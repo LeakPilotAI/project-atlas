@@ -1,29 +1,77 @@
-# Project Atlas (ATLAS)
+# Project Atlas
+
+![Project Atlas](docs/brand/logo-primary.jpg)
 
 **Advanced Trading & Liquidity Analysis System**
 
-Institutional-grade market intelligence platform that continuously scans perpetual markets (Axiom + adapters) for statistically unusual behavior, ranks opportunities, and delivers actionable alerts + analytics.
+Institutional-style market intelligence for Hyperliquid perpetual markets and high-quality equity dip monitoring.
 
-## Core Capabilities
-- Real-time + historical market data ingestion
-- Full technical indicator engine
-- Statistical anomaly detection
-- Transparent opportunity scoring
-- Multi-channel alerting (Discord, Telegram, Email, Desktop)
-- Professional dark dashboard (Next.js)
-- Backtesting + performance analytics
-- Dockerized, production-ready deployment
+![Splash](docs/brand/splash.jpg)
 
-## Tech Stack
-- **Backend**: Python 3.12, FastAPI, AsyncIO, Pydantic
-- **Database**: PostgreSQL + TimescaleDB + Redis
-- **Frontend**: Next.js 14, React, Tailwind CSS, TradingView Lightweight Charts
-- **Infra**: Docker, Nginx, Prometheus/Grafana (later)
+---
 
-## Quick Start (Development)
+## What it does
+
+- Continuously scans Hyperliquid perps for abnormal movement
+- Tracks opportunities with confidence, regime, and risk context
+- Optional paper-trade performance tracking
+- Discord DM alerts (subscribe-only, no channel spam)
+- Quality Dip scanner for large-cap names (ADBE, META, GOOGL, AMZN, MSFT)
+- FastAPI backend + optional Next.js frontend dashboard
+
+This is an **alert and analysis system**. It does not auto-trade.
+
+---
+
+## Brand
+
+| Asset | Path |
+|-------|------|
+| Primary logo | `docs/brand/logo-primary.jpg` |
+| App icon | `docs/brand/logo-icon.jpg` |
+| Favicon | `docs/brand/favicon.jpg` |
+| Splash / social | `docs/brand/splash.jpg` |
+
+---
+
+## Screenshots
+
+> Add real captures to `docs/screenshots/` then uncomment below.
+
+<!--
+### Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Opportunities
+![Opportunities](docs/screenshots/opportunities.png)
+
+### Discord alert
+![Discord Alert](docs/screenshots/discord-alert.png)
+
+### Quality dips
+![Quality Dips](docs/screenshots/quality-dips.png)
+
+### Health
+![Health](docs/screenshots/health.png)
+-->
+
+---
+
+## Stack
+
+- Python 3.12, FastAPI, asyncio
+- PostgreSQL / TimescaleDB, Redis
+- Discord.py
+- yfinance (equity dips)
+- Next.js frontend (optional)
+- Docker Compose for local infra
+
+---
+
+## Quick start (Windows)
+
+### 1. Clone
+
 ```bash
-cp .env.example .env
-# Edit .env with your keys
-docker compose up -d
-cd backend && pip install -e ".[dev]"
-uvicorn app.main:app --reload
+git clone https://github.com/LeakPilotAI/project-atlas.git
+cd project-atlas
