@@ -1,4 +1,4 @@
-"""Perp micro coach v3.1 — quality paper, strict live-path, rate-limit safe."""
+"""Perp micro coach v3.1 — quality paper, strict live-path, rate-limit safe, journal P1–P4."""
 
 from __future__ import annotations
 
@@ -218,6 +218,8 @@ class PerpMicroCoach:
                     "mark": mark,
                     "unrealized_r": round(ur, 2),
                     "counts_for_live": p.get("counts_for_live", True),
+                    "mfe_r": p.get("mfe_r", 0),
+                    "mae_r": p.get("mae_r", 0),
                 }
             )
         return out
@@ -297,15 +299,7 @@ class PerpMicroCoach:
                 return data
         except Exception as e:
             log.warning("cache ticker path failed", error=str(e)[:200])
-        return await self._fetch_tickers_direct_hl()
-
-    async def _fetch_tickers_direct_hl(self) -> List[Dict[str, Any]]:
-        try:
-            from app.adapters.hyperliquid_cache import get_tickers_cached
-
-            return await get_tickers_cached(force=True)
-        except Exception:
-            return []
+        return []
 
     async def _fetch_closes(self, symbol: str, n: int = 48) -> List[float]:
         client = self._http or httpx.AsyncClient(timeout=25.0)
@@ -572,6 +566,8 @@ class PerpMicroCoach:
         micro_heartbeat.record_scan()
 
     async def _try_symbol(self, symbol: str, price: float) -> bool:
+        from app.services.paper_journal import paper_journal
+
         settings = get_settings()
         if price <= 0:
             return False
@@ -597,8 +593,22 @@ class PerpMicroCoach:
         if side is None:
             return False
 
-        ok, qscore, reason = self._setup_quality(symbol, side, price, closes, rsi, sma20, ext_pct)
+        ok, qscore, reason = self._setup_quality(
+            symbol, side, price, closes, rsi, sma20, ext_pct
+        )
         if not ok:
+            # P4 — log rejected candidate (only when RSI extreme + extension already passed)
+            await paper_journal.log_candidate(
+                symbol=symbol,
+                side=side,
+                taken=False,
+                signal_price=price,
+                score=qscore,
+                regime=f"rsi={rsi:.1f}",
+                features={"rsi": rsi, "ext_pct": ext_pct, "sma20": sma20},
+                reject_reason=reason,
+                strategy="rsi_extension_v1",
+            )
             return False
 
         atr = _atr_proxy(closes, 14)
@@ -616,19 +626,29 @@ class PerpMicroCoach:
             return False
         rr = abs(tp1 - price) / risk
         if rr < float(settings.perp_micro_min_rr):
+            await paper_journal.log_candidate(
+                symbol=symbol,
+                side=side,
+                taken=False,
+                signal_price=price,
+                score=qscore,
+                regime=f"rsi={rsi:.1f}",
+                features={"rsi": rsi, "ext_pct": ext_pct, "rr": rr},
+                reject_reason=f"R:R {rr:.2f} < min",
+                strategy="rsi_extension_v1",
+            )
             return False
 
         majors = set(settings.perp_micro_majors_list)
         tier = _tier(symbol, majors)
         counts_for_live = tier in ("major", "alt")
 
-        from app.alerts.discord import is_discord_ready, send_discord_alert
-        from app.services.paper_journal import paper_journal
-
+        # P2 — entry = current mark (price)
         tid = await paper_journal.open_trade(
             symbol=symbol,
             side=side,
             entry=price,
+            signal_price=price,
             stop=stop,
             tp1=tp1,
             tp2=tp2,
@@ -636,7 +656,30 @@ class PerpMicroCoach:
             regime=f"rsi={rsi:.1f};q={qscore:.0f};{tier}",
             notes=f"ext={ext_pct:.2f}%|{reason}|live={counts_for_live}",
             source="perp_micro",
+            strategy="rsi_extension_v1",
+            signal_score=qscore,
+            features={
+                "rsi": rsi,
+                "ext_pct": ext_pct,
+                "sma20": sma20,
+                "atr": atr,
+                "vol": self._vol_map.get(symbol),
+                "oi": self._oi_map.get(symbol),
+            },
+            tier=tier,
+            counts_for_live=counts_for_live,
         )
+        await paper_journal.log_candidate(
+            symbol=symbol,
+            side=side,
+            taken=True,
+            signal_price=price,
+            score=qscore,
+            regime=f"rsi={rsi:.1f}",
+            features={"rsi": rsi, "ext_pct": ext_pct},
+            strategy="rsi_extension_v1",
+        )
+
         self._open[tid] = {
             "symbol": symbol,
             "side": side,
@@ -649,8 +692,12 @@ class PerpMicroCoach:
             "tier": tier,
             "counts_for_live": counts_for_live,
             "qscore": qscore,
+            "mfe_r": 0.0,
+            "mae_r": 0.0,
         }
         self._cooldowns[symbol] = datetime.now(timezone.utc)
+
+        from app.alerts.discord import is_discord_ready, send_discord_alert
 
         if is_discord_ready():
             live_tag = "live-stat" if counts_for_live else "experimental"
@@ -690,6 +737,11 @@ class PerpMicroCoach:
             sym = p["symbol"]
             mark = price_map.get(sym) or float(p.get("mark") or p["entry"])
             p["mark"] = mark
+            # P3 — continuous MFE/MAE
+            paper_journal.update_excursion(tid, mark)
+            p["mfe_r"] = paper_journal._open.get(tid, {}).get("mfe_r", p.get("mfe_r", 0))
+            p["mae_r"] = paper_journal._open.get(tid, {}).get("mae_r", p.get("mae_r", 0))
+
             side, entry = p["side"], float(p["entry"])
             stop, tp1 = float(p["stop"]), float(p["tp1"])
             risk = abs(entry - stop) or 1e-12
@@ -702,17 +754,22 @@ class PerpMicroCoach:
             else:
                 result, exit_px = "TP1", tp1
                 pnl_r = abs(tp1 - entry) / risk
-            await paper_journal.close_trade(tid, exit_price=exit_px, result=result, pnl_r=pnl_r)
+            close_row = await paper_journal.close_trade(
+                tid, exit_price=exit_px, result=result, pnl_r=pnl_r
+            )
             to_close.append(tid)
             self._cooldowns[sym] = datetime.now(timezone.utc)
             if is_discord_ready():
                 live_tag = "live-stat" if p.get("counts_for_live") else "experimental"
+                mfe = close_row.get("mfe_r", 0)
+                mae = close_row.get("mae_r", 0)
                 await send_discord_alert(
                     symbol=sym,
                     title=f"Paper {result} · {sym} · {side}",
                     description=(
                         f"**{sym}** {side} closed **{result}**\n"
                         f"Entry `{entry}` → Exit `{exit_px:.6g}` · **{pnl_r:+.2f}R**\n"
+                        f"MFE `{mfe:+.2f}R` · MAE `{mae:+.2f}R`\n"
                         f"Tier `{p.get('tier', '?')}` · **{live_tag}**\n_Paper only._"
                     ),
                     price=exit_px,
@@ -721,7 +778,15 @@ class PerpMicroCoach:
                     confidence=60,
                     risk=40,
                 )
-            log.info("Paper CLOSE", trade_id=tid, symbol=sym, result=result, pnl_r=pnl_r)
+            log.info(
+                "Paper CLOSE",
+                trade_id=tid,
+                symbol=sym,
+                result=result,
+                pnl_r=pnl_r,
+                mfe_r=mfe if is_discord_ready() else close_row.get("mfe_r"),
+                mae_r=mae if is_discord_ready() else close_row.get("mae_r"),
+            )
         for tid in to_close:
             self._open.pop(tid, None)
 

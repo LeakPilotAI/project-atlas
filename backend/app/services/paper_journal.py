@@ -1,62 +1,189 @@
-"""Persist paper TRIGGER / TP / STOP rows + query helpers for /paper and recaps."""
+"""Paper journal — sole source of truth for Hyperliquid paper stats + MFE/MAE + candidates."""
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import structlog
-from sqlalchemy import desc, select
-
-from app.db.session import AsyncSessionLocal
-from app.models.paper_trade import PaperTrade
 
 log = structlog.get_logger(__name__)
 
+JOURNAL_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_journal.jsonl"
+CANDIDATE_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_candidates.jsonl"
 
-def _uid() -> str:
-    return uuid.uuid4().hex[:12]
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _iso(dt: Optional[datetime] = None) -> str:
+    return (dt or _now()).isoformat()
 
 
 class PaperJournal:
+    def __init__(self) -> None:
+        JOURNAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        CANDIDATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        self._open: Dict[str, Dict[str, Any]] = {}
+        self._load_open_from_disk()
+
+    def _load_open_from_disk(self) -> None:
+        if not JOURNAL_PATH.exists():
+            return
+        closed_ids = set()
+        opens: Dict[str, Dict[str, Any]] = {}
+        try:
+            with JOURNAL_PATH.open("r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    row = json.loads(line)
+                    tid = row.get("trade_id")
+                    if not tid:
+                        continue
+                    if row.get("event") == "open":
+                        opens[tid] = row
+                    elif row.get("event") == "close":
+                        closed_ids.add(tid)
+            for tid, row in opens.items():
+                if tid not in closed_ids:
+                    self._open[tid] = row
+        except Exception as e:
+            log.warning("paper journal load failed", error=str(e)[:200])
+
+    def _append(self, path: Path, row: Dict[str, Any]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row, default=str) + "\n")
+
+    async def log_candidate(
+        self,
+        *,
+        symbol: str,
+        side: Optional[str],
+        taken: bool,
+        signal_price: float,
+        score: float = 0.0,
+        regime: str = "",
+        features: Optional[Dict[str, Any]] = None,
+        reject_reason: str = "",
+        strategy: str = "perp_micro",
+    ) -> str:
+        cid = str(uuid.uuid4())[:12]
+        row = {
+            "event": "candidate",
+            "candidate_id": cid,
+            "timestamp": _iso(),
+            "symbol": symbol.upper(),
+            "side": side,
+            "taken": taken,
+            "signal_price": signal_price,
+            "score": score,
+            "regime": regime,
+            "strategy": strategy,
+            "features": features or {},
+            "reject_reason": reject_reason,
+        }
+        self._append(CANDIDATE_PATH, row)
+        return cid
+
     async def open_trade(
         self,
         *,
         symbol: str,
         side: str,
         entry: float,
-        stop: Optional[float],
-        tp1: Optional[float],
-        tp2: Optional[float] = None,
+        stop: float,
+        tp1: float,
+        tp2: float,
         risk_usd: float = 1.0,
-        regime: Optional[str] = None,
-        notes: Optional[str] = None,
+        regime: str = "",
+        notes: str = "",
         source: str = "perp_micro",
-        trade_id: Optional[str] = None,
+        signal_price: Optional[float] = None,
+        signal_timestamp: Optional[str] = None,
+        strategy: str = "mean_reversion_rsi",
+        signal_score: float = 0.0,
+        features: Optional[Dict[str, Any]] = None,
+        tier: str = "alt",
+        counts_for_live: bool = True,
+        fees_bps: float = 2.0,
+        slippage_bps: float = 1.0,
     ) -> str:
-        tid = trade_id or _uid()
-        now = datetime.now(timezone.utc)
-        async with AsyncSessionLocal() as session:
-            row = PaperTrade(
-                trade_id=tid,
-                symbol=symbol.upper(),
-                side=side.upper(),
-                status="OPEN",
-                entry=float(entry),
-                stop=float(stop) if stop is not None else None,
-                tp1=float(tp1) if tp1 is not None else None,
-                tp2=float(tp2) if tp2 is not None else None,
-                risk_usd=float(risk_usd),
-                regime=regime,
-                notes=notes,
-                source=source,
-                opened_at=now,
-            )
-            session.add(row)
-            await session.commit()
-        log.info("Paper journal OPEN", trade_id=tid, symbol=symbol, side=side, entry=entry)
+        """Entry is ALWAYS actual_entry_price (current mark)."""
+        tid = str(uuid.uuid4())[:12]
+        actual_entry = float(entry)
+        sig_px = float(signal_price) if signal_price is not None else actual_entry
+        risk = abs(actual_entry - float(stop)) or 1e-12
+        row = {
+            "event": "open",
+            "trade_id": tid,
+            "symbol": symbol.upper(),
+            "side": side.upper(),
+            "signal_timestamp": signal_timestamp or _iso(),
+            "entry_timestamp": _iso(),
+            "signal_price": sig_px,
+            "actual_entry_price": actual_entry,
+            "stop_price": float(stop),
+            "tp1_price": float(tp1),
+            "tp2_price": float(tp2),
+            "risk_dollars": float(risk_usd),
+            "risk_price": risk,
+            "position_size": float(risk_usd) / risk if risk > 0 else 0.0,
+            "regime": regime,
+            "strategy": strategy,
+            "signal_score": float(signal_score),
+            "features": features or {},
+            "notes": notes,
+            "source": source,
+            "tier": tier,
+            "counts_for_live": bool(counts_for_live),
+            "fees_bps": fees_bps,
+            "slippage_bps": slippage_bps,
+            "mfe_r": 0.0,
+            "mae_r": 0.0,
+            "mfe_price": actual_entry,
+            "mae_price": actual_entry,
+            "mark": actual_entry,
+            "status": "open",
+        }
+        self._open[tid] = row
+        self._append(JOURNAL_PATH, row)
+        log.info(
+            "paper open",
+            trade_id=tid,
+            symbol=symbol,
+            side=side,
+            entry=actual_entry,
+            signal_price=sig_px,
+        )
         return tid
+
+    def update_excursion(self, trade_id: str, mark: float) -> None:
+        p = self._open.get(trade_id)
+        if not p:
+            return
+        entry = float(p["actual_entry_price"])
+        risk = float(p.get("risk_price") or abs(entry - float(p["stop_price"])) or 1e-12)
+        side = p["side"]
+        if side == "LONG":
+            fav = (mark - entry) / risk
+            adv = (entry - mark) / risk
+        else:
+            fav = (entry - mark) / risk
+            adv = (mark - entry) / risk
+        p["mark"] = mark
+        if fav > float(p.get("mfe_r") or 0):
+            p["mfe_r"] = fav
+            p["mfe_price"] = mark
+        if adv > float(p.get("mae_r") or 0):
+            p["mae_r"] = adv
+            p["mae_price"] = mark
 
     async def close_trade(
         self,
@@ -64,125 +191,114 @@ class PaperJournal:
         *,
         exit_price: float,
         result: str,
-        pnl_r: float,
-        pnl_usd: Optional[float] = None,
-    ) -> None:
-        now = datetime.now(timezone.utc)
-        async with AsyncSessionLocal() as session:
-            q = await session.execute(
-                select(PaperTrade).where(PaperTrade.trade_id == trade_id)
-            )
-            row = q.scalar_one_or_none()
-            if row is None:
-                log.warning("Paper journal close miss", trade_id=trade_id)
-                return
-            row.status = "CLOSED"
-            row.exit_price = float(exit_price)
-            row.result = result.upper()
-            row.pnl_r = float(pnl_r)
-            row.pnl_usd = float(pnl_usd) if pnl_usd is not None else float(pnl_r) * float(row.risk_usd)
-            row.closed_at = now
-            await session.commit()
+        pnl_r: Optional[float] = None,
+        exit_reason: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        p = self._open.pop(trade_id, None)
+        if not p:
+            return {}
+        entry = float(p["actual_entry_price"])
+        risk = float(p.get("risk_price") or 1e-12)
+        side = p["side"]
+        if pnl_r is None:
+            if side == "LONG":
+                pnl_r = (exit_price - entry) / risk
+            else:
+                pnl_r = (entry - exit_price) / risk
+        self._open[trade_id] = p
+        self.update_excursion(trade_id, exit_price)
+        p = self._open.pop(trade_id)
+        fees = float(p.get("fees_bps") or 0) / 10000.0
+        slip = float(p.get("slippage_bps") or 0) / 10000.0
+        cost_r = (fees + slip) * 2 * (entry / risk) if risk else 0.0
+        net_r = float(pnl_r) - cost_r
+        opened = p.get("entry_timestamp")
+        try:
+            t0 = datetime.fromisoformat(opened.replace("Z", "+00:00")) if opened else _now()
+        except Exception:
+            t0 = _now()
+        hold_s = (_now() - t0).total_seconds()
+        close_row = {
+            **{k: v for k, v in p.items() if k != "event"},
+            "event": "close",
+            "status": "closed",
+            "exit_timestamp": _iso(),
+            "actual_exit_price": float(exit_price),
+            "exit_reason": exit_reason or result,
+            "result": result,
+            "R_multiple": round(float(pnl_r), 4),
+            "gross_pnl_r": round(float(pnl_r), 4),
+            "net_pnl_r": round(net_r, 4),
+            "mfe_r": round(float(p.get("mfe_r") or 0), 4),
+            "mae_r": round(float(p.get("mae_r") or 0), 4),
+            "holding_time_sec": int(hold_s),
+            "win": bool(pnl_r > 0),
+        }
+        self._append(JOURNAL_PATH, close_row)
         log.info(
-            "Paper journal CLOSE",
+            "paper close",
             trade_id=trade_id,
             result=result,
             pnl_r=pnl_r,
+            mfe_r=close_row["mfe_r"],
+            mae_r=close_row["mae_r"],
         )
+        return close_row
 
-    async def list_open(self, limit: int = 20) -> List[Dict[str, Any]]:
-        async with AsyncSessionLocal() as session:
-            q = await session.execute(
-                select(PaperTrade)
-                .where(PaperTrade.status == "OPEN")
-                .order_by(desc(PaperTrade.opened_at))
-                .limit(limit)
-            )
-            rows = q.scalars().all()
-        return [self._to_dict(r) for r in rows]
-
-    async def list_closed(self, limit: int = 30) -> List[Dict[str, Any]]:
-        async with AsyncSessionLocal() as session:
-            q = await session.execute(
-                select(PaperTrade)
-                .where(PaperTrade.status == "CLOSED")
-                .order_by(desc(PaperTrade.closed_at))
-                .limit(limit)
-            )
-            rows = q.scalars().all()
-        return [self._to_dict(r) for r in rows]
+    def list_open(self) -> List[Dict[str, Any]]:
+        return list(self._open.values())
 
     async def stats(self) -> Dict[str, Any]:
-        async with AsyncSessionLocal() as session:
-            closed_q = await session.execute(
-                select(PaperTrade).where(PaperTrade.status == "CLOSED")
-            )
-            closed = list(closed_q.scalars().all())
-            open_q = await session.execute(
-                select(PaperTrade).where(PaperTrade.status == "OPEN")
-            )
-            opens = list(open_q.scalars().all())
-
-        wins = [t for t in closed if (t.pnl_r or 0) > 0]
-        losses = [t for t in closed if (t.pnl_r or 0) <= 0]
-        sum_r = sum(float(t.pnl_r or 0) for t in closed)
-        n = len(closed)
-        wr = (len(wins) / n * 100.0) if n else 0.0
+        wins = losses = 0
+        sum_r = 0.0
+        sum_mfe = 0.0
+        sum_mae = 0.0
+        n_closed = 0
+        live_wins = live_losses = 0
+        live_sum_r = 0.0
+        if JOURNAL_PATH.exists():
+            with JOURNAL_PATH.open("r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    row = json.loads(line)
+                    if row.get("event") != "close":
+                        continue
+                    n_closed += 1
+                    r = float(row.get("net_pnl_r") or row.get("R_multiple") or 0)
+                    sum_r += r
+                    sum_mfe += float(row.get("mfe_r") or 0)
+                    sum_mae += float(row.get("mae_r") or 0)
+                    if r > 0:
+                        wins += 1
+                    else:
+                        losses += 1
+                    if row.get("counts_for_live"):
+                        live_sum_r += r
+                        if r > 0:
+                            live_wins += 1
+                        else:
+                            live_losses += 1
+        closed = wins + losses
+        wr = (wins / closed) if closed else 0.0
+        live_closed = live_wins + live_losses
         return {
-            "wins": len(wins),
-            "losses": len(losses),
-            "closed": n,
-            "open": len(opens),
-            "win_rate_pct": round(wr, 1),
-            "sum_r": round(sum_r, 2),
-        }
-
-    async def stats_since(self, since: datetime) -> Dict[str, Any]:
-        async with AsyncSessionLocal() as session:
-            q = await session.execute(
-                select(PaperTrade).where(
-                    PaperTrade.status == "CLOSED",
-                    PaperTrade.closed_at >= since,
-                )
-            )
-            closed = list(q.scalars().all())
-            oq = await session.execute(
-                select(PaperTrade).where(PaperTrade.status == "OPEN")
-            )
-            opens = list(oq.scalars().all())
-        wins = [t for t in closed if (t.pnl_r or 0) > 0]
-        losses = [t for t in closed if (t.pnl_r or 0) <= 0]
-        sum_r = sum(float(t.pnl_r or 0) for t in closed)
-        n = len(closed)
-        wr = (len(wins) / n * 100.0) if n else 0.0
-        return {
-            "wins": len(wins),
-            "losses": len(losses),
-            "closed": n,
-            "open": len(opens),
-            "win_rate_pct": round(wr, 1),
-            "sum_r": round(sum_r, 2),
-            "trades": [self._to_dict(t) for t in closed[-10:]],
-        }
-
-    @staticmethod
-    def _to_dict(r: PaperTrade) -> Dict[str, Any]:
-        return {
-            "id": r.trade_id,
-            "symbol": r.symbol,
-            "side": r.side,
-            "status": r.status,
-            "entry": r.entry,
-            "stop": r.stop,
-            "tp1": r.tp1,
-            "tp2": r.tp2,
-            "exit_price": r.exit_price,
-            "pnl_r": r.pnl_r,
-            "pnl_usd": r.pnl_usd,
-            "result": r.result,
-            "regime": r.regime,
-            "opened_at": r.opened_at.isoformat() if r.opened_at else None,
-            "closed_at": r.closed_at.isoformat() if r.closed_at else None,
+            "open": len(self._open),
+            "closed": closed,
+            "wins": wins,
+            "losses": losses,
+            "winrate": round(wr, 4),
+            "sum_r": round(sum_r, 4),
+            "avg_r": round(sum_r / closed, 4) if closed else 0.0,
+            "avg_mfe_r": round(sum_mfe / n_closed, 4) if n_closed else 0.0,
+            "avg_mae_r": round(sum_mae / n_closed, 4) if n_closed else 0.0,
+            "live_closed": live_closed,
+            "live_wins": live_wins,
+            "live_losses": live_losses,
+            "live_sum_r": round(live_sum_r, 4),
+            "journal_path": str(JOURNAL_PATH),
+            "candidates_path": str(CANDIDATE_PATH),
         }
 
 

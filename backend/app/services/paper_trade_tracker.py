@@ -1,14 +1,13 @@
-"""Legacy paper trade tracker — soft-disabled.
+"""LEGACY NO-OP. Hyperliquid paper stats = paper_journal + perp_micro_coach only.
 
-Real Hyperliquid paper simulation lives in perp_micro_coach (Redis).
-This service stays importable for main.py lifespan but does not call
-missing model methods like PaperTrade.evaluate_after.
+Do not open HL paper trades here. Opportunity tracker / old paths must not write
+stats through this module. Kept so imports in main.py / opportunity_tracker
+do not crash.
 """
 
 from __future__ import annotations
 
-import asyncio
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 import structlog
 
@@ -17,7 +16,6 @@ log = structlog.get_logger(__name__)
 
 class PaperTradeTracker:
     def __init__(self) -> None:
-        self._task: Optional[asyncio.Task] = None
         self._running = False
 
     @property
@@ -25,38 +23,30 @@ class PaperTradeTracker:
         return self._running
 
     async def start(self) -> None:
-        if self._task and not self._task.done():
-            return
         self._running = True
-        self._task = asyncio.create_task(self._loop(), name="paper_trade_tracker")
         log.info(
             "Paper trade tracker started (legacy no-op; use perp_micro_coach + /paper)"
         )
 
     async def stop(self) -> None:
         self._running = False
-        if self._task:
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-            self._task = None
         log.info("Paper trade tracker stopped")
 
-    async def _loop(self) -> None:
-        """Idle loop — does not evaluate DB PaperTrade rows."""
-        await asyncio.sleep(5)
-        while self._running:
-            try:
-                # Intentionally empty: avoid PaperTrade.evaluate_after and
-                # duplicate logic with perp_micro_coach.
-                await asyncio.sleep(60)
-            except asyncio.CancelledError:
-                raise
-            except Exception as e:
-                log.warning("Paper trade tracker cycle error", error=str(e))
-                await asyncio.sleep(30)
+    async def open_trade(self, *args: Any, **kwargs: Any) -> Optional[str]:
+        log.debug("paper_trade_tracker.open_trade ignored (legacy no-op)")
+        return None
+
+    async def close_trade(self, *args: Any, **kwargs: Any) -> None:
+        log.debug("paper_trade_tracker.close_trade ignored (legacy no-op)")
+
+    async def list_open(self) -> List[Dict[str, Any]]:
+        return []
+
+    async def stats(self) -> Dict[str, Any]:
+        return {
+            "legacy": True,
+            "message": "Use paper_journal / perp_micro_coach for paper stats",
+        }
 
 
 paper_trade_tracker = PaperTradeTracker()

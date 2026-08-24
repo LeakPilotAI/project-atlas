@@ -1,227 +1,65 @@
-"""Discord bot — DM alerts + slash commands."""
+"""Discord alerts + slash commands. DM-only. Paper stats from paper_journal only."""
 
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 import discord
-from discord.ext import commands
+from discord import app_commands
+import structlog
 
 from app.core.config import get_settings
-from app.core.logging import get_logger
 
-log = get_logger("discord")
+log = structlog.get_logger(__name__)
 
-_bot: Optional[commands.Bot] = None
-bot: Optional[commands.Bot] = None
-_ready = asyncio.Event()
+intents = discord.Intents.default()
+intents.message_content = True
+intents.dm_messages = True
+
+bot = discord.Client(intents=intents)
+tree = app_commands.CommandTree(bot)
+
+_ready = False
 _subscribers: Set[int] = set()
+_start_lock = asyncio.Lock()
+_bot_task: Optional[asyncio.Task] = None
 
 
 def is_discord_ready() -> bool:
-    return _bot is not None and _bot.is_ready()
+    return _ready and bot.is_ready()
 
 
-def get_subscriber_ids() -> list[int]:
-    return sorted(_subscribers)
+def get_subscriber_ids() -> List[int]:
+    return list(_subscribers)
 
 
-async def _load_subscribers_from_redis() -> None:
-    global _subscribers
-    try:
-        from app.core.redis import get_redis_client
-
-        r = await get_redis_client()
-        if r is None:
-            return
-        members = await r.smembers("atlas:discord:subscribers")
-        for m in members or []:
-            try:
-                _subscribers.add(int(m))
-            except ValueError:
-                continue
-    except Exception as e:
-        log.warning("load subscribers failed", error=str(e))
-
-
-async def _save_subscriber(user_id: int) -> None:
-    _subscribers.add(user_id)
-    try:
-        from app.core.redis import get_redis_client
-
-        r = await get_redis_client()
-        if r is not None:
-            await r.sadd("atlas:discord:subscribers", str(user_id))
-    except Exception as e:
-        log.warning("save subscriber failed", error=str(e))
-
-
-async def _remove_subscriber(user_id: int) -> None:
-    _subscribers.discard(user_id)
-    try:
-        from app.core.redis import get_redis_client
-
-        r = await get_redis_client()
-        if r is not None:
-            await r.srem("atlas:discord:subscribers", str(user_id))
-    except Exception as e:
-        log.warning("remove subscriber failed", error=str(e))
-
-
-def _build_bot() -> commands.Bot:
-    intents = discord.Intents.default()
-    intents.message_content = True
-    intents.members = True
-    client = commands.Bot(command_prefix="!", intents=intents)
-
-    @client.event
-    async def on_ready() -> None:
-        settings = get_settings()
-        await _load_subscribers_from_redis()
-        for oid in settings.discord_owner_id_list:
-            _subscribers.add(oid)
-            try:
-                await _save_subscriber(oid)
-                log.info("Seeded Discord subscriber", user_id=oid)
-            except Exception:
-                pass
-        try:
-            synced = await client.tree.sync()
-            log.info("Slash commands synced", count=len(synced))
-        except Exception as e:
-            log.warning("Slash sync failed", error=str(e))
-        log.info(
-            "Discord bot ready",
-            id=client.user.id if client.user else None,
-            subscribers=len(_subscribers),
-            user=str(client.user) if client.user else None,
-        )
-        _ready.set()
-
-    @client.tree.command(name="subscribe", description="Receive Atlas DM alerts")
-    async def subscribe_cmd(interaction: discord.Interaction) -> None:
-        await _save_subscriber(interaction.user.id)
-        await interaction.response.send_message(
-            "Subscribed to Atlas DMs (paper, dips, day-trade, heartbeats).",
-            ephemeral=True,
-        )
-
-    @client.tree.command(name="unsubscribe", description="Stop Atlas DM alerts")
-    async def unsubscribe_cmd(interaction: discord.Interaction) -> None:
-        await _remove_subscriber(interaction.user.id)
-        await interaction.response.send_message("Unsubscribed.", ephemeral=True)
-
-    @client.tree.command(name="status", description="Atlas bot status")
-    async def status_cmd(interaction: discord.Interaction) -> None:
-        settings = get_settings()
-        try:
-            from app.services.perp_micro_coach import perp_micro_coach
-
-            liquid = perp_micro_coach.liquid_count
-        except Exception:
-            liquid = 0
-        await interaction.response.send_message(
-            f"**{settings.app_name}** · `{settings.app_env}`\n"
-            f"Subscribers: **{len(_subscribers)}**\n"
-            f"Micro paper: **{settings.perp_micro_paper_enabled}** · "
-            f"liquid **{liquid}** · risk ${settings.perp_micro_risk_usd:.2f}\n"
-            f"_Research / paper only. No auto-execution._",
-            ephemeral=True,
-        )
-
-    @client.tree.command(
-        name="paper",
-        description="Paper trades: open + recent history + stats",
-    )
-    async def paper_cmd(interaction: discord.Interaction) -> None:
-        await interaction.response.defer(ephemeral=True)
-        try:
-            from app.services.paper_journal import paper_journal
-            from app.services.perp_micro_coach import perp_micro_coach
-
-            stats = await paper_journal.stats()
-            opens = await paper_journal.list_open(15)
-            closed = await paper_journal.list_closed(10)
-            live = {}
-            try:
-                for t in await perp_micro_coach.list_open_papers():
-                    live[str(t.get("id"))] = t
-            except Exception:
-                pass
-
-            lines = [
-                f"**Stats:** {stats['wins']}W / {stats['losses']}L · "
-                f"WR **{stats['win_rate_pct']}%** · sum R **{stats['sum_r']:+.2f}** · "
-                f"open **{stats['open']}**",
-                "",
-                "**Open:**",
-            ]
-            if not opens:
-                lines.append("_None_")
-            else:
-                for t in opens:
-                    mark = live.get(t["id"], {})
-                    ur = mark.get("unrealized_r")
-                    extra = f" · uR **{ur:+.2f}**" if ur is not None else ""
-                    lines.append(
-                        f"• `{t['id']}` **{t['symbol']}** {t['side']} @ `{t['entry']}`"
-                        f"{extra} · stop `{t.get('stop')}` tp1 `{t.get('tp1')}`"
-                    )
-            lines.append("")
-            lines.append("**Recent closes:**")
-            if not closed:
-                lines.append("_None yet — strict filters_")
-            else:
-                for t in closed:
-                    lines.append(
-                        f"• `{t['symbol']}` {t['side']} → {t.get('result')} "
-                        f"**{(t.get('pnl_r') or 0):+.2f}R**"
-                    )
-            lines.append("\n_Paper only. No live execution._")
-            text = "\n".join(lines)
-            if len(text) > 1900:
-                text = text[:1900] + "\n…"
-            await interaction.followup.send(text, ephemeral=True)
-        except Exception as e:
-            await interaction.followup.send(f"Paper error: `{e}`", ephemeral=True)
-
-    return client
-
-
-async def start_discord_bot() -> None:
-    global _bot, bot
+def _owner_ids() -> Set[int]:
     settings = get_settings()
-    token = (settings.discord_token or "").strip()
-    if not token:
-        log.warning("DISCORD_TOKEN missing — Discord disabled")
-        return
-    if _bot is not None and _bot.is_ready():
-        bot = _bot
-        return
-    log.info("Discord bot starting...")
-    _bot = _build_bot()
-    bot = _bot
-    try:
-        await _bot.start(token)
-    except asyncio.CancelledError:
-        raise
-    except Exception as e:
-        log.error("Discord bot crashed", error=str(e))
-        _bot = None
-        bot = None
+    raw = getattr(settings, "discord_owner_ids", None) or ""
+    if isinstance(raw, (list, tuple, set)):
+        out = set()
+        for x in raw:
+            try:
+                out.add(int(x))
+            except (TypeError, ValueError):
+                pass
+        return out
+    out: Set[int] = set()
+    for part in str(raw).replace(";", ",").split(","):
+        part = part.strip()
+        if part.isdigit():
+            out.add(int(part))
+    return out
 
 
-async def stop_discord_bot() -> None:
-    global _bot, bot
-    if _bot is not None:
-        try:
-            await _bot.close()
-        except Exception as e:
-            log.warning("Discord close failed", error=str(e))
-        _bot = None
-        bot = None
-    _ready.clear()
+def _seed_subscribers() -> None:
+    global _subscribers
+    owners = _owner_ids()
+    if owners:
+        _subscribers |= owners
+        for uid in owners:
+            log.info("Seeded Discord subscriber", user_id=uid)
 
 
 async def send_discord_alert(
@@ -236,76 +74,217 @@ async def send_discord_alert(
     risk: int = 50,
     **kwargs: Any,
 ) -> bool:
+    """Flexible alert sender — positional or keyword. DM only to subscribers."""
     if args:
+        # Support legacy positional: (symbol, title, description, price, ...)
         if len(args) >= 1 and not symbol:
             symbol = str(args[0])
         if len(args) >= 2 and not title:
             title = str(args[1])
         if len(args) >= 3 and not description:
             description = str(args[2])
-        if len(args) >= 4 and price == 0.0:
+        if len(args) >= 4 and not price:
             try:
                 price = float(args[3])
-            except Exception:
+            except (TypeError, ValueError):
                 pass
 
     symbol = kwargs.get("symbol", symbol) or symbol
     title = kwargs.get("title", title) or title
     description = kwargs.get("description", description) or description
-    if "price" in kwargs:
-        try:
-            price = float(kwargs["price"])
-        except Exception:
-            pass
-    severity = str(kwargs.get("severity", severity) or severity).upper()
+    price = float(kwargs.get("price", price) or price or 0)
+    severity = str(kwargs.get("severity", severity) or severity)
     opportunity = int(kwargs.get("opportunity", opportunity) or opportunity)
     confidence = int(kwargs.get("confidence", confidence) or confidence)
     risk = int(kwargs.get("risk", risk) or risk)
 
-    if _bot is None or not _bot.is_ready():
+    if not is_discord_ready():
         log.warning("Discord not ready — alert skipped", symbol=symbol, title=title)
         return False
 
-    color = discord.Color.gold()
-    if severity == "HIGH":
+    color = discord.Color.orange()
+    sev = severity.upper()
+    if sev in ("HIGH", "CRITICAL"):
         color = discord.Color.red()
-    elif severity == "LOW":
-        color = discord.Color.blue()
-    elif severity == "MEDIUM":
-        color = discord.Color.orange()
+    elif sev in ("LOW",):
+        color = discord.Color.green()
+    elif sev in ("INFO",):
+        color = discord.Color.blurple()
 
     embed = discord.Embed(
         title=(title or f"{symbol} alert")[:256],
-        description=(description or "")[:4000],
+        description=(description or "")[:4096],
         color=color,
     )
     if symbol:
         embed.add_field(name="Symbol", value=str(symbol)[:64], inline=True)
     if price:
-        price_str = f"${price:.6g}" if price < 1 else (f"${price:.4f}" if price < 1000 else f"${price:,.2f}")
-        embed.add_field(name="Price", value=price_str, inline=True)
-    embed.add_field(name="Severity", value=severity, inline=True)
+        embed.add_field(name="Price", value=f"${price:,.4f}", inline=True)
+    embed.add_field(name="Severity", value=sev[:32], inline=True)
     embed.add_field(name="Opportunity", value=str(opportunity), inline=True)
     embed.add_field(name="Confidence", value=str(confidence), inline=True)
     embed.add_field(name="Risk", value=str(risk), inline=True)
-    embed.set_footer(text="Project Atlas · Market Intelligence")
+    embed.set_footer(text="Project Atlas • Market Intelligence")
 
-    recipients = list(_subscribers)
-    if not recipients:
-        for oid in get_settings().discord_owner_id_list:
-            recipients.append(oid)
-    if not recipients:
-        log.warning("No Discord subscribers for alert", symbol=symbol)
-        return False
-
-    ok = 0
-    for uid in recipients:
+    delivered = 0
+    targets = list(_subscribers) or list(_owner_ids())
+    for uid in targets:
         try:
-            user = await _bot.fetch_user(int(uid))
+            user = await bot.fetch_user(int(uid))
+            if user is None:
+                continue
             await user.send(embed=embed)
-            ok += 1
+            delivered += 1
         except Exception as e:
-            log.warning("DM failed", user_id=uid, error=str(e))
-    if ok:
-        log.info("Discord alert delivered", recipients=ok, symbol=symbol)
-    return ok > 0
+            log.warning("DM failed", user_id=uid, error=str(e)[:200])
+
+    log.info("Discord alert delivered", recipients=delivered, symbol=symbol or title)
+    return delivered > 0
+
+
+@bot.event
+async def on_ready() -> None:
+    global _ready
+    _seed_subscribers()
+    try:
+        synced = await tree.sync()
+        log.info("Slash commands synced", count=len(synced))
+    except Exception as e:
+        log.warning("Slash sync failed", error=str(e)[:200])
+    _ready = True
+    log.info(
+        "Discord bot ready",
+        id=bot.user.id if bot.user else None,
+        user=str(bot.user) if bot.user else None,
+        subscribers=len(_subscribers),
+    )
+
+
+@tree.command(name="subscribe", description="Subscribe to Atlas DMs")
+async def subscribe_cmd(interaction: discord.Interaction) -> None:
+    _subscribers.add(interaction.user.id)
+    await interaction.response.send_message(
+        "Subscribed. You will receive Atlas DMs.", ephemeral=True
+    )
+    log.info("Subscriber added", user_id=interaction.user.id)
+
+
+@tree.command(name="unsubscribe", description="Stop Atlas DMs")
+async def unsubscribe_cmd(interaction: discord.Interaction) -> None:
+    _subscribers.discard(interaction.user.id)
+    await interaction.response.send_message("Unsubscribed.", ephemeral=True)
+    log.info("Subscriber removed", user_id=interaction.user.id)
+
+
+@tree.command(name="status", description="Atlas bot status")
+async def status_cmd(interaction: discord.Interaction) -> None:
+    await interaction.response.send_message(
+        f"**Atlas Discord** ready=`{is_discord_ready()}` · "
+        f"subscribers=`{len(_subscribers)}` · user=`{bot.user}`",
+        ephemeral=True,
+    )
+
+
+@tree.command(name="paper", description="Paper trade stats (journal only)")
+async def paper_cmd(interaction: discord.Interaction) -> None:
+    await interaction.response.defer(ephemeral=True)
+    try:
+        from app.services.paper_journal import paper_journal
+        from app.services.perp_micro_coach import perp_micro_coach
+
+        stats = await paper_journal.stats()
+        opens = paper_journal.list_open()
+        ready = await perp_micro_coach.live_readiness()
+
+        lines = [
+            "**Paper journal (single source of truth)**",
+            f"Open: `{stats.get('open', 0)}` · Closed: `{stats.get('closed', 0)}`",
+            f"W/L: `{stats.get('wins', 0)}` / `{stats.get('losses', 0)}` · "
+            f"WR `{float(stats.get('winrate') or 0) * 100:.1f}%`",
+            f"Sum R: `{stats.get('sum_r', 0):+.2f}` · Avg R: `{stats.get('avg_r', 0):+.2f}`",
+            f"Avg MFE: `{stats.get('avg_mfe_r', 0):+.2f}R` · "
+            f"Avg MAE: `{stats.get('avg_mae_r', 0):+.2f}R`",
+            f"Live-stat sum R: `{stats.get('live_sum_r', 0):+.2f}` "
+            f"(closed live-tier: `{stats.get('live_closed', 0)}`)",
+            f"Readiness: {ready.get('message', 'n/a')}",
+        ]
+        if opens:
+            lines.append("")
+            lines.append("**Open positions**")
+            for o in opens[:8]:
+                lines.append(
+                    f"• `{o.get('symbol')}` {o.get('side')} entry "
+                    f"`{o.get('actual_entry_price')}` "
+                    f"MFE `{float(o.get('mfe_r') or 0):+.2f}R` "
+                    f"MAE `{float(o.get('mae_r') or 0):+.2f}R`"
+                )
+        else:
+            lines.append("_No open paper positions._")
+
+        text = "\n".join(lines)
+        if len(text) > 1900:
+            text = text[:1900] + "…"
+        await interaction.followup.send(text, ephemeral=True)
+    except Exception as e:
+        log.warning("paper_cmd failed", error=str(e), exc_info=True)
+        await interaction.followup.send(f"Paper stats error: `{e}`", ephemeral=True)
+
+
+@tree.command(name="help", description="Atlas command list")
+async def help_cmd(interaction: discord.Interaction) -> None:
+    await interaction.response.send_message(
+        "**Atlas commands**\n"
+        "`/subscribe` — receive DMs\n"
+        "`/unsubscribe` — stop DMs\n"
+        "`/status` — bot status\n"
+        "`/paper` — paper journal stats (MFE/MAE, sum R)\n"
+        "`/help` — this message\n\n"
+        "_Alerts are research only. Manual execution. Not financial advice._",
+        ephemeral=True,
+    )
+
+
+async def start_discord_bot() -> None:
+    """Start Discord client as a background task (idempotent)."""
+    global _bot_task
+    async with _start_lock:
+        settings = get_settings()
+        token = (settings.discord_token or "").strip()
+        if not token:
+            log.warning("DISCORD_TOKEN missing — Discord disabled")
+            return
+        if _bot_task and not _bot_task.done():
+            log.info("Discord bot already running")
+            return
+
+        _seed_subscribers()
+
+        async def _runner() -> None:
+            try:
+                log.info("Discord bot starting...")
+                await bot.start(token)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                log.error("Discord bot crashed", error=str(e), exc_info=True)
+
+        _bot_task = asyncio.create_task(_runner(), name="discord_bot")
+        log.info("Discord bot task scheduled (DM-only alerts)")
+
+
+async def stop_discord_bot() -> None:
+    global _ready, _bot_task
+    _ready = False
+    try:
+        if bot.is_ready():
+            await bot.close()
+    except Exception as e:
+        log.warning("Discord close error", error=str(e)[:200])
+    if _bot_task and not _bot_task.done():
+        _bot_task.cancel()
+        try:
+            await _bot_task
+        except asyncio.CancelledError:
+            pass
+    _bot_task = None
+    log.info("Discord bot stopped")
