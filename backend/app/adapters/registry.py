@@ -1,40 +1,49 @@
-from typing import Dict, List, Optional
+"""Exchange adapter registry."""
 
-from app.adapters.base import BaseExchangeAdapter
+from __future__ import annotations
+
+from typing import Any, Optional
+
+from app.adapters.base import BaseExchangeAdapter, MarketAdapter
 from app.core.logging import get_logger
 
 logger = get_logger("registry")
 
 
 class AdapterRegistry:
-    def __init__(self):
-        self._adapters: Dict[str, BaseExchangeAdapter] = {}
+    def __init__(self) -> None:
+        self._adapters: dict[str, Any] = {}
 
-    def register(self, adapter: BaseExchangeAdapter) -> None:
-        self._adapters[adapter.name] = adapter
-        logger.info("Adapter registered", name=adapter.name)
+    def register(self, adapter: Any) -> None:
+        name = getattr(adapter, "name", None) or adapter.__class__.__name__.lower()
+        self._adapters[str(name).lower()] = adapter
+        logger.info("Adapter registered", name=name)
 
-    def get(self, name: str) -> Optional[BaseExchangeAdapter]:
-        return self._adapters.get(name)
+    def get(self, name: str) -> Optional[Any]:
+        return self._adapters.get(name.lower())
 
-    def all(self) -> List[BaseExchangeAdapter]:
+    def all(self) -> list[Any]:
         return list(self._adapters.values())
 
+    def names(self) -> list[str]:
+        return list(self._adapters.keys())
+
     async def connect_all(self) -> None:
-        for adapter in self._adapters.values():
+        for name, adapter in self._adapters.items():
             try:
-                await adapter.connect()
-                logger.info("Adapter connected", name=adapter.name)
+                if hasattr(adapter, "connect"):
+                    await adapter.connect()
+                    logger.info("Adapter connected", name=name)
             except Exception as e:
-                logger.error("Failed to connect adapter", name=adapter.name, error=str(e))
+                logger.error("Adapter connect failed", name=name, error=str(e))
 
-    async def disconnect_all(self) -> None:
-        for adapter in self._adapters.values():
+    async def close_all(self) -> None:
+        for name, adapter in self._adapters.items():
             try:
-                await adapter.disconnect()
+                if hasattr(adapter, "close"):
+                    await adapter.close()
             except Exception as e:
-                logger.warning("Error disconnecting adapter", name=adapter.name, error=str(e))
+                logger.warning("Adapter close failed", name=name, error=str(e))
 
 
-# Global singleton
 registry = AdapterRegistry()

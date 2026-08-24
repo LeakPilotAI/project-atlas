@@ -1,30 +1,62 @@
+"""Shared async Redis client for Project Atlas."""
+
+from __future__ import annotations
+
 from typing import Optional
 
-import redis.asyncio as redis
+import structlog
+
 from app.core.config import get_settings
-from app.core.logging import get_logger
 
-logger = get_logger("redis")
-settings = get_settings()
+log = structlog.get_logger(__name__)
 
-_redis_client: Optional[redis.Redis] = None
+_redis = None
 
 
-async def get_redis() -> redis.Redis:
-    global _redis_client
-    if _redis_client is None:
-        _redis_client = redis.from_url(
-            settings.redis_url,
-            encoding="utf-8",
-            decode_responses=True,
-        )
-        logger.info("Redis client created", url=settings.redis_url)
-    return _redis_client
+async def init_redis():
+    """Create and ping Redis. Safe to call once at startup."""
+    global _redis
+    if _redis is not None:
+        return _redis
+    settings = get_settings()
+    try:
+        import redis.asyncio as redis
+
+        client = redis.from_url(settings.redis_url, decode_responses=True)
+        await client.ping()
+        _redis = client
+        log.info("Redis connected successfully", url=settings.redis_url)
+        return _redis
+    except Exception as e:
+        log.warning("Redis connection failed", error=str(e))
+        _redis = None
+        raise
 
 
 async def close_redis() -> None:
-    global _redis_client
-    if _redis_client is not None:
-        await _redis_client.aclose()
-        _redis_client = None
-        logger.info("Redis client closed")
+    global _redis
+    if _redis is not None:
+        try:
+            await _redis.aclose()
+        except Exception:
+            try:
+                await _redis.close()
+            except Exception:
+                pass
+        _redis = None
+        log.info("Redis client closed")
+
+
+def get_redis():
+    return _redis
+
+
+async def get_redis_client():
+    """Lazy get-or-create for services that don't go through lifespan."""
+    global _redis
+    if _redis is not None:
+        return _redis
+    try:
+        return await init_redis()
+    except Exception:
+        return None

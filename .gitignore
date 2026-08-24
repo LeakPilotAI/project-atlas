@@ -1,11 +1,22 @@
+# =========================
 # Environment & secrets
+# =========================
 .env
+.env.*
+!.env.example
+!.env.*.example
 .env.local
 .env.*.local
 *.pem
 *.key
+*.p12
+credentials.json
+secrets/
+**/secrets/
 
+# =========================
 # Python
+# =========================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -23,46 +34,102 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
 .venv/
 venv/
 ENV/
 env/
+backend/.venv/
+backend/venv/
 
-# IDE
+# =========================
+# IDE / editors
+# =========================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.sublime-project
+*.sublime-workspace
 
+# =========================
 # OS
+# =========================
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
+# =========================
 # Node / Frontend
+# =========================
 node_modules/
 .next/
 out/
 .npm
 .yarn/
+.pnpm-store/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
 
-# Docker
+# =========================
+# Docker / runtime
+# =========================
 *.log
+docker-compose.override.yml
 
-# Database
+# =========================
+# Database / local data
+# =========================
 *.db
 *.sqlite3
+*.sqlite
+data/
+pgdata/
+redis-data/
 
-# Testing / Coverage
+# =========================
+# Testing / coverage / linters
+# =========================
 .coverage
+.coverage.*
 htmlcov/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.tox/
+.nox/
+.hypothesis/
+.cache/
+pytestdebug.log
 
-# Logs
+# =========================
+# Logs & local artifacts
+# =========================
 logs/
 *.log
+tmp/
+temp/
+artifacts/
+!docs/
+!docs/**
+
+# =========================
+# Charts / generated media (optional local)
+# =========================
+backend/tmp/
+backend/charts/
+*.png.tmp

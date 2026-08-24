@@ -1,153 +1,209 @@
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+"""Paper-trade and alert performance analytics for Project Atlas."""
 
-from sqlalchemy import select, func, and_
-from app.db.session import AsyncSessionLocal
-from app.models.paper_trade import PaperTrade
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Optional
 
 
 @dataclass
-class PerformanceBreakdown:
-    total_trades: int = 0
-    winners: int = 0
-    losers: int = 0
+class LaneStats:
+    lane: str
+    trades: int = 0
+    wins: int = 0
+    losses: int = 0
+    scratches: int = 0
     win_rate: float = 0.0
-    avg_pnl: float = 0.0
-    avg_winner: float = 0.0
-    avg_loser: float = 0.0
-    best_trade: float = 0.0
-    worst_trade: float = 0.0
-    expectancy: float = 0.0
-    profit_factor: float = 0.0
-    max_drawdown_approx: float = 0.0
+    avg_pnl_pct: float = 0.0
+    total_pnl_pct: float = 0.0
+    avg_win_pct: float = 0.0
+    avg_loss_pct: float = 0.0
+    expectancy_pct: float = 0.0
+    max_win_pct: float = 0.0
+    max_loss_pct: float = 0.0
+    symbols: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
-class SymbolStats:
-    symbol: str
-    trades: int
-    win_rate: float
-    avg_pnl: float
-    total_pnl: float
+class PerformanceReport:
+    generated_at: str
+    total_trades: int
+    overall: LaneStats
+    by_lane: list[LaneStats]
+    by_symbol: list[dict[str, Any]]
+    notes: list[str] = field(default_factory=list)
 
 
-@dataclass
-class FullPerformanceReport:
-    overall: PerformanceBreakdown
-    by_side: Dict[str, PerformanceBreakdown]
-    by_symbol: List[SymbolStats]
-    last_7_days: PerformanceBreakdown
-    last_30_days: PerformanceBreakdown
+def _f(x: Any, default: float = 0.0) -> float:
+    try:
+        if x is None:
+            return default
+        return float(x)
+    except (TypeError, ValueError):
+        return default
 
 
-async def compute_performance(
-    since: Optional[datetime] = None,
-) -> PerformanceBreakdown:
-    async with AsyncSessionLocal() as session:
-        query = select(PaperTrade).where(PaperTrade.status == "closed")
-        if since:
-            query = query.where(PaperTrade.exit_time >= since)
-
-        result = await session.execute(query)
-        trades = result.scalars().all()
-
-    return _from_trades(trades)
+def _classify_pnl(pnl_pct: float, eps: float = 0.05) -> str:
+    if pnl_pct > eps:
+        return "win"
+    if pnl_pct < -eps:
+        return "loss"
+    return "scratch"
 
 
-def _from_trades(trades: List[PaperTrade]) -> PerformanceBreakdown:
+def summarize_trades(
+    trades: list[dict[str, Any]],
+    *,
+    lane_key: str = "lane",
+    symbol_key: str = "symbol",
+    pnl_key: str = "pnl_pct",
+) -> PerformanceReport:
+    """
+    Aggregate closed paper trades.
+
+    Each trade dict should include at least:
+      symbol, pnl_pct, optional lane (perp|day_trade|quality_dip|unknown)
+    """
+    now = datetime.now(timezone.utc).isoformat()
     if not trades:
-        return PerformanceBreakdown()
+        empty = LaneStats(lane="overall")
+        return PerformanceReport(
+            generated_at=now,
+            total_trades=0,
+            overall=empty,
+            by_lane=[],
+            by_symbol=[],
+            notes=["No closed paper trades yet — keep logging outcomes."],
+        )
 
-    pnls = [t.pnl_pct or 0.0 for t in trades]
-    winners = [p for p in pnls if p > 0]
-    losers = [p for p in pnls if p <= 0]
+    lanes: dict[str, list[float]] = {}
+    symbols: dict[str, list[float]] = {}
+    all_pnls: list[float] = []
 
-    total = len(pnls)
-    win_count = len(winners)
-    loss_count = len(losers)
+    for t in trades:
+        pnl = _f(t.get(pnl_key))
+        lane = str(t.get(lane_key) or t.get("source") or "unknown").lower()
+        sym = str(t.get(symbol_key) or "?").upper()
+        all_pnls.append(pnl)
+        lanes.setdefault(lane, []).append(pnl)
+        symbols.setdefault(sym, []).append(pnl)
 
-    avg_pnl = sum(pnls) / total
-    avg_win = sum(winners) / win_count if winners else 0.0
-    avg_loss = sum(losers) / loss_count if losers else 0.0
+    def _stats(name: str, pnls: list[float]) -> LaneStats:
+        wins = [p for p in pnls if _classify_pnl(p) == "win"]
+        losses = [p for p in pnls if _classify_pnl(p) == "loss"]
+        scratches = [p for p in pnls if _classify_pnl(p) == "scratch"]
+        n = len(pnls)
+        wr = (len(wins) / n * 100.0) if n else 0.0
+        avg = sum(pnls) / n if n else 0.0
+        avg_w = sum(wins) / len(wins) if wins else 0.0
+        avg_l = sum(losses) / len(losses) if losses else 0.0
+        # Expectancy per trade in %
+        p_win = len(wins) / n if n else 0.0
+        p_loss = len(losses) / n if n else 0.0
+        exp = p_win * avg_w + p_loss * avg_l
+        return LaneStats(
+            lane=name,
+            trades=n,
+            wins=len(wins),
+            losses=len(losses),
+            scratches=len(scratches),
+            win_rate=round(wr, 1),
+            avg_pnl_pct=round(avg, 3),
+            total_pnl_pct=round(sum(pnls), 3),
+            avg_win_pct=round(avg_w, 3),
+            avg_loss_pct=round(avg_l, 3),
+            expectancy_pct=round(exp, 3),
+            max_win_pct=round(max(pnls), 3) if pnls else 0.0,
+            max_loss_pct=round(min(pnls), 3) if pnls else 0.0,
+        )
 
-    gross_profit = sum(winners)
-    gross_loss = abs(sum(losers))
-    profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else 0.0
+    overall = _stats("overall", all_pnls)
+    by_lane = [_stats(k, v) for k, v in sorted(lanes.items(), key=lambda x: -len(x[1]))]
 
-    # Simple sequential drawdown approximation
-    equity = 0.0
-    peak = 0.0
-    max_dd = 0.0
-    for p in pnls:
-        equity += p
-        peak = max(peak, equity)
-        dd = peak - equity
-        max_dd = max(max_dd, dd)
+    by_symbol: list[dict[str, Any]] = []
+    for sym, pnls in sorted(symbols.items(), key=lambda x: -len(x[1])):
+        s = _stats(sym, pnls)
+        by_symbol.append(
+            {
+                "symbol": sym,
+                "trades": s.trades,
+                "win_rate": s.win_rate,
+                "avg_pnl_pct": s.avg_pnl_pct,
+                "total_pnl_pct": s.total_pnl_pct,
+                "expectancy_pct": s.expectancy_pct,
+            }
+        )
 
-    return PerformanceBreakdown(
-        total_trades=total,
-        winners=win_count,
-        losers=loss_count,
-        win_rate=round(win_count / total * 100, 1) if total else 0.0,
-        avg_pnl=round(avg_pnl, 2),
-        avg_winner=round(avg_win, 2),
-        avg_loser=round(avg_loss, 2),
-        best_trade=round(max(pnls), 2) if pnls else 0.0,
-        worst_trade=round(min(pnls), 2) if pnls else 0.0,
-        expectancy=round(avg_pnl, 2),
-        profit_factor=round(profit_factor, 2),
-        max_drawdown_approx=round(max_dd, 2),
+    notes: list[str] = []
+    if overall.trades < 30:
+        notes.append("Sample size small — treat stats as directional only.")
+    if overall.expectancy_pct > 0:
+        notes.append("Positive expectancy on paper — keep process, refine filters.")
+    elif overall.trades >= 20:
+        notes.append("Non-positive expectancy — tighten score thresholds before sizing up.")
+
+    return PerformanceReport(
+        generated_at=now,
+        total_trades=len(all_pnls),
+        overall=overall,
+        by_lane=by_lane,
+        by_symbol=by_symbol[:25],
+        notes=notes,
     )
 
 
-async def get_full_performance_report() -> FullPerformanceReport:
-    now = datetime.now(timezone.utc)
+def report_to_dict(report: PerformanceReport) -> dict[str, Any]:
+    def lane_dict(s: LaneStats) -> dict[str, Any]:
+        return {
+            "lane": s.lane,
+            "trades": s.trades,
+            "wins": s.wins,
+            "losses": s.losses,
+            "scratches": s.scratches,
+            "win_rate": s.win_rate,
+            "avg_pnl_pct": s.avg_pnl_pct,
+            "total_pnl_pct": s.total_pnl_pct,
+            "avg_win_pct": s.avg_win_pct,
+            "avg_loss_pct": s.avg_loss_pct,
+            "expectancy_pct": s.expectancy_pct,
+            "max_win_pct": s.max_win_pct,
+            "max_loss_pct": s.max_loss_pct,
+        }
 
-    overall = await compute_performance()
-    last_7 = await compute_performance(since=now - timedelta(days=7))
-    last_30 = await compute_performance(since=now - timedelta(days=30))
-
-    # By side
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(
-            select(PaperTrade).where(PaperTrade.status == "closed")
-        )
-        all_trades = result.scalars().all()
-
-    longs = [t for t in all_trades if (t.side or "").upper() == "LONG"]
-    shorts = [t for t in all_trades if (t.side or "").upper() == "SHORT"]
-
-    by_side = {
-        "LONG": _from_trades(longs),
-        "SHORT": _from_trades(shorts),
+    return {
+        "generated_at": report.generated_at,
+        "total_trades": report.total_trades,
+        "overall": lane_dict(report.overall),
+        "by_lane": [lane_dict(x) for x in report.by_lane],
+        "by_symbol": report.by_symbol,
+        "notes": report.notes,
     }
 
-    # By symbol
-    symbol_map: Dict[str, List[PaperTrade]] = {}
-    for t in all_trades:
-        symbol_map.setdefault(t.symbol, []).append(t)
 
-    by_symbol: List[SymbolStats] = []
-    for symbol, trades in symbol_map.items():
-        pnls = [t.pnl_pct or 0.0 for t in trades]
-        wins = sum(1 for p in pnls if p > 0)
-        by_symbol.append(
-            SymbolStats(
-                symbol=symbol,
-                trades=len(trades),
-                win_rate=round(wins / len(trades) * 100, 1) if trades else 0.0,
-                avg_pnl=round(sum(pnls) / len(pnls), 2) if pnls else 0.0,
-                total_pnl=round(sum(pnls), 2),
+def format_report_text(report: PerformanceReport) -> str:
+    o = report.overall
+    lines = [
+        f"**Paper performance** · {report.total_trades} closed trades",
+        f"Win rate **{o.win_rate}%** · Avg PnL **{o.avg_pnl_pct}%** · Expectancy **{o.expectancy_pct}%**",
+        f"Total paper PnL **{o.total_pnl_pct}%** · Max win {o.max_win_pct}% · Max loss {o.max_loss_pct}%",
+        "",
+    ]
+    if report.by_lane:
+        lines.append("**By lane**")
+        for s in report.by_lane:
+            lines.append(
+                f"• `{s.lane}` — n={s.trades} WR {s.win_rate}% exp {s.expectancy_pct}%"
             )
-        )
-
-    by_symbol.sort(key=lambda x: x.total_pnl, reverse=True)
-
-    return FullPerformanceReport(
-        overall=overall,
-        by_side=by_side,
-        by_symbol=by_symbol[:15],
-        last_7_days=last_7,
-        last_30_days=last_30,
-    )
+        lines.append("")
+    if report.by_symbol:
+        lines.append("**Top symbols**")
+        for row in report.by_symbol[:8]:
+            lines.append(
+                f"• `{row['symbol']}` — n={row['trades']} WR {row['win_rate']}% avg {row['avg_pnl_pct']}%"
+            )
+        lines.append("")
+    for n in report.notes:
+        lines.append(f"_{n}_")
+    lines.append("Research only — not financial advice.")
+    return "\n".join(lines)

@@ -1,53 +1,63 @@
-from datetime import datetime, timezone
+"""Alert dispatcher — routes decisions to Discord (and future channels)."""
 
-from app.analytics.anomaly import AnomalySignal
+from __future__ import annotations
+
+from typing import Any, Optional
+
 from app.alerts.discord import send_discord_alert
-from app.core.config import get_settings
 from app.core.logging import get_logger
-from app.db.session import AsyncSessionLocal
-from app.models.alert import Alert
-from app.services.opportunity_tracker import opportunity_tracker
 
-logger = get_logger("alerts")
-settings = get_settings()
+logger = get_logger("dispatcher")
 
 
-async def dispatch_alert(signal: AnomalySignal) -> None:
-    async with AsyncSessionLocal() as session:
-        alert = Alert(
-            market_symbol=signal.symbol,
-            alert_type=signal.alert_type,
-            severity=signal.severity,
-            title=signal.title,
-            message=signal.message,
-            opportunity_score=signal.opportunity_score,
-            confidence_score=signal.confidence_score,
-            risk_score=signal.risk_score,
-            price_at_alert=signal.price,
-            indicators=signal.indicators,
-            sent_discord=False,
-            sent_telegram=False,
-            fired_at=datetime.now(timezone.utc),
+async def dispatch_alert(
+    *args: Any,
+    symbol: str = "",
+    decision: Any = None,
+    price: Optional[float] = None,
+    ticker: Any = None,
+    candles: Any = None,
+    **kwargs: Any,
+) -> None:
+    """
+    Flexible entry used by scanner / trackers.
+
+    Supports:
+      await dispatch_alert(decision)
+      await dispatch_alert(symbol=..., decision=..., price=...)
+    """
+    if args:
+        first = args[0]
+        if decision is None and not isinstance(first, (str, bytes, int, float)):
+            decision = first
+        elif not symbol and isinstance(first, str):
+            symbol = first
+
+    if decision is not None:
+        symbol = symbol or str(getattr(decision, "symbol", "") or "")
+        if price is None:
+            try:
+                price = float(getattr(decision, "price", None) or 0) or None
+            except (TypeError, ValueError):
+                price = None
+        if price is None and ticker is not None:
+            try:
+                price = float(getattr(ticker, "price", 0) or 0) or None
+            except (TypeError, ValueError):
+                price = None
+
+    try:
+        await send_discord_alert(
+            decision=decision,
+            symbol=symbol,
+            price=price,
+            **{k: v for k, v in kwargs.items() if k in ("title", "description", "severity", "embed")},
         )
-        session.add(alert)
-        await session.commit()
-
-    logger.info(
-        "Alert generated",
-        symbol=signal.symbol,
-        type=signal.alert_type,
-        severity=signal.severity,
-        title=signal.title,
-    )
-
-    # Send Discord DM
-    try:
-        await send_discord_alert(signal)
     except Exception as e:
-        logger.error("Discord delivery failed", error=str(e))
-
-    # Create opportunity for further monitoring + later Long/Short recommendation
-    try:
-        await opportunity_tracker.create_from_signal(signal)
-    except Exception as e:
-        logger.error("Failed to create opportunity", error=str(e))
+        logger.warning("dispatch_alert failed", symbol=symbol, error=str(e))
+        # Last resort positional embed/decision
+        try:
+            if decision is not None:
+                await send_discord_alert(decision)
+        except Exception as e2:
+            logger.error("dispatch_alert fallback failed", error=str(e2))

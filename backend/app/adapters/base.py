@@ -1,39 +1,57 @@
-from abc import ABC, abstractmethod
-from typing import List, Optional
-from pydantic import BaseModel, Field
-from datetime import datetime
+"""Adapter base types."""
+
+from __future__ import annotations
+
+from typing import Any, Optional, Protocol
 
 
-class NormalizedTicker(BaseModel):
-    symbol: str
-    exchange: str
-    price: float
-    bid: Optional[float] = None
-    ask: Optional[float] = None
-    volume_24h: float = 0.0
-    open_interest: float = 0.0
-    funding_rate: Optional[float] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-    raw: dict = Field(default_factory=dict)
+class MarketAdapter(Protocol):
+    """Protocol for exchange adapters."""
+
+    name: str
+
+    async def connect(self) -> None: ...
+
+    async def close(self) -> None: ...
+
+    async def get_all_tickers(self) -> list[Any]: ...
+
+    async def get_candles(
+        self,
+        symbol: str,
+        interval: str = "15m",
+        lookback: int = 100,
+    ) -> list[dict[str, float]]: ...
 
 
-class BaseExchangeAdapter(ABC):
+class BaseExchangeAdapter:
+    """
+    Concrete base class used by registry / older imports.
+    Subclass or treat HyperliquidAdapter as standalone.
+    """
+
     name: str = "base"
 
-    @abstractmethod
+    def __init__(self) -> None:
+        self._connected = False
+
     async def connect(self) -> None:
-        ...
+        self._connected = True
 
-    @abstractmethod
-    async def disconnect(self) -> None:
-        ...
+    async def close(self) -> None:
+        self._connected = False
 
-    @abstractmethod
-    async def get_all_tickers(self) -> List[NormalizedTicker]:
-        ...
+    async def get_all_tickers(self) -> list[Any]:
+        raise NotImplementedError
 
-    @abstractmethod
     async def get_candles(
-        self, symbol: str, interval: str = "5m", limit: int = 100
-    ) -> List[dict]:
-        ...
+        self,
+        symbol: str,
+        interval: str = "15m",
+        lookback: int = 100,
+    ) -> list[dict[str, float]]:
+        return []
+
+
+# Back-compat aliases
+ExchangeAdapter = BaseExchangeAdapter

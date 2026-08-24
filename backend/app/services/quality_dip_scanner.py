@@ -1,422 +1,45 @@
-"""
-Quality Dip / Generational Discount scanner.
-
-Category thresholds + adaptive per-symbol learning.
-After each full batch, sends a ranked analysis briefing DM.
-"""
+"""Quality dip / generational discount scanner + auto-ladder hook."""
 
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
 
-import yfinance as yf
+import structlog
 
 from app.core.config import get_settings
-from app.core.logging import get_logger
-from app.core.redis import get_redis
-from app.alerts.discord import send_discord_alert, get_subscriber_ids, bot as discord_bot
-from app.analytics.anomaly import AnomalySignal
 
-logger = get_logger("quality_dip")
-settings = get_settings()
+log = structlog.get_logger(__name__)
 
-METALS_SYMBOLS = {
-    "GLD", "IAU", "SGOL", "GLDM", "BAR",
-    "GDX", "GDXJ", "GOAU",
-    "SLV", "SIVR", "PSLV",
-    "SIL", "SILJ",
-    "GOLD", "NEM", "AEM",
-}
-
-
-def _watchlist() -> list[str]:
-    raw = getattr(settings, "quality_dip_watchlist", None) or "ADBE,META,GOOGL,AMZN,MSFT"
-    if isinstance(raw, str):
-        return [t.strip().upper() for t in raw.split(",") if t.strip()]
-    return list(raw)
-
-
-def _enabled() -> bool:
-    val = getattr(settings, "quality_dip_enabled", True)
-    if isinstance(val, str):
-        return val.lower() in ("1", "true", "yes", "on")
-    return bool(val)
-
-
-def _adaptive_on() -> bool:
-    val = getattr(settings, "quality_dip_adaptive", True)
-    if isinstance(val, str):
-        return val.lower() in ("1", "true", "yes", "on")
-    return bool(val)
-
-
-def _short_drop_pct() -> float:
-    return float(getattr(settings, "quality_dip_short_drop_pct", 15.0))
-
-
-def _scan_interval_seconds() -> int:
-    minutes = int(getattr(settings, "quality_dip_scan_interval_minutes", 60))
-    return max(15, minutes) * 60
-
-
-def _cooldown_seconds() -> int:
-    hours = int(getattr(settings, "quality_dip_cooldown_hours", 24))
-    return max(1, hours) * 3600
-
-
-def _is_metal(symbol: str) -> bool:
-    return symbol.upper() in METALS_SYMBOLS
-
-
-def _base_thresholds(symbol: str) -> tuple[float, float]:
-    if _is_metal(symbol):
-        normal = float(getattr(settings, "quality_dip_metals_threshold_pct", 12.0))
-        high = float(getattr(settings, "quality_dip_metals_high_priority_pct", 18.0))
-    else:
-        normal = float(getattr(settings, "quality_dip_threshold_pct", 25.0))
-        high = float(getattr(settings, "quality_dip_high_priority_pct", 30.0))
-    return normal, high
-
-
-def _adaptive_bounds(symbol: str) -> tuple[float, float]:
-    if _is_metal(symbol):
-        floor = float(getattr(settings, "quality_dip_adaptive_floor_metal", 8.0))
-        ceil = float(getattr(settings, "quality_dip_adaptive_ceiling_metal", 25.0))
-    else:
-        floor = float(getattr(settings, "quality_dip_adaptive_floor_stock", 15.0))
-        ceil = float(getattr(settings, "quality_dip_adaptive_ceiling_stock", 40.0))
-    return floor, ceil
-
-
-def _learn_thresholds_from_history(symbol: str, hist) -> tuple[float, float]:
-    base_n, base_h = _base_thresholds(symbol)
-    floor, ceil = _adaptive_bounds(symbol)
-    try:
-        closes = hist["Close"].astype(float)
-        if len(closes) < 80:
-            return base_n, base_h
-        rolling_high = closes.rolling(60, min_periods=20).max()
-        drawdowns = ((rolling_high - closes) / rolling_high * 100.0).dropna()
-        drawdowns = drawdowns[drawdowns > 1.0]
-        if len(drawdowns) < 20:
-            return base_n, base_h
-        p75 = float(drawdowns.quantile(0.75))
-        p90 = float(drawdowns.quantile(0.90))
-        normal = max(floor, min(ceil, p75))
-        high = max(normal + 3.0, min(ceil + 5.0, p90))
-        normal = 0.6 * normal + 0.4 * base_n
-        high = 0.6 * high + 0.4 * base_h
-        high = max(high, normal + 3.0)
-        normal = round(max(floor, min(ceil, normal)), 1)
-        high = round(max(floor + 3.0, min(ceil + 8.0, high)), 1)
-        return normal, high
-    except Exception as e:
-        logger.warning("Adaptive threshold failed", symbol=symbol, error=str(e))
-        return base_n, base_h
-
-
-@dataclass
-class DipSnapshot:
-    symbol: str
-    name: str
-    price: float
-    high_52w: float
-    low_52w: float
-    pct_from_high: float
-    drop_5d: Optional[float]
-    drop_10d: Optional[float]
-    drop_20d: Optional[float]
-    is_new_52w_low: bool
-    priority: str
-    reasons: list[str]
-    threshold_normal: float
-    threshold_high: float
-    category: str
-    adaptive: bool
-    review_score: float = 0.0
-    review_note: str = ""
-
-
-def _score_candidate(snap: DipSnapshot) -> tuple[float, str]:
-    """
-    Rank for deep analysis priority (not a buy signal).
-    Higher = more worth researching first.
-    """
-    score = 0.0
-    notes: list[str] = []
-
-    # Depth below high
-    score += min(40.0, snap.pct_from_high * 0.55)
-    if snap.pct_from_high >= 40:
-        notes.append("deep drawdown")
-    elif snap.pct_from_high >= 30:
-        notes.append("material drawdown")
-
-    # Fresh weakness vs bounce
-    d5 = snap.drop_5d or 0.0
-    d10 = snap.drop_10d or 0.0
-    d20 = snap.drop_20d or 0.0
-
-    if d5 >= 5:
-        score += 15
-        notes.append("fresh 5d pressure")
-    elif d5 >= 2:
-        score += 8
-    elif d5 < -3:
-        score -= 12
-        notes.append("bouncing short-term")
-
-    if d10 >= 5:
-        score += 10
-        notes.append("10d weakness")
-    elif d10 < -5:
-        score -= 8
-        notes.append("10d recovery")
-
-    if d20 >= 8:
-        score += 8
-        notes.append("20d downtrend")
-    elif d20 < -10:
-        score -= 6
-        notes.append("20d bounce")
-
-    # Near 52w low
-    if snap.is_new_52w_low:
-        score += 12
-        notes.append("near 52w low")
-
-    # Distance above 52w low (avoid knives still free-falling into unknown)
-    if snap.low_52w > 0:
-        above_low = (snap.price - snap.low_52w) / snap.low_52w * 100.0
-        if above_low < 5:
-            score += 5
-            notes.append("pressed into lows")
-        elif above_low > 40:
-            score -= 4
-            notes.append("still far above lows")
-
-    # Category tilt
-    if snap.category == "metal":
-        score += 3
-        notes.append("metals complex")
-
-    # Cap
-    score = max(0.0, min(100.0, score))
-    note = ", ".join(notes) if notes else "standard discount"
-    return round(score, 1), note
-
-
-def _fetch_snapshot(symbol: str) -> Optional[DipSnapshot]:
-    try:
-        t = yf.Ticker(symbol)
-        info = t.info or {}
-        hist = t.history(period="1y", auto_adjust=True)
-        if hist is None or hist.empty or len(hist) < 30:
-            logger.warning("Insufficient history", symbol=symbol)
-            return None
-
-        price = float(hist["Close"].iloc[-1])
-        high_52w = float(hist["High"].max())
-        low_52w = float(hist["Low"].min())
-        if high_52w <= 0:
-            return None
-
-        pct_from_high = ((high_52w - price) / high_52w) * 100.0
-        is_new_52w_low = (
-            abs(price - low_52w) / max(low_52w, 1e-9) < 0.01
-            or price <= low_52w * 1.005
-        )
-
-        def drop_n(n: int) -> Optional[float]:
-            if len(hist) < n + 1:
-                return None
-            past = float(hist["Close"].iloc[-(n + 1)])
-            if past <= 0:
-                return None
-            return ((past - price) / past) * 100.0
-
-        drop_5d, drop_10d, drop_20d = drop_n(5), drop_n(10), drop_n(20)
-        name = info.get("shortName") or info.get("longName") or symbol
-        category = "metal" if _is_metal(symbol) else "stock"
-        adaptive = _adaptive_on()
-        thr, hi = (
-            _learn_thresholds_from_history(symbol, hist)
-            if adaptive
-            else _base_thresholds(symbol)
-        )
-
-        reasons: list[str] = []
-        priority = "normal"
-        short = min(_short_drop_pct(), 8.0) if category == "metal" else _short_drop_pct()
-
-        if pct_from_high >= hi:
-            reasons.append(f"≥{hi:.1f}% below 52-week high (high priority)")
-            priority = "high"
-        elif pct_from_high >= thr:
-            reasons.append(f"≥{thr:.1f}% below 52-week high")
-
-        if is_new_52w_low:
-            reasons.append("At/near 52-week low")
-            priority = "high"
-        if drop_5d is not None and drop_5d >= short:
-            reasons.append(f"Down {drop_5d:.1f}% in ~5 trading days")
-        if drop_10d is not None and drop_10d >= short:
-            reasons.append(f"Down {drop_10d:.1f}% in ~10 trading days")
-
-        if not reasons:
-            return None
-
-        snap = DipSnapshot(
-            symbol=symbol,
-            name=str(name),
-            price=round(price, 2),
-            high_52w=round(high_52w, 2),
-            low_52w=round(low_52w, 2),
-            pct_from_high=round(pct_from_high, 1),
-            drop_5d=round(drop_5d, 1) if drop_5d is not None else None,
-            drop_10d=round(drop_10d, 1) if drop_10d is not None else None,
-            drop_20d=round(drop_20d, 1) if drop_20d is not None else None,
-            is_new_52w_low=is_new_52w_low,
-            priority=priority,
-            reasons=reasons,
-            threshold_normal=thr,
-            threshold_high=hi,
-            category=category,
-            adaptive=adaptive,
-        )
-        snap.review_score, snap.review_note = _score_candidate(snap)
-        return snap
-    except Exception as e:
-        logger.warning("Failed to fetch snapshot", symbol=symbol, error=str(e))
-        return None
-
-
-async def _should_alert(symbol: str, pct_from_high: float) -> bool:
-    redis = await get_redis()
-    key = f"atlas:quality_dip:{symbol}"
-    raw = await redis.get(key)
-    if not raw:
-        return True
-    try:
-        last_pct = float(raw.decode() if isinstance(raw, bytes) else raw)
-    except Exception:
-        return True
-    step = 3.0 if _is_metal(symbol) else 5.0
-    return pct_from_high >= last_pct + step
-
-
-async def _mark_alerted(symbol: str, pct_from_high: float) -> None:
-    redis = await get_redis()
-    await redis.set(f"atlas:quality_dip:{symbol}", str(pct_from_high), ex=_cooldown_seconds())
-
-
-def _build_message(snap: DipSnapshot) -> str:
-    lines = [
-        f"**{snap.symbol}** — {snap.name}",
-        f"**Category:** {snap.category.upper()}"
-        + (" · adaptive thresholds" if snap.adaptive else ""),
-        "",
-        f"**Current price:** ${snap.price:,.2f}",
-        f"**% below 52-week high:** {snap.pct_from_high:.1f}%",
-        f"**Alert thresholds:** {snap.threshold_normal:.1f}% / {snap.threshold_high:.1f}% (high)",
-        f"**52-week high:** ${snap.high_52w:,.2f}",
-        f"**52-week low:** ${snap.low_52w:,.2f}",
-    ]
-    if snap.drop_5d is not None:
-        lines.append(f"**5-day change:** {snap.drop_5d:+.1f}%")
-    if snap.drop_10d is not None:
-        lines.append(f"**10-day change:** {snap.drop_10d:+.1f}%")
-    if snap.drop_20d is not None:
-        lines.append(f"**20-day change:** {snap.drop_20d:+.1f}%")
-    lines.append("")
-    lines.append("**Triggers:**")
-    for r in snap.reasons:
-        lines.append(f"• {r}")
-    lines.append("")
-    lines.append(
-        "🏷️ **POSSIBLE QUALITY DIP / GENERATIONAL DISCOUNT – Review before buying**"
-    )
-    lines.append("_No auto-buy. Confirm price on your broker before acting._")
-    return "\n".join(lines)
-
-
-def _build_briefing(candidates: list[DipSnapshot]) -> str:
-    ranked = sorted(candidates, key=lambda s: s.review_score, reverse=True)
-    top = ranked[:6]
-    metals = [s for s in ranked if s.category == "metal"]
-    stocks = [s for s in ranked if s.category == "stock"]
-
-    lines = [
-        f"**Quality Dip Briefing** — {len(candidates)} candidates",
-        "",
-        "This is a **research priority list**, not buy advice.",
-        "Confirm live prices on your broker. Data feeds can lag or mis-quote.",
-        "",
-        "**Deep-analysis priority (start here):**",
-    ]
-    for i, s in enumerate(top, 1):
-        mom = ""
-        if s.drop_5d is not None:
-            mom = f" · 5d {s.drop_5d:+.1f}%"
-        lines.append(
-            f"{i}. **{s.symbol}** — score {s.review_score:.0f}/100 · "
-            f"{s.pct_from_high:.1f}% off high{mom}"
-        )
-        lines.append(f"   _{s.review_note}_")
-
-    lines.append("")
-    lines.append("**Approach**")
-    if top:
-        primary = top[0]
-        lines.append(
-            f"• Start with **{primary.symbol}** — highest combined depth + pressure score."
-        )
-    if any((s.drop_5d or 0) < -3 for s in top[:3]):
-        lines.append(
-            "• Some names are bouncing short-term — wait for retest or weaker closes if you want better entry quality."
-        )
-    if any((s.drop_5d or 0) >= 5 for s in top[:3]):
-        lines.append(
-            "• Fresh 5-day weakness present — prioritize those over names already reclaiming."
-        )
-    if metals:
-        lines.append(
-            f"• Metals complex active: {', '.join(m.symbol for m in metals[:4])} — treat as one theme, not five unrelated trades."
-        )
-    if stocks:
-        soft = [s for s in stocks if s.symbol in {"CRM", "NOW", "ADBE", "INTU", "ORCL", "MSFT", "AAPL"}]
-        if soft:
-            lines.append(
-                f"• Software/quality cluster: {', '.join(s.symbol for s in soft[:5])} — compare relative strength inside the group."
-            )
-
-    lines.append("")
-    lines.append("**Suggested workflow**")
-    lines.append("1. Open charts for the top 3 only")
-    lines.append("2. Verify price/volume on your broker")
-    lines.append("3. Check thesis + balance sheet / ETF structure")
-    lines.append("4. Size small if acting — these are discounts, not guarantees")
-    lines.append("")
-    lines.append("_Atlas ranks for research time. You decide capital._")
-    return "\n".join(lines)
+METALS = {"GLD", "IAU", "GDX", "SLV", "SIL"}
 
 
 class QualityDipScanner:
-    def __init__(self):
-        self._running = False
+    def __init__(self) -> None:
         self._task: Optional[asyncio.Task] = None
+        self._running = False
+        self._redis = None
+
+    @property
+    def running(self) -> bool:
+        return self._running
 
     async def start(self) -> None:
-        if not _enabled():
-            logger.info("Quality dip scanner disabled")
+        if self._task and not self._task.done():
             return
-        if self._running:
+        settings = get_settings()
+        if not getattr(settings, "quality_dip_enabled", True):
+            log.info("Quality dip scanner disabled")
             return
         self._running = True
-        self._task = asyncio.create_task(self._loop())
-        logger.info("Quality dip scanner started", watchlist=_watchlist(), adaptive=_adaptive_on())
+        self._task = asyncio.create_task(self._loop(), name="quality_dip_scanner")
+        wl = settings.quality_dip_watchlist_list
+        log.info(
+            "Quality dip scanner started",
+            adaptive=bool(settings.quality_dip_adaptive),
+            watchlist=wl,
+        )
 
     async def stop(self) -> None:
         self._running = False
@@ -426,142 +49,393 @@ class QualityDipScanner:
                 await self._task
             except asyncio.CancelledError:
                 pass
-        logger.info("Quality dip scanner stopped")
+            self._task = None
+        log.info("Quality dip scanner stopped")
+
+    async def _redis_client(self):
+        if self._redis is not None:
+            return self._redis
+        try:
+            from app.core.redis import get_redis_client
+
+            self._redis = await get_redis_client()
+            if self._redis is not None:
+                return self._redis
+        except Exception:
+            pass
+        try:
+            import redis.asyncio as redis
+
+            self._redis = redis.from_url(get_settings().redis_url, decode_responses=True)
+            log.info("Redis client created", url=get_settings().redis_url)
+            return self._redis
+        except Exception as e:
+            log.warning("Quality dip redis unavailable", error=str(e))
+            return None
+
+    def _cd_key(self, symbol: str) -> str:
+        return f"atlas:qdip:cd:{symbol.upper()}"
+
+    def _brief_key(self) -> str:
+        return "atlas:qdip:brief:last"
+
+    async def _on_cooldown(self, symbol: str) -> bool:
+        r = await self._redis_client()
+        if not r:
+            return False
+        try:
+            return bool(await r.get(self._cd_key(symbol)))
+        except Exception:
+            return False
+
+    async def _mark_cooldown(self, symbol: str) -> None:
+        settings = get_settings()
+        hours = float(getattr(settings, "quality_dip_cooldown_hours", 12) or 12)
+        r = await self._redis_client()
+        if not r:
+            return
+        try:
+            await r.set(self._cd_key(symbol), "1", ex=max(3600, int(hours * 3600)))
+        except Exception as e:
+            log.warning("Quality dip cooldown mark failed", symbol=symbol, error=str(e))
+
+    def _category(self, symbol: str) -> str:
+        return "metal" if symbol.upper() in METALS else "stock"
+
+    def _thresholds(self, symbol: str, hist_vol: Optional[float] = None) -> Tuple[float, float]:
+        settings = get_settings()
+        cat = self._category(symbol)
+        if cat == "metal":
+            normal = float(settings.quality_dip_metals_threshold_pct)
+            high = float(settings.quality_dip_metals_high_priority_pct)
+            floor = float(settings.quality_dip_adaptive_floor_metal)
+            ceil = float(settings.quality_dip_adaptive_ceiling_metal)
+        else:
+            normal = float(settings.quality_dip_threshold_pct)
+            high = float(settings.quality_dip_high_priority_pct)
+            floor = float(settings.quality_dip_adaptive_floor_stock)
+            ceil = float(settings.quality_dip_adaptive_ceiling_stock)
+
+        if settings.quality_dip_adaptive and hist_vol is not None and hist_vol > 0:
+            # higher vol → slightly lower trigger (alert earlier)
+            adj = min(8.0, max(-5.0, (hist_vol - 0.25) * 20.0))
+            normal = max(floor, min(ceil, normal - adj * 0.3))
+            high = max(floor + 2.0, min(ceil + 5.0, high - adj * 0.25))
+        return normal, high
+
+    async def _fetch_symbol(self, symbol: str) -> Optional[Dict[str, Any]]:
+        try:
+            import yfinance as yf
+
+            def _load() -> Optional[Dict[str, Any]]:
+                t = yf.Ticker(symbol)
+                hist = t.history(period="1y", interval="1d")
+                if hist is None or len(hist) < 20:
+                    return None
+                closes = hist["Close"].astype(float)
+                price = float(closes.iloc[-1])
+                high_52w = float(closes.max())
+                low_52w = float(closes.min())
+                if price <= 0 or high_52w <= 0:
+                    return None
+                pct_from_high = (high_52w - price) / high_52w * 100.0
+
+                def chg(n: int) -> Optional[float]:
+                    if len(closes) <= n:
+                        return None
+                    prev = float(closes.iloc[-n - 1])
+                    if prev <= 0:
+                        return None
+                    return (price - prev) / prev * 100.0
+
+                rets = closes.pct_change().dropna()
+                hist_vol = float(rets.tail(60).std() * (252 ** 0.5)) if len(rets) > 10 else None
+
+                info_name = symbol
+                try:
+                    info = t.info or {}
+                    info_name = info.get("shortName") or info.get("longName") or symbol
+                except Exception:
+                    pass
+
+                return {
+                    "symbol": symbol.upper(),
+                    "name": info_name,
+                    "price": price,
+                    "high_52w": high_52w,
+                    "low_52w": low_52w,
+                    "pct_from_high": pct_from_high,
+                    "chg_5d": chg(5),
+                    "chg_10d": chg(10),
+                    "chg_20d": chg(20),
+                    "hist_vol": hist_vol,
+                    "category": self._category(symbol),
+                }
+
+            return await asyncio.to_thread(_load)
+        except Exception as e:
+            log.warning("Quality dip fetch failed", symbol=symbol, error=str(e))
+            return None
+
+    def _review_score(self, row: Dict[str, Any], normal: float, high: float) -> float:
+        pct = float(row["pct_from_high"])
+        score = 0.0
+        score += min(40.0, max(0.0, (pct - normal) * 1.2))
+        if pct >= high:
+            score += 15.0
+        c5 = row.get("chg_5d")
+        c10 = row.get("chg_10d")
+        c20 = row.get("chg_20d")
+        if c5 is not None and c5 < -3:
+            score += 10.0
+        if c10 is not None and c10 < -5:
+            score += 8.0
+        if c20 is not None and c20 < -10:
+            score += 8.0
+        if c5 is not None and c5 > 3:
+            score -= 8.0  # bouncing — lower urgency
+        low = float(row["low_52w"])
+        price = float(row["price"])
+        if low > 0 and (price - low) / low > 0.35:
+            score -= 5.0  # still far above lows
+        return max(0.0, min(100.0, score))
+
+    def _reasons(self, row: Dict[str, Any], normal: float, high: float) -> List[str]:
+        reasons: List[str] = []
+        pct = float(row["pct_from_high"])
+        if pct >= high:
+            reasons.append(f"≥{high:.1f}% below 52-week high (high priority)")
+        elif pct >= normal:
+            reasons.append(f"≥{normal:.1f}% below 52-week high")
+        c5 = row.get("chg_5d")
+        if c5 is not None and c5 <= -float(get_settings().quality_dip_short_drop_pct):
+            reasons.append(f"Sharp short drop 5d {c5:.1f}%")
+        return reasons
+
+    async def _send_alert(self, row: Dict[str, Any], normal: float, high: float, score: float) -> bool:
+        try:
+            from app.alerts.discord import is_discord_ready, send_discord_alert
+        except Exception as e:
+            log.warning("Quality dip discord import failed", error=str(e))
+            return False
+
+        if not is_discord_ready():
+            return False
+
+        symbol = row["symbol"]
+        price = float(row["price"])
+        pct = float(row["pct_from_high"])
+        priority = "high" if pct >= high else "normal"
+        reasons = self._reasons(row, normal, high)
+        if not reasons:
+            return False
+
+        def fmt_chg(v: Optional[float]) -> str:
+            if v is None:
+                return "n/a"
+            return f"{v:+.1f}%"
+
+        title = f"{symbol} — {'Generational' if priority == 'high' else 'Quality'} Discount Zone"
+        desc = (
+            f"**{symbol}** — {row.get('name', symbol)}\n"
+            f"Category: **{row.get('category', 'stock').upper()}** · adaptive thresholds\n"
+            f"Current price: **${price:,.2f}**\n"
+            f"% below 52-week high: **{pct:.1f}%**\n"
+            f"Alert thresholds: {normal:.1f}% / {high:.1f}% (high)\n"
+            f"52-week high: ${float(row['high_52w']):,.2f}\n"
+            f"52-week low: ${float(row['low_52w']):,.2f}\n"
+            f"5-day change: {fmt_chg(row.get('chg_5d'))}\n"
+            f"10-day change: {fmt_chg(row.get('chg_10d'))}\n"
+            f"20-day change: {fmt_chg(row.get('chg_20d'))}\n"
+            f"Review score: **{score:.0f}/100**\n"
+            f"Triggers:\n"
+            + "\n".join(f"• {r}" for r in reasons)
+            + "\n\n"
+            f"**POSSIBLE QUALITY DIP / GENERATIONAL DISCOUNT – Review before buying**\n"
+            f"No auto-buy. Confirm price on your broker before acting."
+        )
+        try:
+            ok = await send_discord_alert(
+                symbol=symbol,
+                title=title,
+                description=desc,
+                price=price,
+                severity="HIGH" if priority == "high" else "MEDIUM",
+                opportunity=min(95, int(55 + score * 0.4)),
+                confidence=70,
+                risk=45,
+            )
+        except Exception as e:
+            log.warning("Quality dip Discord failed", symbol=symbol, error=str(e))
+            return False
+
+        if ok:
+            await self._mark_cooldown(symbol)
+            log.info(
+                "Quality dip alert sent",
+                symbol=symbol,
+                pct_from_high=round(pct, 1),
+                review_score=round(score, 1),
+            )
+            # One-time auto ladder for non-core names
+            try:
+                from app.services.auto_ladder import auto_ladder
+
+                await auto_ladder.maybe_create_from_dip(
+                    symbol=symbol,
+                    price=price,
+                    name=str(row.get("name") or symbol),
+                    category=str(row.get("category") or "stock"),
+                    high_52w=float(row["high_52w"]),
+                    low_52w=float(row["low_52w"]),
+                    pct_from_high=pct,
+                )
+            except Exception as e:
+                log.warning("Auto ladder create failed", symbol=symbol, error=str(e))
+        return bool(ok)
+
+    async def _send_briefing(self, candidates: List[Dict[str, Any]]) -> None:
+        if not candidates:
+            return
+        r = await self._redis_client()
+        if r:
+            try:
+                if await r.get(self._brief_key()):
+                    log.info("Quality dip briefing skipped (cooldown)")
+                    return
+            except Exception:
+                pass
+
+        try:
+            from app.alerts.discord import is_discord_ready, send_discord_alert
+        except Exception:
+            return
+        if not is_discord_ready():
+            return
+
+        ranked = sorted(candidates, key=lambda x: x["score"], reverse=True)[:8]
+        lines = []
+        for i, c in enumerate(ranked, start=1):
+            c5 = c["row"].get("chg_5d")
+            c5s = f"{c5:+.1f}%" if c5 is not None else "n/a"
+            tags = []
+            if c["row"]["pct_from_high"] >= 40:
+                tags.append("severe/deep drawdown")
+            elif c["row"]["pct_from_high"] >= 25:
+                tags.append("material drawdown")
+            if c5 is not None and c5 > 3:
+                tags.append("bouncing short-term")
+            if c["row"].get("category") == "metal":
+                tags.append("metals complex")
+            tag_s = ", ".join(tags) if tags else "watch"
+            lines.append(
+                f"{i}. **{c['symbol']}** — score {c['score']:.0f}/100 · "
+                f"{c['row']['pct_from_high']:.1f}% off high · 5d {c5s} · {tag_s}"
+            )
+
+        metals = [c["symbol"] for c in ranked if c["row"].get("category") == "metal"]
+        soft = [c["symbol"] for c in ranked if c["symbol"] in {"ORCL", "INTU", "ADBE", "CRM", "NOW"}]
+        approach = [
+            f"• Start with **{ranked[0]['symbol']}** — highest review score.",
+        ]
+        if metals:
+            approach.append(f"• Metals complex: {', '.join(metals)} — one theme, not separate full positions.")
+        if soft:
+            approach.append(f"• Software cluster: {', '.join(soft)} — compare relative strength.")
+
+        desc = (
+            f"**Quality Dip Briefing — {len(candidates)} candidates**\n"
+            f"Research priority only · not buy advice · confirm live prices.\n\n"
+            f"Deep-analysis priority (start here):\n"
+            + "\n".join(lines)
+            + "\n\nApproach\n"
+            + "\n".join(approach)
+            + "\n\n1. Open charts for top 3 only\n"
+            "2. Verify on broker\n"
+            "3. Size small if acting — discounts ≠ guarantees\n\n"
+            "Atlas ranks research time. You decide capital."
+        )
+        try:
+            ok = await send_discord_alert(
+                symbol="BRIEF",
+                title="Quality Dip — Batch Analysis",
+                description=desc,
+                price=0.0,
+                severity="MEDIUM",
+                opportunity=int(ranked[0]["score"]),
+                confidence=70,
+                risk=40,
+            )
+            if ok and r:
+                await r.set(self._brief_key(), datetime.now(timezone.utc).isoformat(), ex=20 * 3600)
+                log.info("Quality dip briefing sent", candidates=len(candidates))
+        except Exception as e:
+            log.warning("Quality dip briefing failed", error=str(e))
+
+    async def _scan_once(self) -> None:
+        settings = get_settings()
+        symbols = settings.quality_dip_watchlist_list
+        log.info("Quality dip scan starting", count=len(symbols))
+        candidates: List[Dict[str, Any]] = []
+        alerted = 0
+
+        for symbol in symbols:
+            if not self._running:
+                break
+            row = await self._fetch_symbol(symbol)
+            if not row:
+                continue
+            normal, high = self._thresholds(symbol, row.get("hist_vol"))
+            pct = float(row["pct_from_high"])
+            score = self._review_score(row, normal, high)
+            reasons = self._reasons(row, normal, high)
+            if not reasons:
+                continue
+
+            candidates.append(
+                {
+                    "symbol": symbol,
+                    "row": row,
+                    "score": score,
+                    "normal": normal,
+                    "high": high,
+                }
+            )
+
+            if await self._on_cooldown(symbol):
+                log.info(
+                    "Quality dip cooldown",
+                    symbol=symbol,
+                    pct_from_high=round(pct, 1),
+                )
+                continue
+
+            if await self._send_alert(row, normal, high, score):
+                alerted += 1
+            await asyncio.sleep(0.35)
+
+        await self._send_briefing(candidates)
+        log.info(
+            "Quality dip scan complete",
+            alerted=alerted,
+            candidates=len(candidates),
+        )
 
     async def _loop(self) -> None:
-        await asyncio.sleep(10)
+        settings = get_settings()
+        interval = max(
+            300.0,
+            float(getattr(settings, "quality_dip_scan_interval_minutes", 60) or 60) * 60.0,
+        )
+        await asyncio.sleep(8)
         while self._running:
             try:
                 await self._scan_once()
+            except asyncio.CancelledError:
+                raise
             except Exception as e:
-                logger.error("Quality dip scan failed", error=str(e))
-            await asyncio.sleep(_scan_interval_seconds())
-
-    async def _scan_once(self) -> None:
-        watchlist = _watchlist()
-        logger.info("Quality dip scan starting", count=len(watchlist))
-        candidates: list[DipSnapshot] = []
-        alerted: list[DipSnapshot] = []
-
-        for symbol in watchlist:
-            try:
-                snap = await asyncio.to_thread(_fetch_snapshot, symbol)
-                if snap is None:
-                    continue
-                candidates.append(snap)
-
-                if await _should_alert(symbol, snap.pct_from_high):
-                    await self._send_alert(snap)
-                    await _mark_alerted(symbol, snap.pct_from_high)
-                    alerted.append(snap)
-                else:
-                    logger.info(
-                        "Quality dip cooldown",
-                        symbol=symbol,
-                        pct_from_high=snap.pct_from_high,
-                    )
-            except Exception as e:
-                logger.warning("Error scanning symbol", symbol=symbol, error=str(e))
-            await asyncio.sleep(1.2)
-
-        if candidates:
-            await self._send_briefing(candidates)
-        logger.info(
-            "Quality dip scan complete",
-            candidates=len(candidates),
-            alerted=len(alerted),
-        )
-
-    async def _send_alert(self, snap: DipSnapshot) -> None:
-        severity = "high" if snap.priority == "high" else "medium"
-        title = (
-            f"🔴 {snap.symbol} — Generational Discount Zone"
-            if snap.priority == "high"
-            else f"🟠 {snap.symbol} — Quality Dip Zone"
-        )
-        signal = AnomalySignal(
-            symbol=snap.symbol,
-            alert_type="quality_dip",
-            severity=severity,
-            title=title,
-            message=_build_message(snap),
-            opportunity_score=min(95.0, 50.0 + snap.pct_from_high),
-            confidence_score=75.0,
-            risk_score=45.0,
-            price=snap.price,
-            indicators={
-                "pct_from_high": snap.pct_from_high,
-                "review_score": snap.review_score,
-                "category": snap.category,
-                "priority": snap.priority,
-            },
-        )
-        await send_discord_alert(signal, chart_bytes=None)
-        logger.info(
-            "Quality dip alert sent",
-            symbol=snap.symbol,
-            pct_from_high=snap.pct_from_high,
-            review_score=snap.review_score,
-        )
-
-    async def _send_briefing(self, candidates: list[DipSnapshot]) -> None:
-        """One ranked analysis DM after the batch."""
-        try:
-            if not discord_bot.is_ready():
-                logger.warning("Discord not ready — briefing skipped")
-                return
-            subscriber_ids = await get_subscriber_ids()
-            if not subscriber_ids:
-                return
-
-            import discord
-
-            embed = discord.Embed(
-                title="📋 Quality Dip — Batch Analysis",
-                description=_build_briefing(candidates),
-                color=discord.Color.dark_gold(),
-                timestamp=discord.utils.utcnow(),
-            )
-            embed.set_footer(text="Project Atlas • Research priority only • Not financial advice")
-
-            for uid in subscriber_ids:
-                try:
-                    user = await discord_bot.fetch_user(uid)
-                    await user.send(embed=embed)
-                    await asyncio.sleep(0.4)
-                except Exception as e:
-                    logger.warning("Briefing DM failed", user_id=uid, error=str(e))
-
-            logger.info("Quality dip briefing sent", candidates=len(candidates))
-        except Exception as e:
-            logger.error("Briefing failed", error=str(e))
-
-    async def current_discounts(self) -> list[dict]:
-        results = []
-        for symbol in _watchlist():
-            snap = await asyncio.to_thread(_fetch_snapshot, symbol)
-            if snap is None:
-                continue
-            results.append(
-                {
-                    "symbol": snap.symbol,
-                    "name": snap.name,
-                    "price": snap.price,
-                    "pct_from_high": snap.pct_from_high,
-                    "high_52w": snap.high_52w,
-                    "low_52w": snap.low_52w,
-                    "priority": snap.priority,
-                    "category": snap.category,
-                    "threshold_normal": snap.threshold_normal,
-                    "threshold_high": snap.threshold_high,
-                    "adaptive": snap.adaptive,
-                    "review_score": snap.review_score,
-                    "review_note": snap.review_note,
-                    "reasons": snap.reasons,
-                }
-            )
-        results.sort(key=lambda x: x.get("review_score", 0), reverse=True)
-        return results
+                log.error("Quality dip cycle failed", error=str(e))
+            await asyncio.sleep(interval)
 
 
 quality_dip_scanner = QualityDipScanner()

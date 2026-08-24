@@ -1,109 +1,135 @@
+"""Technical indicators for Atlas."""
+
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional
-import numpy as np
+from typing import Optional, Sequence
 
 
 @dataclass
 class IndicatorResult:
-    symbol: str
-    price: float
-    ema_9: Optional[float] = None
-    ema_20: Optional[float] = None
-    ema_50: Optional[float] = None
-    ema_200: Optional[float] = None
-    rsi_14: Optional[float] = None
-    atr_14: Optional[float] = None
-    volume_sma_20: Optional[float] = None
-    relative_volume: Optional[float] = None
-    volatility: Optional[float] = None
-    zscore_price: Optional[float] = None
+    rsi: Optional[float] = None
+    ema9: Optional[float] = None
+    ema21: Optional[float] = None
+    sma20: Optional[float] = None
+    volume_spike: Optional[float] = None
+    atr: Optional[float] = None
 
 
-def ema(series: list[float], period: int) -> Optional[float]:
-    if len(series) < period:
+def _ema(values: Sequence[float], period: int) -> Optional[float]:
+    if not values or len(values) < period:
         return None
-    weights = np.exp(np.linspace(-1.0, 0.0, period))
-    weights /= weights.sum()
-    return float(np.convolve(series[-period:], weights, mode="valid")[-1])
+    k = 2 / (period + 1)
+    ema = sum(values[:period]) / period
+    for v in values[period:]:
+        ema = v * k + ema * (1 - k)
+    return float(ema)
 
 
-def rsi(closes: list[float], period: int = 14) -> Optional[float]:
+def _sma(values: Sequence[float], period: int) -> Optional[float]:
+    if not values or len(values) < period:
+        return None
+    return float(sum(values[-period:]) / period)
+
+
+def _rsi(closes: Sequence[float], period: int = 14) -> Optional[float]:
     if len(closes) < period + 1:
         return None
-    deltas = np.diff(closes[-(period + 1):])
-    gains = np.where(deltas > 0, deltas, 0.0)
-    losses = np.where(deltas < 0, -deltas, 0.0)
-    avg_gain = np.mean(gains)
-    avg_loss = np.mean(losses)
+    gains: list[float] = []
+    losses: list[float] = []
+    for i in range(-period, 0):
+        d = closes[i] - closes[i - 1]
+        gains.append(max(d, 0.0))
+        losses.append(max(-d, 0.0))
+    avg_gain = sum(gains) / period
+    avg_loss = sum(losses) / period
     if avg_loss == 0:
         return 100.0
     rs = avg_gain / avg_loss
-    return float(100 - (100 / (1 + rs)))
+    return 100.0 - (100.0 / (1.0 + rs))
 
 
-def atr(highs: list[float], lows: list[float], closes: list[float], period: int = 14) -> Optional[float]:
+def atr_proxy(
+    highs: Sequence[float],
+    lows: Sequence[float],
+    closes: Sequence[float],
+    period: int = 14,
+) -> Optional[float]:
+    """Average True Range proxy from high/low/close series."""
+    n = min(len(highs), len(lows), len(closes))
+    if n < period + 1:
+        # Fallback: use close-to-close range if HL not available
+        if len(closes) < period + 1:
+            return None
+        ranges = [abs(closes[i] - closes[i - 1]) for i in range(-period, 0)]
+        return float(sum(ranges) / period)
+
+    trs: list[float] = []
+    for i in range(n - period, n):
+        if i <= 0:
+            continue
+        high = float(highs[i])
+        low = float(lows[i])
+        prev_close = float(closes[i - 1])
+        tr = max(high - low, abs(high - prev_close), abs(low - prev_close))
+        trs.append(tr)
+    if not trs:
+        return None
+    return float(sum(trs[-period:]) / min(period, len(trs)))
+
+
+def atr_from_closes(closes: Sequence[float], period: int = 14) -> Optional[float]:
+    """ATR-style volatility when only closes exist."""
     if len(closes) < period + 1:
         return None
-    trs = []
-    for i in range(1, len(closes)):
-        tr = max(
-            highs[i] - lows[i],
-            abs(highs[i] - closes[i - 1]),
-            abs(lows[i] - closes[i - 1]),
-        )
-        trs.append(tr)
-    return float(np.mean(trs[-period:]))
+    ranges = [abs(closes[i] - closes[i - 1]) for i in range(-period, 0)]
+    return float(sum(ranges) / period)
 
 
-def relative_volume(current_volume: float, volume_history: list[float], period: int = 20) -> Optional[float]:
-    if len(volume_history) < period:
+def volume_spike_ratio(volumes: Sequence[float], lookback: int = 20) -> Optional[float]:
+    if len(volumes) < lookback:
         return None
-    avg = np.mean(volume_history[-period:])
-    if avg == 0:
+    window = [float(v) for v in volumes[-lookback:]]
+    last = window[-1]
+    avg = sum(window[:-1]) / max(1, lookback - 1)
+    if avg <= 0:
         return None
-    return float(current_volume / avg)
+    return last / avg
 
 
-def zscore(series: list[float], period: int = 20) -> Optional[float]:
-    if len(series) < period:
-        return None
-    window = series[-period:]
-    mean = np.mean(window)
-    std = np.std(window)
-    if std == 0:
-        return 0.0
-    return float((series[-1] - mean) / std)
-
-
-def calculate_basic_indicators(
-    symbol: str,
-    closes: list[float],
-    volumes: list[float],
-    highs: Optional[list[float]] = None,
-    lows: Optional[list[float]] = None,
+def compute_indicators(
+    closes: Sequence[float],
+    volumes: Optional[Sequence[float]] = None,
+    highs: Optional[Sequence[float]] = None,
+    lows: Optional[Sequence[float]] = None,
 ) -> IndicatorResult:
-    """
-    Calculate a core set of indicators from price/volume history.
-    For now we accept simple lists. Later we will feed real candle data.
-    """
-    price = closes[-1] if closes else 0.0
+    volumes = volumes or []
+    spike = volume_spike_ratio(volumes) if volumes else None
 
-    result = IndicatorResult(
-        symbol=symbol,
-        price=price,
-        ema_9=ema(closes, 9),
-        ema_20=ema(closes, 20),
-        ema_50=ema(closes, 50),
-        ema_200=ema(closes, 200),
-        rsi_14=rsi(closes, 14),
-        relative_volume=relative_volume(volumes[-1], volumes, 20) if volumes else None,
-        zscore_price=zscore(closes, 20),
+    atr = None
+    if highs is not None and lows is not None:
+        atr = atr_proxy(highs, lows, closes)
+    if atr is None:
+        atr = atr_from_closes(closes)
+
+    return IndicatorResult(
+        rsi=_rsi(closes),
+        ema9=_ema(closes, 9),
+        ema21=_ema(closes, 21),
+        sma20=_sma(closes, 20),
+        volume_spike=spike,
+        atr=atr,
     )
 
-    if highs and lows and len(highs) == len(closes) and len(lows) == len(closes):
-        result.atr_14 = atr(highs, lows, closes, 14)
 
-    if len(closes) >= 20:
-        result.volatility = float(np.std(closes[-20:]) / np.mean(closes[-20:]) * 100)
+# Aliases older modules may import
+def rsi(closes: Sequence[float], period: int = 14) -> Optional[float]:
+    return _rsi(closes, period)
 
-    return result
+
+def ema(values: Sequence[float], period: int) -> Optional[float]:
+    return _ema(values, period)
+
+
+def sma(values: Sequence[float], period: int) -> Optional[float]:
+    return _sma(values, period)

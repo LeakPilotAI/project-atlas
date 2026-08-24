@@ -1,0 +1,9 @@
+[Unit]
+Description=Atlas health watchdog oneshot
+After=atlas-api.service
+
+[Service]
+Type=oneshot
+Environment=ATLAS_HEALTH_URL=http://127.0.0.1:8000/health
+EnvironmentFile=-/opt/project-atlas/.env
+ExecStart=/opt/project-atlas/backend/.venv/bin/python /opt/project-atlas/scripts/atlas_watchdog.py

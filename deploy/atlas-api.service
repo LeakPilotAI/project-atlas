@@ -1,0 +1,20 @@
+[Unit]
+Description=Project Atlas API
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/project-atlas/backend
+Environment=PATH=/opt/project-atlas/backend/.venv/bin:/usr/bin
+EnvironmentFile=/opt/project-atlas/.env
+ExecStart=/opt/project-atlas/backend/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=0
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

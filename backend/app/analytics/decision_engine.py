@@ -1,211 +1,359 @@
-from dataclasses import dataclass
-from typing import List, Optional
-import numpy as np
+"""A+ setup decision engine for Hyperliquid perps.
 
-from app.analytics.profiles import StrategyProfile, get_profile
-from app.analytics.regime import detect_regime
+Combines RSI, momentum, funding, regime, and ATR channel breakouts.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Optional
 
 
 @dataclass
-class TradeDecision:
-    recommendation: str
+class SetupDecision:
+    symbol: str
+    recommendation: str  # LONG | SHORT | WAIT
+    score: float
     confidence: float
-    reason: str
-    invalidation: Optional[float] = None
-    risk_reward_note: str = ""
-    suggested_rr: Optional[str] = None
-    profile: str = "balanced"
-    regime: Optional[str] = None
+    risk_score: float
+    reasons: list[str] = field(default_factory=list)
+    invalidation: Optional[str] = None
+    direction: Optional[str] = None
+    atr_state: Optional[str] = None
+    stop: Optional[float] = None
+    tp1: Optional[float] = None
+    tp2: Optional[float] = None
+
+    def __post_init__(self) -> None:
+        if self.direction is None:
+            self.direction = self.recommendation
 
 
-def calculate_rsi(closes: List[float], period: int = 14) -> Optional[float]:
-    if len(closes) < period + 1:
+def _rsi_from_closes(closes: list[float], period: int = 14) -> Optional[float]:
+    if not closes or len(closes) < period + 1:
         return None
-    deltas = np.diff(closes[-(period + 1):])
-    gains = np.where(deltas > 0, deltas, 0.0)
-    losses = np.where(deltas < 0, -deltas, 0.0)
-    avg_gain = np.mean(gains)
-    avg_loss = np.mean(losses)
+    gains: list[float] = []
+    losses: list[float] = []
+    for i in range(-period, 0):
+        diff = closes[i] - closes[i - 1]
+        gains.append(max(diff, 0.0))
+        losses.append(max(-diff, 0.0))
+    avg_gain = sum(gains) / period
+    avg_loss = sum(losses) / period
     if avg_loss == 0:
         return 100.0
     rs = avg_gain / avg_loss
-    return float(100 - (100 / (1 + rs)))
+    return 100.0 - (100.0 / (1.0 + rs))
 
 
-def _score_direction(
-    closes: List[float],
-    highs: List[float],
-    lows: List[float],
-    volumes: List[float],
-    entry_price: float,
-    profile: StrategyProfile,
-) -> tuple[float, float, list, list]:
-    if len(closes) < 15:
-        return 0.0, 0.0, [], []
+def _pct_change(closes: list[float], bars: int) -> Optional[float]:
+    if not closes or len(closes) < bars + 1:
+        return None
+    a = closes[-(bars + 1)]
+    b = closes[-1]
+    if a <= 0:
+        return None
+    return (b / a - 1.0) * 100.0
 
-    current = closes[-1]
-    change_pct = ((current - entry_price) / entry_price) * 100
-    recent_move = ((closes[-1] - closes[-6]) / closes[-6]) * 100 if len(closes) >= 6 else 0.0
 
-    avg_vol = np.mean(volumes[-20:]) if len(volumes) >= 20 else np.mean(volumes)
-    recent_vol = np.mean(volumes[-3:]) if len(volumes) >= 3 else volumes[-1]
-    rel_vol = recent_vol / avg_vol if avg_vol > 0 else 1.0
+def evaluate_setup(
+    symbol: str,
+    price: float,
+    volume_24h: float = 0.0,
+    open_interest: float = 0.0,
+    funding_rate: Optional[float] = None,
+    indicators: Any = None,
+    regime: Any = None,
+    price_history: Optional[list[float]] = None,
+    volume_history: Optional[list[float]] = None,
+    funding_bias: Any = None,
+    atr_signal: Any = None,
+    **kwargs: Any,
+) -> Optional[SetupDecision]:
+    """
+    Score a perp for LONG / SHORT / WAIT.
 
-    higher_highs = highs[-1] > max(highs[-6:-1]) if len(highs) >= 6 else False
-    lower_lows = lows[-1] < min(lows[-6:-1]) if len(lows) >= 6 else False
-    rsi = calculate_rsi(closes, 14)
+    Optional atr_signal: ATRChannelSignal from atr_breakout.evaluate_atr_breakout
+    or signal_from_candles.
+    """
+    closes = list(price_history or [])
+    volumes = list(volume_history or [])
+
+    rsi = None
+    if indicators is not None:
+        rsi = getattr(indicators, "rsi", None)
+        if rsi is None and isinstance(indicators, dict):
+            rsi = indicators.get("rsi")
+    if rsi is None:
+        rsi = _rsi_from_closes(closes)
+
+    regime_name = None
+    regime_strength = 0.0
+    vol_state = "normal"
+    if regime is not None:
+        regime_name = getattr(regime, "name", None) or getattr(regime, "regime", None)
+        if regime_name is None and isinstance(regime, dict):
+            regime_name = regime.get("name") or regime.get("regime")
+        if regime_name is not None:
+            regime_name = str(regime_name).lower()
+        try:
+            regime_strength = float(getattr(regime, "strength", 0) or 0)
+        except (TypeError, ValueError):
+            regime_strength = 0.0
+        vol_state = str(getattr(regime, "vol_state", "normal") or "normal").lower()
+
+    chg_5 = _pct_change(closes, 5)
+    chg_20 = _pct_change(closes, 20)
 
     long_score = 0.0
-    long_reasons: list[str] = []
     short_score = 0.0
-    short_reasons: list[str] = []
+    reasons: list[str] = []
+    conf = 50.0
 
-    # Volume
-    if rel_vol >= profile.min_rel_volume:
-        long_score += 22
-        short_score += 22
-        long_reasons.append(f"vol {rel_vol:.1f}x")
-        short_reasons.append(f"vol {rel_vol:.1f}x")
+    # ── Liquidity ────────────────────────────────────────────────────
+    if volume_24h >= 500_000:
+        conf += 5
+    elif volume_24h < 20_000:
+        conf -= 8
+        reasons.append("Thin 24h volume")
 
-    # Momentum bias
-    if profile.prefer_momentum:
-        if change_pct >= profile.min_abs_change_pct:
-            long_score += 24
-            long_reasons.append(f"+{change_pct:.2f}%")
-        if change_pct <= -profile.min_abs_change_pct:
-            short_score += 24
-            short_reasons.append(f"{change_pct:.2f}%")
-        if recent_move > 0.7:
-            long_score += 16
-            long_reasons.append("momentum")
-        if recent_move < -0.7:
-            short_score += 16
-            short_reasons.append("momentum")
+    if open_interest >= 100_000:
+        conf += 3
 
-    # Mean reversion bias
-    if profile.prefer_mean_reversion:
-        if change_pct >= profile.min_abs_change_pct * 1.3:
-            short_score += 26
-            short_reasons.append(f"overextended +{change_pct:.2f}%")
-        if change_pct <= -profile.min_abs_change_pct * 1.3:
-            long_score += 26
-            long_reasons.append(f"oversold {change_pct:.2f}%")
-
-    # Breakout bias
-    if profile.prefer_breakout:
-        if higher_highs and rel_vol >= profile.min_rel_volume:
-            long_score += 20
-            long_reasons.append("HH breakout")
-        if lower_lows and rel_vol >= profile.min_rel_volume:
-            short_score += 20
-            short_reasons.append("LL breakdown")
-
-    # Structure
-    if higher_highs:
-        long_score += 12
-        long_reasons.append("HH structure")
-    if lower_lows:
-        short_score += 12
-        short_reasons.append("LL structure")
-
-    # RSI
+    # ── RSI ──────────────────────────────────────────────────────────
     if rsi is not None:
-        if 48 <= rsi <= 68:
+        if rsi <= 25:
+            long_score += 28
+            reasons.append(f"RSI oversold ({rsi:.1f})")
+            conf += 10
+        elif rsi <= 35:
+            long_score += 14
+            reasons.append(f"RSI soft ({rsi:.1f})")
+            conf += 4
+        elif rsi >= 75:
+            short_score += 28
+            reasons.append(f"RSI overbought ({rsi:.1f})")
+            conf += 10
+        elif rsi >= 65:
+            short_score += 14
+            reasons.append(f"RSI elevated ({rsi:.1f})")
+            conf += 4
+
+    # ── Momentum ─────────────────────────────────────────────────────
+    if chg_5 is not None:
+        if chg_5 <= -6:
+            long_score += 18
+            reasons.append(f"Sharp 5-bar drop ({chg_5:.1f}%)")
+            conf += 6
+        elif chg_5 <= -3:
             long_score += 10
-            long_reasons.append(f"RSI {rsi:.0f}")
-        if 32 <= rsi <= 52:
+            reasons.append(f"5-bar weakness ({chg_5:.1f}%)")
+        elif chg_5 >= 6:
+            short_score += 18
+            reasons.append(f"Sharp 5-bar spike ({chg_5:.1f}%)")
+            conf += 6
+        elif chg_5 >= 3:
             short_score += 10
-            short_reasons.append(f"RSI {rsi:.0f}")
+            reasons.append(f"5-bar strength ({chg_5:.1f}%)")
 
-    return long_score, short_score, long_reasons, short_reasons
+    if chg_20 is not None:
+        if chg_20 <= -12:
+            long_score += 10
+            reasons.append(f"Extended 20-bar drawdown ({chg_20:.1f}%)")
+        elif chg_20 >= 12:
+            short_score += 10
+            reasons.append(f"Extended 20-bar run ({chg_20:.1f}%)")
 
+    # ── Instant funding ──────────────────────────────────────────────
+    if funding_rate is not None:
+        fr = float(funding_rate)
+        if fr >= 0.0003:
+            short_score += 8
+            reasons.append(f"Elevated positive funding ({fr:.5f})")
+        elif fr <= -0.0003:
+            long_score += 8
+            reasons.append(f"Negative funding ({fr:.5f})")
 
-def decide_direction(
-    symbol: str,
-    closes_5m: List[float],
-    highs_5m: List[float],
-    lows_5m: List[float],
-    volumes_5m: List[float],
-    closes_15m: List[float],
-    highs_15m: List[float],
-    lows_15m: List[float],
-    volumes_15m: List[float],
-    entry_price: float,
-    profile_name: str = "balanced",
-) -> TradeDecision:
-    profile = get_profile(profile_name)
+    # ── Funding history bias ─────────────────────────────────────────
+    if isinstance(funding_bias, dict):
+        lean = str(funding_bias.get("lean") or "neutral").lower()
+        try:
+            delta = float(funding_bias.get("score_delta") or 0)
+        except (TypeError, ValueError):
+            delta = 0.0
+        sum_rate = funding_bias.get("sum_rate")
+        if lean == "long" and delta > 0:
+            long_score += delta
+            reasons.append(f"Funding history lean LONG (sum={sum_rate})")
+            conf += 3
+        elif lean == "short" and delta > 0:
+            short_score += delta
+            reasons.append(f"Funding history lean SHORT (sum={sum_rate})")
+            conf += 3
 
-    if len(closes_5m) < 20 or len(closes_15m) < 12:
-        return TradeDecision(
-            "NONE", 0, "Insufficient multi-timeframe data", profile=profile_name
-        )
+    # ── Regime ───────────────────────────────────────────────────────
+    if regime_name:
+        if "trend_up" in regime_name or regime_name == "bull":
+            long_score += 6 + min(6.0, regime_strength * 0.05)
+            short_score -= 4
+            reasons.append(f"Regime trend_up (str={regime_strength:.0f})")
+        elif "trend_down" in regime_name or regime_name == "bear":
+            short_score += 6 + min(6.0, regime_strength * 0.05)
+            long_score -= 4
+            reasons.append(f"Regime trend_down (str={regime_strength:.0f})")
+        elif "range" in regime_name or "mean" in regime_name:
+            conf += 2
+            reasons.append("Regime range — favor RSI extremes only")
+        elif "expansion" in regime_name:
+            conf -= 4
+            reasons.append("Vol expansion — size down / higher bar")
 
-    # Regime detection
-    regime_info = detect_regime(closes_5m, highs_5m, lows_5m)
+    if vol_state == "high":
+        conf -= 3
 
-    regime_boost = 0.0
-    if regime_info.regime == "trending" and profile.prefer_momentum:
-        regime_boost = 8.0
-    elif regime_info.regime == "ranging" and profile.prefer_mean_reversion:
-        regime_boost = 8.0
-    elif regime_info.regime == "high_vol":
-        regime_boost = -5.0  # slightly more cautious
+    # ── ATR channel breakout ─────────────────────────────────────────
+    atr_state = None
+    stop = None
+    tp1 = None
+    tp2 = None
 
-    l5, s5, lr5, sr5 = _score_direction(
-        closes_5m, highs_5m, lows_5m, volumes_5m, entry_price, profile
+    if atr_signal is not None:
+        atr_state = str(getattr(atr_signal, "state", None) or "")
+        if not atr_state and isinstance(atr_signal, dict):
+            atr_state = str(atr_signal.get("state") or "")
+
+        atr_dir = str(getattr(atr_signal, "direction", None) or "")
+        if not atr_dir and isinstance(atr_signal, dict):
+            atr_dir = str(atr_signal.get("direction") or "")
+
+        atr_val = getattr(atr_signal, "atr", None)
+        if atr_val is None and isinstance(atr_signal, dict):
+            atr_val = atr_signal.get("atr")
+        try:
+            atr_f = float(atr_val or 0)
+        except (TypeError, ValueError):
+            atr_f = 0.0
+
+        upper = getattr(atr_signal, "upper", None)
+        lower = getattr(atr_signal, "lower", None)
+        if isinstance(atr_signal, dict):
+            upper = upper if upper is not None else atr_signal.get("upper")
+            lower = lower if lower is not None else atr_signal.get("lower")
+
+        # Breakout alignment boosts
+        if atr_state == "break_up":
+            long_score += 16
+            reasons.append(
+                f"ATR breakout UP (upper={upper})"
+                if upper is not None
+                else "ATR breakout UP"
+            )
+            conf += 6
+            if regime_name and "trend_up" in regime_name:
+                long_score += 8
+                conf += 4
+                reasons.append("ATR break_up + trend_up alignment")
+            if regime_name and "trend_down" in regime_name:
+                long_score -= 10
+                conf -= 5
+                reasons.append("ATR break_up against trend_down — discounted")
+
+        elif atr_state == "break_down":
+            short_score += 16
+            reasons.append(
+                f"ATR breakout DOWN (lower={lower})"
+                if lower is not None
+                else "ATR breakout DOWN"
+            )
+            conf += 6
+            if regime_name and "trend_down" in regime_name:
+                short_score += 8
+                conf += 4
+                reasons.append("ATR break_down + trend_down alignment")
+            if regime_name and "trend_up" in regime_name:
+                short_score -= 10
+                conf -= 5
+                reasons.append("ATR break_down against trend_up — discounted")
+
+        elif atr_state == "near_upper":
+            short_score += 4
+            reasons.append("Price near ATR upper band")
+        elif atr_state == "near_lower":
+            long_score += 4
+            reasons.append("Price near ATR lower band")
+
+        # Pull structured levels for embeds
+        if atr_dir == "long" or atr_state == "break_up":
+            stop = getattr(atr_signal, "stop_long", None)
+            tp1 = getattr(atr_signal, "tp1_long", None)
+            tp2 = getattr(atr_signal, "tp2_long", None)
+            if isinstance(atr_signal, dict):
+                stop = stop if stop is not None else atr_signal.get("stop_long")
+                tp1 = tp1 if tp1 is not None else atr_signal.get("tp1_long")
+                tp2 = tp2 if tp2 is not None else atr_signal.get("tp2_long")
+        elif atr_dir == "short" or atr_state == "break_down":
+            stop = getattr(atr_signal, "stop_short", None)
+            tp1 = getattr(atr_signal, "tp1_short", None)
+            tp2 = getattr(atr_signal, "tp2_short", None)
+            if isinstance(atr_signal, dict):
+                stop = stop if stop is not None else atr_signal.get("stop_short")
+                tp1 = tp1 if tp1 is not None else atr_signal.get("tp1_short")
+                tp2 = tp2 if tp2 is not None else atr_signal.get("tp2_short")
+
+        if atr_f > 0 and price > 0:
+            reasons.append(f"ATR={atr_f:.6g} ({atr_f / price * 100:.2f}%)")
+
+    # ── Decision ─────────────────────────────────────────────────────
+    recommendation = "WAIT"
+    score = 0.0
+
+    if long_score >= short_score and long_score >= 40:
+        recommendation = "LONG"
+        score = min(99.0, 55.0 + long_score * 0.5)
+    elif short_score > long_score and short_score >= 40:
+        recommendation = "SHORT"
+        score = min(99.0, 55.0 + short_score * 0.5)
+    else:
+        recommendation = "WAIT"
+        score = max(long_score, short_score)
+        reasons.append("No A+ edge — stand down")
+
+    conf = max(0.0, min(95.0, conf + min(long_score, short_score) * 0.15))
+    risk = 40.0
+    if volume_24h < 50_000:
+        risk += 15
+    if recommendation != "WAIT":
+        risk += 5
+    if vol_state == "high" or (regime_name and "expansion" in regime_name):
+        risk += 10
+
+    invalidation = None
+    if recommendation == "LONG" and price > 0:
+        if stop is not None:
+            invalidation = f"Stop / invalidation ~{float(stop):.6g}"
+        else:
+            invalidation = f"Close breakdown ~{price * 0.985:.6g}"
+    elif recommendation == "SHORT" and price > 0:
+        if stop is not None:
+            invalidation = f"Stop / invalidation ~{float(stop):.6g}"
+        else:
+            invalidation = f"Close breakout ~{price * 1.015:.6g}"
+
+    return SetupDecision(
+        symbol=symbol,
+        recommendation=recommendation,
+        score=round(score, 1),
+        confidence=round(conf, 1),
+        risk_score=round(risk, 1),
+        reasons=reasons[:12],
+        invalidation=invalidation,
+        atr_state=atr_state or None,
+        stop=float(stop) if stop is not None else None,
+        tp1=float(tp1) if tp1 is not None else None,
+        tp2=float(tp2) if tp2 is not None else None,
     )
-    l15, s15, lr15, sr15 = _score_direction(
-        closes_15m, highs_15m, lows_15m, volumes_15m, entry_price, profile
-    )
 
-    long_score = l5 * 0.6 + l15 * 0.4 + regime_boost
-    short_score = s5 * 0.6 + s15 * 0.4 + regime_boost
 
-    long_aligned = l5 >= 40 and l15 >= 35
-    short_aligned = s5 >= 40 and s15 >= 35
-
-    current = closes_5m[-1]
-
-    if long_aligned and long_score >= 58 and long_score > short_score + 10:
-        invalidation = min(lows_5m[-10:]) * 0.995
-        risk = abs(current - invalidation) / current * 100
-        change_pct = abs((current - entry_price) / entry_price * 100)
-        suggested_rr = f"~1:{max(1.6, round(change_pct / max(risk, 0.25), 1))}"
-        reasons = list(dict.fromkeys(lr5 + lr15))
-        reasons.append(f"regime={regime_info.regime}")
-        return TradeDecision(
-            recommendation="LONG",
-            confidence=min(94.0, long_score + 12),
-            reason=" | ".join(reasons),
-            invalidation=invalidation,
-            risk_reward_note=f"Invalidation ≈ ${invalidation:.4f}",
-            suggested_rr=suggested_rr,
-            profile=profile_name,
-            regime=regime_info.regime,
-        )
-
-    if short_aligned and short_score >= 58 and short_score > long_score + 10:
-        invalidation = max(highs_5m[-10:]) * 1.005
-        risk = abs(invalidation - current) / current * 100
-        change_pct = abs((current - entry_price) / entry_price * 100)
-        suggested_rr = f"~1:{max(1.6, round(change_pct / max(risk, 0.25), 1))}"
-        reasons = list(dict.fromkeys(sr5 + sr15))
-        reasons.append(f"regime={regime_info.regime}")
-        return TradeDecision(
-            recommendation="SHORT",
-            confidence=min(94.0, short_score + 12),
-            reason=" | ".join(reasons),
-            invalidation=invalidation,
-            risk_reward_note=f"Invalidation ≈ ${invalidation:.4f}",
-            suggested_rr=suggested_rr,
-            profile=profile_name,
-            regime=regime_info.regime,
-        )
-
-    return TradeDecision(
-        "NONE",
-        0,
-        "No multi-timeframe agreement yet",
-        profile=profile_name,
-        regime=regime_info.regime,
-    )
+def decide_direction(*args: Any, **kwargs: Any) -> Optional[SetupDecision]:
+    """Back-compat alias used by opportunity_tracker."""
+    return evaluate_setup(*args, **kwargs)
