@@ -1,4 +1,4 @@
-"""Perp micro coach v3.1 — quality paper, strict live-path, rate-limit safe, journal P1–P4."""
+"""Perp micro coach v3.1 — quality paper + shadow research hooks. Thresholds unchanged."""
 
 from __future__ import annotations
 
@@ -130,6 +130,16 @@ def _tier(symbol: str, majors: Set[str]) -> str:
     if symbol in LIVE_ALT_ALLOW:
         return "alt"
     return "junk"
+
+
+def _min_score_for_tier(tier: str) -> float:
+    if tier == "major":
+        return 62.0
+    if tier == "alt":
+        return 72.0
+    if tier == "meme":
+        return 82.0
+    return 85.0
 
 
 class PerpMicroCoach:
@@ -522,6 +532,14 @@ class PerpMicroCoach:
 
         await self._manage_open(price_map)
 
+        # Shadow research (never affects paper)
+        try:
+            from app.services.shadow_research import shadow_research
+
+            shadow_research.update_prices(price_map)
+        except Exception as e:
+            log.debug("shadow update failed", error=str(e)[:120])
+
         max_open = int(settings.perp_micro_max_open)
         max_day = int(settings.perp_micro_max_triggers_per_day)
 
@@ -567,6 +585,7 @@ class PerpMicroCoach:
 
     async def _try_symbol(self, symbol: str, price: float) -> bool:
         from app.services.paper_journal import paper_journal
+        from app.services.shadow_research import shadow_research
 
         settings = get_settings()
         if price <= 0:
@@ -583,6 +602,18 @@ class PerpMicroCoach:
 
         ext_pct = abs(price - sma20) / sma20 * 100.0
         if ext_pct < float(settings.perp_micro_min_extension_pct):
+            shadow_research.record_evaluation(
+                symbol=symbol,
+                side=None,
+                mark_price=price,
+                score=0.0,
+                required_score=62.0,
+                qualified=False,
+                failed_gates=["extension_too_small"],
+                features={"ext_pct": ext_pct, "sma20": sma20, "rsi": rsi},
+                regime=f"rsi={rsi:.1f}",
+                notes="pre-side filter",
+            )
             return False
 
         side: Optional[str] = None
@@ -591,13 +622,44 @@ class PerpMicroCoach:
         elif rsi >= float(settings.perp_micro_rsi_short):
             side = "SHORT"
         if side is None:
+            shadow_research.record_evaluation(
+                symbol=symbol,
+                side=None,
+                mark_price=price,
+                score=float(rsi),
+                required_score=float(settings.perp_micro_rsi_long),
+                qualified=False,
+                failed_gates=["rsi_not_extreme"],
+                features={"rsi": rsi, "ext_pct": ext_pct, "sma20": sma20},
+                regime=f"rsi={rsi:.1f}",
+            )
             return False
 
         ok, qscore, reason = self._setup_quality(
             symbol, side, price, closes, rsi, sma20, ext_pct
         )
+        majors = set(settings.perp_micro_majors_list)
+        tier = _tier(symbol, majors)
+        min_score = _min_score_for_tier(tier)
+        atr = _atr_proxy(closes, 14)
+
         if not ok:
-            # P4 — log rejected candidate (only when RSI extreme + extension already passed)
+            failed: List[str] = []
+            if qscore < min_score:
+                failed.append("score_threshold")
+            if "RSI" in reason:
+                failed.append("rsi_gate")
+            if "extension" in reason.lower() or "ext" in reason.lower():
+                failed.append("extension")
+            if any(x in reason.lower() for x in ("liquidity", "thin", "junk")):
+                failed.append("liquidity")
+            if "ATR" in reason or "atr" in reason:
+                failed.append("risk_atr")
+            if "structure" in reason.lower():
+                failed.append("structure")
+            if not failed:
+                failed.append("quality")
+
             await paper_journal.log_candidate(
                 symbol=symbol,
                 side=side,
@@ -609,9 +671,32 @@ class PerpMicroCoach:
                 reject_reason=reason,
                 strategy="rsi_extension_v1",
             )
+            shadow_research.record_evaluation(
+                symbol=symbol,
+                side=side,
+                mark_price=price,
+                score=qscore,
+                required_score=min_score,
+                qualified=False,
+                failed_gates=failed,
+                features={
+                    "rsi": rsi,
+                    "ext_pct": ext_pct,
+                    "sma20": sma20,
+                    "atr": atr,
+                    "vol": self._vol_map.get(symbol),
+                    "oi": self._oi_map.get(symbol),
+                    "tier": tier,
+                    "reason": reason,
+                },
+                regime=f"rsi={rsi:.1f};{tier}",
+                stop=(price - 1.5 * atr) if side == "LONG" else (price + 1.5 * atr),
+                tp1=(price + 2.5 * atr) if side == "LONG" else (price - 2.5 * atr),
+                tp2=(price + 4.0 * atr) if side == "LONG" else (price - 4.0 * atr),
+                notes=reason,
+            )
             return False
 
-        atr = _atr_proxy(closes, 14)
         if side == "LONG":
             stop = price - 1.5 * atr
             tp1 = price + 2.5 * atr
@@ -637,13 +722,31 @@ class PerpMicroCoach:
                 reject_reason=f"R:R {rr:.2f} < min",
                 strategy="rsi_extension_v1",
             )
+            shadow_research.record_evaluation(
+                symbol=symbol,
+                side=side,
+                mark_price=price,
+                score=qscore,
+                required_score=min_score,
+                qualified=False,
+                failed_gates=["risk_reward"],
+                features={
+                    "rsi": rsi,
+                    "ext_pct": ext_pct,
+                    "rr": rr,
+                    "atr": atr,
+                    "tier": tier,
+                },
+                regime=f"rsi={rsi:.1f};{tier}",
+                stop=stop,
+                tp1=tp1,
+                tp2=tp2,
+                notes=f"R:R {rr:.2f}",
+            )
             return False
 
-        majors = set(settings.perp_micro_majors_list)
-        tier = _tier(symbol, majors)
         counts_for_live = tier in ("major", "alt")
 
-        # P2 — entry = current mark (price)
         tid = await paper_journal.open_trade(
             symbol=symbol,
             side=side,
@@ -678,6 +781,29 @@ class PerpMicroCoach:
             regime=f"rsi={rsi:.1f}",
             features={"rsi": rsi, "ext_pct": ext_pct},
             strategy="rsi_extension_v1",
+        )
+        shadow_research.record_evaluation(
+            symbol=symbol,
+            side=side,
+            mark_price=price,
+            score=qscore,
+            required_score=min_score,
+            qualified=True,
+            failed_gates=[],
+            features={
+                "rsi": rsi,
+                "ext_pct": ext_pct,
+                "sma20": sma20,
+                "atr": atr,
+                "vol": self._vol_map.get(symbol),
+                "oi": self._oi_map.get(symbol),
+                "tier": tier,
+            },
+            regime=f"rsi={rsi:.1f};{tier}",
+            stop=stop,
+            tp1=tp1,
+            tp2=tp2,
+            notes="QUALIFIED paper path",
         )
 
         self._open[tid] = {
@@ -737,10 +863,10 @@ class PerpMicroCoach:
             sym = p["symbol"]
             mark = price_map.get(sym) or float(p.get("mark") or p["entry"])
             p["mark"] = mark
-            # P3 — continuous MFE/MAE
             paper_journal.update_excursion(tid, mark)
-            p["mfe_r"] = paper_journal._open.get(tid, {}).get("mfe_r", p.get("mfe_r", 0))
-            p["mae_r"] = paper_journal._open.get(tid, {}).get("mae_r", p.get("mae_r", 0))
+            jopen = paper_journal._open.get(tid, {})
+            p["mfe_r"] = jopen.get("mfe_r", p.get("mfe_r", 0))
+            p["mae_r"] = jopen.get("mae_r", p.get("mae_r", 0))
 
             side, entry = p["side"], float(p["entry"])
             stop, tp1 = float(p["stop"]), float(p["tp1"])
@@ -759,10 +885,10 @@ class PerpMicroCoach:
             )
             to_close.append(tid)
             self._cooldowns[sym] = datetime.now(timezone.utc)
+            mfe = close_row.get("mfe_r", 0)
+            mae = close_row.get("mae_r", 0)
             if is_discord_ready():
                 live_tag = "live-stat" if p.get("counts_for_live") else "experimental"
-                mfe = close_row.get("mfe_r", 0)
-                mae = close_row.get("mae_r", 0)
                 await send_discord_alert(
                     symbol=sym,
                     title=f"Paper {result} · {sym} · {side}",
@@ -784,8 +910,8 @@ class PerpMicroCoach:
                 symbol=sym,
                 result=result,
                 pnl_r=pnl_r,
-                mfe_r=mfe if is_discord_ready() else close_row.get("mfe_r"),
-                mae_r=mae if is_discord_ready() else close_row.get("mae_r"),
+                mfe_r=mfe,
+                mae_r=mae,
             )
         for tid in to_close:
             self._open.pop(tid, None)

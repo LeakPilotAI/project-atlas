@@ -1,9 +1,9 @@
-"""Discord alerts + slash commands. DM-only. Paper stats from paper_journal only."""
+"""Discord alerts + slash commands. DM-only. Paper from journal; research from shadow."""
 
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, List, Optional, Set
 
 import discord
 from discord import app_commands
@@ -74,9 +74,7 @@ async def send_discord_alert(
     risk: int = 50,
     **kwargs: Any,
 ) -> bool:
-    """Flexible alert sender — positional or keyword. DM only to subscribers."""
     if args:
-        # Support legacy positional: (symbol, title, description, price, ...)
         if len(args) >= 1 and not symbol:
             symbol = str(args[0])
         if len(args) >= 2 and not title:
@@ -173,7 +171,6 @@ async def subscribe_cmd(interaction: discord.Interaction) -> None:
 async def unsubscribe_cmd(interaction: discord.Interaction) -> None:
     _subscribers.discard(interaction.user.id)
     await interaction.response.send_message("Unsubscribed.", ephemeral=True)
-    log.info("Subscriber removed", user_id=interaction.user.id)
 
 
 @tree.command(name="status", description="Atlas bot status")
@@ -230,6 +227,19 @@ async def paper_cmd(interaction: discord.Interaction) -> None:
         await interaction.followup.send(f"Paper stats error: `{e}`", ephemeral=True)
 
 
+@tree.command(name="research", description="Shadow research funnel (not paper PnL)")
+async def research_cmd(interaction: discord.Interaction) -> None:
+    await interaction.response.defer(ephemeral=True)
+    try:
+        from app.services.shadow_research import shadow_research
+
+        text = shadow_research.research_summary_text(24.0)
+        await interaction.followup.send(text, ephemeral=True)
+    except Exception as e:
+        log.warning("research_cmd failed", error=str(e), exc_info=True)
+        await interaction.followup.send(f"Research error: `{e}`", ephemeral=True)
+
+
 @tree.command(name="help", description="Atlas command list")
 async def help_cmd(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(
@@ -237,7 +247,8 @@ async def help_cmd(interaction: discord.Interaction) -> None:
         "`/subscribe` — receive DMs\n"
         "`/unsubscribe` — stop DMs\n"
         "`/status` — bot status\n"
-        "`/paper` — paper journal stats (MFE/MAE, sum R)\n"
+        "`/paper` — real paper journal (MFE/MAE)\n"
+        "`/research` — shadow rejects / funnel (not PnL)\n"
         "`/help` — this message\n\n"
         "_Alerts are research only. Manual execution. Not financial advice._",
         ephemeral=True,
@@ -245,7 +256,6 @@ async def help_cmd(interaction: discord.Interaction) -> None:
 
 
 async def start_discord_bot() -> None:
-    """Start Discord client as a background task (idempotent)."""
     global _bot_task
     async with _start_lock:
         settings = get_settings()
