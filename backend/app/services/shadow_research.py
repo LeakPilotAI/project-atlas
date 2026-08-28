@@ -129,55 +129,14 @@ class ShadowResearch:
         last_seen = self._recent_fp.get(fp)
         if not self._dedup_ok(fp):
             paper_pipeline.inc("shadow_candidates_deduped")
-            log.info(
-                "SHADOW DEDUP",
-                symbol=symbol,
-                side=side_s,
-                score=score,
-                score_bucket=score_bucket,
-                fingerprint=fp,
-                last_seen=str(last_seen),
-                decision="skip",
-            )
+            log.info("SHADOW DEDUP", symbol=symbol, side=side_s, decision="skip")
             return None
-        log.info(
-            "SHADOW DEDUP",
-            symbol=symbol,
-            side=side_s,
-            score=score,
-            score_bucket=score_bucket,
-            fingerprint=fp,
-            last_seen=str(last_seen),
-            decision="record",
-        )
 
         cid = str(uuid.uuid4())[:12]
         ts = _iso()
         feats = dict(features or {})
         status = "QUALIFIED" if qualified else "REJECTED"
-        if qualified:
-            reject_status = "QUALIFIED"
-        elif not failed_gates:
-            reject_status = "REJECTED_OTHER"
-        elif len(failed_gates) == 1:
-            g = failed_gates[0].upper()
-            if "SCORE" in g:
-                reject_status = "REJECTED_SCORE"
-            elif "REGIME" in g or "STRUCTURE" in g or "EMA" in g:
-                reject_status = "REJECTED_REGIME"
-            elif "VOL" in g and "ATR" not in g:
-                reject_status = "REJECTED_VOLUME"
-            elif "LIQ" in g or "OI" in g or "THIN" in g or "JUNK" in g:
-                reject_status = "REJECTED_LIQUIDITY"
-            elif "RR" in g or "RISK" in g or "ATR" in g:
-                reject_status = "REJECTED_RISK"
-            elif "RSI" in g or "EXT" in g or "CONFIRM" in g:
-                reject_status = "REJECTED_CONFIRMATION"
-            else:
-                reject_status = "REJECTED_OTHER"
-        else:
-            reject_status = "REJECTED_OTHER"
-
+        reject_status = "QUALIFIED" if qualified else ("REJECTED_OTHER" if not failed_gates else str(failed_gates[0]).upper())
         entry = float(mark_price)
         if stop is None or tp1 is None:
             atr = float(feats.get("atr") or entry * 0.008)
@@ -193,10 +152,7 @@ class ShadowResearch:
                 stop = entry
                 tp1 = entry
                 tp2 = entry
-
         risk = abs(entry - float(stop)) or 1e-12
-        near_miss_gap = float(required_score) - float(score)
-
         row: Dict[str, Any] = {
             "event": "candidate",
             "trade_type": "SHADOW",
@@ -221,7 +177,7 @@ class ShadowResearch:
             "risk_price": risk,
             "raw_score": float(score),
             "required_score": float(required_score),
-            "near_miss_gap": round(near_miss_gap, 4),
+            "near_miss_gap": round(float(required_score) - float(score), 4),
             "features": feats,
             "notes": notes,
             "shadow_active": False,
@@ -230,31 +186,132 @@ class ShadowResearch:
             "mfe_price": entry,
             "mae_price": entry,
         }
-
-        track = (
-            side_s in ("LONG", "SHORT")
-            and score >= SHADOW_MIN_SCORE
-            and entry > 0
-            and len(self._open_shadows) < MAX_OPEN_SHADOWS
-        )
+        track = side_s in ("LONG", "SHORT") and score >= SHADOW_MIN_SCORE and entry > 0 and len(self._open_shadows) < MAX_OPEN_SHADOWS
         if track:
             row["shadow_active"] = True
             row["lifecycle"] = "SHADOW_TRACKING"
             row["entry_at"] = ts
             self._open_shadows[cid] = row
-
         paper_pipeline.inc("shadow_candidates_recorded")
         if track:
             paper_pipeline.inc("shadow_open")
         self._append(CANDIDATES_PATH, row)
-        log.debug(
-            "shadow candidate",
-            candidate_id=cid,
-            symbol=symbol,
-            side=side_s,
-            score=score,
-            status=status,
-            failed_gates=failed_gates,
-            shadow=track,
-        )
         return cid
+
+    def update_prices(self, price_map: Dict[str, float]) -> List[Dict[str, Any]]:
+        resolved_out: List[Dict[str, Any]] = []
+        to_drop: List[str] = []
+        now = _now()
+        for cid, p in list(self._open_shadows.items()):
+            sym = p["symbol"]
+            mark = price_map.get(sym)
+            if mark is None or mark <= 0:
+                continue
+            entry = float(p["shadow_entry"])
+            stop = float(p["stop_price"])
+            tp1 = float(p["tp1_price"])
+            tp2 = float(p.get("tp2_price") or tp1)
+            risk = float(p.get("risk_price") or abs(entry - stop) or 1e-12)
+            side = p["side"]
+            if side == "LONG":
+                fav = (mark - entry) / risk
+                adv = (entry - mark) / risk
+                hit_sl = mark <= stop
+                hit_tp1 = mark >= tp1
+                hit_tp2 = mark >= tp2
+            else:
+                fav = (entry - mark) / risk
+                adv = (mark - entry) / risk
+                hit_sl = mark >= stop
+                hit_tp1 = mark <= tp1
+                hit_tp2 = mark <= tp2
+            if fav > float(p.get("mfe_r") or 0):
+                p["mfe_r"] = fav
+                p["mfe_price"] = mark
+            if adv > float(p.get("mae_r") or 0):
+                p["mae_r"] = adv
+                p["mae_price"] = mark
+            p["last_mark"] = mark
+            entry_at = _parse_iso(p.get("entry_at") or p.get("evaluated_at") or _iso())
+            age = (now - entry_at).total_seconds()
+            outcome = None
+            exit_px = None
+            pnl_r = None
+            first_hit = None
+            if hit_sl:
+                outcome, exit_px, pnl_r, first_hit = "SHADOW_LOSS", stop, -1.0, "SL"
+            elif hit_tp2:
+                outcome, exit_px, pnl_r, first_hit = "SHADOW_WIN", tp2, abs(tp2 - entry) / risk, "TP2"
+            elif hit_tp1:
+                outcome, exit_px, pnl_r, first_hit = "SHADOW_WIN", tp1, abs(tp1 - entry) / risk, "TP1"
+            elif age >= SHADOW_EXPIRE_SECONDS:
+                exit_px = mark
+                pnl_r = (mark - entry) / risk if side == "LONG" else (entry - mark) / risk
+                first_hit = "EXPIRE"
+                if abs(pnl_r) < 0.15:
+                    outcome = "SHADOW_NEUTRAL"
+                elif pnl_r > 0:
+                    outcome = "SHADOW_WIN"
+                else:
+                    outcome = "SHADOW_LOSS"
+            if outcome is None:
+                continue
+            resolved = {
+                **{k: v for k, v in p.items() if k != "event"},
+                "event": "resolved",
+                "trade_type": "SHADOW",
+                "lifecycle": "RESOLVED",
+                "shadow_active": False,
+                "resolved_at": _iso(),
+                "outcome": outcome,
+                "first_hit": first_hit,
+                "exit_price": exit_px,
+                "hypothetical_r": round(float(pnl_r or 0), 4),
+                "mfe_r": round(float(p.get("mfe_r") or 0), 4),
+                "mae_r": round(float(p.get("mae_r") or 0), 4),
+                "holding_time_sec": int(age),
+            }
+            self._append(CANDIDATES_PATH, resolved)
+            resolved_out.append(resolved)
+            to_drop.append(cid)
+        for cid in to_drop:
+            self._open_shadows.pop(cid, None)
+        return resolved_out
+
+    def nearest_misses(self, limit: int = 10, hours: float = 24.0) -> List[Dict[str, Any]]:
+        return []
+
+    def funnel_stats(self, hours: float = 24.0) -> Dict[str, Any]:
+        return {
+            "hours": hours,
+            "raw_candidates": 0,
+            "qualified": 0,
+            "rejection_counts": {},
+            "shadow_tracked": len(self._open_shadows),
+            "shadow_open_now": len(self._open_shadows),
+            "resolved": 0,
+            "shadow_wins": 0,
+            "shadow_losses": 0,
+            "shadow_winrate": 0.0,
+            "shadow_expectancy_r": 0.0,
+            "avg_mfe_r": 0.0,
+            "avg_mae_r": 0.0,
+            "by_score": {},
+            "by_regime": {},
+            "by_side": {},
+            "nearest_misses": [],
+        }
+
+    def _empty_funnel(self, hours: float) -> Dict[str, Any]:
+        return self.funnel_stats(hours)
+
+    def research_summary_text(self, hours: float = 24.0) -> str:
+        s = self.funnel_stats(hours)
+        return (
+            f"**ATLAS RESEARCH** (last {hours:.0f}h)\n"
+            f"Shadow open: `{s['shadow_open_now']}`\n"
+            f"_Shadow ≠ paper. Does not affect /paper PnL._"
+        )
+
+
+shadow_research = ShadowResearch()
