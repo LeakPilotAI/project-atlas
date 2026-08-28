@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "ATLAS – Advanced Trading & Liquidity Analysis System"
 requires-python = ">=3.12"
 dependencies = [
-    "yfinance>=0.2.40".
+    "yfinance>=0.2.40",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
     "pydantic>=2.9.0",
