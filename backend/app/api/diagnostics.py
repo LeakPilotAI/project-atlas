@@ -43,6 +43,7 @@ async def diagnostics_discord() -> Dict[str, Any]:
     }
 
 
+@router.get("/paper-test")
 @router.post("/paper-test")
 async def diagnostics_paper_test() -> Dict[str, Any]:
     """Isolated TEST journal path. Never counts as PAPER/SHADOW/LIVE."""
