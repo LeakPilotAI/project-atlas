@@ -24,9 +24,6 @@ This is an **alert and analysis system**. It does not auto-trade.
 
 ---
 
-## Screenshots
-
-
 <!--
 ### Dashboard
 ![Dashboard](docs/screenshots/dashboard.png)
