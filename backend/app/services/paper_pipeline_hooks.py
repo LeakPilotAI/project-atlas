@@ -47,16 +47,10 @@ def apply() -> None:
             paper_pipeline.log_cycle_funnel()
 
     async def _try(self, symbol: str, price: float) -> bool:
+        # Universe → evaluated lives here so _try_symbol can stay a pure gate path.
         paper_pipeline.inc("evaluated")
         paper_pipeline.last_evaluation_at = datetime.now(timezone.utc).isoformat()
-        ok = await orig_try(self, symbol, price)
-        if ok:
-            paper_pipeline.inc("qualified")
-            paper_pipeline.inc("paper_open_attempted")
-            paper_pipeline.inc("paper_open_succeeded")
-            paper_pipeline.last_qualified_at = datetime.now(timezone.utc).isoformat()
-            paper_pipeline.last_paper_open_at = datetime.now(timezone.utc).isoformat()
-        return ok
+        return await orig_try(self, symbol, price)
 
     PerpMicroCoach._fetch_tickers = _fetch
     PerpMicroCoach._cycle = _cycle
