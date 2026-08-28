@@ -226,3 +226,50 @@ def detect_regime(
 # Convenience: string-only callers
 def regime_name(closes: Sequence[float], **kwargs: Any) -> str:
     return detect_regime(closes, **kwargs).name
+
+
+def normalize_regime(value: Any) -> str:
+    """Map detector output / free text to research buckets. Does not change strategy."""
+    if value is None:
+        return "UNKNOWN"
+    if isinstance(value, RegimeResult):
+        if value.name == "expansion" or value.vol_state == "high":
+            return "HIGH_VOLATILITY"
+        if value.name == "range" and value.vol_state == "low":
+            return "LOW_VOLATILITY"
+        value = value.name
+    s = str(value).strip().lower().replace("-", "_").replace(" ", "_")
+    if not s or s in ("none", "n/a", "na"):
+        return "UNKNOWN"
+    mapping = {
+        "trend_up": "TREND_UP",
+        "trendup": "TREND_UP",
+        "uptrend": "TREND_UP",
+        "bull": "TREND_UP",
+        "trend_down": "TREND_DOWN",
+        "trenddown": "TREND_DOWN",
+        "downtrend": "TREND_DOWN",
+        "bear": "TREND_DOWN",
+        "range": "RANGE",
+        "ranging": "RANGE",
+        "chop": "RANGE",
+        "expansion": "HIGH_VOLATILITY",
+        "high_volatility": "HIGH_VOLATILITY",
+        "high_vol": "HIGH_VOLATILITY",
+        "low_volatility": "LOW_VOLATILITY",
+        "low_vol": "LOW_VOLATILITY",
+        "unknown": "UNKNOWN",
+    }
+    if s in mapping:
+        return mapping[s]
+    su = s.upper()
+    if su in {
+        "TREND_UP",
+        "TREND_DOWN",
+        "RANGE",
+        "HIGH_VOLATILITY",
+        "LOW_VOLATILITY",
+        "UNKNOWN",
+    }:
+        return su
+    return "UNKNOWN"

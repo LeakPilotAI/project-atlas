@@ -442,6 +442,7 @@ class FunnelResearch:
         }
 
     def research_payload(self) -> Dict[str, Any]:
+        from app.services.outcome_research import paper_performance, shadow_performance
         from app.services.paper_pipeline import paper_pipeline
         from app.services.shadow_research import shadow_research
 
@@ -449,6 +450,8 @@ class FunnelResearch:
         dist = self.distributions()
         bn = self.bottleneck()
         sh = shadow_research.funnel_stats(24.0)
+        paper = paper_performance()
+        shadow_out = shadow_performance()
         return {
             "hours": WINDOW_HOURS,
             "funnel": funnel,
@@ -467,6 +470,9 @@ class FunnelResearch:
                 "avg_mfe": sh.get("avg_mfe_r"),
                 "avg_mae": sh.get("avg_mae_r"),
             },
+            "paper_outcomes": paper,
+            "shadow_outcomes": shadow_out,
+            "rejection_analysis": (shadow_out.get("by_rejection_stage") or {}),
             "paper_24h": {
                 "opened": int(paper_pipeline.last_24h().get("paper_trades") or 0),
                 "closed": int(paper_pipeline.last_24h().get("paper_closed") or 0),
@@ -481,11 +487,15 @@ class FunnelResearch:
         }
 
     def research_summary_text(self) -> str:
+        from app.services.outcome_research import rejection_text
+
         p = self.research_payload()
         f = p["funnel"]["by_name"]
         d = p["distributions"]
         sh = p["shadow"]
         bn = p["bottleneck"]
+        paper = p.get("paper_outcomes") or {}
+        shadow_out = p.get("shadow_outcomes") or {}
 
         def c(name: str) -> int:
             return int((f.get(name) or {}).get("count") or 0)
@@ -516,6 +526,24 @@ class FunnelResearch:
             f"**BOTTLENECK:** `{bn['code']}`",
             str(bn.get("reason") or ""),
             "",
+            "**PAPER OUTCOMES**",
+            f"Closed: `{paper.get('n', 0)}`",
+            f"Win Rate: `{float(paper.get('winrate') or 0) * 100:.1f}%`",
+            f"Average R: `{float(paper.get('avg_r') or 0):+.2f}`",
+            f"Total R: `{float(paper.get('total_r') or 0):+.2f}`",
+            f"MFE: `{float(paper.get('avg_mfe') or 0):+.2f}`",
+            f"MAE: `{float(paper.get('avg_mae') or 0):+.2f}`",
+            "",
+            "**SHADOW OUTCOMES**",
+            "**SHADOW PERFORMANCE** (not paper)",
+            f"Resolved: `{shadow_out.get('n', sh.get('resolved') or 0)}`",
+            f"Win Rate: `{float(shadow_out.get('winrate') or sh.get('wins') or 0) * 100:.1f}%`"
+            if isinstance(shadow_out.get("winrate"), (int, float))
+            else f"Win Rate: `{float(sh.get('wins') or 0)}`",
+            f"Average R: `{float(shadow_out.get('avg_r') or sh.get('avg_r') or 0):+.2f}`",
+            "",
+            rejection_text(),
+            "",
             "**INDEPENDENT GATES** (research, not sequential)",
             f"Ext≥1.4%: `{ind['extension_ge_1_4']['count']}/{ind['n']}` ({ind['extension_ge_1_4']['pct']}%)",
             f"RSI≤28: `{ind['rsi_long_le_28']['count']}` · RSI≥72: `{ind['rsi_short_ge_72']['count']}`",
@@ -527,17 +555,9 @@ class FunnelResearch:
             f"Quality P95: `{q_p95 if q_p95 is not None else 'n/a'}`",
             f"R:R P95: `{rr_p95 if rr_p95 is not None else 'n/a'}`",
             "",
-            "**SHADOW PERFORMANCE** (not paper)",
-            f"Shadow resolved: `{sh.get('resolved') or 0}`",
-            f"Hypothetical winners: `{sh.get('wins') or 0}`",
-            f"Hypothetical losers: `{sh.get('losses') or 0}`",
-            f"Average shadow R: `{(sh.get('avg_r') or 0):+.2f}`",
-            f"Average MFE: `{(sh.get('avg_mfe') or 0):+.2f}`",
-            f"Average MAE: `{(sh.get('avg_mae') or 0):+.2f}`",
-            "",
             "_Gates locked: RSI 28/72 · ext 1.4% · R:R 1.8. Not financial advice._",
         ]
-        text = "\n".join(lines)
+        text = "\n".join(str(x) for x in lines)
         if len(text) > 1900:
             text = text[:1900] + "…"
         return text

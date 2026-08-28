@@ -186,39 +186,23 @@ async def status_cmd(interaction: discord.Interaction) -> None:
 async def paper_cmd(interaction: discord.Interaction) -> None:
     await interaction.response.defer(ephemeral=True)
     try:
+        from app.services.outcome_research import paper_text
         from app.services.paper_journal import paper_journal
         from app.services.perp_micro_coach import perp_micro_coach
 
-        stats = await paper_journal.stats()
-        opens = paper_journal.list_open()
         ready = await perp_micro_coach.live_readiness()
-
-        lines = [
-            "**Paper journal (single source of truth)**",
-            f"Open: `{stats.get('open', 0)}` · Closed: `{stats.get('closed', 0)}`",
-            f"W/L: `{stats.get('wins', 0)}` / `{stats.get('losses', 0)}` · "
-            f"WR `{float(stats.get('winrate') or 0) * 100:.1f}%`",
-            f"Sum R: `{stats.get('sum_r', 0):+.2f}` · Avg R: `{stats.get('avg_r', 0):+.2f}`",
-            f"Avg MFE: `{stats.get('avg_mfe_r', 0):+.2f}R` · "
-            f"Avg MAE: `{stats.get('avg_mae_r', 0):+.2f}R`",
-            f"Live-stat sum R: `{stats.get('live_sum_r', 0):+.2f}` "
-            f"(closed live-tier: `{stats.get('live_closed', 0)}`)",
-            f"Readiness: {ready.get('message', 'n/a')}",
-        ]
+        opens = paper_journal.list_open()
+        text = paper_text(open_n=len(opens), readiness=ready)
         if opens:
-            lines.append("")
-            lines.append("**Open positions**")
-            for o in opens[:8]:
-                lines.append(
+            extra = ["", "**Open positions**"]
+            for o in opens[:6]:
+                extra.append(
                     f"• `{o.get('symbol')}` {o.get('side')} entry "
                     f"`{o.get('actual_entry_price')}` "
                     f"MFE `{float(o.get('mfe_r') or 0):+.2f}R` "
                     f"MAE `{float(o.get('mae_r') or 0):+.2f}R`"
                 )
-        else:
-            lines.append("_No open paper positions._")
-
-        text = "\n".join(lines)
+            text = text.replace("_Paper only.", "\n".join(extra) + "\n_Paper only.")
         if len(text) > 1900:
             text = text[:1900] + "…"
         await interaction.followup.send(text, ephemeral=True)

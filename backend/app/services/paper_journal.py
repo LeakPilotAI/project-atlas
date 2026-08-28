@@ -48,9 +48,19 @@ class PaperJournal:
                         continue
                     if str(row.get("trade_type") or "PAPER").upper() == "TEST":
                         continue
-                    if row.get("event") == "open":
+                    ev = row.get("event")
+                    if ev == "open":
                         opens[tid] = row
-                    elif row.get("event") == "close":
+                    elif ev == "mark" and tid in opens:
+                        opens[tid]["mfe_r"] = max(float(opens[tid].get("mfe_r") or 0), float(row.get("mfe_r") or 0))
+                        opens[tid]["mae_r"] = max(float(opens[tid].get("mae_r") or 0), float(row.get("mae_r") or 0))
+                        if row.get("mark") is not None:
+                            opens[tid]["mark"] = row.get("mark")
+                        if row.get("mfe_price") is not None:
+                            opens[tid]["mfe_price"] = row.get("mfe_price")
+                        if row.get("mae_price") is not None:
+                            opens[tid]["mae_price"] = row.get("mae_price")
+                    elif ev == "close":
                         closed_ids.add(tid)
             for tid, row in opens.items():
                 if tid not in closed_ids:
@@ -119,6 +129,22 @@ class PaperJournal:
         trade_type: str = "PAPER",
     ) -> str:
         """Entry is ALWAYS actual_entry_price (current mark)."""
+        ttype = str(trade_type or "PAPER").upper()
+        if ttype == "PAPER":
+            for existing_id, existing in self._open.items():
+                if str(existing.get("trade_type") or "PAPER").upper() != "PAPER":
+                    continue
+                if (
+                    str(existing.get("symbol") or "").upper() == symbol.upper()
+                    and str(existing.get("side") or "").upper() == side.upper()
+                ):
+                    log.info(
+                        "duplicate paper open prevented",
+                        trade_id=existing_id,
+                        symbol=symbol,
+                        side=side,
+                    )
+                    return existing_id
         tid = str(uuid.uuid4())[:12]
         actual_entry = float(entry)
         sig_px = float(signal_price) if signal_price is not None else actual_entry
@@ -141,6 +167,7 @@ class PaperJournal:
             "risk_price": risk,
             "position_size": float(risk_usd) / risk if risk > 0 else 0.0,
             "regime": regime,
+            "regime_normalized": str((features or {}).get("regime_normalized") or regime or "UNKNOWN"),
             "strategy": strategy,
             "signal_score": float(signal_score),
             "features": features or {},
@@ -190,6 +217,26 @@ class PaperJournal:
         if adv > float(p.get("mae_r") or 0):
             p["mae_r"] = adv
             p["mae_price"] = mark
+        last = float(p.get("_last_persisted_mfe") or 0), float(p.get("_last_persisted_mae") or 0)
+        if (p["mfe_r"] - last[0]) >= 0.05 or (p["mae_r"] - last[1]) >= 0.05:
+            p["_last_persisted_mfe"] = p["mfe_r"]
+            p["_last_persisted_mae"] = p["mae_r"]
+            ur = fav if fav >= 0 else -adv
+            self._append(
+                JOURNAL_PATH,
+                {
+                    "event": "mark",
+                    "trade_id": trade_id,
+                    "timestamp": _iso(),
+                    "mark": mark,
+                    "mfe_r": round(float(p["mfe_r"]), 4),
+                    "mae_r": round(float(p["mae_r"]), 4),
+                    "mfe_price": p.get("mfe_price"),
+                    "mae_price": p.get("mae_price"),
+                    "unrealized_r": round(ur, 4),
+                    "trade_type": p.get("trade_type", "PAPER"),
+                },
+            )
 
     async def close_trade(
         self,
@@ -202,6 +249,7 @@ class PaperJournal:
     ) -> Dict[str, Any]:
         p = self._open.pop(trade_id, None)
         if not p:
+            existing_close: Optional[Dict[str, Any]] = None
             if JOURNAL_PATH.exists():
                 try:
                     with JOURNAL_PATH.open("r", encoding="utf-8") as f:
@@ -210,11 +258,16 @@ class PaperJournal:
                             if not line:
                                 continue
                             row = json.loads(line)
-                            if row.get("trade_id") == trade_id and row.get("event") == "open":
+                            if row.get("trade_id") != trade_id:
+                                continue
+                            if row.get("event") == "close":
+                                existing_close = row
+                            elif row.get("event") == "open" and p is None:
                                 p = row
-                                break
                 except Exception:
-                    p = None
+                    p = p
+            if existing_close:
+                return existing_close
             if not p:
                 return {}
         entry = float(p["actual_entry_price"])
@@ -238,8 +291,10 @@ class PaperJournal:
         except Exception:
             t0 = _now()
         hold_s = (_now() - t0).total_seconds()
+        mfe = float(p.get("mfe_r") or 0)
+        mae = float(p.get("mae_r") or 0)
         close_row = {
-            **{k: v for k, v in p.items() if k != "event"},
+            **{k: v for k, v in p.items() if k != "event" and not str(k).startswith("_")},
             "event": "close",
             "status": "closed",
             "exit_timestamp": _iso(),
@@ -249,10 +304,18 @@ class PaperJournal:
             "R_multiple": round(float(pnl_r), 4),
             "gross_pnl_r": round(float(pnl_r), 4),
             "net_pnl_r": round(net_r, 4),
-            "mfe_r": round(float(p.get("mfe_r") or 0), 4),
-            "mae_r": round(float(p.get("mae_r") or 0), 4),
+            "mfe_r": round(mfe, 4),
+            "mae_r": round(mae, 4),
             "holding_time_sec": int(hold_s),
+            "duration_sec": int(hold_s),
             "win": bool(pnl_r > 0),
+            "reached_0_5r": bool(mfe + 1e-12 >= 0.5),
+            "reached_1r": bool(mfe + 1e-12 >= 1.0),
+            "reached_1_5r": bool(mfe + 1e-12 >= 1.5),
+            "reached_1_8r": bool(mfe + 1e-12 >= 1.8),
+            "reached_2r": bool(mfe + 1e-12 >= 2.0),
+            "excursion_efficiency": round((float(pnl_r) / mfe), 4) if mfe > 1e-12 else 0.0,
+            "mae_before_profit": round(mae, 4),
         }
         self._append(JOURNAL_PATH, close_row)
         log.info(
