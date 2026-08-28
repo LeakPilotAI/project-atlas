@@ -109,7 +109,7 @@ def test_open_mfe_mae_tp_sl_expire_and_restart(tmp_path, monkeypatch) -> None:
         # SOL short was closed, so a new open is a new id
         assert dup != tid_ex
 
-    asyncio.get_event_loop().run_until_complete(_run())
+    asyncio.run(_run())
 
 
 def test_duplicate_open_same_symbol_side(tmp_path, monkeypatch) -> None:
@@ -123,7 +123,7 @@ def test_duplicate_open_same_symbol_side(tmp_path, monkeypatch) -> None:
         assert a == b
         assert j._open[a]["actual_entry_price"] == 1.0
 
-    asyncio.get_event_loop().run_until_complete(_run())
+    asyncio.run(_run())
 
 
 def test_test_trades_excluded_from_performance(tmp_path, monkeypatch) -> None:
@@ -149,7 +149,7 @@ def test_test_trades_excluded_from_performance(tmp_path, monkeypatch) -> None:
         stats = await j.stats()
         assert stats["closed"] == 0
 
-    asyncio.get_event_loop().run_until_complete(_run())
+    asyncio.run(_run())
 
 
 def test_expectancy_drawdown_side_regime(tmp_path, monkeypatch) -> None:
@@ -196,7 +196,7 @@ def test_expectancy_drawdown_side_regime(tmp_path, monkeypatch) -> None:
         assert perf["by_side"]["SHORT"]["n"] == 1
         assert "TREND_DOWN" in perf["by_regime"] or "RANGE" in perf["by_regime"]
 
-    asyncio.get_event_loop().run_until_complete(_run())
+    asyncio.run(_run())
 
 
 def test_shadow_resolution_fields(tmp_path, monkeypatch) -> None:

@@ -29,7 +29,7 @@ def shadow(tmp_path, monkeypatch):
 
 
 def test_candidate_creation(shadow):
-    cid = asyncio.get_event_loop().run_until_complete(
+    cid = asyncio.run(
         _rec(shadow, score=70, required=72, qualified=False, gates=["score_threshold"])
     )
     assert cid is not None
