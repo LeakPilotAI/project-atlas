@@ -1,7 +1,7 @@
-"""ATLAS Investment Intelligence Engine — Phase 1 foundation only.
+"""ATLAS Investment Intelligence Engine — Phase 1–2 foundation.
 
 Completely independent from the Hyperliquid trading / paper engine.
-Does not start scanners, does not score assets, does not allocate capital.
+Phase 2: data ingest only. No scoring, alerts, or allocation.
 """
 
 from app.investment.enums import (
@@ -13,6 +13,7 @@ from app.investment.enums import (
     RiskTolerance,
     ThesisState,
 )
+from app.investment.freshness import FreshnessRules, classify_freshness
 from app.investment.models import (
     AllocationPlan,
     AllocationTier,
@@ -25,7 +26,11 @@ from app.investment.models import (
 )
 from app.investment.providers import NullProvider
 from app.investment.safety import SAFETY_RULES
+from app.investment.snapshot import InvestmentSnapshot
 from app.investment.storage import DATA_DIR, LEDGER_PATH
+from app.investment.universe import InvestmentUniverse, load_universe
+from app.investment.yahoo_fundamentals import YahooFundamentalProvider, YahooValuationProvider
+from app.investment.yahoo_price import YahooPriceProvider
 
 __all__ = [
     "AssetType",
@@ -35,11 +40,14 @@ __all__ = [
     "InvestmentHorizon",
     "RiskTolerance",
     "ThesisState",
+    "FreshnessRules",
+    "classify_freshness",
     "AllocationPlan",
     "AllocationTier",
     "HoldingInput",
     "InvestmentAsset",
     "InvestmentOpportunity",
+    "InvestmentSnapshot",
     "MeasuredValue",
     "PaperInvestmentAccount",
     "PortfolioInput",
@@ -47,4 +55,9 @@ __all__ = [
     "SAFETY_RULES",
     "DATA_DIR",
     "LEDGER_PATH",
+    "InvestmentUniverse",
+    "load_universe",
+    "YahooPriceProvider",
+    "YahooFundamentalProvider",
+    "YahooValuationProvider",
 ]

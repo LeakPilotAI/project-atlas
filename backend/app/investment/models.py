@@ -23,23 +23,43 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _iso(dt: Optional[datetime]) -> Optional[str]:
+    return dt.isoformat() if dt is not None else None
+
+
 @dataclass
 class MeasuredValue:
-    """One metric with provenance. Missing data is UNKNOWN, never guessed."""
+    """One metric with provenance. Missing data is MISSING, never guessed.
+
+    Provenance (required on important points):
+      source, retrieved_at, effective_timestamp, quality
+    `timestamp` is kept as an alias of effective_timestamp (Phase 1).
+    """
 
     value: Any = None
     source: str = "none"
     timestamp: Optional[datetime] = None
+    retrieved_at: Optional[datetime] = None
+    effective_timestamp: Optional[datetime] = None
     quality: DataQuality = DataQuality.UNKNOWN
     availability: bool = False
     notes: str = ""
 
+    def __post_init__(self) -> None:
+        if self.effective_timestamp is None and self.timestamp is not None:
+            self.effective_timestamp = self.timestamp
+        elif self.timestamp is None and self.effective_timestamp is not None:
+            self.timestamp = self.effective_timestamp
+
     @classmethod
     def unknown(cls, source: str = "none", notes: str = "not provided") -> "MeasuredValue":
+        fetched = _now()
         return cls(
             value=None,
             source=source,
             timestamp=None,
+            retrieved_at=fetched,
+            effective_timestamp=None,
             quality=DataQuality.MISSING,
             availability=False,
             notes=notes,
@@ -51,21 +71,41 @@ class MeasuredValue:
         value: Any,
         *,
         source: str,
-        timestamp: Optional[datetime],
+        timestamp: Optional[datetime] = None,
         quality: DataQuality = DataQuality.FRESH,
+        retrieved_at: Optional[datetime] = None,
+        effective_timestamp: Optional[datetime] = None,
+        notes: str = "",
     ) -> "MeasuredValue":
         if value is None:
-            return cls.unknown(source=source, notes="null value")
+            return cls.unknown(source=source, notes=notes or "null value")
+        fetched = retrieved_at or _now()
+        as_of = effective_timestamp or timestamp or fetched
         return cls(
             value=value,
             source=source,
-            timestamp=timestamp or _now(),
+            timestamp=as_of,
+            retrieved_at=fetched,
+            effective_timestamp=as_of,
             quality=quality,
             availability=True,
+            notes=notes,
         )
 
     def is_usable(self) -> bool:
         return self.availability and self.quality in (DataQuality.FRESH, DataQuality.STALE) and self.value is not None
+
+    def as_dict(self) -> Dict[str, Any]:
+        q = self.quality.value if isinstance(self.quality, DataQuality) else self.quality
+        return {
+            "value": self.value,
+            "source": self.source,
+            "retrieved_at": _iso(self.retrieved_at),
+            "effective_timestamp": _iso(self.effective_timestamp or self.timestamp),
+            "quality": q,
+            "availability": self.availability,
+            "notes": self.notes,
+        }
 
 
 @dataclass
@@ -83,9 +123,25 @@ class InvestmentAsset:
     market_cap: MeasuredValue = field(default_factory=MeasuredValue.unknown)
     liquidity: MeasuredValue = field(default_factory=MeasuredValue.unknown)
     data_timestamp: Optional[datetime] = None
+    active: bool = True
 
     def __post_init__(self) -> None:
         self.symbol = str(self.symbol or "").upper().strip()
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "symbol": self.symbol,
+            "asset_type": self.asset_type.value,
+            "name": self.name,
+            "sector": self.sector,
+            "industry": self.industry,
+            "exchange": self.exchange,
+            "currency": self.currency,
+            "active": self.active,
+            "price": self.price.as_dict(),
+            "market_cap": self.market_cap.as_dict(),
+            "data_timestamp": _iso(self.data_timestamp),
+        }
 
 
 @dataclass

@@ -64,6 +64,11 @@ They do **not** share paper PnL, journals, gates, or position sizing.
 - `PaperInvestmentAccount.execute_broker_order` always raises
 - Engine crash must not stop the trading API (not started in `main.py` yet)
 
-## Phase 2 (not this commit)
+## Phase 2 (this layer)
 
-Universe ingest, real price provider, quality-dip **read-only** adapter, portfolio file ingest, still **no** scoring algorithm.
+Universe ingest, Yahoo price / fundamental / valuation adapters behind the
+provider interfaces, isolated historical storage, freshness, validation,
+snapshots, quality report. **Still no scoring algorithm.**
+
+See `docs/INVESTMENT_DATA.md`.
+

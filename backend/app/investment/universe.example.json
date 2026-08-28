@@ -1,0 +1,105 @@
+{
+  "comment": "Copy to data/investment/universe.json and edit. The engine has no baked-in ticker list.",
+  "assets": [
+    {
+      "symbol": "SPY",
+      "name": "SPDR S&P 500 ETF Trust",
+      "asset_type": "ETF",
+      "exchange": "ARCA",
+      "currency": "USD",
+      "sector": "Broad Market",
+      "industry": "Large Cap Blend",
+      "active": true
+    },
+    {
+      "symbol": "QQQ",
+      "name": "Invesco QQQ Trust",
+      "asset_type": "ETF",
+      "exchange": "NASDAQ",
+      "currency": "USD",
+      "sector": "Broad Market",
+      "industry": "Large Cap Growth",
+      "active": true
+    },
+    {
+      "symbol": "IWM",
+      "name": "iShares Russell 2000 ETF",
+      "asset_type": "ETF",
+      "exchange": "ARCA",
+      "currency": "USD",
+      "sector": "Broad Market",
+      "industry": "Small Cap Blend",
+      "active": true
+    },
+    {
+      "symbol": "VTI",
+      "name": "Vanguard Total Stock Market ETF",
+      "asset_type": "ETF",
+      "exchange": "ARCA",
+      "currency": "USD",
+      "sector": "Broad Market",
+      "industry": "Total Market",
+      "active": true
+    },
+    {
+      "symbol": "XLK",
+      "name": "Technology Select Sector SPDR Fund",
+      "asset_type": "SECTOR_ETF",
+      "exchange": "ARCA",
+      "currency": "USD",
+      "sector": "Technology",
+      "industry": "Sector ETF",
+      "active": true
+    },
+    {
+      "symbol": "XLV",
+      "name": "Health Care Select Sector SPDR Fund",
+      "asset_type": "SECTOR_ETF",
+      "exchange": "ARCA",
+      "currency": "USD",
+      "sector": "Health Care",
+      "industry": "Sector ETF",
+      "active": true
+    },
+    {
+      "symbol": "^GSPC",
+      "name": "S&P 500 Index",
+      "asset_type": "INDEX",
+      "exchange": "INDEX",
+      "currency": "USD",
+      "sector": "Broad Market",
+      "industry": "Large Cap Index",
+      "active": true
+    },
+    {
+      "symbol": "JNJ",
+      "name": "Johnson & Johnson",
+      "asset_type": "STOCK",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "sector": "Health Care",
+      "industry": "Pharmaceuticals",
+      "active": true
+    },
+    {
+      "symbol": "CAT",
+      "name": "Caterpillar Inc.",
+      "asset_type": "STOCK",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "sector": "Industrials",
+      "industry": "Farm & Heavy Construction Machinery",
+      "active": true
+    },
+    {
+      "symbol": "BRK-B",
+      "name": "Berkshire Hathaway Inc. Class B",
+      "asset_type": "STOCK",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "sector": "Financials",
+      "industry": "Diversified Financial Services",
+      "active": true
+    }
+  ]
+}
