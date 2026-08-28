@@ -46,6 +46,8 @@ class PaperJournal:
                     tid = row.get("trade_id")
                     if not tid:
                         continue
+                    if str(row.get("trade_type") or "PAPER").upper() == "TEST":
+                        continue
                     if row.get("event") == "open":
                         opens[tid] = row
                     elif row.get("event") == "close":
@@ -114,15 +116,18 @@ class PaperJournal:
         counts_for_live: bool = True,
         fees_bps: float = 2.0,
         slippage_bps: float = 1.0,
+        trade_type: str = "PAPER",
     ) -> str:
         """Entry is ALWAYS actual_entry_price (current mark)."""
         tid = str(uuid.uuid4())[:12]
         actual_entry = float(entry)
         sig_px = float(signal_price) if signal_price is not None else actual_entry
         risk = abs(actual_entry - float(stop)) or 1e-12
+        ttype = str(trade_type or "PAPER").upper()
         row = {
             "event": "open",
             "trade_id": tid,
+            "trade_type": ttype,
             "symbol": symbol.upper(),
             "side": side.upper(),
             "signal_timestamp": signal_timestamp or _iso(),
@@ -142,7 +147,7 @@ class PaperJournal:
             "notes": notes,
             "source": source,
             "tier": tier,
-            "counts_for_live": bool(counts_for_live),
+            "counts_for_live": bool(counts_for_live) and ttype == "PAPER",
             "fees_bps": fees_bps,
             "slippage_bps": slippage_bps,
             "mfe_r": 0.0,
@@ -157,6 +162,7 @@ class PaperJournal:
         log.info(
             "paper open",
             trade_id=tid,
+            trade_type=ttype,
             symbol=symbol,
             side=side,
             entry=actual_entry,
@@ -196,7 +202,21 @@ class PaperJournal:
     ) -> Dict[str, Any]:
         p = self._open.pop(trade_id, None)
         if not p:
-            return {}
+            if JOURNAL_PATH.exists():
+                try:
+                    with JOURNAL_PATH.open("r", encoding="utf-8") as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line:
+                                continue
+                            row = json.loads(line)
+                            if row.get("trade_id") == trade_id and row.get("event") == "open":
+                                p = row
+                                break
+                except Exception:
+                    p = None
+            if not p:
+                return {}
         entry = float(p["actual_entry_price"])
         risk = float(p.get("risk_price") or 1e-12)
         side = p["side"]
@@ -238,6 +258,7 @@ class PaperJournal:
         log.info(
             "paper close",
             trade_id=trade_id,
+            trade_type=p.get("trade_type", "PAPER"),
             result=result,
             pnl_r=pnl_r,
             mfe_r=close_row["mfe_r"],
@@ -246,7 +267,7 @@ class PaperJournal:
         return close_row
 
     def list_open(self) -> List[Dict[str, Any]]:
-        return list(self._open.values())
+        return [p for p in self._open.values() if str(p.get("trade_type") or "PAPER").upper() != "TEST"]
 
     async def stats(self) -> Dict[str, Any]:
         wins = losses = 0
@@ -264,6 +285,8 @@ class PaperJournal:
                         continue
                     row = json.loads(line)
                     if row.get("event") != "close":
+                        continue
+                    if str(row.get("trade_type") or "PAPER").upper() == "TEST":
                         continue
                     n_closed += 1
                     r = float(row.get("net_pnl_r") or row.get("R_multiple") or 0)
@@ -284,7 +307,7 @@ class PaperJournal:
         wr = (wins / closed) if closed else 0.0
         live_closed = live_wins + live_losses
         return {
-            "open": len(self._open),
+            "open": len(self.list_open()),
             "closed": closed,
             "wins": wins,
             "losses": losses,

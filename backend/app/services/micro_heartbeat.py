@@ -60,7 +60,6 @@ class MicroHeartbeatService:
         settings = get_settings()
         hours = float(getattr(settings, "micro_heartbeat_hours", 6.0) or 6.0)
         interval = max(3600.0, hours * 3600.0)
-        # First pulse ~10 minutes after start (not 6h)
         await asyncio.sleep(600.0)
         while self._running:
             try:
@@ -94,9 +93,22 @@ class MicroHeartbeatService:
             wins = int(stats.get("wins") or 0)
             losses = int(stats.get("losses") or 0)
             sum_r = float(stats.get("sum_r") or 0)
-            wr = float(stats.get("win_rate_pct") or 0)
+            wr = float(stats.get("winrate") or 0) * 100.0
         except Exception as e:
             log.warning("heartbeat paper stats failed", error=str(e))
+
+        why_line = ""
+        warn_line = ""
+        try:
+            from app.services.paper_pipeline import paper_pipeline
+
+            why = paper_pipeline.why_no_trade()
+            why_line = f"WHY NO TRADE? {why.get('headline', '')}\n"
+            warns = paper_pipeline.stuck_warnings()
+            if warns:
+                warn_line = "⚠ " + warns[0] + "\n"
+        except Exception:
+            pass
 
         weekend = datetime.now(timezone.utc).weekday() >= 5
         focus = "majors+liquid" if weekend else "full liquid set"
@@ -107,12 +119,13 @@ class MicroHeartbeatService:
             f"• Scans (session): **{self.scans}**\n"
             f"• Triggers (session): **{self.triggers}**\n"
             f"• Paper open: **{open_n}** · "
-            f"all-time {wins}W/{losses}L (WR {wr}%) · "
+            f"all-time {wins}W/{losses}L (WR {wr:.1f}%) · "
             f"sum R **{sum_r:+.2f}**\n"
+            f"{why_line}"
+            f"{warn_line}"
             f"_Quiet = strict filters. Paper only · no live execution._"
         )
 
-        # Always log so you see activity even if DM fails
         log.info(
             "Heartbeat pulse",
             liquid=liquid,
