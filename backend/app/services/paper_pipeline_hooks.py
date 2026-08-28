@@ -7,14 +7,16 @@ from datetime import datetime, timezone
 
 def apply() -> None:
     from app.services.paper_pipeline import paper_pipeline
+    from app.services.paper_try_symbol import instrumented_try_symbol
     from app.services.perp_micro_coach import PerpMicroCoach
+    from app.services.shadow_research import ShadowResearch
 
     if getattr(PerpMicroCoach, "_atlas_pipeline_hooked", False):
         return
 
     orig_cycle = PerpMicroCoach._cycle
-    orig_try = PerpMicroCoach._try_symbol
     orig_fetch = PerpMicroCoach._fetch_tickers
+    orig_research = ShadowResearch.research_summary_text
 
     async def _fetch(self):
         data = await orig_fetch(self)
@@ -47,12 +49,20 @@ def apply() -> None:
             paper_pipeline.log_cycle_funnel()
 
     async def _try(self, symbol: str, price: float) -> bool:
-        # Universe → evaluated lives here so _try_symbol can stay a pure gate path.
         paper_pipeline.inc("evaluated")
         paper_pipeline.last_evaluation_at = datetime.now(timezone.utc).isoformat()
-        return await orig_try(self, symbol, price)
+        return await instrumented_try_symbol(self, symbol, price)
+
+    def _research(self, hours: float = 24.0) -> str:
+        head = paper_pipeline.funnel_24h_text()
+        rest = orig_research(self, hours)
+        text = f"{head}\n\n{rest}"
+        if len(text) > 1900:
+            text = text[:1900] + "\u2026"
+        return text
 
     PerpMicroCoach._fetch_tickers = _fetch
     PerpMicroCoach._cycle = _cycle
     PerpMicroCoach._try_symbol = _try
     PerpMicroCoach._atlas_pipeline_hooked = True
+    ShadowResearch.research_summary_text = _research
