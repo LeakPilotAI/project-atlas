@@ -30,6 +30,7 @@ from app.services.robinhood_brief import robinhood_brief_service
 from app.services.command_center import command_center
 from app.services.daily_paper_recap import daily_paper_recap
 from app.services.micro_heartbeat import micro_heartbeat
+from app.api.diagnostics import router as diagnostics_router
 
 try:
     from app.services.accumulation_ladder import accumulation_ladder
@@ -50,6 +51,13 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     log.info("Project Atlas starting", env=settings.app_env)
     log.info("Database URL host check", database_url=settings.database_url_safe)
+
+    try:
+        from app.services.paper_pipeline import paper_pipeline
+
+        log.info("Effective micro config", **paper_pipeline.effective_config())
+    except Exception as e:
+        log.warning("Could not log effective micro config", error=str(e)[:200])
 
     try:
         r = await get_redis_client()
@@ -170,6 +178,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(diagnostics_router)
+
 
 @app.get("/health")
 async def health() -> Dict[str, Any]:
@@ -221,4 +231,4 @@ async def health() -> Dict[str, Any]:
 
 @app.get("/")
 async def root() -> Dict[str, str]:
-    return {"service": "Project Atlas", "docs": "/docs", "health": "/health"}
+    return {"service": "Project Atlas", "docs": "/docs", "health": "/health", "diagnostics": "/diagnostics/paper"}
