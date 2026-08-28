@@ -151,6 +151,7 @@ class HoldingInput:
     average_cost: Optional[float] = None
     current_value: Optional[float] = None
     sector: str = ""
+    portfolio_percent: Optional[float] = None
 
     def __post_init__(self) -> None:
         self.symbol = str(self.symbol or "").upper().strip()
@@ -168,6 +169,10 @@ class PortfolioInput:
     risk_tolerance: RiskTolerance = RiskTolerance.UNKNOWN
     investment_horizon: InvestmentHorizon = InvestmentHorizon.UNKNOWN
     provided: bool = False
+    minimum_cash_reserve: Optional[float] = None
+    maximum_sector_exposure_percent: Optional[float] = None
+    allow_fractional_shares: bool = False
+    benchmark_symbol: str = "SPY"
 
     def is_complete_for_allocation(self) -> bool:
         return (
@@ -177,6 +182,9 @@ class PortfolioInput:
             and self.available_cash is not None
             and self.available_cash >= 0
         )
+
+    def is_complete_for_personalized_plan(self) -> bool:
+        return self.is_complete_for_allocation() and self.minimum_cash_reserve is not None
 
 
 @dataclass
@@ -218,6 +226,8 @@ class AllocationTier:
     price: Optional[float] = None
     dollar_amount: Optional[float] = None
     share_quantity: Optional[float] = None
+    reason: str = ""
+    remaining_cash_after: Optional[float] = None
 
 
 @dataclass
@@ -230,6 +240,19 @@ class AllocationPlan:
     tiers: List[AllocationTier] = field(default_factory=list)
     remaining_buying_power: Optional[float] = None
     blocked_reason: str = ""
+    plan_id: str = ""
+    allocation_version: str = ""
+    version: int = 1
+    status: str = ""
+    starting_buying_power: Optional[float] = None
+    remaining_reserve: Optional[float] = None
+    notes: List[str] = field(default_factory=list)
+    reasoning: List[str] = field(default_factory=list)
+    parent_plan_id: str = ""
+    scoring_version: str = ""
+    evidence_quality: str = ""
+    thesis: str = ""
+    classification: str = ""
 
     def is_actionable(self) -> bool:
         return not self.blocked_reason and self.number_of_tiers > 0

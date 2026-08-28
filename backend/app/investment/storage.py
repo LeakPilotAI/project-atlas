@@ -17,6 +17,10 @@ UNIVERSE_EXAMPLE_PATH = DATA_DIR / "universe.example.json"
 PACKAGE_UNIVERSE_EXAMPLE = PACKAGE_DIR / "universe.example.json"
 HISTORY_DIR = DATA_DIR / "history"
 SNAPSHOTS_PATH = DATA_DIR / "snapshots.jsonl"
+ALERT_STATE_PATH = DATA_DIR / "alert_state.json"
+PLANS_PATH = DATA_DIR / "plans.jsonl"
+PAPER_STATE_PATH = DATA_DIR / "paper_account.json"
+PORTFOLIO_PATH = HOLDINGS_PATH
 
 # Trading engine files — never read/write these from this package.
 TRADING_PAPER_JOURNAL = _BACKEND / "data" / "paper_journal.jsonl"

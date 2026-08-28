@@ -76,7 +76,15 @@ See `docs/INVESTMENT_DATA.md`.
 
 Research/scoring on `InvestmentSnapshot` + OHLCV history: drawdown, valuation
 context, fundamental quality, thesis, risk, evidence, ordinal opportunity
-score, explainable classification. **No alerts, allocation, orders, or ML.**
+score, explainable classification.
 
 See `docs/INVESTMENT_RESEARCH.md`.
+
+## Phase 4 (this layer)
+
+Stateful investment alerts, portfolio-aware accumulation plans, paper
+investment book, investment Discord copy. **No real orders. No ML.**
+Statistics stay out of `/paper` and `/research`.
+
+See `docs/INVESTMENT_ALERTS.md`.
 
