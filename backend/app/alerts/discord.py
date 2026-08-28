@@ -220,7 +220,7 @@ async def paper_cmd(interaction: discord.Interaction) -> None:
 
         text = "\n".join(lines)
         if len(text) > 1900:
-            text = text[:1900] + "…"
+            text = text[:1900] + "\u2026"
         await interaction.followup.send(text, ephemeral=True)
     except Exception as e:
         log.warning("paper_cmd failed", error=str(e), exc_info=True)
@@ -281,8 +281,8 @@ async def help_cmd(interaction: discord.Interaction) -> None:
         "`/unsubscribe` — stop DMs\n"
         "`/status` — bot status\n"
         "`/paper` — real paper journal (MFE/MAE)\n"
-        "`/research` — shadow rejects / funnel (not PnL)\n"
-        "`/diagnostics` — pipeline funnel / why no trade\n"
+        "`/research` — 24h funnel + shadow (not PnL)\n"
+        "`/diagnostics` — 24h funnel / bottleneck / why no trade\n"
         "`/papertest` — isolated TEST open/close (not counted)\n"
         "`/help` — this message\n\n"
         "_Alerts are research only. Manual execution. Not financial advice._",

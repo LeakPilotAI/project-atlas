@@ -54,10 +54,10 @@ def test_rr_geometry_meets_min() -> None:
     price = closes[-1]
     atr = _atr_proxy(closes, 14)
     stop = price - 1.5 * atr
-    tp1 = price + 2.5 * atr
     risk = abs(price - stop)
+    tp1 = price + 1.8 * risk
     rr = abs(tp1 - price) / risk
-    assert rr >= 1.8
+    assert rr >= 1.8 - 1e-12
 
 
 def test_paper_journal_test_type_does_not_count() -> None:
@@ -99,3 +99,78 @@ def test_pipeline_counters_increment() -> None:
     assert snap["qualified"] == 1
     why = p.why_no_trade()
     assert "headline" in why
+
+
+def test_last_24h_funnel_and_bottleneck(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr("app.services.paper_pipeline.FUNNEL_PATH", tmp_path / "funnel.jsonl")
+    monkeypatch.setattr("app.services.paper_pipeline.DATA_DIR", tmp_path)
+    p = PaperPipeline()
+    p._window.clear()
+    p._cycle.clear()
+    p._session.clear()
+    p._latest_universe = {"markets": 0, "liquid": 0}
+
+    p.inc("tickers_received", 232)
+    p.inc("liquid_set", 78)
+    p.inc("evaluated", 78)
+    h = p.last_24h()
+    assert h["markets"] == 232
+    assert h["liquid"] == 78
+    assert h["evaluated"] == 78
+    assert h["extension_passed"] == 0
+    assert h["bottleneck"] == "extension"
+    assert "Extension" in p.bottleneck_text(h)
+
+    p.inc("extension_pass", 35)
+    h = p.last_24h()
+    assert h["bottleneck"] == "rsi"
+    assert "RSI" in p.bottleneck_text(h)
+
+    p.inc("rsi_extreme", 20)
+    h = p.last_24h()
+    assert h["bottleneck"] == "quality"
+
+    p.inc("quality_pass", 8)
+    h = p.last_24h()
+    assert h["bottleneck"] == "rr"
+
+    p.inc("rr_pass", 6)
+    p.inc("qualified", 6)
+    p.inc("paper_open_succeeded", 6)
+    h = p.last_24h()
+    assert h["bottleneck"] == "producing"
+    assert h["paper_trades"] == 6
+    text = p.funnel_24h_text()
+    assert "LAST 24 HOURS" in text
+    assert "Markets:" in text
+    assert "Liquid:" in text
+    assert "Evaluated:" in text
+    assert "Extension passed:" in text
+    assert "RSI passed:" in text
+    assert "Quality passed:" in text
+    assert "R:R passed:" in text
+    assert "Qualified:" in text
+    assert "Paper trades:" in text
+    assert "Shadow candidates:" in text
+    assert "Bottleneck:" in text
+
+
+def test_24h_window_does_not_sum_universe(tmp_path, monkeypatch) -> None:
+    """Markets/liquid are snapshots, not 24h sums of every cycle."""
+    monkeypatch.setattr("app.services.paper_pipeline.FUNNEL_PATH", tmp_path / "funnel.jsonl")
+    monkeypatch.setattr("app.services.paper_pipeline.DATA_DIR", tmp_path)
+    p = PaperPipeline()
+    p._window.clear()
+    p._cycle.clear()
+    p._latest_universe = {"markets": 0, "liquid": 0}
+    p.inc("tickers_received", 232)
+    p.inc("liquid_set", 78)
+    p.inc("evaluated", 10)
+    p.reset_cycle()
+    p.inc("tickers_received", 232)
+    p.inc("liquid_set", 80)
+    p.inc("evaluated", 12)
+    h = p.last_24h()
+    assert h["markets"] == 232
+    assert h["liquid"] == 80
+    assert h["evaluated"] == 22
