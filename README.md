@@ -24,20 +24,8 @@ This is an **alert and analysis system**. It does not auto-trade.
 
 ---
 
-## Brand
-
-| Asset | Path |
-|-------|------|
-| Primary logo | `docs/brand/logo-primary.jpg` |
-| App icon | `docs/brand/logo-icon.jpg` |
-| Favicon | `docs/brand/favicon.jpg` |
-| Splash / social | `docs/brand/splash.jpg` |
-
----
-
 ## Screenshots
 
-> Add real captures to `docs/screenshots/` then uncomment below.
 
 <!--
 ### Dashboard
