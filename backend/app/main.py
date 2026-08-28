@@ -54,7 +54,9 @@ async def lifespan(app: FastAPI):
 
     try:
         from app.services.paper_pipeline import paper_pipeline
+        from app.services.paper_pipeline_hooks import apply as apply_pipeline_hooks
 
+        apply_pipeline_hooks()
         log.info("Effective micro config", **paper_pipeline.effective_config())
     except Exception as e:
         log.warning("Could not log effective micro config", error=str(e)[:200])
