@@ -72,3 +72,11 @@ snapshots, quality report. **Still no scoring algorithm.**
 
 See `docs/INVESTMENT_DATA.md`.
 
+## Phase 3 (this layer)
+
+Research/scoring on `InvestmentSnapshot` + OHLCV history: drawdown, valuation
+context, fundamental quality, thesis, risk, evidence, ordinal opportunity
+score, explainable classification. **No alerts, allocation, orders, or ML.**
+
+See `docs/INVESTMENT_RESEARCH.md`.
+

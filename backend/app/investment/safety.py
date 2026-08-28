@@ -24,9 +24,12 @@ SAFETY_RULES = (
     "No invented fundamentals.",
     "No future information in historical analysis.",
     "No survivorship-biased backtests.",
-    "No ML in Phase 1.",
+    "No ML in Phase 1–3.",
     "No automatic threshold optimization.",
     "No changes to the Hyperliquid trading engine.",
+    "Opportunity scores are ordinal rankings, not probabilities.",
+    "A drawdown alone is never a generational opportunity.",
+    "No investment Discord alerts in Phase 3.",
 )
 
 

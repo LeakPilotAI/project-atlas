@@ -1,4 +1,4 @@
-"""Normalized per-asset investment snapshot. Scoring is Phase 3+."""
+"""Normalized per-asset investment snapshot. Input to Phase 3 research/scoring."""
 
 from __future__ import annotations
 

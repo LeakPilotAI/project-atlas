@@ -200,6 +200,13 @@ class InvestmentOpportunity:
     reasons: List[str] = field(default_factory=list)
     data_sources: List[str] = field(default_factory=list)
     missing_critical: List[str] = field(default_factory=list)
+    scoring_version: str = ""
+    component_scores: Dict[str, Optional[float]] = field(default_factory=dict)
+    why_now: List[str] = field(default_factory=list)
+    supports: List[str] = field(default_factory=list)
+    weakens: List[str] = field(default_factory=list)
+    missing_data: List[str] = field(default_factory=list)
+    invalidation: List[str] = field(default_factory=list)
 
     def as_probability_claim(self) -> str:
         raise RuntimeError("Investment scores are not probabilities. Do not claim chance of profit.")

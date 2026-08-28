@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import re
 from pathlib import Path
 
 import pytest
@@ -153,7 +154,8 @@ def test_trading_and_investment_packages_are_separate() -> None:
     assert "paper_journal" not in inv.__file__
     src = Path(inv.__file__).read_text(encoding="utf-8")
     assert "perp_micro" not in src
-    assert "RSI" not in src
+    assert not re.search(r"\bRSI\b", src)
+    assert "rsi_long" not in src
     assert len(SAFETY_RULES) >= 12
 
 

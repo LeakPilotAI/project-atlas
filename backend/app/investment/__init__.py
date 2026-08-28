@@ -1,7 +1,7 @@
-"""ATLAS Investment Intelligence Engine — Phase 1–2 foundation.
+"""ATLAS Investment Intelligence Engine — Phase 1–3.
 
 Completely independent from the Hyperliquid trading / paper engine.
-Phase 2: data ingest only. No scoring, alerts, or allocation.
+Phase 3: research/scoring on snapshots + history. No alerts, allocation, or orders.
 """
 
 from app.investment.enums import (
@@ -25,6 +25,8 @@ from app.investment.models import (
     PortfolioInput,
 )
 from app.investment.providers import NullProvider
+from app.investment.research import InvestmentResearch, format_research_text
+from app.investment.research_models import SCORING_VERSION, ResearchRecord
 from app.investment.safety import SAFETY_RULES
 from app.investment.snapshot import InvestmentSnapshot
 from app.investment.storage import DATA_DIR, LEDGER_PATH
@@ -52,6 +54,10 @@ __all__ = [
     "PaperInvestmentAccount",
     "PortfolioInput",
     "NullProvider",
+    "InvestmentResearch",
+    "ResearchRecord",
+    "SCORING_VERSION",
+    "format_research_text",
     "SAFETY_RULES",
     "DATA_DIR",
     "LEDGER_PATH",
