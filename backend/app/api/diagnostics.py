@@ -12,17 +12,24 @@ router = APIRouter(prefix="/diagnostics", tags=["diagnostics"])
 
 @router.get("/research")
 async def diagnostics_research() -> Dict[str, Any]:
+    from app.services.funnel_research import funnel_research
     from app.services.paper_pipeline import paper_pipeline
     from app.services.shadow_research import shadow_research
 
+    payload = funnel_research.research_payload()
     shadow = shadow_research.funnel_stats(24.0)
     return {
         "last_24h": paper_pipeline.last_24h(),
-        "bottleneck": paper_pipeline.bottleneck_text(),
+        "bottleneck": payload.get("bottleneck"),
+        "funnel": payload.get("funnel"),
         "funnel_text": paper_pipeline.funnel_24h_text(),
+        "independent_gates": payload.get("independent_gates"),
+        "distributions": payload.get("distributions"),
+        "sensitivity": payload.get("sensitivity"),
         "shadow": shadow,
-        "why_no_trade": paper_pipeline.why_no_trade(),
+        "why_no_trade": payload.get("why_no_paper_trades"),
         "effective_config": paper_pipeline.effective_config(),
+        "research_text": funnel_research.research_summary_text(),
     }
 
 
@@ -35,9 +42,14 @@ async def diagnostics_paper() -> Dict[str, Any]:
 
 @router.get("")
 async def diagnostics_root() -> Dict[str, Any]:
+    from app.services.funnel_research import funnel_research
     from app.services.paper_pipeline import paper_pipeline
 
-    return paper_pipeline.as_json()
+    base = paper_pipeline.as_json()
+    base["why_no_paper_trades"] = funnel_research.why_no_paper_trades()
+    base["independent_gates"] = funnel_research.independent_gates()
+    base["funnel"] = funnel_research.sequential_funnel()
+    return base
 
 
 @router.get("/discord")

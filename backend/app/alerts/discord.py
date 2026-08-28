@@ -220,33 +220,33 @@ async def paper_cmd(interaction: discord.Interaction) -> None:
 
         text = "\n".join(lines)
         if len(text) > 1900:
-            text = text[:1900] + "\u2026"
+            text = text[:1900] + "…"
         await interaction.followup.send(text, ephemeral=True)
     except Exception as e:
         log.warning("paper_cmd failed", error=str(e), exc_info=True)
         await interaction.followup.send(f"Paper stats error: `{e}`", ephemeral=True)
 
 
-@tree.command(name="research", description="Shadow research funnel (not paper PnL)")
+@tree.command(name="research", description="24h funnel, independent gates, distributions (not paper PnL)")
 async def research_cmd(interaction: discord.Interaction) -> None:
     await interaction.response.defer(ephemeral=True)
     try:
-        from app.services.shadow_research import shadow_research
+        from app.services.funnel_research import funnel_research
 
-        text = shadow_research.research_summary_text(24.0)
+        text = funnel_research.research_summary_text()
         await interaction.followup.send(text, ephemeral=True)
     except Exception as e:
         log.warning("research_cmd failed", error=str(e), exc_info=True)
         await interaction.followup.send(f"Research error: `{e}`", ephemeral=True)
 
 
-@tree.command(name="diagnostics", description="Paper pipeline funnel + why no trade")
+@tree.command(name="diagnostics", description="Why no paper trades — bottleneck + funnel")
 async def diagnostics_cmd(interaction: discord.Interaction) -> None:
     await interaction.response.defer(ephemeral=True)
     try:
-        from app.services.paper_pipeline import paper_pipeline
+        from app.services.funnel_research import funnel_research
 
-        text = paper_pipeline.summary_text()
+        text = funnel_research.diagnostics_text()
         await interaction.followup.send(text, ephemeral=True)
     except Exception as e:
         log.warning("diagnostics_cmd failed", error=str(e), exc_info=True)
@@ -281,8 +281,8 @@ async def help_cmd(interaction: discord.Interaction) -> None:
         "`/unsubscribe` — stop DMs\n"
         "`/status` — bot status\n"
         "`/paper` — real paper journal (MFE/MAE)\n"
-        "`/research` — 24h funnel + shadow (not PnL)\n"
-        "`/diagnostics` — 24h funnel / bottleneck / why no trade\n"
+        "`/research` — 24h funnel + independent gates + distributions (not PnL)\n"
+        "`/diagnostics` — WHY NO PAPER TRADES / bottleneck\n"
         "`/papertest` — isolated TEST open/close (not counted)\n"
         "`/help` — this message\n\n"
         "_Alerts are research only. Manual execution. Not financial advice._",

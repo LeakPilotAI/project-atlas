@@ -40,6 +40,97 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
         return False
 
     ext_pct = abs(price - sma20) / sma20 * 100.0
+    atr = _atr_proxy(closes, 14)
+    majors = set(settings.perp_micro_majors_list)
+    tier = _tier(symbol, majors)
+    min_score = _min_score_for_tier(tier)
+    min_rr = float(settings.perp_micro_min_rr)
+    vol = float(self._vol_map.get(symbol) or 0.0)
+    oi = float(self._oi_map.get(symbol) or 0.0)
+
+    side_hyp = "NONE"
+    if rsi <= float(settings.perp_micro_rsi_long):
+        side_hyp = "LONG"
+    elif rsi >= float(settings.perp_micro_rsi_short):
+        side_hyp = "SHORT"
+    elif rsi < 50:
+        side_hyp = "LONG"
+    else:
+        side_hyp = "SHORT"
+
+    q_research, qscore_research, q_reason_research = 0.0, 0.0, ""
+    try:
+        _ok_r, qscore_research, q_reason_research = self._setup_quality(
+            symbol, side_hyp, price, closes, rsi, sma20, ext_pct, hard_gates=False
+        )
+        q_research = qscore_research
+    except TypeError:
+        _ok_r, qscore_research, q_reason_research = self._setup_quality(
+            symbol, side_hyp, price, closes, rsi, sma20, ext_pct
+        )
+        q_research = qscore_research
+    except Exception:
+        qscore_research, q_research = 0.0, 0.0
+
+    if side_hyp == "LONG":
+        stop_r = price - 1.5 * atr
+        risk_r = abs(price - stop_r) or 1e-12
+        tp1_r = price + min_rr * risk_r
+        rr_research = abs(tp1_r - price) / risk_r
+    else:
+        stop_r = price + 1.5 * atr
+        risk_r = abs(price - stop_r) or 1e-12
+        tp1_r = price - min_rr * risk_r
+        rr_research = abs(price - tp1_r) / risk_r
+
+    regime_norm = "UNKNOWN"
+    try:
+        from app.analytics.regime import detect_regime, normalize_regime
+
+        regime_norm = normalize_regime(detect_regime(closes))
+    except Exception:
+        regime_norm = "UNKNOWN"
+
+    try:
+        from app.services.funnel_research import funnel_research
+
+        sequential_guess = "evaluated"
+        if ext_pct < float(settings.perp_micro_min_extension_pct):
+            sequential_guess = "extension"
+        elif side_hyp == "NONE" or (
+            rsi > float(settings.perp_micro_rsi_long)
+            and rsi < float(settings.perp_micro_rsi_short)
+        ):
+            sequential_guess = "rsi"
+        funnel_research.observe(
+            symbol=symbol,
+            price=price,
+            ext_pct=ext_pct,
+            rsi=rsi,
+            quality_score=float(q_research or 0),
+            quality_min=float(min_score),
+            rr=float(rr_research),
+            atr=float(atr),
+            volume=vol,
+            open_interest=oi,
+            regime=regime_norm,
+            side_hyp=side_hyp,
+            sequential_stage=sequential_guess,
+            features={
+                "sma20": sma20,
+                "tier": tier,
+                "quality_reason": q_reason_research,
+            },
+        )
+    except Exception as e:
+        log_msg = str(e)
+        try:
+            from app.services.paper_pipeline import paper_pipeline as _pp
+
+            _pp.mark_error(f"funnel observe: {log_msg[:160]}")
+        except Exception:
+            pass
+
     if ext_pct < float(settings.perp_micro_min_extension_pct):
         paper_pipeline.inc_reject("EXTENSION_TOO_SMALL")
         shadow_research.record_evaluation(
@@ -50,8 +141,19 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             required_score=62.0,
             qualified=False,
             failed_gates=["extension_too_small"],
-            features={"ext_pct": ext_pct, "sma20": sma20, "rsi": rsi},
-            regime=f"rsi={rsi:.1f}",
+            features={
+                "ext_pct": ext_pct,
+                "sma20": sma20,
+                "rsi": rsi,
+                "atr": atr,
+                "vol": vol,
+                "oi": oi,
+                "rr": rr_research,
+                "regime_normalized": regime_norm,
+            },
+            regime=regime_norm,
+            rejection_stage="extension",
+            regime_normalized=regime_norm,
             notes="pre-side filter",
         )
         return False
@@ -72,8 +174,19 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             required_score=float(settings.perp_micro_rsi_long),
             qualified=False,
             failed_gates=["rsi_not_extreme"],
-            features={"rsi": rsi, "ext_pct": ext_pct, "sma20": sma20},
-            regime=f"rsi={rsi:.1f}",
+            features={
+                "rsi": rsi,
+                "ext_pct": ext_pct,
+                "sma20": sma20,
+                "atr": atr,
+                "vol": vol,
+                "oi": oi,
+                "rr": rr_research,
+                "regime_normalized": regime_norm,
+            },
+            regime=regime_norm,
+            rejection_stage="rsi",
+            regime_normalized=regime_norm,
         )
         return False
     paper_pipeline.inc("rsi_extreme")
@@ -137,7 +250,9 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
                 "tier": tier,
                 "reason": reason,
             },
-            regime=f"rsi={rsi:.1f};{tier}",
+            regime=regime_norm,
+            rejection_stage="quality",
+            regime_normalized=regime_norm,
             stop=(price - 1.5 * atr) if side == "LONG" else (price + 1.5 * atr),
             tp1=(price + 1.8 * 1.5 * atr) if side == "LONG" else (price - 1.8 * 1.5 * atr),
             tp2=(price + 3.0 * 1.5 * atr) if side == "LONG" else (price - 3.0 * 1.5 * atr),
@@ -184,8 +299,10 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             required_score=min_score,
             qualified=False,
             failed_gates=["risk_reward"],
-            features={"rsi": rsi, "ext_pct": ext_pct, "rr": rr, "atr": atr, "tier": tier},
-            regime=f"rsi={rsi:.1f};{tier}",
+            features={"rsi": rsi, "ext_pct": ext_pct, "rr": rr, "atr": atr, "tier": tier, "regime_normalized": regime_norm},
+            regime=regime_norm,
+            rejection_stage="rr",
+            regime_normalized=regime_norm,
             stop=stop,
             tp1=tp1,
             tp2=tp2,
@@ -207,8 +324,8 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
         tp1=tp1,
         tp2=tp2,
         risk_usd=float(settings.perp_micro_risk_usd),
-        regime=f"rsi={rsi:.1f};q={qscore:.0f};{tier}",
-        notes=f"ext={ext_pct:.2f}%|{reason}|live={counts_for_live}",
+        regime=regime_norm,
+        notes=f"ext={ext_pct:.2f}%|{reason}|live={counts_for_live}|regime={regime_norm}",
         source="perp_micro",
         strategy="rsi_extension_v1",
         signal_score=qscore,
@@ -219,6 +336,8 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             "atr": atr,
             "vol": self._vol_map.get(symbol),
             "oi": self._oi_map.get(symbol),
+            "rr": rr,
+            "regime_normalized": regime_norm,
         },
         tier=tier,
         counts_for_live=counts_for_live,
@@ -254,8 +373,12 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             "vol": self._vol_map.get(symbol),
             "oi": self._oi_map.get(symbol),
             "tier": tier,
+            "rr": rr,
+            "regime_normalized": regime_norm,
         },
-        regime=f"rsi={rsi:.1f};{tier}",
+        regime=regime_norm,
+        rejection_stage="qualified",
+        regime_normalized=regime_norm,
         stop=stop,
         tp1=tp1,
         tp2=tp2,
@@ -284,11 +407,11 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
         live_tag = "live-stat" if counts_for_live else "experimental"
         dm_ok = await send_discord_alert(
             symbol=symbol,
-            title=f"Paper TRIGGER \u00b7 {symbol} \u00b7 {side}",
+            title=f"Paper TRIGGER · {symbol} · {side}",
             description=(
-                f"**{symbol} \u00b7 {side}** (paper \u00b7 {tier} \u00b7 **{live_tag}**)\n"
-                f"Entry `{price}` \u00b7 Stop `{stop:.6g}` \u00b7 TP1 `{tp1:.6g}`\n"
-                f"RSI `{rsi:.1f}` \u00b7 ext `{ext_pct:.2f}%` \u00b7 R:R `{rr:.1f}` \u00b7 Q `{qscore:.0f}`\n"
+                f"**{symbol} · {side}** (paper · {tier} · **{live_tag}**)\n"
+                f"Entry `{price}` · Stop `{stop:.6g}` · TP1 `{tp1:.6g}`\n"
+                f"RSI `{rsi:.1f}` · ext `{ext_pct:.2f}%` · R:R `{rr:.1f}` · Q `{qscore:.0f}`\n"
                 f"_{reason}_\n_Simulation only. No live execution._"
             ),
             price=price,

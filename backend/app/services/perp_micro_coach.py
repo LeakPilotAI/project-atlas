@@ -407,6 +407,7 @@ class PerpMicroCoach:
         rsi: float,
         sma20: float,
         ext_pct: float,
+        hard_gates: bool = True,
     ) -> Tuple[bool, float, str]:
         settings = get_settings()
         majors = set(settings.perp_micro_majors_list)
@@ -428,7 +429,9 @@ class PerpMicroCoach:
                 score += 10
                 reasons.append("RSI OS")
             else:
-                return False, 0.0, "RSI not low enough"
+                if hard_gates:
+                    return False, 0.0, "RSI not low enough"
+                reasons.append("RSI not OS")
         else:
             if rsi >= 80:
                 score += 18
@@ -437,7 +440,9 @@ class PerpMicroCoach:
                 score += 10
                 reasons.append("RSI OB")
             else:
-                return False, 0.0, "RSI not high enough"
+                if hard_gates:
+                    return False, 0.0, "RSI not high enough"
+                reasons.append("RSI not OB")
 
         if ext_pct >= float(settings.perp_micro_min_extension_pct) + 0.8:
             score += 12
@@ -446,7 +451,9 @@ class PerpMicroCoach:
             score += 6
             reasons.append("ext ok")
         else:
-            return False, 0.0, "extension too small"
+            if hard_gates:
+                return False, 0.0, "extension too small"
+            reasons.append("extension too small")
 
         recent = sum(closes[-5:]) / 5
         prior = sum(closes[-10:-5]) / 5
@@ -492,16 +499,23 @@ class PerpMicroCoach:
             score += 4
             min_score = 72.0
             if vol < 500_000 or oi < 200_000:
-                return False, score, "alt liquidity too low"
+                if hard_gates:
+                    return False, score, "alt liquidity too low"
+                reasons.append("alt liquidity too low")
         elif tier == "meme":
             min_score = 82.0
         else:
             min_score = 85.0
             if vol < 1_000_000:
-                return False, score, "junk / thin tape"
+                if hard_gates:
+                    return False, score, "junk / thin tape"
+                reasons.append("junk / thin tape")
 
         if price > 0 and (atr / price) < 0.0015:
-            return False, score, "ATR too tight / dead"
+            if hard_gates:
+                return False, score, "ATR too tight / dead"
+            reasons.append("ATR too tight / dead")
+            score -= 8
         if price > 0 and (atr / price) > 0.06 and tier != "major":
             score -= 10
             reasons.append("wild ATR")
@@ -554,13 +568,27 @@ class PerpMicroCoach:
             return
 
         evaluated = 0
+        open_syms = {p["symbol"] for p in self._open.values()}
+        now = datetime.now(timezone.utc)
         for sym in self._liquid:
             if len(self._open) >= max_open or self._triggers_today >= max_day:
                 break
-            if sym in {p["symbol"] for p in self._open.values()}:
+            if sym in open_syms:
+                try:
+                    from app.services.paper_pipeline import paper_pipeline
+
+                    paper_pipeline.inc("skip_already_open")
+                except Exception:
+                    pass
                 continue
             cd = self._cooldowns.get(sym)
-            if cd and (datetime.now(timezone.utc) - cd).total_seconds() < 5400:
+            if cd and (now - cd).total_seconds() < 5400:
+                try:
+                    from app.services.paper_pipeline import paper_pipeline
+
+                    paper_pipeline.inc("skip_cooldown")
+                except Exception:
+                    pass
                 continue
             try:
                 evaluated += 1
@@ -585,23 +613,30 @@ class PerpMicroCoach:
 
     async def _try_symbol(self, symbol: str, price: float) -> bool:
         from app.services.paper_journal import paper_journal
+        from app.services.paper_pipeline import paper_pipeline
         from app.services.shadow_research import shadow_research
 
         settings = get_settings()
         if price <= 0:
+            paper_pipeline.inc_reject("NO_PRICE")
             return False
         closes = await self._fetch_closes(symbol, 48)
         if len(closes) < 25:
+            paper_pipeline.inc("candle_fail")
             return False
         closes[-1] = price
+        paper_pipeline.inc("candle_success")
+        paper_pipeline.last_candle_ok_at = datetime.now(timezone.utc).isoformat()
 
         rsi = _rsi(closes, 14)
         sma20 = _sma(closes, 20)
         if rsi is None or sma20 is None or sma20 <= 0:
+            paper_pipeline.inc("candle_fail")
             return False
 
         ext_pct = abs(price - sma20) / sma20 * 100.0
         if ext_pct < float(settings.perp_micro_min_extension_pct):
+            paper_pipeline.inc_reject("EXTENSION_TOO_SMALL")
             shadow_research.record_evaluation(
                 symbol=symbol,
                 side=None,
@@ -615,6 +650,7 @@ class PerpMicroCoach:
                 notes="pre-side filter",
             )
             return False
+        paper_pipeline.inc("extension_pass")
 
         side: Optional[str] = None
         if rsi <= float(settings.perp_micro_rsi_long):
@@ -622,6 +658,7 @@ class PerpMicroCoach:
         elif rsi >= float(settings.perp_micro_rsi_short):
             side = "SHORT"
         if side is None:
+            paper_pipeline.inc_reject("RSI_NOT_EXTREME")
             shadow_research.record_evaluation(
                 symbol=symbol,
                 side=None,
@@ -634,6 +671,8 @@ class PerpMicroCoach:
                 regime=f"rsi={rsi:.1f}",
             )
             return False
+        paper_pipeline.inc("rsi_extreme")
+        paper_pipeline.inc("long_candidates" if side == "LONG" else "short_candidates")
 
         ok, qscore, reason = self._setup_quality(
             symbol, side, price, closes, rsi, sma20, ext_pct
@@ -642,23 +681,28 @@ class PerpMicroCoach:
         tier = _tier(symbol, majors)
         min_score = _min_score_for_tier(tier)
         atr = _atr_proxy(closes, 14)
+        paper_pipeline.inc("quality_evaluated")
 
         if not ok:
             failed: List[str] = []
             if qscore < min_score:
                 failed.append("score_threshold")
+                paper_pipeline.inc("rejected_score")
             if "RSI" in reason:
                 failed.append("rsi_gate")
             if "extension" in reason.lower() or "ext" in reason.lower():
                 failed.append("extension")
             if any(x in reason.lower() for x in ("liquidity", "thin", "junk")):
                 failed.append("liquidity")
+                paper_pipeline.inc("rejected_liquidity")
             if "ATR" in reason or "atr" in reason:
                 failed.append("risk_atr")
+                paper_pipeline.inc("rejected_atr")
             if "structure" in reason.lower():
                 failed.append("structure")
             if not failed:
                 failed.append("quality")
+            paper_pipeline.inc_reject(failed[0].upper() if failed else "QUALITY")
 
             await paper_journal.log_candidate(
                 symbol=symbol,
@@ -691,26 +735,32 @@ class PerpMicroCoach:
                 },
                 regime=f"rsi={rsi:.1f};{tier}",
                 stop=(price - 1.5 * atr) if side == "LONG" else (price + 1.5 * atr),
-                tp1=(price + 2.5 * atr) if side == "LONG" else (price - 2.5 * atr),
-                tp2=(price + 4.0 * atr) if side == "LONG" else (price - 4.0 * atr),
+                tp1=(price + 1.8 * 1.5 * atr) if side == "LONG" else (price - 1.8 * 1.5 * atr),
+                tp2=(price + 3.0 * 1.5 * atr) if side == "LONG" else (price - 3.0 * 1.5 * atr),
                 notes=reason,
             )
             return False
+        paper_pipeline.inc("quality_pass")
 
+        min_rr = float(settings.perp_micro_min_rr)
         if side == "LONG":
             stop = price - 1.5 * atr
-            tp1 = price + 2.5 * atr
-            tp2 = price + 4.0 * atr
+            risk = abs(price - stop)
+            tp1 = price + min_rr * risk
+            tp2 = price + (min_rr + 1.2) * risk
         else:
             stop = price + 1.5 * atr
-            tp1 = price - 2.5 * atr
-            tp2 = price - 4.0 * atr
+            risk = abs(price - stop)
+            tp1 = price - min_rr * risk
+            tp2 = price - (min_rr + 1.2) * risk
 
-        risk = abs(price - stop)
         if risk <= 0:
+            paper_pipeline.inc_reject("ZERO_RISK")
             return False
         rr = abs(tp1 - price) / risk
-        if rr < float(settings.perp_micro_min_rr):
+        if rr < min_rr:
+            paper_pipeline.inc("rejected_rr")
+            paper_pipeline.inc_reject("RISK_REWARD")
             await paper_journal.log_candidate(
                 symbol=symbol,
                 side=side,
@@ -744,6 +794,10 @@ class PerpMicroCoach:
                 notes=f"R:R {rr:.2f}",
             )
             return False
+        paper_pipeline.inc("rr_pass")
+        paper_pipeline.inc("qualified")
+        paper_pipeline.last_qualified_at = datetime.now(timezone.utc).isoformat()
+        paper_pipeline.inc("paper_open_attempted")
 
         counts_for_live = tier in ("major", "alt")
 
@@ -772,6 +826,11 @@ class PerpMicroCoach:
             tier=tier,
             counts_for_live=counts_for_live,
         )
+        if not tid:
+            paper_pipeline.inc("paper_open_failed")
+            return False
+        paper_pipeline.inc("paper_open_succeeded")
+        paper_pipeline.last_paper_open_at = datetime.now(timezone.utc).isoformat()
         await paper_journal.log_candidate(
             symbol=symbol,
             side=side,
@@ -826,8 +885,9 @@ class PerpMicroCoach:
         from app.alerts.discord import is_discord_ready, send_discord_alert
 
         if is_discord_ready():
+            paper_pipeline.inc("discord_trigger_attempted")
             live_tag = "live-stat" if counts_for_live else "experimental"
-            await send_discord_alert(
+            dm_ok = await send_discord_alert(
                 symbol=symbol,
                 title=f"Paper TRIGGER · {symbol} · {side}",
                 description=(
@@ -842,6 +902,9 @@ class PerpMicroCoach:
                 confidence=min(90, int(50 + qscore / 3)),
                 risk=45 if tier == "major" else (50 if tier == "alt" else 60),
             )
+            if dm_ok:
+                paper_pipeline.inc("discord_trigger_delivered")
+                paper_pipeline.last_discord_alert_at = datetime.now(timezone.utc).isoformat()
         log.info(
             "Paper TRIGGER",
             symbol=symbol,

@@ -165,6 +165,13 @@ class PaperPipeline:
         qualified = int(summed.get("qualified", 0))
         paper = int(summed.get("paper_open_succeeded", 0))
         shadow = int(summed.get("shadow_candidates_recorded", 0))
+        candle_success = int(summed.get("candle_success", 0))
+        candle_fail = int(summed.get("candle_fail", 0))
+        extension_evaluated = int(summed.get("extension_evaluated", 0)) or candle_success
+        rsi_evaluated = int(summed.get("rsi_evaluated", 0))
+        rr_evaluated = int(summed.get("rr_evaluated", 0))
+        paper_closed = int(summed.get("paper_closed", 0))
+        shadow_open = int(summed.get("shadow_open", 0))
         return {
             "hours": WINDOW_HOURS,
             "markets": markets,
@@ -177,9 +184,12 @@ class PaperPipeline:
             "qualified": qualified,
             "paper_trades": paper,
             "shadow_candidates": shadow,
-            "candle_success": int(summed.get("candle_success", 0)),
-            "candle_fail": int(summed.get("candle_fail", 0)),
+            "candle_success": candle_success,
+            "candle_fail": candle_fail,
+            "extension_evaluated": extension_evaluated,
+            "rsi_evaluated": rsi_evaluated,
             "quality_evaluated": int(summed.get("quality_evaluated", 0)),
+            "rr_evaluated": rr_evaluated,
             "rejected_score": int(summed.get("rejected_score", 0)),
             "rejected_rr": int(summed.get("rejected_rr", 0)),
             "rejected_atr": int(summed.get("rejected_atr", 0)),
@@ -187,12 +197,29 @@ class PaperPipeline:
             "rsi_not_extreme": int(summed.get("reject_rsi_not_extreme", 0)),
             "extension_too_small": int(summed.get("reject_extension_too_small", 0)),
             "shadow_evals": int(summed.get("shadow_evaluation_attempts", 0)),
+            "shadow_open": shadow_open,
             "paper_open_attempted": int(summed.get("paper_open_attempted", 0)),
             "paper_open_failed": int(summed.get("paper_open_failed", 0)),
+            "paper_closed": paper_closed,
+            "independent_extension_pass": int(summed.get("independent_extension_pass", 0)),
+            "independent_rsi_pass": int(summed.get("independent_rsi_pass", 0)),
+            "independent_rsi_long": int(summed.get("independent_rsi_long", 0)),
+            "independent_rsi_short": int(summed.get("independent_rsi_short", 0)),
+            "independent_quality_pass": int(summed.get("independent_quality_pass", 0)),
+            "independent_rr_pass": int(summed.get("independent_rr_pass", 0)),
             "cycles": len(self._window) + (1 if self._cycle else 0),
             "bottleneck": self._bottleneck_code(
                 evaluated, extension, rsi, quality, rr, qualified, paper
             ),
+            "pct": {
+                "liquid_of_markets": round(100.0 * liquid / markets, 1) if markets else 0.0,
+                "evaluated_of_liquid": round(100.0 * evaluated / liquid, 1) if liquid else 0.0,
+                "extension_of_evaluated": round(100.0 * extension / (extension_evaluated or evaluated), 1) if (extension_evaluated or evaluated) else 0.0,
+                "rsi_of_extension": round(100.0 * rsi / extension, 1) if extension else 0.0,
+                "quality_of_rsi": round(100.0 * quality / rsi, 1) if rsi else 0.0,
+                "rr_of_quality": round(100.0 * rr / quality, 1) if quality else 0.0,
+                "qualified_of_rr": round(100.0 * qualified / rr, 1) if rr else 0.0,
+            },
         }
 
     def _bottleneck_code(
@@ -229,17 +256,17 @@ class PaperPipeline:
         if code == "evaluated":
             return "No symbols evaluated. Data, liquid set, or gates."
         if code == "extension":
-            return f"Extension is the bottleneck. {e} evaluated \u2192 {x} extension."
+            return f"Extension is the bottleneck. {e} evaluated → {x} extension."
         if code == "rsi":
-            return f"RSI is the bottleneck. {x} extension \u2192 {r} RSI."
+            return f"RSI is the bottleneck. {x} extension → {r} RSI."
         if code == "quality":
-            return f"Quality scoring is the bottleneck. {r} RSI \u2192 {q} quality."
+            return f"Quality scoring is the bottleneck. {r} RSI → {q} quality."
         if code == "rr":
-            return f"R:R is the bottleneck. {q} quality \u2192 {rr} R:R."
+            return f"R:R is the bottleneck. {q} quality → {rr} R:R."
         if code == "qualified":
-            return f"Setups stall after R:R. {rr} R:R \u2192 {qd} qualified."
+            return f"Setups stall after R:R. {rr} R:R → {qd} qualified."
         if code == "paper_open":
-            return f"Qualified but paper open failed. {qd} qualified \u2192 {p} paper."
+            return f"Qualified but paper open failed. {qd} qualified → {p} paper."
         return f"Pipeline is producing paper trades. {p} in the last 24h."
 
     def log_cycle_funnel(self) -> None:
@@ -333,7 +360,7 @@ class PaperPipeline:
         if data_ok and (eval_age is None or eval_age > 30 * 60) and self.cycle_count >= 3:
             warnings.append("Market data is healthy but no evaluations in 30+ minutes.")
         if data_ok and int(s.get("shadow_evaluation_attempts", 0)) == 0 and self.cycle_count >= 3:
-            warnings.append("Zero shadow evaluations this session \u2014 research hook may be dead.")
+            warnings.append("Zero shadow evaluations this session — research hook may be dead.")
         if data_ok and int(h.get("quality_evaluated", 0) or s.get("quality_evaluated", 0)) == 0 and self.cycle_count >= 20:
             warnings.append("No candidates reached quality evaluation. Possible RSI/extension bottleneck.")
         if int(s.get("paper_open_attempted", 0)) > 0 and int(s.get("paper_open_succeeded", 0)) == 0:
@@ -364,9 +391,10 @@ class PaperPipeline:
 
     def funnel_24h_text(self) -> str:
         h = self.last_24h()
+        p = h.get("pct") or {}
 
-        def row(label: str, value: Any, width: int = 20) -> str:
-            return f"{label:<{width}}{value}"
+        def row(label: str, value: Any, extra: str = "", width: int = 20) -> str:
+            return f"{label:<{width}}{value}{extra}"
 
         lines = [
             "**LAST 24 HOURS**",
@@ -375,10 +403,10 @@ class PaperPipeline:
             row("Liquid:", h["liquid"]),
             row("Evaluated:", h["evaluated"]),
             "",
-            row("Extension passed:", h["extension_passed"]),
-            row("RSI passed:", h["rsi_passed"]),
-            row("Quality passed:", h["quality_passed"]),
-            row("R:R passed:", h["rr_passed"]),
+            row("Extension passed:", h["extension_passed"], f"  ({p.get('extension_of_evaluated', 0)}%)"),
+            row("RSI passed:", h["rsi_passed"], f"  ({p.get('rsi_of_extension', 0)}%)"),
+            row("Quality passed:", h["quality_passed"], f"  ({p.get('quality_of_rsi', 0)}%)"),
+            row("R:R passed:", h["rr_passed"], f"  ({p.get('rr_of_quality', 0)}%)"),
             row("Qualified:", h["qualified"]),
             "",
             row("Paper trades:", h["paper_trades"]),
@@ -439,13 +467,19 @@ class PaperPipeline:
         }
 
     def summary_text(self) -> str:
+        try:
+            from app.services.funnel_research import funnel_research
+
+            return funnel_research.diagnostics_text()
+        except Exception:
+            pass
         j = self.as_json()
         why = j["why_no_trade"]
         lines = [
             "**ATLAS DIAGNOSTICS**",
             f"Data: `{j['hyperliquid_data']}`",
             f"Last scan: `{j['last_cycle_at'] or 'n/a'}`",
-            f"Discord: `{'READY' if j['discord_ready'] else 'NOT READY'}` \u00b7 subs `{j['discord_subscribers']}`",
+            f"Discord: `{'READY' if j['discord_ready'] else 'NOT READY'}` · subs `{j['discord_subscribers']}`",
             f"Last error: `{j['last_error'] or 'NONE'}`",
             "",
             self.funnel_24h_text(),
@@ -454,22 +488,22 @@ class PaperPipeline:
         ]
         sess = why["session"]
         lines.append(
-            f"24h rejects \u2014 RSI `{sess['rsi_not_extreme']}` \u00b7 "
-            f"ext `{sess['extension_too_small']}` \u00b7 score `{sess['rejected_score']}` \u00b7 "
-            f"liq `{sess['rejected_liquidity']}` \u00b7 ATR `{sess['rejected_atr']}` \u00b7 "
+            f"24h rejects — RSI `{sess['rsi_not_extreme']}` · "
+            f"ext `{sess['extension_too_small']}` · score `{sess['rejected_score']}` · "
+            f"liq `{sess['rejected_liquidity']}` · ATR `{sess['rejected_atr']}` · "
             f"R:R `{sess['rejected_rr']}`"
         )
         for w in j["warnings"]:
-            lines.append(f"\u26a0 {w}")
+            lines.append(f"⚠ {w}")
         cfg = j.get("effective_config") or {}
         if cfg:
             lines.append(
-                f"Gates locked: RSI `{cfg.get('rsi_long')}/{cfg.get('rsi_short')}` \u00b7 "
-                f"ext `{cfg.get('extension')}%` \u00b7 R:R `{cfg.get('minimum_rr')}`"
+                f"Gates locked: RSI `{cfg.get('rsi_long')}/{cfg.get('rsi_short')}` · "
+                f"ext `{cfg.get('extension')}%` · R:R `{cfg.get('minimum_rr')}`"
             )
         text = "\n".join(lines)
         if len(text) > 1900:
-            text = text[:1900] + "\u2026"
+            text = text[:1900] + "…"
         return text
 
 

@@ -183,6 +183,20 @@ app.add_middleware(
 app.include_router(diagnostics_router)
 
 
+@app.get("/api/research")
+async def api_research() -> Dict[str, Any]:
+    from app.api.diagnostics import diagnostics_research
+
+    return await diagnostics_research()
+
+
+@app.get("/api/funnel")
+async def api_funnel() -> Dict[str, Any]:
+    from app.api.diagnostics import diagnostics_funnel
+
+    return await diagnostics_funnel()
+
+
 @app.get("/health")
 async def health() -> Dict[str, Any]:
     settings = get_settings()
@@ -233,4 +247,11 @@ async def health() -> Dict[str, Any]:
 
 @app.get("/")
 async def root() -> Dict[str, str]:
-    return {"service": "Project Atlas", "docs": "/docs", "health": "/health", "diagnostics": "/diagnostics/paper"}
+    return {
+        "service": "Project Atlas",
+        "docs": "/docs",
+        "health": "/health",
+        "diagnostics": "/diagnostics/paper",
+        "research": "/api/research",
+        "funnel": "/api/funnel",
+    }
