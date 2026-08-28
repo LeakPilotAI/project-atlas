@@ -240,6 +240,39 @@ async def research_cmd(interaction: discord.Interaction) -> None:
         await interaction.followup.send(f"Research error: `{e}`", ephemeral=True)
 
 
+@tree.command(name="diagnostics", description="Paper pipeline funnel + why no trade")
+async def diagnostics_cmd(interaction: discord.Interaction) -> None:
+    await interaction.response.defer(ephemeral=True)
+    try:
+        from app.services.paper_pipeline import paper_pipeline
+
+        text = paper_pipeline.summary_text()
+        await interaction.followup.send(text, ephemeral=True)
+    except Exception as e:
+        log.warning("diagnostics_cmd failed", error=str(e), exc_info=True)
+        await interaction.followup.send(f"Diagnostics error: `{e}`", ephemeral=True)
+
+
+@tree.command(name="papertest", description="Run isolated TEST paper path (not counted)")
+async def papertest_cmd(interaction: discord.Interaction) -> None:
+    await interaction.response.defer(ephemeral=True)
+    try:
+        from app.api.diagnostics import diagnostics_paper_test
+
+        result = await diagnostics_paper_test()
+        await interaction.followup.send(
+            f"**Paper pipeline TEST**\n"
+            f"open `{result.get('open_worked')}` · close `{result.get('close_worked')}`\n"
+            f"MFE `{result.get('mfe_r')}` · MAE `{result.get('mae_r')}`\n"
+            f"Discord `{result.get('discord_delivered')}`\n"
+            f"trade_type=TEST · does not count in /paper",
+            ephemeral=True,
+        )
+    except Exception as e:
+        log.warning("papertest_cmd failed", error=str(e), exc_info=True)
+        await interaction.followup.send(f"Paper test error: `{e}`", ephemeral=True)
+
+
 @tree.command(name="help", description="Atlas command list")
 async def help_cmd(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(
@@ -249,6 +282,8 @@ async def help_cmd(interaction: discord.Interaction) -> None:
         "`/status` — bot status\n"
         "`/paper` — real paper journal (MFE/MAE)\n"
         "`/research` — shadow rejects / funnel (not PnL)\n"
+        "`/diagnostics` — pipeline funnel / why no trade\n"
+        "`/papertest` — isolated TEST open/close (not counted)\n"
         "`/help` — this message\n\n"
         "_Alerts are research only. Manual execution. Not financial advice._",
         ephemeral=True,
