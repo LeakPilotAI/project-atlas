@@ -10,6 +10,22 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/diagnostics", tags=["diagnostics"])
 
 
+@router.get("/research")
+async def diagnostics_research() -> Dict[str, Any]:
+    from app.services.paper_pipeline import paper_pipeline
+    from app.services.shadow_research import shadow_research
+
+    shadow = shadow_research.funnel_stats(24.0)
+    return {
+        "last_24h": paper_pipeline.last_24h(),
+        "bottleneck": paper_pipeline.bottleneck_text(),
+        "funnel_text": paper_pipeline.funnel_24h_text(),
+        "shadow": shadow,
+        "why_no_trade": paper_pipeline.why_no_trade(),
+        "effective_config": paper_pipeline.effective_config(),
+    }
+
+
 @router.get("/paper")
 async def diagnostics_paper() -> Dict[str, Any]:
     from app.services.paper_pipeline import paper_pipeline

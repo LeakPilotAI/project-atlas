@@ -14,6 +14,7 @@ Institutional-style market intelligence for Hyperliquid perpetual markets and hi
 
 - Continuously scans Hyperliquid perps for abnormal movement
 - Tracks opportunities with confidence, regime, and risk context
+- 24h paper funnel (`/diagnostics`, `/research`) — bottleneck diagnosis without retuning gates
 - Optional paper-trade performance tracking
 - Discord DM alerts (subscribe-only, no channel spam)
 - Quality Dip scanner for large-cap names (ADBE, META, GOOGL, AMZN, MSFT)
