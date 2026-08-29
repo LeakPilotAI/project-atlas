@@ -156,6 +156,18 @@ try {
     $apiOut = Join-Path $logDir "api.out.log"
     $apiErr = Join-Path $logDir "api.err.log"
 
+    Write-Step "Checking Python venv"
+    Write-Host "    $VenvPy"
+    & $VenvPy -c "import fastapi, uvicorn, mplfinance" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] venv is missing packages (likely an old locked copy)." -ForegroundColor Red
+        Write-Host "Run this, then double-click Project Atlas again:" -ForegroundColor Yellow
+        Write-Host "  `"$VenvPy`" -m pip install -e `"$Backend`""
+        cmd /c pause
+        exit 1
+    }
+    Write-Host "    imports ok"
+
     Write-Step "Starting Atlas API (port 8000)"
     $api = Start-Process -FilePath $VenvPy -ArgumentList @(
         "-m", "uvicorn", "app.main:app",
