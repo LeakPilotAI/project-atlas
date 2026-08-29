@@ -1,4 +1,4 @@
-# One desktop shortcut: Project Atlas. Removes old Start/Stop icons.
+﻿# One desktop shortcut: Project Atlas. Removes old Start/Stop icons.
 #Requires -Version 5.1
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $LaunchBat = Join-Path $Root "ATLAS.bat"
@@ -28,7 +28,7 @@ $s = $w.CreateShortcut($lnkPath)
 $s.TargetPath = $LaunchBat
 $s.WorkingDirectory = $Root
 $s.WindowStyle = 1
-$s.Description = "Project Atlas — dashboard + bot. Close the window to stop Docker too."
+$s.Description = "Project Atlas - dashboard + bot. Close the window to stop Docker too."
 if (Test-Path $icon) { $s.IconLocation = $icon }
 $s.Save()
 Write-Host "Desktop shortcut created: $lnkPath"

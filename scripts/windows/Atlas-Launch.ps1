@@ -1,4 +1,4 @@
-# Project Atlas — one window. Close it to stop API + frontend + Docker.
+﻿# Project Atlas - one window. Close it to stop API + frontend + Docker.
 #Requires -Version 5.1
 $ErrorActionPreference = "Continue"
 Set-StrictMode -Version Latest
@@ -13,7 +13,7 @@ $script:FePid = 0
 $script:Stopped = $false
 
 Set-Location $Root
-$host.UI.RawUI.WindowTitle = "Project Atlas — close this window to stop everything"
+$host.UI.RawUI.WindowTitle = "Project Atlas - close this window to stop everything"
 
 function Write-Step($msg) { Write-Host ""; Write-Host "==> $msg" -ForegroundColor Cyan }
 
@@ -28,7 +28,7 @@ function Stop-All {
     & $StopScript -Root $Root -ChildPids $pids
 }
 
-# CTRL_C / close-window / logoff — Windows only gives a few seconds on X
+# CTRL_C / close-window / logoff - Windows only gives a few seconds on X
 $code = @"
 using System;
 using System.Runtime.InteropServices;
@@ -139,7 +139,7 @@ try {
     ) -WorkingDirectory $Backend -PassThru -WindowStyle Minimized
     $script:ApiPid = $api.Id
     if (-not (Wait-Http "http://127.0.0.1:8000/health" 30)) {
-        Write-Host "[WARN] API health not OK yet — continuing" -ForegroundColor Yellow
+        Write-Host "[WARN] API health not OK yet - continuing" -ForegroundColor Yellow
     } else {
         Write-Host "    API healthy"
     }
@@ -164,7 +164,7 @@ try {
     ) -WorkingDirectory $Frontend -PassThru -WindowStyle Minimized
     $script:FePid = $fe.Id
     if (-not (Wait-Http "http://127.0.0.1:3000" 45)) {
-        Write-Host "[WARN] Frontend not answering yet — opening browser anyway" -ForegroundColor Yellow
+        Write-Host "[WARN] Frontend not answering yet - opening browser anyway" -ForegroundColor Yellow
     } else {
         Write-Host "    Frontend ready"
     }

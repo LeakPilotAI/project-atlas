@@ -1,4 +1,4 @@
-# Wipe the local Atlas folder and clone GitHub. Must NOT be run with cwd inside the target.
+﻿# Wipe the local Atlas folder and clone GitHub. Must NOT be run with cwd inside the target.
 # Example:
 #   cd D:\Work
 #   powershell -ExecutionPolicy Bypass -File "D:\Work\Project Atlas\scripts\windows\Replace-FromGitHub.ps1"

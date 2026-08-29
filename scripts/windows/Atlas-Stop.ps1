@@ -1,4 +1,4 @@
-# Stop Atlas API, frontend, compose stack, and (by default) Docker Desktop.
+﻿# Stop Atlas API, frontend, compose stack, and (by default) Docker Desktop.
 param(
     [string]$Root = "",
     [int[]]$ChildPids = @(),
@@ -50,7 +50,7 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
     $null = Wait-Job $job -Timeout 25
     if ($job.State -eq "Running") {
         Stop-Job $job -ErrorAction SilentlyContinue
-        Write-Host "[stop] compose down timed out — continuing"
+        Write-Host "[stop] compose down timed out - continuing"
     }
     Remove-Job $job -Force -ErrorAction SilentlyContinue
 }

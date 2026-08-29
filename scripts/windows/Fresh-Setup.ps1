@@ -1,4 +1,4 @@
-# After a clean git clone: venv, npm, one desktop shortcut.
+﻿# After a clean git clone: venv, npm, one desktop shortcut.
 #Requires -Version 5.1
 $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
