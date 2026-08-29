@@ -98,3 +98,9 @@ Hyperliquid trading loop.
 
 See `docs/INVESTMENT_SCAN.md`.
 
+## Phase 5.1 (this layer)
+
+Collection integrity: evaluation status distinct from classification,
+completeness diagnostic, Yahoo provider health, cache reuse, dataset
+health report. **Still no backtest, no ML, no brokerage.**
+

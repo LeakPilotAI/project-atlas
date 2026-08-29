@@ -60,3 +60,26 @@ class InvestmentHorizon(str, Enum):
     MULTI_YEAR = "MULTI_YEAR"
     DECADE = "DECADE"
     UNKNOWN = "UNKNOWN"
+
+
+class EvaluationStatus(str, Enum):
+    """Why a row exists. Distinct from investment classification.
+
+    VALID              — enough data to score; classification is the research call
+    VALID_NO_ACTION    — enough data; genuinely not an accumulation setup
+    INSUFFICIENT_DATA  — too few usable fields to trust a call
+    PROVIDER_ERROR     — Yahoo/client failure, no usable substitute
+    RATE_LIMITED       — 429 / rate limit, no usable substitute
+    STALE_DATA         — scored from cache/last print past freshness TTL
+    CONFLICTING_DATA   — irreconcilable values, not repaired
+    UNKNOWN            — cannot tell
+    """
+
+    VALID = "VALID"
+    VALID_NO_ACTION = "VALID_NO_ACTION"
+    INSUFFICIENT_DATA = "INSUFFICIENT_DATA"
+    PROVIDER_ERROR = "PROVIDER_ERROR"
+    RATE_LIMITED = "RATE_LIMITED"
+    STALE_DATA = "STALE_DATA"
+    CONFLICTING_DATA = "CONFLICTING_DATA"
+    UNKNOWN = "UNKNOWN"

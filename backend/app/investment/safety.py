@@ -35,6 +35,8 @@ SAFETY_RULES = (
     "Look-ahead: scores at T use only information available at T.",
     "Outcome fields stay NULL at evaluation time.",
     "Investment scanner failures must not stop the trading engine.",
+    "Evaluation status is not investment classification.",
+    "Completeness is a diagnostic, not confidence.",
 )
 
 

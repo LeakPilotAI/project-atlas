@@ -12,7 +12,7 @@ from app.investment.models import _iso
 from app.investment.outcomes import empty_outcomes
 from app.investment.research_models import ResearchRecord
 
-SCAN_VERSION = "atlas-scan-5.0"
+SCAN_VERSION = "atlas-scan-5.1"
 
 
 def _now() -> datetime:
@@ -40,6 +40,10 @@ class ScanObservation:
     research: Optional[ResearchRecord] = None
     outcomes: Dict[str, Optional[float]] = field(default_factory=empty_outcomes)
     fetched: Dict[str, bool] = field(default_factory=dict)
+    evaluation: str = ""
+    evaluation_reason: str = ""
+    completeness: Dict[str, Any] = field(default_factory=dict)
+    known_at: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.observation_id:
@@ -75,6 +79,10 @@ class ScanObservation:
             "drawdown": rec.get("drawdown"),
             "components": rec.get("components"),
             "outcomes": dict(self.outcomes),
+            "evaluation": self.evaluation,
+            "evaluation_reason": self.evaluation_reason,
+            "completeness": dict(self.completeness),
+            "known_at": dict(self.known_at),
             "disclaimer": (
                 "Point-in-time research observation. Scores used only data available at as_of. "
                 "Outcome fields are NULL until a later enrichment pass. Not a probability. "
@@ -96,7 +104,10 @@ class ScanReport:
     counts: Dict[str, int] = field(default_factory=dict)
     observations: List[ScanObservation] = field(default_factory=list)
     dashboard: str = ""
+    data_health: str = ""
     error: str = ""
+    alerts_emitted: int = 0
+    evaluation_counts: Dict[str, int] = field(default_factory=dict)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -108,7 +119,9 @@ class ScanReport:
             "universe": self.universe,
             "evaluated": self.evaluated,
             "failed": self.failed,
+            "alerts_emitted": self.alerts_emitted,
             "counts": dict(self.counts),
+            "evaluation_counts": dict(self.evaluation_counts),
             "error": self.error,
             "observation_ids": [o.observation_id for o in self.observations],
         }

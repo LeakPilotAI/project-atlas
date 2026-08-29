@@ -47,6 +47,8 @@ def wrap_provider_error(exc: BaseException, symbol: str) -> ProviderCallError:
         return ProviderCallError("TIMEOUT", msg or "timeout", symbol, retryable=True)
     if "429" in low or "rate limit" in low or "too many requests" in low:
         return ProviderCallError("RATE_LIMIT", msg or "rate limited", symbol, retryable=True)
+    if "401" in low or "unauthorized" in low or "invalid crumb" in low:
+        return ProviderCallError("HTTP_401", msg or "unauthorized", symbol, retryable=False)
     if (
         "delisted" in low
         or "symbol may be delisted" in low
@@ -138,11 +140,21 @@ class YFinanceClient:
                     info = fast
             if not is_usable_info(info):
                 raise ProviderCallError("EMPTY", "empty info payload", symbol, retryable=True)
+            from app.investment.provider_health import record_provider_event
+
+            record_provider_event("OK", success=True)
             return info
-        except ProviderCallError:
+        except ProviderCallError as e:
+            from app.investment.provider_health import record_provider_event
+
+            record_provider_event(e.failure.code, success=False, message=e.failure.message)
             raise
         except Exception as e:
-            raise wrap_provider_error(e, symbol) from e
+            err = wrap_provider_error(e, symbol)
+            from app.investment.provider_health import record_provider_event
+
+            record_provider_event(err.failure.code, success=False, message=err.failure.message)
+            raise err from e
 
     def fetch_history(
         self,
@@ -164,11 +176,21 @@ class YFinanceClient:
             df = t.history(**kwargs)
             if df is None or getattr(df, "empty", True):
                 raise ProviderCallError("EMPTY", "empty history payload", symbol, retryable=True)
+            from app.investment.provider_health import record_provider_event
+
+            record_provider_event("OK", success=True)
             return df
-        except ProviderCallError:
+        except ProviderCallError as e:
+            from app.investment.provider_health import record_provider_event
+
+            record_provider_event(e.failure.code, success=False, message=e.failure.message)
             raise
         except Exception as e:
-            raise wrap_provider_error(e, symbol) from e
+            err = wrap_provider_error(e, symbol)
+            from app.investment.provider_health import record_provider_event
+
+            record_provider_event(err.failure.code, success=False, message=err.failure.message)
+            raise err from e
 
     async def info(self, symbol: str) -> Dict[str, Any]:
         try:
@@ -177,6 +199,9 @@ class YFinanceClient:
                 timeout=self.timeout_sec,
             )
         except asyncio.TimeoutError as e:
+            from app.investment.provider_health import record_provider_event
+
+            record_provider_event("TIMEOUT", success=False, message=f"info timeout after {self.timeout_sec}s")
             raise ProviderCallError(
                 "TIMEOUT",
                 f"info timeout after {self.timeout_sec}s",
@@ -191,6 +216,9 @@ class YFinanceClient:
                 timeout=self.timeout_sec,
             )
         except asyncio.TimeoutError as e:
+            from app.investment.provider_health import record_provider_event
+
+            record_provider_event("TIMEOUT", success=False, message=f"history timeout after {self.timeout_sec}s")
             raise ProviderCallError(
                 "TIMEOUT",
                 f"history timeout after {self.timeout_sec}s",

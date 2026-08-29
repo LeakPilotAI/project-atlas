@@ -46,6 +46,8 @@ async def main() -> int:
     scanner = InvestmentScanner(settings=cfg, universe=_universe(args.symbols) or load_universe())
     report = await scanner.run_once()
     print(report.dashboard)
+    print()
+    print(report.data_health)
     print(f"\nevaluated={report.evaluated} failed={report.failed} scan_id={report.scan_id}")
     return 0 if report.evaluated or report.universe == 0 else 1
 

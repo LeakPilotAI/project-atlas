@@ -26,6 +26,10 @@ OUTCOMES_PATH = DATA_DIR / "outcomes.jsonl"
 FETCH_STATE_PATH = DATA_DIR / "fetch_state.json"
 LATEST_DIR = DATA_DIR / "latest"
 SCAN_LOG_PATH = DATA_DIR / "scan_log.jsonl"
+PROVIDER_HEALTH_PATH = DATA_DIR / "provider_health.json"
+PROVIDER_HEALTH_LOG = DATA_DIR / "provider_health.jsonl"
+LAST_CYCLE_PATH = DATA_DIR / "last_cycle.json"
+
 
 # Trading engine files — never read/write these from this package.
 TRADING_PAPER_JOURNAL = _BACKEND / "data" / "paper_journal.jsonl"

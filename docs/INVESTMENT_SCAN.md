@@ -2,7 +2,7 @@
 
 Opt-in pipeline on top of Phase 1–4. **No real brokerage. No ML. No alpha claim.**
 
-`scan_version`: `atlas-scan-5.0`
+`scan_version`: `atlas-scan-5.1`
 
 ```
 Universe.json
@@ -70,3 +70,31 @@ No new slash commands. Not mixed with `/paper` stats.
 
 Live brokerage, threshold optimization, ML, probability claims,
 performance dashboards, mixed trading/investment stats.
+
+## Phase 5.1 — collection integrity
+
+Classification (`NO_ACTION`, `WATCH`, …) is **not** the same as evaluation:
+
+| Evaluation | Meaning |
+|---|---|
+| VALID | enough data; classification is the research call |
+| VALID_NO_ACTION | enough data; genuinely not a setup |
+| INSUFFICIENT_DATA | too few usable fields |
+| PROVIDER_ERROR | Yahoo/client failure |
+| RATE_LIMITED | 429 |
+| STALE_DATA | scored from cache past TTL |
+| CONFLICTING_DATA | irreconcilable values |
+| UNKNOWN | cannot tell |
+
+Completeness (`9 / 12`) is a **diagnostic**, not confidence.
+
+Provider counters live in `data/investment/provider_health.json` (not mixed into scores).
+
+Windows one-shot (venv, no Docker required for the scan itself):
+
+```
+cd /d "D:\Work\Project Atlas"
+git pull origin main
+backend\.venv\Scripts\python.exe scripts\investment_scan.py
+backend\.venv\Scripts\python.exe scripts\investment_health.py
+```

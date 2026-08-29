@@ -18,31 +18,40 @@ from uuid import uuid4
 
 from app.investment.alerts import AlertStore
 from app.investment.blocking import blocking_pair, blocker_bucket, is_qualified
+from app.investment.completeness import completeness_report
+from app.investment.diagnostics import cycle_summary, format_data_health, save_last_cycle
 from app.investment.engine import process_research
 from app.investment.enums import DataQuality, EvidenceQuality, InvestmentAlertState, ThesisState
-from app.investment.freshness import classify_freshness, restamp
+from app.investment.evaluation import classify_evaluation
+from app.investment.freshness import restamp
 from app.investment.history import load_bars
 from app.investment.ingest import FetchPlan, InvestmentIngest
-from app.investment.lookahead import filter_bars_as_of
+from app.investment.lookahead import as_of_date, filter_bars_as_of
 from app.investment.market_hours import session_status
 from app.investment.models import MeasuredValue, PortfolioInput
 from app.investment.notify import deliver_investment_alert
 from app.investment.outcomes import empty_outcomes, enrich_observation
 from app.investment.paper_book import PaperBook
 from app.investment.portfolio import load_portfolio
+from app.investment.provider_health import configure_provider_health, get_provider_health
 from app.investment.research import InvestmentResearch
 from app.investment.research_models import ResearchRecord
 from app.investment.research_store import append_research
 from app.investment.scan_models import SCAN_VERSION, ScanObservation, ScanReport
 from app.investment.scan_settings import ScanSettings
 from app.investment.scan_store import append_observation, append_scan_log, load_observations
-from app.investment.snapshot import InvestmentSnapshot
+from app.investment.snapshot import (
+    InvestmentSnapshot,
+    load_latest_snapshot,
+    save_latest_snapshot,
+)
 from app.investment.storage import (
     FETCH_STATE_PATH,
+    LATEST_DIR,
+    LEDGER_PATH,
     OBSERVATIONS_PATH,
     OUTCOMES_PATH,
     PAPER_STATE_PATH,
-    LEDGER_PATH,
     bootstrap_universe_if_missing,
     ensure_dirs,
 )
@@ -85,13 +94,39 @@ def _parse_dt(raw: object) -> Optional[datetime]:
         return None
 
 
-def field_quality_map(snap: InvestmentSnapshot) -> Dict[str, str]:
+def field_quality_map(snap: InvestmentSnapshot, *, history_quality: str = "") -> Dict[str, str]:
     out: Dict[str, str] = {"price": snap.price.quality.value}
     for k, mv in snap.fundamentals.items():
         out[f"fundamentals.{k}"] = mv.quality.value if isinstance(mv.quality, DataQuality) else str(mv.quality)
     for k, mv in snap.valuation.items():
         out[f"valuation.{k}"] = mv.quality.value if isinstance(mv.quality, DataQuality) else str(mv.quality)
+    if history_quality:
+        out["history"] = history_quality
     return out
+
+
+def _iso(dt) -> Optional[str]:
+    if dt is None:
+        return None
+    if isinstance(dt, datetime):
+        return dt.isoformat()
+    return str(dt)
+
+
+def known_at_payload(snap: InvestmentSnapshot, bars, as_of: datetime) -> Dict[str, object]:
+    fund_ts = [mv.retrieved_at for mv in snap.fundamentals.values() if getattr(mv, "retrieved_at", None)]
+    val_ts = [mv.retrieved_at for mv in snap.valuation.values() if getattr(mv, "retrieved_at", None)]
+    cutoff = bars[-1].session_date if bars else None
+    return {
+        "as_of": as_of.isoformat(),
+        "price_effective": _iso(snap.price.effective_timestamp or snap.price.timestamp),
+        "price_retrieved": _iso(snap.price.retrieved_at),
+        "fundamentals_retrieved": _iso(max(fund_ts) if fund_ts else None),
+        "valuation_retrieved": _iso(max(val_ts) if val_ts else None),
+        "history_cutoff": cutoff,
+        "look_ahead_cutoff": as_of_date(as_of),
+    }
+
 
 
 def data_source_status(snap: InvestmentSnapshot, fetched: Dict[str, bool]) -> Dict[str, str]:
@@ -417,6 +452,11 @@ class InvestmentScanner:
         now = now or _now()
         cfg = self._cfg()
         persist = self._persist(cfg)
+        if persist:
+            try:
+                configure_provider_health(persist=True)
+            except Exception:
+                pass
         session = session_status(now, system_ok=self.system_ok)
         scan_id = f"scan-{now.strftime('%Y%m%dT%H%M%SZ')}-{uuid4().hex[:8]}"
         report = ScanReport(scan_id=scan_id, started_at=now, session=session)
@@ -451,11 +491,17 @@ class InvestmentScanner:
                 report.observations.append(obs)
                 report.evaluated += 1
                 counts[obs.classification] = counts.get(obs.classification, 0) + 1
+                if obs.evaluation:
+                    report.evaluation_counts[obs.evaluation] = report.evaluation_counts.get(obs.evaluation, 0) + 1
+                if obs.fetched.get("alert_emitted"):
+                    report.alerts_emitted += 1
             except Exception as e:
                 report.failed += 1
                 log.warning("investment symbol failed", symbol=entry.symbol, error=str(e)[:200])
                 rec = failed_record(entry.symbol, entry.name, f"scan exception: {str(e)[:160]}", now)
                 first, factors = blocking_pair(rec)
+                from app.investment.enums import EvaluationStatus
+
                 obs = ScanObservation(
                     scan_id=scan_id,
                     as_of=now,
@@ -468,6 +514,8 @@ class InvestmentScanner:
                     research=rec,
                     outcomes=empty_outcomes(),
                     provider_failures=[{"code": "SCAN_EXCEPTION", "message": str(e)[:200]}],
+                    evaluation=EvaluationStatus.PROVIDER_ERROR.value,
+                    evaluation_reason=f"scan exception: {str(e)[:160]}",
                 )
                 report.observations.append(obs)
                 counts[obs.classification] = counts.get(obs.classification, 0) + 1
@@ -483,9 +531,14 @@ class InvestmentScanner:
         report.counts = counts
         report.finished_at = _now()
         report.dashboard = format_scan_dashboard(report)
+        report.data_health = format_data_health(report)
         self.last_report = report
         if persist:
             append_scan_log(report)
+            try:
+                save_last_cycle(cycle_summary(report))
+            except Exception as e:
+                log.warning("last cycle persist failed", error=str(e)[:160])
             try:
                 self._enrich_past(now=now, outcomes_path=out_path)
             except Exception as e:
@@ -509,6 +562,10 @@ class InvestmentScanner:
         obs_path: Optional[Path],
     ) -> ScanObservation:
         prior = self._latest.get(entry.symbol)
+        if prior is None:
+            prior = load_latest_snapshot(entry.symbol)
+            if prior is not None:
+                self._latest[entry.symbol] = prior
         has_history = bool(load_bars(entry.symbol, root=self.history_root or getattr(ing, "history_root", None)))
         plan = plan_fetches(
             entry.symbol,
@@ -522,6 +579,11 @@ class InvestmentScanner:
         snap = await self._ingest_with_retry(ing, entry, cfg, plan, prior)
         snap = restamp_snapshot(snap, now)
         self._latest[entry.symbol] = snap
+        if persist:
+            try:
+                save_latest_snapshot(snap)
+            except Exception:
+                pass
         if plan.price:
             fetch_state.touch(entry.symbol, price=now)
         if plan.history:
@@ -542,6 +604,12 @@ class InvestmentScanner:
             "fundamentals": plan.fundamentals,
             "valuation": plan.valuation,
         }
+        hist_q = "MISSING"
+        if bars:
+            last_q = getattr(bars[-1], "quality", "") or "FRESH"
+            hist_q = last_q if isinstance(last_q, str) else str(last_q)
+        status, eval_reason = classify_evaluation(snap, rec, failures=snap.failures)
+        complete = completeness_report(snap, evidence=rec.evidence_quality)
         obs = ScanObservation(
             scan_id=scan_id,
             as_of=now,
@@ -550,13 +618,17 @@ class InvestmentScanner:
             classification=rec.classification.value,
             blocking_reason=first,
             blocking_factors=factors,
-            field_quality=field_quality_map(snap),
+            field_quality=field_quality_map(snap, history_quality=hist_q),
             data_source_status=data_source_status(snap, fetched),
             provider_failures=list(snap.failures),
             session=session,
             research=rec,
             outcomes=empty_outcomes(),
             fetched=fetched,
+            evaluation=status.value,
+            evaluation_reason=eval_reason,
+            completeness=complete,
+            known_at=known_at_payload(snap, bars, now),
         )
         if persist:
             if obs_path:
@@ -575,6 +647,9 @@ class InvestmentScanner:
             system_ok=self.system_ok,
             persist=persist,
         )
+        if result.get("decision") is not None and getattr(result["decision"], "emit", False):
+            # counted on the report after return; stash on obs via side channel
+            obs.fetched["alert_emitted"] = True
         if result.get("alert_text") and cfg.notify_discord:
             try:
                 if self._notify is not None:

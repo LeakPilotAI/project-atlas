@@ -1,7 +1,7 @@
-"""ATLAS Investment Intelligence Engine — Phase 1–5.
+"""ATLAS Investment Intelligence Engine — Phase 1–5.1.
 
 Completely independent from the Hyperliquid trading / paper engine.
-Phase 5: opt-in research scanner, point-in-time observations, outcome placeholders.
+Phase 5.1: collection integrity, evaluation status, provider health, dataset diagnostics.
 No real brokerage orders. No ML. No look-ahead in scores.
 """
 

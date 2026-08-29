@@ -257,6 +257,25 @@ async def papertest_cmd(interaction: discord.Interaction) -> None:
         await interaction.followup.send(f"Paper test error: `{e}`", ephemeral=True)
 
 
+@tree.command(name="investhealth", description="Investment data health (not /paper, not trading)")
+async def investhealth_cmd(interaction: discord.Interaction) -> None:
+    await interaction.response.defer(ephemeral=True)
+    try:
+        from app.investment.diagnostics import format_full_health
+        from app.investment.scan import investment_scanner
+
+        text = format_full_health(running=bool(investment_scanner.running))
+        if len(text) > 1900:
+            text = text[:1900] + "…"
+        await interaction.followup.send(text, ephemeral=True)
+    except Exception as e:
+        log.warning("investhealth_cmd failed", error=str(e), exc_info=True)
+        await interaction.followup.send(
+            f"Investment health error: `{e}`\n_Trading /paper is unrelated._",
+            ephemeral=True,
+        )
+
+
 @tree.command(name="help", description="Atlas command list")
 async def help_cmd(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(
@@ -268,6 +287,7 @@ async def help_cmd(interaction: discord.Interaction) -> None:
         "`/research` — 24h funnel + independent gates + distributions (not PnL)\n"
         "`/diagnostics` — WHY NO PAPER TRADES / bottleneck\n"
         "`/papertest` — isolated TEST open/close (not counted)\n"
+        "`/investhealth` — investment dataset/scanner health (not trading)\n"
         "`/help` — this message\n\n"
         "_Alerts are research only. Manual execution. Not financial advice._",
         ephemeral=True,
