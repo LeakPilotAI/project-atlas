@@ -14,18 +14,23 @@ router = APIRouter(prefix="/api", tags=["live"])
 
 
 def _open_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    entry = row.get("actual_entry_price") or row.get("entry") or row.get("signal_price")
+    stop = row.get("stop_price") or row.get("stop")
+    tp1 = row.get("tp1_price") or row.get("tp1")
     return {
         "trade_id": row.get("trade_id"),
         "symbol": row.get("symbol"),
         "side": row.get("side"),
-        "entry": row.get("entry"),
-        "stop": row.get("stop"),
-        "tp1": row.get("tp1"),
-        "mark": row.get("mark"),
+        "entry": entry,
+        "stop": stop,
+        "tp1": tp1,
+        "mark": row.get("mark") or entry,
         "mfe_r": row.get("mfe_r"),
         "mae_r": row.get("mae_r"),
-        "opened_at": row.get("opened_at") or row.get("ts") or row.get("timestamp"),
+        "opened_at": row.get("entry_timestamp") or row.get("opened_at") or row.get("signal_timestamp"),
         "regime": row.get("regime"),
+        "tier": row.get("tier"),
+        "counts_for_live": row.get("counts_for_live"),
         "notes": row.get("notes"),
     }
 
@@ -77,6 +82,15 @@ async def live() -> Dict[str, Any]:
 
     cfg = paper.get("effective_config") or {}
     h24 = paper.get("last_24h") or {}
+    why = paper.get("why_no_trade") or {}
+    if opens:
+        why = dict(why)
+        why["headline"] = f"{len(opens)} paper trade(s) currently open."
+    last_open = paper.get("last_paper_open")
+    last_qual = paper.get("last_qualified_setup")
+    if not last_open and opens:
+        last_open = max((str(r.get("opened_at") or "") for r in opens), default=None) or None
+        last_qual = last_qual or last_open
 
     return {
         "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -104,15 +118,15 @@ async def live() -> Dict[str, Any]:
             "max_open": cfg.get("max_open", settings.perp_micro_max_open),
         },
         "funnel_24h": h24,
-        "why_no_trade": paper.get("why_no_trade") or {},
+        "why_no_trade": why,
         "bottleneck": paper.get("bottleneck"),
         "warnings": paper.get("warnings") or [],
         "activity": {
             "last_market_data": paper.get("last_successful_market_data_fetch"),
             "last_candles": paper.get("last_successful_candle_fetch"),
             "last_evaluation": paper.get("last_candidate_evaluation"),
-            "last_qualified": paper.get("last_qualified_setup"),
-            "last_paper_open": paper.get("last_paper_open"),
+            "last_qualified": last_qual,
+            "last_paper_open": last_open,
             "last_discord_alert": paper.get("last_discord_alert"),
             "discord_subscribers": paper.get("discord_subscribers"),
         },

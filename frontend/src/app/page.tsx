@@ -199,6 +199,7 @@ export default function Dashboard() {
                     <th className="py-2">Symbol</th>
                     <th>Side</th>
                     <th>Entry</th>
+                    <th>Mark</th>
                     <th>Stop</th>
                     <th>MFE R</th>
                   </tr>
@@ -211,6 +212,7 @@ export default function Dashboard() {
                         {String(t.side || "—")}
                       </td>
                       <td className="tabular-nums">{fmt(t.entry, 4)}</td>
+                      <td className="tabular-nums">{fmt(t.mark, 4)}</td>
                       <td className="tabular-nums">{fmt(t.stop, 4)}</td>
                       <td className="tabular-nums">{fmt(t.mfe_r, 2)}</td>
                     </tr>
