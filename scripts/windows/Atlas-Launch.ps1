@@ -48,6 +48,22 @@ try { [void][AtlasConsoleTrap]::SetConsoleCtrlHandler($script:Trap, $true) } cat
 $null = Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action { } -ErrorAction SilentlyContinue
 trap { Stop-All; break }
 
+function Ensure-WslMemoryCap {
+    $cfg = Join-Path $env:USERPROFILE ".wslconfig"
+    $wanted = @"
+[wsl2]
+memory=2GB
+processors=2
+swap=0
+"@
+    if (Test-Path $cfg) {
+        $cur = Get-Content $cfg -Raw -ErrorAction SilentlyContinue
+        if ($cur -match "memory=") { return }
+    }
+    Set-Content -Path $cfg -Value $wanted -Encoding ASCII
+    Write-Host "    WSL/Docker RAM capped at 2GB ($cfg)"
+}
+
 function Get-DockerDesktop {
     @(
         (Join-Path $env:ProgramFiles "Docker\Docker\Docker Desktop.exe"),
@@ -116,6 +132,8 @@ try {
     Write-Step "Force-stop leftover Atlas processes"
     & $StopScript -Root $Root -KeepDockerDesktop
     Start-Sleep -Seconds 2
+
+    Ensure-WslMemoryCap
 
     $dd = Get-DockerDesktop
     if (-not $dd) {
