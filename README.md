@@ -56,8 +56,18 @@ This is an **alert and analysis system**. It does not auto-trade.
 
 ## Quick start (Windows)
 
-### 1. Clone
+**One desktop shortcut.** It starts Docker, the API, and the frontend dashboard,
+then opens your browser. Close that window to stop everything (including Docker Desktop).
 
-```bash
-git clone https://github.com/LeakPilotAI/project-atlas.git
-cd project-atlas
+Full copy-from-GitHub steps: [`docs/WINDOWS.md`](docs/WINDOWS.md)
+
+```powershell
+git clone https://github.com/LeakPilotAI/project-atlas.git "D:\Work\Project Atlas"
+cd "D:\Work\Project Atlas"
+# restore backend\.env from your backup first
+powershell -ExecutionPolicy Bypass -File scripts\windows\Fresh-Setup.ps1
+```
+
+Then double-click **Project Atlas** on the desktop.
+
+Do not use separate Start / Stop icons. Dashboard: http://127.0.0.1:3000

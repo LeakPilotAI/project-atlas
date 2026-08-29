@@ -1,2 +1,2 @@
-﻿Get-Process python* -ErrorAction SilentlyContinue | Stop-Process -Force
-Write-Host "Atlas Python stopped. Docker left running."
+# Emergency stop. Prefer closing the Atlas window — that runs the same teardown.
+& "$PSScriptRoot\scripts\windows\Atlas-Stop.ps1"
