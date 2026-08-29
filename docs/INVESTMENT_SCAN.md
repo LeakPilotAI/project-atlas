@@ -64,7 +64,7 @@ symbols without code changes. Engine has no compiled ticker list.
 ## Discord
 
 Existing investment DM layer. Title `ATLAS INVESTMENT — {CLASS}`.
-No new slash commands. Not mixed with `/paper` stats.
+`/investhealth` is research-only and not mixed with `/paper` stats.
 
 ## Not in this phase
 
@@ -98,3 +98,22 @@ git pull origin main
 backend\.venv\Scripts\python.exe scripts\investment_scan.py
 backend\.venv\Scripts\python.exe scripts\investment_health.py
 ```
+
+## Collection monitor / readiness
+
+Research-only. Does **not** change scores, gates, or allocation.
+
+```
+backend\.venv\Scripts\python.exe scripts\investment_health.py --monitor
+backend\.venv\Scripts\python.exe scripts\investment_health.py --readiness
+backend\.venv\Scripts\python.exe scripts\investment_health.py --quality
+backend\.venv\Scripts\python.exe scripts\investment_health.py --audit
+```
+
+DATASET STATUS: `NOT READY` / `COLLECTING` / `READY FOR RESEARCH`.
+
+READY FOR RESEARCH means the dataset is trustworthy enough to study later
+(≥500 valid rows, ≥15 assets, ≥10 sessions, sector + STOCK/ETF mix,
+provider success ≥60%, reconstructable PIT, zero look-ahead). It does
+**not** mean the strategy is profitable. Do not loosen filters because
+GENERATIONAL is rare.

@@ -37,6 +37,7 @@ SAFETY_RULES = (
     "Investment scanner failures must not stop the trading engine.",
     "Evaluation status is not investment classification.",
     "Completeness is a diagnostic, not confidence.",
+    "Dataset size is not strategy success.",
 )
 
 

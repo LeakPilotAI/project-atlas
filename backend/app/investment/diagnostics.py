@@ -221,14 +221,30 @@ def load_last_cycle(path: Optional[Path] = None) -> Optional[dict]:
 
 
 def format_full_health(*, running: bool = False) -> str:
+    from app.investment.integrity import format_pit_audit
+    from app.investment.monitor import format_collection_monitor
+    from app.investment.quality import format_quality_breakdown
+    from app.investment.readiness import format_readiness
+
     parts = [
         format_scanner_health(running=running),
         "",
+        format_collection_monitor(),
+        "",
+        format_readiness(),
+        "",
         format_dataset_report(),
+        "",
+        format_quality_breakdown(),
+        "",
+        format_pit_audit(),
+        "",
+        "**PERFORMANCE**",
+        "Not available. No win rate. No alpha. No probability of success.",
+        "Dataset size is not strategy success. Outcome enrichment is a later phase.",
     ]
     last = load_last_cycle()
     if last:
-        # rebuild a tiny data-health block from last cycle counts
         parts += [
             "",
             "**LAST CYCLE DATA HEALTH**",

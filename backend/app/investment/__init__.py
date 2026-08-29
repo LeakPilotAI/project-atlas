@@ -1,8 +1,7 @@
-"""ATLAS Investment Intelligence Engine — Phase 1–5.1.
+"""ATLAS Investment Intelligence Engine — Phase 1–5.1 + collection monitor.
 
 Completely independent from the Hyperliquid trading / paper engine.
-Phase 5.1: collection integrity, evaluation status, provider health, dataset diagnostics.
-No real brokerage orders. No ML. No look-ahead in scores.
+Collection/readiness layer: dataset trust only. No real brokerage. No ML.
 """
 
 

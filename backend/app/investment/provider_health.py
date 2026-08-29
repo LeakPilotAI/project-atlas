@@ -71,6 +71,19 @@ class ProviderHealthBook:
             self.save()
             self._log(code, success, message)
 
+    def rates(self) -> Dict[str, Optional[float]]:
+        n = self.requests
+        if n <= 0:
+            return {"success_rate": None, "failure_rate": None}
+        ok = self.successes
+        return {
+            "success_rate": ok / n,
+            "failure_rate": (n - ok) / n,
+            "timeout_rate": self.timeouts / n,
+            "http_401_rate": self.http_401 / n,
+            "http_429_rate": self.http_429 / n,
+        }
+
     def status_label(self) -> str:
         if self.requests <= 0:
             return "UNKNOWN"
@@ -99,6 +112,7 @@ class ProviderHealthBook:
             "last_error": self.last_error,
             "last_at": self.last_at,
             "status": self.status_label(),
+            **{k: v for k, v in self.rates().items()},
         }
 
     def save(self) -> None:

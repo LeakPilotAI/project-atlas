@@ -143,5 +143,19 @@ def format_dashboard(
         lines += ["", "Market is CLOSED. Research may update; paper fills wait for the cash session."]
     elif session == "SYSTEM_OFFLINE":
         lines += ["", "SYSTEM OFFLINE — not the same as a closed market."]
-    lines += ["", "Research rankings are not probabilities. No real orders."]
+    lines += [
+        "",
+        "DATA QUALITY",
+        "See scripts/investment_health.py for collection monitor, readiness, and PIT audit.",
+        "Field completeness is a diagnostic, not confidence.",
+        "",
+        "INVESTMENT OPPORTUNITY",
+        "Rows above are research classifications, not orders.",
+        "",
+        "PERFORMANCE",
+        "Not available. No win rate. No alpha. No probability of success.",
+        "Dataset size is not strategy success.",
+        "",
+        "Research rankings are not probabilities. No real orders.",
+    ]
     return "\n".join(lines)

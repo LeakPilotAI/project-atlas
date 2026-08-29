@@ -304,7 +304,22 @@ def format_scan_dashboard(report: ScanReport) -> str:
         lines += ["", "Market is CLOSED. Research may update; last session prints are not live quotes."]
     elif report.session == "SYSTEM_OFFLINE":
         lines += ["", "SYSTEM OFFLINE — not the same as a closed market."]
-    lines += ["", "Research rankings are not probabilities. No real orders. No alpha claim."]
+    ev = report.evaluation_counts or {}
+    lines += [
+        "",
+        "DATA QUALITY",
+        f"VALID: {ev.get('VALID', 0)}  VALID_NO_ACTION: {ev.get('VALID_NO_ACTION', 0)}",
+        f"INSUFFICIENT_DATA: {ev.get('INSUFFICIENT_DATA', 0)}  PROVIDER_ERROR: {ev.get('PROVIDER_ERROR', 0)}",
+        f"RATE_LIMITED: {ev.get('RATE_LIMITED', 0)}  STALE_DATA: {ev.get('STALE_DATA', 0)}",
+        "",
+        "INVESTMENT OPPORTUNITY",
+        "Classifications above are research calls, not fills and not alpha.",
+        "",
+        "PERFORMANCE",
+        "Not available. No win rate. No alpha. Dataset size is not strategy success.",
+        "",
+        "Research rankings are not probabilities. No real orders. No alpha claim.",
+    ]
     return "\n".join(lines)
 
 

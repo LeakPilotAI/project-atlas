@@ -104,3 +104,9 @@ Collection integrity: evaluation status distinct from classification,
 completeness diagnostic, Yahoo provider health, cache reuse, dataset
 health report. **Still no backtest, no ML, no brokerage.**
 
+## Collection monitor (this layer)
+
+Monitor, readiness (`NOT READY` / `COLLECTING` / `READY FOR RESEARCH`),
+per-asset field quality, point-in-time audit. Dataset size is not
+strategy success. **No backtest. No ML. No brokerage.**
+
