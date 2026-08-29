@@ -204,18 +204,22 @@ try {
         & npm.cmd install
         Pop-Location
     }
-    $fe = Start-Process -FilePath "cmd.exe" -ArgumentList @(
-        "/c", "npm.cmd run dev -- --hostname 127.0.0.1 --port 3000"
-    ) -WorkingDirectory $Frontend -PassThru -WindowStyle Minimized
+    $feCmd = Join-Path $logDir "start-frontend.cmd"
+    @(
+        "@echo off",
+        "cd /d `"$Frontend`"",
+        "npm.cmd run dev -- --hostname 127.0.0.1 --port 3000"
+    ) | Set-Content -Path $feCmd -Encoding ASCII
+    $fe = Start-Process -FilePath $feCmd -WorkingDirectory $Frontend -PassThru -WindowStyle Minimized
     $script:FePid = $fe.Id
-    if (-not (Wait-Http "http://127.0.0.1:3000" 45)) {
-        Write-Host "[WARN] Frontend not answering yet - opening browser anyway" -ForegroundColor Yellow
-    } else {
-        Write-Host "    Frontend ready"
-    }
-
+    Write-Host "    frontend pid $($script:FePid) (first compile can take a minute)"
     Write-Step "Opening dashboard"
     Start-Process "http://127.0.0.1:3000"
+    if (Wait-Http "http://127.0.0.1:3000" 20) {
+        Write-Host "    Frontend ready"
+    } else {
+        Write-Host "[WARN] Dashboard still compiling. Refresh the browser in a few seconds." -ForegroundColor Yellow
+    }
 
     Write-Host ""
     Write-Host "----------------------------------------" -ForegroundColor Green
