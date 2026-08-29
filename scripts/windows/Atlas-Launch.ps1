@@ -172,8 +172,7 @@ try {
     $api = Start-Process -FilePath $VenvPy -ArgumentList @(
         "-m", "uvicorn", "app.main:app",
         "--host", "127.0.0.1",
-        "--port", "8000",
-        "--app-dir", $Backend
+        "--port", "8000"
     ) -WorkingDirectory $Backend -PassThru -NoNewWindow -RedirectStandardOutput $apiOut -RedirectStandardError $apiErr
     if (-not $api) {
         Write-Host "[ERROR] failed to start python/uvicorn" -ForegroundColor Red
