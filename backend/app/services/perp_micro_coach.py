@@ -207,6 +207,50 @@ class PerpMicroCoach:
             self._http = None
         log.info("Perp micro coach stopped")
 
+    @staticmethod
+    def _row_from_journal(row: Dict[str, Any]) -> Dict[str, Any]:
+        entry = float(row.get("actual_entry_price") or row.get("entry") or 0)
+        stop = float(row.get("stop_price") or row.get("stop") or 0)
+        tp1 = float(row.get("tp1_price") or row.get("tp1") or 0)
+        tp2 = float(row.get("tp2_price") or row.get("tp2") or 0)
+        mark = float(row.get("mark") or entry)
+        return {
+            "symbol": str(row.get("symbol") or "").upper(),
+            "side": str(row.get("side") or "").upper(),
+            "entry": entry,
+            "stop": stop,
+            "tp1": tp1,
+            "tp2": tp2,
+            "mark": mark,
+            "trade_id": row.get("trade_id"),
+            "tier": row.get("tier") or "alt",
+            "counts_for_live": bool(row.get("counts_for_live")),
+            "qscore": float(row.get("signal_score") or 0),
+            "mfe_r": float(row.get("mfe_r") or 0),
+            "mae_r": float(row.get("mae_r") or 0),
+            "opened_at": row.get("entry_timestamp") or row.get("opened_at"),
+        }
+
+    def _rehydrate_open(self) -> int:
+        """Journal is source of truth across restarts. Coach memory is not."""
+        from app.services.paper_journal import paper_journal
+
+        added = 0
+        for row in paper_journal.list_open():
+            tid = row.get("trade_id")
+            if not tid:
+                continue
+            if tid not in self._open:
+                self._open[tid] = self._row_from_journal(row)
+                added += 1
+        live_ids = {r.get("trade_id") for r in paper_journal.list_open()}
+        for tid in list(self._open):
+            if tid not in live_ids:
+                self._open.pop(tid, None)
+        if added:
+            log.info("Rehydrated paper opens from journal", added=added, open=len(self._open))
+        return added
+
     async def list_open_papers(self) -> List[Dict[str, Any]]:
         out: List[Dict[str, Any]] = []
         for tid, p in self._open.items():
@@ -230,6 +274,7 @@ class PerpMicroCoach:
                     "counts_for_live": p.get("counts_for_live", True),
                     "mfe_r": p.get("mfe_r", 0),
                     "mae_r": p.get("mae_r", 0),
+                    "stale_quote": bool(p.get("stale_quote")),
                 }
             )
         return out
@@ -542,8 +587,11 @@ class PerpMicroCoach:
             t = _to_dict(raw)
             s = _sym(t)
             if s:
-                price_map[s] = _f(t, "price", "markPx", "midPx", "mark_px", "mid", "last")
+                px = _f(t, "price", "markPx", "midPx", "mark_px", "mid", "last")
+                if px > 0:
+                    price_map[s] = px
 
+        self._rehydrate_open()
         await self._manage_open(price_map)
 
         # Shadow research (never affects paper)
@@ -924,7 +972,14 @@ class PerpMicroCoach:
         to_close: List[str] = []
         for tid, p in list(self._open.items()):
             sym = p["symbol"]
-            mark = price_map.get(sym) or float(p.get("mark") or p["entry"])
+            px = price_map.get(sym)
+            if px is None or px <= 0:
+                mark = float(p.get("mark") or p["entry"])
+                p["stale_quote"] = True
+                log.warning("Open paper missing live quote", symbol=sym, trade_id=tid, mark=mark)
+            else:
+                mark = float(px)
+                p["stale_quote"] = False
             p["mark"] = mark
             paper_journal.update_excursion(tid, mark)
             jopen = paper_journal._open.get(tid, {})

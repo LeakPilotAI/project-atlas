@@ -202,6 +202,7 @@ export default function Dashboard() {
                     <th>Mark</th>
                     <th>Stop</th>
                     <th>MFE R</th>
+                    <th>Age</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -215,6 +216,13 @@ export default function Dashboard() {
                       <td className="tabular-nums">{fmt(t.mark, 4)}</td>
                       <td className="tabular-nums">{fmt(t.stop, 4)}</td>
                       <td className="tabular-nums">{fmt(t.mfe_r, 2)}</td>
+                      <td className="text-zinc-500">
+                        {t.stale_quote ? (
+                          <span className="text-amber-400">stale quote</span>
+                        ) : (
+                          ago(t.opened_at)
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -31,6 +31,7 @@ def _open_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "regime": row.get("regime"),
         "tier": row.get("tier"),
         "counts_for_live": row.get("counts_for_live"),
+        "stale_quote": row.get("stale_quote"),
         "notes": row.get("notes"),
     }
 
