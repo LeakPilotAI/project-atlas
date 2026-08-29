@@ -276,6 +276,19 @@ async def investhealth_cmd(interaction: discord.Interaction) -> None:
         )
 
 
+@tree.command(name="validation", description="Paper validation research (not /paper, does not change gates)")
+async def validation_cmd(interaction: discord.Interaction) -> None:
+    await interaction.response.defer(ephemeral=True)
+    try:
+        from app.services.paper_validation import validation_text
+
+        text = validation_text()
+        await interaction.followup.send(text, ephemeral=True)
+    except Exception as e:
+        log.warning("validation_cmd failed", error=str(e), exc_info=True)
+        await interaction.followup.send(f"Validation error: `{e}`", ephemeral=True)
+
+
 @tree.command(name="help", description="Atlas command list")
 async def help_cmd(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(
@@ -284,6 +297,7 @@ async def help_cmd(interaction: discord.Interaction) -> None:
         "`/unsubscribe` — stop DMs\n"
         "`/status` — bot status\n"
         "`/paper` — real paper journal (MFE/MAE)\n"
+        "`/validation` — paper validation / uncertainty / readiness (research only)\n"
         "`/research` — 24h funnel + independent gates + distributions (not PnL)\n"
         "`/diagnostics` — WHY NO PAPER TRADES / bottleneck\n"
         "`/papertest` — isolated TEST open/close (not counted)\n"

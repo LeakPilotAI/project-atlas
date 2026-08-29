@@ -79,6 +79,10 @@
       <div id="opps"></div>
     </div>
   </div>
+  <div class="card" id="validation">
+    <h3>Trading validation (research only)</h3>
+    <div id="valbody" class="sub">Loading…</div>
+  </div>
   <div class="card" id="gates"></div>
 </main>
 <script>
@@ -159,7 +163,24 @@ async function load(){
         <span class="pill">Min volume ${fmt(g.min_volume,0)}</span>
         <span class="pill">Max open ${fmt(g.max_open,0)}</span>
       </div>`;
-  }catch(e){
+    try {
+      const vr = await fetch("/api/validation/summary");
+      if (vr.ok) {
+        const V = await vr.json();
+        const ci = (V.uncertainty && V.uncertainty.winrate_ci95) || [null,null];
+        const eci = (V.uncertainty && V.uncertainty.expectancy_ci95) || [null,null];
+        const wrci = ci[0]==null ? "n/a" : `${(ci[0]*100).toFixed(1)}–${(ci[1]*100).toFixed(1)}%`;
+        const expci = eci[0]==null ? "n/a" : `${eci[0].toFixed(2)}–${eci[1].toFixed(2)}R`;
+        document.getElementById("valbody").innerHTML =
+          `<div class="n" style="font-size:16px;margin-bottom:8px">${V.conclusion||""}</div>`+
+          `<div>Closed ${V.closed} · WR ${(n(V.winrate)*100).toFixed(1)}% · exp ${fmt(V.expectancy,2)}R · tot ${fmt(V.total_r,2)}R</div>`+
+          `<div>95% WR CI ${wrci} · exp CI ${expci}</div>`+
+          `<div>Sufficiency ${V.data_sufficiency} · stability ${V.statistical_stability} · integrity ${V.data_integrity}</div>`+
+          `<div>Live capital: <b>no</b> · ${(V.milestone&&V.milestone.current_label)||"INSUFFICIENT SAMPLE"}</div>`+
+          `<div class="muted">Does not replace /paper. Gates unchanged. Small sample ≠ edge.</div>`;
+      }
+    } catch (e) {}
+  } catch (e) {
     document.getElementById("api").innerHTML = '<span class="bad">API down</span>';
     document.getElementById("err").innerHTML = '<div class="err">Cannot reach API. Keep the Atlas window open.</div>';
   }
