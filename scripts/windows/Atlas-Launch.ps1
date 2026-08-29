@@ -208,9 +208,13 @@ try {
     }
 
     Write-Step "Opening dashboard"
+    $dash = Join-Path $Backend "app\static\dashboard.html"
+    if (-not (Test-Path $dash)) {
+        Write-Host "[WARN] dashboard.html missing - git pull origin main" -ForegroundColor Yellow
+    }
     Start-Process "http://127.0.0.1:8000/dashboard"
     Write-Host "    Dashboard: http://127.0.0.1:8000/dashboard"
-    Write-Host "    (no Node/Next — served by the API)"
+    Write-Host "    (no Node/Next - served by the API)"
 
     Write-Host ""
     Write-Host "----------------------------------------" -ForegroundColor Green

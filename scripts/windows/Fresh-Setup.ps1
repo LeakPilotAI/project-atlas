@@ -42,15 +42,15 @@ Push-Location $Backend
 & $VenvPy -m pip install -e ".[dev]"
 Pop-Location
 
-Write-Host "==> Frontend npm install"
+Write-Host "==> Frontend (optional - live dashboard is served by the API)"
 $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
 if (-not $npm) {
-    Write-Host "[ERROR] Node.js/npm not found. Install Node.js LTS from nodejs.org." -ForegroundColor Red
-    exit 1
+    Write-Host "    npm not found - skipping. Desktop shortcut does not need Node."
+} elseif (Test-Path (Join-Path $Frontend "package.json")) {
+    Push-Location $Frontend
+    & npm.cmd install
+    Pop-Location
 }
-Push-Location $Frontend
-& npm.cmd install
-Pop-Location
 
 Write-Host "==> .env"
 $beEnv = Join-Path $Backend ".env"

@@ -32,4 +32,10 @@ $s.Description = "Project Atlas - dashboard + bot. Close the window to stop Dock
 if (Test-Path $icon) { $s.IconLocation = $icon }
 $s.Save()
 Write-Host "Desktop shortcut created: $lnkPath"
+Write-Host "  Target:  $LaunchBat"
+Write-Host "  Folder:  $Root"
 Write-Host "Double-click 'Project Atlas'. Close that window to shut everything down."
+if (-not (Test-Path $LaunchBat)) {
+    Write-Host "[ERROR] ATLAS.bat missing at $LaunchBat" -ForegroundColor Red
+    exit 1
+}
