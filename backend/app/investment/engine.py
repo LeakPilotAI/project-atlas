@@ -1,4 +1,4 @@
-"""Phase 4 orchestrator. Opt-in. Not started from main.py. No real orders."""
+"""Phase 4–5 orchestrator. Opt-in scanner is in scan.py. No real orders."""
 
 from __future__ import annotations
 

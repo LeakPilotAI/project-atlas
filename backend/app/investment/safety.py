@@ -24,7 +24,7 @@ SAFETY_RULES = (
     "No invented fundamentals.",
     "No future information in historical analysis.",
     "No survivorship-biased backtests.",
-    "No ML in Phase 1–4.",
+    "No ML in Phase 1–5.",
     "No automatic threshold optimization.",
     "No changes to the Hyperliquid trading engine.",
     "Opportunity scores are ordinal rankings, not probabilities.",
@@ -32,6 +32,9 @@ SAFETY_RULES = (
     "Investment Discord alerts are research-only and separate from trading.",
     "No personalized allocation without a portfolio profile.",
     "Do not increase allocation solely because price fell.",
+    "Look-ahead: scores at T use only information available at T.",
+    "Outcome fields stay NULL at evaluation time.",
+    "Investment scanner failures must not stop the trading engine.",
 )
 
 

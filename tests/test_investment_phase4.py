@@ -412,7 +412,8 @@ def test_discord_alert_copy_and_thesis_broken_copy():
 
     d = AlertDecision(emit=True, reason="WATCH → DEEP_VALUE", classification=InvestmentAlertState.DEEP_VALUE)
     text = format_investment_alert(r, d, plan=None)
-    assert "ATLAS INVESTMENT OPPORTUNITY" in text
+    assert "ATLAS INVESTMENT" in text
+    assert "DEEP VALUE" in text
     assert "not a guarantee" in text.lower()
     r2 = _rec(cls=InvestmentAlertState.THESIS_BROKEN, thesis=ThesisState.BROKEN)
     d2 = AlertDecision(

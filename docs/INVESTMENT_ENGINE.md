@@ -86,5 +86,15 @@ Stateful investment alerts, portfolio-aware accumulation plans, paper
 investment book, investment Discord copy. **No real orders. No ML.**
 Statistics stay out of `/paper` and `/research`.
 
-See `docs/INVESTMENT_ALERTS.md`.
+## Phase 5 (this layer)
+
+Opt-in live research scanner: universe → ingest (cached/incremental) →
+score → observation (qualified *and* rejected) → Phase 4 alerts / paper
+book. Outcome fields stay NULL at T. Enrichment is a separate append-only
+file. **No real orders. No ML. No look-ahead in scores.**
+
+Default `INVESTMENT_SCAN_ENABLED=false`. Start/stop is isolated from the
+Hyperliquid trading loop.
+
+See `docs/INVESTMENT_SCAN.md`.
 

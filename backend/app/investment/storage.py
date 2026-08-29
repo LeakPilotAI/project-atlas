@@ -21,6 +21,11 @@ ALERT_STATE_PATH = DATA_DIR / "alert_state.json"
 PLANS_PATH = DATA_DIR / "plans.jsonl"
 PAPER_STATE_PATH = DATA_DIR / "paper_account.json"
 PORTFOLIO_PATH = HOLDINGS_PATH
+OBSERVATIONS_PATH = DATA_DIR / "observations.jsonl"
+OUTCOMES_PATH = DATA_DIR / "outcomes.jsonl"
+FETCH_STATE_PATH = DATA_DIR / "fetch_state.json"
+LATEST_DIR = DATA_DIR / "latest"
+SCAN_LOG_PATH = DATA_DIR / "scan_log.jsonl"
 
 # Trading engine files — never read/write these from this package.
 TRADING_PAPER_JOURNAL = _BACKEND / "data" / "paper_journal.jsonl"
@@ -30,11 +35,25 @@ TRADING_SHADOW_CANDIDATES = _BACKEND / "data" / "shadow_candidates.jsonl"
 def ensure_dirs() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+    LATEST_DIR.mkdir(parents=True, exist_ok=True)
     if PACKAGE_UNIVERSE_EXAMPLE.exists() and not UNIVERSE_EXAMPLE_PATH.exists():
         UNIVERSE_EXAMPLE_PATH.write_text(
             PACKAGE_UNIVERSE_EXAMPLE.read_text(encoding="utf-8"),
             encoding="utf-8",
         )
+
+
+def bootstrap_universe_if_missing() -> None:
+    """Copy the example universe only when the operator file does not exist.
+
+    Does not hard-code tickers in the engine. Operator may add/remove freely.
+    """
+    ensure_dirs()
+    if UNIVERSE_PATH.exists():
+        return
+    src = PACKAGE_UNIVERSE_EXAMPLE if PACKAGE_UNIVERSE_EXAMPLE.exists() else UNIVERSE_EXAMPLE_PATH
+    if src.exists():
+        UNIVERSE_PATH.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
 
 def trading_paths() -> tuple[Path, Path]:
@@ -46,3 +65,7 @@ def assert_storage_separated() -> None:
         raise RuntimeError("Investment ledger must not share paper_journal.jsonl")
     if DATA_DIR.resolve() == (_BACKEND / "data").resolve():
         raise RuntimeError("Investment data must live under data/investment/")
+    if OBSERVATIONS_PATH.resolve() == TRADING_PAPER_JOURNAL.resolve():
+        raise RuntimeError("Investment observations must not share paper_journal.jsonl")
+    if OUTCOMES_PATH.resolve() == TRADING_PAPER_JOURNAL.resolve():
+        raise RuntimeError("Investment outcomes must not share paper_journal.jsonl")

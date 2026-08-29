@@ -30,46 +30,36 @@ def format_investment_alert(
     *,
     plan: Optional[AllocationPlan] = None,
 ) -> str:
+    cls_label = decision.classification.value.replace("_", " ")
     if decision.classification is InvestmentAlertState.THESIS_BROKEN:
         title = "ATLAS INVESTMENT — THESIS BROKEN"
         extra = ["STOP ACCUMULATING.", "Cancel remaining paper limit tiers.", ""]
-    elif decision.classification is InvestmentAlertState.GENERATIONAL_OPPORTUNITY:
-        title = "ATLAS INVESTMENT OPPORTUNITY"
-        extra = ["Classification is GENERATIONAL_OPPORTUNITY (research-only, extremely selective).", ""]
     else:
-        title = "ATLAS INVESTMENT OPPORTUNITY"
+        title = f"ATLAS INVESTMENT — {cls_label}"
         extra = []
     why = rec.explain.why_now or rec.explain.why_interesting
     risks = rec.explain.risks[:6]
-    inv = rec.explain.invalidation
     lines = [
         title,
-        "━━━━━━━━━━━━━━━━━━",
-        "ASSET:",
         rec.symbol,
-        "CLASSIFICATION:",
-        decision.classification.value.replace("_", " "),
-        "CURRENT PRICE:",
-        _px(rec),
-        "DRAWDOWN:",
-        _dd(rec),
-        "OPPORTUNITY SCORE:",
-        f"{rec.opportunity_score if rec.opportunity_score is not None else 'n/a'}/100",
-        "EVIDENCE QUALITY:",
-        rec.evidence_quality.value,
-        "THESIS:",
-        rec.thesis.value,
-        "━━━━━━━━━━━━━━━━━━",
-        "WHY NOW?",
+        f"Price: {_px(rec)}",
+        f"Drawdown: {_dd(rec)}",
+        f"Score: {rec.opportunity_score if rec.opportunity_score is not None else 'n/a'}/100",
+        f"Evidence: {rec.evidence_quality.value}",
+        f"Thesis: {rec.thesis.value}",
+        "",
+        "WHY NOW:",
         *[f"• {x}" for x in why],
         "",
         "RISKS:",
         *([f"• {x}" for x in risks] or ["• none listed"]),
         "",
         "WHAT WOULD INVALIDATE THE THESIS?",
-        *[f"• {x}" for x in inv],
-        "━━━━━━━━━━━━━━━━━━",
+        *[f"• {x}" for x in rec.explain.invalidation],
+        "",
         *extra,
+        "Research only:",
+        "No real order has been placed.",
         DISCLAIMER,
     ]
     if plan is None:

@@ -1,9 +1,10 @@
-"""ATLAS Investment Intelligence Engine — Phase 1–4.
+"""ATLAS Investment Intelligence Engine — Phase 1–5.
 
 Completely independent from the Hyperliquid trading / paper engine.
-Phase 4: research alerts, personalized accumulation plans, paper investment book.
-No real brokerage orders. No ML.
+Phase 5: opt-in research scanner, point-in-time observations, outcome placeholders.
+No real brokerage orders. No ML. No look-ahead in scores.
 """
+
 
 from app.investment.enums import (
     AssetType,

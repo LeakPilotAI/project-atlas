@@ -117,9 +117,23 @@ async def lifespan(app: FastAPI):
     discord_task = asyncio.create_task(start_discord_bot(), name="discord_bot")
     log.info("Discord bot task scheduled (DM-only alerts)")
 
+    # Investment scanner is opt-in and isolated. A crash here must not stop trading.
+    try:
+        from app.investment.scan import start_investment_scanner
+
+        await start_investment_scanner()
+    except Exception as e:
+        log.warning("investment scanner start failed; trading continues", error=str(e)[:200])
+
     yield
 
     log.info("Project Atlas shutting down")
+    try:
+        from app.investment.scan import stop_investment_scanner
+
+        await stop_investment_scanner()
+    except Exception:
+        pass
     try:
         await stop_discord_bot()
     except Exception:

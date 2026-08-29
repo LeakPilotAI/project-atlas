@@ -1,5 +1,5 @@
 {
-  "comment": "Copy to data/investment/universe.json and edit. The engine has no baked-in ticker list.",
+  "comment": "TEST/RESEARCH assets only. Not recommendations. Copy to data/investment/universe.json and edit. The engine has no baked-in ticker list.",
   "assets": [
     {
       "symbol": "SPY",
@@ -62,6 +62,16 @@
       "active": true
     },
     {
+      "symbol": "XLF",
+      "name": "Financial Select Sector SPDR Fund",
+      "asset_type": "SECTOR_ETF",
+      "exchange": "ARCA",
+      "currency": "USD",
+      "sector": "Financials",
+      "industry": "Sector ETF",
+      "active": true
+    },
+    {
       "symbol": "^GSPC",
       "name": "S&P 500 Index",
       "asset_type": "INDEX",
@@ -99,6 +109,26 @@
       "currency": "USD",
       "sector": "Financials",
       "industry": "Diversified Financial Services",
+      "active": true
+    },
+    {
+      "symbol": "KO",
+      "name": "The Coca-Cola Company",
+      "asset_type": "STOCK",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "sector": "Consumer Staples",
+      "industry": "Beverages",
+      "active": true
+    },
+    {
+      "symbol": "PG",
+      "name": "Procter & Gamble Co.",
+      "asset_type": "STOCK",
+      "exchange": "NYSE",
+      "currency": "USD",
+      "sector": "Consumer Staples",
+      "industry": "Household Products",
       "active": true
     }
   ]

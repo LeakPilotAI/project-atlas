@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
 from app.investment.enums import DataQuality
+from app.investment.models import MeasuredValue
 
 # seconds
 PRICE_TTL_SECONDS = 15 * 60  # last trade / quote
@@ -72,3 +73,13 @@ def classify_freshness(
     if age <= ttl:
         return DataQuality.FRESH
     return DataQuality.STALE
+
+
+def restamp(mv: MeasuredValue, *, kind: str, now: Optional[datetime] = None) -> MeasuredValue:
+    """Recompute quality from the original effective timestamp. Never invents a value."""
+    if mv.value is None or not mv.availability:
+        return mv
+    q = classify_freshness(mv.effective_timestamp or mv.timestamp, kind=kind, now=now)
+    if q is mv.quality:
+        return mv
+    return replace(mv, quality=q)

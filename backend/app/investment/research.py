@@ -1,7 +1,7 @@
 """Phase 3 research engine: snapshot + history → scored, explainable record.
 
-No alerts. No allocation. No orders. No ML. Not started from main.py.
-Does not import the trading / paper stack.
+Scoring uses only bars with session_date ≤ as_of when as_of is provided
+(look-ahead protection). No ML. Does not import the trading / paper stack.
 """
 
 from __future__ import annotations
@@ -532,10 +532,15 @@ class InvestmentResearch:
         bars: Optional[Sequence[OhlcvBar]] = None,
         *,
         history_root=None,
+        as_of=None,
     ) -> ResearchRecord:
         symbol = snap.asset.symbol
         if bars is None:
             bars = load_bars(symbol, root=history_root)
+        if as_of is not None:
+            from app.investment.lookahead import filter_bars_as_of
+
+            bars = filter_bars_as_of(bars, as_of)
         dd = analyze_drawdown(bars, current_price=_usable(snap.price))
         vol = return_volatility(bars)
 

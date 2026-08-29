@@ -155,6 +155,20 @@ class Settings(BaseSettings):
     btc_accum_scan_minutes: float = 15.0
     btc_accum_cooldown_hours: float = 720.0
 
+    # --- Investment engine (opt-in, isolated from perps) ---
+    investment_scan_enabled: bool = False
+    investment_scan_interval_seconds: float = 3600.0
+    investment_scan_closed_interval_seconds: float = 21600.0
+    investment_price_refresh_seconds: float = 900.0
+    investment_fundamental_refresh_seconds: float = 86400.0
+    investment_valuation_refresh_seconds: float = 86400.0
+    investment_history_refresh_seconds: float = 86400.0
+    investment_inter_symbol_delay_seconds: float = 0.75
+    investment_notify_discord: bool = True
+    investment_max_retries: int = 2
+    investment_retry_base_seconds: float = 1.0
+    investment_history_period: str = "5y"
+
     @property
     def database_url_safe(self) -> str:
         u = self.database_url
