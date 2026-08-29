@@ -87,57 +87,66 @@ async def lifespan(app: FastAPI):
         log.error("Database init failed", error=str(last_err))
         raise last_err
 
-    try:
-        hl = HyperliquidAdapter()
-        registry.register(hl)
-        await hl.connect()
-        log.info("Adapter connected", name="hyperliquid")
-    except Exception as e:
-        log.error("Hyperliquid adapter failed", error=str(e))
-
-    for name, starter in [
-        ("scanner", scanner.start),
-        ("opportunity_tracker", opportunity_tracker.start),
-        ("paper_trade_tracker", paper_trade_tracker.start),
-        ("weekly_summary", weekly_summary_service.start),
-        ("quality_dip", quality_dip_scanner.start),
-        ("day_trade", day_trade_assistant.start),
-        ("robinhood_brief", robinhood_brief_service.start),
-        ("command_center", command_center.start),
-        ("perp_micro_coach", perp_micro_coach.start),
-        ("daily_paper_recap", daily_paper_recap.start),
-        ("micro_heartbeat", micro_heartbeat.start),
-    ]:
+    async def _boot_services() -> None:
         try:
-            await starter()
+            hl = HyperliquidAdapter()
+            registry.register(hl)
+            await hl.connect()
+            log.info("Adapter connected", name="hyperliquid")
         except Exception as e:
-            log.warning(f"{name} start failed", error=str(e))
+            log.error("Hyperliquid adapter failed", error=str(e))
 
-    if accumulation_ladder is not None:
+        for name, starter in [
+            ("scanner", scanner.start),
+            ("opportunity_tracker", opportunity_tracker.start),
+            ("paper_trade_tracker", paper_trade_tracker.start),
+            ("weekly_summary", weekly_summary_service.start),
+            ("quality_dip", quality_dip_scanner.start),
+            ("day_trade", day_trade_assistant.start),
+            ("robinhood_brief", robinhood_brief_service.start),
+            ("command_center", command_center.start),
+            ("perp_micro_coach", perp_micro_coach.start),
+            ("daily_paper_recap", daily_paper_recap.start),
+            ("micro_heartbeat", micro_heartbeat.start),
+        ]:
+            try:
+                await starter()
+            except Exception as e:
+                log.warning(f"{name} start failed", error=str(e))
+
+        if accumulation_ladder is not None:
+            try:
+                await accumulation_ladder.start()
+            except Exception as e:
+                log.warning("accumulation start failed", error=str(e))
+        if btc_accumulation is not None:
+            try:
+                await btc_accumulation.start()
+            except Exception as e:
+                log.warning("btc accumulation start failed", error=str(e))
+
+        asyncio.create_task(start_discord_bot(), name="discord_bot")
+        log.info("Discord bot task scheduled (DM-only alerts)")
         try:
-            await accumulation_ladder.start()
+            from app.investment.scan import start_investment_scanner
+
+            await start_investment_scanner()
         except Exception as e:
-            log.warning("accumulation start failed", error=str(e))
-    if btc_accumulation is not None:
-        try:
-            await btc_accumulation.start()
-        except Exception as e:
-            log.warning("btc accumulation start failed", error=str(e))
+            log.warning("investment scanner start failed; trading continues", error=str(e)[:200])
+        log.info("Background services booted")
 
-    discord_task = asyncio.create_task(start_discord_bot(), name="discord_bot")
-    log.info("Discord bot task scheduled (DM-only alerts)")
-
-    # Investment scanner is opt-in and isolated. A crash here must not stop trading.
-    try:
-        from app.investment.scan import start_investment_scanner
-
-        await start_investment_scanner()
-    except Exception as e:
-        log.warning("investment scanner start failed; trading continues", error=str(e)[:200])
+    boot_task = asyncio.create_task(_boot_services(), name="atlas_boot")
+    log.info("API is serving /health; services starting in background")
 
     yield
 
     log.info("Project Atlas shutting down")
+    if not boot_task.done():
+        boot_task.cancel()
+        try:
+            await boot_task
+        except (asyncio.CancelledError, Exception):
+            pass
     try:
         from app.investment.scan import stop_investment_scanner
 
@@ -148,12 +157,6 @@ async def lifespan(app: FastAPI):
         await stop_discord_bot()
     except Exception:
         pass
-    discord_task.cancel()
-    try:
-        await discord_task
-    except asyncio.CancelledError:
-        pass
-
     for name, stopper in [
         ("micro_heartbeat", micro_heartbeat.stop),
         ("daily_paper_recap", daily_paper_recap.stop),

@@ -171,17 +171,17 @@ try {
     Write-Step "Starting Atlas API (port 8000)"
     $api = Start-Process -FilePath $VenvPy -ArgumentList @(
         "-m", "uvicorn", "app.main:app",
-        "--host", "0.0.0.0",
+        "--host", "127.0.0.1",
         "--port", "8000",
         "--app-dir", $Backend
-    ) -WorkingDirectory $Backend -PassThru -WindowStyle Hidden -RedirectStandardOutput $apiOut -RedirectStandardError $apiErr
+    ) -WorkingDirectory $Backend -PassThru -NoNewWindow -RedirectStandardOutput $apiOut -RedirectStandardError $apiErr
     if (-not $api) {
         Write-Host "[ERROR] failed to start python/uvicorn" -ForegroundColor Red
         cmd /c pause
         exit 1
     }
     $script:ApiPid = $api.Id
-    Write-Host ("    API pid {0}" -f $script:ApiPid)
+    Write-Host ("    API pid {0}  logs {1}" -f $script:ApiPid, $apiErr)
     if (-not (Wait-Http "http://127.0.0.1:8000/health" 40)) {
         Write-Host "[WARN] API health not OK. Last log lines:" -ForegroundColor Yellow
         if (Test-Path $apiErr) { Get-Content $apiErr -Tail 20 }
