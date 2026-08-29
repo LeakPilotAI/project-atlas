@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Project Atlas</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 14px/1.45 Inter,Segoe UI,system-ui,sans-serif; background:#07080b; color:#e4e4e7; }
+  header { position:sticky; top:0; background:#0b0d12ee; border-bottom:1px solid #ffffff10; padding:16px 24px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  h1 { margin:0; font-size:22px; color:#fff; }
+  .sub { color:#71717a; font-size:12px; margin-top:4px; }
+  .ok { color:#34d399; } .bad { color:#fb7185; } .muted { color:#71717a; }
+  main { max-width:1120px; margin:0 auto; padding:20px 24px 48px; display:flex; flex-direction:column; gap:16px; }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; }
+  .pill { border:1px solid #ffffff18; border-radius:999px; padding:4px 10px; font-size:11px; color:#a1a1aa; }
+  .pill.on { color:#34d399; background:#34d39914; border-color:#34d39944; }
+  .banner { border:1px solid #f59e0b33; background:#f59e0b0f; border-radius:16px; padding:14px 18px; }
+  .banner h2 { margin:0; font-size:11px; letter-spacing:.14em; color:#fbbf24; text-transform:uppercase; }
+  .grid { display:grid; gap:10px; }
+  .g9 { grid-template-columns: repeat(auto-fit,minmax(90px,1fr)); }
+  .g4 { grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); }
+  .g2 { grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); }
+  .card { background:#10131a; border:1px solid #ffffff14; border-radius:16px; padding:14px; }
+  .card h3 { margin:0 0 10px; font-size:13px; color:#d4d4d8; font-weight:600; }
+  .bar { height:48px; display:flex; align-items:end; margin-bottom:6px; }
+  .bar > i { display:block; width:100%; background:#34d399b3; border-radius:3px; }
+  .n { font-size:20px; font-weight:650; color:#fff; font-variant-numeric: tabular-nums; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; color:#71717a; font-size:11px; font-weight:500; padding:6px 4px; }
+  td { padding:7px 4px; border-top:1px solid #ffffff0d; font-variant-numeric: tabular-nums; }
+  .short { color:#fb7185; } .long { color:#34d399; }
+  .err { color:#fb7185; border:1px solid #fb718544; background:#fb718512; padding:10px 14px; border-radius:12px; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="sub" style="letter-spacing:.2em;color:#34d399;">LIVE COMMAND CENTER</div>
+    <h1>Project Atlas</h1>
+    <div class="sub">Watch-only. Discord is the alert feed. No Node/Next compile.</div>
+  </div>
+  <div class="sub" style="text-align:right">
+    <div id="stamp">connecting…</div>
+    <div id="api">API</div>
+  </div>
+</header>
+<main>
+  <div id="err"></div>
+  <div class="pills" id="pills"></div>
+  <div class="banner">
+    <h2>Why no paper trade</h2>
+    <div id="why" style="font-size:18px;margin-top:6px">—</div>
+    <div class="sub" id="bottleneck"></div>
+  </div>
+  <div>
+    <div class="sub" style="margin-bottom:8px">Last 24 hours — perp funnel</div>
+    <div class="grid g9" id="funnel"></div>
+  </div>
+  <div class="grid g4" id="stats"></div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Open paper trades</h3>
+      <div id="opens"></div>
+    </div>
+    <div class="card">
+      <h3>Live activity</h3>
+      <div id="act"></div>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Quality dips</h3>
+      <div id="dips"></div>
+    </div>
+    <div class="card">
+      <h3>Perp opportunities</h3>
+      <div id="opps"></div>
+    </div>
+  </div>
+  <div class="card" id="gates"></div>
+</main>
+<script>
+const FUNNEL = [
+  ["markets","Markets"],["liquid","Liquid"],["evaluated","Evaluated"],
+  ["extension_passed","Extension"],["rsi_passed","RSI"],["quality_passed","Quality"],
+  ["rr_passed","R:R"],["qualified","Qualified"],["paper_trades","Paper"]
+];
+const n = v => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
+const fmt = (v,d=2) => { const x = Number(v); return Number.isFinite(x) ? x.toLocaleString(undefined,{maximumFractionDigits:d}) : "—"; };
+function ago(iso){
+  if(!iso) return "—";
+  const t = Date.parse(iso); if(Number.isNaN(t)) return iso;
+  const s = Math.max(0, Math.round((Date.now()-t)/1000));
+  if(s<60) return s+"s ago"; if(s<3600) return Math.round(s/60)+"m ago"; return Math.round(s/3600)+"h ago";
+}
+function pill(label, on){ return `<span class="pill ${on?"on":""}">${label} ${on?"on":"off"}</span>`; }
+async function load(){
+  try{
+    const r = await fetch("/api/live");
+    if(!r.ok) throw new Error("live "+r.status);
+    const L = await r.json();
+    document.getElementById("err").innerHTML = "";
+    document.getElementById("stamp").textContent = "refresh 8s · "+ago(L.updated_at);
+    document.getElementById("api").innerHTML = '<span class="ok">API connected</span>';
+    const h = L.health||{};
+    document.getElementById("pills").innerHTML = [
+      pill("Scanner", !!h.scanner), pill("Perp micro", !!h.perp_micro),
+      pill("Paper", !!h.paper_tracker), pill("Discord", !!h.discord),
+      pill("Quality dip", !!h.quality_dip), pill("HL data", h.hyperliquid_data==="OK"),
+      `<span class="pill">Liquid ${n(h.liquid_count)}</span>`,
+      `<span class="pill">Last scan ${ago(h.last_cycle_at)}</span>`
+    ].join("");
+    const why = L.why_no_trade||{};
+    document.getElementById("why").textContent = why.headline || L.bottleneck || "Waiting on first scan.";
+    document.getElementById("bottleneck").textContent = L.bottleneck||"";
+    const f = L.funnel_24h||{};
+    const mx = Math.max(1, ...FUNNEL.map(([k])=>n(f[k])));
+    document.getElementById("funnel").innerHTML = FUNNEL.map(([k,lab])=>{
+      const v=n(f[k]); const ht=Math.max(8, Math.round(v/mx*48));
+      return `<div class="card"><div class="bar"><i style="height:${ht}px"></i></div><div class="n">${v}</div><div class="sub">${lab}</div></div>`;
+    }).join("");
+    const j = L.journal||{};
+    document.getElementById("stats").innerHTML = [
+      ["Paper open", n(j.open)],
+      ["Paper closed", n(j.closed)],
+      ["Win rate", (n(j.winrate)*100).toFixed(0)+"%"],
+      ["Avg R", fmt(j.avg_r,2)]
+    ].map(([a,b])=>`<div class="card"><div class="sub">${a}</div><div class="n">${b}</div></div>`).join("");
+    const opens = L.open_trades||[];
+    document.getElementById("opens").innerHTML = opens.length? `<table><tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Mark</th><th>Stop</th><th>MFE</th></tr>${
+      opens.map(t=>`<tr><td>${t.symbol}</td><td class="${t.side==="LONG"?"long":"short"}">${t.side||""}</td><td>${fmt(t.entry,4)}</td><td>${fmt(t.mark,4)}</td><td>${fmt(t.stop,4)}</td><td>${fmt(t.mfe_r,2)}</td></tr>`).join("")
+    }</table>` : '<div class="sub">No open paper trades.</div>';
+    const a = L.activity||{};
+    document.getElementById("act").innerHTML = [
+      ["Last HL data", ago(a.last_market_data)],
+      ["Last candles", ago(a.last_candles)],
+      ["Last evaluation", ago(a.last_evaluation)],
+      ["Last qualified", ago(a.last_qualified)],
+      ["Last paper open", ago(a.last_paper_open)],
+      ["Last Discord", ago(a.last_discord_alert)],
+      ["Last error", h.last_error||"none"]
+    ].map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0"><span class="muted">${k}</span><span>${v}</span></div>`).join("");
+    const dips = (L.quality_dips&&L.quality_dips.candidates)||[];
+    document.getElementById("dips").innerHTML = dips.length? `<table><tr><th>Symbol</th><th>Off high</th><th>5d</th><th>Score</th></tr>${
+      dips.slice(0,10).map(d=>`<tr><td>${d.symbol}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"}</td><td class="long">${fmt(d.score,0)}</td></tr>`).join("")
+    }</table>` : '<div class="sub">No dip snapshot yet. Alerts still go to Discord.</div>';
+    const opps = L.opportunities||[];
+    document.getElementById("opps").innerHTML = opps.length? `<table><tr><th>Symbol</th><th>Status</th><th>Side</th></tr>${
+      opps.slice(0,12).map(o=>`<tr><td>${o.symbol}</td><td>${o.status||""}</td><td>${o.recommendation||"—"}</td></tr>`).join("")
+    }</table>` : '<div class="sub">No stored perp setups yet. Gates stay strict.</div>';
+    const g = L.gates||{};
+    document.getElementById("gates").innerHTML = `<h3>Active gates (not editable)</h3>
+      <div class="pills">
+        <span class="pill">RSI ${fmt(g.rsi_long,0)} / ${fmt(g.rsi_short,0)}</span>
+        <span class="pill">Extension ${fmt(g.extension_pct,1)}%</span>
+        <span class="pill">Min R:R ${fmt(g.min_rr,1)}</span>
+        <span class="pill">Min volume ${fmt(g.min_volume,0)}</span>
+        <span class="pill">Max open ${fmt(g.max_open,0)}</span>
+      </div>`;
+  }catch(e){
+    document.getElementById("api").innerHTML = '<span class="bad">API down</span>';
+    document.getElementById("err").innerHTML = '<div class="err">Cannot reach API. Keep the Atlas window open.</div>';
+  }
+}
+load();
+setInterval(load, 8000);
+</script>
+</body>
+</html>

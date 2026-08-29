@@ -6,8 +6,11 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import Any, Dict
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.adapters.hyperliquid import HyperliquidAdapter
 from app.adapters.registry import registry
@@ -216,6 +219,13 @@ app.include_router(diagnostics_router)
 app.include_router(performance_router)
 app.include_router(live_router)
 
+DASHBOARD_HTML = Path(__file__).resolve().parent / "static" / "dashboard.html"
+
+
+@app.get("/dashboard")
+async def dashboard_page() -> FileResponse:
+    return FileResponse(DASHBOARD_HTML, media_type="text/html")
+
 
 @app.get("/api/research")
 async def api_research() -> Dict[str, Any]:
@@ -285,6 +295,7 @@ async def root() -> Dict[str, str]:
         "service": "Project Atlas",
         "docs": "/docs",
         "health": "/health",
+        "dashboard": "/dashboard",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
         "funnel": "/api/funnel",

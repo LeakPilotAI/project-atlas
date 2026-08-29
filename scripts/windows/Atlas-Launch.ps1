@@ -207,42 +207,15 @@ try {
         Write-Host "    API healthy"
     }
 
-    Write-Step "Starting frontend dashboard (port 3000)"
-    $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
-    if (-not $npm) { $npm = Get-Command npm -ErrorAction SilentlyContinue }
-    if (-not $npm) {
-        Write-Host "[ERROR] npm/node not in PATH. Install Node.js LTS, then re-run Fresh-Setup." -ForegroundColor Red
-        Stop-All
-        cmd /c pause
-        exit 1
-    }
-    if (-not (Test-Path (Join-Path $Frontend "node_modules"))) {
-        Write-Host "    npm install (first run)..."
-        Push-Location $Frontend
-        & npm.cmd install
-        Pop-Location
-    }
-    $feCmd = Join-Path $logDir "start-frontend.cmd"
-    @(
-        "@echo off",
-        "cd /d `"$Frontend`"",
-        "npm.cmd run dev -- --hostname 127.0.0.1 --port 3000"
-    ) | Set-Content -Path $feCmd -Encoding ASCII
-    $fe = Start-Process -FilePath $feCmd -WorkingDirectory $Frontend -PassThru -WindowStyle Minimized
-    $script:FePid = $fe.Id
-    Write-Host "    frontend pid $($script:FePid) (first compile can take a minute)"
     Write-Step "Opening dashboard"
-    Start-Process "http://127.0.0.1:3000"
-    if (Wait-Http "http://127.0.0.1:3000" 20) {
-        Write-Host "    Frontend ready"
-    } else {
-        Write-Host "[WARN] Dashboard still compiling. Refresh the browser in a few seconds." -ForegroundColor Yellow
-    }
+    Start-Process "http://127.0.0.1:8000/dashboard"
+    Write-Host "    Dashboard: http://127.0.0.1:8000/dashboard"
+    Write-Host "    (no Node/Next — served by the API)"
 
     Write-Host ""
     Write-Host "----------------------------------------" -ForegroundColor Green
     Write-Host " Atlas is running" -ForegroundColor Green
-    Write-Host " Dashboard:  http://127.0.0.1:3000"
+    Write-Host " Dashboard:  http://127.0.0.1:8000/dashboard"
     Write-Host " API:        http://127.0.0.1:8000/health"
     Write-Host ""
     Write-Host " Keep this window open."
