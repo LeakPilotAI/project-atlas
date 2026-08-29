@@ -28,7 +28,9 @@ Copy-Item "D:\Work\Project Atlas\backend\data" D:\Work\atlas-backup\data -Recurs
 
 ## Replace the folder with GitHub
 
-Close Atlas / Docker if they are running. Then:
+Open a **new** PowerShell whose prompt is `PS D:\Work>` — not inside `Project Atlas`.
+Windows will not delete a folder that is the current directory of that window.
+
 
 ```powershell
 # stop leftover python/node if needed
