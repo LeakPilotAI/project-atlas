@@ -31,6 +31,7 @@ from app.services.command_center import command_center
 from app.services.daily_paper_recap import daily_paper_recap
 from app.services.micro_heartbeat import micro_heartbeat
 from app.api.diagnostics import router as diagnostics_router
+from app.api.live import router as live_router
 from app.services.performance import router as performance_router
 
 try:
@@ -210,6 +211,7 @@ app.add_middleware(
 
 app.include_router(diagnostics_router)
 app.include_router(performance_router)
+app.include_router(live_router)
 
 
 @app.get("/api/research")

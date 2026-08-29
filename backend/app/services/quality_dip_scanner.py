@@ -20,6 +20,8 @@ class QualityDipScanner:
         self._task: Optional[asyncio.Task] = None
         self._running = False
         self._redis = None
+        self.last_scan_at: Optional[str] = None
+        self.last_snapshot: List[Dict[str, Any]] = []
 
     @property
     def running(self) -> bool:
@@ -415,6 +417,19 @@ class QualityDipScanner:
             await asyncio.sleep(0.35)
 
         await self._send_briefing(candidates)
+        self.last_scan_at = datetime.now(timezone.utc).isoformat()
+        self.last_snapshot = [
+            {
+                "symbol": c["symbol"],
+                "score": round(float(c.get("score") or 0), 1),
+                "price": (c.get("row") or {}).get("price"),
+                "pct_from_high": (c.get("row") or {}).get("pct_from_high"),
+                "chg_5d": (c.get("row") or {}).get("chg_5d"),
+                "category": (c.get("row") or {}).get("category"),
+                "high_52w": (c.get("row") or {}).get("high_52w"),
+            }
+            for c in sorted(candidates, key=lambda x: float(x.get("score") or 0), reverse=True)
+        ]
         log.info(
             "Quality dip scan complete",
             alerted=alerted,
