@@ -44,8 +44,14 @@ Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object {
 
 Write-Host "[stop] docker compose down..."
 if (Get-Command docker -ErrorAction SilentlyContinue) {
+    $env:COMPOSE_PROJECT_NAME = "atlas"
+    docker rm -f atlas-postgres atlas-redis 2>$null | Out-Null
     $job = Start-Job -ScriptBlock {
-        param($r) Set-Location $r; docker compose down --remove-orphans
+        param($r)
+        Set-Location $r
+        $env:COMPOSE_PROJECT_NAME = "atlas"
+        docker compose down --remove-orphans
+        docker rm -f atlas-postgres atlas-redis 2>$null | Out-Null
     } -ArgumentList $Root
     $null = Wait-Job $job -Timeout 25
     if ($job.State -eq "Running") {

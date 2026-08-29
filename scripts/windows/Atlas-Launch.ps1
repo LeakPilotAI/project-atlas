@@ -122,6 +122,9 @@ try {
     }
 
     Write-Step "Starting Postgres + Redis (docker compose)"
+    $env:COMPOSE_PROJECT_NAME = "atlas"
+    docker rm -f atlas-postgres atlas-redis 2>$null | Out-Null
+    docker compose down --remove-orphans 2>$null | Out-Null
     docker compose up -d
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERROR] docker compose up failed." -ForegroundColor Red
