@@ -68,16 +68,16 @@ export default function Dashboard() {
           fetch("http://127.0.0.1:8000/health"),
         ]);
 
-        if (!pRes.ok || !oRes.ok) {
-          throw new Error("Backend not reachable");
+        if (!hRes.ok) {
+          throw new Error("API health failed");
         }
 
-        const p = await pRes.json();
-        const o = await oRes.json();
-        const h = hRes.ok ? await hRes.json() : null;
+        const h = await hRes.json();
+        const p = pRes.ok ? await pRes.json() : null;
+        const o = oRes.ok ? await oRes.json() : [];
 
         setPerf(p);
-        setOpps(o);
+        setOpps(Array.isArray(o) ? o : []);
         setHealth(h);
         setError(null);
       } catch (err) {
