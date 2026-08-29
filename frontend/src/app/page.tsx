@@ -63,9 +63,9 @@ export default function Dashboard() {
     async function load() {
       try {
         const [pRes, oRes, hRes] = await Promise.all([
-          fetch("http://localhost:8000/api/performance"),
-          fetch("http://localhost:8000/api/opportunities"),
-          fetch("http://localhost:8000/health"),
+          fetch("http://127.0.0.1:8000/api/performance"),
+          fetch("http://127.0.0.1:8000/api/opportunities"),
+          fetch("http://127.0.0.1:8000/health"),
         ]);
 
         if (!pRes.ok || !oRes.ok) {
@@ -99,7 +99,7 @@ export default function Dashboard() {
     setBtResult(null);
     try {
       const res = await fetch(
-        `http://localhost:8000/api/backtest/${btSymbol.trim().toUpperCase()}`
+        `http://127.0.0.1:8000/api/backtest/${btSymbol.trim().toUpperCase()}`
       );
       const data = await res.json();
       setBtResult(data);

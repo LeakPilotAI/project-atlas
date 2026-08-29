@@ -69,13 +69,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         log.warning("Redis connection failed", error=str(e))
 
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        log.info("Database tables created/verified")
-    except Exception as e:
-        log.error("Database init failed", error=str(e))
-        raise
+    last_err: Exception | None = None
+    for attempt in range(1, 16):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            log.info("Database tables created/verified", attempt=attempt)
+            last_err = None
+            break
+        except Exception as e:
+            last_err = e
+            log.warning("Database not ready, retrying", attempt=attempt, error=str(e)[:200])
+            await asyncio.sleep(2)
+    if last_err is not None:
+        log.error("Database init failed", error=str(last_err))
+        raise last_err
 
     try:
         hl = HyperliquidAdapter()

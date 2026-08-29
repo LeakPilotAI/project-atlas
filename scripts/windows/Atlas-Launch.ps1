@@ -71,7 +71,23 @@ function Wait-Http([string]$Url, [int]$Tries = 40) {
             $r = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 2
             if ($r.StatusCode -ge 200 -and $r.StatusCode -lt 500) { return $true }
         } catch { }
+        Write-Host ("    waiting for {0} ({1}/{2})" -f $Url, $i, $Tries)
         Start-Sleep -Seconds 2
+    }
+    return $false
+}
+
+function Wait-Postgres([int]$Seconds = 90) {
+    Write-Host "    waiting for postgres to be ready..."
+    for ($i = 0; $i -lt $Seconds; $i += 3) {
+        $st = docker inspect -f "{{.State.Health.Status}}" atlas-postgres 2>$null
+        if ($st -eq "healthy") {
+            Write-Host "    postgres healthy"
+            return $true
+        }
+        $run = docker inspect -f "{{.State.Running}}" atlas-postgres 2>$null
+        Write-Host ("    postgres status={0} running={1} ({2}s)" -f $st, $run, $i)
+        Start-Sleep -Seconds 3
     }
     return $false
 }
@@ -131,7 +147,14 @@ try {
         cmd /c pause
         exit 1
     }
-    Start-Sleep -Seconds 5
+    if (-not (Wait-Postgres 90)) {
+        Write-Host "[WARN] postgres not healthy yet - starting API anyway" -ForegroundColor Yellow
+    }
+
+    $logDir = Join-Path $Root "logs"
+    New-Item -ItemType Directory -Force $logDir | Out-Null
+    $apiOut = Join-Path $logDir "api.out.log"
+    $apiErr = Join-Path $logDir "api.err.log"
 
     Write-Step "Starting Atlas API (port 8000)"
     $api = Start-Process -FilePath $VenvPy -ArgumentList @(
@@ -139,10 +162,18 @@ try {
         "--host", "0.0.0.0",
         "--port", "8000",
         "--app-dir", $Backend
-    ) -WorkingDirectory $Backend -PassThru -WindowStyle Minimized
+    ) -WorkingDirectory $Backend -PassThru -WindowStyle Hidden -RedirectStandardOutput $apiOut -RedirectStandardError $apiErr
+    if (-not $api) {
+        Write-Host "[ERROR] failed to start python/uvicorn" -ForegroundColor Red
+        cmd /c pause
+        exit 1
+    }
     $script:ApiPid = $api.Id
-    if (-not (Wait-Http "http://127.0.0.1:8000/health" 30)) {
-        Write-Host "[WARN] API health not OK yet - continuing" -ForegroundColor Yellow
+    Write-Host ("    API pid {0}" -f $script:ApiPid)
+    if (-not (Wait-Http "http://127.0.0.1:8000/health" 40)) {
+        Write-Host "[WARN] API health not OK. Last log lines:" -ForegroundColor Yellow
+        if (Test-Path $apiErr) { Get-Content $apiErr -Tail 20 }
+        if (Test-Path $apiOut) { Get-Content $apiOut -Tail 20 }
     } else {
         Write-Host "    API healthy"
     }
