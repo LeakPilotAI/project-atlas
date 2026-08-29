@@ -20,6 +20,9 @@ dependencies = [
     "tenacity>=9.0.0",
     "structlog>=24.4.0",
     "prometheus-client>=0.21.0",
+    "mplfinance>=0.12.10b0",
+    "matplotlib>=3.9.0",
+    "pandas>=2.2.0",
 ]
 
 [project.optional-dependencies]
