@@ -93,6 +93,14 @@ async def live() -> Dict[str, Any]:
         last_open = max((str(r.get("opened_at") or "") for r in opens), default=None) or None
         last_qual = last_qual or last_open
 
+    dip_paper: Dict[str, Any] = {}
+    try:
+        from app.investment.paper_book import PaperBook
+
+        dip_paper = PaperBook.load().snapshot()
+    except Exception:
+        dip_paper = {}
+
     return {
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "note": "Watch-only. Discord is the alert feed. Atlas does not place broker orders.",
@@ -138,6 +146,10 @@ async def live() -> Dict[str, Any]:
             "running": bool(getattr(quality_dip_scanner, "running", False)),
             "last_scan_at": getattr(quality_dip_scanner, "last_scan_at", None),
             "candidates": list(getattr(quality_dip_scanner, "last_snapshot", []) or []),
+            "discord_enabled": bool(settings.quality_dip_discord_enabled),
+            "auto_paper": bool(settings.quality_dip_auto_paper),
         },
+        "major_tape": getattr(perp_micro_coach, "last_major_tape", {}) or {},
+        "dip_paper": dip_paper,
         "investment": inv,
     }

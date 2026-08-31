@@ -71,12 +71,13 @@
   </div>
   <div class="grid g2">
     <div class="card">
-      <h3>Quality dips</h3>
+      <h3>Quality dips (stock paper, not Hyperliquid)</h3>
       <div id="dips"></div>
+      <div id="dippaper" class="sub" style="margin-top:8px"></div>
     </div>
     <div class="card">
-      <h3>Perp opportunities</h3>
-      <div id="opps"></div>
+      <h3>Majors tape (why BTC/SOL may not fire)</h3>
+      <div id="majors"></div>
     </div>
   </div>
   <div class="card" id="validation">
@@ -149,11 +150,21 @@ async function load(){
     const dips = (L.quality_dips&&L.quality_dips.candidates)||[];
     document.getElementById("dips").innerHTML = dips.length? `<table><tr><th>Symbol</th><th>Off high</th><th>5d</th><th>Score</th></tr>${
       dips.slice(0,10).map(d=>`<tr><td>${d.symbol}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"}</td><td class="long">${fmt(d.score,0)}</td></tr>`).join("")
-    }</table>` : '<div class="sub">No dip snapshot yet. Alerts still go to Discord.</div>';
-    const opps = L.opportunities||[];
-    document.getElementById("opps").innerHTML = opps.length? `<table><tr><th>Symbol</th><th>Status</th><th>Side</th></tr>${
-      opps.slice(0,12).map(o=>`<tr><td>${o.symbol}</td><td>${o.status||""}</td><td>${o.recommendation||"—"}</td></tr>`).join("")
-    }</table>` : '<div class="sub">No stored perp setups yet. Gates stay strict.</div>';
+    }</table>` : '<div class="sub">No dip snapshot yet. Stock dips auto-paper into the investment book — no Discord DMs.</div>';
+    const dp = L.dip_paper||{};
+    const pos = dp.positions||{};
+    const pkeys = Object.keys(pos);
+    document.getElementById("dippaper").innerHTML = pkeys.length
+      ? `Auto paper book: ${pkeys.join(", ")} · cash $${fmt(dp.cash,0)} · not Hyperliquid`
+      : "No stock paper fills yet (not crypto).";
+    const tape = L.major_tape||{};
+    const mkeys = Object.keys(tape);
+    document.getElementById("majors").innerHTML = mkeys.length ? `<table><tr><th>Symbol</th><th>RSI</th><th>Ext %</th><th>Blocked</th></tr>${
+      mkeys.slice(0,12).map(k=>{
+        const t=tape[k]||{};
+        return `<tr><td>${k}</td><td>${fmt(t.rsi,1)}</td><td>${fmt(t.ext_pct,2)}</td><td>${t.blocked||t.side||"—"}</td></tr>`;
+      }).join("")
+    }</table>` : '<div class="sub">Waiting on first major evaluation. BTC/SOL only paper when RSI 28/72 and ext 1.4% hit.</div>';
     const g = L.gates||{};
     document.getElementById("gates").innerHTML = `<h3>Active gates (not editable)</h3>
       <div class="pills">

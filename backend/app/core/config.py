@@ -115,6 +115,10 @@ class Settings(BaseSettings):
     quality_dip_adaptive_ceiling_metal: float = 25.0
     quality_dip_scan_interval_minutes: float = 60.0
     quality_dip_cooldown_hours: float = 24.0
+    quality_dip_discord_enabled: bool = False
+    quality_dip_auto_paper: bool = True
+    quality_dip_paper_usd: float = 200.0
+    quality_dip_paper_cash: float = 10_000.0
 
     # --- Day trade ---
     day_trade_enabled: bool = True

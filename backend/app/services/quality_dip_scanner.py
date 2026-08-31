@@ -214,6 +214,53 @@ class QualityDipScanner:
             reasons.append(f"Sharp short drop 5d {c5:.1f}%")
         return reasons
 
+    async def _auto_paper(self, row: Dict[str, Any], score: float) -> bool:
+        settings = get_settings()
+        if not bool(getattr(settings, "quality_dip_auto_paper", True)):
+            return False
+        try:
+            from app.investment.paper_book import PaperBook
+
+            book = PaperBook.load()
+            fill = book.research_buy(
+                str(row["symbol"]),
+                float(row["price"]),
+                float(getattr(settings, "quality_dip_paper_usd", 200) or 200),
+                reason=f"quality_dip score={score:.0f} pct_off_high={float(row['pct_from_high']):.1f}",
+                seed_cash=float(getattr(settings, "quality_dip_paper_cash", 10_000) or 10_000),
+            )
+            if fill:
+                log.info("Quality dip auto paper buy", **{k: fill.get(k) for k in ("symbol", "shares", "price", "usd")})
+                return True
+        except Exception as e:
+            log.warning("Quality dip auto paper failed", symbol=row.get("symbol"), error=str(e)[:200])
+        return False
+
+    async def _handle_candidate(
+        self, row: Dict[str, Any], normal: float, high: float, score: float
+    ) -> bool:
+        paper_ok = await self._auto_paper(row, score)
+        dm_ok = False
+        if bool(get_settings().quality_dip_discord_enabled):
+            dm_ok = await self._send_alert(row, normal, high, score)
+            if dm_ok:
+                try:
+                    from app.services.auto_ladder import auto_ladder
+
+                    await auto_ladder.maybe_create_from_dip(
+                        symbol=str(row["symbol"]),
+                        price=float(row["price"]),
+                        name=str(row.get("name") or row["symbol"]),
+                        category=str(row.get("category") or "stock"),
+                        high_52w=float(row["high_52w"]),
+                        low_52w=float(row["low_52w"]),
+                        pct_from_high=float(row["pct_from_high"]),
+                    )
+                except Exception as e:
+                    log.warning("Auto ladder create failed", symbol=row.get("symbol"), error=str(e))
+        await self._mark_cooldown(str(row["symbol"]))
+        return bool(paper_ok or dm_ok)
+
     async def _send_alert(self, row: Dict[str, Any], normal: float, high: float, score: float) -> bool:
         try:
             from app.alerts.discord import is_discord_ready, send_discord_alert
@@ -253,8 +300,7 @@ class QualityDipScanner:
             f"Triggers:\n"
             + "\n".join(f"• {r}" for r in reasons)
             + "\n\n"
-            f"**POSSIBLE QUALITY DIP / GENERATIONAL DISCOUNT – Review before buying**\n"
-            f"No auto-buy. Confirm price on your broker before acting."
+            f"**PAPER INVESTMENT only. No brokerage order. Not Hyperliquid.**"
         )
         try:
             ok = await send_discord_alert(
@@ -270,33 +316,11 @@ class QualityDipScanner:
         except Exception as e:
             log.warning("Quality dip Discord failed", symbol=symbol, error=str(e))
             return False
-
-        if ok:
-            await self._mark_cooldown(symbol)
-            log.info(
-                "Quality dip alert sent",
-                symbol=symbol,
-                pct_from_high=round(pct, 1),
-                review_score=round(score, 1),
-            )
-            # One-time auto ladder for non-core names
-            try:
-                from app.services.auto_ladder import auto_ladder
-
-                await auto_ladder.maybe_create_from_dip(
-                    symbol=symbol,
-                    price=price,
-                    name=str(row.get("name") or symbol),
-                    category=str(row.get("category") or "stock"),
-                    high_52w=float(row["high_52w"]),
-                    low_52w=float(row["low_52w"]),
-                    pct_from_high=pct,
-                )
-            except Exception as e:
-                log.warning("Auto ladder create failed", symbol=symbol, error=str(e))
         return bool(ok)
 
     async def _send_briefing(self, candidates: List[Dict[str, Any]]) -> None:
+        if not bool(get_settings().quality_dip_discord_enabled):
+            return
         if not candidates:
             return
         r = await self._redis_client()
@@ -412,7 +436,7 @@ class QualityDipScanner:
                 )
                 continue
 
-            if await self._send_alert(row, normal, high, score):
+            if await self._handle_candidate(row, normal, high, score):
                 alerted += 1
             await asyncio.sleep(0.35)
 

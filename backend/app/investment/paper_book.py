@@ -82,6 +82,54 @@ class PaperBook:
         self.state_path = state_path if state_path is not None else PAPER_STATE_PATH
         self.ledger_path = ledger_path if ledger_path is not None else LEDGER_PATH
 
+    def research_buy(
+        self,
+        symbol: str,
+        price: float,
+        usd: float,
+        *,
+        reason: str = "",
+        seed_cash: float = 10_000.0,
+    ) -> Optional[dict]:
+        """Simulated market buy. Stocks/ETFs only. Never a brokerage order."""
+        symbol = symbol.upper()
+        price = float(price)
+        usd = float(usd)
+        if price <= 0 or usd <= 0:
+            return None
+        if symbol in self.positions and self.positions[symbol].shares > 0:
+            return None
+        if self.cash <= 0 and not self.positions:
+            self.cash = float(seed_cash)
+        shares = usd / price
+        cost = shares * price
+        if cost > self.cash + 1e-9:
+            shares = self.cash / price
+            cost = shares * price
+        if shares <= 0 or cost <= 0:
+            return None
+        self.cash = float(money(Decimal(str(self.cash)) - Decimal(str(cost))))
+        pos = self.positions.get(symbol) or PaperPosition(symbol=symbol)
+        new_shares = pos.shares + shares
+        pos.avg_cost = (pos.cost_basis + cost) / new_shares if new_shares else price
+        pos.shares = new_shares
+        pos.market_price = price
+        self.positions[symbol] = pos
+        row = {
+            "symbol": symbol,
+            "shares": shares,
+            "price": price,
+            "usd": cost,
+            "reason": reason,
+            "session": "RESEARCH_PAPER",
+            "at": _now().isoformat(),
+        }
+        self.fills.append(row)
+        self._ledger("research_buy", row)
+        self._touch_peak()
+        self.save()
+        return row
+
     def execute_broker_order(self, *_a, **_k) -> None:
         raise RuntimeError("No real brokerage execution. Investment engine is research/paper only.")
 

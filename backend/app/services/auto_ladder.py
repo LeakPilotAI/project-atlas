@@ -208,7 +208,10 @@ class AutoLadderService:
     ) -> None:
         try:
             from app.alerts.discord import is_discord_ready, send_discord_alert
+            from app.core.config import get_settings
 
+            if not bool(get_settings().quality_dip_discord_enabled):
+                return
             if not is_discord_ready():
                 return
             lines = [

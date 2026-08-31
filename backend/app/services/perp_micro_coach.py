@@ -154,6 +154,7 @@ class PerpMicroCoach:
         self._http: Optional[httpx.AsyncClient] = None
         self._vol_map: Dict[str, float] = {}
         self._oi_map: Dict[str, float] = {}
+        self.last_major_tape: Dict[str, Dict[str, Any]] = {}
 
     @property
     def running(self) -> bool:
@@ -441,7 +442,13 @@ class PerpMicroCoach:
             soft.sort(key=lambda x: -x[1])
             symbols = [s for s, _ in soft][:60]
             log.warning("Liquid set soft fallback", soft_count=len(symbols))
-        return symbols[:80]
+        pinned: List[str] = []
+        seen = set(self._vol_map.keys()) | set(symbols)
+        for m in settings.perp_micro_majors_list:
+            if m in seen and m not in pinned:
+                pinned.append(m)
+        rest = [s for s in symbols if s not in pinned]
+        return (pinned + rest)[:80]
 
     def _setup_quality(
         self,
@@ -683,6 +690,27 @@ class PerpMicroCoach:
             return False
 
         ext_pct = abs(price - sma20) / sma20 * 100.0
+        majors = set(settings.perp_micro_majors_list)
+        if symbol in majors:
+            side_hint = (
+                "LONG"
+                if rsi <= float(settings.perp_micro_rsi_long)
+                else ("SHORT" if rsi >= float(settings.perp_micro_rsi_short) else None)
+            )
+            blocked = None
+            if ext_pct < float(settings.perp_micro_min_extension_pct):
+                blocked = "extension"
+            elif side_hint is None:
+                blocked = "rsi"
+            self.last_major_tape[symbol] = {
+                "symbol": symbol,
+                "price": price,
+                "rsi": round(float(rsi), 2),
+                "ext_pct": round(float(ext_pct), 3),
+                "side": side_hint,
+                "blocked": blocked,
+                "at": datetime.now(timezone.utc).isoformat(),
+            }
         if ext_pct < float(settings.perp_micro_min_extension_pct):
             paper_pipeline.inc_reject("EXTENSION_TOO_SMALL")
             shadow_research.record_evaluation(
