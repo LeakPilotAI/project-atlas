@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import statistics
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -128,6 +127,7 @@ def load_paper_closes(path: Optional[Path] = None) -> List[Dict[str, Any]]:
 
 
 def load_shadow_resolved(path: Optional[Path] = None) -> List[Dict[str, Any]]:
+    from app.services.paper_journal import iter_jsonl
     from app.services.shadow_research import CANDIDATES_PATH
 
     p = path or CANDIDATES_PATH
@@ -135,16 +135,13 @@ def load_shadow_resolved(path: Optional[Path] = None) -> List[Dict[str, Any]]:
         return []
     rows: List[Dict[str, Any]] = []
     try:
-        with p.open("r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                row = json.loads(line)
-                if str(row.get("trade_type") or "").upper() != "SHADOW":
-                    continue
-                if row.get("event") == "resolved" or row.get("lifecycle") == "RESOLVED":
-                    rows.append(row)
+        for row in iter_jsonl(p):
+            if row.get("event") == "_malformed":
+                continue
+            if str(row.get("trade_type") or "").upper() != "SHADOW":
+                continue
+            if row.get("event") == "resolved" or row.get("lifecycle") == "RESOLVED":
+                rows.append(row)
     except Exception:
         return rows
     return rows

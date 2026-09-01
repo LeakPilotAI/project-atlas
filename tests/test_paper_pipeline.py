@@ -60,7 +60,10 @@ def test_rr_geometry_meets_min() -> None:
     assert rr >= 1.8 - 1e-12
 
 
-def test_paper_journal_test_type_does_not_count() -> None:
+def test_paper_journal_test_type_does_not_count(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr("app.services.paper_journal.JOURNAL_PATH", tmp_path / "paper_journal.jsonl")
+    monkeypatch.setattr("app.services.paper_journal.CANDIDATE_PATH", tmp_path / "paper_candidates.jsonl")
+
     async def _run() -> None:
         j = PaperJournal()
         before = await j.stats()

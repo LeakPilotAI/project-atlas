@@ -53,6 +53,7 @@ class PaperJournal:
         CANDIDATE_PATH.parent.mkdir(parents=True, exist_ok=True)
         self._open: Dict[str, Dict[str, Any]] = {}
         self._malformed_lines: List[Dict[str, Any]] = []
+        self._last_reconcile: Dict[str, Any] = {}
         self._load_open_from_disk()
 
     def _load_open_from_disk(self) -> None:
@@ -235,7 +236,7 @@ class PaperJournal:
         )
         return tid
 
-    def update_excursion(self, trade_id: str, mark: float) -> None:
+    def update_excursion(self, trade_id: str, mark: float, *, force: bool = False) -> None:
         p = self._open.get(trade_id)
         if not p:
             return
@@ -256,7 +257,7 @@ class PaperJournal:
             p["mae_r"] = adv
             p["mae_price"] = mark
         last = float(p.get("_last_persisted_mfe") or 0), float(p.get("_last_persisted_mae") or 0)
-        if (p["mfe_r"] - last[0]) >= 0.05 or (p["mae_r"] - last[1]) >= 0.05:
+        if force or (p["mfe_r"] - last[0]) >= 0.05 or (p["mae_r"] - last[1]) >= 0.05:
             p["_last_persisted_mfe"] = p["mfe_r"]
             p["_last_persisted_mae"] = p["mae_r"]
             ur = fav if fav >= 0 else -adv
@@ -276,6 +277,114 @@ class PaperJournal:
                 },
             )
 
+    def persist_open_marks(self) -> int:
+        """Force a mark event for every in-memory open. Used on graceful shutdown."""
+        n = 0
+        for tid, p in list(self._open.items()):
+            mark = p.get("mark")
+            if mark is None:
+                continue
+            try:
+                self.update_excursion(tid, float(mark), force=True)
+                n += 1
+            except Exception:
+                pass
+        return n
+
+    def reconcile_from_disk(self) -> Dict[str, Any]:
+        """Journal file is source of truth.
+
+        - Add disk-only opens into memory (crash/orphan recovery).
+        - Drop memory rows whose close is already on disk.
+        - Preserve in-memory MFE/MAE when the trade is still open.
+        Does not rewrite historical records.
+        """
+        closed_ids = set()
+        opens: Dict[str, Dict[str, Any]] = {}
+        malformed: List[Dict[str, Any]] = []
+        open_counts: Dict[str, int] = {}
+        if JOURNAL_PATH.exists():
+            for row in iter_jsonl(JOURNAL_PATH):
+                if row.get("event") == "_malformed":
+                    malformed.append(row)
+                    continue
+                tid = row.get("trade_id")
+                if not tid:
+                    continue
+                if str(row.get("trade_type") or "PAPER").upper() == "TEST":
+                    continue
+                ev = row.get("event")
+                if ev == "open":
+                    opens[tid] = row
+                    open_counts[tid] = open_counts.get(tid, 0) + 1
+                elif ev == "mark" and tid in opens:
+                    try:
+                        opens[tid]["mfe_r"] = max(
+                            float(opens[tid].get("mfe_r") or 0), float(row.get("mfe_r") or 0)
+                        )
+                        opens[tid]["mae_r"] = max(
+                            float(opens[tid].get("mae_r") or 0), float(row.get("mae_r") or 0)
+                        )
+                    except (TypeError, ValueError):
+                        pass
+                    if row.get("mark") is not None:
+                        opens[tid]["mark"] = row.get("mark")
+                    if row.get("mfe_price") is not None:
+                        opens[tid]["mfe_price"] = row.get("mfe_price")
+                    if row.get("mae_price") is not None:
+                        opens[tid]["mae_price"] = row.get("mae_price")
+                elif ev == "close":
+                    closed_ids.add(tid)
+        self._malformed_lines = malformed
+        dropped_closed = 0
+        for tid in list(self._open):
+            if tid in closed_ids:
+                self._open.pop(tid, None)
+                dropped_closed += 1
+        added = 0
+        for tid, row in opens.items():
+            if tid in closed_ids:
+                continue
+            if tid not in self._open:
+                self._open[tid] = row
+                added += 1
+            else:
+                mem = self._open[tid]
+                try:
+                    mem["mfe_r"] = max(float(mem.get("mfe_r") or 0), float(row.get("mfe_r") or 0))
+                    mem["mae_r"] = max(float(mem.get("mae_r") or 0), float(row.get("mae_r") or 0))
+                except (TypeError, ValueError):
+                    pass
+                if mem.get("entry_timestamp") is None:
+                    mem["entry_timestamp"] = row.get("entry_timestamp")
+        duplicates = sum(1 for tid, n in open_counts.items() if n > 1 and tid not in closed_ids)
+        self._last_reconcile = {
+            "added": added,
+            "dropped_closed": dropped_closed,
+            "already_closed": len(closed_ids),
+            "duplicates": duplicates,
+            "malformed": len(malformed),
+            "persisted_open": len(self.list_open()),
+        }
+        return self._last_reconcile
+
+    def _scan_trade(self, trade_id: str) -> tuple:
+        open_row: Optional[Dict[str, Any]] = None
+        close_row: Optional[Dict[str, Any]] = None
+        if not JOURNAL_PATH.exists():
+            return open_row, close_row
+        for row in iter_jsonl(JOURNAL_PATH):
+            if row.get("event") == "_malformed":
+                continue
+            if row.get("trade_id") != trade_id:
+                continue
+            ev = row.get("event")
+            if ev == "open":
+                open_row = row
+            elif ev == "close":
+                close_row = row
+        return open_row, close_row
+
     async def close_trade(
         self,
         trade_id: str,
@@ -285,29 +394,14 @@ class PaperJournal:
         pnl_r: Optional[float] = None,
         exit_reason: Optional[str] = None,
     ) -> Dict[str, Any]:
-        p = self._open.pop(trade_id, None)
+        disk_open, existing_close = self._scan_trade(trade_id)
+        if existing_close:
+            self._open.pop(trade_id, None)
+            return existing_close
+        p = self._open.get(trade_id) or disk_open
         if not p:
-            existing_close: Optional[Dict[str, Any]] = None
-            if JOURNAL_PATH.exists():
-                try:
-                    with JOURNAL_PATH.open("r", encoding="utf-8") as f:
-                        for line in f:
-                            line = line.strip()
-                            if not line:
-                                continue
-                            row = json.loads(line)
-                            if row.get("trade_id") != trade_id:
-                                continue
-                            if row.get("event") == "close":
-                                existing_close = row
-                            elif row.get("event") == "open" and p is None:
-                                p = row
-                except Exception:
-                    p = p
-            if existing_close:
-                return existing_close
-            if not p:
-                return {}
+            return {}
+        self._open[trade_id] = p
         entry = float(p["actual_entry_price"])
         risk = float(p.get("risk_price") or 1e-12)
         side = p["side"]
@@ -316,9 +410,8 @@ class PaperJournal:
                 pnl_r = (exit_price - entry) / risk
             else:
                 pnl_r = (entry - exit_price) / risk
-        self._open[trade_id] = p
-        self.update_excursion(trade_id, exit_price)
-        p = self._open.pop(trade_id)
+        self.update_excursion(trade_id, exit_price, force=True)
+        p = self._open[trade_id]
         fees = float(p.get("fees_bps") or 0) / 10000.0
         slip = float(p.get("slippage_bps") or 0) / 10000.0
         cost_r = (fees + slip) * 2 * (entry / risk) if risk else 0.0
@@ -356,6 +449,7 @@ class PaperJournal:
             "mae_before_profit": round(mae, 4),
         }
         self._append(JOURNAL_PATH, close_row)
+        self._open.pop(trade_id, None)
         log.info(
             "paper close",
             trade_id=trade_id,
@@ -367,19 +461,22 @@ class PaperJournal:
         )
         return close_row
 
+
     def list_open(self) -> List[Dict[str, Any]]:
         return [p for p in self._open.values() if str(p.get("trade_type") or "PAPER").upper() != "TEST"]
 
     def recovery_report(self) -> Dict[str, Any]:
         opens = self.list_open()
+        rec = dict(self._last_reconcile or {})
         return {
             "title": "ATLAS PAPER RECOVERY",
             "persisted_open": len(opens),
             "recovered": len(opens),
-            "already_closed": 0,
+            "already_closed": int(rec.get("already_closed") or 0),
             "malformed": len(self._malformed_lines),
             "malformed_lines": list(self._malformed_lines),
-            "duplicates": 0,
+            "duplicates": int(rec.get("duplicates") or 0),
+            "added_from_disk": int(rec.get("added") or 0),
             "open_ids": [r.get("trade_id") for r in opens],
             "note": "Journal is source of truth. OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED.",
         }

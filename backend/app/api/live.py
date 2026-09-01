@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter
 
@@ -13,10 +13,13 @@ from app.core.config import get_settings
 router = APIRouter(prefix="/api", tags=["live"])
 
 
-def _open_row(row: Dict[str, Any]) -> Dict[str, Any]:
+def _open_row(row: Dict[str, Any], coach: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     entry = row.get("actual_entry_price") or row.get("entry") or row.get("signal_price")
     stop = row.get("stop_price") or row.get("stop")
     tp1 = row.get("tp1_price") or row.get("tp1")
+    c = coach or {}
+    lifecycle = c.get("lifecycle") or row.get("lifecycle") or "OPEN"
+    stale = c.get("stale_quote") if "stale_quote" in c else row.get("stale_quote")
     return {
         "trade_id": row.get("trade_id"),
         "symbol": row.get("symbol"),
@@ -24,14 +27,17 @@ def _open_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "entry": entry,
         "stop": stop,
         "tp1": tp1,
-        "mark": row.get("mark") or entry,
-        "mfe_r": row.get("mfe_r"),
-        "mae_r": row.get("mae_r"),
+        "mark": c.get("mark") if c.get("mark") is not None else (row.get("mark") or entry),
+        "mfe_r": c.get("mfe_r") if c.get("mfe_r") is not None else row.get("mfe_r"),
+        "mae_r": c.get("mae_r") if c.get("mae_r") is not None else row.get("mae_r"),
         "opened_at": row.get("entry_timestamp") or row.get("opened_at") or row.get("signal_timestamp"),
         "regime": row.get("regime"),
         "tier": row.get("tier"),
         "counts_for_live": row.get("counts_for_live"),
-        "stale_quote": row.get("stale_quote"),
+        "stale_quote": stale,
+        "lifecycle": lifecycle,
+        "recovered": bool(c.get("recovered")),
+        "error": c.get("error") or row.get("error"),
         "notes": row.get("notes"),
     }
 
@@ -58,7 +64,16 @@ async def live() -> Dict[str, Any]:
     opens: List[Dict[str, Any]] = []
     try:
         journal = await paper_journal.stats()
-        opens = [_open_row(r) for r in paper_journal.list_open()]
+        coach_map: Dict[str, Dict[str, Any]] = {}
+        try:
+            for p in await perp_micro_coach.list_open_papers():
+                coach_map[str(p.get("id") or p.get("trade_id"))] = p
+        except Exception:
+            coach_map = {}
+        opens = [
+            _open_row(r, coach_map.get(str(r.get("trade_id"))))
+            for r in paper_journal.list_open()
+        ]
     except Exception as e:
         journal = {"error": str(e)[:200]}
 

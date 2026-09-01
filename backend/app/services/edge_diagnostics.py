@@ -57,17 +57,25 @@ def _label(n: int, min_n: int) -> str:
 
 
 def _json_safe(obj: Any) -> Any:
-    if obj is None or isinstance(obj, (str, int, bool)):
+    if obj is None or isinstance(obj, (str, bool)):
         return obj
-    if isinstance(obj, float):
-        if math.isnan(obj) or math.isinf(obj):
+    if isinstance(obj, int) and not isinstance(obj, bool):
+        return obj
+    if isinstance(obj, float) or type(obj).__name__ in {"float64", "float32", "float16", "float128"}:
+        try:
+            f = float(obj)
+        except Exception:
             return None
-        return obj
+        if math.isnan(f) or math.isinf(f):
+            return None
+        return f
     if isinstance(obj, Path):
         return str(obj)
     if isinstance(obj, dict):
         return {str(k): _json_safe(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, set):
         return [_json_safe(v) for v in obj]
     if hasattr(obj, "isoformat"):
         try:
@@ -89,6 +97,21 @@ def _empty_baseline() -> Dict[str, Any]:
     return metrics([])
 
 
+def _finite_r(row: Dict[str, Any]) -> Optional[float]:
+    """First finite R. Missing / NaN / Inf → None (malformed, not a silent 0)."""
+    for k in ("net_pnl_r", "R_multiple"):
+        if k not in row or row[k] is None:
+            continue
+        try:
+            v = float(row[k])
+        except (TypeError, ValueError):
+            continue
+        if math.isnan(v) or math.isinf(v):
+            continue
+        return v
+    return None
+
+
 def classify_row(row: Dict[str, Any]) -> str:
     """closed / open / malformed / ignored — never silently drop a close."""
     if not isinstance(row, dict):
@@ -104,9 +127,7 @@ def classify_row(row: Dict[str, Any]) -> str:
         return "ignored"
     if str(row.get("trade_type") or "PAPER").upper() == "TEST":
         return "ignored"
-    try:
-        _f(row, "net_pnl_r", "R_multiple")
-    except Exception:
+    if _finite_r(row) is None:
         return "malformed"
     return "closed"
 

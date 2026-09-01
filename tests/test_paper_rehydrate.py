@@ -52,6 +52,12 @@ def test_rehydrate_inserts_missing_open(monkeypatch):
                 "malformed_lines": [],
             }
 
+        def reload(self):
+            return None
+
+        def reconcile_from_disk(self):
+            return {"added": 0, "malformed": 0, "duplicates": 0, "already_closed": 0}
+
     import app.services.paper_journal as pj
 
     monkeypatch.setattr(pj, "paper_journal", _J())
