@@ -49,6 +49,7 @@
 <main>
   <div id="err"></div>
   <div class="pills" id="pills"></div>
+  <div class="sub" style="letter-spacing:.14em;color:#a1a1aa;margin-top:8px">TRADING — Hyperliquid paper (isolated)</div>
   <div class="banner">
     <h2>Why no paper trade</h2>
     <div id="why" style="font-size:18px;margin-top:6px">—</div>
@@ -71,14 +72,19 @@
   </div>
   <div class="grid g2">
     <div class="card">
-      <h3>Quality dips (stock paper, not Hyperliquid)</h3>
+      <h3>Quality dips / major dislocations (investment engine)</h3>
       <div id="dips"></div>
       <div id="dippaper" class="sub" style="margin-top:8px"></div>
     </div>
     <div class="card">
-      <h3>Majors tape (why BTC/SOL may not fire)</h3>
+      <h3>Hyperliquid majors tape (RSI/ext — crypto only)</h3>
       <div id="majors"></div>
     </div>
+  </div>
+  <div class="card">
+    <h3>ATLAS EQUITY MAJORS TAPE</h3>
+    <div class="sub" id="eqhead"></div>
+    <div id="eqtape"></div>
   </div>
   <div class="card" id="validation">
     <h3>Trading validation (research only)</h3>
@@ -150,13 +156,13 @@ async function load(){
     const dips = (L.quality_dips&&L.quality_dips.candidates)||[];
     document.getElementById("dips").innerHTML = dips.length? `<table><tr><th>Symbol</th><th>Off high</th><th>5d</th><th>Score</th></tr>${
       dips.slice(0,10).map(d=>`<tr><td>${d.symbol}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"}</td><td class="long">${fmt(d.score,0)}</td></tr>`).join("")
-    }</table>` : '<div class="sub">No dip snapshot yet. Stock dips auto-paper into the investment book — no Discord DMs.</div>';
+    }</table>` : '<div class="sub">No investment-engine snapshot yet. Quality dips now come from the equity tape, not a 52-week Yahoo loop.</div>';
     const dp = L.dip_paper||{};
     const pos = dp.positions||{};
     const pkeys = Object.keys(pos);
     document.getElementById("dippaper").innerHTML = pkeys.length
-      ? `Auto paper book: ${pkeys.join(", ")} · cash $${fmt(dp.cash,0)} · not Hyperliquid`
-      : "No stock paper fills yet (not crypto).";
+      ? `Investment paper book: ${pkeys.join(", ")} · cash $${fmt(dp.cash,0)} · not Hyperliquid`
+      : "No investment paper fills (not crypto).";
     const tape = L.major_tape||{};
     const mkeys = Object.keys(tape);
     document.getElementById("majors").innerHTML = mkeys.length ? `<table><tr><th>Symbol</th><th>RSI</th><th>Ext %</th><th>Blocked</th></tr>${
@@ -164,7 +170,22 @@ async function load(){
         const t=tape[k]||{};
         return `<tr><td>${k}</td><td>${fmt(t.rsi,1)}</td><td>${fmt(t.ext_pct,2)}</td><td>${t.blocked||t.side||"—"}</td></tr>`;
       }).join("")
-    }</table>` : '<div class="sub">Waiting on first major evaluation. BTC/SOL only paper when RSI 28/72 and ext 1.4% hit.</div>';
+    }</table>` : '<div class="sub">Waiting on first crypto major evaluation. BTC/SOL only paper when RSI 28/72 and ext 1.4% hit.</div>';
+    const eq = L.equity_majors_tape||{};
+    const eqRows = eq.rows||[];
+    document.getElementById("eqhead").textContent = eq.headline || "No major dislocations currently detected.";
+    if (!eqRows.length) {
+      const near = (eq.nearest||[]).map((n,i)=>`${i+1}. ${n.symbol||"?"} — ${n.move_score==null?"n/a":n.move_score}`).join(" · ");
+      document.getElementById("eqtape").innerHTML = `<div class="sub">Nearest: ${near||"waiting on first investment scan"}</div>`;
+    } else {
+      document.getElementById("eqtape").innerHTML = `<table><tr><th>Ticker</th><th>Px</th><th>1D</th><th>5D</th><th>20D</th><th>DD</th><th>Vol</th><th>vs SPY</th><th>Score</th><th>Thesis</th><th>Class</th><th>Cause</th></tr>${
+        eqRows.slice(0,20).map(r=>{
+          const c=(r.cause&&r.cause.category)||"UNKNOWN";
+          const pct=v=> v==null?"—":(Number(v)*100).toFixed(1)+"%";
+          return `<tr><td>${r.symbol||""}</td><td>${fmt(r.price,2)}</td><td>${pct(r.ret_1d)}</td><td>${pct(r.ret_5d)}</td><td>${pct(r.ret_20d)}</td><td>${pct(r.drawdown)}</td><td>${r.rel_volume==null?"—":fmt(r.rel_volume,2)+"x"}</td><td>${pct(r.vs_spy)}</td><td>${r.move_score==null?"—":r.move_score}</td><td>${r.thesis||""}</td><td>${r.classification||""}</td><td>${c}</td></tr>`;
+        }).join("")
+      }</table>`;
+    }
     const g = L.gates||{};
     document.getElementById("gates").innerHTML = `<h3>Active gates (not editable)</h3>
       <div class="pills">

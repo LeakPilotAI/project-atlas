@@ -332,6 +332,190 @@ def side_analysis(rows: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     return out
 
 
+def _bucket(rows: Sequence[Dict[str, Any]], key_fn, min_n: int = 15) -> Dict[str, Any]:
+    buckets: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for r in rows:
+        buckets[str(key_fn(r))].append(r)
+    out: Dict[str, Any] = {}
+    for name, chunk in sorted(buckets.items(), key=lambda kv: -len(kv[1])):
+        m = metrics(chunk)
+        out[name] = {**m, **_slice_flag(m["n"], min_n)}
+    return out
+
+
+def hour_dow_analysis(rows: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
+    def hour(r: Dict[str, Any]) -> str:
+        ts = _parse_iso(r.get("entry_timestamp") or r.get("signal_timestamp"))
+        return "UNKNOWN" if ts is None else f"{ts.hour:02d}"
+
+    def dow(r: Dict[str, Any]) -> str:
+        ts = _parse_iso(r.get("entry_timestamp") or r.get("signal_timestamp"))
+        return "UNKNOWN" if ts is None else ts.strftime("%A")
+
+    return {
+        "hour": _bucket(rows, hour, 15),
+        "day_of_week": _bucket(rows, dow, 15),
+        "note": "EXPLORATORY until each bucket reaches min_n. Do not retune gates from this.",
+    }
+
+
+def feature_buckets(rows: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
+    def rsi_b(r: Dict[str, Any]) -> str:
+        feats = r.get("features") if isinstance(r.get("features"), dict) else {}
+        v = feats.get("rsi")
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            return "UNKNOWN"
+        if x <= 20:
+            return "RSI<=20"
+        if x <= 28:
+            return "RSI_21-28"
+        if x >= 80:
+            return "RSI>=80"
+        if x >= 72:
+            return "RSI_72-80"
+        return "RSI_mid"
+
+    def ext_b(r: Dict[str, Any]) -> str:
+        feats = r.get("features") if isinstance(r.get("features"), dict) else {}
+        v = feats.get("ext_pct")
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            return "UNKNOWN"
+        if x < 1.4:
+            return "ext<1.4"
+        if x < 2.0:
+            return "ext_1.4-2.0"
+        if x < 3.0:
+            return "ext_2.0-3.0"
+        return "ext>=3.0"
+
+    def rr_b(r: Dict[str, Any]) -> str:
+        feats = r.get("features") if isinstance(r.get("features"), dict) else {}
+        v = feats.get("rr")
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            return "UNKNOWN"
+        if x < 1.8:
+            return "rr<1.8"
+        if x < 2.2:
+            return "rr_1.8-2.2"
+        return "rr>=2.2"
+
+    def q_b(r: Dict[str, Any]) -> str:
+        feats = r.get("features") if isinstance(r.get("features"), dict) else {}
+        v = feats.get("qscore") or r.get("signal_score")
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            return "UNKNOWN"
+        if x < 70:
+            return "q<70"
+        if x < 85:
+            return "q_70-85"
+        return "q>=85"
+
+    def liq_b(r: Dict[str, Any]) -> str:
+        feats = r.get("features") if isinstance(r.get("features"), dict) else {}
+        v = feats.get("vol")
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            return "UNKNOWN"
+        if x < 500_000:
+            return "vol<500k"
+        if x < 2_000_000:
+            return "vol_500k-2m"
+        return "vol>=2m"
+
+    return {
+        "rsi": _bucket(rows, rsi_b),
+        "extension": _bucket(rows, ext_b),
+        "rr": _bucket(rows, rr_b),
+        "quality": _bucket(rows, q_b),
+        "liquidity": _bucket(rows, liq_b),
+        "gates_locked": True,
+        "note": "Descriptive only. Do not change RSI 28/72, ext 1.4%, or R:R 1.8 from these buckets.",
+    }
+
+
+def exit_research(rows: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
+    wins = [r for r in rows if _f(r, "net_pnl_r", "R_multiple") > 0]
+    losses = [r for r in rows if _f(r, "net_pnl_r", "R_multiple") <= 0]
+    def avg(xs, key):
+        vals = [_f(r, key) for r in xs]
+        return round(sum(vals) / len(vals), 4) if vals else None
+
+    captured = []
+    for r in rows:
+        mfe = _f(r, "mfe_r")
+        pnl = _f(r, "net_pnl_r", "R_multiple")
+        if mfe > 1e-9:
+            captured.append(pnl / mfe)
+    return {
+        "n": len(rows),
+        "winners_n": len(wins),
+        "losers_n": len(losses),
+        "avg_mfe_winners": avg(wins, "mfe_r"),
+        "avg_mfe_losers": avg(losses, "mfe_r"),
+        "avg_mae_winners": avg(wins, "mae_r"),
+        "avg_mae_losers": avg(losses, "mae_r"),
+        "median_duration_sec_winners": (
+            round(float(statistics.median([_f(r, "duration_sec", "holding_time_sec") for r in wins])), 1)
+            if wins
+            else None
+        ),
+        "median_duration_sec_losers": (
+            round(float(statistics.median([_f(r, "duration_sec", "holding_time_sec") for r in losses])), 1)
+            if losses
+            else None
+        ),
+        "mean_mfe_captured": round(sum(captured) / len(captured), 4) if captured else None,
+        "note": (
+            "MFE captured < 1 means exits leave excursion on the table. "
+            "This is research, not permission to change TP/SL."
+        ),
+        "exploratory": len(rows) < 50,
+        "do_not_change_gates": True,
+    }
+
+
+def loss_concentration(rows: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
+    ordered = _sort_chrono(rows)
+    rs = r_series(ordered)
+    worst = 0
+    cur = 0
+    for x in rs:
+        if x <= 0:
+            cur += 1
+            worst = max(worst, cur)
+        else:
+            cur = 0
+    by_regime = regime_analysis(rows)
+    weakest = None
+    strongest = None
+    best = None
+    worst_r = None
+    for name, m in by_regime.items():
+        if not isinstance(m, dict) or "average_r" not in m:
+            continue
+        if m.get("n", 0) <= 0:
+            continue
+        if weakest is None or m["average_r"] < worst_r:
+            weakest, worst_r = name, m["average_r"]
+        if strongest is None or m["average_r"] > (best if best is not None else -999):
+            strongest, best = name, m["average_r"]
+    return {
+        "longest_losing_streak": worst,
+        "weakest_regime": weakest,
+        "strongest_regime": strongest,
+        "note": "Path/risk observation. Not a live-unlock and not a gate change.",
+    }
+
+
 def regime_analysis(rows: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     buckets: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     for r in rows:
@@ -634,6 +818,10 @@ def full_report(seed: int = 6) -> Dict[str, Any]:
         "chronological": chronological(paper),
         "side": side_analysis(paper),
         "regime": regime_analysis(paper),
+        "hour_dow": hour_dow_analysis(paper),
+        "feature_buckets": feature_buckets(paper),
+        "exit_research": exit_research(paper),
+        "loss_concentration": loss_concentration(paper),
         "shadow_vs_paper": shadow_vs_paper(paper, shadow),
         "rejection": rejection_analysis(),
         "feature_dataset_n": len(feature_dataset(paper)),

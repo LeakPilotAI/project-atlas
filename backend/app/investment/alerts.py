@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from app.investment.enums import EvidenceQuality, InvestmentAlertState, ThesisState
+from app.investment.enums import EvidenceQuality, InvestmentAlertState, MoveClassification, ThesisState
 from app.investment.research import generational_gate
 from app.investment.research_models import ResearchRecord
 from app.investment.storage import ALERT_STATE_PATH, ensure_dirs
@@ -36,6 +36,7 @@ class AlertSnapshot:
     last_price: Optional[float] = None
     last_drawdown: Optional[float] = None
     last_thesis: Optional[str] = None
+    last_move_class: Optional[str] = None
 
 
 @dataclass
@@ -93,6 +94,7 @@ class AlertStore:
                 last_price=row.get("last_price"),
                 last_drawdown=row.get("last_drawdown"),
                 last_thesis=row.get("last_thesis"),
+                last_move_class=row.get("last_move_class"),
             )
             self._by_symbol[snap.symbol] = snap
 
@@ -112,6 +114,7 @@ class AlertStore:
                     "last_price": s.last_price,
                     "last_drawdown": s.last_drawdown,
                     "last_thesis": s.last_thesis,
+                    "last_move_class": s.last_move_class,
                 }
             )
         Path(self.path).write_text(json.dumps({"symbols": rows}, indent=2), encoding="utf-8")
@@ -257,5 +260,47 @@ def commit_alert(rec: ResearchRecord, decision: AlertDecision, store: AlertStore
             last_price=rec.price,
             last_drawdown=rec.drawdown.current_drawdown,
             last_thesis=rec.thesis.value,
+            last_move_class=prev.last_move_class if prev else None,
         )
     )
+
+
+MOVE_ALERTS = {
+    MoveClassification.MAJOR_DISLOCATION,
+    MoveClassification.EXTREME_DISLOCATION,
+    MoveClassification.THESIS_DETERIORATING,
+    MoveClassification.FUNDAMENTAL_BREAKDOWN,
+}
+
+
+def should_emit_move(store: AlertStore, symbol: str, cls: MoveClassification) -> AlertDecision:
+    if cls not in MOVE_ALERTS:
+        return AlertDecision(emit=False, reason="move class not an alert state", classification=InvestmentAlertState.NO_ACTION, suppressed=True)
+    prev = store.get(symbol)
+    prev_m = (prev.last_move_class if prev else None) or ""
+    if prev_m == cls.value:
+        return AlertDecision(
+            emit=False,
+            reason="same move class — duplicate suppressed",
+            classification=InvestmentAlertState.WATCH,
+            suppressed=True,
+        )
+    return AlertDecision(
+        emit=True,
+        reason=f"move {prev_m or 'NONE'} → {cls.value}",
+        classification=InvestmentAlertState.WATCH
+        if cls is MoveClassification.MAJOR_DISLOCATION
+        else InvestmentAlertState.DEEP_VALUE,
+        priority="HIGH",
+    )
+
+
+def commit_move(store: AlertStore, symbol: str, cls: MoveClassification, *, now: Optional[datetime] = None) -> None:
+    now = now or _now()
+    prev = store.get(symbol)
+    if prev is None:
+        store.put(AlertSnapshot(symbol=symbol, classification=InvestmentAlertState.WATCH, last_move_class=cls.value, last_alert_at=now))
+        return
+    prev.last_move_class = cls.value
+    prev.last_alert_at = now
+    store.put(prev)

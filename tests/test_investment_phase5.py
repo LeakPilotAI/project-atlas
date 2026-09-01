@@ -202,8 +202,8 @@ def test_example_universe_is_diversified_research_set():
     assert "SPY" in symbols and "XLK" in symbols and "XLV" in symbols
     assert "JNJ" in symbols and "CAT" in symbols
     assert "KO" in symbols or "PG" in symbols
-    banned = {"MSFT", "AAPL", "GOOGL", "AMZN", "META"}
-    assert banned.isdisjoint(symbols)
+    majors = {e.symbol for e in u.by_group("major")}
+    assert "NVDA" in majors
 
 
 def test_operator_universe_from_file_not_engine(tmp_path):

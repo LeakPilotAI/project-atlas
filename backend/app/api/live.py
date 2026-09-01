@@ -101,6 +101,14 @@ async def live() -> Dict[str, Any]:
     except Exception:
         dip_paper = {}
 
+    equity_tape: Dict[str, Any] = {}
+    try:
+        from app.investment.tape import public_payload as equity_tape_payload
+
+        equity_tape = equity_tape_payload()
+    except Exception as e:
+        equity_tape = {"error": str(e)[:160], "rows": [], "nearest": [], "quiet": True}
+
     return {
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "note": "Watch-only. Discord is the alert feed. Atlas does not place broker orders.",
@@ -150,6 +158,7 @@ async def live() -> Dict[str, Any]:
             "auto_paper": bool(settings.quality_dip_auto_paper),
         },
         "major_tape": getattr(perp_micro_coach, "last_major_tape", {}) or {},
+        "equity_majors_tape": equity_tape,
         "dip_paper": dip_paper,
         "investment": inv,
     }

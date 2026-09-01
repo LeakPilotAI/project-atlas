@@ -75,18 +75,23 @@ def test_universe_from_file_not_hardcoded(tmp_path):
     assert len(empty) == 0
 
 
-def test_example_universe_covers_asset_types_without_megacaps():
+def test_example_universe_has_major_group_without_scoring_tickers():
     u = load_example_universe()
     types = {e.asset_type for e in u}
     assert AssetType.STOCK in types
     assert AssetType.ETF in types
     assert AssetType.INDEX in types
     assert AssetType.SECTOR_ETF in types
-    banned = {"MSFT", "AAPL", "GOOGL", "AMZN", "META"}
-    assert banned.isdisjoint(set(u.symbols()))
-    src = Path(inspect.getfile(load_universe)).read_text(encoding="utf-8")
-    for ticker in banned:
+    majors = {e.symbol for e in u.by_group("major")}
+    assert "NVDA" in majors and "MSFT" in majors and "SPY" in majors
+    from app.investment import scoring as scoring_mod
+    from app.investment import moves as moves_mod
+
+    src = Path(inspect.getfile(scoring_mod)).read_text(encoding="utf-8")
+    src_m = Path(inspect.getfile(moves_mod)).read_text(encoding="utf-8")
+    for ticker in ("MSFT", "AAPL", "NVDA"):
         assert f'"{ticker}"' not in src
+        assert f'"{ticker}"' not in src_m
 
 
 def test_freshness_kinds_differ():

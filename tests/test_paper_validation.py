@@ -220,3 +220,36 @@ def test_coach_thresholds_untouched() -> None:
     assert s.perp_micro_min_extension_pct == 1.4
     assert s.perp_micro_min_rr == 1.8
     assert hasattr(PerpMicroCoach, "_rehydrate_open")
+
+
+def test_exit_research_and_buckets_are_exploratory() -> None:
+    from app.services.paper_validation import exit_research, feature_buckets, hour_dow_analysis
+
+    rows = [
+        {
+            "net_pnl_r": 1.0,
+            "mfe_r": 2.0,
+            "mae_r": 0.4,
+            "duration_sec": 100,
+            "entry_timestamp": "2026-08-31T14:00:00+00:00",
+            "features": {"rsi": 18, "ext_pct": 1.6, "rr": 1.8, "qscore": 80, "vol": 2_000_000},
+            "side": "SHORT",
+        },
+        {
+            "net_pnl_r": -1.0,
+            "mfe_r": 0.2,
+            "mae_r": 1.0,
+            "duration_sec": 80,
+            "entry_timestamp": "2026-09-01T15:00:00+00:00",
+            "features": {"rsi": 75, "ext_pct": 2.5, "rr": 1.9, "qscore": 60, "vol": 100_000},
+            "side": "LONG",
+        },
+    ]
+    er = exit_research(rows)
+    assert er["do_not_change_gates"] is True
+    assert er["avg_mfe_winners"] == 2.0
+    assert er["mean_mfe_captured"] is not None
+    fb = feature_buckets(rows)
+    assert fb["gates_locked"] is True
+    hd = hour_dow_analysis(rows)
+    assert "hour" in hd and "day_of_week" in hd

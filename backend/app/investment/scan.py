@@ -16,7 +16,51 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional
 from uuid import uuid4
 
-from app.investment.alerts import AlertStore
+from app.investment.alerts import AlertStore, commit_move, should_emit_move
+from app.investment.blocking import blocking_pair, blocker_bucket, is_qualified
+from app.investment.completeness import completeness_report
+from app.investment.diagnostics import cycle_summary, format_data_health, save_last_cycle
+from app.investment.engine import process_research
+from app.investment.enums import DataQuality, EvidenceQuality, InvestmentAlertState, ThesisState
+from app.investment.evaluation import classify_evaluation
+from app.investment.freshness import restamp
+from app.investment.history import load_bars
+from app.investment.ingest import FetchPlan, InvestmentIngest
+from app.investment.intelligence import evaluate_equity_move
+from app.investment.lookahead import as_of_date, filter_bars_as_of
+from app.investment.market_hours import session_status
+from app.investment.models import MeasuredValue, PortfolioInput
+from app.investment.move_store import append_move_event
+from app.investment.notify import deliver_investment_alert, format_equity_move_alert
+from app.investment.outcomes import empty_outcomes, enrich_observation
+from app.investment.paper_book import PaperBook
+from app.investment.portfolio import load_portfolio
+from app.investment.provider_health import configure_provider_health, get_provider_health
+from app.investment.research import InvestmentResearch
+from app.investment.research_models import ResearchRecord
+from app.investment.research_store import append_research
+from app.investment.scan_models import SCAN_VERSION, ScanObservation, ScanReport
+from app.investment.scan_settings import ScanSettings
+from app.investment.scan_store import append_observation, append_scan_log, load_observations
+from app.investment.snapshot import (
+    InvestmentSnapshot,
+    load_latest_snapshot,
+    save_latest_snapshot,
+)
+from app.investment.storage import (
+    FETCH_STATE_PATH,
+    LATEST_DIR,
+    LEDGER_PATH,
+    OBSERVATIONS_PATH,
+    OUTCOMES_PATH,
+    PAPER_STATE_PATH,
+    bootstrap_universe_if_missing,
+    ensure_dirs,
+)
+from app.investment.tape import set_rows as set_equity_tape
+from app.investment.thesis_trend import apply_deterioration, detect_deterioration
+from app.investment.universe import InvestmentUniverse, UniverseEntry, load_universe
+from app.investment.yfinance_client import ProviderCallError
 from app.investment.blocking import blocking_pair, blocker_bucket, is_qualified
 from app.investment.completeness import completeness_report
 from app.investment.diagnostics import cycle_summary, format_data_health, save_last_cycle
@@ -476,8 +520,8 @@ class InvestmentScanner:
         scan_id = f"scan-{now.strftime('%Y%m%dT%H%M%SZ')}-{uuid4().hex[:8]}"
         report = ScanReport(scan_id=scan_id, started_at=now, session=session)
         universe = self._universe()
-        active = [e for e in universe if e.active]
-        report.universe = len(active)
+        ordered = universe.scan_order()
+        report.universe = len(ordered)
         ing = self._ing(universe, persist)
         store = self._store(persist)
         port = self._port()
@@ -487,7 +531,8 @@ class InvestmentScanner:
         out_path = self.outcomes_path if self.outcomes_path is not None else (OUTCOMES_PATH if persist else None)
 
         counts = {s.value: 0 for s in InvestmentAlertState}
-        for entry in active:
+        tape_rows: List[dict] = []
+        for entry in ordered:
             try:
                 obs = await self._evaluate_one(
                     entry,
@@ -496,12 +541,14 @@ class InvestmentScanner:
                     session=session,
                     scan_id=scan_id,
                     ing=ing,
+                    universe=universe,
                     fetch_state=fetch_state,
                     store=store,
                     port=port,
                     paper=paper,
                     persist=persist,
                     obs_path=obs_path,
+                    tape_rows=tape_rows,
                 )
                 report.observations.append(obs)
                 report.evaluated += 1
@@ -540,7 +587,7 @@ class InvestmentScanner:
                         append_research(rec)
                     else:
                         append_research(rec, path=Path(self.observations_path).with_name("opportunities.jsonl"))
-            if cfg.inter_symbol_delay_seconds and entry is not active[-1]:
+            if cfg.inter_symbol_delay_seconds and entry is not ordered[-1]:
                 await asyncio.sleep(max(0.0, float(cfg.inter_symbol_delay_seconds)))
 
         report.counts = counts
@@ -548,6 +595,10 @@ class InvestmentScanner:
         report.dashboard = format_scan_dashboard(report)
         report.data_health = format_data_health(report)
         self.last_report = report
+        try:
+            set_equity_tape(tape_rows)
+        except Exception as e:
+            log.warning("equity tape update failed", error=str(e)[:160])
         if persist:
             append_scan_log(report)
             try:
@@ -569,12 +620,14 @@ class InvestmentScanner:
         session: str,
         scan_id: str,
         ing: InvestmentIngest,
+        universe: InvestmentUniverse,
         fetch_state: FetchState,
         store: AlertStore,
         port: PortfolioInput,
         paper: Optional[PaperBook],
         persist: bool,
         obs_path: Optional[Path],
+        tape_rows: Optional[List[dict]] = None,
     ) -> ScanObservation:
         prior = self._latest.get(entry.symbol)
         if prior is None:
@@ -612,6 +665,59 @@ class InvestmentScanner:
         bars = filter_bars_as_of(raw_bars, now)
         rec = self.research.score_snapshot(snap, bars, as_of=now)
         rec.timestamp = now
+        deteriorating, dnotes = detect_deterioration(
+            snap.fundamentals, prior.fundamentals if prior is not None else None
+        )
+        if deteriorating:
+            rec.thesis = apply_deterioration(rec.thesis, True)
+            rec.explain.weakens_thesis.extend(dnotes)
+            rec.explain.invalidation.extend(dnotes)
+
+        headlines: List[dict] = []
+        intel = evaluate_equity_move(
+            entry,
+            rec,
+            universe=universe,
+            history_root=self.history_root or getattr(ing, "history_root", None),
+            headlines=headlines,
+            deteriorating=deteriorating,
+        )
+        mv_score = intel["move"].score
+        if mv_score is not None and mv_score >= 65:
+            try:
+                from app.investment.cause import fetch_yahoo_headlines
+
+                headlines = await fetch_yahoo_headlines(entry.symbol)
+                intel = evaluate_equity_move(
+                    entry,
+                    rec,
+                    universe=universe,
+                    history_root=self.history_root or getattr(ing, "history_root", None),
+                    headlines=headlines,
+                    deteriorating=deteriorating,
+                )
+            except Exception:
+                pass
+        if tape_rows is not None:
+            tape_rows.append(intel["tape_row"])
+        if persist and mv_score is not None and mv_score >= 40:
+            try:
+                append_move_event(
+                    {
+                        "symbol": entry.symbol,
+                        "as_of": now.isoformat(),
+                        "price": rec.price,
+                        "move": intel["move"].as_dict(),
+                        "relative": intel["relative"].as_dict(),
+                        "cause": intel["cause"].as_dict(),
+                        "thesis": rec.thesis.value,
+                        "evidence": rec.evidence_quality.value,
+                        "classification": intel["move"].classification.value,
+                    }
+                )
+            except Exception as e:
+                log.warning("move event persist failed", symbol=entry.symbol, error=str(e)[:160])
+
         first, factors = blocking_pair(rec)
         fetched = {
             "price": plan.price,
@@ -677,6 +783,30 @@ class InvestmentScanner:
                     )
             except Exception as e:
                 log.warning("investment notify failed", symbol=rec.symbol, error=str(e)[:160])
+        try:
+            move_cls = intel["move"].classification
+            mdec = should_emit_move(store, entry.symbol, move_cls)
+            if mdec.emit:
+                commit_move(store, entry.symbol, move_cls, now=now)
+                plan = result.get("plan")
+                if intel.get("review") is not None and plan is not None:
+                    plan.review_levels = intel["review"].as_dict()
+                text = format_equity_move_alert(
+                    symbol=entry.symbol,
+                    tape_row=intel["tape_row"],
+                    plan=plan,
+                    review=None if intel.get("review") is None else intel["review"].as_dict(),
+                    why=rec.explain.why_now or rec.explain.why_interesting,
+                    risks=rec.explain.risks,
+                )
+                if cfg.notify_discord:
+                    if self._notify is not None:
+                        self._notify(text, rec.symbol, mdec.priority)
+                    else:
+                        await deliver_investment_alert(text, symbol=rec.symbol, priority=mdec.priority)
+                obs.fetched["move_alert_emitted"] = True
+        except Exception as e:
+            log.warning("equity move alert failed", symbol=entry.symbol, error=str(e)[:160])
         return obs
 
     async def _ingest_with_retry(

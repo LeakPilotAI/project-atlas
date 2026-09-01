@@ -1,135 +1,54 @@
 {
-  "comment": "TEST/RESEARCH assets only. Not recommendations. Copy to data/investment/universe.json and edit. The engine has no baked-in ticker list.",
+  "comment": "Monitoring universe. Not recommendations. Copy to data/investment/universe.json and edit. Scoring code has no baked-in ticker list.",
+  "broad_benchmarks": {
+    "market": "SPY",
+    "growth": "QQQ"
+  },
+  "sector_benchmarks": {
+    "Technology": "XLK",
+    "Financials": "XLF",
+    "Health Care": "XLV",
+    "Energy": "XLE",
+    "Semiconductors": "SOXX",
+    "Broad Market": "SPY"
+  },
   "assets": [
-    {
-      "symbol": "SPY",
-      "name": "SPDR S&P 500 ETF Trust",
-      "asset_type": "ETF",
-      "exchange": "ARCA",
-      "currency": "USD",
-      "sector": "Broad Market",
-      "industry": "Large Cap Blend",
-      "active": true
-    },
-    {
-      "symbol": "QQQ",
-      "name": "Invesco QQQ Trust",
-      "asset_type": "ETF",
-      "exchange": "NASDAQ",
-      "currency": "USD",
-      "sector": "Broad Market",
-      "industry": "Large Cap Growth",
-      "active": true
-    },
-    {
-      "symbol": "IWM",
-      "name": "iShares Russell 2000 ETF",
-      "asset_type": "ETF",
-      "exchange": "ARCA",
-      "currency": "USD",
-      "sector": "Broad Market",
-      "industry": "Small Cap Blend",
-      "active": true
-    },
-    {
-      "symbol": "VTI",
-      "name": "Vanguard Total Stock Market ETF",
-      "asset_type": "ETF",
-      "exchange": "ARCA",
-      "currency": "USD",
-      "sector": "Broad Market",
-      "industry": "Total Market",
-      "active": true
-    },
-    {
-      "symbol": "XLK",
-      "name": "Technology Select Sector SPDR Fund",
-      "asset_type": "SECTOR_ETF",
-      "exchange": "ARCA",
-      "currency": "USD",
-      "sector": "Technology",
-      "industry": "Sector ETF",
-      "active": true
-    },
-    {
-      "symbol": "XLV",
-      "name": "Health Care Select Sector SPDR Fund",
-      "asset_type": "SECTOR_ETF",
-      "exchange": "ARCA",
-      "currency": "USD",
-      "sector": "Health Care",
-      "industry": "Sector ETF",
-      "active": true
-    },
-    {
-      "symbol": "XLF",
-      "name": "Financial Select Sector SPDR Fund",
-      "asset_type": "SECTOR_ETF",
-      "exchange": "ARCA",
-      "currency": "USD",
-      "sector": "Financials",
-      "industry": "Sector ETF",
-      "active": true
-    },
-    {
-      "symbol": "^GSPC",
-      "name": "S&P 500 Index",
-      "asset_type": "INDEX",
-      "exchange": "INDEX",
-      "currency": "USD",
-      "sector": "Broad Market",
-      "industry": "Large Cap Index",
-      "active": true
-    },
-    {
-      "symbol": "JNJ",
-      "name": "Johnson & Johnson",
-      "asset_type": "STOCK",
-      "exchange": "NYSE",
-      "currency": "USD",
-      "sector": "Health Care",
-      "industry": "Pharmaceuticals",
-      "active": true
-    },
-    {
-      "symbol": "CAT",
-      "name": "Caterpillar Inc.",
-      "asset_type": "STOCK",
-      "exchange": "NYSE",
-      "currency": "USD",
-      "sector": "Industrials",
-      "industry": "Farm & Heavy Construction Machinery",
-      "active": true
-    },
-    {
-      "symbol": "BRK-B",
-      "name": "Berkshire Hathaway Inc. Class B",
-      "asset_type": "STOCK",
-      "exchange": "NYSE",
-      "currency": "USD",
-      "sector": "Financials",
-      "industry": "Diversified Financial Services",
-      "active": true
-    },
-    {
-      "symbol": "KO",
-      "name": "The Coca-Cola Company",
-      "asset_type": "STOCK",
-      "exchange": "NYSE",
-      "currency": "USD",
-      "sector": "Consumer Staples",
-      "industry": "Beverages",
-      "active": true
-    },
-    {
-      "symbol": "PG",
-      "name": "Procter & Gamble Co.",
-      "asset_type": "STOCK",
-      "exchange": "NYSE",
-      "currency": "USD",
-      "sector": "Consumer Staples",
-      "industry": "Household Products",
-      "active": true
-    }
+    {"symbol": "SPY", "name": "SPDR S&P 500 ETF Trust", "asset_type": "ETF", "exchange": "ARCA", "currency": "USD", "sector": "Broad Market", "industry": "Large Cap Blend", "active": true, "groups": ["major", "benchmark"]},
+    {"symbol": "QQQ", "name": "Invesco QQQ Trust", "asset_type": "ETF", "exchange": "NASDAQ", "currency": "USD", "sector": "Broad Market", "industry": "Large Cap Growth", "active": true, "groups": ["major", "benchmark"]},
+    {"symbol": "DIA", "name": "SPDR Dow Jones Industrial Average ETF", "asset_type": "ETF", "exchange": "ARCA", "currency": "USD", "sector": "Broad Market", "industry": "Large Cap Blend", "active": true, "groups": ["major", "benchmark"]},
+    {"symbol": "IWM", "name": "iShares Russell 2000 ETF", "asset_type": "ETF", "exchange": "ARCA", "currency": "USD", "sector": "Broad Market", "industry": "Small Cap Blend", "active": true, "groups": ["major", "benchmark"]},
+    {"symbol": "XLK", "name": "Technology Select Sector SPDR Fund", "asset_type": "SECTOR_ETF", "exchange": "ARCA", "currency": "USD", "sector": "Technology", "industry": "Sector ETF", "active": true, "groups": ["major", "benchmark"]},
+    {"symbol": "XLF", "name": "Financial Select Sector SPDR Fund", "asset_type": "SECTOR_ETF", "exchange": "ARCA", "currency": "USD", "sector": "Financials", "industry": "Sector ETF", "active": true, "groups": ["major", "benchmark"]},
+    {"symbol": "XLV", "name": "Health Care Select Sector SPDR Fund", "asset_type": "SECTOR_ETF", "exchange": "ARCA", "currency": "USD", "sector": "Health Care", "industry": "Sector ETF", "active": true, "groups": ["major", "benchmark"]},
+    {"symbol": "XLE", "name": "Energy Select Sector SPDR Fund", "asset_type": "SECTOR_ETF", "exchange": "ARCA", "currency": "USD", "sector": "Energy", "industry": "Sector ETF", "active": true, "groups": ["major", "benchmark"]},
+    {"symbol": "SOXX", "name": "iShares Semiconductor ETF", "asset_type": "SECTOR_ETF", "exchange": "NASDAQ", "currency": "USD", "sector": "Semiconductors", "industry": "Sector ETF", "active": true, "groups": ["major", "benchmark"]},
+    {"symbol": "^GSPC", "name": "S&P 500 Index", "asset_type": "INDEX", "exchange": "INDEX", "currency": "USD", "sector": "Broad Market", "industry": "Large Cap Index", "active": true, "groups": []},
+    {"symbol": "NVDA", "name": "NVIDIA Corporation", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Technology", "industry": "Semiconductors", "active": true, "groups": ["major"], "sector_etf": "SOXX"},
+    {"symbol": "MSFT", "name": "Microsoft Corporation", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Technology", "industry": "Software", "active": true, "groups": ["major"], "sector_etf": "XLK"},
+    {"symbol": "AAPL", "name": "Apple Inc.", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Technology", "industry": "Consumer Electronics", "active": true, "groups": ["major"], "sector_etf": "XLK"},
+    {"symbol": "AMZN", "name": "Amazon.com Inc.", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Consumer Discretionary", "industry": "Internet Retail", "active": true, "groups": ["major"], "sector_etf": "QQQ"},
+    {"symbol": "GOOGL", "name": "Alphabet Inc. Class A", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Technology", "industry": "Internet Content", "active": true, "groups": ["major"], "sector_etf": "XLK"},
+    {"symbol": "META", "name": "Meta Platforms Inc.", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Technology", "industry": "Internet Content", "active": true, "groups": ["major"], "sector_etf": "XLK"},
+    {"symbol": "AVGO", "name": "Broadcom Inc.", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Technology", "industry": "Semiconductors", "active": true, "groups": ["major"], "sector_etf": "SOXX"},
+    {"symbol": "AMD", "name": "Advanced Micro Devices Inc.", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Technology", "industry": "Semiconductors", "active": true, "groups": ["major"], "sector_etf": "SOXX"},
+    {"symbol": "TSLA", "name": "Tesla Inc.", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Consumer Discretionary", "industry": "Auto Manufacturers", "active": true, "groups": ["major"], "sector_etf": "QQQ"},
+    {"symbol": "NFLX", "name": "Netflix Inc.", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Technology", "industry": "Entertainment", "active": true, "groups": ["major"], "sector_etf": "XLK"},
+    {"symbol": "ORCL", "name": "Oracle Corporation", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Technology", "industry": "Software", "active": true, "groups": ["major"], "sector_etf": "XLK"},
+    {"symbol": "CRM", "name": "Salesforce Inc.", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Technology", "industry": "Software", "active": true, "groups": ["major"], "sector_etf": "XLK"},
+    {"symbol": "ADBE", "name": "Adobe Inc.", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Technology", "industry": "Software", "active": true, "groups": ["major"], "sector_etf": "XLK"},
+    {"symbol": "JPM", "name": "JPMorgan Chase & Co.", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Financials", "industry": "Banks", "active": true, "groups": ["major"], "sector_etf": "XLF"},
+    {"symbol": "V", "name": "Visa Inc.", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Financials", "industry": "Credit Services", "active": true, "groups": ["major"], "sector_etf": "XLF"},
+    {"symbol": "MA", "name": "Mastercard Inc.", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Financials", "industry": "Credit Services", "active": true, "groups": ["major"], "sector_etf": "XLF"},
+    {"symbol": "BRK-B", "name": "Berkshire Hathaway Inc. Class B", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Financials", "industry": "Diversified Financial Services", "active": true, "groups": ["major"], "sector_etf": "XLF"},
+    {"symbol": "COST", "name": "Costco Wholesale Corporation", "asset_type": "STOCK", "exchange": "NASDAQ", "currency": "USD", "sector": "Consumer Staples", "industry": "Discount Stores", "active": true, "groups": ["major"]},
+    {"symbol": "WMT", "name": "Walmart Inc.", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Consumer Staples", "industry": "Discount Stores", "active": true, "groups": ["major"]},
+    {"symbol": "LLY", "name": "Eli Lilly and Company", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Health Care", "industry": "Drug Manufacturers", "active": true, "groups": ["major"], "sector_etf": "XLV"},
+    {"symbol": "UNH", "name": "UnitedHealth Group Inc.", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Health Care", "industry": "Healthcare Plans", "active": true, "groups": ["major"], "sector_etf": "XLV"},
+    {"symbol": "XOM", "name": "Exxon Mobil Corporation", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Energy", "industry": "Oil & Gas Integrated", "active": true, "groups": ["major"], "sector_etf": "XLE"},
+    {"symbol": "CVX", "name": "Chevron Corporation", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Energy", "industry": "Oil & Gas Integrated", "active": true, "groups": ["major"], "sector_etf": "XLE"},
+    {"symbol": "JNJ", "name": "Johnson & Johnson", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Health Care", "industry": "Pharmaceuticals", "active": true, "groups": []},
+    {"symbol": "CAT", "name": "Caterpillar Inc.", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Industrials", "industry": "Farm & Heavy Construction Machinery", "active": true, "groups": []},
+    {"symbol": "KO", "name": "The Coca-Cola Company", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Consumer Staples", "industry": "Beverages", "active": true, "groups": []},
+    {"symbol": "PG", "name": "Procter & Gamble Co.", "asset_type": "STOCK", "exchange": "NYSE", "currency": "USD", "sector": "Consumer Staples", "industry": "Household Products", "active": true, "groups": []}
   ]
 }

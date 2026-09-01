@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from app.investment.alerts import AlertDecision
 from app.investment.enums import InvestmentAlertState
@@ -71,6 +71,82 @@ def format_investment_alert(
             f"Suggested max allocation ${plan.maximum_target_allocation} "
             f"across {plan.number_of_tiers} limit tiers. Remaining reserve ${plan.remaining_reserve}."
         )
+    return "\n".join(lines)
+
+
+def _pct(v: Optional[float]) -> str:
+    if v is None:
+        return "UNKNOWN"
+    return f"{v*100:+.1f}%"
+
+
+def format_equity_move_alert(
+    *,
+    symbol: str,
+    tape_row: Dict[str, Any],
+    plan: Optional[AllocationPlan] = None,
+    review: Optional[Dict[str, Any]] = None,
+    why: Optional[list] = None,
+    risks: Optional[list] = None,
+) -> str:
+    cls = str(tape_row.get("classification") or "UNKNOWN")
+    cause = tape_row.get("cause") or {}
+    headline = cause.get("headline")
+    src = cause.get("source")
+    cause_line = (
+        f"{cause.get('category', 'UNKNOWN')} — {headline} ({src})"
+        if headline and src
+        else "UNKNOWN"
+    )
+    ladder = "not issued (thesis/evidence/capital block)"
+    if plan is not None and plan.is_actionable():
+        bits = []
+        for t in plan.tiers:
+            bits.append(f"T{t.index}: ${t.price} · ${t.dollar_amount} · {t.share_quantity} sh · {t.reason}")
+        ladder = "\n".join(bits)
+    rv = review or (plan.review_levels if plan else {}) or {}
+    lines = [
+        "ATLAS EQUITY ALERT",
+        f"{symbol} — {cls.replace('_', ' ')}",
+        f"Price: {tape_row.get('price')}",
+        f"1D: {_pct(tape_row.get('ret_1d'))}",
+        f"5D: {_pct(tape_row.get('ret_5d'))}",
+        f"Drawdown: {_pct(tape_row.get('drawdown'))}",
+        f"Volume vs 20d: {tape_row.get('rel_volume') if tape_row.get('rel_volume') is not None else 'UNKNOWN'}",
+        f"Move Score: {tape_row.get('move_score')}/100",
+        "",
+        "RELATIVE:",
+        f"vs SPY: {_pct(tape_row.get('vs_spy'))}",
+        f"vs QQQ: {_pct(tape_row.get('vs_qqq'))}",
+        f"vs sector: {_pct(tape_row.get('vs_sector'))}",
+        "",
+        f"THESIS: {tape_row.get('thesis')}",
+        f"Evidence: {tape_row.get('evidence')}",
+        f"Valuation component: {tape_row.get('valuation')}",
+        f"CAUSE: {cause_line}",
+        "",
+        f"ATLAS CLASSIFICATION: {cls}",
+        "",
+        "MANUAL RESEARCH BUY LADDER:",
+        ladder,
+        "",
+        "REVIEW LEVELS:",
+        f"Recovery: {rv.get('recovery', 'n/a')}",
+        f"Fair Value: {rv.get('fair_value', 'n/a')}",
+        f"Overvaluation: {rv.get('overvaluation', 'n/a')}",
+        f"Thesis Review: {rv.get('thesis_review', 'n/a')}",
+        "",
+        "WHY:",
+        *[f"• {x}" for x in (why or ["unusual move vs history/peers"])],
+        "",
+        "RISKS:",
+        *[f"• {x}" for x in (risks or ["thesis can break", "drawdowns can continue"])],
+        "",
+        "MANUAL ACTION:",
+        "Review on Robinhood.",
+        "No real order has been placed.",
+        DISCLAIMER,
+    ]
     return "\n".join(lines)
 
 

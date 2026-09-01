@@ -253,6 +253,7 @@ class AllocationPlan:
     evidence_quality: str = ""
     thesis: str = ""
     classification: str = ""
+    review_levels: Dict[str, Any] = field(default_factory=dict)
 
     def is_actionable(self) -> bool:
         return not self.blocked_reason and self.number_of_tiers > 0

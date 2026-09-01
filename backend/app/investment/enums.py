@@ -62,6 +62,42 @@ class InvestmentHorizon(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class MoveClassification(str, Enum):
+    """Unusualness class. Not a buy recommendation by itself."""
+
+    NORMAL = "NORMAL"
+    NORMAL_PULLBACK = "NORMAL_PULLBACK"
+    ELEVATED_SELLING = "ELEVATED_SELLING"
+    ABNORMAL_SELLING = "ABNORMAL_SELLING"
+    MAJOR_DISLOCATION = "MAJOR_DISLOCATION"
+    EXTREME_DISLOCATION = "EXTREME_DISLOCATION"
+    THESIS_DETERIORATING = "THESIS_DETERIORATING"
+    FUNDAMENTAL_BREAKDOWN = "FUNDAMENTAL_BREAKDOWN"
+    UNKNOWN = "UNKNOWN"
+
+
+class MoveAlertSeverity(str, Enum):
+    INFO = "INFO"
+    WATCH = "WATCH"
+    ELEVATED = "ELEVATED"
+    MAJOR = "MAJOR"
+    EXTREME = "EXTREME"
+    THESIS_BROKEN = "THESIS_BROKEN"
+
+
+class CauseCategory(str, Enum):
+    EARNINGS = "EARNINGS"
+    GUIDANCE = "GUIDANCE"
+    ANALYST = "ANALYST"
+    REGULATORY = "REGULATORY"
+    LITIGATION = "LITIGATION"
+    MACRO = "MACRO"
+    SECTOR = "SECTOR"
+    MARKET_WIDE = "MARKET_WIDE"
+    COMPANY_SPECIFIC = "COMPANY_NEWS"
+    UNKNOWN = "UNKNOWN"
+
+
 class EvaluationStatus(str, Enum):
     """Why a row exists. Distinct from investment classification.
 
