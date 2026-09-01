@@ -45,3 +45,17 @@ async def validation_text_endpoint() -> Dict[str, str]:
     from app.services.paper_validation import validation_text
 
     return {"text": validation_text()}
+
+
+@router.get("/edge")
+async def edge_endpoint() -> Dict[str, Any]:
+    from app.services.edge_diagnostics import edge_report
+
+    return edge_report()
+
+
+@router.get("/edge/text")
+async def edge_text_endpoint() -> Dict[str, str]:
+    from app.services.edge_diagnostics import edge_text
+
+    return {"text": edge_text()}

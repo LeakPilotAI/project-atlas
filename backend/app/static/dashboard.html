@@ -90,6 +90,11 @@
     <h3>Trading validation (research only)</h3>
     <div id="valbody" class="sub">Loading…</div>
   </div>
+  <div class="card" id="edge">
+    <h3>ATLAS EDGE DIAGNOSTICS</h3>
+    <div class="sub">Where paper makes/loses R. Does not change gates. Not live-ready.</div>
+    <div id="edgebody" class="sub" style="margin-top:8px">Loading…</div>
+  </div>
   <div class="card" id="gates"></div>
 </main>
 <script>
@@ -210,6 +215,33 @@ async function load(){
           `<div>Sufficiency ${V.data_sufficiency} · stability ${V.statistical_stability} · integrity ${V.data_integrity}</div>`+
           `<div>Live capital: <b>no</b> · ${(V.milestone&&V.milestone.current_label)||"INSUFFICIENT SAMPLE"}</div>`+
           `<div class="muted">Does not replace /paper. Gates unchanged. Small sample ≠ edge.</div>`;
+      }
+    } catch (e) {}
+    try {
+      const er = await fetch("/api/validation/edge");
+      if (er.ok) {
+        const E = await er.json();
+        const b = E.baseline||{};
+        const nrr = E.narrative||{};
+        const dir = E.direction||{};
+        const ex = E.exit||{};
+        const ho = E.holdout||{};
+        const pvs = E.paper_vs_shadow||{};
+        const list = (arr)=> (arr||[]).map(x=>`<div>• ${x}</div>`).join("");
+        const sideL = (dir.LONG||{});
+        const sideS = (dir.SHORT||{});
+        document.getElementById("edgebody").innerHTML =
+          `<div class="n" style="font-size:15px">n ${n(b.n)} · WR ${(n(b.winrate)*100).toFixed(1)}% · exp ${fmt(b.expectancy,2)}R · tot ${fmt(b.total_r,2)}R · DD ${fmt(b.max_drawdown_r,2)}R · streak ${n(b.longest_losing_streak)}</div>`+
+          `<div style="margin-top:8px"><b>ENTRY</b> — fills already passed locked gates. ${((E.entry||{}).note)||""}</div>`+
+          `<div><b>EXIT</b> — MFE capture ${ex.mean_mfe_capture==null?"n/a":ex.mean_mfe_capture} · losers with +MFE ${ex.losers_with_positive_mfe_pct||0}% · ${ex.note||""}</div>`+
+          `<div><b>DIRECTION</b> LONG n ${n(sideL.n)} exp ${fmt(sideL.expectancy,2)}R · SHORT n ${n(sideS.n)} exp ${fmt(sideS.expectancy,2)}R · ${dir.statistical||"exploratory"}</div>`+
+          `<div><b>HOLDOUT</b> ${ho.available?("research n "+((ho.research||{}).n)+" / holdout n "+((ho.holdout||{}).n)+" (not shuffled)"): (ho.label||"insufficient")}</div>`+
+          `<div><b>PAPER VS SHADOW</b> paper n ${n((pvs.paper||{}).n)} exp ${fmt((pvs.paper||{}).expectancy,2)}R · shadow n ${n((pvs.shadow||{}).n)} exp ${fmt((pvs.shadow||{}).expectancy,2)}R · not combined</div>`+
+          `<div style="margin-top:8px"><b>WHAT WE KNOW</b>${list(nrr.WHAT_WE_KNOW)}</div>`+
+          `<div><b>WHAT LOOKS PROMISING</b>${list(nrr.WHAT_LOOKS_PROMISING)}</div>`+
+          `<div><b>WHAT LOOKS WEAK</b>${list(nrr.WHAT_LOOKS_WEAK)}</div>`+
+          `<div><b>WHAT IS STILL UNKNOWN</b>${list(nrr.WHAT_IS_STILL_UNKNOWN)}</div>`+
+          `<div class="muted" style="margin-top:8px">${E.disclaimer||""}</div>`;
       }
     } catch (e) {}
   } catch (e) {
