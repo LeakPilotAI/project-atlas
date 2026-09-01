@@ -148,6 +148,8 @@ class PerpMicroCoach:
         self._running = False
         self._liquid: List[str] = []
         self._open: Dict[str, Dict[str, Any]] = {}
+        self.last_recovery: Dict[str, Any] = {}
+        self._recovered_ids: Set[str] = set()
         self._triggers_today: int = 0
         self._day_key: str = ""
         self._cooldowns: Dict[str, datetime] = {}
@@ -174,6 +176,10 @@ class PerpMicroCoach:
             return
         self._http = httpx.AsyncClient(timeout=25.0)
         self._running = True
+        try:
+            self._rehydrate_open(reason="startup")
+        except Exception as e:
+            log.warning("startup paper rehydrate failed", error=str(e)[:200])
         self._task = asyncio.create_task(self._loop(), name="perp_micro_coach")
         log.info(
             "Perp micro coach started (v3.1 live-path)",
@@ -206,6 +212,19 @@ class PerpMicroCoach:
             except Exception:
                 pass
             self._http = None
+        try:
+            from app.services.paper_journal import paper_journal
+
+            paper_journal.flush()
+            for tid, p in list(self._open.items()):
+                mark = p.get("mark")
+                if mark is not None:
+                    try:
+                        paper_journal.update_excursion(tid, float(mark))
+                    except Exception:
+                        pass
+        except Exception as e:
+            log.warning("shutdown paper persist failed", error=str(e)[:200])
         log.info("Perp micro coach stopped")
 
     @staticmethod
@@ -230,26 +249,56 @@ class PerpMicroCoach:
             "mfe_r": float(row.get("mfe_r") or 0),
             "mae_r": float(row.get("mae_r") or 0),
             "opened_at": row.get("entry_timestamp") or row.get("opened_at"),
+            "lifecycle": "RECOVERY_PENDING",
+            "stale_quote": False,
         }
 
-    def _rehydrate_open(self) -> int:
+    def _rehydrate_open(self, reason: str = "cycle") -> int:
         """Journal is source of truth across restarts. Coach memory is not."""
         from app.services.paper_journal import paper_journal
 
         added = 0
+        failed: List[Dict[str, Any]] = []
         for row in paper_journal.list_open():
             tid = row.get("trade_id")
             if not tid:
+                failed.append({"reason": "missing trade_id", "row_symbol": row.get("symbol")})
                 continue
-            if tid not in self._open:
-                self._open[tid] = self._row_from_journal(row)
+            if tid in self._open:
+                continue
+            try:
+                mapped = self._row_from_journal(row)
+                if not mapped["symbol"] or not mapped["side"] or not mapped["entry"]:
+                    failed.append({"trade_id": tid, "reason": "incomplete open row"})
+                    continue
+                mapped["lifecycle"] = "RECOVERY_PENDING"
+                self._open[tid] = mapped
+                self._recovered_ids.add(str(tid))
                 added += 1
+            except Exception as e:
+                failed.append({"trade_id": tid, "reason": str(e)[:160]})
         live_ids = {r.get("trade_id") for r in paper_journal.list_open()}
         for tid in list(self._open):
             if tid not in live_ids:
                 self._open.pop(tid, None)
-        if added:
-            log.info("Rehydrated paper opens from journal", added=added, open=len(self._open))
+        jr = paper_journal.recovery_report()
+        self.last_recovery = {
+            "title": "ATLAS PAPER RECOVERY",
+            "reason": reason,
+            "persisted_open": jr["persisted_open"],
+            "recovered": len(self._open),
+            "added_this_pass": added,
+            "already_closed": 0,
+            "malformed": jr["malformed"],
+            "malformed_lines": jr.get("malformed_lines") or [],
+            "duplicates": 0,
+            "failed": failed,
+            "management_resumed": len(self._open),
+            "recovered_ids": sorted(str(x) for x in self._open),
+            "note": "OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED. No invented exits.",
+        }
+        if added or failed or reason == "startup":
+            log.info("Rehydrated paper opens from journal", added=added, open=len(self._open), reason=reason)
         return added
 
     async def list_open_papers(self) -> List[Dict[str, Any]]:
@@ -276,9 +325,52 @@ class PerpMicroCoach:
                     "mfe_r": p.get("mfe_r", 0),
                     "mae_r": p.get("mae_r", 0),
                     "stale_quote": bool(p.get("stale_quote")),
+                    "lifecycle": p.get("lifecycle") or "OPEN",
+                    "opened_at": p.get("opened_at"),
+                    "recovered": str(tid) in self._recovered_ids,
                 }
             )
         return out
+
+    def lifecycle_snapshot(self) -> Dict[str, Any]:
+        from datetime import datetime, timezone as _tz
+
+        now = datetime.now(_tz.utc)
+        opens = list(self._open.values())
+        ages = []
+        oldest = None
+        oldest_age = -1.0
+        missing_px = 0
+        for p in opens:
+            ts = p.get("opened_at")
+            age = None
+            if ts:
+                try:
+                    t0 = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                    age = (now - t0).total_seconds()
+                    ages.append(age)
+                    if age > oldest_age:
+                        oldest_age = age
+                        oldest = p.get("symbol")
+                except Exception:
+                    pass
+            if p.get("stale_quote") or p.get("lifecycle") == "MARKET_DATA_UNAVAILABLE":
+                missing_px += 1
+        rec = dict(self.last_recovery or {})
+        rec.update(
+            {
+                "currently_open": len(opens),
+                "recovered_positions": len(self._recovered_ids & {str(t) for t in self._open}),
+                "orphan_candidates": missing_px,
+                "positions_missing_market_data": missing_px,
+                "avg_age_sec": round(sum(ages) / len(ages), 1) if ages else None,
+                "oldest_open_symbol": oldest,
+                "oldest_open_age_sec": round(oldest_age, 1) if oldest_age >= 0 else None,
+                "failed_recovery": rec.get("failed") or [],
+                "note": "OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED. Only CLOSED counts for performance.",
+            }
+        )
+        return rec
 
     async def paper_stats(self) -> Dict[str, Any]:
         from app.services.paper_journal import paper_journal
@@ -580,6 +672,7 @@ class PerpMicroCoach:
 
         self._roll_day()
         settings = get_settings()
+        self._rehydrate_open(reason="cycle")
         tickers = await self._fetch_tickers()
         log.info("Micro coach tickers", count=len(tickers))
 
@@ -598,7 +691,6 @@ class PerpMicroCoach:
                 if px > 0:
                     price_map[s] = px
 
-        self._rehydrate_open()
         await self._manage_open(price_map)
 
         # Shadow research (never affects paper)
@@ -994,7 +1086,6 @@ class PerpMicroCoach:
         return True
 
     async def _manage_open(self, price_map: Dict[str, float]) -> None:
-        from app.alerts.discord import is_discord_ready, send_discord_alert
         from app.services.paper_journal import paper_journal
 
         to_close: List[str] = []
@@ -1004,10 +1095,13 @@ class PerpMicroCoach:
             if px is None or px <= 0:
                 mark = float(p.get("mark") or p["entry"])
                 p["stale_quote"] = True
+                p["lifecycle"] = "MARKET_DATA_UNAVAILABLE"
                 log.warning("Open paper missing live quote", symbol=sym, trade_id=tid, mark=mark)
-            else:
-                mark = float(px)
-                p["stale_quote"] = False
+                p["mark"] = mark
+                continue
+            mark = float(px)
+            p["stale_quote"] = False
+            p["lifecycle"] = "MANAGED"
             p["mark"] = mark
             paper_journal.update_excursion(tid, mark)
             jopen = paper_journal._open.get(tid, {})
@@ -1021,6 +1115,7 @@ class PerpMicroCoach:
             hit_tp = mark >= tp1 if side == "LONG" else mark <= tp1
             if not hit_stop and not hit_tp:
                 continue
+            p["lifecycle"] = "EXIT_TRIGGERED"
             if hit_stop:
                 result, exit_px, pnl_r = "STOP", stop, -1.0
             else:
@@ -1029,27 +1124,33 @@ class PerpMicroCoach:
             close_row = await paper_journal.close_trade(
                 tid, exit_price=exit_px, result=result, pnl_r=pnl_r
             )
+            p["lifecycle"] = "CLOSED"
             to_close.append(tid)
             self._cooldowns[sym] = datetime.now(timezone.utc)
             mfe = close_row.get("mfe_r", 0)
             mae = close_row.get("mae_r", 0)
-            if is_discord_ready():
-                live_tag = "live-stat" if p.get("counts_for_live") else "experimental"
-                await send_discord_alert(
-                    symbol=sym,
-                    title=f"Paper {result} · {sym} · {side}",
-                    description=(
-                        f"**{sym}** {side} closed **{result}**\n"
-                        f"Entry `{entry}` → Exit `{exit_px:.6g}` · **{pnl_r:+.2f}R**\n"
-                        f"MFE `{mfe:+.2f}R` · MAE `{mae:+.2f}R`\n"
-                        f"Tier `{p.get('tier', '?')}` · **{live_tag}**\n_Paper only._"
-                    ),
-                    price=exit_px,
-                    severity="LOW" if result == "TP1" else "MEDIUM",
-                    opportunity=60,
-                    confidence=60,
-                    risk=40,
-                )
+            try:
+                from app.alerts.discord import is_discord_ready, send_discord_alert
+
+                if is_discord_ready():
+                    live_tag = "live-stat" if p.get("counts_for_live") else "experimental"
+                    await send_discord_alert(
+                        symbol=sym,
+                        title=f"Paper {result} · {sym} · {side}",
+                        description=(
+                            f"**{sym}** {side} closed **{result}**\n"
+                            f"Entry `{entry}` → Exit `{exit_px:.6g}` · **{pnl_r:+.2f}R**\n"
+                            f"MFE `{mfe:+.2f}R` · MAE `{mae:+.2f}R`\n"
+                            f"Tier `{p.get('tier', '?')}` · **{live_tag}**\n_Paper only._"
+                        ),
+                        price=exit_px,
+                        severity="LOW" if result == "TP1" else "MEDIUM",
+                        opportunity=60,
+                        confidence=60,
+                        risk=40,
+                    )
+            except Exception as e:
+                log.warning("paper close discord failed; trade already persisted", error=str(e)[:160])
             log.info(
                 "Paper CLOSE",
                 trade_id=tid,

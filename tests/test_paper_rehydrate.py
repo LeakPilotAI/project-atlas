@@ -45,6 +45,13 @@ def test_rehydrate_inserts_missing_open(monkeypatch):
         def list_open(self):
             return [row]
 
+        def recovery_report(self):
+            return {
+                "persisted_open": 1,
+                "malformed": 0,
+                "malformed_lines": [],
+            }
+
     import app.services.paper_journal as pj
 
     monkeypatch.setattr(pj, "paper_journal", _J())

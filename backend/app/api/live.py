@@ -109,7 +109,7 @@ async def live() -> Dict[str, Any]:
     except Exception as e:
         equity_tape = {"error": str(e)[:160], "rows": [], "nearest": [], "quiet": True}
 
-    return {
+    payload = {
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "note": "Watch-only. Discord is the alert feed. Atlas does not place broker orders.",
         "health": {
@@ -161,4 +161,10 @@ async def live() -> Dict[str, Any]:
         "equity_majors_tape": equity_tape,
         "dip_paper": dip_paper,
         "investment": inv,
+        "paper_lifecycle": {},
     }
+    try:
+        payload["paper_lifecycle"] = perp_micro_coach.lifecycle_snapshot()
+    except Exception as e:
+        payload["paper_lifecycle"] = {"error": str(e)[:160]}
+    return payload

@@ -112,26 +112,18 @@ def _milestones(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def load_paper_closes(path: Optional[Path] = None) -> List[Dict[str, Any]]:
-    from app.services.paper_journal import JOURNAL_PATH
+    from app.services.paper_journal import JOURNAL_PATH, iter_jsonl
 
     p = path or JOURNAL_PATH
     if not p.exists():
         return []
     rows: List[Dict[str, Any]] = []
-    try:
-        with p.open("r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                row = json.loads(line)
-                if row.get("event") != "close":
-                    continue
-                if str(row.get("trade_type") or "PAPER").upper() != "PAPER":
-                    continue
-                rows.append(row)
-    except Exception:
-        return rows
+    for row in iter_jsonl(p):
+        if row.get("event") != "close":
+            continue
+        if str(row.get("trade_type") or "PAPER").upper() != "PAPER":
+            continue
+        rows.append(row)
     return rows
 
 

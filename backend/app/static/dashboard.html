@@ -64,6 +64,7 @@
     <div class="card">
       <h3>Open paper trades</h3>
       <div id="opens"></div>
+      <div id="lifecycle" class="sub" style="margin-top:8px"></div>
     </div>
     <div class="card">
       <h3>Live activity</h3>
@@ -148,6 +149,11 @@ async function load(){
     document.getElementById("opens").innerHTML = opens.length? `<table><tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Mark</th><th>Stop</th><th>MFE</th></tr>${
       opens.map(t=>`<tr><td>${t.symbol}</td><td class="${t.side==="LONG"?"long":"short"}">${t.side||""}</td><td>${fmt(t.entry,4)}</td><td>${fmt(t.mark,4)}</td><td>${fmt(t.stop,4)}</td><td>${fmt(t.mfe_r,2)}</td></tr>`).join("")
     }</table>` : '<div class="sub">No open paper trades.</div>';
+    const lc = L.paper_lifecycle||{};
+    if (document.getElementById("lifecycle")) {
+      document.getElementById("lifecycle").innerHTML =
+        `Recovery: persisted ${n(lc.persisted_open)} · in-memory ${n(lc.currently_open)} · missing quotes ${n(lc.positions_missing_market_data)} · malformed ${n(lc.malformed)} · ${lc.note||"OPEN ≠ hung. No quote ≠ closed."}`;
+    }
     const a = L.activity||{};
     document.getElementById("act").innerHTML = [
       ["Last HL data", ago(a.last_market_data)],

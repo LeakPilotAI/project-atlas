@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,54 +25,91 @@ def _iso(dt: Optional[datetime] = None) -> str:
     return (dt or _now()).isoformat()
 
 
+def iter_jsonl(path: Path) -> List[Dict[str, Any]]:
+    """Parse jsonl line-by-line. A truncated/corrupt line does not abort the file."""
+    rows: List[Dict[str, Any]] = []
+    if not path.exists():
+        return rows
+    with path.open("r", encoding="utf-8") as f:
+        for i, line in enumerate(f, start=1):
+            raw = line.strip()
+            if not raw:
+                continue
+            try:
+                row = json.loads(raw)
+            except Exception:
+                rows.append({"event": "_malformed", "line": i, "raw": raw[:200]})
+                continue
+            if isinstance(row, dict):
+                rows.append(row)
+            else:
+                rows.append({"event": "_malformed", "line": i, "raw": raw[:200]})
+    return rows
+
+
 class PaperJournal:
     def __init__(self) -> None:
         JOURNAL_PATH.parent.mkdir(parents=True, exist_ok=True)
         CANDIDATE_PATH.parent.mkdir(parents=True, exist_ok=True)
         self._open: Dict[str, Dict[str, Any]] = {}
+        self._malformed_lines: List[Dict[str, Any]] = []
         self._load_open_from_disk()
 
     def _load_open_from_disk(self) -> None:
+        self._open = {}
+        self._malformed_lines = []
         if not JOURNAL_PATH.exists():
             return
         closed_ids = set()
         opens: Dict[str, Dict[str, Any]] = {}
-        try:
-            with JOURNAL_PATH.open("r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    row = json.loads(line)
-                    tid = row.get("trade_id")
-                    if not tid:
-                        continue
-                    if str(row.get("trade_type") or "PAPER").upper() == "TEST":
-                        continue
-                    ev = row.get("event")
-                    if ev == "open":
-                        opens[tid] = row
-                    elif ev == "mark" and tid in opens:
-                        opens[tid]["mfe_r"] = max(float(opens[tid].get("mfe_r") or 0), float(row.get("mfe_r") or 0))
-                        opens[tid]["mae_r"] = max(float(opens[tid].get("mae_r") or 0), float(row.get("mae_r") or 0))
-                        if row.get("mark") is not None:
-                            opens[tid]["mark"] = row.get("mark")
-                        if row.get("mfe_price") is not None:
-                            opens[tid]["mfe_price"] = row.get("mfe_price")
-                        if row.get("mae_price") is not None:
-                            opens[tid]["mae_price"] = row.get("mae_price")
-                    elif ev == "close":
-                        closed_ids.add(tid)
-            for tid, row in opens.items():
-                if tid not in closed_ids:
-                    self._open[tid] = row
-        except Exception as e:
-            log.warning("paper journal load failed", error=str(e)[:200])
+        for row in iter_jsonl(JOURNAL_PATH):
+            if row.get("event") == "_malformed":
+                self._malformed_lines.append(row)
+                continue
+            tid = row.get("trade_id")
+            if not tid:
+                continue
+            if str(row.get("trade_type") or "PAPER").upper() == "TEST":
+                continue
+            ev = row.get("event")
+            if ev == "open":
+                opens[tid] = row
+            elif ev == "mark" and tid in opens:
+                try:
+                    opens[tid]["mfe_r"] = max(float(opens[tid].get("mfe_r") or 0), float(row.get("mfe_r") or 0))
+                    opens[tid]["mae_r"] = max(float(opens[tid].get("mae_r") or 0), float(row.get("mae_r") or 0))
+                except (TypeError, ValueError):
+                    pass
+                if row.get("mark") is not None:
+                    opens[tid]["mark"] = row.get("mark")
+                if row.get("mfe_price") is not None:
+                    opens[tid]["mfe_price"] = row.get("mfe_price")
+                if row.get("mae_price") is not None:
+                    opens[tid]["mae_price"] = row.get("mae_price")
+            elif ev == "close":
+                closed_ids.add(tid)
+        for tid, row in opens.items():
+            if tid not in closed_ids:
+                self._open[tid] = row
+
+    def reload(self) -> None:
+        """Re-read journal from disk. Idempotent. Used after crash-sim / tests."""
+        self._load_open_from_disk()
+
+    def flush(self) -> None:
+        """Append-only journal is already durable per write (flush+fsync)."""
+        return None
 
     def _append(self, path: Path, row: Dict[str, Any]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
+        line = json.dumps(row, default=str) + "\n"
         with path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(row, default=str) + "\n")
+            f.write(line)
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except OSError:
+                pass
 
     async def log_candidate(
         self,
@@ -332,6 +370,20 @@ class PaperJournal:
     def list_open(self) -> List[Dict[str, Any]]:
         return [p for p in self._open.values() if str(p.get("trade_type") or "PAPER").upper() != "TEST"]
 
+    def recovery_report(self) -> Dict[str, Any]:
+        opens = self.list_open()
+        return {
+            "title": "ATLAS PAPER RECOVERY",
+            "persisted_open": len(opens),
+            "recovered": len(opens),
+            "already_closed": 0,
+            "malformed": len(self._malformed_lines),
+            "malformed_lines": list(self._malformed_lines),
+            "duplicates": 0,
+            "open_ids": [r.get("trade_id") for r in opens],
+            "note": "Journal is source of truth. OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED.",
+        }
+
     async def stats(self) -> Dict[str, Any]:
         wins = losses = 0
         sum_r = 0.0
@@ -341,31 +393,26 @@ class PaperJournal:
         live_wins = live_losses = 0
         live_sum_r = 0.0
         if JOURNAL_PATH.exists():
-            with JOURNAL_PATH.open("r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    row = json.loads(line)
-                    if row.get("event") != "close":
-                        continue
-                    if str(row.get("trade_type") or "PAPER").upper() == "TEST":
-                        continue
-                    n_closed += 1
-                    r = float(row.get("net_pnl_r") or row.get("R_multiple") or 0)
-                    sum_r += r
-                    sum_mfe += float(row.get("mfe_r") or 0)
-                    sum_mae += float(row.get("mae_r") or 0)
+            for row in iter_jsonl(JOURNAL_PATH):
+                if row.get("event") != "close":
+                    continue
+                if str(row.get("trade_type") or "PAPER").upper() == "TEST":
+                    continue
+                n_closed += 1
+                r = float(row.get("net_pnl_r") or row.get("R_multiple") or 0)
+                sum_r += r
+                sum_mfe += float(row.get("mfe_r") or 0)
+                sum_mae += float(row.get("mae_r") or 0)
+                if r > 0:
+                    wins += 1
+                else:
+                    losses += 1
+                if row.get("counts_for_live"):
+                    live_sum_r += r
                     if r > 0:
-                        wins += 1
+                        live_wins += 1
                     else:
-                        losses += 1
-                    if row.get("counts_for_live"):
-                        live_sum_r += r
-                        if r > 0:
-                            live_wins += 1
-                        else:
-                            live_losses += 1
+                        live_losses += 1
         closed = wins + losses
         wr = (wins / closed) if closed else 0.0
         live_closed = live_wins + live_losses
