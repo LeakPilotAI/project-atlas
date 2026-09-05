@@ -147,7 +147,7 @@ async function load(){
     ].map(([a,b])=>`<div class="card"><div class="sub">${a}</div><div class="n">${b}</div></div>`).join("");
     const opens = L.open_trades||[];
     document.getElementById("opens").innerHTML = opens.length? `<table><tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Mark</th><th>Stop</th><th>MFE</th><th>State</th></tr>${
-      opens.map(t=>`<tr><td>${t.symbol}</td><td class="${t.side==="LONG"?"long":"short"}">${t.side||""}</td><td>${fmt(t.entry,4)}</td><td>${fmt(t.mark,4)}</td><td>${fmt(t.stop,4)}</td><td>${fmt(t.mfe_r,2)}</td><td>${t.lifecycle||(t.stale_quote?"MARKET_DATA_UNAVAILABLE":"OPEN")}${t.recovered?" · recovered":""}</td></tr>`).join("")
+      opens.map(t=>`<tr><td>${t.symbol}</td><td class="${t.side==="LONG"?"long":"short"}">${t.side||""}</td><td>${fmt(t.entry,4)}</td><td>${fmt(t.mark,4)}</td><td>${fmt(t.stop,4)}</td><td>${fmt(t.mfe_r,2)}</td><td>${t.lifecycle||(t.stale_quote?"MARKET_DATA_UNAVAILABLE":"OPEN")}${t.be_armed?" · BE":""}${t.recovered?" · recovered":""}</td></tr>`).join("")
     }</table>` : '<div class="sub">No open paper trades.</div>';
     const lc = L.paper_lifecycle||{};
     if (document.getElementById("lifecycle")) {
@@ -202,7 +202,9 @@ async function load(){
       <div class="pills">
         <span class="pill">RSI ${fmt(g.rsi_long,0)} / ${fmt(g.rsi_short,0)}</span>
         <span class="pill">Extension ${fmt(g.extension_pct,1)}%</span>
-        <span class="pill">Min R:R ${fmt(g.min_rr,1)}</span>
+        <span class="pill">Entry R:R ${fmt(g.min_rr,1)}</span>
+        <span class="pill">Scalp TP ${fmt(g.scalp_tp_r,1)}R</span>
+        <span class="pill">BE after ${fmt(g.be_after_r,1)}R</span>
         <span class="pill">Min volume ${fmt(g.min_volume,0)}</span>
         <span class="pill">Max open ${fmt(g.max_open,0)}</span>
       </div>`;

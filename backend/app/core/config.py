@@ -86,6 +86,12 @@ class Settings(BaseSettings):
     perp_micro_min_extension_pct: float = 1.4
     perp_micro_scan_seconds: float = 60.0
     perp_micro_min_rr: float = 1.8
+    # EXIT (paper management). Does not change entry RSI/ext/min R:R.
+    # Bank 1.0R (typical MFE was ~1.24 while 1.8R TP rarely filled).
+    # After +0.5R MFE, stop moves to entry so giveback cannot become a full -1R loss.
+    perp_micro_scalp_enabled: bool = True
+    perp_micro_scalp_tp_r: float = 1.0
+    perp_micro_be_after_r: float = 0.5
     perp_micro_prefer_majors: bool = True
     perp_micro_block_meme_for_live_stats: bool = True
     perp_micro_live_min_trades: int = 50

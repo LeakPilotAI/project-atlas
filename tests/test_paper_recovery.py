@@ -39,6 +39,11 @@ def _open_row(tid, symbol="AAA", side="LONG", entry=100.0, stop=99.0, tp1=102.0,
         "mae_r": 0.0,
         "entry_timestamp": datetime(2026, 8, 1, 12, tzinfo=timezone.utc).isoformat(),
         "status": "open",
+        "exit_mode": "SETUP_18",
+        "be_after_r": 99.0,
+        "initial_stop": stop,
+        "working_stop": stop,
+        "be_armed": False,
     }
 
 

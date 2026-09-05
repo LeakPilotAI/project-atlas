@@ -14,10 +14,10 @@ router = APIRouter(prefix="/api", tags=["live"])
 
 
 def _open_row(row: Dict[str, Any], coach: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    entry = row.get("actual_entry_price") or row.get("entry") or row.get("signal_price")
-    stop = row.get("stop_price") or row.get("stop")
-    tp1 = row.get("tp1_price") or row.get("tp1")
     c = coach or {}
+    entry = row.get("actual_entry_price") or row.get("entry") or row.get("signal_price")
+    stop = c.get("stop") if c.get("stop") is not None else (row.get("working_stop") or row.get("stop_price") or row.get("stop"))
+    tp1 = c.get("tp1") if c.get("tp1") is not None else (row.get("tp1_price") or row.get("tp1"))
     lifecycle = c.get("lifecycle") or row.get("lifecycle") or "OPEN"
     stale = c.get("stale_quote") if "stale_quote" in c else row.get("stale_quote")
     return {
@@ -37,6 +37,8 @@ def _open_row(row: Dict[str, Any], coach: Optional[Dict[str, Any]] = None) -> Di
         "stale_quote": stale,
         "lifecycle": lifecycle,
         "recovered": bool(c.get("recovered")),
+        "be_armed": bool(c.get("be_armed") or row.get("be_armed")),
+        "exit_mode": c.get("exit_mode") or row.get("exit_mode") or "SCALP",
         "error": c.get("error") or row.get("error"),
         "notes": row.get("notes"),
     }
@@ -146,6 +148,9 @@ async def live() -> Dict[str, Any]:
             "rsi_short": cfg.get("rsi_short", settings.perp_micro_rsi_short),
             "extension_pct": cfg.get("extension", settings.perp_micro_min_extension_pct),
             "min_rr": cfg.get("minimum_rr", settings.perp_micro_min_rr),
+            "scalp_tp_r": cfg.get("scalp_tp_r", getattr(settings, "perp_micro_scalp_tp_r", 1.0)),
+            "be_after_r": cfg.get("be_after_r", getattr(settings, "perp_micro_be_after_r", 0.5)),
+            "scalp_enabled": cfg.get("scalp_enabled", True),
             "min_volume": cfg.get("min_volume", settings.perp_micro_min_vol),
             "max_open": cfg.get("max_open", settings.perp_micro_max_open),
         },

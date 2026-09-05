@@ -87,6 +87,12 @@ class PaperJournal:
                     opens[tid]["mfe_price"] = row.get("mfe_price")
                 if row.get("mae_price") is not None:
                     opens[tid]["mae_price"] = row.get("mae_price")
+                if row.get("be_armed"):
+                    opens[tid]["be_armed"] = True
+                if row.get("working_stop") is not None:
+                    opens[tid]["working_stop"] = row.get("working_stop")
+                if row.get("exit_mode"):
+                    opens[tid]["exit_mode"] = row.get("exit_mode")
             elif ev == "close":
                 closed_ids.add(tid)
         for tid, row in opens.items():
@@ -222,6 +228,17 @@ class PaperJournal:
             "mae_price": actual_entry,
             "mark": actual_entry,
             "status": "open",
+            "exit_mode": str((features or {}).get("exit_mode") or "SCALP"),
+            "scalp_tp_r": float((features or {}).get("scalp_tp_r") or 1.0),
+            "be_after_r": float(
+                (features or {}).get("be_after_r")
+                if (features or {}).get("be_after_r") is not None
+                else 0.5
+            ),
+            "setup_rr": float((features or {}).get("setup_rr") or 1.8),
+            "initial_stop": float(stop),
+            "working_stop": float(stop),
+            "be_armed": False,
         }
         self._open[tid] = row
         self._append(JOURNAL_PATH, row)
@@ -276,6 +293,29 @@ class PaperJournal:
                     "trade_type": p.get("trade_type", "PAPER"),
                 },
             )
+
+    def note_be_armed(self, trade_id: str, working_stop: float) -> None:
+        """Append-only BE arm. Does not rewrite the open event."""
+        p = self._open.get(trade_id)
+        if not p:
+            return
+        p["be_armed"] = True
+        p["working_stop"] = float(working_stop)
+        self._append(
+            JOURNAL_PATH,
+            {
+                "event": "mark",
+                "trade_id": trade_id,
+                "timestamp": _iso(),
+                "mark": p.get("mark"),
+                "mfe_r": round(float(p.get("mfe_r") or 0), 4),
+                "mae_r": round(float(p.get("mae_r") or 0), 4),
+                "be_armed": True,
+                "working_stop": float(working_stop),
+                "exit_mode": p.get("exit_mode") or "SCALP",
+                "trade_type": p.get("trade_type", "PAPER"),
+            },
+        )
 
     def persist_open_marks(self) -> int:
         """Force a mark event for every in-memory open. Used on graceful shutdown."""
@@ -416,6 +456,9 @@ class PaperJournal:
         slip = float(p.get("slippage_bps") or 0) / 10000.0
         cost_r = (fees + slip) * 2 * (entry / risk) if risk else 0.0
         net_r = float(pnl_r) - cost_r
+        result_u = str(result or "").upper()
+        if result_u in ("BE", "SCRATCH"):
+            net_r = 0.0
         opened = p.get("entry_timestamp")
         try:
             t0 = datetime.fromisoformat(opened.replace("Z", "+00:00")) if opened else _now()
@@ -439,7 +482,8 @@ class PaperJournal:
             "mae_r": round(mae, 4),
             "holding_time_sec": int(hold_s),
             "duration_sec": int(hold_s),
-            "win": bool(pnl_r > 0),
+            "win": bool(net_r > 0),
+            "scratch": result_u in ("BE", "SCRATCH") or abs(net_r) < 1e-9,
             "reached_0_5r": bool(mfe + 1e-12 >= 0.5),
             "reached_1r": bool(mfe + 1e-12 >= 1.0),
             "reached_1_5r": bool(mfe + 1e-12 >= 1.5),
@@ -482,13 +526,15 @@ class PaperJournal:
         }
 
     async def stats(self) -> Dict[str, Any]:
-        wins = losses = 0
+        wins = losses = scratches = 0
         sum_r = 0.0
         sum_mfe = 0.0
         sum_mae = 0.0
         n_closed = 0
         live_wins = live_losses = 0
         live_sum_r = 0.0
+        scalp_n = scalp_wins = scalp_losses = scalp_scratch = 0
+        scalp_sum_r = 0.0
         if JOURNAL_PATH.exists():
             for row in iter_jsonl(JOURNAL_PATH):
                 if row.get("event") != "close":
@@ -500,7 +546,13 @@ class PaperJournal:
                 sum_r += r
                 sum_mfe += float(row.get("mfe_r") or 0)
                 sum_mae += float(row.get("mae_r") or 0)
-                if r > 0:
+                is_scratch = bool(row.get("scratch")) or str(row.get("result") or "").upper() in (
+                    "BE",
+                    "SCRATCH",
+                )
+                if is_scratch:
+                    scratches += 1
+                elif r > 0:
                     wins += 1
                 else:
                     losses += 1
@@ -510,14 +562,25 @@ class PaperJournal:
                         live_wins += 1
                     else:
                         live_losses += 1
-        closed = wins + losses
+                if str(row.get("exit_mode") or "").upper() == "SCALP":
+                    scalp_n += 1
+                    scalp_sum_r += r
+                    if is_scratch:
+                        scalp_scratch += 1
+                    elif r > 0:
+                        scalp_wins += 1
+                    else:
+                        scalp_losses += 1
+        closed = wins + losses + scratches
         wr = (wins / closed) if closed else 0.0
         live_closed = live_wins + live_losses
+        scalp_wr = (scalp_wins / scalp_n) if scalp_n else 0.0
         return {
             "open": len(self.list_open()),
             "closed": closed,
             "wins": wins,
             "losses": losses,
+            "scratches": scratches,
             "winrate": round(wr, 4),
             "sum_r": round(sum_r, 4),
             "avg_r": round(sum_r / closed, 4) if closed else 0.0,
@@ -527,6 +590,16 @@ class PaperJournal:
             "live_wins": live_wins,
             "live_losses": live_losses,
             "live_sum_r": round(live_sum_r, 4),
+            "scalp_cohort": {
+                "n": scalp_n,
+                "wins": scalp_wins,
+                "losses": scalp_losses,
+                "scratches": scalp_scratch,
+                "winrate": round(scalp_wr, 4),
+                "sum_r": round(scalp_sum_r, 4),
+                "avg_r": round(scalp_sum_r / scalp_n, 4) if scalp_n else 0.0,
+                "note": "SCALP-exit paper only. Not mixed with the old 1.8R-TP cohort. Not live-ready.",
+            },
             "journal_path": str(JOURNAL_PATH),
             "candidates_path": str(CANDIDATE_PATH),
         }

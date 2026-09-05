@@ -192,6 +192,9 @@ class PerpMicroCoach:
             min_oi=float(settings.perp_micro_min_oi),
             min_vol=float(settings.perp_micro_min_vol),
             min_rr=float(settings.perp_micro_min_rr),
+            scalp_tp_r=float(getattr(settings, "perp_micro_scalp_tp_r", 1.0)),
+            be_after_r=float(getattr(settings, "perp_micro_be_after_r", 0.5)),
+            scalp_enabled=bool(getattr(settings, "perp_micro_scalp_enabled", True)),
             rsi_long=float(settings.perp_micro_rsi_long),
             rsi_short=float(settings.perp_micro_rsi_short),
             paper=bool(settings.perp_micro_paper_enabled),
@@ -273,6 +276,13 @@ class PerpMicroCoach:
             "lifecycle": "ERROR_REQUIRES_REVIEW" if incomplete else "RECOVERY_PENDING",
             "stale_quote": False,
             "error": "incomplete open row" if incomplete else None,
+            "exit_mode": str(row.get("exit_mode") or "SCALP"),
+            "scalp_tp_r": _fx("scalp_tp_r", default=0.0),
+            "be_after_r": row.get("be_after_r"),
+            "initial_stop": _fx("initial_stop", "stop_price", "stop", default=stop),
+            "working_stop": _fx("working_stop", default=stop),
+            "be_armed": bool(row.get("be_armed")),
+            "setup_rr": _fx("setup_rr", default=1.8),
         }
 
     def _rehydrate_open(self, reason: str = "cycle") -> int:
@@ -302,6 +312,7 @@ class PerpMicroCoach:
                     added += 1
                     continue
                 mapped["lifecycle"] = "RECOVERY_PENDING"
+                self._prepare_exit_levels(mapped)
                 self._open[tid] = mapped
                 self._recovered_ids.add(str(tid))
                 added += 1
@@ -362,8 +373,8 @@ class PerpMicroCoach:
         for tid, p in self._open.items():
             mark = float(p.get("mark") or p.get("entry") or 0)
             entry = float(p["entry"])
-            stop = float(p.get("stop") or entry)
-            risk = abs(entry - stop) or 1e-12
+            stop = float(p.get("working_stop") or p.get("initial_stop") or p.get("stop") or entry)
+            risk = abs(entry - float(p.get("initial_stop") or p.get("stop") or entry)) or 1e-12
             side = p["side"]
             ur = (mark - entry) / risk if side == "LONG" else (entry - mark) / risk
             out.append(
@@ -373,8 +384,11 @@ class PerpMicroCoach:
                     "side": side,
                     "tier": p.get("tier", "alt"),
                     "entry": entry,
-                    "stop": p.get("stop"),
+                    "stop": p.get("working_stop") or p.get("stop"),
+                    "initial_stop": p.get("initial_stop") or p.get("stop"),
                     "tp1": p.get("tp1"),
+                    "be_armed": bool(p.get("be_armed")),
+                    "exit_mode": p.get("exit_mode") or "SCALP",
                     "mark": mark,
                     "unrealized_r": round(ur, 2),
                     "counts_for_live": p.get("counts_for_live", True),
@@ -970,21 +984,26 @@ class PerpMicroCoach:
         paper_pipeline.inc("quality_pass")
 
         min_rr = float(settings.perp_micro_min_rr)
+        scalp_r = float(getattr(settings, "perp_micro_scalp_tp_r", 1.0) or 1.0)
+        be_after = float(getattr(settings, "perp_micro_be_after_r", 0.5) or 0.0)
+        scalp_on = bool(getattr(settings, "perp_micro_scalp_enabled", True))
         if side == "LONG":
             stop = price - 1.5 * atr
             risk = abs(price - stop)
-            tp1 = price + min_rr * risk
-            tp2 = price + (min_rr + 1.2) * risk
+            setup_tp = price + min_rr * risk
+            tp1 = (price + scalp_r * risk) if scalp_on else setup_tp
+            tp2 = setup_tp
         else:
             stop = price + 1.5 * atr
             risk = abs(price - stop)
-            tp1 = price - min_rr * risk
-            tp2 = price - (min_rr + 1.2) * risk
+            setup_tp = price - min_rr * risk
+            tp1 = (price - scalp_r * risk) if scalp_on else setup_tp
+            tp2 = setup_tp
 
         if risk <= 0:
             paper_pipeline.inc_reject("ZERO_RISK")
             return False
-        rr = abs(tp1 - price) / risk
+        rr = abs(setup_tp - price) / risk
         if rr < min_rr:
             paper_pipeline.inc("rejected_rr")
             paper_pipeline.inc_reject("RISK_REWARD")
@@ -1049,6 +1068,11 @@ class PerpMicroCoach:
                 "atr": atr,
                 "vol": self._vol_map.get(symbol),
                 "oi": self._oi_map.get(symbol),
+                "rr": rr,
+                "setup_rr": min_rr,
+                "exit_mode": "SCALP" if scalp_on else "SETUP_18",
+                "scalp_tp_r": scalp_r,
+                "be_after_r": be_after,
             },
             tier=tier,
             counts_for_live=counts_for_live,
@@ -1087,7 +1111,7 @@ class PerpMicroCoach:
             },
             regime=f"rsi={rsi:.1f};{tier}",
             stop=stop,
-            tp1=tp1,
+            tp1=setup_tp,
             tp2=tp2,
             notes="QUALIFIED paper path",
         )
@@ -1097,8 +1121,10 @@ class PerpMicroCoach:
             "side": side,
             "entry": price,
             "stop": stop,
+            "initial_stop": stop,
+            "working_stop": stop,
             "tp1": tp1,
-            "tp2": tp2,
+            "tp2": setup_tp,
             "mark": price,
             "trade_id": tid,
             "tier": tier,
@@ -1106,6 +1132,12 @@ class PerpMicroCoach:
             "qscore": qscore,
             "mfe_r": 0.0,
             "mae_r": 0.0,
+            "exit_mode": "SCALP" if scalp_on else "SETUP_18",
+            "scalp_tp_r": scalp_r,
+            "be_after_r": be_after,
+            "be_armed": False,
+            "setup_rr": min_rr,
+            "risk_price": risk,
         }
         self._cooldowns[symbol] = datetime.now(timezone.utc)
 
@@ -1119,9 +1151,10 @@ class PerpMicroCoach:
                 title=f"Paper TRIGGER · {symbol} · {side}",
                 description=(
                     f"**{symbol} · {side}** (paper · {tier} · **{live_tag}**)\n"
-                    f"Entry `{price}` · Stop `{stop:.6g}` · TP1 `{tp1:.6g}`\n"
-                    f"RSI `{rsi:.1f}` · ext `{ext_pct:.2f}%` · R:R `{rr:.1f}` · Q `{qscore:.0f}`\n"
-                    f"_{reason}_\n_Simulation only. No live execution._"
+                    f"Entry `{price}` · Stop `{stop:.6g}` · Scalp TP `{tp1:.6g}` (1.0R)\n"
+                    f"RSI `{rsi:.1f}` · ext `{ext_pct:.2f}%` · setup R:R `{rr:.1f}` · Q `{qscore:.0f}`\n"
+                    f"Manage: bank 1.0R · BE after +0.5R MFE. Entry gates unchanged.\n"
+                    f"_{reason}_\n_Paper only. No live execution._"
                 ),
                 price=price,
                 severity="MEDIUM",
@@ -1143,6 +1176,34 @@ class PerpMicroCoach:
             counts_for_live=counts_for_live,
         )
         return True
+
+    def _prepare_exit_levels(self, p: Dict[str, Any]) -> None:
+        """Entry filters stay 1.8R geometry. Paper management may scalp."""
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        entry = float(p.get("entry") or 0)
+        side = str(p.get("side") or "").upper()
+        initial_stop = float(p.get("initial_stop") or p.get("stop") or 0)
+        p["initial_stop"] = initial_stop
+        risk = abs(entry - initial_stop) or 1e-12
+        p["risk_price"] = float(p.get("risk_price") or risk)
+        mode = str(p.get("exit_mode") or "").upper()
+        if not mode:
+            mode = "SCALP" if bool(getattr(settings, "perp_micro_scalp_enabled", True)) else "SETUP_18"
+        p["exit_mode"] = "SETUP_18" if mode in ("SETUP_18", "SETUP18", "LEGACY") else "SCALP"
+        if p.get("working_stop") is None:
+            p["working_stop"] = initial_stop
+        if p["exit_mode"] == "SETUP_18":
+            return
+        scalp_r = float(p.get("scalp_tp_r") or 0) or float(getattr(settings, "perp_micro_scalp_tp_r", 1.0) or 1.0)
+        p["scalp_tp_r"] = scalp_r
+        if p.get("be_after_r") is None:
+            p["be_after_r"] = float(getattr(settings, "perp_micro_be_after_r", 0.5) or 0.0)
+        if side == "LONG":
+            p["tp1"] = entry + scalp_r * risk
+        elif side == "SHORT":
+            p["tp1"] = entry - scalp_r * risk
 
     async def _manage_open(self, price_map: Dict[str, float]) -> None:
         from app.services.paper_journal import paper_journal
@@ -1169,20 +1230,55 @@ class PerpMicroCoach:
                 jopen = paper_journal._open.get(tid, {})
                 p["mfe_r"] = jopen.get("mfe_r", p.get("mfe_r", 0))
                 p["mae_r"] = jopen.get("mae_r", p.get("mae_r", 0))
+                if jopen.get("be_armed"):
+                    p["be_armed"] = True
+                if jopen.get("working_stop") is not None:
+                    p["working_stop"] = jopen.get("working_stop")
 
+                self._prepare_exit_levels(p)
                 side, entry = p["side"], float(p["entry"])
-                stop, tp1 = float(p["stop"]), float(p["tp1"])
-                risk = abs(entry - stop) or 1e-12
-                hit_stop = mark <= stop if side == "LONG" else mark >= stop
+                initial_stop = float(p.get("initial_stop") or p.get("stop") or 0)
+                risk = abs(entry - initial_stop) or 1e-12
+                mfe = float(p.get("mfe_r") or 0)
+                be_after = p.get("be_after_r")
+                if be_after is None:
+                    be_after = 99.0 if p.get("exit_mode") == "SETUP_18" else 0.5
+                be_after = float(be_after)
+                if (
+                    p.get("exit_mode") == "SCALP"
+                    and not p.get("be_armed")
+                    and be_after > 0
+                    and mfe + 1e-12 >= be_after
+                ):
+                    p["be_armed"] = True
+                    p["working_stop"] = entry
+                    try:
+                        paper_journal.note_be_armed(tid, entry)
+                    except Exception:
+                        pass
+
+                working_stop = float(p.get("working_stop") or initial_stop)
+                p["stop"] = working_stop
+                tp1 = float(p["tp1"])
+                hit_stop = mark <= working_stop if side == "LONG" else mark >= working_stop
                 hit_tp = mark >= tp1 if side == "LONG" else mark <= tp1
                 if not hit_stop and not hit_tp:
                     continue
                 p["lifecycle"] = "EXIT_TRIGGERED"
                 if hit_stop:
-                    result, exit_px, pnl_r = "STOP", stop, -1.0
+                    be = bool(p.get("be_armed")) and abs(working_stop - entry) <= max(1e-12, abs(entry) * 1e-9)
+                    if be:
+                        result, exit_px, pnl_r = "BE", entry, 0.0
+                    else:
+                        result, exit_px, pnl_r = "STOP", initial_stop, -1.0
                 else:
                     result, exit_px = "TP1", tp1
                     pnl_r = abs(tp1 - entry) / risk
+                jmem = paper_journal._open.get(tid)
+                if jmem is not None:
+                    jmem["exit_mode"] = p.get("exit_mode")
+                    jmem["be_armed"] = bool(p.get("be_armed"))
+                    jmem["working_stop"] = p.get("working_stop")
                 close_row = await paper_journal.close_trade(
                     tid, exit_price=exit_px, result=result, pnl_r=pnl_r
                 )
