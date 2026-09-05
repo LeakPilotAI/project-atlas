@@ -94,6 +94,13 @@ async def live() -> Dict[str, Any]:
             "enabled": bool(getattr(settings, "investment_scan_enabled", False)),
             "running": bool(getattr(investment_scanner, "running", False)),
             "last_cycle": load_last_cycle() or {},
+            "opportunities": [
+                r
+                for r in (getattr(quality_dip_scanner, "last_snapshot", []) or [])
+                if str(r.get("investment_class") or "NO_ACTION")
+                not in ("NO_ACTION", "", "None")
+                or str(r.get("action") or "") in ("PREPARE", "ACCUMULATE", "STAND_DOWN")
+            ],
         }
     except Exception as e:
         inv = {"enabled": False, "error": str(e)[:160]}
@@ -152,7 +159,8 @@ async def live() -> Dict[str, Any]:
             "be_after_r": cfg.get("be_after_r", getattr(settings, "perp_micro_be_after_r", 0.5)),
             "scalp_enabled": cfg.get("scalp_enabled", True),
             "min_volume": cfg.get("min_volume", settings.perp_micro_min_vol),
-            "max_open": cfg.get("max_open", settings.perp_micro_max_open),
+            "max_open": cfg.get("max_open", settings.effective_max_open),
+            "max_open_unlimited": bool(cfg.get("max_open_unlimited", int(settings.perp_micro_max_open) <= 0)),
         },
         "funnel_24h": h24,
         "why_no_trade": why,
@@ -174,8 +182,19 @@ async def live() -> Dict[str, Any]:
             "running": bool(getattr(quality_dip_scanner, "running", False)),
             "last_scan_at": getattr(quality_dip_scanner, "last_scan_at", None),
             "candidates": list(getattr(quality_dip_scanner, "last_snapshot", []) or []),
+            "last_alerts": list(getattr(quality_dip_scanner, "last_alerts", []) or []),
             "discord_enabled": bool(settings.quality_dip_discord_enabled),
             "auto_paper": bool(settings.quality_dip_auto_paper),
+            "prepare": [
+                r
+                for r in (getattr(quality_dip_scanner, "last_snapshot", []) or [])
+                if str(r.get("action") or "") in ("PREPARE", "ACCUMULATE")
+            ],
+            "stand_down": [
+                r
+                for r in (getattr(quality_dip_scanner, "last_snapshot", []) or [])
+                if str(r.get("action") or "") == "STAND_DOWN"
+            ],
         },
         "major_tape": getattr(perp_micro_coach, "last_major_tape", {}) or {},
         "equity_majors_tape": equity_tape,

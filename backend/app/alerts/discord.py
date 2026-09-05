@@ -195,7 +195,7 @@ async def paper_cmd(interaction: discord.Interaction) -> None:
         text = paper_text(open_n=len(opens), readiness=ready)
         if opens:
             extra = ["", "**Open positions**"]
-            for o in opens[:6]:
+            for o in opens[:16]:
                 extra.append(
                     f"• `{o.get('symbol')}` {o.get('side')} entry "
                     f"`{o.get('actual_entry_price')}` "

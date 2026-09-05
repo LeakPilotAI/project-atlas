@@ -187,7 +187,7 @@ class PerpMicroCoach:
         log.info(
             "Perp micro coach started (v3.1 live-path)",
             all_markets=bool(settings.perp_micro_all_markets),
-            max_open=int(settings.perp_micro_max_open),
+            max_open=int(settings.effective_max_open),
             max_triggers=int(settings.perp_micro_max_triggers_per_day),
             min_oi=float(settings.perp_micro_min_oi),
             min_vol=float(settings.perp_micro_min_vol),
@@ -202,6 +202,10 @@ class PerpMicroCoach:
             live_min_wr=float(settings.perp_micro_live_min_winrate),
             live_min_sum_r=float(settings.perp_micro_live_min_sum_r),
         )
+        if int(settings.perp_micro_max_open) == 6:
+            log.warning(
+                "perp_micro_max_open is 6 (old default). Set PERP_MICRO_MAX_OPEN=0 in .env for unlimited paper."
+            )
 
     async def stop(self) -> None:
         self._running = False
@@ -774,7 +778,7 @@ class PerpMicroCoach:
         except Exception as e:
             log.debug("shadow update failed", error=str(e)[:120])
 
-        max_open = int(settings.perp_micro_max_open)
+        max_open = int(settings.effective_max_open)
         max_day = int(settings.perp_micro_max_triggers_per_day)
 
         if not settings.perp_micro_paper_enabled or not self._liquid:

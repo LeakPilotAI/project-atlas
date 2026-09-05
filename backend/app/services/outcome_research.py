@@ -110,18 +110,27 @@ def _milestones(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     return out
 
 
-def load_paper_closes(path: Optional[Path] = None) -> List[Dict[str, Any]]:
+def load_paper_closes(path: Optional[Path] = None, *, session_only: bool = False) -> List[Dict[str, Any]]:
     from app.services.paper_journal import JOURNAL_PATH, iter_jsonl
 
     p = path or JOURNAL_PATH
     if not p.exists():
         return []
+    started: Optional[str] = None
+    if session_only:
+        for row in iter_jsonl(p):
+            if row.get("event") == "session_start":
+                started = row.get("started_at") or row.get("timestamp")
     rows: List[Dict[str, Any]] = []
     for row in iter_jsonl(p):
         if row.get("event") != "close":
             continue
         if str(row.get("trade_type") or "PAPER").upper() != "PAPER":
             continue
+        if started:
+            ts = str(row.get("exit_timestamp") or row.get("timestamp") or "")
+            if ts < str(started):
+                continue
         rows.append(row)
     return rows
 
@@ -258,10 +267,16 @@ def accepted_vs_rejected() -> Dict[str, Any]:
 
 
 def paper_text(open_n: int = 0, readiness: Optional[Dict[str, Any]] = None) -> str:
-    p = paper_performance()
+    from app.services.paper_journal import paper_journal
+
+    session = paper_journal.current_session()
+    p = paper_performance(load_paper_closes(session_only=True))
+    all_time = paper_performance(load_paper_closes(session_only=False))
     side = p["by_side"]
+    sid = session.get("session_id") or "session"
     lines = [
-        "**ATLAS PAPER PERFORMANCE**",
+        f"**ATLAS PAPER PERFORMANCE — SESSION `{sid}`**",
+        f"Window from: `{session.get('started_at') or 'all-time'}`",
         f"Open: `{open_n}`",
         f"Closed: `{p['n']}`",
         f"Win/Loss: `{p['wins']}` / `{p['losses']}`",
@@ -291,11 +306,16 @@ def paper_text(open_n: int = 0, readiness: Optional[Dict[str, Any]] = None) -> s
                 f"`{k}` n `{v['n']}` WR `{v['winrate']*100:.0f}%` avgR `{v['avg_r']:+.2f}` tot `{v['total_r']:+.2f}`"
             )
     else:
-        lines.append("_No closed trades yet._")
+        lines.append("_No closed trades in this session yet._")
     if readiness:
         lines.append("")
         lines.append(f"Readiness: {readiness.get('message', 'n/a')}")
         lines.append(f"Sample: `{p['uncertainty']}`")
+    lines.append("")
+    lines.append(
+        f"All-time archived (not deleted): n `{all_time['n']}` WR `{all_time['winrate']*100:.1f}%` "
+        f"tot `{all_time['total_r']:+.2f}R`. Research/edge still uses all-time."
+    )
     lines.append("_Paper only. Shadow excluded. Not financial advice._")
     text = "\n".join(lines)
     if len(text) > 1900:

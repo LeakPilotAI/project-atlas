@@ -14,8 +14,10 @@ def test_gates_still_locked() -> None:
     assert s.perp_micro_rsi_long == 28.0
     assert s.perp_micro_min_extension_pct == 1.4
     assert s.perp_micro_min_rr == 1.8
-    assert s.quality_dip_discord_enabled is False
+    assert s.quality_dip_discord_enabled is True
     assert s.quality_dip_auto_paper is True
+    assert s.perp_micro_max_open == 0
+    assert s.effective_max_open == 80
 
 
 def test_research_buy_is_not_brokerage(tmp_path) -> None:

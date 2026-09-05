@@ -387,7 +387,9 @@ class PaperPipeline:
             "scalp_enabled": bool(getattr(s, "perp_micro_scalp_enabled", True)),
             "scalp_tp_r": float(getattr(s, "perp_micro_scalp_tp_r", 1.0)),
             "be_after_r": float(getattr(s, "perp_micro_be_after_r", 0.5)),
-            "max_open": int(s.perp_micro_max_open),
+            "max_open": int(s.effective_max_open),
+            "max_open_configured": int(s.perp_micro_max_open),
+            "max_open_unlimited": int(s.perp_micro_max_open) <= 0,
             "max_daily_triggers": int(s.perp_micro_max_triggers_per_day),
             "scan_seconds": float(s.perp_micro_scan_seconds),
         }

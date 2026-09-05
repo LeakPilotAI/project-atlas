@@ -5,39 +5,71 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Project Atlas</title>
 <style>
-  :root { color-scheme: dark; }
+  :root {
+    color-scheme: dark;
+    --bg: #09090b;
+    --surface: #111114;
+    --elevated: #18181c;
+    --fg: #f4f1ea;
+    --muted: #8b919a;
+    --subtle: #5c6168;
+    --border: #232328;
+    --accent: #7d9b8a;
+    --long: #6ee7b7;
+    --short: #f87171;
+    --warn: #e8c07a;
+    --radius: 20px;
+  }
   * { box-sizing: border-box; }
-  body { margin:0; font: 14px/1.45 Inter,Segoe UI,system-ui,sans-serif; background:#07080b; color:#e4e4e7; }
-  header { position:sticky; top:0; background:#0b0d12ee; border-bottom:1px solid #ffffff10; padding:16px 24px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-  h1 { margin:0; font-size:22px; color:#fff; }
-  .sub { color:#71717a; font-size:12px; margin-top:4px; }
-  .ok { color:#34d399; } .bad { color:#fb7185; } .muted { color:#71717a; }
-  main { max-width:1120px; margin:0 auto; padding:20px 24px 48px; display:flex; flex-direction:column; gap:16px; }
+  body { margin:0; font: 14px/1.45 "IBM Plex Sans", Segoe UI, system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  header { position:sticky; top:0; z-index:4; background:#09090bee; border-bottom:1px solid var(--border); padding:16px 24px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  h1 { margin:0; font-size:28px; font-weight:600; letter-spacing:-0.03em; }
+  .sub { color:var(--muted); font-size:12px; margin-top:4px; }
+  .ok { color:var(--long); } .bad { color:var(--short); } .muted { color:var(--muted); }
+  main { max-width:1180px; margin:0 auto; padding:20px 24px 64px; display:flex; flex-direction:column; gap:16px; }
   .pills { display:flex; flex-wrap:wrap; gap:8px; }
-  .pill { border:1px solid #ffffff18; border-radius:999px; padding:4px 10px; font-size:11px; color:#a1a1aa; }
-  .pill.on { color:#34d399; background:#34d39914; border-color:#34d39944; }
-  .banner { border:1px solid #f59e0b33; background:#f59e0b0f; border-radius:16px; padding:14px 18px; }
-  .banner h2 { margin:0; font-size:11px; letter-spacing:.14em; color:#fbbf24; text-transform:uppercase; }
+  .pill { border:1px solid var(--border); border-radius:999px; padding:4px 10px; font-size:11px; color:var(--muted); }
+  .pill.on { color:var(--long); background:#6ee7b714; border-color:#6ee7b744; }
+  .tabs { display:flex; gap:4px; background:var(--surface); padding:4px; border-radius:12px; width:fit-content; border:1px solid var(--border); }
+  .tabs button { appearance:none; background:transparent; border:0; color:var(--muted); padding:8px 14px; border-radius:8px; font:inherit; font-size:13px; }
+  .tabs button.on { background:var(--elevated); color:var(--fg); }
+  .banner { border:1px solid #e8c07a33; background:#e8c07a0f; border-radius:var(--radius); padding:14px 18px; }
+  .banner h2 { margin:0; font-size:11px; letter-spacing:.14em; color:var(--warn); text-transform:uppercase; }
   .grid { display:grid; gap:10px; }
   .g9 { grid-template-columns: repeat(auto-fit,minmax(90px,1fr)); }
   .g4 { grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
   .g2 { grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); }
-  .card { background:#10131a; border:1px solid #ffffff14; border-radius:16px; padding:14px; }
-  .card h3 { margin:0 0 10px; font-size:13px; color:#d4d4d8; font-weight:600; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+  .card h3 { margin:0 0 10px; font-size:13px; color:var(--fg); font-weight:600; }
   .bar { height:48px; display:flex; align-items:end; margin-bottom:6px; }
-  .bar > i { display:block; width:100%; background:#34d399b3; border-radius:3px; }
-  .n { font-size:20px; font-weight:650; color:#fff; font-variant-numeric: tabular-nums; }
+  .bar > i { display:block; width:100%; background:#7d9b8ab3; border-radius:3px; }
+  .n { font-size:22px; font-weight:600; color:#fff; font-variant-numeric: tabular-nums; letter-spacing:-0.03em; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { text-align:left; color:#71717a; font-size:11px; font-weight:500; padding:6px 4px; }
-  td { padding:7px 4px; border-top:1px solid #ffffff0d; font-variant-numeric: tabular-nums; }
-  .short { color:#fb7185; } .long { color:#34d399; }
-  .err { color:#fb7185; border:1px solid #fb718544; background:#fb718512; padding:10px 14px; border-radius:12px; }
+  th { text-align:left; color:var(--subtle); font-size:11px; font-weight:500; padding:6px 4px; }
+  td { padding:8px 4px; border-top:1px solid #ffffff0d; font-variant-numeric: tabular-nums; }
+  .short { color:var(--short); } .long { color:var(--long); }
+  .err { color:var(--short); border:1px solid #fb718544; background:#fb718512; padding:10px 14px; border-radius:12px; }
+  .action { font-size:10px; letter-spacing:.08em; font-weight:600; border-radius:999px; padding:2px 8px; }
+  .ACCUMULATE { color:#0a0a0b; background:var(--long); }
+  .PREPARE { color:#0a0a0b; background:var(--warn); }
+  .WATCH { color:var(--fg); background:var(--elevated); border:1px solid var(--border); }
+  .STAND_DOWN { color:#fff; background:#7f1d1d; }
+  .QUIET { color:var(--subtle); background:transparent; border:1px solid var(--border); }
+  .dip { display:flex; flex-direction:column; gap:6px; }
+  .dip .top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .hidden { display:none; }
+  @media (max-width:640px) {
+    header, main { padding-left:16px; padding-right:16px; }
+    h1 { font-size:22px; }
+    .n { font-size:18px; }
+  }
 </style>
 </head>
 <body>
 <header>
   <div>
-    <div class="sub" style="letter-spacing:.2em;color:#34d399;">LIVE COMMAND CENTER</div>
+    <div class="sub" style="letter-spacing:.2em;color:var(--accent);">LIVE COMMAND CENTER</div>
     <h1>Project Atlas</h1>
     <div class="sub">Watch-only. Discord is the alert feed. No Node/Next compile.</div>
   </div>
@@ -49,54 +81,86 @@
 <main>
   <div id="err"></div>
   <div class="pills" id="pills"></div>
-  <div class="sub" style="letter-spacing:.14em;color:#a1a1aa;margin-top:8px">TRADING — Hyperliquid paper (isolated)</div>
-  <div class="banner">
-    <h2>Why no paper trade</h2>
-    <div id="why" style="font-size:18px;margin-top:6px">—</div>
-    <div class="sub" id="bottleneck"></div>
+  <div class="tabs" role="tablist">
+    <button class="on" data-tab="trading">Trading</button>
+    <button data-tab="dips">Quality dip</button>
+    <button data-tab="invest">Investment</button>
+    <button data-tab="research">Research</button>
   </div>
-  <div>
-    <div class="sub" style="margin-bottom:8px">Last 24 hours — perp funnel</div>
-    <div class="grid g9" id="funnel"></div>
-  </div>
-  <div class="grid g4" id="stats"></div>
-  <div class="grid g2">
-    <div class="card">
-      <h3>Open paper trades</h3>
-      <div id="opens"></div>
-      <div id="lifecycle" class="sub" style="margin-top:8px"></div>
+
+  <section id="tab-trading">
+    <div class="sub" style="letter-spacing:.14em;color:var(--muted);margin:4px 0 8px">TRADING — Hyperliquid paper (isolated)</div>
+    <div class="banner">
+      <h2>Why no paper trade</h2>
+      <div id="why" style="font-size:18px;margin-top:6px">—</div>
+      <div class="sub" id="bottleneck"></div>
     </div>
-    <div class="card">
-      <h3>Live activity</h3>
-      <div id="act"></div>
+    <div>
+      <div class="sub" style="margin:12px 0 8px">Last 24 hours — perp funnel</div>
+      <div class="grid g9" id="funnel"></div>
     </div>
-  </div>
-  <div class="grid g2">
+    <div class="grid g4" id="stats"></div>
+    <div class="sub" id="sessionline"></div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Open paper trades</h3>
+        <div id="opens"></div>
+        <div id="lifecycle" class="sub" style="margin-top:8px"></div>
+      </div>
+      <div class="card">
+        <h3>Live activity</h3>
+        <div id="act"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-dips" class="hidden">
+    <div class="banner">
+      <h2>Quality names — prepare, don’t chase</h2>
+      <div id="diphead" style="font-size:16px;margin-top:6px">Waiting on first investment scan.</div>
+      <div class="sub" id="dipmeta"></div>
+    </div>
+    <div class="grid g3" id="dipcards"></div>
     <div class="card">
-      <h3>Quality dips / major dislocations (investment engine)</h3>
+      <h3>Full watchlist</h3>
       <div id="dips"></div>
       <div id="dippaper" class="sub" style="margin-top:8px"></div>
     </div>
-    <div class="card">
-      <h3>Hyperliquid majors tape (RSI/ext — crypto only)</h3>
-      <div id="majors"></div>
+  </section>
+
+  <section id="tab-invest" class="hidden">
+    <div class="grid g2">
+      <div class="card">
+        <h3>Investment engine</h3>
+        <div id="invstatus" class="sub"></div>
+        <div id="invopps" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <h3>Equity majors tape</h3>
+        <div class="sub" id="eqhead"></div>
+        <div id="eqtape"></div>
+      </div>
     </div>
-  </div>
-  <div class="card">
-    <h3>ATLAS EQUITY MAJORS TAPE</h3>
-    <div class="sub" id="eqhead"></div>
-    <div id="eqtape"></div>
-  </div>
-  <div class="card" id="validation">
-    <h3>Trading validation (research only)</h3>
-    <div id="valbody" class="sub">Loading…</div>
-  </div>
-  <div class="card" id="edge">
-    <h3>ATLAS EDGE DIAGNOSTICS</h3>
-    <div class="sub">Where paper makes/loses R. Does not change gates. Not live-ready.</div>
-    <div id="edgebody" class="sub" style="margin-top:8px">Loading…</div>
-  </div>
-  <div class="card" id="gates"></div>
+  </section>
+
+  <section id="tab-research" class="hidden">
+    <div class="grid g2">
+      <div class="card">
+        <h3>Hyperliquid majors tape (RSI/ext — crypto only)</h3>
+        <div id="majors"></div>
+      </div>
+      <div class="card" id="validation">
+        <h3>Trading validation (research only · all-time)</h3>
+        <div id="valbody" class="sub">Loading…</div>
+      </div>
+    </div>
+    <div class="card" id="edge">
+      <h3>ATLAS EDGE DIAGNOSTICS</h3>
+      <div class="sub">Where paper makes/loses R. All-time journal. Does not change gates. Not live-ready.</div>
+      <div id="edgebody" class="sub" style="margin-top:8px">Loading…</div>
+    </div>
+    <div class="card" id="gates"></div>
+  </section>
 </main>
 <script>
 const FUNNEL = [
@@ -113,6 +177,20 @@ function ago(iso){
   if(s<60) return s+"s ago"; if(s<3600) return Math.round(s/60)+"m ago"; return Math.round(s/3600)+"h ago";
 }
 function pill(label, on){ return `<span class="pill ${on?"on":""}">${label} ${on?"on":"off"}</span>`; }
+function actionBadge(a){
+  const x = String(a||"QUIET");
+  return `<span class="action ${x}">${x.replace("_"," ")}</span>`;
+}
+document.querySelectorAll(".tabs button").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("on"));
+    btn.classList.add("on");
+    const id = btn.getAttribute("data-tab");
+    ["trading","dips","invest","research"].forEach(k=>{
+      document.getElementById("tab-"+k).classList.toggle("hidden", k!==id);
+    });
+  });
+});
 async function load(){
   try{
     const r = await fetch("/api/live");
@@ -139,12 +217,17 @@ async function load(){
       return `<div class="card"><div class="bar"><i style="height:${ht}px"></i></div><div class="n">${v}</div><div class="sub">${lab}</div></div>`;
     }).join("");
     const j = L.journal||{};
+    const sess = j.session||{};
+    const at = j.all_time||{};
     document.getElementById("stats").innerHTML = [
-      ["Paper open", n(j.open)],
-      ["Paper closed", n(j.closed)],
-      ["Win rate", (n(j.winrate)*100).toFixed(0)+"%"],
-      ["Avg R", fmt(j.avg_r,2)]
+      ["Session open", n(j.open)],
+      ["Session closed", n(j.closed)],
+      ["Session WR", (n(j.winrate)*100).toFixed(0)+"%"],
+      ["Session avg R", fmt(j.avg_r,2)]
     ].map(([a,b])=>`<div class="card"><div class="sub">${a}</div><div class="n">${b}</div></div>`).join("");
+    document.getElementById("sessionline").innerHTML =
+      `Session <b>${sess.session_id||"all-time"}</b> from ${sess.started_at?ago(sess.started_at):"the beginning"}. `+
+      `All-time archived: ${n(at.closed)} closed · WR ${(n(at.winrate)*100).toFixed(1)}% · ${fmt(at.sum_r,2)}R. Journal not deleted.`;
     const opens = L.open_trades||[];
     document.getElementById("opens").innerHTML = opens.length? `<table><tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Mark</th><th>Stop</th><th>MFE</th><th>State</th></tr>${
       opens.map(t=>`<tr><td>${t.symbol}</td><td class="${t.side==="LONG"?"long":"short"}">${t.side||""}</td><td>${fmt(t.entry,4)}</td><td>${fmt(t.mark,4)}</td><td>${fmt(t.stop,4)}</td><td>${fmt(t.mfe_r,2)}</td><td>${t.lifecycle||(t.stale_quote?"MARKET_DATA_UNAVAILABLE":"OPEN")}${t.be_armed?" · BE":""}${t.recovered?" · recovered":""}</td></tr>`).join("")
@@ -164,16 +247,50 @@ async function load(){
       ["Last Discord", ago(a.last_discord_alert)],
       ["Last error", h.last_error||"none"]
     ].map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0"><span class="muted">${k}</span><span>${v}</span></div>`).join("");
-    const dips = (L.quality_dips&&L.quality_dips.candidates)||[];
-    document.getElementById("dips").innerHTML = dips.length? `<table><tr><th>Symbol</th><th>Off high</th><th>5d</th><th>Score</th></tr>${
-      dips.slice(0,10).map(d=>`<tr><td>${d.symbol}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"}</td><td class="long">${fmt(d.score,0)}</td></tr>`).join("")
-    }</table>` : '<div class="sub">No investment-engine snapshot yet. Quality dips now come from the equity tape, not a 52-week Yahoo loop.</div>';
+
+    const qd = L.quality_dips||{};
+    const dips = qd.candidates||[];
+    const prep = qd.prepare||dips.filter(d=>d.action==="PREPARE"||d.action==="ACCUMULATE");
+    const stand = qd.stand_down||[];
+    document.getElementById("diphead").textContent = prep.length
+      ? `${prep.length} quality name(s) in PREPARE / ACCUMULATE — research a buy, Atlas does not place it.`
+      : "No quality names in a buy-prep zone right now.";
+    document.getElementById("dipmeta").textContent =
+      `Scan ${ago(qd.last_scan_at)} · Discord dips ${qd.discord_enabled?"on":"off"} · ${stand.length} stand-down`;
+    const featured = (prep.length?prep:dips.filter(d=>d.action==="WATCH")).slice(0,6);
+    document.getElementById("dipcards").innerHTML = featured.length ? featured.map(d=>`
+      <div class="card dip">
+        <div class="top">
+          <div>
+            <div class="n" style="font-size:20px">${d.symbol||""}</div>
+            <div class="sub">${d.name||d.category||""}</div>
+          </div>
+          ${actionBadge(d.action)}
+        </div>
+        <div class="n" style="font-size:16px">${d.pct_from_high==null?"—":fmt(d.pct_from_high,1)+"% off high"}</div>
+        <div class="sub">1d ${d.chg_1d==null?"—":fmt(d.chg_1d,1)+"%"} · 5d ${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"} · vs SPY ${d.vs_spy==null?"—":fmt(d.vs_spy,1)+"%"}</div>
+        <div class="sub">${d.thesis||""} · ${d.classification||""}</div>
+        <div>${d.action_reason||""}</div>
+      </div>`).join("") : '<div class="card sub">Waiting on the investment scan. Quality dips come from the equity tape, not a second Yahoo loop.</div>';
+    document.getElementById("dips").innerHTML = dips.length? `<table><tr><th></th><th>Symbol</th><th>Off high</th><th>1d</th><th>5d</th><th>Thesis</th><th>Why</th></tr>${
+      dips.map(d=>`<tr><td>${actionBadge(d.action)}</td><td>${d.symbol}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.chg_1d==null?"—":fmt(d.chg_1d,1)+"%"}</td><td>${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"}</td><td>${d.thesis||""}</td><td class="sub">${d.action_reason||""}</td></tr>`).join("")
+    }</table>` : '<div class="sub">No investment-engine snapshot yet.</div>';
     const dp = L.dip_paper||{};
     const pos = dp.positions||{};
     const pkeys = Object.keys(pos);
     document.getElementById("dippaper").innerHTML = pkeys.length
       ? `Investment paper book: ${pkeys.join(", ")} · cash $${fmt(dp.cash,0)} · not Hyperliquid`
-      : "No investment paper fills (not crypto).";
+      : "No investment paper fills (not crypto). Discord DMs PREPARE / ACCUMULATE names.";
+
+    const inv = L.investment||{};
+    const cycle = inv.last_cycle||{};
+    document.getElementById("invstatus").innerHTML =
+      `Scan ${inv.enabled?"enabled":"off"} · running ${inv.running?"yes":"no"} · last cycle ${cycle.finished_at?ago(cycle.finished_at):"n/a"} · ${cycle.symbols_scanned||0} names`;
+    const iopps = inv.opportunities||prep;
+    document.getElementById("invopps").innerHTML = iopps.length? `<table><tr><th></th><th>Symbol</th><th>Class</th><th>Thesis</th><th>Off high</th></tr>${
+      iopps.slice(0,16).map(d=>`<tr><td>${actionBadge(d.action)}</td><td>${d.symbol}</td><td>${d.investment_class||d.classification||""}</td><td>${d.thesis||""}</td><td>${fmt(d.pct_from_high,1)}%</td></tr>`).join("")
+    }</table>` : '<div class="sub">No investment opportunities on this scan. Alerts still DM when class changes.</div>';
+
     const tape = L.major_tape||{};
     const mkeys = Object.keys(tape);
     document.getElementById("majors").innerHTML = mkeys.length ? `<table><tr><th>Symbol</th><th>RSI</th><th>Ext %</th><th>Blocked</th></tr>${
@@ -189,15 +306,15 @@ async function load(){
       const near = (eq.nearest||[]).map((n,i)=>`${i+1}. ${n.symbol||"?"} — ${n.move_score==null?"n/a":n.move_score}`).join(" · ");
       document.getElementById("eqtape").innerHTML = `<div class="sub">Nearest: ${near||"waiting on first investment scan"}</div>`;
     } else {
-      document.getElementById("eqtape").innerHTML = `<table><tr><th>Ticker</th><th>Px</th><th>1D</th><th>5D</th><th>20D</th><th>DD</th><th>Vol</th><th>vs SPY</th><th>Score</th><th>Thesis</th><th>Class</th><th>Cause</th></tr>${
+      document.getElementById("eqtape").innerHTML = `<table><tr><th>Ticker</th><th>Px</th><th>1D</th><th>5D</th><th>DD</th><th>vs SPY</th><th>Score</th><th>Thesis</th><th>Class</th></tr>${
         eqRows.slice(0,20).map(r=>{
-          const c=(r.cause&&r.cause.category)||"UNKNOWN";
           const pct=v=> v==null?"—":(Number(v)*100).toFixed(1)+"%";
-          return `<tr><td>${r.symbol||""}</td><td>${fmt(r.price,2)}</td><td>${pct(r.ret_1d)}</td><td>${pct(r.ret_5d)}</td><td>${pct(r.ret_20d)}</td><td>${pct(r.drawdown)}</td><td>${r.rel_volume==null?"—":fmt(r.rel_volume,2)+"x"}</td><td>${pct(r.vs_spy)}</td><td>${r.move_score==null?"—":r.move_score}</td><td>${r.thesis||""}</td><td>${r.classification||""}</td><td>${c}</td></tr>`;
+          return `<tr><td>${r.symbol||""}</td><td>${fmt(r.price,2)}</td><td>${pct(r.ret_1d)}</td><td>${pct(r.ret_5d)}</td><td>${pct(r.drawdown)}</td><td>${pct(r.vs_spy)}</td><td>${r.move_score==null?"—":r.move_score}</td><td>${r.thesis||""}</td><td>${r.classification||""}</td></tr>`;
         }).join("")
       }</table>`;
     }
     const g = L.gates||{};
+    const cap = g.max_open_unlimited ? "Unlimited (80 safety)" : fmt(g.max_open,0);
     document.getElementById("gates").innerHTML = `<h3>Active gates (not editable)</h3>
       <div class="pills">
         <span class="pill">RSI ${fmt(g.rsi_long,0)} / ${fmt(g.rsi_short,0)}</span>
@@ -206,7 +323,7 @@ async function load(){
         <span class="pill">Scalp TP ${fmt(g.scalp_tp_r,1)}R</span>
         <span class="pill">BE after ${fmt(g.be_after_r,1)}R</span>
         <span class="pill">Min volume ${fmt(g.min_volume,0)}</span>
-        <span class="pill">Max open ${fmt(g.max_open,0)}</span>
+        <span class="pill">Max open ${cap}</span>
       </div>`;
     try {
       const vr = await fetch("/api/validation/summary");
@@ -218,11 +335,11 @@ async function load(){
         const expci = eci[0]==null ? "n/a" : `${eci[0].toFixed(2)}–${eci[1].toFixed(2)}R`;
         document.getElementById("valbody").innerHTML =
           `<div class="n" style="font-size:16px;margin-bottom:8px">${V.conclusion||""}</div>`+
-          `<div>Closed ${V.closed} · WR ${(n(V.winrate)*100).toFixed(1)}% · exp ${fmt(V.expectancy,2)}R · tot ${fmt(V.total_r,2)}R</div>`+
+          `<div>All-time closed ${V.closed} · WR ${(n(V.winrate)*100).toFixed(1)}% · exp ${fmt(V.expectancy,2)}R · tot ${fmt(V.total_r,2)}R</div>`+
           `<div>95% WR CI ${wrci} · exp CI ${expci}</div>`+
           `<div>Sufficiency ${V.data_sufficiency} · stability ${V.statistical_stability} · integrity ${V.data_integrity}</div>`+
           `<div>Live capital: <b>no</b> · ${(V.milestone&&V.milestone.current_label)||"INSUFFICIENT SAMPLE"}</div>`+
-          `<div class="muted">Does not replace /paper. Gates unchanged. Small sample ≠ edge.</div>`;
+          `<div class="muted">Does not replace /paper. Gates unchanged. Session WR is separate.</div>`;
       }
     } catch (e) {}
     try {

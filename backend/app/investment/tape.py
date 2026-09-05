@@ -77,20 +77,35 @@ def public_payload() -> Dict[str, Any]:
 
 def as_quality_dip_rows() -> List[Dict[str, Any]]:
     """Dashboard quality-dip list consumes the tape — no second Yahoo loop."""
+    from app.investment.buy_prep import ACTION_RANK, from_tape_row
+
     out: List[Dict[str, Any]] = []
-    for r in sorted(_TAPE, key=sort_key):
+    for r in _TAPE:
+        prep = from_tape_row(r)
+        dd = r.get("drawdown")
+        off = None if dd is None else round(abs(float(dd)) * 100.0, 1)
+        r1 = r.get("ret_1d")
+        r5 = r.get("ret_5d")
         out.append(
             {
                 "symbol": r.get("symbol"),
+                "name": r.get("name") or r.get("symbol"),
                 "score": r.get("move_score"),
                 "price": r.get("price"),
-                "pct_from_high": None
-                if r.get("drawdown") is None
-                else round(abs(float(r["drawdown"])) * 100.0, 1),
-                "chg_5d": None if r.get("ret_5d") is None else round(float(r["ret_5d"]) * 100.0, 1),
+                "pct_from_high": off,
+                "chg_1d": None if r1 is None else round(float(r1) * 100.0, 1),
+                "chg_5d": None if r5 is None else round(float(r5) * 100.0, 1),
+                "vs_spy": None if r.get("vs_spy") is None else round(float(r["vs_spy"]) * 100.0, 1),
                 "category": r.get("sector") or "stock",
                 "classification": r.get("classification"),
                 "thesis": r.get("thesis"),
+                "evidence": r.get("evidence"),
+                "investment_class": r.get("investment_class"),
+                "action": prep.get("action"),
+                "action_reason": prep.get("reason"),
+                "notify": bool(prep.get("notify")),
+                "rel_volume": r.get("rel_volume"),
             }
         )
+    out.sort(key=lambda row: (ACTION_RANK.get(str(row.get("action") or "QUIET"), 9), -(row.get("pct_from_high") or 0)))
     return out

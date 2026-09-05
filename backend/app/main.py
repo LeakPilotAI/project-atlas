@@ -38,6 +38,36 @@ from app.api.live import router as live_router
 from app.api.validation import router as validation_router
 from app.services.performance import router as performance_router
 
+
+async def _announce_session(info: Dict[str, Any]) -> None:
+    await asyncio.sleep(12)
+    try:
+        from app.alerts.discord import is_discord_ready, send_discord_alert
+
+        if not is_discord_ready():
+            return
+        prior = int(info.get("prior_closed_archived") or 0)
+        desc = (
+            f"**New paper testing window** `{info.get('session_id')}`\n\n"
+            f"Session stats (WR, closed, avg R) start at zero.\n"
+            f"`{prior}` prior PAPER closes stay in the journal for research.\n"
+            f"Nothing was deleted.\n\n"
+            f"Concurrent paper cap: unlimited (safety 80).\n"
+            f"Entry gates unchanged: RSI 28/72 · ext 1.4% · R:R 1.8.\n"
+            f"Not live capital."
+        )
+        await send_discord_alert(
+            symbol="ATLAS",
+            title="Paper session reset — data kept",
+            description=desc,
+            severity="LOW",
+            opportunity=10,
+            confidence=10,
+            risk=10,
+        )
+    except Exception:
+        pass
+
 try:
     from app.services.accumulation_ladder import accumulation_ladder
 except Exception:
@@ -131,6 +161,15 @@ async def lifespan(app: FastAPI):
 
         asyncio.create_task(start_discord_bot(), name="discord_bot")
         log.info("Discord bot task scheduled (DM-only alerts)")
+        try:
+            from app.services.paper_journal import paper_journal
+
+            session_info = paper_journal.bootstrap_session()
+            log.info("paper session bootstrap", **{k: session_info.get(k) for k in ("created", "session_id", "started_at", "prior_closed_archived")})
+            if session_info.get("created"):
+                asyncio.create_task(_announce_session(session_info), name="paper_session_announce")
+        except Exception as e:
+            log.warning("paper session bootstrap failed", error=str(e)[:200])
         try:
             from app.investment.scan import start_investment_scanner
 

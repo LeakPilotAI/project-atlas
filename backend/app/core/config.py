@@ -77,7 +77,8 @@ class Settings(BaseSettings):
     perp_micro_paper_enabled: bool = True
     perp_micro_all_markets: bool = True
     perp_micro_risk_usd: float = 1.0
-    perp_micro_max_open: int = 6
+    # 0 = no operator cap (hard safety ceiling 80). Faster paper sample collection.
+    perp_micro_max_open: int = 0
     perp_micro_max_triggers_per_day: int = 999
     perp_micro_min_oi: float = 75000.0
     perp_micro_min_vol: float = 150000.0
@@ -119,9 +120,9 @@ class Settings(BaseSettings):
     quality_dip_adaptive_floor_metal: float = 8.0
     quality_dip_adaptive_ceiling_stock: float = 40.0
     quality_dip_adaptive_ceiling_metal: float = 25.0
-    quality_dip_scan_interval_minutes: float = 60.0
-    quality_dip_cooldown_hours: float = 24.0
-    quality_dip_discord_enabled: bool = False
+    quality_dip_scan_interval_minutes: float = 15.0
+    quality_dip_cooldown_hours: float = 12.0
+    quality_dip_discord_enabled: bool = True
     quality_dip_auto_paper: bool = True
     quality_dip_paper_usd: float = 200.0
     quality_dip_paper_cash: float = 10_000.0
@@ -165,9 +166,9 @@ class Settings(BaseSettings):
     btc_accum_scan_minutes: float = 15.0
     btc_accum_cooldown_hours: float = 720.0
 
-    # --- Investment engine (opt-in, isolated from perps) ---
-    investment_scan_enabled: bool = False
-    investment_scan_interval_seconds: float = 3600.0
+    # --- Investment engine (isolated from perps) ---
+    investment_scan_enabled: bool = True
+    investment_scan_interval_seconds: float = 900.0
     investment_scan_closed_interval_seconds: float = 21600.0
     investment_price_refresh_seconds: float = 900.0
     investment_fundamental_refresh_seconds: float = 86400.0
@@ -229,6 +230,14 @@ class Settings(BaseSettings):
             except ValueError:
                 pass
         return out
+
+    @property
+    def effective_max_open(self) -> int:
+        """Concurrent paper cap. 0 in config means unlimited up to the safety ceiling."""
+        n = int(self.perp_micro_max_open)
+        if n <= 0:
+            return 80
+        return min(n, 80)
 
     @property
     def discord_owner_id_list(self) -> List[int]:

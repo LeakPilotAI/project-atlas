@@ -15,6 +15,7 @@ log = structlog.get_logger(__name__)
 
 JOURNAL_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_journal.jsonl"
 CANDIDATE_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_candidates.jsonl"
+SESSION_ID = "scalp-v1"
 
 
 def _now() -> datetime:
@@ -509,6 +510,86 @@ class PaperJournal:
     def list_open(self) -> List[Dict[str, Any]]:
         return [p for p in self._open.values() if str(p.get("trade_type") or "PAPER").upper() != "TEST"]
 
+    def current_session(self) -> Dict[str, Any]:
+        """Last session_start in the journal. Missing → all-time window."""
+        started_at = None
+        session_id = None
+        label = None
+        note = None
+        if JOURNAL_PATH.exists():
+            for row in iter_jsonl(JOURNAL_PATH):
+                if row.get("event") != "session_start":
+                    continue
+                started_at = row.get("started_at") or row.get("timestamp")
+                session_id = row.get("session_id")
+                label = row.get("label")
+                note = row.get("note")
+        if not started_at:
+            return {
+                "session_id": "all-time",
+                "started_at": None,
+                "label": "all-time (no session marker)",
+                "note": "Stats count every PAPER close. Journal was not reset.",
+            }
+        return {
+            "session_id": session_id or "unknown",
+            "started_at": started_at,
+            "label": label or session_id,
+            "note": note or "Prior closes remain in the journal.",
+        }
+
+    def start_session(
+        self,
+        *,
+        session_id: str,
+        label: str,
+        note: str = "",
+        prior_closed: int = 0,
+    ) -> Dict[str, Any]:
+        """Append a session marker. Never deletes or rewrites closes."""
+        row = {
+            "event": "session_start",
+            "session_id": session_id,
+            "label": label,
+            "note": note,
+            "started_at": _iso(),
+            "timestamp": _iso(),
+            "prior_closed_archived": int(prior_closed),
+        }
+        self._append(JOURNAL_PATH, row)
+        log.info(
+            "paper session started",
+            session_id=session_id,
+            prior_closed_archived=prior_closed,
+        )
+        return row
+
+    def bootstrap_session(
+        self,
+        session_id: str = SESSION_ID,
+        *,
+        label: str = "SCALP 1.0R + BE 0.5R",
+        note: str = "New testing window. Prior PAPER closes stay in the journal and all-time research.",
+    ) -> Dict[str, Any]:
+        cur = self.current_session()
+        if cur.get("session_id") == session_id and cur.get("started_at"):
+            return {"created": False, **cur}
+        prior = 0
+        if JOURNAL_PATH.exists():
+            for row in iter_jsonl(JOURNAL_PATH):
+                if row.get("event") != "close":
+                    continue
+                if str(row.get("trade_type") or "PAPER").upper() == "TEST":
+                    continue
+                prior += 1
+        started = self.start_session(
+            session_id=session_id,
+            label=label,
+            note=note,
+            prior_closed=prior,
+        )
+        return {"created": True, "prior_closed_archived": prior, **started}
+
     def recovery_report(self) -> Dict[str, Any]:
         opens = self.list_open()
         rec = dict(self._last_reconcile or {})
@@ -526,6 +607,44 @@ class PaperJournal:
         }
 
     async def stats(self) -> Dict[str, Any]:
+        session = self.current_session()
+        started = session.get("started_at")
+        all_rows: List[Dict[str, Any]] = []
+        session_rows: List[Dict[str, Any]] = []
+        if JOURNAL_PATH.exists():
+            for row in iter_jsonl(JOURNAL_PATH):
+                if row.get("event") != "close":
+                    continue
+                if str(row.get("trade_type") or "PAPER").upper() == "TEST":
+                    continue
+                all_rows.append(row)
+                ts = str(row.get("exit_timestamp") or row.get("timestamp") or "")
+                if not started or ts >= str(started):
+                    session_rows.append(row)
+        primary = self._tally(session_rows)
+        all_time = self._tally(all_rows)
+        primary.update(
+            {
+                "open": len(self.list_open()),
+                "journal_path": str(JOURNAL_PATH),
+                "candidates_path": str(CANDIDATE_PATH),
+                "session": session,
+                "all_time": {
+                    "closed": all_time["closed"],
+                    "wins": all_time["wins"],
+                    "losses": all_time["losses"],
+                    "scratches": all_time["scratches"],
+                    "winrate": all_time["winrate"],
+                    "sum_r": all_time["sum_r"],
+                    "avg_r": all_time["avg_r"],
+                    "note": "Archived. Not deleted. Used by research/edge. Not mixed into session WR.",
+                },
+            }
+        )
+        return primary
+
+    @staticmethod
+    def _tally(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
         wins = losses = scratches = 0
         sum_r = 0.0
         sum_mfe = 0.0
@@ -535,48 +654,42 @@ class PaperJournal:
         live_sum_r = 0.0
         scalp_n = scalp_wins = scalp_losses = scalp_scratch = 0
         scalp_sum_r = 0.0
-        if JOURNAL_PATH.exists():
-            for row in iter_jsonl(JOURNAL_PATH):
-                if row.get("event") != "close":
-                    continue
-                if str(row.get("trade_type") or "PAPER").upper() == "TEST":
-                    continue
-                n_closed += 1
-                r = float(row.get("net_pnl_r") or row.get("R_multiple") or 0)
-                sum_r += r
-                sum_mfe += float(row.get("mfe_r") or 0)
-                sum_mae += float(row.get("mae_r") or 0)
-                is_scratch = bool(row.get("scratch")) or str(row.get("result") or "").upper() in (
-                    "BE",
-                    "SCRATCH",
-                )
-                if is_scratch:
-                    scratches += 1
-                elif r > 0:
-                    wins += 1
+        for row in rows:
+            n_closed += 1
+            r = float(row.get("net_pnl_r") or row.get("R_multiple") or 0)
+            sum_r += r
+            sum_mfe += float(row.get("mfe_r") or 0)
+            sum_mae += float(row.get("mae_r") or 0)
+            is_scratch = bool(row.get("scratch")) or str(row.get("result") or "").upper() in (
+                "BE",
+                "SCRATCH",
+            )
+            if is_scratch:
+                scratches += 1
+            elif r > 0:
+                wins += 1
+            else:
+                losses += 1
+            if row.get("counts_for_live"):
+                live_sum_r += r
+                if r > 0:
+                    live_wins += 1
                 else:
-                    losses += 1
-                if row.get("counts_for_live"):
-                    live_sum_r += r
-                    if r > 0:
-                        live_wins += 1
-                    else:
-                        live_losses += 1
-                if str(row.get("exit_mode") or "").upper() == "SCALP":
-                    scalp_n += 1
-                    scalp_sum_r += r
-                    if is_scratch:
-                        scalp_scratch += 1
-                    elif r > 0:
-                        scalp_wins += 1
-                    else:
-                        scalp_losses += 1
+                    live_losses += 1
+            if str(row.get("exit_mode") or "").upper() == "SCALP":
+                scalp_n += 1
+                scalp_sum_r += r
+                if is_scratch:
+                    scalp_scratch += 1
+                elif r > 0:
+                    scalp_wins += 1
+                else:
+                    scalp_losses += 1
         closed = wins + losses + scratches
         wr = (wins / closed) if closed else 0.0
         live_closed = live_wins + live_losses
         scalp_wr = (scalp_wins / scalp_n) if scalp_n else 0.0
         return {
-            "open": len(self.list_open()),
             "closed": closed,
             "wins": wins,
             "losses": losses,
@@ -600,8 +713,6 @@ class PaperJournal:
                 "avg_r": round(scalp_sum_r / scalp_n, 4) if scalp_n else 0.0,
                 "note": "SCALP-exit paper only. Not mixed with the old 1.8R-TP cohort. Not live-ready.",
             },
-            "journal_path": str(JOURNAL_PATH),
-            "candidates_path": str(CANDIDATE_PATH),
         }
 
 

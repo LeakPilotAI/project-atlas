@@ -14,6 +14,15 @@ DISCLAIMER = (
     "Not a brokerage order."
 )
 
+ACTION_LINE = {
+    InvestmentAlertState.WATCH: "WATCH — on the radar. Not a buy yet.",
+    InvestmentAlertState.ACCUMULATION: "PREPARE TO BUY — accumulation zone. Research a scale-in. You place any order.",
+    InvestmentAlertState.DEEP_VALUE: "PREPARE TO BUY — deep value zone. A dip can keep falling. Size small.",
+    InvestmentAlertState.GENERATIONAL_OPPORTUNITY: "REVIEW CAREFULLY — generational gate passed. Not permission to size large.",
+    InvestmentAlertState.THESIS_BROKEN: "STAND DOWN — do not buy this dip.",
+    InvestmentAlertState.NO_ACTION: "NO ACTION — not a setup.",
+}
+
 
 def _dd(rec: ResearchRecord) -> str:
     d = rec.drawdown.current_drawdown
@@ -31,9 +40,10 @@ def format_investment_alert(
     plan: Optional[AllocationPlan] = None,
 ) -> str:
     cls_label = decision.classification.value.replace("_", " ")
+    action = ACTION_LINE.get(decision.classification, "Research only.")
     if decision.classification is InvestmentAlertState.THESIS_BROKEN:
         title = "ATLAS INVESTMENT — THESIS BROKEN"
-        extra = ["STOP ACCUMULATING.", "Cancel remaining paper limit tiers.", ""]
+        extra = ["STAND DOWN.", "STOP ACCUMULATING.", "Cancel remaining paper limit tiers.", ""]
     else:
         title = f"ATLAS INVESTMENT — {cls_label}"
         extra = []
@@ -42,6 +52,7 @@ def format_investment_alert(
     lines = [
         title,
         rec.symbol,
+        f"ACTION: {action}",
         f"Price: {_px(rec)}",
         f"Drawdown: {_dd(rec)}",
         f"Score: {rec.opportunity_score if rec.opportunity_score is not None else 'n/a'}/100",
@@ -143,14 +154,20 @@ def format_equity_move_alert(
         *[f"• {x}" for x in (risks or ["thesis can break", "drawdowns can continue"])],
         "",
         "MANUAL ACTION:",
-        "Review on Robinhood.",
+        "Review on your broker. Atlas does not place the buy.",
         "No real order has been placed.",
         DISCLAIMER,
     ]
     return "\n".join(lines)
 
 
-async def deliver_investment_alert(text: str, *, symbol: str, priority: str = "NORMAL") -> bool:
+async def deliver_investment_alert(
+    text: str,
+    *,
+    symbol: str,
+    priority: str = "NORMAL",
+    title: str = "ATLAS INVESTMENT",
+) -> bool:
     """DM via the existing Discord client. Does not add slash commands or mix /paper stats."""
     try:
         import discord
@@ -160,11 +177,13 @@ async def deliver_investment_alert(text: str, *, symbol: str, priority: str = "N
         return False
     if not is_discord_ready():
         return False
-    color = discord.Color.dark_gold()
+    color = discord.Color.dark_teal()
     if priority == "HIGH":
         color = discord.Color.red()
+    elif "QUALITY DIP" in title.upper() or "PREPARE" in text.upper()[:80]:
+        color = discord.Color.dark_gold()
     embed = discord.Embed(
-        title="ATLAS INVESTMENT",
+        title=title[:256],
         description=text[:4096],
         color=color,
     )

@@ -14,11 +14,21 @@ type Live = {
   bottleneck?: string;
   warnings?: string[];
   activity?: Record<string, unknown>;
-  journal?: Record<string, number | string>;
+  journal?: Record<string, unknown>;
   open_trades?: Array<Record<string, unknown>>;
   opportunities?: Array<Record<string, unknown>>;
-  quality_dips?: { last_scan_at?: string; candidates?: Array<Record<string, unknown>> };
-  investment?: { enabled?: boolean; running?: boolean; last_cycle?: Record<string, unknown> };
+  quality_dips?: {
+    last_scan_at?: string;
+    discord_enabled?: boolean;
+    candidates?: Array<Record<string, unknown>>;
+    prepare?: Array<Record<string, unknown>>;
+  };
+  investment?: {
+    enabled?: boolean;
+    running?: boolean;
+    last_cycle?: Record<string, unknown>;
+    opportunities?: Array<Record<string, unknown>>;
+  };
 };
 
 const FUNNEL: Array<{ key: string; label: string }> = [
@@ -96,10 +106,13 @@ export default function Dashboard() {
 
   const h = live?.health || {};
   const funnel = live?.funnel_24h || {};
-  const journal = live?.journal || {};
   const why = live?.why_no_trade || {};
   const gates = live?.gates || {};
+  const journal = (live?.journal || {}) as Record<string, unknown>;
+  const session = (journal.session || {}) as Record<string, unknown>;
+  const allTime = (journal.all_time || {}) as Record<string, unknown>;
   const dips = live?.quality_dips?.candidates || [];
+  const prepare = live?.quality_dips?.prepare || dips.filter((d) => ["PREPARE", "ACCUMULATE"].includes(String(d.action)));
   const opens = live?.open_trades || [];
   const opps = live?.opportunities || [];
   const maxFunnel = Math.max(1, ...FUNNEL.map((s) => n(funnel[s.key])));
@@ -178,14 +191,14 @@ export default function Dashboard() {
         </section>
 
         <section className="grid md:grid-cols-4 gap-3">
-          <Stat label="Paper open" value={n(journal.open)} />
-          <Stat label="Paper closed" value={n(journal.closed)} />
+          <Stat label="Session open" value={n(journal.open)} />
+          <Stat label="Session closed" value={n(journal.closed)} hint={String(session.session_id || "all-time")} />
           <Stat
-            label="Win rate"
+            label="Session win rate"
             value={`${(n(journal.winrate) * 100).toFixed(0)}%`}
-            hint="from paper journal"
+            hint={`all-time ${(n(allTime.winrate) * 100).toFixed(1)}% archived`}
           />
-          <Stat label="Avg R" value={fmt(journal.avg_r, 2)} />
+          <Stat label="Session avg R" value={fmt(journal.avg_r, 2)} hint={`${n(allTime.closed)} all-time closes kept`} />
         </section>
 
         <section className="grid lg:grid-cols-2 gap-4">
@@ -245,29 +258,34 @@ export default function Dashboard() {
         </section>
 
         <section className="grid lg:grid-cols-2 gap-4">
-          <Card title="Quality dip watchlist (latest scan)">
+          <Card title="Quality dip — prepare to buy (research)">
             <p className="text-[11px] text-zinc-500 mb-3">
-              Research ranking only. Same names Discord already DMs. Scan {ago(live?.quality_dips?.last_scan_at)}.
+              Strong names off highs. Discord DMs PREPARE / ACCUMULATE. Scan {ago(live?.quality_dips?.last_scan_at)}.
+              You place any buy. Atlas does not.
             </p>
-            {dips.length === 0 ? (
-              <Empty text="No dip snapshot yet — scanner runs about once an hour. Alerts still go to Discord." />
+            {prepare.length === 0 && dips.length === 0 ? (
+              <Empty text="No dip snapshot yet — scanner runs about every 15 minutes while the engine is up." />
             ) : (
               <table className="w-full text-sm">
                 <thead className="text-zinc-500 text-left text-xs">
                   <tr>
-                    <th className="py-2">Symbol</th>
+                    <th className="py-2">Action</th>
+                    <th>Symbol</th>
                     <th>Off high</th>
+                    <th>1d</th>
                     <th>5d</th>
-                    <th>Score</th>
+                    <th>Thesis</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {dips.slice(0, 10).map((d) => (
+                  {(prepare.length ? prepare : dips).slice(0, 16).map((d) => (
                     <tr key={String(d.symbol)} className="border-t border-white/5">
-                      <td className="py-2 font-medium text-white">{String(d.symbol)}</td>
+                      <td className="py-2 text-[11px] tracking-wide">{String(d.action || "WATCH")}</td>
+                      <td className="font-medium text-white">{String(d.symbol)}</td>
                       <td className="tabular-nums">{fmt(d.pct_from_high, 1)}%</td>
+                      <td className="tabular-nums">{d.chg_1d == null ? "—" : `${fmt(d.chg_1d, 1)}%`}</td>
                       <td className="tabular-nums">{d.chg_5d == null ? "—" : `${fmt(d.chg_5d, 1)}%`}</td>
-                      <td className="tabular-nums text-emerald-400">{fmt(d.score, 0)}</td>
+                      <td className="text-zinc-400">{String(d.thesis || "")}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -310,7 +328,7 @@ export default function Dashboard() {
             <Chip>Extension {fmt(gates.extension_pct, 1)}%</Chip>
             <Chip>Min R:R {fmt(gates.min_rr, 1)}</Chip>
             <Chip>Min volume {fmt(gates.min_volume, 0)}</Chip>
-            <Chip>Max open {fmt(gates.max_open, 0)}</Chip>
+            <Chip>Max open {(gates as { max_open_unlimited?: boolean }).max_open_unlimited ? "Unlimited" : fmt(gates.max_open, 0)}</Chip>
           </div>
         </section>
       </main>
