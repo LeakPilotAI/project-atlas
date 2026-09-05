@@ -47,14 +47,17 @@ async def _announce_session(info: Dict[str, Any]) -> None:
         if not is_discord_ready():
             return
         prior = int(info.get("prior_closed_archived") or 0)
+        rolled = info.get("rolled_open") or []
+        roll_n = len(rolled) if isinstance(rolled, list) else 0
         desc = (
             f"**New paper testing window** `{info.get('session_id')}`\n\n"
             f"Session stats (WR, closed, avg R) start at zero.\n"
             f"`{prior}` prior PAPER closes stay in the journal for research.\n"
+            f"`{roll_n}` leftover open(s) rolled out of this window (not stop-outs).\n"
             f"Nothing was deleted.\n\n"
             f"Concurrent paper cap: unlimited (safety 80).\n"
             f"Entry gates unchanged: RSI 28/72 · ext 1.4% · R:R 1.8.\n"
-            f"Dashboard: http://127.0.0.1:8000/dashboard\n"
+            f"Dashboard: http://127.0.0.1:8000/dashboard?v=desk-v3\n"
             f"Not live capital."
         )
         await send_discord_alert(
@@ -131,6 +134,23 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             log.error("Hyperliquid adapter failed", error=str(e))
 
+        try:
+            from app.services.paper_journal import paper_journal
+
+            session_info = paper_journal.bootstrap_session()
+            log.info(
+                "paper session bootstrap",
+                **{
+                    k: session_info.get(k)
+                    for k in ("created", "session_id", "started_at", "prior_closed_archived")
+                },
+                rolled=len(session_info.get("rolled_open") or []),
+            )
+            if session_info.get("created"):
+                asyncio.create_task(_announce_session(session_info), name="paper_session_announce")
+        except Exception as e:
+            log.warning("paper session bootstrap failed", error=str(e)[:200])
+
         for name, starter in [
             ("scanner", scanner.start),
             ("opportunity_tracker", opportunity_tracker.start),
@@ -162,15 +182,6 @@ async def lifespan(app: FastAPI):
 
         asyncio.create_task(start_discord_bot(), name="discord_bot")
         log.info("Discord bot task scheduled (DM-only alerts)")
-        try:
-            from app.services.paper_journal import paper_journal
-
-            session_info = paper_journal.bootstrap_session()
-            log.info("paper session bootstrap", **{k: session_info.get(k) for k in ("created", "session_id", "started_at", "prior_closed_archived")})
-            if session_info.get("created"):
-                asyncio.create_task(_announce_session(session_info), name="paper_session_announce")
-        except Exception as e:
-            log.warning("paper session bootstrap failed", error=str(e)[:200])
         try:
             from app.investment.scan import start_investment_scanner
 
@@ -266,7 +277,14 @@ DASHBOARD_HTML = Path(__file__).resolve().parent / "static" / "dashboard.html"
 
 @app.get("/dashboard")
 async def dashboard_page() -> FileResponse:
-    return FileResponse(DASHBOARD_HTML, media_type="text/html")
+    return FileResponse(
+        DASHBOARD_HTML,
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Pragma": "no-cache",
+        },
+    )
 
 
 @app.get("/api/research")

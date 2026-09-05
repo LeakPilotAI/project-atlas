@@ -15,7 +15,7 @@ log = structlog.get_logger(__name__)
 
 JOURNAL_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_journal.jsonl"
 CANDIDATE_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_candidates.jsonl"
-SESSION_ID = "desk-v2"
+SESSION_ID = "desk-v3"
 
 
 def _now() -> datetime:
@@ -24,6 +24,20 @@ def _now() -> datetime:
 
 def _iso(dt: Optional[datetime] = None) -> str:
     return (dt or _now()).isoformat()
+
+
+def _is_session_roll(row: Dict[str, Any]) -> bool:
+    return bool(row.get("session_roll")) or str(row.get("result") or "").upper() == "SESSION_ROLL"
+
+
+def _opened_in_session(row: Dict[str, Any], started: Optional[str]) -> bool:
+    """A close belongs to the session only if the trade was opened after the marker."""
+    if not started:
+        return True
+    opened = str(row.get("entry_timestamp") or row.get("signal_timestamp") or "")
+    if not opened:
+        return False
+    return opened >= str(started)
 
 
 def iter_jsonl(path: Path) -> List[Dict[str, Any]]:
@@ -458,7 +472,7 @@ class PaperJournal:
         cost_r = (fees + slip) * 2 * (entry / risk) if risk else 0.0
         net_r = float(pnl_r) - cost_r
         result_u = str(result or "").upper()
-        if result_u in ("BE", "SCRATCH"):
+        if result_u in ("BE", "SCRATCH", "SESSION_ROLL"):
             net_r = 0.0
         opened = p.get("entry_timestamp")
         try:
@@ -484,7 +498,9 @@ class PaperJournal:
             "holding_time_sec": int(hold_s),
             "duration_sec": int(hold_s),
             "win": bool(net_r > 0),
-            "scratch": result_u in ("BE", "SCRATCH") or abs(net_r) < 1e-9,
+            "scratch": result_u in ("BE", "SCRATCH", "SESSION_ROLL") or abs(net_r) < 1e-9,
+            "session_roll": result_u == "SESSION_ROLL",
+            "counts_for_live": False if result_u == "SESSION_ROLL" else bool(p.get("counts_for_live")),
             "reached_0_5r": bool(mfe + 1e-12 >= 0.5),
             "reached_1r": bool(mfe + 1e-12 >= 1.0),
             "reached_1_5r": bool(mfe + 1e-12 >= 1.5),
@@ -564,6 +580,47 @@ class PaperJournal:
         )
         return row
 
+    def roll_open_for_session(self) -> List[str]:
+        """Flatten leftover opens when a new testing window starts.
+
+        Writes SESSION_ROLL closes. Does not delete rows. Rolls are excluded
+        from session and all-time performance tallies — they are not stop-outs.
+        """
+        rolled: List[str] = []
+        for tid, p in list(self._open.items()):
+            if str(p.get("trade_type") or "PAPER").upper() == "TEST":
+                continue
+            mark = p.get("mark")
+            if mark is None:
+                mark = p.get("actual_entry_price") or p.get("entry") or 0.0
+            try:
+                mark_f = float(mark)
+            except (TypeError, ValueError):
+                mark_f = 0.0
+            close_row = {
+                **{k: v for k, v in p.items() if k != "event" and not str(k).startswith("_")},
+                "event": "close",
+                "status": "closed",
+                "exit_timestamp": _iso(),
+                "timestamp": _iso(),
+                "actual_exit_price": mark_f,
+                "exit_reason": "session_reset",
+                "result": "SESSION_ROLL",
+                "session_roll": True,
+                "scratch": True,
+                "win": False,
+                "counts_for_live": False,
+                "R_multiple": 0.0,
+                "gross_pnl_r": 0.0,
+                "net_pnl_r": 0.0,
+                "notes": "Rolled out of a new testing window. Not a stop-out. Data kept.",
+            }
+            self._append(JOURNAL_PATH, close_row)
+            self._open.pop(tid, None)
+            rolled.append(str(tid))
+            log.info("paper session roll", trade_id=tid, symbol=p.get("symbol"))
+        return rolled
+
     def bootstrap_session(
         self,
         session_id: str = SESSION_ID,
@@ -573,13 +630,15 @@ class PaperJournal:
     ) -> Dict[str, Any]:
         cur = self.current_session()
         if cur.get("session_id") == session_id and cur.get("started_at"):
-            return {"created": False, **cur}
+            return {"created": False, "rolled_open": [], **cur}
         prior = 0
         if JOURNAL_PATH.exists():
             for row in iter_jsonl(JOURNAL_PATH):
                 if row.get("event") != "close":
                     continue
                 if str(row.get("trade_type") or "PAPER").upper() == "TEST":
+                    continue
+                if _is_session_roll(row):
                     continue
                 prior += 1
         started = self.start_session(
@@ -588,7 +647,13 @@ class PaperJournal:
             note=note,
             prior_closed=prior,
         )
-        return {"created": True, "prior_closed_archived": prior, **started}
+        rolled = self.roll_open_for_session()
+        return {
+            "created": True,
+            "prior_closed_archived": prior,
+            "rolled_open": rolled,
+            **started,
+        }
 
     def recovery_report(self) -> Dict[str, Any]:
         opens = self.list_open()
@@ -617,9 +682,10 @@ class PaperJournal:
                     continue
                 if str(row.get("trade_type") or "PAPER").upper() == "TEST":
                     continue
+                if _is_session_roll(row):
+                    continue
                 all_rows.append(row)
-                ts = str(row.get("exit_timestamp") or row.get("timestamp") or "")
-                if not started or ts >= str(started):
+                if _opened_in_session(row, started):
                     session_rows.append(row)
         primary = self._tally(session_rows)
         all_time = self._tally(all_rows)

@@ -77,6 +77,50 @@ def test_bootstrap_idempotent(tmp_path, monkeypatch):
     assert a["session_id"] == b["session_id"] == "scalp-v1"
 
 
+def test_bootstrap_rolls_leftover_opens_out_of_new_session(tmp_path, monkeypatch):
+    j, p = _bind(tmp_path, monkeypatch)
+
+    async def _go():
+        tid = await j.open_trade(
+            symbol="BNB",
+            side="SHORT",
+            entry=746.57,
+            stop=749.81,
+            tp1=743.0,
+            tp2=740.0,
+            trade_type="PAPER",
+        )
+        assert len(j.list_open()) == 1
+        boot = j.bootstrap_session(session_id="desk-v3", label="test")
+        assert boot["created"] is True
+        assert tid in boot["rolled_open"]
+        assert j.list_open() == []
+        after = await j.stats()
+        assert after["open"] == 0
+        assert after["closed"] == 0
+        assert after["winrate"] == 0.0
+        assert after["all_time"]["closed"] == 0
+        text = p.read_text(encoding="utf-8")
+        assert "SESSION_ROLL" in text
+        assert "BNB" in text
+        tid2 = await j.open_trade(
+            symbol="NEW",
+            side="LONG",
+            entry=1.0,
+            stop=0.99,
+            tp1=1.01,
+            tp2=1.02,
+            trade_type="PAPER",
+        )
+        await j.close_trade(tid2, exit_price=1.01, result="WIN")
+        now = await j.stats()
+        assert now["closed"] == 1
+        assert now["wins"] == 1
+        assert now["all_time"]["closed"] == 1
+
+    _run(_go())
+
+
 def test_buy_prep_stand_down_on_broken_thesis():
     r = classify_buy_prep(thesis="BROKEN", drawdown=0.2, ret_1d=-0.08)
     assert r["action"] == "STAND_DOWN"
