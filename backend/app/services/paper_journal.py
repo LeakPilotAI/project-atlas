@@ -15,7 +15,7 @@ log = structlog.get_logger(__name__)
 
 JOURNAL_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_journal.jsonl"
 CANDIDATE_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_candidates.jsonl"
-SESSION_ID = "scalp-v1"
+SESSION_ID = "desk-v2"
 
 
 def _now() -> datetime:
@@ -568,7 +568,7 @@ class PaperJournal:
         self,
         session_id: str = SESSION_ID,
         *,
-        label: str = "SCALP 1.0R + BE 0.5R",
+        label: str = "Desktop testing window",
         note: str = "New testing window. Prior PAPER closes stay in the journal and all-time research.",
     ) -> Dict[str, Any]:
         cur = self.current_session()

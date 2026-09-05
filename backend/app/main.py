@@ -54,6 +54,7 @@ async def _announce_session(info: Dict[str, Any]) -> None:
             f"Nothing was deleted.\n\n"
             f"Concurrent paper cap: unlimited (safety 80).\n"
             f"Entry gates unchanged: RSI 28/72 · ext 1.4% · R:R 1.8.\n"
+            f"Dashboard: http://127.0.0.1:8000/dashboard\n"
             f"Not live capital."
         )
         await send_discord_alert(

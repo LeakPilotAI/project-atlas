@@ -3,140 +3,214 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Project Atlas</title>
+<title>Atlas Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
   :root {
     color-scheme: dark;
     --bg: #09090b;
-    --surface: #111114;
-    --elevated: #18181c;
-    --fg: #f4f1ea;
-    --muted: #8b919a;
-    --subtle: #5c6168;
-    --border: #232328;
-    --accent: #7d9b8a;
-    --long: #6ee7b7;
-    --short: #f87171;
-    --warn: #e8c07a;
-    --radius: 20px;
+    --bg-2: #0e0e11;
+    --surface: #121215;
+    --elevated: #1a1a1f;
+    --fg: #f3f1ec;
+    --muted: #9a9aa3;
+    --subtle: #6b6b74;
+    --border: color-mix(in oklab, #f3f1ec 11%, transparent);
+    --border-strong: color-mix(in oklab, #f3f1ec 20%, transparent);
+    --accent: #b8c0c8;
+    --accent-fg: #09090b;
+    --long: #7dcea0;
+    --short: #e07a7a;
+    --warn: #d4c4a8;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --font: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
   }
   * { box-sizing: border-box; }
-  body { margin:0; font: 14px/1.45 "IBM Plex Sans", Segoe UI, system-ui, sans-serif; background:var(--bg); color:var(--fg); }
-  header { position:sticky; top:0; z-index:4; background:#09090bee; border-bottom:1px solid var(--border); padding:16px 24px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-  h1 { margin:0; font-size:28px; font-weight:600; letter-spacing:-0.03em; }
-  .sub { color:var(--muted); font-size:12px; margin-top:4px; }
-  .ok { color:var(--long); } .bad { color:var(--short); } .muted { color:var(--muted); }
-  main { max-width:1180px; margin:0 auto; padding:20px 24px 64px; display:flex; flex-direction:column; gap:16px; }
-  .pills { display:flex; flex-wrap:wrap; gap:8px; }
-  .pill { border:1px solid var(--border); border-radius:999px; padding:4px 10px; font-size:11px; color:var(--muted); }
-  .pill.on { color:var(--long); background:#6ee7b714; border-color:#6ee7b744; }
-  .tabs { display:flex; gap:4px; background:var(--surface); padding:4px; border-radius:12px; width:fit-content; border:1px solid var(--border); }
-  .tabs button { appearance:none; background:transparent; border:0; color:var(--muted); padding:8px 14px; border-radius:8px; font:inherit; font-size:13px; }
-  .tabs button.on { background:var(--elevated); color:var(--fg); }
-  .banner { border:1px solid #e8c07a33; background:#e8c07a0f; border-radius:var(--radius); padding:14px 18px; }
-  .banner h2 { margin:0; font-size:11px; letter-spacing:.14em; color:var(--warn); text-transform:uppercase; }
-  .grid { display:grid; gap:10px; }
-  .g9 { grid-template-columns: repeat(auto-fit,minmax(90px,1fr)); }
-  .g4 { grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); }
-  .g3 { grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
-  .g2 { grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); }
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
-  .card h3 { margin:0 0 10px; font-size:13px; color:var(--fg); font-weight:600; }
-  .bar { height:48px; display:flex; align-items:end; margin-bottom:6px; }
-  .bar > i { display:block; width:100%; background:#7d9b8ab3; border-radius:3px; }
-  .n { font-size:22px; font-weight:600; color:#fff; font-variant-numeric: tabular-nums; letter-spacing:-0.03em; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { text-align:left; color:var(--subtle); font-size:11px; font-weight:500; padding:6px 4px; }
-  td { padding:8px 4px; border-top:1px solid #ffffff0d; font-variant-numeric: tabular-nums; }
-  .short { color:var(--short); } .long { color:var(--long); }
-  .err { color:var(--short); border:1px solid #fb718544; background:#fb718512; padding:10px 14px; border-radius:12px; }
-  .action { font-size:10px; letter-spacing:.08em; font-weight:600; border-radius:999px; padding:2px 8px; }
-  .ACCUMULATE { color:#0a0a0b; background:var(--long); }
-  .PREPARE { color:#0a0a0b; background:var(--warn); }
-  .WATCH { color:var(--fg); background:var(--elevated); border:1px solid var(--border); }
-  .STAND_DOWN { color:#fff; background:#7f1d1d; }
-  .QUIET { color:var(--subtle); background:transparent; border:1px solid var(--border); }
-  .dip { display:flex; flex-direction:column; gap:6px; }
-  .dip .top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
-  .hidden { display:none; }
-  @media (max-width:640px) {
-    header, main { padding-left:16px; padding-right:16px; }
-    h1 { font-size:22px; }
-    .n { font-size:18px; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+  header {
+    position: sticky; top: 0; z-index: 8;
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+    padding: 18px 28px;
+    background: color-mix(in oklab, var(--bg) 88%, transparent);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .mark {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    background: var(--elevated); border: 1px solid var(--border-strong);
+    display: grid; place-items: center;
+    font: 500 13px/1 var(--mono); letter-spacing: 0.06em; color: var(--accent);
+  }
+  h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; }
+  .kicker { font: 500 10px/1 var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--subtle); }
+  .sub { color: var(--muted); font-size: 12.5px; }
+  .ok { color: var(--long); } .bad { color: var(--short); } .muted { color: var(--muted); }
+  .head-meta { text-align: right; font: 400 12px/1.45 var(--mono); color: var(--muted); }
+  .live { display: inline-flex; align-items: center; gap: 8px; }
+  .dot { width: 7px; height: 7px; border-radius: 99px; background: var(--short); }
+  .dot.on { background: var(--long); box-shadow: 0 0 0 3px color-mix(in oklab, var(--long) 22%, transparent); }
+  main { max-width: 1240px; margin: 0 auto; padding: 22px 28px 80px; display: flex; flex-direction: column; gap: 18px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 4px 10px; font: 400 11px/1.3 var(--mono); color: var(--muted);
+  }
+  .pill.on { color: var(--long); border-color: color-mix(in oklab, var(--long) 35%, transparent); background: color-mix(in oklab, var(--long) 8%, transparent); }
+  .tabs {
+    display: flex; gap: 4px; width: fit-content; max-width: 100%;
+    padding: 4px; border-radius: var(--radius-md);
+    background: var(--surface); border: 1px solid var(--border); overflow-x: auto;
+  }
+  .tabs button {
+    appearance: none; border: 0; background: transparent; color: var(--muted);
+    padding: 9px 14px; border-radius: 8px; font: 500 13px/1 var(--font);
+    transition: background 150ms var(--ease), color 150ms var(--ease);
+    white-space: nowrap;
+  }
+  .tabs button.on { background: var(--elevated); color: var(--fg); }
+  .banner {
+    border: 1px solid var(--border); background: var(--surface);
+    border-radius: var(--radius-xl); padding: 18px 20px;
+  }
+  .banner.warn { border-color: color-mix(in oklab, var(--warn) 28%, transparent); background: color-mix(in oklab, var(--warn) 6%, var(--surface)); }
+  .banner h2 { margin: 0; font: 500 11px/1 var(--mono); letter-spacing: .16em; color: var(--subtle); text-transform: uppercase; }
+  .grid { display: grid; gap: 10px; }
+  .g9 { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); }
+  .g5 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-xl); padding: 18px;
+  }
+  .card h3 { margin: 0 0 12px; font-size: 14px; font-weight: 600; letter-spacing: -0.02em; }
+  .bar { height: 44px; display: flex; align-items: end; margin-bottom: 8px; }
+  .bar > i { display: block; width: 100%; background: color-mix(in oklab, var(--accent) 55%, transparent); border-radius: 3px; }
+  .n { font: 500 22px/1.1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; color: var(--fg); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--subtle); font: 500 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 8px 6px; }
+  td { padding: 10px 6px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  tr:hover td { background: color-mix(in oklab, var(--fg) 3%, transparent); }
+  .short { color: var(--short); } .long { color: var(--long); }
+  .err { color: var(--short); border: 1px solid color-mix(in oklab, var(--short) 35%, transparent); background: color-mix(in oklab, var(--short) 8%, transparent); padding: 12px 14px; border-radius: var(--radius-md); }
+  .action { font: 500 10px/1.2 var(--mono); letter-spacing: .08em; border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+  .ACCUMULATE { color: var(--accent-fg); background: var(--long); }
+  .PREPARE { color: var(--accent-fg); background: var(--warn); }
+  .WATCH { color: var(--fg); background: var(--elevated); border: 1px solid var(--border); }
+  .STAND_DOWN { color: #fff; background: #6b2a2a; }
+  .QUIET { color: var(--subtle); background: transparent; border: 1px solid var(--border); }
+  .dip { display: flex; flex-direction: column; gap: 8px; }
+  .dip .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .rail { display: flex; gap: 12px; align-items: stretch; }
+  .rail b { width: 3px; border-radius: 99px; background: var(--subtle); flex: 0 0 3px; }
+  .rail b.LONG { background: var(--long); }
+  .rail b.SHORT { background: var(--short); }
+  .kv { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .kv:last-child { border-bottom: 0; }
+  .hidden { display: none; }
+  .session-chip { font: 400 11px/1.3 var(--mono); color: var(--muted); }
+  .session-chip b { color: var(--fg); font-weight: 500; }
+  .note { font-size: 12.5px; color: var(--subtle); }
+  @media (max-width: 720px) {
+    header, main { padding-left: 16px; padding-right: 16px; }
+    h1 { font-size: 18px; }
+    .n { font-size: 18px; }
+    .head-meta { text-align: left; }
+    header { flex-wrap: wrap; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
   }
 </style>
 </head>
 <body>
 <header>
-  <div>
-    <div class="sub" style="letter-spacing:.2em;color:var(--accent);">LIVE COMMAND CENTER</div>
-    <h1>Project Atlas</h1>
-    <div class="sub">Watch-only. Discord is the alert feed. No Node/Next compile.</div>
+  <div class="brand">
+    <div class="mark" aria-hidden="true">AT</div>
+    <div>
+      <div class="kicker">Live command</div>
+      <h1>Project Atlas</h1>
+      <div class="sub">Paper Hyperliquid · quality-dip board · Discord alerts. Watch-only.</div>
+    </div>
   </div>
-  <div class="sub" style="text-align:right">
-    <div id="stamp">connecting…</div>
-    <div id="api">API</div>
+  <div class="head-meta">
+    <div class="live"><span class="dot" id="dot"></span><span id="api">Connecting</span></div>
+    <div id="stamp">—</div>
+    <div id="sessionchip" class="session-chip"></div>
   </div>
 </header>
 <main>
   <div id="err"></div>
   <div class="pills" id="pills"></div>
   <div class="tabs" role="tablist">
-    <button class="on" data-tab="trading">Trading</button>
+    <button class="on" data-tab="trading">Paper</button>
     <button data-tab="dips">Quality dip</button>
     <button data-tab="invest">Investment</button>
-    <button data-tab="research">Research</button>
+    <button data-tab="research">Archive</button>
   </div>
 
   <section id="tab-trading">
-    <div class="sub" style="letter-spacing:.14em;color:var(--muted);margin:4px 0 8px">TRADING — Hyperliquid paper (isolated)</div>
-    <div class="banner">
-      <h2>Why no paper trade</h2>
-      <div id="why" style="font-size:18px;margin-top:6px">—</div>
+    <div class="banner" id="statusbanner">
+      <h2>This session</h2>
+      <div id="why" class="n" style="font-size:18px;margin-top:8px">Waiting on first scan.</div>
       <div class="sub" id="bottleneck"></div>
+      <div class="session-chip" id="sessionline" style="margin-top:10px"></div>
     </div>
     <div>
-      <div class="sub" style="margin:12px 0 8px">Last 24 hours — perp funnel</div>
+      <div class="kicker" style="margin: 6px 0 10px">Last 24 hours — perp funnel</div>
       <div class="grid g9" id="funnel"></div>
     </div>
-    <div class="grid g4" id="stats"></div>
-    <div class="sub" id="sessionline"></div>
+    <div class="grid g5" id="stats"></div>
     <div class="grid g2">
       <div class="card">
-        <h3>Open paper trades</h3>
+        <h3>Open book</h3>
         <div id="opens"></div>
-        <div id="lifecycle" class="sub" style="margin-top:8px"></div>
+        <div id="lifecycle" class="note" style="margin-top:10px"></div>
       </div>
       <div class="card">
         <h3>Live activity</h3>
         <div id="act"></div>
       </div>
     </div>
+    <div class="card" id="gates"></div>
   </section>
 
   <section id="tab-dips" class="hidden">
     <div class="banner">
-      <h2>Quality names — prepare, don’t chase</h2>
-      <div id="diphead" style="font-size:16px;margin-top:6px">Waiting on first investment scan.</div>
+      <h2>Quality names — prepare, do not chase</h2>
+      <div id="diphead" class="n" style="font-size:18px;margin-top:8px">Waiting on first investment scan.</div>
       <div class="sub" id="dipmeta"></div>
     </div>
     <div class="grid g3" id="dipcards"></div>
     <div class="card">
-      <h3>Full watchlist</h3>
+      <h3>Watchlist ranked by action</h3>
       <div id="dips"></div>
-      <div id="dippaper" class="sub" style="margin-top:8px"></div>
+      <div id="dippaper" class="note" style="margin-top:10px"></div>
     </div>
   </section>
 
   <section id="tab-invest" class="hidden">
     <div class="grid g2">
       <div class="card">
-        <h3>Investment engine</h3>
+        <h3>Investment scan</h3>
         <div id="invstatus" class="sub"></div>
-        <div id="invopps" style="margin-top:10px"></div>
+        <div id="invopps" style="margin-top:12px"></div>
       </div>
       <div class="card">
-        <h3>Equity majors tape</h3>
+        <h3>Equity majors</h3>
         <div class="sub" id="eqhead"></div>
         <div id="eqtape"></div>
       </div>
@@ -144,22 +218,26 @@
   </section>
 
   <section id="tab-research" class="hidden">
+    <div class="banner">
+      <h2>Archive — all-time journal</h2>
+      <div class="n" style="font-size:16px;margin-top:8px">Not this session</div>
+      <div class="sub">Research and edge use every PAPER close ever recorded. Session WR on Paper is the number to track now. Nothing here is a live-unlock.</div>
+    </div>
     <div class="grid g2">
       <div class="card">
-        <h3>Hyperliquid majors tape (RSI/ext — crypto only)</h3>
+        <h3>Hyperliquid majors tape</h3>
         <div id="majors"></div>
       </div>
       <div class="card" id="validation">
-        <h3>Trading validation (research only · all-time)</h3>
+        <h3>All-time validation</h3>
         <div id="valbody" class="sub">Loading…</div>
       </div>
     </div>
     <div class="card" id="edge">
-      <h3>ATLAS EDGE DIAGNOSTICS</h3>
-      <div class="sub">Where paper makes/loses R. All-time journal. Does not change gates. Not live-ready.</div>
-      <div id="edgebody" class="sub" style="margin-top:8px">Loading…</div>
+      <h3>Edge diagnostics · all-time</h3>
+      <div class="note">Where paper makes and loses R. Does not change gates. Not live-ready.</div>
+      <div id="edgebody" class="sub" style="margin-top:10px">Loading…</div>
     </div>
-    <div class="card" id="gates"></div>
   </section>
 </main>
 <script>
@@ -170,6 +248,7 @@ const FUNNEL = [
 ];
 const n = v => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
 const fmt = (v,d=2) => { const x = Number(v); return Number.isFinite(x) ? x.toLocaleString(undefined,{maximumFractionDigits:d}) : "—"; };
+const pctf = v => { if (v==null || v==="") return "—"; const x = Number(v); if (!Number.isFinite(x)) return "—"; const p = Math.abs(x) <= 2 ? x*100 : x; return p.toFixed(1)+"%"; };
 function ago(iso){
   if(!iso) return "—";
   const t = Date.parse(iso); if(Number.isNaN(t)) return iso;
@@ -181,6 +260,7 @@ function actionBadge(a){
   const x = String(a||"QUIET");
   return `<span class="action ${x}">${x.replace("_"," ")}</span>`;
 }
+function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({'&':'&','<':'<','>':'>','"':'"'}[c])); }
 document.querySelectorAll(".tabs button").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("on"));
@@ -198,7 +278,9 @@ async function load(){
     const L = await r.json();
     document.getElementById("err").innerHTML = "";
     document.getElementById("stamp").textContent = "refresh 8s · "+ago(L.updated_at);
-    document.getElementById("api").innerHTML = '<span class="ok">API connected</span>';
+    document.getElementById("api").textContent = "API connected";
+    document.getElementById("api").className = "ok";
+    document.getElementById("dot").classList.add("on");
     const h = L.health||{};
     document.getElementById("pills").innerHTML = [
       pill("Scanner", !!h.scanner), pill("Perp micro", !!h.perp_micro),
@@ -208,35 +290,46 @@ async function load(){
       `<span class="pill">Last scan ${ago(h.last_cycle_at)}</span>`
     ].join("");
     const why = L.why_no_trade||{};
+    const producing = String(L.bottleneck||"").toLowerCase().includes("produc");
+    document.getElementById("statusbanner").classList.toggle("warn", !producing && n((L.open_trades||[]).length)===0);
     document.getElementById("why").textContent = why.headline || L.bottleneck || "Waiting on first scan.";
     document.getElementById("bottleneck").textContent = L.bottleneck||"";
     const f = L.funnel_24h||{};
     const mx = Math.max(1, ...FUNNEL.map(([k])=>n(f[k])));
     document.getElementById("funnel").innerHTML = FUNNEL.map(([k,lab])=>{
-      const v=n(f[k]); const ht=Math.max(8, Math.round(v/mx*48));
+      const v=n(f[k]); const ht=Math.max(6, Math.round(v/mx*44));
       return `<div class="card"><div class="bar"><i style="height:${ht}px"></i></div><div class="n">${v}</div><div class="sub">${lab}</div></div>`;
     }).join("");
     const j = L.journal||{};
     const sess = j.session||{};
     const at = j.all_time||{};
     document.getElementById("stats").innerHTML = [
-      ["Session open", n(j.open)],
-      ["Session closed", n(j.closed)],
-      ["Session WR", (n(j.winrate)*100).toFixed(0)+"%"],
-      ["Session avg R", fmt(j.avg_r,2)]
+      ["Open", n(j.open)],
+      ["Closed", n(j.closed)],
+      ["Win rate", (n(j.winrate)*100).toFixed(0)+"%"],
+      ["Avg R", fmt(j.avg_r,2)],
+      ["Sum R", fmt(j.sum_r,2)],
+      ["W / L", n(j.wins)+" / "+n(j.losses)]
     ].map(([a,b])=>`<div class="card"><div class="sub">${a}</div><div class="n">${b}</div></div>`).join("");
     document.getElementById("sessionline").innerHTML =
-      `Session <b>${sess.session_id||"all-time"}</b> from ${sess.started_at?ago(sess.started_at):"the beginning"}. `+
-      `All-time archived: ${n(at.closed)} closed · WR ${(n(at.winrate)*100).toFixed(1)}% · ${fmt(at.sum_r,2)}R. Journal not deleted.`;
+      `Session <b>${esc(sess.session_id||"all-time")}</b> · started ${sess.started_at?ago(sess.started_at):"—"}. Archive kept: ${n(at.closed)} closed · WR ${(n(at.winrate)*100).toFixed(1)}% · ${fmt(at.sum_r,2)}R.`;
+    document.getElementById("sessionchip").innerHTML =
+      `session <b>${esc(sess.session_id||"—")}</b>`;
     const opens = L.open_trades||[];
-    document.getElementById("opens").innerHTML = opens.length? `<table><tr><th>Symbol</th><th>Side</th><th>Entry</th><th>Mark</th><th>Stop</th><th>MFE</th><th>State</th></tr>${
-      opens.map(t=>`<tr><td>${t.symbol}</td><td class="${t.side==="LONG"?"long":"short"}">${t.side||""}</td><td>${fmt(t.entry,4)}</td><td>${fmt(t.mark,4)}</td><td>${fmt(t.stop,4)}</td><td>${fmt(t.mfe_r,2)}</td><td>${t.lifecycle||(t.stale_quote?"MARKET_DATA_UNAVAILABLE":"OPEN")}${t.be_armed?" · BE":""}${t.recovered?" · recovered":""}</td></tr>`).join("")
-    }</table>` : '<div class="sub">No open paper trades.</div>';
+    document.getElementById("opens").innerHTML = opens.length? opens.map(t=>`
+      <div class="rail" style="padding:8px 0;border-bottom:1px solid var(--border)">
+        <b class="${esc(t.side||"")}"></b>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <span><b>${esc(t.symbol)}</b> <span class="${t.side==="LONG"?"long":"short"}">${esc(t.side||"")}</span></span>
+            <span class="sub">${esc(t.lifecycle||"OPEN")}${t.be_armed?" · BE":""}${t.recovered?" · recovered":""}</span>
+          </div>
+          <div class="sub" style="font-family:var(--mono)">entry ${fmt(t.entry,4)} · mark ${fmt(t.mark,4)} · stop ${fmt(t.stop,4)} · MFE ${fmt(t.mfe_r,2)}R</div>
+        </div>
+      </div>`).join("") : '<div class="sub">No open paper trades in this session.</div>';
     const lc = L.paper_lifecycle||{};
-    if (document.getElementById("lifecycle")) {
-      document.getElementById("lifecycle").innerHTML =
-        `Recovery: persisted ${n(lc.persisted_open)} · recovered ${n(lc.recovered)} · in-memory ${n(lc.currently_open)} · missing quotes ${n(lc.positions_missing_market_data)} · review ${n(lc.error_requires_review)} · malformed ${n(lc.malformed)} · ${lc.note||"OPEN ≠ hung. No quote ≠ closed."}`;
-    }
+    document.getElementById("lifecycle").innerHTML =
+      `Recovery: persisted ${n(lc.persisted_open)} · recovered ${n(lc.recovered)} · in-memory ${n(lc.currently_open)} · missing quotes ${n(lc.positions_missing_market_data)} · review ${n(lc.error_requires_review)} · malformed ${n(lc.malformed)}. OPEN ≠ hung. Only CLOSED counts.`;
     const a = L.activity||{};
     document.getElementById("act").innerHTML = [
       ["Last HL data", ago(a.last_market_data)],
@@ -246,76 +339,85 @@ async function load(){
       ["Last paper open", ago(a.last_paper_open)],
       ["Last Discord", ago(a.last_discord_alert)],
       ["Last error", h.last_error||"none"]
-    ].map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0"><span class="muted">${k}</span><span>${v}</span></div>`).join("");
+    ].map(([k,v])=>`<div class="kv"><span class="muted">${k}</span><span style="font-family:var(--mono)">${esc(v)}</span></div>`).join("");
 
     const qd = L.quality_dips||{};
     const dips = qd.candidates||[];
     const prep = qd.prepare||dips.filter(d=>d.action==="PREPARE"||d.action==="ACCUMULATE");
-    const stand = qd.stand_down||[];
+    const stand = qd.stand_down||dips.filter(d=>d.action==="STAND_DOWN");
+    const watch = dips.filter(d=>d.action==="WATCH");
     document.getElementById("diphead").textContent = prep.length
-      ? `${prep.length} quality name(s) in PREPARE / ACCUMULATE — research a buy, Atlas does not place it.`
-      : "No quality names in a buy-prep zone right now.";
+      ? `${prep.length} quality name${prep.length===1?"":"s"} in PREPARE / ACCUMULATE — research a buy. Atlas does not place it.`
+      : "No quality names in a buy-prep zone right now. Discord will DM when one appears.";
     document.getElementById("dipmeta").textContent =
-      `Scan ${ago(qd.last_scan_at)} · Discord dips ${qd.discord_enabled?"on":"off"} · ${stand.length} stand-down`;
-    const featured = (prep.length?prep:dips.filter(d=>d.action==="WATCH")).slice(0,6);
+      `Scan ${ago(qd.last_scan_at)} · Discord ${qd.discord_enabled?"on":"off"} · ${watch.length} watch · ${stand.length} stand-down`;
+    const featured = (prep.length?prep:watch).slice(0,6);
     document.getElementById("dipcards").innerHTML = featured.length ? featured.map(d=>`
       <div class="card dip">
         <div class="top">
           <div>
-            <div class="n" style="font-size:20px">${d.symbol||""}</div>
-            <div class="sub">${d.name||d.category||""}</div>
+            <div class="n" style="font-size:22px">${esc(d.symbol||"")}</div>
+            <div class="sub">${esc(d.name||d.category||"")}</div>
           </div>
           ${actionBadge(d.action)}
         </div>
-        <div class="n" style="font-size:16px">${d.pct_from_high==null?"—":fmt(d.pct_from_high,1)+"% off high"}</div>
-        <div class="sub">1d ${d.chg_1d==null?"—":fmt(d.chg_1d,1)+"%"} · 5d ${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"} · vs SPY ${d.vs_spy==null?"—":fmt(d.vs_spy,1)+"%"}</div>
-        <div class="sub">${d.thesis||""} · ${d.classification||""}</div>
-        <div>${d.action_reason||""}</div>
-      </div>`).join("") : '<div class="card sub">Waiting on the investment scan. Quality dips come from the equity tape, not a second Yahoo loop.</div>';
-    document.getElementById("dips").innerHTML = dips.length? `<table><tr><th></th><th>Symbol</th><th>Off high</th><th>1d</th><th>5d</th><th>Thesis</th><th>Why</th></tr>${
-      dips.map(d=>`<tr><td>${actionBadge(d.action)}</td><td>${d.symbol}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.chg_1d==null?"—":fmt(d.chg_1d,1)+"%"}</td><td>${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"}</td><td>${d.thesis||""}</td><td class="sub">${d.action_reason||""}</td></tr>`).join("")
-    }</table>` : '<div class="sub">No investment-engine snapshot yet.</div>';
+        <div class="n" style="font-size:18px">${d.pct_from_high==null?"—":fmt(d.pct_from_high,1)+"%"} <span class="sub" style="font-size:13px;font-weight:400">off high</span></div>
+        <div class="sub" style="font-family:var(--mono)">1d ${d.chg_1d==null?"—":fmt(d.chg_1d,1)+"%"} · 5d ${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"} · vs SPY ${d.vs_spy==null?"—":fmt(d.vs_spy,1)+"%"}</div>
+        <div class="sub">${esc(d.thesis||"")} · ${esc(d.classification||"")}</div>
+        <div>${esc(d.action_reason||"")}</div>
+      </div>`).join("") : '<div class="card sub">Quiet tape. Quality dips come from the equity scan, not a second Yahoo loop. Strong names only — not a crash shop.</div>';
+    const ranked = dips.slice().sort((a,b)=>{
+      const rank = {ACCUMULATE:0,PREPARE:1,STAND_DOWN:2,WATCH:3,QUIET:4};
+      return (rank[a.action]??9)-(rank[b.action]??9);
+    });
+    const shown = ranked.filter(d => d.action && d.action!=="QUIET");
+    const quietN = ranked.length - shown.length;
+    document.getElementById("dips").innerHTML = shown.length? `<table><tr><th></th><th>Symbol</th><th>Off high</th><th>1d</th><th>5d</th><th>Thesis</th><th>Why</th></tr>${
+      shown.map(d=>`<tr><td>${actionBadge(d.action)}</td><td>${esc(d.symbol)}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.chg_1d==null?"—":fmt(d.chg_1d,1)+"%"}</td><td>${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"}</td><td>${esc(d.thesis||"")}</td><td class="sub">${esc(d.action_reason||"")}</td></tr>`).join("")
+    }</table><div class="note" style="margin-top:8px">${quietN} quiet names hidden. They are still scanned.</div>` : '<div class="sub">No investment-engine snapshot yet. First scan can take a few minutes after launch.</div>';
     const dp = L.dip_paper||{};
     const pos = dp.positions||{};
     const pkeys = Object.keys(pos);
     document.getElementById("dippaper").innerHTML = pkeys.length
-      ? `Investment paper book: ${pkeys.join(", ")} · cash $${fmt(dp.cash,0)} · not Hyperliquid`
-      : "No investment paper fills (not crypto). Discord DMs PREPARE / ACCUMULATE names.";
+      ? `Investment paper book: ${esc(pkeys.join(", "))} · cash $${fmt(dp.cash,0)} · not Hyperliquid`
+      : "No investment paper fills. Discord DMs PREPARE / ACCUMULATE names. You place any buy.";
 
     const inv = L.investment||{};
     const cycle = inv.last_cycle||{};
     document.getElementById("invstatus").innerHTML =
-      `Scan ${inv.enabled?"enabled":"off"} · running ${inv.running?"yes":"no"} · last cycle ${cycle.finished_at?ago(cycle.finished_at):"n/a"} · ${cycle.symbols_scanned||0} names`;
-    const iopps = inv.opportunities||prep;
+      `Scan ${inv.enabled?"enabled":"off"} · running ${inv.running?"yes":"no"} · last cycle ${cycle.finished_at?ago(cycle.finished_at):"waiting"} · ${cycle.symbols_scanned||0} names`;
+    const iopps = (inv.opportunities||prep).filter(d => ["PREPARE","ACCUMULATE","STAND_DOWN","WATCH"].includes(d.action));
     document.getElementById("invopps").innerHTML = iopps.length? `<table><tr><th></th><th>Symbol</th><th>Class</th><th>Thesis</th><th>Off high</th></tr>${
-      iopps.slice(0,16).map(d=>`<tr><td>${actionBadge(d.action)}</td><td>${d.symbol}</td><td>${d.investment_class||d.classification||""}</td><td>${d.thesis||""}</td><td>${fmt(d.pct_from_high,1)}%</td></tr>`).join("")
-    }</table>` : '<div class="sub">No investment opportunities on this scan. Alerts still DM when class changes.</div>';
+      iopps.slice(0,16).map(d=>`<tr><td>${actionBadge(d.action)}</td><td>${esc(d.symbol)}</td><td>${esc(d.investment_class||d.classification||"")}</td><td>${esc(d.thesis||"")}</td><td>${fmt(d.pct_from_high,1)}%</td></tr>`).join("")
+    }</table>` : '<div class="sub">No investment opportunities on this scan. Alerts still DM when a quality name enters PREPARE.</div>';
 
     const tape = L.major_tape||{};
     const mkeys = Object.keys(tape);
-    document.getElementById("majors").innerHTML = mkeys.length ? `<table><tr><th>Symbol</th><th>RSI</th><th>Ext %</th><th>Blocked</th></tr>${
+    document.getElementById("majors").innerHTML = mkeys.length ? `<table><tr><th>Symbol</th><th>RSI</th><th>Ext %</th><th>Gate</th></tr>${
       mkeys.slice(0,12).map(k=>{
         const t=tape[k]||{};
-        return `<tr><td>${k}</td><td>${fmt(t.rsi,1)}</td><td>${fmt(t.ext_pct,2)}</td><td>${t.blocked||t.side||"—"}</td></tr>`;
+        return `<tr><td>${esc(k)}</td><td>${fmt(t.rsi,1)}</td><td>${fmt(t.ext_pct,2)}</td><td>${esc(t.blocked||t.side||"—")}</td></tr>`;
       }).join("")
-    }</table>` : '<div class="sub">Waiting on first crypto major evaluation. BTC/SOL only paper when RSI 28/72 and ext 1.4% hit.</div>';
+    }</table>` : '<div class="sub">Waiting on first crypto major evaluation. BTC/SOL paper only when RSI 28/72 and ext 1.4% hit.</div>';
     const eq = L.equity_majors_tape||{};
     const eqRows = eq.rows||[];
     document.getElementById("eqhead").textContent = eq.headline || "No major dislocations currently detected.";
+    const hot = eqRows.filter(r => {
+      const c = String(r.classification||"");
+      return c && c!=="NORMAL" && c!=="NORMAL_PULLBACK";
+    });
+    const showEq = (hot.length?hot:eqRows).slice(0,12);
     if (!eqRows.length) {
-      const near = (eq.nearest||[]).map((n,i)=>`${i+1}. ${n.symbol||"?"} — ${n.move_score==null?"n/a":n.move_score}`).join(" · ");
+      const near = (eq.nearest||[]).map((row,i)=>`${i+1}. ${row.symbol||"?"} — ${row.move_score==null?"n/a":row.move_score}`).join(" · ");
       document.getElementById("eqtape").innerHTML = `<div class="sub">Nearest: ${near||"waiting on first investment scan"}</div>`;
     } else {
-      document.getElementById("eqtape").innerHTML = `<table><tr><th>Ticker</th><th>Px</th><th>1D</th><th>5D</th><th>DD</th><th>vs SPY</th><th>Score</th><th>Thesis</th><th>Class</th></tr>${
-        eqRows.slice(0,20).map(r=>{
-          const pct=v=> v==null?"—":(Number(v)*100).toFixed(1)+"%";
-          return `<tr><td>${r.symbol||""}</td><td>${fmt(r.price,2)}</td><td>${pct(r.ret_1d)}</td><td>${pct(r.ret_5d)}</td><td>${pct(r.drawdown)}</td><td>${pct(r.vs_spy)}</td><td>${r.move_score==null?"—":r.move_score}</td><td>${r.thesis||""}</td><td>${r.classification||""}</td></tr>`;
-        }).join("")
-      }</table>`;
+      document.getElementById("eqtape").innerHTML = `<table><tr><th>Ticker</th><th>Px</th><th>1D</th><th>5D</th><th>Off high</th><th>vs SPY</th><th>Thesis</th><th>Class</th></tr>${
+        showEq.map(row=>`<tr><td>${esc(row.symbol||"")}</td><td>${fmt(row.price,2)}</td><td>${pctf(row.ret_1d)}</td><td>${pctf(row.ret_5d)}</td><td>${pctf(row.drawdown)}</td><td>${pctf(row.vs_spy)}</td><td>${esc(row.thesis||"")}</td><td>${esc(row.classification||"")}</td></tr>`).join("")
+      }</table><div class="note" style="margin-top:8px">${hot.length? "Showing dislocations only." : "Tape is quiet — nearest names, not buy signals."}</div>`;
     }
     const g = L.gates||{};
     const cap = g.max_open_unlimited ? "Unlimited (80 safety)" : fmt(g.max_open,0);
-    document.getElementById("gates").innerHTML = `<h3>Active gates (not editable)</h3>
+    document.getElementById("gates").innerHTML = `<h3>Active gates — not editable</h3>
       <div class="pills">
         <span class="pill">RSI ${fmt(g.rsi_long,0)} / ${fmt(g.rsi_short,0)}</span>
         <span class="pill">Extension ${fmt(g.extension_pct,1)}%</span>
@@ -324,7 +426,8 @@ async function load(){
         <span class="pill">BE after ${fmt(g.be_after_r,1)}R</span>
         <span class="pill">Min volume ${fmt(g.min_volume,0)}</span>
         <span class="pill">Max open ${cap}</span>
-      </div>`;
+      </div>
+      <div class="note" style="margin-top:10px">Gates stay locked. Session WR is the score to watch. All-time archive is on the Archive tab.</div>`;
     try {
       const vr = await fetch("/api/validation/summary");
       if (vr.ok) {
@@ -334,12 +437,12 @@ async function load(){
         const wrci = ci[0]==null ? "n/a" : `${(ci[0]*100).toFixed(1)}–${(ci[1]*100).toFixed(1)}%`;
         const expci = eci[0]==null ? "n/a" : `${eci[0].toFixed(2)}–${eci[1].toFixed(2)}R`;
         document.getElementById("valbody").innerHTML =
-          `<div class="n" style="font-size:16px;margin-bottom:8px">${V.conclusion||""}</div>`+
+          `<div class="n" style="font-size:16px;margin-bottom:8px">${esc(V.conclusion||"")}</div>`+
           `<div>All-time closed ${V.closed} · WR ${(n(V.winrate)*100).toFixed(1)}% · exp ${fmt(V.expectancy,2)}R · tot ${fmt(V.total_r,2)}R</div>`+
           `<div>95% WR CI ${wrci} · exp CI ${expci}</div>`+
-          `<div>Sufficiency ${V.data_sufficiency} · stability ${V.statistical_stability} · integrity ${V.data_integrity}</div>`+
-          `<div>Live capital: <b>no</b> · ${(V.milestone&&V.milestone.current_label)||"INSUFFICIENT SAMPLE"}</div>`+
-          `<div class="muted">Does not replace /paper. Gates unchanged. Session WR is separate.</div>`;
+          `<div>Sufficiency ${esc(V.data_sufficiency)} · stability ${esc(V.statistical_stability)} · integrity ${esc(V.data_integrity)}</div>`+
+          `<div>Live capital: <b>no</b> · ${esc((V.milestone&&V.milestone.current_label)||"INSUFFICIENT SAMPLE")}</div>`+
+          `<div class="muted">Archive only. Does not replace this session on Paper. Gates unchanged.</div>`;
       }
     } catch (e) {}
     try {
@@ -352,8 +455,8 @@ async function load(){
           `<div class="err">Edge diagnostics HTTP ${er.status}. Response was not usable JSON. Journal not modified.</div>`;
       } else if (E.ok === false) {
         document.getElementById("edgebody").innerHTML =
-          `<div class="err">Edge diagnostics error: ${E.error||"unknown"}. Journal not modified.</div>`+
-          `<div class="muted">${E.disclaimer||""}</div>`;
+          `<div class="err">Edge diagnostics error: ${esc(E.error||"unknown")}. Journal not modified.</div>`+
+          `<div class="muted">${esc(E.disclaimer||"")}</div>`;
       } else {
         const b = E.baseline||{};
         const nrr = E.narrative||{};
@@ -361,28 +464,30 @@ async function load(){
         const ex = E.exit||{};
         const ho = E.holdout||{};
         const pvs = E.paper_vs_shadow||{};
-        const list = (arr)=> (arr||[]).map(x=>`<div>• ${x}</div>`).join("");
+        const list = (arr)=> (arr||[]).map(x=>`<div>• ${esc(x)}</div>`).join("");
         const sideL = (dir.LONG||{});
         const sideS = (dir.SHORT||{});
         document.getElementById("edgebody").innerHTML =
           `<div class="n" style="font-size:15px">n ${n(b.n)} · WR ${(n(b.winrate)*100).toFixed(1)}% · exp ${fmt(b.expectancy,2)}R · tot ${fmt(b.total_r,2)}R · DD ${fmt(b.max_drawdown_r,2)}R · streak ${n(b.longest_losing_streak)}</div>`+
           `<div class="muted">malformed ${n(E.malformed_count)} · open events ${n((E.journal_counts||{}).open)} · ignored ${n((E.journal_counts||{}).ignored)}</div>`+
-          `<div style="margin-top:8px"><b>ENTRY</b> — fills already passed locked gates. ${((E.entry||{}).note)||""}</div>`+
-          `<div><b>EXIT</b> — MFE capture ${ex.mean_mfe_capture==null?"n/a":ex.mean_mfe_capture} · losers with +MFE ${ex.losers_with_positive_mfe_pct||0}% · ${ex.note||""}</div>`+
-          `<div><b>DIRECTION</b> LONG n ${n(sideL.n)} exp ${fmt(sideL.expectancy,2)}R · SHORT n ${n(sideS.n)} exp ${fmt(sideS.expectancy,2)}R · ${dir.statistical||"exploratory"}</div>`+
-          `<div><b>HOLDOUT</b> ${ho.available?("research n "+((ho.research||{}).n)+" / holdout n "+((ho.holdout||{}).n)+" (not shuffled)"): (ho.label||"insufficient")}</div>`+
+          `<div style="margin-top:8px"><b>ENTRY</b> — fills already passed locked gates. ${esc(((E.entry||{}).note)||"")}</div>`+
+          `<div><b>EXIT</b> — MFE capture ${ex.mean_mfe_capture==null?"n/a":ex.mean_mfe_capture} · losers with +MFE ${ex.losers_with_positive_mfe_pct||0}% · ${esc(ex.note||"")}</div>`+
+          `<div><b>DIRECTION</b> LONG n ${n(sideL.n)} exp ${fmt(sideL.expectancy,2)}R · SHORT n ${n(sideS.n)} exp ${fmt(sideS.expectancy,2)}R · ${esc(dir.statistical||"exploratory")}</div>`+
+          `<div><b>HOLDOUT</b> ${ho.available?("research n "+((ho.research||{}).n)+" / holdout n "+((ho.holdout||{}).n)+" (not shuffled)"): esc(ho.label||"insufficient")}</div>`+
           `<div><b>PAPER VS SHADOW</b> paper n ${n((pvs.paper||{}).n)} exp ${fmt((pvs.paper||{}).expectancy,2)}R · shadow n ${n((pvs.shadow||{}).n)} exp ${fmt((pvs.shadow||{}).expectancy,2)}R · not combined</div>`+
           `<div style="margin-top:8px"><b>WHAT WE KNOW</b>${list(nrr.WHAT_WE_KNOW)}</div>`+
           `<div><b>WHAT LOOKS PROMISING</b>${list(nrr.WHAT_LOOKS_PROMISING)}</div>`+
           `<div><b>WHAT LOOKS WEAK</b>${list(nrr.WHAT_LOOKS_WEAK)}</div>`+
           `<div><b>WHAT IS STILL UNKNOWN</b>${list(nrr.WHAT_IS_STILL_UNKNOWN)}</div>`+
-          `<div class="muted" style="margin-top:8px">${E.disclaimer||""}</div>`;
+          `<div class="muted" style="margin-top:8px">${esc(E.disclaimer||"")}</div>`;
       }
     } catch (e) {
       document.getElementById("edgebody").innerHTML = '<div class="err">Edge diagnostics request failed. Journal not modified.</div>';
     }
   } catch (e) {
-    document.getElementById("api").innerHTML = '<span class="bad">API down</span>';
+    document.getElementById("api").textContent = "API down";
+    document.getElementById("api").className = "bad";
+    document.getElementById("dot").classList.remove("on");
     document.getElementById("err").innerHTML = '<div class="err">Cannot reach API. Keep the Atlas window open.</div>';
   }
 }
