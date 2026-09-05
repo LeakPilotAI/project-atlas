@@ -62,7 +62,7 @@ Start/Stop Atlas icons.
 
 1. Double-click **Project Atlas** on the desktop.
 2. A console window stays open. The dashboard opens at
-   [http://127.0.0.1:3000](http://127.0.0.1:3000).
+   [http://127.0.0.1:8000/dashboard](http://127.0.0.1:8000/dashboard).
 3. Close that console (or Ctrl+C) when you are done. That:
    - kills the API
    - kills the frontend
@@ -71,12 +71,25 @@ Start/Stop Atlas icons.
 
 Do not use the old Start / Stop shortcuts.
 
-## Later updates (do not delete the folder)
+## Later updates (overwrite code, keep .env and paper data)
+
+Close the Atlas window first.
 
 ```powershell
 cd "D:\Work\Project Atlas"
-git pull origin main
+git fetch origin
+git reset --hard origin/main
+powershell -ExecutionPolicy Bypass -File scripts\windows\Pull-And-Ready.ps1
 ```
+
+That:
+- overwrites every **tracked** file to match GitHub `main`
+- keeps `backend\.env` and `backend\data` (journal, secrets)
+- sets `PERP_MICRO_MAX_OPEN=0` (unlimited paper, 80 safety cap in code)
+- recreates the **Project Atlas** desktop shortcut
+
+Then double-click **Project Atlas** on the desktop. Do not keep the old
+window running — that process still has old code.
 
 `.env` and `backend\data` stay on disk. Re-run `Fresh-Setup.ps1` only if
 Python packages or the frontend install break.
