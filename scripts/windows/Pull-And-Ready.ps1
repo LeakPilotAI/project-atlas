@@ -39,6 +39,11 @@ if ($LASTEXITCODE -ne 0) { throw "git reset --hard failed" }
 Write-Host "==> Patch .env (does not delete secrets or paper data)"
 $keys = @{
     PERP_MICRO_MAX_OPEN = "0"
+    PERP_MICRO_SCALP_TP_R = "0.6"
+    PERP_MICRO_BE_AFTER_R = "0.3"
+    PERP_MICRO_LOCK_AFTER_R = "0.5"
+    PERP_MICRO_LOCK_R = "0.2"
+    PERP_MICRO_MANAGE_SECONDS = "8"
     QUALITY_DIP_DISCORD_ENABLED = "true"
     INVESTMENT_SCAN_ENABLED = "true"
 }

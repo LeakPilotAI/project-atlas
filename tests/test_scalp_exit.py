@@ -1,4 +1,4 @@
-"""Paper scalp exits: bank 1.0R, BE after 0.5R MFE. Entry gates unchanged."""
+"""Paper scalp exits: bank 0.6R, BE after 0.3R, lock +0.2R after 0.5R MFE. Entry gates unchanged."""
 
 from __future__ import annotations
 
@@ -37,14 +37,16 @@ def _open_scalp(tid, symbol="AAA", side="LONG", entry=100.0, stop=99.0, mfe=0.0)
         "stop_price": stop,
         "initial_stop": stop,
         "working_stop": stop,
-        "tp1_price": entry + risk if side == "LONG" else entry - risk,
+        "tp1_price": entry + 0.6 * risk if side == "LONG" else entry - 0.6 * risk,
         "risk_price": risk,
         "mark": entry,
         "mfe_r": mfe,
         "mae_r": 0.0,
         "exit_mode": "SCALP",
-        "scalp_tp_r": 1.0,
-        "be_after_r": 0.5,
+        "scalp_tp_r": 0.6,
+        "be_after_r": 0.3,
+        "lock_after_r": 0.5,
+        "lock_r": 0.2,
         "be_armed": False,
         "entry_timestamp": datetime(2026, 8, 1, 12, tzinfo=timezone.utc).isoformat(),
         "status": "open",
@@ -61,17 +63,19 @@ def test_entry_gates_still_locked() -> None:
     assert RSI_SHORT_LOCK == 72.0
     assert EXT_LOCK == 1.4
     assert RR_LOCK == 1.8
-    assert s.perp_micro_scalp_tp_r == 1.0
-    assert s.perp_micro_be_after_r == 0.5
+    assert s.perp_micro_scalp_tp_r == 0.6
+    assert s.perp_micro_be_after_r == 0.3
+    assert s.perp_micro_lock_after_r == 0.5
+    assert s.perp_micro_lock_r == 0.2
 
 
-def test_scalp_tp_at_1r_not_18(tmp_path, monkeypatch):
+def test_scalp_tp_at_0_6r_not_18(tmp_path, monkeypatch):
     j, p = _bind(tmp_path, monkeypatch)
     j._append(p, _open_scalp("t1"))
     j.reload()
     c = PerpMicroCoach()
     c._rehydrate_open(reason="startup")
-    _run(c._manage_open({"AAA": 101.0}))
+    _run(c._manage_open({"AAA": 100.6}))
     assert "t1" not in c._open
     stats = _run(j.stats())
     assert stats["wins"] == 1
@@ -81,26 +85,25 @@ def test_scalp_tp_at_1r_not_18(tmp_path, monkeypatch):
 
 
 def test_1_8_target_no_longer_required_to_win(tmp_path, monkeypatch):
-    """Old bot waited for 102 (1.8R). Scalp banks at 101 (1.0R)."""
+    """Old bot waited for 102 (1.8R). Capture banks at 100.6 (0.6R)."""
     j, p = _bind(tmp_path, monkeypatch)
     j._append(p, _open_scalp("t1"))
     j.reload()
     c = PerpMicroCoach()
     c._rehydrate_open(reason="startup")
-    _run(c._manage_open({"AAA": 101.5}))  # between 1.0R and 1.8R
+    _run(c._manage_open({"AAA": 100.7}))  # between 0.6R and 1.8R
     assert "t1" not in c._open
-    closed = [r for r in j._open.values()]  # empty
     assert _run(j.stats())["wins"] == 1
 
 
-def test_be_after_half_r_prevents_full_loss(tmp_path, monkeypatch):
+def test_be_after_0_3r_prevents_full_loss(tmp_path, monkeypatch):
     j, p = _bind(tmp_path, monkeypatch)
-    j._append(p, _open_scalp("t1", mfe=0.6))
+    j._append(p, _open_scalp("t1", mfe=0.35))
     j.reload()
     c = PerpMicroCoach()
     c._rehydrate_open(reason="startup")
-    assert c._open["t1"]["mfe_r"] >= 0.5
-    _run(c._manage_open({"AAA": 100.6}))  # arm BE, do not TP yet
+    assert c._open["t1"]["mfe_r"] >= 0.3
+    _run(c._manage_open({"AAA": 100.35}))  # arm BE, do not TP yet
     assert "t1" in c._open
     assert c._open["t1"]["be_armed"] is True
     assert c._open["t1"]["working_stop"] == 100.0
@@ -131,11 +134,28 @@ def test_short_scalp_tp_and_be(tmp_path, monkeypatch):
     j.reload()
     c = PerpMicroCoach()
     c._rehydrate_open(reason="startup")
-    _run(c._manage_open({"BBB": 49.6}))
+    _run(c._manage_open({"BBB": 49.65}))
     assert c._open["s1"]["be_armed"] is True
-    _run(c._manage_open({"BBB": 49.0}))  # 1.0R TP
+    _run(c._manage_open({"BBB": 49.4}))  # 0.6R TP
     stats = _run(j.stats())
     assert stats["wins"] == 1
+
+
+def test_lock_after_half_r_banks_partial(tmp_path, monkeypatch):
+    j, p = _bind(tmp_path, monkeypatch)
+    j._append(p, _open_scalp("t1", mfe=0.55))
+    j.reload()
+    c = PerpMicroCoach()
+    c._rehydrate_open(reason="startup")
+    _run(c._manage_open({"AAA": 100.55}))  # arm lock at +0.2R, no TP yet
+    assert "t1" in c._open
+    assert c._open["t1"]["lock_armed"] is True
+    assert abs(c._open["t1"]["working_stop"] - 100.2) < 1e-9
+    _run(c._manage_open({"AAA": 100.2}))
+    assert "t1" not in c._open
+    stats = _run(j.stats())
+    assert stats["wins"] == 1
+    assert stats["sum_r"] > 0
 
 
 def test_legacy_setup_18_keeps_old_tp(tmp_path, monkeypatch):

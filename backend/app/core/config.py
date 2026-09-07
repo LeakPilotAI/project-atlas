@@ -88,11 +88,16 @@ class Settings(BaseSettings):
     perp_micro_scan_seconds: float = 60.0
     perp_micro_min_rr: float = 1.8
     # EXIT (paper management). Does not change entry RSI/ext/min R:R.
-    # Bank 1.0R (typical MFE was ~1.24 while 1.8R TP rarely filled).
-    # After +0.5R MFE, stop moves to entry so giveback cannot become a full -1R loss.
+    # desk-v3 (1.0R TP / BE 0.5R, 60s manage): n=277 WR 42% exp -0.06R.
+    # Mean MFE 0.74 while 1.0R rarely filled; loser MFE ~0.42 never armed BE in time.
+    # Bank 0.6R (under observed MFE). Arm BE at 0.3R. Lock +0.2R after 0.5R MFE.
+    # Manage opens every 8s so BE/TP can fire inside a 5m bar.
     perp_micro_scalp_enabled: bool = True
-    perp_micro_scalp_tp_r: float = 1.0
-    perp_micro_be_after_r: float = 0.5
+    perp_micro_scalp_tp_r: float = 0.6
+    perp_micro_be_after_r: float = 0.3
+    perp_micro_lock_after_r: float = 0.5
+    perp_micro_lock_r: float = 0.2
+    perp_micro_manage_seconds: float = 8.0
     perp_micro_prefer_majors: bool = True
     perp_micro_block_meme_for_live_stats: bool = True
     perp_micro_live_min_trades: int = 50
