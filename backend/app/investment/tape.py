@@ -105,6 +105,12 @@ def as_quality_dip_rows() -> List[Dict[str, Any]]:
                 "action_reason": prep.get("reason"),
                 "notify": bool(prep.get("notify")),
                 "rel_volume": r.get("rel_volume"),
+                "stance": prep.get("stance"),
+                "bottom_risk": prep.get("bottom_risk"),
+                "quality_score": prep.get("quality_score"),
+                "trap": bool(prep.get("trap")),
+                "ladder": prep.get("ladder") or [],
+                "invalidation": prep.get("invalidation"),
             }
         )
     out.sort(key=lambda row: (ACTION_RANK.get(str(row.get("action") or "QUIET"), 9), -(row.get("pct_from_high") or 0)))

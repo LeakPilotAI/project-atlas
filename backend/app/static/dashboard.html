@@ -110,6 +110,9 @@
   .action { font: 500 10px/1.2 var(--mono); letter-spacing: .08em; border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
   .ACCUMULATE { color: var(--accent-fg); background: var(--long); }
   .PREPARE { color: var(--accent-fg); background: var(--warn); }
+  .SCALE_SMALL { color: var(--accent-fg); background: var(--long); }
+  .WAIT_CHEAPER { color: var(--accent-fg); background: var(--warn); }
+  .DO_NOT_BUY { color: #fff; background: #6b2a2a; }
   .WATCH { color: var(--fg); background: var(--elevated); border: 1px solid var(--border); }
   .STAND_DOWN { color: #fff; background: #6b2a2a; }
   .QUIET { color: var(--subtle); background: transparent; border: 1px solid var(--border); }
@@ -259,7 +262,7 @@ function ago(iso){
 function pill(label, on){ return `<span class="pill ${on?"on":""}">${label} ${on?"on":"off"}</span>`; }
 function actionBadge(a){
   const x = String(a||"QUIET");
-  return `<span class="action ${x}">${x.replace("_"," ")}</span>`;
+  return `<span class="action ${x}">${x.replaceAll("_"," ")}</span>`;
 }
 function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({'&':'&','<':'<','>':'>','"':'"'}[c])); }
 document.querySelectorAll(".tabs button").forEach(btn=>{
@@ -348,7 +351,7 @@ async function load(){
     const stand = qd.stand_down||dips.filter(d=>d.action==="STAND_DOWN");
     const watch = dips.filter(d=>d.action==="WATCH");
     document.getElementById("diphead").textContent = prep.length
-      ? `${prep.length} quality name${prep.length===1?"":"s"} in PREPARE / ACCUMULATE — research a buy. Atlas does not place it.`
+      ? `${prep.length} name${prep.length===1?"":"s"} to research. ACCUMULATE = scale with limits below last. PREPARE = wait cheaper. Atlas does not place a buy.`
       : "No quality names in a buy-prep zone right now. Discord will DM when one appears.";
     document.getElementById("dipmeta").textContent =
       `Scan ${ago(qd.last_scan_at)} · Discord ${qd.discord_enabled?"on":"off"} · ${watch.length} watch · ${stand.length} stand-down`;
@@ -360,12 +363,14 @@ async function load(){
             <div class="n" style="font-size:22px">${esc(d.symbol||"")}</div>
             <div class="sub">${esc(d.name||d.category||"")}</div>
           </div>
-          ${actionBadge(d.action)}
+          ${actionBadge(d.stance||d.action)}
         </div>
         <div class="n" style="font-size:18px">${d.pct_from_high==null?"—":fmt(d.pct_from_high,1)+"%"} <span class="sub" style="font-size:13px;font-weight:400">off high</span></div>
         <div class="sub" style="font-family:var(--mono)">1d ${d.chg_1d==null?"—":fmt(d.chg_1d,1)+"%"} · 5d ${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"} · vs SPY ${d.vs_spy==null?"—":fmt(d.vs_spy,1)+"%"}</div>
+        <div class="sub">Still-falling ${d.bottom_risk==null?"—":d.bottom_risk}/100 · quality ${d.quality_score==null?"—":d.quality_score}/100${d.trap?" · trap risk":""}</div>
         <div class="sub">${esc(d.thesis||"")} · ${esc(d.classification||"")}</div>
         <div>${esc(d.action_reason||"")}</div>
+        ${(d.ladder&&d.ladder.length)? `<div class="sub" style="font-family:var(--mono)">${d.ladder.map(t=>`${t.pct_below}% → $${fmt(t.limit,2)}`).join(" · ")}</div>`:""}
       </div>`).join("") : '<div class="card sub">Quiet tape. Quality dips come from the equity scan, not a second Yahoo loop. Strong names only — not a crash shop.</div>';
     const ranked = dips.slice().sort((a,b)=>{
       const rank = {ACCUMULATE:0,PREPARE:1,STAND_DOWN:2,WATCH:3,QUIET:4};
@@ -373,9 +378,12 @@ async function load(){
     });
     const shown = ranked.filter(d => d.action && d.action!=="QUIET");
     const quietN = ranked.length - shown.length;
-    document.getElementById("dips").innerHTML = shown.length? `<table><tr><th></th><th>Symbol</th><th>Off high</th><th>1d</th><th>5d</th><th>Thesis</th><th>Why</th></tr>${
-      shown.map(d=>`<tr><td>${actionBadge(d.action)}</td><td>${esc(d.symbol)}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.chg_1d==null?"—":fmt(d.chg_1d,1)+"%"}</td><td>${d.chg_5d==null?"—":fmt(d.chg_5d,1)+"%"}</td><td>${esc(d.thesis||"")}</td><td class="sub">${esc(d.action_reason||"")}</td></tr>`).join("")
-    }</table><div class="note" style="margin-top:8px">${quietN} quiet names hidden. They are still scanned.</div>` : '<div class="sub">No investment-engine snapshot yet. First scan can take a few minutes after launch.</div>';
+    document.getElementById("dips").innerHTML = shown.length? `<table><tr><th></th><th>Symbol</th><th>Off high</th><th>Falling</th><th>T1 limit</th><th>Thesis</th><th>Why</th></tr>${
+      shown.map(d=>{
+        const t1 = (d.ladder&&d.ladder[0]) ? ("$"+fmt(d.ladder[0].limit,2)) : "—";
+        return `<tr><td>${actionBadge(d.stance||d.action)}</td><td>${esc(d.symbol)}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.bottom_risk==null?"—":d.bottom_risk}</td><td>${t1}</td><td>${esc(d.thesis||"")}</td><td class="sub">${esc(d.action_reason||"")}</td></tr>`;
+      }).join("")
+    }</table><div class="note" style="margin-top:8px">${quietN} quiet names hidden. Limits are research levels, not orders. A dip can keep falling.</div>` : '<div class="sub">No investment-engine snapshot yet. First scan can take a few minutes after launch.</div>';
     const dp = L.dip_paper||{};
     const pos = dp.positions||{};
     const pkeys = Object.keys(pos);
@@ -388,8 +396,11 @@ async function load(){
     document.getElementById("invstatus").innerHTML =
       `Scan ${inv.enabled?"enabled":"off"} · running ${inv.running?"yes":"no"} · last cycle ${cycle.finished_at?ago(cycle.finished_at):"waiting"} · ${cycle.symbols_scanned||0} names`;
     const iopps = (inv.opportunities||prep).filter(d => ["PREPARE","ACCUMULATE","STAND_DOWN","WATCH"].includes(d.action));
-    document.getElementById("invopps").innerHTML = iopps.length? `<table><tr><th></th><th>Symbol</th><th>Class</th><th>Thesis</th><th>Off high</th></tr>${
-      iopps.slice(0,16).map(d=>`<tr><td>${actionBadge(d.action)}</td><td>${esc(d.symbol)}</td><td>${esc(d.investment_class||d.classification||"")}</td><td>${esc(d.thesis||"")}</td><td>${fmt(d.pct_from_high,1)}%</td></tr>`).join("")
+    document.getElementById("invopps").innerHTML = iopps.length? `<table><tr><th></th><th>Symbol</th><th>Stance</th><th>Falling</th><th>T1</th><th>Off high</th></tr>${
+      iopps.slice(0,16).map(d=>{
+        const t1 = (d.ladder&&d.ladder[0]) ? ("$"+fmt(d.ladder[0].limit,2)) : "—";
+        return `<tr><td>${actionBadge(d.stance||d.action)}</td><td>${esc(d.symbol)}</td><td>${esc(d.stance||d.action||"")}</td><td>${d.bottom_risk==null?"—":d.bottom_risk}</td><td>${t1}</td><td>${fmt(d.pct_from_high,1)}%</td></tr>`;
+      }).join("")
     }</table>` : '<div class="sub">No investment opportunities on this scan. Alerts still DM when a quality name enters PREPARE.</div>';
 
     const tape = L.major_tape||{};

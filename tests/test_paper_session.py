@@ -134,10 +134,68 @@ def test_buy_prep_prepare_on_momentary_dip():
 
 
 def test_buy_prep_accumulate_state():
-    r = classify_buy_prep(thesis="STRONG", investment_class="ACCUMULATION", drawdown=0.12)
+    r = classify_buy_prep(
+        thesis="STRONG",
+        investment_class="ACCUMULATION",
+        drawdown=0.12,
+        move_class="NORMAL_PULLBACK",
+        ret_1d=0.005,
+        price=50.0,
+    )
     assert r["action"] == "ACCUMULATE"
+    assert r["stance"] == "SCALE_SMALL"
+    assert r["ladder"]
 
 
 def test_buy_prep_quiet_when_flat():
     r = classify_buy_prep(thesis="INTACT", drawdown=0.01, ret_1d=-0.002)
     assert r["action"] == "QUIET"
+
+
+def test_buy_prep_adbe_dump_is_wait_not_accumulate():
+    r = classify_buy_prep(
+        thesis="STRONG",
+        investment_class="ACCUMULATION",
+        move_class="ELEVATED_SELLING",
+        drawdown=0.614,
+        ret_1d=-0.067,
+        ret_5d=-0.078,
+        vs_spy=-0.063,
+        price=265.8,
+    )
+    assert r["action"] != "ACCUMULATE"
+    assert r["stance"] == "WAIT_CHEAPER"
+    assert r["trap"] is True
+    assert r["bottom_risk"] >= 55
+    assert r["ladder"]
+    assert r["ladder"][0]["limit"] < 265.8
+
+
+def test_buy_prep_orcl_under_pressure_is_not_a_buy():
+    r = classify_buy_prep(
+        thesis="UNDER_PRESSURE",
+        move_class="NORMAL_PULLBACK",
+        drawdown=0.511,
+        ret_1d=0.031,
+        ret_5d=0.053,
+        price=140.0,
+    )
+    assert r["action"] in ("PREPARE", "STAND_DOWN")
+    assert r["stance"] in ("WAIT_CHEAPER", "DO_NOT_BUY")
+    assert r["trap"] is True
+
+
+def test_buy_prep_calm_bounce_can_scale():
+    r = classify_buy_prep(
+        thesis="STRONG",
+        move_class="NORMAL_PULLBACK",
+        investment_class="ACCUMULATION",
+        drawdown=0.22,
+        ret_1d=0.01,
+        ret_5d=-0.03,
+        vs_spy=0.006,
+        price=100.0,
+    )
+    assert r["action"] == "ACCUMULATE"
+    assert r["ladder"][0]["pct_below"] == 3.0
+    assert abs(r["ladder"][0]["limit"] - 97.0) < 0.02
