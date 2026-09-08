@@ -7,18 +7,50 @@ Set-Location $Root
 
 Write-Host "Project Atlas overwrite in $Root"
 
+function Compact-DotEnv {
+    param([string]$Path)
+    $kept = New-Object System.Collections.Generic.List[string]
+    $sr = [System.IO.StreamReader]::new($Path)
+    try {
+        while ($null -ne ($line = $sr.ReadLine())) {
+            if ($line.Length -gt 800) { continue }
+            if ($line -match '^\s*$' -or $line -match '^\s*#' -or $line -match '^[A-Za-z_][A-Za-z0-9_]*\s*=') {
+                $kept.Add($line)
+            }
+            if ($kept.Count -ge 400) { break }
+        }
+    } finally {
+        $sr.Close()
+    }
+    $utf8 = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllLines($Path, $kept.ToArray(), $utf8)
+}
+
 function Set-DotEnvKey {
     param([string]$Path, [string]$Key, [string]$Value)
     if (-not (Test-Path $Path)) { return $false }
-    $lines = @(Get-Content -Path $Path)
+    $len = (Get-Item $Path).Length
+    if ($len -gt 262144) {
+        $bak = "$Path.bak-oversized"
+        Copy-Item $Path $bak -Force
+        Write-Host ("    WARN {0} is {1} bytes. Backed up to {2}. Keeping env keys only." -f $Path, $len, $bak)
+        Compact-DotEnv $Path
+    }
     $found = $false
     $out = New-Object System.Collections.Generic.List[string]
-    foreach ($line in $lines) {
-        if ($line -match ("^\s*#?\s*" + [regex]::Escape($Key) + "\s*=")) {
-            if (-not $found) { $out.Add("$Key=$Value"); $found = $true }
-        } else {
-            $out.Add($line)
+    $sr = [System.IO.StreamReader]::new($Path)
+    try {
+        while ($null -ne ($line = $sr.ReadLine())) {
+            if ($line.Length -gt 800) { continue }
+            if ($line -match ("^\s*#?\s*" + [regex]::Escape($Key) + "\s*=")) {
+                if (-not $found) { $out.Add("$Key=$Value"); $found = $true }
+            } else {
+                $out.Add($line)
+            }
+            if ($out.Count -ge 400) { break }
         }
+    } finally {
+        $sr.Close()
     }
     if (-not $found) { $out.Add("$Key=$Value") }
     $utf8 = New-Object System.Text.UTF8Encoding $false
