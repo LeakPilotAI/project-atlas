@@ -79,7 +79,8 @@ $keys = @{
     QUALITY_DIP_DISCORD_ENABLED = "true"
     INVESTMENT_SCAN_ENABLED = "true"
     DAY_TRADE_ALERT_COOLDOWN_MINUTES = "720"
-    DAY_TRADE_SCAN_SECONDS = "300"
+    DAY_TRADE_SCAN_SECONDS = "90"
+    DAY_TRADE_ENABLED = "true"
 }
 foreach ($envPath in @(
     (Join-Path $Root "backend\.env"),

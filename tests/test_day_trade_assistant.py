@@ -1,6 +1,6 @@
-"""Day-trade alerts use quality-dip ladders, not 0.3% scalp zones."""
+"""Day-trade DMs: LONG limits below last, R:R 1.8, no WAIT spam, no shorts."""
 
-from app.services.day_trade_assistant import _build_plan, _digest_text, _plan_embed_text
+from app.services.day_trade_assistant import MIN_RR, _build_plan, _digest_text, _plan_embed_text
 
 
 def _snap(**kw):
@@ -10,59 +10,42 @@ def _snap(**kw):
         "price": 499.68,
         "prior_close": 510.12,
         "gap_pct": -2.05,
-        "ret_1d": -0.0205,
-        "ret_5d": -0.03,
-        "drawdown": 0.10,
-        "high_52w": 555.0,
     }
     base.update(kw)
     return base
 
 
-def test_msft_limits_are_percent_not_a_dollar():
+def test_msft_prepare_has_real_limits_and_rr():
     p = _build_plan(_snap(), "OPEN")
+    assert p.action == "PREPARE"
     assert p.bias == "LONG"
-    assert p.ladder
-    t1 = p.ladder[0]["limit"]
-    # Old bot: $497–$498. New: 3% below last ≈ $484.69
-    assert t1 < 490
-    assert abs(t1 - 499.68 * 0.97) < 0.5
-    assert p.ladder[-1]["pct_below"] == 18.0
-    assert p.stance in ("WAIT_CHEAPER", "WATCH", "SCALE_SMALL")
-
-
-def test_adbe_dump_is_not_a_buy_the_ask():
-    p = _build_plan(
-        _snap(
-            symbol="ADBE",
-            name="Adobe",
-            price=266.51,
-            prior_close=285.75,
-            gap_pct=-6.73,
-            ret_1d=-0.0673,
-            ret_5d=-0.078,
-            drawdown=0.614,
-        ),
-        "OPEN",
-    )
-    assert p.stance != "SCALE_SMALL"
-    assert p.trap or p.stance == "WAIT_CHEAPER"
-    assert p.ladder[0]["limit"] < 266.51
+    assert p.l1 < 499.68 * 0.995
+    assert p.l2 < p.l1
+    assert p.stop < p.l2
+    assert p.rr >= MIN_RR
+    assert p.tp1 > p.l1
     text = _plan_embed_text(p)
-    assert "3%" in text or "below last" in text.lower() or "WAIT" in text
+    assert "L1 starter" in text
+    assert "L2 add" in text
+    assert "$497.28" not in text
 
 
-def test_never_short_quality_names():
-    p = _build_plan(
-        _snap(symbol="MU", price=1016.59, prior_close=958.16, gap_pct=6.1, ret_1d=0.061, drawdown=0.05),
-        "OPEN",
-    )
+def test_trigger_when_already_down_hard():
+    p = _build_plan(_snap(symbol="TSLA", price=354.08, prior_close=376.37, gap_pct=-5.92), "OPEN")
+    assert p.action == "TRIGGER"
+    assert p.l1 < p.price
+    assert p.rr >= MIN_RR
+
+
+def test_no_short_on_gap_up():
+    p = _build_plan(_snap(symbol="MU", price=1016.59, prior_close=958.16, gap_pct=6.1), "OPEN")
+    assert p.action == "SKIP"
     assert p.bias == "LONG"
 
 
-def test_wait_digest_lists_t1():
-    p = _build_plan(_snap(), "OPEN")
+def test_digest_lists_limits():
+    p = _build_plan(_snap(), "PREMARKET")
     text = _digest_text([p])
     assert "MSFT" in text
-    assert "T1" in text
-    assert "0.3%" not in text
+    assert "L1" in text
+    assert "PREPARE" in text
