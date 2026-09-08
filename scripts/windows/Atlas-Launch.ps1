@@ -1,4 +1,4 @@
-﻿# Project Atlas - one window. Close it to stop API + frontend + Docker.
+﻿# Project Atlas - one window. Close it to stop the bot. Docker Desktop stays running.
 #Requires -Version 5.1
 $ErrorActionPreference = "Continue"
 Set-StrictMode -Version Latest
@@ -50,7 +50,7 @@ function Stop-All {
     if ($script:Stopped) { return }
     $script:Stopped = $true
     Write-Host ""
-    Write-Host "Shutting down Atlas (API, frontend, Docker)..." -ForegroundColor Yellow
+    Write-Host "Shutting down Atlas bot (Python). Docker Desktop stays up." -ForegroundColor Yellow
     $pids = @()
     if ($script:ApiPid) { $pids += $script:ApiPid }
     if ($script:FePid) { $pids += $script:FePid }
@@ -189,7 +189,7 @@ function Wait-Postgres([int]$Seconds = 90) {
 try {
     Write-Host "========================================"
     Write-Host " PROJECT ATLAS"
-    Write-Host " Close this window = stop bot + Docker"
+    Write-Host " Close this window = stop the bot. Docker Desktop stays running."
     Write-Host " Frontend will open in your browser"
     Write-Host "========================================"
     Write-Host "Folder: $Root"
@@ -312,8 +312,8 @@ try {
     Write-Host " API:        http://127.0.0.1:8000/health"
     Write-Host ""
     Write-Host " Keep this window open."
-    Write-Host " Close it (or press Ctrl+C) to stop the bot,"
-    Write-Host " the dashboard, and Docker Desktop."
+    Write-Host " Close it (or press Ctrl+C) to stop the bot only."
+    Write-Host " Docker Desktop and other apps (Genesis, etc.) stay running."
     Write-Host "----------------------------------------" -ForegroundColor Green
     Write-Host ""
 

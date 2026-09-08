@@ -28,7 +28,7 @@ $s = $w.CreateShortcut($lnkPath)
 $s.TargetPath = $LaunchBat
 $s.WorkingDirectory = $Root
 $s.WindowStyle = 1
-$s.Description = "Project Atlas. Close the window to stop the bot, Python, and Docker."
+$s.Description = "Project Atlas. Close the window to stop the bot. Docker Desktop stays running."
 if (Test-Path $icon) { $s.IconLocation = $icon }
 $s.Save()
 Write-Host "Desktop shortcut created: $lnkPath"

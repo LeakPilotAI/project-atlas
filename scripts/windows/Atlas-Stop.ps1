@@ -1,4 +1,4 @@
-# Stop Atlas API, leftover python/node, compose stack, and (by default) Docker Desktop.
+# Stop Atlas API + atlas postgres/redis containers. Never quits Docker Desktop.
 param(
     [string]$Root = "",
     [int[]]$ChildPids = @(),
@@ -58,43 +58,9 @@ Get-Process -Name "node" -ErrorAction SilentlyContinue | ForEach-Object {
     } catch { }
 }
 
-Write-Host "[stop] docker compose down..."
+Write-Host "[stop] atlas containers only (Docker Desktop stays up)..."
 if (Get-Command docker -ErrorAction SilentlyContinue) {
-    $env:COMPOSE_PROJECT_NAME = "atlas"
-    docker rm -f atlas-postgres atlas-redis 2>$null | Out-Null
-    $job = Start-Job -ScriptBlock {
-        param($r)
-        Set-Location $r
-        $env:COMPOSE_PROJECT_NAME = "atlas"
-        docker compose down --remove-orphans
-        docker rm -f atlas-postgres atlas-redis 2>$null | Out-Null
-    } -ArgumentList $Root
-    $null = Wait-Job $job -Timeout 25
-    if ($job.State -eq "Running") {
-        Stop-Job $job -ErrorAction SilentlyContinue
-        Write-Host "[stop] compose down timed out - continuing"
-    }
-    Remove-Job $job -Force -ErrorAction SilentlyContinue
+    docker stop atlas-postgres atlas-redis 2>$null | Out-Null
 }
 
-if (-not $KeepDockerDesktop) {
-    Write-Host "[stop] quitting Docker Desktop..."
-    $quit = Join-Path $env:ProgramFiles "Docker\Docker\Docker Desktop.exe"
-    if (Test-Path $quit) {
-        Start-Process $quit -ArgumentList "-Quit" -ErrorAction SilentlyContinue | Out-Null
-        Start-Sleep -Seconds 3
-    }
-    @(
-        "Docker Desktop",
-        "com.docker.backend",
-        "com.docker.build",
-        "com.docker.dev-envs",
-        "com.docker.proxy",
-        "Docker Desktop Backend",
-        "docker"
-    ) | ForEach-Object {
-        Get-Process -Name $_ -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    }
-}
-
-Write-Host "[stop] done."
+Write-Host "[stop] done. Docker Desktop / other apps were not touched."
