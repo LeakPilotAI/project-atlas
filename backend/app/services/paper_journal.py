@@ -15,7 +15,7 @@ log = structlog.get_logger(__name__)
 
 JOURNAL_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_journal.jsonl"
 CANDIDATE_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_candidates.jsonl"
-SESSION_ID = "desk-v4"
+SESSION_ID = "desk-v5"
 
 
 def _now() -> datetime:

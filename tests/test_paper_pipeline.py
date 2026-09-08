@@ -177,3 +177,20 @@ def test_24h_window_does_not_sum_universe(tmp_path, monkeypatch) -> None:
     assert h["markets"] == 232
     assert h["liquid"] == 80
     assert h["evaluated"] == 22
+
+
+def test_tickers_received_is_snapshot_not_sum(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr("app.services.paper_pipeline.FUNNEL_PATH", tmp_path / "funnel.jsonl")
+    monkeypatch.setattr("app.services.paper_pipeline.DATA_DIR", tmp_path)
+    p = PaperPipeline()
+    p._window.clear()
+    p._cycle.clear()
+    p._latest_universe = {"markets": 0, "liquid": 0}
+    p.inc("tickers_received", 233)
+    p.inc("tickers_received", 233)
+    p.inc("tickers_received", 233)
+    p.inc("liquid_set", 80)
+    p.inc("liquid_set", 80)
+    h = p.last_24h()
+    assert h["markets"] == 233
+    assert h["liquid"] == 80

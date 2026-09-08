@@ -118,6 +118,15 @@ class PaperPipeline:
         self.cycle_count += 1
 
     def inc(self, key: str, n: int = 1) -> None:
+        n = int(n)
+        if key in SNAPSHOT_KEYS:
+            self._cycle[key] = n
+            self._session[key] = n
+            if key == "tickers_received":
+                self._latest_universe["markets"] = n
+            elif key == "liquid_set":
+                self._latest_universe["liquid"] = n
+            return
         self._cycle[key] += n
         self._session[key] += n
 
@@ -157,6 +166,11 @@ class PaperPipeline:
         liquid = int(self._cycle.get("liquid_set") or 0) or int(
             self._latest_universe.get("liquid") or 0
         )
+        # Universe size is a snapshot. Never display a 24h sum of ticker fetches.
+        if markets > 400:
+            markets = int(self._latest_universe.get("markets") or 0) or liquid
+        if liquid > 200:
+            liquid = int(self._latest_universe.get("liquid") or 0) or min(liquid, 80)
         evaluated = int(summed.get("evaluated", 0))
         extension = int(summed.get("extension_pass", 0))
         rsi = int(summed.get("rsi_extreme", 0))
@@ -385,7 +399,7 @@ class PaperPipeline:
             "extension": float(s.perp_micro_min_extension_pct),
             "minimum_rr": float(s.perp_micro_min_rr),
             "scalp_enabled": bool(getattr(s, "perp_micro_scalp_enabled", True)),
-            "scalp_tp_r": float(getattr(s, "perp_micro_scalp_tp_r", 0.6)),
+            "scalp_tp_r": float(getattr(s, "perp_micro_scalp_tp_r", 1.0)),
             "be_after_r": float(getattr(s, "perp_micro_be_after_r", 0.3)),
             "lock_after_r": float(getattr(s, "perp_micro_lock_after_r", 0.5)),
             "lock_r": float(getattr(s, "perp_micro_lock_r", 0.2)),

@@ -194,7 +194,7 @@ class PerpMicroCoach:
             min_oi=float(settings.perp_micro_min_oi),
             min_vol=float(settings.perp_micro_min_vol),
             min_rr=float(settings.perp_micro_min_rr),
-            scalp_tp_r=float(getattr(settings, "perp_micro_scalp_tp_r", 0.6)),
+            scalp_tp_r=float(getattr(settings, "perp_micro_scalp_tp_r", 1.0)),
             be_after_r=float(getattr(settings, "perp_micro_be_after_r", 0.3)),
             lock_after_r=float(getattr(settings, "perp_micro_lock_after_r", 0.5)),
             lock_r=float(getattr(settings, "perp_micro_lock_r", 0.2)),
@@ -1021,7 +1021,7 @@ class PerpMicroCoach:
         paper_pipeline.inc("quality_pass")
 
         min_rr = float(settings.perp_micro_min_rr)
-        scalp_r = float(getattr(settings, "perp_micro_scalp_tp_r", 0.6) or 0.6)
+        scalp_r = float(getattr(settings, "perp_micro_scalp_tp_r", 1.0) or 1.0)
         be_after = float(getattr(settings, "perp_micro_be_after_r", 0.3) or 0.0)
         lock_after = float(getattr(settings, "perp_micro_lock_after_r", 0.5) or 0.0)
         lock_r = float(getattr(settings, "perp_micro_lock_r", 0.2) or 0.0)
@@ -1082,6 +1082,20 @@ class PerpMicroCoach:
         paper_pipeline.inc("rr_pass")
         paper_pipeline.inc("qualified")
         paper_pipeline.last_qualified_at = datetime.now(timezone.utc).isoformat()
+        if tier in ("junk", "meme"):
+            paper_pipeline.inc_reject("TIER")
+            await paper_journal.log_candidate(
+                symbol=symbol,
+                side=side,
+                taken=False,
+                signal_price=price,
+                score=qscore,
+                regime=f"rsi={rsi:.1f}",
+                features={"rsi": rsi, "ext_pct": ext_pct, "tier": tier},
+                reject_reason=f"tier {tier} not paper",
+                strategy="rsi_extension_v1",
+            )
+            return False
         paper_pipeline.inc("paper_open_attempted")
 
         counts_for_live = tier in ("major", "alt")
@@ -1240,7 +1254,7 @@ class PerpMicroCoach:
             p["working_stop"] = initial_stop
         if p["exit_mode"] == "SETUP_18":
             return
-        scalp_r = float(p.get("scalp_tp_r") or 0) or float(getattr(settings, "perp_micro_scalp_tp_r", 0.6) or 0.6)
+        scalp_r = float(p.get("scalp_tp_r") or 0) or float(getattr(settings, "perp_micro_scalp_tp_r", 1.0) or 1.0)
         p["scalp_tp_r"] = scalp_r
         if p.get("be_after_r") is None:
             p["be_after_r"] = float(getattr(settings, "perp_micro_be_after_r", 0.3) or 0.0)

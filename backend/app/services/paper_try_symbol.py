@@ -312,7 +312,49 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
     paper_pipeline.inc("rr_pass")
     paper_pipeline.inc("qualified")
     paper_pipeline.last_qualified_at = datetime.now(timezone.utc).isoformat()
+
+    if tier in ("junk", "meme"):
+        paper_pipeline.inc_reject("TIER")
+        await paper_journal.log_candidate(
+            symbol=symbol,
+            side=side,
+            taken=False,
+            signal_price=price,
+            score=qscore,
+            regime=f"rsi={rsi:.1f}",
+            features={"rsi": rsi, "ext_pct": ext_pct, "tier": tier},
+            reject_reason=f"tier {tier} not paper",
+            strategy="rsi_extension_v1",
+        )
+        shadow_research.record_evaluation(
+            symbol=symbol,
+            side=side,
+            mark_price=price,
+            score=qscore,
+            required_score=min_score,
+            qualified=True,
+            failed_gates=[],
+            features={"rsi": rsi, "ext_pct": ext_pct, "tier": tier},
+            regime=regime_norm,
+            rejection_stage="tier",
+            regime_normalized=regime_norm,
+            stop=stop,
+            tp1=tp1,
+            tp2=tp2,
+            notes=f"qualified but {tier} not paper",
+        )
+        return False
+
     paper_pipeline.inc("paper_open_attempted")
+
+    scalp_on = bool(getattr(settings, "perp_micro_scalp_enabled", True))
+    scalp_r = float(getattr(settings, "perp_micro_scalp_tp_r", 1.0) or 1.0)
+    be_after = float(getattr(settings, "perp_micro_be_after_r", 0.3) or 0.0)
+    lock_after = float(getattr(settings, "perp_micro_lock_after_r", 0.5) or 0.0)
+    lock_r = float(getattr(settings, "perp_micro_lock_r", 0.2) or 0.0)
+    setup_tp = tp1
+    if scalp_on:
+        tp1 = (price + scalp_r * risk) if side == "LONG" else (price - scalp_r * risk)
 
     counts_for_live = tier in ("major", "alt")
     tid = await paper_journal.open_trade(
@@ -322,7 +364,7 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
         signal_price=price,
         stop=stop,
         tp1=tp1,
-        tp2=tp2,
+        tp2=setup_tp,
         risk_usd=float(settings.perp_micro_risk_usd),
         regime=regime_norm,
         notes=f"ext={ext_pct:.2f}%|{reason}|live={counts_for_live}|regime={regime_norm}",
@@ -337,6 +379,12 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             "vol": self._vol_map.get(symbol),
             "oi": self._oi_map.get(symbol),
             "rr": rr,
+            "setup_rr": min_rr,
+            "exit_mode": "SCALP" if scalp_on else "SETUP_18",
+            "scalp_tp_r": scalp_r,
+            "be_after_r": be_after,
+            "lock_after_r": lock_after,
+            "lock_r": lock_r,
             "regime_normalized": regime_norm,
         },
         tier=tier,
@@ -390,8 +438,10 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
         "side": side,
         "entry": price,
         "stop": stop,
+        "initial_stop": stop,
+        "working_stop": stop,
         "tp1": tp1,
-        "tp2": tp2,
+        "tp2": setup_tp,
         "mark": price,
         "trade_id": tid,
         "tier": tier,
@@ -399,6 +449,15 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
         "qscore": qscore,
         "mfe_r": 0.0,
         "mae_r": 0.0,
+        "exit_mode": "SCALP" if scalp_on else "SETUP_18",
+        "scalp_tp_r": scalp_r,
+        "be_after_r": be_after,
+        "lock_after_r": lock_after,
+        "lock_r": lock_r,
+        "be_armed": False,
+        "lock_armed": False,
+        "setup_rr": min_rr,
+        "risk_price": risk,
     }
     self._cooldowns[symbol] = datetime.now(timezone.utc)
 
@@ -410,9 +469,10 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             title=f"Paper TRIGGER · {symbol} · {side}",
             description=(
                 f"**{symbol} · {side}** (paper · {tier} · **{live_tag}**)\n"
-                f"Entry `{price}` · Stop `{stop:.6g}` · TP1 `{tp1:.6g}`\n"
-                f"RSI `{rsi:.1f}` · ext `{ext_pct:.2f}%` · R:R `{rr:.1f}` · Q `{qscore:.0f}`\n"
-                f"_{reason}_\n_Simulation only. No live execution._"
+                f"Entry `{price}` · Stop `{stop:.6g}` · Scalp TP `{tp1:.6g}` ({scalp_r:.1f}R)\n"
+                f"RSI `{rsi:.1f}` · ext `{ext_pct:.2f}%` · setup R:R `{rr:.1f}` · Q `{qscore:.0f}`\n"
+                f"Manage: bank {scalp_r:.1f}R · BE after +{be_after:.1f}R · lock +{lock_r:.1f}R after +{lock_after:.1f}R MFE.\n"
+                f"_{reason}_\n_Paper only. No live execution._"
             ),
             price=price,
             severity="MEDIUM",
