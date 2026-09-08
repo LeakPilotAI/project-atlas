@@ -1,4 +1,4 @@
-﻿# Stop Atlas API, frontend, compose stack, and (by default) Docker Desktop.
+# Stop Atlas API, leftover python/node, compose stack, and (by default) Docker Desktop.
 param(
     [string]$Root = "",
     [int[]]$ChildPids = @(),
@@ -10,6 +10,7 @@ if (-not $Root) {
     $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 }
 Set-Location $Root
+$VenvPy = Join-Path $Root "backend\.venv\Scripts\python.exe"
 
 function Stop-Tree([int]$ProcessId) {
     if ($ProcessId -le 0) { return }
@@ -26,16 +27,31 @@ function Stop-ListenPort([int]$Port) {
     }
 }
 
+function Stop-AtlasPython {
+    $markers = @("uvicorn", "app.main", "Project Atlas", "project-atlas")
+    try {
+        Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction SilentlyContinue | ForEach-Object {
+            $cl = [string]$_.CommandLine
+            $exe = [string]$_.ExecutablePath
+            $hit = $false
+            foreach ($m in $markers) {
+                if ($cl -like "*$m*" -or $exe -like "*$m*") { $hit = $true; break }
+            }
+            if ($VenvPy -and $exe -and ($exe -ieq $VenvPy)) { $hit = $true }
+            if ($hit -and $_.ProcessId -gt 4) {
+                Stop-Tree ([int]$_.ProcessId)
+            }
+        }
+    } catch { }
+}
+
 Write-Host "[stop] Atlas processes..."
 foreach ($p in $ChildPids) { Stop-Tree $p }
+Stop-AtlasPython
 Stop-ListenPort 8000
 Stop-ListenPort 3000
 
-# Named windows from Start-Process -WindowStyle Minimized / titles
-Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object {
-    try { $_.Path -like "*\\nodejs\\*" -or $_.ProcessName -eq "node" } catch { $true }
-} | ForEach-Object {
-    # only kill node whose command line looks like next/atlas frontend
+Get-Process -Name "node" -ErrorAction SilentlyContinue | ForEach-Object {
     try {
         $cl = (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)").CommandLine
         if ($cl -match "next|frontend") { Stop-Tree $_.Id }

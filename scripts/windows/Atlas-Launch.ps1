@@ -17,6 +17,35 @@ $host.UI.RawUI.WindowTitle = "Project Atlas - close this window to stop everythi
 
 function Write-Step($msg) { Write-Host ""; Write-Host "==> $msg" -ForegroundColor Cyan }
 
+function Repair-DotEnv([string]$Path) {
+    if (-not (Test-Path $Path)) { return }
+    $len = (Get-Item $Path).Length
+    if ($len -le 65536) { return }
+    $bak = "$Path.bak-oversized"
+    try { Copy-Item $Path $bak -Force -ErrorAction SilentlyContinue } catch { }
+    Write-Host ("    WARN {0} is {1} bytes - compacting env keys" -f $Path, $len) -ForegroundColor Yellow
+    $kept = New-Object System.Collections.Generic.List[string]
+    $sr = [System.IO.StreamReader]::new($Path)
+    try {
+        while ($null -ne ($line = $sr.ReadLine())) {
+            if ($line.Length -gt 800) { continue }
+            if ($line -match '^\s*$' -or $line -match '^\s*#' -or $line -match '^[A-Za-z_][A-Za-z0-9_]*\s*=') {
+                $kept.Add($line)
+            }
+            if ($kept.Count -ge 400) { break }
+        }
+    } finally { $sr.Close() }
+    $utf8 = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllLines($Path, $kept.ToArray(), $utf8)
+    Write-Host ("    compacted to {0} bytes" -f (Get-Item $Path).Length)
+}
+
+function Rotate-Log([string]$Path, [int]$MaxBytes = 20971520) {
+    if (-not (Test-Path $Path)) { return }
+    if ((Get-Item $Path).Length -le $MaxBytes) { return }
+    Move-Item $Path "$Path.old" -Force -ErrorAction SilentlyContinue
+}
+
 function Stop-All {
     if ($script:Stopped) { return }
     $script:Stopped = $true
@@ -31,11 +60,60 @@ function Stop-All {
 # CTRL_C / close-window / logoff - Windows only gives a few seconds on X
 $code = @"
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 public static class AtlasConsoleTrap {
   public delegate bool HandlerRoutine(int dwCtrlType);
   [DllImport("kernel32.dll", SetLastError = true)]
   public static extern bool SetConsoleCtrlHandler(HandlerRoutine handler, bool add);
+}
+public static class AtlasJob {
+  [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+  static extern IntPtr CreateJobObject(IntPtr a, string n);
+  [DllImport("kernel32.dll", SetLastError = true)]
+  static extern bool SetInformationJobObject(IntPtr h, int i, IntPtr p, uint l);
+  [DllImport("kernel32.dll", SetLastError = true)]
+  static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+  [StructLayout(LayoutKind.Sequential)]
+  struct JOBOBJECT_BASIC_LIMIT_INFORMATION {
+    public long PerProcessUserTimeLimit;
+    public long PerJobUserTimeLimit;
+    public uint LimitFlags;
+    public UIntPtr MinimumWorkingSetSize;
+    public UIntPtr MaximumWorkingSetSize;
+    public uint ActiveProcessLimit;
+    public long Affinity;
+    public uint PriorityClass;
+    public uint SchedulingClass;
+  }
+  [StructLayout(LayoutKind.Sequential)]
+  struct IO_COUNTERS {
+    public ulong ReadOperationCount, WriteOperationCount, OtherOperationCount;
+    public ulong ReadTransferCount, WriteTransferCount, OtherTransferCount;
+  }
+  [StructLayout(LayoutKind.Sequential)]
+  struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+    public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
+    public IO_COUNTERS IoInfo;
+    public UIntPtr ProcessMemoryLimit, JobMemoryLimit, PeakProcessMemoryUsed, PeakJobMemoryUsed;
+  }
+  static IntPtr job = IntPtr.Zero;
+  public static bool Attach(int pid) {
+    if (job == IntPtr.Zero) {
+      job = CreateJobObject(IntPtr.Zero, null);
+      var info = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
+      info.BasicLimitInformation.LimitFlags = 0x2000;
+      int length = Marshal.SizeOf(typeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+      IntPtr ptr = Marshal.AllocHGlobal(length);
+      Marshal.StructureToPtr(info, ptr, false);
+      SetInformationJobObject(job, 9, ptr, (uint)length);
+      Marshal.FreeHGlobal(ptr);
+    }
+    try {
+      var p = Process.GetProcessById(pid);
+      return AssignProcessToJobObject(job, p.Handle);
+    } catch { return false; }
+  }
 }
 "@
 try { Add-Type -TypeDefinition $code -ErrorAction Stop } catch { }
@@ -128,6 +206,8 @@ try {
         cmd /c pause
         exit 1
     }
+    Repair-DotEnv (Join-Path $Backend ".env")
+    Repair-DotEnv (Join-Path $Root ".env")
 
     Write-Step "Force-stop leftover Atlas processes"
     & $StopScript -Root $Root -KeepDockerDesktop
@@ -173,6 +253,8 @@ try {
     New-Item -ItemType Directory -Force $logDir | Out-Null
     $apiOut = Join-Path $logDir "api.out.log"
     $apiErr = Join-Path $logDir "api.err.log"
+    Rotate-Log $apiOut
+    Rotate-Log $apiErr
 
     Write-Step "Checking Python venv"
     Write-Host "    $VenvPy"
@@ -199,6 +281,13 @@ try {
     }
     $script:ApiPid = $api.Id
     Write-Host ("    API pid {0}  logs {1}" -f $script:ApiPid, $apiErr)
+    try {
+        if ([AtlasJob]::Attach([int]$script:ApiPid)) {
+            Write-Host "    API will die when this window closes (Windows job)"
+        }
+    } catch {
+        Write-Host "    job attach skipped - Stop-All still runs on close"
+    }
     if (-not (Wait-Http "http://127.0.0.1:8000/health" 40)) {
         Write-Host "[WARN] API health not OK. Last log lines:" -ForegroundColor Yellow
         if (Test-Path $apiErr) { Get-Content $apiErr -Tail 20 }
@@ -231,7 +320,8 @@ try {
     while (-not $script:Stopped) {
         Start-Sleep -Seconds 3
         if ($script:ApiPid -and -not (Get-Process -Id $script:ApiPid -ErrorAction SilentlyContinue)) {
-            Write-Host "[warn] API process exited" -ForegroundColor Yellow
+            Write-Host "[warn] API process exited - shutting down" -ForegroundColor Yellow
+            break
         }
     }
 }
