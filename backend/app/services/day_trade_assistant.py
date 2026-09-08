@@ -1,6 +1,7 @@
-"""US equity day-trade coach — premarket PREPARE + open WAIT/TRIGGER/SKIP.
+"""Quality-dip coach for the equity watchlist. Manual only. Never places orders.
 
-Manual only. Never places orders.
+Replaces the old 0.3% scalp 'buy zone' (wrong pricing, 0.9 R:R, WAIT spam).
+Limits are 3 / 7 / 12 / 18% below last. Not a bottom call. No shorts.
 """
 
 from __future__ import annotations
@@ -13,10 +14,9 @@ from zoneinfo import ZoneInfo
 
 import yfinance as yf
 
-from app.alerts.discord import send_discord_alert
 from app.core.config import get_settings
 from app.core.logging import get_logger
-from app.core.redis import get_redis
+from app.investment.buy_prep import classify_buy_prep, format_quality_dip_alert
 
 logger = get_logger("day_trade")
 settings = get_settings()
@@ -27,34 +27,35 @@ ET = ZoneInfo("America/New_York")
 class DayPlan:
     symbol: str
     name: str = ""
-    phase: str = "CLOSED"  # PREMARKET | OPEN | MIDDAY | CLOSED
+    phase: str = "CLOSED"
     bias: str = "LONG"
-    action: str = "WAIT"  # PREPARE | TRIGGER | WAIT | SKIP
+    action: str = "WAIT"
+    stance: str = "WATCH"
     confidence: float = 0.0
     price: float = 0.0
     prior_close: float = 0.0
     gap_pct: float = 0.0
-    limit_low: float = 0.0
-    limit_high: float = 0.0
-    stop: float = 0.0
-    tp1: float = 0.0
-    tp2: float = 0.0
-    rr: float = 0.0
+    off_high: float = 0.0
+    bottom_risk: int = 0
+    quality_score: int = 0
+    trap: bool = False
+    ladder: list = field(default_factory=list)
     coach: str = ""
     reasons: list[str] = field(default_factory=list)
+    prep: dict = field(default_factory=dict)
+    snap: dict = field(default_factory=dict)
 
-    # aliases used by send_discord_alert(decision=...)
     @property
     def recommendation(self) -> str:
-        return self.action
+        return self.stance or self.action
 
     @property
     def score(self) -> float:
-        return self.confidence
+        return float(self.quality_score or self.confidence)
 
     @property
     def risk_score(self) -> float:
-        return 40.0
+        return float(self.bottom_risk or 40)
 
     @property
     def description(self) -> str:
@@ -73,16 +74,14 @@ def _session_phase(now: Optional[datetime] = None) -> str:
     t = now.time()
     if time(4, 0) <= t < time(9, 30):
         return "PREMARKET"
-    if time(9, 30) <= t < time(11, 30):
+    if time(9, 30) <= t < time(16, 0):
         return "OPEN"
-    if time(11, 30) <= t < time(16, 0):
-        return "MIDDAY"
     return "CLOSED"
 
 
 def _fetch_snapshot(symbol: str) -> dict[str, Any]:
     t = yf.Ticker(symbol)
-    info = {}
+    info: dict[str, Any] = {}
     try:
         info = t.info or {}
     except Exception:
@@ -90,10 +89,14 @@ def _fetch_snapshot(symbol: str) -> dict[str, Any]:
     hist = t.history(period="10d", interval="1d")
     prior_close = 0.0
     last = 0.0
+    r5 = None
     if hist is not None and len(hist) >= 2:
         prior_close = float(hist["Close"].iloc[-2])
         last = float(hist["Close"].iloc[-1])
-    # prefer live-ish
+        if len(hist) >= 6:
+            base = float(hist["Close"].iloc[-6])
+            if base > 0:
+                r5 = last / base - 1.0
     try:
         fast = t.history(period="1d", interval="1m")
         if fast is not None and len(fast):
@@ -104,151 +107,134 @@ def _fetch_snapshot(symbol: str) -> dict[str, Any]:
         last = float(info.get("currentPrice") or info.get("regularMarketPrice") or 0)
     if prior_close <= 0:
         prior_close = float(info.get("previousClose") or last)
+    high = float(info.get("fiftyTwoWeekHigh") or 0)
+    if high <= 0 and hist is not None and len(hist):
+        try:
+            high = float(hist["High"].max())
+        except Exception:
+            high = 0.0
     name = str(info.get("shortName") or info.get("longName") or symbol)
-    gap = ((last / prior_close) - 1.0) * 100.0 if prior_close > 0 else 0.0
+    gap = ((last / prior_close) - 1.0) if prior_close > 0 else 0.0
+    dd = ((high - last) / high) if high > last > 0 else 0.0
     return {
         "symbol": symbol,
         "name": name,
         "price": last,
         "prior_close": prior_close,
-        "gap_pct": gap,
+        "gap_pct": gap * 100.0,
+        "ret_1d": gap,
+        "ret_5d": r5,
+        "drawdown": dd,
+        "high_52w": high,
     }
 
 
+def _thesis_and_move(snap: dict[str, Any]) -> tuple[str, str]:
+    dd = float(snap.get("drawdown") or 0)
+    r1 = snap.get("ret_1d")
+    r1f = float(r1) if r1 is not None else 0.0
+    if dd >= 0.40 and r1f < 0:
+        th = "UNDER_PRESSURE"
+    elif dd >= 0.25 and r1f <= -0.04:
+        th = "UNDER_PRESSURE"
+    else:
+        th = "INTACT"
+    if r1f <= -0.04:
+        mv = "ELEVATED_SELLING"
+    elif r1f <= -0.015:
+        mv = "NORMAL_PULLBACK"
+    elif r1f >= 0.04:
+        mv = "NORMAL"
+    else:
+        mv = "NORMAL_PULLBACK" if dd >= 0.08 else "NORMAL"
+    return th, mv
+
+
 def _build_plan(snap: dict[str, Any], phase: str) -> DayPlan:
+    """Quality-dip plan. Never shorts. Never a 0.3% scalp zone."""
     symbol = snap["symbol"]
-    price = float(snap["price"])
-    prior = float(snap["prior_close"])
-    gap = float(snap["gap_pct"])
-    name = snap.get("name") or symbol
-
-    gap_long = float(getattr(settings, "day_trade_gap_long_pct", 1.5))
-    gap_short = float(getattr(settings, "day_trade_gap_short_pct", 2.0))
-
-    # Default long bias on gap-down quality names
-    bias = "LONG"
-    action = "WAIT"
-    conf = 50.0
-    reasons: list[str] = []
-
-    if gap <= -gap_long:
-        bias = "LONG"
-        conf = min(78.0, 55.0 + abs(gap) * 3.0)
-        reasons.append(f"Gap/session down {gap:.2f}% vs prior close")
-    elif gap >= gap_short:
-        bias = "SHORT"
-        conf = min(72.0, 52.0 + abs(gap) * 2.5)
-        reasons.append(f"Gap/session up {gap:.2f}% vs prior close")
-    else:
-        action = "SKIP"
-        conf = 40.0
-        reasons.append(f"Gap {gap:.2f}% too small — no day plan")
-
-    # Levels (ATR proxy ~0.8% of price)
-    atr = max(price * 0.008, 0.05)
-    if bias == "LONG":
-        limit_high = price * 0.998
-        limit_low = price - atr * 0.6
-        stop = limit_low - atr * 0.5
-        tp1 = price + atr * 1.0
-        tp2 = prior if prior > price else price + atr * 2.5
-    else:
-        limit_low = price * 1.002
-        limit_high = price + atr * 0.6
-        stop = limit_high + atr * 0.5
-        tp1 = price - atr * 1.0
-        tp2 = prior if prior < price else price - atr * 2.5
-
-    risk = abs(price - stop) or 1e-9
-    reward = abs(tp1 - price)
-    rr = reward / risk
-
-    if action != "SKIP":
-        if phase == "PREMARKET":
-            action = "PREPARE"
-            coach = (
-                f"Do not buy yet. Premarket only. Watch **{symbol}** at **${price:.2f}**. "
-                f"If the open sells into **${limit_low:.2f}–${limit_high:.2f}** and holds above "
-                f"**${stop:.2f}**, then consider a starter. Otherwise stand down. "
-                f"You place every order. Atlas does not execute."
-            )
-        elif phase == "OPEN":
-            # distance to zone
-            if bias == "LONG":
-                if limit_low <= price <= limit_high:
-                    action = "TRIGGER"
-                    conf = min(85.0, conf + 8)
-                    coach = (
-                        f"**TRIGGER** — {symbol} **${price:.2f}** is in the buy zone "
-                        f"(${limit_low:.2f}–${limit_high:.2f}). Starter only. Stop **${stop:.2f}**. "
-                        f"TP1 **${tp1:.2f}** · TP2 **${tp2:.2f}**. You place every order."
-                    )
-                elif price > limit_high:
-                    action = "WAIT"
-                    coach = (
-                        f"**WAIT** — {symbol} **${price:.2f}** is above the buy zone "
-                        f"(${limit_low:.2f}–${limit_high:.2f}). Let it come to you or skip. "
-                        f"No market chase."
-                    )
-                else:
-                    action = "WAIT"
-                    coach = (
-                        f"**WAIT** — {symbol} **${price:.2f}** below zone; watch for reclaim of "
-                        f"${limit_low:.2f} or stand down if under stop **${stop:.2f}**."
-                    )
-            else:
-                if limit_low <= price <= limit_high:
-                    action = "TRIGGER"
-                    conf = min(82.0, conf + 6)
-                    coach = (
-                        f"**TRIGGER SHORT** — {symbol} **${price:.2f}** in zone. "
-                        f"Stop **${stop:.2f}**. TP1 **${tp1:.2f}**. Manual only."
-                    )
-                else:
-                    action = "WAIT"
-                    coach = (
-                        f"**WAIT** — {symbol} **${price:.2f}** not in short zone "
-                        f"(${limit_low:.2f}–${limit_high:.2f})."
-                    )
-        else:
-            action = "SKIP"
-            coach = f"Midday/late — no new day entries for {symbol} at ${price:.2f}."
-    else:
-        coach = f"Skip {symbol} today — gap {gap:.2f}% not actionable."
+    price = float(snap["price"] or 0)
+    th, mv = _thesis_and_move(snap)
+    prep = classify_buy_prep(
+        thesis=th,
+        move_class=mv,
+        investment_class="NO_ACTION",
+        drawdown=snap.get("drawdown") or 0.0,
+        ret_1d=snap.get("ret_1d"),
+        ret_5d=snap.get("ret_5d"),
+        price=price,
+    )
+    stance = str(prep.get("stance") or "WATCH")
+    action = str(prep.get("action") or "WATCH")
+    ladder = prep.get("ladder") or []
+    t1 = ladder[0]["limit"] if ladder else None
+    coach = str(prep.get("reason") or "")
+    if stance == "SCALE_SMALL" and t1:
+        coach = (
+            f"SCALE IN — {symbol} ${price:.2f}. First limit ${t1:,.2f} (3% below last). "
+            f"Then 7 / 12 / 18% if it keeps falling. Not a bottom. You place the order."
+        )
+    elif stance == "WAIT_CHEAPER" and t1:
+        coach = (
+            f"WAIT — {symbol} ${price:.2f} is not a buy-the-ask. "
+            f"Still-falling {prep.get('bottom_risk')}/100. Park T1 at ${t1:,.2f} or skip. "
+            f"Do not chase."
+        )
+    elif stance == "DO_NOT_BUY":
+        coach = f"DO NOT BUY {symbol} — thesis/trap. Cancel any working limits."
 
     return DayPlan(
         symbol=symbol,
-        name=name,
+        name=str(snap.get("name") or symbol),
         phase=phase,
-        bias=bias,
+        bias="LONG",
         action=action,
-        confidence=round(conf, 1),
+        stance=stance,
+        confidence=float(prep.get("quality_score") or 0),
         price=round(price, 4),
-        prior_close=round(prior, 4),
-        gap_pct=round(gap, 2),
-        limit_low=round(min(limit_low, limit_high), 4),
-        limit_high=round(max(limit_low, limit_high), 4),
-        stop=round(stop, 4),
-        tp1=round(tp1, 4),
-        tp2=round(tp2, 4),
-        rr=round(rr, 2),
+        prior_close=round(float(snap.get("prior_close") or 0), 4),
+        gap_pct=round(float(snap.get("gap_pct") or 0), 2),
+        off_high=round(float(snap.get("drawdown") or 0) * 100.0, 1),
+        bottom_risk=int(prep.get("bottom_risk") or 0),
+        quality_score=int(prep.get("quality_score") or 0),
+        trap=bool(prep.get("trap")),
+        ladder=ladder,
         coach=coach,
-        reasons=reasons,
+        reasons=[th, mv, coach],
+        prep=prep,
+        snap=snap,
     )
 
 
 def _plan_embed_text(plan: DayPlan) -> str:
-    return (
-        f"**{plan.symbol}** — {plan.name}\n"
-        f"**Live price: ${plan.price:.2f}**\n"
-        f"Call: **{plan.action}** · Bias: **{plan.bias}** · Phase: **{plan.phase}**\n"
-        f"Confidence: **{plan.confidence:.0f}/100** · R:R (TP1): **{plan.rr:.1f}**\n"
-        f"Prior close: ${plan.prior_close:.2f} · Gap: **{plan.gap_pct:+.2f}%**\n"
-        f"Limit zone: **${plan.limit_low:.2f} – ${plan.limit_high:.2f}**\n"
-        f"Stop: **${plan.stop:.2f}**\n"
-        f"TP1: **${plan.tp1:.2f}** · TP2: **${plan.tp2:.2f}**\n\n"
-        f"**Coach:** {plan.coach}"
-    )
+    row = {
+        "symbol": plan.symbol,
+        "name": plan.name,
+        "price": plan.price,
+        "pct_from_high": plan.off_high,
+        "ret_1d": plan.snap.get("ret_1d"),
+        "ret_5d": plan.snap.get("ret_5d"),
+        "thesis": (plan.reasons[0] if plan.reasons else "INTACT"),
+        "classification": (plan.reasons[1] if len(plan.reasons) > 1 else ""),
+    }
+    return format_quality_dip_alert(row, plan.prep)
+
+
+def _digest_text(plans: list[DayPlan]) -> str:
+    lines = [
+        "ATLAS QUALITY DIP — WAIT cheaper (digest)",
+        "Not a bottom. Limits are 3/7/12/18% below last. You place any order.",
+        "",
+    ]
+    for p in plans:
+        t1 = p.ladder[0]["limit"] if p.ladder else None
+        t1s = f"${t1:,.2f}" if t1 else "—"
+        lines.append(
+            f"• {p.symbol} ${p.price:,.2f}  off-high {p.off_high:.0f}%  "
+            f"falling {p.bottom_risk}/100  T1 {t1s}  {p.stance}"
+        )
+    lines += ["", "Do not buy the ask on WAIT_CHEAPER names. Not financial advice."]
+    return "\n".join(lines)
 
 
 class DayTradeAssistant:
@@ -264,7 +250,7 @@ class DayTradeAssistant:
             return
         self._running = True
         self._task = asyncio.create_task(self._loop())
-        logger.info("Day trade assistant started", symbols=_watchlist())
+        logger.info("Day trade assistant started (quality-dip ladder)", symbols=_watchlist())
 
     async def stop(self) -> None:
         self._running = False
@@ -277,31 +263,26 @@ class DayTradeAssistant:
         logger.info("Day trade assistant stopped")
 
     async def _loop(self) -> None:
-        await asyncio.sleep(5)
-        interval = float(getattr(settings, "day_trade_scan_seconds", 60))
+        await asyncio.sleep(8)
+        interval = float(getattr(settings, "day_trade_scan_seconds", 300) or 300)
         while self._running:
             try:
                 await self._scan()
             except Exception as e:
                 logger.error("Day trade scan failed", error=str(e))
-            await asyncio.sleep(max(30.0, interval))
+            await asyncio.sleep(max(120.0, interval))
 
-    async def _cooldown_ok(self, symbol: str, action: str) -> bool:
-        redis = await get_redis()
-        day = datetime.now(ET).strftime("%Y-%m-%d")
-        # One PREPARE per symbol per day; TRIGGER/WAIT use shorter cooldown
-        if action == "PREPARE":
-            key = f"atlas:daytrade:prepare:{day}:{symbol}"
+    async def _cooldown_ok(self, key: str, hours: float) -> bool:
+        try:
+            from app.core.redis import get_redis
+
+            redis = await get_redis()
             if await redis.get(key):
                 return False
-            await redis.set(key, "1", ex=86400)
+            await redis.set(key, "1", ex=int(max(1.0, hours) * 3600))
             return True
-        mins = int(getattr(settings, "day_trade_alert_cooldown_minutes", 15))
-        key = f"atlas:daytrade:alert:{symbol}:{action}"
-        if await redis.get(key):
-            return False
-        await redis.set(key, "1", ex=max(60, mins * 60))
-        return True
+        except Exception:
+            return True
 
     async def _scan(self) -> None:
         phase = _session_phase()
@@ -313,39 +294,74 @@ class DayTradeAssistant:
         if not symbols:
             return
 
+        scale: list[DayPlan] = []
+        wait: list[DayPlan] = []
+        stand: list[DayPlan] = []
         for symbol in symbols:
             try:
                 snap = await asyncio.to_thread(_fetch_snapshot, symbol)
-                if snap["price"] <= 0:
+                if float(snap.get("price") or 0) <= 0:
                     continue
                 plan = _build_plan(snap, phase)
-                if plan.action == "SKIP":
-                    continue
-                # Premarket: only PREPARE once; Open: WAIT/TRIGGER with cooldown
-                if phase == "PREMARKET" and plan.action != "PREPARE":
-                    continue
-                if phase == "MIDDAY" and plan.action != "TRIGGER":
-                    continue
-                if not await self._cooldown_ok(symbol, plan.action):
-                    continue
-
-                title = f"{plan.symbol} ${plan.price:.2f} · {plan.action}"
-                description = _plan_embed_text(plan)
-
-                # Keyword-style call (always safe)
-                await send_discord_alert(
-                    symbol=plan.symbol,
-                    title=title,
-                    description=description,
-                    price=plan.price,
-                    severity="HIGH" if plan.action == "TRIGGER" else "MEDIUM",
-                    opportunity=plan.confidence,
-                    confidence=plan.confidence,
-                    risk=40,
-                    decision=plan,
-                )
+                if plan.stance == "SCALE_SMALL":
+                    scale.append(plan)
+                elif plan.stance == "WAIT_CHEAPER":
+                    wait.append(plan)
+                elif plan.stance == "DO_NOT_BUY":
+                    stand.append(plan)
             except Exception as e:
                 logger.warning("Day trade symbol error", symbol=symbol, error=str(e))
+
+        hours = float(getattr(settings, "day_trade_alert_cooldown_minutes", 720) or 720) / 60.0
+        hours = max(6.0, hours)
+        from app.alerts.discord import send_discord_alert
+
+        for plan in scale:
+            key = f"atlas:dip:scale:{plan.symbol}"
+            if not await self._cooldown_ok(key, hours):
+                continue
+            await send_discord_alert(
+                symbol=plan.symbol,
+                title=f"ATLAS QUALITY DIP — SCALE · {plan.symbol} ${plan.price:.2f}",
+                description=_plan_embed_text(plan)[:1900],
+                price=plan.price,
+                severity="HIGH",
+                opportunity=plan.quality_score,
+                confidence=plan.quality_score,
+                risk=min(90, plan.bottom_risk),
+                decision=plan,
+            )
+
+        if wait:
+            day = datetime.now(ET).strftime("%Y-%m-%d")
+            if await self._cooldown_ok(f"atlas:dip:waitdigest:{day}", hours):
+                wait.sort(key=lambda p: -p.bottom_risk)
+                await send_discord_alert(
+                    symbol="DIP",
+                    title=f"ATLAS QUALITY DIP — WAIT cheaper · {len(wait)} names",
+                    description=_digest_text(wait)[:1900],
+                    price=0,
+                    severity="MEDIUM",
+                    opportunity=40,
+                    confidence=40,
+                    risk=55,
+                )
+
+        for plan in stand:
+            key = f"atlas:dip:stand:{plan.symbol}"
+            if not await self._cooldown_ok(key, max(12.0, hours)):
+                continue
+            await send_discord_alert(
+                symbol=plan.symbol,
+                title=f"ATLAS QUALITY DIP — DO NOT BUY · {plan.symbol}",
+                description=_plan_embed_text(plan)[:1900],
+                price=plan.price,
+                severity="HIGH",
+                opportunity=10,
+                confidence=plan.quality_score,
+                risk=90,
+                decision=plan,
+            )
 
 
 day_trade_assistant = DayTradeAssistant()

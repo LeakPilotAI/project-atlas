@@ -137,8 +137,8 @@ class Settings(BaseSettings):
     )
     day_trade_gap_long_pct: float = 1.5
     day_trade_gap_short_pct: float = 2.0
-    day_trade_scan_seconds: float = 60.0
-    day_trade_alert_cooldown_minutes: float = 15.0
+    day_trade_scan_seconds: float = 300.0
+    day_trade_alert_cooldown_minutes: float = 720.0
 
     # --- Robinhood / command center ---
     robinhood_brief_enabled: bool = True

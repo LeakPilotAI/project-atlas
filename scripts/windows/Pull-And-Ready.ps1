@@ -78,6 +78,8 @@ $keys = @{
     PERP_MICRO_MANAGE_SECONDS = "8"
     QUALITY_DIP_DISCORD_ENABLED = "true"
     INVESTMENT_SCAN_ENABLED = "true"
+    DAY_TRADE_ALERT_COOLDOWN_MINUTES = "720"
+    DAY_TRADE_SCAN_SECONDS = "300"
 }
 foreach ($envPath in @(
     (Join-Path $Root "backend\.env"),
