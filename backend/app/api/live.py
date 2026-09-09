@@ -163,6 +163,7 @@ async def live() -> Dict[str, Any]:
             "min_volume": cfg.get("min_volume", settings.perp_micro_min_vol),
             "max_open": cfg.get("max_open", settings.effective_max_open),
             "max_open_unlimited": bool(cfg.get("max_open_unlimited", int(settings.perp_micro_max_open) <= 0)),
+            "htf_align": bool(getattr(settings, "perp_micro_htf_align", True)),
         },
         "funnel_24h": h24,
         "why_no_trade": why,

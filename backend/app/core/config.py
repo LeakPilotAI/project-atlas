@@ -96,6 +96,8 @@ class Settings(BaseSettings):
     perp_micro_lock_after_r: float = 0.5
     perp_micro_lock_r: float = 0.2
     perp_micro_manage_seconds: float = 8.0
+    # 1h SMA filter: only paper pullbacks WITH the hour. Do not fade 1h trend.
+    perp_micro_htf_align: bool = True
     perp_micro_prefer_majors: bool = True
     perp_micro_block_meme_for_live_stats: bool = True
     perp_micro_live_min_trades: int = 50

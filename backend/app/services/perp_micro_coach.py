@@ -56,6 +56,27 @@ def _sma(xs: List[float], n: int) -> Optional[float]:
     return sum(xs[-n:]) / n
 
 
+def _trend_from_closes(closes: List[float]) -> str:
+    """1h close vs SMA20. FLAT = no paper (don't fade a chop)."""
+    sma = _sma(closes, 20)
+    if sma is None or sma <= 0 or not closes:
+        return "FLAT"
+    last = float(closes[-1])
+    if last > sma * 1.002:
+        return "UP"
+    if last < sma * 0.998:
+        return "DOWN"
+    return "FLAT"
+
+
+def htf_allows_side(side: str, trend: str) -> bool:
+    if side == "LONG":
+        return trend == "UP"
+    if side == "SHORT":
+        return trend == "DOWN"
+    return False
+
+
 def _ema(xs: List[float], n: int) -> Optional[float]:
     if len(xs) < n:
         return None
@@ -158,6 +179,7 @@ class PerpMicroCoach:
         self._vol_map: Dict[str, float] = {}
         self._oi_map: Dict[str, float] = {}
         self.last_major_tape: Dict[str, Dict[str, Any]] = {}
+        self._htf_cache: Dict[str, Tuple[float, str]] = {}
 
     @property
     def running(self) -> bool:
@@ -559,19 +581,20 @@ class PerpMicroCoach:
             log.warning("cache ticker path failed", error=str(e)[:200])
         return []
 
-    async def _fetch_closes(self, symbol: str, n: int = 48) -> List[float]:
+    async def _fetch_closes(self, symbol: str, n: int = 48, interval: str = "5m") -> List[float]:
         client = self._http or httpx.AsyncClient(timeout=25.0)
         owned = self._http is None
         try:
             end_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
-            start_ms = end_ms - n * 5 * 60 * 1000
+            bar_ms = 5 * 60 * 1000 if interval == "5m" else 60 * 60 * 1000
+            start_ms = end_ms - n * bar_ms
             r = await client.post(
                 HL_INFO_URL,
                 json={
                     "type": "candleSnapshot",
                     "req": {
                         "coin": symbol,
-                        "interval": "5m",
+                        "interval": interval,
                         "startTime": start_ms,
                         "endTime": end_ms,
                     },
@@ -597,6 +620,16 @@ class PerpMicroCoach:
                     await client.aclose()
                 except Exception:
                     pass
+
+    async def htf_trend(self, symbol: str) -> str:
+        now = datetime.now(timezone.utc).timestamp()
+        hit = self._htf_cache.get(symbol)
+        if hit and now - float(hit[0]) < 900:
+            return str(hit[1])
+        closes = await self._fetch_closes(symbol, 48, interval="1h")
+        trend = _trend_from_closes(closes)
+        self._htf_cache[symbol] = (now, trend)
+        return trend
 
     def _build_liquid(self, tickers: List[Any]) -> List[str]:
         settings = get_settings()
@@ -951,6 +984,22 @@ class PerpMicroCoach:
             return False
         paper_pipeline.inc("rsi_extreme")
         paper_pipeline.inc("long_candidates" if side == "LONG" else "short_candidates")
+        if bool(getattr(settings, "perp_micro_htf_align", True)):
+            trend = await self.htf_trend(symbol)
+            if not htf_allows_side(side, trend):
+                paper_pipeline.inc_reject("TREND_ALIGN")
+                await paper_journal.log_candidate(
+                    symbol=symbol,
+                    side=side,
+                    taken=False,
+                    signal_price=price,
+                    score=0.0,
+                    regime=f"rsi={rsi:.1f}",
+                    features={"rsi": rsi, "htf": trend},
+                    reject_reason=f"1h trend {trend} blocks {side}",
+                    strategy="rsi_extension_v1",
+                )
+                return False
 
         ok, qscore, reason = self._setup_quality(
             symbol, side, price, closes, rsi, sma20, ext_pct

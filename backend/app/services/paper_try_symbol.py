@@ -12,6 +12,7 @@ from app.services.perp_micro_coach import (
     _rsi,
     _sma,
     _tier,
+    htf_allows_side,
 )
 
 
@@ -191,6 +192,36 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
         return False
     paper_pipeline.inc("rsi_extreme")
     paper_pipeline.inc("long_candidates" if side == "LONG" else "short_candidates")
+
+    if bool(getattr(settings, "perp_micro_htf_align", True)):
+        trend = await self.htf_trend(symbol)
+        if not htf_allows_side(side, trend):
+            paper_pipeline.inc_reject("TREND_ALIGN")
+            await paper_journal.log_candidate(
+                symbol=symbol,
+                side=side,
+                taken=False,
+                signal_price=price,
+                score=float(rsi),
+                regime=f"rsi={rsi:.1f}",
+                features={"rsi": rsi, "htf": trend, "ext_pct": ext_pct},
+                reject_reason=f"1h trend {trend} blocks {side}",
+                strategy="rsi_extension_v1",
+            )
+            shadow_research.record_evaluation(
+                symbol=symbol,
+                side=side,
+                mark_price=price,
+                score=float(rsi),
+                required_score=float(settings.perp_micro_rsi_long),
+                qualified=False,
+                failed_gates=["trend_align"],
+                features={"rsi": rsi, "ext_pct": ext_pct, "htf": trend},
+                regime=regime_norm,
+                rejection_stage="trend",
+                regime_normalized=regime_norm,
+            )
+            return False
 
     ok, qscore, reason = self._setup_quality(
         symbol, side, price, closes, rsi, sma20, ext_pct

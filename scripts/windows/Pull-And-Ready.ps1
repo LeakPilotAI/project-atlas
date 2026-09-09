@@ -81,6 +81,7 @@ $keys = @{
     DAY_TRADE_ALERT_COOLDOWN_MINUTES = "720"
     DAY_TRADE_SCAN_SECONDS = "90"
     DAY_TRADE_ENABLED = "true"
+    PERP_MICRO_HTF_ALIGN = "true"
 }
 foreach ($envPath in @(
     (Join-Path $Root "backend\.env"),
