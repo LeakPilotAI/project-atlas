@@ -164,6 +164,7 @@ async def live() -> Dict[str, Any]:
             "max_open": cfg.get("max_open", settings.effective_max_open),
             "max_open_unlimited": bool(cfg.get("max_open_unlimited", int(settings.perp_micro_max_open) <= 0)),
             "htf_align": bool(getattr(settings, "perp_micro_htf_align", True)),
+            "max_extension_pct": float(getattr(settings, "perp_micro_max_extension_pct", 3.5)),
         },
         "funnel_24h": h24,
         "why_no_trade": why,

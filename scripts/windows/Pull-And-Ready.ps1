@@ -82,6 +82,7 @@ $keys = @{
     DAY_TRADE_SCAN_SECONDS = "90"
     DAY_TRADE_ENABLED = "true"
     PERP_MICRO_HTF_ALIGN = "true"
+    PERP_MICRO_MAX_EXTENSION_PCT = "3.5"
 }
 foreach ($envPath in @(
     (Join-Path $Root "backend\.env"),

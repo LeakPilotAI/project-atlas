@@ -70,7 +70,8 @@ def _trend_from_closes(closes: List[float]) -> str:
 
 
 def htf_allows_side(side: str, trend: str) -> bool:
-    if trend in ("UNKNOWN", "OFF"):
+    # Chop/unknown: 5m mean-rev is allowed. Only block fading a *directional* 1h.
+    if trend in ("UNKNOWN", "OFF", "FLAT"):
         return True
     if side == "LONG":
         return trend == "UP"
@@ -874,7 +875,7 @@ class PerpMicroCoach:
                     pass
                 continue
             cd = self._cooldowns.get(sym)
-            if cd and (now - cd).total_seconds() < 5400:
+            if cd and (now - cd).total_seconds() < 1800:
                 try:
                     from app.services.paper_pipeline import paper_pipeline
 
@@ -962,6 +963,10 @@ class PerpMicroCoach:
                 regime=f"rsi={rsi:.1f}",
                 notes="pre-side filter",
             )
+            return False
+        max_ext = float(getattr(settings, "perp_micro_max_extension_pct", 3.5) or 3.5)
+        if ext_pct > max_ext:
+            paper_pipeline.inc_reject("EXTENSION_KNIFE")
             return False
         paper_pipeline.inc("extension_pass")
 

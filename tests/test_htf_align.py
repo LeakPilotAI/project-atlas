@@ -17,11 +17,11 @@ def test_downtrend_allows_short_blocks_long():
     assert htf_allows_side("LONG", "DOWN") is False
 
 
-def test_chop_is_flat_and_blocks_both():
+def test_chop_is_flat_and_still_allows_mean_rev():
     closes = [100, 100.1, 99.9, 100.05, 99.95] * 6
     assert _trend_from_closes(closes) == "FLAT"
-    assert htf_allows_side("LONG", "FLAT") is False
-    assert htf_allows_side("SHORT", "FLAT") is False
+    assert htf_allows_side("LONG", "FLAT") is True
+    assert htf_allows_side("SHORT", "FLAT") is True
 
 
 def test_missing_htf_data_does_not_freeze_paper():

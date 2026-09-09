@@ -301,14 +301,14 @@ try {
     if (-not (Test-Path $dash)) {
         Write-Host "[WARN] dashboard.html missing - git pull origin main" -ForegroundColor Yellow
     }
-    Start-Process "http://127.0.0.1:8000/dashboard?v=desk-v6"
-    Write-Host "    Dashboard: http://127.0.0.1:8000/dashboard?v=desk-v6"
+    Start-Process "http://127.0.0.1:8000/dashboard?v=desk-v7"
+    Write-Host "    Dashboard: http://127.0.0.1:8000/dashboard?v=desk-v7"
     Write-Host "    (no Node/Next - served by the API)"
 
     Write-Host ""
     Write-Host "----------------------------------------" -ForegroundColor Green
     Write-Host " Atlas is running" -ForegroundColor Green
-    Write-Host " Dashboard:  http://127.0.0.1:8000/dashboard?v=desk-v6"
+    Write-Host " Dashboard:  http://127.0.0.1:8000/dashboard?v=desk-v7"
     Write-Host " API:        http://127.0.0.1:8000/health"
     Write-Host ""
     Write-Host " Keep this window open."

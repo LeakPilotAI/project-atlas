@@ -85,6 +85,8 @@ class Settings(BaseSettings):
     perp_micro_rsi_long: float = 28.0
     perp_micro_rsi_short: float = 72.0
     perp_micro_min_extension_pct: float = 1.4
+    # Don't fade a 5m runaway. Knives were the "terrible" book.
+    perp_micro_max_extension_pct: float = 3.5
     perp_micro_scan_seconds: float = 60.0
     perp_micro_min_rr: float = 1.8
     # EXIT (paper management). Does not change entry RSI/ext/min R:R.
@@ -96,7 +98,7 @@ class Settings(BaseSettings):
     perp_micro_lock_after_r: float = 0.5
     perp_micro_lock_r: float = 0.2
     perp_micro_manage_seconds: float = 8.0
-    # 1h SMA filter: only paper pullbacks WITH the hour. Do not fade 1h trend.
+    # 1h SMA: block fading UP/DOWN. Chop (FLAT) is allowed so the book actually trades.
     perp_micro_htf_align: bool = True
     perp_micro_prefer_majors: bool = True
     perp_micro_block_meme_for_live_stats: bool = True

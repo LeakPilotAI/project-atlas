@@ -158,6 +158,24 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             notes="pre-side filter",
         )
         return False
+    max_ext = float(getattr(settings, "perp_micro_max_extension_pct", 3.5) or 3.5)
+    if ext_pct > max_ext:
+        paper_pipeline.inc_reject("EXTENSION_KNIFE")
+        shadow_research.record_evaluation(
+            symbol=symbol,
+            side=None,
+            mark_price=price,
+            score=0.0,
+            required_score=62.0,
+            qualified=False,
+            failed_gates=["extension_knife"],
+            features={"ext_pct": ext_pct, "sma20": sma20, "rsi": rsi},
+            regime=regime_norm,
+            rejection_stage="extension",
+            regime_normalized=regime_norm,
+            notes="too extended to fade",
+        )
+        return False
     paper_pipeline.inc("extension_pass")
 
     side: Optional[str] = None
