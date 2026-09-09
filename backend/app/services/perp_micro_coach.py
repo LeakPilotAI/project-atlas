@@ -57,10 +57,10 @@ def _sma(xs: List[float], n: int) -> Optional[float]:
 
 
 def _trend_from_closes(closes: List[float]) -> str:
-    """1h close vs SMA20. FLAT = no paper (don't fade a chop)."""
+    """1h close vs SMA20. UNKNOWN = no HTF data (do not freeze paper)."""
     sma = _sma(closes, 20)
-    if sma is None or sma <= 0 or not closes:
-        return "FLAT"
+    if sma is None or sma <= 0 or not closes or len(closes) < 20:
+        return "UNKNOWN"
     last = float(closes[-1])
     if last > sma * 1.002:
         return "UP"
@@ -70,6 +70,8 @@ def _trend_from_closes(closes: List[float]) -> str:
 
 
 def htf_allows_side(side: str, trend: str) -> bool:
+    if trend in ("UNKNOWN", "OFF"):
+        return True
     if side == "LONG":
         return trend == "UP"
     if side == "SHORT":

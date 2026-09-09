@@ -22,3 +22,10 @@ def test_chop_is_flat_and_blocks_both():
     assert _trend_from_closes(closes) == "FLAT"
     assert htf_allows_side("LONG", "FLAT") is False
     assert htf_allows_side("SHORT", "FLAT") is False
+
+
+def test_missing_htf_data_does_not_freeze_paper():
+    assert _trend_from_closes([]) == "UNKNOWN"
+    assert _trend_from_closes([100.0] * 10) == "UNKNOWN"
+    assert htf_allows_side("LONG", "UNKNOWN") is True
+    assert htf_allows_side("SHORT", "UNKNOWN") is True
