@@ -341,8 +341,6 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
         )
         return False
     paper_pipeline.inc("rr_pass")
-    paper_pipeline.inc("qualified")
-    paper_pipeline.last_qualified_at = datetime.now(timezone.utc).isoformat()
 
     if tier in ("junk", "meme"):
         paper_pipeline.inc_reject("TIER")
@@ -363,8 +361,8 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             mark_price=price,
             score=qscore,
             required_score=min_score,
-            qualified=True,
-            failed_gates=[],
+            qualified=False,
+            failed_gates=["tier"],
             features={"rsi": rsi, "ext_pct": ext_pct, "tier": tier},
             regime=regime_norm,
             rejection_stage="tier",
@@ -372,10 +370,12 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
             stop=stop,
             tp1=tp1,
             tp2=tp2,
-            notes=f"qualified but {tier} not paper",
+            notes=f"{tier} not paper",
         )
         return False
 
+    paper_pipeline.inc("qualified")
+    paper_pipeline.last_qualified_at = datetime.now(timezone.utc).isoformat()
     paper_pipeline.inc("paper_open_attempted")
 
     scalp_on = bool(getattr(settings, "perp_micro_scalp_enabled", True))

@@ -1131,8 +1131,6 @@ class PerpMicroCoach:
             )
             return False
         paper_pipeline.inc("rr_pass")
-        paper_pipeline.inc("qualified")
-        paper_pipeline.last_qualified_at = datetime.now(timezone.utc).isoformat()
         if tier in ("junk", "meme"):
             paper_pipeline.inc_reject("TIER")
             await paper_journal.log_candidate(
@@ -1147,6 +1145,8 @@ class PerpMicroCoach:
                 strategy="rsi_extension_v1",
             )
             return False
+        paper_pipeline.inc("qualified")
+        paper_pipeline.last_qualified_at = datetime.now(timezone.utc).isoformat()
         paper_pipeline.inc("paper_open_attempted")
 
         counts_for_live = tier in ("major", "alt")
