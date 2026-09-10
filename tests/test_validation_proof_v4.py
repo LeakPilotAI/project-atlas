@@ -60,6 +60,15 @@ def test_validation_proof_exposes_quality_dips_historical_analysis():
         "symbol": "MSFT",
         "as_of": "2026-09-09T12:00:00+00:00",
         "classification": "ACCUMULATION",
+        "known_at": {
+            "history_cutoff": "2026-09-09",
+            "price_effective": "2026-09-09T11:59:00+00:00",
+            "price_retrieved": "2026-09-09T12:00:00+00:00",
+            "fundamentals_retrieved": "2026-09-09T12:00:00+00:00",
+            "valuation_retrieved": "2026-09-09T12:00:00+00:00",
+        },
+        "outcomes": {"return_1d": None, "return_5d": None, "return_20d": None, "return_60d": None, "return_252d": None},
+        "classification": "ACCUMULATION",
         "research": {"opportunity_score": 80, "evidence_quality": "HIGH", "thesis": "INTACT"},
     }]
     outcomes = [{"observation_id": "o1", "symbol": "MSFT", "return_20d": 0.12, "enriched_at": "2026-09-10T12:00:00+00:00"}]
