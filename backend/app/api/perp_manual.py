@@ -4,15 +4,32 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.services.perp_alert_delivery import perp_alert_delivery_service
 from app.services.perp_manual_service import perp_manual_service
 from app.trading_core.perp_board import build_perp_board
 
 router = APIRouter(prefix="/api/perps", tags=["manual-perps"])
 
 
+@router.on_event("startup")
+async def start_manual_perp_alert_delivery() -> None:
+    await perp_alert_delivery_service.start()
+
+
+@router.on_event("shutdown")
+async def stop_manual_perp_alert_delivery() -> None:
+    await perp_alert_delivery_service.stop()
+
+
 @router.get("/manual")
 async def manual_perps() -> Dict[str, Any]:
-    return perp_manual_service.snapshot()
+    snapshot = perp_manual_service.snapshot()
+    snapshot["alert_delivery"] = {
+        "running": perp_alert_delivery_service.running,
+        "last_result": dict(perp_alert_delivery_service.last_result),
+        "last_error": perp_alert_delivery_service.last_error,
+    }
+    return snapshot
 
 
 @router.get("/manual/board")
@@ -27,6 +44,7 @@ async def manual_perp_board(limit: int = Query(8, ge=1, le=25)) -> Dict[str, Any
         "board": board,
         "count": len(board),
         "alert_count": sum(1 for row in board if bool(row.get("alert_eligible"))),
+        "alert_delivery_running": perp_alert_delivery_service.running,
         "note": "Manual guidance only. Atlas does not place Hyperliquid orders.",
     }
 
