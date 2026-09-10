@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse
 from app.adapters.hyperliquid import HyperliquidAdapter
 from app.adapters.registry import registry
 from app.alerts.discord import is_discord_ready, start_discord_bot, stop_discord_bot
+from app.api.command_center import router as command_center_router
 from app.api.diagnostics import router as diagnostics_router
 from app.api.live import router as live_router
 from app.api.perp_manual import router as perp_manual_router
@@ -274,6 +275,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(command_center_router)
 app.include_router(diagnostics_router)
 app.include_router(performance_router)
 app.include_router(live_router)
@@ -388,6 +390,7 @@ async def root() -> Dict[str, str]:
         "dashboard_perps": "/dashboard/perps",
         "dashboard_quality_dips": "/api/investments/quality-dips/view",
         "dashboard_legacy": "/dashboard/legacy",
+        "command_center_summary": "/api/command-center/summary",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
         "funnel": "/api/funnel",
