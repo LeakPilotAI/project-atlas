@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 from statistics import mean, median
 from typing import Any, Iterable
 
+from app.investment.integrity import is_validation_eligible
+
 HORIZONS = ("1d", "5d", "20d", "60d", "252d")
 ACTIONABLE = {"ACCUMULATION", "DEEP_VALUE", "GENERATIONAL_OPPORTUNITY", "ACCUMULATE"}
 
@@ -94,9 +96,15 @@ def build_historical_validation(
     now: datetime | None = None,
     stale_after_hours: float = 36.0,
 ) -> dict[str, Any]:
-    """Join observations to future outcomes and report descriptive predictive evidence."""
+    """Join only point-in-time-safe observations to future outcomes.
+
+    Unsafe/missing-lineage rows stay in the append-only corpus for auditability but
+    are quarantined from all return, score, classification, evidence, and thesis stats.
+    """
     now = now or datetime.now(timezone.utc)
-    obs_rows = [r for r in observations if isinstance(r, dict)]
+    all_obs_rows = [r for r in observations if isinstance(r, dict)]
+    obs_rows = [r for r in all_obs_rows if is_validation_eligible(r)]
+    quarantined = len(all_obs_rows) - len(obs_rows)
     outcome_map = _latest_outcomes(outcomes)
     joined: list[tuple[dict[str, Any], dict[str, Any]]] = []
     for obs in obs_rows:
@@ -160,7 +168,9 @@ def build_historical_validation(
     return {
         "domain": "EQUITY_INVESTMENT",
         "mode": "HISTORICAL_RESEARCH_ONLY",
-        "observations": len(obs_rows),
+        "observations": len(all_obs_rows),
+        "validation_eligible_observations": len(obs_rows),
+        "quarantined_observations": quarantined,
         "matched_observations": len(joined),
         "outcome_coverage": coverage,
         "latest_observation_age_hours": freshness_hours,
@@ -176,5 +186,9 @@ def build_historical_validation(
         "score_is_probability": False,
         "strategy_frozen": True,
         "live_capital_allowed": False,
-        "note": "Historical associations are descriptive and may not persist. No thresholds are retuned and no Robinhood orders are placed.",
+        "note": (
+            "Only point-in-time validation-eligible observations are used. Unsafe legacy rows are quarantined, "
+            "not rewritten. Historical associations are descriptive and may not persist. No thresholds are retuned "
+            "and no Robinhood orders are placed."
+        ),
     }
