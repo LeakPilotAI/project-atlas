@@ -34,6 +34,7 @@ def test_validation_orchestration_keeps_domains_separate():
     assert proof["perps"]["domain"] == "HYPERLIQUID_PERPS"
     assert proof["investments"]["domain"] == "EQUITY_INVESTMENT"
     assert proof["investment_historical"]["domain"] == "EQUITY_INVESTMENT"
+    assert proof["investment_freshness"]["domain"] == "EQUITY_INVESTMENT"
     assert proof["engineering_complete_is_not_edge"] is True
     assert proof["live_capital_allowed"] is False
 
@@ -66,5 +67,29 @@ def test_validation_proof_exposes_quality_dips_historical_analysis():
     report = proof["investment_historical"]
     assert report["matched_observations"] == 1
     assert report["by_horizon"]["20d"]["mean_return"] == 0.12
+    assert report["strategy_frozen"] is True
+    assert report["live_capital_allowed"] is False
+
+
+def test_validation_proof_exposes_investment_freshness_without_live_unlock():
+    readiness = {
+        "status": "READY FOR RESEARCH",
+        "checks": {
+            name: {"ok": True, "detail": "ok"}
+            for name in (
+                "provider_reliability",
+                "fundamental_completeness",
+                "valuation_completeness",
+                "historical_price_coverage",
+                "point_in_time_integrity",
+                "look_ahead",
+            )
+        },
+    }
+    proof = build_validation_proof(
+        paper_rows=[], opportunity_rows=[], outcome_rows=[], investment_readiness=readiness
+    )
+    report = proof["investment_freshness"]
+    assert report["quality_gate_passed"] is True
     assert report["strategy_frozen"] is True
     assert report["live_capital_allowed"] is False
