@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from app.services.oos_cost_validation import build_oos_cost_report
 from app.services.paper_validation import metrics, uncertainty
 
 
@@ -104,12 +105,14 @@ def build_investment_proof(
 
 
 def build_validation_proof(*, paper_rows: Iterable[dict[str, Any]], opportunity_rows: Iterable[dict[str, Any]], outcome_rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    paper = list(paper_rows)
     return {
         "domain": "VALIDATION_ORCHESTRATION",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "engineering_complete_is_not_edge": True,
         "live_capital_allowed": False,
-        "perps": build_perp_proof(paper_rows),
+        "perps": build_perp_proof(paper),
+        "perp_oos_cost": build_oos_cost_report(paper),
         "investments": build_investment_proof(opportunity_rows, outcome_rows),
-        "next_gate": "Collect forward/out-of-sample evidence and model realistic costs before considering any live-capital review.",
+        "next_gate": "Keep collecting forward evidence and review holdout, rolling expectancy, subgroup stability, and realistic cost sensitivity before any live-capital review.",
     }
