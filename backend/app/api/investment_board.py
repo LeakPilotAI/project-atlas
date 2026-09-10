@@ -5,11 +5,13 @@ from pathlib import Path
 from typing import Any, Dict
 
 from fastapi import APIRouter, Query
+from fastapi.responses import FileResponse
 
 from app.investment.board import build_quality_dips_board
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 
-router = APIRouter(prefix="/api/investments", tags=["investments"])
+router = APIRouter(prefix="/investments", tags=["investments"])
+QUALITY_DIPS_HTML = Path(__file__).resolve().parents[1] / "static" / "quality_dips.html"
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -51,3 +53,12 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "Opportunity scores are ordinal research rankings, not probabilities. Atlas places no Robinhood orders."
         ),
     }
+
+
+@router.get("/quality-dips/view", include_in_schema=False)
+async def quality_dips_view() -> FileResponse:
+    return FileResponse(
+        QUALITY_DIPS_HTML,
+        media_type="text/html",
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"},
+    )
