@@ -10,6 +10,12 @@ def apply() -> None:
     from app.services.paper_try_symbol import instrumented_try_symbol
     from app.services.perp_micro_coach import PerpMicroCoach
     from app.services.shadow_research import ShadowResearch
+    from app.services.paper_journal import paper_journal
+    from app.services.v4_journal_observer import install_paper_journal_observer
+
+    # V4 shadow observation is independent of the legacy coach hook. Install it
+    # first so a previously-hooked coach cannot accidentally skip activation.
+    install_paper_journal_observer(paper_journal)
 
     if getattr(PerpMicroCoach, "_atlas_pipeline_hooked", False):
         return
