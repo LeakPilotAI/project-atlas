@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional
 from app.adapters.registry import registry
 from app.core.logging import get_logger
 from app.trading_core.models import Side
+from app.trading_core.perp_discovery import analyze_candles, rank_setup, shortlist_markets
 from app.trading_core.perp_manual_planner import build_manual_perp_plan
 from app.trading_core.perp_setup_state import classify_setup_state
 
@@ -17,8 +18,8 @@ log = get_logger("perp_manual")
 class PerpManualService:
     """Read-only manual perp planner sourced strictly from Hyperliquid.
 
-    No brokerage/exchange orders are placed. Atlas only publishes a manual plan for
-    symbols that are present in the live Hyperliquid universe exposed by the adapter.
+    No brokerage/exchange orders are placed. Atlas only publishes manual plans and
+    ranked discovery candidates for symbols present in the live Hyperliquid universe.
     """
 
     def __init__(self) -> None:
@@ -29,6 +30,7 @@ class PerpManualService:
             "source": "hyperliquid",
             "mode": "MANUAL_ONLY",
             "markets": [],
+            "setups": [],
             "plans": [],
         }
         self._task: Optional[asyncio.Task] = None
@@ -75,6 +77,75 @@ class PerpManualService:
                 self.last_error = f"{type(e).__name__}: {str(e)[:180]}"
                 log.warning("Manual perp refresh failed", error=self.last_error)
             await asyncio.sleep(20)
+
+    async def _discover_setups(
+        self,
+        adapter: Any,
+        rows: list[Dict[str, Any]],
+        live_universe: list[str],
+    ) -> list[Dict[str, Any]]:
+        if not hasattr(adapter, "get_candles"):
+            return []
+
+        candidates = shortlist_markets(rows, limit=8)
+
+        async def inspect(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+            symbol = str(row["symbol"])
+            try:
+                candles = await adapter.get_candles(symbol, interval="5m", lookback=48)
+                structure = analyze_candles(candles)
+                ranked = rank_setup(
+                    symbol=symbol,
+                    price=float(row["price"]),
+                    volume_24h=float(row.get("volume_24h") or 0.0),
+                    open_interest=float(row.get("open_interest") or 0.0),
+                    funding_rate=row.get("funding_rate"),
+                    structure=structure,
+                )
+                if ranked is None:
+                    return None
+                plan = build_manual_perp_plan(
+                    symbol=ranked.symbol,
+                    side=ranked.side,
+                    reference_price=ranked.price,
+                    hyperliquid_symbols=live_universe,
+                    volatility_pct=max(0.15, ranked.volatility_pct),
+                    target_rr=1.8,
+                    secondary_rr=3.0,
+                )
+                state = classify_setup_state(
+                    side=ranked.side,
+                    mark=ranked.price,
+                    l1=plan.l1,
+                    l2=plan.l2,
+                    l3=plan.l3,
+                    stop=plan.stop,
+                    tp1=plan.tp1,
+                    tp2=plan.tp2,
+                )
+                out = asdict(ranked)
+                out["side"] = ranked.side.value
+                out["state"] = state.state.value
+                out["next_action"] = state.next_action
+                out["distance_to_l1_pct"] = round(float(state.distance_to_l1_pct), 4)
+                out["levels"] = {
+                    "l1": plan.l1,
+                    "l2": plan.l2,
+                    "l3": plan.l3,
+                    "stop": plan.stop,
+                    "tp1": plan.tp1,
+                    "tp2": plan.tp2,
+                    "target_rr": plan.target_rr,
+                }
+                return out
+            except Exception as e:
+                log.debug("Manual perp discovery symbol skipped", symbol=symbol, error=str(e)[:120])
+                return None
+
+        inspected = await asyncio.gather(*(inspect(row) for row in candidates))
+        setups = [s for s in inspected if s is not None]
+        setups.sort(key=lambda s: float(s.get("score") or 0.0), reverse=True)
+        return setups[:8]
 
     async def refresh(self) -> Dict[str, Any]:
         adapter = self._adapter()
@@ -125,6 +196,7 @@ class PerpManualService:
                     stop=float(plan["stop"]),
                     tp1=float(plan["tp1"]),
                     tp2=float(plan["tp2"]),
+                    entered=bool(plan.get("entered", False)),
                 )
                 plan["mark"] = mark
                 plan["state"] = state.state.value
@@ -135,6 +207,8 @@ class PerpManualService:
                 plan["next_action"] = f"State unavailable: {str(e)[:120]}"
                 plan["mark"] = mark
 
+        setups = await self._discover_setups(adapter, rows, live_universe)
+
         now = datetime.now(timezone.utc).isoformat()
         self.last_snapshot = {
             "source": "hyperliquid",
@@ -142,8 +216,9 @@ class PerpManualService:
             "updated_at": now,
             "market_count": len(rows),
             "markets": rows,
+            "setups": setups,
             "plans": plans,
-            "note": "Hyperliquid markets only. Atlas never places orders.",
+            "note": "Hyperliquid markets only. Ranked setups are research guidance; Atlas never places orders.",
         }
         self.last_refresh_at = now
         self.last_error = None
@@ -182,6 +257,7 @@ class PerpManualService:
         out["side"] = plan.side.value
         out["risk_pct"] = float(risk_pct)
         out["tp2_rr"] = float(tp2_r)
+        out["entered"] = False
 
         mark = None
         for row in markets:
@@ -198,6 +274,7 @@ class PerpManualService:
                 stop=plan.stop,
                 tp1=plan.tp1,
                 tp2=plan.tp2,
+                entered=False,
             )
             out["mark"] = mark
             out["state"] = state.state.value
