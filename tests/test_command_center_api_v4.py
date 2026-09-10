@@ -1,20 +1,13 @@
 from pathlib import Path
 
+from fastapi.routing import iter_route_contexts
+
 from app.main import app
 from app.services.command_center import CommandCenterService
 
 
-def _walk_routes(routes):
-    for route in routes:
-        if hasattr(route, "path"):
-            yield route
-        nested = getattr(route, "routes", None)
-        if nested:
-            yield from _walk_routes(nested)
-
-
 def test_command_center_summary_api_is_mounted_and_read_only():
-    routes = list(_walk_routes(app.routes))
+    routes = list(iter_route_contexts(app.routes))
     paths = {route.path for route in routes}
     assert "/api/command-center/summary" in paths
     methods = next(route.methods for route in routes if route.path == "/api/command-center/summary")
