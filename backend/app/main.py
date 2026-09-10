@@ -27,7 +27,6 @@ import app.models  # noqa: F401
 
 from app.services.command_center import command_center
 from app.services.daily_paper_recap import daily_paper_recap
-from app.services.day_trade_assistant import day_trade_assistant
 from app.services.micro_heartbeat import micro_heartbeat
 from app.services.opportunity_tracker import opportunity_tracker
 from app.services.paper_trade_tracker import paper_trade_tracker
@@ -154,13 +153,15 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             log.warning("paper session bootstrap failed", error=str(e)[:200])
 
+        # "Day Trade" is now exclusively the Hyperliquid manual-perp product.
+        # The legacy yfinance equity day-trade worker remains in source for research
+        # compatibility but is intentionally not imported or started here.
         for name, starter in [
             ("scanner", scanner.start),
             ("opportunity_tracker", opportunity_tracker.start),
             ("paper_trade_tracker", paper_trade_tracker.start),
             ("weekly_summary", weekly_summary_service.start),
             ("quality_dip", quality_dip_scanner.start),
-            ("day_trade", day_trade_assistant.start),
             ("robinhood_brief", robinhood_brief_service.start),
             ("command_center", command_center.start),
             ("perp_micro_coach", perp_micro_coach.start),
@@ -225,7 +226,6 @@ async def lifespan(app: FastAPI):
         ("perp_micro_coach", perp_micro_coach.stop),
         ("command_center", command_center.stop),
         ("robinhood_brief", robinhood_brief_service.stop),
-        ("day_trade", day_trade_assistant.stop),
         ("quality_dip", quality_dip_scanner.stop),
         ("weekly_summary", weekly_summary_service.stop),
         ("paper_trade_tracker", paper_trade_tracker.stop),
@@ -356,7 +356,9 @@ async def health() -> Dict[str, Any]:
         "paper_trade_tracker_running": bool(getattr(paper_trade_tracker, "running", False)),
         "weekly_summary_running": bool(getattr(weekly_summary_service, "running", False)),
         "quality_dip_running": bool(getattr(quality_dip_scanner, "running", False)),
-        "day_trade_running": bool(getattr(day_trade_assistant, "running", False)),
+        "day_trade_running": bool(getattr(perp_manual_service, "running", False)),
+        "day_trade_domain": "HYPERLIQUID_PERPS",
+        "legacy_equity_day_trade_running": False,
         "robinhood_brief_running": bool(getattr(robinhood_brief_service, "running", False)),
         "command_center_running": bool(getattr(command_center, "running", False)),
         "perp_micro_running": bool(getattr(perp_micro_coach, "running", False)),
