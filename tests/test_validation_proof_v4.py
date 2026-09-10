@@ -33,6 +33,7 @@ def test_validation_orchestration_keeps_domains_separate():
     assert proof["domain"] == "VALIDATION_ORCHESTRATION"
     assert proof["perps"]["domain"] == "HYPERLIQUID_PERPS"
     assert proof["investments"]["domain"] == "EQUITY_INVESTMENT"
+    assert proof["investment_historical"]["domain"] == "EQUITY_INVESTMENT"
     assert proof["engineering_complete_is_not_edge"] is True
     assert proof["live_capital_allowed"] is False
 
@@ -50,3 +51,20 @@ def test_validation_proof_exposes_oos_cost_analysis_without_live_unlock():
     assert "holdout" in report
     assert "rolling" in report
     assert "cost_stress" in report
+
+
+def test_validation_proof_exposes_quality_dips_historical_analysis():
+    observations = [{
+        "observation_id": "o1",
+        "symbol": "MSFT",
+        "as_of": "2026-09-09T12:00:00+00:00",
+        "classification": "ACCUMULATION",
+        "research": {"opportunity_score": 80, "evidence_quality": "HIGH", "thesis": "INTACT"},
+    }]
+    outcomes = [{"observation_id": "o1", "symbol": "MSFT", "return_20d": 0.12, "enriched_at": "2026-09-10T12:00:00+00:00"}]
+    proof = build_validation_proof(paper_rows=[], opportunity_rows=[], outcome_rows=outcomes, observation_rows=observations)
+    report = proof["investment_historical"]
+    assert report["matched_observations"] == 1
+    assert report["by_horizon"]["20d"]["mean_return"] == 0.12
+    assert report["strategy_frozen"] is True
+    assert report["live_capital_allowed"] is False
