@@ -34,6 +34,7 @@ async def manual_perp_board(limit: int = Query(8, ge=1, le=25)) -> Dict[str, Any
         "board": board,
         "count": len(board),
         "alert_count": sum(1 for row in board if bool(row.get("alert_eligible"))),
+        "entered_count": sum(1 for row in board if str(row.get("trade_status")) == "ENTERED"),
         "alert_delivery_running": perp_alert_delivery_service.running,
         "note": "Manual guidance only. Atlas does not place Hyperliquid orders.",
     }
@@ -44,6 +45,47 @@ async def acknowledge_manual_perp_alert(setup_key: str) -> Dict[str, Any]:
     if not perp_manual_service.acknowledge_alert(setup_key):
         raise HTTPException(status_code=404, detail="setup alert not found")
     return {"ok": True, "setup_key": setup_key, "status": "COOLDOWN_ACTIVE"}
+
+
+@router.post("/manual/setups/{setup_key}/enter")
+async def enter_manual_perp_setup(
+    setup_key: str,
+    fill_price: float | None = Query(None, gt=0),
+) -> Dict[str, Any]:
+    try:
+        plan = perp_manual_service.enter_discovered_setup(setup_key, fill_price=fill_price)
+        return {
+            "ok": True,
+            "setup_key": setup_key,
+            "status": plan.get("status"),
+            "plan": plan,
+            "note": "Recorded a user-confirmed manual fill. Atlas did not place an order.",
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@router.post("/manual/plans/{setup_key}/close")
+async def close_manual_perp_plan(
+    setup_key: str,
+    exit_price: float = Query(..., gt=0),
+    reason: str = Query("MANUAL_EXIT", min_length=1, max_length=120),
+) -> Dict[str, Any]:
+    try:
+        plan = perp_manual_service.close_entered_plan(
+            setup_key,
+            exit_price=exit_price,
+            reason=reason,
+        )
+        return {
+            "ok": True,
+            "setup_key": setup_key,
+            "status": plan.get("status"),
+            "plan": plan,
+            "note": "Recorded a user-confirmed manual close. Atlas did not place an order.",
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.post("/manual/plan")
