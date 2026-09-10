@@ -21,10 +21,14 @@ def build_perp_board(setups: Iterable[dict[str, Any]], *, limit: int = 8) -> lis
         if not symbol or side not in {"LONG", "SHORT"}:
             continue
         board.append({
+            "setup_key": str(row.get("setup_key") or f"{symbol}:{side}"),
             "symbol": symbol,
             "side": side,
             "tier": str(row.get("tier") or "WATCH").upper(),
             "state": str(row.get("state") or "WAIT").upper(),
+            "trade_status": str(row.get("trade_status") or "NOT_ENTERED").upper(),
+            "entry_price": row.get("entry_price"),
+            "entered_at": row.get("entered_at"),
             "score": round(float(row.get("score") or 0.0), 2),
             "mark": float(row.get("price") or row.get("mark") or 0.0),
             "l1": levels.get("l1"),
