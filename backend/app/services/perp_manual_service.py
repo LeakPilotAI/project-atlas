@@ -10,6 +10,7 @@ from app.core.logging import get_logger
 from app.trading_core.models import Side
 from app.trading_core.perp_discovery import analyze_candles, rank_setup, shortlist_markets
 from app.trading_core.perp_manual_planner import build_manual_perp_plan
+from app.trading_core.perp_setup_lifecycle import reconcile_setups
 from app.trading_core.perp_setup_state import classify_setup_state
 
 log = get_logger("perp_manual")
@@ -207,9 +208,24 @@ class PerpManualService:
                 plan["next_action"] = f"State unavailable: {str(e)[:120]}"
                 plan["mark"] = mark
 
-        setups = await self._discover_setups(adapter, rows, live_universe)
+        raw_setups = await self._discover_setups(adapter, rows, live_universe)
+        now_dt = datetime.now(timezone.utc)
+        setups = reconcile_setups(
+            raw_setups,
+            previous=list(self.last_snapshot.get("setups") or []),
+            now=now_dt,
+            cooldown_minutes=30,
+        )
+        setups.sort(
+            key=lambda s: (
+                bool(s.get("alert_eligible")),
+                str(s.get("tier") or "") == "PRIME",
+                float(s.get("score") or 0.0),
+            ),
+            reverse=True,
+        )
 
-        now = datetime.now(timezone.utc).isoformat()
+        now = now_dt.isoformat()
         self.last_snapshot = {
             "source": "hyperliquid",
             "mode": "MANUAL_ONLY",
@@ -217,12 +233,27 @@ class PerpManualService:
             "market_count": len(rows),
             "markets": rows,
             "setups": setups,
+            "alert_candidates": [s for s in setups if bool(s.get("alert_eligible"))],
             "plans": plans,
             "note": "Hyperliquid markets only. Ranked setups are research guidance; Atlas never places orders.",
         }
         self.last_refresh_at = now
         self.last_error = None
         return self.snapshot()
+
+    def acknowledge_alert(self, setup_key: str) -> bool:
+        now = datetime.now(timezone.utc).isoformat()
+        changed = False
+        for setup in self.last_snapshot.get("setups") or []:
+            if str(setup.get("setup_key") or "") == str(setup_key):
+                setup["last_alert_at"] = now
+                setup["alert_eligible"] = False
+                setup["alert_reason"] = "alert acknowledged; cooldown active"
+                changed = True
+        self.last_snapshot["alert_candidates"] = [
+            s for s in self.last_snapshot.get("setups") or [] if bool(s.get("alert_eligible"))
+        ]
+        return changed
 
     def create_plan(
         self,
