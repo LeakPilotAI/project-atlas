@@ -1,4 +1,4 @@
-"""Performance HTTP endpoints."""
+"""Performance HTTP endpoints plus isolated investment-board route composition."""
 
 from __future__ import annotations
 
@@ -8,11 +8,13 @@ from typing import Any, Optional
 from fastapi import APIRouter
 from sqlalchemy import select
 
+from app.api.investment_board import router as investment_board_router
 from app.db.session import async_session
 from app.models.opportunity import Opportunity
 from app.services.performance_service import get_performance_report
 
 router = APIRouter(prefix="/api", tags=["performance"])
+router.include_router(investment_board_router)
 
 
 def _dashboard_perf(payload: dict[str, Any]) -> dict[str, Any]:
