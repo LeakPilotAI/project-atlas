@@ -281,7 +281,8 @@ app.include_router(perp_manual_router)
 app.include_router(validation_router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
-DASHBOARD_HTML = STATIC_DIR / "dashboard_shell.html"
+DASHBOARD_HTML = STATIC_DIR / "dashboard_hub.html"
+PERP_DASHBOARD_HTML = STATIC_DIR / "dashboard_shell.html"
 LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 
 
@@ -299,6 +300,11 @@ def _dashboard_response(path: Path) -> FileResponse:
 @app.get("/dashboard")
 async def dashboard_page() -> FileResponse:
     return _dashboard_response(DASHBOARD_HTML)
+
+
+@app.get("/dashboard/perps")
+async def perp_dashboard_page() -> FileResponse:
+    return _dashboard_response(PERP_DASHBOARD_HTML)
 
 
 @app.get("/dashboard/legacy")
@@ -379,6 +385,8 @@ async def root() -> Dict[str, str]:
         "docs": "/docs",
         "health": "/health",
         "dashboard": "/dashboard",
+        "dashboard_perps": "/dashboard/perps",
+        "dashboard_quality_dips": "/api/investments/quality-dips/view",
         "dashboard_legacy": "/dashboard/legacy",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
