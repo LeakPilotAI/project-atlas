@@ -4,10 +4,21 @@ from app.investment.historical_validation import build_historical_validation
 
 
 def _obs(i, cls="WATCH", score=50, evidence="MEDIUM", thesis="INTACT"):
+    as_of = "2026-09-09T12:00:00+00:00"
     return {
         "observation_id": f"o{i}",
         "symbol": f"S{i}",
-        "as_of": "2026-09-09T12:00:00+00:00",
+        "as_of": as_of,
+        "timestamp": as_of,
+        "look_ahead_protected": True,
+        "known_at": {
+            "price_effective": "2026-09-09T11:59:00+00:00",
+            "price_retrieved": "2026-09-09T11:59:30+00:00",
+            "fundamentals_retrieved": "2026-09-09T11:00:00+00:00",
+            "valuation_retrieved": "2026-09-09T11:00:00+00:00",
+            "history_cutoff": "2026-09-09",
+        },
+        "outcomes": {"1d": None, "5d": None, "20d": None, "60d": None, "252d": None},
         "classification": cls,
         "research": {
             "opportunity_score": score,
@@ -34,6 +45,8 @@ def test_historical_validation_joins_by_observation_id_and_reports_horizons():
         now=datetime(2026, 9, 10, 12, tzinfo=timezone.utc),
     )
     assert report["matched_observations"] == 2
+    assert report["validation_eligible_observations"] == 2
+    assert report["quarantined_observations"] == 0
     assert report["outcome_coverage"] == 1.0
     assert report["by_horizon"]["1d"]["n"] == 2
     assert report["by_horizon"]["20d"]["mean_return"] == 0.15
@@ -83,3 +96,18 @@ def test_latest_outcome_row_wins_for_reenriched_observation():
         ],
     )
     assert report["by_horizon"]["20d"]["mean_return"] == 0.25
+
+
+def test_lookahead_row_is_quarantined_from_all_historical_stats():
+    safe = _obs(1, cls="ACCUMULATION", score=80)
+    unsafe = _obs(2, cls="ACCUMULATION", score=99)
+    unsafe["known_at"]["price_retrieved"] = "2026-09-09T12:05:00+00:00"
+    report = build_historical_validation(
+        [safe, unsafe],
+        [_outcome(1, return_1d=0.01), _outcome(2, return_1d=0.90)],
+    )
+    assert report["observations"] == 2
+    assert report["validation_eligible_observations"] == 1
+    assert report["quarantined_observations"] == 1
+    assert report["matched_observations"] == 1
+    assert report["by_horizon"]["1d"]["mean_return"] == 0.01
