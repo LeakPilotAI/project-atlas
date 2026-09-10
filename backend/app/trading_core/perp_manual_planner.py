@@ -35,22 +35,33 @@ def build_manual_perp_plan(
     symbol: str,
     side: Side,
     reference_price: float,
-    volatility_pct: float,
     hyperliquid_symbols: Iterable[str],
+    volatility_pct: float | None = None,
+    layer_spacing_pct: float | None = None,
     target_rr: float = 1.8,
+    secondary_rr: float | None = None,
 ) -> ManualPerpPlan:
     """Create a manual, layered limit plan for a verified Hyperliquid market.
 
-    Pure research/planning function: it does not submit orders. Layer distances scale
-    with observed volatility rather than using one fixed percentage across markets.
+    Pure research/planning function: it does not submit orders. The caller may provide
+    either observed volatility or an explicit layer spacing. In both cases spacing is
+    bounded so one noisy input cannot produce an absurd ladder.
     """
     symbol = require_hyperliquid_market(symbol, hyperliquid_symbols)
     px = _positive("reference_price", reference_price)
-    vol = _positive("volatility_pct", volatility_pct) / 100.0
     rr = _positive("target_rr", target_rr)
+    rr2 = _positive("secondary_rr", secondary_rr) if secondary_rr is not None else max(3.0, rr + 0.8)
+    if rr2 <= rr:
+        raise ValueError("secondary_rr must be greater than target_rr")
 
-    # Conservative bounded spacing: avoid absurd ladders from noisy volatility inputs.
-    step = min(max(vol * 0.35, 0.0025), 0.02)
+    if layer_spacing_pct is not None:
+        step = _positive("layer_spacing_pct", layer_spacing_pct) / 100.0
+    else:
+        if volatility_pct is None:
+            raise ValueError("volatility_pct or layer_spacing_pct is required")
+        vol = _positive("volatility_pct", volatility_pct) / 100.0
+        step = vol * 0.35
+    step = min(max(step, 0.0025), 0.02)
 
     if side is Side.LONG:
         l1 = px * (1.0 - step)
@@ -59,7 +70,7 @@ def build_manual_perp_plan(
         stop = px * (1.0 - step * 4.25)
         risk = l1 - stop
         tp1 = l1 + rr * risk
-        tp2 = l1 + max(3.0, rr + 0.8) * risk
+        tp2 = l1 + rr2 * risk
     elif side is Side.SHORT:
         l1 = px * (1.0 + step)
         l2 = px * (1.0 + step * 2.0)
@@ -67,7 +78,7 @@ def build_manual_perp_plan(
         stop = px * (1.0 + step * 4.25)
         risk = stop - l1
         tp1 = l1 - rr * risk
-        tp2 = l1 - max(3.0, rr + 0.8) * risk
+        tp2 = l1 - rr2 * risk
     else:
         raise ValueError(f"unsupported side: {side}")
 
