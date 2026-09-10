@@ -10,6 +10,7 @@ from app.core.logging import get_logger
 from app.trading_core.models import Side
 from app.trading_core.perp_discovery import analyze_candles, rank_setup, shortlist_markets
 from app.trading_core.perp_manual_planner import build_manual_perp_plan
+from app.trading_core.perp_manual_trade_lifecycle import close_plan, enter_setup
 from app.trading_core.perp_setup_lifecycle import reconcile_setups
 from app.trading_core.perp_setup_state import classify_setup_state
 
@@ -17,10 +18,10 @@ log = get_logger("perp_manual")
 
 
 class PerpManualService:
-    """Read-only manual perp planner sourced strictly from Hyperliquid.
+    """Read-only/manual Hyperliquid planning and lifecycle service.
 
-    No brokerage/exchange orders are placed. Atlas only publishes manual plans and
-    ranked discovery candidates for symbols present in the live Hyperliquid universe.
+    Atlas never places brokerage/exchange orders. Entry/close state is changed only
+    by explicit user/API lifecycle actions; price movement alone cannot invent a fill.
     """
 
     def __init__(self) -> None:
@@ -180,6 +181,8 @@ class PerpManualService:
         rows.sort(key=lambda r: (float(r["volume_24h"]), float(r["open_interest"])), reverse=True)
         plans = list(self.last_snapshot.get("plans") or [])
         for plan in plans:
+            if str(plan.get("status") or "").upper() == "CLOSED":
+                continue
             mark = price_map.get(str(plan.get("symbol") or "").upper())
             if mark is None:
                 plan["state"] = "WAIT"
@@ -225,6 +228,17 @@ class PerpManualService:
             reverse=True,
         )
 
+        active_by_key = {
+            str(p.get("setup_key") or ""): p
+            for p in plans
+            if str(p.get("status") or "").upper() == "ENTERED"
+        }
+        for setup in setups:
+            active = active_by_key.get(str(setup.get("setup_key") or ""))
+            setup["trade_status"] = "ENTERED" if active else "NOT_ENTERED"
+            setup["entry_price"] = active.get("entry_price") if active else None
+            setup["entered_at"] = active.get("entered_at") if active else None
+
         now = now_dt.isoformat()
         self.last_snapshot = {
             "source": "hyperliquid",
@@ -254,6 +268,72 @@ class PerpManualService:
             s for s in self.last_snapshot.get("setups") or [] if bool(s.get("alert_eligible"))
         ]
         return changed
+
+    def enter_discovered_setup(self, setup_key: str, *, fill_price: float | None = None) -> Dict[str, Any]:
+        key = str(setup_key or "")
+        setups = list(self.last_snapshot.get("setups") or [])
+        setup = next((s for s in setups if str(s.get("setup_key") or "") == key), None)
+        if setup is None:
+            raise ValueError("manual perp setup not found")
+
+        plans = list(self.last_snapshot.get("plans") or [])
+        existing = next(
+            (
+                p
+                for p in plans
+                if str(p.get("setup_key") or "") == key
+                and str(p.get("status") or "").upper() == "ENTERED"
+            ),
+            None,
+        )
+        if existing is not None:
+            return dict(existing)
+
+        plan = enter_setup(setup, fill_price=fill_price)
+        plans = [
+            p
+            for p in plans
+            if not (
+                str(p.get("setup_key") or "") == key
+                and str(p.get("status") or "").upper() != "CLOSED"
+            )
+        ]
+        plans.insert(0, plan)
+        self.last_snapshot["plans"] = plans[:100]
+        setup["trade_status"] = "ENTERED"
+        setup["entry_price"] = plan["entry_price"]
+        setup["entered_at"] = plan["entered_at"]
+        return dict(plan)
+
+    def close_entered_plan(
+        self,
+        setup_key: str,
+        *,
+        exit_price: float,
+        reason: str = "MANUAL_EXIT",
+    ) -> Dict[str, Any]:
+        key = str(setup_key or "")
+        plans = list(self.last_snapshot.get("plans") or [])
+        idx = next(
+            (
+                i
+                for i, p in enumerate(plans)
+                if str(p.get("setup_key") or "") == key
+                and str(p.get("status") or "").upper() == "ENTERED"
+            ),
+            None,
+        )
+        if idx is None:
+            raise ValueError("entered manual perp plan not found")
+        closed = close_plan(plans[idx], exit_price=exit_price, reason=reason)
+        plans[idx] = closed
+        self.last_snapshot["plans"] = plans
+        for setup in self.last_snapshot.get("setups") or []:
+            if str(setup.get("setup_key") or "") == key:
+                setup["trade_status"] = "CLOSED"
+                setup["entry_price"] = closed.get("entry_price")
+                setup["entered_at"] = closed.get("entered_at")
+        return dict(closed)
 
     def create_plan(
         self,
@@ -289,6 +369,8 @@ class PerpManualService:
         out["risk_pct"] = float(risk_pct)
         out["tp2_rr"] = float(tp2_r)
         out["entered"] = False
+        out["status"] = "PLANNED"
+        out["setup_key"] = f"{out['symbol']}:{out['side']}"
 
         mark = None
         for row in markets:
@@ -320,7 +402,7 @@ class PerpManualService:
         plans = list(self.last_snapshot.get("plans") or [])
         plans = [p for p in plans if not (p.get("symbol") == out["symbol"] and p.get("side") == out["side"])]
         plans.insert(0, out)
-        self.last_snapshot["plans"] = plans[:50]
+        self.last_snapshot["plans"] = plans[:100]
         return out
 
     def snapshot(self) -> Dict[str, Any]:
