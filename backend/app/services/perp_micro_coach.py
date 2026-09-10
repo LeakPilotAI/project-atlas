@@ -70,6 +70,7 @@ def _trend_from_closes(closes: List[float]) -> str:
 
 
 def htf_allows_side(side: str, trend: str) -> bool:
+    # Chop/unknown: 5m mean-rev is allowed. Only block fading a *directional* 1h.
     if trend in ("UNKNOWN", "OFF", "FLAT"):
         return True
     if side == "LONG":
@@ -208,13 +209,6 @@ class PerpMicroCoach:
             self._rehydrate_open(reason="startup")
         except Exception as e:
             log.warning("startup paper rehydrate failed", error=str(e)[:200])
-        try:
-            from app.trading_core.shadow_coordinator import v4_shadow_coordinator
-
-            recovered = v4_shadow_coordinator.recover()
-            log.info("V4 shadow recovered", open=recovered)
-        except Exception as e:
-            log.warning("V4 shadow recovery failed", error=str(e)[:160])
         self._task = asyncio.create_task(self._loop(), name="perp_micro_coach")
         self._manage_task = asyncio.create_task(self._manage_loop(), name="perp_micro_manage")
         log.info(
@@ -238,6 +232,10 @@ class PerpMicroCoach:
             live_min_wr=float(settings.perp_micro_live_min_winrate),
             live_min_sum_r=float(settings.perp_micro_live_min_sum_r),
         )
+        if int(settings.perp_micro_max_open) == 6:
+            log.warning(
+                "perp_micro_max_open is 6 (old default). Set PERP_MICRO_MAX_OPEN=0 in .env for unlimited paper."
+            )
 
     async def stop(self) -> None:
         self._running = False
@@ -289,255 +287,615 @@ class PerpMicroCoach:
         tp2 = _fx("tp2_price", "tp2")
         mark = _fx("mark", default=entry)
         side = str(row.get("side") or "").upper()
-        incomplete = not str(row.get("symbol") or "").strip() or side not in ("LONG", "SHORT") or entry <= 0 or stop <= 0
+        incomplete = (
+            not str(row.get("symbol") or "").strip()
+            or side not in ("LONG", "SHORT")
+            or entry <= 0
+            or stop <= 0
+        )
         return {
-            "symbol": str(row.get("symbol") or "").upper(), "side": side, "entry": entry,
-            "stop": stop, "tp1": tp1, "tp2": tp2, "mark": mark if mark > 0 else entry,
-            "trade_id": row.get("trade_id"), "tier": row.get("tier") or "alt",
-            "counts_for_live": bool(row.get("counts_for_live")), "qscore": _fx("signal_score"),
-            "mfe_r": _fx("mfe_r"), "mae_r": _fx("mae_r"),
+            "symbol": str(row.get("symbol") or "").upper(),
+            "side": side,
+            "entry": entry,
+            "stop": stop,
+            "tp1": tp1,
+            "tp2": tp2,
+            "mark": mark if mark > 0 else entry,
+            "trade_id": row.get("trade_id"),
+            "tier": row.get("tier") or "alt",
+            "counts_for_live": bool(row.get("counts_for_live")),
+            "qscore": _fx("signal_score"),
+            "mfe_r": _fx("mfe_r"),
+            "mae_r": _fx("mae_r"),
             "opened_at": row.get("entry_timestamp") or row.get("opened_at"),
             "risk_price": _fx("risk_price", default=abs(entry - stop) or 1e-12),
             "lifecycle": "ERROR_REQUIRES_REVIEW" if incomplete else "RECOVERY_PENDING",
-            "stale_quote": False, "error": "incomplete open row" if incomplete else None,
-            "exit_mode": str(row.get("exit_mode") or "SCALP"), "scalp_tp_r": _fx("scalp_tp_r", default=0.0),
-            "be_after_r": row.get("be_after_r"), "lock_after_r": row.get("lock_after_r"),
-            "lock_r": row.get("lock_r"), "lock_armed": bool(row.get("lock_armed")),
+            "stale_quote": False,
+            "error": "incomplete open row" if incomplete else None,
+            "exit_mode": str(row.get("exit_mode") or "SCALP"),
+            "scalp_tp_r": _fx("scalp_tp_r", default=0.0),
+            "be_after_r": row.get("be_after_r"),
+            "lock_after_r": row.get("lock_after_r"),
+            "lock_r": row.get("lock_r"),
+            "lock_armed": bool(row.get("lock_armed")),
             "initial_stop": _fx("initial_stop", "stop_price", "stop", default=stop),
-            "working_stop": _fx("working_stop", default=stop), "be_armed": bool(row.get("be_armed")),
+            "working_stop": _fx("working_stop", default=stop),
+            "be_armed": bool(row.get("be_armed")),
             "setup_rr": _fx("setup_rr", default=1.8),
         }
 
     def _rehydrate_open(self, reason: str = "cycle") -> int:
         from app.services.paper_journal import paper_journal
-        if reason == "startup": paper_journal.reload()
-        else: paper_journal.reconcile_from_disk()
-        added = 0; failed: List[Dict[str, Any]] = []; review: List[Dict[str, Any]] = []
+        if reason == "startup":
+            paper_journal.reload()
+        else:
+            paper_journal.reconcile_from_disk()
+        added = 0
+        failed: List[Dict[str, Any]] = []
+        review: List[Dict[str, Any]] = []
         for row in paper_journal.list_open():
             tid = row.get("trade_id")
             if not tid:
-                failed.append({"reason": "missing trade_id", "row_symbol": row.get("symbol")}); continue
-            if tid in self._open: continue
+                failed.append({"reason": "missing trade_id", "row_symbol": row.get("symbol")})
+                continue
+            if tid in self._open:
+                continue
             try:
                 mapped = self._row_from_journal(row)
-                self._open[tid] = mapped; self._recovered_ids.add(str(tid)); added += 1
-                if mapped.get("lifecycle") == "ERROR_REQUIRES_REVIEW": review.append({"trade_id": tid, "reason": mapped.get("error")})
-                else: self._prepare_exit_levels(mapped)
+                if mapped.get("lifecycle") == "ERROR_REQUIRES_REVIEW":
+                    review.append({"trade_id": tid, "reason": mapped.get("error") or "incomplete open row"})
+                    self._open[tid] = mapped
+                    self._recovered_ids.add(str(tid))
+                    added += 1
+                    continue
+                mapped["lifecycle"] = "RECOVERY_PENDING"
+                self._prepare_exit_levels(mapped)
+                self._open[tid] = mapped
+                self._recovered_ids.add(str(tid))
+                added += 1
             except Exception as e:
                 failed.append({"trade_id": tid, "reason": str(e)[:160]})
+                self._open[tid] = {
+                    "symbol": str(row.get("symbol") or "").upper(),
+                    "side": str(row.get("side") or "").upper(),
+                    "entry": 0.0,
+                    "stop": 0.0,
+                    "tp1": 0.0,
+                    "tp2": 0.0,
+                    "mark": 0.0,
+                    "trade_id": tid,
+                    "lifecycle": "ERROR_REQUIRES_REVIEW",
+                    "stale_quote": False,
+                    "error": str(e)[:160],
+                    "opened_at": row.get("entry_timestamp"),
+                    "mfe_r": row.get("mfe_r") or 0,
+                    "mae_r": row.get("mae_r") or 0,
+                }
         live_ids = {r.get("trade_id") for r in paper_journal.list_open()}
         for tid in list(self._open):
-            if tid not in live_ids: self._open.pop(tid, None)
+            if tid not in live_ids:
+                self._open.pop(tid, None)
         jr = paper_journal.recovery_report()
-        self.last_recovery = {"title":"ATLAS PAPER RECOVERY","reason":reason,"persisted_open":jr["persisted_open"],"recovered":len(self._open),"added_this_pass":added,"already_closed":jr.get("already_closed") or 0,"malformed":jr["malformed"],"duplicates":jr.get("duplicates") or 0,"failed":failed,"error_requires_review":review+failed,"management_resumed":sum(1 for p in self._open.values() if p.get("lifecycle") != "ERROR_REQUIRES_REVIEW"),"recovered_ids":sorted(str(x) for x in self._open),"note":"OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED. No invented exits."}
+        self.last_recovery = {
+            "title": "ATLAS PAPER RECOVERY",
+            "reason": reason,
+            "persisted_open": jr["persisted_open"],
+            "recovered": len(self._open),
+            "added_this_pass": added,
+            "already_closed": jr.get("already_closed") or 0,
+            "malformed": jr["malformed"],
+            "malformed_lines": jr.get("malformed_lines") or [],
+            "duplicates": jr.get("duplicates") or 0,
+            "failed": failed,
+            "error_requires_review": review + failed,
+            "management_resumed": sum(1 for p in self._open.values() if p.get("lifecycle") != "ERROR_REQUIRES_REVIEW"),
+            "recovered_ids": sorted(str(x) for x in self._open),
+            "note": "OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED. No invented exits.",
+        }
         return added
 
     async def list_open_papers(self) -> List[Dict[str, Any]]:
-        out=[]
-        for tid,p in self._open.items():
-            mark=float(p.get("mark") or p.get("entry") or 0); entry=float(p["entry"]); risk=abs(entry-float(p.get("initial_stop") or p.get("stop") or entry)) or 1e-12; side=p["side"]
-            ur=(mark-entry)/risk if side=="LONG" else (entry-mark)/risk
-            out.append({"id":tid,"symbol":p["symbol"],"side":side,"tier":p.get("tier","alt"),"entry":entry,"stop":p.get("working_stop") or p.get("stop"),"initial_stop":p.get("initial_stop") or p.get("stop"),"tp1":p.get("tp1"),"be_armed":bool(p.get("be_armed")),"exit_mode":p.get("exit_mode") or "SCALP","mark":mark,"unrealized_r":round(ur,2),"counts_for_live":p.get("counts_for_live",True),"mfe_r":p.get("mfe_r",0),"mae_r":p.get("mae_r",0),"stale_quote":bool(p.get("stale_quote")),"lifecycle":p.get("lifecycle") or "OPEN","opened_at":p.get("opened_at"),"recovered":str(tid) in self._recovered_ids})
+        out: List[Dict[str, Any]] = []
+        for tid, p in self._open.items():
+            mark = float(p.get("mark") or p.get("entry") or 0)
+            entry = float(p["entry"])
+            risk = abs(entry - float(p.get("initial_stop") or p.get("stop") or entry)) or 1e-12
+            side = p["side"]
+            ur = (mark - entry) / risk if side == "LONG" else (entry - mark) / risk
+            out.append({
+                "id": tid,
+                "symbol": p["symbol"],
+                "side": side,
+                "tier": p.get("tier", "alt"),
+                "entry": entry,
+                "stop": p.get("working_stop") or p.get("stop"),
+                "initial_stop": p.get("initial_stop") or p.get("stop"),
+                "tp1": p.get("tp1"),
+                "be_armed": bool(p.get("be_armed")),
+                "exit_mode": p.get("exit_mode") or "SCALP",
+                "mark": mark,
+                "unrealized_r": round(ur, 2),
+                "counts_for_live": p.get("counts_for_live", True),
+                "mfe_r": p.get("mfe_r", 0),
+                "mae_r": p.get("mae_r", 0),
+                "stale_quote": bool(p.get("stale_quote")),
+                "lifecycle": p.get("lifecycle") or "OPEN",
+                "opened_at": p.get("opened_at"),
+                "recovered": str(tid) in self._recovered_ids,
+            })
         return out
 
     def lifecycle_snapshot(self) -> Dict[str, Any]:
-        opens=list(self._open.values()); review_n=sum(1 for p in opens if p.get("lifecycle")=="ERROR_REQUIRES_REVIEW"); missing_px=sum(1 for p in opens if p.get("stale_quote") or p.get("lifecycle")=="MARKET_DATA_UNAVAILABLE")
-        rec=dict(self.last_recovery or {}); rec.update({"currently_open":len(opens),"recovered_positions":len(self._recovered_ids & {str(t) for t in self._open}),"orphan_candidates":missing_px,"positions_missing_market_data":missing_px,"positions_missing_state":review_n,"error_requires_review":review_n,"note":"OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED. Only CLOSED counts for performance."}); return rec
+        opens = list(self._open.values())
+        missing_px = sum(1 for p in opens if p.get("stale_quote") or p.get("lifecycle") == "MARKET_DATA_UNAVAILABLE")
+        review_n = sum(1 for p in opens if p.get("lifecycle") == "ERROR_REQUIRES_REVIEW")
+        rec = dict(self.last_recovery or {})
+        rec.update({
+            "currently_open": len(opens),
+            "recovered_positions": len(self._recovered_ids & {str(t) for t in self._open}),
+            "orphan_candidates": missing_px,
+            "positions_missing_market_data": missing_px,
+            "positions_missing_state": review_n,
+            "error_requires_review": review_n,
+            "note": "OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED. Only CLOSED counts for performance.",
+        })
+        return rec
 
-    async def paper_stats(self)->Dict[str,Any]:
+    async def paper_stats(self) -> Dict[str, Any]:
         from app.services.paper_journal import paper_journal
-        base=await paper_journal.stats(); base["live_readiness"]=await self.live_readiness(); return base
+        base = await paper_journal.stats()
+        base["live_readiness"] = await self.live_readiness()
+        return base
 
-    async def live_readiness(self)->Dict[str,Any]:
-        settings=get_settings(); from app.services.paper_journal import paper_journal
-        stats=await paper_journal.stats(); wins=int(stats.get("wins") or stats.get("w") or 0); losses=int(stats.get("losses") or stats.get("l") or 0); closed=wins+losses; sum_r=float(stats.get("sum_r") or stats.get("sum_R") or 0.0); wr=(wins/closed) if closed else 0.0; min_n=int(settings.perp_micro_live_min_trades); min_wr=float(settings.perp_micro_live_min_winrate); min_sum=float(settings.perp_micro_live_min_sum_r); ready=closed>=min_n and wr>=min_wr and sum_r>=min_sum
-        return {"ready":ready,"closed":closed,"wins":wins,"losses":losses,"winrate":round(wr,4),"sum_r":round(sum_r,2),"need_trades":max(0,min_n-closed),"need_winrate":min_wr,"need_sum_r":min_sum,"message":"LIVE READY (manual only)" if ready else f"Not live-ready: {closed}/{min_n} trades, WR {wr*100:.1f}% (need {min_wr*100:.0f}%), sum R {sum_r:+.2f} (need ≥ {min_sum})."}
+    async def live_readiness(self) -> Dict[str, Any]:
+        settings = get_settings()
+        from app.services.paper_journal import paper_journal
+        stats = await paper_journal.stats()
+        wins = int(stats.get("wins") or stats.get("w") or 0)
+        losses = int(stats.get("losses") or stats.get("l") or 0)
+        closed = wins + losses
+        sum_r = float(stats.get("sum_r") or stats.get("sum_R") or 0.0)
+        wr = (wins / closed) if closed else 0.0
+        min_n = int(settings.perp_micro_live_min_trades)
+        min_wr = float(settings.perp_micro_live_min_winrate)
+        min_sum = float(settings.perp_micro_live_min_sum_r)
+        ready = closed >= min_n and wr >= min_wr and sum_r >= min_sum
+        return {
+            "ready": ready,
+            "closed": closed,
+            "wins": wins,
+            "losses": losses,
+            "winrate": round(wr, 4),
+            "sum_r": round(sum_r, 2),
+            "need_trades": max(0, min_n - closed),
+            "need_winrate": min_wr,
+            "need_sum_r": min_sum,
+            "message": "LIVE READY (manual only)" if ready else f"Not live-ready: {closed}/{min_n} trades, WR {wr * 100:.1f}% (need {min_wr * 100:.0f}%), sum R {sum_r:+.2f} (need ≥ {min_sum}).",
+        }
 
-    async def _loop(self)->None:
+    async def _loop(self) -> None:
         await asyncio.sleep(8)
         while self._running:
-            try: await self._cycle()
-            except asyncio.CancelledError: raise
+            try:
+                await self._cycle()
+            except asyncio.CancelledError:
+                raise
             except Exception as e:
-                log.warning("Perp micro cycle error",error=str(e),exc_info=True); await asyncio.sleep(20)
-            await asyncio.sleep(float(get_settings().perp_micro_scan_seconds or 90))
+                log.warning("Perp micro cycle error", error=str(e), exc_info=True)
+                await asyncio.sleep(20)
+            settings = get_settings()
+            await asyncio.sleep(float(settings.perp_micro_scan_seconds or 90))
 
-    async def _manage_loop(self)->None:
+    async def _manage_loop(self) -> None:
         await asyncio.sleep(4)
         while self._running:
             try:
-                tickers=await self._fetch_tickers(); price_map:Dict[str,float]={}
+                tickers = await self._fetch_tickers()
+                price_map: Dict[str, float] = {}
                 for raw in tickers or []:
-                    t=_to_dict(raw); s=_sym(t)
+                    t = _to_dict(raw)
+                    s = _sym(t)
                     if s:
-                        px=_f(t,"price","markPx","midPx","mark_px","mid","last")
-                        if px>0: price_map[s]=px
+                        px = _f(t, "price", "markPx", "midPx", "mark_px", "mid", "last")
+                        if px > 0:
+                            price_map[s] = px
                 if price_map:
                     await self._manage_open(price_map)
                     try:
                         from app.services.v4_shadow_bridge import mirror_price_map
                         mirror_price_map(price_map)
-                    except Exception: pass
-            except asyncio.CancelledError: raise
-            except Exception as e: log.warning("paper manage loop error",error=str(e)[:160])
-            await asyncio.sleep(float(getattr(get_settings(),"perp_micro_manage_seconds",8.0) or 8.0))
+                    except Exception:
+                        pass
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                log.warning("paper manage loop error", error=str(e)[:160])
+            settings = get_settings()
+            await asyncio.sleep(float(getattr(settings, "perp_micro_manage_seconds", 8.0) or 8.0))
 
-    def _roll_day(self)->None:
-        key=datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        if key!=self._day_key: self._day_key=key; self._triggers_today=0
+    def _roll_day(self) -> None:
+        key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        if key != self._day_key:
+            self._day_key = key
+            self._triggers_today = 0
 
-    async def _fetch_tickers(self)->List[Any]:
+    async def _fetch_tickers(self) -> List[Any]:
         try:
             from app.adapters.hyperliquid_cache import get_tickers_cached
-            data=await get_tickers_cached()
-            if data: return data
-        except Exception as e: log.warning("cache ticker path failed",error=str(e)[:200])
+            data = await get_tickers_cached()
+            if data:
+                return data
+        except Exception as e:
+            log.warning("cache ticker path failed", error=str(e)[:200])
         return []
 
-    async def _fetch_closes(self,symbol:str,n:int=48,interval:str="5m")->List[float]:
-        client=self._http or httpx.AsyncClient(timeout=25.0); owned=self._http is None
+    async def _fetch_closes(self, symbol: str, n: int = 48, interval: str = "5m") -> List[float]:
+        client = self._http or httpx.AsyncClient(timeout=25.0)
+        owned = self._http is None
         try:
-            end_ms=int(datetime.now(timezone.utc).timestamp()*1000); bar_ms=5*60*1000 if interval=="5m" else 60*60*1000; start_ms=end_ms-n*bar_ms
-            r=await client.post(HL_INFO_URL,json={"type":"candleSnapshot","req":{"coin":symbol,"interval":interval,"startTime":start_ms,"endTime":end_ms}})
-            if r.status_code==429: await asyncio.sleep(2.0); return []
-            r.raise_for_status(); rows=r.json(); closes=[]
+            end_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+            bar_ms = 5 * 60 * 1000 if interval == "5m" else 60 * 60 * 1000
+            start_ms = end_ms - n * bar_ms
+            r = await client.post(HL_INFO_URL, json={"type": "candleSnapshot", "req": {"coin": symbol, "interval": interval, "startTime": start_ms, "endTime": end_ms}})
+            if r.status_code == 429:
+                await asyncio.sleep(2.0)
+                return []
+            r.raise_for_status()
+            rows = r.json()
+            closes: List[float] = []
             for c in rows or []:
-                if isinstance(c,dict): closes.append(_f(c,"c","close"))
-            return [x for x in closes if x>0]
-        except Exception: return []
+                if isinstance(c, dict):
+                    closes.append(_f(c, "c", "close"))
+            return [x for x in closes if x > 0]
+        except Exception:
+            return []
         finally:
             if owned:
-                try: await client.aclose()
-                except Exception: pass
+                try:
+                    await client.aclose()
+                except Exception:
+                    pass
 
-    async def htf_trend(self,symbol:str)->str:
-        now=datetime.now(timezone.utc).timestamp(); hit=self._htf_cache.get(symbol)
-        if hit and now-float(hit[0])<900: return str(hit[1])
-        trend=_trend_from_closes(await self._fetch_closes(symbol,48,interval="1h")); self._htf_cache[symbol]=(now,trend); return trend
+    async def htf_trend(self, symbol: str) -> str:
+        now = datetime.now(timezone.utc).timestamp()
+        hit = self._htf_cache.get(symbol)
+        if hit and now - float(hit[0]) < 900:
+            return str(hit[1])
+        closes = await self._fetch_closes(symbol, 48, interval="1h")
+        trend = _trend_from_closes(closes)
+        self._htf_cache[symbol] = (now, trend)
+        return trend
 
-    def _build_liquid(self,tickers:List[Any])->List[str]:
-        settings=get_settings(); min_vol=float(settings.perp_micro_min_vol); min_oi=float(settings.perp_micro_min_oi); majors=set(settings.perp_micro_majors_list); ranked=[]; self._vol_map.clear(); self._oi_map.clear()
+    def _build_liquid(self, tickers: List[Any]) -> List[str]:
+        settings = get_settings()
+        min_vol = float(settings.perp_micro_min_vol)
+        min_oi = float(settings.perp_micro_min_oi)
+        majors = set(settings.perp_micro_majors_list)
+        ranked: List[Tuple[str, float, str]] = []
+        self._vol_map.clear()
+        self._oi_map.clear()
         for raw in tickers:
-            t=_to_dict(raw); sym=_sym(t)
-            if not sym: continue
-            vol=_f(t,"volume_24h","dayNtlVlm","day_ntl_vlm","volume24h","vol24h","volume"); oi=_f(t,"open_interest","openInterest","open_interest_usd","oi"); px=_f(t,"price","markPx","midPx","mark_px","mid","last")
-            if 0<oi<min_oi and px>0 and oi*px>=min_oi*0.2: oi=oi*px
-            self._vol_map[sym]=vol; self._oi_map[sym]=oi
-            if vol<min_vol or oi<min_oi: continue
-            tier=_tier(sym,majors)
-            if tier=="junk" and vol<min_vol*5: continue
-            ranked.append((sym,vol,tier))
-        tier_rank={"major":0,"alt":1,"meme":2,"junk":3}; ranked.sort(key=lambda x:(tier_rank.get(x[2],9),-x[1])); symbols=[s for s,_,_ in ranked]; pinned=[]; seen=set(self._vol_map.keys())|set(symbols)
-        for m in settings.perp_micro_majors_list:
-            if m in seen and m not in pinned: pinned.append(m)
-        return (pinned+[s for s in symbols if s not in pinned])[:80]
+            t = _to_dict(raw)
+            sym = _sym(t)
+            if not sym:
+                continue
+            vol = _f(t, "volume_24h", "dayNtlVlm", "day_ntl_vlm", "volume24h", "vol24h", "volume")
+            oi = _f(t, "open_interest", "openInterest", "open_interest_usd", "oi")
+            px = _f(t, "price", "markPx", "midPx", "mark_px", "mid", "last")
+            if 0 < oi < min_oi and px > 0 and oi * px >= min_oi * 0.2:
+                oi = oi * px
+            self._vol_map[sym] = vol
+            self._oi_map[sym] = oi
+            if vol < min_vol or oi < min_oi:
+                continue
+            tier = _tier(sym, majors)
+            if settings.perp_micro_prefer_majors and tier == "meme" and vol < min_vol * 4:
+                continue
+            if tier == "junk" and vol < min_vol * 5:
+                continue
+            ranked.append((sym, vol, tier))
+        tier_rank = {"major": 0, "alt": 1, "meme": 2, "junk": 3}
+        ranked.sort(key=lambda x: (tier_rank.get(x[2], 9), -x[1]))
+        return [s for s, _, _ in ranked][:80]
 
-    def _setup_quality(self,symbol:str,side:str,price:float,closes:List[float],rsi:float,sma20:float,ext_pct:float,hard_gates:bool=True)->Tuple[bool,float,str]:
-        settings=get_settings(); tier=_tier(symbol,set(settings.perp_micro_majors_list)); atr=_atr_proxy(closes,14); score=40.0; reasons=[]
-        if side=="LONG":
-            if rsi<=20: score+=18; reasons.append("RSI deep OS")
-            elif rsi<=float(settings.perp_micro_rsi_long): score+=10; reasons.append("RSI OS")
-            elif hard_gates: return False,0.0,"RSI not low enough"
+    def _setup_quality(self, symbol: str, side: str, price: float, closes: List[float], rsi: float, sma20: float, ext_pct: float, hard_gates: bool = True) -> Tuple[bool, float, str]:
+        settings = get_settings()
+        tier = _tier(symbol, set(settings.perp_micro_majors_list))
+        atr = _atr_proxy(closes, 14)
+        ema21 = _ema(closes, 21)
+        ema50 = _ema(closes, 50) if len(closes) >= 50 else ema21
+        score = 40.0
+        reasons: List[str] = []
+        vol = self._vol_map.get(symbol, 0.0)
+        oi = self._oi_map.get(symbol, 0.0)
+        if side == "LONG":
+            if rsi <= 20:
+                score += 18; reasons.append("RSI deep OS")
+            elif rsi <= float(settings.perp_micro_rsi_long):
+                score += 10; reasons.append("RSI OS")
+            elif hard_gates:
+                return False, 0.0, "RSI not low enough"
         else:
-            if rsi>=80: score+=18; reasons.append("RSI deep OB")
-            elif rsi>=float(settings.perp_micro_rsi_short): score+=10; reasons.append("RSI OB")
-            elif hard_gates: return False,0.0,"RSI not high enough"
-        if ext_pct>=float(settings.perp_micro_min_extension_pct)+0.8: score+=12
-        elif ext_pct>=float(settings.perp_micro_min_extension_pct): score+=6
-        elif hard_gates: return False,0.0,"extension too small"
-        vol=self._vol_map.get(symbol,0.0); oi=self._oi_map.get(symbol,0.0)
-        if vol>=5_000_000: score+=10
-        elif vol>=1_000_000: score+=5
-        if oi>=5_000_000: score+=8
-        elif oi>=500_000: score+=3
-        min_score=_min_score_for_tier(tier); score+=10 if tier=="major" else (4 if tier=="alt" else 0)
-        if price>0 and (atr/price)<0.0015 and hard_gates: return False,score,"ATR too tight / dead"
-        return score>=min_score,score,", ".join(reasons) if reasons else "n/a"
+            if rsi >= 80:
+                score += 18; reasons.append("RSI deep OB")
+            elif rsi >= float(settings.perp_micro_rsi_short):
+                score += 10; reasons.append("RSI OB")
+            elif hard_gates:
+                return False, 0.0, "RSI not high enough"
+        if ext_pct >= float(settings.perp_micro_min_extension_pct) + 0.8:
+            score += 12
+        elif ext_pct >= float(settings.perp_micro_min_extension_pct):
+            score += 6
+        elif hard_gates:
+            return False, 0.0, "extension too small"
+        recent = sum(closes[-5:]) / 5
+        prior = sum(closes[-10:-5]) / 5
+        if side == "LONG" and recent < prior * 0.995:
+            score += 10
+        elif side == "SHORT" and recent > prior * 1.005:
+            score += 10
+        else:
+            score -= 8
+        if ema21 and ema50:
+            up = ema21 > ema50
+            if side == "LONG" and not up:
+                score += 8
+            elif side == "SHORT" and up:
+                score += 8
+            elif tier != "major":
+                score -= 6
+        if vol >= 5_000_000:
+            score += 10
+        elif vol >= 1_000_000:
+            score += 5
+        if oi >= 5_000_000:
+            score += 8
+        elif oi >= 500_000:
+            score += 3
+        if tier == "major":
+            score += 10
+        elif tier == "alt":
+            score += 4
+        if price > 0 and (atr / price) < 0.0015 and hard_gates:
+            return False, score, "ATR too tight / dead"
+        return score >= _min_score_for_tier(tier), score, ", ".join(reasons) if reasons else "n/a"
 
-    async def _cycle(self)->None:
+    async def _cycle(self) -> None:
         from app.services.micro_heartbeat import micro_heartbeat
-        self._roll_day(); settings=get_settings(); self._rehydrate_open(reason="cycle"); tickers=await self._fetch_tickers(); self._liquid=self._build_liquid(tickers) if tickers else []
-        price_map={}
+        self._roll_day()
+        settings = get_settings()
+        self._rehydrate_open(reason="cycle")
+        tickers = await self._fetch_tickers()
+        self._liquid = self._build_liquid(tickers) if tickers else []
+        price_map: Dict[str, float] = {}
         for raw in tickers or []:
-            t=_to_dict(raw); s=_sym(t); px=_f(t,"price","markPx","midPx","mark_px","mid","last")
-            if s and px>0: price_map[s]=px
+            t = _to_dict(raw)
+            s = _sym(t)
+            if s:
+                px = _f(t, "price", "markPx", "midPx", "mark_px", "mid", "last")
+                if px > 0:
+                    price_map[s] = px
         await self._manage_open(price_map)
         try:
             from app.services.v4_shadow_bridge import mirror_price_map
             mirror_price_map(price_map)
-        except Exception: pass
-        max_open=int(settings.effective_max_open); max_day=int(settings.perp_micro_max_triggers_per_day)
-        if not settings.perp_micro_paper_enabled or not self._liquid or len(self._open)>=max_open or self._triggers_today>=max_day: micro_heartbeat.record_scan(); return
-        open_syms={p["symbol"] for p in self._open.values()}; now=datetime.now(timezone.utc)
+        except Exception:
+            pass
+        max_open = int(settings.effective_max_open)
+        max_day = int(settings.perp_micro_max_triggers_per_day)
+        if not settings.perp_micro_paper_enabled or not self._liquid or len(self._open) >= max_open or self._triggers_today >= max_day:
+            micro_heartbeat.record_scan()
+            return
+        open_syms = {p["symbol"] for p in self._open.values()}
+        now = datetime.now(timezone.utc)
         for sym in self._liquid:
-            if len(self._open)>=max_open or self._triggers_today>=max_day: break
-            if sym in open_syms: continue
-            cd=self._cooldowns.get(sym)
-            if cd and (now-cd).total_seconds()<1800: continue
+            if len(self._open) >= max_open or self._triggers_today >= max_day:
+                break
+            if sym in open_syms:
+                continue
+            cd = self._cooldowns.get(sym)
+            if cd and (now - cd).total_seconds() < 1800:
+                continue
             try:
-                if await self._try_symbol(sym,price_map.get(sym,0.0)): self._triggers_today+=1; micro_heartbeat.record_trigger()
-            except Exception as e: log.debug("symbol eval fail",symbol=sym,error=str(e))
+                if await self._try_symbol(sym, price_map.get(sym, 0.0)):
+                    self._triggers_today += 1
+                    micro_heartbeat.record_trigger()
+            except Exception as e:
+                log.debug("symbol eval fail", symbol=sym, error=str(e))
         micro_heartbeat.record_scan()
 
-    async def _try_symbol(self,symbol:str,price:float)->bool:
+    async def _try_symbol(self, symbol: str, price: float) -> bool:
         from app.services.paper_journal import paper_journal
-        from app.services.paper_pipeline import paper_pipeline
-        settings=get_settings()
-        if price<=0: return False
-        closes=await self._fetch_closes(symbol,48)
-        if len(closes)<25: return False
-        closes[-1]=price; rsi=_rsi(closes,14); sma20=_sma(closes,20)
-        if rsi is None or sma20 is None or sma20<=0: return False
-        ext_pct=abs(price-sma20)/sma20*100.0
-        if ext_pct<float(settings.perp_micro_min_extension_pct) or ext_pct>float(getattr(settings,"perp_micro_max_extension_pct",3.5)): return False
-        side="LONG" if rsi<=float(settings.perp_micro_rsi_long) else ("SHORT" if rsi>=float(settings.perp_micro_rsi_short) else None)
-        if side is None: return False
-        ok,qscore,reason=self._setup_quality(symbol,side,price,closes,rsi,sma20,ext_pct)
-        if not ok: return False
-        tier=_tier(symbol,set(settings.perp_micro_majors_list))
-        if tier in ("junk","meme"): return False
-        atr=_atr_proxy(closes,14); min_rr=float(settings.perp_micro_min_rr); scalp_r=float(getattr(settings,"perp_micro_scalp_tp_r",1.0) or 1.0); be_after=float(getattr(settings,"perp_micro_be_after_r",0.3) or 0.0); lock_after=float(getattr(settings,"perp_micro_lock_after_r",0.5) or 0.0); lock_r=float(getattr(settings,"perp_micro_lock_r",0.2) or 0.0); scalp_on=bool(getattr(settings,"perp_micro_scalp_enabled",True))
-        stop=price-1.5*atr if side=="LONG" else price+1.5*atr; risk=abs(price-stop)
-        if risk<=0: return False
-        setup_tp=price+min_rr*risk if side=="LONG" else price-min_rr*risk; tp1=(price+scalp_r*risk if side=="LONG" else price-scalp_r*risk) if scalp_on else setup_tp
-        tid=await paper_journal.open_trade(symbol=symbol,side=side,entry=price,signal_price=price,stop=stop,tp1=tp1,tp2=setup_tp,risk_usd=float(settings.perp_micro_risk_usd),regime=f"rsi={rsi:.1f};q={qscore:.0f};{tier}",notes=f"ext={ext_pct:.2f}%|{reason}",source="perp_micro",strategy="rsi_extension_v1",signal_score=qscore,features={"rsi":rsi,"ext_pct":ext_pct,"atr":atr,"setup_rr":min_rr,"exit_mode":"SCALP" if scalp_on else "SETUP_18","scalp_tp_r":scalp_r,"be_after_r":be_after,"lock_after_r":lock_after,"lock_r":lock_r},tier=tier,counts_for_live=True)
-        if not tid: return False
-        self._open[tid]={"symbol":symbol,"side":side,"entry":price,"stop":stop,"initial_stop":stop,"working_stop":stop,"tp1":tp1,"tp2":setup_tp,"mark":price,"trade_id":tid,"tier":tier,"counts_for_live":True,"qscore":qscore,"mfe_r":0.0,"mae_r":0.0,"exit_mode":"SCALP" if scalp_on else "SETUP_18","scalp_tp_r":scalp_r,"be_after_r":be_after,"lock_after_r":lock_after,"lock_r":lock_r,"be_armed":False,"lock_armed":False,"setup_rr":min_rr,"risk_price":risk}
-        self._cooldowns[symbol]=datetime.now(timezone.utc)
+        settings = get_settings()
+        if price <= 0:
+            return False
+        closes = await self._fetch_closes(symbol, 48)
+        if len(closes) < 25:
+            return False
+        closes[-1] = price
+        rsi = _rsi(closes, 14)
+        sma20 = _sma(closes, 20)
+        if rsi is None or sma20 is None or sma20 <= 0:
+            return False
+        ext_pct = abs(price - sma20) / sma20 * 100.0
+        if ext_pct < float(settings.perp_micro_min_extension_pct) or ext_pct > float(getattr(settings, "perp_micro_max_extension_pct", 3.5)):
+            return False
+        side: Optional[str] = None
+        if rsi <= float(settings.perp_micro_rsi_long):
+            side = "LONG"
+        elif rsi >= float(settings.perp_micro_rsi_short):
+            side = "SHORT"
+        if side is None:
+            return False
+        if bool(getattr(settings, "perp_micro_htf_align", True)):
+            trend = await self.htf_trend(symbol)
+            if not htf_allows_side(side, trend):
+                return False
+        ok, qscore, reason = self._setup_quality(symbol, side, price, closes, rsi, sma20, ext_pct)
+        if not ok:
+            return False
+        tier = _tier(symbol, set(settings.perp_micro_majors_list))
+        if tier in ("junk", "meme"):
+            return False
+        atr = _atr_proxy(closes, 14)
+        min_rr = float(settings.perp_micro_min_rr)
+        scalp_r = float(getattr(settings, "perp_micro_scalp_tp_r", 1.0) or 1.0)
+        be_after = float(getattr(settings, "perp_micro_be_after_r", 0.3) or 0.0)
+        lock_after = float(getattr(settings, "perp_micro_lock_after_r", 0.5) or 0.0)
+        lock_r = float(getattr(settings, "perp_micro_lock_r", 0.2) or 0.0)
+        scalp_on = bool(getattr(settings, "perp_micro_scalp_enabled", True))
+        if side == "LONG":
+            stop = price - 1.5 * atr
+            risk = abs(price - stop)
+            setup_tp = price + min_rr * risk
+            tp1 = (price + scalp_r * risk) if scalp_on else setup_tp
+        else:
+            stop = price + 1.5 * atr
+            risk = abs(price - stop)
+            setup_tp = price - min_rr * risk
+            tp1 = (price - scalp_r * risk) if scalp_on else setup_tp
+        if risk <= 0:
+            return False
+        tid = await paper_journal.open_trade(
+            symbol=symbol,
+            side=side,
+            entry=price,
+            signal_price=price,
+            stop=stop,
+            tp1=tp1,
+            tp2=setup_tp,
+            risk_usd=float(settings.perp_micro_risk_usd),
+            regime=f"rsi={rsi:.1f};q={qscore:.0f};{tier}",
+            notes=f"ext={ext_pct:.2f}%|{reason}",
+            source="perp_micro",
+            strategy="rsi_extension_v1",
+            signal_score=qscore,
+            features={"rsi": rsi, "ext_pct": ext_pct, "atr": atr, "setup_rr": min_rr, "exit_mode": "SCALP" if scalp_on else "SETUP_18", "scalp_tp_r": scalp_r, "be_after_r": be_after, "lock_after_r": lock_after, "lock_r": lock_r},
+            tier=tier,
+            counts_for_live=True,
+        )
+        if not tid:
+            return False
+        self._open[tid] = {
+            "symbol": symbol,
+            "side": side,
+            "entry": price,
+            "stop": stop,
+            "initial_stop": stop,
+            "working_stop": stop,
+            "tp1": tp1,
+            "tp2": setup_tp,
+            "mark": price,
+            "trade_id": tid,
+            "tier": tier,
+            "counts_for_live": True,
+            "qscore": qscore,
+            "mfe_r": 0.0,
+            "mae_r": 0.0,
+            "exit_mode": "SCALP" if scalp_on else "SETUP_18",
+            "scalp_tp_r": scalp_r,
+            "be_after_r": be_after,
+            "lock_after_r": lock_after,
+            "lock_r": lock_r,
+            "be_armed": False,
+            "lock_armed": False,
+            "setup_rr": min_rr,
+            "risk_price": risk,
+        }
+        self._cooldowns[symbol] = datetime.now(timezone.utc)
         try:
             from app.services.v4_shadow_bridge import mirror_legacy_trade
-            mirror_legacy_trade(trade_id=tid,symbol=symbol,side=side,price=price,stop=stop,setup_rr=min_rr,risk_usd=float(settings.perp_micro_risk_usd))
-        except Exception: pass
+            mirror_legacy_trade(
+                trade_id=tid,
+                symbol=symbol,
+                side=side,
+                price=price,
+                stop=stop,
+                setup_rr=min_rr,
+                risk_usd=float(settings.perp_micro_risk_usd),
+            )
+        except Exception:
+            pass
         return True
 
-    def _prepare_exit_levels(self,p:Dict[str,Any])->None:
-        entry=float(p.get("entry") or 0); side=str(p.get("side") or "").upper(); initial_stop=float(p.get("initial_stop") or p.get("stop") or 0); risk=abs(entry-initial_stop) or 1e-12; p["risk_price"]=risk
-        if p.get("working_stop") is None: p["working_stop"]=initial_stop
-        scalp_r=float(p.get("scalp_tp_r") or 1.0)
-        if side=="LONG": p["tp1"]=entry+scalp_r*risk
-        elif side=="SHORT": p["tp1"]=entry-scalp_r*risk
+    def _prepare_exit_levels(self, p: Dict[str, Any]) -> None:
+        entry = float(p.get("entry") or 0)
+        side = str(p.get("side") or "").upper()
+        initial_stop = float(p.get("initial_stop") or p.get("stop") or 0)
+        p["initial_stop"] = initial_stop
+        risk = abs(entry - initial_stop) or 1e-12
+        p["risk_price"] = float(p.get("risk_price") or risk)
+        if p.get("working_stop") is None:
+            p["working_stop"] = initial_stop
+        scalp_r = float(p.get("scalp_tp_r") or 1.0)
+        if side == "LONG":
+            p["tp1"] = entry + scalp_r * risk
+        elif side == "SHORT":
+            p["tp1"] = entry - scalp_r * risk
 
-    async def _manage_open(self,price_map:Dict[str,float])->None:
+    async def _manage_open(self, price_map: Dict[str, float]) -> None:
         from app.services.paper_journal import paper_journal
-        to_close=[]
-        for tid,p in list(self._open.items()):
+        to_close: List[str] = []
+        for tid, p in list(self._open.items()):
             try:
-                sym=p["symbol"]; px=price_map.get(sym)
-                if px is None or px<=0: p["stale_quote"]=True; p["lifecycle"]="MARKET_DATA_UNAVAILABLE"; continue
-                mark=float(px); p["mark"]=mark; p["lifecycle"]="MANAGED"; p["stale_quote"]=False; paper_journal.update_excursion(tid,mark); jopen=paper_journal._open.get(tid,{})
-                p["mfe_r"]=jopen.get("mfe_r",p.get("mfe_r",0)); p["mae_r"]=jopen.get("mae_r",p.get("mae_r",0)); self._prepare_exit_levels(p)
-                side=p["side"]; entry=float(p["entry"]); initial_stop=float(p.get("initial_stop") or p.get("stop") or 0); risk=abs(entry-initial_stop) or 1e-12; mfe=float(p.get("mfe_r") or 0); be_after=float(p.get("be_after_r") or 0.3); lock_after=float(p.get("lock_after_r") or 0.5); lock_r=float(p.get("lock_r") or 0.2)
-                if not p.get("be_armed") and mfe>=be_after: p["be_armed"]=True; p["working_stop"]=entry
-                if mfe>=lock_after:
-                    locked=entry+lock_r*risk if side=="LONG" else entry-lock_r*risk; p["working_stop"]=max(float(p.get("working_stop") or initial_stop),locked) if side=="LONG" else min(float(p.get("working_stop") or initial_stop),locked); p["lock_armed"]=True
-                working_stop=float(p.get("working_stop") or initial_stop); tp1=float(p["tp1"]); hit_stop=mark<=working_stop if side=="LONG" else mark>=working_stop; hit_tp=mark>=tp1 if side=="LONG" else mark<=tp1
-                if not hit_stop and not hit_tp: continue
+                if p.get("lifecycle") == "ERROR_REQUIRES_REVIEW":
+                    continue
+                sym = p["symbol"]
+                px = price_map.get(sym)
+                if px is None or px <= 0:
+                    p["stale_quote"] = True
+                    p["lifecycle"] = "MARKET_DATA_UNAVAILABLE"
+                    continue
+                mark = float(px)
+                p["stale_quote"] = False
+                p["lifecycle"] = "MANAGED"
+                p["mark"] = mark
+                paper_journal.update_excursion(tid, mark)
+                jopen = paper_journal._open.get(tid, {})
+                p["mfe_r"] = jopen.get("mfe_r", p.get("mfe_r", 0))
+                p["mae_r"] = jopen.get("mae_r", p.get("mae_r", 0))
+                self._prepare_exit_levels(p)
+                side = p["side"]
+                entry = float(p["entry"])
+                initial_stop = float(p.get("initial_stop") or p.get("stop") or 0)
+                risk = abs(entry - initial_stop) or 1e-12
+                mfe = float(p.get("mfe_r") or 0)
+                be_after = float(p.get("be_after_r") or 0.3)
+                lock_after = float(p.get("lock_after_r") or 0.5)
+                lock_r = float(p.get("lock_r") or 0.2)
+                if not p.get("be_armed") and mfe >= be_after:
+                    p["be_armed"] = True
+                    p["working_stop"] = entry
+                if mfe >= lock_after:
+                    locked = entry + lock_r * risk if side == "LONG" else entry - lock_r * risk
+                    p["working_stop"] = max(float(p.get("working_stop") or initial_stop), locked) if side == "LONG" else min(float(p.get("working_stop") or initial_stop), locked)
+                    p["lock_armed"] = True
+                working_stop = float(p.get("working_stop") or initial_stop)
+                tp1 = float(p["tp1"])
+                hit_stop = mark <= working_stop if side == "LONG" else mark >= working_stop
+                hit_tp = mark >= tp1 if side == "LONG" else mark <= tp1
+                if not hit_stop and not hit_tp:
+                    continue
                 if hit_stop:
-                    stop_pnl=(working_stop-entry)/risk if side=="LONG" else (entry-working_stop)/risk; result="LOCK" if stop_pnl>=0.05 else ("BE" if p.get("be_armed") else "STOP"); exit_px=working_stop if result=="LOCK" else (entry if result=="BE" else initial_stop); pnl_r=stop_pnl if result=="LOCK" else (0.0 if result=="BE" else -1.0)
-                else: result="TP1"; exit_px=tp1; pnl_r=abs(tp1-entry)/risk
-                await paper_journal.close_trade(tid,exit_price=exit_px,result=result,pnl_r=pnl_r); p["lifecycle"]="CLOSED"; to_close.append(tid); self._cooldowns[sym]=datetime.now(timezone.utc)
-            except Exception as e: p["lifecycle"]="ERROR_REQUIRES_REVIEW"; p["error"]=str(e)[:160]
-        for tid in to_close: self._open.pop(tid,None)
+                    stop_pnl = (working_stop - entry) / risk if side == "LONG" else (entry - working_stop) / risk
+                    if stop_pnl >= 0.05:
+                        result, exit_px, pnl_r = "LOCK", working_stop, stop_pnl
+                    elif p.get("be_armed") or abs(stop_pnl) < 0.05:
+                        result, exit_px, pnl_r = "BE", entry, 0.0
+                    else:
+                        result, exit_px, pnl_r = "STOP", initial_stop, -1.0
+                else:
+                    result, exit_px = "TP1", tp1
+                    pnl_r = abs(tp1 - entry) / risk
+                await paper_journal.close_trade(tid, exit_price=exit_px, result=result, pnl_r=pnl_r)
+                p["lifecycle"] = "CLOSED"
+                to_close.append(tid)
+                self._cooldowns[sym] = datetime.now(timezone.utc)
+            except Exception as e:
+                p["lifecycle"] = "ERROR_REQUIRES_REVIEW"
+                p["error"] = str(e)[:160]
+        for tid in to_close:
+            self._open.pop(tid, None)
 
 
-perp_micro_coach=PerpMicroCoach()
+perp_micro_coach = PerpMicroCoach()
