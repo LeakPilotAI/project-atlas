@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import asdict
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from app.adapters.registry import registry
@@ -10,11 +11,14 @@ from app.core.logging import get_logger
 from app.trading_core.models import Side
 from app.trading_core.perp_discovery import analyze_candles, rank_setup, shortlist_markets
 from app.trading_core.perp_manual_planner import build_manual_perp_plan
+from app.trading_core.perp_manual_state_store import ManualPerpStateError, ManualPerpStateStore
 from app.trading_core.perp_manual_trade_lifecycle import close_plan, enter_setup
 from app.trading_core.perp_setup_lifecycle import reconcile_setups
 from app.trading_core.perp_setup_state import classify_setup_state
 
 log = get_logger("perp_manual")
+
+DEFAULT_MANUAL_PERP_STATE_PATH = Path(__file__).resolve().parents[2] / "data" / "perp_manual_state.json"
 
 
 class PerpManualService:
@@ -24,18 +28,59 @@ class PerpManualService:
     by explicit user/API lifecycle actions; price movement alone cannot invent a fill.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, state_path: Path | None = None) -> None:
         self.running = False
         self.last_error: Optional[str] = None
         self.last_refresh_at: Optional[str] = None
+        self.recovery_error: Optional[str] = None
+        self.recovered_at: Optional[str] = None
+        self._state_store = ManualPerpStateStore(state_path) if state_path is not None else None
+        self._recovered_setup_history: list[Dict[str, Any]] = []
         self.last_snapshot: Dict[str, Any] = {
             "source": "hyperliquid",
             "mode": "MANUAL_ONLY",
             "markets": [],
             "setups": [],
+            "alert_candidates": [],
             "plans": [],
         }
         self._task: Optional[asyncio.Task] = None
+        self._recover_state()
+
+    def _recover_state(self) -> None:
+        if self._state_store is None:
+            return
+        try:
+            state = self._state_store.load()
+        except ManualPerpStateError as exc:
+            self.recovery_error = str(exc)
+            log.warning("Manual perp state recovery skipped", error=self.recovery_error)
+            return
+        plans = [dict(row) for row in state.get("plans") or []]
+        for plan in plans:
+            if str(plan.get("status") or "").upper() != "CLOSED":
+                plan["mark"] = None
+                plan["state"] = "WAIT"
+                plan["next_action"] = "Recovered after restart; waiting for a fresh Hyperliquid mark."
+                plan["distance_to_l1_pct"] = None
+        self.last_snapshot["plans"] = plans
+        self._recovered_setup_history = [dict(row) for row in state.get("setup_history") or []]
+        self.recovered_at = datetime.now(timezone.utc).isoformat()
+        self.recovery_error = None
+
+    def _persist_state(self) -> None:
+        if self._state_store is None:
+            return
+        try:
+            setup_history = list(self.last_snapshot.get("setups") or []) or list(self._recovered_setup_history)
+            self._state_store.save(
+                plans=list(self.last_snapshot.get("plans") or []),
+                setup_history=setup_history,
+            )
+            self.recovery_error = None
+        except Exception as exc:
+            self.recovery_error = f"{type(exc).__name__}: {str(exc)[:180]}"
+            log.warning("Manual perp state persist failed", error=self.recovery_error)
 
     async def start(self) -> None:
         if self.running:
@@ -46,6 +91,7 @@ class PerpManualService:
 
     async def stop(self) -> None:
         self.running = False
+        self._persist_state()
         if self._task:
             self._task.cancel()
             try:
@@ -213,9 +259,12 @@ class PerpManualService:
 
         raw_setups = await self._discover_setups(adapter, rows, live_universe)
         now_dt = datetime.now(timezone.utc)
+        previous_setups = list(self.last_snapshot.get("setups") or [])
+        if not previous_setups and self._recovered_setup_history:
+            previous_setups = list(self._recovered_setup_history)
         setups = reconcile_setups(
             raw_setups,
-            previous=list(self.last_snapshot.get("setups") or []),
+            previous=previous_setups,
             now=now_dt,
             cooldown_minutes=30,
         )
@@ -239,6 +288,7 @@ class PerpManualService:
             setup["entry_price"] = active.get("entry_price") if active else None
             setup["entered_at"] = active.get("entered_at") if active else None
 
+        self._recovered_setup_history = [dict(row) for row in setups]
         now = now_dt.isoformat()
         self.last_snapshot = {
             "source": "hyperliquid",
@@ -253,6 +303,7 @@ class PerpManualService:
         }
         self.last_refresh_at = now
         self.last_error = None
+        self._persist_state()
         return self.snapshot()
 
     def acknowledge_alert(self, setup_key: str) -> bool:
@@ -267,6 +318,9 @@ class PerpManualService:
         self.last_snapshot["alert_candidates"] = [
             s for s in self.last_snapshot.get("setups") or [] if bool(s.get("alert_eligible"))
         ]
+        if changed:
+            self._recovered_setup_history = [dict(row) for row in self.last_snapshot.get("setups") or []]
+            self._persist_state()
         return changed
 
     def enter_discovered_setup(self, setup_key: str, *, fill_price: float | None = None) -> Dict[str, Any]:
@@ -303,6 +357,7 @@ class PerpManualService:
         setup["trade_status"] = "ENTERED"
         setup["entry_price"] = plan["entry_price"]
         setup["entered_at"] = plan["entered_at"]
+        self._persist_state()
         return dict(plan)
 
     def close_entered_plan(
@@ -333,6 +388,7 @@ class PerpManualService:
                 setup["trade_status"] = "CLOSED"
                 setup["entry_price"] = closed.get("entry_price")
                 setup["entered_at"] = closed.get("entered_at")
+        self._persist_state()
         return dict(closed)
 
     def create_plan(
@@ -403,6 +459,7 @@ class PerpManualService:
         plans = [p for p in plans if not (p.get("symbol") == out["symbol"] and p.get("side") == out["side"])]
         plans.insert(0, out)
         self.last_snapshot["plans"] = plans[:100]
+        self._persist_state()
         return out
 
     def snapshot(self) -> Dict[str, Any]:
@@ -411,7 +468,12 @@ class PerpManualService:
             "running": self.running,
             "last_refresh_at": self.last_refresh_at,
             "last_error": self.last_error,
+            "persistence": {
+                "enabled": self._state_store is not None,
+                "recovered_at": self.recovered_at,
+                "error": self.recovery_error,
+            },
         }
 
 
-perp_manual_service = PerpManualService()
+perp_manual_service = PerpManualService(state_path=DEFAULT_MANUAL_PERP_STATE_PATH)
