@@ -35,6 +35,22 @@ def test_board_exposes_manual_levels():
     assert row["tp2"] == 106.0
 
 
+def test_long_limits_below_mark_are_resting():
+    row = build_perp_board([_setup("BTC", tier="PRIME", state="PREPARE", score=90)])[0]
+    assert row["limit_sanity"]["l1"]["behavior"] == "RESTING"
+    assert row["limit_sanity"]["l1"]["marketable"] is False
+    assert "Leverage affects exposure" in row["leverage_note"]
+
+
+def test_short_limit_below_mark_is_flagged_marketable():
+    setup = _setup("XRP", tier="QUALIFIED", state="PREPARE", score=80)
+    setup["side"] = "SHORT"
+    setup["levels"]["l1"] = 99.5
+    row = build_perp_board([setup])[0]
+    assert row["limit_sanity"]["l1"]["behavior"] == "MARKETABLE"
+    assert row["limit_sanity"]["l1"]["marketable"] is True
+
+
 def test_board_limit_is_enforced():
     rows = [_setup(f"X{i}", tier="WATCH", state="WAIT", score=50 + i) for i in range(10)]
     assert len(build_perp_board(rows, limit=3)) == 3
