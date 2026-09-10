@@ -1,4 +1,4 @@
-"""Morning command center — one combined DM (RH posture + perps note)."""
+"""Morning command center — read-only domain-isolated summary DM."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ from zoneinfo import ZoneInfo
 import structlog
 
 from app.core.config import get_settings
+from app.services.command_center_summary import live_command_center_summary
+from app.services.perp_manual_service import perp_manual_service
 
 log = structlog.get_logger(__name__)
 ET = ZoneInfo("America/New_York")
@@ -73,6 +75,45 @@ class CommandCenterService:
                 log.error("Command center error", error=str(e))
             await asyncio.sleep(30)
 
+    @staticmethod
+    def _body(summary: dict) -> str:
+        perps = summary.get("perps") or {}
+        investments = summary.get("investments") or {}
+        counts = investments.get("counts") or {}
+        top_perp = perps.get("top_setup") or {}
+        top_inv = investments.get("top_opportunity") or {}
+
+        perp_top = "none"
+        if top_perp:
+            perp_top = (
+                f"{top_perp.get('symbol')} {top_perp.get('side')} · "
+                f"{top_perp.get('tier')} · {top_perp.get('state')}"
+            )
+        inv_top = "none"
+        if top_inv:
+            inv_top = (
+                f"{top_inv.get('symbol')} · {top_inv.get('stance')} · "
+                f"evidence {top_inv.get('evidence_quality')} · thesis {top_inv.get('thesis')}"
+            )
+
+        return (
+            "**Morning Command Center**\n\n"
+            "**Perp Day Trade — HYPERLIQUID_PERPS**\n"
+            f"• Running: **{bool(perps.get('running'))}** · markets: **{perps.get('market_count', 0)}**\n"
+            f"• PRIME: **{perps.get('prime_count', 0)}** · QUALIFIED: **{perps.get('qualified_count', 0)}**\n"
+            f"• Actionable: **{perps.get('actionable_count', 0)}** · entered: **{perps.get('entered_count', 0)}**\n"
+            f"• Top setup: **{perp_top}**\n\n"
+            "**Quality Dips — EQUITY_INVESTMENT**\n"
+            f"• Assets: **{investments.get('asset_count', 0)}**\n"
+            f"• ACCUMULATE: **{counts.get('ACCUMULATE', 0)}** · PREPARE: **{counts.get('PREPARE', 0)}**\n"
+            f"• WATCH: **{counts.get('WATCH', 0)}** · STAND_DOWN: **{counts.get('STAND_DOWN', 0)}**\n"
+            f"• Top research row: **{inv_top}**\n\n"
+            "**Isolation rules**\n"
+            "• Perp and investment symbols, capital assumptions, performance, and action logic remain separate.\n"
+            "• Atlas places no orders from Command Center.\n"
+            f"_Generated {datetime.now(ET).strftime('%Y-%m-%d %H:%M')} ET · read-only_"
+        )
+
     async def _send(self) -> None:
         from app.alerts.discord import is_discord_ready, send_discord_alert
 
@@ -80,35 +121,18 @@ class CommandCenterService:
             log.warning("Command center skipped — Discord not ready")
             return
 
-        settings = get_settings()
-        allow = getattr(settings, "perp_allowlist_enabled", True)
-        seeds = (getattr(settings, "perp_allowlist", "") or "BTC,ETH,SOL")[:120]
-        micro = getattr(settings, "perp_micro_enabled", True)
-
-        body = (
-            "**Morning Command Center**\n\n"
-            "**Robinhood (compound)**\n"
-            "• Posture: WATCH research dips — prefer dry powder when unsure.\n"
-            "• Max one name ≤15% · scale in · not a day-trade signal.\n\n"
-            "**Perps (separate risk)**\n"
-            f"• Allowlist active: **{allow}**\n"
-            f"• Micro paper coach: **{micro}** (sim only · `/paper`)\n"
-            f"• Seeds: `{seeds}`\n\n"
-            "**Standing rules**\n"
-            "• Target cash ≥40% when possible.\n"
-            "• You place every order. Atlas does not execute.\n"
-            f"_Generated {datetime.now(ET).strftime('%Y-%m-%d %H:%M')} ET · not advice_"
-        )
+        summary = live_command_center_summary(perp_manual_service.snapshot())
+        body = self._body(summary)
         try:
             ok = await send_discord_alert(
                 symbol="CMD",
                 title="Atlas · Morning Command Center",
                 description=body[:3900],
                 price=0.0,
-                severity="MEDIUM",
-                opportunity=50,
-                confidence=60,
-                risk=40,
+                severity="LOW",
+                opportunity=0,
+                confidence=0,
+                risk=0,
             )
             if ok:
                 log.info("Command center delivered")
