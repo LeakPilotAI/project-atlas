@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Awaitable, Callable, Dict, Iterable
+import asyncio
+from typing import Any, Awaitable, Callable, Dict, Iterable, Optional
 
 from app.alerts.discord import send_discord_alert
 from app.core.logging import get_logger
@@ -65,11 +66,7 @@ async def deliver_alert_candidates(
     acknowledge: Acknowledger,
     sender: Sender = send_discord_alert,
 ) -> Dict[str, int]:
-    """Deliver eligible manual-perp alerts without losing failed sends.
-
-    A candidate is acknowledged only after Discord reports at least one successful
-    delivery. Failed/disabled Discord leaves the candidate eligible for a later pass.
-    """
+    """Deliver eligible manual-perp alerts without losing failed sends."""
     attempted = delivered = acknowledged = failed = 0
     for setup in list(candidates):
         if not bool(setup.get("alert_eligible")):
@@ -99,3 +96,59 @@ async def deliver_alert_candidates(
         "acknowledged": acknowledged,
         "failed": failed,
     }
+
+
+class PerpAlertDeliveryService:
+    """Poll the manual-perp snapshot and DM only lifecycle-approved candidates."""
+
+    def __init__(self, *, interval_seconds: float = 10.0) -> None:
+        self.interval_seconds = max(5.0, float(interval_seconds))
+        self.running = False
+        self.last_result: Dict[str, int] = {"attempted": 0, "delivered": 0, "acknowledged": 0, "failed": 0}
+        self.last_error: Optional[str] = None
+        self._task: Optional[asyncio.Task] = None
+
+    async def start(self) -> None:
+        if self.running:
+            return
+        self.running = True
+        self._task = asyncio.create_task(self._loop(), name="perp_alert_delivery")
+        log.info("Manual perp Discord delivery started")
+
+    async def stop(self) -> None:
+        self.running = False
+        if self._task:
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+            self._task = None
+        log.info("Manual perp Discord delivery stopped")
+
+    async def deliver_once(self, *, sender: Sender = send_discord_alert) -> Dict[str, int]:
+        from app.services.perp_manual_service import perp_manual_service
+
+        snapshot = perp_manual_service.snapshot()
+        candidates = list(snapshot.get("alert_candidates") or [])
+        result = await deliver_alert_candidates(
+            candidates,
+            acknowledge=perp_manual_service.acknowledge_alert,
+            sender=sender,
+        )
+        self.last_result = result
+        self.last_error = None
+        return result
+
+    async def _loop(self) -> None:
+        await asyncio.sleep(5)
+        while self.running:
+            try:
+                await self.deliver_once()
+            except Exception as exc:
+                self.last_error = f"{type(exc).__name__}: {str(exc)[:180]}"
+                log.warning("Manual perp Discord delivery pass failed", error=self.last_error)
+            await asyncio.sleep(self.interval_seconds)
+
+
+perp_alert_delivery_service = PerpAlertDeliveryService()
