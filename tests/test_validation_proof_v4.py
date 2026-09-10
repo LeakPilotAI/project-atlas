@@ -35,3 +35,18 @@ def test_validation_orchestration_keeps_domains_separate():
     assert proof["investments"]["domain"] == "EQUITY_INVESTMENT"
     assert proof["engineering_complete_is_not_edge"] is True
     assert proof["live_capital_allowed"] is False
+
+
+def test_validation_proof_exposes_oos_cost_analysis_without_live_unlock():
+    rows = [
+        {"exit_timestamp": f"2026-01-{(i % 28) + 1:02d}T00:{i % 60:02d}:00+00:00", "net_pnl_r": 0.2, "side": "LONG", "regime": "TREND"}
+        for i in range(60)
+    ]
+    proof = build_validation_proof(paper_rows=rows, opportunity_rows=[], outcome_rows=[])
+    report = proof["perp_oos_cost"]
+    assert report["domain"] == "HYPERLIQUID_PERPS"
+    assert report["strategy_frozen"] is True
+    assert report["live_capital_allowed"] is False
+    assert "holdout" in report
+    assert "rolling" in report
+    assert "cost_stress" in report
