@@ -5,6 +5,9 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Iterable
 
+from app.trading_core.models import Side
+from app.trading_core.perp_setup_state import classify_setup_state
+
 
 class SetupTier(str, Enum):
     WATCH = "WATCH"
@@ -43,6 +46,40 @@ def _parse_time(value: Any) -> datetime | None:
         return dt.astimezone(timezone.utc)
     except (TypeError, ValueError):
         return None
+
+
+def _freeze_prior_levels(row: dict[str, Any], prior: dict[str, Any] | None) -> dict[str, Any]:
+    """Keep published execution levels fixed for the life of a setup key."""
+    if not prior or not isinstance(prior.get("levels"), dict):
+        row["levels_frozen"] = True
+        return row
+    levels = dict(prior["levels"])
+    required = {"l1", "l2", "l3", "stop", "tp1", "tp2"}
+    if not required.issubset(levels):
+        row["levels_frozen"] = True
+        return row
+    row["levels"] = levels
+    try:
+        side = Side[str(row.get("side") or "").upper()]
+        mark = float(row.get("price") or row.get("mark") or 0.0)
+        state = classify_setup_state(
+            side=side,
+            mark=mark,
+            l1=float(levels["l1"]),
+            l2=float(levels["l2"]),
+            l3=float(levels["l3"]),
+            stop=float(levels["stop"]),
+            tp1=float(levels["tp1"]),
+            tp2=float(levels["tp2"]),
+            entered=str(prior.get("trade_status") or "").upper() == "ENTERED",
+        )
+        row["state"] = state.state.value
+        row["next_action"] = state.next_action
+        row["distance_to_l1_pct"] = round(float(state.distance_to_l1_pct), 4)
+    except Exception:
+        pass
+    row["levels_frozen"] = True
+    return row
 
 
 def decide_lifecycle(
@@ -87,17 +124,28 @@ def reconcile_setups(
     previous: Iterable[dict[str, Any]] = (),
     now: datetime | None = None,
     cooldown_minutes: int = 30,
+    retention_minutes: int = 10,
 ) -> list[dict[str, Any]]:
+    """Reconcile discovery rows into stable, executable setup instances.
+
+    Published L1/L2/L3/stop/target levels do not drift on later refreshes. If a
+    setup temporarily falls out of the small discovery shortlist, retain it for
+    a short grace window as non-actionable/stale instead of making the card
+    disappear and then reappear.
+    """
     now = now or datetime.now(timezone.utc)
     prior_by_key = {
         setup_key(str(row.get("symbol") or ""), str(row.get("side") or "")): dict(row)
         for row in previous
     }
     output: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
     for raw in setups:
         row = dict(raw)
         key = setup_key(str(row.get("symbol") or ""), str(row.get("side") or ""))
         prior = prior_by_key.get(key)
+        row = _freeze_prior_levels(row, prior)
         decision = decide_lifecycle(
             row,
             prior=prior,
@@ -113,5 +161,30 @@ def reconcile_setups(
         row["last_alert_at"] = (prior or {}).get("last_alert_at")
         row["previous_tier"] = (prior or {}).get("tier")
         row["previous_state"] = (prior or {}).get("state")
+        row["discovery_stale"] = False
         output.append(row)
+        seen.add(key)
+
+    keep_for = timedelta(minutes=max(1, int(retention_minutes)))
+    terminal = {"INVALIDATED", "TP2_HIT"}
+    for key, prior in prior_by_key.items():
+        if key in seen:
+            continue
+        if str(prior.get("state") or "").upper() in terminal:
+            continue
+        first_seen = _parse_time(prior.get("first_seen_at") or prior.get("last_seen_at"))
+        if first_seen is None or now - first_seen > keep_for:
+            continue
+        retained = dict(prior)
+        retained["setup_key"] = key
+        retained["levels_frozen"] = True
+        retained["discovery_stale"] = True
+        retained["state"] = "WAIT"
+        retained["alert_eligible"] = False
+        retained["alert_reason"] = "temporarily outside discovery shortlist; retained with frozen levels"
+        retained["previous_tier"] = prior.get("tier")
+        retained["previous_state"] = prior.get("state")
+        retained["next_action"] = "Scanner confirmation temporarily absent; keep existing limits frozen and do not add/chase until rediscovered."
+        output.append(retained)
+
     return output
