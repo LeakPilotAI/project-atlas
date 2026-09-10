@@ -99,12 +99,13 @@ async def deliver_alert_candidates(
 
 
 class PerpAlertDeliveryService:
-    """Poll the manual-perp snapshot and DM only lifecycle-approved candidates."""
+    """Poll manual-perp lifecycle for Discord alerts and the isolated paper mirror."""
 
     def __init__(self, *, interval_seconds: float = 10.0) -> None:
         self.interval_seconds = max(5.0, float(interval_seconds))
         self.running = False
         self.last_result: Dict[str, int] = {"attempted": 0, "delivered": 0, "acknowledged": 0, "failed": 0}
+        self.last_paper_result: Dict[str, int] = {"opened": 0, "closed": 0, "marked": 0, "skipped": 0}
         self.last_error: Optional[str] = None
         self._task: Optional[asyncio.Task] = None
 
@@ -113,7 +114,7 @@ class PerpAlertDeliveryService:
             return
         self.running = True
         self._task = asyncio.create_task(self._loop(), name="perp_alert_delivery")
-        log.info("Manual perp Discord delivery started")
+        log.info("Manual perp Discord delivery + paper mirror started")
 
     async def stop(self) -> None:
         self.running = False
@@ -124,7 +125,7 @@ class PerpAlertDeliveryService:
             except asyncio.CancelledError:
                 pass
             self._task = None
-        log.info("Manual perp Discord delivery stopped")
+        log.info("Manual perp Discord delivery + paper mirror stopped")
 
     async def deliver_once(self, *, sender: Sender = send_discord_alert) -> Dict[str, int]:
         from app.services.perp_manual_service import perp_manual_service
@@ -140,9 +141,28 @@ class PerpAlertDeliveryService:
         self.last_error = None
         return result
 
+    async def paper_once(self) -> Dict[str, int]:
+        from app.services.perp_manual_service import perp_manual_service
+        from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
+
+        snapshot = perp_manual_service.snapshot()
+        setups = list(snapshot.get("setups") or [])
+        price_map = {
+            str(row.get("symbol") or "").upper(): float(row.get("price") or 0.0)
+            for row in list(snapshot.get("markets") or [])
+            if row.get("symbol") and float(row.get("price") or 0.0) > 0
+        }
+        result = await perp_setup_paper_mirror.sync(setups, price_map)
+        self.last_paper_result = result
+        return result
+
     async def _loop(self) -> None:
         await asyncio.sleep(5)
         while self.running:
+            try:
+                await self.paper_once()
+            except Exception as exc:
+                log.warning("Manual perp paper mirror pass failed", error=f"{type(exc).__name__}: {str(exc)[:180]}")
             try:
                 await self.deliver_once()
             except Exception as exc:
