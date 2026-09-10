@@ -86,22 +86,23 @@ def dataset_readiness(
 
     eligible = int(audit.get("validation_eligible") or 0)
     quarantined = int(audit.get("validation_quarantined") or 0)
+    raw_lookahead = int(audit.get("lookahead_violations") or 0)
     checks["point_in_time_integrity"] = _pass(
         eligible >= READY_MIN_VALID,
         f"{eligible} validation-eligible / {audit['observations']} raw; {quarantined} quarantined",
     )
-    # Raw historical violations are preserved for audit, but they cannot contaminate
-    # research once quarantined. The gate therefore checks the usable cohort, not the
-    # existence of immutable legacy rows that are deliberately excluded.
+    # Quarantine protects historical metrics, but a corpus containing raw look-ahead
+    # remains NOT READY until clean forward observations replace the contaminated data.
     checks["look_ahead"] = _pass(
-        eligible > 0,
-        f"0 unquarantined look-ahead rows; {audit['lookahead_violations']} raw legacy flags quarantined",
+        raw_lookahead == 0,
+        f"{raw_lookahead} raw look-ahead flags (quarantined from validation; need 0 for dataset readiness)",
     )
 
     all_ok = all(c["ok"] for c in checks.values())
+    lookahead_fail = not checks["look_ahead"]["ok"]
     if all_ok:
         status = "READY FOR RESEARCH"
-    elif valid >= COLLECTING_MIN_VALID and eligible > 0:
+    elif valid >= COLLECTING_MIN_VALID and eligible > 0 and not lookahead_fail:
         status = "COLLECTING"
     else:
         status = "NOT READY"
@@ -121,8 +122,8 @@ def dataset_readiness(
             "validation_quarantined": quarantined,
         },
         "disclaimer": (
-            "READY FOR RESEARCH means only the validation-eligible cohort is trustworthy enough to study. "
-            "Quarantined legacy rows remain immutable and excluded. It does not mean the strategy is profitable, "
+            "READY FOR RESEARCH means only the validation-eligible cohort is trustworthy enough to study and the raw corpus has no look-ahead flags. "
+            "Quarantined legacy rows remain immutable and excluded from historical metrics. It does not mean the strategy is profitable, "
             "has alpha, or has a win rate. Do not loosen filters because GENERATIONAL is rare."
         ),
     }
