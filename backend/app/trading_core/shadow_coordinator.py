@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Optional
 
 from .models import MarketQuote, PaperExecutionConfig
 from .persistent_runtime import PersistentPaperRuntime
-from .runtime import legacy_row_to_intent
+from .runtime import LegacySignalAdapter
 
 
 _DEFAULT_EVENT_PATH = Path(__file__).resolve().parents[2] / "data" / "trading_v4_shadow.jsonl"
@@ -58,9 +58,9 @@ class V4ShadowCoordinator:
         try:
             payload = dict(row)
             payload["trade_id"] = trade_id
-            intent = legacy_row_to_intent(payload)
+            intent = LegacySignalAdapter().to_intent(payload)
             quote = MarketQuote(
-                symbol=str(payload.get("symbol") or "").upper(),
+                symbol=intent.symbol,
                 price=float(price),
                 timestamp=datetime.now(timezone.utc),
             )
