@@ -1,16 +1,9 @@
 import asyncio
 
+from fastapi.routing import iter_route_contexts
+
 from app.api.validation_proof import validation_proof
 from app.main import app
-
-
-def _walk_routes(routes):
-    for route in routes:
-        if hasattr(route, "path"):
-            yield route
-        nested = getattr(route, "routes", None)
-        if nested:
-            yield from _walk_routes(nested)
 
 
 def test_validation_proof_api_is_read_only_and_never_live_unlocks():
@@ -24,7 +17,7 @@ def test_validation_proof_api_is_read_only_and_never_live_unlocks():
 
 
 def test_main_mounts_validation_proof_router_without_order_actions():
-    routes = list(_walk_routes(app.routes))
+    routes = list(iter_route_contexts(app.routes))
     paths = {route.path for route in routes}
     assert "/api/validation/proof" in paths
     methods = next(route.methods for route in routes if route.path == "/api/validation/proof")
