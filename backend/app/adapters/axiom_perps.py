@@ -8,7 +8,6 @@ Manual/research use only. No order submission lives here.
 """
 from __future__ import annotations
 
-import asyncio
 import time
 from typing import Any, Optional
 
@@ -22,9 +21,13 @@ INFO_URL = "https://api.hyperliquid.xyz/info"
 
 
 class AxiomPerpAdapter:
-    """Read-only market-data adapter for the perp markets Axiom can surface."""
+    """Read-only market-data adapter for the perp markets Axiom can surface.
 
-    name = "axiom_perps"
+    The registry key intentionally stays ``hyperliquid`` for compatibility with the
+    existing Atlas services. The adapter itself expands that feed across HIP-3 dexes.
+    """
+
+    name = "hyperliquid"
 
     def __init__(self) -> None:
         self._client: Optional[httpx.AsyncClient] = None
@@ -149,7 +152,18 @@ class AxiomPerpAdapter:
                         funding = float(ctx["funding"])
                 except (TypeError, ValueError):
                     funding = None
-                out.append(Ticker(symbol=symbol, exchange="axiom_perps", price=price, volume_24h=volume, open_interest=oi, funding_rate=funding, timestamp=now, raw={"dex": dex or "native", **ctx}))
+                out.append(
+                    Ticker(
+                        symbol=symbol,
+                        exchange="axiom_perps",
+                        price=price,
+                        volume_24h=volume,
+                        open_interest=oi,
+                        funding_rate=funding,
+                        timestamp=now,
+                        raw={"dex": dex or "native", **ctx},
+                    )
+                )
         return out
 
     async def get_candles(self, symbol: str, interval: str = "15m", lookback: int = 96) -> list[dict[str, Any]]:
