@@ -59,7 +59,7 @@ async def _announce_session(info: Dict[str, Any]) -> None:
             f"Nothing was deleted.\n\n"
             f"Concurrent paper cap: unlimited (safety 80).\n"
             f"Entry gates unchanged: RSI 28/72 · ext 1.4% · R:R 1.8.\n"
-            f"Dashboard: http://127.0.0.1:8000/dashboard?v=desk-v7\n"
+            f"Dashboard: http://127.0.0.1:8000/dashboard\n"
             f"Not live capital."
         )
         await send_discord_alert(
@@ -280,19 +280,30 @@ app.include_router(live_router)
 app.include_router(perp_manual_router)
 app.include_router(validation_router)
 
-DASHBOARD_HTML = Path(__file__).resolve().parent / "static" / "dashboard.html"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+DASHBOARD_HTML = STATIC_DIR / "dashboard_shell.html"
+LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 
 
-@app.get("/dashboard")
-async def dashboard_page() -> FileResponse:
+def _dashboard_response(path: Path) -> FileResponse:
     return FileResponse(
-        DASHBOARD_HTML,
+        path,
         media_type="text/html",
         headers={
             "Cache-Control": "no-store, no-cache, must-revalidate",
             "Pragma": "no-cache",
         },
     )
+
+
+@app.get("/dashboard")
+async def dashboard_page() -> FileResponse:
+    return _dashboard_response(DASHBOARD_HTML)
+
+
+@app.get("/dashboard/legacy")
+async def legacy_dashboard_page() -> FileResponse:
+    return _dashboard_response(LEGACY_DASHBOARD_HTML)
 
 
 @app.get("/api/research")
@@ -366,6 +377,7 @@ async def root() -> Dict[str, str]:
         "docs": "/docs",
         "health": "/health",
         "dashboard": "/dashboard",
+        "dashboard_legacy": "/dashboard/legacy",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
         "funnel": "/api/funnel",
