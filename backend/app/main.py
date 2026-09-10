@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Any, Dict
-
 from pathlib import Path
+from typing import Any, Dict
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +14,10 @@ from fastapi.responses import FileResponse
 from app.adapters.hyperliquid import HyperliquidAdapter
 from app.adapters.registry import registry
 from app.alerts.discord import is_discord_ready, start_discord_bot, stop_discord_bot
+from app.api.diagnostics import router as diagnostics_router
+from app.api.live import router as live_router
+from app.api.perp_manual import router as perp_manual_router
+from app.api.validation import router as validation_router
 from app.core.config import get_settings
 from app.core.logging import get_logger, setup_logging
 from app.core.redis import close_redis, get_redis_client
@@ -22,21 +25,19 @@ from app.db.session import Base, engine
 
 import app.models  # noqa: F401
 
-from app.services.scanner import scanner
-from app.services.opportunity_tracker import opportunity_tracker
-from app.services.paper_trade_tracker import paper_trade_tracker
-from app.services.weekly_summary import weekly_summary_service
-from app.services.quality_dip_scanner import quality_dip_scanner
-from app.services.day_trade_assistant import day_trade_assistant
-from app.services.perp_micro_coach import perp_micro_coach
-from app.services.robinhood_brief import robinhood_brief_service
 from app.services.command_center import command_center
 from app.services.daily_paper_recap import daily_paper_recap
+from app.services.day_trade_assistant import day_trade_assistant
 from app.services.micro_heartbeat import micro_heartbeat
-from app.api.diagnostics import router as diagnostics_router
-from app.api.live import router as live_router
-from app.api.validation import router as validation_router
+from app.services.opportunity_tracker import opportunity_tracker
+from app.services.paper_trade_tracker import paper_trade_tracker
 from app.services.performance import router as performance_router
+from app.services.perp_manual_service import perp_manual_service
+from app.services.perp_micro_coach import perp_micro_coach
+from app.services.quality_dip_scanner import quality_dip_scanner
+from app.services.robinhood_brief import robinhood_brief_service
+from app.services.scanner import scanner
+from app.services.weekly_summary import weekly_summary_service
 
 
 async def _announce_session(info: Dict[str, Any]) -> None:
@@ -161,6 +162,7 @@ async def lifespan(app: FastAPI):
             ("robinhood_brief", robinhood_brief_service.start),
             ("command_center", command_center.start),
             ("perp_micro_coach", perp_micro_coach.start),
+            ("perp_manual", perp_manual_service.start),
             ("daily_paper_recap", daily_paper_recap.start),
             ("micro_heartbeat", micro_heartbeat.start),
         ]:
@@ -215,6 +217,7 @@ async def lifespan(app: FastAPI):
     for name, stopper in [
         ("micro_heartbeat", micro_heartbeat.stop),
         ("daily_paper_recap", daily_paper_recap.stop),
+        ("perp_manual", perp_manual_service.stop),
         ("perp_micro_coach", perp_micro_coach.stop),
         ("command_center", command_center.stop),
         ("robinhood_brief", robinhood_brief_service.stop),
@@ -270,6 +273,7 @@ app.add_middleware(
 app.include_router(diagnostics_router)
 app.include_router(performance_router)
 app.include_router(live_router)
+app.include_router(perp_manual_router)
 app.include_router(validation_router)
 
 DASHBOARD_HTML = Path(__file__).resolve().parent / "static" / "dashboard.html"
@@ -341,6 +345,7 @@ async def health() -> Dict[str, Any]:
         "robinhood_brief_running": bool(getattr(robinhood_brief_service, "running", False)),
         "command_center_running": bool(getattr(command_center, "running", False)),
         "perp_micro_running": bool(getattr(perp_micro_coach, "running", False)),
+        "perp_manual_running": bool(getattr(perp_manual_service, "running", False)),
         "daily_paper_recap_running": bool(getattr(daily_paper_recap, "running", False)),
         "micro_heartbeat_running": bool(getattr(micro_heartbeat, "running", False)),
         "discord_ready": is_discord_ready(),
@@ -359,4 +364,5 @@ async def root() -> Dict[str, str]:
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
         "funnel": "/api/funnel",
+        "manual_perps": "/api/perps/manual",
     }
