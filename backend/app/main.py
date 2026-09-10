@@ -32,6 +32,7 @@ from app.services.micro_heartbeat import micro_heartbeat
 from app.services.opportunity_tracker import opportunity_tracker
 from app.services.paper_trade_tracker import paper_trade_tracker
 from app.services.performance import router as performance_router
+from app.services.perp_alert_delivery import perp_alert_delivery_service
 from app.services.perp_manual_service import perp_manual_service
 from app.services.perp_micro_coach import perp_micro_coach
 from app.services.quality_dip_scanner import quality_dip_scanner
@@ -72,6 +73,7 @@ async def _announce_session(info: Dict[str, Any]) -> None:
         )
     except Exception:
         pass
+
 
 try:
     from app.services.accumulation_ladder import accumulation_ladder
@@ -163,6 +165,7 @@ async def lifespan(app: FastAPI):
             ("command_center", command_center.start),
             ("perp_micro_coach", perp_micro_coach.start),
             ("perp_manual", perp_manual_service.start),
+            ("perp_alert_delivery", perp_alert_delivery_service.start),
             ("daily_paper_recap", daily_paper_recap.start),
             ("micro_heartbeat", micro_heartbeat.start),
         ]:
@@ -217,6 +220,7 @@ async def lifespan(app: FastAPI):
     for name, stopper in [
         ("micro_heartbeat", micro_heartbeat.stop),
         ("daily_paper_recap", daily_paper_recap.stop),
+        ("perp_alert_delivery", perp_alert_delivery_service.stop),
         ("perp_manual", perp_manual_service.stop),
         ("perp_micro_coach", perp_micro_coach.stop),
         ("command_center", command_center.stop),
@@ -346,6 +350,7 @@ async def health() -> Dict[str, Any]:
         "command_center_running": bool(getattr(command_center, "running", False)),
         "perp_micro_running": bool(getattr(perp_micro_coach, "running", False)),
         "perp_manual_running": bool(getattr(perp_manual_service, "running", False)),
+        "perp_alert_delivery_running": bool(getattr(perp_alert_delivery_service, "running", False)),
         "daily_paper_recap_running": bool(getattr(daily_paper_recap, "running", False)),
         "micro_heartbeat_running": bool(getattr(micro_heartbeat, "running", False)),
         "discord_ready": is_discord_ready(),
