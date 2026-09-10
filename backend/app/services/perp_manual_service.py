@@ -9,6 +9,7 @@ from app.adapters.registry import registry
 from app.core.logging import get_logger
 from app.trading_core.models import Side
 from app.trading_core.perp_manual_planner import build_manual_perp_plan
+from app.trading_core.perp_setup_state import classify_setup_state
 
 log = get_logger("perp_manual")
 
@@ -86,6 +87,7 @@ class PerpManualService:
             live_universe = [str(getattr(t, "symbol", "")) for t in tickers if getattr(t, "symbol", None)]
 
         rows = []
+        price_map: Dict[str, float] = {}
         for t in tickers:
             symbol = str(getattr(t, "symbol", "") or "").upper()
             price = float(getattr(t, "price", 0.0) or 0.0)
@@ -94,6 +96,7 @@ class PerpManualService:
             funding = getattr(t, "funding_rate", None)
             if not symbol or price <= 0:
                 continue
+            price_map[symbol] = price
             rows.append({
                 "symbol": symbol,
                 "price": price,
@@ -103,6 +106,35 @@ class PerpManualService:
             })
 
         rows.sort(key=lambda r: (float(r["volume_24h"]), float(r["open_interest"])), reverse=True)
+        plans = list(self.last_snapshot.get("plans") or [])
+        for plan in plans:
+            mark = price_map.get(str(plan.get("symbol") or "").upper())
+            if mark is None:
+                plan["state"] = "WAIT"
+                plan["next_action"] = "No current Hyperliquid mark; wait for fresh data."
+                plan["mark"] = None
+                continue
+            try:
+                side_enum = Side[str(plan.get("side") or "").upper()]
+                state = classify_setup_state(
+                    side=side_enum,
+                    mark=mark,
+                    l1=float(plan["l1"]),
+                    l2=float(plan["l2"]),
+                    l3=float(plan["l3"]),
+                    stop=float(plan["stop"]),
+                    tp1=float(plan["tp1"]),
+                    tp2=float(plan["tp2"]),
+                )
+                plan["mark"] = mark
+                plan["state"] = state.state.value
+                plan["next_action"] = state.next_action
+                plan["distance_to_l1_pct"] = round(float(state.distance_to_l1_pct), 4)
+            except Exception as e:
+                plan["state"] = "WAIT"
+                plan["next_action"] = f"State unavailable: {str(e)[:120]}"
+                plan["mark"] = mark
+
         now = datetime.now(timezone.utc).isoformat()
         self.last_snapshot = {
             "source": "hyperliquid",
@@ -110,7 +142,7 @@ class PerpManualService:
             "updated_at": now,
             "market_count": len(rows),
             "markets": rows,
-            "plans": list(self.last_snapshot.get("plans") or []),
+            "plans": plans,
             "note": "Hyperliquid markets only. Atlas never places orders.",
         }
         self.last_refresh_at = now
@@ -150,6 +182,32 @@ class PerpManualService:
         out["side"] = plan.side.value
         out["risk_pct"] = float(risk_pct)
         out["tp2_rr"] = float(tp2_r)
+
+        mark = None
+        for row in markets:
+            if str(row.get("symbol") or "").upper() == out["symbol"]:
+                mark = float(row.get("price") or 0.0)
+                break
+        if mark and mark > 0:
+            state = classify_setup_state(
+                side=plan.side,
+                mark=mark,
+                l1=plan.l1,
+                l2=plan.l2,
+                l3=plan.l3,
+                stop=plan.stop,
+                tp1=plan.tp1,
+                tp2=plan.tp2,
+            )
+            out["mark"] = mark
+            out["state"] = state.state.value
+            out["next_action"] = state.next_action
+            out["distance_to_l1_pct"] = round(float(state.distance_to_l1_pct), 4)
+        else:
+            out["mark"] = None
+            out["state"] = "WAIT"
+            out["next_action"] = "No current Hyperliquid mark; wait for fresh data."
+            out["distance_to_l1_pct"] = None
 
         plans = list(self.last_snapshot.get("plans") or [])
         plans = [p for p in plans if not (p.get("symbol") == out["symbol"] and p.get("side") == out["side"])]
