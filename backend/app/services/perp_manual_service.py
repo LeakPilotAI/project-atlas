@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 
 from app.adapters.registry import registry
 from app.core.logging import get_logger
+from app.trading_core.models import Side
 from app.trading_core.perp_manual_planner import build_manual_perp_plan
 
 log = get_logger("perp_manual")
@@ -127,19 +128,29 @@ class PerpManualService:
         tp1_r: float = 1.5,
         tp2_r: float = 2.5,
     ) -> Dict[str, Any]:
+        if float(risk_pct) <= 0:
+            raise ValueError("risk_pct must be positive")
+        try:
+            side_enum = Side[str(side).strip().upper()]
+        except KeyError as exc:
+            raise ValueError("side must be LONG or SHORT") from exc
+
         markets = self.last_snapshot.get("markets") or []
         live_universe = [str(r.get("symbol") or "") for r in markets]
         plan = build_manual_perp_plan(
             symbol=symbol,
-            side=side,
+            side=side_enum,
             reference_price=reference_price,
-            live_universe=live_universe,
-            risk_pct=risk_pct,
+            hyperliquid_symbols=live_universe,
             layer_spacing_pct=layer_spacing_pct,
-            tp1_r=tp1_r,
-            tp2_r=tp2_r,
+            target_rr=tp1_r,
+            secondary_rr=tp2_r,
         )
         out = asdict(plan)
+        out["side"] = plan.side.value
+        out["risk_pct"] = float(risk_pct)
+        out["tp2_rr"] = float(tp2_r)
+
         plans = list(self.last_snapshot.get("plans") or [])
         plans = [p for p in plans if not (p.get("symbol") == out["symbol"] and p.get("side") == out["side"])]
         plans.insert(0, out)
