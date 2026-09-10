@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from app.adapters.hyperliquid import HyperliquidAdapter
+from app.adapters.axiom_perps import AxiomPerpAdapter
 from app.adapters.registry import registry
 from app.alerts.discord import is_discord_ready, start_discord_bot, stop_discord_bot
 from app.api.command_center import router as command_center_router
@@ -131,12 +131,12 @@ async def lifespan(app: FastAPI):
 
     async def _boot_services() -> None:
         try:
-            hl = HyperliquidAdapter()
-            registry.register(hl)
-            await hl.connect()
-            log.info("Adapter connected", name="hyperliquid")
+            perp_feed = AxiomPerpAdapter()
+            registry.register(perp_feed)
+            await perp_feed.connect()
+            log.info("Adapter connected", name="axiom_perps", registry_key="hyperliquid")
         except Exception as e:
-            log.error("Hyperliquid adapter failed", error=str(e))
+            log.error("Axiom perp adapter failed", error=str(e))
 
         try:
             from app.services.paper_journal import paper_journal
@@ -155,9 +155,10 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             log.warning("paper session bootstrap failed", error=str(e)[:200])
 
-        # "Day Trade" is now exclusively the Hyperliquid manual-perp product.
-        # The legacy yfinance equity day-trade worker remains in source for research
-        # compatibility but is intentionally not imported or started here.
+        # "Day Trade" is the Axiom perp product. Axiom perps are powered by
+        # Hyperliquid; Atlas now includes native + HIP-3 builder markets so stock,
+        # index, commodity, and crypto perps exposed through that stack are visible.
+        # Execution remains manual-only.
         for name, starter in [
             ("scanner", scanner.start),
             ("opportunity_tracker", opportunity_tracker.start),
@@ -367,7 +368,7 @@ async def health() -> Dict[str, Any]:
         "weekly_summary_running": bool(getattr(weekly_summary_service, "running", False)),
         "quality_dip_running": bool(getattr(quality_dip_scanner, "running", False)),
         "day_trade_running": bool(getattr(perp_manual_service, "running", False)),
-        "day_trade_domain": "HYPERLIQUID_PERPS",
+        "day_trade_domain": "AXIOM_PERPS",
         "legacy_equity_day_trade_running": False,
         "robinhood_brief_running": bool(getattr(robinhood_brief_service, "running", False)),
         "command_center_running": bool(getattr(command_center, "running", False)),
