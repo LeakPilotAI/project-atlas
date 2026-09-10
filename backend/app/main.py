@@ -19,6 +19,7 @@ from app.api.diagnostics import router as diagnostics_router
 from app.api.live import router as live_router
 from app.api.perp_manual import router as perp_manual_router
 from app.api.validation import router as validation_router
+from app.api.validation_proof import router as validation_proof_router
 from app.core.config import get_settings
 from app.core.logging import get_logger, setup_logging
 from app.core.redis import close_redis, get_redis_client
@@ -281,6 +282,7 @@ app.include_router(performance_router)
 app.include_router(live_router)
 app.include_router(perp_manual_router)
 app.include_router(validation_router)
+app.include_router(validation_proof_router)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 DASHBOARD_HTML = STATIC_DIR / "dashboard_hub.html"
@@ -390,7 +392,6 @@ async def root() -> Dict[str, str]:
         "dashboard_perps": "/dashboard/perps",
         "dashboard_quality_dips": "/api/investments/quality-dips/view",
         "dashboard_legacy": "/dashboard/legacy",
-        "command_center_summary": "/api/command-center/summary",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
         "funnel": "/api/funnel",
