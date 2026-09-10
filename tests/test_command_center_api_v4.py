@@ -5,7 +5,7 @@ from app.services.command_center import CommandCenterService
 
 
 def test_command_center_summary_api_is_mounted_and_read_only():
-    paths = {route.path for route in app.routes}
+    paths = {route.path for route in app.routes if hasattr(route, "path")}
     assert "/api/command-center/summary" in paths
 
 
