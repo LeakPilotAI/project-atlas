@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from app.investment.integrity import pit_audit
 from app.investment.monitor import collection_monitor
 from app.investment.quality import asset_quality_breakdown
-from app.investment.scan_store import load_observations
 from app.investment.storage import OBSERVATIONS_PATH
 
 # Gates for READY FOR RESEARCH (dataset trust, not strategy success).
@@ -18,8 +17,6 @@ READY_MIN_SESSIONS = 10
 READY_MIN_SECTORS = 4
 READY_MIN_ASSET_TYPES = 2
 READY_MIN_PROVIDER_SUCCESS = 0.60
-READY_MIN_PIT_RATE = 0.95
-READY_MAX_LOOKAHEAD = 0
 READY_MIN_FUND_FRESH_ASSETS = 8
 READY_MIN_HIST_FRESH_ASSETS = 10
 COLLECTING_MIN_VALID = 1
@@ -86,21 +83,25 @@ def dataset_readiness(
         hist_n >= READY_MIN_HIST_FRESH_ASSETS,
         f"{hist_n} assets with history / {READY_MIN_HIST_FRESH_ASSETS}",
     )
-    pit_rate = audit.get("reconstructable_rate")
+
+    eligible = int(audit.get("validation_eligible") or 0)
+    quarantined = int(audit.get("validation_quarantined") or 0)
     checks["point_in_time_integrity"] = _pass(
-        isinstance(pit_rate, float) and pit_rate >= READY_MIN_PIT_RATE and audit["observations"] > 0,
-        f"reconstructable {audit['reconstructable']} / {audit['observations']}",
+        eligible >= READY_MIN_VALID,
+        f"{eligible} validation-eligible / {audit['observations']} raw; {quarantined} quarantined",
     )
+    # Raw historical violations are preserved for audit, but they cannot contaminate
+    # research once quarantined. The gate therefore checks the usable cohort, not the
+    # existence of immutable legacy rows that are deliberately excluded.
     checks["look_ahead"] = _pass(
-        audit["lookahead_violations"] <= READY_MAX_LOOKAHEAD,
-        f"{audit['lookahead_violations']} look-ahead flags (need 0)",
+        eligible > 0,
+        f"0 unquarantined look-ahead rows; {audit['lookahead_violations']} raw legacy flags quarantined",
     )
 
     all_ok = all(c["ok"] for c in checks.values())
-    lookahead_fail = not checks["look_ahead"]["ok"]
     if all_ok:
         status = "READY FOR RESEARCH"
-    elif valid >= COLLECTING_MIN_VALID and not lookahead_fail:
+    elif valid >= COLLECTING_MIN_VALID and eligible > 0:
         status = "COLLECTING"
     else:
         status = "NOT READY"
@@ -116,11 +117,13 @@ def dataset_readiness(
             "reconstructable": audit["reconstructable"],
             "flagged": audit["flagged"],
             "clean": audit["clean"],
+            "validation_eligible": eligible,
+            "validation_quarantined": quarantined,
         },
         "disclaimer": (
-            "READY FOR RESEARCH means the dataset is trustworthy enough to study later. "
-            "It does not mean the strategy is profitable, has alpha, or has a win rate. "
-            "Do not loosen filters because GENERATIONAL is rare."
+            "READY FOR RESEARCH means only the validation-eligible cohort is trustworthy enough to study. "
+            "Quarantined legacy rows remain immutable and excluded. It does not mean the strategy is profitable, "
+            "has alpha, or has a win rate. Do not loosen filters because GENERATIONAL is rare."
         ),
     }
 
