@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from app.investment.historical_validation import build_historical_validation
 from app.services.oos_cost_validation import build_oos_cost_report
 from app.services.paper_validation import metrics, uncertainty
 
@@ -104,8 +105,17 @@ def build_investment_proof(
     }
 
 
-def build_validation_proof(*, paper_rows: Iterable[dict[str, Any]], opportunity_rows: Iterable[dict[str, Any]], outcome_rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
+def build_validation_proof(
+    *,
+    paper_rows: Iterable[dict[str, Any]],
+    opportunity_rows: Iterable[dict[str, Any]],
+    outcome_rows: Iterable[dict[str, Any]],
+    observation_rows: Iterable[dict[str, Any]] = (),
+) -> dict[str, Any]:
     paper = list(paper_rows)
+    opportunities = list(opportunity_rows)
+    outcomes = list(outcome_rows)
+    observations = list(observation_rows)
     return {
         "domain": "VALIDATION_ORCHESTRATION",
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -113,6 +123,7 @@ def build_validation_proof(*, paper_rows: Iterable[dict[str, Any]], opportunity_
         "live_capital_allowed": False,
         "perps": build_perp_proof(paper),
         "perp_oos_cost": build_oos_cost_report(paper),
-        "investments": build_investment_proof(opportunity_rows, outcome_rows),
-        "next_gate": "Keep collecting forward evidence and review holdout, rolling expectancy, subgroup stability, and realistic cost sensitivity before any live-capital review.",
+        "investments": build_investment_proof(opportunities, outcomes),
+        "investment_historical": build_historical_validation(observations, outcomes),
+        "next_gate": "Keep collecting forward evidence. Engineering completion does not authorize live capital; review empirical stability before any future live-capital decision.",
     }
