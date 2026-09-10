@@ -51,6 +51,40 @@ def test_short_limit_below_mark_is_flagged_marketable():
     assert row["limit_sanity"]["l1"]["marketable"] is True
 
 
+def test_resting_actionable_l1_gets_exact_manual_instruction():
+    row = build_perp_board([_setup("BTC", tier="PRIME", state="PREPARE", score=90)])[0]
+    instruction = row["manual_instruction"]
+    assert instruction["action"] == "PLACE_RESTING_L1"
+    assert instruction["can_mark_entered"] is True
+    assert instruction["limit_price"] == 99.5
+    assert instruction["order_type"] == "LIMIT"
+
+
+def test_stale_setup_blocks_new_manual_order_even_with_resting_l1():
+    setup = _setup("BTC", tier="PRIME", state="WAIT", score=90)
+    setup["discovery_stale"] = True
+    row = build_perp_board([setup])[0]
+    assert row["manual_instruction"]["action"] == "NO_NEW_ORDER"
+    assert row["manual_instruction"]["can_mark_entered"] is False
+    assert "STALE SETUP" in row["manual_instruction"]["headline"]
+
+
+def test_marketable_l1_blocks_new_manual_order():
+    setup = _setup("XRP", tier="QUALIFIED", state="PREPARE", score=80)
+    setup["side"] = "SHORT"
+    setup["levels"]["l1"] = 99.5
+    row = build_perp_board([setup])[0]
+    assert row["manual_instruction"]["action"] == "NO_NEW_ORDER"
+    assert row["manual_instruction"]["can_mark_entered"] is False
+    assert "FILL NOW" in row["manual_instruction"]["headline"]
+
+
+def test_wait_state_blocks_manual_entry():
+    row = build_perp_board([_setup("SOL", tier="PRIME", state="WAIT", score=90)])[0]
+    assert row["manual_instruction"]["action"] == "WAIT"
+    assert row["manual_instruction"]["can_mark_entered"] is False
+
+
 def test_board_limit_is_enforced():
     rows = [_setup(f"X{i}", tier="WATCH", state="WAIT", score=50 + i) for i in range(10)]
     assert len(build_perp_board(rows, limit=3)) == 3
