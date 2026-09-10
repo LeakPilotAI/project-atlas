@@ -33,3 +33,13 @@ def test_perp_shell_has_no_equity_data_endpoints():
     assert "yahoo" not in html.lower()
     assert "/api/live" not in html
     assert "equity_majors" not in html
+
+
+def test_perp_shell_renders_authoritative_manual_instruction_and_blocks_unsafe_entry():
+    html = _read("backend/app/static/dashboard_shell.html")
+    assert "manual_instruction" in html
+    assert "NO NEW ORDER" in html
+    assert "PLACE_RESTING_L1" in html
+    assert "RESTING L1 VERIFIED" in html
+    assert "MARK FILLED AFTER AXIOM FILLS" in html
+    assert "Only use this AFTER your Axiom limit actually fills" in html
