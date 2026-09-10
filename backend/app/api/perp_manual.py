@@ -11,16 +11,6 @@ from app.trading_core.perp_board import build_perp_board
 router = APIRouter(prefix="/api/perps", tags=["manual-perps"])
 
 
-@router.on_event("startup")
-async def start_manual_perp_alert_delivery() -> None:
-    await perp_alert_delivery_service.start()
-
-
-@router.on_event("shutdown")
-async def stop_manual_perp_alert_delivery() -> None:
-    await perp_alert_delivery_service.stop()
-
-
 @router.get("/manual")
 async def manual_perps() -> Dict[str, Any]:
     snapshot = perp_manual_service.snapshot()
