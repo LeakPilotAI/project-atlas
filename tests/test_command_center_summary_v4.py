@@ -52,3 +52,26 @@ def test_investment_summary_never_contains_perp_setup_fields():
     assert "leverage" not in inv
     assert "setup_count" not in inv
     assert inv["top_opportunity"]["stance"] == "ACCUMULATE"
+
+
+def test_perp_summary_surfaces_auto_paper_journal_counts_without_live_unlock():
+    perp = {
+        "running": True,
+        "market_count": 234,
+        "setups": [],
+        "plans": [],
+        "auto_paper": {
+            "open_count": 3,
+            "opened_total": 17,
+            "closed_total": 14,
+            "included_in_paper_journal": True,
+            "counts_for_live": False,
+        },
+    }
+    out = build_command_center_summary(perp, [])
+    p = out["perps"]
+    assert p["auto_paper_open_count"] == 3
+    assert p["auto_paper_opened_total"] == 17
+    assert p["auto_paper_closed_total"] == 14
+    assert p["auto_paper_included_in_journal"] is True
+    assert out["execution"] == "NO_ORDER_ACTIONS"
