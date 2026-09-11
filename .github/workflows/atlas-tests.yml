@@ -1,0 +1,38 @@
+name: Atlas Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - chatgpt/atlas-rebuild-v1
+      - fix/auto-paper-resting-limits
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install Atlas
+        run: python -m pip install -e './backend[dev]'
+      - name: Run paper/manual perp regression suite
+        env:
+          PYTHONPATH: backend
+        run: >-
+          python -m pytest -q
+          tests/test_perp_setup_paper_mirror_v4.py
+          tests/test_perp_board_v4.py
+          tests/test_perp_manual_service_v4.py
+          tests/test_perp_manual_entry_service_v4.py
+          tests/test_perp_manual_lifecycle_service_v4.py
+          tests/test_perp_alert_delivery_v4.py
+          tests/test_paper_pipeline.py
+          tests/test_paper_recovery.py
+          tests/test_paper_rehydrate.py
+          tests/test_paper_session.py
+          tests/test_paper_validation.py
