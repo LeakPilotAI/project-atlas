@@ -16,6 +16,14 @@ class AdapterRegistry:
 
     def register(self, adapter: Any) -> None:
         name = getattr(adapter, "name", None) or adapter.__class__.__name__.lower()
+        if str(name).lower() == "hyperliquid":
+            try:
+                from app.services.runtime_hardening import install_runtime_hardening
+
+                install_runtime_hardening(adapter)
+                logger.info("Hyperliquid runtime hardening installed")
+            except Exception as exc:
+                logger.warning("Hyperliquid runtime hardening skipped", error=str(exc)[:180])
         self._adapters[str(name).lower()] = adapter
         logger.info("Adapter registered", name=name)
 
