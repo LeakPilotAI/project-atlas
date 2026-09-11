@@ -35,6 +35,7 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
 def _perp_summary(snapshot: dict[str, Any]) -> dict[str, Any]:
     setups = list(snapshot.get("setups") or [])
     plans = list(snapshot.get("plans") or [])
+    auto_paper = dict(snapshot.get("auto_paper") or {})
     actionable_states = {"PREPARE", "L1_ACTIVE", "L2_ACTIVE", "L3_ACTIVE"}
     top = setups[0] if setups else None
     return {
@@ -49,6 +50,10 @@ def _perp_summary(snapshot: dict[str, Any]) -> dict[str, Any]:
         "qualified_count": sum(1 for x in setups if str(x.get("tier") or "") == "QUALIFIED"),
         "actionable_count": sum(1 for x in setups if str(x.get("state") or "") in actionable_states),
         "entered_count": sum(1 for x in plans if str(x.get("status") or "") == "ENTERED"),
+        "auto_paper_open_count": int(auto_paper.get("open_count") or 0),
+        "auto_paper_opened_total": int(auto_paper.get("opened_total") or 0),
+        "auto_paper_closed_total": int(auto_paper.get("closed_total") or 0),
+        "auto_paper_included_in_journal": bool(auto_paper.get("included_in_paper_journal", False)),
         "alert_candidate_count": len(snapshot.get("alert_candidates") or []),
         "top_setup": None if top is None else {
             "symbol": top.get("symbol"),
@@ -59,7 +64,7 @@ def _perp_summary(snapshot: dict[str, Any]) -> dict[str, Any]:
             "next_action": top.get("next_action"),
         },
         "last_error": snapshot.get("last_error"),
-        "note": "Hyperliquid-only manual trading guidance. No investment capital assumptions are included.",
+        "note": "Hyperliquid manual guidance with automatic paper mirroring at active L1/L2/L3 triggers. No investment capital assumptions are included.",
     }
 
 
