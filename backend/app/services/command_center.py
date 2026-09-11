@@ -101,7 +101,8 @@ class CommandCenterService:
             "**Perp Day Trade — HYPERLIQUID_PERPS**\n"
             f"• Running: **{bool(perps.get('running'))}** · markets: **{perps.get('market_count', 0)}**\n"
             f"• PRIME: **{perps.get('prime_count', 0)}** · QUALIFIED: **{perps.get('qualified_count', 0)}**\n"
-            f"• Actionable: **{perps.get('actionable_count', 0)}** · entered: **{perps.get('entered_count', 0)}**\n"
+            f"• Actionable: **{perps.get('actionable_count', 0)}**\n"
+            f"• Auto-paper open now: **{perps.get('auto_paper_open_count', 0)}** · opened total: **{perps.get('auto_paper_opened_total', 0)}** · closed total: **{perps.get('auto_paper_closed_total', 0)}**\n"
             f"• Top setup: **{perp_top}**\n\n"
             "**Quality Dips — EQUITY_INVESTMENT**\n"
             f"• Assets: **{investments.get('asset_count', 0)}**\n"
@@ -110,6 +111,7 @@ class CommandCenterService:
             f"• Top research row: **{inv_top}**\n\n"
             "**Isolation rules**\n"
             "• Perp and investment symbols, capital assumptions, performance, and action logic remain separate.\n"
+            "• Auto-paper fills are research-only and never place exchange orders or unlock live capital.\n"
             "• Atlas places no orders from Command Center.\n"
             f"_Generated {datetime.now(ET).strftime('%Y-%m-%d %H:%M')} ET · read-only_"
         )
