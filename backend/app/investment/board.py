@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any, Iterable
 
+from app.investment.high_conviction import from_research_board
+
 _ALLOWED_TYPES = {"STOCK", "ETF", "SECTOR_ETF"}
 _ACTIONABLE = {"ACCUMULATION", "DEEP_VALUE", "GENERATIONAL_OPPORTUNITY"}
 
@@ -94,6 +96,7 @@ def build_quality_dips_board(
         plan = latest_plans.get(str(row.get("symbol") or "").upper()) or {}
         tiers = list(plan.get("tiers") or []) if ladder_eligible and str(plan.get("status") or "") == "ACTIVE" else []
         drawdown = dict(row.get("drawdown") or {})
+        conviction = from_research_board(row, stance=stance)
         board.append({
             "symbol": str(row.get("symbol") or "").upper(),
             "name": row.get("name") or "",
@@ -121,8 +124,13 @@ def build_quality_dips_board(
             "tiers": tiers,
             "domain": "EQUITY_INVESTMENT",
             "execution": "MANUAL_ONLY",
+            **conviction,
         })
 
     rank = {"ACCUMULATE": 0, "PREPARE": 1, "WATCH": 2, "STAND_DOWN": 3}
-    board.sort(key=lambda r: (rank.get(str(r["stance"]), 9), -(float(r.get("opportunity_score") or 0))))
+    board.sort(key=lambda r: (
+        0 if r.get("high_conviction") else 1,
+        rank.get(str(r["stance"]), 9),
+        -(float(r.get("opportunity_score") or 0)),
+    ))
     return board[: max(1, int(limit))]
