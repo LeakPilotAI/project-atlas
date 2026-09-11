@@ -14,13 +14,14 @@ from app.investment.freshness_proof import build_freshness_proof
 from app.investment.historical_validation import build_historical_validation
 from app.services.oos_cost_validation import build_oos_cost_report
 from app.services.paper_validation import metrics, uncertainty
+from app.services.v5_research import build_v5_research_report
 
 
 def _jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
     rows: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as handle:
+    with path.open("r", encoding="utf-8", errors="replace") as handle:
         for line in handle:
             try:
                 row = json.loads(line)
@@ -126,6 +127,7 @@ def build_validation_proof(
         "live_capital_allowed": False,
         "perps": build_perp_proof(paper),
         "perp_oos_cost": build_oos_cost_report(paper),
+        "perp_v5_research": build_v5_research_report(paper),
         "investments": build_investment_proof(opportunities, outcomes),
         "investment_historical": build_historical_validation(observations, outcomes),
         "investment_freshness": build_freshness_proof(readiness),
