@@ -43,3 +43,12 @@ def test_perp_shell_renders_authoritative_manual_instruction_and_blocks_unsafe_e
     assert "RESTING L1 VERIFIED" in html
     assert "MARK FILLED AFTER AXIOM FILLS" in html
     assert "Only use this AFTER your Axiom limit actually fills" in html
+
+
+def test_perp_shell_uses_auto_paper_counter_instead_of_manual_fill_counter():
+    html = _read("backend/app/static/dashboard_shell.html")
+    assert "Auto paper open" in html
+    assert "AUTO-PAPER IS AUTOMATIC" in html
+    assert "S.auto_paper" in html
+    assert "fills automatically at active L1/L2/L3" in html
+    assert '<div class="label">Manual fills</div>' not in html
