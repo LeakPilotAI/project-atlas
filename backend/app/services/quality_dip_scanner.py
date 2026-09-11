@@ -87,14 +87,24 @@ class QualityDipScanner:
             self._task = None
         log.info("Quality dip consumer stopped")
 
+    def _research_gate(self, row: Dict[str, Any]) -> Dict[str, Any]:
+        from app.investment.buy_prep import from_tape_row
+        from app.investment.high_conviction import from_quality_tape
+
+        prep = from_tape_row(row)
+        return from_quality_tape(row, prep)
+
     def _should_notify(self, row: Dict[str, Any], hours: float) -> bool:
-        if not row.get("notify"):
+        # Quality-Dip DMs are intentionally rare: only the locked A+ research gate
+        # is allowed through. Other investment alerts continue in the investment engine.
+        gate = self._research_gate(row)
+        if not bool(gate.get("high_conviction")):
             return False
         sym = str(row.get("symbol") or "").upper()
         if not sym:
             return False
         prev = self._cooldowns.get(sym) or {}
-        if str(prev.get("action") or "") == str(row.get("action") or ""):
+        if str(prev.get("action") or "") == "A+_QUALITY_DIP":
             last = _parse(prev.get("last_at"))
             if last and _now() - last < timedelta(hours=max(1.0, hours)):
                 return False
@@ -102,28 +112,44 @@ class QualityDipScanner:
 
     async def _emit(self, row: Dict[str, Any]) -> None:
         from app.investment.buy_prep import format_quality_dip_alert, from_tape_row
+        from app.investment.high_conviction import from_quality_tape
         from app.investment.notify import deliver_investment_alert
 
         prep = from_tape_row(row)
+        gate = from_quality_tape(row, prep)
         text = format_quality_dip_alert(row, prep)
+        runway = gate.get("recovery_runway_pct")
+        runway_line = "UNKNOWN" if runway is None else f"{float(runway):.1f}%"
+        text = (
+            "A+ QUALITY DIP RESEARCH CANDIDATE\n"
+            f"Recovery runway to prior high: {runway_line}\n"
+            "25% is a screening hurdle, not a promised return.\n\n"
+            + text
+        )
         ok = await deliver_investment_alert(
             text,
             symbol=str(row.get("symbol") or ""),
-            priority=str(prep.get("priority") or "NORMAL"),
-            title=f"ATLAS QUALITY DIP — {prep.get('action')} · {row.get('symbol')}",
+            priority="HIGH",
+            title=f"ATLAS A+ QUALITY DIP · {row.get('symbol')}",
         )
         now = _now().isoformat()
         self._cooldowns[str(row.get("symbol") or "").upper()] = {
-            "action": row.get("action"),
+            "action": "A+_QUALITY_DIP",
             "last_at": now,
             "delivered": bool(ok),
         }
         self._save_cooldowns()
-        self.last_alerts = ([{"symbol": row.get("symbol"), "action": row.get("action"), "at": now, "delivered": bool(ok)}] + self.last_alerts)[:20]
+        self.last_alerts = ([{
+            "symbol": row.get("symbol"),
+            "action": "A+_QUALITY_DIP",
+            "at": now,
+            "delivered": bool(ok),
+            "recovery_runway_pct": runway,
+        }] + self.last_alerts)[:20]
         log.info(
-            "quality dip alert",
+            "A+ quality dip research alert",
             symbol=row.get("symbol"),
-            action=row.get("action"),
+            recovery_runway_pct=runway,
             delivered=bool(ok),
         )
 
