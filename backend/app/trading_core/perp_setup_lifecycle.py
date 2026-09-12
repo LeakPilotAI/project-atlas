@@ -137,6 +137,9 @@ def reconcile_setups(
     setup that leaves the actionable states and later becomes actionable again
     receives a new epoch so the automatic paper mirror may arm the new manual
     instruction exactly once without replaying the prior fill forever.
+
+    Prior mark/state metadata is carried forward for one refresh so the paper
+    mirror can prove that a previously-resting L1 was crossed between polls.
     """
     now = now or datetime.now(timezone.utc)
     prior_by_key = {
@@ -167,6 +170,8 @@ def reconcile_setups(
         row["last_alert_at"] = (prior or {}).get("last_alert_at")
         row["previous_tier"] = (prior or {}).get("tier")
         row["previous_state"] = (prior or {}).get("state")
+        row["previous_price"] = (prior or {}).get("price") or (prior or {}).get("mark")
+        row["previous_discovery_stale"] = bool((prior or {}).get("discovery_stale", False))
         row["discovery_stale"] = False
 
         current_state = str(row.get("state") or "WAIT").upper()
@@ -202,6 +207,8 @@ def reconcile_setups(
         retained["alert_reason"] = "temporarily outside discovery shortlist; retained with frozen levels"
         retained["previous_tier"] = prior.get("tier")
         retained["previous_state"] = prior.get("state")
+        retained["previous_price"] = prior.get("price") or prior.get("mark")
+        retained["previous_discovery_stale"] = bool(prior.get("discovery_stale", False))
         retained["next_action"] = "Scanner confirmation temporarily absent; keep existing limits frozen and do not add/chase until rediscovered."
         output.append(retained)
 
