@@ -132,6 +132,11 @@ def reconcile_setups(
     setup temporarily falls out of the small discovery shortlist, retain it for
     a short grace window as non-actionable/stale instead of making the card
     disappear and then reappear.
+
+    ``paper_mirror_epoch_at`` versions a continuous manual-opportunity cycle. A
+    setup that leaves the actionable states and later becomes actionable again
+    receives a new epoch so the automatic paper mirror may arm the new manual
+    instruction exactly once without replaying the prior fill forever.
     """
     now = now or datetime.now(timezone.utc)
     prior_by_key = {
@@ -140,6 +145,7 @@ def reconcile_setups(
     }
     output: list[dict[str, Any]] = []
     seen: set[str] = set()
+    actionable_states = {"PREPARE", "L1_ACTIVE", "L2_ACTIVE", "L3_ACTIVE"}
 
     for raw in setups:
         row = dict(raw)
@@ -162,6 +168,18 @@ def reconcile_setups(
         row["previous_tier"] = (prior or {}).get("tier")
         row["previous_state"] = (prior or {}).get("state")
         row["discovery_stale"] = False
+
+        current_state = str(row.get("state") or "WAIT").upper()
+        prior_state = str((prior or {}).get("state") or "WAIT").upper()
+        prior_epoch = str((prior or {}).get("paper_mirror_epoch_at") or "")
+        if current_state in actionable_states:
+            if not prior_epoch or prior_state not in actionable_states:
+                row["paper_mirror_epoch_at"] = now.isoformat()
+            else:
+                row["paper_mirror_epoch_at"] = prior_epoch
+        else:
+            row["paper_mirror_epoch_at"] = prior_epoch or None
+
         output.append(row)
         seen.add(key)
 
