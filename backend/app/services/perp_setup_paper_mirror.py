@@ -99,6 +99,36 @@ class PerpSetupPaperMirror:
     def _invalidated_before_fill(*, side: str, mark: float, stop: float) -> bool:
         return (side == "LONG" and mark <= stop) or (side == "SHORT" and mark >= stop)
 
+    @staticmethod
+    def _crossed_from_prior_resting(setup: dict[str, Any], *, mark: float) -> bool:
+        """Prove a published resting L1 was crossed between consecutive snapshots.
+
+        This is not an inferred live-account fill. It is only a PAPER recovery path
+        for a manual instruction Atlas had already published on the prior snapshot.
+        """
+        if bool(setup.get("previous_discovery_stale")):
+            return False
+        state = str(setup.get("state") or "").upper()
+        previous_state = str(setup.get("previous_state") or "").upper()
+        if state not in {"L1_ACTIVE", "L2_ACTIVE", "L3_ACTIVE"}:
+            return False
+        if previous_state not in {"PREPARE", "L1_ACTIVE", "L2_ACTIVE", "L3_ACTIVE"}:
+            return False
+        levels = setup.get("levels") if isinstance(setup.get("levels"), dict) else {}
+        try:
+            previous_price = float(setup.get("previous_price") or 0.0)
+            l1 = float(levels.get("l1") or 0.0)
+        except (TypeError, ValueError):
+            return False
+        if min(previous_price, l1, mark) <= 0:
+            return False
+        side = str(setup.get("side") or "").upper()
+        if side == "LONG":
+            return previous_price > l1 and mark <= l1
+        if side == "SHORT":
+            return previous_price < l1 and mark >= l1
+        return False
+
     def _arm(self, setup: dict[str, Any], *, mark: float, instruction: dict[str, Any]) -> bool:
         tier = str(setup.get("tier") or "").upper()
         symbol = str(setup.get("symbol") or "").upper()
@@ -142,6 +172,7 @@ class PerpSetupPaperMirror:
             "trend_pct": setup.get("trend_pct"),
             "state_at_arm": str(setup.get("state") or "").upper(),
             "manual_trigger_mirror": True,
+            "recovered_limit_cross": bool(instruction.get("recovered_limit_cross")),
             "source": SOURCE,
             "strategy": STRATEGY,
         }
@@ -154,6 +185,7 @@ class PerpSetupPaperMirror:
             tier=tier,
             limit_price=limit_price,
             paper_mirror_epoch_at=setup.get("paper_mirror_epoch_at"),
+            recovered_limit_cross=bool(instruction.get("recovered_limit_cross")),
         )
         return True
 
@@ -206,6 +238,7 @@ class PerpSetupPaperMirror:
             "tier": row.get("tier"),
             "state_at_arm": row.get("state_at_arm"),
             "manual_trigger_mirror": True,
+            "recovered_limit_cross": bool(row.get("recovered_limit_cross")),
             "paper_order_model": "RESTING_L1_LIMIT",
             "paper_fill_model": "LIMIT_TOUCH",
             "paper_order_armed_at": row.get("timestamp"),
@@ -243,10 +276,18 @@ class PerpSetupPaperMirror:
             "side": side,
             "limit_price": limit_price,
             "touch_mark": mark,
+            "recovered_limit_cross": bool(row.get("recovered_limit_cross")),
         })
         self._pending.pop(instance, None)
         self._mirrored_instances.add(instance)
-        log.info("Auto paper resting limit filled", symbol=symbol, side=side, entry=limit_price, touch_mark=mark)
+        log.info(
+            "Auto paper resting limit filled",
+            symbol=symbol,
+            side=side,
+            entry=limit_price,
+            touch_mark=mark,
+            recovered_limit_cross=bool(row.get("recovered_limit_cross")),
+        )
         return True
 
     def status(self) -> dict[str, int]:
@@ -277,7 +318,7 @@ class PerpSetupPaperMirror:
     async def sync(self, setups: list[dict[str, Any]], price_map: dict[str, float]) -> dict[str, int]:
         """Mirror every fresh manual resting-limit instruction into PAPER."""
         self._seed()
-        opened = closed = marked = skipped = armed = filled = cancelled = 0
+        opened = closed = marked = skipped = armed = filled = cancelled = recovered = 0
 
         # Manage previously filled auto-mirror positions first.
         for trade in list(paper_journal.list_open()):
@@ -316,6 +357,9 @@ class PerpSetupPaperMirror:
         # Arm exactly what the manual board tells the user to place, regardless of
         # PRIME / QUALIFIED / WATCH presentation tier. paper_mirror_epoch_at makes
         # a later re-entry into a manual opportunity a distinct paper experiment.
+        # If a resting L1 was published on the prior snapshot and the next snapshot
+        # proves price crossed it, recover that paper fill even if the current board
+        # can no longer advertise the now-marketable order.
         for setup in setups:
             symbol = str(setup.get("symbol") or "").upper()
             mark = float(price_map.get(symbol) or setup.get("price") or setup.get("mark") or 0.0)
@@ -323,8 +367,17 @@ class PerpSetupPaperMirror:
                 skipped += 1
                 continue
             instruction = self._instruction(setup)
+            if str(instruction.get("action") or "") != "PLACE_RESTING_L1" and self._crossed_from_prior_resting(setup, mark=mark):
+                levels = setup.get("levels") if isinstance(setup.get("levels"), dict) else {}
+                instruction = {
+                    "action": "PLACE_RESTING_L1",
+                    "limit_price": levels.get("l1"),
+                    "recovered_limit_cross": True,
+                }
             if self._arm(setup, mark=mark, instruction=instruction):
                 armed += 1
+                if bool(instruction.get("recovered_limit_cross")):
+                    recovered += 1
 
         # A later (or same-pass) touch converts a pending paper limit into an open
         # PAPER position. PREPARE itself is never an assumed fill.
@@ -352,6 +405,7 @@ class PerpSetupPaperMirror:
             "closed": closed,
             "marked": marked,
             "cancelled": cancelled,
+            "recovered": recovered,
             "skipped": skipped,
         }
 
