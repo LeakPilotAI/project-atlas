@@ -198,6 +198,41 @@ def test_opposite_side_open_paper_trade_does_not_block_manual_short_fill(tmp_pat
     assert fake.open_calls[-1]["entry"] == 101.0
 
 
+def test_crossed_resting_short_is_recovered_and_filled_at_l1(tmp_path, monkeypatch):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    crossed = short_setup(price=102.0, epoch="2026-09-10T14:00:00+00:00")
+    crossed["state"] = "L1_ACTIVE"
+    crossed["previous_state"] = "PREPARE"
+    crossed["previous_price"] = 100.0
+    crossed["previous_discovery_stale"] = False
+
+    monkeypatch.setattr(m, "_instruction", lambda _setup: {"action": "NO_NEW_ORDER"})
+    result = asyncio.run(m.sync([crossed], {"BTC": 102.0}))
+
+    assert result["recovered"] == 1
+    assert result["opened"] == 1
+    assert fake.open_calls[-1]["entry"] == 101.0
+    assert fake.open_calls[-1]["features"]["recovered_limit_cross"] is True
+
+
+def test_cross_recovery_refuses_stale_prior_snapshot(tmp_path, monkeypatch):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    crossed = short_setup(price=102.0, epoch="2026-09-10T14:00:00+00:00")
+    crossed["state"] = "L1_ACTIVE"
+    crossed["previous_state"] = "PREPARE"
+    crossed["previous_price"] = 100.0
+    crossed["previous_discovery_stale"] = True
+
+    monkeypatch.setattr(m, "_instruction", lambda _setup: {"action": "NO_NEW_ORDER"})
+    result = asyncio.run(m.sync([crossed], {"BTC": 102.0}))
+
+    assert result["recovered"] == 0
+    assert result["opened"] == 0
+    assert fake.open_calls == []
+
+
 def test_auto_paper_trade_closes_at_tp1_and_records_mark(tmp_path):
     fake = FakeJournal()
     m = mirror_with(fake, tmp_path)
