@@ -76,6 +76,7 @@ def test_prepare_arms_resting_paper_limit_but_does_not_fake_fill(tmp_path):
     pending = next(iter(m._pending.values()))
     assert pending["limit_price"] == 99.0
     assert pending["source"] == "perp_manual_auto"
+    assert pending["manual_trigger_mirror"] is True
 
 
 def test_pending_limit_fills_once_only_after_price_touches_l1(tmp_path):
@@ -92,6 +93,7 @@ def test_pending_limit_fills_once_only_after_price_touches_l1(tmp_path):
     assert call["source"] == "perp_manual_auto"
     assert call["strategy"] == "perp_setup_auto_v2_resting_limit"
     assert call["counts_for_live"] is False
+    assert call["features"]["manual_trigger_mirror"] is True
     assert call["features"]["paper_order_model"] == "RESTING_L1_LIMIT"
     assert call["features"]["paper_fill_model"] == "LIMIT_TOUCH"
 
@@ -135,12 +137,22 @@ def test_stale_discovery_does_not_arm_a_new_paper_order(tmp_path):
     assert fake.open_calls == []
 
 
-def test_watch_tier_does_not_arm_even_if_prepare(tmp_path):
+def test_watch_manual_opportunity_arms_and_auto_fills_on_same_l1_touch(tmp_path):
+    """If the manual board says PLACE_RESTING_L1, paper must mirror it regardless of tier."""
     fake = FakeJournal()
     m = mirror_with(fake, tmp_path)
-    result = asyncio.run(m.sync([setup(tier="WATCH")], {"BTC": 100.0}))
-    assert result["armed"] == 0
-    assert result["pending"] == 0
+    watch = setup(tier="WATCH")
+
+    armed = asyncio.run(m.sync([watch], {"BTC": 100.0}))
+    filled = asyncio.run(m.sync([watch], {"BTC": 99.0}))
+
+    assert armed["armed"] == 1
+    assert armed["pending"] == 1
+    assert filled["opened"] == 1
+    assert filled["pending"] == 0
+    assert len(fake.open_calls) == 1
+    assert fake.open_calls[0]["tier"] == "watch"
+    assert fake.open_calls[0]["features"]["manual_trigger_mirror"] is True
 
 
 def test_auto_paper_trade_closes_at_tp1_and_records_mark(tmp_path):
