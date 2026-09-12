@@ -40,11 +40,12 @@ class FakeJournal:
         return {"trade_id": trade_id}
 
 
-def setup(state="PREPARE", tier="QUALIFIED", side="LONG", price=100.0):
+def setup(state="PREPARE", tier="QUALIFIED", side="LONG", price=100.0, epoch="2026-09-10T13:00:00+00:00"):
     return {
         "setup_key": f"BTC:{side}",
         "first_seen_at": "2026-09-10T13:00:00+00:00",
         "last_seen_at": "2026-09-10T13:01:00+00:00",
+        "paper_mirror_epoch_at": epoch,
         "symbol": "BTC",
         "side": side,
         "tier": tier,
@@ -56,6 +57,12 @@ def setup(state="PREPARE", tier="QUALIFIED", side="LONG", price=100.0):
         "levels_frozen": True,
         "levels": {"l1": 99.0, "l2": 98.0, "l3": 97.0, "stop": 95.0, "tp1": 105.0, "tp2": 110.0, "target_rr": 1.8},
     }
+
+
+def short_setup(price=100.0, epoch="2026-09-10T13:00:00+00:00"):
+    row = setup(side="SHORT", price=price, epoch=epoch)
+    row["levels"] = {"l1": 101.0, "l2": 102.0, "l3": 103.0, "stop": 105.0, "tp1": 95.0, "tp2": 90.0, "target_rr": 1.8}
+    return row
 
 
 def mirror_with(fake, tmp_path):
@@ -153,6 +160,42 @@ def test_watch_manual_opportunity_arms_and_auto_fills_on_same_l1_touch(tmp_path)
     assert len(fake.open_calls) == 1
     assert fake.open_calls[0]["tier"] == "watch"
     assert fake.open_calls[0]["features"]["manual_trigger_mirror"] is True
+
+
+def test_new_manual_opportunity_epoch_can_arm_after_prior_cycle_was_mirrored(tmp_path):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    old = setup(epoch="2026-09-10T13:00:00+00:00")
+    new = setup(epoch="2026-09-10T14:00:00+00:00")
+    m._mirrored_instances.add(m._instance_id(old))
+
+    result = asyncio.run(m.sync([new], {"BTC": 100.0}))
+
+    assert result["armed"] == 1
+    assert result["pending"] == 1
+    assert m._instance_id(old) != m._instance_id(new)
+
+
+def test_opposite_side_open_paper_trade_does_not_block_manual_short_fill(tmp_path):
+    fake = FakeJournal()
+    fake.open_rows.append({
+        "trade_id": "old-long",
+        "trade_type": "PAPER",
+        "source": "perp_manual_auto",
+        "symbol": "BTC",
+        "side": "LONG",
+        "working_stop": 95.0,
+        "tp1_price": 105.0,
+    })
+    m = mirror_with(fake, tmp_path)
+
+    armed = asyncio.run(m.sync([short_setup()], {"BTC": 100.0}))
+    filled = asyncio.run(m.sync([short_setup()], {"BTC": 101.0}))
+
+    assert armed["armed"] == 1
+    assert filled["opened"] == 1
+    assert fake.open_calls[-1]["side"] == "SHORT"
+    assert fake.open_calls[-1]["entry"] == 101.0
 
 
 def test_auto_paper_trade_closes_at_tp1_and_records_mark(tmp_path):
