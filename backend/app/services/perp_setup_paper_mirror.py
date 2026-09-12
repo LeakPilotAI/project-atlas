@@ -43,7 +43,8 @@ class PerpSetupPaperMirror:
     def _instance_id(self, setup: dict[str, Any]) -> str:
         key = str(setup.get("setup_key") or "")
         first = str(setup.get("first_seen_at") or "")
-        return f"{key}|{first}"
+        epoch = str(setup.get("paper_mirror_epoch_at") or first)
+        return f"{key}|{first}|{epoch}"
 
     def _append_pending_event(self, row: dict[str, Any]) -> None:
         self._pending_path.parent.mkdir(parents=True, exist_ok=True)
@@ -124,6 +125,7 @@ class PerpSetupPaperMirror:
         row = {
             "event": "armed",
             "setup_instance_id": instance,
+            "paper_mirror_epoch_at": setup.get("paper_mirror_epoch_at"),
             "setup_key": setup.get("setup_key"),
             "symbol": symbol,
             "side": side,
@@ -151,6 +153,7 @@ class PerpSetupPaperMirror:
             side=side,
             tier=tier,
             limit_price=limit_price,
+            paper_mirror_epoch_at=setup.get("paper_mirror_epoch_at"),
         )
         return True
 
@@ -198,6 +201,7 @@ class PerpSetupPaperMirror:
 
         features = {
             "setup_instance_id": instance,
+            "paper_mirror_epoch_at": row.get("paper_mirror_epoch_at"),
             "setup_key": row.get("setup_key"),
             "tier": row.get("tier"),
             "state_at_arm": row.get("state_at_arm"),
@@ -310,8 +314,8 @@ class PerpSetupPaperMirror:
                 cancelled += 1
 
         # Arm exactly what the manual board tells the user to place, regardless of
-        # PRIME / QUALIFIED / WATCH presentation tier. The board's authoritative
-        # manual_instruction gate remains the eligibility source of truth.
+        # PRIME / QUALIFIED / WATCH presentation tier. paper_mirror_epoch_at makes
+        # a later re-entry into a manual opportunity a distinct paper experiment.
         for setup in setups:
             symbol = str(setup.get("symbol") or "").upper()
             mark = float(price_map.get(symbol) or setup.get("price") or setup.get("mark") or 0.0)
