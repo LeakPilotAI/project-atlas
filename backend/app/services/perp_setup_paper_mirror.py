@@ -5,6 +5,10 @@ place a verified resting L1 limit, this module arms the same PAPER limit. A pape
 position is opened only after a later market mark actually touches that limit.
 Pending paper limits are durable across restarts; no PREPARE state is treated as a
 fill and no exchange order is ever submitted here.
+
+Parity rule: every fresh setup that Atlas exposes as a manual PLACE_RESTING_L1
+instruction is eligible for the same auto-paper mirror, regardless of display tier.
+This keeps manual opportunity logging and paper evidence aligned.
 """
 from __future__ import annotations
 
@@ -20,7 +24,6 @@ from app.trading_core.perp_board import build_perp_board
 
 log = get_logger("perp_setup_paper_mirror")
 
-ENTRY_TIERS = {"PRIME", "QUALIFIED"}
 SOURCE = "perp_manual_auto"
 STRATEGY = "perp_setup_auto_v2_resting_limit"
 PENDING_EVENT_PATH = Path(__file__).resolve().parents[2] / "data" / "perp_setup_paper_limits.jsonl"
@@ -109,8 +112,7 @@ class PerpSetupPaperMirror:
         except (TypeError, ValueError):
             return False
         if (
-            tier not in ENTRY_TIERS
-            or not instance
+            not instance
             or instance in self._mirrored_instances
             or instance in self._pending
             or symbol == ""
@@ -137,12 +139,19 @@ class PerpSetupPaperMirror:
             "momentum_pct": setup.get("momentum_pct"),
             "trend_pct": setup.get("trend_pct"),
             "state_at_arm": str(setup.get("state") or "").upper(),
+            "manual_trigger_mirror": True,
             "source": SOURCE,
             "strategy": STRATEGY,
         }
         self._append_pending_event(row)
         self._pending[instance] = {"timestamp": _now(), **row}
-        log.info("Auto paper resting limit armed", symbol=symbol, side=side, limit_price=limit_price)
+        log.info(
+            "Auto paper resting limit armed",
+            symbol=symbol,
+            side=side,
+            tier=tier,
+            limit_price=limit_price,
+        )
         return True
 
     def _cancel_pending(self, instance: str, *, reason: str, mark: float | None = None) -> None:
@@ -192,6 +201,7 @@ class PerpSetupPaperMirror:
             "setup_key": row.get("setup_key"),
             "tier": row.get("tier"),
             "state_at_arm": row.get("state_at_arm"),
+            "manual_trigger_mirror": True,
             "paper_order_model": "RESTING_L1_LIMIT",
             "paper_fill_model": "LIMIT_TOUCH",
             "paper_order_armed_at": row.get("timestamp"),
@@ -213,7 +223,7 @@ class PerpSetupPaperMirror:
             signal_score=float(row.get("signal_score") or 0.0),
             source=SOURCE,
             strategy=STRATEGY,
-            tier=str(row.get("tier") or "qualified").lower(),
+            tier=str(row.get("tier") or "manual").lower(),
             notes="Auto paper fill of Atlas manual resting L1 instruction; no live order placed.",
             features=features,
             counts_for_live=False,
@@ -261,7 +271,7 @@ class PerpSetupPaperMirror:
         }
 
     async def sync(self, setups: list[dict[str, Any]], price_map: dict[str, float]) -> dict[str, int]:
-        """Mirror manual resting-limit instructions into realistic PAPER orders."""
+        """Mirror every fresh manual resting-limit instruction into PAPER."""
         self._seed()
         opened = closed = marked = skipped = armed = filled = cancelled = 0
 
@@ -299,7 +309,9 @@ class PerpSetupPaperMirror:
                 self._cancel_pending(instance, reason=f"SETUP_{str(setup.get('state')).upper()}")
                 cancelled += 1
 
-        # Arm exactly what the manual board tells the user to place.
+        # Arm exactly what the manual board tells the user to place, regardless of
+        # PRIME / QUALIFIED / WATCH presentation tier. The board's authoritative
+        # manual_instruction gate remains the eligibility source of truth.
         for setup in setups:
             symbol = str(setup.get("symbol") or "").upper()
             mark = float(price_map.get(symbol) or setup.get("price") or setup.get("mark") or 0.0)
