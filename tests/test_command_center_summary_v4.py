@@ -61,17 +61,40 @@ def test_perp_summary_surfaces_auto_paper_journal_counts_without_live_unlock():
         "setups": [],
         "plans": [],
         "auto_paper": {
+            "pending_count": 7,
             "open_count": 3,
             "opened_total": 17,
             "closed_total": 14,
             "included_in_paper_journal": True,
             "counts_for_live": False,
+            "observability": {
+                "pending_health": {
+                    "currently_backed": 2,
+                    "not_in_current_snapshot": 5,
+                    "oldest_pending_age_hours": 3.5,
+                    "review_recommended": False,
+                    "age_buckets": {"h1_6": 7},
+                },
+                "clean_cohort": {
+                    "cohort": "manual_auto_observability_v1",
+                    "started_at": "2026-09-13T14:00:00+00:00",
+                    "opened": 4,
+                    "closed": 3,
+                    "open": 1,
+                },
+            },
         },
     }
     out = build_command_center_summary(perp, [])
     p = out["perps"]
+    assert p["auto_paper_pending_count"] == 7
     assert p["auto_paper_open_count"] == 3
     assert p["auto_paper_opened_total"] == 17
     assert p["auto_paper_closed_total"] == 14
     assert p["auto_paper_included_in_journal"] is True
+    assert p["auto_paper_pending_health"]["not_in_current_snapshot"] == 5
+    assert p["auto_paper_pending_health"]["oldest_pending_age_hours"] == 3.5
+    assert p["auto_paper_clean_cohort"]["opened"] == 4
+    assert "L1 touch/cross" in p["note"]
+    assert "L1/L2/L3 triggers" not in p["note"]
     assert out["execution"] == "NO_ORDER_ACTIONS"
