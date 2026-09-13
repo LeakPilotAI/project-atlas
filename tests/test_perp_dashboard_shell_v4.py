@@ -50,5 +50,8 @@ def test_perp_shell_uses_auto_paper_counter_instead_of_manual_fill_counter():
     assert "Auto paper open" in html
     assert "AUTO-PAPER IS AUTOMATIC" in html
     assert "S.auto_paper" in html
-    assert "fills automatically at active L1/L2/L3" in html
+    assert "arms valid manual L1; fills only on touch" in html
+    assert "regardless of display tier" in html
+    assert "paper opens only when price touches or crosses L1" in html
+    assert "PRIME/QUALIFIED manual setup" not in html
     assert '<div class="label">Manual fills</div>' not in html
