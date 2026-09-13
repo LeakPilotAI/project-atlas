@@ -101,11 +101,6 @@ class PerpSetupPaperMirror:
 
     @staticmethod
     def _crossed_from_prior_resting(setup: dict[str, Any], *, mark: float) -> bool:
-        """Prove a published resting L1 was crossed between consecutive snapshots.
-
-        This is not an inferred live-account fill. It is only a PAPER recovery path
-        for a manual instruction Atlas had already published on the prior snapshot.
-        """
         if bool(setup.get("previous_discovery_stale")):
             return False
         state = str(setup.get("state") or "").upper()
@@ -178,15 +173,6 @@ class PerpSetupPaperMirror:
         }
         self._append_pending_event(row)
         self._pending[instance] = {"timestamp": _now(), **row}
-        log.info(
-            "Auto paper resting limit armed",
-            symbol=symbol,
-            side=side,
-            tier=tier,
-            limit_price=limit_price,
-            paper_mirror_epoch_at=setup.get("paper_mirror_epoch_at"),
-            recovered_limit_cross=bool(instruction.get("recovered_limit_cross")),
-        )
         return True
 
     def _cancel_pending(self, instance: str, *, reason: str, mark: float | None = None) -> None:
@@ -280,14 +266,6 @@ class PerpSetupPaperMirror:
         })
         self._pending.pop(instance, None)
         self._mirrored_instances.add(instance)
-        log.info(
-            "Auto paper resting limit filled",
-            symbol=symbol,
-            side=side,
-            entry=limit_price,
-            touch_mark=mark,
-            recovered_limit_cross=bool(row.get("recovered_limit_cross")),
-        )
         return True
 
     def status(self) -> dict[str, int]:
@@ -320,7 +298,6 @@ class PerpSetupPaperMirror:
         self._seed()
         opened = closed = marked = skipped = armed = filled = cancelled = recovered = 0
 
-        # Manage previously filled auto-mirror positions first.
         for trade in list(paper_journal.list_open()):
             if str(trade.get("source") or "") != SOURCE:
                 continue
@@ -345,21 +322,21 @@ class PerpSetupPaperMirror:
                 await paper_journal.close_trade(tid, exit_price=float(mark), result="WIN", exit_reason="SETUP_TP1")
                 closed += 1
 
-        # Cancel only explicit terminal invalidations. Discovery-stale rows deliberately
-        # keep an already-armed resting order unchanged, matching the manual board text.
+        # A discovery-stale retained setup remains present during the lifecycle grace
+        # window, so its already-published resting order stays intact. Once the setup
+        # disappears entirely after retention, the paper order is detached from any
+        # manual instruction and must be cancelled to prevent stale phantom fills.
         current_by_instance = {self._instance_id(s): s for s in setups if self._instance_id(s)}
         for instance in list(self._pending):
             setup = current_by_instance.get(instance)
-            if setup and str(setup.get("state") or "").upper() in {"INVALIDATED", "TP1_HIT", "TP2_HIT"}:
+            if setup is None:
+                self._cancel_pending(instance, reason="DETACHED_AFTER_RETENTION")
+                cancelled += 1
+                continue
+            if str(setup.get("state") or "").upper() in {"INVALIDATED", "TP1_HIT", "TP2_HIT"}:
                 self._cancel_pending(instance, reason=f"SETUP_{str(setup.get('state')).upper()}")
                 cancelled += 1
 
-        # Arm exactly what the manual board tells the user to place, regardless of
-        # PRIME / QUALIFIED / WATCH presentation tier. paper_mirror_epoch_at makes
-        # a later re-entry into a manual opportunity a distinct paper experiment.
-        # If a resting L1 was published on the prior snapshot and the next snapshot
-        # proves price crossed it, recover that paper fill even if the current board
-        # can no longer advertise the now-marketable order.
         for setup in setups:
             symbol = str(setup.get("symbol") or "").upper()
             mark = float(price_map.get(symbol) or setup.get("price") or setup.get("mark") or 0.0)
@@ -379,8 +356,6 @@ class PerpSetupPaperMirror:
                 if bool(instruction.get("recovered_limit_cross")):
                     recovered += 1
 
-        # A later (or same-pass) touch converts a pending paper limit into an open
-        # PAPER position. PREPARE itself is never an assumed fill.
         for instance, row in list(self._pending.items()):
             symbol = str(row.get("symbol") or "").upper()
             mark = float(price_map.get(symbol) or 0.0)
