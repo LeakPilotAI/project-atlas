@@ -271,6 +271,23 @@ class PerpMicroCoach:
         log.info("Perp micro coach stopped")
 
     @staticmethod
+    def _owns_journal_row(row: Dict[str, Any]) -> bool:
+        """Return True only for paper positions managed by this RSI/extension coach.
+
+        The shared journal also contains manual-trigger auto-paper positions. Those
+        have their own resting-limit/TP1 manager and must never be adopted here or
+        they can be double-managed under the scalp/breakeven rules. Historical
+        pre-source rows remain owned for backward compatibility.
+        """
+        source = str(row.get("source") or "").strip()
+        strategy = str(row.get("strategy") or "").strip()
+        if source:
+            return source == "perp_micro"
+        if strategy:
+            return strategy == "rsi_extension_v1"
+        return True
+
+    @staticmethod
     def _row_from_journal(row: Dict[str, Any]) -> Dict[str, Any]:
         def _fx(*keys: str, default: float = 0.0) -> float:
             for k in keys:
@@ -325,17 +342,19 @@ class PerpMicroCoach:
         }
 
     def _rehydrate_open(self, reason: str = "cycle") -> int:
-        """Journal is source of truth across restarts. Coach memory is not."""
+        """Journal is source of truth across restarts, scoped to coach-owned trades."""
         from app.services.paper_journal import paper_journal
 
         if reason == "startup":
             paper_journal.reload()
         else:
             paper_journal.reconcile_from_disk()
+        all_open_rows = list(paper_journal.list_open())
+        owned_open_rows = [row for row in all_open_rows if self._owns_journal_row(row)]
         added = 0
         failed: List[Dict[str, Any]] = []
         review: List[Dict[str, Any]] = []
-        for row in paper_journal.list_open():
+        for row in owned_open_rows:
             tid = row.get("trade_id")
             if not tid:
                 failed.append({"reason": "missing trade_id", "row_symbol": row.get("symbol")})
@@ -347,13 +366,15 @@ class PerpMicroCoach:
                 if mapped.get("lifecycle") == "ERROR_REQUIRES_REVIEW":
                     review.append({"trade_id": tid, "reason": mapped.get("error") or "incomplete open row"})
                     self._open[tid] = mapped
-                    self._recovered_ids.add(str(tid))
+                    if reason == "startup":
+                        self._recovered_ids.add(str(tid))
                     added += 1
                     continue
                 mapped["lifecycle"] = "RECOVERY_PENDING"
                 self._prepare_exit_levels(mapped)
                 self._open[tid] = mapped
-                self._recovered_ids.add(str(tid))
+                if reason == "startup":
+                    self._recovered_ids.add(str(tid))
                 added += 1
             except Exception as e:
                 failed.append({"trade_id": tid, "reason": str(e)[:160]})
@@ -373,16 +394,23 @@ class PerpMicroCoach:
                     "mfe_r": row.get("mfe_r") or 0,
                     "mae_r": row.get("mae_r") or 0,
                 }
-        live_ids = {r.get("trade_id") for r in paper_journal.list_open()}
+                if reason == "startup":
+                    self._recovered_ids.add(str(tid))
+        live_ids = {r.get("trade_id") for r in owned_open_rows if r.get("trade_id")}
         for tid in list(self._open):
             if tid not in live_ids:
                 self._open.pop(tid, None)
+        live_id_strings = {str(tid) for tid in live_ids}
+        self._recovered_ids.intersection_update(live_id_strings)
         jr = paper_journal.recovery_report()
+        recovered_active = self._recovered_ids & {str(t) for t in self._open}
         self.last_recovery = {
             "title": "ATLAS PAPER RECOVERY",
             "reason": reason,
-            "persisted_open": jr["persisted_open"],
-            "recovered": len(self._open),
+            "persisted_open": len(owned_open_rows),
+            "journal_open_total": len(all_open_rows),
+            "foreign_open": max(0, len(all_open_rows) - len(owned_open_rows)),
+            "recovered": len(recovered_active),
             "added_this_pass": added,
             "already_closed": jr.get("already_closed") or 0,
             "malformed": jr["malformed"],
@@ -393,14 +421,16 @@ class PerpMicroCoach:
             "management_resumed": sum(
                 1 for p in self._open.values() if p.get("lifecycle") != "ERROR_REQUIRES_REVIEW"
             ),
-            "recovered_ids": sorted(str(x) for x in self._open),
-            "note": "OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED. No invented exits.",
+            "recovered_ids": sorted(recovered_active),
+            "note": "Micro recovery owns perp_micro rows only. Other paper strategies remain isolated.",
         }
         if added or failed or review or reason == "startup":
             log.info(
-                "Rehydrated paper opens from journal",
+                "Rehydrated coach-owned paper opens from journal",
                 added=added,
                 open=len(self._open),
+                journal_open=len(all_open_rows),
+                foreign_open=max(0, len(all_open_rows) - len(owned_open_rows)),
                 reason=reason,
                 failed=len(failed),
                 review=len(review),
@@ -416,6 +446,13 @@ class PerpMicroCoach:
             risk = abs(entry - float(p.get("initial_stop") or p.get("stop") or entry)) or 1e-12
             side = p["side"]
             ur = (mark - entry) / risk if side == "LONG" else (entry - mark) / risk
+            lifecycle = p.get("lifecycle") or "OPEN"
+            was_recovered = str(tid) in self._recovered_ids
+            recovering = was_recovered and lifecycle in {
+                "RECOVERY_PENDING",
+                "MARKET_DATA_UNAVAILABLE",
+                "ERROR_REQUIRES_REVIEW",
+            }
             out.append(
                 {
                     "id": tid,
@@ -434,9 +471,10 @@ class PerpMicroCoach:
                     "mfe_r": p.get("mfe_r", 0),
                     "mae_r": p.get("mae_r", 0),
                     "stale_quote": bool(p.get("stale_quote")),
-                    "lifecycle": p.get("lifecycle") or "OPEN",
+                    "lifecycle": lifecycle,
                     "opened_at": p.get("opened_at"),
-                    "recovered": str(tid) in self._recovered_ids,
+                    "recovered": recovering,
+                    "was_recovered": was_recovered,
                 }
             )
         return out
@@ -479,7 +517,7 @@ class PerpMicroCoach:
                 "oldest_open_symbol": oldest,
                 "oldest_open_age_sec": round(oldest_age, 1) if oldest_age >= 0 else None,
                 "failed_recovery": rec.get("failed") or [],
-                "note": "OPEN ≠ hung. MARKET_DATA_UNAVAILABLE ≠ CLOSED. Only CLOSED counts for performance.",
+                "note": "Micro recovery is source-scoped. OPEN ≠ hung; only CLOSED counts for performance.",
             }
         )
         return rec
@@ -839,7 +877,6 @@ class PerpMicroCoach:
 
         await self._manage_open(price_map)
 
-        # Shadow research (never affects paper)
         try:
             from app.services.shadow_research import shadow_research
 
