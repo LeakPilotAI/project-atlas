@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.services.perp_alert_delivery import perp_alert_delivery_service
 from app.services.perp_manual_service import perp_manual_service
+from app.services.perp_paper_observability import build_paper_observability
 from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
 from app.trading_core.perp_board import build_perp_board
 
@@ -25,6 +26,7 @@ async def manual_perps() -> Dict[str, Any]:
         "last_pass": dict(perp_alert_delivery_service.last_paper_result),
         "mode": "RESTING_L1_LIMIT_TOUCH",
         "live_execution": False,
+        "observability": build_paper_observability(snapshot.get("setups") or []),
     }
     return snapshot
 
@@ -43,8 +45,11 @@ async def manual_perp_board(limit: int = Query(8, ge=1, le=25)) -> Dict[str, Any
         "alert_count": sum(1 for row in board if bool(row.get("alert_eligible"))),
         "entered_count": sum(1 for row in board if str(row.get("trade_status")) == "ENTERED"),
         "alert_delivery_running": perp_alert_delivery_service.running,
-        "auto_paper": perp_setup_paper_mirror.status(),
-        "note": "Real Hyperliquid execution is manual-only. Verified resting instructions are mirrored as PAPER limits.",
+        "auto_paper": {
+            **perp_setup_paper_mirror.status(),
+            "observability": build_paper_observability(setups),
+        },
+        "note": "Real Hyperliquid execution is manual-only. Each verified manual resting-L1 instruction is mirrored as a PAPER limit and fills only on an L1 touch/cross.",
     }
 
 
