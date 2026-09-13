@@ -264,7 +264,7 @@ function actionBadge(a){
   const x = String(a||"QUIET");
   return `<span class="action ${x}">${x.replaceAll("_"," ")}</span>`;
 }
-function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({'&':'&','<':'<','>':'>','"':'"'}[c])); }
+function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 document.querySelectorAll(".tabs button").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("on"));
@@ -333,7 +333,7 @@ async function load(){
       </div>`).join("") : '<div class="sub">No open paper trades in this session.</div>';
     const lc = L.paper_lifecycle||{};
     document.getElementById("lifecycle").innerHTML =
-      `Recovery: persisted ${n(lc.persisted_open)} · recovered ${n(lc.recovered)} · in-memory ${n(lc.currently_open)} · missing quotes ${n(lc.positions_missing_market_data)} · review ${n(lc.error_requires_review)} · malformed ${n(lc.malformed)}. OPEN ≠ hung. Only CLOSED counts.`;
+      `Micro recovery: persisted ${n(lc.persisted_open)} · startup-recovered ${n(lc.recovered_positions)} · micro managed ${n(lc.currently_open)} · other paper ${n(lc.foreign_open)} · missing quotes ${n(lc.positions_missing_market_data)} · review ${n(lc.error_requires_review)} · malformed ${n(lc.malformed)}. Other paper strategies are isolated. Only CLOSED counts.`;
     const a = L.activity||{};
     document.getElementById("act").innerHTML = [
       ["Last HL data", ago(a.last_market_data)],
