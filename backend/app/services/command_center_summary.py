@@ -64,7 +64,7 @@ def _perp_summary(snapshot: dict[str, Any]) -> dict[str, Any]:
             "next_action": top.get("next_action"),
         },
         "last_error": snapshot.get("last_error"),
-        "note": "Hyperliquid manual guidance with automatic paper mirroring at active L1/L2/L3 triggers. No investment capital assumptions are included.",
+        "note": "Hyperliquid manual research with automatic PAPER mirroring of each verified resting-L1 instruction. PAPER opens only after an L1 touch/cross. No real order is placed.",
     }
 
 
