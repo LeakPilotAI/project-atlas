@@ -93,28 +93,20 @@ def decide_lifecycle(
     key = setup_key(str(setup.get("symbol") or ""), str(setup.get("side") or ""))
     tier = classify_tier(float(setup.get("score") or 0.0))
     state = str(setup.get("state") or "WAIT").upper()
-
-    # Alerts are deliberately narrower than ranking. A setup must be at least
-    # QUALIFIED and close enough to execution to be actionable.
     actionable_state = state in {"PREPARE", "L1_ACTIVE", "L2_ACTIVE", "L3_ACTIVE"}
     if tier is SetupTier.WATCH or not actionable_state:
         return LifecycleDecision(tier, False, "ranked for observation; not actionable yet", key)
-
     prior = prior or {}
     previous_tier = str(prior.get("tier") or "")
     previous_state = str(prior.get("state") or "")
     last_alert = _parse_time(prior.get("last_alert_at"))
     changed = previous_tier != tier.value or previous_state != state
-
     if changed:
         return LifecycleDecision(tier, True, "setup promoted or execution state changed", key)
-
     if last_alert is None:
         return LifecycleDecision(tier, True, "qualified actionable setup has not been alerted", key)
-
     if now - last_alert >= timedelta(minutes=max(1, int(cooldown_minutes))):
         return LifecycleDecision(tier, True, "alert cooldown elapsed while setup remains actionable", key)
-
     return LifecycleDecision(tier, False, "cooldown suppresses duplicate alert", key)
 
 
@@ -128,18 +120,8 @@ def reconcile_setups(
 ) -> list[dict[str, Any]]:
     """Reconcile discovery rows into stable, executable setup instances.
 
-    Published L1/L2/L3/stop/target levels do not drift on later refreshes. If a
-    setup temporarily falls out of the small discovery shortlist, retain it for
-    a short grace window as non-actionable/stale instead of making the card
-    disappear and then reappear.
-
-    ``paper_mirror_epoch_at`` versions a continuous manual-opportunity cycle. A
-    setup that leaves the actionable states and later becomes actionable again
-    receives a new epoch so the automatic paper mirror may arm the new manual
-    instruction exactly once without replaying the prior fill forever.
-
-    Prior mark/state metadata is carried forward for one refresh so the paper
-    mirror can prove that a previously-resting L1 was crossed between polls.
+    Published levels remain frozen. Missing discovery rows are retained for a short
+    grace window measured from last_seen_at (not first_seen_at), then disappear.
     """
     now = now or datetime.now(timezone.utc)
     prior_by_key = {
@@ -155,12 +137,7 @@ def reconcile_setups(
         key = setup_key(str(row.get("symbol") or ""), str(row.get("side") or ""))
         prior = prior_by_key.get(key)
         row = _freeze_prior_levels(row, prior)
-        decision = decide_lifecycle(
-            row,
-            prior=prior,
-            now=now,
-            cooldown_minutes=cooldown_minutes,
-        )
+        decision = decide_lifecycle(row, prior=prior, now=now, cooldown_minutes=cooldown_minutes)
         row["setup_key"] = key
         row["tier"] = decision.tier.value
         row["alert_eligible"] = decision.alert_eligible
@@ -173,7 +150,6 @@ def reconcile_setups(
         row["previous_price"] = (prior or {}).get("price") or (prior or {}).get("mark")
         row["previous_discovery_stale"] = bool((prior or {}).get("discovery_stale", False))
         row["discovery_stale"] = False
-
         current_state = str(row.get("state") or "WAIT").upper()
         prior_state = str((prior or {}).get("state") or "WAIT").upper()
         prior_epoch = str((prior or {}).get("paper_mirror_epoch_at") or "")
@@ -184,7 +160,6 @@ def reconcile_setups(
                 row["paper_mirror_epoch_at"] = prior_epoch
         else:
             row["paper_mirror_epoch_at"] = prior_epoch or None
-
         output.append(row)
         seen.add(key)
 
@@ -195,8 +170,8 @@ def reconcile_setups(
             continue
         if str(prior.get("state") or "").upper() in terminal:
             continue
-        first_seen = _parse_time(prior.get("first_seen_at") or prior.get("last_seen_at"))
-        if first_seen is None or now - first_seen > keep_for:
+        last_seen = _parse_time(prior.get("last_seen_at") or prior.get("first_seen_at"))
+        if last_seen is None or now - last_seen > keep_for:
             continue
         retained = dict(prior)
         retained["setup_key"] = key
@@ -211,5 +186,4 @@ def reconcile_setups(
         retained["previous_discovery_stale"] = bool(prior.get("discovery_stale", False))
         retained["next_action"] = "Scanner confirmation temporarily absent; keep existing limits frozen and do not add/chase until rediscovered."
         output.append(retained)
-
     return output
