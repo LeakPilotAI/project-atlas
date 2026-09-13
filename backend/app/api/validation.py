@@ -30,6 +30,23 @@ def _json_http(body: Any, status_code: int = 200) -> JSONResponse:
     return JSONResponse(content=payload, status_code=status_code)
 
 
+def _clean_policy_guard_errors(body: Any) -> Any:
+    """Policy phrasing guards are telemetry, not diagnostic failures.
+
+    Older edge reports appended 'redacted phrase guard: ...' to section_errors,
+    which made a healthy report look broken in the UI. Keep real section failures
+    in section_errors and expose only a count for phrasing-guard activations.
+    """
+    if not isinstance(body, dict):
+        return body
+    raw = list(body.get("section_errors") or [])
+    guards = [x for x in raw if str(x).lower().startswith("redacted phrase guard:")]
+    body["section_errors"] = [x for x in raw if x not in guards]
+    body["policy_guard_activations"] = len(guards)
+    body["diagnostics_healthy"] = bool(body.get("ok", True)) and not body["section_errors"]
+    return body
+
+
 @router.get("")
 @router.get("/report")
 async def validation_report() -> Dict[str, Any]:
@@ -73,7 +90,7 @@ async def edge_endpoint() -> JSONResponse:
     try:
         from app.services.edge_diagnostics import edge_report
 
-        body = edge_report()
+        body = _clean_policy_guard_errors(edge_report())
     except Exception as e:
         body = {
             "ok": False,
@@ -83,6 +100,8 @@ async def edge_endpoint() -> JSONResponse:
             "baseline": {"n": 0, "winrate": 0.0, "expectancy": 0.0, "total_r": 0.0},
             "malformed_count": 0,
             "section_errors": [str(e)[:240]],
+            "policy_guard_activations": 0,
+            "diagnostics_healthy": False,
             "disclaimer": "Diagnostics failed to fully build. Journal was not rewritten.",
         }
     return _json_http(body, 200)
