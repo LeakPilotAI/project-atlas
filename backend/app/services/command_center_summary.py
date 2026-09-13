@@ -36,6 +36,9 @@ def _perp_summary(snapshot: dict[str, Any]) -> dict[str, Any]:
     setups = list(snapshot.get("setups") or [])
     plans = list(snapshot.get("plans") or [])
     auto_paper = dict(snapshot.get("auto_paper") or {})
+    obs = dict(auto_paper.get("observability") or {})
+    pending_health = dict(obs.get("pending_health") or {})
+    clean_cohort = dict(obs.get("clean_cohort") or {})
     actionable_states = {"PREPARE", "L1_ACTIVE", "L2_ACTIVE", "L3_ACTIVE"}
     top = setups[0] if setups else None
     return {
@@ -50,10 +53,25 @@ def _perp_summary(snapshot: dict[str, Any]) -> dict[str, Any]:
         "qualified_count": sum(1 for x in setups if str(x.get("tier") or "") == "QUALIFIED"),
         "actionable_count": sum(1 for x in setups if str(x.get("state") or "") in actionable_states),
         "entered_count": sum(1 for x in plans if str(x.get("status") or "") == "ENTERED"),
+        "auto_paper_pending_count": int(auto_paper.get("pending_count") or 0),
         "auto_paper_open_count": int(auto_paper.get("open_count") or 0),
         "auto_paper_opened_total": int(auto_paper.get("opened_total") or 0),
         "auto_paper_closed_total": int(auto_paper.get("closed_total") or 0),
         "auto_paper_included_in_journal": bool(auto_paper.get("included_in_paper_journal", False)),
+        "auto_paper_pending_health": {
+            "currently_backed": int(pending_health.get("currently_backed") or 0),
+            "not_in_current_snapshot": int(pending_health.get("not_in_current_snapshot") or 0),
+            "oldest_pending_age_hours": pending_health.get("oldest_pending_age_hours"),
+            "review_recommended": bool(pending_health.get("review_recommended")),
+            "age_buckets": dict(pending_health.get("age_buckets") or {}),
+        },
+        "auto_paper_clean_cohort": {
+            "cohort": clean_cohort.get("cohort"),
+            "started_at": clean_cohort.get("started_at"),
+            "opened": int(clean_cohort.get("opened") or 0),
+            "closed": int(clean_cohort.get("closed") or 0),
+            "open": int(clean_cohort.get("open") or 0),
+        },
         "alert_candidate_count": len(snapshot.get("alert_candidates") or []),
         "top_setup": None if top is None else {
             "symbol": top.get("symbol"),
