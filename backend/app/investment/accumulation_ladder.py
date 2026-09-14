@@ -15,10 +15,10 @@ from typing import Any, Iterable
 from app.investment.storage import DATA_DIR, ensure_dirs
 
 STATE_PATH = DATA_DIR / "accumulation_ladder_state.json"
-SCHEMA_VERSION = 2
-# Tighter accumulation ladder: L1 is a modest real dip rather than waiting 3%.
-# At a $252.20 anchor this places L1 at about $248.42.
-LADDER_PCTS = (0.015, 0.03, 0.05, 0.08)
+SCHEMA_VERSION = 3
+# Patient anti-chase accumulation ladder. L1 now requires a meaningful 3% dip;
+# deeper levels progressively reserve capital for larger dislocations.
+LADDER_PCTS = (0.03, 0.05, 0.08, 0.12)
 LEVEL_NAMES = ("L1", "L2", "L3", "L4")
 ACTIONABLE_QUOTE_QUALITY = {"LIVE", "FRESH"}
 
@@ -153,9 +153,8 @@ class AccumulationLadderStore:
             if display_price is None or trigger_price is None or quote_quality not in ACTIONABLE_QUOTE_QUALITY:
                 continue
 
-            # Any pre-v2 ladder is invalid. Earlier tests could persist synthetic $300
-            # anchors into the shared development data file; v2 deliberately re-arms
-            # from the first real fresh quote and uses the new tighter percentages.
+            # Any pre-v3 ladder is invalid. Re-arm from the first fresh quote so every
+            # active cycle uses the patient 3/5/8/12 ladder without rewriting history.
             if state and state.get("active") and not self._valid_schema(state):
                 state["active"] = False
                 state["ended_at"] = now.isoformat()
@@ -209,8 +208,6 @@ class AccumulationLadderStore:
                 if level_price is None:
                     continue
                 if not bool(level.get("hit")):
-                    # For Robinhood bid/ask quotes, trigger_price is the ask. A manual
-                    # buy limit at Lx is marketable once the ask reaches that limit.
                     crossed = trigger_price <= level_price and (previous_trigger is None or previous_trigger > level_price)
                     if crossed:
                         level["hit"] = True
@@ -220,14 +217,7 @@ class AccumulationLadderStore:
                         level.setdefault("dm_delivered", False)
                         changed = True
                 if bool(level.get("hit")) and not bool(level.get("dm_delivered")):
-                    event = self._event_from_level(
-                        symbol,
-                        state,
-                        level,
-                        fallback_price=trigger_price,
-                        quote_session=quote_session,
-                        quote_ts=quote_ts,
-                    )
+                    event = self._event_from_level(symbol, state, level, fallback_price=trigger_price, quote_session=quote_session, quote_ts=quote_ts)
                     if event is not None:
                         notifications.append(event)
             state["levels"] = levels
@@ -266,12 +256,7 @@ class AccumulationLadderStore:
         if str(row.get("stance") or "").upper() != "ACCUMULATE":
             return {"state": "NOT_ACCUMULATING", "next_level": None, "pending_dm": 0}
         if not state:
-            return {
-                "state": "WAITING_FOR_FRESH_QUOTE",
-                "next_level": None,
-                "pending_dm": 0,
-                "quote_quality": quality,
-            }
+            return {"state": "WAITING_FOR_FRESH_QUOTE", "next_level": None, "pending_dm": 0, "quote_quality": quality}
         levels = list(state.get("levels") or [])
         pending_dm = sum(1 for x in levels if x.get("hit") and not x.get("dm_delivered"))
         latest_hit = next((x for x in reversed(levels) if x.get("hit")), None)
