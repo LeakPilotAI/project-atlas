@@ -38,18 +38,33 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
 async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, Any]:
     research = _load_jsonl(OPPORTUNITIES_PATH)
     plans = _load_jsonl(PLANS_PATH)
-    symbols = {str(row.get("symbol") or "").upper().strip() for row in research if str(row.get("symbol") or "").strip()}
+    symbols = {
+        str(row.get("symbol") or "").upper().strip()
+        for row in research
+        if str(row.get("symbol") or "").strip()
+    }
     quotes = await quality_dip_quote_service.get_many(symbols)
     board = build_quality_dips_board(apply_quote_overlay(research, quotes), plans, limit=limit)
+
+    # Browser refreshes also reconcile level hits so the visual state updates as soon
+    # as a fresh supported quote crosses a frozen level. The hit remains queued for
+    # Discord until the background monitor confirms DM delivery.
+    pending_hits = accumulation_ladder_store.sync(board)
     board = accumulation_ladder_store.overlay(board)
+
     counts = {"ACCUMULATE": 0, "PREPARE": 0, "WATCH": 0, "STAND_DOWN": 0}
     for row in board:
         stance = str(row.get("stance") or "WATCH")
         counts[stance] = counts.get(stance, 0) + 1
+
     active_ladders = sum(1 for row in board if row.get("accumulation_ladder"))
+    pending_dm = sum(
+        int((row.get("accumulation_status") or {}).get("pending_dm") or 0)
+        for row in board
+    )
     return {
         "domain": "EQUITY_INVESTMENT",
-        "source": "investment_research_store+yfinance_quote_overlay",
+        "source": "investment_research_store+yfinance_intraday_quote_overlay",
         "execution": "MANUAL_ONLY",
         "count": len(board),
         "counts": counts,
@@ -60,12 +75,14 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "levels": ["L1", "L2", "L3", "L4"],
             "mode": "FROZEN_DIP_LEVELS_ONE_SHOT_PER_ACCUMULATION_CYCLE",
             "discord_dm": "quality_dip_discord_enabled",
+            "pending_dm": pending_dm,
+            "pending_events_seen_this_request": len(pending_hits),
             "broker_execution": False,
         },
         "board": board,
         "note": (
             "Research observations and timestamped market quotes are kept separate and labeled with source, session, and freshness. "
-            "ACCUMULATE names may carry a frozen dip ladder; Atlas only alerts on supported fresh-quote level hits and never places a Robinhood order."
+            "ACCUMULATE names carry a frozen dip ladder when a LIVE/FRESH quote is available. Browser refreshes reconcile hits immediately; Discord delivery remains durable and retryable. Atlas never places a Robinhood order."
         ),
     }
 
