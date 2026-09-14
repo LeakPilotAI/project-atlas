@@ -17,6 +17,7 @@ from app.investment.storage import DATA_DIR, ensure_dirs
 STATE_PATH = DATA_DIR / "accumulation_ladder_state.json"
 LADDER_PCTS = (0.03, 0.07, 0.12, 0.18)
 LEVEL_NAMES = ("L1", "L2", "L3", "L4")
+ACTIONABLE_QUOTE_QUALITY = {"LIVE", "FRESH"}
 
 
 def _now() -> datetime:
@@ -138,9 +139,7 @@ class AccumulationLadderStore:
                     changed = True
                 continue
 
-            # Fresh quotes are required to arm and to claim a new level hit.
-            # Existing undelivered hits can still be retried later when a fresh quote returns.
-            if quote_price is None or quote_quality != "FRESH":
+            if quote_price is None or quote_quality not in ACTIONABLE_QUOTE_QUALITY:
                 continue
 
             if not state or not state.get("active"):
@@ -226,9 +225,48 @@ class AccumulationLadderStore:
             row = dict(original)
             symbol = str(row.get("symbol") or "").upper()
             state = self.get(symbol)
-            row["accumulation_ladder"] = state if state and state.get("active") else None
+            active = state if state and state.get("active") else None
+            row["accumulation_ladder"] = active
+            row["accumulation_status"] = self._status(row, active)
             out.append(row)
         return out
+
+    @staticmethod
+    def _status(row: dict[str, Any], state: dict[str, Any] | None) -> dict[str, Any]:
+        quote = _float(row.get("quote_price")) or _float(row.get("quote_display_price"))
+        quality = str(row.get("quote_quality") or "UNKNOWN").upper()
+        if str(row.get("stance") or "").upper() != "ACCUMULATE":
+            return {"state": "NOT_ACCUMULATING", "next_level": None, "pending_dm": 0}
+        if not state:
+            return {
+                "state": "WAITING_FOR_FRESH_QUOTE",
+                "next_level": None,
+                "pending_dm": 0,
+                "quote_quality": quality,
+            }
+        levels = list(state.get("levels") or [])
+        pending_dm = sum(1 for x in levels if x.get("hit") and not x.get("dm_delivered"))
+        latest_hit = next((x for x in reversed(levels) if x.get("hit")), None)
+        next_level = next((x for x in levels if not x.get("hit")), None)
+        if pending_dm:
+            status_state = "LEVEL_HIT_DM_PENDING"
+        elif latest_hit is not None:
+            status_state = "LEVEL_HIT"
+        else:
+            status_state = "ARMED"
+        payload: dict[str, Any] = {
+            "state": status_state,
+            "pending_dm": pending_dm,
+            "quote_quality": quality,
+            "latest_hit": latest_hit,
+            "next_level": next_level,
+        }
+        if quote is not None and next_level is not None:
+            level_price = _float(next_level.get("price"))
+            if level_price is not None:
+                payload["distance_to_next_level_usd"] = round(max(0.0, quote - level_price), 4)
+                payload["distance_to_next_level_pct"] = round(max(0.0, (quote / level_price - 1.0) * 100.0), 2)
+        return payload
 
 
 accumulation_ladder_store = AccumulationLadderStore()
