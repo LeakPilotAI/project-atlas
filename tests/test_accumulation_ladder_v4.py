@@ -8,6 +8,7 @@ def board(price=100.0, stance="ACCUMULATE", quality="FRESH", symbol="ADBE"):
         "symbol": symbol,
         "stance": stance,
         "quote_price": price,
+        "quote_display_price": price,
         "quote_quality": quality,
         "quote_session": "REGULAR",
         "quote_effective_timestamp": "2026-09-14T14:30:00+00:00",
@@ -24,6 +25,14 @@ def test_accumulate_arms_frozen_levels_below_current_quote(tmp_path):
     assert [x["price"] for x in state["levels"]] == [97.0, 93.0, 88.0, 82.0]
 
 
+def test_live_quote_can_arm_and_trigger(tmp_path):
+    store = AccumulationLadderStore(tmp_path / "ladder.json")
+    now = datetime(2026, 9, 14, 14, 30, tzinfo=timezone.utc)
+    store.sync(board(100.0, quality="LIVE"), now=now)
+    hits = store.sync(board(96.5, quality="LIVE"), now=now + timedelta(seconds=30))
+    assert [x.level for x in hits] == ["L1"]
+
+
 def test_rising_market_never_chases_ladder_higher(tmp_path):
     store = AccumulationLadderStore(tmp_path / "ladder.json")
     now = datetime(2026, 9, 14, 14, 30, tzinfo=timezone.utc)
@@ -33,6 +42,19 @@ def test_rising_market_never_chases_ladder_higher(tmp_path):
     assert state["anchor_price"] == 100.0
     assert [x["price"] for x in state["levels"]] == [97.0, 93.0, 88.0, 82.0]
     assert all(not x["hit"] for x in state["levels"])
+
+
+def test_overlay_exposes_next_level_and_distance(tmp_path):
+    store = AccumulationLadderStore(tmp_path / "ladder.json")
+    now = datetime(2026, 9, 14, 14, 30, tzinfo=timezone.utc)
+    row = board(100.0)[0]
+    store.sync([row], now=now)
+    out = store.overlay([row])[0]
+    status = out["accumulation_status"]
+    assert status["state"] == "ARMED"
+    assert status["next_level"]["level"] == "L1"
+    assert status["distance_to_next_level_usd"] == 3.0
+    assert round(status["distance_to_next_level_pct"], 2) == 3.09
 
 
 def test_each_level_alerts_once_after_successful_delivery(tmp_path):
@@ -56,8 +78,14 @@ def test_undelivered_hit_is_retried_until_marked_delivered(tmp_path):
     retry = store.sync(board(96.0), now=now + timedelta(minutes=2))
     assert [x.level for x in first] == ["L1"]
     assert [x.level for x in retry] == ["L1"]
+    overlay = store.overlay(board(96.0))[0]
+    assert overlay["accumulation_status"]["state"] == "LEVEL_HIT_DM_PENDING"
+    assert overlay["accumulation_status"]["pending_dm"] == 1
     assert store.mark_delivered("ADBE", retry[0].cycle_id, "L1") is True
     assert store.sync(board(95.5), now=now + timedelta(minutes=3)) == []
+    delivered = store.overlay(board(95.5))[0]
+    assert delivered["accumulation_status"]["state"] == "LEVEL_HIT"
+    assert delivered["accumulation_status"]["pending_dm"] == 0
 
 
 def test_gap_down_emits_every_newly_crossed_level(tmp_path):
