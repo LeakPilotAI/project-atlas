@@ -1,6 +1,6 @@
 import asyncio
-from datetime import datetime, timezone
 
+from app.investment.board import build_quality_dips_board
 from app.investment.quality_dip_quotes import QualityDipQuoteService, apply_quote_overlay, quote_health
 
 
@@ -47,6 +47,40 @@ def test_overlay_preserves_research_price_and_recomputes_drawdown_from_same_anch
     assert row["drawdown"]["prior_high_anchor"] == 500.0
     assert round(row["drawdown"]["current_drawdown"], 4) == -0.4
     assert row["drawdown"]["research_current_drawdown"] == -0.5
+
+
+def test_current_quote_recomputes_recovery_runway_before_aplus_gate():
+    research = [{
+        "timestamp": "2026-09-12T20:00:00+00:00",
+        "symbol": "ADBE",
+        "name": "Adobe",
+        "asset_type": "STOCK",
+        "price": 250.0,
+        "classification": "ACCUMULATION",
+        "opportunity_score": 82,
+        "evidence_quality": "HIGH",
+        "thesis": "INTACT",
+        "components": {"valuation": 80, "fundamentals": 85, "drawdown": 90, "thesis_integrity": 90},
+        "drawdown": {"current_drawdown": -0.5},
+        "missing_critical": [],
+    }]
+    quotes = {"ADBE": {
+        "price": 400.0,
+        "fresh_for_display": True,
+        "quality": "FRESH",
+        "session": "REGULAR",
+        "source": "yfinance",
+        "effective_timestamp": "2026-09-13T20:00:00+00:00",
+        "age_sec": 60.0,
+    }}
+    board = build_quality_dips_board(apply_quote_overlay(research, quotes))
+    row = board[0]
+    assert row["price"] == 400.0
+    assert row["research_price"] == 250.0
+    assert round(row["current_drawdown"], 4) == -0.2
+    assert row["recovery_runway_pct"] == 25.0
+    assert row["quote_session"] == "REGULAR"
+    assert row["price_provenance"] == "CURRENT_QUOTE"
 
 
 def test_unusable_quote_never_overwrites_persisted_research_price():
