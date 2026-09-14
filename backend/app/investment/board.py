@@ -97,11 +97,23 @@ def build_quality_dips_board(
         tiers = list(plan.get("tiers") or []) if ladder_eligible and str(plan.get("status") or "") == "ACTIVE" else []
         drawdown = dict(row.get("drawdown") or {})
         conviction = from_research_board(row, stance=stance)
+        current_quote = dict(row.get("current_quote") or {})
         board.append({
             "symbol": str(row.get("symbol") or "").upper(),
             "name": row.get("name") or "",
             "asset_type": asset_type,
             "price": row.get("price"),
+            "price_provenance": row.get("price_provenance") or "RESEARCH_OBSERVATION",
+            "research_price": row.get("research_price", row.get("price")),
+            "research_timestamp": row.get("research_timestamp", row.get("timestamp")),
+            "quote_price": row.get("quote_price"),
+            "current_quote": current_quote,
+            "quote_source": current_quote.get("source"),
+            "quote_session": current_quote.get("session"),
+            "quote_quality": current_quote.get("quality"),
+            "quote_effective_timestamp": current_quote.get("effective_timestamp"),
+            "quote_retrieved_at": current_quote.get("retrieved_at"),
+            "quote_age_sec": current_quote.get("age_sec"),
             "timestamp": row.get("timestamp"),
             "classification": row.get("classification") or "NO_ACTION",
             "stance": stance,
@@ -111,6 +123,8 @@ def build_quality_dips_board(
             "thesis": row.get("thesis") or "UNKNOWN",
             "components": dict(row.get("components") or {}),
             "current_drawdown": drawdown.get("current_drawdown"),
+            "research_drawdown": drawdown.get("research_current_drawdown"),
+            "prior_high_anchor": drawdown.get("prior_high_anchor"),
             "drawdown_percentile": drawdown.get("percentile") or drawdown.get("historical_percentile"),
             "coverage_label": row.get("coverage_label") or "",
             "blockers": blockers,
