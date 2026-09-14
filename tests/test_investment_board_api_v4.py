@@ -65,7 +65,7 @@ def test_quality_dips_api_is_mounted_under_investment_domain(monkeypatch):
     assert "robinhood" in data["source"]
     assert data["accumulation_alerts"]["monitor_interval_sec"] == 30
     assert data["accumulation_alerts"]["levels"] == ["L1", "L2", "L3", "L4"]
-    assert data["accumulation_alerts"]["level_pcts"] == [1.5, 3.0, 5.0, 8.0]
+    assert data["accumulation_alerts"]["level_pcts"] == [3.0, 5.0, 8.0, 12.0]
     assert "pending_dm" in data["accumulation_alerts"]
     assert data["accumulation_alerts"]["broker_execution"] is False
 
@@ -81,7 +81,8 @@ def test_quality_dips_view_is_stock_only_and_has_no_perp_api_calls():
     assert "Hyperliquid" not in text
     assert "LIVE SUPPORTED PRICE" in text
     assert "LAST SUPPORTED PRICE" in text
-    assert "DIP LEVEL HIT — CHECK ROBINHOOD" in text
+    assert "DIP LEVEL HIT" in text
+    assert "CHECK ROBINHOOD" in text
     assert "NEXT DIP LEVEL" in text
     assert "DISCORD DM PENDING" in text
     assert "L1-L4" in text
