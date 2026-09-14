@@ -36,6 +36,9 @@ def test_quality_dips_api_is_mounted_under_investment_domain(monkeypatch):
     assert "counts" in data
     assert data["quote_health"]["source"] == "yfinance"
     assert "yfinance_quote_overlay" in data["source"]
+    assert data["accumulation_alerts"]["monitor_interval_sec"] == 60
+    assert data["accumulation_alerts"]["levels"] == ["L1", "L2", "L3", "L4"]
+    assert data["accumulation_alerts"]["broker_execution"] is False
 
 
 def test_quality_dips_view_is_stock_only_and_has_no_perp_api_calls():
@@ -51,3 +54,6 @@ def test_quality_dips_view_is_stock_only_and_has_no_perp_api_calls():
     assert "research snapshot" in text
     assert "quote_quality" in text
     assert "quote_session" in text
+    assert "AUTO DIP ALERT LADDER" in text
+    assert "L1-L4" in text
+    assert "does not place" not in text or "manually" in text
