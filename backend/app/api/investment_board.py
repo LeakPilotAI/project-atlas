@@ -7,7 +7,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 
-from app.investment.accumulation_ladder import accumulation_ladder_store
+from app.investment.accumulation_ladder import LADDER_PCTS, accumulation_ladder_store
 from app.investment.board import build_quality_dips_board
 from app.investment.quality_dip_quotes import apply_quote_overlay, quality_dip_quote_service, quote_health
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
@@ -64,7 +64,7 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
     )
     return {
         "domain": "EQUITY_INVESTMENT",
-        "source": "investment_research_store+yfinance_intraday_quote_overlay",
+        "source": "investment_research_store+robinhood_underlying+yfinance_fallback",
         "execution": "MANUAL_ONLY",
         "count": len(board),
         "counts": counts,
@@ -73,6 +73,7 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "active_ladders": active_ladders,
             "monitor_interval_sec": 30,
             "levels": ["L1", "L2", "L3", "L4"],
+            "level_pcts": [round(x * 100.0, 2) for x in LADDER_PCTS],
             "mode": "FROZEN_DIP_LEVELS_ONE_SHOT_PER_ACCUMULATION_CYCLE",
             "discord_dm": "quality_dip_discord_enabled",
             "pending_dm": pending_dm,
@@ -82,6 +83,7 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         "board": board,
         "note": (
             "Research observations and timestamped market quotes are kept separate and labeled with source, session, and freshness. "
+            "Atlas prefers Robinhood read-only underlying bid/ask when available and uses the ask for manual buy-limit level monitoring. "
             "ACCUMULATE names carry a frozen dip ladder when a LIVE/FRESH quote is available. Browser refreshes reconcile hits immediately; Discord delivery remains durable and retryable. Atlas never places a Robinhood order."
         ),
     }
