@@ -234,6 +234,8 @@ class QualityDipScanner:
                     delivered = await self._emit_ladder_hit(hit)
                 except Exception as exc:
                     log.warning("accumulation ladder DM failed", symbol=hit.symbol, level=hit.level, error=str(exc)[:160])
+            if delivered:
+                accumulation_ladder_store.mark_delivered(hit.symbol, hit.cycle_id, hit.level)
             event = {
                 "symbol": hit.symbol,
                 "action": "ACCUMULATION_LEVEL_HIT",
