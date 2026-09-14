@@ -48,10 +48,7 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         "count": len(board),
         "counts": counts,
         "board": board,
-        "note": (
-            "Stocks/ETFs only. Readiness gates control whether a staged ladder may be shown. "
-            "Opportunity scores are ordinal research rankings, not probabilities. Atlas places no Robinhood orders."
-        ),
+        "note": "Quality Dips research observations include their original timestamps. Prices must not be presented as current without a separate quote timestamp.",
     }
 
 
