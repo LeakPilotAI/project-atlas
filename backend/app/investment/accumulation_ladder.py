@@ -15,7 +15,10 @@ from typing import Any, Iterable
 from app.investment.storage import DATA_DIR, ensure_dirs
 
 STATE_PATH = DATA_DIR / "accumulation_ladder_state.json"
-LADDER_PCTS = (0.03, 0.07, 0.12, 0.18)
+SCHEMA_VERSION = 2
+# Tighter accumulation ladder: L1 is a modest real dip rather than waiting 3%.
+# At a $252.20 anchor this places L1 at about $248.42.
+LADDER_PCTS = (0.015, 0.03, 0.05, 0.08)
 LEVEL_NAMES = ("L1", "L2", "L3", "L4")
 ACTIONABLE_QUOTE_QUALITY = {"LIVE", "FRESH"}
 
@@ -48,23 +51,25 @@ class LadderHit:
 class AccumulationLadderStore:
     def __init__(self, path: Path = STATE_PATH) -> None:
         self.path = path
-        self.state: dict[str, Any] = {"symbols": {}}
+        self.state: dict[str, Any] = {"schema_version": SCHEMA_VERSION, "symbols": {}}
         self.load()
 
     def load(self) -> None:
         if not self.path.exists():
-            self.state = {"symbols": {}}
+            self.state = {"schema_version": SCHEMA_VERSION, "symbols": {}}
             return
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
-            self.state = raw if isinstance(raw, dict) else {"symbols": {}}
+            self.state = raw if isinstance(raw, dict) else {"schema_version": SCHEMA_VERSION, "symbols": {}}
         except Exception:
-            self.state = {"symbols": {}}
+            self.state = {"schema_version": SCHEMA_VERSION, "symbols": {}}
         if not isinstance(self.state.get("symbols"), dict):
             self.state["symbols"] = {}
+        self.state["schema_version"] = SCHEMA_VERSION
 
     def save(self) -> None:
         ensure_dirs()
+        self.state["schema_version"] = SCHEMA_VERSION
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(self.state, indent=2), encoding="utf-8")
 
@@ -75,9 +80,13 @@ class AccumulationLadderStore:
     def put(self, symbol: str, row: dict[str, Any]) -> None:
         self.state["symbols"][symbol.upper()] = row
 
+    @staticmethod
+    def _valid_schema(state: dict[str, Any] | None) -> bool:
+        return bool(state) and int(state.get("schema_version") or 0) == SCHEMA_VERSION
+
     def mark_delivered(self, symbol: str, cycle_id: str, level_name: str, *, now: datetime | None = None) -> bool:
         state = self.get(symbol)
-        if not state or str(state.get("cycle_id") or "") != str(cycle_id):
+        if not self._valid_schema(state) or str(state.get("cycle_id") or "") != str(cycle_id):
             return False
         changed = False
         for level in list(state.get("levels") or []):
@@ -125,9 +134,11 @@ class AccumulationLadderStore:
             seen.add(symbol)
             stance = str(board_row.get("stance") or "WATCH").upper()
             quote_quality = str(board_row.get("quote_quality") or "UNKNOWN").upper()
-            quote_price = _float(board_row.get("quote_price"))
+            display_price = _float(board_row.get("quote_display_price")) or _float(board_row.get("quote_price"))
+            trigger_price = _float(board_row.get("quote_trigger_price")) or _float(board_row.get("quote_price"))
             quote_ts = board_row.get("quote_effective_timestamp")
             quote_session = str(board_row.get("quote_session") or "UNKNOWN")
+            quote_source = str(board_row.get("quote_source") or "UNKNOWN")
             state = self.get(symbol)
 
             if stance != "ACCUMULATE":
@@ -139,8 +150,19 @@ class AccumulationLadderStore:
                     changed = True
                 continue
 
-            if quote_price is None or quote_quality not in ACTIONABLE_QUOTE_QUALITY:
+            if display_price is None or trigger_price is None or quote_quality not in ACTIONABLE_QUOTE_QUALITY:
                 continue
+
+            # Any pre-v2 ladder is invalid. Earlier tests could persist synthetic $300
+            # anchors into the shared development data file; v2 deliberately re-arms
+            # from the first real fresh quote and uses the new tighter percentages.
+            if state and state.get("active") and not self._valid_schema(state):
+                state["active"] = False
+                state["ended_at"] = now.isoformat()
+                state["end_reason"] = "ladder_schema_upgrade"
+                self.put(symbol, state)
+                state = None
+                changed = True
 
             if not state or not state.get("active"):
                 cycle_id = f"{symbol}:{now.isoformat()}"
@@ -148,8 +170,8 @@ class AccumulationLadderStore:
                 for name, pct in zip(LEVEL_NAMES, LADDER_PCTS):
                     levels.append({
                         "level": name,
-                        "pct_below_anchor": round(pct * 100.0, 1),
-                        "price": round(quote_price * (1.0 - pct), 4),
+                        "pct_below_anchor": round(pct * 100.0, 2),
+                        "price": round(display_price * (1.0 - pct), 4),
                         "hit": False,
                         "hit_at": None,
                         "hit_market_price": None,
@@ -158,13 +180,16 @@ class AccumulationLadderStore:
                         "dm_delivered_at": None,
                     })
                 state = {
+                    "schema_version": SCHEMA_VERSION,
                     "symbol": symbol,
                     "active": True,
                     "cycle_id": cycle_id,
                     "armed_at": now.isoformat(),
-                    "anchor_price": quote_price,
+                    "anchor_price": display_price,
                     "anchor_quote_timestamp": quote_ts,
-                    "last_price": quote_price,
+                    "anchor_quote_source": quote_source,
+                    "last_price": display_price,
+                    "last_trigger_price": trigger_price,
                     "last_quote_timestamp": quote_ts,
                     "levels": levels,
                     "note": "Frozen below the accumulation-cycle anchor; levels do not chase rising prices.",
@@ -173,8 +198,9 @@ class AccumulationLadderStore:
                 changed = True
                 continue
 
-            previous = _float(state.get("last_price"))
-            state["last_price"] = quote_price
+            previous_trigger = _float(state.get("last_trigger_price")) or _float(state.get("last_price"))
+            state["last_price"] = display_price
+            state["last_trigger_price"] = trigger_price
             state["last_quote_timestamp"] = quote_ts
             state["last_seen_at"] = now.isoformat()
             levels = list(state.get("levels") or [])
@@ -183,11 +209,13 @@ class AccumulationLadderStore:
                 if level_price is None:
                     continue
                 if not bool(level.get("hit")):
-                    crossed = quote_price <= level_price and (previous is None or previous > level_price)
+                    # For Robinhood bid/ask quotes, trigger_price is the ask. A manual
+                    # buy limit at Lx is marketable once the ask reaches that limit.
+                    crossed = trigger_price <= level_price and (previous_trigger is None or previous_trigger > level_price)
                     if crossed:
                         level["hit"] = True
                         level["hit_at"] = now.isoformat()
-                        level["hit_market_price"] = quote_price
+                        level["hit_market_price"] = trigger_price
                         level["hit_quote_timestamp"] = quote_ts
                         level.setdefault("dm_delivered", False)
                         changed = True
@@ -196,7 +224,7 @@ class AccumulationLadderStore:
                         symbol,
                         state,
                         level,
-                        fallback_price=quote_price,
+                        fallback_price=trigger_price,
                         quote_session=quote_session,
                         quote_ts=quote_ts,
                     )
@@ -225,7 +253,7 @@ class AccumulationLadderStore:
             row = dict(original)
             symbol = str(row.get("symbol") or "").upper()
             state = self.get(symbol)
-            active = state if state and state.get("active") else None
+            active = state if state and state.get("active") and self._valid_schema(state) else None
             row["accumulation_ladder"] = active
             row["accumulation_status"] = self._status(row, active)
             out.append(row)
@@ -233,7 +261,7 @@ class AccumulationLadderStore:
 
     @staticmethod
     def _status(row: dict[str, Any], state: dict[str, Any] | None) -> dict[str, Any]:
-        quote = _float(row.get("quote_price")) or _float(row.get("quote_display_price"))
+        quote = _float(row.get("quote_display_price")) or _float(row.get("quote_price"))
         quality = str(row.get("quote_quality") or "UNKNOWN").upper()
         if str(row.get("stance") or "").upper() != "ACCUMULATE":
             return {"state": "NOT_ACCUMULATING", "next_level": None, "pending_dm": 0}
@@ -265,7 +293,7 @@ class AccumulationLadderStore:
             level_price = _float(next_level.get("price"))
             if level_price is not None:
                 payload["distance_to_next_level_usd"] = round(max(0.0, quote - level_price), 4)
-                payload["distance_to_next_level_pct"] = round(max(0.0, (quote / level_price - 1.0) * 100.0), 2)
+                payload["distance_to_next_level_pct"] = round(max(0.0, (quote - level_price) / quote * 100.0), 2)
         return payload
 
 
