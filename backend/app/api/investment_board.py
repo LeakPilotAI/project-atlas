@@ -7,6 +7,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Query
 from fastapi.responses import FileResponse
 
+from app.investment.accumulation_ladder import accumulation_ladder_store
 from app.investment.board import build_quality_dips_board
 from app.investment.quality_dip_quotes import apply_quote_overlay, quality_dip_quote_service, quote_health
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
@@ -40,10 +41,12 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
     symbols = {str(row.get("symbol") or "").upper().strip() for row in research if str(row.get("symbol") or "").strip()}
     quotes = await quality_dip_quote_service.get_many(symbols)
     board = build_quality_dips_board(apply_quote_overlay(research, quotes), plans, limit=limit)
+    board = accumulation_ladder_store.overlay(board)
     counts = {"ACCUMULATE": 0, "PREPARE": 0, "WATCH": 0, "STAND_DOWN": 0}
     for row in board:
         stance = str(row.get("stance") or "WATCH")
         counts[stance] = counts.get(stance, 0) + 1
+    active_ladders = sum(1 for row in board if row.get("accumulation_ladder"))
     return {
         "domain": "EQUITY_INVESTMENT",
         "source": "investment_research_store+yfinance_quote_overlay",
@@ -51,8 +54,19 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         "count": len(board),
         "counts": counts,
         "quote_health": quote_health(quotes),
+        "accumulation_alerts": {
+            "active_ladders": active_ladders,
+            "monitor_interval_sec": 60,
+            "levels": ["L1", "L2", "L3", "L4"],
+            "mode": "FROZEN_DIP_LEVELS_ONE_SHOT_PER_ACCUMULATION_CYCLE",
+            "discord_dm": "quality_dip_discord_enabled",
+            "broker_execution": False,
+        },
         "board": board,
-        "note": "Research observations and timestamped market quotes are kept separate and labeled with source, session, and freshness.",
+        "note": (
+            "Research observations and timestamped market quotes are kept separate and labeled with source, session, and freshness. "
+            "ACCUMULATE names may carry a frozen dip ladder; Atlas only alerts on supported fresh-quote level hits and never places a Robinhood order."
+        ),
     }
 
 
