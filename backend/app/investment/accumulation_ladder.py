@@ -1,8 +1,8 @@
 """Durable research-only accumulation ladder for Quality Dips.
 
 The ladder is frozen when an ACCUMULATE cycle arms so levels never chase a rising
-market. Crossing a level creates a one-shot manual-buy research alert. Atlas never
-places a brokerage order.
+market. Crossing a level records the hit and queues a manual-buy research DM until
+Discord confirms delivery. Atlas never places a brokerage order.
 """
 from __future__ import annotations
 
@@ -74,10 +74,45 @@ class AccumulationLadderStore:
     def put(self, symbol: str, row: dict[str, Any]) -> None:
         self.state["symbols"][symbol.upper()] = row
 
+    def mark_delivered(self, symbol: str, cycle_id: str, level_name: str, *, now: datetime | None = None) -> bool:
+        state = self.get(symbol)
+        if not state or str(state.get("cycle_id") or "") != str(cycle_id):
+            return False
+        changed = False
+        for level in list(state.get("levels") or []):
+            if str(level.get("level") or "") != str(level_name):
+                continue
+            level["dm_delivered"] = True
+            level["dm_delivered_at"] = (now or _now()).isoformat()
+            changed = True
+            break
+        if changed:
+            self.put(symbol, state)
+            self.save()
+        return changed
+
+    @staticmethod
+    def _event_from_level(symbol: str, state: dict[str, Any], level: dict[str, Any], *, fallback_price: float, quote_session: str, quote_ts: Any) -> LadderHit | None:
+        level_price = _float(level.get("price"))
+        market_price = _float(level.get("hit_market_price")) or fallback_price
+        if level_price is None:
+            return None
+        return LadderHit(
+            symbol=symbol,
+            level=str(level.get("level") or "L?"),
+            level_price=level_price,
+            market_price=market_price,
+            anchor_price=float(state.get("anchor_price") or fallback_price),
+            pct_below_anchor=float(level.get("pct_below_anchor") or 0.0),
+            cycle_id=str(state.get("cycle_id") or ""),
+            quote_session=quote_session,
+            quote_timestamp=str(level.get("hit_quote_timestamp") or quote_ts) if (level.get("hit_quote_timestamp") or quote_ts) else None,
+        )
+
     def sync(self, rows: Iterable[dict[str, Any]], *, now: datetime | None = None) -> list[LadderHit]:
         now = now or _now()
         seen: set[str] = set()
-        hits: list[LadderHit] = []
+        notifications: list[LadderHit] = []
         changed = False
 
         for board_row in rows:
@@ -103,8 +138,8 @@ class AccumulationLadderStore:
                     changed = True
                 continue
 
-            # Never arm or trigger from a stale/missing quote. REFERENCE is useful for
-            # display but not good enough to claim a level was just hit.
+            # Fresh quotes are required to arm and to claim a new level hit.
+            # Existing undelivered hits can still be retried later when a fresh quote returns.
             if quote_price is None or quote_quality != "FRESH":
                 continue
 
@@ -119,6 +154,9 @@ class AccumulationLadderStore:
                         "hit": False,
                         "hit_at": None,
                         "hit_market_price": None,
+                        "hit_quote_timestamp": None,
+                        "dm_delivered": False,
+                        "dm_delivered_at": None,
                     })
                 state = {
                     "symbol": symbol,
@@ -142,38 +180,33 @@ class AccumulationLadderStore:
             state["last_seen_at"] = now.isoformat()
             levels = list(state.get("levels") or [])
             for level in levels:
-                if bool(level.get("hit")):
-                    continue
                 level_price = _float(level.get("price"))
                 if level_price is None:
                     continue
-                # First observed print at/below the frozen level counts as a hit.
-                # previous > level is preferred, but restart gaps are intentionally
-                # recovered so a real dip is not silently lost.
-                crossed = quote_price <= level_price and (previous is None or previous > level_price)
-                if not crossed:
-                    continue
-                level["hit"] = True
-                level["hit_at"] = now.isoformat()
-                level["hit_market_price"] = quote_price
-                hits.append(LadderHit(
-                    symbol=symbol,
-                    level=str(level.get("level") or "L?"),
-                    level_price=level_price,
-                    market_price=quote_price,
-                    anchor_price=float(state.get("anchor_price") or quote_price),
-                    pct_below_anchor=float(level.get("pct_below_anchor") or 0.0),
-                    cycle_id=str(state.get("cycle_id") or ""),
-                    quote_session=quote_session,
-                    quote_timestamp=str(quote_ts) if quote_ts else None,
-                ))
-                changed = True
+                if not bool(level.get("hit")):
+                    crossed = quote_price <= level_price and (previous is None or previous > level_price)
+                    if crossed:
+                        level["hit"] = True
+                        level["hit_at"] = now.isoformat()
+                        level["hit_market_price"] = quote_price
+                        level["hit_quote_timestamp"] = quote_ts
+                        level.setdefault("dm_delivered", False)
+                        changed = True
+                if bool(level.get("hit")) and not bool(level.get("dm_delivered")):
+                    event = self._event_from_level(
+                        symbol,
+                        state,
+                        level,
+                        fallback_price=quote_price,
+                        quote_session=quote_session,
+                        quote_ts=quote_ts,
+                    )
+                    if event is not None:
+                        notifications.append(event)
             state["levels"] = levels
             self.put(symbol, state)
             changed = True
 
-        # Symbols that disappeared from the board close their cycle. This prevents
-        # an ancient ACCUMULATE state from remaining armed forever.
         for symbol, state in list(self.state["symbols"].items()):
             if symbol in seen or not isinstance(state, dict) or not state.get("active"):
                 continue
@@ -185,7 +218,7 @@ class AccumulationLadderStore:
 
         if changed:
             self.save()
-        return hits
+        return notifications
 
     def overlay(self, rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
