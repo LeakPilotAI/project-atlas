@@ -6,13 +6,36 @@ from app.main import app
 client = TestClient(app)
 
 
+class FakeLadderStore:
+    """API tests must never mutate backend/data/investment runtime state."""
+
+    def sync(self, rows):
+        return []
+
+    def overlay(self, rows):
+        out = []
+        for row in rows:
+            copy = dict(row)
+            copy["accumulation_ladder"] = None
+            copy["accumulation_status"] = {
+                "state": "WAITING_FOR_FRESH_QUOTE" if copy.get("stance") == "ACCUMULATE" else "NOT_ACCUMULATING",
+                "next_level": None,
+                "pending_dm": 0,
+            }
+            out.append(copy)
+        return out
+
+
 def _quote(symbol: str) -> dict:
     return {
         "symbol": symbol,
         "price": 300.0,
         "display_price": 300.0,
-        "source": "yfinance_1m",
-        "session": "REGULAR",
+        "trigger_price": 300.05,
+        "bid": 299.95,
+        "ask": 300.05,
+        "source": "robinhood_underlying_bid_ask",
+        "session": "ROBINHOOD_MARKET_DATA",
         "market_state": "REGULAR",
         "effective_timestamp": "2026-09-13T20:00:00+00:00",
         "retrieved_at": "2026-09-13T20:01:00+00:00",
@@ -30,6 +53,7 @@ def test_quality_dips_api_is_mounted_under_investment_domain(monkeypatch):
         return {symbol: _quote(symbol) for symbol in symbols}
 
     monkeypatch.setattr("app.api.investment_board.quality_dip_quote_service.get_many", fake_get_many)
+    monkeypatch.setattr("app.api.investment_board.accumulation_ladder_store", FakeLadderStore())
     r = client.get("/api/investments/quality-dips")
     assert r.status_code == 200
     data = r.json()
@@ -37,10 +61,11 @@ def test_quality_dips_api_is_mounted_under_investment_domain(monkeypatch):
     assert data["execution"] == "MANUAL_ONLY"
     assert "board" in data
     assert "counts" in data
-    assert data["quote_health"]["source"] == "yfinance_1m+quote_fields"
-    assert "yfinance_intraday_quote_overlay" in data["source"]
+    assert data["quote_health"]["source"] == "robinhood_underlying+yfinance_fallback"
+    assert "robinhood" in data["source"]
     assert data["accumulation_alerts"]["monitor_interval_sec"] == 30
     assert data["accumulation_alerts"]["levels"] == ["L1", "L2", "L3", "L4"]
+    assert data["accumulation_alerts"]["level_pcts"] == [1.5, 3.0, 5.0, 8.0]
     assert "pending_dm" in data["accumulation_alerts"]
     assert data["accumulation_alerts"]["broker_execution"] is False
 
