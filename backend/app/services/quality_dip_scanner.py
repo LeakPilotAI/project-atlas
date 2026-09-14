@@ -21,7 +21,7 @@ from app.investment.storage import DATA_DIR, OPPORTUNITIES_PATH, PLANS_PATH, ens
 log = structlog.get_logger(__name__)
 
 ALERT_COOLDOWN_PATH = DATA_DIR / "quality_dip_alerts.json"
-LADDER_MONITOR_INTERVAL_SEC = 60.0
+LADDER_MONITOR_INTERVAL_SEC = 30.0
 
 
 def _now() -> datetime:
@@ -191,7 +191,7 @@ class QualityDipScanner:
         symbols = [r.get("symbol") for r in base if str(r.get("stance") or "").upper() == "ACCUMULATE"]
         if not symbols:
             return base
-        quotes = await quality_dip_quote_service.get_many(symbols)
+        quotes = await quality_dip_quote_service.get_many(symbols, max_cache_age_sec=20.0)
         return build_quality_dips_board(apply_quote_overlay(research, quotes), plans, limit=100)
 
     async def _emit_ladder_hit(self, hit: Any) -> bool:
@@ -276,7 +276,7 @@ class QualityDipScanner:
                 log.warning("quality dip notify failed", symbol=row.get("symbol"), error=str(e)[:160])
 
     async def _ladder_loop(self) -> None:
-        await asyncio.sleep(12)
+        await asyncio.sleep(8)
         while self._running:
             try:
                 await self._ladder_once()
