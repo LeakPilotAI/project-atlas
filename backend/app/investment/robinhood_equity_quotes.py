@@ -3,7 +3,7 @@
 Uses unauthenticated/public Robinhood market-data surfaces only. No account access,
 no order placement, and no brokerage mutation. The preferred RHJ endpoint exposes
 raw underlying-equity bid/ask with a generated timestamp; when available, Atlas
-uses the ask for manual buy-limit monitoring and the bid/ask midpoint for display.
+uses the ask as the displayed buy-side price and for manual buy-limit monitoring.
 The legacy public quote endpoint is a fallback/reference only because it can stop
 updating after extended hours.
 """
@@ -109,14 +109,16 @@ class RobinhoodEquityQuoteClient:
         ts = _parse_ts(row.get("generatedAt"))
         if bid is None and ask is None:
             return None
-        display = (bid + ask) / 2.0 if bid is not None and ask is not None else (ask or bid)
+        midpoint = (bid + ask) / 2.0 if bid is not None and ask is not None else (ask or bid)
+        buy_price = ask or midpoint
         return {
             "symbol": symbol,
-            "price": display,
-            "display_price": display,
+            "price": buy_price,
+            "display_price": buy_price,
+            "midpoint": midpoint,
             "bid": bid,
             "ask": ask,
-            "trigger_price": ask or display,
+            "trigger_price": buy_price,
             "source": "robinhood_underlying_bid_ask",
             "session": "ROBINHOOD_MARKET_DATA",
             "effective_timestamp": ts.isoformat() if ts else None,
@@ -133,13 +135,15 @@ class RobinhoodEquityQuoteClient:
         ts = _parse_ts(payload.get("updated_at"))
         if price is None:
             return None
+        ask = _float(payload.get("ask_price"))
         return {
             "symbol": symbol,
-            "price": price,
-            "display_price": price,
+            "price": ask or price,
+            "display_price": ask or price,
+            "midpoint": None,
             "bid": _float(payload.get("bid_price")),
-            "ask": _float(payload.get("ask_price")),
-            "trigger_price": _float(payload.get("ask_price")) or price,
+            "ask": ask,
+            "trigger_price": ask or price,
             "source": "robinhood_public_quote",
             "session": "ROBINHOOD_PUBLIC_REFERENCE",
             "effective_timestamp": ts.isoformat() if ts else None,
@@ -154,6 +158,7 @@ class RobinhoodEquityQuoteClient:
             "symbol": symbol,
             "price": None,
             "display_price": None,
+            "midpoint": None,
             "bid": None,
             "ask": None,
             "trigger_price": None,
