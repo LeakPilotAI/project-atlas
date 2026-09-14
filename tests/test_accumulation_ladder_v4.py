@@ -35,16 +35,29 @@ def test_rising_market_never_chases_ladder_higher(tmp_path):
     assert all(not x["hit"] for x in state["levels"])
 
 
-def test_each_level_emits_once_when_price_crosses_down(tmp_path):
+def test_each_level_alerts_once_after_successful_delivery(tmp_path):
     store = AccumulationLadderStore(tmp_path / "ladder.json")
     now = datetime(2026, 9, 14, 14, 30, tzinfo=timezone.utc)
     store.sync(board(100.0), now=now)
     first = store.sync(board(96.5), now=now + timedelta(minutes=1))
     assert [x.level for x in first] == ["L1"]
+    assert store.mark_delivered("ADBE", first[0].cycle_id, "L1", now=now + timedelta(minutes=1)) is True
     duplicate = store.sync(board(96.0), now=now + timedelta(minutes=2))
     assert duplicate == []
     second = store.sync(board(92.5), now=now + timedelta(minutes=3))
     assert [x.level for x in second] == ["L2"]
+
+
+def test_undelivered_hit_is_retried_until_marked_delivered(tmp_path):
+    store = AccumulationLadderStore(tmp_path / "ladder.json")
+    now = datetime(2026, 9, 14, 14, 30, tzinfo=timezone.utc)
+    store.sync(board(100.0), now=now)
+    first = store.sync(board(96.5), now=now + timedelta(minutes=1))
+    retry = store.sync(board(96.0), now=now + timedelta(minutes=2))
+    assert [x.level for x in first] == ["L1"]
+    assert [x.level for x in retry] == ["L1"]
+    assert store.mark_delivered("ADBE", retry[0].cycle_id, "L1") is True
+    assert store.sync(board(95.5), now=now + timedelta(minutes=3)) == []
 
 
 def test_gap_down_emits_every_newly_crossed_level(tmp_path):
