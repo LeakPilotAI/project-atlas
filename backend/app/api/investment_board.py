@@ -71,7 +71,7 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         "quote_health": quote_health(quotes),
         "accumulation_alerts": {
             "active_ladders": active_ladders,
-            "monitor_interval_sec": 60,
+            "monitor_interval_sec": 30,
             "levels": ["L1", "L2", "L3", "L4"],
             "mode": "FROZEN_DIP_LEVELS_ONE_SHOT_PER_ACCUMULATION_CYCLE",
             "discord_dm": "quality_dip_discord_enabled",
