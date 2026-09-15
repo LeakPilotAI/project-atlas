@@ -20,7 +20,9 @@ def test_command_center_keeps_research_distinct_from_domains():
     status={"domain":"V6_RESEARCH","trading_readiness":"NOT_READY","live_capital_allowed":False}
     out=build_command_center_summary({"running":True,"setups":[],"plans":[]},[],[],v6_status=status)
     assert out["research"] is status
-    assert out["guardrails"]["research_is_trading_readiness"] is False
+    assert out["research_guardrails"]["research_is_trading_readiness"] is False
+    assert out["research_guardrails"]["automatic_promotion"] is False
+    assert out["research_guardrails"]["live_capital_allowed"] is False
     assert out["execution"]=="NO_ORDER_ACTIONS"
     assert out["perps"]["execution"]=="MANUAL_ONLY"
     assert out["investments"]["execution"]=="MANUAL_ONLY"
