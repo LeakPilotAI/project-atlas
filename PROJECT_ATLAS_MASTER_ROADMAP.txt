@@ -1,62 +1,58 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-15
 Branch: chatgpt/atlas-rebuild-v1
+Current execution head before roadmap commit: 44aee429e5564ea4fdbe866890836a8922c52103
 
 PERMANENT EXECUTION PROTOCOL
-When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or automatic production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
+When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
-LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: d94603de25752e45dba04cba58d9f3dcfb4889f4
-Focused V6/readiness/monitor/CC/edge: 25 passed, 1 warning in 1.94s.
-Full regression: 550 passed, 2 warnings in 36.19s.
-Failures: 0.
-Warnings: dependency deprecations only (discord audioop; Starlette/httpx TestClient).
-This supersedes the prior 546-test checkpoint.
+LATEST VERIFIED CHECKPOINT
+User tested d94603de: focused 25 passed, 1 warning; full regression 550 passed, 2 warnings; 0 failures.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
 
 ENGINEERING ROADMAP
-[COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / journal-recovery / Quality Dips infrastructure
-[COMPLETE, VERIFIED] V6 Challenger Lab
-[COMPLETE, VERIFIED] V6 Prospective Persistence
-[COMPLETE, VERIFIED] V6 Point-in-Time Exit Replay
-[COMPLETE, VERIFIED] V6 SHADOW-vs-PAPER Diagnostics
-[COMPLETE, VERIFIED] V6 Command Center Research Status
-[COMPLETE, VERIFIED] V6 Research Readiness Scorecard
-[COMPLETE, VERIFIED] Lightweight Readiness Presentation
-[COMPLETE, VERIFIED] V6 Forward Evidence Monitor
-  - GET /api/validation/challengers/forward-monitor
-  - POST /api/validation/challengers/forward-monitor/refresh
-  - append-only backend/data/v6_forward_evidence_history.jsonl
-  - normal Command Center refresh remains lightweight
-[NEXT] Prospective Candidate Comparison report: same forward-only cutoff, frozen open-time membership, contemporaneous baseline, uncertainty/risk/sample comparison, >=100 challenger closes, no retrospective substitution, no auto-promotion.
-[NEXT] Evidence trend visualization/status surface.
+[COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
+[COMPLETE, VERIFIED] V6 Challenger Lab / Prospective Persistence / PIT Exit Replay / SHADOW-PAPER / Research Status / Readiness Scorecard / Lightweight Presentation / Forward Evidence Monitor
+[COMPLETE, LOCAL TEST PENDING] V6 Prospective Candidate Comparison — execution 2026-09-15
+  - backend/app/services/v6_candidate_comparison.py
+  - GET /api/validation/challengers/comparison
+  - consumes only prospective_report() frozen forward cohort
+  - baseline is contemporaneous forward PAPER cohort from same durable cutoff
+  - no retrospective substitution and no SHADOW population use
+  - compares expectancy delta and max-drawdown delta plus complete metrics/uncertainty
+  - research nomination requires challenger >=100 closes AND baseline >=100 closes AND positive expectancy AND lower 95% expectancy CI >0 AND expectancy above contemporaneous baseline
+  - membership frozen at open; promoted false
+  - trading readiness hard NOT_READY; live capital false; automatic promotion/execution false
+  - tests cover valid research nomination, low sample block, nonpositive CI block, failure-to-beat-baseline block, isolation/live locks
+[NEXT] Local focused + full regression validation.
+[NEXT AFTER GREEN] Evidence Trend Visualization/Status: summarize append-only monitor history without rewriting evidence; show sample/expectancy/CI/replay trajectories and candidate comparison state; lightweight/read-only.
+[NEXT] Prospective candidate stability rules across multiple snapshots before any human promotion review.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
-[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence.
+[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence and stability.
 
 RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Engineering regression GREEN: 550 passed at d94603de. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified engineering regression GREEN: 550 passed at d94603de. Current candidate-comparison changes LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-NEXT EXECUTION
-Prospective Candidate Comparison:
-- compare frozen forward challenger cohorts with contemporaneous forward baseline from same cutoff;
-- use recorded PAPER outcomes/costs only;
-- expectancy, uncertainty, drawdown/risk, sample-size deltas;
-- >=100 challenger closes before research nomination;
-- no retrospective feature substitution;
-- no production mutation, automatic promotion, or live unlock.
-
-LOCAL UPDATE / TEST
+LOCAL COMMANDS
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_research_status_command_center.py tests/test_v6_readiness_scorecard.py tests/test_v6_forward_monitor.py tests/test_command_center_summary_v4.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_candidate_comparison.py tests/test_challenger_prospective_v6.py tests/test_v6_readiness_scorecard.py tests/test_v6_forward_monitor.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
+
+NEXT EXECUTION AFTER GREEN
+Evidence Trend Visualization/Status:
+- read append-only forward evidence history only;
+- summarize per-challenger close-count trajectory, expectancy trajectory, CI-positive transitions;
+- summarize PIT replay coverage trajectory and nomination-count trajectory;
+- include current prospective candidate comparison state;
+- no rewriting history, no heavy Command Center recomputation, no auto-promotion/live unlock.
 
 END OF MASTER ROADMAP
