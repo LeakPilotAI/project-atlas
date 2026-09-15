@@ -1,94 +1,83 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-15
 Branch: chatgpt/atlas-rebuild-v1
-Current execution head at roadmap write: 7838d2b0d4238981e41b9161f1c22bc97f7d9593
+Current execution head before this roadmap commit: 95bdc15461d5859a21cb541aa183d0b71f89f84c
 
 PURPOSE
-This file is the durable Project Atlas continuity record. Update it after EVERY implementation execution so a future session can recover what was built, what was verified, what remains, and the safety boundaries.
+Durable Project Atlas continuity record. Update after EVERY implementation execution.
 
 PERMANENT EXECUTION PROTOCOL — USER REQUIREMENT
-1. When the user says execute, implement the next appropriate roadmap item directly when tooling permits; do not substitute planning for executable work.
+1. When user says execute, implement the next appropriate roadmap item directly when tooling permits; do not substitute planning for executable work.
 2. Keep implementation on chatgpt/atlas-rebuild-v1 until validated/merged intentionally.
-3. After EVERY execution:
-   - audit the GitHub changes/commit range;
-   - identify exact changed files;
-   - provide exact Windows PowerShell commands to fetch/reset and run focused tests, then full pytest;
-   - never claim local tests passed until the user posts the local result;
-   - update this master roadmap in GitHub;
-   - create/provide an updated downloadable TXT roadmap artifact;
-   - show the updated roadmap in chat as a reference.
+3. After EVERY execution: audit GitHub changes; identify exact changed files; provide exact Windows PowerShell fetch/reset + focused tests + full pytest; never claim local tests passed until user posts local result; update this GitHub roadmap; create/provide an updated downloadable TXT roadmap; show updated roadmap in chat.
 4. Never use git clean -fdx. backend/data contains persistent paper/research history.
 5. Keep engineering completion separate from trading/live-capital readiness.
 6. Never imply profitability from engineering completion or historical/backtest results.
-7. No automatic real-money execution. Manual execution only. Paper/shadow research boundaries remain enforced.
-8. Do not automatically change production gates from exploratory diagnostics. Changes require isolated challenger research and prospective validation.
-9. Keep PAPER and SHADOW populations separate; never average their performance.
-10. Keep equity Quality Dips and Hyperliquid perps separate: no shared symbols, capital assumptions, performance, or action logic.
-11. Optimize for expectancy after costs and robustness, not win rate alone.
-12. Preserve historical data and point-in-time integrity; never rewrite history merely to make readiness pass.
+7. No automatic real-money execution. Manual execution only. PAPER/SHADOW boundaries remain enforced.
+8. Do not automatically change production gates from exploratory diagnostics. Require isolated challenger research + prospective validation.
+9. Keep PAPER and SHADOW separate; never average performance.
+10. Keep Quality Dips equities and Hyperliquid perps separate: no shared symbols/capital/performance/action logic.
+11. Optimize expectancy after costs and robustness, not win rate alone.
+12. Preserve historical/PIT integrity; never rewrite history to make readiness pass.
 
 REPOSITORY / LOCAL
 Repo: LeakPilotAI/project-atlas
 Local: D:\Work\Project Atlas
 Python: backend\.venv\Scripts\python.exe
 Active branch: chatgpt/atlas-rebuild-v1
-Last known green checkpoint before V6 execution: c93213f — 525 passed, 2 warnings.
-V6 changes are NOT locally verified yet; user must run focused + full suite.
+Last locally verified checkpoint before V6: c93213f — 525 passed, 2 warnings.
+All V6 executions after c93213f remain LOCAL VERIFICATION PENDING until user posts test output.
 
 ARCHITECTURE
 Market Data -> Feature Engine -> Strategy -> Risk Engine -> Paper Execution -> Event Store/Journal -> Validation
-Domains:
-A. Hyperliquid Perp Day Trading — manual real-money execution only; automatic PAPER mirroring permitted.
-B. Quality Dips / Robinhood Investment — stocks/ETFs, longer-term research, manual Robinhood only.
+A. Hyperliquid Perps — manual real-money execution only; automatic PAPER mirroring allowed.
+B. Quality Dips / Robinhood — stocks/ETFs, longer-term research, manual Robinhood only.
 C. Command Center — read-only orchestration; domains never combine risk/capital/performance/action logic.
 
-LOCKED PRODUCTION CONTROL GATES
-RSI long <= 28
-RSI short >= 72
-Extension >= 1.4%
+LOCKED PRODUCTION GATES
+RSI long <=28
+RSI short >=72
+Extension >=1.4%
 Minimum R:R 1.8
-No automatic production retuning.
-No ML until infrastructure/data quality and evidence justify it.
+No automatic production retuning. No automatic live unlock. No ML until evidence/infrastructure justify it.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild architecture — 100%
-[COMPLETE] Hyperliquid market adapter/manual cockpit
-[COMPLETE] Manual setup lifecycle and exact L1/L2/L3, stop, TP1/TP2 instructions
-[COMPLETE] Automatic PAPER mirror of verified manual resting-L1 instructions
-[COMPLETE] Persistent paper journal
-[COMPLETE] Restart recovery and ownership isolation
+[COMPLETE] Hyperliquid manual cockpit + setup lifecycle
+[COMPLETE] Manual-to-auto PAPER resting-L1 parity
+[COMPLETE] Persistent journal / restart recovery / ownership isolation
 [COMPLETE] Missed-L1 crossing recovery
-[COMPLETE] Pending-order observability
-[COMPLETE] Detached pending cleanup
-[COMPLETE] Command Center parity
-[COMPLETE] Clean post-fix prospective cohort tracking
-[COMPLETE] Quality Dips Robinhood-first quote layer with Yahoo fallback
-[COMPLETE] Quality Dips 3/5/8/12 patient accumulation ladder
-[COMPLETE] Quality Dips Discord per-level alert/retry semantics
-[COMPLETE] Phase 8 edge diagnostics / chronological holdout / MFE-MAE diagnostics
-[COMPLETE] V6 Challenger Lab foundation — execution 2026-09-15
-    Added backend/app/services/challenger_lab.py
-    Added GET /api/validation/challengers
-    Added tests/test_challenger_lab_v6.py
-    Production gates remain unchanged.
-    Live-capital state remains false.
-    Predeclared research challengers:
-      - TREND_UP/TREND_DOWN regime
-      - extension >= 3%
-      - quality >= 85
-      - trend + extension >=3% + quality >=85 intersection
-    Exit challenger intentionally remains diagnostic-only until point-in-time mark-event replay exists.
-    Shadow discovery remains separate from PAPER.
-[NEXT] Locally validate V6 focused tests and full regression.
-[NEXT] Build prospective challenger cohort persistence/cutoff so new observations are forward-only and cannot contaminate retrospective discovery.
-[NEXT] Build point-in-time exit replay challenger using mark events; do not infer realizable exits from MFE summary alone.
-[NEXT] Build shadow-vs-paper interaction diagnostics without combining populations.
-[NEXT] Surface Challenger Lab status in Command Center/readiness UI after service validation.
+[COMPLETE] Pending observability / detached cleanup
+[COMPLETE] Command Center parity / clean post-fix cohort
+[COMPLETE] Quality Dips Robinhood-first quotes + Yahoo fallback
+[COMPLETE] Quality Dips 3/5/8/12 patient ladder + Discord alert retry
+[COMPLETE] Phase 8 edge diagnostics / chronological holdout / MFE-MAE
+[COMPLETE, LOCAL TEST PENDING] V6 Challenger Lab foundation
+  - backend/app/services/challenger_lab.py
+  - GET /api/validation/challengers
+  - retrospective nomination only; never production promotion
+[COMPLETE, LOCAL TEST PENDING] V6 Prospective Challenger Cohort Persistence — execution 2026-09-15
+  - backend/app/services/challenger_prospective.py
+  - GET /api/validation/challengers/prospective
+  - durable marker: backend/data/v6_challenger_prospective_marker.json at runtime
+  - append-only membership: backend/data/v6_challenger_membership.jsonl at runtime
+  - membership frozen from PAPER open event using pre-entry fields only
+  - rows opened before cutoff are rejected from prospective evidence
+  - close-event feature changes cannot reclassify membership
+  - restart-safe/deduplicated membership reconstruction
+  - per challenger: opened/closed/open, metrics, uncertainty
+  - retrospective rows never count as prospective
+  - no automatic promotion; production strategy unchanged; live capital false
+  - tests/test_challenger_prospective_v6.py covers cutoff, restart persistence, open-snapshot leakage isolation, production lock
+[NEXT] Locally validate all V6 focused tests and full regression.
+[NEXT] Build point-in-time exit replay challenger from mark events; never infer alternate exits from MFE summary alone.
+[NEXT] Build SHADOW-vs-PAPER interaction diagnostics without combining populations.
+[NEXT] Surface Challenger Lab + prospective cohort status in Command Center/readiness UI.
 [ONGOING] Quality Dips prospective/PIT evidence collection.
-[ONGOING] Challenger prospective evidence collection after cohort persistence is implemented.
+[ONGOING] V6 forward evidence collection after runtime endpoint creates its durable cutoff.
 [FUTURE] Strategy promotion framework only after sufficient forward evidence, positive expectancy after costs, acceptable risk, and explicit review.
 
-LATEST RESEARCH CHECKPOINT — 2026-09-15 RUNTIME DUMP
+LATEST RESEARCH CHECKPOINT — 2026-09-15
 Paper closes: 932
 Win rate: 43.03%
 Expectancy: -0.0212R/trade
@@ -96,66 +85,49 @@ Total: -19.7381R
 Profit factor: 0.9614
 Max drawdown: 95.6119R
 Longest losing streak: 13
-Chronological earlier research: n=622, expectancy +0.0541R, total +33.6805R
-Chronological later holdout: n=310, expectancy -0.1723R, total -53.4186R
-Conclusion: no demonstrated stable positive edge; insufficient evidence for live capital.
-Exploratory hypotheses only:
-- TREND_UP/TREND_DOWN looked better than RANGE/LOW_VOLATILITY.
-- >=3% extension looked promising in retrospective slicing.
-- >=85 quality looked stronger than weaker-quality buckets.
-- 66.3% of winners gave back favorable excursion; 31.8% of losers had positive MFE.
-- LONG vs SHORT confidence intervals overlap; do not disable a side from current evidence.
-- SHADOW looked materially stronger than PAPER but is a different selection population and must remain separate.
+Earlier chronological research: n=622, expectancy +0.0541R, total +33.6805R
+Later holdout: n=310, expectancy -0.1723R, total -53.4186R
+Conclusion: stable positive edge NOT established; live capital not justified.
+Exploratory only: trends, >=3% extension, >=85 quality looked stronger retrospectively; 66.3% winners gave back favorable excursion; 31.8% losers had positive MFE; LONG/SHORT CIs overlap; SHADOW differs materially from PAPER and remains separate.
 
-LATEST RUNTIME OPERATIONS CHECKPOINT
-Runtime dump generated 2026-09-15 07:32 local review time.
-Perp service running at that snapshot.
-Market count: 234
-Setup count: 3
-Prime: 1
-Qualified: 1
-Actionable: 0
-Auto-paper pending: 2; both currently backed; no detached pending.
-Auto-paper open: 6
-Opened total: 104
-Closed total: 98
-Clean cohort manual_auto_observability_v1: opened 33 / closed 27 / open 6.
-These numbers are historical snapshot values; always re-check runtime before describing them as current.
+LATEST RUNTIME SNAPSHOT — HISTORICAL, RECHECK BEFORE CALLING CURRENT
+Markets 234; setups 3; PRIME 1; QUALIFIED 1; actionable 0.
+Auto-paper pending 2 backed / 0 detached; open 6; opened total 104; closed total 98.
+Clean cohort manual_auto_observability_v1: 33 opened / 27 closed / 6 open.
 
 QUALITY DIPS READINESS
-Engineering: implemented.
+Engineering implemented. Latest reviewed runtime: 36 WATCH / 0 ACCUMULATE / 0 PREPARE.
+Historical look-ahead-contaminated legacy rows remain quarantined rather than rewritten.
+Broken/unknown thesis blocks accumulation.
 Investment evidence/live readiness: NOT READY.
-Latest reviewed runtime had 36 assets all WATCH, 0 ACCUMULATE, 0 PREPARE.
-Historical PIT/readiness work has quarantined look-ahead-contaminated legacy rows rather than rewriting them.
-Broken/unknown thesis must block accumulation.
 
 TRADING / LIVE-CAPITAL READINESS
-Engineering rebuild: feature-complete, last verified baseline 525/525 tests green before V6.
+Engineering rebuild: feature-complete; latest locally verified baseline 525/525 before V6.
 V6 local verification: PENDING.
 Demonstrated positive expectancy: NOT ESTABLISHED.
 Statistical stability: LOW.
-Chronological holdout: NEGATIVE at latest review.
+Latest chronological holdout: NEGATIVE.
 Quality Dips validation: NOT READY.
 Live capital: NOT READY / LOCKED.
 Automatic real-money execution: DISABLED.
 Manual real-money execution remains the only allowed live execution model.
 
-NEXT EXECUTION AFTER V6 VALIDATION
-Prospective Challenger Cohort Persistence:
-- freeze a durable V6 start/cutoff timestamp;
-- assign challenger membership using only features known before entry;
-- persist challenger observations separately from production journal semantics;
-- expose counts/open/closed/expectancy/PF/drawdown and uncertainty per challenger;
-- no retrospective rows may masquerade as prospective evidence;
-- no challenger can auto-promote or modify production;
-- add tests for restart persistence, cutoff enforcement, no leakage, and production isolation.
+NEXT EXECUTION AFTER LOCAL V6 VALIDATION
+Point-in-Time Exit Replay Challenger:
+- replay actual persisted mark-event path chronologically;
+- define candidate exits before evaluating them;
+- account for existing fees/slippage assumptions;
+- never use final MFE/MAE to manufacture a realizable exit;
+- compare baseline vs challenger on identical eligible trades;
+- keep output research-only and forward-validation-required;
+- no production exit mutation or automatic promotion.
 
 LOCAL UPDATE / TEST COMMANDS
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_challenger_lab_v6.py tests/test_edge_diagnostics.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_challenger_lab_v6.py tests/test_challenger_prospective_v6.py tests/test_edge_diagnostics.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 END OF MASTER ROADMAP
