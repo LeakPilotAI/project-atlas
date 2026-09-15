@@ -53,6 +53,13 @@ async def challenger_prospective_endpoint()->JSONResponse:
         body=prospective_report()
     except Exception as e:body={"ok":False,"error":str(e)[:240],"production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
     return _json_http(body)
+@router.get("/challengers/comparison")
+async def challenger_comparison_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_candidate_comparison import candidate_comparison
+        body=candidate_comparison()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 PROSPECTIVE CANDIDATE COMPARISON","error":str(e)[:240],"research_nominations":[],"trading_readiness":"NOT_READY","production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
 @router.get("/challengers/exit-replay")
 async def challenger_exit_replay_endpoint()->JSONResponse:
     try:
