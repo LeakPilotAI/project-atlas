@@ -1,7 +1,7 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-15
 Branch: chatgpt/atlas-rebuild-v1
-Current execution head before roadmap commit: 0c06a20b11eefdc4dd2d9b0e9c4ebd2bf521db4c
+Current execution head before roadmap commit: c128dfa810b2af6a1eabe4d6b50f7b7b6c7fa445
 
 PERMANENT EXECUTION PROTOCOL — USER REQUIREMENT
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; identify exact changed files; give exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update this GitHub roadmap; provide downloadable TXT roadmap; show roadmap in chat. Never use git clean -fdx. Preserve backend/data. Separate engineering from live readiness. Never imply profitability from engineering/backtests. No automatic real-money execution. Never auto-retune production from exploratory diagnostics. PAPER/SHADOW stay separate. Quality Dips/perps stay separate. Optimize expectancy after costs/robustness, not win rate. Preserve PIT/history integrity.
@@ -10,8 +10,7 @@ REPO / LOCAL
 Repo: LeakPilotAI/project-atlas
 Local: D:\Work\Project Atlas
 Python: backend\.venv\Scripts\python.exe
-Last locally verified pre-V6: c93213f — 525 passed, 2 warnings.
-All V6 work remains LOCAL VERIFICATION PENDING until user posts tests.
+Last locally verified pre-V6: c93213f — 525 passed, 2 warnings. All V6 work remains LOCAL VERIFICATION PENDING until user posts tests.
 
 LOCKED PRODUCTION GATES
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -29,28 +28,26 @@ ENGINEERING ROADMAP
 [COMPLETE, LOCAL TEST PENDING] V6 Challenger Lab
 [COMPLETE, LOCAL TEST PENDING] V6 Prospective Challenger Persistence
 [COMPLETE, LOCAL TEST PENDING] V6 Point-in-Time Exit Replay
-[COMPLETE, LOCAL TEST PENDING] V6 SHADOW-vs-PAPER Interaction Diagnostics — execution 2026-09-15
-  - backend/app/services/shadow_paper_interactions.py
-  - GET /api/validation/challengers/shadow-paper
-  - PAPER and SHADOW baselines remain separate
-  - combined_performance is intentionally null; populations_pooled false
-  - identical definitions compare LONG, SHORT, trend, range/low-vol, >=3% extension, >=85 quality, trend+ext3+q85
-  - each side exposes sample size/uncertainty and separate expectancy
-  - delta is descriptive SHADOW-minus-PAPER, not pooled performance
-  - nomination requires both samples >=30 and only proposes prospective research
-  - no automatic gate loosening, production mutation, promotion, or live unlock
-  - tests/test_shadow_paper_interactions_v6.py covers population isolation, identical bucket delta, insufficient-sample block
+[COMPLETE, LOCAL TEST PENDING] V6 SHADOW-vs-PAPER Interaction Diagnostics
+[COMPLETE, LOCAL TEST PENDING] V6 Command Center Research Status — execution 2026-09-15
+  - backend/app/services/v6_research_status.py
+  - backend/app/services/command_center_summary.py now exposes top-level research block
+  - normal refresh does NOT execute heavy retrospective challenger/edge recomputation
+  - reads only durable prospective cutoff + deduplicated membership log counts
+  - reports availability of challenger lab, prospective cohort, exit replay, shadow-paper diagnostics
+  - research_collection_healthy means infrastructure/cutoff initialized, explicitly NOT positive expectancy
+  - trading_readiness remains NOT_READY; live_capital_allowed false
+  - guardrail research_is_trading_readiness false
+  - tests/test_v6_research_status_command_center.py covers lightweight durable state and domain separation
 [NEXT] Local focused + full regression validation of all V6 blocks.
-[NEXT] Surface V6 challenger/prospective/exit/shadow-paper status in Command Center/readiness UI.
-[NEXT] Build consolidated V6 research readiness scorecard after UI/service integration, without automatic live unlock.
+[NEXT] Consolidated V6 research readiness scorecard using forward evidence and replay coverage, without automatic live unlock.
+[NEXT] Readiness UI presentation after scorecard service is stable.
 [ONGOING] Quality Dips PIT/forward evidence.
 [ONGOING] V6 prospective evidence after runtime cutoff.
 [FUTURE] Promotion only after sufficient forward positive expectancy after costs, acceptable risk, explicit review.
 
 LATEST RESEARCH CHECKPOINT
-932 paper closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614; max DD 95.6119R.
-Earlier n=622 expectancy +0.0541R; later holdout n=310 expectancy -0.1723R.
-Stable positive edge NOT ESTABLISHED.
+932 paper closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614; max DD 95.6119R. Earlier n=622 expectancy +0.0541R; later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LATEST RUNTIME SNAPSHOT — HISTORICAL
 234 markets; 3 setups; PRIME 1; QUALIFIED 1; actionable 0. Auto-paper 2 pending/backed; 6 open; 104 opened; 98 closed. Clean cohort 33 opened / 27 closed / 6 open.
@@ -62,18 +59,20 @@ TRADING/LIVE READINESS
 Last locally verified pre-V6 regression 525/525. V6 local verification PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Latest holdout NEGATIVE. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 NEXT EXECUTION AFTER LOCAL VALIDATION
-Command Center V6 Research Status:
-- expose Challenger Lab, prospective cohort, exit replay coverage, SHADOW/PAPER diagnostic health in one read-only status block;
-- do not perform heavy retrospective recomputation on every normal Command Center refresh if avoidable;
-- clearly distinguish research health/sample collection from trading readiness;
-- no automatic promotion/live unlock.
+Consolidated V6 Research Readiness Scorecard:
+- summarize prospective sample sufficiency/expectancy/uncertainty per challenger;
+- include point-in-time exit replay path coverage rather than hindsight MFE;
+- include SHADOW/PAPER diagnostic nominations but never pool populations;
+- fail closed when cutoff/evidence is absent;
+- separate engineering health, research evidence, and trading readiness;
+- no automatic production promotion or live unlock.
 
 LOCAL COMMANDS
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_challenger_lab_v6.py tests/test_challenger_prospective_v6.py tests/test_challenger_exit_replay_v6.py tests/test_shadow_paper_interactions_v6.py tests/test_edge_diagnostics.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_challenger_lab_v6.py tests/test_challenger_prospective_v6.py tests/test_challenger_exit_replay_v6.py tests/test_shadow_paper_interactions_v6.py tests/test_v6_research_status_command_center.py tests/test_edge_diagnostics.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 END OF MASTER ROADMAP
