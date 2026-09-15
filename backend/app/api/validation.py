@@ -68,9 +68,16 @@ async def challenger_exit_replay_endpoint()->JSONResponse:
     return _json_http(body)
 @router.get("/challengers/shadow-paper")
 async def challenger_shadow_paper_endpoint()->JSONResponse:
-    """Separate-population interaction research; never pools SHADOW and PAPER."""
     try:
         from app.services.shadow_paper_interactions import interaction_report
         body=interaction_report()
     except Exception as e: body={"ok":False,"title":"ATLAS V6 SHADOW-vs-PAPER INTERACTION DIAGNOSTICS","error":f"{type(e).__name__}: {str(e)[:240]}","populations_pooled":False,"production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/readiness")
+async def challenger_readiness_endpoint()->JSONResponse:
+    """Fail-closed consolidated V6 research evidence scorecard."""
+    try:
+        from app.services.v6_readiness_scorecard import readiness_scorecard
+        body=readiness_scorecard()
+    except Exception as e: body={"ok":False,"title":"ATLAS V6 RESEARCH READINESS SCORECARD","error":f"{type(e).__name__}: {str(e)[:240]}","research_evidence_ready":False,"trading_readiness":"NOT_READY","production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
     return _json_http(body)
