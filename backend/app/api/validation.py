@@ -12,11 +12,7 @@ router = APIRouter(prefix="/api/validation", tags=["validation"])
 
 
 def _json_http(body: Any, status_code: int = 200) -> JSONResponse:
-    """Never let FastAPI/Starlette jsonable_encoder 500 this route.
-
-    Starlette JSONResponse uses allow_nan=False. Pre-serialize with default=str
-    so NaN/Inf/exotic types cannot crash the API. Always JSON, never HTML 500.
-    """
+    """Never let FastAPI/Starlette jsonable_encoder 500 this route."""
     try:
         payload = json.loads(json.dumps(body, allow_nan=False, default=str))
     except Exception as e:
@@ -31,12 +27,6 @@ def _json_http(body: Any, status_code: int = 200) -> JSONResponse:
 
 
 def _clean_policy_guard_errors(body: Any) -> Any:
-    """Policy phrasing guards are telemetry, not diagnostic failures.
-
-    Older edge reports appended 'redacted phrase guard: ...' to section_errors,
-    which made a healthy report look broken in the UI. Keep real section failures
-    in section_errors and expose only a count for phrasing-guard activations.
-    """
     if not isinstance(body, dict):
         return body
     raw = list(body.get("section_errors") or [])
@@ -51,29 +41,21 @@ def _clean_policy_guard_errors(body: Any) -> Any:
 @router.get("/report")
 async def validation_report() -> Dict[str, Any]:
     from app.services.paper_validation import full_report
-
     return full_report()
 
 
 @router.get("/summary")
 async def validation_summary() -> Dict[str, Any]:
     from app.services.paper_validation import readiness_report, uncertainty, load_paper_closes
-
     rows = load_paper_closes()
     rd = readiness_report(rows)
     return {
-        "closed": rd["closed_trades"],
-        "winrate": rd["observed_wr"],
-        "expectancy": rd["observed_expectancy"],
-        "total_r": rd["total_r"],
-        "uncertainty": uncertainty(rows),
-        "data_sufficiency": rd["data_sufficiency"],
-        "statistical_stability": rd["statistical_stability"],
-        "performance": rd["performance"],
-        "risk": rd["risk"],
-        "data_integrity": rd["data_integrity"],
-        "conclusion": rd["conclusion"],
-        "live_capital_allowed": False,
+        "closed": rd["closed_trades"], "winrate": rd["observed_wr"],
+        "expectancy": rd["observed_expectancy"], "total_r": rd["total_r"],
+        "uncertainty": uncertainty(rows), "data_sufficiency": rd["data_sufficiency"],
+        "statistical_stability": rd["statistical_stability"], "performance": rd["performance"],
+        "risk": rd["risk"], "data_integrity": rd["data_integrity"],
+        "conclusion": rd["conclusion"], "live_capital_allowed": False,
         "milestone": rd["milestone"],
     }
 
@@ -81,7 +63,6 @@ async def validation_summary() -> Dict[str, Any]:
 @router.get("/text")
 async def validation_text_endpoint() -> Dict[str, str]:
     from app.services.paper_validation import validation_text
-
     return {"text": validation_text()}
 
 
@@ -89,19 +70,14 @@ async def validation_text_endpoint() -> Dict[str, str]:
 async def edge_endpoint() -> JSONResponse:
     try:
         from app.services.edge_diagnostics import edge_report
-
         body = _clean_policy_guard_errors(edge_report())
     except Exception as e:
         body = {
-            "ok": False,
-            "title": "ATLAS EDGE DIAGNOSTICS",
-            "error": f"{type(e).__name__}: {str(e)[:240]}",
-            "live_capital_allowed": False,
+            "ok": False, "title": "ATLAS EDGE DIAGNOSTICS",
+            "error": f"{type(e).__name__}: {str(e)[:240]}", "live_capital_allowed": False,
             "baseline": {"n": 0, "winrate": 0.0, "expectancy": 0.0, "total_r": 0.0},
-            "malformed_count": 0,
-            "section_errors": [str(e)[:240]],
-            "policy_guard_activations": 0,
-            "diagnostics_healthy": False,
+            "malformed_count": 0, "section_errors": [str(e)[:240]],
+            "policy_guard_activations": 0, "diagnostics_healthy": False,
             "disclaimer": "Diagnostics failed to fully build. Journal was not rewritten.",
         }
     return _json_http(body, 200)
@@ -111,8 +87,24 @@ async def edge_endpoint() -> JSONResponse:
 async def edge_text_endpoint() -> JSONResponse:
     try:
         from app.services.edge_diagnostics import edge_text
-
         body: Dict[str, Any] = {"text": edge_text()}
     except Exception as e:
         body = {"text": f"ATLAS EDGE DIAGNOSTICS failed: {type(e).__name__}: {str(e)[:180]}"}
+    return _json_http(body, 200)
+
+
+@router.get("/challengers")
+async def challenger_lab_endpoint() -> JSONResponse:
+    """V6 research challengers. Never mutates production gates or execution."""
+    try:
+        from app.services.challenger_lab import challenger_report
+        body = challenger_report()
+    except Exception as e:
+        body = {
+            "ok": False, "title": "ATLAS V6 CHALLENGER LAB",
+            "error": f"{type(e).__name__}: {str(e)[:240]}",
+            "production_strategy_modified": False,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
     return _json_http(body, 200)
