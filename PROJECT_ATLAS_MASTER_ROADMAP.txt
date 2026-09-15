@@ -1,13 +1,17 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-15
 Branch: chatgpt/atlas-rebuild-v1
-Current execution head before roadmap commit: 8955d354d9f89a26301ec2713a0b7d2375d36fd6
 
 PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or automatic production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
-LATEST VERIFIED CHECKPOINT
-User tested e5b389ed: focused 10 passed; full 546 passed, 2 dependency warnings. Later lightweight-presentation and forward-monitor changes are local-test pending.
+LATEST VERIFIED CHECKPOINT — USER LOCAL
+Tested commit: d94603de25752e45dba04cba58d9f3dcfb4889f4
+Focused V6/readiness/monitor/CC/edge: 25 passed, 1 warning in 1.94s.
+Full regression: 550 passed, 2 warnings in 36.19s.
+Failures: 0.
+Warnings: dependency deprecations only (discord audioop; Starlette/httpx TestClient).
+This supersedes the prior 546-test checkpoint.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -20,21 +24,14 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] V6 SHADOW-vs-PAPER Diagnostics
 [COMPLETE, VERIFIED] V6 Command Center Research Status
 [COMPLETE, VERIFIED] V6 Research Readiness Scorecard
-[COMPLETE, LOCAL TEST PENDING] Lightweight Readiness Presentation
-[COMPLETE, LOCAL TEST PENDING] V6 Forward Evidence Monitor — execution 2026-09-15
-  - backend/app/services/v6_forward_monitor.py
-  - GET /api/validation/challengers/forward-monitor reads history status only
-  - POST /api/validation/challengers/forward-monitor/refresh explicitly computes scorecard and appends snapshot
+[COMPLETE, VERIFIED] Lightweight Readiness Presentation
+[COMPLETE, VERIFIED] V6 Forward Evidence Monitor
+  - GET /api/validation/challengers/forward-monitor
+  - POST /api/validation/challengers/forward-monitor/refresh
   - append-only backend/data/v6_forward_evidence_history.jsonl
-  - each snapshot stores compact forward evidence, PIT replay state, separate SHADOW/PAPER nomination count
-  - deltas: closes, expectancy, sample-sufficiency transition, positive-CI transition, replay coverage, nomination count
-  - prior snapshots never rewritten
-  - normal Command Center refresh does not invoke monitor refresh or heavy recomputation
-  - automatic promotion false; production mutation false; live capital false; real-money automation false
-  - tests cover append-only history, longitudinal deltas, empty/read-only status, fail-closed live flags
-[NEXT] Local focused + full regression validation for readiness presentation + forward monitor.
-[NEXT AFTER GREEN] Prospective Candidate Comparison report: compare only frozen forward challenger cohorts against the contemporaneous forward baseline; require sample threshold and uncertainty; no retrospective substitution; no auto-promotion.
-[NEXT] Evidence trend visualization/status surface after candidate comparison.
+  - normal Command Center refresh remains lightweight
+[NEXT] Prospective Candidate Comparison report: same forward-only cutoff, frozen open-time membership, contemporaneous baseline, uncertainty/risk/sample comparison, >=100 challenger closes, no retrospective substitution, no auto-promotion.
+[NEXT] Evidence trend visualization/status surface.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence.
@@ -43,23 +40,23 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified engineering regression GREEN at e5b389ed. Current additions LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Engineering regression GREEN: 550 passed at d94603de. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-LOCAL COMMANDS
+NEXT EXECUTION
+Prospective Candidate Comparison:
+- compare frozen forward challenger cohorts with contemporaneous forward baseline from same cutoff;
+- use recorded PAPER outcomes/costs only;
+- expectancy, uncertainty, drawdown/risk, sample-size deltas;
+- >=100 challenger closes before research nomination;
+- no retrospective feature substitution;
+- no production mutation, automatic promotion, or live unlock.
+
+LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
 backend\.venv\Scripts\python.exe -m pytest tests/test_v6_research_status_command_center.py tests/test_v6_readiness_scorecard.py tests/test_v6_forward_monitor.py tests/test_command_center_summary_v4.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
-
-NEXT EXECUTION AFTER GREEN
-Prospective Candidate Comparison:
-- baseline and challenger outcomes from the same forward-only cutoff period;
-- challenger membership frozen at open time;
-- baseline contains eligible contemporaneous PAPER trades without retrospective feature substitution;
-- compare expectancy after recorded costs, uncertainty, drawdown/risk and sample size;
-- require >=100 challenger closes before research nomination;
-- no production mutation, automatic promotion, or live unlock.
 
 END OF MASTER ROADMAP
