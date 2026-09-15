@@ -1,22 +1,13 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-15
 Branch: chatgpt/atlas-rebuild-v1
-Current execution head before roadmap commit: e5b389edcef024a9c06c3fcc5c890b0a170ca953
+Current execution head before roadmap commit: f956db2e2e92c66276b0eb7744b7d8271791c06e
 
 PERMANENT EXECUTION PROTOCOL — USER REQUIREMENT
-When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; identify exact changed files; give exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update this GitHub roadmap; provide downloadable TXT roadmap; show roadmap in chat. Never use git clean -fdx. Preserve backend/data. Separate engineering from live readiness. Never imply profitability from engineering/backtests. No automatic real-money execution. Never auto-retune production from exploratory diagnostics. PAPER/SHADOW stay separate. Quality Dips/perps stay separate. Optimize expectancy after costs/robustness, not win rate. Preserve PIT/history integrity.
+When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; identify exact changed files; give exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update this GitHub roadmap; provide downloadable TXT roadmap; show roadmap in chat. Never use git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution. No automatic production retuning from exploratory diagnostics. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
-REPO / LOCAL
-Repo: LeakPilotAI/project-atlas
-Local: D:\Work\Project Atlas
-Python: backend\.venv\Scripts\python.exe
-
-LATEST VERIFIED TEST CHECKPOINT — USER PROVIDED
-Head tested: e5b389edcef024a9c06c3fcc5c890b0a170ca953
-Focused compatibility + scorecard tests: 10 passed in 0.43s.
-Full regression: 546 passed, 2 warnings in 38.08s.
-Warnings are dependency deprecations only: discord audioop and Starlette/httpx TestClient.
-This supersedes the earlier 540 passed / 2 failed checkpoint.
+LATEST VERIFIED CHECKPOINT
+User tested e5b389ed: focused 10 passed in 0.43s; full regression 546 passed, 2 warnings in 38.08s. Dependency deprecation warnings only.
 
 LOCKED PRODUCTION GATES
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -25,58 +16,54 @@ ENGINEERING ROADMAP
 [COMPLETE] Core rebuild — 100%
 [COMPLETE] Hyperliquid cockpit/lifecycle
 [COMPLETE] Manual-to-auto PAPER
-[COMPLETE] Journal/recovery/ownership isolation
-[COMPLETE] Crossing recovery/pending observability/detached cleanup
+[COMPLETE] Journal/recovery/isolation
+[COMPLETE] Crossing/pending/detached cleanup
 [COMPLETE] Command Center parity/clean cohort
-[COMPLETE] Quality Dips Robinhood-first quotes + Yahoo fallback
-[COMPLETE] Quality Dips 3/5/8/12 ladder + Discord retry
-[COMPLETE] Edge diagnostics/holdout/MFE-MAE
+[COMPLETE] Quality Dips quote/ladder/Discord infrastructure
+[COMPLETE] Edge/holdout/MFE-MAE
 [COMPLETE, VERIFIED] V6 Challenger Lab
-[COMPLETE, VERIFIED] V6 Prospective Challenger Persistence
+[COMPLETE, VERIFIED] V6 Prospective Persistence
 [COMPLETE, VERIFIED] V6 Point-in-Time Exit Replay
-[COMPLETE, VERIFIED] V6 SHADOW-vs-PAPER Interaction Diagnostics
-[COMPLETE, VERIFIED] V6 Command Center Research Status compatibility
-[COMPLETE, VERIFIED] Consolidated V6 Research Readiness Scorecard
-  - GET /api/validation/challengers/readiness
-  - >=100 forward closes per challenger
-  - positive forward expectancy required
-  - lower 95% expectancy bound >0 required
-  - >=70% point-in-time replay path coverage required
-  - SHADOW/PAPER remain separate and pooled state fails closed
-  - research_evidence_ready remains distinct from trading_readiness
-  - trading_readiness hard NOT_READY; live capital false; automatic promotion/execution false
-[NEXT] Readiness UI / lightweight Command Center scorecard progress presentation.
-[NEXT] Forward evidence monitoring and candidate comparison as samples accumulate.
+[COMPLETE, VERIFIED] V6 SHADOW-vs-PAPER Diagnostics
+[COMPLETE, VERIFIED] V6 Command Center Research Status
+[COMPLETE, VERIFIED] V6 Research Readiness Scorecard
+[COMPLETE, LOCAL TEST PENDING] Lightweight Readiness Presentation — execution 2026-09-15
+  - readiness_scorecard() atomically persists backend/data/v6_readiness_scorecard_cache.json when explicitly run
+  - normal Command Center research_status reads durable membership + optional cached scorecard only
+  - normal refresh never runs heavy retrospective challenger/exit/shadow analysis
+  - readiness_progress shows per-challenger closes/100, progress ratio, positive expectancy flag, positive lower-CI flag
+  - exit replay shows path coverage/70% and progress ratio
+  - SHADOW/PAPER shows separate prospective nomination count and pooled-state flag
+  - absent cache fails closed and reports DURABLE_MEMBERSHIP_ONLY
+  - trading_readiness remains NOT_READY and live_capital_allowed false regardless of research display
+  - tests expanded for no-cache lightweight path, cached progress, and cache persistence
+[NEXT] Local focused + full regression validation.
+[NEXT AFTER GREEN] Forward Evidence Monitor: explicit scorecard refresh/snapshot history and deltas as samples accumulate, without automatic promotion.
+[NEXT] Candidate comparison report using only prospective cohort evidence when sample thresholds are met.
 [ONGOING] Quality Dips PIT/forward evidence.
-[ONGOING] V6 prospective evidence after runtime cutoff.
-[FUTURE] Explicit strategy promotion framework only after sufficient forward evidence and human review; never automatic live unlock.
+[ONGOING] V6 prospective evidence.
+[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence; never automatic live unlock.
 
 LATEST RESEARCH CHECKPOINT
-932 paper closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614; max DD 95.6119R. Earlier n=622 expectancy +0.0541R; later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
-
-QUALITY DIPS
-Latest reviewed 36 WATCH / 0 ACCUMULATE / 0 PREPARE. Validation/live readiness NOT READY.
+932 paper closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614; max DD 95.6119R. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 TRADING/LIVE READINESS
-Engineering regression status: GREEN at e5b389ed — 546 passed, 2 warnings.
-Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Latest holdout NEGATIVE. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified engineering regression GREEN at e5b389ed — 546 passed. Current presentation changes LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Latest holdout NEGATIVE. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-NEXT EXECUTION
-Readiness UI / lightweight Command Center scorecard status:
-- show prospective sample progress toward 100 closes per challenger;
-- show positive expectancy/CI requirement state;
-- show exit-replay path coverage progress toward 70%;
-- show separate SHADOW/PAPER nomination count;
-- never run heavy full retrospective analysis on every Command Center refresh;
-- clearly display RESEARCH EVIDENCE != LIVE READY;
-- no automatic promotion/live unlock.
+NEXT EXECUTION AFTER GREEN
+Forward Evidence Monitor:
+- explicit refresh operation computes scorecard outside normal Command Center refresh;
+- append-only timestamped scorecard snapshots for longitudinal evidence;
+- report changes in forward closes, expectancy/CI status, replay coverage, nominations;
+- never rewrite prior snapshots;
+- no automatic production promotion/live unlock.
 
 LOCAL COMMANDS
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_command_center_summary_v4.py tests/test_v6_research_status_command_center.py tests/test_v6_readiness_scorecard.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_research_status_command_center.py tests/test_v6_readiness_scorecard.py tests/test_command_center_summary_v4.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 END OF MASTER ROADMAP
