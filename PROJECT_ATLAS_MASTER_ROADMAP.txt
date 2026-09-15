@@ -1,7 +1,7 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-15
 Branch: chatgpt/atlas-rebuild-v1
-Current execution head before roadmap commit: bbe88c7a0984927a955246cf9255238025935b89
+Current execution head before roadmap commit: 3967c25f490cecf792ab9016b40f8f364b3fc258
 
 PERMANENT EXECUTION PROTOCOL — USER REQUIREMENT
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; identify exact changed files; give exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update this GitHub roadmap; provide downloadable TXT roadmap; show roadmap in chat. Never use git clean -fdx. Preserve backend/data. Separate engineering from live readiness. Never imply profitability from engineering/backtests. No automatic real-money execution. Never auto-retune production from exploratory diagnostics. PAPER/SHADOW stay separate. Quality Dips/perps stay separate. Optimize expectancy after costs/robustness, not win rate. Preserve PIT/history integrity.
@@ -10,9 +10,8 @@ REPO / LOCAL
 Repo: LeakPilotAI/project-atlas
 Local: D:\Work\Project Atlas
 Python: backend\.venv\Scripts\python.exe
-Last locally verified focused V6 checkpoint from user: 42 passed, 1 warning at 04ac41d.
-Last full regression from user at 04ac41d: 540 passed, 2 failed, 2 warnings.
-Failures were both Command Center backward-compatibility regressions introduced by V6 status integration.
+User verified focused V6 at 04ac41d: 42 passed, 1 warning.
+User full regression at 04ac41d: 540 passed, 2 failed, 2 warnings. Both failures were Command Center compatibility regressions and are repaired in 11bf1bb, but local re-test is still pending.
 
 LOCKED PRODUCTION GATES
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -27,31 +26,33 @@ ENGINEERING ROADMAP
 [COMPLETE] Quality Dips Robinhood-first quotes + Yahoo fallback
 [COMPLETE] Quality Dips 3/5/8/12 ladder + Discord retry
 [COMPLETE] Edge diagnostics/holdout/MFE-MAE
-[COMPLETE] V6 Challenger Lab — focused tests included in user's 42/42 pass
-[COMPLETE] V6 Prospective Challenger Persistence — focused tests included in user's 42/42 pass
-[COMPLETE] V6 Point-in-Time Exit Replay — focused tests included in user's 42/42 pass
-[COMPLETE] V6 SHADOW-vs-PAPER Interaction Diagnostics — focused tests included in user's 42/42 pass
-[REPAIRED, RE-TEST PENDING] V6 Command Center Research Status compatibility
-  - user full suite exposed 2 regressions at 04ac41d:
-    1) v4 guardrails dict gained research_is_trading_readiness and broke exact legacy equality
-    2) perp note lost required 'L1 touch/cross' wording
-  - repair commits:
-    - 8d3e961 restore legacy guardrails exactly and restore L1 touch/cross note
-    - bbe88c7 update V6 test to assert separate research_guardrails block
-  - V6 research guardrails now live under top-level research_guardrails, preserving v4 guardrails contract
-  - no production strategy/risk/execution change
-[NEXT] Re-run focused Command Center/V6 tests, then full suite.
-[NEXT AFTER GREEN] Consolidated V6 research readiness scorecard.
-[NEXT] Readiness UI presentation after scorecard service is stable.
+[COMPLETE] V6 Challenger Lab
+[COMPLETE] V6 Prospective Challenger Persistence
+[COMPLETE] V6 Point-in-Time Exit Replay
+[COMPLETE] V6 SHADOW-vs-PAPER Interaction Diagnostics
+[REPAIRED, LOCAL RE-TEST PENDING] V6 Command Center Research Status compatibility
+[COMPLETE, LOCAL TEST PENDING] Consolidated V6 Research Readiness Scorecard — execution 2026-09-15
+  - backend/app/services/v6_readiness_scorecard.py
+  - GET /api/validation/challengers/readiness
+  - requires >=100 forward closes per challenger before sample sufficiency
+  - requires positive forward expectancy and positive lower 95% expectancy bound
+  - requires >=70% point-in-time mark replay path coverage
+  - carries SHADOW/PAPER nominations separately and fails if populations are pooled
+  - distinguishes research_evidence_ready from trading_readiness
+  - trading_readiness is hard NOT_READY; live_capital_allowed false
+  - automatic_promotion false; production_strategy_modified false; automatic real-money execution false
+  - tests/test_v6_readiness_scorecard.py covers evidence-ready research state, low sample/CI failure, replay coverage failure, pooled-population failure
+[NEXT] Local compatibility + scorecard focused tests, then full regression.
+[NEXT AFTER GREEN] Readiness UI presentation / Command Center scorecard summary without heavy refresh recomputation.
+[NEXT] Forward evidence monitoring and candidate comparison as samples accumulate.
 [ONGOING] Quality Dips PIT/forward evidence.
 [ONGOING] V6 prospective evidence after runtime cutoff.
-[FUTURE] Promotion only after sufficient forward positive expectancy after costs, acceptable risk, explicit review.
+[FUTURE] Explicit strategy promotion framework only after sufficient forward evidence and human review; never automatic live unlock.
 
 LATEST TEST EVIDENCE FROM USER
-Focused V6 command at 04ac41d: 42 passed, 1 warning in 6.49s.
+Focused V6 at 04ac41d: 42 passed, 1 warning in 6.49s.
 Full suite at 04ac41d: 540 passed, 2 failed, 2 warnings in 39.75s.
-The two failures are addressed in GitHub but NOT yet locally re-verified.
-Warnings remain non-blocking dependency deprecations: discord audioop and Starlette/httpx TestClient.
+Both failures repaired in GitHub; local re-verification remains pending.
 
 LATEST RESEARCH CHECKPOINT
 932 paper closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614; max DD 95.6119R. Earlier n=622 expectancy +0.0541R; later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
@@ -60,24 +61,25 @@ QUALITY DIPS
 Latest reviewed 36 WATCH / 0 ACCUMULATE / 0 PREPARE. Validation/live readiness NOT READY.
 
 TRADING/LIVE READINESS
-Engineering regression status: REPAIR PENDING LOCAL RE-TEST.
+Engineering regression status: REPAIRED BUT LOCAL RE-TEST PENDING.
 Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Latest holdout NEGATIVE. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 NEXT EXECUTION AFTER GREEN REGRESSION
-Consolidated V6 Research Readiness Scorecard:
-- summarize prospective sample sufficiency/expectancy/uncertainty per challenger;
-- include point-in-time exit replay path coverage rather than hindsight MFE;
-- include SHADOW/PAPER diagnostic nominations but never pool populations;
-- fail closed when cutoff/evidence is absent;
-- separate engineering health, research evidence, and trading readiness;
-- no automatic production promotion or live unlock.
+Readiness UI / lightweight Command Center scorecard status:
+- show prospective sample progress toward 100 closes per challenger;
+- show positive expectancy/CI requirement state;
+- show exit-replay path coverage progress toward 70%;
+- show separate SHADOW/PAPER nomination count;
+- never run heavy full retrospective analysis on every Command Center refresh;
+- clearly display RESEARCH EVIDENCE != LIVE READY;
+- no automatic promotion/live unlock.
 
 LOCAL COMMANDS
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_command_center_summary_v4.py tests/test_v6_research_status_command_center.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_command_center_summary_v4.py tests/test_v6_research_status_command_center.py tests/test_v6_readiness_scorecard.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 END OF MASTER ROADMAP
