@@ -1,133 +1,104 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-15
 Branch: chatgpt/atlas-rebuild-v1
-Current execution head before this roadmap commit: 95bdc15461d5859a21cb541aa183d0b71f89f84c
+Current execution head before roadmap commit: b116cdb5e05dfc5c5758a992fe669439a52c5d0a
 
 PURPOSE
 Durable Project Atlas continuity record. Update after EVERY implementation execution.
 
 PERMANENT EXECUTION PROTOCOL — USER REQUIREMENT
-1. When user says execute, implement the next appropriate roadmap item directly when tooling permits; do not substitute planning for executable work.
-2. Keep implementation on chatgpt/atlas-rebuild-v1 until validated/merged intentionally.
-3. After EVERY execution: audit GitHub changes; identify exact changed files; provide exact Windows PowerShell fetch/reset + focused tests + full pytest; never claim local tests passed until user posts local result; update this GitHub roadmap; create/provide an updated downloadable TXT roadmap; show updated roadmap in chat.
-4. Never use git clean -fdx. backend/data contains persistent paper/research history.
+1. When user says execute, implement the next appropriate roadmap item directly when tooling permits.
+2. Stay on chatgpt/atlas-rebuild-v1 until intentionally validated/merged.
+3. After EVERY execution: audit GitHub; identify exact changed files; give exact Windows PowerShell fetch/reset + focused tests + full pytest; never claim local tests passed until user posts results; update this GitHub roadmap; provide downloadable TXT roadmap; show roadmap in chat.
+4. Never use git clean -fdx; preserve backend/data paper/research history.
 5. Keep engineering completion separate from trading/live-capital readiness.
-6. Never imply profitability from engineering completion or historical/backtest results.
-7. No automatic real-money execution. Manual execution only. PAPER/SHADOW boundaries remain enforced.
-8. Do not automatically change production gates from exploratory diagnostics. Require isolated challenger research + prospective validation.
-9. Keep PAPER and SHADOW separate; never average performance.
-10. Keep Quality Dips equities and Hyperliquid perps separate: no shared symbols/capital/performance/action logic.
+6. Never imply profitability from engineering completion/backtests.
+7. No automatic real-money execution; manual live execution only; PAPER/SHADOW boundaries enforced.
+8. Never auto-change production gates from exploratory diagnostics; require isolated challenger + prospective evidence.
+9. Keep PAPER and SHADOW separate; never average them.
+10. Keep Quality Dips equities and Hyperliquid perps separate.
 11. Optimize expectancy after costs and robustness, not win rate alone.
-12. Preserve historical/PIT integrity; never rewrite history to make readiness pass.
+12. Preserve historical/PIT integrity; never rewrite history to pass readiness.
 
-REPOSITORY / LOCAL
+REPO / LOCAL
 Repo: LeakPilotAI/project-atlas
 Local: D:\Work\Project Atlas
 Python: backend\.venv\Scripts\python.exe
-Active branch: chatgpt/atlas-rebuild-v1
-Last locally verified checkpoint before V6: c93213f — 525 passed, 2 warnings.
-All V6 executions after c93213f remain LOCAL VERIFICATION PENDING until user posts test output.
-
-ARCHITECTURE
-Market Data -> Feature Engine -> Strategy -> Risk Engine -> Paper Execution -> Event Store/Journal -> Validation
-A. Hyperliquid Perps — manual real-money execution only; automatic PAPER mirroring allowed.
-B. Quality Dips / Robinhood — stocks/ETFs, longer-term research, manual Robinhood only.
-C. Command Center — read-only orchestration; domains never combine risk/capital/performance/action logic.
+Last locally verified pre-V6 checkpoint: c93213f — 525 passed, 2 warnings.
+All V6 work remains LOCAL VERIFICATION PENDING until user posts tests.
 
 LOCKED PRODUCTION GATES
-RSI long <=28
-RSI short >=72
-Extension >=1.4%
-Minimum R:R 1.8
-No automatic production retuning. No automatic live unlock. No ML until evidence/infrastructure justify it.
+RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8.
+No automatic production retuning. No automatic live unlock.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild architecture — 100%
-[COMPLETE] Hyperliquid manual cockpit + setup lifecycle
-[COMPLETE] Manual-to-auto PAPER resting-L1 parity
-[COMPLETE] Persistent journal / restart recovery / ownership isolation
-[COMPLETE] Missed-L1 crossing recovery
-[COMPLETE] Pending observability / detached cleanup
-[COMPLETE] Command Center parity / clean post-fix cohort
+[COMPLETE] Hyperliquid cockpit/lifecycle
+[COMPLETE] Manual-to-auto PAPER parity
+[COMPLETE] Persistent journal/recovery/ownership isolation
+[COMPLETE] Crossing recovery/pending observability/detached cleanup
+[COMPLETE] Command Center parity/clean cohort
 [COMPLETE] Quality Dips Robinhood-first quotes + Yahoo fallback
-[COMPLETE] Quality Dips 3/5/8/12 patient ladder + Discord alert retry
-[COMPLETE] Phase 8 edge diagnostics / chronological holdout / MFE-MAE
-[COMPLETE, LOCAL TEST PENDING] V6 Challenger Lab foundation
-  - backend/app/services/challenger_lab.py
-  - GET /api/validation/challengers
-  - retrospective nomination only; never production promotion
-[COMPLETE, LOCAL TEST PENDING] V6 Prospective Challenger Cohort Persistence — execution 2026-09-15
-  - backend/app/services/challenger_prospective.py
-  - GET /api/validation/challengers/prospective
-  - durable marker: backend/data/v6_challenger_prospective_marker.json at runtime
-  - append-only membership: backend/data/v6_challenger_membership.jsonl at runtime
-  - membership frozen from PAPER open event using pre-entry fields only
-  - rows opened before cutoff are rejected from prospective evidence
-  - close-event feature changes cannot reclassify membership
-  - restart-safe/deduplicated membership reconstruction
-  - per challenger: opened/closed/open, metrics, uncertainty
-  - retrospective rows never count as prospective
-  - no automatic promotion; production strategy unchanged; live capital false
-  - tests/test_challenger_prospective_v6.py covers cutoff, restart persistence, open-snapshot leakage isolation, production lock
-[NEXT] Locally validate all V6 focused tests and full regression.
-[NEXT] Build point-in-time exit replay challenger from mark events; never infer alternate exits from MFE summary alone.
-[NEXT] Build SHADOW-vs-PAPER interaction diagnostics without combining populations.
-[NEXT] Surface Challenger Lab + prospective cohort status in Command Center/readiness UI.
-[ONGOING] Quality Dips prospective/PIT evidence collection.
-[ONGOING] V6 forward evidence collection after runtime endpoint creates its durable cutoff.
-[FUTURE] Strategy promotion framework only after sufficient forward evidence, positive expectancy after costs, acceptable risk, and explicit review.
+[COMPLETE] Quality Dips 3/5/8/12 ladder + Discord retry
+[COMPLETE] Phase 8 edge diagnostics/holdout/MFE-MAE
+[COMPLETE, LOCAL TEST PENDING] V6 Challenger Lab
+[COMPLETE, LOCAL TEST PENDING] V6 Prospective Challenger Cohort Persistence
+[COMPLETE, LOCAL TEST PENDING] V6 Point-in-Time Exit Replay — execution 2026-09-15
+  - backend/app/services/challenger_exit_replay.py
+  - GET /api/validation/challengers/exit-replay
+  - replays persisted PAPER mark events chronologically
+  - candidates predeclared at +0.5R, +1.0R, +1.5R capture
+  - final MFE/MAE never triggers a simulated exit
+  - LONG/SHORT direction handled from actual entry/risk geometry
+  - configured fee/slippage assumptions converted to R for candidate accounting
+  - trades without sufficient persisted mark path retain actual baseline close; no invented touch
+  - sparse marks explicitly reported as a limitation
+  - production exits unchanged; automatic promotion false; live capital false
+  - tests/test_challenger_exit_replay_v6.py covers no-MFE hindsight, observed threshold, SHORT direction, costs, missing path
+[NEXT] Local focused + full regression validation of all V6 blocks.
+[NEXT] SHADOW-vs-PAPER interaction diagnostics without combining populations.
+[NEXT] Surface challenger/prospective/exit-replay status in Command Center/readiness UI.
+[ONGOING] Quality Dips PIT/forward evidence.
+[ONGOING] V6 forward evidence after prospective runtime cutoff exists.
+[FUTURE] Promotion only after sufficient forward positive expectancy after costs, acceptable risk, explicit review.
 
-LATEST RESEARCH CHECKPOINT — 2026-09-15
-Paper closes: 932
-Win rate: 43.03%
-Expectancy: -0.0212R/trade
-Total: -19.7381R
-Profit factor: 0.9614
-Max drawdown: 95.6119R
-Longest losing streak: 13
-Earlier chronological research: n=622, expectancy +0.0541R, total +33.6805R
-Later holdout: n=310, expectancy -0.1723R, total -53.4186R
-Conclusion: stable positive edge NOT established; live capital not justified.
-Exploratory only: trends, >=3% extension, >=85 quality looked stronger retrospectively; 66.3% winners gave back favorable excursion; 31.8% losers had positive MFE; LONG/SHORT CIs overlap; SHADOW differs materially from PAPER and remains separate.
+LATEST RESEARCH CHECKPOINT
+Paper closes 932; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614; max DD 95.6119R.
+Earlier research n=622 expectancy +0.0541R total +33.6805R.
+Later holdout n=310 expectancy -0.1723R total -53.4186R.
+Stable positive edge: NOT ESTABLISHED.
 
-LATEST RUNTIME SNAPSHOT — HISTORICAL, RECHECK BEFORE CALLING CURRENT
-Markets 234; setups 3; PRIME 1; QUALIFIED 1; actionable 0.
-Auto-paper pending 2 backed / 0 detached; open 6; opened total 104; closed total 98.
-Clean cohort manual_auto_observability_v1: 33 opened / 27 closed / 6 open.
+LATEST RUNTIME SNAPSHOT — HISTORICAL
+234 markets; 3 setups; PRIME 1; QUALIFIED 1; actionable 0.
+Auto-paper pending 2 backed; open 6; opened total 104; closed total 98.
+Clean cohort 33 opened / 27 closed / 6 open.
 
-QUALITY DIPS READINESS
-Engineering implemented. Latest reviewed runtime: 36 WATCH / 0 ACCUMULATE / 0 PREPARE.
-Historical look-ahead-contaminated legacy rows remain quarantined rather than rewritten.
-Broken/unknown thesis blocks accumulation.
-Investment evidence/live readiness: NOT READY.
+QUALITY DIPS
+Engineering implemented. Latest reviewed: 36 WATCH / 0 ACCUMULATE / 0 PREPARE.
+Validation/live readiness: NOT READY.
 
-TRADING / LIVE-CAPITAL READINESS
-Engineering rebuild: feature-complete; latest locally verified baseline 525/525 before V6.
+TRADING/LIVE READINESS
+Latest locally verified pre-V6 regression: 525/525 passed.
 V6 local verification: PENDING.
-Demonstrated positive expectancy: NOT ESTABLISHED.
-Statistical stability: LOW.
-Latest chronological holdout: NEGATIVE.
-Quality Dips validation: NOT READY.
-Live capital: NOT READY / LOCKED.
-Automatic real-money execution: DISABLED.
-Manual real-money execution remains the only allowed live execution model.
+Stable positive expectancy: NOT ESTABLISHED.
+Statistical stability: LOW. Latest chronological holdout: NEGATIVE.
+Live capital: NOT READY / LOCKED. Automated real-money execution: DISABLED.
 
-NEXT EXECUTION AFTER LOCAL V6 VALIDATION
-Point-in-Time Exit Replay Challenger:
-- replay actual persisted mark-event path chronologically;
-- define candidate exits before evaluating them;
-- account for existing fees/slippage assumptions;
-- never use final MFE/MAE to manufacture a realizable exit;
-- compare baseline vs challenger on identical eligible trades;
-- keep output research-only and forward-validation-required;
-- no production exit mutation or automatic promotion.
+NEXT EXECUTION AFTER LOCAL VALIDATION
+SHADOW-vs-PAPER Interaction Diagnostics:
+- preserve separate populations and separate metrics;
+- compare feature/regime/side/quality/extension interactions using identical definitions;
+- expose sample sizes and uncertainty;
+- identify selection-gate inversions worth prospective challenger nomination;
+- never average SHADOW with PAPER;
+- never auto-loosen gates or promote from retrospective results.
 
-LOCAL UPDATE / TEST COMMANDS
+LOCAL COMMANDS
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_challenger_lab_v6.py tests/test_challenger_prospective_v6.py tests/test_edge_diagnostics.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_challenger_lab_v6.py tests/test_challenger_prospective_v6.py tests/test_challenger_exit_replay_v6.py tests/test_edge_diagnostics.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 END OF MASTER ROADMAP
