@@ -14,11 +14,20 @@ HISTORY_PATH=Path(__file__).resolve().parents[2]/"data"/"v6_forward_evidence_his
 
 def _now()->str:return datetime.now(timezone.utc).isoformat()
 
-def _compact(report:Dict[str,Any])->Dict[str,Any]:
+def _risk_compact(comparison:Dict[str,Any]|None)->Dict[str,Any]:
+    comparison=comparison if isinstance(comparison,dict) else {}; base=comparison.get("baseline") if isinstance(comparison.get("baseline"),dict) else {}; bm=base.get("metrics") if isinstance(base.get("metrics"),dict) else {}
+    candidates={}
+    for name,row in (comparison.get("candidates") or {}).items():
+        if not isinstance(row,dict):continue
+        m=row.get("metrics") if isinstance(row.get("metrics"),dict) else {}
+        candidates[name]={"closed":int(row.get("closed") or 0),"expectancy":m.get("expectancy"),"max_drawdown_r":m.get("max_drawdown_r"),"expectancy_delta_vs_baseline":row.get("expectancy_delta_vs_baseline"),"max_drawdown_delta_vs_baseline":row.get("max_drawdown_delta_vs_baseline"),"research_nomination":bool(row.get("research_nomination",False))}
+    return {"cutoff":comparison.get("cutoff"),"baseline":{"closed":int(base.get("closed") or 0),"expectancy":bm.get("expectancy"),"max_drawdown_r":bm.get("max_drawdown_r")},"candidates":candidates,"retrospective_substitution":False,"shadow_population_used":False}
+
+def _compact(report:Dict[str,Any],comparison:Dict[str,Any]|None=None)->Dict[str,Any]:
     forward={}
     for name,row in (report.get("forward_evidence") or {}).items():
         forward[name]={k:row.get(k) for k in ("opened","closed","open","expectancy","expectancy_ci95","sample_sufficient","positive_expectancy","uncertainty_supports_positive_edge","research_evidence_ready")}
-    return {"forward":forward,"exit_replay":dict(report.get("exit_replay") or {}),"shadow_paper":{"prospective_nomination_count":int((report.get("shadow_paper") or {}).get("prospective_nomination_count") or 0),"populations_pooled":bool((report.get("shadow_paper") or {}).get("populations_pooled",False))},"research_evidence_ready":bool(report.get("research_evidence_ready",False)),"trading_readiness":"NOT_READY","live_capital_allowed":False}
+    return {"forward":forward,"risk_comparison":_risk_compact(comparison),"exit_replay":dict(report.get("exit_replay") or {}),"shadow_paper":{"prospective_nomination_count":int((report.get("shadow_paper") or {}).get("prospective_nomination_count") or 0),"populations_pooled":bool((report.get("shadow_paper") or {}).get("populations_pooled",False))},"research_evidence_ready":bool(report.get("research_evidence_ready",False)),"trading_readiness":"NOT_READY","live_capital_allowed":False}
 
 def _previous(path:Path)->Dict[str,Any]|None:
     last=None
@@ -37,8 +46,8 @@ def _deltas(current:Dict[str,Any],previous:Dict[str,Any]|None)->Dict[str,Any]:
     out["nomination_count_delta"]=int((current.get("shadow_paper") or {}).get("prospective_nomination_count") or 0)-int((prev.get("shadow_paper") or {}).get("prospective_nomination_count") or 0)
     return out
 
-def append_snapshot(report:Dict[str,Any],*,path:Path=HISTORY_PATH,timestamp:str|None=None)->Dict[str,Any]:
-    evidence=_compact(report); previous=_previous(path); row={"event":"v6_forward_evidence_snapshot","timestamp":timestamp or _now(),"evidence":evidence,"deltas":_deltas(evidence,previous),"automatic_promotion":False,"production_strategy_modified":False,"automatic_real_money_execution":False}
+def append_snapshot(report:Dict[str,Any],*,path:Path=HISTORY_PATH,timestamp:str|None=None,comparison:Dict[str,Any]|None=None)->Dict[str,Any]:
+    evidence=_compact(report,comparison); previous=_previous(path); row={"event":"v6_forward_evidence_snapshot","timestamp":timestamp or _now(),"evidence":evidence,"deltas":_deltas(evidence,previous),"automatic_promotion":False,"production_strategy_modified":False,"automatic_real_money_execution":False}
     path.parent.mkdir(parents=True,exist_ok=True)
     with path.open("a",encoding="utf-8") as f:
         f.write(json.dumps(row,allow_nan=False,default=str)+"\n");f.flush()
@@ -48,7 +57,8 @@ def append_snapshot(report:Dict[str,Any],*,path:Path=HISTORY_PATH,timestamp:str|
 
 def refresh_forward_evidence(*,path:Path=HISTORY_PATH)->Dict[str,Any]:
     from app.services.v6_readiness_scorecard import readiness_scorecard
-    report=readiness_scorecard(); snapshot=append_snapshot(report,path=path)
+    from app.services.v6_candidate_comparison import candidate_comparison
+    report=readiness_scorecard(); comparison=candidate_comparison(); snapshot=append_snapshot(report,path=path,comparison=comparison)
     return {"ok":True,"title":"ATLAS V6 FORWARD EVIDENCE MONITOR","snapshot":snapshot,"history_path":str(path),"mode":"EXPLICIT_REFRESH_APPEND_ONLY","normal_command_center_recompute":False,"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
 
 def monitor_status(*,path:Path=HISTORY_PATH)->Dict[str,Any]:
