@@ -8,7 +8,7 @@ When user says execute, implement next roadmap item directly when tooling permit
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: a13a04ca40c7b0e112ddefaaa4e7a4933c5d78d8
 Frontend production build GREEN. Focused: 28 passed, 1 warning in 2.50s. Full regression: 568 passed, 2 warnings in 39.83s. Failures: 0.
-Lightweight Diversity Integration changes after this checkpoint are LOCAL TEST/BUILD PENDING.
+Lightweight Diversity Integration and Longitudinal Diversity Diagnostics after this checkpoint are LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -19,17 +19,19 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Research Evidence Front-End Panel
 [COMPLETE, VERIFIED] Forward Evidence Window Diversity / Regime Coverage Diagnostics
 [COMPLETE, LOCAL TEST/BUILD PENDING] Lightweight Diversity Integration + Navigation
-  - research_evidence_ui now reads diversity through the existing durable membership/history read path
-  - custom membership_path used by tests/status is propagated into diversity diagnostics; no hidden production-data fallback
-  - research evidence response adds established candidates, per-candidate diversity diagnostics, snapshot availability, and explicit 3-day/2-regime/10-membership thresholds
-  - separation explicitly states diversity is not trading readiness or production approval
-  - /research displays diversity-established count and per-candidate day/regime progress
-  - global Atlas layout provides a Research Evidence navigation control, making /research directly reachable from Command Center without coupling Command Center data logic
-  - no heavy retrospective/prospective/scorecard recompute added
-  - no automatic promotion, production mutation, gate changes, live unlock, or real-money execution
-  - research evidence tests extended for diversity integration and missing-data fail-closed behavior
-[NEXT] Local frontend build + focused/full regression validation.
-[NEXT AFTER GREEN] Forward Evidence Diversity Trend/History Diagnostics: persist/derive longitudinal diversity progression without rewriting history, so one current aggregate cannot hide later concentration/regime collapse.
+  - research evidence includes durable diversity state; /research renders it; global Atlas nav links Research Evidence
+  - no heavy recompute or domain coupling
+[COMPLETE, LOCAL TEST PENDING] Forward Evidence Diversity Trend / History Diagnostics
+  - new v6_diversity_trends derives longitudinal state from append-only forward evidence snapshots plus contemporaneously frozen prospective membership
+  - each historical snapshot only sees memberships whose entry timestamp is <= that snapshot timestamp; future membership cannot leak backward
+  - no historical membership reclassification or retrospective candidate substitution
+  - minimum 3 longitudinal snapshots before a trend is considered sufficient
+  - descriptive labels: STABLE_DIVERSE, BROADENING, COLLAPSED, MIXED_OR_CONCENTRATED, or INSUFFICIENT_LONGITUDINAL_EVIDENCE
+  - labels describe diversity progression only; they do not establish independence, expectancy, production approval, or live readiness
+  - GET /api/validation/challengers/diversity-trends is read-only/fail-closed
+  - tests cover broadening PIT behavior, insufficient history, and future-membership leakage prevention
+[NEXT] Local frontend build + focused/full regression validation for all pending integration.
+[NEXT AFTER GREEN] Integrate longitudinal diversity summary into lightweight /research evidence panel, then evaluate whether evidence windows need fixed-duration slicing rather than cumulative PIT snapshots.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -38,7 +40,7 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified regression GREEN: 568 passed at a13a04ca. Current integration LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified regression GREEN: 568 passed at a13a04ca. Current changes LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
@@ -48,15 +50,15 @@ git reset --hard origin/chatgpt/atlas-rebuild-v1
 Push-Location frontend
 npm run build
 Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_research_evidence_ui.py tests/test_v6_window_diversity.py tests/test_v6_research_status_command_center.py tests/test_command_center_summary_v4.py tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_diversity_trends.py tests/test_v6_research_evidence_ui.py tests/test_v6_window_diversity.py tests/test_v6_research_status_command_center.py tests/test_command_center_summary_v4.py tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Forward Evidence Diversity Trend/History Diagnostics:
-- use append-only forward evidence and contemporaneously frozen membership only;
-- expose whether diversity broadens, remains stable, or collapses over successive evidence windows;
-- fail closed on insufficient longitudinal evidence;
-- do not reinterpret historical membership or substitute retrospective classifications;
+Longitudinal diversity presentation + window-method review:
+- surface concise trend state in lightweight research evidence without heavy recompute;
+- preserve PIT membership cutoffs;
+- assess cumulative snapshots versus fixed-duration windows before interpreting regime collapse/broadening strongly;
+- do not tune production gates from these labels;
 - no automatic promotion, production mutation, or real-money execution.
 
 END OF MASTER ROADMAP
