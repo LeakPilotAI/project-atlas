@@ -22,3 +22,14 @@ def test_research_page_renders_consistency_change_diagnostics_contract():
     assert "sufficiency changed" in page
     assert "new-evidence-only" in page
     assert "No automatic scoring" in page
+
+
+def test_research_page_renders_transition_persistence_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Transition persistence / reversal" in page
+    assert "DESCRIPTIVE_NEXT_NEW_EVIDENCE_CONFIRMATION" in page
+    assert "minimum 3 qualifying observations" in page
+    assert "Disagreement outcome" in page
+    assert "BECAME INSUFFICIENT" in page
+    assert "confirmation checks" in page
+    assert "no production score" in page.lower()
