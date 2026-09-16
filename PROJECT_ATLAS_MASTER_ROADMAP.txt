@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 5bac3a56c6b7c1cdec62c4db978f32a7f81df56c
-Focused maturity-transition-persistence + maturity-transition suite: 6 passed in 0.42s. Full regression: 608 passed, 2 warnings in 37.16s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
+Tested commit: 869cc410f598a07407f85556a7225da7ad9356d8
+Frontend production build GREEN. Focused maturity-persistence/evidence-ui/page-contract suite: 13 passed in 0.43s. Full regression: 609 passed, 2 warnings in 36.11s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -41,16 +41,19 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Maturity Change History / New-Evidence Transition Diagnostics
 [COMPLETE, VERIFIED] Maturity Change History Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Maturity Transition Persistence / Reversal Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Maturity Transition Persistence Lightweight Surface + Presentation
-  - research_evidence_ui exposes maturity_transition_persistence through the durable lightweight endpoint
-  - surface includes all eight dimensions, observation_count, confirmation_check_count, minimum_observations_required=3, full chronological checks, latest_check, duplicate-refresh resistance, and new-evidence-only flags
-  - /research renders previous -> transitioned_to -> next for every maturity dimension with PERSISTED / REVERSED / CHANGED AGAIN outcome labels
-  - page explains that three qualifying maturity observations are required before a confirmation exists
-  - duplicate refreshes remain excluded; no weighted score, readiness percentage, ranking, tuning, production promotion, or live-capital unlock
-  - evidence-ui tests cover normal and missing-file fail-closed persistence behavior
-  - page contract covers method, outcomes, minimum observation boundary, and maturity_transition_persistence presence
-[NEXT] Local frontend production build + focused maturity-persistence/evidence-ui/page-contract regression + full regression.
-[NEXT AFTER GREEN] Maturity Confirmation Sequence Diagnostics: expose chronological per-dimension maturity outcome sequences over retained qualifying observations without scoring, ranking, promotion, or live unlock.
+[COMPLETE, VERIFIED] Maturity Transition Persistence Lightweight Surface + Presentation
+[COMPLETE, LOCAL TEST PENDING] Maturity Confirmation Sequence Diagnostics
+  - new v6_maturity_confirmation_sequences service derives chronological per-dimension persistence/reversal outcome sequences from retained maturity persistence checks
+  - all eight declared maturity dimensions are preserved independently
+  - each dimension exposes sequence, sequence_length, and latest outcome
+  - confirmation_check_count and minimum_observations_required=3 are preserved
+  - duplicate refreshes remain excluded by the retained-history/maturity-transition pipeline
+  - new-evidence-only, duplicate-refresh-resistant, human-review-only, and production_promoted=False flags are preserved
+  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None, automatic_promotion=False
+  - production strategy remains unchanged; live capital and automatic real-money execution remain disabled
+  - missing durable files fail closed with no candidates
+[NEXT] Local focused maturity-confirmation-sequence + maturity-persistence regression and full regression.
+[NEXT AFTER GREEN] Maturity Confirmation Sequence Lightweight Surface + Presentation: expose and render chronological per-dimension maturity outcome sequences through the durable research-evidence endpoint without scoring, ranking, promotion, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -59,23 +62,21 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified build+regression checkpoint: 608 passed at 5bac3a5. Current Maturity Transition Persistence Lightweight Surface + Presentation is LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified build+regression checkpoint: 609 passed at 869cc41 with frontend production build GREEN. Current Maturity Confirmation Sequence Diagnostics is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_transition_persistence.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_confirmation_sequences.py tests/test_v6_maturity_transition_persistence.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Maturity Confirmation Sequence Diagnostics:
-- derive chronological per-dimension outcome sequences from retained maturity persistence checks;
-- preserve qualifying-new-evidence semantics and duplicate-refresh resistance;
+Maturity Confirmation Sequence Lightweight Surface + Presentation:
+- expose chronological per-dimension outcome sequences through the durable lightweight research evidence endpoint;
+- render each dimension sequence and latest outcome on /research;
+- preserve duplicate-refresh resistance and qualifying-new-evidence semantics;
 - no aggregate readiness score, percentage, favorable-window rank, tuning, promotion, or live readiness decision;
 - human review only; no real-money execution.
 
