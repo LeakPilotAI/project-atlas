@@ -27,9 +27,12 @@ def test_maturity_persistence_classifies_per_dimension_next_observation(tmp_path
 def test_maturity_persistence_preserves_safety_and_duplicate_resistance(tmp_path):
     h=tmp_path/"h.jsonl";m=tmp_path/"m.jsonl"
     for i in range(10):member(m,10,"TREND_UP",i)
+    # Two unchanged refreshes (closed=1 and closed=2) are intentionally duplicates.
+    # The retained-history engine counts each skipped refresh, so this fixture has two.
     snap(h,10,13,1);snap(h,10,14,1);snap(h,10,15,2);snap(h,10,16,2)
     r=maturity_transition_persistence(membership_path=m,history_path=h);c=r["candidates"]["trend_regime"]
-    assert r["duplicate_refreshes_skipped"]==1
+    assert r["duplicate_refreshes_skipped"]==2
+    assert c["observation_count"]==2;assert c["confirmation_check_count"]==0
     assert c["duplicate_refresh_resistant"] is True;assert c["new_evidence_only"] is True;assert c["production_promoted"] is False
     assert r["automatic_scoring"] is False;assert r["weighted_scoring"] is False;assert r["readiness_percentage"] is None
     assert r["automatic_promotion"] is False;assert r["live_capital_allowed"] is False;assert r["automatic_real_money_execution"] is False
