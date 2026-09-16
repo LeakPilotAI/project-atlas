@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 87e4e68469d755ff8c7e89a1410d2f5aa83c08df
-Focused transition persistence/change/history: 11 passed in 0.64s. Full regression: 589 passed, 2 warnings in 39.73s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
+Tested commit: f12846c35a7a955c376633ff0f71943cceef8d3c
+Frontend production build GREEN. Focused persistence surface/presentation: 9 passed in 0.50s. Full regression: 590 passed, 2 warnings in 41.45s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -31,15 +31,17 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Prospective Consistency Change Diagnostics
 [COMPLETE, VERIFIED] Consistency Change Lightweight Surface + Front-End Presentation
 [COMPLETE, VERIFIED] Transition Persistence / Reversal Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Transition Persistence Lightweight Surface + Presentation
-  - research_evidence_ui now exposes confirmation counts, minimum observation requirement, latest check, full confirmation history, and new-evidence-only boundary
-  - /research renders confirmation intervals for each candidate
-  - all 3d/7d/14d outcomes remain visible as PERSISTED / REVERSED / CHANGED AGAIN / BECAME INSUFFICIENT
-  - disagreement persistence/reversal is shown independently
-  - three-observation minimum and duplicate-refresh exclusion are explicit
-  - no production score, window ranking, gate retuning, promotion, live unlock, or real-money execution
-[NEXT] Local frontend production build + focused/full regression for persistence surface/presentation.
-[NEXT AFTER GREEN] Confirmation Sequence Diagnostics: describe repeated confirmation outcomes over longer qualifying sequences (for example persisted-after-persisted, reversal-after-persisted, repeated insufficiency) without collapsing them into scores or readiness decisions.
+[COMPLETE, VERIFIED] Transition Persistence Lightweight Surface + Presentation
+[COMPLETE, LOCAL TEST PENDING] Confirmation Sequence Diagnostics
+  - derives per-window chronological sequences from successive qualifying persistence/reversal checks
+  - preserves 3d/7d/14d independently
+  - retains PERSISTED / REVERSED / CHANGED_AGAIN / BECAME_INSUFFICIENT outcomes in order
+  - preserves disagreement confirmation sequence independently
+  - duplicate refreshes cannot extend sequences because source confirmations remain new-evidence-only
+  - requires underlying confirmation checks; no synthetic sequence from refreshes
+  - no ranking, scoring, gate tuning, promotion, live unlock, or real-money execution
+[NEXT] Local focused/full regression for confirmation-sequence diagnostics.
+[NEXT AFTER GREEN] Confirmation Sequence Lightweight Surface + Presentation: expose chronological confirmation sequences through durable research evidence and /research without scoring or production interpretation.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -48,26 +50,22 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified regression GREEN: 589 passed at 87e4e68. Current transition-persistence lightweight surface/presentation LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified regression GREEN: 590 passed at f12846c. Current confirmation-sequence diagnostics LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_transition_persistence.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_confirmation_sequences.py tests/test_v6_transition_persistence.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Confirmation Sequence Diagnostics:
-- derive descriptive sequences from successive persistence/reversal confirmation checks;
-- preserve chronological next-new-evidence confirmation semantics;
-- report repeated persistence, reversals after persistence, changed-again sequences, and repeated/entered insufficiency;
-- retain all 3d/7d/14d windows independently;
-- never convert sequences into a production score, favorable-window rank, automatic tuning, promotion, or live readiness decision;
+Confirmation Sequence Lightweight Surface + Presentation:
+- expose descriptive per-window and disagreement confirmation sequences through research_evidence_ui from durable membership/history only;
+- render sequence length, latest outcome, and chronological outcomes on /research;
+- keep three-observation minimum and new-evidence-only semantics explicit;
+- never collapse sequences into a production score, favorable-window rank, automatic tuning, promotion, or live readiness decision;
 - no real-money execution.
 
 END OF MASTER ROADMAP
