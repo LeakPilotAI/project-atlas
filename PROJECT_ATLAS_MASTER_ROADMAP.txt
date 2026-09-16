@@ -8,7 +8,7 @@ When user says execute, implement next roadmap item directly when tooling permit
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: 06187a85b1cc6e8b4d680a0a57fa04e095486903
 Focused evidence-sufficiency-gap + multi-window-history: 6 passed in 0.43s. Full regression: 597 passed, 2 warnings in 36.14s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
+Latest presentation validation at 3e7ef2c: frontend production build GREEN; focused suite 8 passed / 1 failed and full regression 597 passed / 1 failed, 2 warnings in 35.48s. Failure correctly identified a missing /research evidence-gap panel. Commit 26da9fc adds the actual gap types, data binding, and presentation; local rerun pending.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -35,13 +35,14 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Confirmation Sequence Diagnostics
 [COMPLETE, VERIFIED] Confirmation Sequence Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Evidence Sufficiency Gap Diagnostics
-[IN PROGRESS, LOCAL TEST/BUILD PENDING] Evidence Sufficiency Gap Lightweight Surface + Presentation
-  - research_evidence_ui now exposes evidence_sufficiency_gaps from durable membership/history only
-  - per candidate: 3d/7d/14d current memberships, required memberships, nonnegative membership gap, and evidence_sufficient remain separate
-  - confirmation observation count, minimum=3, confirmation_observation_gap, and confirmation_layer_sufficient remain separate from window membership sufficiency
-  - readiness_score remains None; automatic_scoring=False; best_window_selection=False; gap diagnostics are not trading readiness or production approval
-  - research-evidence tests now cover normal and missing-file fail-closed gap behavior
-  - /research presentation contract has been added; front-end rendering implementation is the remaining local/build validation target in this execution branch
+[COMPLETE, LOCAL TEST/BUILD PENDING] Evidence Sufficiency Gap Lightweight Surface + Presentation
+  - research_evidence_ui exposes evidence_sufficiency_gaps from durable membership/history only
+  - /research now binds evidence_sufficiency_gaps candidates directly
+  - panel renders 3d/7d/14d current memberships, required memberships, Membership gap, and window evidence sufficiency independently
+  - panel separately renders Confirmation observation gap and confirmation-layer sufficiency
+  - readiness_score remains none; presentation explicitly states gaps are not readiness percentage, production score, favorable-window ranking, tuning, promotion, or live unlock
+  - backend surface and presentation contracts cover normal and fail-closed behavior
+  - current implementation requires local frontend build + focused/full regression before VERIFIED
 [NEXT] Local frontend production build + focused/full regression for evidence-sufficiency gap surface/presentation.
 [NEXT AFTER GREEN] Research Evidence Maturity / Missing-Evidence Summary: consolidate which evidence dimensions are present versus missing for human review without producing a readiness score, ranking, promotion decision, or live unlock.
 [ONGOING] V6 prospective evidence.
@@ -52,7 +53,7 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified regression GREEN: 597 passed at 06187a8. Current evidence-sufficiency gap lightweight surface/presentation remains LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified regression GREEN: 597 passed at 06187a8. Current evidence-sufficiency gap lightweight surface/presentation remains LOCAL TEST/BUILD PENDING after the missing panel was implemented. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
