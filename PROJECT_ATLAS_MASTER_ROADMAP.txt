@@ -6,8 +6,8 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 5e8fcbb120fcfbc9910fb9440d9863dd7be2c390
-Focused prospective multi-window consistency history: 4 passed in 0.48s. Full regression: 580 passed, 2 warnings in 35.04s. Failures: 0.
+Tested commit: c667430fdf2550c36b1a1d358b98634dc1912303
+Focused prospective history + research evidence surface: 6 passed in 0.36s. Full regression: 580 passed, 2 warnings in 39.22s. Failures: 0.
 All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
@@ -26,19 +26,17 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Predeclared Multi-Window Diversity Diagnostics
 [COMPLETE, VERIFIED] Multi-Window Lightweight Presentation
 [COMPLETE, VERIFIED] Prospective Multi-Window Consistency History Engine
-  - evaluates predeclared 3d/7d/14d methodology across successive persisted forward snapshots
-  - duplicate refreshes do not create additional observations
-  - new prospective membership or increased forward-closed evidence is required between qualifying observations
-  - each point preserves all three window labels, sufficiency, diversity state, and cross-window disagreement
-  - best_window_selection remains false
-  - descriptive research only; no production score, gate tuning, promotion, live unlock, or real-money execution
-[COMPLETE, LOCAL TEST PENDING] Prospective Multi-Window Consistency History Lightweight Surface
-  - research_evidence_ui now exposes observation history from durable membership/history only
-  - output includes observation count, duplicate-refresh resistance, new-evidence requirement, latest point, full series, and skipped duplicate count
-  - separation explicitly states consistency history is not trading readiness or production approval
-  - missing durable files fail closed
-[NEXT] Local focused/full regression for the new lightweight history surface.
-[NEXT AFTER GREEN] Prospective Consistency History Front-End Presentation: render descriptive point-in-time consistency/disagreement history in /research without ranking windows, automatic scoring, or promotion logic.
+[COMPLETE, VERIFIED] Prospective Multi-Window Consistency History Lightweight Surface
+[COMPLETE, LOCAL TEST/BUILD PENDING] Prospective Consistency History Front-End Presentation
+  - /research now renders the prospective new-evidence-only consistency series
+  - each observation shows timestamp, prospective membership count, forward-closed count, and interpretable-window count
+  - all 3d/7d/14d labels, membership thresholds, sufficiency, diversity state, and cross-window disagreement remain visible
+  - duplicate-refresh resistance and new-evidence requirements are shown explicitly as method boundaries
+  - skipped duplicate refresh count is visible
+  - no best-window selection, production scoring, promotion logic, live unlock, or real-money execution
+  - presentation contract test added to guard the method boundary and required fields
+[NEXT] Local frontend production build + focused/full regression for the consistency-history presentation.
+[NEXT AFTER GREEN] Prospective Consistency Change Diagnostics: derive descriptive transition counts across qualifying history observations (window label transitions, disagreement transitions, evidence-sufficiency transitions) while preserving new-evidence-only observations and avoiding any production score or automatic promotion.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -47,22 +45,26 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified regression GREEN: 580 passed at 5e8fcbb. Current lightweight consistency-history surface changes LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified regression GREEN: 580 passed at c667430. Current front-end consistency-history presentation changes LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_multi_window_history.py tests/test_v6_research_evidence_ui.py -q
+Push-Location frontend
+npm run build
+Pop-Location
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_multi_window_history.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Prospective Consistency History Front-End Presentation:
-- render the prospective new-evidence-only 3d/7d/14d history in /research;
-- preserve each observation timestamp, all window labels, sufficiency, and disagreement without ranking or selecting a best window;
-- make duplicate-refresh resistance and new-evidence requirements visible as method boundaries;
-- keep the presentation descriptive and lightweight;
+Prospective Consistency Change Diagnostics:
+- derive descriptive transition counts across qualifying new-evidence-only consistency observations;
+- report per-window comparison-label transitions and evidence-sufficiency transitions;
+- report cross-window disagreement entering/leaving/persisting states;
+- preserve complete point-in-time history and never collapse transitions into a favorable score;
+- expose through lightweight research evidence only after implementation;
 - no automatic gate tuning, promotion, production mutation, live unlock, or real-money execution.
 
 END OF MASTER ROADMAP
