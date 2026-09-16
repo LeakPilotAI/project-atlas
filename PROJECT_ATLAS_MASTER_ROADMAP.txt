@@ -7,12 +7,8 @@ When user says execute, implement next roadmap item directly when tooling permit
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: a13a04ca40c7b0e112ddefaaa4e7a4933c5d78d8
-Frontend production build: GREEN. Next.js 16.2.12 compiled successfully; TypeScript finished; / and /research prerendered static.
-Focused validation: 28 passed, 1 warning in 2.50s.
-Full regression: 568 passed, 2 warnings in 39.83s.
-Failures: 0.
-Warnings: dependency deprecations only (discord audioop; Starlette/httpx TestClient).
-This supersedes the prior 565-test checkpoint.
+Frontend production build GREEN. Focused: 28 passed, 1 warning in 2.50s. Full regression: 568 passed, 2 warnings in 39.83s. Failures: 0.
+Lightweight Diversity Integration changes after this checkpoint are LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -21,43 +17,46 @@ ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
 [COMPLETE, VERIFIED] V6 research stack through Snapshot Independence Hardening
 [COMPLETE, VERIFIED] Research Evidence Front-End Panel
-  - /research production build verified green
-  - uses existing lightweight research-evidence endpoint only
-  - explicit NOT_READY/live-lock boundaries preserved
 [COMPLETE, VERIFIED] Forward Evidence Window Diversity / Regime Coverage Diagnostics
-  - reads append-only prospective membership + latest forward snapshot only
-  - temporal diversity requires memberships across >=3 UTC calendar days
-  - regime diversity requires >=2 contemporaneously recorded pre-entry regimes with >=10 memberships each
-  - missing or concentrated evidence fails closed
-  - GET /api/validation/challengers/diversity remains read-only research status
-  - no automatic promotion, production mutation, gate changes, or live unlock
-[NEXT] Lightweight Diversity Integration + Main Command Center Navigation
-  - surface diversity diagnostics in existing research-evidence read model and /research panel
-  - add simple /research navigation link from main Command Center
-  - no heavy recompute or domain coupling
-[NEXT] Forward evidence diversity trend/history diagnostics if needed after integration.
+[COMPLETE, LOCAL TEST/BUILD PENDING] Lightweight Diversity Integration + Navigation
+  - research_evidence_ui now reads diversity through the existing durable membership/history read path
+  - custom membership_path used by tests/status is propagated into diversity diagnostics; no hidden production-data fallback
+  - research evidence response adds established candidates, per-candidate diversity diagnostics, snapshot availability, and explicit 3-day/2-regime/10-membership thresholds
+  - separation explicitly states diversity is not trading readiness or production approval
+  - /research displays diversity-established count and per-candidate day/regime progress
+  - global Atlas layout provides a Research Evidence navigation control, making /research directly reachable from Command Center without coupling Command Center data logic
+  - no heavy retrospective/prospective/scorecard recompute added
+  - no automatic promotion, production mutation, gate changes, live unlock, or real-money execution
+  - research evidence tests extended for diversity integration and missing-data fail-closed behavior
+[NEXT] Local frontend build + focused/full regression validation.
+[NEXT AFTER GREEN] Forward Evidence Diversity Trend/History Diagnostics: persist/derive longitudinal diversity progression without rewriting history, so one current aggregate cannot hide later concentration/regime collapse.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
-[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, and operational review.
+[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
 
 RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Engineering regression GREEN: 568 passed at a13a04ca. Frontend production build GREEN. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified regression GREEN: 568 passed at a13a04ca. Current integration LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-LOCAL UPDATE
+LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
+Push-Location frontend
+npm run build
+Pop-Location
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_research_evidence_ui.py tests/test_v6_window_diversity.py tests/test_v6_research_status_command_center.py tests/test_command_center_summary_v4.py tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest -q
 
-NEXT EXECUTION
-Lightweight Diversity Integration + Main Command Center Navigation:
-- add diversity status to research_evidence_ui using read-only membership/history reads;
-- expose concise diversity state in /research without heavy research recompute;
-- add main Command Center link to /research;
-- preserve exact legacy guardrails and exact perp note compatibility;
+NEXT EXECUTION AFTER GREEN
+Forward Evidence Diversity Trend/History Diagnostics:
+- use append-only forward evidence and contemporaneously frozen membership only;
+- expose whether diversity broadens, remains stable, or collapses over successive evidence windows;
+- fail closed on insufficient longitudinal evidence;
+- do not reinterpret historical membership or substitute retrospective classifications;
 - no automatic promotion, production mutation, or real-money execution.
 
 END OF MASTER ROADMAP
