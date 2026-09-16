@@ -88,6 +88,13 @@ async def challenger_diversity_trends_endpoint()->JSONResponse:
         body=diversity_trends()
     except Exception as e:body={"ok":False,"title":"ATLAS V6 FORWARD DIVERSITY TRENDS","error":str(e)[:240],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
     return _json_http(body)
+@router.get("/challengers/fixed-window-diversity")
+async def challenger_fixed_window_diversity_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_fixed_window_diversity import fixed_window_diversity
+        body=fixed_window_diversity()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 FIXED-DURATION FORWARD DIVERSITY","error":str(e)[:240],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)
 @router.get("/challengers/research-evidence")
 async def challenger_research_evidence_endpoint()->JSONResponse:
     try:
