@@ -6,9 +6,12 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 1495f2616df66f3f6a8fe83153938feacc1976c8
-Focused: 31 passed, 1 warning in 2.36s. Full regression: 559 passed, 2 warnings in 40.56s. Failures: 0.
-Research Evidence UI, Forward Risk Stability, Command Center Evidence Presentation, and Snapshot Independence changes after this checkpoint are LOCAL TEST PENDING.
+Tested commit: 18f7c9da7af334f051d7038f1b466169f771fafe
+Focused post-559 validation: 29 passed, 1 warning in 2.02s.
+Full regression: 565 passed, 2 warnings in 37.41s.
+Failures: 0.
+Warnings: dependency deprecations only (discord audioop; Starlette/httpx TestClient).
+This supersedes the prior 559-test checkpoint.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -16,21 +19,18 @@ RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic r
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
 [COMPLETE, VERIFIED] V6 research stack through Multi-Snapshot Prospective Stability
-[COMPLETE, LOCAL TEST PENDING] V6 Research Evidence UI Integration
-[COMPLETE, LOCAL TEST PENDING] Contemporaneous Baseline Risk-Stability Persistence
-[COMPLETE, LOCAL TEST PENDING] Command Center Research Evidence Presentation
-[COMPLETE, LOCAL TEST PENDING] Forward Snapshot Independence Hardening — execution 2026-09-16
-  - qualifying stability snapshots now require materially new challenger closed-trade evidence versus the prior counted snapshot
-  - minimum new closes = 1; minimum temporal separation remains >=6 hours as a secondary independence condition
-  - repeated refreshes with unchanged close counts are rejected as unchanged evidence and cannot manufacture stability
-  - snapshots with new closes but insufficient time separation are rejected as temporally dependent
-  - exposes raw qualifying count, independent qualifying count, unchanged/time rejection counts, and independence_established
-  - human review still requires >=3 independent snapshots, positive expectancy/lower CI, and contemporaneous drawdown no worse than baseline
-  - append-only history unchanged; old evidence remains readable; risk-missing old evidence still fails closed
+[COMPLETE, VERIFIED] V6 Research Evidence UI Integration
+[COMPLETE, VERIFIED] Contemporaneous Baseline Risk-Stability Persistence
+[COMPLETE, VERIFIED] Command Center Research Evidence Presentation
+[COMPLETE, VERIFIED] Forward Snapshot Independence Hardening
+  - qualifying stability snapshots require materially new challenger closed-trade evidence versus the prior counted snapshot
+  - minimum new closes = 1; minimum temporal separation remains >=6 hours
+  - repeated refreshes with unchanged close counts cannot manufacture stability
+  - new closes without sufficient time separation remain dependent
+  - human review requires >=3 independent snapshots, positive expectancy/lower CI, and contemporaneous drawdown no worse than baseline
+  - append-only history preserved; old risk-missing evidence fails closed
   - no production mutation, automatic promotion, live unlock, or automatic real-money execution
-  - tests now cover new-close independence, unchanged refresh rejection, temporal dependence, risk stability, and fail-closed old history
-[NEXT] Local focused + full regression validation for all post-559 changes.
-[NEXT AFTER GREEN] Research Evidence Front-End Panel: inspect current web architecture and surface the existing lightweight Command Center research_evidence block without coupling domains or triggering heavy research work.
+[NEXT] Research Evidence Front-End Panel: inspect current web architecture and surface the existing lightweight Command Center research_evidence block without coupling domains or triggering heavy research work.
 [NEXT] Forward evidence window diversity / regime coverage diagnostics before any human promotion framework.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
@@ -40,22 +40,22 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified engineering regression GREEN: 559 passed at 1495f261. All post-559 changes LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Engineering regression GREEN: 565 passed at 18f7c9da. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-LOCAL COMMANDS
-cd "D:\Work\Project Atlas"
-git fetch origin
-git checkout chatgpt/atlas-rebuild-v1
-git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_v6_research_status_command_center.py tests/test_command_center_summary_v4.py tests/test_v6_research_evidence_ui.py tests/test_v6_forward_monitor.py tests/test_edge_http.py -q
-backend\.venv\Scripts\python.exe -m pytest -q
-
-NEXT EXECUTION AFTER GREEN
+NEXT EXECUTION
 Research Evidence Front-End Panel:
 - inspect existing Command Center web components and API consumption first;
 - render lightweight research_evidence only; do not create another research computation path;
 - clearly distinguish research progress, human-review eligibility, and NOT_READY/live locked state;
 - preserve perps/equities/research separation and existing UI behavior;
 - no production mutation, automatic promotion, or live unlock.
+
+LOCAL UPDATE / TEST
+cd "D:\Work\Project Atlas"
+git fetch origin
+git checkout chatgpt/atlas-rebuild-v1
+git reset --hard origin/chatgpt/atlas-rebuild-v1
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_v6_research_status_command_center.py tests/test_command_center_summary_v4.py tests/test_v6_research_evidence_ui.py tests/test_v6_forward_monitor.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest -q
 
 END OF MASTER ROADMAP
