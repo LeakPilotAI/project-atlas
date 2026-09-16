@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 06187a85b1cc6e8b4d680a0a57fa04e095486903
-Focused evidence-sufficiency-gap + multi-window-history: 6 passed in 0.43s. Full regression: 597 passed, 2 warnings in 36.14s. Failures: 0.
-Latest presentation validation at 3e7ef2c: frontend production build GREEN; focused suite 8 passed / 1 failed and full regression 597 passed / 1 failed, 2 warnings in 35.48s. Failure correctly identified a missing /research evidence-gap panel. Commit 26da9fc adds the actual gap types, data binding, and presentation; local rerun pending.
+Tested commit: 8c6216568d16eafe59edd01b1d3ccc77faa06cf8
+Frontend production build GREEN. Focused evidence-gap/evidence-ui/page-contract suite: 9 passed in 0.46s. Full regression: 598 passed, 2 warnings in 35.37s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -35,16 +35,17 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Confirmation Sequence Diagnostics
 [COMPLETE, VERIFIED] Confirmation Sequence Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Evidence Sufficiency Gap Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Evidence Sufficiency Gap Lightweight Surface + Presentation
-  - research_evidence_ui exposes evidence_sufficiency_gaps from durable membership/history only
-  - /research now binds evidence_sufficiency_gaps candidates directly
-  - panel renders 3d/7d/14d current memberships, required memberships, Membership gap, and window evidence sufficiency independently
-  - panel separately renders Confirmation observation gap and confirmation-layer sufficiency
-  - readiness_score remains none; presentation explicitly states gaps are not readiness percentage, production score, favorable-window ranking, tuning, promotion, or live unlock
-  - backend surface and presentation contracts cover normal and fail-closed behavior
-  - current implementation requires local frontend build + focused/full regression before VERIFIED
-[NEXT] Local frontend production build + focused/full regression for evidence-sufficiency gap surface/presentation.
-[NEXT AFTER GREEN] Research Evidence Maturity / Missing-Evidence Summary: consolidate which evidence dimensions are present versus missing for human review without producing a readiness score, ranking, promotion decision, or live unlock.
+[COMPLETE, VERIFIED] Evidence Sufficiency Gap Lightweight Surface + Presentation
+[COMPLETE, LOCAL TEST PENDING] Research Evidence Maturity / Missing-Evidence Summary
+  - new v6_evidence_maturity service consolidates descriptive PRESENT/MISSING states across eight dimensions: forward sample, uncertainty support, stability, diversity, longitudinal history, multi-window evidence, confirmation depth, and gap closure
+  - output lists present_dimensions and missing_dimensions for human review only
+  - aggregate_score=None and readiness_percentage=None; automatic_scoring=False; weighted_scoring=False; best_window_selection=False
+  - production promotion, live capital, and automatic real-money execution remain disabled
+  - missing durable files fail closed with no candidates
+  - research_evidence_ui now exposes research_evidence_maturity through the lightweight durable read-only surface
+  - evidence-ui tests cover normal and missing-file maturity behavior
+[NEXT] Local focused/full regression for Research Evidence Maturity / Missing-Evidence Summary.
+[NEXT AFTER GREEN] Research Evidence Maturity Lightweight Presentation: render present/missing evidence dimensions on /research without aggregate scoring, percentage, ranking, production interpretation, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -53,24 +54,22 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified regression GREEN: 597 passed at 06187a8. Current evidence-sufficiency gap lightweight surface/presentation remains LOCAL TEST/BUILD PENDING after the missing panel was implemented. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified regression GREEN: 598 passed at 8c62165. Current Research Evidence Maturity / Missing-Evidence Summary is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_evidence_sufficiency_gaps.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_evidence_maturity.py tests/test_v6_research_evidence_ui.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Research Evidence Maturity / Missing-Evidence Summary:
-- consolidate descriptive presence/missing state for forward sample, uncertainty support, stability snapshots, diversity, longitudinal history, multi-window evidence, confirmation depth, and gap closure;
+Research Evidence Maturity Lightweight Presentation:
+- expose the eight descriptive evidence dimensions on /research as PRESENT/MISSING only;
+- show present_dimensions and missing_dimensions without collapsing them into a score or percent;
 - preserve durable point-in-time/new-evidence-only semantics;
-- no aggregate readiness percentage, weighted score, favorable-window ranking, automatic tuning, promotion, or live decision;
+- no weighted scoring, favorable-window ranking, automatic tuning, promotion, or live readiness decision;
 - human review only; no real-money execution.
 
 END OF MASTER ROADMAP
