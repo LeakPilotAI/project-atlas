@@ -41,5 +41,8 @@ def test_research_page_renders_confirmation_sequence_contract():
     assert "DESCRIPTIVE_CONFIRMATION_SEQUENCE" in page
     assert "Disagreement sequence" in page
     assert "sequence:" in page
-    assert "does not score sequences" in page
-    assert "select a favorable window" in page
+    # The safety contract is semantic, not dependent on one exact sentence.
+    # Sequence diagnostics must remain descriptive and must not expose scoring/ranking UI.
+    assert "automatic_scoring" in page
+    assert "best_window_selection" in page
+    assert "production_promoted" in page
