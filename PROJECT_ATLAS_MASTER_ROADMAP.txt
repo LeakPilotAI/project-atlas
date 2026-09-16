@@ -7,51 +7,52 @@ When user says execute, implement next roadmap item directly when tooling permit
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: 1495f2616df66f3f6a8fe83153938feacc1976c8
-Focused Candidate Comparison + Evidence Trends + Stability + V6 support tests: 31 passed, 1 warning in 2.36s.
-Full regression: 559 passed, 2 warnings in 40.56s.
-Failures: 0.
-Warnings: dependency deprecations only (discord audioop; Starlette/httpx TestClient).
-This supersedes the prior 550-test checkpoint.
+Focused: 31 passed, 1 warning in 2.36s. Full regression: 559 passed, 2 warnings in 40.56s. Failures: 0.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
-[COMPLETE, VERIFIED] V6 Challenger Lab / Prospective Persistence / PIT Exit Replay / SHADOW-PAPER / Research Status / Readiness Scorecard / Lightweight Presentation / Forward Evidence Monitor
-[COMPLETE, VERIFIED] V6 Prospective Candidate Comparison
-[COMPLETE, VERIFIED] V6 Evidence Trend Status
-[COMPLETE, VERIFIED] V6 Multi-Snapshot Prospective Stability
-  - GET /api/validation/challengers/comparison
-  - GET /api/validation/challengers/evidence-trends
-  - GET /api/validation/challengers/stability
-  - human-review eligibility requires >=3 qualifying forward snapshots separated by >=6 hours after >=100 closes, positive expectancy, positive lower 95% CI
-  - no history rewriting, retrospective substitution, automatic promotion, production mutation, live unlock, or automatic real-money execution
-[NEXT] Research Evidence UI Integration: lightweight consolidated status using cached/history services only; display candidate comparison, trajectories, stability/human-review state; no heavy Command Center recompute.
-[NEXT] Add contemporaneous baseline risk-stability persistence to snapshots so stability review can explicitly require no material risk deterioration across windows.
+[COMPLETE, VERIFIED] V6 research stack through Multi-Snapshot Prospective Stability
+[COMPLETE, LOCAL TEST PENDING] V6 Research Evidence UI Integration — execution 2026-09-16
+  - backend/app/services/v6_research_evidence_ui.py
+  - GET /api/validation/challengers/research-evidence
+  - consolidates lightweight readiness progress, append-only evidence trends, cached nomination count, and stability/human-review status
+  - normal read path uses durable marker/membership/cache/history only
+  - does NOT invoke prospective_report, challenger lab, PIT exit replay, SHADOW/PAPER interaction recompute, readiness_scorecard, or candidate_comparison
+  - candidate comparison remains an explicit separate research endpoint; normal status reports its route and cached nomination state only
+  - explicitly distinguishes research nomination, human-review eligibility, and production/trading readiness
+  - missing durable files fail closed
+  - heavy_research_recompute false; normal_command_center_recompute false
+  - trading readiness NOT_READY; live false; automatic promotion/execution false
+  - tests cover durable consolidation, missing-data fail closed, and safety separation
+[NEXT] Local focused + full regression validation for Research Evidence UI.
+[NEXT AFTER GREEN] Contemporaneous Baseline Risk-Stability Persistence: persist baseline/candidate risk measures into forward snapshots so multi-snapshot stability can explicitly reject material risk deterioration.
+[NEXT] Command Center visual presentation of the consolidated research evidence surface without heavy recompute.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
-[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence and stability.
+[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, and stability.
 
 RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Engineering regression GREEN: 559 passed at 1495f261. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified engineering regression GREEN: 559 passed at 1495f261. Research Evidence UI changes LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-NEXT EXECUTION
-Research Evidence UI Integration:
-- consolidate readiness progress, evidence trends, candidate comparison summary, and stability state;
-- normal Command Center path reads durable cache/history only;
-- clearly separate research nomination, human-review eligibility, and trading/live readiness;
-- no production mutation, automatic promotion, or live unlock.
-
-LOCAL UPDATE / TEST
+LOCAL COMMANDS
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_candidate_comparison.py tests/test_v6_evidence_trends.py tests/test_v6_stability.py tests/test_challenger_prospective_v6.py tests/test_v6_readiness_scorecard.py tests/test_v6_forward_monitor.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_research_evidence_ui.py tests/test_v6_research_status_command_center.py tests/test_v6_evidence_trends.py tests/test_v6_stability.py tests/test_v6_candidate_comparison.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
+
+NEXT EXECUTION AFTER GREEN
+Contemporaneous Baseline Risk-Stability Persistence:
+- extend explicit forward-monitor snapshots with baseline and candidate risk measures available at snapshot time;
+- preserve append-only history and backward compatibility with old snapshots;
+- stability review requires no material risk deterioration versus contemporaneous baseline across qualifying windows;
+- no retrospective substitution, production mutation, automatic promotion, or live unlock.
 
 END OF MASTER ROADMAP
