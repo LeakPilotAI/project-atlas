@@ -65,3 +65,14 @@ def test_research_page_renders_evidence_maturity_contract():
     assert "aggregate_score" in page
     assert "readiness_percentage" in page
     assert "research_evidence_maturity" in page
+
+
+def test_research_page_renders_maturity_change_history_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Maturity change history / new-evidence transitions" in page
+    assert "DESCRIPTIVE_MATURITY_NEW_EVIDENCE_TRANSITIONS" in page
+    assert "MISSING->PRESENT" in page
+    assert "PRESENT->PRESENT" in page
+    assert "duplicate refresh resistant" in page
+    assert "maturity_change_history" in page
+    assert "readiness_percentage" in page
