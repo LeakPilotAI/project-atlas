@@ -67,6 +67,13 @@ async def challenger_evidence_trends_endpoint()->JSONResponse:
         body=evidence_trends()
     except Exception as e:body={"ok":False,"title":"ATLAS V6 EVIDENCE TRENDS","error":str(e)[:240],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
     return _json_http(body)
+@router.get("/challengers/stability")
+async def challenger_stability_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_stability import stability_report
+        body=stability_report()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 MULTI-SNAPSHOT PROSPECTIVE STABILITY","error":str(e)[:240],"human_review_eligible":[],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)
 @router.get("/challengers/exit-replay")
 async def challenger_exit_replay_endpoint()->JSONResponse:
     try:
