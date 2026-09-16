@@ -6,9 +6,13 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 18f7c9da7af334f051d7038f1b466169f771fafe
-Focused: 29 passed, 1 warning in 2.02s. Full regression: 565 passed, 2 warnings in 37.41s. Failures: 0.
-Research Front-End + Forward Diversity changes after this checkpoint are LOCAL TEST/BUILD PENDING.
+Tested commit: a13a04ca40c7b0e112ddefaaa4e7a4933c5d78d8
+Frontend production build: GREEN. Next.js 16.2.12 compiled successfully; TypeScript finished; / and /research prerendered static.
+Focused validation: 28 passed, 1 warning in 2.50s.
+Full regression: 568 passed, 2 warnings in 39.83s.
+Failures: 0.
+Warnings: dependency deprecations only (discord audioop; Starlette/httpx TestClient).
+This supersedes the prior 565-test checkpoint.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -16,20 +20,22 @@ RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic r
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
 [COMPLETE, VERIFIED] V6 research stack through Snapshot Independence Hardening
-[COMPLETE, LOCAL TEST/BUILD PENDING] Research Evidence Front-End Panel
-  - /research consumes existing lightweight research-evidence endpoint only
-  - displays forward evidence and explicit NOT_READY/live-lock boundaries
-[COMPLETE, LOCAL TEST PENDING] Forward Evidence Window Diversity / Regime Coverage Diagnostics
-  - new v6_window_diversity service reads only append-only prospective membership + latest forward snapshot
-  - candidate universe comes from latest persisted forward evidence; no retrospective candidate substitution
+[COMPLETE, VERIFIED] Research Evidence Front-End Panel
+  - /research production build verified green
+  - uses existing lightweight research-evidence endpoint only
+  - explicit NOT_READY/live-lock boundaries preserved
+[COMPLETE, VERIFIED] Forward Evidence Window Diversity / Regime Coverage Diagnostics
+  - reads append-only prospective membership + latest forward snapshot only
   - temporal diversity requires memberships across >=3 UTC calendar days
   - regime diversity requires >=2 contemporaneously recorded pre-entry regimes with >=10 memberships each
-  - fails closed when history/snapshot/diversity evidence is absent or concentrated
-  - descriptive human-review research only; no automatic promotion, production mutation, gate changes, or live unlock
-  - GET /api/validation/challengers/diversity exposes read-only status
-  - dedicated tests cover diverse, clustered/single-regime, and missing-evidence cases
-[NEXT] Local frontend build + focused backend + full regression validation for pending work.
-[NEXT AFTER GREEN] Integrate diversity status into lightweight Research Evidence endpoint/panel without heavy recompute, then link /research from main Command Center.
+  - missing or concentrated evidence fails closed
+  - GET /api/validation/challengers/diversity remains read-only research status
+  - no automatic promotion, production mutation, gate changes, or live unlock
+[NEXT] Lightweight Diversity Integration + Main Command Center Navigation
+  - surface diversity diagnostics in existing research-evidence read model and /research panel
+  - add simple /research navigation link from main Command Center
+  - no heavy recompute or domain coupling
+[NEXT] Forward evidence diversity trend/history diagnostics if needed after integration.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, and operational review.
@@ -38,25 +44,20 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified regression GREEN: 565 passed at 18f7c9da. Current changes LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Engineering regression GREEN: 568 passed at a13a04ca. Frontend production build GREEN. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-LOCAL UPDATE / TEST
+LOCAL UPDATE
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_window_diversity.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_status_command_center.py tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_v6_forward_monitor.py tests/test_edge_http.py -q
-backend\.venv\Scripts\python.exe -m pytest -q
 
-NEXT EXECUTION AFTER GREEN
-Lightweight diversity integration:
-- surface diversity diagnostics in the existing research-evidence read model and /research panel;
-- do not create heavy recomputation or mutate prospective membership;
-- keep diversity separate from production approval and trading readiness;
-- add a simple main Command Center navigation link after frontend build verification;
+NEXT EXECUTION
+Lightweight Diversity Integration + Main Command Center Navigation:
+- add diversity status to research_evidence_ui using read-only membership/history reads;
+- expose concise diversity state in /research without heavy research recompute;
+- add main Command Center link to /research;
+- preserve exact legacy guardrails and exact perp note compatibility;
 - no automatic promotion, production mutation, or real-money execution.
 
 END OF MASTER ROADMAP
