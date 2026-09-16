@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 0566b573109690bb0d99415b111a2a34c8f89a15
-Focused consistency-change + history: 7 passed in 0.50s. Full regression: 584 passed, 2 warnings in 36.79s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
+Tested commit: 661a48a14d5e8cc125dfa445589e5d1617715a61
+Frontend production build GREEN. Focused consistency-change surface/presentation: 7 passed in 0.46s. Full regression: 585 passed, 2 warnings in 40.34s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -29,15 +29,17 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Prospective Multi-Window Consistency History Lightweight Surface
 [COMPLETE, VERIFIED] Prospective Consistency History Front-End Presentation
 [COMPLETE, VERIFIED] Prospective Consistency Change Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Consistency Change Lightweight Surface + Front-End Presentation
-  - research_evidence_ui exposes descriptive transition diagnostics from durable membership/history only
-  - candidate output includes observation/transition counts, latest transition, full transitions, and new-evidence-only boundary
-  - /research renders transition intervals, disagreement transitions, 3d/7d/14d comparison changes, sufficiency changes, diversity changes, membership growth, and forward-closed growth
-  - duplicate-refresh exclusion remains inherited from prospective consistency history
-  - presentation explicitly states no automatic scoring, favorable-window ranking, gate retuning, promotion, or capital unlock
-  - tests cover lightweight exposure, fail-closed behavior, trading-readiness separation, and front-end method contract
-[NEXT] Local frontend production build + focused/full regression for consistency-change surface/presentation.
-[NEXT AFTER GREEN] Transition Persistence / Reversal Diagnostics: describe whether qualifying comparison/disagreement transitions persist or reverse across subsequent new-evidence observations, without scoring, ranking, retuning, or promotion.
+[COMPLETE, VERIFIED] Consistency Change Lightweight Surface + Front-End Presentation
+[COMPLETE, LOCAL TEST PENDING] Transition Persistence / Reversal Diagnostics
+  - evaluates each transition against the next qualifying new-evidence observation only
+  - requires three qualifying observations before a confirmation check exists
+  - reports each 3d/7d/14d outcome as PERSISTED, REVERSED, CHANGED_AGAIN, or BECAME_INSUFFICIENT
+  - reports disagreement state as PERSISTED, REVERSED, or CHANGED_AGAIN
+  - duplicate refreshes cannot create confirmation observations
+  - chronology and all predeclared windows remain preserved
+  - no ranking, automatic scoring, gate tuning, promotion, live unlock, or real-money execution
+[NEXT] Local focused/full regression for transition persistence/reversal diagnostics.
+[NEXT AFTER GREEN] Transition Persistence Lightweight Surface + Presentation: expose confirmation checks through durable research evidence and /research while preserving descriptive-only boundaries.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -46,26 +48,23 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified regression GREEN: 584 passed at 0566b57. Current consistency-change lightweight surface/presentation LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified regression GREEN: 585 passed at 661a48a. Current transition persistence/reversal diagnostics LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_consistency_changes.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_transition_persistence.py tests/test_v6_consistency_changes.py tests/test_v6_multi_window_history.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Transition Persistence / Reversal Diagnostics:
-- evaluate successive qualifying new-evidence transitions descriptively;
-- report whether per-window comparison transitions persist, reverse, or remain insufficient across subsequent observations;
-- report whether disagreement entering/leaving states persist or reverse;
-- preserve point-in-time chronology and duplicate-refresh resistance;
-- never convert persistence into a production score or favorable-window rank;
+Transition Persistence Lightweight Surface + Presentation:
+- expose descriptive persistence/reversal confirmation checks through research_evidence_ui from durable membership/history only;
+- render each confirmation interval and all 3d/7d/14d outcomes on /research;
+- show disagreement persistence/reversal descriptively;
+- make the three-observation minimum and new-evidence-only boundary explicit;
+- never convert confirmation outcomes into a production score or favorable-window ranking;
 - no automatic gate tuning, promotion, production mutation, live unlock, or real-money execution.
 
 END OF MASTER ROADMAP
