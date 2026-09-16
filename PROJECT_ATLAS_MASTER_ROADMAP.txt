@@ -1,12 +1,12 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
-Updated: 2026-09-15
+Updated: 2026-09-16
 Branch: chatgpt/atlas-rebuild-v1
 
 PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT
-User tested d94603de: focused 25 passed, 1 warning; full regression 550 passed, 2 warnings; 0 failures. Candidate-comparison and evidence-trend changes after that checkpoint remain local-test pending.
+User tested d94603de: focused 25 passed, 1 warning; full regression 550 passed, 2 warnings; 0 failures. Candidate Comparison, Evidence Trends, and Stability changes after that checkpoint remain local-test pending.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -15,19 +15,22 @@ ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
 [COMPLETE, VERIFIED] V6 Challenger Lab / Prospective Persistence / PIT Exit Replay / SHADOW-PAPER / Research Status / Readiness Scorecard / Lightweight Presentation / Forward Evidence Monitor
 [COMPLETE, LOCAL TEST PENDING] V6 Prospective Candidate Comparison
-[COMPLETE, LOCAL TEST PENDING] V6 Evidence Trend Status — execution 2026-09-15
-  - backend/app/services/v6_evidence_trends.py
-  - GET /api/validation/challengers/evidence-trends
-  - reads append-only v6_forward_evidence_history.jsonl only; never writes/recomputes history
-  - preserves chronological snapshot series for each challenger
-  - exposes close-count growth, expectancy trajectory/change, expectancy CI, sample-sufficiency and positive-CI transitions
-  - carries PIT replay path-coverage and SHADOW/PAPER prospective nomination trajectories in each point
-  - empty/missing history fails closed with zero snapshots
-  - normal Command Center recomputation false; trading readiness NOT_READY; live capital false; automatic promotion/execution false
-  - tests cover chronology, growth, transitions, empty history and safety locks
-[NEXT] Local focused + full regression validation for candidate comparison + evidence trends.
-[NEXT AFTER GREEN] Multi-Snapshot Prospective Stability Rules: require repeated forward evidence across independent snapshots/windows before candidate can enter human promotion review; no automatic production mutation.
-[NEXT] Research evidence UI integration after stability rules.
+[COMPLETE, LOCAL TEST PENDING] V6 Evidence Trend Status
+[COMPLETE, LOCAL TEST PENDING] V6 Multi-Snapshot Prospective Stability — execution 2026-09-16
+  - backend/app/services/v6_stability.py
+  - GET /api/validation/challengers/stability
+  - consumes append-only forward evidence history only
+  - qualifying snapshot requires >=100 closes, positive expectancy, positive lower 95% expectancy bound
+  - human-review eligibility requires >=3 qualifying snapshots separated by >=6 hours
+  - close-together snapshots cannot masquerade as independent stability evidence
+  - low sample, negative expectancy, or nonpositive CI fail closed
+  - human-review eligibility is informational only; production_promoted false
+  - retrospective substitution false; history_rewritten false
+  - trading readiness NOT_READY; live false; automatic promotion/execution false
+  - tests cover separated qualification, insufficient temporal independence, and fail-closed evidence
+[NEXT] Local focused + full regression validation for Candidate Comparison + Evidence Trends + Stability.
+[NEXT AFTER GREEN] Research Evidence UI Integration: lightweight consolidated status using cached/history services only; display candidate comparison, trajectories, stability/human-review state; no heavy Command Center recompute.
+[NEXT] Add contemporaneous baseline risk-stability persistence to snapshots so stability review can explicitly require no material risk deterioration across windows.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence and stability.
@@ -36,23 +39,21 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified engineering regression GREEN: 550 passed at d94603de. Current candidate-comparison + trend changes LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified engineering regression GREEN: 550 passed at d94603de. Current Candidate Comparison + Trends + Stability LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL COMMANDS
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_candidate_comparison.py tests/test_v6_evidence_trends.py tests/test_challenger_prospective_v6.py tests/test_v6_readiness_scorecard.py tests/test_v6_forward_monitor.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_candidate_comparison.py tests/test_v6_evidence_trends.py tests/test_v6_stability.py tests/test_challenger_prospective_v6.py tests/test_v6_readiness_scorecard.py tests/test_v6_forward_monitor.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Multi-Snapshot Prospective Stability Rules:
-- consume append-only forward evidence snapshots only;
-- require multiple sufficiently separated snapshots/windows after >=100 closes;
-- require sustained positive expectancy and positive lower CI, not a single transient pass;
-- require no material risk deterioration relative to contemporaneous forward baseline;
-- output human-review eligibility only, never production promotion;
-- no live unlock or automatic real-money execution.
+Research Evidence UI Integration:
+- consolidate lightweight readiness progress, evidence trends, candidate comparison summary, and stability status;
+- prefer durable cache/history reads on normal refresh;
+- clearly separate research nomination, human-review eligibility, and trading/live readiness;
+- no production mutation, automatic promotion, or live unlock.
 
 END OF MASTER ROADMAP
