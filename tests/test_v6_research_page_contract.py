@@ -41,8 +41,16 @@ def test_research_page_renders_confirmation_sequence_contract():
     assert "DESCRIPTIVE_CONFIRMATION_SEQUENCE" in page
     assert "Disagreement sequence" in page
     assert "sequence:" in page
-    # The safety contract is semantic, not dependent on one exact sentence.
-    # Sequence diagnostics must remain descriptive and must not expose scoring/ranking UI.
     assert "automatic_scoring" in page
     assert "best_window_selection" in page
     assert "production_promoted" in page
+
+
+def test_research_page_renders_evidence_sufficiency_gap_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Evidence sufficiency gaps" in page
+    assert "DESCRIPTIVE_EVIDENCE_GAPS" in page
+    assert "Membership gap" in page
+    assert "Confirmation observation gap" in page
+    assert "readiness_score" in page
+    assert "evidence_sufficiency_gaps" in page
