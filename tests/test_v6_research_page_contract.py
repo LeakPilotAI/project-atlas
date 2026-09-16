@@ -54,3 +54,14 @@ def test_research_page_renders_evidence_sufficiency_gap_contract():
     assert "Confirmation observation gap" in page
     assert "readiness_score" in page
     assert "evidence_sufficiency_gaps" in page
+
+
+def test_research_page_renders_evidence_maturity_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Research evidence maturity / missing-evidence summary" in page
+    assert "DESCRIPTIVE_MATURITY_PRESENCE_MISSING" in page
+    assert "Present dimensions" in page
+    assert "Missing dimensions" in page
+    assert "aggregate_score" in page
+    assert "readiness_percentage" in page
+    assert "research_evidence_maturity" in page
