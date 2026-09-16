@@ -1,14 +1,15 @@
 import json
 from app.services.v6_stability import stability_report
 
-def _row(ts,closed=120,exp=0.15,ci_ok=True):
-    return {"event":"v6_forward_evidence_snapshot","timestamp":ts,"evidence":{"forward":{"trend_regime":{"closed":closed,"expectancy":exp,"uncertainty_supports_positive_edge":ci_ok}}}}
+def _row(ts,closed=120,exp=0.15,ci_ok=True,candidate_dd=8.0,baseline_dd=10.0):
+    return {"event":"v6_forward_evidence_snapshot","timestamp":ts,"evidence":{"forward":{"trend_regime":{"closed":closed,"expectancy":exp,"uncertainty_supports_positive_edge":ci_ok}},"risk_comparison":{"baseline":{"closed":120,"max_drawdown_r":baseline_dd},"candidates":{"trend_regime":{"closed":120,"max_drawdown_r":candidate_dd}}}}}
 def _write(path,rows):path.write_text("\n".join(json.dumps(r) for r in rows)+"\n",encoding="utf-8")
 
 def test_three_separated_qualifying_snapshots_enable_human_review_only(tmp_path):
     path=tmp_path/"history.jsonl"; _write(path,[_row("2026-09-15T00:00:00+00:00"),_row("2026-09-15T06:00:00+00:00"),_row("2026-09-15T12:00:00+00:00")])
     r=stability_report(path=path); c=r["candidates"]["trend_regime"]
     assert c["qualifying_snapshot_count"]==3
+    assert c["contemporaneous_risk_stable"] is True
     assert c["human_review_eligible"] is True
     assert c["production_promoted"] is False
     assert r["human_review_eligible"]==["trend_regime"]
