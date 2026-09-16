@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: bc6865a4a36124a3e2369dbb1a301d9e73ed27c7
-Frontend production build GREEN. Focused maturity/evidence-ui/page-contract suite: 10 passed in 0.48s. Full regression: 601 passed, 2 warnings in 36.55s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST PENDING.
+Tested commit: c314c80f188de20207706b9b6b4406641b277755
+Focused maturity-transition + multi-window-history suite: 7 passed in 0.45s. Full regression: 604 passed, 2 warnings in 36.15s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -38,16 +38,17 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Evidence Sufficiency Gap Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Research Evidence Maturity / Missing-Evidence Summary
 [COMPLETE, VERIFIED] Research Evidence Maturity Lightweight Presentation
-[COMPLETE, LOCAL TEST PENDING] Maturity Change History / New-Evidence Transition Diagnostics
-  - new v6_maturity_transitions service derives chronological dimension states from retained prospective multi-window observations only
-  - reports all eight declared maturity dimensions independently as PRESENT/MISSING and records MISSING->PRESENT, PRESENT->PRESENT, PRESENT->MISSING, or MISSING->MISSING transitions
-  - duplicate refreshes remain excluded by the underlying retained-history engine
-  - output exposes observation_count, transition_count, full states/transitions, and latest_transition for human review
-  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None, automatic_promotion=False
-  - production strategy remains unchanged; live capital and automatic real-money execution remain disabled
-  - missing durable files fail closed with no candidates
-[NEXT] Local focused maturity-transition + multi-window-history regression and full regression.
-[NEXT AFTER GREEN] Maturity Change History Lightweight Surface + Presentation: expose and render chronological per-dimension transitions without scoring, ranking, promotion, or live unlock.
+[COMPLETE, VERIFIED] Maturity Change History / New-Evidence Transition Diagnostics
+[COMPLETE, LOCAL TEST/BUILD PENDING] Maturity Change History Lightweight Surface + Presentation
+  - research_evidence_ui now exposes maturity_change_history from durable retained new-evidence observations only
+  - surface carries all declared maturity dimensions, observation_count, transition_count, full chronological transitions, latest_transition, duplicate-refresh resistance, and new-evidence-only flags
+  - /research renders each per-dimension transition with from/to transition labels and changed yes/no
+  - panel explicitly identifies duplicate refresh resistance and new-evidence-only semantics
+  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None; no ranking, tuning, promotion, or live unlock
+  - evidence-ui tests cover normal and missing-file fail-closed maturity-transition behavior
+  - page contract verifies method, transition labels, duplicate-refresh language, and no-percentage field
+[NEXT] Local frontend production build + focused maturity-transition/evidence-ui/page-contract regression + full regression.
+[NEXT AFTER GREEN] Maturity Transition Persistence / Reversal Diagnostics: describe whether per-dimension PRESENT/MISSING transitions persist, reverse, or change again on the next qualifying observation, without scoring, ranking, promotion, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -56,20 +57,23 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified regression GREEN: 601 passed at bc6865a. Current Maturity Change History / New-Evidence Transition Diagnostics is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified regression GREEN: 604 passed at c314c80. Current Maturity Change History Lightweight Surface + Presentation remains LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_transitions.py tests/test_v6_multi_window_history.py -q
+Push-Location frontend
+npm run build
+Pop-Location
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_transitions.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Maturity Change History Lightweight Surface + Presentation:
-- expose chronological maturity states/transitions through the durable lightweight research evidence endpoint;
-- render per-dimension transition history on /research;
+Maturity Transition Persistence / Reversal Diagnostics:
+- evaluate each maturity dimension transition against the next retained qualifying observation;
+- classify PERSISTED, REVERSED, CHANGED_AGAIN, or BECAME_INSUFFICIENT when applicable;
 - preserve duplicate-refresh resistance and qualifying-new-evidence semantics;
 - no aggregate readiness score, percentage, favorable-window rank, tuning, promotion, or live readiness decision;
 - human review only; no real-money execution.
