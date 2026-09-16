@@ -22,8 +22,14 @@ def research_evidence_maturity(*,membership_path:Path=MEMBERSHIP_PATH,history_pa
     status=research_status(**paths);stability=stability_report(path=history_path)
     common={"membership_path":membership_path,"history_path":history_path}
     diversity=diversity_report(**common);longitudinal=diversity_trends(**common);history=multi_window_consistency_history(**common);sequences=confirmation_sequence_diagnostics(**common);gaps=evidence_sufficiency_gaps(**common)
-    forward=((status.get("readiness_progress") or {}).get("forward") or {});candidates={}
-    names=set(forward)|set(stability.get("candidates") or {})|set(diversity.get("candidates") or {})|set(longitudinal.get("candidates") or {})|set(history.get("candidates") or {})|set(sequences.get("candidates") or {})|set(gaps.get("candidates") or {})
+    progress=status.get("readiness_progress") or {};forward=progress.get("forward") or {};candidates={}
+    # research_status always exposes the four declared challenger rows, even when all
+    # durable inputs are absent. Do not let those schema placeholders manufacture
+    # maturity candidates: require evidence-bearing durable state from at least one
+    # source before a challenger enters this descriptive summary.
+    evidence_names=set(stability.get("candidates") or {})|set(diversity.get("candidates") or {})|set(longitudinal.get("candidates") or {})|set(history.get("candidates") or {})|set(sequences.get("candidates") or {})|set(gaps.get("candidates") or {})
+    forward_names={name for name,row in forward.items() if int((row or {}).get("opened") or 0)>0 or int((row or {}).get("closed") or 0)>0}
+    names=evidence_names|forward_names
     eligible=set(stability.get("human_review_eligible") or []);diverse=set(diversity.get("diversity_established") or [])
     for name in sorted(names):
         f=forward.get(name) or {};lr=(longitudinal.get("candidates") or {}).get(name) or {};hr=(history.get("candidates") or {}).get(name) or {};sr=(sequences.get("candidates") or {}).get(name) or {};gr=(gaps.get("candidates") or {}).get(name) or {}
