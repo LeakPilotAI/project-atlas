@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 8c6216568d16eafe59edd01b1d3ccc77faa06cf8
-Frontend production build GREEN. Focused evidence-gap/evidence-ui/page-contract suite: 9 passed in 0.46s. Full regression: 598 passed, 2 warnings in 35.37s. Failures: 0.
-Latest maturity validation at 4f78fe1: focused maturity/evidence-ui suite 2 passed / 2 failed; full regression 598 passed / 2 failed, 2 warnings in 36.84s. Both failures had the same fail-closed cause: research_status intentionally emits four declared challenger schema rows even with no durable inputs, and maturity treated those placeholders as evidence-bearing candidates. Commit 1fae1c0 now requires actual durable evidence (opened/closed forward activity or downstream evidence-bearing candidate state) before creating a maturity candidate. Local rerun pending.
+Tested commit: c2f59c7dd8dc32bc2e23475091f45ecc627df58c
+Focused maturity/evidence-ui suite: 4 passed in 0.38s. Full regression: 600 passed, 2 warnings in 35.47s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -36,16 +36,16 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Confirmation Sequence Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Evidence Sufficiency Gap Diagnostics
 [COMPLETE, VERIFIED] Evidence Sufficiency Gap Lightweight Surface + Presentation
-[COMPLETE, LOCAL TEST PENDING] Research Evidence Maturity / Missing-Evidence Summary
-  - new v6_evidence_maturity service consolidates descriptive PRESENT/MISSING states across eight dimensions: forward sample, uncertainty support, stability, diversity, longitudinal history, multi-window evidence, confirmation depth, and gap closure
-  - output lists present_dimensions and missing_dimensions for human review only
-  - aggregate_score=None and readiness_percentage=None; automatic_scoring=False; weighted_scoring=False; best_window_selection=False
-  - production promotion, live capital, and automatic real-money execution remain disabled
-  - fail-closed candidate discovery now ignores research_status schema placeholders and requires actual durable evidence-bearing state
-  - research_evidence_ui exposes research_evidence_maturity through the lightweight durable read-only surface
-  - evidence-ui tests cover normal and missing-file maturity behavior
-[NEXT] Local focused/full regression after maturity fail-closed candidate-discovery repair.
-[NEXT AFTER GREEN] Research Evidence Maturity Lightweight Presentation: render present/missing evidence dimensions on /research without aggregate scoring, percentage, ranking, production interpretation, or live unlock.
+[COMPLETE, VERIFIED] Research Evidence Maturity / Missing-Evidence Summary
+[COMPLETE, LOCAL TEST/BUILD PENDING] Research Evidence Maturity Lightweight Presentation
+  - /research now consumes research_evidence_maturity directly from the durable lightweight evidence surface
+  - each maturity candidate renders all eight descriptive dimensions as PRESENT/MISSING
+  - panel also renders present_dimensions and missing_dimensions explicitly for human review
+  - aggregate_score and readiness_percentage remain none; no score/percent collapse is introduced
+  - weighted scoring, best-window selection, automatic tuning, production promotion, live-capital unlock, and automatic real-money execution remain disabled
+  - page contract verifies the maturity method, present/missing lists, and no-score/no-percentage fields
+[NEXT] Local frontend production build + focused maturity/evidence-ui/page-contract regression + full regression.
+[NEXT AFTER GREEN] Maturity Change History / New-Evidence Transition Diagnostics: track how individual evidence dimensions move between PRESENT and MISSING across qualifying new-evidence observations, without aggregate scoring, ranking, promotion, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -54,22 +54,25 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified regression GREEN: 598 passed at 8c62165. Current Research Evidence Maturity / Missing-Evidence Summary remains LOCAL TEST PENDING after fail-closed candidate-discovery repair. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified regression GREEN: 600 passed at c2f59c7. Current Research Evidence Maturity Lightweight Presentation remains LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_evidence_maturity.py tests/test_v6_research_evidence_ui.py -q
+Push-Location frontend
+npm run build
+Pop-Location
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_evidence_maturity.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Research Evidence Maturity Lightweight Presentation:
-- expose the eight descriptive evidence dimensions on /research as PRESENT/MISSING only;
-- show present_dimensions and missing_dimensions without collapsing them into a score or percent;
-- preserve durable point-in-time/new-evidence-only semantics;
-- no weighted scoring, favorable-window ranking, automatic tuning, promotion, or live readiness decision;
+Maturity Change History / New-Evidence Transition Diagnostics:
+- preserve per-dimension PRESENT/MISSING state over qualifying new-evidence observations;
+- describe transitions such as MISSING->PRESENT, PRESENT->PRESENT, and PRESENT->MISSING independently per dimension;
+- retain fail-closed durable evidence semantics and duplicate-refresh resistance;
+- no aggregate readiness score, percentage, favorable-window rank, tuning, promotion, or live readiness decision;
 - human review only; no real-money execution.
 
 END OF MASTER ROADMAP
