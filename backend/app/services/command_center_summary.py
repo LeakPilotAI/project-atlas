@@ -27,12 +27,19 @@ def _investment_summary(board:Iterable[dict[str,Any]])->dict[str,Any]:
     top=rows[0] if rows else None
     return {"domain":"EQUITY_INVESTMENT","source":"investment_research_store","execution":"MANUAL_ONLY","asset_count":len(rows),"counts":counts,"top_opportunity":None if top is None else {"symbol":top.get("symbol"),"asset_type":top.get("asset_type"),"stance":top.get("stance"),"classification":top.get("classification"),"opportunity_score":top.get("opportunity_score"),"evidence_quality":top.get("evidence_quality"),"thesis":top.get("thesis"),"ladder_eligible":bool(top.get("ladder_eligible"))},"note":"Stock/ETF-only investment research. No perp state included."}
 
-def build_command_center_summary(perp_snapshot:dict[str,Any],research_rows:Iterable[dict[str,Any]],plan_rows:Iterable[dict[str,Any]]=(),*,v6_status:dict[str,Any]|None=None)->dict[str,Any]:
+def _research_presentation(evidence:dict[str,Any])->dict[str,Any]:
+    stability=evidence.get("stability") or {}; ev=evidence.get("evidence") or {}; progress=evidence.get("readiness_progress") or {}
+    return {"mode":"LIGHTWEIGHT_DURABLE_READ_ONLY","snapshot_count":int(ev.get("snapshot_count") or 0),"forward_progress":progress.get("forward") or {},"exit_replay_progress":progress.get("exit_replay") or {},"research_nomination_count":int(((evidence.get("candidate_state") or {}).get("research_nominations_cached")) or 0),"human_review_eligible":stability.get("human_review_eligible") or [],"research_nomination_is_production_approval":False,"human_review_is_production_approval":False,"trading_readiness":"NOT_READY","live_capital_allowed":False,"heavy_research_recompute":False}
+
+def build_command_center_summary(perp_snapshot:dict[str,Any],research_rows:Iterable[dict[str,Any]],plan_rows:Iterable[dict[str,Any]]=(),*,v6_status:dict[str,Any]|None=None,v6_evidence:dict[str,Any]|None=None)->dict[str,Any]:
     board=build_quality_dips_board(research_rows,plan_rows,limit=100)
     if v6_status is None:
         from app.services.v6_research_status import research_status
         v6_status=research_status()
-    return {"domain":"ORCHESTRATION","mode":"READ_ONLY","execution":"NO_ORDER_ACTIONS","perps":_perp_summary(perp_snapshot),"investments":_investment_summary(board),"research":v6_status,"guardrails":{"shared_symbols":False,"shared_capital_assumptions":False,"shared_performance":False,"shared_action_logic":False},"research_guardrails":{"research_is_trading_readiness":False,"automatic_promotion":False,"live_capital_allowed":False},"note":"Command Center observes domains and research status without combining risk, capital, scores, performance, or execution logic."}
+    if v6_evidence is None:
+        from app.services.v6_research_evidence_ui import research_evidence_ui
+        v6_evidence=research_evidence_ui()
+    return {"domain":"ORCHESTRATION","mode":"READ_ONLY","execution":"NO_ORDER_ACTIONS","perps":_perp_summary(perp_snapshot),"investments":_investment_summary(board),"research":v6_status,"research_evidence":_research_presentation(v6_evidence),"guardrails":{"shared_symbols":False,"shared_capital_assumptions":False,"shared_performance":False,"shared_action_logic":False},"research_guardrails":{"research_is_trading_readiness":False,"automatic_promotion":False,"live_capital_allowed":False},"note":"Command Center observes domains and research status without combining risk, capital, scores, performance, or execution logic."}
 
 def live_command_center_summary(perp_snapshot:dict[str,Any])->dict[str,Any]:
     return build_command_center_summary(perp_snapshot,_load_jsonl(OPPORTUNITIES_PATH),_load_jsonl(PLANS_PATH))
