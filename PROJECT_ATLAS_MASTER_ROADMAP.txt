@@ -8,7 +8,7 @@ When user says execute, implement next roadmap item directly when tooling permit
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: c314c80f188de20207706b9b6b4406641b277755
 Focused maturity-transition + multi-window-history suite: 7 passed in 0.45s. Full regression: 604 passed, 2 warnings in 36.15s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
+Latest maturity-transition presentation validation at 403328c: frontend production build GREEN; focused suite 11 passed / 1 failed; full regression 604 passed / 1 failed, 2 warnings in 35.87s. Failure was presentation-contract-only: the UI rendered transition values dynamically but did not contain the literal documented transition form MISSING->PRESENT. Commit 4fc62f6 now explicitly documents all four supported forms in the panel source. Local rerun pending.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -40,14 +40,15 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Research Evidence Maturity Lightweight Presentation
 [COMPLETE, VERIFIED] Maturity Change History / New-Evidence Transition Diagnostics
 [COMPLETE, LOCAL TEST/BUILD PENDING] Maturity Change History Lightweight Surface + Presentation
-  - research_evidence_ui now exposes maturity_change_history from durable retained new-evidence observations only
+  - research_evidence_ui exposes maturity_change_history from durable retained new-evidence observations only
   - surface carries all declared maturity dimensions, observation_count, transition_count, full chronological transitions, latest_transition, duplicate-refresh resistance, and new-evidence-only flags
   - /research renders each per-dimension transition with from/to transition labels and changed yes/no
+  - panel explicitly documents supported transition forms: MISSING->PRESENT, PRESENT->PRESENT, PRESENT->MISSING, and MISSING->MISSING
   - panel explicitly identifies duplicate refresh resistance and new-evidence-only semantics
   - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None; no ranking, tuning, promotion, or live unlock
   - evidence-ui tests cover normal and missing-file fail-closed maturity-transition behavior
   - page contract verifies method, transition labels, duplicate-refresh language, and no-percentage field
-[NEXT] Local frontend production build + focused maturity-transition/evidence-ui/page-contract regression + full regression.
+[NEXT] Local frontend production build + focused maturity-transition/evidence-ui/page-contract regression + full regression after presentation-contract repair.
 [NEXT AFTER GREEN] Maturity Transition Persistence / Reversal Diagnostics: describe whether per-dimension PRESENT/MISSING transitions persist, reverse, or change again on the next qualifying observation, without scoring, ranking, promotion, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
@@ -57,7 +58,7 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified regression GREEN: 604 passed at c314c80. Current Maturity Change History Lightweight Surface + Presentation remains LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified regression GREEN: 604 passed at c314c80. Current Maturity Change History Lightweight Surface + Presentation remains LOCAL TEST/BUILD PENDING after presentation-contract repair. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
