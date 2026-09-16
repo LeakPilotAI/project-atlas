@@ -33,11 +33,19 @@ def test_lightweight_status_surfaces_cached_scorecard_progress(tmp_path):
 
 def test_command_center_keeps_research_distinct_from_domains():
     status={"domain":"V6_RESEARCH","trading_readiness":"NOT_READY","live_capital_allowed":False}
-    out=build_command_center_summary({"running":True,"setups":[],"plans":[]},[],[],v6_status=status)
+    evidence={"readiness_progress":{"forward":{"trend_regime":{"closed":100}},"exit_replay":{"path_coverage":0.8}},"evidence":{"snapshot_count":4},"candidate_state":{"research_nominations_cached":1},"stability":{"human_review_eligible":["trend_regime"]}}
+    out=build_command_center_summary({"running":True,"setups":[],"plans":[]},[],[],v6_status=status,v6_evidence=evidence)
     assert out["research"] is status
+    assert out["research_evidence"]["snapshot_count"]==4
+    assert out["research_evidence"]["research_nomination_count"]==1
+    assert out["research_evidence"]["human_review_eligible"]==["trend_regime"]
+    assert out["research_evidence"]["heavy_research_recompute"] is False
+    assert out["research_evidence"]["trading_readiness"]=="NOT_READY"
     assert out["research_guardrails"]["research_is_trading_readiness"] is False
     assert out["research_guardrails"]["automatic_promotion"] is False
     assert out["research_guardrails"]["live_capital_allowed"] is False
+    assert out["guardrails"]=={"shared_symbols":False,"shared_capital_assumptions":False,"shared_performance":False,"shared_action_logic":False}
     assert out["execution"]=="NO_ORDER_ACTIONS"
     assert out["perps"]["execution"]=="MANUAL_ONLY"
+    assert out["perps"]["note"]=="Hyperliquid manual research with automatic PAPER mirroring of each verified resting-L1 instruction. PAPER opens only after an L1 touch/cross. No real order is placed."
     assert out["investments"]["execution"]=="MANUAL_ONLY"
