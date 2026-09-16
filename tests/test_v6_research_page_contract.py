@@ -76,3 +76,15 @@ def test_research_page_renders_maturity_change_history_contract():
     assert "duplicate refresh resistant" in page
     assert "maturity_change_history" in page
     assert "readiness_percentage" in page
+
+
+def test_research_page_renders_maturity_transition_persistence_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Maturity transition persistence / reversal" in page
+    assert "DESCRIPTIVE_MATURITY_NEXT_NEW_EVIDENCE_CONFIRMATION" in page
+    assert "Three qualifying maturity observations are required" in page
+    assert "PERSISTED" in page
+    assert "REVERSED" in page
+    assert "CHANGED AGAIN" in page
+    assert "maturity_transition_persistence" in page
+    assert "readiness percentage" in page
