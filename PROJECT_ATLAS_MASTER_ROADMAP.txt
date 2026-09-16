@@ -7,31 +7,27 @@ When user says execute, implement next roadmap item directly when tooling permit
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: 18f7c9da7af334f051d7038f1b466169f771fafe
-Focused post-559 validation: 29 passed, 1 warning in 2.02s.
-Full regression: 565 passed, 2 warnings in 37.41s.
-Failures: 0.
-Warnings: dependency deprecations only (discord audioop; Starlette/httpx TestClient).
-This supersedes the prior 559-test checkpoint.
+Focused: 29 passed, 1 warning in 2.02s. Full regression: 565 passed, 2 warnings in 37.41s. Failures: 0.
+Research Evidence Front-End Panel changes after this checkpoint are LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
-[COMPLETE, VERIFIED] V6 research stack through Multi-Snapshot Prospective Stability
-[COMPLETE, VERIFIED] V6 Research Evidence UI Integration
-[COMPLETE, VERIFIED] Contemporaneous Baseline Risk-Stability Persistence
-[COMPLETE, VERIFIED] Command Center Research Evidence Presentation
-[COMPLETE, VERIFIED] Forward Snapshot Independence Hardening
-  - qualifying stability snapshots require materially new challenger closed-trade evidence versus the prior counted snapshot
-  - minimum new closes = 1; minimum temporal separation remains >=6 hours
-  - repeated refreshes with unchanged close counts cannot manufacture stability
-  - new closes without sufficient time separation remain dependent
-  - human review requires >=3 independent snapshots, positive expectancy/lower CI, and contemporaneous drawdown no worse than baseline
-  - append-only history preserved; old risk-missing evidence fails closed
-  - no production mutation, automatic promotion, live unlock, or automatic real-money execution
-[NEXT] Research Evidence Front-End Panel: inspect current web architecture and surface the existing lightweight Command Center research_evidence block without coupling domains or triggering heavy research work.
-[NEXT] Forward evidence window diversity / regime coverage diagnostics before any human promotion framework.
+[COMPLETE, VERIFIED] V6 research stack through Snapshot Independence Hardening
+[COMPLETE, LOCAL TEST/BUILD PENDING] Research Evidence Front-End Panel — execution 2026-09-16
+  - added frontend/src/app/research/page.tsx using existing Next.js App Router architecture
+  - read-only /research panel polls only GET /api/validation/challengers/research-evidence every 15 seconds
+  - no new backend computation path; endpoint remains lightweight durable marker/cache/history based
+  - displays snapshot count, cached research nominations, human-review eligibility, trading readiness, forward close progress, expectancy/lower-CI state, and exit replay coverage
+  - prominent safety boundary displays live capital LOCKED, automatic promotion OFF, automatic real-money execution OFF
+  - API failure fails closed visually to NOT READY
+  - panel links back to Command Center; no perp/equity state is consumed or combined
+  - no production mutation, gate changes, automatic promotion, or live unlock
+[NEXT] Local frontend build + focused backend + full regression validation.
+[NEXT AFTER GREEN] Forward Evidence Window Diversity / Regime Coverage Diagnostics: measure whether positive forward evidence spans sufficiently diverse time/regime windows rather than one clustered condition.
+[NEXT] Link Research Evidence panel from main Command Center after build verification, if desired without changing domain logic.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, and operational review.
@@ -40,22 +36,25 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Engineering regression GREEN: 565 passed at 18f7c9da. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
-
-NEXT EXECUTION
-Research Evidence Front-End Panel:
-- inspect existing Command Center web components and API consumption first;
-- render lightweight research_evidence only; do not create another research computation path;
-- clearly distinguish research progress, human-review eligibility, and NOT_READY/live locked state;
-- preserve perps/equities/research separation and existing UI behavior;
-- no production mutation, automatic promotion, or live unlock.
+Last verified regression GREEN: 565 passed at 18f7c9da. Front-End Panel LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_v6_research_status_command_center.py tests/test_command_center_summary_v4.py tests/test_v6_research_evidence_ui.py tests/test_v6_forward_monitor.py tests/test_edge_http.py -q
+Push-Location frontend
+npm run build
+Pop-Location
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_research_evidence_ui.py tests/test_v6_research_status_command_center.py tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
+
+NEXT EXECUTION AFTER GREEN
+Forward Evidence Window Diversity / Regime Coverage Diagnostics:
+- use forward-only persisted evidence and contemporaneous classifications where available;
+- quantify temporal/regime concentration without retrospective substitution;
+- fail closed when diversity cannot be established;
+- do not treat diversity as production approval or live readiness;
+- no automatic promotion, production mutation, or real-money execution.
 
 END OF MASTER ROADMAP
