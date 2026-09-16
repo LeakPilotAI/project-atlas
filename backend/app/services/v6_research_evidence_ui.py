@@ -17,7 +17,9 @@ def research_evidence_ui(*,history_path:Path=HISTORY_PATH,**status_paths:Any)->d
     status=research_status(**status_paths)
     trends=evidence_trends(path=history_path)
     stability=stability_report(path=history_path)
-    diversity=diversity_report(history_path=history_path)
+    diversity_kwargs={"history_path":history_path}
+    if status_paths.get("membership_path") is not None:diversity_kwargs["membership_path"]=status_paths["membership_path"]
+    diversity=diversity_report(**diversity_kwargs)
     progress=status.get("readiness_progress") or {}
     latest={}
     for name,series in (trends.get("series") or {}).items():
