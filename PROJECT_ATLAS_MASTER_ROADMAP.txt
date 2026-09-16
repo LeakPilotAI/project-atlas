@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: c314c80f188de20207706b9b6b4406641b277755
-Focused maturity-transition + multi-window-history suite: 7 passed in 0.45s. Full regression: 604 passed, 2 warnings in 36.15s. Failures: 0.
-Latest maturity-transition presentation validation at c1351ac: frontend build FAILED because raw arrow text such as MISSING->PRESENT was inserted directly into JSX text; focused suite still passed 12/12 and full regression passed 605 tests with 2 warnings. Commit c3a0dcc moves the exact literal transition forms into a JSX-safe string constant and renders them via expression, preserving the presentation contract while removing the parser error. Local frontend rebuild + focused/full rerun pending.
+Tested commit: da1caef85698bcf9ed4980c5159d6d852f0de423
+Frontend production build GREEN. Focused maturity-transition/evidence-ui/page-contract suite: 12 passed in 0.35s. Full regression: 605 passed, 2 warnings in 36.27s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -39,16 +39,17 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Research Evidence Maturity / Missing-Evidence Summary
 [COMPLETE, VERIFIED] Research Evidence Maturity Lightweight Presentation
 [COMPLETE, VERIFIED] Maturity Change History / New-Evidence Transition Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Maturity Change History Lightweight Surface + Presentation
-  - research_evidence_ui exposes maturity_change_history from durable retained new-evidence observations only
-  - surface carries all declared maturity dimensions, observation_count, transition_count, full chronological transitions, latest_transition, duplicate-refresh resistance, and new-evidence-only flags
-  - /research renders each per-dimension transition with from/to transition labels and changed yes/no
-  - exact supported forms remain present in source via MATURITY_TRANSITION_FORMS: MISSING->PRESENT, PRESENT->PRESENT, PRESENT->MISSING, MISSING->MISSING
-  - supported forms are rendered through a JSX-safe expression, avoiding raw-arrow parser failures
-  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None; no ranking, tuning, promotion, or live unlock
-  - backend/full pytest state at c1351ac was 605 passed, 2 warnings; frontend build still required repair and therefore checkpoint is not VERIFIED
-[NEXT] Local frontend production build + focused maturity-transition/evidence-ui/page-contract regression + full regression after JSX-safe repair.
-[NEXT AFTER GREEN] Maturity Transition Persistence / Reversal Diagnostics: describe whether per-dimension PRESENT/MISSING transitions persist, reverse, or change again on the next qualifying observation, without scoring, ranking, promotion, or live unlock.
+[COMPLETE, VERIFIED] Maturity Change History Lightweight Surface + Presentation
+[COMPLETE, LOCAL TEST PENDING] Maturity Transition Persistence / Reversal Diagnostics
+  - new v6_maturity_transition_persistence service evaluates each maturity-dimension transition against the next retained qualifying observation only
+  - all eight declared maturity dimensions are evaluated independently
+  - outcomes are descriptive PERSISTED, REVERSED, or CHANGED_AGAIN based on previous -> transitioned_to -> next state
+  - output exposes observation_count, confirmation_check_count, minimum_observations_required=3, full checks, latest_check, duplicate-refresh resistance, and new-evidence-only flags
+  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None, automatic_promotion=False
+  - production strategy remains unchanged; live capital and automatic real-money execution remain disabled
+  - missing durable files fail closed with no candidates
+[NEXT] Local focused maturity-transition-persistence regression + full regression.
+[NEXT AFTER GREEN] Maturity Transition Persistence Lightweight Surface + Presentation: expose and render per-dimension persistence/reversal outcomes through the durable lightweight research evidence endpoint without scoring, ranking, promotion, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -57,23 +58,20 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified build+regression checkpoint remains 604 passed at c314c80. Backend/full pytest at c1351ac reached 605 passed, but frontend build failed and therefore is not a full GREEN checkpoint. Current Maturity Change History Lightweight Surface + Presentation remains LOCAL TEST/BUILD PENDING after JSX-safe repair. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified build+regression checkpoint: 605 passed at da1caef with frontend production build GREEN. Current Maturity Transition Persistence / Reversal Diagnostics is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_transitions.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_transition_persistence.py tests/test_v6_maturity_transitions.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Maturity Transition Persistence / Reversal Diagnostics:
-- evaluate each maturity dimension transition against the next retained qualifying observation;
-- classify PERSISTED, REVERSED, CHANGED_AGAIN, or BECAME_INSUFFICIENT when applicable;
+Maturity Transition Persistence Lightweight Surface + Presentation:
+- expose chronological per-dimension persistence/reversal checks through the durable lightweight research evidence endpoint;
+- render previous -> transitioned_to -> next and PERSISTED/REVERSED/CHANGED_AGAIN outcomes on /research;
 - preserve duplicate-refresh resistance and qualifying-new-evidence semantics;
 - no aggregate readiness score, percentage, favorable-window rank, tuning, promotion, or live readiness decision;
 - human review only; no real-money execution.
