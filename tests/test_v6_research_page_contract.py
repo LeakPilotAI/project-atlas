@@ -33,3 +33,14 @@ def test_research_page_renders_transition_persistence_contract():
     assert "BECAME INSUFFICIENT" in page
     assert "confirmation checks" in page
     assert "no production score" in page.lower()
+
+
+def test_research_page_renders_confirmation_sequence_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Confirmation sequence diagnostics" in page
+    assert "DESCRIPTIVE_CONFIRMATION_SEQUENCE" in page
+    assert "chronological outcomes only" in page
+    assert "Disagreement sequence" in page
+    assert "sequence:" in page
+    assert "does not score sequences" in page
+    assert "select a favorable window" in page
