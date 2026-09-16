@@ -8,7 +8,7 @@ When user says execute, implement next roadmap item directly when tooling permit
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: da1caef85698bcf9ed4980c5159d6d852f0de423
 Frontend production build GREEN. Focused maturity-transition/evidence-ui/page-contract suite: 12 passed in 0.35s. Full regression: 605 passed, 2 warnings in 36.27s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST PENDING.
+Latest maturity-persistence validation at c1ec466: focused suite 5 passed / 1 failed; full regression 607 passed / 1 failed, 2 warnings in 36.77s. The only failure was a test-fixture expectation: snapshots closed=1,1,2,2 contain two unchanged duplicate refreshes, and the retained-history engine correctly reported duplicate_refreshes_skipped=2 rather than the test's incorrect expected value 1. Commit 8874c85 repairs the assertion and explicitly verifies that only two qualifying observations remain and therefore no three-observation confirmation check is manufactured. Local rerun pending.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -41,14 +41,15 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Maturity Change History / New-Evidence Transition Diagnostics
 [COMPLETE, VERIFIED] Maturity Change History Lightweight Surface + Presentation
 [COMPLETE, LOCAL TEST PENDING] Maturity Transition Persistence / Reversal Diagnostics
-  - new v6_maturity_transition_persistence service evaluates each maturity-dimension transition against the next retained qualifying observation only
+  - v6_maturity_transition_persistence evaluates each maturity-dimension transition against the next retained qualifying observation only
   - all eight declared maturity dimensions are evaluated independently
   - outcomes are descriptive PERSISTED, REVERSED, or CHANGED_AGAIN based on previous -> transitioned_to -> next state
-  - output exposes observation_count, confirmation_check_count, minimum_observations_required=3, full checks, latest_check, duplicate-refresh resistance, and new-evidence-only flags
+  - duplicate refreshes are inherited from the retained-history engine; the repaired fixture now correctly expects both unchanged refreshes to be skipped
+  - the repaired fixture additionally verifies two retained observations produce zero confirmation checks, preserving the minimum-three-observation boundary
   - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None, automatic_promotion=False
   - production strategy remains unchanged; live capital and automatic real-money execution remain disabled
   - missing durable files fail closed with no candidates
-[NEXT] Local focused maturity-transition-persistence regression + full regression.
+[NEXT] Local focused maturity-transition-persistence regression + full regression after fixture repair.
 [NEXT AFTER GREEN] Maturity Transition Persistence Lightweight Surface + Presentation: expose and render per-dimension persistence/reversal outcomes through the durable lightweight research evidence endpoint without scoring, ranking, promotion, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
@@ -58,7 +59,7 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified build+regression checkpoint: 605 passed at da1caef with frontend production build GREEN. Current Maturity Transition Persistence / Reversal Diagnostics is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified build+regression checkpoint: 605 passed at da1caef with frontend production build GREEN. Current Maturity Transition Persistence / Reversal Diagnostics remains LOCAL TEST PENDING after test-fixture repair. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
