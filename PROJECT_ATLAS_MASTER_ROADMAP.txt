@@ -8,7 +8,7 @@ When user says execute, implement next roadmap item directly when tooling permit
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: 8c6216568d16eafe59edd01b1d3ccc77faa06cf8
 Frontend production build GREEN. Focused evidence-gap/evidence-ui/page-contract suite: 9 passed in 0.46s. Full regression: 598 passed, 2 warnings in 35.37s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST PENDING.
+Latest maturity validation at 4f78fe1: focused maturity/evidence-ui suite 2 passed / 2 failed; full regression 598 passed / 2 failed, 2 warnings in 36.84s. Both failures had the same fail-closed cause: research_status intentionally emits four declared challenger schema rows even with no durable inputs, and maturity treated those placeholders as evidence-bearing candidates. Commit 1fae1c0 now requires actual durable evidence (opened/closed forward activity or downstream evidence-bearing candidate state) before creating a maturity candidate. Local rerun pending.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -41,10 +41,10 @@ ENGINEERING ROADMAP
   - output lists present_dimensions and missing_dimensions for human review only
   - aggregate_score=None and readiness_percentage=None; automatic_scoring=False; weighted_scoring=False; best_window_selection=False
   - production promotion, live capital, and automatic real-money execution remain disabled
-  - missing durable files fail closed with no candidates
-  - research_evidence_ui now exposes research_evidence_maturity through the lightweight durable read-only surface
+  - fail-closed candidate discovery now ignores research_status schema placeholders and requires actual durable evidence-bearing state
+  - research_evidence_ui exposes research_evidence_maturity through the lightweight durable read-only surface
   - evidence-ui tests cover normal and missing-file maturity behavior
-[NEXT] Local focused/full regression for Research Evidence Maturity / Missing-Evidence Summary.
+[NEXT] Local focused/full regression after maturity fail-closed candidate-discovery repair.
 [NEXT AFTER GREEN] Research Evidence Maturity Lightweight Presentation: render present/missing evidence dimensions on /research without aggregate scoring, percentage, ranking, production interpretation, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
@@ -54,7 +54,7 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified regression GREEN: 598 passed at 8c62165. Current Research Evidence Maturity / Missing-Evidence Summary is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified regression GREEN: 598 passed at 8c62165. Current Research Evidence Maturity / Missing-Evidence Summary remains LOCAL TEST PENDING after fail-closed candidate-discovery repair. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
