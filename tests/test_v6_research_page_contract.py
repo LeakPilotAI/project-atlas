@@ -88,3 +88,15 @@ def test_research_page_renders_maturity_transition_persistence_contract():
     assert "CHANGED AGAIN" in page
     assert "maturity_transition_persistence" in page
     assert "readiness percentage" in page
+
+
+def test_research_page_renders_maturity_confirmation_sequence_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Maturity confirmation sequence diagnostics" in page
+    assert "DESCRIPTIVE_MATURITY_CONFIRMATION_SEQUENCE" in page
+    assert "maturity_confirmation_sequence_diagnostics" in page
+    assert "sequence:" in page
+    assert "latest" in page
+    assert "PERSISTED" in page
+    assert "REVERSED" in page
+    assert "CHANGED AGAIN" in page
