@@ -6,8 +6,8 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: a13a04ca40c7b0e112ddefaaa4e7a4933c5d78d8
-Frontend production build GREEN. Focused: 28 passed, 1 warning in 2.50s. Full regression: 568 passed, 2 warnings in 39.83s. Failures: 0.
+Tested commit: 5e8fcbb120fcfbc9910fb9440d9863dd7be2c390
+Focused prospective multi-window consistency history: 4 passed in 0.48s. Full regression: 580 passed, 2 warnings in 35.04s. Failures: 0.
 All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
@@ -18,23 +18,27 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] V6 research stack through Snapshot Independence Hardening
 [COMPLETE, VERIFIED] Research Evidence Front-End Panel
 [COMPLETE, VERIFIED] Forward Evidence Window Diversity / Regime Coverage Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Lightweight Diversity Integration + Navigation
-[COMPLETE, LOCAL TEST PENDING] Forward Evidence Diversity Trend / History Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Longitudinal Diversity Presentation + Method Boundary
-[COMPLETE, LOCAL TEST PENDING] Fixed-Duration Forward Diversity Window Research
-[COMPLETE, LOCAL TEST/BUILD PENDING] Fixed-Window Diversity Presentation
-[COMPLETE, LOCAL TEST PENDING] Predeclared Multi-Window Diversity Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Multi-Window Lightweight Presentation
-  - lightweight research_evidence_ui now reads 3d/7d/14d multi-window diagnostics from durable membership/history only
-  - all predeclared windows and their thresholds are exposed together; best_window_selection remains false
-  - candidate output preserves cumulative state, each recent-window state, interpretable count, and disagreement flag
-  - /research renders 3d/7d/14d cards side-by-side with membership threshold, days, regimes, sufficiency, and comparison label
-  - UI explicitly states Atlas reports every declared window and does not select whichever looks favorable
-  - missing durable data fails closed and no heavy recompute is introduced
-  - tests cover lightweight integration, 3d/7d/14d thresholds, all-window reporting, no selected best window, and live lock
-  - no automatic gate tuning, promotion, production mutation, live unlock, or real-money execution
-[NEXT] Local frontend build + focused/full regression validation for all pending work.
-[NEXT AFTER GREEN] Prospective Multi-Window Consistency History: persist/derive point-in-time 3d/7d/14d labels across future forward snapshots, require new prospective evidence between observations, and report stability/disagreement history without using it for automatic promotion.
+[COMPLETE, VERIFIED] Lightweight Diversity Integration + Navigation
+[COMPLETE, VERIFIED] Forward Evidence Diversity Trend / History Diagnostics
+[COMPLETE, VERIFIED] Longitudinal Diversity Presentation + Method Boundary
+[COMPLETE, VERIFIED] Fixed-Duration Forward Diversity Window Research
+[COMPLETE, VERIFIED] Fixed-Window Diversity Presentation
+[COMPLETE, VERIFIED] Predeclared Multi-Window Diversity Diagnostics
+[COMPLETE, VERIFIED] Multi-Window Lightweight Presentation
+[COMPLETE, VERIFIED] Prospective Multi-Window Consistency History Engine
+  - evaluates predeclared 3d/7d/14d methodology across successive persisted forward snapshots
+  - duplicate refreshes do not create additional observations
+  - new prospective membership or increased forward-closed evidence is required between qualifying observations
+  - each point preserves all three window labels, sufficiency, diversity state, and cross-window disagreement
+  - best_window_selection remains false
+  - descriptive research only; no production score, gate tuning, promotion, live unlock, or real-money execution
+[COMPLETE, LOCAL TEST PENDING] Prospective Multi-Window Consistency History Lightweight Surface
+  - research_evidence_ui now exposes observation history from durable membership/history only
+  - output includes observation count, duplicate-refresh resistance, new-evidence requirement, latest point, full series, and skipped duplicate count
+  - separation explicitly states consistency history is not trading readiness or production approval
+  - missing durable files fail closed
+[NEXT] Local focused/full regression for the new lightweight history surface.
+[NEXT AFTER GREEN] Prospective Consistency History Front-End Presentation: render descriptive point-in-time consistency/disagreement history in /research without ranking windows, automatic scoring, or promotion logic.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -43,25 +47,22 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified regression GREEN: 568 passed at a13a04ca. Current changes LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified regression GREEN: 580 passed at 5e8fcbb. Current lightweight consistency-history surface changes LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_fixed_window_diversity.py tests/test_v6_diversity_trends.py tests/test_v6_research_evidence_ui.py tests/test_v6_window_diversity.py tests/test_v6_research_status_command_center.py tests/test_command_center_summary_v4.py tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_multi_window_history.py tests/test_v6_research_evidence_ui.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Prospective Multi-Window Consistency History:
-- evaluate the predeclared 3d/7d/14d methodology at successive persisted forward snapshots;
-- require new prospective membership/evidence between qualifying observations so refresh duplicates do not create false stability;
-- preserve each window's label and cross-window disagreement at each point in time;
-- report history descriptively; do not collapse it into a production score;
-- no automatic gate tuning, promotion, production mutation, or real-money execution.
+Prospective Consistency History Front-End Presentation:
+- render the prospective new-evidence-only 3d/7d/14d history in /research;
+- preserve each observation timestamp, all window labels, sufficiency, and disagreement without ranking or selecting a best window;
+- make duplicate-refresh resistance and new-evidence requirements visible as method boundaries;
+- keep the presentation descriptive and lightweight;
+- no automatic gate tuning, promotion, production mutation, live unlock, or real-money execution.
 
 END OF MASTER ROADMAP
