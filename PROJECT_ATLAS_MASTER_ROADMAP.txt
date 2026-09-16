@@ -8,7 +8,7 @@ When user says execute, implement next roadmap item directly when tooling permit
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: ede8766987f7bd43f99e36ee0fcbdfdad7850f73
 Focused confirmation-sequence + persistence: 8 passed in 0.55s. Full regression: 594 passed, 2 warnings in 39.16s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
+Latest attempted presentation validation at ba2e542/descendants: frontend production build GREEN; focused sequence/evidence/page suite had 1 contract failure because /research no longer contained the exact explicit phrase "minimum 3 qualifying observations". Full regression was started but no completed result was posted. A targeted wording fix is now pushed; local rerun is pending.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -34,13 +34,13 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Transition Persistence Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Confirmation Sequence Diagnostics
 [COMPLETE, LOCAL TEST/BUILD PENDING] Confirmation Sequence Lightweight Surface + Presentation
-  - research_evidence_ui now exposes chronological confirmation sequences from durable membership/history only
+  - research_evidence_ui exposes chronological confirmation sequences from durable membership/history only
   - per-candidate output includes observation count, confirmation count, three-observation minimum, independent 3d/7d/14d sequences, latest outcome, and disagreement sequence
   - /research renders sequence length, latest outcome, and complete chronological sequence for each predeclared window plus disagreement sequence
-  - sequence presentation explicitly remains new-evidence-only and duplicate-refresh resistant through the underlying confirmation method
+  - transition-persistence section explicitly restores the contract phrase: minimum 3 qualifying observations
+  - sequence presentation remains new-evidence-only and duplicate-refresh resistant through the underlying confirmation method
   - no favorable-window ranking, scoring, gate tuning, production promotion, live unlock, or real-money execution
-  - backend and front-end contracts cover fail-closed behavior and trading-readiness separation
-[NEXT] Local frontend production build + focused/full regression for confirmation-sequence surface/presentation.
+[NEXT] Local frontend production build + focused/full regression after the persistence wording fix.
 [NEXT AFTER GREEN] Evidence Sufficiency Gap Diagnostics: describe which predeclared windows or confirmation layers lack enough qualifying observations/evidence, and how far each is from its declared minimum, without manufacturing readiness scores.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
@@ -50,7 +50,7 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified regression GREEN: 594 passed at ede8766. Current confirmation-sequence lightweight surface/presentation LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified regression GREEN: 594 passed at ede8766. Current confirmation-sequence lightweight surface/presentation remains LOCAL TEST/BUILD PENDING after targeted wording fix. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
