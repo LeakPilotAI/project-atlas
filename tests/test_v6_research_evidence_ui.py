@@ -15,16 +15,17 @@ def test_ui_consolidates_durable_status_without_live_unlock(tmp_path):
     assert r["stability"]["human_review_eligible"]==[]
     assert r["diversity"]["snapshot_available"] is True
     assert r["diversity"]["candidates"]["trend_regime"]["membership_count"]==1
-    assert r["diversity"]["candidates"]["trend_regime"]["diversity_established"] is False
     assert r["longitudinal_diversity"]["candidates"]["trend_regime"]["snapshot_count"]==1
     assert r["longitudinal_diversity"]["candidates"]["trend_regime"]["trend"]=="INSUFFICIENT_LONGITUDINAL_EVIDENCE"
     assert r["longitudinal_diversity"]["method"]=="CUMULATIVE_POINT_IN_TIME"
-    assert r["longitudinal_diversity"]["fixed_duration_windows_evaluated"] is False
-    assert r["diversity"]["diversity_is_production_approval"] is False
+    assert r["longitudinal_diversity"]["fixed_duration_windows_evaluated"] is True
+    assert r["fixed_window_diversity"]["method"]=="PREDECLARED_7_DAY_POINT_IN_TIME"
+    assert r["fixed_window_diversity"]["minimum_window_memberships"]==20
+    assert r["fixed_window_diversity"]["candidates"]["trend_regime"]["comparison"]=="INSUFFICIENT_RECENT_WINDOW_EVIDENCE"
+    assert r["fixed_window_diversity"]["candidates"]["trend_regime"]["recent_window_evidence_sufficient"] is False
     assert r["heavy_research_recompute"] is False
     assert r["separation"]["research_nomination_is_production_approval"] is False
-    assert r["separation"]["diversity_is_trading_readiness"] is False
-    assert r["separation"]["longitudinal_diversity_is_trading_readiness"] is False
+    assert r["separation"]["fixed_window_diversity_is_trading_readiness"] is False
     assert r["trading_readiness"]=="NOT_READY"
     assert r["live_capital_allowed"] is False
     assert r["automatic_real_money_execution"] is False
@@ -36,6 +37,8 @@ def test_ui_missing_durable_files_fails_closed(tmp_path):
     assert r["diversity"]["snapshot_available"] is False
     assert r["diversity"]["established"]==[]
     assert r["longitudinal_diversity"]["candidates"]=={}
+    assert r["fixed_window_diversity"]["snapshot_available"] is False
+    assert r["fixed_window_diversity"]["candidates"]=={}
     assert r["normal_command_center_recompute"] is False
     assert r["automatic_promotion"] is False
     assert r["live_capital_allowed"] is False
