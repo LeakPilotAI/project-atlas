@@ -8,7 +8,7 @@ When user says execute, implement next roadmap item directly when tooling permit
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: a13a04ca40c7b0e112ddefaaa4e7a4933c5d78d8
 Frontend production build GREEN. Focused: 28 passed, 1 warning in 2.50s. Full regression: 568 passed, 2 warnings in 39.83s. Failures: 0.
-Lightweight Diversity Integration and Longitudinal Diversity Diagnostics after this checkpoint are LOCAL TEST/BUILD PENDING.
+All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -19,19 +19,17 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Research Evidence Front-End Panel
 [COMPLETE, VERIFIED] Forward Evidence Window Diversity / Regime Coverage Diagnostics
 [COMPLETE, LOCAL TEST/BUILD PENDING] Lightweight Diversity Integration + Navigation
-  - research evidence includes durable diversity state; /research renders it; global Atlas nav links Research Evidence
-  - no heavy recompute or domain coupling
 [COMPLETE, LOCAL TEST PENDING] Forward Evidence Diversity Trend / History Diagnostics
-  - new v6_diversity_trends derives longitudinal state from append-only forward evidence snapshots plus contemporaneously frozen prospective membership
-  - each historical snapshot only sees memberships whose entry timestamp is <= that snapshot timestamp; future membership cannot leak backward
-  - no historical membership reclassification or retrospective candidate substitution
-  - minimum 3 longitudinal snapshots before a trend is considered sufficient
-  - descriptive labels: STABLE_DIVERSE, BROADENING, COLLAPSED, MIXED_OR_CONCENTRATED, or INSUFFICIENT_LONGITUDINAL_EVIDENCE
-  - labels describe diversity progression only; they do not establish independence, expectancy, production approval, or live readiness
-  - GET /api/validation/challengers/diversity-trends is read-only/fail-closed
-  - tests cover broadening PIT behavior, insufficient history, and future-membership leakage prevention
-[NEXT] Local frontend build + focused/full regression validation for all pending integration.
-[NEXT AFTER GREEN] Integrate longitudinal diversity summary into lightweight /research evidence panel, then evaluate whether evidence windows need fixed-duration slicing rather than cumulative PIT snapshots.
+[COMPLETE, LOCAL TEST/BUILD PENDING] Longitudinal Diversity Presentation + Method Boundary
+  - research_evidence_ui now exposes compact longitudinal candidate trend, snapshot count, evidence sufficiency, and latest PIT diversity state
+  - custom membership path propagates into longitudinal reads, preserving isolated/test data boundaries
+  - read model explicitly labels current method CUMULATIVE_POINT_IN_TIME and fixed-duration windows as not yet evaluated
+  - /research renders longitudinal trend per challenger with snapshot/membership/day/regime context
+  - UI explicitly states trend does not establish expectancy, independence, production approval, or live readiness
+  - tests cover longitudinal read-model presence, insufficient-evidence behavior, method metadata, and missing-data fail-closed behavior
+  - no heavy recompute, production mutation, automatic promotion, gate changes, live unlock, or real-money execution
+[NEXT] Local frontend build + focused/full regression validation for all pending work.
+[NEXT AFTER GREEN] Fixed-Duration Forward Diversity Window Research: compare cumulative PIT diversity with fixed-duration windows to detect recent concentration/regime collapse that cumulative history can mask. Keep it descriptive and forward-only; do not alter production gates.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -54,11 +52,12 @@ backend\.venv\Scripts\python.exe -m pytest tests/test_v6_diversity_trends.py tes
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Longitudinal diversity presentation + window-method review:
-- surface concise trend state in lightweight research evidence without heavy recompute;
-- preserve PIT membership cutoffs;
-- assess cumulative snapshots versus fixed-duration windows before interpreting regime collapse/broadening strongly;
-- do not tune production gates from these labels;
+Fixed-Duration Forward Diversity Window Research:
+- derive recent fixed-duration windows from frozen prospective membership timestamps;
+- compare recent-window diversity against cumulative PIT diversity;
+- expose concentration/collapse diagnostics without rewriting historical membership;
+- fail closed when recent-window sample is insufficient;
+- do not use the result to retune production gates automatically;
 - no automatic promotion, production mutation, or real-money execution.
 
 END OF MASTER ROADMAP
