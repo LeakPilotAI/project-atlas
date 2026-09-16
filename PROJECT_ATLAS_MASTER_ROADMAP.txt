@@ -24,17 +24,17 @@ ENGINEERING ROADMAP
 [COMPLETE, LOCAL TEST PENDING] Fixed-Duration Forward Diversity Window Research
 [COMPLETE, LOCAL TEST/BUILD PENDING] Fixed-Window Diversity Presentation
 [COMPLETE, LOCAL TEST PENDING] Predeclared Multi-Window Diversity Diagnostics
-  - evaluates 3d/7d/14d together at the same latest persisted forward-snapshot cutoff
-  - predeclared minimum membership counts: 3d >=10, 7d >=20, 14d >=30
-  - every window is reported; best_window_selection=false and selected_best_window=null
-  - retains disagreement across interpretable windows instead of collapsing to a favorable label
-  - cumulative PIT state is reported separately from every recent fixed window
-  - future memberships are excluded and no historical membership is reclassified
-  - GET /api/validation/challengers/multi-window-diversity is read-only/fail-closed
-  - tests cover all-window reporting, differing 3d/7d/14d conclusions, sample insufficiency, and no best-window selection
-  - descriptive research only; no expectancy claim, gate tuning, production promotion, live unlock, or real-money execution
+[COMPLETE, LOCAL TEST/BUILD PENDING] Multi-Window Lightweight Presentation
+  - lightweight research_evidence_ui now reads 3d/7d/14d multi-window diagnostics from durable membership/history only
+  - all predeclared windows and their thresholds are exposed together; best_window_selection remains false
+  - candidate output preserves cumulative state, each recent-window state, interpretable count, and disagreement flag
+  - /research renders 3d/7d/14d cards side-by-side with membership threshold, days, regimes, sufficiency, and comparison label
+  - UI explicitly states Atlas reports every declared window and does not select whichever looks favorable
+  - missing durable data fails closed and no heavy recompute is introduced
+  - tests cover lightweight integration, 3d/7d/14d thresholds, all-window reporting, no selected best window, and live lock
+  - no automatic gate tuning, promotion, production mutation, live unlock, or real-money execution
 [NEXT] Local frontend build + focused/full regression validation for all pending work.
-[NEXT AFTER GREEN] Multi-Window Lightweight Presentation: surface all predeclared windows in research_evidence_ui and /research without collapsing disagreement; then add prospective window-consistency history only after enough forward snapshots exist.
+[NEXT AFTER GREEN] Prospective Multi-Window Consistency History: persist/derive point-in-time 3d/7d/14d labels across future forward snapshots, require new prospective evidence between observations, and report stability/disagreement history without using it for automatic promotion.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -57,11 +57,11 @@ backend\.venv\Scripts\python.exe -m pytest tests/test_v6_fixed_window_diversity.
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Multi-Window Lightweight Presentation:
-- expose 3d/7d/14d results through lightweight research evidence;
-- render all declared windows together and preserve disagreement visibly;
-- show each window's sample threshold/sufficiency;
-- never choose or emphasize a best-performing window;
+Prospective Multi-Window Consistency History:
+- evaluate the predeclared 3d/7d/14d methodology at successive persisted forward snapshots;
+- require new prospective membership/evidence between qualifying observations so refresh duplicates do not create false stability;
+- preserve each window's label and cross-window disagreement at each point in time;
+- report history descriptively; do not collapse it into a production score;
 - no automatic gate tuning, promotion, production mutation, or real-money execution.
 
 END OF MASTER ROADMAP
