@@ -21,15 +21,17 @@ ENGINEERING ROADMAP
 [COMPLETE, LOCAL TEST/BUILD PENDING] Lightweight Diversity Integration + Navigation
 [COMPLETE, LOCAL TEST PENDING] Forward Evidence Diversity Trend / History Diagnostics
 [COMPLETE, LOCAL TEST/BUILD PENDING] Longitudinal Diversity Presentation + Method Boundary
-  - research_evidence_ui now exposes compact longitudinal candidate trend, snapshot count, evidence sufficiency, and latest PIT diversity state
-  - custom membership path propagates into longitudinal reads, preserving isolated/test data boundaries
-  - read model explicitly labels current method CUMULATIVE_POINT_IN_TIME and fixed-duration windows as not yet evaluated
-  - /research renders longitudinal trend per challenger with snapshot/membership/day/regime context
-  - UI explicitly states trend does not establish expectancy, independence, production approval, or live readiness
-  - tests cover longitudinal read-model presence, insufficient-evidence behavior, method metadata, and missing-data fail-closed behavior
-  - no heavy recompute, production mutation, automatic promotion, gate changes, live unlock, or real-money execution
+[COMPLETE, LOCAL TEST PENDING] Fixed-Duration Forward Diversity Window Research
+  - new v6_fixed_window_diversity compares latest cumulative PIT diversity with a recent 7-day membership window ending at the latest persisted forward snapshot
+  - only frozen prospective memberships with entry timestamp <= snapshot cutoff are eligible; future membership is excluded
+  - recent window is start-exclusive/end-inclusive and requires >=20 memberships before comparison is considered sufficient
+  - diagnostic states: RECENT_CONCENTRATION, RECENT_BROADENING, DIVERSITY_PERSISTS, CONCENTRATED_BOTH_WINDOWS, INSUFFICIENT_RECENT_WINDOW_EVIDENCE
+  - detects recent concentration that cumulative historical diversity can mask
+  - GET /api/validation/challengers/fixed-window-diversity is read-only/fail-closed
+  - tests cover masked recent concentration, insufficient recent sample, and future-membership leakage prevention
+  - descriptive research only; no expectancy claim, gate retuning, production promotion, live unlock, or real-money execution
 [NEXT] Local frontend build + focused/full regression validation for all pending work.
-[NEXT AFTER GREEN] Fixed-Duration Forward Diversity Window Research: compare cumulative PIT diversity with fixed-duration windows to detect recent concentration/regime collapse that cumulative history can mask. Keep it descriptive and forward-only; do not alter production gates.
+[NEXT AFTER GREEN] Integrate fixed-window comparison into lightweight research evidence and /research; then evaluate multiple predeclared window lengths without selecting the best-performing window post hoc.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -48,16 +50,16 @@ git reset --hard origin/chatgpt/atlas-rebuild-v1
 Push-Location frontend
 npm run build
 Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_diversity_trends.py tests/test_v6_research_evidence_ui.py tests/test_v6_window_diversity.py tests/test_v6_research_status_command_center.py tests/test_command_center_summary_v4.py tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_fixed_window_diversity.py tests/test_v6_diversity_trends.py tests/test_v6_research_evidence_ui.py tests/test_v6_window_diversity.py tests/test_v6_research_status_command_center.py tests/test_command_center_summary_v4.py tests/test_v6_stability.py tests/test_v6_risk_stability.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Fixed-Duration Forward Diversity Window Research:
-- derive recent fixed-duration windows from frozen prospective membership timestamps;
-- compare recent-window diversity against cumulative PIT diversity;
-- expose concentration/collapse diagnostics without rewriting historical membership;
-- fail closed when recent-window sample is insufficient;
-- do not use the result to retune production gates automatically;
+Fixed-window presentation + predeclared multi-window methodology:
+- surface latest fixed-window comparison in lightweight research evidence and /research;
+- keep cumulative and recent-window evidence visibly separate;
+- if adding multiple windows, predeclare them (for example 3d/7d/14d) and report all rather than selecting whichever looks best;
+- fail closed for insufficient membership counts;
+- do not tune production gates from window labels;
 - no automatic promotion, production mutation, or real-money execution.
 
 END OF MASTER ROADMAP
