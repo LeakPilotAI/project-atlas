@@ -8,6 +8,7 @@ When user says execute, implement next roadmap item directly when tooling permit
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: 1495f2616df66f3f6a8fe83153938feacc1976c8
 Focused: 31 passed, 1 warning in 2.36s. Full regression: 559 passed, 2 warnings in 40.56s. Failures: 0.
+Research Evidence UI and Forward Risk Stability changes after this checkpoint are LOCAL TEST PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -15,44 +16,44 @@ RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic r
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
 [COMPLETE, VERIFIED] V6 research stack through Multi-Snapshot Prospective Stability
-[COMPLETE, LOCAL TEST PENDING] V6 Research Evidence UI Integration — execution 2026-09-16
-  - backend/app/services/v6_research_evidence_ui.py
-  - GET /api/validation/challengers/research-evidence
-  - consolidates lightweight readiness progress, append-only evidence trends, cached nomination count, and stability/human-review status
-  - normal read path uses durable marker/membership/cache/history only
-  - does NOT invoke prospective_report, challenger lab, PIT exit replay, SHADOW/PAPER interaction recompute, readiness_scorecard, or candidate_comparison
-  - candidate comparison remains an explicit separate research endpoint; normal status reports its route and cached nomination state only
-  - explicitly distinguishes research nomination, human-review eligibility, and production/trading readiness
-  - missing durable files fail closed
-  - heavy_research_recompute false; normal_command_center_recompute false
-  - trading readiness NOT_READY; live false; automatic promotion/execution false
-  - tests cover durable consolidation, missing-data fail closed, and safety separation
-[NEXT] Local focused + full regression validation for Research Evidence UI.
-[NEXT AFTER GREEN] Contemporaneous Baseline Risk-Stability Persistence: persist baseline/candidate risk measures into forward snapshots so multi-snapshot stability can explicitly reject material risk deterioration.
-[NEXT] Command Center visual presentation of the consolidated research evidence surface without heavy recompute.
+[COMPLETE, LOCAL TEST PENDING] V6 Research Evidence UI Integration
+[COMPLETE, LOCAL TEST PENDING] Contemporaneous Baseline Risk-Stability Persistence — execution 2026-09-16
+  - explicit forward-monitor refresh now also obtains the forward-only contemporaneous candidate comparison
+  - new snapshots persist risk_comparison with cutoff, baseline closed/expectancy/max_drawdown_r, and candidate closed/expectancy/max_drawdown_r/deltas/nomination
+  - snapshot history remains append-only; old snapshots are never rewritten
+  - retrospective_substitution false and shadow_population_used false in persisted risk evidence
+  - multi-snapshot stability now requires candidate max_drawdown_r <= contemporaneous baseline max_drawdown_r for every qualifying review snapshot
+  - old snapshots without persisted risk evidence fail closed for risk stability; they remain readable and intact
+  - human review still requires >=3 separated qualifying snapshots plus positive expectancy/lower CI and now risk stability
+  - no automatic promotion, production mutation, live unlock, or automatic real-money execution
+  - tests cover persisted risk evidence, stable-risk eligibility, deterioration block, and backward-compatible fail-closed old history
+[NEXT] Local focused + full regression validation for Research Evidence UI + Risk Stability.
+[NEXT AFTER GREEN] Command Center Visual Research Evidence Presentation: expose the lightweight consolidated evidence state in existing Command Center presentation while preserving exact legacy guardrails/perp note and no heavy recompute.
+[NEXT] Forward snapshot cadence/independence hardening based on new closed-trade information, not wall-clock duplicates alone.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
-[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, and stability.
+[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, and operational review.
 
 RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last verified engineering regression GREEN: 559 passed at 1495f261. Research Evidence UI changes LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last verified engineering regression GREEN: 559 passed at 1495f261. Current UI + risk-stability changes LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL COMMANDS
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_research_evidence_ui.py tests/test_v6_research_status_command_center.py tests/test_v6_evidence_trends.py tests/test_v6_stability.py tests/test_v6_candidate_comparison.py tests/test_edge_http.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_risk_stability.py tests/test_v6_stability.py tests/test_v6_forward_monitor.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_status_command_center.py tests/test_v6_candidate_comparison.py tests/test_edge_http.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Contemporaneous Baseline Risk-Stability Persistence:
-- extend explicit forward-monitor snapshots with baseline and candidate risk measures available at snapshot time;
-- preserve append-only history and backward compatibility with old snapshots;
-- stability review requires no material risk deterioration versus contemporaneous baseline across qualifying windows;
-- no retrospective substitution, production mutation, automatic promotion, or live unlock.
+Command Center Visual Research Evidence Presentation:
+- surface consolidated research evidence using durable/cache/history reads only;
+- preserve exact legacy guardrails dictionary shape and exact perp note compatibility;
+- distinguish research evidence, human-review eligibility, and trading/live readiness visually;
+- no heavy retrospective/prospective research recompute on normal Command Center refresh;
+- no production mutation, automatic promotion, or live unlock.
 
 END OF MASTER ROADMAP
