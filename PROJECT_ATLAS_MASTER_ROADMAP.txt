@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: ede8766987f7bd43f99e36ee0fcbdfdad7850f73
-Focused confirmation-sequence + persistence: 8 passed in 0.55s. Full regression: 594 passed, 2 warnings in 39.16s. Failures: 0.
-Latest attempted presentation validation after the first semantic-contract repair: frontend production build GREEN; focused suite 9 passed / 1 failed and full regression 594 passed / 1 failed, 2 warnings in 37.17s. The remaining failure was another brittle exact-copy assertion requiring "does not score sequences". Commit 868fa32 replaces incidental prose assertions with structural safety-contract assertions for automatic_scoring, best_window_selection, and production_promoted while retaining checks that the sequence method/data are actually rendered. Local rerun pending.
+Tested commit: 5f1852d7d626e0323b348413b4bfdc2ab6f7676e
+Frontend production build GREEN. Focused confirmation-sequence/evidence/page suite: 10 passed in 0.56s. Full regression: 595 passed, 2 warnings in 34.84s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -33,16 +33,17 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Transition Persistence / Reversal Diagnostics
 [COMPLETE, VERIFIED] Transition Persistence Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Confirmation Sequence Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Confirmation Sequence Lightweight Surface + Presentation
-  - research_evidence_ui exposes chronological confirmation sequences from durable membership/history only
-  - per-candidate output includes observation count, confirmation count, three-observation minimum, independent 3d/7d/14d sequences, latest outcome, and disagreement sequence
-  - /research renders sequence length, latest outcome, complete sequence for every predeclared window, and disagreement sequence
-  - persistence section explicitly states minimum 3 qualifying observations
-  - page contract verifies rendered sequence method/data plus structural no-scoring/no-best-window/no-promotion fields rather than exact incidental prose
-  - sequence presentation remains new-evidence-only and duplicate-refresh resistant through the underlying confirmation method
-  - no favorable-window ranking, scoring, gate tuning, production promotion, live unlock, or real-money execution
-[NEXT] Local frontend production build + focused/full regression after structural safety-contract repair.
-[NEXT AFTER GREEN] Evidence Sufficiency Gap Diagnostics: describe which predeclared windows or confirmation layers lack enough qualifying observations/evidence, and how far each is from its declared minimum, without manufacturing readiness scores.
+[COMPLETE, VERIFIED] Confirmation Sequence Lightweight Surface + Presentation
+[COMPLETE, LOCAL TEST PENDING] Evidence Sufficiency Gap Diagnostics
+  - derives current-vs-required membership gaps for each predeclared 3d/7d/14d window from prospective multi-window history
+  - reports current memberships, required memberships, nonnegative membership gap, and evidence_sufficient independently per window
+  - reports observation_count, minimum_observations_required=3, confirmation_observation_gap, and confirmation_layer_sufficient separately from window membership sufficiency
+  - missing durable files fail closed with no candidates and no readiness score
+  - duplicate refreshes remain excluded because the source history is new-evidence-only
+  - readiness_score is always None; automatic_scoring=False; best_window_selection=False; automatic_promotion=False
+  - trading_readiness remains NOT_READY; live capital and automatic real-money execution remain disabled
+[NEXT] Local focused/full regression for evidence-sufficiency gap diagnostics.
+[NEXT AFTER GREEN] Evidence Sufficiency Gap Lightweight Surface + Presentation: expose the descriptive gaps through durable research evidence and /research without readiness scoring or production interpretation.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -51,25 +52,22 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified regression GREEN: 594 passed at ede8766. Current confirmation-sequence lightweight surface/presentation remains LOCAL TEST/BUILD PENDING after structural contract repair. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified regression GREEN: 595 passed at 5f1852d. Current evidence-sufficiency gap diagnostics LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_confirmation_sequences.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_evidence_sufficiency_gaps.py tests/test_v6_multi_window_history.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Evidence Sufficiency Gap Diagnostics:
-- describe declared evidence minimums and current gaps for 3d/7d/14d windows and confirmation layers;
-- distinguish insufficient membership/window evidence from insufficient longitudinal confirmation observations;
-- preserve durable point-in-time/new-evidence-only semantics;
-- never convert gaps into a production score, favorable-window ranking, automatic tuning, promotion, or live readiness decision;
+Evidence Sufficiency Gap Lightweight Surface + Presentation:
+- expose per-window current/required membership gaps and confirmation-observation gaps through research_evidence_ui using durable history only;
+- render these gaps on /research with window sufficiency and confirmation-layer sufficiency clearly separated;
+- preserve new-evidence-only and duplicate-refresh-resistant semantics;
+- never convert gaps into a readiness percentage, production score, favorable-window rank, automatic tuning, promotion, or live readiness decision;
 - no real-money execution.
 
 END OF MASTER ROADMAP
