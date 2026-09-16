@@ -22,16 +22,17 @@ ENGINEERING ROADMAP
 [COMPLETE, LOCAL TEST PENDING] Forward Evidence Diversity Trend / History Diagnostics
 [COMPLETE, LOCAL TEST/BUILD PENDING] Longitudinal Diversity Presentation + Method Boundary
 [COMPLETE, LOCAL TEST PENDING] Fixed-Duration Forward Diversity Window Research
-  - new v6_fixed_window_diversity compares latest cumulative PIT diversity with a recent 7-day membership window ending at the latest persisted forward snapshot
-  - only frozen prospective memberships with entry timestamp <= snapshot cutoff are eligible; future membership is excluded
-  - recent window is start-exclusive/end-inclusive and requires >=20 memberships before comparison is considered sufficient
-  - diagnostic states: RECENT_CONCENTRATION, RECENT_BROADENING, DIVERSITY_PERSISTS, CONCENTRATED_BOTH_WINDOWS, INSUFFICIENT_RECENT_WINDOW_EVIDENCE
-  - detects recent concentration that cumulative historical diversity can mask
-  - GET /api/validation/challengers/fixed-window-diversity is read-only/fail-closed
-  - tests cover masked recent concentration, insufficient recent sample, and future-membership leakage prevention
-  - descriptive research only; no expectancy claim, gate retuning, production promotion, live unlock, or real-money execution
+[COMPLETE, LOCAL TEST/BUILD PENDING] Fixed-Window Diversity Presentation
+  - research_evidence_ui includes compact fixed-window candidate comparison with cumulative and recent state kept separate
+  - fixed window is explicitly PREDECLARED_7_DAY_POINT_IN_TIME with >=20 recent memberships required
+  - custom membership path propagates into fixed-window reads for isolated/PIT-safe testing
+  - /research renders cumulative versus recent membership/day/regime context and sample sufficiency
+  - longitudinal metadata now accurately records fixed-duration windows as evaluated
+  - fixed-window comparison explicitly remains separate from trading readiness/production approval
+  - tests cover read-model integration, method metadata, insufficient recent evidence, missing-data fail-closed behavior
+  - no heavy recompute, gate changes, production mutation, automatic promotion, live unlock, or real-money execution
 [NEXT] Local frontend build + focused/full regression validation for all pending work.
-[NEXT AFTER GREEN] Integrate fixed-window comparison into lightweight research evidence and /research; then evaluate multiple predeclared window lengths without selecting the best-performing window post hoc.
+[NEXT AFTER GREEN] Predeclared Multi-Window Diversity Diagnostics: report 3d/7d/14d together, with window-specific minimum sample requirements, and prohibit best-window selection/post-hoc gate tuning.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -54,12 +55,11 @@ backend\.venv\Scripts\python.exe -m pytest tests/test_v6_fixed_window_diversity.
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Fixed-window presentation + predeclared multi-window methodology:
-- surface latest fixed-window comparison in lightweight research evidence and /research;
-- keep cumulative and recent-window evidence visibly separate;
-- if adding multiple windows, predeclare them (for example 3d/7d/14d) and report all rather than selecting whichever looks best;
-- fail closed for insufficient membership counts;
-- do not tune production gates from window labels;
-- no automatic promotion, production mutation, or real-money execution.
+Predeclared Multi-Window Diversity Diagnostics:
+- evaluate 3d, 7d, and 14d windows together rather than selecting a favorable window after observing results;
+- define sample sufficiency per window before interpreting labels;
+- preserve the same latest persisted snapshot cutoff and frozen prospective membership set;
+- report disagreement between windows rather than collapsing it into a single winner;
+- no automatic gate tuning, promotion, production mutation, or real-money execution.
 
 END OF MASTER ROADMAP
