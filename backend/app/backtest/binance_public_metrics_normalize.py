@@ -75,9 +75,13 @@ def normalize(*,inputs:list[Path],provider_symbol:str,start_utc:str,end_utc:str,
     if not points:raise RuntimeError("no metrics rows in requested window")
     ordered=sorted(points,key=_parse_ts)
     times=[_parse_ts(x) for x in ordered]
-    deltas=[int((b-a).total_seconds()) for a,b in zip(times,times[1:])]
-    bad=sum(1 for d in deltas if d!=cadence)
-    if bad:raise RuntimeError(f"normalized OI metrics contain cadence gaps: {bad}")
+    gaps=[]
+    for a,b in zip(times,times[1:]):
+        delta=int((b-a).total_seconds())
+        if delta!=cadence:gaps.append({"after":_iso(a),"before":_iso(b),"delta_seconds":delta,"missing_intervals":max(0,delta//cadence-1)})
+    if gaps:
+        preview="; ".join(f"{g['after']} -> {g['before']} ({g['delta_seconds']}s, missing={g['missing_intervals']})" for g in gaps[:10])
+        raise RuntimeError(f"normalized OI metrics contain cadence gaps: {len(gaps)}; {preview}")
 
     output=Path(output);output.parent.mkdir(parents=True,exist_ok=True)
     with output.open("w",encoding="utf-8",newline="") as fh:
