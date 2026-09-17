@@ -40,34 +40,40 @@ f722997 backend/app/investment/quality_dips_v2_gate.py
 Focused verification: 24 passed in 0.21s.
 Full regression: 821 passed, 2 warnings in 37.91s.
 
-PHASE 4 — EXECUTED / LOCAL TEST PENDING
+PHASE 4 — COMPLETE / USER-LOCAL VERIFIED GREEN
 394e0a8 backend/app/investment/quality_dips_v2_valuation.py
-- explicit provenance-backed normalization-value model
-- accepts only named valuation methods: HISTORICAL_MULTIPLE / SECTOR_RELATIVE / DCF / ANALYST_CONSENSUS / OWNER_EARNINGS / MANUAL_RESEARCH
-- rejects invalid provenance and nonpositive values
-- requires at least 3 explicit estimates for a complete conservative/base/optimistic window
-- derives low/median/high scenarios only from supplied estimates
-- never fabricates missing fair values
-- emits valuation provenance beside every estimate
-- MANUAL_ONLY / read-only / no-live controls preserved
-
 4d2df84 tests/test_quality_dips_v2_valuation.py
-- insufficient-source fail-closed coverage
-- low/median/high scenario construction
-- invalid provenance rejection
-- nonpositive-value rejection
-- row-level provenance preservation
-- no fabricated fair-value coverage
-- manual-only/no-live contract
+6efadd8 PROJECT_ATLAS_MASTER_ROADMAP.txt
+Focused verification: 30 passed in 0.26s.
+Full regression: 827 passed, 2 warnings in 37.77s.
+
+PHASE 5 — EXECUTED / LOCAL TEST PENDING
+066e702 backend/app/investment/quality_dips_v2_entries.py
+- staged patient-capital L1/L2/L3/L4 research ladder
+- L1=29%, L2=35%, L3=40%, L4=50% required conservative normalization upside
+- every level is derived from the conservative normalization value, never optimistic value
+- current-price reached flags are informational only
+- incomplete valuation fails closed
+- point-in-time frozen entry evidence snapshot for planned/manual entries
+- frozen snapshot deep-copies evidence so later mutation cannot rewrite why the entry was taken
+- MANUAL_ONLY / no-live controls preserved
+
+a0a888e tests/test_quality_dips_v2_entries.py
+- complete-valuation requirement
+- exact 29/35/40/50 ladder arithmetic
+- deeper levels must be lower prices
+- reached flags do not imply brokerage execution
+- frozen entry snapshot integrity
+- invalid level/nonpositive entry rejection
 
 FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
 [COMPLETE/VERIFIED GREEN] Phase 1: patient-capital policy + tests + specification
 [COMPLETE/VERIFIED GREEN] Phase 2: read-only V2 evidence adapter + trend evidence passthrough
 [COMPLETE/VERIFIED GREEN] Phase 3: hard value-trap / thesis-integrity / evidence-freshness gate
-[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 4: conservative/base/optimistic normalization-value model with provenance
-[REMAINING] Phase 5: patient-state integration + staged L1/L2/L3/L4 entry-zone planner + frozen entry snapshots
-[REMAINING] Phase 6: active-position trend/thesis monitor; HOLD/HOLD_WATCH/ADD_ELIGIBLE/STOP_ADDING/THESIS_BROKEN/EXIT_REVIEW; compare current evidence vs frozen entry thesis
+[COMPLETE/VERIFIED GREEN] Phase 4: conservative/base/optimistic normalization-value model with provenance
+[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 5: patient-state integration + staged L1/L2/L3/L4 entry-zone planner + frozen entry snapshots
+[REMAINING] Phase 6: active-position trend/thesis monitor; HOLD/HOLD_WATCH/ADD_ELIGIBLE/STOP_ADDING/THESIS_BROKEN/EXIT_REVIEW; compare current evidence vs frozen entry thesis and cost basis
 [REMAINING] Phase 7: historical/PIT validation dataset; evaluate 29/40/50% opportunity hurdles + position-state behavior without lookahead
 [REMAINING] Phase 8: freeze DEVELOPMENT policy; evaluate untouched HOLDOUT
 [REMAINING] Phase 9: integrate validated V2 board + active-position fields into Quality Dips API/dashboard; MANUAL_ONLY
@@ -75,18 +81,18 @@ FULL ROADMAP — QUALITY DIPS V2
 [REMAINING] Phase 11: desktop regression + operational smoke + V2 evidence decision/closure
 
 NEXT GREEN GATE
-Pull latest branch, run Phase 1 + Phase 2 + Phase 3 + Phase 4 focused tests, then full regression. Do not call Phase 4 verified until user posts GREEN output.
+Pull latest branch, run Phase 1 through Phase 5 focused tests, then full regression. Do not call Phase 5 verified until user posts GREEN output.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 AFTER GREEN
-Proceed directly to Phase 5: integrate patient-state classification with provenance-backed valuation, staged L1/L2/L3/L4 entry zones, and frozen entry snapshots for later hold/trend monitoring.
+Proceed directly to Phase 6: implement the active-position trend/thesis monitor using frozen entry evidence, current trend/fundamental/valuation evidence, and cost basis. Price movement alone must not create thesis failure or an automatic sell decision.
 
 NORMAL DESKTOP WORKFLOW REMAINS
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
