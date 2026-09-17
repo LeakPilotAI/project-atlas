@@ -33,52 +33,58 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Production-Equivalent PIT HTF Semantic Hardening
 [COMPLETE, VERIFIED] Canonical Historical Context Contract v2
 [COMPLETE, VERIFIED] Hyperliquid Funding-Event Semantics Hardening + Legacy Test Reconciliation
-[COMPLETE, VERIFIED] Representative Historical Source Acquisition Plan
-  - verified by 43 focused + 670 full tests at 7e04087
-  - deterministic BTC/ETH/SOL 5m source plan is now available
-  - official Hyperliquid historical candles/funding remain canonical candle/funding sources
-  - provider historical OI remains external and must be verified/exported with provenance
-  - PIT rolling-volume and explicit HTF trend remain derived strictly from historical information
-  - current-state backfill remains forbidden
+[COMPLETE, VERIFIED] Representative Historical Source Acquisition Plan — verified by 43 focused + 670 full tests at 7e04087
 
-[CURRENT] Real Representative Dataset Acquisition / Normalization
-  - select representative UTC research windows with multiple regimes
-  - generate source plan for those windows
-  - acquire 5m and 1h Hyperliquid candles and fundingHistory
-  - acquire timestamped BTC/ETH/SOL historical OI at 5m cadence from verified provider/export
-  - derive trailing-24h PIT notional volume from historical data only
-  - derive htf_trend from completed 1h candles only
-  - merge OI + rolling-volume + HTF trend with 5m candles/funding events
-  - generate canonical BTC-5m.csv / ETH-5m.csv / SOL-5m.csv plus verified manifests
-  - preserve provider identity, API/export route, request IDs where available, UTC ranges, cadence, coverage gaps, raw checksums, and limitations
-  - run source_audit and require ready_for_locked_baseline_batch=true
-  - never use current metaAndAssetCtxs values as historical OI/volume context
-  - if trustworthy PIT context cannot be obtained, keep locked-baseline historical research blocked rather than weaken production gates
+[COMPLETE, LOCAL TEST PENDING] Representative UTC Research Window Lock
+- added backend/app/backtest/representative_windows.py
+- calendar-selected before Atlas strategy-result inspection
+- development windows: 2024-H2 and 2025-H1
+- temporal holdouts: 2025-H2 and 2026-H1
+- holdouts explicitly prohibited from candidate parameter tuning
+- windows are research-only/live-disabled and non-overlapping
+- tests/test_backtest_representative_windows.py added
 
-[NEXT] Locked Baseline Historical Batch Research
-  - run locked baseline first across BTC/ETH/SOL and representative periods/regimes
-  - persist metrics/trades/manifests/run metadata
-  - inspect expectancy R, WR, PF, total R, max drawdown, explicit costs, sample size, regime behavior, and symbol dependence
-  - preserve exact locked thresholds and PIT discipline
-  - no automatic production promotion from historical results
+[NEXT] Local representative-window + source-plan + HTF/context-v2/funding/provider/source/import/backtest focused tests and full regression.
+
+[NEXT AFTER GREEN] Real Representative Dataset Acquisition / Normalization
+- generate source plans for locked windows
+- acquire 5m and 1h Hyperliquid candles and fundingHistory
+- acquire timestamped BTC/ETH/SOL historical OI at 5m cadence from verified provider/export
+- derive trailing-24h PIT notional volume from historical data only
+- derive htf_trend from completed 1h candles only
+- merge OI + rolling-volume + HTF trend with 5m candles/funding events
+- generate canonical BTC-5m.csv / ETH-5m.csv / SOL-5m.csv plus verified manifests per research window/bundle
+- preserve provider identity, API/export route, request IDs where available, UTC ranges, cadence, coverage gaps, raw checksums, and limitations
+- run source_audit and require ready_for_locked_baseline_batch=true
+- never use current metaAndAssetCtxs values as historical OI/volume context
+- if trustworthy PIT context cannot be obtained, keep locked-baseline historical research blocked rather than weaken production gates
+
+[THEN] Locked Baseline Historical Batch Research
+- development windows first; holdouts remain untouched until evaluation
+- run locked baseline across BTC/ETH/SOL and locked periods
+- persist metrics/trades/manifests/run metadata
+- inspect expectancy R, WR, PF, total R, max drawdown, explicit costs, sample size, regime behavior, and symbol dependence
+- preserve exact locked thresholds and PIT discipline
+- no automatic production promotion from historical results
 
 [THEN] Research Candidate Batch Comparison
-  - candidates isolated from production baseline
-  - identical datasets/assumptions/costs
-  - protected holdouts
-  - no automatic retuning/live unlock
+- candidates isolated from production baseline
+- identical datasets/assumptions/costs
+- tune only on DEVELOPMENT windows
+- HOLDOUT windows evaluation-only
+- no automatic retuning/live unlock
 
 [THEN] PAPER/SHADOW Operations Checkpoint
-  - startup/recovery, live market data, signals, simulated fills, exits, durable logs/dashboard, prospective evidence, restart integrity
+- startup/recovery, live market data, signals, simulated fills, exits, durable logs/dashboard, prospective evidence, restart integrity
 
 [THEN — DESKTOP OPERATIONAL INTEGRATION]
-  - inspect exact Project Atlas.lnk / Stop Atlas.lnk targets and arguments
-  - launch intended services/dependencies/UI
-  - reconcile API dashboard + Next.js /research surfaces
-  - expose research/backtest readiness/results/operator surfaces
-  - validate failures, stale cleanup, restart/recovery, shutdown, logs, persistence
-  - launch/stop smoke test
-  - Atlas not operationally finished until GREEN
+- inspect exact Project Atlas.lnk / Stop Atlas.lnk targets and arguments
+- launch intended services/dependencies/UI
+- reconcile API dashboard + Next.js /research surfaces
+- expose research/backtest readiness/results/operator surfaces
+- validate failures, stale cleanup, restart/recovery, shutdown, logs, persistence
+- launch/stop smoke test
+- Atlas not operationally finished until GREEN
 
 [ONGOING] V6 prospective evidence and Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion only after sufficient evidence. Live remains separate.
@@ -87,29 +93,33 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE REAL-DATA BACKTESTING
-1. Select representative UTC windows for BTC/ETH/SOL.
-2. Acquire trustworthy PIT historical OI + 5m/1h candles + funding.
+1. Verify locked representative UTC windows locally.
+2. Acquire trustworthy PIT historical OI + 5m/1h candles + funding for locked windows.
 3. Derive PIT rolling-volume and HTF context.
 4. Normalize/import canonical BTC/ETH/SOL v2 datasets + manifests.
 5. Require source audit GREEN.
-6. Run locked-baseline historical batches.
-7. Run candidate comparisons with holdouts.
-8. Continue PAPER/SHADOW prospective evidence/operations.
-9. Complete desktop operational integration.
+6. Run locked-baseline DEVELOPMENT batches.
+7. Evaluate holdouts only after development decisions are frozen.
+8. Run candidate comparisons without holdout tuning.
+9. Continue PAPER/SHADOW prospective evidence/operations.
+10. Complete desktop operational integration.
 
 LIVE READINESS
-Last fully verified checkpoint: 670 passed at 7e04087. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 670 passed at 7e04087. Representative window lock is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_source_plan.py tests/test_backtest_funding_events.py tests/test_backtest_context_v2.py tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_representative_windows.py tests/test_backtest_source_plan.py tests/test_backtest_funding_events.py tests/test_backtest_context_v2.py tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-SOURCE PLAN COMMAND
-backend\.venv\Scripts\python.exe -m app.backtest.source_plan --start <UTC_START> --end <UTC_END> --output backend\data\research\historical\source-plan.json
+REPRESENTATIVE WINDOWS COMMAND
+backend\.venv\Scripts\python.exe -m app.backtest.representative_windows --output backend\data\research\historical\representative-windows.json
+
+SOURCE PLAN EXAMPLE FOR FIRST DEVELOPMENT WINDOW
+backend\.venv\Scripts\python.exe -m app.backtest.source_plan --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --output backend\data\research\historical\source-plan-dev-2024-h2.json
 
 SOURCE READINESS COMMAND
 backend\.venv\Scripts\python.exe -m app.backtest.source_audit --root backend\data\research\historical --timeframe 5m
@@ -118,7 +128,7 @@ Until real canonical BTC/ETH/SOL bundles exist, ready_for_locked_baseline_batch=
 CANONICAL BACKTEST COMMAND
 backend\.venv\Scripts\python.exe -m app.backtest.cli --dataset <CANONICAL_DATASET> --output-dir backend\data\research\backtests
 
-NEXT EXECUTION
-Select representative UTC windows and implement/execute real BTC/ETH/SOL source acquisition/normalization workflow. Desktop integration remains mandatory before Atlas is finished.
+NEXT EXECUTION AFTER GREEN
+Begin actual source acquisition/normalization for the first DEVELOPMENT window (2024-H2), then subsequent locked windows. Desktop integration remains mandatory before Atlas is finished.
 
 END OF MASTER ROADMAP
