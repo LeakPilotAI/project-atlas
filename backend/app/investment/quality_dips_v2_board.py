@@ -14,24 +14,28 @@ from app.investment.quality_dips_v2_gate import evaluate_v2_gate
 from app.investment.quality_dips_v2_valuation import from_research_row as valuation_from_research_row
 
 
-def _merge_valuation(row: dict[str, Any]) -> dict[str, Any]:
+def _merge_valuation(row: dict[str, Any]) -> tuple[dict[str, Any], bool]:
     merged = dict(row)
     valuation = valuation_from_research_row(row)
-    if valuation.get("valuation_window_complete"):
+    complete = bool(valuation.get("valuation_window_complete"))
+    if complete:
         merged["normalization_value"] = dict(valuation.get("normalization_value") or {})
-    return merged
+    return merged, complete
 
 
 def build_v2_projection(row: dict[str, Any]) -> dict[str, Any]:
     """Return a read-only V2 projection for one investment research row."""
-    merged = _merge_valuation(row)
+    merged, valuation_complete = _merge_valuation(row)
     evidence = adapt_research_row(merged)
     gate = evaluate_v2_gate(evidence)
 
     ladder = build_entry_ladder(
-        conservative_value=(evidence.get("normalization_value") or {}).get("conservative"),
+        symbol=str(evidence.get("symbol") or ""),
+        normalization_value=dict(evidence.get("normalization_value") or {}),
+        valuation_window_complete=(
+            valuation_complete and not bool(evidence.get("missing_v2_evidence"))
+        ),
         current_price=evidence.get("price"),
-        valuation_complete=not bool(evidence.get("missing_v2_evidence")),
     )
 
     return {
@@ -82,9 +86,9 @@ def attach_v2_board(
             "symbol": symbol,
             "patient_state": "WATCH",
             "state_reasons": ["no source research row available"],
-            "evidence_gate": {"allowed": False, "status": "BLOCKED", "reasons": ["missing source research"]},
+            "evidence_gate": {"gate_passed": False, "status": "BLOCKED", "blockers": ["missing source research"]},
             "normalization_value": {},
-            "entry_ladder": {"active": False, "levels": []},
+            "entry_ladder": {"symbol": symbol, "ready": False, "levels": []},
             "missing_v2_evidence": ["source_research"],
             "execution": "MANUAL_ONLY",
             "read_only": True,
