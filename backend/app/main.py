@@ -16,6 +16,7 @@ from app.adapters.registry import registry
 from app.alerts.discord import is_discord_ready, start_discord_bot, stop_discord_bot
 from app.api.command_center import router as command_center_router
 from app.api.diagnostics import router as diagnostics_router
+from app.api.investment_board import router as investment_board_router
 from app.api.live import router as live_router
 from app.api.perp_manual import router as perp_manual_router
 from app.api.validation import router as validation_router
@@ -155,9 +156,6 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             log.warning("paper session bootstrap failed", error=str(e)[:200])
 
-        # "Day Trade" is now exclusively the Hyperliquid manual-perp product.
-        # The legacy yfinance equity day-trade worker remains in source for research
-        # compatibility but is intentionally not imported or started here.
         for name, starter in [
             ("scanner", scanner.start),
             ("opportunity_tracker", opportunity_tracker.start),
@@ -279,6 +277,7 @@ app.add_middleware(
 app.include_router(command_center_router)
 app.include_router(diagnostics_router)
 app.include_router(performance_router)
+app.include_router(investment_board_router, prefix="/api")
 app.include_router(live_router)
 app.include_router(perp_manual_router)
 app.include_router(validation_router)
