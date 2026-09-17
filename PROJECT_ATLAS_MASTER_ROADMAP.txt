@@ -6,17 +6,18 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files/commits; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity. After every execution provide this FULL CURRENT ROADMAP as a downloadable artifact so the user can overwrite their local roadmap and preserve continuity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 374f7482ec48f541fc36bd1b2d0631c108e0bf59
+Last fully GREEN commit: 374f7482ec48f541fc36bd1b2d0631c108e0bf59
 Focused provider-normalization + source-audit/import/manifest/PIT/backtest suite: 29 passed in 0.78s. Full regression: 656 passed, 2 warnings in 36.12s. Failures: 0.
+Latest attempted combined checkpoint before repair: 38 passed / 1 failed. Failure was a stale legacy importer test that still expected pre-hardening carry-forward funding semantics. The production code behaved as intended (0.0 on non-event bars); test reconciliation is now pushed and LOCAL RETEST PENDING.
 
 LOCKED PRODUCTION
 OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. Production HTF semantics: latest completed 1h close vs SMA20; UP if > SMA20*1.002, DOWN if < SMA20*0.998, otherwise FLAT; UNKNOWN/OFF/FLAT permit either side, UP permits LONG and blocks SHORT, DOWN permits SHORT and blocks LONG. No automatic retuning/live unlock.
 
 DESKTOP / OPERATOR END-STATE REQUIREMENT
-Final desktop integration must validate these exact user-supplied Windows shortcut paths:
+Final desktop integration must validate:
 - C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
 - C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
-Launching Atlas must bring up the intended research stack cleanly; Stop Atlas must terminate the intended Atlas runtime cleanly. Validate dependencies, backend/API, intended UI, paper/shadow, research/backtesting surfaces, restart/recovery, logs, persistence, stale-process cleanup, and visible failures before Atlas is called finished.
+Launching Atlas must bring up the intended research stack cleanly; Stop Atlas must terminate the intended runtime cleanly. Validate dependencies, backend/API, intended UI, paper/shadow, research/backtesting surfaces, restart/recovery, logs, persistence, stale-process cleanup, and visible failures before Atlas is called finished.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
@@ -29,66 +30,65 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Hyperliquid Historical Dataset PIT Import Foundation
 [COMPLETE, VERIFIED] Historical Dataset Provenance / Manifest Foundation + Historical Source Operator Import Command
 [COMPLETE, VERIFIED] Representative Historical Source Readiness Audit
-[COMPLETE, VERIFIED] Provider Historical Context Normalization — verified by 29 focused + 656 full tests at 374f748
+[COMPLETE, VERIFIED] Provider Historical Context Normalization — 29 focused + 656 full tests at 374f748
 
 [COMPLETE, LOCAL TEST PENDING] Production-Equivalent PIT HTF Semantic Hardening
-  - production-equivalent side-aware HTF semantics
-  - only completed historical 1h candles visible to 5m decisions
-  - locked baseline accepts explicit htf_trend
+- side-aware HTF semantics matching production
+- only completed 1h candles visible to 5m decisions
+- locked baseline accepts explicit htf_trend
 
 [COMPLETE, LOCAL TEST PENDING] Canonical Historical Context Contract v2
-  - explicit htf_trend UP/DOWN/FLAT/UNKNOWN/OFF end-to-end
-  - loader/importer/writer/operator CLI/backtest CLI support v2
-  - legacy htf_regime_aligned retained temporarily for old synthetic fixtures only
+- explicit htf_trend UP/DOWN/FLAT/UNKNOWN/OFF end-to-end
+- loader/importer/writer/operator CLI/backtest CLI support v2
+- legacy htf_regime_aligned temporarily retained for synthetic fixtures
 
-[COMPLETE, LOCAL TEST PENDING] Hyperliquid Funding-Event Semantics Hardening
-  - verified current fundingHistory contract returns timestamped realized funding-rate records
-  - Hyperliquid funding is hourly; historical importer no longer carries the latest rate onto every 5m candle
-  - funding rate is attached only to a candle whose timestamp exactly matches a funding event; non-event 5m candles receive 0
-  - conflicting duplicate funding events fail closed
-  - tests/test_backtest_funding_events.py covers non-carry-forward behavior, distinct hourly events, and conflicting duplicates
-  - historical engine therefore charges funding only when a position crosses an imported funding-event bar
-  - note: engine currently approximates funding notional with candle open, while protocol funding notional is oracle-price based; before high-precision performance claims, either import event oracle notional/price or explicitly document this residual approximation
-  - no live execution changes
+[COMPLETE, LOCAL RETEST PENDING] Hyperliquid Funding-Event Semantics Hardening + Legacy Test Reconciliation
+- fundingHistory modeled as timestamped realized funding events
+- latest rate is NOT carried onto every 5m candle
+- exact event timestamp receives event rate; other bars receive zero
+- conflicting duplicate events fail closed
+- dedicated funding-event tests added
+- stale tests/test_hyperliquid_historical_import.py expectation repaired after local run exposed old carry-forward assumption
+- added exact-timestamp event assertion to legacy importer suite
+- residual precision: funding notional currently uses candle open instead of event oracle price; track before high-precision cost claims
 
-[NEXT] Local combined HTF-v2 + funding-event + provider/source/import/backtest focused tests and full regression.
+[NEXT] Local combined retest: funding-event + HTF-v2 + provider/source/import/backtest focused suite and full regression.
 
 [NEXT AFTER GREEN] Real Representative Dataset Acquisition / Normalization
-  - obtain trustworthy BTC/ETH/SOL historical OI at 5m cadence
-  - obtain/derive PIT rolling 24h notional volume strictly from historical records
-  - obtain historical 1h candles and derive htf_trend from completed bars only
-  - merge OI + rolling volume + trend with 5m candles/funding events
-  - generate canonical BTC-5m.csv / ETH-5m.csv / SOL-5m.csv + manifests
-  - record provider identity, route/export, request IDs where available, UTC range, cadence, gaps, checksums, limitations
-  - require source_audit ready_for_locked_baseline_batch=true
-  - never backfill current metaAndAssetCtxs into history
-  - if trustworthy PIT context is unavailable, remain blocked rather than weaken gates
+- trustworthy BTC/ETH/SOL historical OI at 5m cadence
+- PIT rolling 24h notional volume from historical records only
+- historical 1h candles -> completed-bar htf_trend
+- merge OI + rolling volume + trend with 5m candles/funding events
+- canonical BTC/ETH/SOL 5m datasets + manifests
+- preserve provider identity, routes/request IDs, UTC ranges, cadence, gaps, checksums, limitations
+- require source audit GREEN
+- never current-state-backfill metaAndAssetCtxs
+- if trustworthy PIT context unavailable, stay blocked rather than weaken gates
 
 [THEN] Locked Baseline Historical Batch Research
-  - BTC/ETH/SOL across representative periods/regimes
-  - persist metrics/trades/manifests
-  - evaluate expectancy R, WR, PF, total R, drawdown, costs, sample size, regimes, symbol dependence
-  - preserve locked thresholds/PIT discipline
-  - no in-sample automatic promotion
+- BTC/ETH/SOL representative periods/regimes
+- metrics/trades/manifests
+- expectancy R, WR, PF, total R, drawdown, costs, sample size, regime/symbol behavior
+- exact locked thresholds/PIT discipline
+- no automatic promotion
 
 [THEN] Research Candidate Batch Comparison
-  - isolate candidates from production baseline
-  - identical datasets/assumptions/costs
-  - protected holdouts
-  - no automatic production retuning/live unlock
+- candidates isolated from production baseline
+- identical datasets/assumptions/costs
+- protected holdouts
+- no automatic retuning/live unlock
 
 [THEN] PAPER/SHADOW Operations Checkpoint
-  - startup/recovery, live market data, signals, simulated fills, exits, durable logs/dashboard, prospective evidence
-  - restart integrity
+- startup/recovery, live market data, signals, simulated fills, exits, durable logs/dashboard, prospective evidence, restart integrity
 
-[THEN — DESKTOP OPERATIONAL INTEGRATION] Final shortcut/runtime audit
-  - inspect exact Project Atlas.lnk / Stop Atlas.lnk targets and arguments
-  - launch every intended service/dependency and intended UI
-  - reconcile API dashboard with Next.js /research surfaces
-  - expose research/backtest readiness/results/operator surfaces
-  - validate failures, stale cleanup, restart/recovery, shutdown, logs, persistence
-  - complete launch/stop smoke test
-  - Atlas is not operationally finished until GREEN
+[THEN — DESKTOP OPERATIONAL INTEGRATION]
+- inspect exact Project Atlas.lnk / Stop Atlas.lnk targets and arguments
+- launch intended services/dependencies/UI
+- reconcile API dashboard + Next.js /research surfaces
+- expose research/backtest readiness/results/operator surfaces
+- validate failures, stale cleanup, restart/recovery, shutdown, logs, persistence
+- launch/stop smoke test
+- Atlas not operationally finished until GREEN
 
 [ONGOING] V6 prospective evidence and Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion only after sufficient evidence. Live remains separate.
@@ -97,19 +97,19 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE REAL-DATA BACKTESTING
-1. Verify production-equivalent PIT HTF hardening + canonical context v2 + funding-event hardening locally.
-2. Acquire trustworthy PIT BTC/ETH/SOL historical OI + rolling-volume material and historical 1h candles.
+1. Retest HTF hardening + context v2 + funding-event reconciliation locally.
+2. Acquire trustworthy PIT BTC/ETH/SOL historical OI + rolling-volume + 1h candles.
 3. Normalize/import canonical BTC/ETH/SOL v2 datasets + manifests.
 4. Require source audit GREEN.
-5. Run locked-baseline historical batches across representative periods/regimes.
-6. Run isolated research-candidate comparisons with protected holdouts.
-7. Continue PAPER/SHADOW prospective evidence and operational validation.
-8. Complete desktop operational integration using exact Project Atlas.lnk and Stop Atlas.lnk paths.
+5. Run locked-baseline historical batches.
+6. Run candidate comparisons with holdouts.
+7. Continue PAPER/SHADOW prospective evidence/operations.
+8. Complete desktop operational integration.
 
 LIVE READINESS
-Last fully verified checkpoint: 656 passed at 374f748. HTF hardening + context v2 + funding-event hardening are LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 656 passed at 374f748. New HTF/context-v2/funding work remains LOCAL RETEST PENDING after the stale test repair. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-LOCAL UPDATE / TEST
+LOCAL UPDATE / RETEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
@@ -125,6 +125,6 @@ CANONICAL BACKTEST COMMAND
 backend\.venv\Scripts\python.exe -m app.backtest.cli --dataset <CANONICAL_DATASET> --output-dir backend\data\research\backtests
 
 NEXT EXECUTION AFTER GREEN
-Acquire/normalize real BTC/ETH/SOL PIT v2 datasets and require source-audit GREEN, then run locked-baseline historical batch research. Desktop operational integration remains mandatory before Atlas is considered finished.
+Acquire/normalize real BTC/ETH/SOL PIT v2 datasets and require source-audit GREEN, then locked-baseline historical batch research. Desktop integration remains mandatory before Atlas is finished.
 
 END OF MASTER ROADMAP
