@@ -9,82 +9,82 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. ATLAS_RUNTIME_AUDIT.json is untracked local output and must not be committed blindly.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-PAPER/SHADOW focused checkpoint GREEN: 13 passed in 0.57s. Full regression GREEN: 788 passed, 2 warnings in 42.21s. Read-only local shadow-store checkpoint GREEN with event_count=29023, event_store_corruption=null, persistent_recovery_ready=true, recovered_open=2, shadow_isolation_ready=true, legacy_state_mutated=false, real_order_actions=false, live_capital_allowed=false, automatic_real_money_execution=false. Shadow snapshot recovered 107 closed positions and 2 open positions (CRV and NEAR) from backend/data/trading_v4_shadow.jsonl.
+PAPER/SHADOW focused checkpoint GREEN: 13 passed in 0.57s. Full regression GREEN: 788 passed, 2 warnings in 42.21s. Read-only local shadow-store checkpoint GREEN: event_count=29023; event_store_corruption=null; persistent_recovery_ready=true; recovered_open=2; shadow_isolation_ready=true; legacy_state_mutated=false; real_order_actions=false; live_capital_allowed=false; automatic_real_money_execution=false; status=PAPER_SHADOW_CHECKPOINT_GREEN. Snapshot recovered 107 closed positions and 2 open positions (CRV, NEAR).
 
 CLOSED HISTORICAL EXPERIMENT — VERIFIED NEGATIVE
 DEVELOPMENT dev-2024-h2: 659 trades; total_r=-117.21753020091131; expectancy_r=-0.17787182124569242; FAILED_NEGATIVE.
 Untouched HOLDOUT holdout-2025-h2: 546 trades; total_r=-26.72350715657114; expectancy_r=-0.048944152301412344; FAILED_NEGATIVE.
-Independent HOLDOUT source audit id=951dbc0f46516bcf97eb was GREEN. Stable positive edge is NOT established. The experiment is closed. Do not retune or relabel it.
-
-PAPER/SHADOW OPERATIONAL CHECKPOINT — COMPLETE/VERIFIED GREEN
-4234cd5 atlas: add paper shadow operational checkpoint
-- backend/app/trading_core/shadow_operational_checkpoint.py
-- read-only inspection of V4 shadow event store/recovery
-- reports corruption, recovered opens, SHADOW_ONLY snapshot, persistence readiness
-- never creates orders/trades or mutates legacy PAPER state
-- live_capital_allowed=false and automatic_real_money_execution=false
-
-a5def7d atlas: test paper shadow operational checkpoint
-- tests/test_trading_shadow_operational_checkpoint.py
-- empty event store GREEN/live-disabled
-- valid persisted open recovers exactly
-- corrupt middle JSONL fails closed/BLOCKED
-
-USER-VERIFIED REAL CHECKPOINT
-- event store exists: true
-- event count: 29023
-- corruption: null
-- recovered open: 2
-- shadow snapshot: 107 closed / 2 open
-- mode: SHADOW_ONLY
-- persistent recovery ready: true
-- shadow isolation ready: true
-- legacy state mutated: false
-- real order actions: false
-- live capital allowed: false
-- automatic real-money execution: false
-- status: PAPER_SHADOW_CHECKPOINT_GREEN
+Independent HOLDOUT source audit id=951dbc0f46516bcf97eb was GREEN. Stable positive edge is NOT established. Experiment closed; no retuning/relabeling.
 
 FULL ROADMAP
 [COMPLETE/VERIFIED] Core rebuild / cockpit / PAPER / recovery / Quality Dips
 [COMPLETE/VERIFIED] V6 evidence stack
-[COMPLETE/VERIFIED] Historical runner + PIT importer + manifests + source readiness
-[COMPLETE/VERIFIED] DEVELOPMENT canonical data + source audit GREEN
+[COMPLETE/VERIFIED] Historical/PIT/source infrastructure
+[COMPLETE/VERIFIED] DEVELOPMENT canonical + source audit GREEN
 [COMPLETE/VERIFIED NEGATIVE] DEVELOPMENT baseline
 [COMPLETE/VERIFIED] DEVELOPMENT decision freeze
-[COMPLETE/VERIFIED] HOLDOUT acquisition/context/funding/canonical + source audit
-[COMPLETE/VERIFIED NEGATIVE] Exact frozen untouched HOLDOUT evaluation
+[COMPLETE/VERIFIED] HOLDOUT acquisition/context/funding/canonical + audit
+[COMPLETE/VERIFIED NEGATIVE] Frozen untouched HOLDOUT evaluation
 [COMPLETE/VERIFIED] Immutable HOLDOUT evidence freeze
-[COMPLETE/CLOSED] Historical experiment dev-2024-h2 -> holdout-2025-h2 — FAILED_NEGATIVE
-[COMPLETE/VERIFIED GREEN] PAPER/SHADOW operational checkpoint — 788 full tests GREEN; 29,023-event store recovered without corruption; 107 closed / 2 open; isolation/no-live controls GREEN
+[COMPLETE/CLOSED] Historical experiment — FAILED_NEGATIVE
+[COMPLETE/VERIFIED GREEN] PAPER/SHADOW operational checkpoint — 788 full tests; 29,023-event store; 107 closed / 2 open; no corruption; recovery/isolation/no-live GREEN
 
-[CURRENT] FINAL DESKTOP INTEGRATION
-- inspect/harden scripts/windows/Atlas-Launch.ps1, Atlas-Stop.ps1, Install-DesktopShortcut.ps1, ATLAS.bat and ATLAS-STOP.bat
-- validate exact desktop shortcut paths: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
-- verify stale-process cleanup and restart behavior
-- verify Docker/Postgres/Redis dependency visibility
-- verify FastAPI startup and persistent logs
-- verify /health, /dashboard, /api/research, /api/command-center/summary
-- verify PAPER/SHADOW event persistence/recovery survives restart
-- verify Stop Atlas terminates Atlas API/Atlas containers without terminating Docker Desktop or unrelated Genesis services
-- reconcile remaining README/frontend wording with API-served dashboard reality
-- run final launch/stop smoke test on local Windows machine
+[CURRENT, LOCAL TEST PENDING] FINAL DESKTOP INTEGRATION
+110019b atlas: mark paper shadow checkpoint green
+- roadmap records actual user-verified runtime checkpoint
 
-[NEXT AFTER DESKTOP GREEN] Record final operational artifact and close engineering roadmap. Atlas remains PAPER/SHADOW research software; stable positive edge remains not established and live execution remains disabled.
+d7a57a4 atlas: add desktop integration smoke check
+- scripts/windows/Atlas-Desktop-Smoke.ps1
+- validates actual Desktop folder shortcuts and targets
+- validates ATLAS.bat / ATLAS-STOP.bat presence
+- validates running /health, /dashboard, /api/research, /api/command-center/summary
+- reports Atlas containers
+- fail-closed BLOCKED exit code if required surfaces are absent
+- paper_shadow_only=true, live_capital_allowed=false, automatic_real_money_execution=false
 
-LOCAL UPDATE
+4b70a60 atlas: test desktop integration contracts
+- tests/test_windows_desktop_integration_scripts.py
+- locks API-served dashboard/no-Next architecture
+- locks Atlas-scoped stop behavior that preserves Docker Desktop/Genesis
+- locks shortcut target contracts
+- locks no-live/fail-closed desktop smoke controls
+
+EXISTING DESKTOP IMPLEMENTATION VERIFIED BY SOURCE INSPECTION
+- Atlas-Launch.ps1 starts Docker Desktop only if engine is down, starts atlas Postgres/Redis, starts FastAPI/uvicorn on 127.0.0.1:8000, writes persistent API logs, waits on /health, opens API-served /dashboard, and attaches API to kill-on-close job.
+- Atlas-Stop.ps1 targets Atlas Python, ports 8000/3000, Atlas-related Node only, COMPOSE_PROJECT_NAME=atlas, and atlas-postgres/atlas-redis; it does not quit Docker Desktop.
+- Install-DesktopShortcut.ps1 creates Project Atlas.lnk and Stop Atlas.lnk in Windows Desktop and targets repo-root ATLAS.bat / ATLAS-STOP.bat.
+- app.main exposes /health, /dashboard, /api/research, and command-center router.
+
+LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
+backend\.venv\Scripts\python.exe -m pytest tests/test_windows_desktop_integration_scripts.py tests/test_trading_shadow_operational_checkpoint.py -q
+backend\.venv\Scripts\python.exe -m pytest -q
+
+FINAL WINDOWS SMOKE — AFTER TESTS GREEN
+1. Install/refresh shortcuts:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\Install-DesktopShortcut.ps1
+2. Double-click C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and wait until the launcher says Atlas is running / API healthy.
+3. In a SECOND PowerShell window run:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\Atlas-Desktop-Smoke.ps1
+Expected: status=ATLAS_DESKTOP_SMOKE_GREEN; all four HTTP surfaces ok; both shortcuts exist and target the correct root BAT files; live controls false.
+4. Double-click C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk.
+5. Verify stop behavior:
+Invoke-WebRequest http://127.0.0.1:8000/health -UseBasicParsing
+Expected after stop: connection failure. Docker Desktop should remain running and unrelated Genesis services must remain untouched.
+6. Restart Project Atlas.lnk once more, rerun Atlas-Desktop-Smoke.ps1, and rerun shadow_operational_checkpoint against backend\data\trading_v4_shadow.jsonl. Recovery must remain GREEN with no corruption.
+
+[NEXT AFTER DESKTOP GREEN] Record final operational artifact, mark desktop integration COMPLETE/VERIFIED, and close the engineering roadmap.
 
 WHAT REMAINS
-1 Final desktop integration/hardening.
-2 Local launch/restart/stop smoke test and endpoint checks.
+1 Validate desktop integration contract tests/full regression locally.
+2 Run real shortcut launch/smoke/stop/restart/recovery sequence.
 3 Record final operational artifact and close engineering roadmap.
-4 Any future strategy research must be a NEW isolated cycle; never retune the closed experiment.
+4 Future strategy research, if desired, must be a NEW isolated cycle; never retune closed experiment.
 
 RESEARCH/LIVE STATUS
-Stable positive edge NOT ESTABLISHED. Historical experiment CLOSED as FAILED_NEGATIVE. PAPER/SHADOW operational checkpoint GREEN. Live capital locked. Automated real-money execution disabled.
+Stable positive edge NOT ESTABLISHED. Historical experiment CLOSED FAILED_NEGATIVE. PAPER/SHADOW operational checkpoint GREEN. Live capital locked. Automated real-money execution disabled.
 
 END OF MASTER ROADMAP
