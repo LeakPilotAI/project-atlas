@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict
 
@@ -10,8 +11,7 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/diagnostics", tags=["diagnostics"])
 
 
-@router.get("/research")
-async def diagnostics_research() -> Dict[str, Any]:
+def _research_payload() -> Dict[str, Any]:
     from app.services.funnel_research import funnel_research
     from app.services.paper_pipeline import paper_pipeline
     from app.services.shadow_research import shadow_research
@@ -31,6 +31,11 @@ async def diagnostics_research() -> Dict[str, Any]:
         "effective_config": paper_pipeline.effective_config(),
         "research_text": funnel_research.research_summary_text(),
     }
+
+
+@router.get("/research")
+async def diagnostics_research() -> Dict[str, Any]:
+    return await asyncio.to_thread(_research_payload)
 
 
 @router.get("/paper")
