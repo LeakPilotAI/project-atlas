@@ -2,10 +2,12 @@
 
 Fail-closed research utility: raw archive schemas are authoritative. Atlas does not
 promote expected/current API field names into historical facts without inspection.
+LZ4 archives are decoded in-process through the pinned Python dependency so Windows
+operators do not need a separate lz4.exe installation.
 """
 from __future__ import annotations
 
-import argparse,csv,json,shutil,subprocess
+import argparse,csv,json
 from pathlib import Path
 from typing import Any
 
@@ -18,11 +20,16 @@ TIME_FIELDS=("time","timestamp","ts","datetime")
 
 def _decompress(path:Path)->str:
     if path.suffix.lower()!=".lz4":return path.read_text(encoding="utf-8",errors="replace")
-    exe=shutil.which("lz4")
-    if exe is None:raise RuntimeError("lz4 CLI is required to inspect .lz4 archive files")
-    p=subprocess.run([exe,"-dc",str(path)],capture_output=True,check=False)
-    if p.returncode!=0:raise RuntimeError(f"lz4 decompression failed: {p.stderr.decode(errors='replace').strip()}")
-    return p.stdout.decode("utf-8",errors="replace")
+    try:
+        import lz4.frame
+    except ImportError as exc:
+        raise RuntimeError("Python package 'lz4' is required to inspect .lz4 archive files") from exc
+    try:
+        with lz4.frame.open(path,"rb") as f:
+            raw=f.read()
+    except (OSError,RuntimeError) as exc:
+        raise RuntimeError(f"lz4 decompression failed for {path}: {exc}") from exc
+    return raw.decode("utf-8",errors="replace")
 
 
 def _pick(fields:list[str],candidates:tuple[str,...])->str|None:
@@ -50,6 +57,7 @@ def inspect_file(path:Path)->dict[str,Any]:
     return {
         "mode":"RESEARCH_ONLY_ARCHIVE_SCHEMA_INSPECTION",
         "path":str(path),"header":fields,"rows_scanned":rows,
+        "compression":"lz4.frame" if Path(path).suffix.lower()==".lz4" else "plain_text",
         "detected":{"symbol":symbol_field,"timestamp":time_field,"open_interest":oi_field,"day_notional_volume":volume_field},
         "target_sample_counts":target_counts,
         "pit_context_candidate":bool(symbol_field and time_field and oi_field and volume_field and all(target_counts.values())),
