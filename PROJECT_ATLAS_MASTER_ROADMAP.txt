@@ -10,7 +10,7 @@ Tested commit: 374f7482ec48f541fc36bd1b2d0631c108e0bf59
 Focused provider-normalization + source-audit/import/manifest/PIT/backtest suite: 29 passed in 0.78s. Full regression: 656 passed, 2 warnings in 36.12s. Failures: 0.
 
 LOCKED PRODUCTION
-OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. Production HTF semantics confirmed from perp_micro_coach.py: latest completed 1h close vs SMA20; UP if > SMA20*1.002, DOWN if < SMA20*0.998, otherwise FLAT; UNKNOWN/OFF/FLAT permit either side, UP permits LONG and blocks SHORT, DOWN permits SHORT and blocks LONG. No automatic retuning/live unlock.
+OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. Production HTF semantics: latest completed 1h close vs SMA20; UP if > SMA20*1.002, DOWN if < SMA20*0.998, otherwise FLAT; UNKNOWN/OFF/FLAT permit either side, UP permits LONG and blocks SHORT, DOWN permits SHORT and blocks LONG. No automatic retuning/live unlock.
 
 DESKTOP / OPERATOR END-STATE REQUIREMENT
 Final desktop integration must validate these exact user-supplied Windows shortcut paths:
@@ -29,40 +29,47 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Hyperliquid Historical Dataset PIT Import Foundation
 [COMPLETE, VERIFIED] Historical Dataset Provenance / Manifest Foundation + Historical Source Operator Import Command
 [COMPLETE, VERIFIED] Representative Historical Source Readiness Audit
-[COMPLETE, VERIFIED] Provider Historical Context Normalization
-  - verified by 29 focused + 656 full tests at 374f748
+[COMPLETE, VERIFIED] Provider Historical Context Normalization — verified by 29 focused + 656 full tests at 374f748
 
 [COMPLETE, LOCAL TEST PENDING] Production-Equivalent PIT HTF Semantic Hardening
-  - audited actual production perp_micro_coach.py rather than approximating HTF behavior
-  - added backend/app/backtest/htf_context.py
-  - reproduces production 1h close-vs-SMA20 thresholds exactly: UP > +0.2%, DOWN < -0.2%, otherwise FLAT
-  - reproduces production side-aware gate exactly: UP allows LONG only; DOWN allows SHORT only; FLAT/UNKNOWN/OFF allow either side
-  - historical 1h candles become visible only after the candle has completed; unfinished hourly candles are never exposed to a 5m decision
-  - locked_perp_micro_signal now accepts htf_trend and applies the HTF gate after the candidate side is known
-  - legacy htf_regime_aligned remains temporarily supported only for backward-compatible synthetic fixtures; real historical datasets should migrate to side-aware htf_trend
-  - this corrects an important pre-real-data modeling weakness where a generic boolean could not represent production side-aware HTF semantics
-  - focused tests cover exact trend thresholds, side semantics, completed-candle PIT visibility, and LONG blocking/allowing by DOWN/UP trend
+  - backend/app/backtest/htf_context.py reproduces production 1h close-vs-SMA20 thresholds and side-aware gate
+  - only completed historical 1h candles become visible to 5m decisions
+  - locked_perp_micro_signal accepts htf_trend and applies side-aware HTF semantics
+  - tests added; local verification still pending because user requested next execution before posting results
+
+[COMPLETE, LOCAL TEST PENDING] Canonical Historical Context Contract v2
+  - HistoricalContext and HistoricalMarketContext now support explicit htf_trend: UP/DOWN/FLAT/UNKNOWN/OFF
+  - canonical loader requires explicit htf_trend for v2 data while retaining legacy htf_regime_aligned fixture compatibility
+  - Hyperliquid historical normalization carries explicit trend end-to-end
+  - canonical CSV writer emits htf_trend for v2 rows and legacy boolean only for legacy rows
+  - operator import CLI accepts explicit htf_trend and fails closed on invalid/missing HTF context
+  - backtest CLI passes explicit htf_trend into the locked baseline when present, falling back to legacy boolean only for old fixtures
+  - tests/test_backtest_context_v2.py covers v2 load, invalid trend rejection, v2 import/write/reload, and legacy compatibility
   - no production Settings mutation; live capital remains disabled
 
-[NEXT] Local HTF-hardening + provider/source/import/backtest focused tests and full regression.
+[NEXT] Local combined HTF-v2 + provider/source/import/backtest focused tests and full regression.
 
-[NEXT AFTER GREEN] Canonical Historical Context Contract v2 + Real Representative Dataset Acquisition
-  - migrate canonical real-data context from generic htf_regime_aligned boolean to explicit htf_trend while preserving fixture compatibility during transition
-  - derive htf_trend from completed historical 1h candles using app.backtest.htf_context
-  - obtain/export trustworthy historical BTC/ETH/SOL OI at 5m cadence; 0xArchive is a documented candidate because it provides historical Hyperliquid market-data/open-interest surfaces and file/API delivery, but provider access/coverage must be validated before trust
-  - obtain/derive PIT rolling 24h notional volume strictly from historical records available at each timestamp; do not approximate current dayNtlVlm backward
-  - merge historical OI + rolling-volume + HTF trend with 5m candles/funding
+[NEXT AFTER GREEN] Real Representative Dataset Acquisition / Normalization
+  - obtain/export trustworthy historical BTC/ETH/SOL OI at 5m cadence
+  - obtain/derive PIT rolling 24h notional volume strictly from historical records available at each timestamp
+  - obtain historical 1h candles and derive htf_trend using completed bars only via app.backtest.htf_context
+  - merge OI + rolling-volume + explicit HTF trend with 5m candles/funding
   - generate canonical BTC-5m.csv / ETH-5m.csv / SOL-5m.csv plus verified manifests under backend/data/research/historical
   - record provider identity, route/export, request IDs where available, exact UTC range, cadence, coverage/gaps, raw checksums, and limitations
   - run app.backtest.source_audit and require ready_for_locked_baseline_batch=true before batch research
   - never use current metaAndAssetCtxs values as historical OI/volume context
   - if trustworthy PIT OI/volume cannot be obtained, keep locked-baseline historical research blocked rather than weaken production gates
 
+[THEN] Funding-Event Semantics Hardening Before Real Batch
+  - verify Hyperliquid funding schedule/meaning from current official documentation
+  - stop carrying the latest funding rate onto every 5m bar if funding is event-based; represent actual funding events or correct prorating only
+  - add exact funding-event accounting tests before interpreting real historical expectancy
+
 [THEN] Locked Baseline Historical Batch Research
   - run locked production baseline first across BTC/ETH/SOL and multiple representative periods/regimes
   - persist comparable run bundles/metrics/trades/manifests
   - inspect expectancy R, WR, PF, total R, max drawdown, explicit costs, sample size, regime behavior, and symbol dependence
-  - preserve point-in-time discipline and exact locked production thresholds
+  - preserve PIT discipline and exact locked production thresholds
   - no strategy promotion from in-sample performance alone
 
 [THEN] Research Candidate Batch Comparison
@@ -92,25 +99,25 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE REAL-DATA BACKTESTING
-1. Verify production-equivalent PIT HTF hardening locally.
-2. Migrate real-data context contract to explicit htf_trend.
-3. Acquire trustworthy PIT BTC/ETH/SOL historical OI + rolling-volume material and historical 1h candles.
-4. Normalize/import canonical BTC/ETH/SOL datasets + manifests.
-5. Require source audit GREEN before locked-baseline batches.
+1. Verify production-equivalent PIT HTF hardening + canonical context v2 locally.
+2. Acquire trustworthy PIT BTC/ETH/SOL historical OI + rolling-volume material and historical 1h candles.
+3. Normalize/import canonical BTC/ETH/SOL v2 datasets + manifests.
+4. Require source audit GREEN.
+5. Harden/verify actual Hyperliquid funding-event semantics before interpreting batches.
 6. Run locked-baseline historical batches across representative periods/regimes.
 7. Run isolated research-candidate comparisons with protected holdouts.
 8. Continue PAPER/SHADOW prospective evidence and operational validation.
 9. Complete desktop operational integration using exact Project Atlas.lnk and Stop Atlas.lnk paths.
 
 LIVE READINESS
-Last fully verified checkpoint: 656 passed at 374f748. PIT HTF hardening is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 656 passed at 374f748. HTF hardening + context v2 are LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_context_v2.py tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 SOURCE READINESS COMMAND
@@ -121,6 +128,6 @@ CANONICAL BACKTEST COMMAND
 backend\.venv\Scripts\python.exe -m app.backtest.cli --dataset <CANONICAL_DATASET> --output-dir backend\data\research\backtests
 
 NEXT EXECUTION AFTER GREEN
-Canonical Historical Context Contract v2 (explicit htf_trend), then real BTC/ETH/SOL PIT source acquisition/normalization and source-audit GREEN. Desktop operational integration remains mandatory before Atlas is considered finished.
+Acquire/normalize real BTC/ETH/SOL PIT v2 datasets, then harden verified Hyperliquid funding-event semantics before locked-baseline batch interpretation. Desktop operational integration remains mandatory before Atlas is considered finished.
 
 END OF MASTER ROADMAP
