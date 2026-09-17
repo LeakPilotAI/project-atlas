@@ -4,11 +4,17 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/diagnostics", tags=["diagnostics"])
+
+# Heavy research is read-only but may scan large durable JSONL histories. Keep the
+# desktop/API surface responsive while a single background refresh completes.
+_RESEARCH_RESPONSE_BUDGET_SECONDS = 2.5
+_research_cache: Optional[Dict[str, Any]] = None
+_research_task: Optional[asyncio.Task] = None
 
 
 def _research_payload() -> Dict[str, Any]:
@@ -17,7 +23,9 @@ def _research_payload() -> Dict[str, Any]:
     from app.services.shadow_research import shadow_research
 
     payload = funnel_research.research_payload()
-    shadow = shadow_research.funnel_stats(24.0)
+    # research_payload already contains the expensive shadow aggregation. Reuse it
+    # instead of scanning the shadow history yet again.
+    shadow = payload.get("shadow") or {}
     return {
         "last_24h": paper_pipeline.last_24h(),
         "bottleneck": payload.get("bottleneck"),
@@ -29,13 +37,70 @@ def _research_payload() -> Dict[str, Any]:
         "shadow": shadow,
         "why_no_trade": payload.get("why_no_paper_trades"),
         "effective_config": paper_pipeline.effective_config(),
-        "research_text": funnel_research.research_summary_text(),
+        # Avoid research_summary_text(), which recomputes the full research payload.
+        "research_text": "ATLAS research snapshot loaded. Detailed research remains read-only.",
+        "operational_surface": {"state": "FRESH", "background_refresh": False},
+    }
+
+
+def _research_warming_payload() -> Dict[str, Any]:
+    from app.services.paper_pipeline import paper_pipeline
+
+    return {
+        "last_24h": paper_pipeline.last_24h(),
+        "bottleneck": None,
+        "funnel": None,
+        "funnel_text": paper_pipeline.funnel_24h_text(),
+        "independent_gates": {},
+        "distributions": {},
+        "sensitivity": {},
+        "shadow": {},
+        "why_no_trade": None,
+        "effective_config": paper_pipeline.effective_config(),
+        "research_text": "Research snapshot is refreshing in the background.",
+        "operational_surface": {
+            "state": "WARMING",
+            "background_refresh": True,
+            "read_only": True,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        },
     }
 
 
 @router.get("/research")
 async def diagnostics_research() -> Dict[str, Any]:
-    return await asyncio.to_thread(_research_payload)
+    global _research_cache, _research_task
+
+    if _research_task is not None and _research_task.done():
+        try:
+            _research_cache = _research_task.result()
+        except Exception:
+            pass
+        _research_task = None
+
+    if _research_task is None:
+        _research_task = asyncio.create_task(asyncio.to_thread(_research_payload))
+
+    try:
+        result = await asyncio.wait_for(
+            asyncio.shield(_research_task), timeout=_RESEARCH_RESPONSE_BUDGET_SECONDS
+        )
+        _research_cache = result
+        _research_task = None
+        return result
+    except asyncio.TimeoutError:
+        if _research_cache is not None:
+            stale = dict(_research_cache)
+            stale["operational_surface"] = {
+                "state": "STALE_WHILE_REFRESHING",
+                "background_refresh": True,
+                "read_only": True,
+                "live_capital_allowed": False,
+                "automatic_real_money_execution": False,
+            }
+            return stale
+        return _research_warming_payload()
 
 
 @router.get("/paper")
