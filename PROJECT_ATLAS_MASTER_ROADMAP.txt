@@ -11,10 +11,17 @@ Never commit credentials, tokens, passwords, private keys, seed phrases, .env se
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Locked DEVELOPMENT input freeze is GREEN and COMPLETE. Focused tests: 2 passed in 0.32s. Full regression: 759 passed, 2 warnings in 39.39s; 0 failures. Freeze execution loaded BTC/ETH/SOL canonical datasets with 52,990 rows each, total_rows=158970, source_audit_green=true, source_audit_id=ae70db3328bd71604414, threshold_retuning_allowed=false, holdout_data_touched=false, live_capital_allowed=false, and status=LOCKED_DEVELOPMENT_BASELINE_INPUTS_FROZEN.
 
-EXECUTED LOCKED DEVELOPMENT BASELINE RUNNER — LOCAL TEST PENDING
+LOCKED DEVELOPMENT BASELINE RUNNER — LOCAL TEST RED DIAGNOSED
+Focused test result: 1 failed, 1 passed. Failure was test-only: the fixture set htf_trend=DOWN while asserting that a LONG must be emitted. That contradicts the locked HTF rule: UP permits LONG/blocks SHORT; DOWN permits SHORT/blocks LONG. Production signal logic was already correct and was NOT changed.
+
+FIX EXECUTED — LOCAL RETEST PENDING
+e693c27 atlas: fix locked HTF baseline test semantics
+Updated tests/test_backtest_locked_development_baseline_run.py so the fixture now verifies UP permits LONG, DOWN blocks LONG, and OI below 75,000 blocks the signal. No production thresholds or baseline signal code changed.
+
+RUNNER COMMITS
 a085076 atlas: run deterministic locked development baseline
 9ef5e01 atlas: test locked development baseline run
-The new runner consumes only source-audit-GREEN canonical DEVELOPMENT datasets and the locked thresholds: OI >=75k USD, volume >=150k USD, RSI long <=28, RSI short >=72, extension 1.4%-3.5%, minimum R:R 1.8, HTF alignment enabled. It uses strict PIT history, next-bar-open fills through the existing deterministic historical engine, persists per-symbol run artifacts, writes an aggregate summary, forbids threshold retuning, does not touch holdout data, and cannot enable live capital or automated real-money execution.
+The runner consumes only source-audit-GREEN canonical DEVELOPMENT datasets and the locked thresholds: OI >=75k USD, volume >=150k USD, RSI long <=28, RSI short >=72, extension 1.4%-3.5%, minimum R:R 1.8, HTF alignment enabled. It uses strict PIT history, next-bar-open fills through the existing deterministic historical engine, persists per-symbol run artifacts, writes an aggregate summary, forbids threshold retuning, does not touch holdout data, and cannot enable live capital or automated real-money execution.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -45,7 +52,9 @@ FULL ROADMAP
 [COMPLETE/VERIFIED GREEN] Canonical source audit — ready_for_locked_baseline_batch=true
 [COMPLETE/VERIFIED] Locked DEVELOPMENT input freeze — total_rows=158970; holdout untouched
 
-[CURRENT, LOCAL TEST PENDING] DETERMINISTIC LOCKED DEVELOPMENT BASELINE RUN
+[CURRENT, LOCAL RETEST PENDING] DETERMINISTIC LOCKED DEVELOPMENT BASELINE RUN
+- production runner unchanged after test RED
+- corrected HTF test semantics now match locked policy
 - canonical source_audit must remain GREEN
 - consumes only dev-2024-h2 canonical BTC/ETH/SOL datasets
 - locked thresholds only; no retuning
@@ -58,7 +67,7 @@ FULL ROADMAP
 - live_capital_allowed=false
 - automatic_real_money_execution=false
 
-[NEXT AFTER LOCAL GREEN] Execute the locked DEVELOPMENT baseline across BTC/ETH/SOL. Capture the exact per-symbol and aggregate metrics, run ids, and output paths. Treat the result as evidence only; do not tune on the same DEVELOPMENT window.
+[NEXT AFTER LOCAL GREEN] Execute the locked DEVELOPMENT baseline across BTC/ETH/SOL. Capture exact per-symbol and aggregate metrics, run ids, and output paths. Treat the result as evidence only; do not tune on the same DEVELOPMENT window.
 
 [THEN] Freeze DEVELOPMENT decisions/parameters and record whether the baseline establishes any credible positive edge. Stable positive edge must not be claimed from DEVELOPMENT alone.
 
@@ -82,7 +91,7 @@ backend\.venv\Scripts\python.exe -m app.backtest.locked_development_baseline_run
 Expected: status=LOCKED_DEVELOPMENT_BASELINE_COMPLETE, threshold_retuning_allowed=false, holdout_data_touched=false, three per-symbol deterministic runs.
 
 WHAT REMAINS
-1 Validate locked DEVELOPMENT baseline-run focused/full tests.
+1 Retest corrected locked DEVELOPMENT baseline-run focused/full tests.
 2 Execute deterministic locked DEVELOPMENT baseline and record metrics.
 3 Freeze DEVELOPMENT decisions/parameters.
 4 Untouched HOLDOUT evaluation.
