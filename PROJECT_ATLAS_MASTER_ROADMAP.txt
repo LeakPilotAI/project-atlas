@@ -6,49 +6,40 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: b0039a700b43789c42f3073402a4ed175c4e6464
-Frontend production build GREEN. Focused recurrence/evidence-ui/page-contract suite: 18 passed in 0.45s. Full regression: 627 passed, 2 warnings in 35.84s. Failures: 0.
-
-LATEST LOCAL FAILURE / REPAIR
-At 65b0ace, historical-foundation tests collected successfully after the package-export repair, but one fixture expected the target exit at 00:20 even though the 00:15 bar high equals the 104 target. The historical engine correctly exited at 00:15. Test-only repair commit 4c385dad changes the expected exit timestamp to 00:15. No engine behavior changed. This repair is LOCAL TEST PENDING.
+Tested commit: b2e6c4f027a8c4bf3486bbff29cc4c883d59baac
+Historical-foundation focused suite: 4 passed in 0.23s. Full regression: 631 passed, 2 warnings in 35.58s. Failures: 0.
 
 LOCKED PRODUCTION
-RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8. No automatic retuning/live unlock.
+OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
 [COMPLETE, VERIFIED] V6 research/evidence/maturity stack through Run Boundary Recurrence Lightweight Surface + Presentation
 [COMPLETE] Backtesting Readiness Audit
+[COMPLETE, VERIFIED] Deterministic Historical Backtest Runner Foundation
+  - canonical immutable HistoricalBar OHLCV/funding contract
+  - strict ascending unique PIT chronology and one symbol/timeframe per run
+  - signals see history through current bar only and fill next-bar open
+  - explicit fees, slippage, funding, risk sizing, stop/target handling, ledger, equity, drawdown, R metrics
+  - deterministic run_id and idempotent persisted result bundle
+  - hard research-only/live-disabled safety flags
+  - package export and target-hit fixture repairs verified by 4 focused + 631 full tests
 
-[COMPLETE, LOCAL TEST PENDING AFTER FIXTURE REPAIR] Deterministic Historical Backtest Runner Foundation — replay/fill/cost/result core
-  - canonical immutable HistoricalBar contract includes timestamp, symbol, timeframe, OHLCV, optional funding_rate
-  - one run fails closed unless data is unique ascending timestamps and one symbol/timeframe
-  - signal callback receives tuple(rows[:i+1]) only; future bars are unavailable to decision code
-  - signal generated at bar i fills at bar i+1 open, preventing same-bar signal/fill lookahead
-  - explicit adverse slippage per entry/exit fill
-  - explicit fee bps per fill
-  - explicit funding accounting while a position is held
-  - risk_usd sizing derives quantity from entry-to-stop risk
-  - stop/target intrabar collision policy is explicit and defaults conservatively to STOP_FIRST
-  - ledger records signal/entry/exit timestamps, prices, quantity, gross/net PnL, fees, slippage, funding, net R, exit reason
-  - metrics include n, WR, expectancy R, total R, PF, max drawdown USD, ending equity, fees/slippage/funding
-  - deterministic result payload includes assumptions, dataset range, equity curve, research-only safety flags, and content-derived run_id
-  - persisted JSON result is idempotent and collision-protected
-  - no exchange adapter, production-setting mutation, live-capital enablement, or real-money execution path exists in this module
-  - focused tests cover PIT visibility/next-bar fills, explicit costs, repeatability/persistence, research-only safety, and fail-closed ordering
-  - package export blocker repaired in a1dfb969
-  - target-hit fixture corrected in 4c385dad: 00:15 high=104 reaches target=104, so TARGET exit timestamp is correctly 00:15
+[COMPLETE, LOCAL TEST PENDING] Locked Perp-Micro Baseline Strategy Adapter
+  - backend/app/backtest/perp_micro_baseline.py consumes production Settings defaults without mutating them
+  - locked thresholds: RSI 28/72, extension 1.4%-3.5%, minimum R:R 1.8, risk_usd from production defaults
+  - OI/24h-volume eligibility and HTF alignment are explicit fail-closed gates because current HistoricalBar does not contain those production inputs
+  - no silent use of legacy generic decide_direction behavior
+  - baseline metadata explicitly reports production_strategy_modified=False, live_capital_allowed=False, automatic_real_money_execution=False
+  - focused tests verify settings immutability, missing external gates fail closed, long/short 1.8R construction, extension bounds, and safety metadata
 
-[NEXT] Re-run focused historical-foundation tests + full regression after fixture repair.
-[NEXT AFTER GREEN] Locked Perp-Micro Baseline Strategy Adapter
-  - implement historical signal adapter using locked RSI 28/72, extension 1.4%-3.5%, min R:R 1.8 and existing production semantics where reproducible from historical inputs
-  - do not mutate Settings and do not silently substitute legacy generic decide_direction rules
-  - explicitly document any production inputs not reconstructible from the initial OHLCV contract (for example OI/volume eligibility or HTF regime) and fail closed or extend the dataset contract rather than fabricate them
-  - add unit tests proving locked thresholds and no production mutation
-[THEN] Canonical Backtest CLI / Operator Workflow
-  - CSV/JSONL loader with explicit schema validation
+[NEXT] Local focused baseline-adapter + historical-foundation tests and full regression.
+[NEXT AFTER GREEN] Canonical Backtest Data Loader + CLI / Operator Workflow
+  - define validated CSV/JSONL historical schema including point-in-time OI/24h-volume eligibility and HTF alignment inputs needed by locked baseline
+  - wire loader -> locked baseline adapter -> deterministic historical runner
   - one repeatable PowerShell command
-  - explicit dataset path, baseline/candidate selection, and deterministic output directory
+  - explicit dataset path and deterministic output directory
+  - research-only baseline/candidate selection, no production mutation
 [THEN] Smoke Backtest Reconciliation
   - tiny known dataset; inspect every signal/fill/cost/R/equity update; repeat twice with identical result
 [THEN] Historical Batch Research
@@ -62,25 +53,24 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE BACKTESTING
-1. Verify the repaired deterministic historical replay/fill/cost/result foundation locally.
-2. Build and verify the locked perp-micro historical signal adapter without changing production settings.
-3. Build canonical validated historical-data loader + CLI/operator command + deterministic result location.
-4. Run/reconcile deterministic smoke backtest twice.
-5. Begin locked-baseline historical batches, then separate research-candidate batches.
-6. Continue PAPER/SHADOW prospective evidence after historical runner is healthy.
+1. Verify the locked perp-micro historical baseline adapter locally.
+2. Build validated historical-data loader with PIT OI/volume/HTF fields and canonical CLI/operator command.
+3. Run/reconcile deterministic smoke backtest twice.
+4. Begin locked-baseline historical batches, then separate research-candidate batches.
+5. Continue PAPER/SHADOW prospective evidence after historical runner is healthy.
 
 LIVE READINESS
-Last fully verified checkpoint: 627 passed at b0039a7 with frontend GREEN. Historical foundation + package-export repair + target-hit fixture repair are LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 631 passed at b2e6c4f. Locked baseline adapter is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Locked Perp-Micro Baseline Strategy Adapter, then canonical CLI. Do not extend maturity diagnostics before backtesting.
+Canonical Backtest Data Loader + CLI / Operator Workflow, then deterministic smoke backtest. Do not extend maturity diagnostics before backtesting.
 
 END OF MASTER ROADMAP
