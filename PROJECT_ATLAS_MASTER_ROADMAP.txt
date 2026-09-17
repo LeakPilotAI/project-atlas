@@ -22,38 +22,40 @@ PHASE 1 — COMPLETE / USER-LOCAL VERIFIED GREEN
 44be030 tests/test_quality_dips_v2_policy.py
 7d2504e docs/research/QUALITY_DIPS_V2_PATIENT_CAPITAL.md
 0162f82 PROJECT_ATLAS_MASTER_ROADMAP.txt
-User-local focused verification: 8 passed in 0.12s.
-User-local full regression: 805 passed, 2 warnings in 38.15s.
+Focused verification: 8 passed.
+Full regression: 805 passed, 2 warnings.
 
-PHASE 2 — EXECUTED / LOCAL TEST PENDING
+PHASE 2 — COMPLETE / USER-LOCAL VERIFIED GREEN
 da6de06 backend/app/investment/quality_dips_v2_evidence.py
-- read-only adapter over existing investment research rows
-- preserves legacy classification/opportunity score for side-by-side comparison
-- consumes existing quality/fundamentals/valuation/drawdown/thesis/evidence fields
-- consumes normalization values only when explicitly present; never fabricates them
-- computes V2 upside windows only from real supplied values
-- surfaces existing trend evidence without interpreting missing data
-- retains MANUAL_ONLY/no-live controls
-
 bd73314 tests/test_quality_dips_v2_evidence.py
-- read-only/manual-only contract
-- trend evidence passthrough
-- no fabricated normalization values
-- legacy-field preservation
-- generational/broken-thesis/value-trap routing
-- UNKNOWN trend behavior when source data is absent
-
 2bd0cb7 docs/research/QUALITY_DIPS_V2_ACTIVE_POSITION_MONITOR.md
-- freezes post-entry trend/thesis monitoring requirement
-- future research states: HOLD / HOLD_WATCH / ADD_ELIGIBLE / STOP_ADDING / THESIS_BROKEN / EXIT_REVIEW
-- requires comparison against frozen L-level entry evidence
-- falling price alone cannot break thesis; rising price alone cannot force HOLD
+3d47d32 PROJECT_ATLAS_MASTER_ROADMAP.txt
+Focused verification: 16 passed in 0.15s.
+Full regression: 813 passed, 2 warnings in 38.07s.
+
+PHASE 3 — EXECUTED / LOCAL TEST PENDING
+f722997 backend/app/investment/quality_dips_v2_gate.py
+- hard fail-closed V2 research gate
+- broken/failed thesis blocks classification
+- value-trap/falling-knife evidence blocks classification
+- evidence quality below MEDIUM blocks
+- missing required V2 evidence blocks
+- research timestamp missing/stale blocks
+- trend freshness is tracked independently
+- weak/bearish price trend creates caution but cannot break an intact thesis by itself
+- MANUAL_ONLY / no-live preserved
+
+37ac455 tests/test_quality_dips_v2_gate.py
+- fresh intact evidence passes
+- broken thesis/value trap/missing evidence/stale research fail closed
+- stale or bearish trend becomes caution rather than automatic thesis failure
+- no-live/manual-only contract locked
 
 FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
 [COMPLETE/VERIFIED GREEN] Phase 1: patient-capital policy + tests + specification
-[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 2: read-only V2 evidence adapter + trend evidence passthrough
-[REMAINING] Phase 3: hard value-trap / thesis-integrity / evidence-freshness gate
+[COMPLETE/VERIFIED GREEN] Phase 2: read-only V2 evidence adapter + trend evidence passthrough
+[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 3: hard value-trap / thesis-integrity / evidence-freshness gate
 [REMAINING] Phase 4: conservative/base/optimistic normalization-value model with provenance
 [REMAINING] Phase 5: patient-state integration + staged L1/L2/L3/L4 entry-zone planner + frozen entry snapshots
 [REMAINING] Phase 6: active-position trend/thesis monitor; HOLD/HOLD_WATCH/ADD_ELIGIBLE/STOP_ADDING/THESIS_BROKEN/EXIT_REVIEW; compare current evidence vs frozen entry thesis
@@ -64,18 +66,18 @@ FULL ROADMAP — QUALITY DIPS V2
 [REMAINING] Phase 11: desktop regression + operational smoke + V2 evidence decision/closure
 
 NEXT GREEN GATE
-Pull latest branch, run Phase 1 + Phase 2 focused tests, then full regression. Do not call Phase 2 verified until user posts GREEN output.
+Pull latest branch, run Phase 1 + Phase 2 + Phase 3 focused tests, then full regression. Do not call Phase 3 verified until user posts GREEN output.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 AFTER GREEN
-Proceed directly to Phase 3: build hard value-trap/thesis-integrity/evidence-freshness gate, preserving legacy scoring and all closed evidence.
+Proceed directly to Phase 4: build conservative/base/optimistic normalization-value model with explicit provenance and no fabricated fair values.
 
 NORMAL DESKTOP WORKFLOW REMAINS
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
