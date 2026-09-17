@@ -9,25 +9,18 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Final HOLDOUT execution-path tests GREEN: 4 passed in 0.47s. Full regression GREEN: 782 passed, 2 warnings in 46.57s. Exact frozen untouched HOLDOUT evaluation completed under source audit id 951dbc0f46516bcf97eb with source_audit_green=true, parameters_frozen=true, threshold_retuning_allowed=false, same_window_optimization_allowed=false, production_strategy_modified=false, live_capital_allowed=false, automatic_real_money_execution=false.
+Immutable HOLDOUT evidence-freeze tests GREEN: 7 passed in 0.47s. Full regression GREEN: 785 passed, 2 warnings in 39.57s. The real evidence freeze completed with status=HOLDOUT_EVIDENCE_FROZEN, holdout_result=FAILED_NEGATIVE, stable_positive_edge_established=false, threshold_retuning_allowed=false, next_cycle_must_be_isolated=true, live_capital_allowed=false. HOLDOUT summary SHA-256: ee6b28c5042414e70534f04e120ae439b8e765dc156f9b20e1fa2c0873149d72.
 
-UNTOUCHED HOLDOUT RESULT — VERIFIED NEGATIVE
-Aggregate: 546 trades; total_r=-26.72350715657114; expectancy_r=-0.048944152301412344.
-BTC: 67 trades; expectancy=-0.13120166403507955R; total=-8.79051149035033R; PF=0.8151646776263058; win_rate=0.34328358208955223; run_id=36a8b36242e9cc1c708c.
-ETH: 192 trades; expectancy=-0.11222419567471187R; total=-21.54704556954468R; PF=0.8401063289638052; win_rate=0.3489583333333333; run_id=bc9c8c61cf356cf09fa7.
-SOL: 287 trades; expectancy=+0.012592508373950756R; total=+3.614049903323867R; PF=1.0192535094387052; win_rate=0.39372822299651566; run_id=5d83c5d3284696739eb2.
-The aggregate HOLDOUT is negative. DEVELOPMENT was also negative. Stable positive edge is NOT established. Do not retune this completed experiment.
+CLOSED HISTORICAL EXPERIMENT — VERIFIED NEGATIVE
+DEVELOPMENT dev-2024-h2: 659 trades; total_r=-117.21753020091131; expectancy_r=-0.17787182124569242; FAILED_NEGATIVE.
+Untouched HOLDOUT holdout-2025-h2: 546 trades; total_r=-26.72350715657114; expectancy_r=-0.048944152301412344; FAILED_NEGATIVE.
+BTC HOLDOUT: 67 trades; expectancy=-0.13120166403507955R; total=-8.79051149035033R; PF=0.8151646776263058; run_id=36a8b36242e9cc1c708c.
+ETH HOLDOUT: 192 trades; expectancy=-0.11222419567471187R; total=-21.54704556954468R; PF=0.8401063289638052; run_id=bc9c8c61cf356cf09fa7.
+SOL HOLDOUT: 287 trades; expectancy=+0.012592508373950756R; total=+3.614049903323867R; PF=1.0192535094387052; run_id=5d83c5d3284696739eb2.
+Independent HOLDOUT source audit id=951dbc0f46516bcf97eb was GREEN. Stable positive edge is NOT established. The experiment is closed. Do not retune or relabel it.
 
-LOCKED DEVELOPMENT BASELINE — VERIFIED NEGATIVE
-659 trades; total_r=-117.21753020091131; expectancy_r=-0.17787182124569242. development_result=FAILED_NEGATIVE; parameters frozen=true.
-
-EXECUTED NEXT STAGE — LOCAL TEST PENDING
-c4cb3ea atlas: add immutable holdout evidence freeze
-904115c atlas: test immutable holdout evidence freeze
-The freeze hashes the completed HOLDOUT summary, records exact BTC/ETH/SOL run IDs/metrics, records aggregate evidence, fails closed on safety-boundary violations, marks this experiment FAILED_NEGATIVE when aggregate expectancy/total R are not positive, forbids retuning, keeps live disabled, and requires any future research cycle to be isolated.
-
-LOCKED PRODUCTION THRESHOLDS FOR THIS COMPLETED EXPERIMENT
-OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; HTF alignment enabled. These are now evidence inputs for the completed failed experiment, not candidates for same-window retuning.
+LOCKED THRESHOLDS — CLOSED EXPERIMENT EVIDENCE
+OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; RSI period 14; extension lookback 20; HTF alignment enabled. These are immutable inputs to the closed experiment, not same-window tuning candidates.
 
 FULL ROADMAP
 [COMPLETE/VERIFIED] Core rebuild / cockpit / PAPER / recovery / Quality Dips
@@ -42,19 +35,18 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] HOLDOUT candles/OI/rolling-volume/HTF/funding/PIT merge
 [COMPLETE/VERIFIED GREEN] HOLDOUT canonical assembly + independent source audit
 [COMPLETE/VERIFIED NEGATIVE] Exact frozen untouched HOLDOUT evaluation — 546 trades, -26.7235R, -0.048944R expectancy
+[COMPLETE/VERIFIED] Immutable HOLDOUT evidence freeze — 785 full tests GREEN; evidence artifact generated locally
+[COMPLETE/CLOSED] Historical experiment dev-2024-h2 -> holdout-2025-h2 — FAILED_NEGATIVE; no retuning; preserved in docs/research/FAILED_EXPERIMENT_DEV2024H2_HOLDOUT2025H2.md
 
-[CURRENT, LOCAL TEST PENDING] IMMUTABLE HOLDOUT EVIDENCE FREEZE
-- hash source holdout summary
-- preserve exact per-symbol run IDs and metrics
-- classify completed experiment from aggregate evidence
-- no retuning
-- live disabled
-- future research must be a separate cycle
+[CURRENT] PAPER/SHADOW OPERATIONAL CHECKPOINT
+Goal: verify the existing PAPER/SHADOW runtime as an operational system without treating it as validation of the closed historical configuration.
+Required boundary: no real-money order path, no live-capital unlock, no automatic threshold retuning, and no mutation of the closed DEVELOPMENT/HOLDOUT evidence.
+Required validation: deterministic paper execution, persistent/recoverable event state, SHADOW comparison path, restart/recovery behavior, observability/health surfaces, and fail-closed controls.
 
-[NEXT AFTER LOCAL GREEN] Generate holdout-evidence-freeze-2025-h2.json from the completed summary. This closes the current historical experiment.
-[THEN] Start a NEW isolated research cycle only if desired. Do not modify/relabel the completed DEVELOPMENT/HOLDOUT evidence. Candidate research can investigate why BTC/ETH remained negative while SOL was near-flat/slightly positive, but must use new DEVELOPMENT data/configuration and a new untouched holdout before any conclusion.
-[THEN] PAPER/SHADOW operational checkpoint remains separate; do not treat older SHADOW results as validation of this failed historical configuration.
-[FINAL] Desktop integration after research/operational boundaries are explicit.
+[NEXT] Inspect and harden the actual PAPER/SHADOW runtime and persistence/recovery path against the existing implementation and tests.
+[THEN] Run focused PAPER/SHADOW operational tests and full regression locally; record the exact GREEN checkpoint.
+[THEN] Final desktop integration: start/stop shortcuts, stale-process cleanup, dependency visibility, API/dashboard/research reachability, persistent paths, logging, restart/recovery, and launch/stop smoke test.
+[FINAL] Atlas remains PAPER/SHADOW research software unless a future independently validated research cycle establishes evidence sufficient for a separate human decision about any later stage. Automated real-money execution remains disabled.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
@@ -64,19 +56,13 @@ git reset --hard origin/chatgpt/atlas-rebuild-v1
 backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_holdout_evidence_freeze.py tests/test_backtest_holdout_evaluation.py tests/test_backtest_holdout_evaluation_execution.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-EVIDENCE FREEZE — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.holdout_evidence_freeze --summary backend\data\research\historical\holdout-summary-2025-h2.json --output backend\data\research\historical\holdout-evidence-freeze-2025-h2.json
-Expected controls: status=HOLDOUT_EVIDENCE_FROZEN; holdout_result=FAILED_NEGATIVE; stable_positive_edge_established=false; threshold_retuning_allowed=false; next_cycle_must_be_isolated=true; live_capital_allowed=false.
-
 WHAT REMAINS
-1 Validate evidence-freeze tests/full regression.
-2 Generate immutable HOLDOUT evidence freeze.
-3 Close current historical experiment as failed negative.
-4 If continuing research, create an isolated next-cycle research plan/configuration with no leakage from the completed holdout.
-5 PAPER/SHADOW operational checkpoint.
-6 Final desktop integration.
+1 PAPER/SHADOW operational checkpoint: inspect/harden runtime, persistence/recovery, observability, and fail-closed boundaries.
+2 Validate PAPER/SHADOW focused tests and full regression locally.
+3 Final desktop integration and launch/stop smoke test.
+4 Any future strategy research must be a NEW isolated cycle with new DEVELOPMENT decisions and a new untouched holdout; never retune the closed experiment.
 
 RESEARCH/LIVE STATUS
-Stable positive edge NOT ESTABLISHED. Current frozen historical experiment FAILED_NEGATIVE on DEVELOPMENT and aggregate HOLDOUT. Live capital locked. Automated real-money execution disabled.
+Stable positive edge NOT ESTABLISHED. Historical experiment CLOSED as FAILED_NEGATIVE on DEVELOPMENT and aggregate HOLDOUT. Live capital locked. Automated real-money execution disabled. PAPER/SHADOW remains operational research only.
 
 END OF MASTER ROADMAP
