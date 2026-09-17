@@ -3,115 +3,85 @@ Updated: 2026-09-16
 Branch: chatgpt/atlas-rebuild-v1
 
 PERMANENT EXECUTION PROTOCOL
-When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files/commits; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity. After every execution provide this FULL CURRENT ROADMAP as a downloadable artifact/file.
+When user says execute, implement next roadmap item directly. After EVERY execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: a412527b6afa503a59ed6fd9ee7a779208a1fe1d
-Focused acquisition + representative-window + source-plan + historical stack: 50 passed in 0.96s. Full regression: 677 passed, 2 warnings in 36.68s. Failures: 0.
+Commit 6378bf12a601dc5189a0245841ce1edf48a18431: focused historical stack 53 passed in 1.00s; full regression 680 passed, 2 warnings in 35.56s; 0 failures. Candle-retention fail-closed hardening VERIFIED.
 
-FIRST REAL ACQUISITION RESULT — 2024-H2 DEVELOPMENT
-BTC: 5m candles=0, 1h candles=0, funding=3096
-ETH: 5m candles=0, 1h candles=0, funding=3096
-SOL: 5m candles=0, 1h candles=0, funding=3096
-Historical OI=PENDING_EXTERNAL_PIT_SOURCE.
-Root cause verified against current Hyperliquid documentation: candleSnapshot exposes only the most recent 5000 candles per interval, so 2024-H2 is outside API candle retention. Hyperliquid requester-pays S3 historical archive provides market_data and asset_ctxs; it does not provide historical candles directly. Funding history remained available and acquired successfully.
+FIRST REAL 2024-H2 ACQUISITION RESULT
+BTC/ETH/SOL each: 5m candles=0; 1h candles=0; funding=3096. Historical OI pending. Root cause: official candleSnapshot retention cannot reach locked 2024-H2. Official historical docs instead expose requester-pays asset_ctxs daily archives and market_data; no historical candles are supplied through that S3 archive. Funding history succeeded.
 
 LOCKED PRODUCTION
-OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. Production HTF: completed 1h close vs SMA20; UP > +0.2%, DOWN < -0.2%, else FLAT; UNKNOWN/OFF/FLAT permit either side; UP permits LONG; DOWN permits SHORT. No automatic retuning/live unlock.
+OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock. Live capital locked; automated real-money execution disabled.
 
-DESKTOP / OPERATOR END-STATE REQUIREMENT
-Final integration must validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk, intended services/UI/research surfaces, dependency failures, stale cleanup, restart/recovery/shutdown, logs and persistence.
+DESKTOP END STATE
+Must validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk, intended dependencies/services/UI, research/backtesting, PAPER/SHADOW, recovery/shutdown/logging/persistence.
 
-ENGINEERING ROADMAP
-[COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
-[COMPLETE, VERIFIED] V6 research/evidence/maturity stack
-[COMPLETE, VERIFIED] Deterministic historical runner + locked baseline + loader/CLI + smoke reconciliation
-[COMPLETE, VERIFIED] PIT historical importer + manifests/operator import + source readiness
-[COMPLETE, VERIFIED] Provider normalization + production-equivalent HTF + context v2 + funding-event semantics
-[COMPLETE, VERIFIED] Representative source acquisition plan
-[COMPLETE, VERIFIED] Representative UTC Research Window Lock
-[COMPLETE, VERIFIED] Official Hyperliquid Historical Acquisition CLI — 50 focused + 677 full at a412527
+ROADMAP
+[COMPLETE/VERIFIED] Core rebuild / Hyperliquid cockpit / PAPER / recovery / Quality Dips
+[COMPLETE/VERIFIED] V6 evidence stack
+[COMPLETE/VERIFIED] Historical runner + locked baseline + loader/CLI + smoke
+[COMPLETE/VERIFIED] PIT importer + manifests/operator import + source readiness
+[COMPLETE/VERIFIED] Provider normalization + HTF semantics + context v2 + funding events
+[COMPLETE/VERIFIED] Representative source acquisition plan + UTC window lock
+[COMPLETE/VERIFIED] Official Hyperliquid acquisition CLI + candle-retention fail-closed hardening — 680 full tests at 6378bf1
 
-[COMPLETE, LOCAL TEST PENDING] Candle Retention Fail-Closed Hardening
-- hyperliquid_acquire.py now models Hyperliquid candleSnapshot 5000-candle retention explicitly
-- old windows no longer silently write empty candle files as successful acquisitions
-- manifest marks 5m/1h status OUT_OF_RETENTION_EXTERNAL_RECONSTRUCTION_REQUIRED
-- funding acquisition remains supported
-- current-state backfill remains forbidden
-- tests cover 5m/1h retention floors and old-window fail-closed semantics
+[COMPLETE, LOCAL TEST PENDING] First-Party Hyperliquid asset_ctxs Archive Acquisition
+- backend/app/backtest/hyperliquid_archive.py
+- deterministic half-open daily plan for s3://hyperliquid-archive/asset_ctxs/YYYYMMDD.csv.lz4
+- 2024-H2 plan contains 184 daily objects
+- requester-pays explicitly required
+- uses local AWS CLI credential chain/profile; Atlas CLI never accepts AWS access keys/secrets
+- raw files retained compressed and SHA-256 recorded after acquisition
+- raw schema must be inspected before normalization; no assumed schema silently promoted
+- expected context fields include openInterest/dayNtlVlm/mark/oracle/mid/premium based on documented/current asset context shape, but actual archive header remains authoritative
+- research-only/live-disabled/current-state-backfill forbidden
+- tests/test_backtest_hyperliquid_archive.py
 
-[CURRENT] Historical Archive / Provider Reconstruction for 2024-H2 DEVELOPMENT
-- use requester-pays Hyperliquid archive asset_ctxs as first-party PIT historical context source where sufficient
-- inspect asset_ctxs schema/cadence for BTC/ETH/SOL historical openInterest/dayNtlVlm or equivalent usable fields
-- if archive asset_ctxs supplies trustworthy timestamped OI and notional-volume context, prefer it over external OI vendor
-- reconstruct 5m and 1h candles from trustworthy historical trade/fill data OR use a verified historical provider with exact provenance
-- preserve official fundingHistory already acquired: 3096 events per symbol for 2024-H2
-- never synthesize old candles from present API or current market state
-- preserve exact raw source paths, UTC coverage, cadence, gaps, checksums, provider/archive route and limitations
-- derive completed-bar HTF trend only after trustworthy 1h bars exist
-- generate canonical BTC/ETH/SOL v2 bundles + manifests
-- source_audit must reach ready_for_locked_baseline_batch=true before baseline research
+[NEXT] Local focused + full regression.
 
-[NEXT AFTER DATA GREEN] Locked Baseline Historical Batch Research
-- DEVELOPMENT windows first; holdouts untouched until evaluation
-- BTC/ETH/SOL; persist metrics/trades/manifests
-- expectancy R, WR, PF, total R, DD, explicit costs, sample size, regime/symbol behavior
-- no automatic promotion
+[NEXT AFTER GREEN] Run PLAN ONLY first for 2024-H2 asset_ctxs. Then, if user has an AWS profile configured and accepts requester-pays transfer cost, execute a narrow one-day archive probe before any 184-day download. Inspect raw CSV header/schema/cadence and verify BTC/ETH/SOL OI + dayNtlVlm semantics. Only after probe validation should full 2024-H2 archive acquisition occur.
 
-[THEN] Research Candidate Batch Comparison
-- tune only on DEVELOPMENT; HOLDOUT evaluation-only
-- identical datasets/assumptions/costs
-- no automatic retuning/live unlock
+[THEN] Historical candle reconstruction/provider ingestion
+- trustworthy 5m/1h bars for 2024-H2
+- do not synthesize from current state
+- exact provenance/coverage/checksums/gaps
+- derive completed 1h HTF trend
+- merge funding + PIT OI/volume + candles
+- canonical BTC/ETH/SOL v2 bundles + manifests
+- source_audit ready_for_locked_baseline_batch=true required
 
-[THEN] PAPER/SHADOW Operations Checkpoint
-- startup/recovery, market data, signals, simulated fills/exits, durable logs/dashboard, prospective evidence
+[THEN] Locked baseline DEVELOPMENT research -> freeze decisions -> HOLDOUT evaluation -> isolated candidate comparison -> PAPER/SHADOW operational checkpoint -> final desktop operational integration.
 
-[THEN — DESKTOP OPERATIONAL INTEGRATION]
-- inspect exact shortcut targets/args
-- launch intended dependencies/services/UI
-- reconcile API dashboard + Next.js /research
-- research/backtest readiness/results/operator surfaces
-- visible failures, stale cleanup, restart/recovery/shutdown, logs/persistence
-- launch/stop smoke GREEN required
-
-[ONGOING] V6 prospective evidence and Quality Dips PIT/forward evidence.
-[FUTURE] Human-reviewed promotion only after sufficient evidence. Live remains separate.
-
-RESEARCH CHECKPOINT
+RESEARCH STATUS
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
-
-WHAT REMAINS BEFORE ROUTINE REAL-DATA BACKTESTING
-1. Verify candle-retention fail-closed hardening locally.
-2. Inspect/acquire Hyperliquid requester-pays asset_ctxs for 2024-H2 and determine whether first-party PIT OI/volume context is sufficient.
-3. Acquire/reconstruct trustworthy 5m/1h candles for 2024-H2.
-4. Merge acquired funding + OI/volume + candles and derive HTF.
-5. Normalize/import canonical v2 datasets + manifests.
-6. Require source audit GREEN.
-7. Run locked-baseline DEVELOPMENT batches.
-8. Freeze development decisions, then evaluate holdouts.
-9. Candidate comparisons without holdout tuning.
-10. PAPER/SHADOW operations and final desktop integration.
-
-LIVE READINESS
-Last fully verified checkpoint: 677 passed at a412527. Candle-retention fix is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_hyperliquid_acquire.py tests/test_backtest_representative_windows.py tests/test_backtest_source_plan.py tests/test_backtest_funding_events.py tests/test_backtest_context_v2.py tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_hyperliquid_archive.py tests/test_backtest_hyperliquid_acquire.py tests/test_backtest_representative_windows.py tests/test_backtest_source_plan.py tests/test_backtest_funding_events.py tests/test_backtest_context_v2.py tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-RECHECK 2024-H2 ACQUISITION AFTER GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_acquire --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2 --manifest backend\data\research\historical\hyperliquid-acquisition-dev-2024-h2.json
-Expected: funding acquired; 5m/1h explicitly marked OUT_OF_RETENTION_EXTERNAL_RECONSTRUCTION_REQUIRED instead of misleading zero-row success.
+2024-H2 ARCHIVE PLAN ONLY — NO DOWNLOAD / NO REQUESTER CHARGE
+backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2 --manifest backend\data\research\historical\hyperliquid-asset-ctxs-plan-dev-2024-h2.json
+Expected: objects=184 status=PLANNED_NOT_DOWNLOADED.
 
-SOURCE READINESS
-backend\.venv\Scripts\python.exe -m app.backtest.source_audit --root backend\data\research\historical --timeframe 5m
-Until canonical BTC/ETH/SOL bundles + manifests exist, ready_for_locked_baseline_batch=false is expected.
+ONE-DAY REQUESTER-PAID PROBE AFTER GREEN AND AWS PROFILE CONFIRMATION
+backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive --start 2024-07-01T00:00:00Z --end 2024-07-02T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-probe --manifest backend\data\research\historical\hyperliquid-asset-ctxs-probe-20240701.json --execute --aws-profile <YOUR_PROFILE>
+Do not run the 184-day requester-paid download before the one-day probe is inspected.
 
-NEXT EXECUTION AFTER GREEN
-Implement first-party Hyperliquid S3 asset_ctxs acquisition/normalization for 2024-H2, inspect its schema for PIT OI/volume, then add historical candle reconstruction/provider ingestion. Desktop integration remains mandatory before Atlas is finished.
+WHAT REMAINS
+1 Verify archive acquisition code locally.
+2 Generate no-cost 184-day plan.
+3 One-day requester-paid asset_ctxs probe with user's configured AWS profile.
+4 Inspect schema/cadence and prove PIT OI/volume suitability.
+5 Full 2024-H2 context acquisition only after probe validation.
+6 Acquire/reconstruct trustworthy 5m/1h candles.
+7 Canonical datasets/manifests + source audit GREEN.
+8 Locked baseline DEVELOPMENT research.
+9 HOLDOUT evaluation/candidate comparison.
+10 PAPER/SHADOW operations + final desktop integration.
 
 END OF MASTER ROADMAP
