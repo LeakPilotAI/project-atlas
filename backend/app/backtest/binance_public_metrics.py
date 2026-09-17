@@ -6,7 +6,7 @@ state. This module does not by itself make canonical source readiness GREEN.
 """
 from __future__ import annotations
 
-import argparse,csv,hashlib,json,urllib.error,urllib.request,zipfile
+import argparse,csv,hashlib,json,time,urllib.error,urllib.request,zipfile
 from datetime import date,datetime,timedelta,timezone
 from pathlib import Path
 
@@ -35,23 +35,36 @@ def _sha256(path:Path)->str:
     return h.hexdigest()
 
 
-def _download(url:str,path:Path)->None:
+def _download(url:str,path:Path,*,timeout:int=20,retries:int=3)->None:
     path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix(path.suffix+".part")
-    try:
-        with urllib.request.urlopen(url,timeout=60) as response,tmp.open("wb") as fh:
-            while True:
-                chunk=response.read(1024*1024)
-                if not chunk:break
-                fh.write(chunk)
-        tmp.replace(path)
-    except Exception:
-        tmp.unlink(missing_ok=True);raise
+    last=None
+    for attempt in range(1,retries+1):
+        try:
+            with urllib.request.urlopen(url,timeout=timeout) as response,tmp.open("wb") as fh:
+                while True:
+                    chunk=response.read(1024*1024)
+                    if not chunk:break
+                    fh.write(chunk)
+            tmp.replace(path);return
+        except Exception as exc:
+            last=exc;tmp.unlink(missing_ok=True)
+            if attempt<retries:time.sleep(min(2**(attempt-1),4))
+    assert last is not None
+    raise last
 
 
 def _published_sha256(path:Path)->str:
     text=path.read_text(encoding="utf-8").strip();token=text.split()[0].lower() if text else ""
     if len(token)!=64 or any(c not in "0123456789abcdef" for c in token):raise RuntimeError(f"invalid published checksum: {path}")
     return token
+
+
+def _already_verified(zp:Path,cp:Path)->tuple[bool,str|None]:
+    if not(zp.is_file() and cp.is_file()):return False,None
+    try:
+        published=_published_sha256(cp);actual=_sha256(zp)
+    except Exception:return False,None
+    return published==actual,actual
 
 
 def plan(*,start_utc:str,end_utc:str,raw_root:Path,symbols:tuple[str,...] = ("BTC","ETH","SOL"))->dict:
@@ -68,14 +81,26 @@ def plan(*,start_utc:str,end_utc:str,raw_root:Path,symbols:tuple[str,...] = ("BT
 
 
 def acquire(payload:dict)->dict:
-    results=[]
-    for obj in payload["objects"]:
+    results=[];total=len(payload["objects"])
+    for idx,obj in enumerate(payload["objects"],1):
         zp,cp=Path(obj["local_zip"]),Path(obj["local_checksum"])
-        try:_download(obj["checksum_url"],cp);_download(obj["url"],zp)
-        except urllib.error.HTTPError as exc:raise RuntimeError(f"public metrics acquisition failed for {obj['provider_symbol']} {obj['date']}: HTTP {exc.code}") from exc
-        pub,actual=_published_sha256(cp),_sha256(zp)
-        if pub!=actual:raise RuntimeError(f"checksum mismatch for {zp}: published={pub} actual={actual}")
-        results.append({**obj,"bytes":zp.stat().st_size,"sha256":actual,"published_sha256":pub,"status":"ACQUIRED_CHECKSUM_VERIFIED"})
+        verified,actual=_already_verified(zp,cp)
+        if verified:
+            pub=_published_sha256(cp)
+            status="ALREADY_ACQUIRED_CHECKSUM_VERIFIED"
+            print(f"[{idx}/{total}] {obj['provider_symbol']} {obj['date']} skip verified",flush=True)
+        else:
+            print(f"[{idx}/{total}] {obj['provider_symbol']} {obj['date']} download",flush=True)
+            try:
+                _download(obj["checksum_url"],cp);_download(obj["url"],zp)
+            except urllib.error.HTTPError as exc:
+                raise RuntimeError(f"public metrics acquisition failed for {obj['provider_symbol']} {obj['date']}: HTTP {exc.code}") from exc
+            except Exception as exc:
+                raise RuntimeError(f"public metrics acquisition failed for {obj['provider_symbol']} {obj['date']}: {type(exc).__name__}: {exc}") from exc
+            pub,actual=_published_sha256(cp),_sha256(zp)
+            if pub!=actual:raise RuntimeError(f"checksum mismatch for {zp}: published={pub} actual={actual}")
+            status="ACQUIRED_CHECKSUM_VERIFIED"
+        results.append({**obj,"bytes":zp.stat().st_size,"sha256":actual,"published_sha256":pub,"status":status})
     return {**payload,"objects":results,"acquisition_status":"ACQUIRED_RAW_METRICS_CHECKSUM_VERIFIED"}
 
 
