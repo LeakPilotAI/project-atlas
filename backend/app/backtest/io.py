@@ -15,10 +15,12 @@ class HistoricalContext:
     bar: HistoricalBar
     open_interest_usd: float
     volume_24h_usd: float
-    htf_regime_aligned: bool
+    htf_regime_aligned: bool|None = None
+    htf_trend: str|None = None
 
 
-_REQUIRED=("timestamp","symbol","timeframe","open","high","low","close","volume","open_interest_usd","volume_24h_usd","htf_regime_aligned")
+_REQUIRED=("timestamp","symbol","timeframe","open","high","low","close","volume","open_interest_usd","volume_24h_usd")
+_VALID_HTF={"UP","DOWN","FLAT","UNKNOWN","OFF"}
 
 
 def _bool(value:object)->bool:
@@ -29,19 +31,30 @@ def _bool(value:object)->bool:
     raise ValueError(f"invalid boolean value: {value!r}")
 
 
+def _trend(value:object)->str:
+    text=str(value).strip().upper()
+    if text not in _VALID_HTF:raise ValueError(f"invalid htf_trend: {value!r}")
+    return text
+
+
 def _row_to_context(row:dict,source:str)->HistoricalContext:
     missing=[key for key in _REQUIRED if key not in row or row[key] in (None,"")]
     if missing:raise ValueError(f"{source}: missing required fields: {', '.join(missing)}")
+    has_trend=row.get("htf_trend") not in (None,"")
+    has_legacy=row.get("htf_regime_aligned") not in (None,"")
+    if not has_trend and not has_legacy:raise ValueError(f"{source}: missing required HTF context: htf_trend")
     try:
         bar=HistoricalBar(
             timestamp=str(row["timestamp"]),symbol=str(row["symbol"]).upper(),timeframe=str(row["timeframe"]),
             open=float(row["open"]),high=float(row["high"]),low=float(row["low"]),close=float(row["close"]),volume=float(row["volume"]),
             funding_rate=float(row.get("funding_rate") or 0.0),
         )
-        oi=float(row["open_interest_usd"]);vol24=float(row["volume_24h_usd"]);aligned=_bool(row["htf_regime_aligned"])
+        oi=float(row["open_interest_usd"]);vol24=float(row["volume_24h_usd"])
+        trend=_trend(row["htf_trend"]) if has_trend else None
+        aligned=_bool(row["htf_regime_aligned"]) if has_legacy else None
     except (TypeError,ValueError) as exc:raise ValueError(f"{source}: invalid field value: {exc}") from exc
     if oi<0 or vol24<0:raise ValueError(f"{source}: OI/24h volume cannot be negative")
-    return HistoricalContext(bar,oi,vol24,aligned)
+    return HistoricalContext(bar,oi,vol24,aligned,trend)
 
 
 def load_historical_contexts(path:Path)->list[HistoricalContext]:
