@@ -8,7 +8,7 @@ When user says execute, implement next roadmap item directly when tooling permit
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: 7bc68cd49bd85d0a4835442cf7ae9e3159e13e24
 Frontend production build GREEN. Focused maturity-run-boundary/evidence-ui/page-contract suite: 16 passed in 0.52s. Full regression: 623 passed, 2 warnings in 35.34s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
+All changes after this checkpoint remain LOCAL TEST PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -50,15 +50,20 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Maturity Sequence Run-Length Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Maturity Sequence Run Boundary Transition Diagnostics
 [COMPLETE, VERIFIED] Maturity Sequence Run Boundary Lightweight Surface + Presentation
-  - research_evidence_ui exposes maturity_sequence_run_boundary_diagnostics through the durable lightweight endpoint
-  - all eight dimensions preserve chronological boundary_count, boundaries, latest_boundary, current_run_outcome, and current_run_length
-  - each boundary exposes boundary_index, from_outcome, from_length, to_outcome, to_length, and transition
-  - /research includes a dedicated maturity sequence run boundary transition diagnostics panel
-  - panel renders boundary count, latest boundary, current run, and complete chronological boundary history
-  - evidence-ui tests cover normal and missing-file fail-closed run-boundary behavior
-  - page contract verifies method, boundary count, latest boundary, boundary history, current run, and maturity_sequence_run_boundary_diagnostics presence
-  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None; no ranking, tuning, production promotion, or live-capital unlock
-[NEXT] Maturity Sequence Run Boundary Recurrence Diagnostics: describe recurrence/frequency of exact adjacent-run transition forms per dimension without scoring, ranking, promotion, or live unlock.
+[COMPLETE, LOCAL TEST PENDING] Maturity Sequence Run Boundary Recurrence Diagnostics
+  - new v6_maturity_sequence_run_boundary_recurrence service consumes chronological per-dimension run-boundary histories only
+  - exact from_outcome -> to_outcome forms are grouped without ranking or favorable-pattern selection
+  - each recurrence row preserves count, all boundary-index/run-length occurrences, and latest occurrence context
+  - each dimension preserves boundary_count, boundaries, distinct_transition_count, recurrences, latest_boundary, and current run context
+  - all eight maturity dimensions remain independent; duplicate-refresh resistance and qualifying-new-evidence semantics are inherited
+  - missing durable files fail closed with no candidates
+  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None, automatic_promotion=False
+  - production strategy remains unchanged; live capital and automatic real-money execution remain disabled
+[NEXT] Local focused recurrence + run-boundary regression and full regression.
+[NEXT AFTER GREEN] Maturity Sequence Run Boundary Recurrence Lightweight Surface + Presentation.
+[THEN — BACKTESTING READINESS AUDIT] Audit existing Atlas backtest/replay/data paths, CLI/API entry points, PIT guarantees, cost/slippage/funding assumptions, result persistence, and operator workflow. Repair only gaps that block safe repeatable historical backtesting.
+[THEN — BACKTEST RUNNER CHECKPOINT] Provide one repeatable local command/workflow to run historical backtests, save results, compare locked baseline vs research candidates, and keep all outputs research-only.
+[THEN — SHADOW/PAPER OPERATIONS CHECKPOINT] Validate startup/recovery, market-data ingestion, signal generation, simulated fills, logs, dashboard visibility, and durable evidence collection before any consideration of live capital.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -66,16 +71,35 @@ ENGINEERING ROADMAP
 RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
-LIVE READINESS
-Last fully verified build+regression checkpoint: 623 passed at 7bc68cd with frontend production build GREEN. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+WHAT REMAINS BEFORE ROUTINE BACKTESTING / ATLAS RESEARCH RUNS
+1. Verify this Run Boundary Recurrence Diagnostics implementation locally.
+2. Add its lightweight research-evidence surface + /research presentation and verify frontend + full regression.
+3. Perform a dedicated backtesting-readiness audit of the code that already exists: historical data inputs, point-in-time protections, fee/slippage/funding model, replay/backtest entry points, persistence, baseline-vs-candidate comparison, and failure/recovery behavior.
+4. Repair any audit findings that prevent deterministic, repeatable, research-only backtests.
+5. Establish and verify the canonical backtest runner/operator command and output location.
+6. Run a smoke backtest and then baseline/candidate historical backtest batches. These are research measurements, not production approval.
+7. After backtesting workflow is healthy, run Atlas in PAPER/SHADOW for prospective evidence collection and operational validation.
 
-NEXT EXECUTION
-Maturity Sequence Run Boundary Recurrence Diagnostics:
-- consume chronological per-dimension boundary histories only;
-- group exact from_outcome -> to_outcome boundary forms and report counts descriptively;
-- preserve underlying run lengths and latest occurrence context without collapsing to a score;
-- preserve duplicate-refresh resistance and qualifying-new-evidence semantics;
-- no aggregate readiness score, percentage, favorable-window rank, tuning, promotion, or live readiness decision;
-- human review only; no real-money execution.
+IMPORTANT DISTINCTION
+We do NOT need to finish every future maturity diagnostic before historical backtesting can begin. The current maturity diagnostics are evidence-observability layers. Once the recurrence surface is closed and the dedicated backtesting-readiness audit is green, Atlas can begin routine research backtests while additional evidence diagnostics continue in parallel. Live trading remains a separate, much later gate.
+
+LIVE READINESS
+Last fully verified build+regression checkpoint: 623 passed at 7bc68cd with frontend production build GREEN. Current Maturity Sequence Run Boundary Recurrence Diagnostics is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+
+LOCAL UPDATE / TEST
+cd "D:\Work\Project Atlas"
+git fetch origin
+git checkout chatgpt/atlas-rebuild-v1
+git reset --hard origin/chatgpt/atlas-rebuild-v1
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_sequence_run_boundary_recurrence.py tests/test_v6_maturity_sequence_run_boundaries.py -q
+backend\.venv\Scripts\python.exe -m pytest -q
+
+NEXT EXECUTION AFTER GREEN
+Maturity Sequence Run Boundary Recurrence Lightweight Surface + Presentation:
+- expose recurrence rows through the durable lightweight research-evidence endpoint;
+- render exact transition form, count, occurrence run lengths, latest occurrence, and current run context on /research;
+- preserve chronological new-evidence-only semantics and duplicate-refresh resistance;
+- no aggregate readiness score, percentage, favorable-pattern rank, tuning, promotion, or live readiness decision;
+- after this surface is GREEN, move directly to the dedicated backtesting-readiness audit rather than extending the diagnostic chain indefinitely.
 
 END OF MASTER ROADMAP
