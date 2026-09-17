@@ -11,7 +11,9 @@ def test_archive_uri_matches_official_asset_ctxs_layout():
 def test_plan_is_half_open_deterministic_and_research_only(tmp_path:Path):
     payload=plan(start_utc="2024-07-01T00:00:00Z",end_utc="2024-07-03T00:00:00Z",raw_root=tmp_path)
     assert [x["day"] for x in payload["objects"]]==["2024-07-01","2024-07-02"]
-    assert payload["objects"][0]["local_path"].endswith("asset_ctxs/20240701.csv.lz4")
+    local_path=Path(payload["objects"][0]["local_path"])
+    assert local_path.name=="20240701.csv.lz4"
+    assert local_path.parent.name=="asset_ctxs"
     assert payload["request_payer"]=="requester"
     assert payload["live_capital_allowed"] is False
     assert payload["automatic_real_money_execution"] is False
