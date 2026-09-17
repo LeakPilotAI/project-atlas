@@ -6,14 +6,14 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: b2e6c4f027a8c4bf3486bbff29cc4c883d59baac
-Historical-foundation focused suite: 4 passed in 0.23s. Full regression: 631 passed, 2 warnings in 35.58s. Failures: 0.
-
-LATEST LOCAL FAILURE / REPAIR
-At 5988110, the baseline-adapter suite failed one fixture because the intended long/short examples exceeded the locked max-extension gate. The long series ended near -5% extension versus the allowed 1.4%-3.5% band, so the adapter correctly returned None. Repair commit e503e29 changes only the fixture data to remain strongly oversold/overbought while staying inside the locked extension band. No baseline logic or production threshold changed. Repair is LOCAL TEST PENDING.
+Tested commit: 17198e7cda151002b12d553a93c69eda25bb9ed0
+Focused baseline-adapter + historical-foundation suite: 8 passed in 0.42s. Full regression: 635 passed, 2 warnings in 35.64s. Failures: 0.
 
 LOCKED PRODUCTION
 OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock.
+
+DESKTOP / OPERATOR END-STATE REQUIREMENT
+When Atlas is finished, launching the desktop shortcut must bring up the intended operational research stack cleanly and consistently: Docker dependencies, API/backend services, intended dashboard/UI, paper/shadow systems, research evidence surfaces, and backtesting/operator workflows. The launcher must fail visibly when required dependencies/data are unavailable, must not silently drop required services, and must preserve research/live separation. Current Atlas-Launch.ps1 starts Docker/Postgres/Redis + FastAPI and opens the API-served dashboard; final operational validation must reconcile this with the intended UI/Next.js architecture and backtest controls/status before Atlas is considered finished.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
@@ -26,30 +26,45 @@ ENGINEERING ROADMAP
   - explicit fees, slippage, funding, risk sizing, stop/target handling, ledger, equity, drawdown, R metrics
   - deterministic run_id and idempotent persisted result bundle
   - hard research-only/live-disabled safety flags
-  - package export and target-hit fixture repairs verified by 4 focused + 631 full tests
+  - verified by 4 focused + 631 full tests
 
-[COMPLETE, LOCAL TEST PENDING AFTER FIXTURE REPAIR] Locked Perp-Micro Baseline Strategy Adapter
-  - backend/app/backtest/perp_micro_baseline.py consumes production Settings defaults without mutating them
-  - locked thresholds: RSI 28/72, extension 1.4%-3.5%, minimum R:R 1.8, risk_usd from production defaults
-  - OI/24h-volume eligibility and HTF alignment are explicit fail-closed gates because current HistoricalBar does not contain those production inputs
+[COMPLETE, VERIFIED] Locked Perp-Micro Baseline Strategy Adapter
+  - consumes production Settings defaults without mutating them
+  - locked thresholds: OI 75k, volume 150k, RSI 28/72, extension 1.4%-3.5%, min R:R 1.8, risk_usd from production defaults
+  - OI/24h-volume eligibility and HTF alignment remain explicit fail-closed gates
   - no silent use of legacy generic decide_direction behavior
-  - baseline metadata explicitly reports production_strategy_modified=False, live_capital_allowed=False, automatic_real_money_execution=False
-  - focused tests verify settings immutability, missing external gates fail closed, long/short 1.8R construction, extension bounds, and safety metadata
-  - fixture repair e503e29 keeps intended signal examples inside the production max-extension gate instead of weakening the adapter
+  - metadata reports production_strategy_modified=False, live_capital_allowed=False, automatic_real_money_execution=False
+  - verified by 8 focused + 635 full tests at 17198e7
 
-[NEXT] Re-run focused baseline-adapter + historical-foundation tests and full regression after fixture repair.
-[NEXT AFTER GREEN] Canonical Backtest Data Loader + CLI / Operator Workflow
-  - define validated CSV/JSONL historical schema including point-in-time OI/24h-volume eligibility and HTF alignment inputs needed by locked baseline
-  - wire loader -> locked baseline adapter -> deterministic historical runner
-  - one repeatable PowerShell command
-  - explicit dataset path and deterministic output directory
-  - research-only baseline/candidate selection, no production mutation
-[THEN] Smoke Backtest Reconciliation
-  - tiny known dataset; inspect every signal/fill/cost/R/equity update; repeat twice with identical result
+[COMPLETE, LOCAL TEST PENDING] Canonical Backtest Data Loader + CLI / Operator Workflow
+  - backend/app/backtest/io.py validates CSV/JSONL/NDJSON datasets
+  - required PIT fields: timestamp, symbol, timeframe, OHLCV, open_interest_usd, volume_24h_usd, htf_regime_aligned; optional funding_rate
+  - loader fails closed on missing context, negative OI/volume, unsupported file type, duplicate/out-of-order timestamps, and mixed symbol/timeframe datasets
+  - backend/app/backtest/cli.py wires validated context -> locked baseline adapter -> deterministic historical runner -> persisted JSON result
+  - baseline OI/volume eligibility uses thresholds sourced from the same PerpMicroBaselineConfig/Settings source of truth, not duplicated constants in CLI logic
+  - CLI exposes explicit dataset, output-dir, fee-bps, slippage-bps, initial-equity and locked baseline strategy
+  - output reports run_id, result path, trade count, WR, expectancy R, total R, PF, drawdown and explicit costs
+  - research-only/live-disabled safety remains preserved
+  - focused loader/CLI tests cover PIT field parsing, fail-closed missing OI, locked threshold metadata, result persistence, and live-disabled flags
+
+[NEXT] Local focused loader/CLI + baseline + foundation tests and full regression.
+[NEXT AFTER GREEN] Deterministic Smoke Backtest Reconciliation
+  - add a tiny canonical fixture dataset under tests/fixtures or backend/data/research/smoke without polluting production data
+  - run the exact CLI twice with identical inputs/assumptions
+  - require identical run_id/result content
+  - reconcile every generated signal, next-bar fill, stop/target, fee/slippage/funding charge, net R, equity update and metrics
+  - record the exact canonical PowerShell command and output location
 [THEN] Historical Batch Research
-  - locked baseline first; research candidates second; multiple periods/regimes; persisted comparable metrics
+  - establish dataset acquisition/import workflow for representative Hyperliquid periods/regimes with PIT OI/volume/HTF context
+  - locked baseline first; research candidates second; persisted comparable metrics
 [THEN] PAPER/SHADOW Operations Checkpoint
-  - startup/recovery, live data ingestion, simulated fills, logs/dashboard, durable prospective evidence
+  - startup/recovery, live market-data ingestion, signal generation, simulated fills, logs/dashboard, durable prospective evidence
+[THEN — DESKTOP OPERATIONAL INTEGRATION] Final shortcut/runtime audit
+  - verify desktop shortcut launches every intended Atlas service and the intended UI
+  - reconcile current API-served dashboard with Next.js /research surfaces so nothing built is unreachable from normal launch
+  - surface backtest status/results/operator entry points from the normal Atlas experience rather than requiring hidden/manual scripts
+  - validate dependency failure messages, restart/recovery, shutdown, stale-process cleanup, logs and persistent data paths
+  - execute a complete desktop-launch smoke test before declaring Atlas operationally finished
 [ONGOING] V6 prospective evidence and Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion only after sufficient evidence. Live remains separate.
 
@@ -57,24 +72,28 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE BACKTESTING
-1. Verify the repaired locked perp-micro historical baseline adapter locally.
-2. Build validated historical-data loader with PIT OI/volume/HTF fields and canonical CLI/operator command.
-3. Run/reconcile deterministic smoke backtest twice.
+1. Verify the new validated data loader + canonical CLI locally.
+2. Run/reconcile deterministic smoke backtest twice and freeze the canonical operator command.
+3. Establish representative historical dataset acquisition/import with PIT OI/volume/HTF context.
 4. Begin locked-baseline historical batches, then separate research-candidate batches.
 5. Continue PAPER/SHADOW prospective evidence after historical runner is healthy.
+6. Before Atlas is called finished, complete desktop operational integration so the shortcut launches the full intended research environment and built surfaces are reachable/healthy.
 
 LIVE READINESS
-Last fully verified checkpoint: 631 passed at b2e6c4f. Locked baseline adapter + fixture repair are LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 635 passed at 17198e7. Loader/CLI workflow is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
+CANONICAL BACKTEST COMMAND AFTER THIS CHECKPOINT IS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.cli --dataset <PATH_TO_VALIDATED.csv-or-jsonl> --output-dir backend\data\research\backtests
+
 NEXT EXECUTION AFTER GREEN
-Canonical Backtest Data Loader + CLI / Operator Workflow, then deterministic smoke backtest. Do not extend maturity diagnostics before backtesting.
+Deterministic Smoke Backtest Reconciliation, then representative historical dataset workflow/batches. Desktop operational integration remains a mandatory final checkpoint before Atlas is considered finished.
 
 END OF MASTER ROADMAP
