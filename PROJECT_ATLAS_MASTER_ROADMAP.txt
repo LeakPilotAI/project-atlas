@@ -5,23 +5,17 @@ Branch: chatgpt/atlas-rebuild-v1
 PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly. After EVERY execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
-PERMANENT REPOSITORY SECURITY GATE
-Never commit credentials, AWS access/secret/session keys, tokens, passwords, private keys, seed phrases, .env secrets, ~/.aws files, local cloud credential stores, or raw credential exports. Keep credential protections even though AWS is no longer part of the active Atlas research path.
+PERMANENT SECURITY GATE
+Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from the active Atlas path. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-63 focused historical/archive tests passed in 1.19s; full regression 690 passed, 2 warnings in 36.58s; 0 failures. Python LZ4 decoding VERIFIED. Credential-safety ignore rules were locally verified: .aws/credentials and generic credentials paths are ignored. ATLAS_RUNTIME_AUDIT.json remains an untracked local runtime artifact and must not be committed blindly.
+63 focused historical/archive tests passed in 1.19s; full regression 690 passed, 2 warnings in 36.58s; 0 failures. Python LZ4 verified. Credential ignore rules verified. Source audit fef498458128fe534977 is RED because BTC/ETH/SOL canonical 5m datasets and provenance manifests are missing. ready_for_locked_baseline_batch=false.
 
-OPERATOR DECISION — LOCAL-ONLY RESEARCH PATH
-AWS/requester-pays S3 acquisition is REMOVED FROM THE ACTIVE ROADMAP. No AWS account, credit card, AWS login, profile, or requester-paid download is required for the active Atlas workflow. Existing Hyperliquid archive code remains research tooling only and is not a prerequisite for local backtesting. Do not request AWS setup again unless the user explicitly re-enables that optional source in the future.
-
-IMPORTANT DATA LIMITATION
-The previously attempted official REST acquisition for locked 2024-H2 produced BTC/ETH/SOL funding history but zero 5m/1h candles because candleSnapshot retention does not reach that window. Therefore the 2024-H2 locked historical baseline is NOT data-ready yet. Do not fabricate/backfill historical OI/volume from current state and do not claim routine historical backtesting is ready on 2024-H2 until trustworthy local/provider data is ingested.
+OPERATOR DECISION — LOCAL/NO-AWS PATH
+No AWS account, credit card, login, profile, or requester-paid download is required. Existing optional archive tooling is not a prerequisite. Do not request AWS setup unless explicitly re-enabled.
 
 LOCKED PRODUCTION
 OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock. Live capital locked; automated real-money execution disabled.
-
-DESKTOP END STATE
-Must validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk, intended dependencies/services/UI, research/backtesting, PAPER/SHADOW, recovery/shutdown/logging/persistence.
 
 ROADMAP
 [COMPLETE/VERIFIED] Core rebuild / Hyperliquid cockpit / PAPER / recovery / Quality Dips
@@ -29,67 +23,79 @@ ROADMAP
 [COMPLETE/VERIFIED] Historical runner + locked baseline + loader/CLI + smoke
 [COMPLETE/VERIFIED] PIT importer + manifests/operator import + source readiness
 [COMPLETE/VERIFIED] Provider normalization + HTF semantics + context v2 + funding events
-[COMPLETE/VERIFIED] Representative source acquisition plan + UTC window lock
-[COMPLETE/VERIFIED] Official Hyperliquid REST acquisition CLI + candle-retention fail-closed hardening
-[COMPLETE/VERIFIED] Optional first-party asset_ctxs archive planner + schema inspector + Python LZ4 decoding
-[COMPLETE/VERIFIED] Credential-safety .gitignore hardening locally verified
-[REMOVED FROM ACTIVE PATH] AWS authentication and requester-paid S3 archive acquisition
+[COMPLETE/VERIFIED] Representative UTC window lock
+[COMPLETE/VERIFIED] Hyperliquid REST acquisition + retention fail-closed hardening
+[COMPLETE/VERIFIED] Optional archive planner/schema inspector/Python LZ4
+[COMPLETE/VERIFIED] Credential-safety hardening
+[REMOVED ACTIVE PATH] AWS authentication/requester-paid S3
+[COMPLETE/VERIFIED RED] Local source audit: canonical BTC/ETH/SOL datasets/manifests absent
 
-[CURRENT] LOCAL HISTORICAL DATA READINESS / BACKTEST START
-1. Audit what trustworthy historical market data already exists under backend/data without deleting or overwriting it.
-2. Run source_audit against existing canonical historical bundles/manifests.
-3. If canonical BTC/ETH/SOL 5m + 1h + PIT context are already complete, begin the locked DEVELOPMENT baseline immediately.
-4. If not complete, implement a no-AWS historical candle/context ingestion/reconstruction path. Prefer free/local/first-party non-requester-paid data where trustworthy; otherwise require an explicitly approved provider rather than fabricating data.
-5. Preserve exact provenance, checksums, gaps, PIT semantics, and completed-1h HTF derivation.
-6. Require source_audit ready_for_locked_baseline_batch=true before claiming the locked 2024-H2 baseline data-ready.
+[COMPLETE, LOCAL TEST PENDING] FREE NO-AWS PUBLIC CANDLE ACQUISITION
+- backend/app/backtest/binance_public_acquire.py
+- tests/test_backtest_binance_public_acquire.py
+- source: public Binance USD-M futures monthly klines on data.binance.vision
+- BTCUSDT/ETHUSDT/SOLUSDT
+- locked intervals: 5m and 1h
+- 2024-H2 plan = 36 raw monthly ZIP objects (3 symbols x 2 intervals x 6 months)
+- no account/API key/AWS/paid service
+- downloads published CHECKSUM sidecars and verifies SHA-256 before accepting raw ZIP
+- deterministic month planning
+- fail-closed symbols/intervals
+- raw files retained under backend/data/research/raw/historical/binance_public
+- explicit candles_only=true and pit_oi_context_complete=false
+- cannot make source_audit GREEN by itself
+- no current-state backfill/live-capital path
 
-[THEN] LOCKED BASELINE DEVELOPMENT RESEARCH
-Run calendar-locked DEVELOPMENT windows first. Record trades, assumptions, costs, expectancy R, WR, PF, total R, drawdown, sample size, symbol/regime behavior, provenance and deterministic run IDs. Do not tune on HOLDOUT.
+[NEXT AFTER LOCAL GREEN] Run 2024-H2 PLAN ONLY first; verify exactly 36 objects and no download. Then execute a ONE-MONTH BTC 5m+1h public-data probe, verify published checksums, inspect raw kline schema, and only then acquire all 36 2024-H2 candle objects.
 
-[THEN] FREEZE DEVELOPMENT DECISIONS
-Freeze any candidate/exit/filter decisions before opening holdout results.
+[THEN] PUBLIC CANDLE NORMALIZATION
+Normalize verified ZIP contents into deterministic Atlas candle inputs; enforce exact half-open UTC window, unique ascending timestamps, expected 5m/1h cadence, gap reporting, symbol mapping and raw checksums. Do not create canonical source-audit-passing bundles until PIT context is complete.
 
-[THEN] HOLDOUT EVALUATION
-Evaluate untouched HOLDOUT windows chronologically. No automatic gate changes or live unlock.
+[THEN] NO-AWS PIT CONTEXT
+Acquire/derive trustworthy historical PIT OI and rolling 24h notional volume without current-state synthesis. Funding already exists from first-party Hyperliquid history. Derive completed 1h HTF from historical candles. If a trustworthy free historical OI source cannot be established, start prospective PIT collection rather than weakening/faking the OI gate.
 
-[THEN] CANDIDATE COMPARISON
-Candidates isolated; identical datasets/cost assumptions; DEVELOPMENT tuning only; HOLDOUT evaluation only.
+[THEN] CANONICAL BUNDLES + SOURCE AUDIT GREEN
+Merge candles + funding + PIT OI/volume + completed 1h HTF. Generate BTC-5m.csv, ETH-5m.csv, SOL-5m.csv plus provenance manifests with raw SHA-256 values. Require ready_for_locked_baseline_batch=true.
 
-[THEN] PAPER/SHADOW OPERATIONAL CHECKPOINT
-Validate startup/recovery, live market data, signals, simulated fills, exits, durable logs/dashboard, prospective evidence, and restart integrity. PAPER and SHADOW remain separate populations.
+[THEN] LOCKED DEVELOPMENT BASELINE
+Run DEVELOPMENT windows first. Record trades, costs, expectancy R, WR, PF, total R, drawdown, sample size, symbol/regime behavior, provenance and deterministic run IDs. Do not tune HOLDOUT.
 
-[THEN] FINAL DESKTOP OPERATIONAL INTEGRATION
-Validate exact shortcuts:
-C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
-C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
-Reconcile launcher/service/UI behavior, research/backtest surfaces, visible failures, stale-process cleanup, restart/recovery/shutdown, logging and persistent paths. Atlas is not operationally finished until this is GREEN.
+[THEN] Freeze development decisions -> untouched HOLDOUT -> isolated candidate comparison -> PAPER/SHADOW operational checkpoint -> final desktop integration.
+
+DESKTOP END STATE
+Validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk; services/UI/research/backtests/recovery/shutdown/logging/persistence must be GREEN.
 
 RESEARCH STATUS
-Existing prospective report: PAPER n=903, WR=43.41%, expectancy=-0.0114R, total=-10.3104R, PF=0.9787. Chronological later holdout n=301, WR=44.19%, expectancy=-0.1474R, total=-44.369R. Stable positive edge NOT ESTABLISHED. These results do not justify live capital or gate changes.
+PAPER n=903, WR=43.41%, expectancy=-0.0114R, total=-10.3104R, PF=0.9787. Later chronological holdout n=301, WR=44.19%, expectancy=-0.1474R, total=-44.369R. Stable positive edge NOT ESTABLISHED.
 
-LOCAL UPDATE
+LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-git status --short
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_acquire.py -q
+backend\.venv\Scripts\python.exe -m pytest -q
 
-LOCAL DATA READINESS CHECK
-backend\.venv\Scripts\python.exe -m app.backtest.source_audit --root backend\data\research\historical --timeframe 5m
+AFTER GREEN — PLAN ONLY, NO DOWNLOAD
+backend\.venv\Scripts\python.exe -m app.backtest.binance_public_acquire --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2 --manifest backend\data\research\historical\binance-public-candles-plan-dev-2024-h2.json
+Expected: objects=36 status=PLANNED_NOT_DOWNLOADED
 
-DO NOT RUN
-Do not run aws login, aws configure, or requester-paid Hyperliquid archive acquisition as part of the active roadmap. AWS CLI may be uninstalled locally if the user wants; it is no longer an Atlas prerequisite.
+ONE-MONTH PROBE ONLY AFTER TESTS/PLAN GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.binance_public_acquire --start 2024-07-01T00:00:00Z --end 2024-08-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-probe --manifest backend\data\research\historical\binance-public-candles-probe-btc-202407.json --symbols BTC --intervals 5m 1h --execute
+Expected: objects=2 status=ACQUIRED_RAW_CANDLES_CHECKSUM_VERIFIED_CONTEXT_STILL_REQUIRED
 
 WHAT REMAINS
-1 Audit existing local historical data/source readiness.
-2 If source audit GREEN, run locked DEVELOPMENT baseline now.
-3 If source audit not GREEN, build/ingest trustworthy no-AWS historical 5m/1h + PIT context.
-4 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
-5 Locked DEVELOPMENT baseline research.
-6 Freeze development decisions.
-7 HOLDOUT evaluation and isolated candidate comparison.
-8 PAPER/SHADOW operational checkpoint.
-9 Final desktop integration and launch/stop smoke test.
+1 Local tests for public candle acquisition checkpoint.
+2 36-object 2024-H2 no-download plan.
+3 One-month BTC checksum-verified probe.
+4 Raw kline schema/cadence inspection + candle normalizer.
+5 Full 2024-H2 candle acquisition after probe GREEN.
+6 Trustworthy no-AWS PIT OI + rolling-volume context (or prospective collection if unavailable).
+7 Canonical datasets/manifests + source audit GREEN.
+8 Locked DEVELOPMENT baseline.
+9 Freeze -> HOLDOUT -> candidates.
+10 PAPER/SHADOW operations.
+11 Final desktop integration.
 
 LIVE STATUS
 Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
