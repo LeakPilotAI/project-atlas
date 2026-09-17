@@ -124,3 +124,14 @@ def test_research_page_renders_maturity_sequence_run_length_contract():
     assert "run count" in page
     assert "boundary" in page
     assert "runs:" in page
+
+
+def test_research_page_renders_maturity_sequence_run_boundary_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Maturity sequence run boundary transition diagnostics" in page
+    assert "DESCRIPTIVE_MATURITY_SEQUENCE_RUN_BOUNDARIES" in page
+    assert "maturity_sequence_run_boundary_diagnostics" in page
+    assert "boundary count" in page
+    assert "latest boundary" in page
+    assert "boundaries:" in page
+    assert "current run" in page
