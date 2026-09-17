@@ -18,53 +18,49 @@ Any failed thesis -> THESIS_BROKEN.
 GENERATONAL is intentionally rare and must never be awarded from drawdown alone.
 
 PHASE 1 — COMPLETE / USER-LOCAL VERIFIED GREEN
-87e0531 backend/app/investment/quality_dips_v2.py
-44be030 tests/test_quality_dips_v2_policy.py
-7d2504e docs/research/QUALITY_DIPS_V2_PATIENT_CAPITAL.md
-0162f82 PROJECT_ATLAS_MASTER_ROADMAP.txt
 Focused verification: 8 passed.
 Full regression: 805 passed, 2 warnings.
 
 PHASE 2 — COMPLETE / USER-LOCAL VERIFIED GREEN
-da6de06 backend/app/investment/quality_dips_v2_evidence.py
-bd73314 tests/test_quality_dips_v2_evidence.py
-2bd0cb7 docs/research/QUALITY_DIPS_V2_ACTIVE_POSITION_MONITOR.md
-3d47d32 PROJECT_ATLAS_MASTER_ROADMAP.txt
-Focused verification: 16 passed in 0.15s.
-Full regression: 813 passed, 2 warnings in 38.07s.
+Focused verification: 16 passed.
+Full regression: 813 passed, 2 warnings.
 
 PHASE 3 — COMPLETE / USER-LOCAL VERIFIED GREEN
-f722997 backend/app/investment/quality_dips_v2_gate.py
-37ac455 tests/test_quality_dips_v2_gate.py
-3da7297 PROJECT_ATLAS_MASTER_ROADMAP.txt
-Focused verification: 24 passed in 0.21s.
-Full regression: 821 passed, 2 warnings in 37.91s.
+Focused verification: 24 passed.
+Full regression: 821 passed, 2 warnings.
 
 PHASE 4 — COMPLETE / USER-LOCAL VERIFIED GREEN
-394e0a8 backend/app/investment/quality_dips_v2_valuation.py
-4d2df84 tests/test_quality_dips_v2_valuation.py
-6efadd8 PROJECT_ATLAS_MASTER_ROADMAP.txt
-Focused verification: 30 passed in 0.26s.
-Full regression: 827 passed, 2 warnings in 37.77s.
+Focused verification: 30 passed.
+Full regression: 827 passed, 2 warnings.
 
-PHASE 5 — EXECUTED / LOCAL TEST PENDING
+PHASE 5 — COMPLETE / USER-LOCAL VERIFIED GREEN
 066e702 backend/app/investment/quality_dips_v2_entries.py
-- staged patient-capital L1/L2/L3/L4 research ladder
-- L1=29%, L2=35%, L3=40%, L4=50% required conservative normalization upside
-- every level is derived from the conservative normalization value, never optimistic value
-- current-price reached flags are informational only
-- incomplete valuation fails closed
-- point-in-time frozen entry evidence snapshot for planned/manual entries
-- frozen snapshot deep-copies evidence so later mutation cannot rewrite why the entry was taken
-- MANUAL_ONLY / no-live controls preserved
-
 a0a888e tests/test_quality_dips_v2_entries.py
-- complete-valuation requirement
-- exact 29/35/40/50 ladder arithmetic
-- deeper levels must be lower prices
-- reached flags do not imply brokerage execution
-- frozen entry snapshot integrity
-- invalid level/nonpositive entry rejection
+931b1f0 PROJECT_ATLAS_MASTER_ROADMAP.txt
+Focused verification: 37 passed in 0.30s.
+Full regression: 834 passed, 2 warnings in 38.09s.
+
+PHASE 6 — EXECUTED / LOCAL TEST PENDING
+b69906d backend/app/investment/quality_dips_v2_position_monitor.py
+- active-position research monitor using frozen entry snapshot + cost basis + current evidence
+- research states: HOLD / HOLD_WATCH / ADD_ELIGIBLE / STOP_ADDING / THESIS_BROKEN / EXIT_REVIEW
+- price performance vs cost basis tracked explicitly
+- multi-horizon trend condition synthesized from short/intermediate/long trend, momentum, and relative strength
+- bearish trend alone can produce HOLD_WATCH but cannot break thesis
+- explicit value-trap/falling-knife or weak evidence stops additional accumulation
+- explicit thesis/fundamental failure produces THESIS_BROKEN
+- material quality/fundamentals deterioration versus frozen entry snapshot produces EXIT_REVIEW
+- MANUAL_ONLY / read-only / no-live controls preserved
+
+e2853c6 tests/test_quality_dips_v2_position_monitor.py
+- HOLD behavior
+- bearish-trend HOLD_WATCH behavior
+- explicit THESIS_BROKEN behavior
+- STOP_ADDING on value trap
+- EXIT_REVIEW on material fundamentals deterioration
+- ADD_ELIGIBLE behavior
+- invalid price/cost basis fail-safe
+- manual-only/no-live contract
 
 FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
@@ -72,8 +68,8 @@ FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/VERIFIED GREEN] Phase 2: read-only V2 evidence adapter + trend evidence passthrough
 [COMPLETE/VERIFIED GREEN] Phase 3: hard value-trap / thesis-integrity / evidence-freshness gate
 [COMPLETE/VERIFIED GREEN] Phase 4: conservative/base/optimistic normalization-value model with provenance
-[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 5: patient-state integration + staged L1/L2/L3/L4 entry-zone planner + frozen entry snapshots
-[REMAINING] Phase 6: active-position trend/thesis monitor; HOLD/HOLD_WATCH/ADD_ELIGIBLE/STOP_ADDING/THESIS_BROKEN/EXIT_REVIEW; compare current evidence vs frozen entry thesis and cost basis
+[COMPLETE/VERIFIED GREEN] Phase 5: staged L1/L2/L3/L4 entry-zone planner + frozen entry snapshots
+[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 6: active-position trend/thesis/cost-basis monitor
 [REMAINING] Phase 7: historical/PIT validation dataset; evaluate 29/40/50% opportunity hurdles + position-state behavior without lookahead
 [REMAINING] Phase 8: freeze DEVELOPMENT policy; evaluate untouched HOLDOUT
 [REMAINING] Phase 9: integrate validated V2 board + active-position fields into Quality Dips API/dashboard; MANUAL_ONLY
@@ -81,18 +77,18 @@ FULL ROADMAP — QUALITY DIPS V2
 [REMAINING] Phase 11: desktop regression + operational smoke + V2 evidence decision/closure
 
 NEXT GREEN GATE
-Pull latest branch, run Phase 1 through Phase 5 focused tests, then full regression. Do not call Phase 5 verified until user posts GREEN output.
+Pull latest branch, run Phase 1 through Phase 6 focused tests, then full regression. Do not call Phase 6 verified until user posts GREEN output.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py tests/test_quality_dips_v2_position_monitor.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 AFTER GREEN
-Proceed directly to Phase 6: implement the active-position trend/thesis monitor using frozen entry evidence, current trend/fundamental/valuation evidence, and cost basis. Price movement alone must not create thesis failure or an automatic sell decision.
+Proceed directly to Phase 7: build the historical/PIT validation harness for 29/40/50% entry hurdles and post-entry state behavior without lookahead or same-window retuning.
 
 NORMAL DESKTOP WORKFLOW REMAINS
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
