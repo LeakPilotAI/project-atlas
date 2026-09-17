@@ -9,14 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Full BTC/ETH/SOL exact funding PIT merge batch is GREEN and COMPLETE. Focused tests: 6 passed in 0.35s. Full regression: 754 passed, 2 warnings in 37.44s; 0 failures. Batch execution produced normalized_outputs=3 status=MERGED_FIRST_PARTY_FUNDING_INTO_5M_BARS. BTC/ETH/SOL each contain 52,992 funded 5m bars with all 4,415 first-party Hyperliquid funding events merged under exact half-open interval semantics, with no interpolation or forward-fill.
+Canonical BTC/ETH/SOL PIT assembly is GREEN and source readiness is GREEN. Focused canonical tests: 3 passed in 0.54s. Full regression: 757 passed, 2 warnings in 38.78s; 0 failures. Canonical execution produced normalized_outputs=3 status=ASSEMBLED_CANONICAL_PIT_DATASETS. BTC/ETH/SOL each contain 52,990 rows with exactly 2 incomplete-context rows excluded rather than fabricated. source_audit returned ready=true for all three datasets and ready_for_locked_baseline_batch=true with audit_id=ae70db3328bd71604414.
 
-EXECUTED CANONICAL PIT ASSEMBLY — LOCAL TEST PENDING
-0c453cb atlas: assemble canonical PIT datasets without OI fabrication
-9d51235 atlas: test canonical PIT assembly and sparse OI exclusion
-8ffaa92 atlas: batch canonical PIT dataset assembly
-affa843 atlas: test canonical PIT batch assembly
-Canonical assembly merges funded 5m bars, sparse PIT OI, exact rolling 24h quote volume, and completed-1h HTF. Any row missing required PIT context is EXCLUDED rather than filled or fabricated. The known two absent OI timestamps therefore remain missing. Per-symbol canonical manifests include PIT-aligned=true, current_state_backfill_used=false, source paths, raw/input SHA-256 values in notes, and dataset SHA-256, matching source_audit requirements.
+EXECUTED LOCKED DEVELOPMENT BASELINE INPUT FREEZE — LOCAL TEST PENDING
+51a049d atlas: freeze locked development baseline inputs
+c7ba31e atlas: test locked development baseline freeze
+New research-only stage refuses to run unless source_audit is GREEN, loads the canonical BTC/ETH/SOL datasets, records row coverage and the source audit id, and freezes the DEVELOPMENT inputs without threshold retuning, holdout access, or live-capital enablement.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -35,44 +33,34 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Optional archive/schema/LZ4 tooling
 [COMPLETE/VERIFIED] Credential security hardening
 [REMOVED] AWS requester-paid active path
-[VERIFIED RED] Canonical source audit — canonical PIT bundles not complete
 [COMPLETE/VERIFIED] No-AWS public candle acquisition
 [COMPLETE/VERIFIED] Full real 2024-H2 candle batch — 36 raw objects -> 6 normalized outputs
 [COMPLETE/VERIFIED] Historical PIT metrics acquisition
-[COMPLETE/VERIFIED] OI checksum/schema/cadence probe + normalizer
-[COMPLETE/VERIFIED] Full 2024-H2 OI batch orchestration + resumable acquisition
-[COMPLETE/VERIFIED RAW] All 552 locked 2024-H2 metrics archives
-[COMPLETE/VERIFIED] Exact real OI gap diagnosis — 2024-10-28 16:25/16:30 UTC absent
-[COMPLETE/VERIFIED] Sparse PIT OI preservation — no fabrication
-[COMPLETE/VERIFIED] Full 2024-H2 OI normalization — 3 outputs
-[COMPLETE/VERIFIED] Exact PIT rolling 24h quote-volume derivation
-[COMPLETE/VERIFIED] Real BTC July 1 warm-up probe — 288 rows, exact June 30 warm-up
-[COMPLETE/VERIFIED] Full BTC/ETH/SOL 2024-H2 rolling-volume batch — 21 raw objects -> 3 outputs
-[COMPLETE/VERIFIED] Real BTC completed-1h HTF derivation — 52,992 rows
-[COMPLETE/VERIFIED] Full BTC/ETH/SOL completed-1h HTF batch — 3 outputs
-[COMPLETE/VERIFIED] Paginated first-party funding history implementation
-[COMPLETE/VERIFIED] Real BTC full-window funding — 4,415 rows / 9 pages
-[COMPLETE/VERIFIED] Full BTC/ETH/SOL funding batch — each 4,415 rows / 9 pages
-[COMPLETE/VERIFIED] Real BTC exact-event funding PIT merge — 52,992 bars / 4,415 events
-[COMPLETE/VERIFIED] Full BTC/ETH/SOL funding PIT merge batch — each 52,992 bars / 4,415 events
+[COMPLETE/VERIFIED] Full 2024-H2 OI normalization — sparse source missingness preserved
+[COMPLETE/VERIFIED] Exact rolling 24h quote-volume — 3 outputs
+[COMPLETE/VERIFIED] Completed-1h HTF — 3 outputs
+[COMPLETE/VERIFIED] Paginated first-party Hyperliquid funding — 3 outputs
+[COMPLETE/VERIFIED] Exact funding PIT merge — 3 outputs
+[COMPLETE/VERIFIED] Canonical BTC/ETH/SOL PIT datasets — 52,990 rows each; 2 incomplete OI rows excluded
+[COMPLETE/VERIFIED GREEN] Canonical source audit — ready_for_locked_baseline_batch=true
 
-[CURRENT, LOCAL TEST PENDING] CANONICAL BTC/ETH/SOL PIT DATASET + MANIFEST ASSEMBLY
-- inputs: funded 5m bars + sparse PIT OI + exact rolling 24h quote volume + completed HTF
-- incomplete PIT context rows are excluded, never filled
-- known OI missingness remains real source missingness
-- funding_rate remains exact-event bar assignment from funded bars
-- htf_trend retained directly
-- per-symbol canonical dataset + .manifest.json
-- raw/input/output SHA-256 provenance
-- PIT aligned=true
-- current-state backfill=false
-- research only; no live path
+[CURRENT, LOCAL TEST PENDING] LOCKED DEVELOPMENT BASELINE INPUT FREEZE
+- requires canonical source_audit GREEN
+- canonical root: backend/data/research/historical/canonical-dev-2024-h2
+- freezes exact BTC/ETH/SOL DEVELOPMENT inputs
+- preserves source audit id
+- threshold retuning disabled
+- holdout_data_touched=false
+- live_capital_allowed=false
+- automatic_real_money_execution=false
 
-[NEXT AFTER LOCAL GREEN] Execute the canonical BTC/ETH/SOL batch. Expect normalized_outputs=3 status=ASSEMBLED_CANONICAL_PIT_DATASETS. BTC/ETH/SOL should each cover the locked 2024-H2 decision window except for any documented incomplete-context rows; the known two OI missing timestamps must be excluded rather than fabricated. Then run source_audit on the canonical output root and require ready_for_locked_baseline_batch=true.
+[NEXT AFTER LOCAL GREEN] Execute the locked DEVELOPMENT input freeze. Verify all three canonical datasets load, total rows reflect the frozen PIT bundle, source_audit_green=true, threshold_retuning_allowed=false, and holdout_data_touched=false.
 
-[THEN] Run source_audit and require all three canonical datasets/manifests GREEN before any locked DEVELOPMENT baseline.
+[THEN] Run the actual locked DEVELOPMENT baseline using the frozen inputs and locked production thresholds. Capture deterministic baseline metrics/artifacts only; do not retune on the same window.
 
-[THEN] Locked DEVELOPMENT baseline -> freeze decisions -> untouched HOLDOUT -> isolated candidates -> PAPER/SHADOW operational checkpoint -> final desktop integration.
+[THEN] Freeze DEVELOPMENT decisions/parameters before opening any untouched HOLDOUT window.
+
+[THEN] Untouched HOLDOUT evaluation -> isolated candidates only if justified by evidence -> PAPER/SHADOW operational checkpoint -> final desktop integration.
 
 DESKTOP END STATE
 Validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk; services/UI/research/backtests/recovery/shutdown/logging/persistence GREEN.
@@ -82,25 +70,22 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_canonical_assemble.py tests/test_backtest_canonical_batch.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_locked_development_baseline.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-CANONICAL BATCH — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.canonical_batch --funded-root backend\data\research\historical\dev-2024-h2-funded --oi-root backend\data\research\historical\dev-2024-h2-oi --volume-root backend\data\research\historical\dev-2024-h2-volume --htf-root backend\data\research\historical\dev-2024-h2-htf --output-root backend\data\research\historical\canonical-dev-2024-h2 --manifest backend\data\research\historical\canonical-batch-dev-2024-h2.json --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z
-Expected: normalized_outputs=3 status=ASSEMBLED_CANONICAL_PIT_DATASETS
-
-SOURCE AUDIT — AFTER CANONICAL BATCH GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.source_audit --root backend\data\research\historical\canonical-dev-2024-h2 --timeframe 5m
-Required: ready_for_locked_baseline_batch=true
+LOCKED DEVELOPMENT INPUT FREEZE — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.locked_development_baseline --canonical-root backend\data\research\historical\canonical-dev-2024-h2 --output backend\data\research\historical\locked-development-baseline-inputs-dev-2024-h2.json --timeframe 5m
+Expected: status=LOCKED_DEVELOPMENT_BASELINE_INPUTS_FROZEN, source_audit_green=true, threshold_retuning_allowed=false, holdout_data_touched=false
 
 WHAT REMAINS
-1 Validate canonical assembly focused/full tests.
-2 Execute canonical BTC/ETH/SOL batch and inspect excluded incomplete rows.
-3 source_audit GREEN.
-4 Locked DEVELOPMENT baseline.
-5 Freeze -> HOLDOUT -> candidates.
-6 PAPER/SHADOW operational checkpoint.
-7 Final desktop integration.
+1 Validate locked DEVELOPMENT input-freeze focused/full tests.
+2 Execute locked DEVELOPMENT input freeze.
+3 Execute deterministic locked DEVELOPMENT baseline using frozen inputs and locked thresholds.
+4 Freeze decisions/parameters.
+5 Untouched HOLDOUT evaluation.
+6 Isolated candidates only if evidence supports them.
+7 PAPER/SHADOW operational checkpoint.
+8 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
