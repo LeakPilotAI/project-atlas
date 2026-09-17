@@ -6,10 +6,13 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly. After EVERY execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Commit 73df9c9957c980bdc1b58851c30492c96948a4c0 branch state: focused historical/archive stack 57 passed in 0.95s; full regression 684 passed, 2 warnings in 36.43s; 0 failures. 2024-H2 archive plan generated 184 objects with PLANNED_NOT_DOWNLOADED. Archive acquisition + Windows portability VERIFIED.
+Commit ec79fb07 branch state: focused historical/archive stack 61 passed in 1.00s; full regression 688 passed, 2 warnings in 36.60s; 0 failures. Raw archive schema inspector VERIFIED. 2024-H2 archive plan previously generated 184 objects with PLANNED_NOT_DOWNLOADED.
+
+LOCAL ENVIRONMENT VERIFIED
+AWS CLI 2.36.47 installed at C:\Program Files\Amazon\AWSCLIV2\aws.exe and working on PATH. Atlas venv has Python lz4 4.4.5 installed and import verified. No standalone lz4.exe is required after the current Python-LZ4 checkpoint is locally verified.
 
 FIRST REAL 2024-H2 ACQUISITION RESULT
-BTC/ETH/SOL each: 5m candles=0; 1h candles=0; funding=3096. Historical OI pending. Official REST candle retention cannot reach locked 2024-H2. Funding history succeeded. Historical context pivots to first-party asset_ctxs archive before external OI vendor.
+BTC/ETH/SOL each: REST 5m candles=0; REST 1h candles=0; funding=3096. Historical OI pending. Official REST candle retention cannot reach locked 2024-H2. Funding history succeeded. Historical context pivots to first-party asset_ctxs archive before external OI vendor.
 
 LOCKED PRODUCTION
 OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock. Live capital locked; automated real-money execution disabled.
@@ -25,28 +28,26 @@ ROADMAP
 [COMPLETE/VERIFIED] Provider normalization + HTF semantics + context v2 + funding events
 [COMPLETE/VERIFIED] Representative source acquisition plan + UTC window lock
 [COMPLETE/VERIFIED] Official Hyperliquid acquisition CLI + candle-retention fail-closed hardening
-[COMPLETE/VERIFIED] First-party asset_ctxs archive acquisition/planning + cross-platform tests — 684 full tests; 184-day plan generated without download
+[COMPLETE/VERIFIED] First-party asset_ctxs archive acquisition/planning + cross-platform tests
+[COMPLETE/VERIFIED] Raw asset_ctxs schema inspector — 688 full tests
 
-[COMPLETE, LOCAL TEST PENDING] Raw asset_ctxs Schema Inspector
-- backend/app/backtest/hyperliquid_archive_inspect.py
-- inspects actual acquired CSV header before normalization
-- supports .lz4 through local lz4 CLI; no silent decompression assumptions
-- detects symbol/timestamp/open-interest/day-notional-volume fields case-insensitively
-- requires BTC, ETH and SOL samples before normalization_allowed=true
-- missing required historical context fails closed
-- writes research-only inspection JSON with detected fields and samples
-- never enables live capital/automatic real-money execution
-- tests/test_backtest_hyperliquid_archive_inspect.py covers success, missing volume, missing locked symbol, empty archive
+[COMPLETE, LOCAL TEST PENDING] Self-contained Python LZ4 archive decoding
+- hyperliquid_archive_inspect.py now decodes .lz4 in-process with lz4.frame
+- standalone lz4.exe dependency removed
+- backend/pyproject.toml pins lz4>=4.4.5
+- tests exercise real lz4.frame compressed CSV bytes and corrupt-LZ4 fail-closed behavior
+- inspection output records compression=lz4.frame
+- research-only/live-disabled semantics unchanged
 
-[NEXT] Local inspector + archive/historical focused tests and full regression.
+[NEXT] Local focused + full regression for Python-LZ4 checkpoint.
 
-[NEXT AFTER GREEN] Environment/probe gate
-1. Confirm local AWS CLI exists and identify an already-configured AWS profile; do not put credentials in chat/code.
-2. Confirm local lz4 CLI exists for inspection.
-3. Execute exactly one requester-paid day (2024-07-01) only.
-4. Run hyperliquid_archive_inspect against the acquired raw file.
-5. Verify actual schema/cadence and whether BTC/ETH/SOL PIT OI + day-notional-volume are present and semantically usable.
-6. Only if inspection is GREEN, authorize full 184-day 2024-H2 asset_ctxs acquisition.
+[NEXT AFTER GREEN] AWS credential/profile gate
+1. Run aws configure list-profiles.
+2. If no profile exists, configure one locally with aws configure. Never paste AWS access key or secret into chat/code/repo.
+3. Execute exactly one requester-paid archive day: 2024-07-01.
+4. Run archive inspector against the acquired .csv.lz4.
+5. Verify actual schema/cadence and BTC/ETH/SOL PIT OI + day-notional-volume suitability.
+6. Only after real inspection is GREEN consider full 184-day 2024-H2 asset_ctxs acquisition.
 
 [THEN] Historical candle reconstruction/provider ingestion
 - trustworthy 5m/1h bars for 2024-H2
@@ -70,22 +71,21 @@ git reset --hard origin/chatgpt/atlas-rebuild-v1
 backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_hyperliquid_archive_inspect.py tests/test_backtest_hyperliquid_archive.py tests/test_backtest_hyperliquid_acquire.py tests/test_backtest_representative_windows.py tests/test_backtest_source_plan.py tests/test_backtest_funding_events.py tests/test_backtest_context_v2.py tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-ENVIRONMENT CHECK AFTER GREEN
+AFTER GREEN
 aws --version
 aws configure list-profiles
-lz4 --version
-Do not paste AWS keys/secrets. Profile names are safe to share.
+backend\.venv\Scripts\python.exe -c "import lz4.frame; print('LZ4 Python support: OK')"
 
-ONE-DAY REQUESTER-PAID PROBE — AFTER ENVIRONMENT CHECK
+ONE-DAY REQUESTER-PAID PROBE — ONLY AFTER AWS PROFILE EXISTS
 backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive --start 2024-07-01T00:00:00Z --end 2024-07-02T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-probe --manifest backend\data\research\historical\hyperliquid-asset-ctxs-probe-20240701.json --execute --aws-profile <PROFILE_NAME>
 
 INSPECT PROBE
 backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive_inspect --input backend\data\research\raw\historical\dev-2024-h2-probe\asset_ctxs\20240701.csv.lz4 --output backend\data\research\historical\hyperliquid-asset-ctxs-inspection-20240701.json
-Expected only after real inspection: pit_context_candidate=true. Do not assume GREEN before output proves it.
+Do not assume pit_context_candidate=true before real output proves it.
 
 WHAT REMAINS
-1 Verify schema inspector locally.
-2 Confirm AWS CLI/profile + lz4 environment.
+1 Verify Python-LZ4 checkpoint locally.
+2 Confirm/create local AWS profile without sharing secrets.
 3 One-day requester-paid archive probe.
 4 Inspect real schema/cadence and prove PIT OI/volume suitability.
 5 Full 2024-H2 context acquisition only after probe validation.
