@@ -35,9 +35,10 @@ def _dates(start:str,end:str)->list[str]:
     return out
 
 
-def run(*,start_utc:str,end_utc:str,raw_root:Path,output_root:Path,symbols:tuple[str,...]=( "BTC","ETH","SOL"),execute:bool=False)->dict:
+def run(*,start_utc:str,end_utc:str,raw_root:Path,output_root:Path,symbols:tuple[str,...]=( "BTC","ETH","SOL"),execute:bool=False,max_missing_intervals:int=2)->dict:
     bad=sorted(set(symbols)-set(SYMBOL_MAP))
     if bad:raise ValueError(f"unsupported symbols: {', '.join(bad)}")
+    if max_missing_intervals<0:raise ValueError("max_missing_intervals must be nonnegative")
     dates=_dates(start_utc,end_utc)
     payload=metrics_plan(start_utc=start_utc,end_utc=end_utc,raw_root=raw_root,symbols=symbols)
     if execute:payload=metrics_acquire(payload)
@@ -48,13 +49,14 @@ def run(*,start_utc:str,end_utc:str,raw_root:Path,output_root:Path,symbols:tuple
             inputs=[Path(raw_root)/"binance_public_metrics"/provider/f"{provider}-metrics-{d}.zip" for d in dates]
             output=Path(output_root)/f"{symbol}-oi-5m.csv"
             report=Path(output_root)/f"{symbol}-oi-5m.normalization.json"
-            result=normalize_oi(inputs=inputs,provider_symbol=provider,start_utc=start_utc,end_utc=end_utc,output=output,report=report)
+            result=normalize_oi(inputs=inputs,provider_symbol=provider,start_utc=start_utc,end_utc=end_utc,output=output,report=report,max_missing_intervals=max_missing_intervals)
             normalized.append(result)
     return {
         "mode":"RESEARCH_ONLY_BINANCE_PUBLIC_OI_BATCH",
         "start_utc":start_utc,"end_utc":end_utc,"symbols":list(symbols),
         "objects":payload["objects"],"object_count":len(payload["objects"]),
         "normalized_outputs":normalized,"normalized_output_count":len(normalized),
+        "max_missing_intervals":max_missing_intervals,
         "pit_oi_context_complete":bool(execute and len(normalized)==len(symbols)),
         "rolling_volume_context_complete":False,
         "live_capital_allowed":False,"automatic_real_money_execution":False,
@@ -69,8 +71,9 @@ def main(argv:list[str]|None=None)->int:
     p.add_argument("--output-root",type=Path,default=Path("backend/data/research/historical/dev-2024-h2-oi"))
     p.add_argument("--manifest",type=Path,default=Path("backend/data/research/historical/binance-public-oi-batch.json"))
     p.add_argument("--symbols",nargs="+",default=["BTC","ETH","SOL"]);p.add_argument("--execute",action="store_true")
+    p.add_argument("--max-missing-intervals",type=int,default=2)
     a=p.parse_args(argv)
-    result=run(start_utc=a.start,end_utc=a.end,raw_root=a.raw_root,output_root=a.output_root,symbols=tuple(x.upper() for x in a.symbols),execute=a.execute)
+    result=run(start_utc=a.start,end_utc=a.end,raw_root=a.raw_root,output_root=a.output_root,symbols=tuple(x.upper() for x in a.symbols),execute=a.execute,max_missing_intervals=a.max_missing_intervals)
     a.manifest.parent.mkdir(parents=True,exist_ok=True);a.manifest.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     print(f"oi_batch_manifest={a.manifest}")
     print(f"objects={result['object_count']} normalized_outputs={result['normalized_output_count']} status={result['status']}")
