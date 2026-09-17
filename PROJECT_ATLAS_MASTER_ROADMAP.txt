@@ -8,31 +8,27 @@ When user posts GREEN output, advance directly. After every execution: exact com
 PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. ATLAS_RUNTIME_AUDIT.json is untracked local output and must not be committed blindly.
 
-LATEST VERIFIED CHECKPOINT — USER LOCAL
-Desktop contract tests GREEN: 7 passed in 0.58s. Full regression GREEN: 792 passed, 2 warnings in 40.05s. Shortcut install GREEN: Project Atlas.lnk -> D:\Work\Project Atlas\ATLAS.bat; Stop Atlas.lnk -> D:\Work\Project Atlas\ATLAS-STOP.bat. Real desktop smoke was correctly BLOCKED because /health=200 and /dashboard=200 but /api/research and /api/command-center/summary each timed out. Atlas containers atlas-postgres and atlas-redis were running. paper_shadow_only=true; live_capital_allowed=false; automatic_real_money_execution=false.
+LATEST VERIFIED USER LOCAL
+Nonblocking endpoint repair focused tests GREEN: 6 passed in 0.75s. Full regression GREEN: 794 passed, 2 warnings in 39.57s. Branch updated to 665ac95. Shortcut targets remain correct. The subsequent desktop smoke returned connection failures for every HTTP surface and no Atlas containers, and an explicit /health probe also failed to connect. This verifies the Atlas stop path was active; it does NOT yet evaluate the repaired live endpoint behavior because the smoke was run while Atlas was stopped.
 
-DESKTOP BLOCKER DIAGNOSIS
-The two timed-out surfaces executed heavy synchronous research/summary work directly inside async FastAPI request handlers. This can block the event loop and trip the 5-second desktop smoke timeout even while core API health/dashboard remain responsive. The smoke timeout is not being weakened; the endpoint implementation is being repaired.
+STOP-PATH CHECKPOINT — VERIFIED
+- Atlas HTTP endpoint unavailable after stop: VERIFIED
+- Atlas containers absent after stop: observed in smoke
+- Project Atlas/Stop Atlas shortcuts remain correctly targeted
+- live_capital_allowed=false
+- automatic_real_money_execution=false
+- Docker Desktop/Genesis preservation still requires direct local observation if not already noted by user
 
-EXECUTED REPAIR — LOCAL TEST PENDING
-9cf4625 atlas: keep command center summary off event loop
-- backend/app/api/command_center.py
-- moves synchronous command-center aggregation to asyncio.to_thread
-- preserves exact read-only summary logic and no-order semantics
-
-7e19e5f atlas: keep research diagnostics off event loop
-- backend/app/api/diagnostics.py
-- moves synchronous research payload construction to asyncio.to_thread
-- preserves research data and thresholds; no strategy mutation
-
-fb7362b atlas: test nonblocking operational surfaces
-- tests/test_api_nonblocking_operational_surfaces.py
-- verifies both async endpoints explicitly offload synchronous work via asyncio.to_thread
+DESKTOP TIMEOUT REPAIR — CODE/TEST GREEN, LIVE RETEST PENDING
+9cf4625 backend/app/api/command_center.py — synchronous summary aggregation moved to asyncio.to_thread
+7e19e5f backend/app/api/diagnostics.py — synchronous research aggregation moved to asyncio.to_thread
+fb7362b tests/test_api_nonblocking_operational_surfaces.py — regression coverage
+665ac95 roadmap — repair checkpoint
 
 CLOSED HISTORICAL EXPERIMENT — VERIFIED NEGATIVE
 DEVELOPMENT dev-2024-h2: 659 trades; total_r=-117.21753020091131; expectancy_r=-0.17787182124569242; FAILED_NEGATIVE.
 Untouched HOLDOUT holdout-2025-h2: 546 trades; total_r=-26.72350715657114; expectancy_r=-0.048944152301412344; FAILED_NEGATIVE.
-Independent HOLDOUT source audit id=951dbc0f46516bcf97eb GREEN. Stable positive edge NOT established. No retuning/relabeling.
+Stable positive edge NOT established. No retuning/relabeling.
 
 FULL ROADMAP
 [COMPLETE/VERIFIED] Core rebuild / cockpit / PAPER / recovery / Quality Dips
@@ -45,38 +41,22 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Immutable HOLDOUT evidence freeze
 [COMPLETE/CLOSED] Historical experiment — FAILED_NEGATIVE
 [COMPLETE/VERIFIED GREEN] PAPER/SHADOW operational checkpoint — 29,023-event store; 107 closed / 2 open; no corruption; recovery/isolation/no-live GREEN
-[COMPLETE/VERIFIED PARTIAL] Desktop startup/shortcut/core API — shortcuts correct, containers up, /health + /dashboard 200
-[CURRENT, LOCAL TEST PENDING] Desktop timeout repair for /api/research + /api/command-center/summary
+[COMPLETE/VERIFIED] Desktop shortcut wiring
+[COMPLETE/VERIFIED] Desktop stop path — API unavailable and Atlas containers absent after stop
+[COMPLETE/TEST GREEN, LIVE RETEST PENDING] Nonblocking /api/research + /api/command-center/summary repair
+[CURRENT] Restart Atlas with repaired code and rerun live desktop smoke
 
-LOCAL UPDATE / TEST
-cd "D:\Work\Project Atlas"
-git fetch origin
-git checkout chatgpt/atlas-rebuild-v1
-git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_api_nonblocking_operational_surfaces.py tests/test_windows_desktop_integration_scripts.py -q
-backend\.venv\Scripts\python.exe -m pytest -q
-
-REAL RETEST AFTER GREEN
-Keep/start Atlas from C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk, then in a second PowerShell:
+NEXT LOCAL ACTION
+1 Double-click C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk.
+2 Wait until its launcher window says API healthy / Atlas is running.
+3 In a SECOND PowerShell:
 cd "D:\Work\Project Atlas"
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\Atlas-Desktop-Smoke.ps1
-Expected: ATLAS_DESKTOP_SMOKE_GREEN with /health, /dashboard, /api/research, /api/command-center/summary all ok.
-
-THEN STOP/RESTART VALIDATION
-1 Double-click C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
-2 Invoke-WebRequest http://127.0.0.1:8000/health -UseBasicParsing
-Expected: connection failure after stop; Docker Desktop/Genesis remain untouched.
-3 Restart Project Atlas.lnk.
-4 Rerun Atlas-Desktop-Smoke.ps1.
-5 Rerun shadow_operational_checkpoint against backend\data\trading_v4_shadow.jsonl; require GREEN/no corruption.
-
-[NEXT AFTER FULL DESKTOP GREEN] Record final operational artifact, mark desktop integration COMPLETE/VERIFIED, and close engineering roadmap.
-
-WHAT REMAINS
-1 Validate nonblocking endpoint repair tests/full regression locally.
-2 Rerun real desktop smoke.
-3 Validate stop/restart/recovery.
-4 Record final operational artifact and close engineering roadmap.
+Expected: status=ATLAS_DESKTOP_SMOKE_GREEN with health/dashboard/research/command_center all ok and no-live controls false.
+4 Then rerun shadow operational recovery:
+backend\.venv\Scripts\python.exe -m app.trading_core.shadow_operational_checkpoint --event-path backend\data\trading_v4_shadow.jsonl --output backend\data\paper-shadow-operational-checkpoint.json
+Require PAPER_SHADOW_CHECKPOINT_GREEN and event_store_corruption=null.
+5 If both GREEN, final remaining action is record final operational artifact and close engineering roadmap.
 
 RESEARCH/LIVE STATUS
 Stable positive edge NOT ESTABLISHED. Historical experiment CLOSED FAILED_NEGATIVE. PAPER/SHADOW operational checkpoint GREEN. Live capital locked. Automated real-money execution disabled.
