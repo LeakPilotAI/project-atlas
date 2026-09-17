@@ -4,99 +4,86 @@ Branch: chatgpt/atlas-rebuild-v1
 Current cycle: QUALITY DIPS V2 — PATIENT CAPITAL
 
 PRESERVED CLOSED CHECKPOINT
-The prior Project Atlas engineering/historical cycle remains closed and immutable as evidence. Historical perps experiment: FAILED_NEGATIVE. Final desktop operational checkpoint recorded. PAPER/SHADOW recovery GREEN. This V2 cycle does not relabel, retune, or overwrite those results.
+Prior Atlas engineering/historical evidence remains closed and immutable. Historical perps experiment: FAILED_NEGATIVE. Final desktop operational checkpoint recorded. PAPER/SHADOW recovery GREEN. V2 does not relabel, retune, or overwrite those results.
 
 PERMANENT SECURITY / EXECUTION BOUNDARY
-Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local credential stores, or raw credential exports. Preserve backend/data. Quality Dips V2 is research/decision support during development. Brokerage execution is MANUAL_ONLY. live_capital_allowed=false. automatic_real_money_execution=false. No claimed or guaranteed bottom, return, recovery, fair value, hold duration, or exit price.
+Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local credential stores, or raw credential exports. Preserve backend/data. Quality Dips V2 remains research/decision support. Brokerage execution=MANUAL_ONLY. live_capital_allowed=false. automatic_real_money_execution=false. No guaranteed bottom, return, recovery, fair value, hold duration, or exit price.
 
 QUALITY DIPS V2 OBJECTIVE
-Make Atlas materially more patient. Prefer exceptional discounts in high-quality businesses over frequent dip buying. Work backward from conservative/base/optimistic normalization values. A minimum 29% upside hurdle and preferred 50% GENERATIONAL hurdle are screening requirements only, not promised returns.
+Prefer exceptional evidence-backed discounts in high-quality businesses over frequent dip buying. Work backward from conservative/base/optimistic normalization values. Minimum 29% conservative-upside screening hurdle; preferred 50% GENERATIONAL hurdle. Screening hurdles are not promised returns.
 
 STATE MODEL
 WATCH -> ACCUMULATION -> DEEP_VALUE -> GENERATIONAL
-Any failed thesis -> THESIS_BROKEN.
-GENERATIONAL is intentionally rare and must never be awarded from drawdown alone.
+Failed thesis -> THESIS_BROKEN.
+GENERATIONAL is intentionally rare and cannot be awarded from drawdown alone.
 
-PHASE 1 — COMPLETE / USER-LOCAL VERIFIED GREEN
-Focused verification: 8 passed.
-Full regression: 805 passed, 2 warnings.
+VERIFIED HISTORY
+Phase 1: 8 focused / 805 full GREEN.
+Phase 2: 16 focused / 813 full GREEN.
+Phase 3: 24 focused / 821 full GREEN.
+Phase 4: 30 focused / 827 full GREEN.
+Phase 5: 37 focused / 834 full GREEN.
+Phase 6: 45 focused / 842 full GREEN.
+Phase 7: 53 focused in 0.44s / 850 full, 2 warnings in 41.64s GREEN.
+Phase 8: 60 focused in 0.43s / 857 full, 2 warnings in 42.94s GREEN.
 
-PHASE 2 — COMPLETE / USER-LOCAL VERIFIED GREEN
-Focused verification: 16 passed.
-Full regression: 813 passed, 2 warnings.
+PHASE 9 — REPAIRED / LOCAL TEST PENDING
+Initial user-local run exposed two concrete integration defects:
+1. quality_dips_v2_board.py called build_entry_ladder with obsolete keyword names conservative_value/valuation_complete. Result: 3 failures, 61 passes.
+2. quality_dips.html did not yet contain V2 patient-capital rendering. Result: API surface 2 passes, 1 dashboard-contract failure.
 
-PHASE 3 — COMPLETE / USER-LOCAL VERIFIED GREEN
-Focused verification: 24 passed.
-Full regression: 821 passed, 2 warnings.
+Repair commits:
+cd83a8b atlas: fix Quality Dips V2 ladder integration
+- uses the real build_entry_ladder contract: symbol, normalization_value, valuation_window_complete, current_price
+- preserves fail-closed valuation completeness
+- aligns missing-source evidence_gate and entry_ladder shapes with current V2 contracts
 
-PHASE 4 — COMPLETE / USER-LOCAL VERIFIED GREEN
-Focused verification: 30 passed.
-Full regression: 827 passed, 2 warnings.
+7e3136c atlas: surface Quality Dips V2 patient capital fields
+- safely merged against latest dashboard blob after prior SHA conflicts
+- dashboard now explicitly renders QUALITY DIPS V2 / PATIENT CAPITAL
+- patient state, conservative/base/optimistic values, conservative upside
+- evidence-gate state/blockers
+- L1/L2/L3/L4 29/35/40/50 patient entry prices
+- trend evidence
+- V2 state counts
+- explicit screening-not-guarantee and MANUAL_ONLY/no-live language
 
-PHASE 5 — COMPLETE / USER-LOCAL VERIFIED GREEN
-Focused verification: 37 passed.
-Full regression: 834 passed, 2 warnings.
-
-PHASE 6 — COMPLETE / USER-LOCAL VERIFIED GREEN
-Focused verification: 45 passed.
-Full regression: 842 passed, 2 warnings.
-
-PHASE 7 — COMPLETE / USER-LOCAL VERIFIED GREEN
-44c95d5 backend/app/investment/quality_dips_v2_validation.py
-f79c652 tests/test_quality_dips_v2_validation.py
-8a641aa PROJECT_ATLAS_MASTER_ROADMAP.txt
-Focused verification: 53 passed in 0.44s.
-Full regression: 850 passed, 2 warnings in 41.64s.
-
-PHASE 8 — EXECUTED / LOCAL TEST PENDING
-617bd6b backend/app/investment/quality_dips_v2_freeze.py
-- frozen DEVELOPMENT policy manifest with deterministic SHA-256 fingerprint
-- locks 29/40/50% research hurdles and L1/L2/L3/L4 = 29/35/40/50
-- explicit DEVELOPMENT window: 2024-01-01 through 2025-06-30T23:59:59
-- explicit untouched HOLDOUT window: 2025-07-01 through 2025-12-31T23:59:59
-- same-window retuning forbidden
-- lookahead forbidden
-- fail-closed partition classifier and HOLDOUT-boundary audit
-- MANUAL_ONLY / no-live controls preserved
-
-3da376b tests/test_quality_dips_v2_freeze.py
-- frozen policy/no-live contract
-- hurdle lock coverage
-- deterministic fingerprint
-- lookahead/retuning rejection
-- DEVELOPMENT/HOLDOUT partition classification
-- clean HOLDOUT boundary GREEN
-- cross-partition contamination BLOCKED
+Earlier Phase 9 commits retained:
+c506a60 backend/app/investment/quality_dips_v2_board.py
+2f870b8 tests/test_quality_dips_v2_board.py
+43d5b2b backend/app/api/investment_board.py
+128f3e5 backend/app/main.py
+9e6d1ef tests/test_quality_dips_v2_api_surface.py
 
 FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
-[COMPLETE/VERIFIED GREEN] Phase 1: patient-capital policy + tests + specification
-[COMPLETE/VERIFIED GREEN] Phase 2: read-only evidence adapter + trend evidence passthrough
-[COMPLETE/VERIFIED GREEN] Phase 3: hard value-trap / thesis-integrity / evidence-freshness gate
-[COMPLETE/VERIFIED GREEN] Phase 4: conservative/base/optimistic normalization-value model with provenance
-[COMPLETE/VERIFIED GREEN] Phase 5: staged L1/L2/L3/L4 entry-zone planner + frozen entry snapshots
+[COMPLETE/VERIFIED GREEN] Phase 1: patient-capital policy + specification
+[COMPLETE/VERIFIED GREEN] Phase 2: evidence adapter + trend passthrough
+[COMPLETE/VERIFIED GREEN] Phase 3: value-trap / thesis / freshness gate
+[COMPLETE/VERIFIED GREEN] Phase 4: normalization-value model + provenance
+[COMPLETE/VERIFIED GREEN] Phase 5: L1/L2/L3/L4 planner + frozen entry snapshots
 [COMPLETE/VERIFIED GREEN] Phase 6: active-position trend/thesis/cost-basis monitor
-[COMPLETE/VERIFIED GREEN] Phase 7: PIT validation of 29/40/50% hurdles + position-state behavior without lookahead
-[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 8: freeze DEVELOPMENT policy + untouched HOLDOUT boundary
-[REMAINING] Phase 9: integrate validated V2 board + active-position fields into Quality Dips API/dashboard; MANUAL_ONLY
+[COMPLETE/VERIFIED GREEN] Phase 7: PIT/no-lookahead validation
+[COMPLETE/VERIFIED GREEN] Phase 8: DEVELOPMENT freeze + untouched HOLDOUT boundary
+[CURRENT — REPAIRED, LOCAL TEST PENDING] Phase 9: validated V2 board + API/dashboard integration; MANUAL_ONLY
 [REMAINING] Phase 10: state-transition / exceptional-zone / thesis-change alerts with cooldown + dedupe
 [REMAINING] Phase 11: desktop regression + operational smoke + V2 evidence decision/closure
 
 NEXT GREEN GATE
-Pull latest branch, run Phase 1 through Phase 8 focused tests, then full regression. Do not call Phase 8 verified until user posts GREEN output.
+Pull latest branch and rerun Phase 1-9 focused tests plus full regression. Do not call Phase 9 verified until user posts GREEN output.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py tests/test_quality_dips_v2_position_monitor.py tests/test_quality_dips_v2_validation.py tests/test_quality_dips_v2_freeze.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py tests/test_quality_dips_v2_position_monitor.py tests/test_quality_dips_v2_validation.py tests/test_quality_dips_v2_freeze.py tests/test_quality_dips_v2_board.py tests/test_quality_dips_v2_api_surface.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 AFTER GREEN
-Proceed directly to Phase 9: integrate validated V2 research/entry/active-position fields into the Quality Dips API/dashboard while preserving MANUAL_ONLY/no-live execution controls. HOLDOUT evidence remains untouched; no retuning of the frozen Phase 8 policy.
+Proceed directly to Phase 10: durable state-transition / exceptional-zone / thesis-change alerts with cooldown and dedupe. No brokerage execution and no retuning of the frozen DEVELOPMENT/HOLDOUT policy.
 
-NORMAL DESKTOP WORKFLOW REMAINS
+NORMAL DESKTOP WORKFLOW
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
 STOP: C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
 
