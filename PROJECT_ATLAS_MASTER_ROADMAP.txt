@@ -6,70 +6,55 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly. After EVERY execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 PERMANENT SECURITY GATE
-Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from the active Atlas path. Preserve backend/data and raw research data locally.
+Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Public candle acquisition checkpoint GREEN: 5 focused passed in 0.32s; full regression 695 passed, 2 warnings in 36.47s; 0 failures. 2024-H2 no-download plan = 36 objects PLANNED_NOT_DOWNLOADED. Real BTC July-2024 probe acquired exactly 2 objects (BTCUSDT 5m + 1h) with status ACQUIRED_RAW_CANDLES_CHECKSUM_VERIFIED_CONTEXT_STILL_REQUIRED. Source audit remains RED because canonical BTC/ETH/SOL historical datasets/manifests and PIT context are not complete.
+Full regression = 700 passed, 2 warnings in 41.56s; 0 failures before the header compatibility fix. 2024-H2 plan = 36 objects. BTC July-2024 real probe acquired 2 checksum-verified objects. Real 5m and 1h inspection then revealed both provider CSVs contain a 12-column header whose first value is open_time. This is a real provider schema nuance, not corrupt market data. Inspector previously assumed headerless archives and failed closed as designed.
+
+EXECUTED FIX — LOCAL TEST PENDING
+69f2b12 atlas: accept Binance public kline header rows
+0696a50 atlas: test Binance kline header handling
+The inspector now accepts a recognized first-row open_time header only, excludes it from market row counts/cadence checks, reports header_present, still requires exactly 12 columns, and still fails closed on nonnumeric open_time anywhere in the data body or header-only archives. Tests now cover headered 5m/1h data and fail-closed behavior.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
-No AWS account, credit card, login, profile, or requester-paid download is required. Existing optional archive tooling is not a prerequisite. Do not request AWS setup unless explicitly re-enabled.
+No AWS account, credit card, login, profile, or requester-paid download required.
 
 LOCKED PRODUCTION
 OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock. Live capital locked; automated real-money execution disabled.
 
-ROADMAP
+FULL ROADMAP
 [COMPLETE/VERIFIED] Core rebuild / Hyperliquid cockpit / PAPER / recovery / Quality Dips
 [COMPLETE/VERIFIED] V6 evidence stack
 [COMPLETE/VERIFIED] Historical runner + locked baseline + loader/CLI + smoke
 [COMPLETE/VERIFIED] PIT importer + manifests/operator import + source readiness
-[COMPLETE/VERIFIED] Provider normalization + HTF semantics + context v2 + funding events
-[COMPLETE/VERIFIED] Representative UTC window lock
-[COMPLETE/VERIFIED] Hyperliquid REST acquisition + retention fail-closed hardening
-[COMPLETE/VERIFIED] Optional archive planner/schema inspector/Python LZ4
-[COMPLETE/VERIFIED] Credential-safety hardening
-[REMOVED ACTIVE PATH] AWS authentication/requester-paid S3
-[COMPLETE/VERIFIED RED] Local source audit: canonical BTC/ETH/SOL datasets/manifests absent
-[COMPLETE/VERIFIED] Free no-AWS Binance public candle acquisition — 5 focused / 695 full
-[COMPLETE/VERIFIED] 2024-H2 public-candle plan — 36 objects, no download
-[COMPLETE/VERIFIED] BTC July-2024 real public-data acquisition probe — 2 checksum-verified objects
+[COMPLETE/VERIFIED] Provider normalization + HTF/context v2/funding semantics
+[COMPLETE/VERIFIED] Representative UTC research windows
+[COMPLETE/VERIFIED] Hyperliquid REST acquisition + retention hardening
+[COMPLETE/VERIFIED] Optional archive/schema/LZ4 tooling
+[COMPLETE/VERIFIED] Credential security hardening
+[REMOVED] AWS requester-paid active path
+[VERIFIED RED] Canonical source audit — BTC/ETH/SOL bundles absent
+[COMPLETE/VERIFIED] No-AWS public candle acquisition
+[COMPLETE/VERIFIED] 2024-H2 plan — 36 objects
+[COMPLETE/VERIFIED] BTC July probe — 2 checksum-verified objects
+[DISCOVERED/RESOLVED IN CODE, LOCAL TEST PENDING] Real Binance archives contain header row; inspector compatibility implemented
 
-[CURRENT, LOCAL TEST/REAL-DATA INSPECTION PENDING] RAW BINANCE KLINE INSPECTOR
-- backend/app/backtest/binance_public_inspect.py
-- tests/test_backtest_binance_public_inspect.py
-- validates exactly one CSV member per ZIP
-- validates 12-column Binance USD-M kline schema
-- validates positive open timestamps, unique strictly ascending order and exact 5m/1h cadence
-- reports row count / first+last timestamps / cadence / schema state
-- research-only, PIT OI context incomplete, live capital disabled
-- does not create canonical Atlas datasets yet
+[CURRENT] Re-run focused inspector tests + full regression, then inspect real BTC 5m/1h ZIPs. Required: header_present=true, schema_valid=true, cadence_consistent=true, ascending_unique=true.
 
-[NEXT] INSPECT THE TWO ACQUIRED REAL BTC ZIPs
-Run inspector against BTCUSDT 5m and 1h July-2024 raw ZIPs. Both must report schema_valid=true, cadence_consistent=true and ascending_unique=true. If real archives reveal a provider schema nuance, fix inspector/tests before normalization.
+[NEXT] Deterministic candle normalizer: consume recognized headered/headerless verified ZIPs, exact half-open UTC windows, unique ascending timestamps, gap/window enforcement, symbol mapping, raw SHA-256 provenance. Do not fabricate PIT context.
 
-[THEN] PUBLIC CANDLE NORMALIZATION
-Normalize verified ZIP contents into deterministic Atlas candle inputs; enforce exact half-open UTC windows, unique ascending timestamps, expected 5m/1h cadence, gap reporting, symbol mapping, source archive SHA-256 and provider metadata. Do not create source-audit-passing canonical bundles until PIT context is complete.
+[THEN] Full 2024-H2 36-object BTC/ETH/SOL 5m+1h acquisition + normalization.
 
-[THEN] FULL 2024-H2 CANDLE ACQUISITION
-After real probe inspection and normalizer are GREEN, acquire all 36 BTC/ETH/SOL 5m+1h monthly 2024-H2 objects and normalize them. Retain raw ZIP/CHECKSUM provenance.
+[THEN] Trustworthy no-AWS historical PIT OI + rolling 24h notional volume. Funding already exists from first-party Hyperliquid history. Derive completed 1h HTF from historical candles. If trustworthy historical OI cannot be established freely, prospective PIT collection is preferred over weakening/fabricating the OI gate.
 
-[THEN] NO-AWS PIT CONTEXT
-Acquire/derive trustworthy historical PIT OI and rolling 24h notional volume without current-state synthesis. Funding already exists from first-party Hyperliquid history. Derive completed 1h HTF from historical candles. If trustworthy historical OI cannot be established without a paid source, begin prospective PIT collection rather than weakening or fabricating the OI gate.
+[THEN] Merge candles + funding + PIT OI/volume + HTF -> canonical BTC/ETH/SOL datasets/manifests -> source_audit ready_for_locked_baseline_batch=true.
 
-[THEN] CANONICAL BUNDLES + SOURCE AUDIT GREEN
-Merge candles + funding + PIT OI/volume + completed 1h HTF. Generate BTC-5m.csv, ETH-5m.csv, SOL-5m.csv plus provenance manifests with raw SHA-256 values. Require ready_for_locked_baseline_batch=true.
-
-[THEN] LOCKED DEVELOPMENT BASELINE
-Run DEVELOPMENT windows first. Record trades, costs, expectancy R, WR, PF, total R, drawdown, sample size, symbol/regime behavior, provenance and deterministic run IDs. Do not tune HOLDOUT.
-
-[THEN] Freeze development decisions -> untouched HOLDOUT -> isolated candidate comparison -> PAPER/SHADOW operational checkpoint -> final desktop integration.
+[THEN] Locked DEVELOPMENT baseline -> freeze decisions -> untouched HOLDOUT -> isolated candidates -> PAPER/SHADOW operational checkpoint -> final desktop integration.
 
 DESKTOP END STATE
-Validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk; services/UI/research/backtests/recovery/shutdown/logging/persistence must be GREEN.
+Validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk; services/UI/research/backtests/recovery/shutdown/logging/persistence GREEN.
 
-RESEARCH STATUS
-PAPER n=903, WR=43.41%, expectancy=-0.0114R, total=-10.3104R, PF=0.9787. Later chronological holdout n=301, WR=44.19%, expectancy=-0.1474R, total=-44.369R. Stable positive edge NOT ESTABLISHED.
-
-LOCAL UPDATE / TEST
+LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
@@ -77,24 +62,24 @@ git reset --hard origin/chatgpt/atlas-rebuild-v1
 backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_inspect.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-INSPECT 5M
+REAL 5M
 backend\.venv\Scripts\python.exe -m app.backtest.binance_public_inspect --input backend\data\research\raw\historical\dev-2024-h2-probe\binance_public\BTCUSDT\5m\BTCUSDT-5m-2024-07.zip --provider-symbol BTCUSDT --interval 5m --output backend\data\research\historical\binance-public-inspection-BTCUSDT-5m-2024-07.json
 
-INSPECT 1H
+REAL 1H
 backend\.venv\Scripts\python.exe -m app.backtest.binance_public_inspect --input backend\data\research\raw\historical\dev-2024-h2-probe\binance_public\BTCUSDT\1h\BTCUSDT-1h-2024-07.zip --provider-symbol BTCUSDT --interval 1h --output backend\data\research\historical\binance-public-inspection-BTCUSDT-1h-2024-07.json
 
 WHAT REMAINS
-1 Verify inspector tests locally and inspect the two real BTC ZIPs.
-2 Implement deterministic candle normalizer with gap/window enforcement.
-3 Full 2024-H2 36-object candle acquisition + normalization.
-4 Trustworthy no-AWS PIT OI + rolling-volume context, or prospective collection if historical OI unavailable.
+1 Validate header fix and real BTC 5m/1h inspection.
+2 Deterministic candle normalizer.
+3 Full 36-object 2024-H2 candle acquisition/normalization.
+4 Trustworthy no-AWS PIT OI + rolling volume, or prospective collection if historical unavailable.
 5 Canonical datasets/manifests + source audit GREEN.
 6 Locked DEVELOPMENT baseline.
 7 Freeze -> HOLDOUT -> candidates.
-8 PAPER/SHADOW operations.
+8 PAPER/SHADOW operational checkpoint.
 9 Final desktop integration.
 
-LIVE STATUS
-Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
+RESEARCH/LIVE STATUS
+PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
 
 END OF MASTER ROADMAP
