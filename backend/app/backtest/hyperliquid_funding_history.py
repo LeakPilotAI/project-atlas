@@ -13,6 +13,7 @@ from pathlib import Path
 INFO_URL="https://api.hyperliquid.xyz/info"
 SYMBOLS=("BTC","ETH","SOL")
 FIELDS=["timestamp","funding_rate"]
+MAX_PAGES=1000
 
 
 def _ms(value:str)->int:
@@ -32,25 +33,47 @@ def _sha256(path:Path)->str:
     return h.hexdigest()
 
 
-def acquire(*,symbol:str,start_utc:str,end_utc:str,output:Path,report:Path|None=None)->dict:
-    symbol=symbol.upper()
-    if symbol not in SYMBOLS:raise ValueError(f"unsupported symbol: {symbol}")
-    start,end=_ms(start_utc),_ms(end_utc)
-    if end<=start:raise ValueError("end must be after start")
+def _request_page(*,symbol:str,start:int,end:int)->list[dict]:
     body=json.dumps({"type":"fundingHistory","coin":symbol,"startTime":start,"endTime":end}).encode()
     req=urllib.request.Request(INFO_URL,data=body,headers={"Content-Type":"application/json"},method="POST")
     with urllib.request.urlopen(req,timeout=60) as response:
         raw=json.loads(response.read().decode("utf-8"))
     if not isinstance(raw,list):raise RuntimeError("unexpected Hyperliquid fundingHistory response")
-    rows=[];seen=set();last=None
-    for item in raw:
-        if not isinstance(item,dict):raise RuntimeError("fundingHistory row must be object")
-        ts=int(item.get("time"));rate=float(item.get("fundingRate"))
-        if not(start<=ts<end):continue
-        if ts in seen:raise RuntimeError(f"duplicate funding timestamp: {ts}")
-        if last is not None and ts<=last:raise RuntimeError("funding events not strictly ascending")
-        seen.add(ts);last=ts;rows.append((ts,rate))
+    return raw
+
+
+def acquire(*,symbol:str,start_utc:str,end_utc:str,output:Path,report:Path|None=None)->dict:
+    symbol=symbol.upper()
+    if symbol not in SYMBOLS:raise ValueError(f"unsupported symbol: {symbol}")
+    start,end=_ms(start_utc),_ms(end_utc)
+    if end<=start:raise ValueError("end must be after start")
+
+    rows=[];seen=set();cursor=start;pages=0;last_global=None
+    while cursor<end:
+        pages+=1
+        if pages>MAX_PAGES:raise RuntimeError("fundingHistory pagination exceeded safety limit")
+        raw=_request_page(symbol=symbol,start=cursor,end=end)
+        if not raw:break
+        page_last=None
+        for item in raw:
+            if not isinstance(item,dict):raise RuntimeError("fundingHistory row must be object")
+            try:ts=int(item.get("time"));rate=float(item.get("fundingRate"))
+            except Exception as exc:raise RuntimeError("invalid Hyperliquid fundingHistory row") from exc
+            if not(start<=ts<end):continue
+            if ts in seen:
+                continue
+            if last_global is not None and ts<last_global:raise RuntimeError("funding events not ascending across pages")
+            seen.add(ts);last_global=ts;page_last=ts;rows.append((ts,rate))
+        if page_last is None:break
+        next_cursor=page_last+1
+        if next_cursor<=cursor:raise RuntimeError("fundingHistory pagination made no forward progress")
+        cursor=next_cursor
+        if len(raw)<500:break
+
     if not rows:raise RuntimeError("no Hyperliquid funding events returned for requested window")
+    rows.sort(key=lambda x:x[0])
+    if any(rows[i][0]>=rows[i+1][0] for i in range(len(rows)-1)):raise RuntimeError("funding events not strictly ascending after pagination")
+
     output=Path(output);output.parent.mkdir(parents=True,exist_ok=True)
     with output.open("w",encoding="utf-8",newline="") as fh:
         w=csv.DictWriter(fh,fieldnames=FIELDS);w.writeheader()
@@ -58,9 +81,10 @@ def acquire(*,symbol:str,start_utc:str,end_utc:str,output:Path,report:Path|None=
     payload={
         "mode":"RESEARCH_ONLY_HYPERLIQUID_FUNDING_HISTORY",
         "source":"hyperliquid:/info fundingHistory","symbol":symbol,
-        "start_utc":_iso(start),"end_utc":_iso(end),"row_count":len(rows),
+        "start_utc":_iso(start),"end_utc":_iso(end),"row_count":len(rows),"page_count":pages,
         "first_timestamp":_iso(rows[0][0]),"last_timestamp":_iso(rows[-1][0]),
         "output":str(output),"output_sha256":_sha256(output),
+        "pagination":"cursor=last_event_ms+1 until end or short/empty page",
         "exact_event_timestamps":True,"interpolation_used":False,"current_state_backfill_used":False,
         "live_capital_allowed":False,"automatic_real_money_execution":False,
     }
