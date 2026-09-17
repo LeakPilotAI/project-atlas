@@ -9,12 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Historical PIT metrics acquisition checkpoint GREEN: focused metrics tests 4 passed in 0.25s. Full regression = 714 passed, 2 warnings in 37.02s; 0 failures. One-day real BTCUSDT July-1-2024 metrics probe acquired exactly 1 checksum-verified archive with status ACQUIRED_RAW_METRICS_CHECKSUM_VERIFIED. The full 2024-H2 candle batch is already GREEN: 36 raw candle objects -> 6 normalized BTC/ETH/SOL 5m/1h research outputs.
+Historical metrics inspection is GREEN. Focused inspector tests: 5 passed in 0.25s. Full regression: 719 passed, 2 warnings in 35.48s; 0 failures. Real BTCUSDT 2024-07-01 metrics archive inspection: rows=288, required_columns_present=true, ascending_unique=true, cadence_seconds=300, cadence_consistent=true. Therefore the real public metrics archive provides clean 5-minute point-in-time historical OI observations for the tested day. Full 2024-H2 candle batch remains GREEN: 36 candle objects -> 6 normalized BTC/ETH/SOL 5m/1h outputs.
 
 EXECUTED NEXT STEP — LOCAL TEST PENDING
-17c4c8d atlas: inspect Binance public futures metrics archives
-4695e39 atlas: test Binance public futures metrics inspection
-New inspector validates exactly one CSV member, required historical metrics columns create_time/symbol/sum_open_interest/sum_open_interest_value, provider-symbol filtering, positive/nonnegative OI values, strictly ascending unique timestamps, and consistent observed cadence. It reports the actual header/cadence before Atlas treats sum_open_interest_value as historical OI context. Research-only; no canonical dataset/live permission.
+6b6a30c atlas: normalize Binance historical OI metrics
+a5cf321 atlas: test Binance historical OI normalization
+The new normalizer converts checksum-verified metrics archives into provider-neutral timestamp/open_interest_usd using historical sum_open_interest_value, preserves raw SHA-256 provenance, filters the exact provider symbol, enforces 300-second cadence, rejects duplicates/gaps/negative OI, and remains research/live disabled. It marks PIT OI complete for the normalized output only; rolling-volume context remains incomplete.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -42,23 +42,27 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Real BTC July candle normalization
 [COMPLETE/VERIFIED] Full real 2024-H2 candle batch — 36 objects -> 6 normalized outputs
 [COMPLETE/VERIFIED] Historical PIT metrics acquisition — 4 focused / 714 full
-[COMPLETE/VERIFIED] One-day real BTC metrics archive checksum probe — 1 object
+[COMPLETE/VERIFIED] One-day real BTC metrics archive checksum probe
+[COMPLETE/VERIFIED] Real metrics schema/cadence inspection — 5 focused / 719 full; 288 rows/day at exact 300-second cadence
 
-[CURRENT, LOCAL TEST PENDING] REAL HISTORICAL METRICS SCHEMA/CADENCE INSPECTION
-- backend/app/backtest/binance_public_metrics_inspect.py
-- tests/test_backtest_binance_public_metrics_inspect.py
-- fail closed if required historical OI columns are missing
-- filter exact provider symbol
-- reject invalid/negative OI values
-- require strictly ascending unique create_time rows
-- report observed cadence_seconds instead of assuming cadence
-- no current-state synthesis; research/live disabled
+[CURRENT, LOCAL TEST PENDING] HISTORICAL OI METRICS NORMALIZER
+- backend/app/backtest/binance_public_metrics_normalize.py
+- tests/test_backtest_binance_public_metrics_normalize.py
+- sum_open_interest_value -> open_interest_usd
+- exact provider symbol filtering
+- strict UTC parsing
+- exact 300-second cadence
+- duplicate timestamps fail closed
+- cadence gaps fail closed
+- negative OI fails closed
+- raw archive SHA-256 + normalized output SHA-256 provenance
+- pit_oi_context_complete=true for normalized OI artifact only
+- rolling_volume_context_complete=false
+- live/automatic execution=false
 
-[NEXT AFTER LOCAL GREEN] Inspect the acquired BTCUSDT 2024-07-01 metrics ZIP. Confirm required columns, row count, first/last timestamps and actual cadence. Only after this real inspection may Atlas implement the OI normalizer.
+[NEXT AFTER LOCAL GREEN] Normalize the real BTCUSDT 2024-07-01 metrics probe and verify 288 rows from 00:00 through 23:55 UTC with 300-second cadence.
 
-[THEN] Historical OI metrics normalizer: convert checksum-verified daily archives into provider-neutral timestamp/open_interest_usd context using sum_open_interest_value, exact observed cadence semantics, strict UTC ordering/gap audit and raw SHA-256 provenance.
-
-[THEN] Acquire/normalize the full locked 2024-H2 BTC/ETH/SOL metrics window.
+[THEN] Full 2024-H2 BTC/ETH/SOL historical metrics acquisition + OI normalization using checksum-verified daily archives. Preserve all raw ZIP/CHECKSUM data; do not git clean -fdx.
 
 [THEN] Exact PIT rolling 24h quote-notional volume derivation from verified raw 5m candle quote_volume. Extend raw candle normalization/context derivation as needed; do not approximate USD volume from base volume and do not use current-state values.
 
@@ -76,24 +80,24 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_metrics_inspect.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_metrics_normalize.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-REAL BTC METRICS INSPECTION
-backend\.venv\Scripts\python.exe -m app.backtest.binance_public_metrics_inspect --input backend\data\research\raw\historical\dev-2024-h2-metrics-probe\binance_public_metrics\BTCUSDT\BTCUSDT-metrics-2024-07-01.zip --provider-symbol BTCUSDT --output backend\data\research\historical\binance-public-metrics-inspection-BTCUSDT-2024-07-01.json
+REAL BTC OI NORMALIZATION — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.binance_public_metrics_normalize --input backend\data\research\raw\historical\dev-2024-h2-metrics-probe\binance_public_metrics\BTCUSDT\BTCUSDT-metrics-2024-07-01.zip --provider-symbol BTCUSDT --start 2024-07-01T00:00:00Z --end 2024-07-02T00:00:00Z --output backend\data\research\historical\probe\BTC-oi-2024-07-01.csv --report backend\data\research\historical\probe\BTC-oi-2024-07-01.normalization.json
+Expected: row_count=288, first_timestamp=2024-07-01T00:00:00Z, last_timestamp=2024-07-01T23:55:00Z, cadence_seconds=300, pit_oi_context_complete=true, rolling_volume_context_complete=false.
 
 WHAT REMAINS
-1 Validate metrics inspector focused/full tests.
-2 Inspect the real BTC July-1 metrics archive and confirm actual cadence/schema.
-3 Implement historical OI metrics normalizer.
-4 Acquire/normalize full 2024-H2 BTC/ETH/SOL metrics.
-5 Exact PIT rolling 24h quote-notional volume derivation.
-6 Completed 1h HTF + first-party funding merge.
-7 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
-8 Locked DEVELOPMENT baseline.
-9 Freeze -> HOLDOUT -> candidates.
-10 PAPER/SHADOW operational checkpoint.
-11 Final desktop integration.
+1 Validate OI normalizer focused/full tests.
+2 Normalize the real BTC one-day metrics probe.
+3 Full 2024-H2 BTC/ETH/SOL metrics acquisition + OI normalization.
+4 Exact PIT rolling 24h quote-notional volume derivation.
+5 Completed 1h HTF + first-party funding merge.
+6 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
+7 Locked DEVELOPMENT baseline.
+8 Freeze -> HOLDOUT -> candidates.
+9 PAPER/SHADOW operational checkpoint.
+10 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
