@@ -6,12 +6,8 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: faf847cdb3d10392c43e9fa86602eeccca6b1711
-Focused smoke/loader/baseline/foundation suite: 13 passed in 0.52s. Full regression: 640 passed, 2 warnings in 34.79s. Failures: 0.
-Canonical CLI smoke run succeeded:
-run_id=f86b6144e920fea965ca
-result=backend\data\research\backtests\smoke\f86b6144e920fea965ca.json
-trades=1; win_rate=0.0000; expectancy_r=-1.0764; total_r=-1.0764; PF=0.0; max_drawdown_usd=1.0764; fees=0.0669; slippage=0.0191; funding=0.0000; research-only/live-capital-disabled.
+Tested commit: a68285181676fff34ba431b4b6efda4ccb25ab57
+Focused Hyperliquid-import + smoke/loader/baseline/foundation suite: 16 passed in 0.57s. Full regression: 643 passed, 2 warnings in 35.08s. Failures: 0.
 
 LOCKED PRODUCTION
 OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock.
@@ -27,33 +23,39 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Locked Perp-Micro Baseline Strategy Adapter
 [COMPLETE, VERIFIED] Canonical Backtest Data Loader + CLI / Operator Workflow
 [COMPLETE, VERIFIED] Deterministic Smoke Backtest Reconciliation
-  - 13 focused + 640 full tests GREEN
-  - canonical CLI produced persisted research-only result f86b6144e920fea965ca
-  - smoke loss is expected fixture behavior and not a profitability claim
+[COMPLETE, VERIFIED] Hyperliquid Historical Dataset PIT Import Foundation
+  - reuses historical candle/funding shapes without projecting current OI/volume backward
+  - requires timestamp-aligned historical OI USD, rolling 24h volume USD, and HTF alignment
+  - funding only from records available at/before candle timestamp
+  - fails closed on missing/duplicated/negative/non-PIT context
+  - canonical round-trip verified
+  - verified by 16 focused + 643 full tests at a682851
 
-[COMPLETE, LOCAL TEST PENDING] Hyperliquid Historical Dataset PIT Import Foundation
-  - reuses existing Hyperliquid candleSnapshot and fundingHistory data shapes
-  - explicitly does NOT project current metaAndAssetCtxs OI/24h volume backward into history
-  - requires timestamp-aligned HistoricalMarketContext rows containing historical OI USD, rolling 24h volume USD, and HTF alignment
-  - funding is assigned only from funding records at or before each candle timestamp
-  - normalization fails closed when PIT market context is missing, duplicated, negative, or candle chronology is invalid
-  - normalized data writes directly to canonical Atlas CSV schema and round-trips through the validated loader
-  - no current-state backfill, no fabricated eligibility context, no production mutation
+[COMPLETE, LOCAL TEST PENDING] Historical Dataset Provenance / Manifest Foundation
+  - backend/app/backtest/manifest.py creates deterministic provenance manifests for canonical historical datasets
+  - manifest binds dataset checksum, symbol, timeframe, first/last timestamp, row count, and source identity for candles/funding/OI/rolling-volume/HTF context
+  - PIT alignment is mandatory; current-state backfill is explicitly forbidden
+  - missing provenance fails closed
+  - dataset tampering/checksum mismatch fails closed
+  - deterministic manifest_id is content-derived from manifest payload
+  - tests cover valid manifest round-trip, missing provenance rejection, forbidden current-state backfill, checksum tampering, and incomplete manifest rejection
 
-[NEXT] Local focused Hyperliquid-import + smoke/loader/baseline/foundation tests and full regression.
-[NEXT AFTER GREEN] Historical Dataset Acquisition Sources / Manifest Workflow
-  - define the supported source path(s) for timestamp-aligned historical OI and rolling volume context
-  - attach provenance/source/date-range/symbol/timeframe metadata to imported datasets
-  - add deterministic import manifest and reject datasets lacking required PIT provenance/context
-  - provide one operator command/workflow to normalize raw historical source data into Atlas canonical files
+[NEXT] Local focused manifest + Hyperliquid-import + smoke/loader/baseline/foundation tests and full regression.
+[NEXT AFTER GREEN] Historical Source Acquisition / Operator Import Command
+  - define one supported operator workflow for importing timestamp-aligned historical OI and rolling-volume context into canonical Atlas schema
+  - include source/provider identity and raw-input checksums in the manifest
+  - do not claim Hyperliquid current metaAndAssetCtxs is historical; current snapshots cannot be backfilled into old candles
+  - add one deterministic import command that emits canonical dataset + manifest together
+  - fail closed when historical PIT OI/volume source material is unavailable
+[THEN] Representative Historical Dataset Normalization
+  - BTC/ETH/SOL first, multiple periods/regimes
+  - canonical files + manifests only
 [THEN] Locked Baseline Historical Batch Research
-  - run baseline across multiple representative symbols/periods/regimes
-  - persist comparable metrics/trades/run metadata
-  - inspect expectancy, WR, PF, total R, drawdown and costs; stable positive edge remains unproven until evidence says otherwise
+  - run baseline across representative symbols/periods/regimes; persist comparable metrics/trades/run metadata
 [THEN] Research Candidate Batch Comparison
-  - candidates remain isolated from production gates and compared against locked baseline only in research outputs
+  - candidates isolated from production and compared against locked baseline only in research outputs
 [THEN] PAPER/SHADOW Operations Checkpoint
-  - startup/recovery, market-data ingestion, signals, simulated fills, logs/dashboard and durable prospective evidence
+  - startup/recovery, data ingestion, signals, simulated fills, logs/dashboard, durable prospective evidence
 [THEN — DESKTOP OPERATIONAL INTEGRATION] Final shortcut/runtime audit
   - verify desktop shortcut launches every intended Atlas service and intended UI
   - reconcile API-served dashboard with Next.js /research surfaces so no completed capability is unreachable from normal launch
@@ -67,30 +69,26 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE REAL-DATA BACKTESTING
-1. Verify PIT-safe Hyperliquid historical import normalization locally.
-2. Define/acquire supported historical OI + rolling-volume source with provenance and deterministic manifest/import workflow.
-3. Normalize representative historical datasets into canonical Atlas schema.
+1. Verify provenance/manifest foundation locally.
+2. Build supported historical source acquisition/operator import command for PIT OI + rolling volume + HTF context.
+3. Normalize representative BTC/ETH/SOL historical datasets into canonical files with manifests.
 4. Run locked-baseline historical batches across representative periods/regimes.
 5. Run isolated research-candidate comparison batches.
 6. Continue PAPER/SHADOW prospective evidence.
 7. Complete desktop operational integration and shortcut smoke test before Atlas is called finished.
 
 LIVE READINESS
-Last fully verified checkpoint: 640 passed at faf847c with canonical smoke CLI result persisted. Hyperliquid PIT import foundation is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 643 passed at a682851. Historical provenance/manifest foundation is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-OPTIONAL SMOKE REPEAT
-backend\.venv\Scripts\python.exe -m app.backtest.cli --dataset tests\fixtures\backtest_smoke.csv --output-dir backend\data\research\backtests\smoke
-Expected existing deterministic run_id: f86b6144e920fea965ca
-
 NEXT EXECUTION AFTER GREEN
-Historical Dataset Acquisition Sources / Manifest Workflow, then locked-baseline historical batches. Desktop operational integration remains mandatory before Atlas is considered finished.
+Historical Source Acquisition / Operator Import Command, then representative BTC/ETH/SOL normalization and locked-baseline historical batches. Desktop operational integration remains mandatory before Atlas is considered finished.
 
 END OF MASTER ROADMAP
