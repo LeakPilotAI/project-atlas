@@ -9,12 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Sparse PIT OI policy is GREEN and the full locked 2024-H2 OI batch is COMPLETE. Full regression: 729 passed, 2 warnings in 38.72s, 0 failures. All 552 raw metrics objects were checksum-verified/skipped locally. Batch completed with objects=552 normalized_outputs=3 status=ACQUIRED_AND_NORMALIZED_OI_ROLLING_VOLUME_STILL_REQUIRED. The two absent OI observations remain absent; no interpolation/forward-fill/synthetic OI.
+Exact PIT rolling quote-volume foundation is GREEN. Focused rolling-volume tests: 4 passed in 0.32s. Full regression: 733 passed, 2 warnings in 40.70s; 0 failures. Historical OI remains complete for locked 2024-H2: 552 raw checksum-verified metrics objects -> 3 normalized OI outputs with the known two-point source gap preserved as missingness.
 
-EXECUTED ROLLING-VOLUME FOUNDATION — LOCAL TEST PENDING
-2c43ccb atlas: derive exact PIT rolling quote volume
-a4a0234 atlas: test exact PIT rolling quote volume
-New research-only derivation uses Binance historical 5m kline quote_volume (not base volume) and requires an exact 288-bar trailing 24h window before every emitted decision timestamp. It fails closed on missing warm-up/window candles, duplicates, negative quote volume, off-cadence windows, or incomplete coverage. No current-state backfill and no live unlock.
+EXECUTED WARM-UP PROBE — LOCAL TEST PENDING
+7edf917 atlas: add real rolling-volume warmup probe
+7b05054 atlas: test rolling-volume warmup probe
+The new probe expands a requested rolling-volume window backward by exactly 24h, plans/acquires only 5m public kline archives for the requested symbol, checksum-verifies them through the existing public acquisition path, and then calls the exact PIT quote-volume derivation. For a BTC July 1 probe it deterministically requires June + July monthly 5m archives, giving the July 1 decision window a complete June 30 warm-up.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -43,18 +43,19 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Exact real OI gap diagnosis — 2024-10-28 16:25/16:30 UTC absent
 [COMPLETE/VERIFIED] Sparse PIT OI preservation — no fabrication
 [COMPLETE/VERIFIED] Full 2024-H2 OI normalization — 3 outputs
+[COMPLETE/VERIFIED] Exact PIT rolling 24h quote-volume derivation — 4 focused / 733 full
 
-[CURRENT, LOCAL TEST PENDING] EXACT PIT ROLLING 24H QUOTE-NOTIONAL VOLUME
-- source is raw Binance USD-M 5m kline quote_volume field
-- never approximate USD volume from base volume
-- 288 completed 5m observations per trailing window
-- requires complete trailing-24h warm-up before first decision timestamp
-- exact cadence and coverage fail closed
+[CURRENT, LOCAL TEST PENDING] REAL ROLLING-VOLUME WARM-UP PROBE
+- exact 24h backward expansion from requested decision start
+- 5m only
+- BTC/ETH/SOL provider symbols only
+- reuses checksum-verified public monthly kline acquisition
+- then derives exact quote_volume-based 24h totals
 - research only; no current-state backfill/live path
 
-[NEXT AFTER LOCAL GREEN] Run a real BTC probe using June 2024 warm-up plus July 2024 5m raw archives. The existing 2024-H2 candle acquisition starts July 1, so the locked July 1 decision window needs June 30 historical warm-up data. Add/acquire the minimum deterministic warm-up archive(s), checksum verify, then derive BTC rolling volume and inspect row count/first/last/provenance.
+[NEXT AFTER LOCAL GREEN] Execute a real BTC July 1 one-day rolling-volume probe. It should acquire/verify BTCUSDT 5m June 2024 + July 2024 monthly archives, use June 30 as warm-up, and emit 288 decision rows from 2024-07-01T00:00:00Z through 2024-07-01T23:55:00Z. Inspect source SHA256s and output SHA256.
 
-[THEN] Batch rolling-volume warm-up/acquisition/derivation for BTC/ETH/SOL across locked 2024-H2.
+[THEN] Generalize into the full BTC/ETH/SOL locked 2024-H2 rolling-volume batch with June 30 warm-up preserved in provenance.
 
 [THEN] Derive completed-1h HTF from verified historical 1h candles and merge first-party Hyperliquid historical funding events.
 
@@ -70,20 +71,23 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_rolling_volume.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_rolling_volume_probe.py tests/test_backtest_binance_public_rolling_volume.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
+REAL BTC PROBE — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.binance_public_rolling_volume_probe --provider-symbol BTCUSDT --start 2024-07-01T00:00:00Z --end 2024-07-02T00:00:00Z --raw-root backend\data\research\raw\historical\rolling-volume-probe --output backend\data\research\historical\probe\BTC-volume24h-2024-07-01.csv --report backend\data\research\historical\probe\BTC-volume24h-2024-07-01.normalization.json --manifest backend\data\research\historical\binance-public-volume-probe-BTCUSDT-2024-07-01.json --execute
+Expected: rows=288 first=2024-07-01T00:00:00Z last=2024-07-01T23:55:00Z warmup_start=2024-06-30T00:00:00Z status=ACQUIRED_AND_DERIVED_ROLLING_VOLUME
+
 WHAT REMAINS
-1 Validate rolling-volume focused/full tests.
-2 Acquire exact June warm-up required for July 1 rolling-volume decisions.
-3 Real BTC rolling-volume probe and provenance inspection.
-4 Full BTC/ETH/SOL 2024-H2 rolling-volume batch.
-5 Completed 1h HTF + first-party funding merge.
-6 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
-7 Locked DEVELOPMENT baseline.
-8 Freeze -> HOLDOUT -> candidates.
-9 PAPER/SHADOW operational checkpoint.
-10 Final desktop integration.
+1 Validate warm-up probe focused/full tests.
+2 Execute real BTC July 1 rolling-volume probe and inspect provenance.
+3 Full BTC/ETH/SOL 2024-H2 rolling-volume batch.
+4 Completed 1h HTF + first-party funding merge.
+5 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
+6 Locked DEVELOPMENT baseline.
+7 Freeze -> HOLDOUT -> candidates.
+8 PAPER/SHADOW operational checkpoint.
+9 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
