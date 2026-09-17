@@ -100,3 +100,15 @@ def test_research_page_renders_maturity_confirmation_sequence_contract():
     assert "PERSISTED" in page
     assert "REVERSED" in page
     assert "CHANGED AGAIN" in page
+
+
+def test_research_page_renders_maturity_sequence_stability_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Maturity sequence stability / repetition diagnostics" in page
+    assert "DESCRIPTIVE_MATURITY_SEQUENCE_STABILITY" in page
+    assert "maturity_sequence_stability_diagnostics" in page
+    assert "REPEATED OUTCOME" in page
+    assert "ALTERNATING PATTERN" in page
+    assert "MIXED SEQUENCE" in page
+    assert "INSUFFICIENT HISTORY" in page
+    assert "repeated latest" in page
