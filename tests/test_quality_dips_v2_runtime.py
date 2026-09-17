@@ -16,11 +16,7 @@ def test_runtime_builds_quality_from_existing_scored_pillars():
 
 
 def test_runtime_extracts_explicit_provider_analyst_targets():
-    row = {
-        "symbol": "MSFT",
-        "components": {"fundamentals": 88, "thesis_integrity": 90},
-        "input_snapshot": {"valuation": {"target_low_price": _mv(500), "target_mean_price": _mv(600), "target_high_price": _mv(700)}},
-    }
+    row = {"symbol": "MSFT", "components": {"fundamentals": 88, "thesis_integrity": 90}, "input_snapshot": {"valuation": {"target_low_price": _mv(500), "target_mean_price": _mv(600), "target_high_price": _mv(700)}}}
     out = enrich_research_row(row)
     window = from_research_row(out)
     assert window["valuation_window_complete"] is True
@@ -29,7 +25,7 @@ def test_runtime_extracts_explicit_provider_analyst_targets():
 
 
 def test_runtime_does_not_invent_incomplete_targets():
-    row = {"symbol": "MSFT", "components": {"fundamentals": 88, "thesis_integrity": 90}, "input_snapshot": {"valuation": {"target_mean_price": _mv(600)}}}
+    row = {"symbol": "ZZTEST_NO_CACHE", "components": {"fundamentals": 88, "thesis_integrity": 90}, "input_snapshot": {"valuation": {"target_mean_price": _mv(600)}}}
     out = enrich_research_row(row)
     window = from_research_row(out)
     assert window["valuation_window_complete"] is False
@@ -38,13 +34,7 @@ def test_runtime_does_not_invent_incomplete_targets():
 
 def test_runtime_preserves_manual_only_v2_boundary():
     from app.investment.quality_dips_v2_board import build_v2_projection
-    row = {
-        "symbol": "MSFT", "timestamp": "2026-09-17T12:00:00+00:00", "price": 400,
-        "evidence_quality": "HIGH", "thesis": "STRONG",
-        "components": {"valuation": 92, "fundamentals": 92, "balance_sheet": 92, "cash_flow": 92, "thesis_integrity": 92},
-        "drawdown": {"percentile": 96},
-        "input_snapshot": {"valuation": {"target_low_price": _mv(600), "target_mean_price": _mv(650), "target_high_price": _mv(700)}},
-    }
+    row = {"symbol": "MSFT", "timestamp": "2026-09-17T12:00:00+00:00", "price": 400, "evidence_quality": "HIGH", "thesis": "STRONG", "components": {"valuation": 92, "fundamentals": 92, "balance_sheet": 92, "cash_flow": 92, "thesis_integrity": 92}, "drawdown": {"percentile": 96}, "input_snapshot": {"valuation": {"target_low_price": _mv(600), "target_mean_price": _mv(650), "target_high_price": _mv(700)}}}
     out = build_v2_projection(row)
     assert out["normalization_value"]["conservative"] == 600.0
     assert out["conservative_upside_pct"] == 50.0
