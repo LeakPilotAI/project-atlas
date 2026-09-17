@@ -9,6 +9,9 @@ LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: b0039a700b43789c42f3073402a4ed175c4e6464
 Frontend production build GREEN. Focused recurrence/evidence-ui/page-contract suite: 18 passed in 0.45s. Full regression: 627 passed, 2 warnings in 35.84s. Failures: 0.
 
+LATEST LOCAL FAILURE / REPAIR
+At 0db602a, historical-foundation tests could not collect because backend/app/backtest/__init__.py still imported removed legacy symbols run_simple_backtest, BacktestResult, and BacktestTrade from engine.py. Repair commit a1dfb969 now exports the new research-only historical API from app.backtest.historical. This repair is LOCAL TEST PENDING.
+
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8. No automatic retuning/live unlock.
 
@@ -17,7 +20,7 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] V6 research/evidence/maturity stack through Run Boundary Recurrence Lightweight Surface + Presentation
 [COMPLETE] Backtesting Readiness Audit
 
-[COMPLETE, LOCAL TEST PENDING] Deterministic Historical Backtest Runner Foundation — replay/fill/cost/result core
+[COMPLETE, LOCAL TEST PENDING AFTER IMPORT REPAIR] Deterministic Historical Backtest Runner Foundation — replay/fill/cost/result core
   - canonical immutable HistoricalBar contract includes timestamp, symbol, timeframe, OHLCV, optional funding_rate
   - one run fails closed unless data is unique ascending timestamps and one symbol/timeframe
   - signal callback receives tuple(rows[:i+1]) only; future bars are unavailable to decision code
@@ -32,9 +35,10 @@ ENGINEERING ROADMAP
   - deterministic result payload includes assumptions, dataset range, equity curve, research-only safety flags, and content-derived run_id
   - persisted JSON result is idempotent and collision-protected
   - no exchange adapter, production-setting mutation, live-capital enablement, or real-money execution path exists in this module
-  - focused tests added for PIT visibility/next-bar fills, explicit costs, repeatability/persistence, research-only safety, and fail-closed ordering
+  - focused tests cover PIT visibility/next-bar fills, explicit costs, repeatability/persistence, research-only safety, and fail-closed ordering
+  - package export blocker repaired: backend/app/backtest/__init__.py now exposes HistoricalBar, BacktestSignal, BacktestAssumptions, BacktestTrade, run_historical_backtest, persist_backtest_result from the new historical module
 
-[NEXT] Local focused historical-foundation tests + full regression.
+[NEXT] Re-run focused historical-foundation tests + full regression after import repair.
 [NEXT AFTER GREEN] Locked Perp-Micro Baseline Strategy Adapter
   - implement historical signal adapter using locked RSI 28/72, extension 1.4%-3.5%, min R:R 1.8 and existing production semantics where reproducible from historical inputs
   - do not mutate Settings and do not silently substitute legacy generic decide_direction rules
@@ -57,7 +61,7 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE BACKTESTING
-1. Verify the new deterministic historical replay/fill/cost/result foundation locally.
+1. Verify the repaired deterministic historical replay/fill/cost/result foundation locally.
 2. Build and verify the locked perp-micro historical signal adapter without changing production settings.
 3. Build canonical validated historical-data loader + CLI/operator command + deterministic result location.
 4. Run/reconcile deterministic smoke backtest twice.
@@ -65,7 +69,7 @@ WHAT REMAINS BEFORE ROUTINE BACKTESTING
 6. Continue PAPER/SHADOW prospective evidence after historical runner is healthy.
 
 LIVE READINESS
-Last fully verified checkpoint: 627 passed at b0039a7 with frontend GREEN. New historical foundation is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 627 passed at b0039a7 with frontend GREEN. Historical foundation + import repair are LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
