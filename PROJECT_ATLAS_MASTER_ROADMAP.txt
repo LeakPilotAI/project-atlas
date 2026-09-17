@@ -11,17 +11,15 @@ Never commit credentials, tokens, passwords, private keys, seed phrases, .env se
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Locked DEVELOPMENT input freeze is GREEN and COMPLETE. Focused tests: 2 passed in 0.32s. Full regression: 759 passed, 2 warnings in 39.39s; 0 failures. Freeze execution loaded BTC/ETH/SOL canonical datasets with 52,990 rows each, total_rows=158970, source_audit_green=true, source_audit_id=ae70db3328bd71604414, threshold_retuning_allowed=false, holdout_data_touched=false, live_capital_allowed=false, and status=LOCKED_DEVELOPMENT_BASELINE_INPUTS_FROZEN.
 
-LOCKED DEVELOPMENT BASELINE RUNNER — LOCAL TEST RED DIAGNOSED
-Focused test result: 1 failed, 1 passed. Failure was test-only: the fixture set htf_trend=DOWN while asserting that a LONG must be emitted. That contradicts the locked HTF rule: UP permits LONG/blocks SHORT; DOWN permits SHORT/blocks LONG. Production signal logic was already correct and was NOT changed.
+LOCKED DEVELOPMENT BASELINE TEST FIX — VERIFIED LOCALLY
+Corrected HTF test semantics are GREEN: focused baseline-run tests 2 passed in 0.14s; full regression 761 passed, 2 warnings in 38.54s. The production HTF policy remains unchanged: UP permits LONG/blocks SHORT; DOWN permits SHORT/blocks LONG.
 
-FIX EXECUTED — LOCAL RETEST PENDING
-e693c27 atlas: fix locked HTF baseline test semantics
-Updated tests/test_backtest_locked_development_baseline_run.py so the fixture now verifies UP permits LONG, DOWN blocks LONG, and OI below 75,000 blocks the signal. No production thresholds or baseline signal code changed.
+LATEST RUNTIME RED — PERFORMANCE, NOT LOGIC
+The real locked DEVELOPMENT baseline run was manually interrupted with KeyboardInterrupt while executing the signal hot path. Traceback showed repeated closes=[b.close for b in history] over growing PIT history on each decision bar. With ~52,990 rows per symbol this creates quadratic Python work and presents as a freeze. No evidence of deadlock or data corruption.
 
-RUNNER COMMITS
-a085076 atlas: run deterministic locked development baseline
-9ef5e01 atlas: test locked development baseline run
-The runner consumes only source-audit-GREEN canonical DEVELOPMENT datasets and the locked thresholds: OI >=75k USD, volume >=150k USD, RSI long <=28, RSI short >=72, extension 1.4%-3.5%, minimum R:R 1.8, HTF alignment enabled. It uses strict PIT history, next-bar-open fills through the existing deterministic historical engine, persists per-symbol run artifacts, writes an aggregate summary, forbids threshold retuning, does not touch holdout data, and cannot enable live capital or automated real-money execution.
+PERFORMANCE FIX EXECUTED — LOCAL RETEST PENDING
+1ab5853 atlas: optimize locked baseline signal hot path
+Updated backend/app/backtest/locked_development_baseline_run.py. The runner now precomputes the immutable close series and timestamp indexes once per symbol, and evaluates RSI from only the exact rsi_period+1 slice needed at the current PIT index. Extension uses the exact precomputed lookback anchor. It does NOT read future bars for the decision: the current index is derived from history[-1], and only data at or before that index is used. Locked thresholds, HTF semantics, fees, slippage, funding, next-bar fill behavior, holdout isolation, and live locks are unchanged.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -51,23 +49,23 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Canonical BTC/ETH/SOL PIT datasets — 52,990 rows each; 2 incomplete OI rows excluded
 [COMPLETE/VERIFIED GREEN] Canonical source audit — ready_for_locked_baseline_batch=true
 [COMPLETE/VERIFIED] Locked DEVELOPMENT input freeze — total_rows=158970; holdout untouched
+[COMPLETE/VERIFIED] Corrected locked baseline HTF tests — 761 full tests GREEN before runtime run
 
-[CURRENT, LOCAL RETEST PENDING] DETERMINISTIC LOCKED DEVELOPMENT BASELINE RUN
-- production runner unchanged after test RED
-- corrected HTF test semantics now match locked policy
+[CURRENT, LOCAL RETEST PENDING] OPTIMIZED DETERMINISTIC LOCKED DEVELOPMENT BASELINE RUN
+- removes quadratic close-history reconstruction from signal path
+- precomputes immutable close/index structures per symbol
+- RSI sees only exact PIT slice ending at current decision bar
+- extension anchor is exact locked lookback at or before current decision bar
 - canonical source_audit must remain GREEN
-- consumes only dev-2024-h2 canonical BTC/ETH/SOL datasets
 - locked thresholds only; no retuning
-- strict PIT signal history
 - signal at bar i fills next bar open via historical engine
-- per-symbol deterministic run artifacts + aggregate summary
 - threshold_retuning_allowed=false
 - holdout_data_touched=false
 - production_strategy_modified=false
 - live_capital_allowed=false
 - automatic_real_money_execution=false
 
-[NEXT AFTER LOCAL GREEN] Execute the locked DEVELOPMENT baseline across BTC/ETH/SOL. Capture exact per-symbol and aggregate metrics, run ids, and output paths. Treat the result as evidence only; do not tune on the same DEVELOPMENT window.
+[NEXT AFTER LOCAL GREEN] Re-run focused/full tests, then execute the locked DEVELOPMENT baseline across BTC/ETH/SOL. Capture exact per-symbol and aggregate metrics, run ids, and output paths. Treat the result as evidence only; do not tune on the same DEVELOPMENT window.
 
 [THEN] Freeze DEVELOPMENT decisions/parameters and record whether the baseline establishes any credible positive edge. Stable positive edge must not be claimed from DEVELOPMENT alone.
 
@@ -91,7 +89,7 @@ backend\.venv\Scripts\python.exe -m app.backtest.locked_development_baseline_run
 Expected: status=LOCKED_DEVELOPMENT_BASELINE_COMPLETE, threshold_retuning_allowed=false, holdout_data_touched=false, three per-symbol deterministic runs.
 
 WHAT REMAINS
-1 Retest corrected locked DEVELOPMENT baseline-run focused/full tests.
+1 Retest optimized locked DEVELOPMENT baseline-run focused/full tests.
 2 Execute deterministic locked DEVELOPMENT baseline and record metrics.
 3 Freeze DEVELOPMENT decisions/parameters.
 4 Untouched HOLDOUT evaluation.
