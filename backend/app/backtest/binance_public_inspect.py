@@ -12,6 +12,7 @@ from pathlib import Path
 
 EXPECTED_COLUMNS=12
 INTERVAL_MS={"5m":300_000,"1h":3_600_000}
+HEADER_FIRST_COLUMNS={"open_time","open time"}
 
 @dataclass(frozen=True)
 class Inspection:
@@ -27,6 +28,7 @@ class Inspection:
     schema_columns:int
     schema_valid:bool
     ascending_unique:bool
+    header_present:bool=False
     research_only:bool=True
     pit_oi_context_complete:bool=False
     live_capital_allowed:bool=False
@@ -35,6 +37,10 @@ class Inspection:
 
 def _iso(ms:int)->str:
     return datetime.fromtimestamp(ms/1000,tz=timezone.utc).isoformat().replace("+00:00","Z")
+
+
+def _is_header(row:list[str])->bool:
+    return bool(row) and row[0].strip().lower() in HEADER_FIRST_COLUMNS
 
 
 def inspect_zip(path:Path,*,provider_symbol:str,interval:str)->Inspection:
@@ -50,6 +56,10 @@ def inspect_zip(path:Path,*,provider_symbol:str,interval:str)->Inspection:
             rows=list(csv.reader(line for line in text if line))
     if not rows:raise RuntimeError("kline archive CSV is empty")
     if any(len(r)!=EXPECTED_COLUMNS for r in rows):raise RuntimeError("unexpected Binance kline column count")
+    header_present=_is_header(rows[0])
+    if header_present:rows=rows[1:]
+    if not rows:raise RuntimeError("kline archive CSV contains header but no data rows")
+    # A header is allowed only as the first row. Any later non-numeric open_time fails closed.
     try:times=[int(r[0]) for r in rows]
     except Exception as exc:raise RuntimeError("invalid kline open_time") from exc
     if any(t<=0 for t in times):raise RuntimeError("nonpositive kline open_time")
@@ -60,7 +70,7 @@ def inspect_zip(path:Path,*,provider_symbol:str,interval:str)->Inspection:
         input=str(path),provider_symbol=provider_symbol,interval=interval,member=member,
         row_count=len(rows),first_open_time=_iso(times[0]),last_open_time=_iso(times[-1]),
         cadence_ms=step,cadence_consistent=cadence_consistent,schema_columns=EXPECTED_COLUMNS,
-        schema_valid=True,ascending_unique=ascending_unique,
+        schema_valid=True,ascending_unique=ascending_unique,header_present=header_present,
     )
 
 
@@ -76,7 +86,7 @@ def main(argv:list[str]|None=None)->int:
     a.output.parent.mkdir(parents=True,exist_ok=True)
     a.output.write_text(json.dumps(payload,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     print(f"inspection={a.output}")
-    print(f"rows={result.row_count} schema_valid={str(result.schema_valid).lower()} cadence_consistent={str(result.cadence_consistent).lower()} ascending_unique={str(result.ascending_unique).lower()}")
+    print(f"rows={result.row_count} header_present={str(result.header_present).lower()} schema_valid={str(result.schema_valid).lower()} cadence_consistent={str(result.cadence_consistent).lower()} ascending_unique={str(result.ascending_unique).lower()}")
     if not(result.schema_valid and result.cadence_consistent and result.ascending_unique):return 2
     return 0
 
