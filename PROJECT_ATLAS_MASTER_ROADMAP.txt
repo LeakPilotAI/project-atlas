@@ -6,63 +6,87 @@ PERMANENT EXECUTION PROTOCOL
 When user posts GREEN output, advance directly. After every execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 PERMANENT SECURITY GATE
-Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas.
+Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. ATLAS_RUNTIME_AUDIT.json is untracked local output and must not be committed blindly.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Immutable HOLDOUT evidence-freeze tests GREEN: 7 passed in 0.47s. Full regression GREEN: 785 passed, 2 warnings in 39.57s. The real evidence freeze completed with status=HOLDOUT_EVIDENCE_FROZEN, holdout_result=FAILED_NEGATIVE, stable_positive_edge_established=false, threshold_retuning_allowed=false, next_cycle_must_be_isolated=true, live_capital_allowed=false. HOLDOUT summary SHA-256: ee6b28c5042414e70534f04e120ae439b8e765dc156f9b20e1fa2c0873149d72.
+Branch sync is GREEN at 2d78e00 with origin/chatgpt/atlas-rebuild-v1. git status is clean except untracked ATLAS_RUNTIME_AUDIT.json. Immutable HOLDOUT evidence freeze remains verified from prior local run: 7 focused tests passed; full regression 785 passed, 2 warnings; status=HOLDOUT_EVIDENCE_FROZEN; holdout_result=FAILED_NEGATIVE; stable_positive_edge_established=false; next_cycle_must_be_isolated=true; live_capital_allowed=false.
 
 CLOSED HISTORICAL EXPERIMENT — VERIFIED NEGATIVE
 DEVELOPMENT dev-2024-h2: 659 trades; total_r=-117.21753020091131; expectancy_r=-0.17787182124569242; FAILED_NEGATIVE.
 Untouched HOLDOUT holdout-2025-h2: 546 trades; total_r=-26.72350715657114; expectancy_r=-0.048944152301412344; FAILED_NEGATIVE.
-BTC HOLDOUT: 67 trades; expectancy=-0.13120166403507955R; total=-8.79051149035033R; PF=0.8151646776263058; run_id=36a8b36242e9cc1c708c.
-ETH HOLDOUT: 192 trades; expectancy=-0.11222419567471187R; total=-21.54704556954468R; PF=0.8401063289638052; run_id=bc9c8c61cf356cf09fa7.
-SOL HOLDOUT: 287 trades; expectancy=+0.012592508373950756R; total=+3.614049903323867R; PF=1.0192535094387052; run_id=5d83c5d3284696739eb2.
 Independent HOLDOUT source audit id=951dbc0f46516bcf97eb was GREEN. Stable positive edge is NOT established. The experiment is closed. Do not retune or relabel it.
 
-LOCKED THRESHOLDS — CLOSED EXPERIMENT EVIDENCE
-OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; RSI period 14; extension lookback 20; HTF alignment enabled. These are immutable inputs to the closed experiment, not same-window tuning candidates.
+EXECUTED PAPER/SHADOW CHECKPOINT CODE — LOCAL TEST PENDING
+4234cd5 atlas: add paper shadow operational checkpoint
+- added backend/app/trading_core/shadow_operational_checkpoint.py
+- read-only inspection of V4 shadow event store/recovery
+- reports corruption, recovered opens, SHADOW_ONLY snapshot, persistence readiness
+- never creates orders/trades or mutates legacy PAPER state
+- live_capital_allowed=false and automatic_real_money_execution=false
+
+a5def7d atlas: test paper shadow operational checkpoint
+- added tests/test_trading_shadow_operational_checkpoint.py
+- empty event store must be GREEN and live-disabled
+- valid persisted open must recover exactly
+- corrupt middle JSONL line must fail closed/BLOCKED
+
+EXISTING IMPLEMENTATION RE-VERIFIED
+- PersistentPaperRuntime uses append-only JsonlEventStore and PositionBook recovery.
+- JsonlEventStore flushes + fsyncs event appends; malformed non-final line and sequence gaps fail closed.
+- V4ShadowCoordinator is explicitly SHADOW_ONLY and cannot alter legacy PAPER state or place live orders.
+- main API starts existing manual/PAPER services; command-center reports manual-only/PAPER observability.
+- Windows launcher is API-served dashboard only (no Node/Next), starts Docker/Postgres/Redis + FastAPI, cleans stale Atlas processes, attaches API to a Windows kill-on-close job, logs to logs/api.*.log, and opens http://127.0.0.1:8000/dashboard.
+- Install-DesktopShortcut.ps1 creates Project Atlas.lnk and Stop Atlas.lnk using the repo ATLAS.bat / ATLAS-STOP.bat paths.
 
 FULL ROADMAP
 [COMPLETE/VERIFIED] Core rebuild / cockpit / PAPER / recovery / Quality Dips
 [COMPLETE/VERIFIED] V6 evidence stack
 [COMPLETE/VERIFIED] Historical runner + PIT importer + manifests + source readiness
-[COMPLETE/VERIFIED] Provider normalization + HTF/context v2/funding semantics
-[COMPLETE/VERIFIED] Representative UTC research windows
-[COMPLETE/VERIFIED] Credential hardening / no-AWS path
 [COMPLETE/VERIFIED] DEVELOPMENT canonical data + source audit GREEN
-[COMPLETE/VERIFIED NEGATIVE] DEVELOPMENT baseline — 659 trades, -117.2175R, -0.17787R expectancy
+[COMPLETE/VERIFIED NEGATIVE] DEVELOPMENT baseline
 [COMPLETE/VERIFIED] DEVELOPMENT decision freeze
-[COMPLETE/VERIFIED] HOLDOUT candles/OI/rolling-volume/HTF/funding/PIT merge
-[COMPLETE/VERIFIED GREEN] HOLDOUT canonical assembly + independent source audit
-[COMPLETE/VERIFIED NEGATIVE] Exact frozen untouched HOLDOUT evaluation — 546 trades, -26.7235R, -0.048944R expectancy
-[COMPLETE/VERIFIED] Immutable HOLDOUT evidence freeze — 785 full tests GREEN; evidence artifact generated locally
-[COMPLETE/CLOSED] Historical experiment dev-2024-h2 -> holdout-2025-h2 — FAILED_NEGATIVE; no retuning; preserved in docs/research/FAILED_EXPERIMENT_DEV2024H2_HOLDOUT2025H2.md
+[COMPLETE/VERIFIED] HOLDOUT acquisition/context/funding/canonical + source audit
+[COMPLETE/VERIFIED NEGATIVE] Exact frozen untouched HOLDOUT evaluation
+[COMPLETE/VERIFIED] Immutable HOLDOUT evidence freeze
+[COMPLETE/CLOSED] Historical experiment dev-2024-h2 -> holdout-2025-h2 — FAILED_NEGATIVE
 
-[CURRENT] PAPER/SHADOW OPERATIONAL CHECKPOINT
-Goal: verify the existing PAPER/SHADOW runtime as an operational system without treating it as validation of the closed historical configuration.
-Required boundary: no real-money order path, no live-capital unlock, no automatic threshold retuning, and no mutation of the closed DEVELOPMENT/HOLDOUT evidence.
-Required validation: deterministic paper execution, persistent/recoverable event state, SHADOW comparison path, restart/recovery behavior, observability/health surfaces, and fail-closed controls.
+[CURRENT, LOCAL TEST PENDING] PAPER/SHADOW OPERATIONAL CHECKPOINT
+- validate new read-only checkpoint tests
+- run full regression
+- run checkpoint against local backend/data/trading_v4_shadow.jsonl
+- record actual event_count/recovered_open/corruption status
+- preserve fail-closed no-live boundaries
+- do not treat PAPER/SHADOW as validation of closed historical strategy
 
-[NEXT] Inspect and harden the actual PAPER/SHADOW runtime and persistence/recovery path against the existing implementation and tests.
-[THEN] Run focused PAPER/SHADOW operational tests and full regression locally; record the exact GREEN checkpoint.
-[THEN] Final desktop integration: start/stop shortcuts, stale-process cleanup, dependency visibility, API/dashboard/research reachability, persistent paths, logging, restart/recovery, and launch/stop smoke test.
-[FINAL] Atlas remains PAPER/SHADOW research software unless a future independently validated research cycle establishes evidence sufficient for a separate human decision about any later stage. Automated real-money execution remains disabled.
+[NEXT AFTER GREEN] Final desktop integration and launch/stop smoke test.
+- validate scripts/windows/Atlas-Launch.ps1 and Atlas-Stop.ps1 against actual local machine
+- reinstall/verify Project Atlas.lnk and Stop Atlas.lnk
+- verify /health, /dashboard, /api/research, /api/command-center/summary
+- verify stale-process cleanup/restart/recovery/log persistence
+- verify stop shortcut terminates Atlas API/containers without touching Docker Desktop/Genesis
+- reconcile any remaining README/frontend wording with API-served dashboard reality
+
+[FINAL] Atlas remains PAPER/SHADOW research software unless a future independently validated research cycle provides separate evidence. Automated real-money execution remains disabled.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_holdout_evidence_freeze.py tests/test_backtest_holdout_evaluation.py tests/test_backtest_holdout_evaluation_execution.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_trading_shadow_operational_checkpoint.py tests/test_trading_core_v4.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
+READ-ONLY PAPER/SHADOW CHECKPOINT — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.trading_core.shadow_operational_checkpoint --event-path backend\data\trading_v4_shadow.jsonl --output backend\data\paper-shadow-operational-checkpoint.json
+Expected controls: status=PAPER_SHADOW_CHECKPOINT_GREEN if store is absent/valid; persistent_recovery_ready=true; shadow_isolation_ready=true; real_order_actions=false; live_capital_allowed=false. If event_store_corruption is non-null, checkpoint must be BLOCKED and desktop finalization pauses until repaired without deleting evidence.
+
 WHAT REMAINS
-1 PAPER/SHADOW operational checkpoint: inspect/harden runtime, persistence/recovery, observability, and fail-closed boundaries.
-2 Validate PAPER/SHADOW focused tests and full regression locally.
+1 Validate PAPER/SHADOW operational checkpoint focused tests and full regression locally.
+2 Run read-only checkpoint against actual local shadow store and record results.
 3 Final desktop integration and launch/stop smoke test.
-4 Any future strategy research must be a NEW isolated cycle with new DEVELOPMENT decisions and a new untouched holdout; never retune the closed experiment.
+4 Any future strategy research must be a NEW isolated cycle; never retune the closed experiment.
 
 RESEARCH/LIVE STATUS
-Stable positive edge NOT ESTABLISHED. Historical experiment CLOSED as FAILED_NEGATIVE on DEVELOPMENT and aggregate HOLDOUT. Live capital locked. Automated real-money execution disabled. PAPER/SHADOW remains operational research only.
+Stable positive edge NOT ESTABLISHED. Historical experiment CLOSED as FAILED_NEGATIVE. Live capital locked. Automated real-money execution disabled. PAPER/SHADOW remains operational research only.
 
 END OF MASTER ROADMAP
