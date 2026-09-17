@@ -27,11 +27,13 @@ def test_missing_non_ohlcv_production_inputs_fail_closed():
 
 def test_long_and_short_signals_respect_locked_thresholds_when_external_gates_are_supplied():
     cfg=PerpMicroBaselineConfig(28,72,1.4,3.5,1.8,1.0,True,True)
-    long_bars=make_bars([100]*14+[99,98,97,96,95,94])
+    # Final close is sufficiently oversold/overbought for RSI while remaining inside
+    # the locked 1.4%-3.5% extension band instead of tripping the max-extension gate.
+    long_bars=make_bars([100]*14+[99.5,99,98.5,98,97.5,97])
     long_signal=locked_perp_micro_signal(long_bars,config=cfg,oi_volume_eligible=True,htf_regime_aligned=True)
     assert long_signal is not None;assert long_signal.side=="LONG"
     assert round((long_signal.target_price-long_bars[-1].close)/(long_bars[-1].close-long_signal.stop_price),10)==1.8
-    short_bars=make_bars([100]*14+[101,102,103,104,105,106])
+    short_bars=make_bars([100]*14+[100.5,101,101.5,102,102.5,103])
     short_signal=locked_perp_micro_signal(short_bars,config=cfg,oi_volume_eligible=True,htf_regime_aligned=True)
     assert short_signal is not None;assert short_signal.side=="SHORT"
     assert round((short_bars[-1].close-short_signal.target_price)/(short_signal.stop_price-short_bars[-1].close),10)==1.8
