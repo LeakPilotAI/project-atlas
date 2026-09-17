@@ -9,15 +9,18 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-OI source-gap preservation is GREEN. Focused normalization + HOLDOUT OI tests: 9 passed in 0.56s. Full regression: 774 passed, 2 warnings in 45.79s. The real retry checksum-verified/skipped all 552 local raw objects and completed normalization with status=HOLDOUT_OI_BATCH_EXECUTED, normalized_output_count=3, pit_oi_context_complete=true. Real missing_interval_counts are BTC=3, ETH=3, SOL=3. Missing policy remains PRESERVE_ABSENT_NO_INTERPOLATION_NO_FORWARD_FILL. DEVELOPMENT evidence was not mutated; threshold retuning and same-window optimization remain disabled; HOLDOUT evaluation remains blocked before independent source_audit GREEN.
+HOLDOUT volume+HTF focused tests are GREEN: 8 passed in 0.47s. Full regression is GREEN: 776 passed, 2 warnings in 43.38s. Plan mode is GREEN with status=HOLDOUT_VOLUME_HTF_PLANNED, volume_object_count=21, volume_normalized_output_count=0, htf_normalized_output_count=0, current_state_backfill_used=false, development_evidence_mutated=false, threshold_retuning_allowed=false, same_window_optimization_allowed=false, and HOLDOUT evaluation blocked before source_audit GREEN.
 
 LOCKED DEVELOPMENT BASELINE — VERIFIED NEGATIVE
 659 trades; total_r=-117.21753020091131; expectancy_r=-0.17787182124569242. development_result=FAILED_NEGATIVE; parameters frozen.
 
-EXECUTED NEXT STAGE — LOCAL TEST PENDING
-e9160ea atlas: add untouched holdout volume and HTF stage
-1906466 atlas: test untouched holdout volume and HTF stage
-New research-only wrapper reuses the proven exact rolling-24h quote-volume batch and completed-1h HTF batch. It fixes HOLDOUT boundaries to [2025-07-01,2026-01-01), acquires exact 24h 5m warm-up data for volume, consumes existing normalized HOLDOUT 5m/1h candles for HTF, writes only HOLDOUT roots, forbids current-state backfill, does not mutate DEVELOPMENT evidence, and cannot enable live or HOLDOUT evaluation.
+CURRENT REAL EXECUTION CHECKPOINT — USER LOCAL PENDING
+Run exact rolling-volume acquisition/derivation + completed-1h HTF derivation for holdout-2025-h2 using the already-tested wrapper. Expected controls: 3 rolling-volume outputs, 3 HTF outputs, pit_rolling_volume_context_complete=true, completed_hourly_only=true, current_state_backfill_used=false. Do not advance evidence claims until user posts real output.
+
+NEXT STAGE ALREADY IMPLEMENTED — LOCAL TEST PENDING
+c8ba985 atlas: add untouched holdout funding and merge stage
+ad8d545 atlas: test untouched holdout funding and merge stage
+This wrapper acquires first-party Hyperliquid funding for BTC/ETH/SOL over [2025-07-01,2026-01-01), then performs the proven exact-event 5m PIT merge into the normalized HOLDOUT bars. It preserves exact event timestamps, no interpolation, no forward fill, no current-state backfill, no DEVELOPMENT mutation, no retuning, and no live/HOLDOUT-evaluation unlock.
 
 LOCKED PRODUCTION
 OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock. Live capital locked; automated real-money execution disabled.
@@ -37,20 +40,24 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] HOLDOUT candles — 36 raw monthly objects; 6 normalized outputs
 [COMPLETE/VERIFIED] HOLDOUT OI plan/acquisition/normalization — 552 objects; 3 normalized outputs
 [COMPLETE/VERIFIED] HOLDOUT OI sparse source evidence — BTC=3, ETH=3, SOL=3 absent 5m observations preserved without fill
+[COMPLETE/VERIFIED] HOLDOUT volume+HTF wrapper/tests/plan — 8 focused GREEN; 776 full GREEN; 21-object plan GREEN
 
-[CURRENT, LOCAL TEST PENDING] HOLDOUT EXACT ROLLING 24H QUOTE VOLUME + COMPLETED-1H HTF
-- exact trailing 24h quote_volume from historical 5m klines
-- exact 24h warm-up before 2025-07-01
-- exact cadence required; missing volume source timestamps fail closed
-- completed 1h HTF consumes existing HOLDOUT normalized candles
+[CURRENT] REAL HOLDOUT ROLLING 24H VOLUME + COMPLETED-1H HTF EXECUTION
+- exact trailing 24h historical quote_volume
+- exact 24h warm-up
+- exact cadence required; missing source timestamps fail closed
+- completed 1h HTF from existing normalized HOLDOUT candles
 - no current-state backfill
 - no DEVELOPMENT mutation
-- no threshold retuning
 - HOLDOUT evaluation remains blocked before source_audit GREEN
-- live disabled
 
-[NEXT AFTER LOCAL GREEN] Run wrapper plan. Then execute real rolling-volume acquisition/derivation + HTF derivation. Verify 3 volume outputs and 3 HTF outputs before advancing.
-[THEN] Acquire HOLDOUT first-party Hyperliquid funding and exact funding PIT merge.
+[NEXT, CODE READY / LOCAL TEST PENDING] HOLDOUT FIRST-PARTY FUNDING + EXACT PIT MERGE
+- first-party Hyperliquid funding BTC/ETH/SOL
+- exact event timestamps
+- exact containing half-open 5m interval merge
+- no interpolation / no forward fill
+- writes holdout-2025-h2-funding and holdout-2025-h2-funded only
+
 [THEN] Assemble canonical HOLDOUT datasets/manifests.
 [GATE] Independent HOLDOUT source_audit ready_for_locked_baseline_batch=true.
 [THEN] Run exact frozen DEVELOPMENT configuration on HOLDOUT; record out-of-sample metrics without retuning.
@@ -63,21 +70,25 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_holdout_volume_htf_batch.py tests/test_backtest_binance_public_rolling_volume.py tests/test_backtest_binance_public_htf_context.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_holdout_funding_merge_batch.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-PLAN AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.holdout_volume_htf_batch --root backend\data\research\historical --manifest backend\data\research\historical\holdout-volume-htf-stage-2025-h2.json
-Expected: HOLDOUT_VOLUME_HTF_PLANNED; volume_normalized_output_count=0; htf_normalized_output_count=0. Record actual volume_object_count from the plan rather than assuming it.
-
-EXECUTE AFTER PLAN GREEN
+REAL VOLUME+HTF EXECUTION — RUN NOW
 backend\.venv\Scripts\python.exe -m app.backtest.holdout_volume_htf_batch --root backend\data\research\historical --manifest backend\data\research\historical\holdout-volume-htf-stage-2025-h2.json --execute
 Expected controls: HOLDOUT_VOLUME_HTF_EXECUTED; volume_normalized_output_count=3; pit_rolling_volume_context_complete=true; htf_normalized_output_count=3; completed_hourly_only=true; current_state_backfill_used=false; live=false.
 
+FUNDING PLAN — AFTER VOLUME+HTF REAL GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.holdout_funding_merge_batch --root backend\data\research\historical --manifest backend\data\research\historical\holdout-funding-merge-stage-2025-h2.json
+Expected: HOLDOUT_FUNDING_MERGE_PLANNED; funding_normalized_output_count=0; funded_output_count=0.
+
+FUNDING EXECUTION — AFTER PLAN GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.holdout_funding_merge_batch --root backend\data\research\historical --manifest backend\data\research\historical\holdout-funding-merge-stage-2025-h2.json --execute
+Expected controls: HOLDOUT_FUNDING_MERGE_EXECUTED; funding_normalized_output_count=3; funded_output_count=3; exact_event_timestamps=true; interpolation_used=false; forward_fill_used=false; current_state_backfill_used=false.
+
 WHAT REMAINS
-1 Validate HOLDOUT volume+HTF focused/full tests.
-2 Run volume+HTF plan and real execution.
-3 Acquire HOLDOUT first-party funding and exact-event PIT merge.
+1 Real HOLDOUT volume+HTF execution and verification.
+2 Validate funding+merge wrapper focused/full tests.
+3 Run funding+merge plan and real execution.
 4 Assemble canonical HOLDOUT datasets/manifests.
 5 Independent HOLDOUT source_audit GREEN.
 6 Run frozen configuration on HOLDOUT and record OOS evidence.
