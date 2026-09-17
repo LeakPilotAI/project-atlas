@@ -35,10 +35,14 @@ def test_duplicate_timestamp_fails_closed(tmp_path:Path):
     else:raise AssertionError("expected duplicate failure")
 
 
-def test_gap_fails_closed(tmp_path:Path):
+def test_gap_fails_closed_with_exact_location(tmp_path:Path):
     p=tmp_path/"a.zip";_zip(p,[["2024-07-01 00:00:00","BTCUSDT","1","2"],["2024-07-01 00:10:00","BTCUSDT","1","3"]])
     try:normalize(inputs=[p],provider_symbol="BTCUSDT",start_utc="2024-07-01T00:00:00Z",end_utc="2024-07-01T00:15:00Z",output=tmp_path/"o.csv")
-    except RuntimeError as e:assert "cadence gaps" in str(e)
+    except RuntimeError as e:
+        text=str(e)
+        assert "cadence gaps: 1" in text
+        assert "2024-07-01T00:00:00Z -> 2024-07-01T00:10:00Z" in text
+        assert "600s, missing=1" in text
     else:raise AssertionError("expected gap failure")
 
 
