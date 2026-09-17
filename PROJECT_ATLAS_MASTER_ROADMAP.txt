@@ -1,23 +1,22 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-17
 Branch: chatgpt/atlas-rebuild-v1
-Current cycle: QUALITY DIPS V2 — PATIENT CAPITAL
+Current cycle: QUALITY DIPS V2.1 — RUNTIME OPERATIONAL REPAIR
 
 PRESERVED CLOSED CHECKPOINT
-Prior Atlas engineering/historical evidence remains closed and immutable. Historical perps experiment: FAILED_NEGATIVE. Final desktop operational checkpoint recorded. PAPER/SHADOW recovery GREEN. V2 does not relabel, retune, or overwrite those results.
+Prior Atlas engineering/historical evidence remains closed and immutable. Historical perps experiment: FAILED_NEGATIVE. PAPER/SHADOW recovery GREEN. Frozen Quality Dips V2 policy/hurdles and historical evidence are not retuned or relabeled by V2.1.
 
 PERMANENT SECURITY / EXECUTION BOUNDARY
-Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local credential stores, or raw credential exports. Preserve backend/data. Quality Dips V2 remains research/decision support. Brokerage execution=MANUAL_ONLY. live_capital_allowed=false. automatic_real_money_execution=false. No guaranteed bottom, return, recovery, fair value, hold duration, or exit price.
+Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local credential stores, or raw credential exports. Preserve backend/data. Quality Dips remains research/decision support. Brokerage execution=MANUAL_ONLY. live_capital_allowed=false. automatic_real_money_execution=false. No guaranteed bottom, return, recovery, fair value, hold duration, or exit price.
 
-QUALITY DIPS V2 OBJECTIVE
-Prefer exceptional evidence-backed discounts in high-quality businesses over frequent dip buying. Work backward from conservative/base/optimistic normalization values. Minimum 29% conservative-upside screening hurdle; preferred 50% GENERATIONAL hurdle. Screening hurdles are not promised returns.
+QUALITY DIPS POLICY — FROZEN
+WATCH -> ACCUMULATION -> DEEP_VALUE -> GENERATIONAL; failed thesis -> THESIS_BROKEN.
+Minimum conservative-upside screening hurdle: 29%.
+Preferred GENERATIONAL conservative-upside hurdle: 50%.
+L1/L2/L3/L4: 29/35/40/50.
+These are screening hurdles, not promised returns.
 
-STATE MODEL
-WATCH -> ACCUMULATION -> DEEP_VALUE -> GENERATIONAL
-Failed thesis -> THESIS_BROKEN.
-GENERATIONAL is intentionally rare and cannot be awarded from drawdown alone.
-
-VERIFIED HISTORY
+VERIFIED HISTORY — UNCHANGED
 Phase 1: 8 focused / 805 full GREEN.
 Phase 2: 16 focused / 813 full GREEN.
 Phase 3: 24 focused / 821 full GREEN.
@@ -26,34 +25,36 @@ Phase 5: 37 focused / 834 full GREEN.
 Phase 6: 45 focused / 842 full GREEN.
 Phase 7: 53 focused / 850 full GREEN.
 Phase 8: 60 focused / 857 full GREEN.
-Phase 9: 69 focused, 2 warnings in 2.96s / 864 full, 2 warnings in 39.07s GREEN.
-Phase 10: 80 focused, 2 warnings in 3.42s / 875 full, 2 warnings in 38.09s GREEN.
-Phase 11 automated gate: 84 focused, 2 warnings in 3.08s / 879 full, 2 warnings in 42.68s GREEN.
+Phase 9: 69 focused, 2 warnings / 864 full, 2 warnings GREEN.
+Phase 10: 80 focused, 2 warnings / 875 full, 2 warnings GREEN.
+Phase 11 automated gate: 84 focused, 2 warnings / 879 full, 2 warnings GREEN.
 
-PHASE 11 — AUTOMATED GREEN / MANUAL DESKTOP SMOKE STILL EXTERNAL
-Phase 11 commits:
-0e31ef7 tests/test_quality_dips_v2_operational_closure.py
-52e67a8 atlas: fix Phase 11 desktop launch contract test
-- validates launcher composition using Join-Path instead of requiring a redundant hard-coded path
-- verifies uvicorn app.main:app on 127.0.0.1:8000
-- verifies /health readiness and dashboard launch contracts
-- verifies stop behavior preserves Docker Desktop and Genesis
-- verifies V2 remains MANUAL_ONLY with no broker execution methods
-- verifies prior FAILED_NEGATIVE perps evidence remains closed and immutable
+WHY V2.1 WAS OPENED
+The frozen V2 policy was valid but the live board could remain permanently blocked when runtime research rows did not contain the V2-specific quality composite, three explicit normalization values, or trend timestamps. V2.1 repairs evidence plumbing only; it does not loosen thresholds or manufacture upside.
 
-FINAL EVIDENCE DECISION
-RESEARCH_READY_MANUAL_ONLY
+V2.1 — CODE EXECUTED / LOCAL GREEN PENDING
+Commits:
+aa173cf atlas: ingest explicit analyst normalization targets
+8a3f8d5 atlas: populate Quality Dips V2 runtime evidence
+b965276 atlas: wire runtime evidence into V2 board
+7bb89d9 atlas: add V2 analyst target evidence cache
+fd26468 atlas: use cached analyst targets for V2 normalization
+25e7200 atlas: refresh V2 normalization evidence on board load
+1801079 atlas: test V2 runtime evidence population
+4f52aa9 atlas: isolate incomplete target runtime test
+532d36f atlas: isolate V4 API test from live V2 target refresh
 
-NOT:
-LIVE_CAPITAL_READY
-GUARANTEED_BOTTOM
-GUARANTEED_29_PERCENT
-GUARANTEED_50_PERCENT
+V2.1 BEHAVIOR
+- Quality score is populated only when at least two existing scored business pillars are available; current implementation uses the median of fundamentals, balance-sheet, cash-flow, and thesis-integrity scores.
+- Conservative/base/optimistic normalization values come from explicit provider-supplied analyst low/mean/high targets, either from newly ingested snapshot fields or a six-hour runtime cache.
+- Three valid explicit target values are still required for a complete normalization window; incomplete evidence stays incomplete.
+- Short/intermediate/long trend is populated from stored daily OHLCV using 20/50/200-day moving-average relationships, with an explicit as-of timestamp.
+- Existing provider targets on research snapshots take precedence over runtime cache.
+- Provider/cache failure stays missing and fails closed.
+- Legacy Quality Dips, V4 dashboard literals, quote overlay, accumulation alerts, and durable V2 alert policy remain preserved.
+- No brokerage execution was added.
 
-Reason:
-All automated Quality Dips V2 engineering, policy, evidence, no-lookahead, valuation, entry-planning, position-monitoring, board/API/dashboard, alerting, launcher/stop contract, and regression tests are GREEN. Prospective real-money performance and exact-bottom identification have not been established. No automatic real-money execution is enabled.
-
-FULL ROADMAP — QUALITY DIPS V2
+FULL ROADMAP — CURRENT
 [COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
 [COMPLETE/VERIFIED GREEN] Phase 1: patient-capital policy + specification
 [COMPLETE/VERIFIED GREEN] Phase 2: evidence adapter + trend passthrough
@@ -63,22 +64,14 @@ FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/VERIFIED GREEN] Phase 6: active-position trend/thesis/cost-basis monitor
 [COMPLETE/VERIFIED GREEN] Phase 7: PIT/no-lookahead validation
 [COMPLETE/VERIFIED GREEN] Phase 8: DEVELOPMENT freeze + untouched HOLDOUT boundary
-[COMPLETE/VERIFIED GREEN] Phase 9: validated V2 board + API/dashboard integration; MANUAL_ONLY
-[COMPLETE/VERIFIED GREEN] Phase 10: durable state-transition / exceptional-zone / thesis-change alerts with cooldown + dedupe
+[COMPLETE/VERIFIED GREEN] Phase 9: V2 board + API/dashboard integration; MANUAL_ONLY
+[COMPLETE/VERIFIED GREEN] Phase 10: durable state-transition / exceptional-zone / thesis-change alerts
 [COMPLETE/VERIFIED GREEN — AUTOMATED] Phase 11: desktop-contract regression + V2 evidence decision/closure
-[EXTERNAL MANUAL CHECK ONLY] Desktop shortcut smoke on the user's Windows machine
+[CURRENT — CODE EXECUTED, LOCAL GREEN PENDING] V2.1: runtime quality + normalization + trend evidence plumbing
+[AFTER GREEN] V2.1 desktop/API smoke: confirm board receives normalization evidence where provider targets exist, trend timestamps render, scanner stays running, shortcuts work, and no broker execution exists
 
-FINAL MANUAL OPERATIONAL SMOKE
-1. Double-click: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
-2. Confirm Atlas stays running and the dashboard opens.
-3. Open: http://127.0.0.1:8000/health
-4. Open: http://127.0.0.1:8000/api/investments/quality-dips/view
-5. Confirm Quality Dips V2 / PATIENT CAPITAL renders and remains MANUAL_ONLY.
-6. Double-click: C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
-7. Confirm Atlas API/processes and atlas-postgres/atlas-redis stop while Docker Desktop/Genesis remain running.
-
-CLOSURE RULE
-The Quality Dips V2 engineering cycle is closed from the automated-code-validation standpoint as RESEARCH_READY_MANUAL_ONLY. The desktop shortcut smoke remains a user-machine operational confirmation, not an unverified code phase. Preserve all frozen policy/evidence artifacts. Any future model or threshold changes must open a new cycle rather than silently retuning this frozen V2 policy.
+LOCAL VALIDATION REQUIRED BEFORE CALLING V2.1 GREEN
+Run the focused V2/V4/runtime suite, then the complete pytest suite. After automated GREEN, start Atlas from the normal desktop shortcut and inspect /health and /api/investments/quality-dips/view. The API now reports normalization_evidence_complete_symbols and normalization_evidence_requested_symbols so runtime target coverage is directly visible.
 
 NORMAL DESKTOP WORKFLOW
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
