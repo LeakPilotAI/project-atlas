@@ -9,12 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Full BTC/ETH/SOL completed-1h HTF batch is GREEN and COMPLETE. Focused HTF tests: 7 passed in 0.51s. Full regression: 741 passed, 2 warnings in 37.33s; 0 failures. Full batch execution produced normalized_outputs=3 status=DERIVED_COMPLETED_1H_HTF_CONTEXT.
+First-party Hyperliquid funding acquisition code is locally GREEN under the original single-page implementation: focused tests 3 passed in 0.27s; full regression 744 passed, 2 warnings in 40.32s. The real BTC locked-window run exposed a source-pagination defect in Atlas: the endpoint returned exactly 500 rows and stopped at 2024-07-21T19:00:00.124Z, so the requested [2024-07-01,2025-01-01) window was NOT fully acquired. This is not accepted as a complete funding artifact.
 
-EXECUTED FIRST-PARTY HYPERLIQUID FUNDING ACQUISITION — LOCAL TEST PENDING
-ba1f38a atlas: add first-party Hyperliquid funding history acquisition
-d539fbd atlas: test first-party Hyperliquid funding history
-New research-only acquisition calls Hyperliquid's public /info endpoint with type=fundingHistory for BTC/ETH/SOL. It preserves exact returned funding event timestamps and rates, rejects duplicates/non-ascending data, emits SHA-256 provenance, and does not interpolate or use current-state funding. No live path.
+EXECUTED FUNDING PAGINATION FIX — LOCAL TEST PENDING
+a61e6b4 atlas: paginate Hyperliquid funding history
+375fc33 atlas: test paginated funding history
+The acquisition now repeatedly requests fundingHistory from cursor=last_event_ms+1 until the requested end or a short/empty page is reached. It preserves exact event timestamps/rates, dedupes page-boundary overlap only, fails closed on non-ascending cross-page data or lack of forward progress, records page_count/pagination policy, and still performs no interpolation or current-state backfill.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -48,20 +48,25 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Full BTC/ETH/SOL 2024-H2 rolling-volume batch — 21 raw objects -> 3 outputs
 [COMPLETE/VERIFIED] Real BTC completed-1h HTF derivation — 52,992 rows
 [COMPLETE/VERIFIED] Full BTC/ETH/SOL completed-1h HTF batch — 3 outputs
+[COMPLETE/VERIFIED] Original first-party funding implementation tests — 3 focused / 744 full
+[VERIFIED DEFECT] Real BTC funding probe truncated at 500 rows ending 2024-07-21; full window NOT complete
 
-[CURRENT, LOCAL TEST PENDING] FIRST-PARTY HYPERLIQUID FUNDING HISTORY
+[CURRENT, LOCAL TEST PENDING] PAGINATED FIRST-PARTY HYPERLIQUID FUNDING HISTORY
 - public /info fundingHistory endpoint
 - BTC/ETH/SOL only
 - exact returned event timestamps/rates preserved
-- no interpolation
-- no current-state backfill
-- duplicate/non-ascending event timestamps fail closed
-- SHA-256 output provenance
+- cursor advances last_event_ms+1 across 500-row pages
+- page-boundary overlap deduped without synthesizing events
+- no interpolation/current-state backfill
+- non-ascending/no-progress fail closed
+- page_count + output SHA-256 provenance
 - research only; no live path
 
-[NEXT AFTER LOCAL GREEN] Run a real BTC 2024-H2 funding-history acquisition. Verify non-empty event count, first/last timestamps inside [2024-07-01,2025-01-01), exact-event semantics, and output SHA-256. Then batch BTC/ETH/SOL funding artifacts.
+[NEXT AFTER LOCAL GREEN] Re-run the real BTC 2024-H2 funding acquisition. The last_timestamp must extend through the locked window's final funding events near 2024-12-31, row_count must exceed 500, and page_count must exceed 1. Do not accept the artifact if it still terminates in July.
 
-[THEN] Implement PIT merge of first-party funding events into 5m historical bars without synthesizing funding between event timestamps.
+[THEN] Batch BTC/ETH/SOL first-party funding artifacts for the locked 2024-H2 window.
+
+[THEN] Implement PIT merge of exact funding events into 5m historical bars without inventing funding between event timestamps.
 
 [THEN] Merge candles + first-party funding + PIT OI + rolling 24h volume + completed HTF -> canonical BTC/ETH/SOL datasets/manifests with raw source SHA-256 values and OI-gap provenance -> source_audit ready_for_locked_baseline_batch=true.
 
@@ -78,13 +83,14 @@ git reset --hard origin/chatgpt/atlas-rebuild-v1
 backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_hyperliquid_funding_history.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-REAL BTC FUNDING ACQUISITION — AFTER TESTS GREEN
+RE-RUN REAL BTC FUNDING ACQUISITION — AFTER TESTS GREEN
 backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_funding_history --symbol BTC --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --output backend\data\research\historical\dev-2024-h2-funding\BTC-funding.csv --report backend\data\research\historical\dev-2024-h2-funding\BTC-funding.normalization.json
+Expected diagnostic properties: row_count > 500, page_count > 1, last_timestamp near 2024-12-31 rather than 2024-07-21.
 
 WHAT REMAINS
-1 Validate funding-history focused/full tests.
-2 Real BTC 2024-H2 funding acquisition + provenance inspection.
-3 Batch BTC/ETH/SOL first-party funding artifacts.
+1 Validate paginated funding focused/full tests.
+2 Re-run real BTC 2024-H2 funding acquisition and verify full-window coverage.
+3 Batch BTC/ETH/SOL funding artifacts.
 4 PIT merge funding events into 5m research bars.
 5 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
 6 Locked DEVELOPMENT baseline.
