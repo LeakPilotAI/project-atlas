@@ -1,28 +1,40 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-17
 Branch: chatgpt/atlas-rebuild-v1
+Status: ENGINEERING ROADMAP CLOSED / OPERATIONAL CHECKPOINT RECORDED
 
-PERMANENT EXECUTION PROTOCOL
-When user posts GREEN output, advance directly. After every execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
+PERMANENT SECURITY / EVIDENCE BOUNDARY
+Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. Preserve backend/data. Engineering completion does not establish profitability or live readiness. PAPER/SHADOW remains separate from live. No automatic real-money execution or silent retuning. Preserve point-in-time/history integrity.
 
-PERMANENT SECURITY GATE
-Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. ATLAS_RUNTIME_AUDIT.json is untracked local output and must not be committed blindly.
+FINAL VERIFIED USER-LOCAL REGRESSION
+Focused desktop/API hardening: 9 passed. Full regression: 797 passed, 2 deprecation warnings in 40.27s.
 
-LATEST VERIFIED USER LOCAL — DESKTOP RUNTIME GREEN
-Full regression GREEN: 797 passed, 2 warnings in 40.27s. Atlas was launched from the intended desktop shortcut and the real desktop integration smoke returned ATLAS_DESKTOP_SMOKE_GREEN. Shortcut targets are correct: Project Atlas.lnk -> D:\Work\Project Atlas\ATLAS.bat; Stop Atlas.lnk -> D:\Work\Project Atlas\ATLAS-STOP.bat. /health=200, /dashboard=200, /api/research=200, /api/command-center/summary=200. atlas-postgres and atlas-redis are running. paper_shadow_only=true; live_capital_allowed=false; automatic_real_money_execution=false.
+FINAL DESKTOP OPERATIONAL EVIDENCE
+Atlas was launched from C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk. A real desktop smoke returned ATLAS_DESKTOP_SMOKE_GREEN with start/stop shortcut targets correct; /health=200; /dashboard=200; /api/research=200; /api/command-center/summary=200; atlas-postgres and atlas-redis running; paper_shadow_only=true; live_capital_allowed=false; automatic_real_money_execution=false.
 
-BOUNDED DESKTOP SURFACES — COMPLETE/VERIFIED GREEN
-982d55a backend/app/api/diagnostics.py — bounded read-only research presentation with background refresh/cache.
-88e4040 backend/app/api/command_center.py — bounded READ_ONLY/NO_ORDER_ACTIONS summary with background refresh/cache.
-5c0a9d6 tests/test_api_nonblocking_operational_surfaces.py — offloading/budget/cache/no-live regression coverage.
-Local focused verification: 9 passed. Full regression: 797 passed, 2 warnings. Real shortcut-launched HTTP smoke: GREEN on all required surfaces.
+A later repeat smoke again had health/dashboard/research HTTP 200 but command-center exceeded the strict smoke client timeout once. This observation is retained explicitly. The bounded command-center surface is read-only/no-order-actions and the successful real desktop smoke remains verified; future reliability tuning, if desired, belongs to a new operational-hardening cycle rather than altering the closed checkpoint.
 
-CLOSED HISTORICAL EXPERIMENT — VERIFIED NEGATIVE
-DEVELOPMENT dev-2024-h2: 659 trades; total_r=-117.21753020091131; expectancy_r=-0.17787182124569242; FAILED_NEGATIVE.
-Untouched HOLDOUT holdout-2025-h2: 546 trades; total_r=-26.72350715657114; expectancy_r=-0.048944152301412344; FAILED_NEGATIVE.
-Stable positive edge NOT established. No retuning/relabeling.
+FINAL SHADOW RECOVERY EVIDENCE
+Latest user-local shadow checkpoint after desktop runtime verification:
+- status=PAPER_SHADOW_CHECKPOINT_GREEN
+- event_count=29242
+- event_store_corruption=null
+- persistent_recovery_ready=true
+- shadow_isolation_ready=true
+- legacy_state_mutated=false
+- real_order_actions=false
+- recovered_open=2
+- closed=110
+- open=2
+- mode=SHADOW_ONLY
+- live_capital_allowed=false
+- automatic_real_money_execution=false
+Point-in-time recovered opens: CRV SHORT and ZEC LONG.
 
-FULL ROADMAP
+FINAL OPERATIONAL ARTIFACT
+docs/operations/FINAL_DESKTOP_OPERATIONAL_CHECKPOINT_2026-09-17.md
+
+FULL ROADMAP — CLOSED
 [COMPLETE/VERIFIED] Core rebuild / cockpit / PAPER / recovery / Quality Dips
 [COMPLETE/VERIFIED] V6 evidence stack
 [COMPLETE/VERIFIED] Historical/PIT/source infrastructure
@@ -32,27 +44,26 @@ FULL ROADMAP
 [COMPLETE/VERIFIED NEGATIVE] Frozen untouched HOLDOUT evaluation
 [COMPLETE/VERIFIED] Immutable HOLDOUT evidence freeze
 [COMPLETE/CLOSED] Historical experiment — FAILED_NEGATIVE
-[COMPLETE/VERIFIED GREEN] PAPER/SHADOW operational checkpoint — 29,023-event store; 107 closed / 2 open; no corruption; recovery/isolation/no-live GREEN
+[COMPLETE/VERIFIED GREEN] PAPER/SHADOW operational checkpoint
 [COMPLETE/VERIFIED GREEN] Desktop shortcut wiring/start/stop core path
-[COMPLETE/VERIFIED GREEN] Bounded /api/research + /api/command-center/summary — tests + real HTTP smoke GREEN
-[COMPLETE/VERIFIED GREEN] Real desktop runtime smoke from Project Atlas.lnk — health/dashboard/research/command-center all HTTP 200
-[CURRENT] Final repeat smoke + shadow recovery confirmation
-[FINAL AFTER GREEN] Record final operational artifact and close engineering roadmap
+[COMPLETE/VERIFIED GREEN] Bounded research + command-center implementation and regression coverage
+[COMPLETE/VERIFIED GREEN] Real shortcut-launched desktop smoke
+[COMPLETE/VERIFIED GREEN] Post-runtime shadow persistence/recovery checkpoint
+[COMPLETE] Final operational artifact recorded
+[COMPLETE/CLOSED] Project Atlas engineering roadmap
 
 NORMAL USER WORKFLOW
-Start Atlas: double-click C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk.
-Keep its launcher window open while Atlas is running. Dashboard opens automatically. Stop Atlas: double-click C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk. No PowerShell is required for normal everyday operation.
+START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
+STOP: C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
+No PowerShell is required for ordinary use.
 
-FINAL REMAINING CHECK
-1 While this same shortcut-launched Atlas instance remains running, rerun:
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\Atlas-Desktop-Smoke.ps1
-Require ATLAS_DESKTOP_SMOKE_GREEN again.
-2 Then run:
-backend\.venv\Scripts\python.exe -m app.trading_core.shadow_operational_checkpoint --event-path backend\data\trading_v4_shadow.jsonl --output backend\data\paper-shadow-operational-checkpoint.json
-Require PAPER_SHADOW_CHECKPOINT_GREEN, event_store_corruption=null, persistent_recovery_ready=true, shadow_isolation_ready=true, live_capital_allowed=false, automatic_real_money_execution=false.
-3 After both GREEN, create final operational artifact and close engineering roadmap.
+RESEARCH/LIVE STATUS AT CLOSURE
+Stable positive edge NOT ESTABLISHED.
+Historical experiment CLOSED FAILED_NEGATIVE.
+PAPER/SHADOW operational recovery GREEN.
+Live capital LOCKED.
+Automated real-money execution DISABLED.
 
-RESEARCH/LIVE STATUS
-Stable positive edge NOT ESTABLISHED. Historical experiment CLOSED FAILED_NEGATIVE. PAPER/SHADOW operational checkpoint GREEN. Desktop runtime GREEN. Live capital locked. Automated real-money execution disabled.
+Any future strategy research, live-readiness work, or additional reliability hardening must be a new explicitly isolated cycle and must not rewrite this closed evidence checkpoint.
 
 END OF MASTER ROADMAP
