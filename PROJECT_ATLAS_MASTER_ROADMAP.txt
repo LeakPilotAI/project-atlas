@@ -9,21 +9,33 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. ATLAS_RUNTIME_AUDIT.json is untracked local output and must not be committed blindly.
 
 LATEST VERIFIED USER LOCAL
-Nonblocking endpoint repair focused tests GREEN: 6 passed in 0.75s. Full regression GREEN: 794 passed, 2 warnings in 39.57s. Branch updated to 665ac95. Shortcut targets remain correct. The subsequent desktop smoke returned connection failures for every HTTP surface and no Atlas containers, and an explicit /health probe also failed to connect. This verifies the Atlas stop path was active; it does NOT yet evaluate the repaired live endpoint behavior because the smoke was run while Atlas was stopped.
+Nonblocking endpoint repair focused tests GREEN: 6 passed. Full regression GREEN: 794 passed, 2 warnings. Desktop shortcut launch is confirmed operational: /health=200, /dashboard=200, atlas-postgres and atlas-redis running, shortcut targets correct. Real desktop smoke remains BLOCKED because /api/research and /api/command-center/summary exceed the 5-second client timeout. No-live controls remain false.
 
-STOP-PATH CHECKPOINT — VERIFIED
-- Atlas HTTP endpoint unavailable after stop: VERIFIED
-- Atlas containers absent after stop: observed in smoke
-- Project Atlas/Stop Atlas shortcuts remain correctly targeted
-- live_capital_allowed=false
-- automatic_real_money_execution=false
-- Docker Desktop/Genesis preservation still requires direct local observation if not already noted by user
+ROOT CAUSE — SECOND PASS
+Moving the work to asyncio.to_thread protected the event loop but did not make the heavy read-only aggregations finish within the desktop response budget. /api/research repeatedly scans durable research/shadow histories, including duplicated research/shadow aggregation. Command Center invokes the consolidated V6 evidence UI, which performs many durable history diagnostics on a normal summary request. These are research presentation costs, not order execution.
 
-DESKTOP TIMEOUT REPAIR — CODE/TEST GREEN, LIVE RETEST PENDING
-9cf4625 backend/app/api/command_center.py — synchronous summary aggregation moved to asyncio.to_thread
-7e19e5f backend/app/api/diagnostics.py — synchronous research aggregation moved to asyncio.to_thread
-fb7362b tests/test_api_nonblocking_operational_surfaces.py — regression coverage
-665ac95 roadmap — repair checkpoint
+EXECUTED BOUNDED-SURFACE HARDENING — LOCAL TEST PENDING
+982d55a backend/app/api/diagnostics.py
+- 2.5-second server-side response budget
+- one background research refresh at a time
+- stale-while-refreshing cache when available
+- explicit read-only WARMING fallback on cold/slow refresh
+- removes duplicate extra shadow funnel scan from diagnostics wrapper
+- removes duplicate full research_summary_text recomputation from normal API surface
+- never changes research thresholds or trading state
+
+88e4040 backend/app/api/command_center.py
+- 2.5-second server-side response budget
+- one background command-center refresh at a time
+- stale-while-refreshing cache when available
+- explicit READ_ONLY / NO_ORDER_ACTIONS WARMING fallback on cold/slow refresh
+- live_capital_allowed=false; automatic_real_money_execution=false
+
+5c0a9d6 tests/test_api_nonblocking_operational_surfaces.py
+- cache isolation/reset in tests
+- preserves to_thread regression coverage
+- verifies both WARMING fallbacks are read-only/no-live
+- verifies server response budgets remain below 5-second desktop smoke timeout
 
 CLOSED HISTORICAL EXPERIMENT — VERIFIED NEGATIVE
 DEVELOPMENT dev-2024-h2: 659 trades; total_r=-117.21753020091131; expectancy_r=-0.17787182124569242; FAILED_NEGATIVE.
@@ -41,22 +53,28 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Immutable HOLDOUT evidence freeze
 [COMPLETE/CLOSED] Historical experiment — FAILED_NEGATIVE
 [COMPLETE/VERIFIED GREEN] PAPER/SHADOW operational checkpoint — 29,023-event store; 107 closed / 2 open; no corruption; recovery/isolation/no-live GREEN
-[COMPLETE/VERIFIED] Desktop shortcut wiring
-[COMPLETE/VERIFIED] Desktop stop path — API unavailable and Atlas containers absent after stop
-[COMPLETE/TEST GREEN, LIVE RETEST PENDING] Nonblocking /api/research + /api/command-center/summary repair
-[CURRENT] Restart Atlas with repaired code and rerun live desktop smoke
+[COMPLETE/VERIFIED] Desktop shortcut wiring/start/stop core path
+[CURRENT, LOCAL TEST PENDING] Bounded research + command-center desktop surfaces
+[NEXT] Real shortcut restart -> desktop smoke -> shadow recovery
+[FINAL AFTER GREEN] Record final operational artifact and close engineering roadmap
 
-NEXT LOCAL ACTION
-1 Double-click C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk.
-2 Wait until its launcher window says API healthy / Atlas is running.
-3 In a SECOND PowerShell:
+LOCAL UPDATE / TEST
+cd "D:\Work\Project Atlas"
+git fetch origin
+git checkout chatgpt/atlas-rebuild-v1
+git reset --hard origin/chatgpt/atlas-rebuild-v1
+backend\.venv\Scripts\python.exe -m pytest tests/test_api_nonblocking_operational_surfaces.py tests/test_windows_desktop_integration_scripts.py -q
+backend\.venv\Scripts\python.exe -m pytest -q
+
+REAL DESKTOP RETEST
+1 Stop the currently running Atlas using C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk so the API cannot retain old Python code.
+2 Double-click C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and wait for API healthy / Atlas is running.
+3 In a second PowerShell:
 cd "D:\Work\Project Atlas"
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\Atlas-Desktop-Smoke.ps1
-Expected: status=ATLAS_DESKTOP_SMOKE_GREEN with health/dashboard/research/command_center all ok and no-live controls false.
-4 Then rerun shadow operational recovery:
-backend\.venv\Scripts\python.exe -m app.trading_core.shadow_operational_checkpoint --event-path backend\data\trading_v4_shadow.jsonl --output backend\data\paper-shadow-operational-checkpoint.json
-Require PAPER_SHADOW_CHECKPOINT_GREEN and event_store_corruption=null.
-5 If both GREEN, final remaining action is record final operational artifact and close engineering roadmap.
+Expected: ATLAS_DESKTOP_SMOKE_GREEN. Heavy surfaces may report operational_surface.state=WARMING or STALE_WHILE_REFRESHING while their read-only background snapshot finishes, but they must return HTTP 200 inside the smoke budget.
+4 Rerun the same smoke after ~30 seconds; expected HTTP 200 again, normally with cached/fresh research presentation available.
+5 Run shadow_operational_checkpoint against backend\data\trading_v4_shadow.jsonl and require GREEN/no corruption.
 
 RESEARCH/LIVE STATUS
 Stable positive edge NOT ESTABLISHED. Historical experiment CLOSED FAILED_NEGATIVE. PAPER/SHADOW operational checkpoint GREEN. Live capital locked. Automated real-money execution disabled.
