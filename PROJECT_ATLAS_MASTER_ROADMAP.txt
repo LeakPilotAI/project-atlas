@@ -9,12 +9,20 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Historical OI normalization is GREEN. Focused OI-normalizer tests: 5 passed in 0.29s. Full regression: 724 passed, 2 warnings in 36.75s; 0 failures. Real BTCUSDT 2024-07-01 OI normalization produced exactly 288 rows, 2024-07-01T00:00:00Z through 2024-07-01T23:55:00Z at 300-second cadence, output SHA256=2fccc0076914ab52279da301643d64f4b8c75dd68c93a2216cd290fb89ea82dd, raw SHA256=e4236dcb22fda0ce5c881b7cbf9a4a9c3b220d879dd14a0b53c6c47e6d1c9ca7, pit_oi_context_complete=true, rolling_volume_context_complete=false. The full locked 2024-H2 candle batch is already complete: 36 checksum-verified raw archives -> 6 normalized BTC/ETH/SOL 5m/1h outputs.
+Full historical OI batch tests are GREEN: focused batch tests 2 passed in 0.30s. Full regression = 726 passed, 2 warnings in 36.47s; 0 failures. Real full OI batch execution was manually interrupted after appearing frozen. Traceback showed it blocked in a serial urllib HTTPS read. The design issue was operational: 552 serial downloads, each allowed a long blocking timeout, no progress output, and no resume/skip logic for already checksum-verified local objects.
 
-EXECUTED NEXT STEP — LOCAL TEST PENDING
-ca6047d atlas: add full 2024-H2 historical OI metrics batch
-998e3a9 atlas: test full historical OI metrics batch
-New batch orchestrator plans/acquires daily checksum-verified BTCUSDT/ETHUSDT/SOLUSDT public futures metrics and normalizes one provider-neutral 5m OI artifact per Atlas symbol using the verified OI normalizer. Locked 2024-H2 contains 184 UTC days, therefore 552 raw metrics objects across 3 symbols. Rolling-volume context remains incomplete and live/automatic execution remain disabled.
+EXECUTED RECOVERY HARDENING — LOCAL TEST PENDING
+34be394 atlas: make metrics acquisition resumable and visible
+18393b7 atlas: test resumable metrics acquisition
+The metrics downloader now:
+- prints `[n/total] SYMBOL DATE download|skip verified` progress with flush=True
+- verifies and skips already-downloaded ZIP/CHECKSUM pairs when SHA-256 matches
+- preserves partial progress across interruption/restart
+- uses a shorter 20-second network timeout with 3 retries and bounded exponential backoff
+- deletes only `.part` temporary files on failed attempts
+- wraps non-HTTP network failures with the exact symbol/date and exception type
+- retains checksum verification before every object is accepted
+- does not modify or remove existing raw research data
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -40,21 +48,19 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] One-day BTC real metrics checksum/schema/cadence probe — 288 rows/day, 300-second cadence
 [COMPLETE/VERIFIED] Historical OI metrics normalizer — 5 focused / 724 full
 [COMPLETE/VERIFIED] Real BTC one-day OI normalization — 288 rows, PIT OI complete for artifact
+[COMPLETE/VERIFIED] Full 2024-H2 OI batch orchestration tests — 2 focused / 726 full
 
-[CURRENT, LOCAL TEST PENDING] FULL 2024-H2 HISTORICAL OI BATCH
-- backend/app/backtest/binance_public_metrics_batch.py
-- tests/test_backtest_binance_public_metrics_batch.py
-- BTC/ETH/SOL only
-- 184 UTC days in [2024-07-01,2025-01-01)
-- 552 daily checksum-verified metrics objects expected
-- execute mode normalizes 3 symbol-level 5m OI outputs
-- current-state synthesis forbidden
-- rolling_volume_context_complete=false
-- live_capital_allowed=false; automatic_real_money_execution=false
+[CURRENT, RECOVERY FIX LOCAL TEST PENDING] RESUMABLE FULL 2024-H2 HISTORICAL OI BATCH
+- existing batch remains 184 UTC days x 3 symbols = 552 objects
+- acquisition now resumes instead of restarting from zero
+- already checksum-verified objects are skipped locally
+- visible per-object progress prevents false frozen appearance
+- shorter timeout/retries prevent indefinite-looking stalls
+- output normalization still waits until all required raw objects are present and verified
 
-[NEXT AFTER LOCAL GREEN] Execute the full 2024-H2 metrics/OI batch. Preserve all raw ZIP/CHECKSUM data. Expect objects=552, normalized_outputs=3, status=ACQUIRED_AND_NORMALIZED_OI_ROLLING_VOLUME_STILL_REQUIRED.
+[NEXT AFTER LOCAL GREEN] Re-run the same full OI batch command. It will skip any valid objects already downloaded before the KeyboardInterrupt and continue from the remaining work. Expected terminal output now visibly advances with [n/552] lines and final status objects=552 normalized_outputs=3 status=ACQUIRED_AND_NORMALIZED_OI_ROLLING_VOLUME_STILL_REQUIRED.
 
-[THEN] Exact PIT rolling 24h quote-notional volume derivation from the already checksum-verified raw 5m candle archives. Use historical quote_volume, not base volume approximation and never current-state values. Include 24h warm-up semantics so the first research decision timestamp only receives a complete trailing 24-hour window.
+[THEN] Exact PIT rolling 24h quote-notional volume derivation from checksum-verified raw 5m candle archives with complete trailing-24h warm-up semantics.
 
 [THEN] Derive completed-1h HTF from verified historical 1h candles and merge first-party Hyperliquid historical funding events.
 
@@ -70,16 +76,17 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_metrics_batch.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_metrics.py tests/test_backtest_binance_public_metrics_batch.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-FULL OI BATCH — AFTER TESTS GREEN
+RESUME FULL OI BATCH — AFTER TESTS GREEN
 backend\.venv\Scripts\python.exe -m app.backtest.binance_public_metrics_batch --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-metrics --output-root backend\data\research\historical\dev-2024-h2-oi --manifest backend\data\research\historical\binance-public-oi-batch-dev-2024-h2.json --execute
+Expected visible progress: [n/552] SYMBOL DATE download|skip verified
 Expected final line: objects=552 normalized_outputs=3 status=ACQUIRED_AND_NORMALIZED_OI_ROLLING_VOLUME_STILL_REQUIRED
 
 WHAT REMAINS
-1 Validate full OI batch focused/full tests.
-2 Execute the 552-object full 2024-H2 metrics/OI batch.
+1 Validate resumable acquisition focused/full tests.
+2 Resume and complete the 552-object full 2024-H2 metrics/OI batch.
 3 Exact PIT rolling 24h quote-notional volume derivation with proper warm-up.
 4 Completed 1h HTF + first-party funding merge.
 5 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
