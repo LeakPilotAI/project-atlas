@@ -23,10 +23,10 @@ class PerpMicroBaselineConfig:
     max_extension_pct: float
     min_rr: float
     risk_usd: float
-    min_open_interest_usd: float
-    min_volume_24h_usd: float
     require_oi_volume: bool = True
     require_htf_alignment: bool = True
+    min_open_interest_usd: float = 75_000.0
+    min_volume_24h_usd: float = 150_000.0
 
     @classmethod
     def from_settings(cls,settings:Settings|None=None)->"PerpMicroBaselineConfig":
@@ -38,10 +38,10 @@ class PerpMicroBaselineConfig:
             max_extension_pct=float(s.perp_micro_max_extension_pct),
             min_rr=float(s.perp_micro_min_rr),
             risk_usd=float(s.perp_micro_risk_usd),
-            min_open_interest_usd=float(s.perp_micro_min_oi),
-            min_volume_24h_usd=float(s.perp_micro_min_vol),
             require_oi_volume=True,
             require_htf_alignment=bool(s.perp_micro_htf_align),
+            min_open_interest_usd=float(s.perp_micro_min_oi),
+            min_volume_24h_usd=float(s.perp_micro_min_vol),
         )
 
 
