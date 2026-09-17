@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: dcb3cc6f669a5ed5879e06543ed76bb3f338ea14
-Frontend production build GREEN. Focused maturity-sequence-stability/evidence-ui/page-contract suite: 14 passed in 0.47s. Full regression: 616 passed, 2 warnings in 36.94s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST PENDING.
+Tested commit: 9d11dac3f48295d66e4e5c7206895e58a16206ca
+Focused maturity-sequence-run-length + maturity-confirmation-sequence suite: 6 passed in 0.34s. Full regression: 619 passed, 2 warnings in 37.36s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -46,17 +46,17 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Maturity Confirmation Sequence Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Maturity Sequence Stability / Repetition Diagnostics
 [COMPLETE, VERIFIED] Maturity Sequence Stability Lightweight Surface + Presentation
-[COMPLETE, LOCAL TEST PENDING] Maturity Sequence Run-Length / Recent-Streak Diagnostics
-  - new v6_maturity_sequence_run_lengths service consumes chronological per-dimension maturity confirmation sequences only
-  - consecutive identical outcomes are grouped into explicit runs
-  - each dimension exposes sequence, sequence_length, run_count, runs, current_run_length, current_run_outcome, previous_run_outcome, previous_run_length, and run_boundary_present
-  - all eight maturity dimensions remain independent and descriptive
-  - candidate output preserves observation_count, confirmation_check_count, minimum_observations_required=3, duplicate-refresh resistance, new-evidence-only semantics, human-review-only, and production_promoted=False
-  - missing durable files fail closed with no candidates
-  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None, automatic_promotion=False
-  - production strategy remains unchanged; live capital and automatic real-money execution remain disabled
-[NEXT] Local focused maturity-sequence-run-length + maturity-confirmation-sequence regression and full regression.
-[NEXT AFTER GREEN] Maturity Sequence Run-Length Lightweight Surface + Presentation: expose current/prior per-dimension run lengths and boundaries through the durable research-evidence endpoint and /research without scoring, ranking, promotion, or live unlock.
+[COMPLETE, VERIFIED] Maturity Sequence Run-Length / Recent-Streak Diagnostics
+[COMPLETE, LOCAL TEST/BUILD PENDING] Maturity Sequence Run-Length Lightweight Surface + Presentation
+  - research_evidence_ui exposes maturity_sequence_run_length_diagnostics through the durable lightweight endpoint
+  - all eight maturity dimensions preserve sequence, sequence_length, run_count, runs, current_run_length, current_run_outcome, previous_run_outcome, previous_run_length, and run_boundary_present
+  - /research adds a dedicated maturity sequence run-length / recent-streak diagnostics panel
+  - panel renders current run, prior run, total run count, boundary state, full sequence, and explicit run history
+  - evidence-ui tests cover normal and missing-file fail-closed run-length behavior
+  - page contract verifies method, current/previous run presentation, run count, boundary, and run-history display
+  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None; no ranking, tuning, production promotion, or live-capital unlock
+[NEXT] Local frontend production build + focused maturity-run-length/evidence-ui/page-contract regression + full regression.
+[NEXT AFTER GREEN] Maturity Sequence Run Boundary Transition Diagnostics: describe each change between consecutive outcome runs (from outcome/length -> to outcome/length) per maturity dimension without converting transitions into a score, rank, promotion rule, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -65,20 +65,23 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified build+regression checkpoint: 616 passed at dcb3cc6 with frontend production build GREEN. Current Maturity Sequence Run-Length / Recent-Streak Diagnostics is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified build+regression checkpoint: 619 passed at 9d11dac. Current Maturity Sequence Run-Length Lightweight Surface + Presentation is LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_sequence_run_lengths.py tests/test_v6_maturity_confirmation_sequences.py -q
+Push-Location frontend
+npm run build
+Pop-Location
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_sequence_run_lengths.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Maturity Sequence Run-Length Lightweight Surface + Presentation:
-- expose per-dimension current/prior runs, run counts, run boundaries, and latest same-outcome streak length through the durable lightweight research evidence endpoint;
-- render current run outcome/length and previous run boundary on /research;
+Maturity Sequence Run Boundary Transition Diagnostics:
+- consume explicit per-dimension run histories only;
+- report chronological transitions between adjacent runs, including from_outcome/from_length and to_outcome/to_length;
 - preserve duplicate-refresh resistance and qualifying-new-evidence semantics;
 - no aggregate readiness score, percentage, favorable-window rank, tuning, promotion, or live readiness decision;
 - human review only; no real-money execution.
