@@ -9,20 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Full historical OI batch tests are GREEN: focused batch tests 2 passed in 0.30s. Full regression = 726 passed, 2 warnings in 36.47s; 0 failures. Real full OI batch execution was manually interrupted after appearing frozen. Traceback showed it blocked in a serial urllib HTTPS read. The design issue was operational: 552 serial downloads, each allowed a long blocking timeout, no progress output, and no resume/skip logic for already checksum-verified local objects.
+Resumable acquisition is GREEN: focused metrics+batch tests 7 passed in 0.40s; full regression 727 passed, 2 warnings in 37.08s; 0 failures. The resumed 2024-H2 run checksum-verified all 552 daily raw metrics objects and reached normalization. It then correctly failed closed because one symbol's merged historical OI series contains exactly one non-300-second cadence transition. No data was fabricated or silently forward-filled.
 
-EXECUTED RECOVERY HARDENING — LOCAL TEST PENDING
-34be394 atlas: make metrics acquisition resumable and visible
-18393b7 atlas: test resumable metrics acquisition
-The metrics downloader now:
-- prints `[n/total] SYMBOL DATE download|skip verified` progress with flush=True
-- verifies and skips already-downloaded ZIP/CHECKSUM pairs when SHA-256 matches
-- preserves partial progress across interruption/restart
-- uses a shorter 20-second network timeout with 3 retries and bounded exponential backoff
-- deletes only `.part` temporary files on failed attempts
-- wraps non-HTTP network failures with the exact symbol/date and exception type
-- retains checksum verification before every object is accepted
-- does not modify or remove existing raw research data
+EXECUTED DIAGNOSTIC HARDENING — LOCAL TEST PENDING
+0f2d10f atlas: diagnose historical OI cadence gaps precisely
+1b5b543 atlas: test precise OI gap diagnostics
+The normalizer still fails closed, but now reports the exact timestamps around every cadence gap (up to the first 10), delta seconds, and number of missing 5m intervals. This is intentionally diagnostic only: Atlas does not interpolate or weaken the PIT OI requirement before inspecting the real source discontinuity.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -46,19 +38,22 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Full real 2024-H2 candle batch — 36 raw objects -> 6 normalized outputs
 [COMPLETE/VERIFIED] Historical PIT metrics acquisition
 [COMPLETE/VERIFIED] One-day BTC real metrics checksum/schema/cadence probe — 288 rows/day, 300-second cadence
-[COMPLETE/VERIFIED] Historical OI metrics normalizer — 5 focused / 724 full
-[COMPLETE/VERIFIED] Real BTC one-day OI normalization — 288 rows, PIT OI complete for artifact
-[COMPLETE/VERIFIED] Full 2024-H2 OI batch orchestration tests — 2 focused / 726 full
+[COMPLETE/VERIFIED] Historical OI metrics normalizer
+[COMPLETE/VERIFIED] Real BTC one-day OI normalization
+[COMPLETE/VERIFIED] Full 2024-H2 OI batch orchestration
+[COMPLETE/VERIFIED] Resumable/checksum-verified acquisition — 7 focused / 727 full
+[COMPLETE/VERIFIED RAW] All 552 locked 2024-H2 metrics archives downloaded/checksum-verified
 
-[CURRENT, RECOVERY FIX LOCAL TEST PENDING] RESUMABLE FULL 2024-H2 HISTORICAL OI BATCH
-- existing batch remains 184 UTC days x 3 symbols = 552 objects
-- acquisition now resumes instead of restarting from zero
-- already checksum-verified objects are skipped locally
-- visible per-object progress prevents false frozen appearance
-- shorter timeout/retries prevent indefinite-looking stalls
-- output normalization still waits until all required raw objects are present and verified
+[CURRENT, LOCAL TEST PENDING] EXACT REAL OI GAP DIAGNOSIS
+- real normalization reached after all 552 raw objects were acquired
+- source contains exactly one cadence discontinuity somewhere in BTC/ETH/SOL 2024-H2
+- normalizer correctly failed closed rather than filling it
+- diagnostic now emits exact after/before timestamps, delta_seconds and missing_intervals
+- next run should be fast because all 552 raw objects already exist and verify/skip locally
 
-[NEXT AFTER LOCAL GREEN] Re-run the same full OI batch command. It will skip any valid objects already downloaded before the KeyboardInterrupt and continue from the remaining work. Expected terminal output now visibly advances with [n/552] lines and final status objects=552 normalized_outputs=3 status=ACQUIRED_AND_NORMALIZED_OI_ROLLING_VOLUME_STILL_REQUIRED.
+[NEXT AFTER LOCAL GREEN] Re-run the same full batch once. All 552 objects should say skip verified; normalization will then print the exact real cadence-gap location. Use that evidence to determine whether the source has a single missing provider observation, a malformed timestamp, or another documented discontinuity. Do not interpolate until that evidence is inspected.
+
+[THEN] Implement the evidence-based PIT gap policy. Preferred invariant: preserve missingness explicitly and only allow a bounded as-of carry when its age is known and encoded, if justified by OI being a sampled state variable; otherwise exclude the affected decision interval. Never fabricate an unknown observation.
 
 [THEN] Exact PIT rolling 24h quote-notional volume derivation from checksum-verified raw 5m candle archives with complete trailing-24h warm-up semantics.
 
@@ -76,24 +71,25 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_metrics.py tests/test_backtest_binance_public_metrics_batch.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_metrics_normalize.py tests/test_backtest_binance_public_metrics.py tests/test_backtest_binance_public_metrics_batch.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-RESUME FULL OI BATCH — AFTER TESTS GREEN
+EXACT GAP DIAGNOSIS — AFTER TESTS GREEN
 backend\.venv\Scripts\python.exe -m app.backtest.binance_public_metrics_batch --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-metrics --output-root backend\data\research\historical\dev-2024-h2-oi --manifest backend\data\research\historical\binance-public-oi-batch-dev-2024-h2.json --execute
-Expected visible progress: [n/552] SYMBOL DATE download|skip verified
-Expected final line: objects=552 normalized_outputs=3 status=ACQUIRED_AND_NORMALIZED_OI_ROLLING_VOLUME_STILL_REQUIRED
+Expected acquisition behavior: 552 skip verified lines, then either successful normalization or a fail-closed message containing the exact cadence-gap timestamps.
 
 WHAT REMAINS
-1 Validate resumable acquisition focused/full tests.
-2 Resume and complete the 552-object full 2024-H2 metrics/OI batch.
-3 Exact PIT rolling 24h quote-notional volume derivation with proper warm-up.
-4 Completed 1h HTF + first-party funding merge.
-5 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
-6 Locked DEVELOPMENT baseline.
-7 Freeze -> HOLDOUT -> candidates.
-8 PAPER/SHADOW operational checkpoint.
-9 Final desktop integration.
+1 Validate precise gap-diagnostic focused/full tests.
+2 Re-run local batch and capture exact real gap location.
+3 Implement evidence-based PIT gap handling without fabricated observations.
+4 Complete normalized 2024-H2 OI artifacts.
+5 Exact PIT rolling 24h quote-notional volume with warm-up.
+6 Completed 1h HTF + first-party funding merge.
+7 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
+8 Locked DEVELOPMENT baseline.
+9 Freeze -> HOLDOUT -> candidates.
+10 PAPER/SHADOW operational checkpoint.
+11 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
