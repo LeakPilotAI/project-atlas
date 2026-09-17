@@ -9,17 +9,19 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Locked DEVELOPMENT input freeze is GREEN and COMPLETE. Focused tests: 2 passed in 0.32s. Full regression: 759 passed, 2 warnings in 39.39s; 0 failures. Freeze execution loaded BTC/ETH/SOL canonical datasets with 52,990 rows each, total_rows=158970, source_audit_green=true, source_audit_id=ae70db3328bd71604414, threshold_retuning_allowed=false, holdout_data_touched=false, live_capital_allowed=false, and status=LOCKED_DEVELOPMENT_BASELINE_INPUTS_FROZEN.
+Optimized locked DEVELOPMENT baseline runner is GREEN and COMPLETE. Focused tests: 2 passed in 0.15s. Full regression: 761 passed, 2 warnings in 42.65s; 0 failures. The real locked dev-2024-h2 run completed without the previous quadratic freeze.
 
-LOCKED DEVELOPMENT BASELINE TEST FIX — VERIFIED LOCALLY
-Corrected HTF test semantics are GREEN: focused baseline-run tests 2 passed in 0.14s; full regression 761 passed, 2 warnings in 38.54s. The production HTF policy remains unchanged: UP permits LONG/blocks SHORT; DOWN permits SHORT/blocks LONG.
+LOCKED DEVELOPMENT BASELINE — VERIFIED NEGATIVE EVIDENCE
+Aggregate: trade_count=659, total_r=-117.21753020091131, expectancy_r=-0.17787182124569242.
+BTC: 127 trades, win_rate=0.2992125984251969, expectancy_r=-0.24497867956413943, total_r=-31.11229230464571, profit_factor=0.6736527513765005, run_id=e84cb2b8a191c8a0b3c2.
+ETH: 206 trades, win_rate=0.3592233009708738, expectancy_r=-0.08322733855596981, total_r=-17.14483174252978, profit_factor=0.8796660660219333, run_id=048d6203cdb33594a3a3.
+SOL: 326 trades, win_rate=0.3128834355828221, expectancy_r=-0.21153498820164363, total_r=-68.96040615373582, profit_factor=0.7147090311474995, run_id=d0834633cc5edf771dc3.
+Controls remained intact: threshold_retuning_allowed=false, holdout_data_touched=false, production_strategy_modified=false, live_capital_allowed=false, automatic_real_money_execution=false.
 
-LATEST RUNTIME RED — PERFORMANCE, NOT LOGIC
-The real locked DEVELOPMENT baseline run was manually interrupted with KeyboardInterrupt while executing the signal hot path. Traceback showed repeated closes=[b.close for b in history] over growing PIT history on each decision bar. With ~52,990 rows per symbol this creates quadratic Python work and presents as a freeze. No evidence of deadlock or data corruption.
-
-PERFORMANCE FIX EXECUTED — LOCAL RETEST PENDING
-1ab5853 atlas: optimize locked baseline signal hot path
-Updated backend/app/backtest/locked_development_baseline_run.py. The runner now precomputes the immutable close series and timestamp indexes once per symbol, and evaluates RSI from only the exact rsi_period+1 slice needed at the current PIT index. Extension uses the exact precomputed lookback anchor. It does NOT read future bars for the decision: the current index is derived from history[-1], and only data at or before that index is used. Locked thresholds, HTF semantics, fees, slippage, funding, next-bar fill behavior, holdout isolation, and live locks are unchanged.
+EXECUTED DEVELOPMENT DECISION FREEZE — LOCAL TEST PENDING
+c92dd9d atlas: freeze negative development baseline decisions
+c8e71f1 atlas: test development decision freeze
+New research-only freeze consumes the completed locked DEVELOPMENT baseline summary and records it as immutable evidence before any HOLDOUT access. A negative DEVELOPMENT result becomes development_result=FAILED_NEGATIVE. It forbids same-window optimization/retuning, freezes parameters, preserves holdout_data_touched=false, and does not unlock live capital.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -49,29 +51,28 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Canonical BTC/ETH/SOL PIT datasets — 52,990 rows each; 2 incomplete OI rows excluded
 [COMPLETE/VERIFIED GREEN] Canonical source audit — ready_for_locked_baseline_batch=true
 [COMPLETE/VERIFIED] Locked DEVELOPMENT input freeze — total_rows=158970; holdout untouched
-[COMPLETE/VERIFIED] Corrected locked baseline HTF tests — 761 full tests GREEN before runtime run
+[COMPLETE/VERIFIED] Corrected locked baseline HTF tests
+[COMPLETE/VERIFIED] Optimized deterministic locked DEVELOPMENT baseline runner
+[COMPLETE/VERIFIED NEGATIVE] Locked DEVELOPMENT baseline — 659 trades, -117.2175R, -0.17787R expectancy
 
-[CURRENT, LOCAL RETEST PENDING] OPTIMIZED DETERMINISTIC LOCKED DEVELOPMENT BASELINE RUN
-- removes quadratic close-history reconstruction from signal path
-- precomputes immutable close/index structures per symbol
-- RSI sees only exact PIT slice ending at current decision bar
-- extension anchor is exact locked lookback at or before current decision bar
-- canonical source_audit must remain GREEN
-- locked thresholds only; no retuning
-- signal at bar i fills next bar open via historical engine
+[CURRENT, LOCAL TEST PENDING] DEVELOPMENT DECISION/PARAMETER FREEZE
+- consumes only completed dev-2024-h2 baseline summary
+- records exact aggregate/per-symbol evidence
+- development_result=FAILED_NEGATIVE for the current baseline
+- parameters_frozen=true
 - threshold_retuning_allowed=false
+- same_window_optimization_allowed=false
 - holdout_data_touched=false
-- production_strategy_modified=false
 - live_capital_allowed=false
 - automatic_real_money_execution=false
 
-[NEXT AFTER LOCAL GREEN] Re-run focused/full tests, then execute the locked DEVELOPMENT baseline across BTC/ETH/SOL. Capture exact per-symbol and aggregate metrics, run ids, and output paths. Treat the result as evidence only; do not tune on the same DEVELOPMENT window.
+[NEXT AFTER LOCAL GREEN] Execute the DEVELOPMENT decision freeze and verify FAILED_NEGATIVE with the exact locked metrics. This is not a reason to tune on dev-2024-h2; it is the evidence record that prevents same-window optimization.
 
-[THEN] Freeze DEVELOPMENT decisions/parameters and record whether the baseline establishes any credible positive edge. Stable positive edge must not be claimed from DEVELOPMENT alone.
+[THEN] Open the untouched HOLDOUT only after the freeze. Run the exact frozen configuration out-of-sample, with no retuning, to measure generalization. Because DEVELOPMENT is already negative, HOLDOUT is diagnostic evidence rather than a live-unlock path.
 
-[THEN] Open the untouched HOLDOUT window only after the freeze, run the exact frozen configuration, and compare out-of-sample results without retuning.
+[THEN] If both DEVELOPMENT and HOLDOUT fail, isolate future research candidates in a new DEVELOPMENT cycle/window rather than altering this frozen experiment. PAPER/SHADOW operational checkpoint remains separate.
 
-[THEN] Isolated candidates only if justified by evidence -> PAPER/SHADOW operational checkpoint -> final desktop integration.
+[FINAL] Desktop integration after research-state handling and operational verification.
 
 DESKTOP END STATE
 Validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk; services/UI/research/backtests/recovery/shutdown/logging/persistence GREEN.
@@ -81,23 +82,23 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_locked_development_baseline_run.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_development_decision_freeze.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-LOCKED DEVELOPMENT BASELINE RUN — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.locked_development_baseline_run --canonical-root backend\data\research\historical\canonical-dev-2024-h2 --output-root backend\data\research\historical\locked-development-baseline-runs\dev-2024-h2 --summary backend\data\research\historical\locked-development-baseline-summary-dev-2024-h2.json --timeframe 5m
-Expected: status=LOCKED_DEVELOPMENT_BASELINE_COMPLETE, threshold_retuning_allowed=false, holdout_data_touched=false, three per-symbol deterministic runs.
+DEVELOPMENT DECISION FREEZE — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.development_decision_freeze --baseline-summary backend\data\research\historical\locked-development-baseline-summary-dev-2024-h2.json --output backend\data\research\historical\development-decision-freeze-dev-2024-h2.json
+Expected: status=DEVELOPMENT_DECISIONS_FROZEN, development_result=FAILED_NEGATIVE, parameters_frozen=true, same_window_optimization_allowed=false, holdout_data_touched=false.
 
 WHAT REMAINS
-1 Retest optimized locked DEVELOPMENT baseline-run focused/full tests.
-2 Execute deterministic locked DEVELOPMENT baseline and record metrics.
-3 Freeze DEVELOPMENT decisions/parameters.
-4 Untouched HOLDOUT evaluation.
-5 Isolated candidates only if evidence supports them.
+1 Validate DEVELOPMENT decision-freeze focused/full tests.
+2 Execute DEVELOPMENT decision freeze.
+3 Untouched HOLDOUT acquisition/canonicalization/evaluation with exact frozen configuration.
+4 Record out-of-sample result without retuning.
+5 Start isolated next-cycle research only if justified; do not mutate frozen dev-2024-h2 experiment.
 6 PAPER/SHADOW operational checkpoint.
 7 Final desktop integration.
 
 RESEARCH/LIVE STATUS
-Prior PAPER n=903 expectancy=-0.0114R. Prior chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
+Current locked DEVELOPMENT baseline: n=659 expectancy=-0.17787182124569242R total=-117.21753020091131R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
 
 END OF MASTER ROADMAP
