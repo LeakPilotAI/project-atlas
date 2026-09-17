@@ -3,76 +3,58 @@ Updated: 2026-09-17
 Branch: chatgpt/atlas-rebuild-v1
 
 PERMANENT EXECUTION PROTOCOL
-When user says execute, implement next roadmap item directly. After EVERY execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
+When user posts GREEN output, advance directly. After every execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 PERMANENT SECURITY GATE
-Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
+Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-HOLDOUT OI wrapper focused tests are GREEN: 2 passed in 0.26s. Full regression is GREEN: 774 passed, 2 warnings in 38.38s. Plan is GREEN with object_count=552 and HOLDOUT_OI_BATCH_PLANNED. Real acquisition downloaded all 552 planned daily BTC/ETH/SOL metrics objects, then normalization correctly failed closed because untouched HOLDOUT source evidence contains 3 absent 5m observations in one on-grid gap: 2025-08-29T06:15:00Z -> 2025-08-29T06:35:00Z. The old generic safety budget was 2 missing intervals. No interpolation, forward-fill, DEVELOPMENT mutation, or HOLDOUT evaluation occurred.
+OI source-gap preservation is GREEN. Focused normalization + HOLDOUT OI tests: 9 passed in 0.56s. Full regression: 774 passed, 2 warnings in 45.79s. The real retry checksum-verified/skipped all 552 local raw objects and completed normalization with status=HOLDOUT_OI_BATCH_EXECUTED, normalized_output_count=3, pit_oi_context_complete=true. Real missing_interval_counts are BTC=3, ETH=3, SOL=3. Missing policy remains PRESERVE_ABSENT_NO_INTERPOLATION_NO_FORWARD_FILL. DEVELOPMENT evidence was not mutated; threshold retuning and same-window optimization remain disabled; HOLDOUT evaluation remains blocked before independent source_audit GREEN.
 
-LOCKED DEVELOPMENT BASELINE — VERIFIED NEGATIVE EVIDENCE
-Aggregate: trade_count=659, total_r=-117.21753020091131, expectancy_r=-0.17787182124569242. DEVELOPMENT decisions remain frozen: development_result=FAILED_NEGATIVE, parameters_frozen=true, same_window_optimization_allowed=false.
+LOCKED DEVELOPMENT BASELINE — VERIFIED NEGATIVE
+659 trades; total_r=-117.21753020091131; expectancy_r=-0.17787182124569242. development_result=FAILED_NEGATIVE; parameters frozen.
 
-EXECUTED OI SOURCE-GAP PRESERVATION FIX — LOCAL TEST PENDING
-a8ac67f atlas: make OI gap budget explicit per research window
-09469e1 atlas: preserve observed holdout OI gap
-0ffadb1 atlas: test preserved holdout OI gap policy
-The generic OI batch now accepts an explicit max_missing_intervals while retaining the existing default=2 for DEVELOPMENT/backward compatibility. The untouched holdout wrapper pins its observed source-gap allowance to exactly 3, records per-symbol missing counts in its stage manifest, and retains PRESERVE_ABSENT_NO_INTERPOLATION_NO_FORWARD_FILL. This does not fabricate the three observations; it permits normalization to retain them as absent so later canonical assembly can exclude incomplete context rows.
-
-OPERATOR DECISION — LOCAL/NO-AWS PATH
-No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
+EXECUTED NEXT STAGE — LOCAL TEST PENDING
+e9160ea atlas: add untouched holdout volume and HTF stage
+1906466 atlas: test untouched holdout volume and HTF stage
+New research-only wrapper reuses the proven exact rolling-24h quote-volume batch and completed-1h HTF batch. It fixes HOLDOUT boundaries to [2025-07-01,2026-01-01), acquires exact 24h 5m warm-up data for volume, consumes existing normalized HOLDOUT 5m/1h candles for HTF, writes only HOLDOUT roots, forbids current-state backfill, does not mutate DEVELOPMENT evidence, and cannot enable live or HOLDOUT evaluation.
 
 LOCKED PRODUCTION
 OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock. Live capital locked; automated real-money execution disabled.
 
 FULL ROADMAP
-[COMPLETE/VERIFIED] Core rebuild / Hyperliquid cockpit / PAPER / recovery / Quality Dips
+[COMPLETE/VERIFIED] Core rebuild / cockpit / PAPER / recovery / Quality Dips
 [COMPLETE/VERIFIED] V6 evidence stack
-[COMPLETE/VERIFIED] Historical runner + locked baseline + loader/CLI + smoke
-[COMPLETE/VERIFIED] PIT importer + manifests/operator import + source readiness
+[COMPLETE/VERIFIED] Historical runner + PIT importer + manifests + source readiness
 [COMPLETE/VERIFIED] Provider normalization + HTF/context v2/funding semantics
 [COMPLETE/VERIFIED] Representative UTC research windows
-[COMPLETE/VERIFIED] Hyperliquid REST acquisition + retention hardening
-[COMPLETE/VERIFIED] Optional archive/schema/LZ4 tooling
-[COMPLETE/VERIFIED] Credential security hardening
-[REMOVED] AWS requester-paid active path
-[COMPLETE/VERIFIED] No-AWS public candle acquisition
-[COMPLETE/VERIFIED] Full real 2024-H2 candle batch
-[COMPLETE/VERIFIED] Full 2024-H2 OI normalization — sparse source missingness preserved
-[COMPLETE/VERIFIED] Exact rolling 24h quote-volume
-[COMPLETE/VERIFIED] Completed-1h HTF
-[COMPLETE/VERIFIED] Paginated first-party Hyperliquid funding
-[COMPLETE/VERIFIED] Exact funding PIT merge
-[COMPLETE/VERIFIED] Canonical BTC/ETH/SOL PIT DEVELOPMENT datasets
-[COMPLETE/VERIFIED GREEN] DEVELOPMENT source audit
-[COMPLETE/VERIFIED] DEVELOPMENT input freeze
-[COMPLETE/VERIFIED] Optimized deterministic locked DEVELOPMENT baseline runner
+[COMPLETE/VERIFIED] Credential hardening / no-AWS path
+[COMPLETE/VERIFIED] DEVELOPMENT candles/OI/rolling-volume/HTF/funding/PIT merge
+[COMPLETE/VERIFIED] Canonical DEVELOPMENT BTC/ETH/SOL + source audit GREEN
 [COMPLETE/VERIFIED NEGATIVE] Locked DEVELOPMENT baseline — 659 trades, -117.2175R, -0.17787R expectancy
-[COMPLETE/VERIFIED] DEVELOPMENT decision/parameter freeze — FAILED_NEGATIVE, parameters frozen
-[COMPLETE/VERIFIED] Untouched HOLDOUT evaluation runner — 766 full tests GREEN
-[COMPLETE/VERIFIED] Untouched HOLDOUT preparation boundary — 768 full tests GREEN
-[COMPLETE/VERIFIED] Untouched HOLDOUT data-build plan — 770 full tests GREEN
-[COMPLETE/VERIFIED] Untouched HOLDOUT candle acquisition/normalization — 772 full tests GREEN; 36 raw monthly objects; 6 normalized outputs
-[COMPLETE/VERIFIED] HOLDOUT OI wrapper/tests/plan — 774 full tests GREEN; 552-object plan GREEN
-[COMPLETE/OBSERVED] HOLDOUT raw OI acquisition — all 552 downloads reached; source exposes 3 absent 5m observations in one on-grid gap
+[COMPLETE/VERIFIED] DEVELOPMENT decision freeze — FAILED_NEGATIVE, parameters frozen
+[COMPLETE/VERIFIED] Untouched HOLDOUT evaluation/preparation/build-plan infrastructure
+[COMPLETE/VERIFIED] HOLDOUT candles — 36 raw monthly objects; 6 normalized outputs
+[COMPLETE/VERIFIED] HOLDOUT OI plan/acquisition/normalization — 552 objects; 3 normalized outputs
+[COMPLETE/VERIFIED] HOLDOUT OI sparse source evidence — BTC=3, ETH=3, SOL=3 absent 5m observations preserved without fill
 
-[CURRENT, LOCAL TEST PENDING] OI SOURCE-GAP PRESERVATION FIX / NORMALIZATION RETRY
-- holdout allowance pinned to exactly the observed 3 missing intervals
-- generic DEVELOPMENT/default behavior remains max_missing_intervals=2
-- no interpolation/fill/fabrication
-- stage manifest records per-symbol missing_interval_counts
-- raw files already downloaded locally should be checksum-verified/skipped on retry where acquisition supports reuse
-- no DEVELOPMENT overwrite
-- HOLDOUT evaluation still forbidden before source_audit GREEN
+[CURRENT, LOCAL TEST PENDING] HOLDOUT EXACT ROLLING 24H QUOTE VOLUME + COMPLETED-1H HTF
+- exact trailing 24h quote_volume from historical 5m klines
+- exact 24h warm-up before 2025-07-01
+- exact cadence required; missing volume source timestamps fail closed
+- completed 1h HTF consumes existing HOLDOUT normalized candles
+- no current-state backfill
+- no DEVELOPMENT mutation
+- no threshold retuning
+- HOLDOUT evaluation remains blocked before source_audit GREEN
+- live disabled
 
-[NEXT AFTER GREEN] Retry HOLDOUT OI --execute. Expected: 3 normalized outputs, pit_oi_context_complete=true, missing counts recorded, and the 3 observed source intervals remain absent.
-[THEN] Derive HOLDOUT exact rolling 24h quote volume and completed-1h HTF.
-[THEN] Acquire HOLDOUT first-party funding and exact funding PIT merge.
+[NEXT AFTER LOCAL GREEN] Run wrapper plan. Then execute real rolling-volume acquisition/derivation + HTF derivation. Verify 3 volume outputs and 3 HTF outputs before advancing.
+[THEN] Acquire HOLDOUT first-party Hyperliquid funding and exact funding PIT merge.
 [THEN] Assemble canonical HOLDOUT datasets/manifests.
 [GATE] Independent HOLDOUT source_audit ready_for_locked_baseline_batch=true.
-[THEN] Run exact frozen DEVELOPMENT configuration on HOLDOUT and record out-of-sample metrics without retuning.
-[THEN] Preserve failed experiment or start isolated next-cycle research only after HOLDOUT evidence.
+[THEN] Run exact frozen DEVELOPMENT configuration on HOLDOUT; record out-of-sample metrics without retuning.
+[THEN] Preserve failed experiment or begin separate next research cycle only after HOLDOUT evidence.
 [THEN] PAPER/SHADOW operational checkpoint.
 [FINAL] Desktop integration.
 
@@ -81,24 +63,27 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_metrics_normalize.py tests/test_backtest_holdout_oi_batch.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_holdout_volume_htf_batch.py tests/test_backtest_binance_public_rolling_volume.py tests/test_backtest_binance_public_htf_context.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-OI RETRY — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.holdout_oi_batch --root backend\data\research\historical --manifest backend\data\research\historical\holdout-oi-stage-2025-h2.json --execute
-Expected controls: status=HOLDOUT_OI_BATCH_EXECUTED; normalized_output_count=3; pit_oi_context_complete=true; missing_value_policy=PRESERVE_ABSENT_NO_INTERPOLATION_NO_FORWARD_FILL. Do not require missing counts for ETH/SOL to be zero until the real retry reports them; the only observed failure so far proves total missing=3 at the reported gap for the symbol being normalized when it failed.
+PLAN AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.holdout_volume_htf_batch --root backend\data\research\historical --manifest backend\data\research\historical\holdout-volume-htf-stage-2025-h2.json
+Expected: HOLDOUT_VOLUME_HTF_PLANNED; volume_normalized_output_count=0; htf_normalized_output_count=0. Record actual volume_object_count from the plan rather than assuming it.
+
+EXECUTE AFTER PLAN GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.holdout_volume_htf_batch --root backend\data\research\historical --manifest backend\data\research\historical\holdout-volume-htf-stage-2025-h2.json --execute
+Expected controls: HOLDOUT_VOLUME_HTF_EXECUTED; volume_normalized_output_count=3; pit_rolling_volume_context_complete=true; htf_normalized_output_count=3; completed_hourly_only=true; current_state_backfill_used=false; live=false.
 
 WHAT REMAINS
-1 Validate OI source-gap preservation fix focused/full tests.
-2 Retry OI normalization/acquisition and record real per-symbol missingness.
-3 Derive HOLDOUT exact rolling 24h volume and completed-1h HTF.
-4 Acquire HOLDOUT first-party funding and exact-event PIT merge.
-5 Assemble canonical HOLDOUT datasets/manifests.
-6 Independent HOLDOUT source_audit GREEN.
-7 Run frozen configuration on HOLDOUT and record out-of-sample evidence.
-8 Preserve failed experiment or start isolated next-cycle research only after HOLDOUT evidence.
-9 PAPER/SHADOW operational checkpoint.
-10 Final desktop integration.
+1 Validate HOLDOUT volume+HTF focused/full tests.
+2 Run volume+HTF plan and real execution.
+3 Acquire HOLDOUT first-party funding and exact-event PIT merge.
+4 Assemble canonical HOLDOUT datasets/manifests.
+5 Independent HOLDOUT source_audit GREEN.
+6 Run frozen configuration on HOLDOUT and record OOS evidence.
+7 Preserve failed experiment or isolated next-cycle research after HOLDOUT evidence.
+8 PAPER/SHADOW operational checkpoint.
+9 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
