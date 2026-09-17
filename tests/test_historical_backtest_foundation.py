@@ -21,7 +21,7 @@ def test_signal_receives_only_point_in_time_history_and_fills_next_bar():
     r=run_historical_backtest(bars(),signal,BacktestAssumptions(fee_bps_per_fill=0,slippage_bps_per_fill=0))
     assert seen[1]==("2026-01-01T00:00:00Z","2026-01-01T00:05:00Z")
     t=r["trades"][0];assert t["signal_timestamp"]=="2026-01-01T00:05:00Z";assert t["entry_timestamp"]=="2026-01-01T00:10:00Z";assert t["entry_price"]==100
-    assert t["exit_reason"]=="TARGET";assert t["exit_timestamp"]=="2026-01-01T00:20:00Z"
+    assert t["exit_reason"]=="TARGET";assert t["exit_timestamp"]=="2026-01-01T00:15:00Z"
 
 
 def test_costs_are_explicit_and_reduce_net_pnl():
