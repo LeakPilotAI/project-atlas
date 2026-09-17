@@ -9,12 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Rolling-volume warm-up probe is GREEN. Focused probe+derivation tests: 6 passed in 0.37s. Full regression: 735 passed, 2 warnings in 39.04s; 0 failures. Real BTCUSDT July 1 probe acquired checksum-verified June+July 2024 5m archives, used warmup_start=2024-06-30T00:00:00Z, and emitted exactly 288 rows from 2024-07-01T00:00:00Z through 2024-07-01T23:55:00Z with status=ACQUIRED_AND_DERIVED_ROLLING_VOLUME.
+Full locked 2024-H2 rolling-volume batch is GREEN and COMPLETE. Focused rolling-volume batch/probe/derivation tests: 8 passed in 0.38s. Full regression: 737 passed, 2 warnings in 40.27s; 0 failures. Real execution acquired/checksum-verified 21 monthly BTC/ETH/SOL 5m archives (June-Dec 2024) and produced 3 normalized rolling-volume outputs with status=ACQUIRED_AND_DERIVED_ROLLING_VOLUME.
 
-EXECUTED FULL ROLLING-VOLUME BATCH — LOCAL TEST PENDING
-21462ad atlas: add full 2024-H2 rolling volume batch
-7d2f04b atlas: test full rolling volume batch
-The new batch expands the locked 2024-H2 decision window backward exactly 24h, plans BTC/ETH/SOL 5m monthly archives from June through December 2024 (21 objects total), checksum-verifies raw archives through the existing public acquisition path, and derives one exact quote_volume-based trailing-24h artifact per symbol. No base-volume approximation, no current-state backfill, and no live path.
+EXECUTED COMPLETED-1H HTF DERIVATION — LOCAL TEST PENDING
+b722a68 atlas: derive completed 1h HTF context
+4eb9e2e atlas: test completed 1h HTF context
+New research-only derivation consumes existing normalized 5m decision candles and normalized 1h candles. It uses the production-equivalent rule already implemented in htf_context.py: latest COMPLETED 1h close vs SMA20, UP above +0.2%, DOWN below -0.2%, otherwise FLAT, with UNKNOWN before 20 completed closes. A 1h candle is not visible until one hour after its open. Decision/hourly input SHA-256 and output SHA-256 are persisted. No current-state backfill and no live path.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -45,22 +45,22 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Full 2024-H2 OI normalization — 3 outputs
 [COMPLETE/VERIFIED] Exact PIT rolling 24h quote-volume derivation
 [COMPLETE/VERIFIED] Real BTC July 1 warm-up probe — 288 rows, exact June 30 warm-up
+[COMPLETE/VERIFIED] Full BTC/ETH/SOL 2024-H2 rolling-volume batch — 21 raw objects -> 3 outputs
 
-[CURRENT, LOCAL TEST PENDING] FULL BTC/ETH/SOL 2024-H2 ROLLING-VOLUME BATCH
-- exact decision window [2024-07-01,2025-01-01)
-- warm-up starts 2024-06-30T00:00:00Z
-- BTC/ETH/SOL 5m only
-- 7 monthly archives per symbol = 21 checksum-verified raw objects expected
-- source field is Binance quote_volume
-- exact 288-bar trailing window for every emitted timestamp
-- 3 normalized symbol outputs expected
+[CURRENT, LOCAL TEST PENDING] COMPLETED-1H HTF CONTEXT
+- uses existing verified normalized 1h candles
+- uses 5m decision timestamps as output cadence
+- 1h candle visible only after completion
+- production SMA20 +/-0.2% rule
+- UNKNOWN before 20 completed closes
+- SHA-256 provenance for inputs/output
 - no current-state backfill/live path
 
-[NEXT AFTER LOCAL GREEN] Execute the full rolling-volume batch. Expected: objects=21 normalized_outputs=3 status=ACQUIRED_AND_DERIVED_ROLLING_VOLUME. Preserve raw June-Dec archives and normalization reports for later canonical provenance.
+[NEXT AFTER LOCAL GREEN] Run a real BTC 2024-H2 HTF derivation from the already-normalized BTC 5m and BTC 1h artifacts. Verify row_count equals the 5m decision rows, first/last timestamps cover the full locked window, and source/output SHA-256 values are emitted. Then batch BTC/ETH/SOL HTF outputs.
 
-[THEN] Derive completed-1h HTF from verified historical 1h candles and merge first-party Hyperliquid historical funding events.
+[THEN] First-party Hyperliquid historical funding acquisition/normalization and PIT merge. Preserve event timestamps exactly; never synthesize funding between events or use current-state funding.
 
-[THEN] Merge candles + funding + PIT OI + rolling 24h volume + completed HTF -> canonical BTC/ETH/SOL datasets/manifests with raw source SHA-256 values and OI-gap provenance -> source_audit ready_for_locked_baseline_batch=true.
+[THEN] Merge candles + first-party funding + PIT OI + rolling 24h volume + completed HTF -> canonical BTC/ETH/SOL datasets/manifests with raw source SHA-256 values and OI-gap provenance -> source_audit ready_for_locked_baseline_batch=true.
 
 [THEN] Locked DEVELOPMENT baseline -> freeze decisions -> untouched HOLDOUT -> isolated candidates -> PAPER/SHADOW operational checkpoint -> final desktop integration.
 
@@ -72,22 +72,23 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_rolling_volume_batch.py tests/test_backtest_binance_public_rolling_volume_probe.py tests/test_backtest_binance_public_rolling_volume.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_htf_context.py tests/test_backtest_htf_context.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-FULL ROLLING-VOLUME BATCH — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.binance_public_rolling_volume_batch --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-volume --output-root backend\data\research\historical\dev-2024-h2-volume --manifest backend\data\research\historical\binance-public-volume-batch-dev-2024-h2.json --execute
-Expected: objects=21 normalized_outputs=3 status=ACQUIRED_AND_DERIVED_ROLLING_VOLUME
+REAL BTC HTF DERIVATION — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.binance_public_htf_context --decision-candles backend\data\research\historical\dev-2024-h2-candles\BTC-5m-2024-07-01_2025-01-01.csv --hourly-candles backend\data\research\historical\dev-2024-h2-candles\BTC-1h-2024-07-01_2025-01-01.csv --output backend\data\research\historical\dev-2024-h2-htf\BTC-htf-5m.csv --report backend\data\research\historical\dev-2024-h2-htf\BTC-htf-5m.normalization.json
+If the local candle output root differs, use the exact existing 2024-H2 normalized candle paths rather than regenerating data.
 
 WHAT REMAINS
-1 Validate full rolling-volume batch focused/full tests.
-2 Execute 21-object BTC/ETH/SOL 2024-H2 rolling-volume batch.
-3 Completed 1h HTF + first-party funding merge.
-4 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
-5 Locked DEVELOPMENT baseline.
-6 Freeze -> HOLDOUT -> candidates.
-7 PAPER/SHADOW operational checkpoint.
-8 Final desktop integration.
+1 Validate completed-1h HTF focused/full tests.
+2 Real BTC HTF derivation + provenance inspection.
+3 Batch BTC/ETH/SOL completed-1h HTF outputs.
+4 First-party Hyperliquid historical funding acquisition/normalization/merge.
+5 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
+6 Locked DEVELOPMENT baseline.
+7 Freeze -> HOLDOUT -> candidates.
+8 PAPER/SHADOW operational checkpoint.
+9 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
