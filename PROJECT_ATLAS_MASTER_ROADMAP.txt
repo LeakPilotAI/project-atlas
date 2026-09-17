@@ -5,11 +5,11 @@ Branch: chatgpt/atlas-rebuild-v1
 PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly. After EVERY execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
-LATEST VERIFIED CHECKPOINT — USER LOCAL
-Commit ec79fb07 branch state: focused historical/archive stack 61 passed in 1.00s; full regression 688 passed, 2 warnings in 36.60s; 0 failures. Raw archive schema inspector VERIFIED. 2024-H2 archive plan previously generated 184 objects with PLANNED_NOT_DOWNLOADED.
+PERMANENT REPOSITORY SECURITY GATE
+Never commit credentials, AWS access/secret/session keys, tokens, passwords, private keys, seed phrases, .env secrets, ~/.aws files, local cloud credential stores, or raw credential exports. Atlas CLIs accept profile names only, never secret material. Before security-sensitive writes, inspect tracked/config paths and keep credential material local. .gitignore explicitly excludes AWS/local credential paths in addition to existing environment/secret exclusions.
 
-LOCAL ENVIRONMENT VERIFIED
-AWS CLI 2.36.47 installed at C:\Program Files\Amazon\AWSCLIV2\aws.exe and working on PATH. Atlas venv has Python lz4 4.4.5 installed and import verified. No standalone lz4.exe is required after the current Python-LZ4 checkpoint is locally verified.
+LATEST VERIFIED CHECKPOINT — USER LOCAL
+Commit 2ea3eb3 branch state: focused historical/archive stack 63 passed in 1.19s; full regression 690 passed, 2 warnings in 36.58s; 0 failures. Python lz4 archive decoding VERIFIED. AWS CLI 2.36.47 works on PATH. Python lz4 4.4.5 works in Atlas venv. aws configure list-profiles returned no profiles.
 
 FIRST REAL 2024-H2 ACQUISITION RESULT
 BTC/ETH/SOL each: REST 5m candles=0; REST 1h candles=0; funding=3096. Historical OI pending. Official REST candle retention cannot reach locked 2024-H2. Funding history succeeded. Historical context pivots to first-party asset_ctxs archive before external OI vendor.
@@ -29,63 +29,50 @@ ROADMAP
 [COMPLETE/VERIFIED] Representative source acquisition plan + UTC window lock
 [COMPLETE/VERIFIED] Official Hyperliquid acquisition CLI + candle-retention fail-closed hardening
 [COMPLETE/VERIFIED] First-party asset_ctxs archive acquisition/planning + cross-platform tests
-[COMPLETE/VERIFIED] Raw asset_ctxs schema inspector — 688 full tests
+[COMPLETE/VERIFIED] Raw asset_ctxs schema inspector
+[COMPLETE/VERIFIED] Self-contained Python LZ4 archive decoding — 690 full tests
+[COMPLETE, LOCAL TEST PENDING] Credential-safety .gitignore hardening for .aws/local credential paths
 
-[COMPLETE, LOCAL TEST PENDING] Self-contained Python LZ4 archive decoding
-- hyperliquid_archive_inspect.py now decodes .lz4 in-process with lz4.frame
-- standalone lz4.exe dependency removed
-- backend/pyproject.toml pins lz4>=4.4.5
-- tests exercise real lz4.frame compressed CSV bytes and corrupt-LZ4 fail-closed behavior
-- inspection output records compression=lz4.frame
-- research-only/live-disabled semantics unchanged
+[CURRENT OPERATOR GATE] AWS profile does not yet exist. Configure authentication locally only. AWS documentation recommends temporary/federated authentication for purpose-built software/real data rather than long-term IAM-user credentials where practical. `aws login` or IAM Identity Center/SSO are preferred when available; `aws configure --profile atlas-research` is supported when access-key credentials are intentionally used. Credentials remain under the Windows user profile, outside Project Atlas and Git.
 
-[NEXT] Local focused + full regression for Python-LZ4 checkpoint.
+[NEXT AFTER AUTH] Validate only profile metadata/identity without printing secrets. Then execute exactly one requester-paid archive day (2024-07-01), run archive inspector, and prove actual BTC/ETH/SOL PIT OI + day-notional-volume schema/cadence. Do not full-download 184 days before the probe is GREEN.
 
-[NEXT AFTER GREEN] AWS credential/profile gate
-1. Run aws configure list-profiles.
-2. If no profile exists, configure one locally with aws configure. Never paste AWS access key or secret into chat/code/repo.
-3. Execute exactly one requester-paid archive day: 2024-07-01.
-4. Run archive inspector against the acquired .csv.lz4.
-5. Verify actual schema/cadence and BTC/ETH/SOL PIT OI + day-notional-volume suitability.
-6. Only after real inspection is GREEN consider full 184-day 2024-H2 asset_ctxs acquisition.
-
-[THEN] Historical candle reconstruction/provider ingestion
-- trustworthy 5m/1h bars for 2024-H2
-- no current-state synthesis
-- exact provenance/coverage/checksums/gaps
-- derive completed 1h HTF trend
-- merge funding + PIT OI/volume + candles
-- canonical BTC/ETH/SOL v2 bundles + manifests
-- source_audit ready_for_locked_baseline_batch=true required
-
+[THEN] Full 2024-H2 context acquisition only after probe validation.
+[THEN] Trustworthy historical 5m/1h bars; no current-state synthesis; exact provenance/coverage/checksums/gaps; derive completed 1h HTF; merge funding + PIT OI/volume + candles; canonical BTC/ETH/SOL v2 bundles/manifests; source_audit ready_for_locked_baseline_batch=true.
 [THEN] Locked baseline DEVELOPMENT research -> freeze decisions -> HOLDOUT evaluation -> isolated candidate comparison -> PAPER/SHADOW operational checkpoint -> final desktop operational integration.
 
 RESEARCH STATUS
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
-LOCAL UPDATE / TEST
+LOCAL UPDATE / SAFETY VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_hyperliquid_archive_inspect.py tests/test_backtest_hyperliquid_archive.py tests/test_backtest_hyperliquid_acquire.py tests/test_backtest_representative_windows.py tests/test_backtest_source_plan.py tests/test_backtest_funding_events.py tests/test_backtest_context_v2.py tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
-backend\.venv\Scripts\python.exe -m pytest -q
+git status --short
+git check-ignore -v .aws/credentials
+git check-ignore -v credentials
 
-AFTER GREEN
-aws --version
+AUTHENTICATION GATE
 aws configure list-profiles
-backend\.venv\Scripts\python.exe -c "import lz4.frame; print('LZ4 Python support: OK')"
+# Preferred when supported by the user's AWS account/authentication setup: temporary/federated auth such as `aws login` or `aws configure sso`.
+# If intentionally using access-key credentials, configure them locally only:
+aws configure --profile atlas-research
+# NEVER paste the prompted Access Key ID or Secret Access Key into chat, code, PowerShell history, or the repository.
+# Profile name is safe to share.
+aws configure list --profile atlas-research
+aws sts get-caller-identity --profile atlas-research
 
-ONE-DAY REQUESTER-PAID PROBE — ONLY AFTER AWS PROFILE EXISTS
-backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive --start 2024-07-01T00:00:00Z --end 2024-07-02T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-probe --manifest backend\data\research\historical\hyperliquid-asset-ctxs-probe-20240701.json --execute --aws-profile <PROFILE_NAME>
+ONE-DAY REQUESTER-PAID PROBE — ONLY AFTER AUTH IS VALID
+backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive --start 2024-07-01T00:00:00Z --end 2024-07-02T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-probe --manifest backend\data\research\historical\hyperliquid-asset-ctxs-probe-20240701.json --execute --aws-profile atlas-research
 
 INSPECT PROBE
 backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive_inspect --input backend\data\research\raw\historical\dev-2024-h2-probe\asset_ctxs\20240701.csv.lz4 --output backend\data\research\historical\hyperliquid-asset-ctxs-inspection-20240701.json
 Do not assume pit_context_candidate=true before real output proves it.
 
 WHAT REMAINS
-1 Verify Python-LZ4 checkpoint locally.
-2 Confirm/create local AWS profile without sharing secrets.
+1 Verify credential-safety .gitignore hardening locally.
+2 Configure/validate local AWS authentication without sharing secrets.
 3 One-day requester-paid archive probe.
 4 Inspect real schema/cadence and prove PIT OI/volume suitability.
 5 Full 2024-H2 context acquisition only after probe validation.
