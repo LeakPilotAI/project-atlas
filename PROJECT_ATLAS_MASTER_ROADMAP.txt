@@ -9,12 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Completed-1h HTF derivation is GREEN. Focused HTF tests: 5 passed in 0.48s. Full regression: 739 passed, 2 warnings in 38.77s; 0 failures. Real BTC 2024-H2 HTF derivation emitted 52,992 rows from 2024-07-01T00:00:00Z through 2024-12-31T23:55:00Z. It used completed-hourly-only semantics, no current-state backfill, and persisted decision/hourly/output SHA-256 values.
+Full BTC/ETH/SOL completed-1h HTF batch is GREEN and COMPLETE. Focused HTF tests: 7 passed in 0.51s. Full regression: 741 passed, 2 warnings in 37.33s; 0 failures. Full batch execution produced normalized_outputs=3 status=DERIVED_COMPLETED_1H_HTF_CONTEXT.
 
-EXECUTED FULL HTF BATCH — LOCAL TEST PENDING
-f4eda23 atlas: add full completed HTF batch
-d98792a atlas: test full completed HTF batch
-The new batch consumes the existing normalized BTC/ETH/SOL 5m + 1h candle artifacts for the locked window and writes one completed-1h HTF context artifact/report per symbol. Missing decision/hourly source files fail closed. No live path or current-state backfill.
+EXECUTED FIRST-PARTY HYPERLIQUID FUNDING ACQUISITION — LOCAL TEST PENDING
+ba1f38a atlas: add first-party Hyperliquid funding history acquisition
+d539fbd atlas: test first-party Hyperliquid funding history
+New research-only acquisition calls Hyperliquid's public /info endpoint with type=fundingHistory for BTC/ETH/SOL. It preserves exact returned funding event timestamps and rates, rejects duplicates/non-ascending data, emits SHA-256 provenance, and does not interpolate or use current-state funding. No live path.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -47,19 +47,21 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Real BTC July 1 warm-up probe — 288 rows, exact June 30 warm-up
 [COMPLETE/VERIFIED] Full BTC/ETH/SOL 2024-H2 rolling-volume batch — 21 raw objects -> 3 outputs
 [COMPLETE/VERIFIED] Real BTC completed-1h HTF derivation — 52,992 rows
+[COMPLETE/VERIFIED] Full BTC/ETH/SOL completed-1h HTF batch — 3 outputs
 
-[CURRENT, LOCAL TEST PENDING] FULL BTC/ETH/SOL COMPLETED-1H HTF BATCH
-- consumes existing normalized 5m + 1h candle artifacts
-- writes 3 HTF context outputs + normalization reports
-- preserves production SMA20 +/-0.2% rule
-- completed-hourly-only; UNKNOWN before 20 completed closes
-- SHA-256 provenance retained per symbol
-- missing source artifacts fail closed
-- research only; no current-state backfill/live path
+[CURRENT, LOCAL TEST PENDING] FIRST-PARTY HYPERLIQUID FUNDING HISTORY
+- public /info fundingHistory endpoint
+- BTC/ETH/SOL only
+- exact returned event timestamps/rates preserved
+- no interpolation
+- no current-state backfill
+- duplicate/non-ascending event timestamps fail closed
+- SHA-256 output provenance
+- research only; no live path
 
-[NEXT AFTER LOCAL GREEN] Execute the full BTC/ETH/SOL HTF batch. Expected normalized_outputs=3 status=DERIVED_COMPLETED_1H_HTF_CONTEXT. Verify each output covers 52,992 5m decision rows for the locked 2024-H2 window.
+[NEXT AFTER LOCAL GREEN] Run a real BTC 2024-H2 funding-history acquisition. Verify non-empty event count, first/last timestamps inside [2024-07-01,2025-01-01), exact-event semantics, and output SHA-256. Then batch BTC/ETH/SOL funding artifacts.
 
-[THEN] First-party Hyperliquid historical funding acquisition/normalization and PIT merge. Preserve event timestamps exactly; never synthesize funding between events or use current-state funding.
+[THEN] Implement PIT merge of first-party funding events into 5m historical bars without synthesizing funding between event timestamps.
 
 [THEN] Merge candles + first-party funding + PIT OI + rolling 24h volume + completed HTF -> canonical BTC/ETH/SOL datasets/manifests with raw source SHA-256 values and OI-gap provenance -> source_audit ready_for_locked_baseline_batch=true.
 
@@ -73,22 +75,22 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_htf_batch.py tests/test_backtest_binance_public_htf_context.py tests/test_backtest_htf_context.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_hyperliquid_funding_history.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-FULL HTF BATCH — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.binance_public_htf_batch --candle-root backend\data\research\historical\dev-2024-h2-candles --output-root backend\data\research\historical\dev-2024-h2-htf --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --manifest backend\data\research\historical\binance-public-htf-batch-dev-2024-h2.json
-Expected: normalized_outputs=3 status=DERIVED_COMPLETED_1H_HTF_CONTEXT
+REAL BTC FUNDING ACQUISITION — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_funding_history --symbol BTC --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --output backend\data\research\historical\dev-2024-h2-funding\BTC-funding.csv --report backend\data\research\historical\dev-2024-h2-funding\BTC-funding.normalization.json
 
 WHAT REMAINS
-1 Validate full HTF batch focused/full tests.
-2 Execute BTC/ETH/SOL completed-1h HTF batch.
-3 First-party Hyperliquid historical funding acquisition/normalization/merge.
-4 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
-5 Locked DEVELOPMENT baseline.
-6 Freeze -> HOLDOUT -> candidates.
-7 PAPER/SHADOW operational checkpoint.
-8 Final desktop integration.
+1 Validate funding-history focused/full tests.
+2 Real BTC 2024-H2 funding acquisition + provenance inspection.
+3 Batch BTC/ETH/SOL first-party funding artifacts.
+4 PIT merge funding events into 5m research bars.
+5 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
+6 Locked DEVELOPMENT baseline.
+7 Freeze -> HOLDOUT -> candidates.
+8 PAPER/SHADOW operational checkpoint.
+9 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
