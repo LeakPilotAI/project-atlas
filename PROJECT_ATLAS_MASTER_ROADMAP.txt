@@ -9,12 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Historical metrics inspection is GREEN. Focused inspector tests: 5 passed in 0.25s. Full regression: 719 passed, 2 warnings in 35.48s; 0 failures. Real BTCUSDT 2024-07-01 metrics archive inspection: rows=288, required_columns_present=true, ascending_unique=true, cadence_seconds=300, cadence_consistent=true. Therefore the real public metrics archive provides clean 5-minute point-in-time historical OI observations for the tested day. Full 2024-H2 candle batch remains GREEN: 36 candle objects -> 6 normalized BTC/ETH/SOL 5m/1h outputs.
+Historical OI normalization is GREEN. Focused OI-normalizer tests: 5 passed in 0.29s. Full regression: 724 passed, 2 warnings in 36.75s; 0 failures. Real BTCUSDT 2024-07-01 OI normalization produced exactly 288 rows, 2024-07-01T00:00:00Z through 2024-07-01T23:55:00Z at 300-second cadence, output SHA256=2fccc0076914ab52279da301643d64f4b8c75dd68c93a2216cd290fb89ea82dd, raw SHA256=e4236dcb22fda0ce5c881b7cbf9a4a9c3b220d879dd14a0b53c6c47e6d1c9ca7, pit_oi_context_complete=true, rolling_volume_context_complete=false. The full locked 2024-H2 candle batch is already complete: 36 checksum-verified raw archives -> 6 normalized BTC/ETH/SOL 5m/1h outputs.
 
 EXECUTED NEXT STEP — LOCAL TEST PENDING
-6b6a30c atlas: normalize Binance historical OI metrics
-a5cf321 atlas: test Binance historical OI normalization
-The new normalizer converts checksum-verified metrics archives into provider-neutral timestamp/open_interest_usd using historical sum_open_interest_value, preserves raw SHA-256 provenance, filters the exact provider symbol, enforces 300-second cadence, rejects duplicates/gaps/negative OI, and remains research/live disabled. It marks PIT OI complete for the normalized output only; rolling-volume context remains incomplete.
+ca6047d atlas: add full 2024-H2 historical OI metrics batch
+998e3a9 atlas: test full historical OI metrics batch
+New batch orchestrator plans/acquires daily checksum-verified BTCUSDT/ETHUSDT/SOLUSDT public futures metrics and normalizes one provider-neutral 5m OI artifact per Atlas symbol using the verified OI normalizer. Locked 2024-H2 contains 184 UTC days, therefore 552 raw metrics objects across 3 symbols. Rolling-volume context remains incomplete and live/automatic execution remain disabled.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -35,36 +35,26 @@ FULL ROADMAP
 [REMOVED] AWS requester-paid active path
 [VERIFIED RED] Canonical source audit — PIT context/canonical bundles not complete
 [COMPLETE/VERIFIED] No-AWS public candle acquisition
-[COMPLETE/VERIFIED] 2024-H2 public candle plan — 36 objects
-[COMPLETE/VERIFIED] BTC real candle checksum probe
-[COMPLETE/VERIFIED] Real candle schema/cadence inspection
-[COMPLETE/VERIFIED] Deterministic candle normalizer
-[COMPLETE/VERIFIED] Real BTC July candle normalization
-[COMPLETE/VERIFIED] Full real 2024-H2 candle batch — 36 objects -> 6 normalized outputs
-[COMPLETE/VERIFIED] Historical PIT metrics acquisition — 4 focused / 714 full
-[COMPLETE/VERIFIED] One-day real BTC metrics archive checksum probe
-[COMPLETE/VERIFIED] Real metrics schema/cadence inspection — 5 focused / 719 full; 288 rows/day at exact 300-second cadence
+[COMPLETE/VERIFIED] Full real 2024-H2 candle batch — 36 raw objects -> 6 normalized outputs
+[COMPLETE/VERIFIED] Historical PIT metrics acquisition
+[COMPLETE/VERIFIED] One-day BTC real metrics checksum/schema/cadence probe — 288 rows/day, 300-second cadence
+[COMPLETE/VERIFIED] Historical OI metrics normalizer — 5 focused / 724 full
+[COMPLETE/VERIFIED] Real BTC one-day OI normalization — 288 rows, PIT OI complete for artifact
 
-[CURRENT, LOCAL TEST PENDING] HISTORICAL OI METRICS NORMALIZER
-- backend/app/backtest/binance_public_metrics_normalize.py
-- tests/test_backtest_binance_public_metrics_normalize.py
-- sum_open_interest_value -> open_interest_usd
-- exact provider symbol filtering
-- strict UTC parsing
-- exact 300-second cadence
-- duplicate timestamps fail closed
-- cadence gaps fail closed
-- negative OI fails closed
-- raw archive SHA-256 + normalized output SHA-256 provenance
-- pit_oi_context_complete=true for normalized OI artifact only
+[CURRENT, LOCAL TEST PENDING] FULL 2024-H2 HISTORICAL OI BATCH
+- backend/app/backtest/binance_public_metrics_batch.py
+- tests/test_backtest_binance_public_metrics_batch.py
+- BTC/ETH/SOL only
+- 184 UTC days in [2024-07-01,2025-01-01)
+- 552 daily checksum-verified metrics objects expected
+- execute mode normalizes 3 symbol-level 5m OI outputs
+- current-state synthesis forbidden
 - rolling_volume_context_complete=false
-- live/automatic execution=false
+- live_capital_allowed=false; automatic_real_money_execution=false
 
-[NEXT AFTER LOCAL GREEN] Normalize the real BTCUSDT 2024-07-01 metrics probe and verify 288 rows from 00:00 through 23:55 UTC with 300-second cadence.
+[NEXT AFTER LOCAL GREEN] Execute the full 2024-H2 metrics/OI batch. Preserve all raw ZIP/CHECKSUM data. Expect objects=552, normalized_outputs=3, status=ACQUIRED_AND_NORMALIZED_OI_ROLLING_VOLUME_STILL_REQUIRED.
 
-[THEN] Full 2024-H2 BTC/ETH/SOL historical metrics acquisition + OI normalization using checksum-verified daily archives. Preserve all raw ZIP/CHECKSUM data; do not git clean -fdx.
-
-[THEN] Exact PIT rolling 24h quote-notional volume derivation from verified raw 5m candle quote_volume. Extend raw candle normalization/context derivation as needed; do not approximate USD volume from base volume and do not use current-state values.
+[THEN] Exact PIT rolling 24h quote-notional volume derivation from the already checksum-verified raw 5m candle archives. Use historical quote_volume, not base volume approximation and never current-state values. Include 24h warm-up semantics so the first research decision timestamp only receives a complete trailing 24-hour window.
 
 [THEN] Derive completed-1h HTF from verified historical 1h candles and merge first-party Hyperliquid historical funding events.
 
@@ -80,24 +70,23 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_metrics_normalize.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_metrics_batch.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-REAL BTC OI NORMALIZATION — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.binance_public_metrics_normalize --input backend\data\research\raw\historical\dev-2024-h2-metrics-probe\binance_public_metrics\BTCUSDT\BTCUSDT-metrics-2024-07-01.zip --provider-symbol BTCUSDT --start 2024-07-01T00:00:00Z --end 2024-07-02T00:00:00Z --output backend\data\research\historical\probe\BTC-oi-2024-07-01.csv --report backend\data\research\historical\probe\BTC-oi-2024-07-01.normalization.json
-Expected: row_count=288, first_timestamp=2024-07-01T00:00:00Z, last_timestamp=2024-07-01T23:55:00Z, cadence_seconds=300, pit_oi_context_complete=true, rolling_volume_context_complete=false.
+FULL OI BATCH — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.binance_public_metrics_batch --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-metrics --output-root backend\data\research\historical\dev-2024-h2-oi --manifest backend\data\research\historical\binance-public-oi-batch-dev-2024-h2.json --execute
+Expected final line: objects=552 normalized_outputs=3 status=ACQUIRED_AND_NORMALIZED_OI_ROLLING_VOLUME_STILL_REQUIRED
 
 WHAT REMAINS
-1 Validate OI normalizer focused/full tests.
-2 Normalize the real BTC one-day metrics probe.
-3 Full 2024-H2 BTC/ETH/SOL metrics acquisition + OI normalization.
-4 Exact PIT rolling 24h quote-notional volume derivation.
-5 Completed 1h HTF + first-party funding merge.
-6 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
-7 Locked DEVELOPMENT baseline.
-8 Freeze -> HOLDOUT -> candidates.
-9 PAPER/SHADOW operational checkpoint.
-10 Final desktop integration.
+1 Validate full OI batch focused/full tests.
+2 Execute the 552-object full 2024-H2 metrics/OI batch.
+3 Exact PIT rolling 24h quote-notional volume derivation with proper warm-up.
+4 Completed 1h HTF + first-party funding merge.
+5 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
+6 Locked DEVELOPMENT baseline.
+7 Freeze -> HOLDOUT -> candidates.
+8 PAPER/SHADOW operational checkpoint.
+9 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
