@@ -6,14 +6,18 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 1909bac606ef980db3bda31d4be1d3181c60ae9f
-Focused loader/CLI + baseline + foundation suite: 11 passed in 0.40s. Full regression: 638 passed, 2 warnings in 34.99s. Failures: 0.
+Tested commit: faf847cdb3d10392c43e9fa86602eeccca6b1711
+Focused smoke/loader/baseline/foundation suite: 13 passed in 0.52s. Full regression: 640 passed, 2 warnings in 34.79s. Failures: 0.
+Canonical CLI smoke run succeeded:
+run_id=f86b6144e920fea965ca
+result=backend\data\research\backtests\smoke\f86b6144e920fea965ca.json
+trades=1; win_rate=0.0000; expectancy_r=-1.0764; total_r=-1.0764; PF=0.0; max_drawdown_usd=1.0764; fees=0.0669; slippage=0.0191; funding=0.0000; research-only/live-capital-disabled.
 
 LOCKED PRODUCTION
 OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock.
 
 DESKTOP / OPERATOR END-STATE REQUIREMENT
-When Atlas is finished, launching the desktop shortcut must bring up the intended operational research stack cleanly and consistently: Docker dependencies, API/backend services, intended dashboard/UI, paper/shadow systems, research evidence surfaces, and backtesting/operator workflows. The launcher must fail visibly when required dependencies/data are unavailable, must not silently drop required services, and must preserve research/live separation. Current Atlas-Launch.ps1 starts Docker/Postgres/Redis + FastAPI and opens the API-served dashboard; final operational validation must reconcile this with the intended UI/Next.js architecture and backtest controls/status before Atlas is considered finished.
+When Atlas is finished, launching the desktop shortcut must bring up the intended operational research stack cleanly and consistently: Docker dependencies, API/backend services, intended dashboard/UI, paper/shadow systems, research evidence surfaces, and backtesting/operator workflows. The launcher must fail visibly when required dependencies/data are unavailable, must not silently drop required services, and must preserve research/live separation. Final operational validation must reconcile the current API-served dashboard with the intended Next.js /research surface and backtest controls/status before Atlas is considered finished.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
@@ -22,37 +26,37 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Deterministic Historical Backtest Runner Foundation
 [COMPLETE, VERIFIED] Locked Perp-Micro Baseline Strategy Adapter
 [COMPLETE, VERIFIED] Canonical Backtest Data Loader + CLI / Operator Workflow
-  - validated CSV/JSONL/NDJSON PIT schema
-  - loader -> locked baseline -> deterministic runner -> persisted JSON result
-  - production OI/volume thresholds sourced from Settings-backed baseline config
-  - canonical command supports dataset/output/fees/slippage/equity
-  - verified by 11 focused + 638 full tests at 1909bac
+[COMPLETE, VERIFIED] Deterministic Smoke Backtest Reconciliation
+  - 13 focused + 640 full tests GREEN
+  - canonical CLI produced persisted research-only result f86b6144e920fea965ca
+  - smoke loss is expected fixture behavior and not a profitability claim
 
-[COMPLETE, LOCAL TEST PENDING] Deterministic Smoke Backtest Reconciliation
-  - canonical fixture: tests/fixtures/backtest_smoke.csv
-  - fixture includes PIT OHLCV, funding, OI, 24h volume and HTF alignment
-  - smoke test runs the same dataset twice through the exact locked baseline + deterministic runner and requires identical result payload and run_id
-  - reconciles trade_count against ledger length and total_r/fees/slippage/funding metrics against summed trade ledger values
-  - CLI smoke test persists the result, reruns with identical inputs, and requires the exact same single result file path/content identity behavior
-  - research-only/live-disabled safety flags are asserted
+[COMPLETE, LOCAL TEST PENDING] Hyperliquid Historical Dataset PIT Import Foundation
+  - reuses existing Hyperliquid candleSnapshot and fundingHistory data shapes
+  - explicitly does NOT project current metaAndAssetCtxs OI/24h volume backward into history
+  - requires timestamp-aligned HistoricalMarketContext rows containing historical OI USD, rolling 24h volume USD, and HTF alignment
+  - funding is assigned only from funding records at or before each candle timestamp
+  - normalization fails closed when PIT market context is missing, duplicated, negative, or candle chronology is invalid
+  - normalized data writes directly to canonical Atlas CSV schema and round-trips through the validated loader
+  - no current-state backfill, no fabricated eligibility context, no production mutation
 
-[NEXT] Local smoke reconciliation + loader/CLI + baseline/foundation focused tests and full regression.
-[NEXT AFTER GREEN] Historical Dataset Acquisition / Import Workflow
-  - obtain representative historical Hyperliquid data without lookahead
-  - preserve point-in-time OI, rolling volume, funding and HTF context or derive only from data available at each timestamp
-  - define deterministic normalization/import path into canonical Atlas schema
-  - include provenance/date range/symbol/timeframe metadata and reject incomplete context rather than fabricate it
+[NEXT] Local focused Hyperliquid-import + smoke/loader/baseline/foundation tests and full regression.
+[NEXT AFTER GREEN] Historical Dataset Acquisition Sources / Manifest Workflow
+  - define the supported source path(s) for timestamp-aligned historical OI and rolling volume context
+  - attach provenance/source/date-range/symbol/timeframe metadata to imported datasets
+  - add deterministic import manifest and reject datasets lacking required PIT provenance/context
+  - provide one operator command/workflow to normalize raw historical source data into Atlas canonical files
 [THEN] Locked Baseline Historical Batch Research
-  - run baseline across multiple symbols/periods/regimes
+  - run baseline across multiple representative symbols/periods/regimes
   - persist comparable metrics/trades/run metadata
   - inspect expectancy, WR, PF, total R, drawdown and costs; stable positive edge remains unproven until evidence says otherwise
 [THEN] Research Candidate Batch Comparison
-  - candidates remain isolated from production gates and compared against the locked baseline only in research outputs
+  - candidates remain isolated from production gates and compared against locked baseline only in research outputs
 [THEN] PAPER/SHADOW Operations Checkpoint
   - startup/recovery, market-data ingestion, signals, simulated fills, logs/dashboard and durable prospective evidence
 [THEN — DESKTOP OPERATIONAL INTEGRATION] Final shortcut/runtime audit
   - verify desktop shortcut launches every intended Atlas service and intended UI
-  - reconcile current API-served dashboard with Next.js /research surfaces so no completed capability is unreachable from normal launch
+  - reconcile API-served dashboard with Next.js /research surfaces so no completed capability is unreachable from normal launch
   - surface backtest status/results/operator entry points in normal Atlas operation
   - validate dependency failures, restart/recovery, shutdown, stale-process cleanup, logs and persistent data paths
   - execute a complete desktop-launch smoke test before declaring Atlas operationally finished
@@ -62,29 +66,31 @@ ENGINEERING ROADMAP
 RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
-WHAT REMAINS BEFORE ROUTINE BACKTESTING
-1. Verify deterministic smoke reconciliation locally.
-2. Establish representative historical dataset acquisition/import with PIT OI/volume/funding/HTF context.
-3. Run locked-baseline historical batches across representative periods/regimes.
-4. Run isolated research-candidate comparison batches.
-5. Continue PAPER/SHADOW prospective evidence.
-6. Before Atlas is called finished, complete desktop operational integration and full shortcut smoke test.
+WHAT REMAINS BEFORE ROUTINE REAL-DATA BACKTESTING
+1. Verify PIT-safe Hyperliquid historical import normalization locally.
+2. Define/acquire supported historical OI + rolling-volume source with provenance and deterministic manifest/import workflow.
+3. Normalize representative historical datasets into canonical Atlas schema.
+4. Run locked-baseline historical batches across representative periods/regimes.
+5. Run isolated research-candidate comparison batches.
+6. Continue PAPER/SHADOW prospective evidence.
+7. Complete desktop operational integration and shortcut smoke test before Atlas is called finished.
 
 LIVE READINESS
-Last fully verified checkpoint: 638 passed at 1909bac. Smoke reconciliation is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 640 passed at faf847c with canonical smoke CLI result persisted. Hyperliquid PIT import foundation is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-CANONICAL SMOKE COMMAND AFTER GREEN
+OPTIONAL SMOKE REPEAT
 backend\.venv\Scripts\python.exe -m app.backtest.cli --dataset tests\fixtures\backtest_smoke.csv --output-dir backend\data\research\backtests\smoke
+Expected existing deterministic run_id: f86b6144e920fea965ca
 
 NEXT EXECUTION AFTER GREEN
-Historical Dataset Acquisition / Import Workflow, then locked-baseline historical batches. Desktop operational integration remains mandatory before Atlas is considered finished.
+Historical Dataset Acquisition Sources / Manifest Workflow, then locked-baseline historical batches. Desktop operational integration remains mandatory before Atlas is considered finished.
 
 END OF MASTER ROADMAP
