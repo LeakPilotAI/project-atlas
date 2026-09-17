@@ -9,12 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Canonical BTC/ETH/SOL PIT assembly is GREEN and source readiness is GREEN. Focused canonical tests: 3 passed in 0.54s. Full regression: 757 passed, 2 warnings in 38.78s; 0 failures. Canonical execution produced normalized_outputs=3 status=ASSEMBLED_CANONICAL_PIT_DATASETS. BTC/ETH/SOL each contain 52,990 rows with exactly 2 incomplete-context rows excluded rather than fabricated. source_audit returned ready=true for all three datasets and ready_for_locked_baseline_batch=true with audit_id=ae70db3328bd71604414.
+Locked DEVELOPMENT input freeze is GREEN and COMPLETE. Focused tests: 2 passed in 0.32s. Full regression: 759 passed, 2 warnings in 39.39s; 0 failures. Freeze execution loaded BTC/ETH/SOL canonical datasets with 52,990 rows each, total_rows=158970, source_audit_green=true, source_audit_id=ae70db3328bd71604414, threshold_retuning_allowed=false, holdout_data_touched=false, live_capital_allowed=false, and status=LOCKED_DEVELOPMENT_BASELINE_INPUTS_FROZEN.
 
-EXECUTED LOCKED DEVELOPMENT BASELINE INPUT FREEZE — LOCAL TEST PENDING
-51a049d atlas: freeze locked development baseline inputs
-c7ba31e atlas: test locked development baseline freeze
-New research-only stage refuses to run unless source_audit is GREEN, loads the canonical BTC/ETH/SOL datasets, records row coverage and the source audit id, and freezes the DEVELOPMENT inputs without threshold retuning, holdout access, or live-capital enablement.
+EXECUTED LOCKED DEVELOPMENT BASELINE RUNNER — LOCAL TEST PENDING
+a085076 atlas: run deterministic locked development baseline
+9ef5e01 atlas: test locked development baseline run
+The new runner consumes only source-audit-GREEN canonical DEVELOPMENT datasets and the locked thresholds: OI >=75k USD, volume >=150k USD, RSI long <=28, RSI short >=72, extension 1.4%-3.5%, minimum R:R 1.8, HTF alignment enabled. It uses strict PIT history, next-bar-open fills through the existing deterministic historical engine, persists per-symbol run artifacts, writes an aggregate summary, forbids threshold retuning, does not touch holdout data, and cannot enable live capital or automated real-money execution.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -43,24 +43,28 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Exact funding PIT merge — 3 outputs
 [COMPLETE/VERIFIED] Canonical BTC/ETH/SOL PIT datasets — 52,990 rows each; 2 incomplete OI rows excluded
 [COMPLETE/VERIFIED GREEN] Canonical source audit — ready_for_locked_baseline_batch=true
+[COMPLETE/VERIFIED] Locked DEVELOPMENT input freeze — total_rows=158970; holdout untouched
 
-[CURRENT, LOCAL TEST PENDING] LOCKED DEVELOPMENT BASELINE INPUT FREEZE
-- requires canonical source_audit GREEN
-- canonical root: backend/data/research/historical/canonical-dev-2024-h2
-- freezes exact BTC/ETH/SOL DEVELOPMENT inputs
-- preserves source audit id
-- threshold retuning disabled
+[CURRENT, LOCAL TEST PENDING] DETERMINISTIC LOCKED DEVELOPMENT BASELINE RUN
+- canonical source_audit must remain GREEN
+- consumes only dev-2024-h2 canonical BTC/ETH/SOL datasets
+- locked thresholds only; no retuning
+- strict PIT signal history
+- signal at bar i fills next bar open via historical engine
+- per-symbol deterministic run artifacts + aggregate summary
+- threshold_retuning_allowed=false
 - holdout_data_touched=false
+- production_strategy_modified=false
 - live_capital_allowed=false
 - automatic_real_money_execution=false
 
-[NEXT AFTER LOCAL GREEN] Execute the locked DEVELOPMENT input freeze. Verify all three canonical datasets load, total rows reflect the frozen PIT bundle, source_audit_green=true, threshold_retuning_allowed=false, and holdout_data_touched=false.
+[NEXT AFTER LOCAL GREEN] Execute the locked DEVELOPMENT baseline across BTC/ETH/SOL. Capture the exact per-symbol and aggregate metrics, run ids, and output paths. Treat the result as evidence only; do not tune on the same DEVELOPMENT window.
 
-[THEN] Run the actual locked DEVELOPMENT baseline using the frozen inputs and locked production thresholds. Capture deterministic baseline metrics/artifacts only; do not retune on the same window.
+[THEN] Freeze DEVELOPMENT decisions/parameters and record whether the baseline establishes any credible positive edge. Stable positive edge must not be claimed from DEVELOPMENT alone.
 
-[THEN] Freeze DEVELOPMENT decisions/parameters before opening any untouched HOLDOUT window.
+[THEN] Open the untouched HOLDOUT window only after the freeze, run the exact frozen configuration, and compare out-of-sample results without retuning.
 
-[THEN] Untouched HOLDOUT evaluation -> isolated candidates only if justified by evidence -> PAPER/SHADOW operational checkpoint -> final desktop integration.
+[THEN] Isolated candidates only if justified by evidence -> PAPER/SHADOW operational checkpoint -> final desktop integration.
 
 DESKTOP END STATE
 Validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk; services/UI/research/backtests/recovery/shutdown/logging/persistence GREEN.
@@ -70,24 +74,23 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_locked_development_baseline.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_locked_development_baseline_run.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-LOCKED DEVELOPMENT INPUT FREEZE — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.locked_development_baseline --canonical-root backend\data\research\historical\canonical-dev-2024-h2 --output backend\data\research\historical\locked-development-baseline-inputs-dev-2024-h2.json --timeframe 5m
-Expected: status=LOCKED_DEVELOPMENT_BASELINE_INPUTS_FROZEN, source_audit_green=true, threshold_retuning_allowed=false, holdout_data_touched=false
+LOCKED DEVELOPMENT BASELINE RUN — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.locked_development_baseline_run --canonical-root backend\data\research\historical\canonical-dev-2024-h2 --output-root backend\data\research\historical\locked-development-baseline-runs\dev-2024-h2 --summary backend\data\research\historical\locked-development-baseline-summary-dev-2024-h2.json --timeframe 5m
+Expected: status=LOCKED_DEVELOPMENT_BASELINE_COMPLETE, threshold_retuning_allowed=false, holdout_data_touched=false, three per-symbol deterministic runs.
 
 WHAT REMAINS
-1 Validate locked DEVELOPMENT input-freeze focused/full tests.
-2 Execute locked DEVELOPMENT input freeze.
-3 Execute deterministic locked DEVELOPMENT baseline using frozen inputs and locked thresholds.
-4 Freeze decisions/parameters.
-5 Untouched HOLDOUT evaluation.
-6 Isolated candidates only if evidence supports them.
-7 PAPER/SHADOW operational checkpoint.
-8 Final desktop integration.
+1 Validate locked DEVELOPMENT baseline-run focused/full tests.
+2 Execute deterministic locked DEVELOPMENT baseline and record metrics.
+3 Freeze DEVELOPMENT decisions/parameters.
+4 Untouched HOLDOUT evaluation.
+5 Isolated candidates only if evidence supports them.
+6 PAPER/SHADOW operational checkpoint.
+7 Final desktop integration.
 
 RESEARCH/LIVE STATUS
-PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
+Prior PAPER n=903 expectancy=-0.0114R. Prior chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
 
 END OF MASTER ROADMAP
