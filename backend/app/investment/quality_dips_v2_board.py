@@ -1,8 +1,8 @@
 """Quality Dips V2 read-only board projection.
 
 Adds patient-capital research fields to legacy Quality Dips rows without changing
-legacy scoring, persistence, or brokerage behavior. Phase 9 exposes the V2 policy to
-the API/dashboard while execution remains manual-only.
+legacy scoring, persistence, or brokerage behavior. Runtime enrichment uses only
+persisted scored evidence, explicit provider targets, and stored daily OHLCV.
 """
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from typing import Any, Iterable
 from app.investment.quality_dips_v2_evidence import adapt_research_row
 from app.investment.quality_dips_v2_entries import build_entry_ladder
 from app.investment.quality_dips_v2_gate import evaluate_v2_gate
+from app.investment.quality_dips_v2_runtime import enrich_research_row
 from app.investment.quality_dips_v2_valuation import from_research_row as valuation_from_research_row
 
 
@@ -25,16 +26,15 @@ def _merge_valuation(row: dict[str, Any]) -> tuple[dict[str, Any], bool]:
 
 def build_v2_projection(row: dict[str, Any]) -> dict[str, Any]:
     """Return a read-only V2 projection for one investment research row."""
-    merged, valuation_complete = _merge_valuation(row)
+    runtime_row = enrich_research_row(row)
+    merged, valuation_complete = _merge_valuation(runtime_row)
     evidence = adapt_research_row(merged)
     gate = evaluate_v2_gate(evidence)
 
     ladder = build_entry_ladder(
         symbol=str(evidence.get("symbol") or ""),
         normalization_value=dict(evidence.get("normalization_value") or {}),
-        valuation_window_complete=(
-            valuation_complete and not bool(evidence.get("missing_v2_evidence"))
-        ),
+        valuation_window_complete=(valuation_complete and not bool(evidence.get("missing_v2_evidence"))),
         current_price=evidence.get("price"),
     )
 
@@ -44,6 +44,10 @@ def build_v2_projection(row: dict[str, Any]) -> dict[str, Any]:
         "state_reasons": list(evidence.get("state_reasons") or []),
         "evidence_gate": gate,
         "normalization_value": dict(evidence.get("normalization_value") or {}),
+        "valuation_provenance": list(valuation_from_research_row(runtime_row).get("valuation_provenance") or []),
+        "valuation_source_count": int(valuation_from_research_row(runtime_row).get("valuation_source_count") or 0),
+        "quality_score": evidence.get("quality_score"),
+        "quality_score_provenance": runtime_row.get("quality_score_provenance"),
         "conservative_upside_pct": evidence.get("conservative_upside_pct"),
         "base_upside_pct": evidence.get("base_upside_pct"),
         "optimistic_upside_pct": evidence.get("optimistic_upside_pct"),
@@ -63,9 +67,7 @@ def build_v2_projection(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def attach_v2_board(
-    board: Iterable[dict[str, Any]], research_rows: Iterable[dict[str, Any]]
-) -> list[dict[str, Any]]:
+def attach_v2_board(board: Iterable[dict[str, Any]], research_rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     latest: dict[str, dict[str, Any]] = {}
     for row in research_rows:
         if not isinstance(row, dict):
