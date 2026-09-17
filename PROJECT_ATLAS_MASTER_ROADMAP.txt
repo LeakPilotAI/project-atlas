@@ -9,12 +9,14 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Exact funding PIT merge is GREEN. Focused merge tests: 4 passed in 0.37s. Full regression: 752 passed, 2 warnings in 37.96s; 0 failures. Real BTC 2024-H2 merge consumed all 52,992 5m bars and all 4,415 first-party funding events with interpolation_used=false, forward_fill_used=false, current_state_backfill_used=false, and complete bars/funding/output SHA-256 provenance.
+Full BTC/ETH/SOL exact funding PIT merge batch is GREEN and COMPLETE. Focused tests: 6 passed in 0.35s. Full regression: 754 passed, 2 warnings in 37.44s; 0 failures. Batch execution produced normalized_outputs=3 status=MERGED_FIRST_PARTY_FUNDING_INTO_5M_BARS. BTC/ETH/SOL each contain 52,992 funded 5m bars with all 4,415 first-party Hyperliquid funding events merged under exact half-open interval semantics, with no interpolation or forward-fill.
 
-EXECUTED FULL FUNDING-MERGE BATCH — LOCAL TEST PENDING
-4a2c748 atlas: batch exact funding PIT merge
-1309ca5 atlas: test batch funding PIT merge
-New batch consumes the existing BTC/ETH/SOL normalized 5m candle files and corresponding first-party funding artifacts, writes one funded 5m artifact/report per symbol, aborts on missing source files, and preserves the exact-event/no-fill/no-interpolation semantics already verified in funding_pit_merge.py.
+EXECUTED CANONICAL PIT ASSEMBLY — LOCAL TEST PENDING
+0c453cb atlas: assemble canonical PIT datasets without OI fabrication
+9d51235 atlas: test canonical PIT assembly and sparse OI exclusion
+8ffaa92 atlas: batch canonical PIT dataset assembly
+affa843 atlas: test canonical PIT batch assembly
+Canonical assembly merges funded 5m bars, sparse PIT OI, exact rolling 24h quote volume, and completed-1h HTF. Any row missing required PIT context is EXCLUDED rather than filled or fabricated. The known two absent OI timestamps therefore remain missing. Per-symbol canonical manifests include PIT-aligned=true, current_state_backfill_used=false, source paths, raw/input SHA-256 values in notes, and dataset SHA-256, matching source_audit requirements.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -52,21 +54,23 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Real BTC full-window funding — 4,415 rows / 9 pages
 [COMPLETE/VERIFIED] Full BTC/ETH/SOL funding batch — each 4,415 rows / 9 pages
 [COMPLETE/VERIFIED] Real BTC exact-event funding PIT merge — 52,992 bars / 4,415 events
+[COMPLETE/VERIFIED] Full BTC/ETH/SOL funding PIT merge batch — each 52,992 bars / 4,415 events
 
-[CURRENT, LOCAL TEST PENDING] FULL BTC/ETH/SOL FUNDING PIT MERGE BATCH
-- consumes existing normalized 5m bars + first-party funding artifacts
-- exact event belongs only to containing half-open 5m interval
-- no forward-fill/interpolation/synthetic funding
-- missing source files fail closed
-- per-symbol funded output + report
-- batch manifest
+[CURRENT, LOCAL TEST PENDING] CANONICAL BTC/ETH/SOL PIT DATASET + MANIFEST ASSEMBLY
+- inputs: funded 5m bars + sparse PIT OI + exact rolling 24h quote volume + completed HTF
+- incomplete PIT context rows are excluded, never filled
+- known OI missingness remains real source missingness
+- funding_rate remains exact-event bar assignment from funded bars
+- htf_trend retained directly
+- per-symbol canonical dataset + .manifest.json
+- raw/input/output SHA-256 provenance
+- PIT aligned=true
+- current-state backfill=false
 - research only; no live path
 
-[NEXT AFTER LOCAL GREEN] Execute the full funding merge batch. Expect normalized_outputs=3 status=MERGED_FIRST_PARTY_FUNDING_INTO_5M_BARS, with each symbol bar_count=52992 and funding_events_merged=4415.
+[NEXT AFTER LOCAL GREEN] Execute the canonical BTC/ETH/SOL batch. Expect normalized_outputs=3 status=ASSEMBLED_CANONICAL_PIT_DATASETS. BTC/ETH/SOL should each cover the locked 2024-H2 decision window except for any documented incomplete-context rows; the known two OI missing timestamps must be excluded rather than fabricated. Then run source_audit on the canonical output root and require ready_for_locked_baseline_batch=true.
 
-[THEN] Canonical BTC/ETH/SOL dataset + manifest assembly: merge funded 5m bars with sparse PIT OI, rolling 24h quote-volume, and completed HTF. The two absent OI timestamps remain absent; canonical construction must exclude incomplete-context rows instead of fabricating OI. Persist raw/input/output SHA-256 provenance and gap policy in manifests.
-
-[THEN] Run source_audit and require ready_for_locked_baseline_batch=true before any locked DEVELOPMENT baseline.
+[THEN] Run source_audit and require all three canonical datasets/manifests GREEN before any locked DEVELOPMENT baseline.
 
 [THEN] Locked DEVELOPMENT baseline -> freeze decisions -> untouched HOLDOUT -> isolated candidates -> PAPER/SHADOW operational checkpoint -> final desktop integration.
 
@@ -78,22 +82,25 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_funding_pit_merge_batch.py tests/test_backtest_funding_pit_merge.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_canonical_assemble.py tests/test_backtest_canonical_batch.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-FULL FUNDING MERGE BATCH — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.funding_pit_merge_batch --bars-root backend\data\research\historical\dev-2024-h2-candles --funding-root backend\data\research\historical\dev-2024-h2-funding --output-root backend\data\research\historical\dev-2024-h2-funded --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --manifest backend\data\research\historical\funding-pit-merge-batch-dev-2024-h2.json
-Expected: normalized_outputs=3 status=MERGED_FIRST_PARTY_FUNDING_INTO_5M_BARS
+CANONICAL BATCH — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.canonical_batch --funded-root backend\data\research\historical\dev-2024-h2-funded --oi-root backend\data\research\historical\dev-2024-h2-oi --volume-root backend\data\research\historical\dev-2024-h2-volume --htf-root backend\data\research\historical\dev-2024-h2-htf --output-root backend\data\research\historical\canonical-dev-2024-h2 --manifest backend\data\research\historical\canonical-batch-dev-2024-h2.json --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z
+Expected: normalized_outputs=3 status=ASSEMBLED_CANONICAL_PIT_DATASETS
+
+SOURCE AUDIT — AFTER CANONICAL BATCH GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.source_audit --root backend\data\research\historical\canonical-dev-2024-h2 --timeframe 5m
+Required: ready_for_locked_baseline_batch=true
 
 WHAT REMAINS
-1 Validate funding-merge batch focused/full tests.
-2 Execute BTC/ETH/SOL funding merge batch.
-3 Canonical BTC/ETH/SOL datasets/manifests.
-4 source_audit GREEN.
-5 Locked DEVELOPMENT baseline.
-6 Freeze -> HOLDOUT -> candidates.
-7 PAPER/SHADOW operational checkpoint.
-8 Final desktop integration.
+1 Validate canonical assembly focused/full tests.
+2 Execute canonical BTC/ETH/SOL batch and inspect excluded incomplete rows.
+3 source_audit GREEN.
+4 Locked DEVELOPMENT baseline.
+5 Freeze -> HOLDOUT -> candidates.
+6 PAPER/SHADOW operational checkpoint.
+7 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 PAPER n=903 expectancy=-0.0114R. Later chronological holdout n=301 expectancy=-0.1474R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
