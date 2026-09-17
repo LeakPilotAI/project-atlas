@@ -6,9 +6,9 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: c98f9bdf3a490d2370c57c1815b066b44cacf7e4
-Focused maturity-confirmation-sequence + maturity-persistence suite: 6 passed in 0.35s. Full regression: 612 passed, 2 warnings in 37.02s. Failures: 0.
-Latest maturity-confirmation-sequence presentation validation at a38757d: frontend production build GREEN; focused suite 13 passed / 1 failed; full regression 612 passed / 1 failed, 2 warnings in 40.90s. The only failure was page-contract-only: the endpoint and contract were committed, but the final /research sequence panel write never landed after a stale-SHA conflict. Commit b541b52 adds the missing dedicated maturity confirmation sequence panel against the current page. Local rebuild + focused/full rerun pending.
+Tested commit: b7ecf2c06ef274b5df99c941f115c04352735f20
+Frontend production build GREEN. Focused maturity-sequence/evidence-ui/page-contract suite: 14 passed in 0.57s. Full regression: 613 passed, 2 warnings in 35.16s. Failures: 0.
+All changes after this checkpoint remain LOCAL TEST PENDING.
 
 LOCKED PRODUCTION
 RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
@@ -43,16 +43,18 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Maturity Transition Persistence / Reversal Diagnostics
 [COMPLETE, VERIFIED] Maturity Transition Persistence Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Maturity Confirmation Sequence Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Maturity Confirmation Sequence Lightweight Surface + Presentation
-  - research_evidence_ui exposes maturity_confirmation_sequence_diagnostics from retained qualifying maturity persistence checks
-  - surface preserves all eight dimensions, sequence, sequence_length, latest outcome, observation_count, confirmation_check_count, minimum_observations_required=3, duplicate-refresh resistance, and new-evidence-only semantics
-  - /research now includes the missing dedicated maturity confirmation sequence panel with per-dimension chronological sequence and latest outcome
-  - sequence outcomes remain descriptive PERSISTED / REVERSED / CHANGED AGAIN only; duplicate refreshes remain excluded
-  - evidence-ui tests cover normal and missing-file fail-closed maturity-sequence behavior
-  - page contract verifies method, sequence display, latest outcome, supported labels, and maturity_confirmation_sequence_diagnostics presence
-  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None; no ranking, tuning, production promotion, or live-capital unlock
-[NEXT] Local frontend production build + focused maturity-sequence/evidence-ui/page-contract regression + full regression after missing-panel repair.
-[NEXT AFTER GREEN] Maturity Sequence Stability / Repetition Diagnostics: describe whether per-dimension confirmation outcomes repeat, alternate, or remain unresolved across chronological retained checks, without scoring, ranking, promotion, or live unlock.
+[COMPLETE, VERIFIED] Maturity Confirmation Sequence Lightweight Surface + Presentation
+[COMPLETE, LOCAL TEST PENDING] Maturity Sequence Stability / Repetition Diagnostics
+  - new v6_maturity_sequence_stability service consumes chronological per-dimension maturity confirmation sequences only
+  - all eight maturity dimensions are preserved independently
+  - pattern labels are descriptive only: REPEATED_OUTCOME, ALTERNATING_PATTERN, MIXED_SEQUENCE, or INSUFFICIENT_HISTORY
+  - each dimension preserves sequence, sequence_length, latest, pattern, and repeated_latest
+  - candidate output preserves observation_count, confirmation_check_count, minimum_observations_required=3, duplicate-refresh resistance, new-evidence-only semantics, human-review-only, and production_promoted=False
+  - missing durable files fail closed with no candidates
+  - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None, automatic_promotion=False
+  - production strategy remains unchanged; live capital and automatic real-money execution remain disabled
+[NEXT] Local focused maturity-sequence-stability + maturity-confirmation-sequence regression and full regression.
+[NEXT AFTER GREEN] Maturity Sequence Stability Lightweight Surface + Presentation: expose per-dimension repetition/alternation patterns through the durable research-evidence endpoint and /research without scoring, ranking, promotion, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -61,23 +63,20 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified build+regression checkpoint: 612 passed at c98f9bd. Current Maturity Confirmation Sequence Lightweight Surface + Presentation remains LOCAL TEST/BUILD PENDING after missing-panel repair. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified build+regression checkpoint: 613 passed at b7ecf2c with frontend production build GREEN. Current Maturity Sequence Stability / Repetition Diagnostics is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_confirmation_sequences.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_sequence_stability.py tests/test_v6_maturity_confirmation_sequences.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 NEXT EXECUTION AFTER GREEN
-Maturity Sequence Stability / Repetition Diagnostics:
-- consume chronological per-dimension maturity confirmation sequences only;
-- describe repeated outcome, alternating/reversal pattern, or unresolved/insufficient history without collapsing to a score;
+Maturity Sequence Stability Lightweight Surface + Presentation:
+- expose per-dimension REPEATED_OUTCOME / ALTERNATING_PATTERN / MIXED_SEQUENCE / INSUFFICIENT_HISTORY through the durable lightweight research evidence endpoint;
+- render sequence, latest outcome, pattern, and repeated_latest on /research;
 - preserve duplicate-refresh resistance and qualifying-new-evidence semantics;
 - no aggregate readiness score, percentage, favorable-window rank, tuning, promotion, or live readiness decision;
 - human review only; no real-money execution.
