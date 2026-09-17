@@ -27,47 +27,21 @@ Phase 6: 45 focused / 842 full GREEN.
 Phase 7: 53 focused / 850 full GREEN.
 Phase 8: 60 focused / 857 full GREEN.
 Phase 9: 69 focused, 2 warnings in 2.96s / 864 full, 2 warnings in 39.07s GREEN.
+Phase 10: 80 focused, 2 warnings in 3.42s / 875 full, 2 warnings in 38.09s GREEN.
 
-PHASE 10 — EXECUTED / LOCAL TEST PENDING
-59cf67e backend/app/investment/quality_dips_v2_alerts.py
-- research-only alert policy
-- state-transition alerts
-- exceptional L3/L4 patient-zone alerts
-- thesis-change alerts
-- thesis failure overrides price/zone events
-- deterministic dedupe keys
-- configurable cooldown suppression
-- MANUAL_ONLY / no-live flags preserved
+PHASE 11 — EXECUTED / LOCAL TEST PENDING
+0e31ef7 tests/test_quality_dips_v2_operational_closure.py
+- verifies desktop ATLAS.bat launch chain remains wired to Atlas-Launch.ps1 and Atlas-Stop.ps1
+- verifies uvicorn app.main:app stays bound to 127.0.0.1:8000 with /health readiness and dashboard launch
+- verifies stop flow targets Atlas processes/ports/containers while preserving Docker Desktop and Genesis
+- verifies Quality Dips V2 code remains MANUAL_ONLY with no order-execution methods
+- verifies prior FAILED_NEGATIVE perps result remains closed/immutable in continuity evidence
 
-20946af tests/test_quality_dips_v2_alerts.py
-- state upgrades
-- GENERATIONAL high priority
-- L3/L4 exceptional-zone behavior
-- thesis-break precedence
-- cooldown/dedupe suppression
-- post-cooldown re-alert
-- no-change suppression
-- manual-only/non-guarantee formatting
-
-7076d86 backend/app/investment/quality_dips_v2_alert_store.py
-- durable JSON state under backend/data
-- stores prior V2 projection by symbol
-- stores last event by dedupe key
-- contains no brokerage actions
-
-6b622d1 tests/test_quality_dips_v2_alert_store.py
-- durable round-trip
-- defensive-copy behavior
-- no broker execution methods
-
-ee5d883 backend/app/services/quality_dip_scanner.py
-- integrates V2 alert policy with existing Quality Dip background monitor
-- first observation creates baseline, avoiding historical catch-up noise
-- durable snapshot/event state
-- Discord delivery only when quality_dip_discord_enabled
-- cooldown/dedupe applied before delivery
-- legacy accumulation ladder alerts preserved
-- no brokerage execution
+PHASE 11 CLOSURE DECISION
+Quality Dips V2 engineering cycle is functionally complete pending one final user-local operational regression gate.
+The correct evidence decision is RESEARCH_READY_MANUAL_ONLY, not LIVE_CAPITAL_READY.
+Reason: the software policy/validation/alerting/desktop integration can be verified, but the frozen V2 patient-capital model has not established prospective real-money performance or a guaranteed ability to identify exact bottoms. No return guarantee is supported.
+No automatic real-money execution is enabled.
 
 FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
@@ -80,25 +54,31 @@ FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/VERIFIED GREEN] Phase 7: PIT/no-lookahead validation
 [COMPLETE/VERIFIED GREEN] Phase 8: DEVELOPMENT freeze + untouched HOLDOUT boundary
 [COMPLETE/VERIFIED GREEN] Phase 9: validated V2 board + API/dashboard integration; MANUAL_ONLY
-[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 10: durable state-transition / exceptional-zone / thesis-change alerts with cooldown + dedupe
-[REMAINING] Phase 11: desktop regression + operational smoke + V2 evidence decision/closure
+[COMPLETE/VERIFIED GREEN] Phase 10: durable state-transition / exceptional-zone / thesis-change alerts with cooldown + dedupe
+[CURRENT — CODE COMPLETE, LOCAL OPERATIONAL TEST PENDING] Phase 11: desktop regression + operational smoke + V2 evidence decision/closure
 
-NEXT GREEN GATE
-Pull latest branch, run Phase 1-10 focused tests, then full regression. Do not call Phase 10 verified until user posts GREEN output.
+FINAL GREEN GATE
+Pull latest branch. Run the cumulative V2 focused suite including operational closure tests, then the full regression. After tests pass, launch Project Atlas from the normal desktop shortcut, confirm /health and the Quality Dips view load, then stop Atlas with the normal Stop Atlas shortcut and confirm Atlas stops without closing Docker Desktop/Genesis.
+Do not call the cycle fully closed until the user posts that final local operational GREEN output.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py tests/test_quality_dips_v2_position_monitor.py tests/test_quality_dips_v2_validation.py tests/test_quality_dips_v2_freeze.py tests/test_quality_dips_v2_board.py tests/test_quality_dips_v2_api_surface.py tests/test_quality_dips_v2_alerts.py tests/test_quality_dips_v2_alert_store.py tests/test_investment_board_api_v4.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py tests/test_quality_dips_v2_position_monitor.py tests/test_quality_dips_v2_validation.py tests/test_quality_dips_v2_freeze.py tests/test_quality_dips_v2_board.py tests/test_quality_dips_v2_api_surface.py tests/test_quality_dips_v2_alerts.py tests/test_quality_dips_v2_alert_store.py tests/test_quality_dips_v2_operational_closure.py tests/test_investment_board_api_v4.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-AFTER GREEN
-Proceed directly to Phase 11: desktop regression, operational smoke, and final V2 evidence decision/closure.
+FINAL MANUAL OPERATIONAL SMOKE
+1. Double-click: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
+2. Confirm Atlas stays running and the dashboard opens.
+3. Open: http://127.0.0.1:8000/health
+4. Open: http://127.0.0.1:8000/api/investments/quality-dips/view
+5. Confirm Quality Dips V2 / PATIENT CAPITAL renders and remains MANUAL_ONLY.
+6. Double-click: C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
+7. Confirm Atlas API/processes and atlas-postgres/atlas-redis stop while Docker Desktop/Genesis remain running.
 
-NORMAL DESKTOP WORKFLOW
-START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
-STOP: C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
+AFTER FINAL GREEN
+Close the Quality Dips V2 engineering cycle as RESEARCH_READY_MANUAL_ONLY. Preserve all frozen policy/evidence artifacts. Any future work must open a new cycle rather than silently retuning this frozen one.
 
 END OF MASTER ROADMAP
