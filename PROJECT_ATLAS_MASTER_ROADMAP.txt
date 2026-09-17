@@ -9,6 +9,9 @@ LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: b2e6c4f027a8c4bf3486bbff29cc4c883d59baac
 Historical-foundation focused suite: 4 passed in 0.23s. Full regression: 631 passed, 2 warnings in 35.58s. Failures: 0.
 
+LATEST LOCAL FAILURE / REPAIR
+At 5988110, the baseline-adapter suite failed one fixture because the intended long/short examples exceeded the locked max-extension gate. The long series ended near -5% extension versus the allowed 1.4%-3.5% band, so the adapter correctly returned None. Repair commit e503e29 changes only the fixture data to remain strongly oversold/overbought while staying inside the locked extension band. No baseline logic or production threshold changed. Repair is LOCAL TEST PENDING.
+
 LOCKED PRODUCTION
 OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock.
 
@@ -25,15 +28,16 @@ ENGINEERING ROADMAP
   - hard research-only/live-disabled safety flags
   - package export and target-hit fixture repairs verified by 4 focused + 631 full tests
 
-[COMPLETE, LOCAL TEST PENDING] Locked Perp-Micro Baseline Strategy Adapter
+[COMPLETE, LOCAL TEST PENDING AFTER FIXTURE REPAIR] Locked Perp-Micro Baseline Strategy Adapter
   - backend/app/backtest/perp_micro_baseline.py consumes production Settings defaults without mutating them
   - locked thresholds: RSI 28/72, extension 1.4%-3.5%, minimum R:R 1.8, risk_usd from production defaults
   - OI/24h-volume eligibility and HTF alignment are explicit fail-closed gates because current HistoricalBar does not contain those production inputs
   - no silent use of legacy generic decide_direction behavior
   - baseline metadata explicitly reports production_strategy_modified=False, live_capital_allowed=False, automatic_real_money_execution=False
   - focused tests verify settings immutability, missing external gates fail closed, long/short 1.8R construction, extension bounds, and safety metadata
+  - fixture repair e503e29 keeps intended signal examples inside the production max-extension gate instead of weakening the adapter
 
-[NEXT] Local focused baseline-adapter + historical-foundation tests and full regression.
+[NEXT] Re-run focused baseline-adapter + historical-foundation tests and full regression after fixture repair.
 [NEXT AFTER GREEN] Canonical Backtest Data Loader + CLI / Operator Workflow
   - define validated CSV/JSONL historical schema including point-in-time OI/24h-volume eligibility and HTF alignment inputs needed by locked baseline
   - wire loader -> locked baseline adapter -> deterministic historical runner
@@ -53,14 +57,14 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE BACKTESTING
-1. Verify the locked perp-micro historical baseline adapter locally.
+1. Verify the repaired locked perp-micro historical baseline adapter locally.
 2. Build validated historical-data loader with PIT OI/volume/HTF fields and canonical CLI/operator command.
 3. Run/reconcile deterministic smoke backtest twice.
 4. Begin locked-baseline historical batches, then separate research-candidate batches.
 5. Continue PAPER/SHADOW prospective evidence after historical runner is healthy.
 
 LIVE READINESS
-Last fully verified checkpoint: 631 passed at b2e6c4f. Locked baseline adapter is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 631 passed at b2e6c4f. Locked baseline adapter + fixture repair are LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
