@@ -1,8 +1,9 @@
-"""Quality-dip view and durable accumulation-level alert monitor.
+"""Quality-dip view and durable accumulation/V2 research alert monitor.
 
 The investment engine remains the source of truth. Real brokerage execution is
-always manual. A lightweight quote monitor watches frozen accumulation ladders and
-DMs one alert per L1/L2/L3/L4 hit for each accumulation cycle.
+always manual. Legacy accumulation alerts are preserved. Quality Dips V2 adds durable
+state-transition, exceptional-zone, and thesis-change research alerts with cooldown
+and dedupe.
 """
 
 from __future__ import annotations
@@ -181,7 +182,6 @@ class QualityDipScanner:
         log.info("A+ quality dip research alert", symbol=row.get("symbol"), recovery_runway_pct=runway, delivered=bool(ok))
 
     async def _accumulation_board(self) -> list[dict[str, Any]]:
-        """Build a fresh quote-aware board, fetching only current ACCUMULATE names."""
         from app.investment.board import build_quality_dips_board
         from app.investment.quality_dip_quotes import apply_quote_overlay, quality_dip_quote_service
 
@@ -220,8 +220,69 @@ class QualityDipScanner:
             title=f"ATLAS ACCUMULATION · {hit.symbol} · {hit.level} HIT",
         )
 
+    async def _process_v2_alerts(self, board: list[dict[str, Any]], cooldown_hours: float) -> None:
+        from app.investment.notify import deliver_investment_alert
+        from app.investment.quality_dips_v2_alert_store import quality_dips_v2_alert_store
+        from app.investment.quality_dips_v2_alerts import decide_v2_alert, format_v2_alert
+
+        for row in board:
+            symbol = str(row.get("symbol") or "").upper().strip()
+            current = dict(row.get("quality_dips_v2") or {})
+            if not symbol or not current:
+                continue
+            previous = quality_dips_v2_alert_store.previous(symbol)
+            # First observation establishes durable baseline; do not emit historical catch-up noise.
+            if previous is None:
+                quality_dips_v2_alert_store.remember_snapshot(symbol, current)
+                continue
+            probe = decide_v2_alert(
+                symbol=symbol,
+                previous=previous,
+                current=current,
+                cooldown_hours=cooldown_hours,
+            )
+            prior_event = quality_dips_v2_alert_store.prior_event(str(probe.get("dedupe_key") or ""))
+            decision = decide_v2_alert(
+                symbol=symbol,
+                previous=previous,
+                current=current,
+                prior_event=prior_event,
+                cooldown_hours=cooldown_hours,
+            )
+            if decision.get("notify"):
+                text = format_v2_alert(symbol, decision, current)
+                delivered = False
+                try:
+                    delivered = await deliver_investment_alert(
+                        text,
+                        symbol=symbol,
+                        priority=str(decision.get("priority") or "NORMAL"),
+                        title=f"ATLAS QUALITY DIPS V2 · {symbol} · {decision.get('event_type')}",
+                    )
+                except Exception as exc:
+                    log.warning("Quality Dips V2 notify failed", symbol=symbol, error=str(exc)[:160])
+                quality_dips_v2_alert_store.mark_event(
+                    dedupe_key=str(decision.get("dedupe_key") or ""),
+                    delivered=bool(delivered),
+                    event_type=str(decision.get("event_type") or "UNKNOWN"),
+                    symbol=symbol,
+                )
+                event = {
+                    "symbol": symbol,
+                    "action": "QUALITY_DIPS_V2_ALERT",
+                    "event_type": decision.get("event_type"),
+                    "dedupe_key": decision.get("dedupe_key"),
+                    "delivered": bool(delivered),
+                    "at": _now().isoformat(),
+                }
+                self.last_alerts = ([event] + self.last_alerts)[:20]
+                log.info("Quality Dips V2 research alert", **event)
+            quality_dips_v2_alert_store.remember_snapshot(symbol, current)
+        quality_dips_v2_alert_store.save()
+
     async def _ladder_once(self) -> None:
         from app.investment.accumulation_ladder import accumulation_ladder_store
+        from app.investment.quality_dips_v2_board import attach_v2_board
 
         board = await self._accumulation_board()
         hits = accumulation_ladder_store.sync(board)
@@ -248,6 +309,12 @@ class QualityDipScanner:
             }
             self.last_alerts = ([event] + self.last_alerts)[:20]
             log.info("accumulation ladder level hit", **event)
+
+        if discord_enabled:
+            research = _load_jsonl(OPPORTUNITIES_PATH)
+            v2_board = attach_v2_board(board, research)
+            hours = float(getattr(settings, "quality_dip_cooldown_hours", 12) or 12)
+            await self._process_v2_alerts(v2_board, hours)
 
     async def _consume(self) -> None:
         from app.investment.scan import investment_scanner
