@@ -3,7 +3,7 @@ Updated: 2026-09-16
 Branch: chatgpt/atlas-rebuild-v1
 
 PERMANENT EXECUTION PROTOCOL
-When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
+When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Tested commit: b0039a700b43789c42f3073402a4ed175c4e6464
@@ -14,84 +14,68 @@ RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
-[COMPLETE, VERIFIED] V6 research stack through Snapshot Independence Hardening
-[COMPLETE, VERIFIED] Research Evidence Front-End Panel and all maturity/sequence diagnostics through Run Boundary Recurrence
-[COMPLETE, VERIFIED] Maturity Sequence Run Boundary Recurrence Lightweight Surface + Presentation
+[COMPLETE, VERIFIED] V6 research/evidence/maturity stack through Run Boundary Recurrence Lightweight Surface + Presentation
+[COMPLETE] Backtesting Readiness Audit
 
-[COMPLETE — AUDIT FINDINGS RECORDED] Backtesting Readiness Audit
-  - backend/app/backtest/engine.py exists, but it is currently a signal/decision helper, not a complete historical backtest runner
-  - current engine computes RSI, direction scores, multi-timeframe agreement, invalidation, and suggested R:R only
-  - no canonical historical dataset iteration loop exists in backend/app/backtest
-  - no explicit deterministic fill simulator exists there
-  - no explicit fee/slippage/funding accounting exists there
-  - no portfolio/equity curve or drawdown accounting exists there
-  - no canonical persisted trade ledger/result bundle exists there
-  - no canonical CLI/operator command exists for repeatable historical runs
-  - locked production thresholds are centralized in Settings and can be consumed by a baseline backtest profile without changing production configuration
-  - README describes Atlas as an alert/analysis system that does not auto-trade; historical backtesting can remain isolated research-only
+[COMPLETE, LOCAL TEST PENDING] Deterministic Historical Backtest Runner Foundation — replay/fill/cost/result core
+  - canonical immutable HistoricalBar contract includes timestamp, symbol, timeframe, OHLCV, optional funding_rate
+  - one run fails closed unless data is unique ascending timestamps and one symbol/timeframe
+  - signal callback receives tuple(rows[:i+1]) only; future bars are unavailable to decision code
+  - signal generated at bar i fills at bar i+1 open, preventing same-bar signal/fill lookahead
+  - explicit adverse slippage per entry/exit fill
+  - explicit fee bps per fill
+  - explicit funding accounting while a position is held
+  - risk_usd sizing derives quantity from entry-to-stop risk
+  - stop/target intrabar collision policy is explicit and defaults conservatively to STOP_FIRST
+  - ledger records signal/entry/exit timestamps, prices, quantity, gross/net PnL, fees, slippage, funding, net R, exit reason
+  - metrics include n, WR, expectancy R, total R, PF, max drawdown USD, ending equity, fees/slippage/funding
+  - deterministic result payload includes assumptions, dataset range, equity curve, research-only safety flags, and content-derived run_id
+  - persisted JSON result is idempotent and collision-protected
+  - no exchange adapter, production-setting mutation, live-capital enablement, or real-money execution path exists in this module
+  - focused tests added for PIT visibility/next-bar fills, explicit costs, repeatability/persistence, research-only safety, and fail-closed ordering
 
-[CURRENT — BUILD REQUIRED] Deterministic Historical Backtest Runner Foundation
-  1. define canonical OHLCV historical input contract with timestamps and symbol/timeframe identity
-  2. build deterministic replay loop that only exposes bars available at each simulated decision timestamp
-  3. adapt/bridge locked perp-micro baseline rules separately from legacy generic decide_direction helper
-  4. implement explicit entry/exit fill assumptions
-  5. implement explicit fee/slippage/funding assumptions with all costs included in net PnL
-  6. implement position sizing and R-based accounting
-  7. persist run metadata, config snapshot, trade ledger, metrics, and deterministic run identifier
-  8. guarantee research-only output cannot mutate production gates or enable live capital
-  9. add deterministic-repeatability and no-lookahead tests
-
-[NEXT AFTER FOUNDATION GREEN] Canonical Backtest CLI / Operator Workflow
+[NEXT] Local focused historical-foundation tests + full regression.
+[NEXT AFTER GREEN] Locked Perp-Micro Baseline Strategy Adapter
+  - implement historical signal adapter using locked RSI 28/72, extension 1.4%-3.5%, min R:R 1.8 and existing production semantics where reproducible from historical inputs
+  - do not mutate Settings and do not silently substitute legacy generic decide_direction rules
+  - explicitly document any production inputs not reconstructible from the initial OHLCV contract (for example OI/volume eligibility or HTF regime) and fail closed or extend the dataset contract rather than fabricate them
+  - add unit tests proving locked thresholds and no production mutation
+[THEN] Canonical Backtest CLI / Operator Workflow
+  - CSV/JSONL loader with explicit schema validation
   - one repeatable PowerShell command
-  - explicit dataset path / symbols / date range / baseline-or-candidate selection
-  - deterministic output directory under research/backtest results
-  - baseline vs research candidate separation
-
+  - explicit dataset path, baseline/candidate selection, and deterministic output directory
 [THEN] Smoke Backtest Reconciliation
-  - tiny known dataset
-  - inspect every signal, entry, stop/target, cost, R result, equity update
-  - repeat same run twice and require identical output
-
+  - tiny known dataset; inspect every signal/fill/cost/R/equity update; repeat twice with identical result
 [THEN] Historical Batch Research
-  - locked baseline first
-  - research candidates second
-  - multiple periods/regimes
-  - comparable persisted metrics including n, WR, expectancy R, total R, PF, drawdown, costs
-
+  - locked baseline first; research candidates second; multiple periods/regimes; persisted comparable metrics
 [THEN] PAPER/SHADOW Operations Checkpoint
-  - startup/recovery
-  - live market-data ingestion
-  - signal generation
-  - simulated fills
-  - logs/dashboard
-  - durable prospective evidence
-
-[ONGOING] V6 prospective evidence.
-[ONGOING] Quality Dips PIT/forward evidence.
-[FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
+  - startup/recovery, live data ingestion, simulated fills, logs/dashboard, durable prospective evidence
+[ONGOING] V6 prospective evidence and Quality Dips PIT/forward evidence.
+[FUTURE] Human-reviewed promotion only after sufficient evidence. Live remains separate.
 
 RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
-WHAT REMAINS BEFORE ROUTINE BACKTESTING / ATLAS RESEARCH RUNS
-1. Build deterministic historical replay foundation listed above.
-2. Add focused tests for PIT/no-lookahead, costs, fills, R accounting, persistence, and repeatability.
-3. Establish the canonical backtest CLI/operator command and result location.
-4. Run and reconcile a deterministic smoke backtest.
-5. Begin locked-baseline historical batches, then research candidates across representative periods/regimes.
-6. In parallel, continue PAPER/SHADOW prospective evidence collection after the historical runner is healthy.
-
-IMPORTANT DISTINCTION
-The evidence-observability/maturity chain is complete for pre-backtest purposes. The blocker is no longer diagnostics; it is that the existing backtest module is not yet a complete historical simulator. Historical backtesting may begin as soon as the deterministic runner foundation + smoke checkpoint are GREEN. Live trading remains a separate, much later gate.
+WHAT REMAINS BEFORE ROUTINE BACKTESTING
+1. Verify the new deterministic historical replay/fill/cost/result foundation locally.
+2. Build and verify the locked perp-micro historical signal adapter without changing production settings.
+3. Build canonical validated historical-data loader + CLI/operator command + deterministic result location.
+4. Run/reconcile deterministic smoke backtest twice.
+5. Begin locked-baseline historical batches, then separate research-candidate batches.
+6. Continue PAPER/SHADOW prospective evidence after historical runner is healthy.
 
 LIVE READINESS
-Last fully verified build+regression checkpoint: 627 passed at b0039a7 with frontend production build GREEN. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 627 passed at b0039a7 with frontend GREEN. New historical foundation is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-NEXT EXECUTION
-Deterministic Historical Backtest Runner Foundation:
-- create the historical input/replay/fill/cost/result architecture without changing locked production settings;
-- research-only; no real-money execution;
-- add tests first around deterministic replay and no-lookahead invariants;
-- then expose a canonical operator runner.
+LOCAL UPDATE / TEST
+cd "D:\Work\Project Atlas"
+git fetch origin
+git checkout chatgpt/atlas-rebuild-v1
+git reset --hard origin/chatgpt/atlas-rebuild-v1
+backend\.venv\Scripts\python.exe -m pytest tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest -q
+
+NEXT EXECUTION AFTER GREEN
+Locked Perp-Micro Baseline Strategy Adapter, then canonical CLI. Do not extend maturity diagnostics before backtesting.
 
 END OF MASTER ROADMAP
