@@ -6,8 +6,8 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 17198e7cda151002b12d553a93c69eda25bb9ed0
-Focused baseline-adapter + historical-foundation suite: 8 passed in 0.42s. Full regression: 635 passed, 2 warnings in 35.64s. Failures: 0.
+Tested commit: 1909bac606ef980db3bda31d4be1d3181c60ae9f
+Focused loader/CLI + baseline + foundation suite: 11 passed in 0.40s. Full regression: 638 passed, 2 warnings in 34.99s. Failures: 0.
 
 LOCKED PRODUCTION
 OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock.
@@ -20,50 +20,41 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] V6 research/evidence/maturity stack through Run Boundary Recurrence Lightweight Surface + Presentation
 [COMPLETE] Backtesting Readiness Audit
 [COMPLETE, VERIFIED] Deterministic Historical Backtest Runner Foundation
-  - canonical immutable HistoricalBar OHLCV/funding contract
-  - strict ascending unique PIT chronology and one symbol/timeframe per run
-  - signals see history through current bar only and fill next-bar open
-  - explicit fees, slippage, funding, risk sizing, stop/target handling, ledger, equity, drawdown, R metrics
-  - deterministic run_id and idempotent persisted result bundle
-  - hard research-only/live-disabled safety flags
-  - verified by 4 focused + 631 full tests
-
 [COMPLETE, VERIFIED] Locked Perp-Micro Baseline Strategy Adapter
-  - consumes production Settings defaults without mutating them
-  - locked thresholds: OI 75k, volume 150k, RSI 28/72, extension 1.4%-3.5%, min R:R 1.8, risk_usd from production defaults
-  - OI/24h-volume eligibility and HTF alignment remain explicit fail-closed gates
-  - no silent use of legacy generic decide_direction behavior
-  - metadata reports production_strategy_modified=False, live_capital_allowed=False, automatic_real_money_execution=False
-  - verified by 8 focused + 635 full tests at 17198e7
+[COMPLETE, VERIFIED] Canonical Backtest Data Loader + CLI / Operator Workflow
+  - validated CSV/JSONL/NDJSON PIT schema
+  - loader -> locked baseline -> deterministic runner -> persisted JSON result
+  - production OI/volume thresholds sourced from Settings-backed baseline config
+  - canonical command supports dataset/output/fees/slippage/equity
+  - verified by 11 focused + 638 full tests at 1909bac
 
-[COMPLETE, LOCAL TEST PENDING] Canonical Backtest Data Loader + CLI / Operator Workflow
-  - backend/app/backtest/io.py validates CSV/JSONL/NDJSON datasets
-  - required PIT fields: timestamp, symbol, timeframe, OHLCV, open_interest_usd, volume_24h_usd, htf_regime_aligned; optional funding_rate
-  - loader fails closed on missing context, negative OI/volume, unsupported file type, duplicate/out-of-order timestamps, and mixed symbol/timeframe datasets
-  - backend/app/backtest/cli.py wires validated context -> locked baseline adapter -> deterministic historical runner -> persisted JSON result
-  - baseline OI/volume eligibility uses thresholds sourced from the same PerpMicroBaselineConfig/Settings source of truth, not duplicated constants in CLI logic
-  - CLI exposes explicit dataset, output-dir, fee-bps, slippage-bps, initial-equity and locked baseline strategy
-  - output reports run_id, result path, trade count, WR, expectancy R, total R, PF, drawdown and explicit costs
-  - research-only/live-disabled safety remains preserved
-  - focused loader/CLI tests cover PIT field parsing, fail-closed missing OI, locked threshold metadata, result persistence, and live-disabled flags
+[COMPLETE, LOCAL TEST PENDING] Deterministic Smoke Backtest Reconciliation
+  - canonical fixture: tests/fixtures/backtest_smoke.csv
+  - fixture includes PIT OHLCV, funding, OI, 24h volume and HTF alignment
+  - smoke test runs the same dataset twice through the exact locked baseline + deterministic runner and requires identical result payload and run_id
+  - reconciles trade_count against ledger length and total_r/fees/slippage/funding metrics against summed trade ledger values
+  - CLI smoke test persists the result, reruns with identical inputs, and requires the exact same single result file path/content identity behavior
+  - research-only/live-disabled safety flags are asserted
 
-[NEXT] Local focused loader/CLI + baseline + foundation tests and full regression.
-[NEXT AFTER GREEN] Deterministic Smoke Backtest Reconciliation
-  - add a tiny canonical fixture dataset under tests/fixtures or backend/data/research/smoke without polluting production data
-  - run the exact CLI twice with identical inputs/assumptions
-  - require identical run_id/result content
-  - reconcile every generated signal, next-bar fill, stop/target, fee/slippage/funding charge, net R, equity update and metrics
-  - record the exact canonical PowerShell command and output location
-[THEN] Historical Batch Research
-  - establish dataset acquisition/import workflow for representative Hyperliquid periods/regimes with PIT OI/volume/HTF context
-  - locked baseline first; research candidates second; persisted comparable metrics
+[NEXT] Local smoke reconciliation + loader/CLI + baseline/foundation focused tests and full regression.
+[NEXT AFTER GREEN] Historical Dataset Acquisition / Import Workflow
+  - obtain representative historical Hyperliquid data without lookahead
+  - preserve point-in-time OI, rolling volume, funding and HTF context or derive only from data available at each timestamp
+  - define deterministic normalization/import path into canonical Atlas schema
+  - include provenance/date range/symbol/timeframe metadata and reject incomplete context rather than fabricate it
+[THEN] Locked Baseline Historical Batch Research
+  - run baseline across multiple symbols/periods/regimes
+  - persist comparable metrics/trades/run metadata
+  - inspect expectancy, WR, PF, total R, drawdown and costs; stable positive edge remains unproven until evidence says otherwise
+[THEN] Research Candidate Batch Comparison
+  - candidates remain isolated from production gates and compared against the locked baseline only in research outputs
 [THEN] PAPER/SHADOW Operations Checkpoint
-  - startup/recovery, live market-data ingestion, signal generation, simulated fills, logs/dashboard, durable prospective evidence
+  - startup/recovery, market-data ingestion, signals, simulated fills, logs/dashboard and durable prospective evidence
 [THEN — DESKTOP OPERATIONAL INTEGRATION] Final shortcut/runtime audit
-  - verify desktop shortcut launches every intended Atlas service and the intended UI
-  - reconcile current API-served dashboard with Next.js /research surfaces so nothing built is unreachable from normal launch
-  - surface backtest status/results/operator entry points from the normal Atlas experience rather than requiring hidden/manual scripts
-  - validate dependency failure messages, restart/recovery, shutdown, stale-process cleanup, logs and persistent data paths
+  - verify desktop shortcut launches every intended Atlas service and intended UI
+  - reconcile current API-served dashboard with Next.js /research surfaces so no completed capability is unreachable from normal launch
+  - surface backtest status/results/operator entry points in normal Atlas operation
+  - validate dependency failures, restart/recovery, shutdown, stale-process cleanup, logs and persistent data paths
   - execute a complete desktop-launch smoke test before declaring Atlas operationally finished
 [ONGOING] V6 prospective evidence and Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion only after sufficient evidence. Live remains separate.
@@ -72,28 +63,28 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE BACKTESTING
-1. Verify the new validated data loader + canonical CLI locally.
-2. Run/reconcile deterministic smoke backtest twice and freeze the canonical operator command.
-3. Establish representative historical dataset acquisition/import with PIT OI/volume/HTF context.
-4. Begin locked-baseline historical batches, then separate research-candidate batches.
-5. Continue PAPER/SHADOW prospective evidence after historical runner is healthy.
-6. Before Atlas is called finished, complete desktop operational integration so the shortcut launches the full intended research environment and built surfaces are reachable/healthy.
+1. Verify deterministic smoke reconciliation locally.
+2. Establish representative historical dataset acquisition/import with PIT OI/volume/funding/HTF context.
+3. Run locked-baseline historical batches across representative periods/regimes.
+4. Run isolated research-candidate comparison batches.
+5. Continue PAPER/SHADOW prospective evidence.
+6. Before Atlas is called finished, complete desktop operational integration and full shortcut smoke test.
 
 LIVE READINESS
-Last fully verified checkpoint: 635 passed at 17198e7. Loader/CLI workflow is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 638 passed at 1909bac. Smoke reconciliation is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-CANONICAL BACKTEST COMMAND AFTER THIS CHECKPOINT IS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.cli --dataset <PATH_TO_VALIDATED.csv-or-jsonl> --output-dir backend\data\research\backtests
+CANONICAL SMOKE COMMAND AFTER GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.cli --dataset tests\fixtures\backtest_smoke.csv --output-dir backend\data\research\backtests\smoke
 
 NEXT EXECUTION AFTER GREEN
-Deterministic Smoke Backtest Reconciliation, then representative historical dataset workflow/batches. Desktop operational integration remains a mandatory final checkpoint before Atlas is considered finished.
+Historical Dataset Acquisition / Import Workflow, then locked-baseline historical batches. Desktop operational integration remains mandatory before Atlas is considered finished.
 
 END OF MASTER ROADMAP
