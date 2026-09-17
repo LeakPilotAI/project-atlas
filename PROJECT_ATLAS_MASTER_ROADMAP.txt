@@ -29,21 +29,40 @@ Phase 8: 60 focused in 0.43s / 857 full, 2 warnings in 42.94s GREEN.
 
 PHASE 9 — REPAIRED / LOCAL TEST PENDING
 Latest user-local focused suite before this repair: 68 passed, 1 failed, 2 warnings in 3.38s.
-Remaining failure was legacy dashboard compatibility only:
-- tests/test_investment_board_api_v4.py required exact text LAST SUPPORTED PRICE.
+The prior failure exposed the next exact V4 dashboard marker. Instead of repairing markers one at a time, the complete V4 dashboard contract test was inspected and every required marker was restored in one compatibility pass.
 
-Repair commits:
+Phase 9 repair history:
 cd83a8b atlas: fix Quality Dips V2 ladder integration
 7e3136c atlas: surface Quality Dips V2 patient capital fields
 bcdb352 atlas: restore equity investment dashboard contract
 6365b45 atlas: restore live supported price dashboard contract
 3e8ae18 atlas: restore last supported price dashboard contract
-- preserves QUALITY DIPS V2 / PATIENT CAPITAL UI
-- preserves exact EQUITY INVESTMENT marker
-- preserves exact LIVE SUPPORTED PRICE marker
-- restores exact LAST SUPPORTED PRICE marker
-- LIVE/FRESH quote quality shows LIVE SUPPORTED PRICE; stale/reference/missing quality shows LAST SUPPORTED PRICE
-- does not add perp API calls or live execution
+618001a atlas: restore complete Quality Dips V4 dashboard contract
+
+Complete V4 compatibility now preserves:
+- Quality Dips / Robinhood
+- EQUITY INVESTMENT
+- /api/investments/quality-dips
+- no /api/perps/
+- no Hyperliquid
+- LIVE SUPPORTED PRICE
+- LAST SUPPORTED PRICE
+- DIP LEVEL HIT
+- CHECK ROBINHOOD
+- NEXT DIP LEVEL
+- DISCORD DM PENDING
+- L1-L4
+- NO BROKER ORDERS
+
+V2 remains intact:
+- QUALITY DIPS V2 / PATIENT CAPITAL
+- patient state
+- conservative/base/optimistic normalization values
+- conservative upside
+- evidence gate
+- L1/L2/L3/L4 patient entry ladder at 29/35/40/50 hurdles
+- trend evidence
+- MANUAL_ONLY / no-live
 
 Earlier Phase 9 commits retained:
 c506a60 backend/app/investment/quality_dips_v2_board.py
@@ -62,7 +81,7 @@ FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/VERIFIED GREEN] Phase 6: active-position trend/thesis/cost-basis monitor
 [COMPLETE/VERIFIED GREEN] Phase 7: PIT/no-lookahead validation
 [COMPLETE/VERIFIED GREEN] Phase 8: DEVELOPMENT freeze + untouched HOLDOUT boundary
-[CURRENT — REPAIRED, LOCAL TEST PENDING] Phase 9: validated V2 board + API/dashboard integration; MANUAL_ONLY
+[CURRENT — COMPLETE V4 COMPATIBILITY REPAIR APPLIED, LOCAL TEST PENDING] Phase 9: validated V2 board + API/dashboard integration; MANUAL_ONLY
 [REMAINING] Phase 10: state-transition / exceptional-zone / thesis-change alerts with cooldown + dedupe
 [REMAINING] Phase 11: desktop regression + operational smoke + V2 evidence decision/closure
 
