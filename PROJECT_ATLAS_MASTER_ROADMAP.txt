@@ -6,9 +6,8 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files/commits; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity. After every execution provide this FULL CURRENT ROADMAP as a downloadable artifact so the user can overwrite their local roadmap and preserve continuity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Last fully GREEN commit: 374f7482ec48f541fc36bd1b2d0631c108e0bf59
-Focused provider-normalization + source-audit/import/manifest/PIT/backtest suite: 29 passed in 0.78s. Full regression: 656 passed, 2 warnings in 36.12s. Failures: 0.
-Latest attempted combined checkpoint before repair: 38 passed / 1 failed. Failure was a stale legacy importer test that still expected pre-hardening carry-forward funding semantics. The production code behaved as intended (0.0 on non-event bars); test reconciliation is now pushed and LOCAL RETEST PENDING.
+Tested commit: e85bf20e4459a425434de2cf1f7218fdafb90269
+Focused HTF/context-v2/funding/provider/source/import/backtest suite: 40 passed in 0.75s. Full regression: 667 passed, 2 warnings in 35.23s. Failures: 0.
 
 LOCKED PRODUCTION
 OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. Production HTF semantics: latest completed 1h close vs SMA20; UP if > SMA20*1.002, DOWN if < SMA20*0.998, otherwise FLAT; UNKNOWN/OFF/FLAT permit either side, UP permits LONG and blocks SHORT, DOWN permits SHORT and blocks LONG. No automatic retuning/live unlock.
@@ -30,65 +29,63 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Hyperliquid Historical Dataset PIT Import Foundation
 [COMPLETE, VERIFIED] Historical Dataset Provenance / Manifest Foundation + Historical Source Operator Import Command
 [COMPLETE, VERIFIED] Representative Historical Source Readiness Audit
-[COMPLETE, VERIFIED] Provider Historical Context Normalization — 29 focused + 656 full tests at 374f748
+[COMPLETE, VERIFIED] Provider Historical Context Normalization
+[COMPLETE, VERIFIED] Production-Equivalent PIT HTF Semantic Hardening
+[COMPLETE, VERIFIED] Canonical Historical Context Contract v2
+[COMPLETE, VERIFIED] Hyperliquid Funding-Event Semantics Hardening + Legacy Test Reconciliation
+  - verified by 40 focused + 667 full tests at e85bf20
+  - residual funding precision note remains: event notional currently uses candle open rather than event oracle price; do not claim high-precision funding-cost reconstruction until enhanced
 
-[COMPLETE, LOCAL TEST PENDING] Production-Equivalent PIT HTF Semantic Hardening
-- side-aware HTF semantics matching production
-- only completed 1h candles visible to 5m decisions
-- locked baseline accepts explicit htf_trend
+[COMPLETE, LOCAL TEST PENDING] Representative Historical Source Acquisition Plan
+  - added backend/app/backtest/source_plan.py
+  - locks representative symbols to BTC/ETH/SOL and timeframe to 5m
+  - defines exact raw filenames/paths for candles, funding, OI, rolling volume, 1h HTF candles, derived HTF context, and merged context
+  - locks official Hyperliquid candleSnapshot for 5m/1h candles and fundingHistory for realized funding source identity
+  - records 0xArchive Hyperliquid historical open-interest 5m as current acquisition target based on documented history/aggregation support
+  - rolling 24h notional volume is explicitly derived point-in-time from historical records only; current-state backfill forbidden
+  - source-plan output is research-only/live-disabled
+  - focused tests cover BTC/ETH/SOL lock, source identities, deterministic paths, safety flags, and fail-closed invalid plans
 
-[COMPLETE, LOCAL TEST PENDING] Canonical Historical Context Contract v2
-- explicit htf_trend UP/DOWN/FLAT/UNKNOWN/OFF end-to-end
-- loader/importer/writer/operator CLI/backtest CLI support v2
-- legacy htf_regime_aligned temporarily retained for synthetic fixtures
-
-[COMPLETE, LOCAL RETEST PENDING] Hyperliquid Funding-Event Semantics Hardening + Legacy Test Reconciliation
-- fundingHistory modeled as timestamped realized funding events
-- latest rate is NOT carried onto every 5m candle
-- exact event timestamp receives event rate; other bars receive zero
-- conflicting duplicate events fail closed
-- dedicated funding-event tests added
-- stale tests/test_hyperliquid_historical_import.py expectation repaired after local run exposed old carry-forward assumption
-- added exact-timestamp event assertion to legacy importer suite
-- residual precision: funding notional currently uses candle open instead of event oracle price; track before high-precision cost claims
-
-[NEXT] Local combined retest: funding-event + HTF-v2 + provider/source/import/backtest focused suite and full regression.
+[NEXT] Local source-plan + HTF-v2/funding/provider/source/import/backtest focused tests and full regression.
 
 [NEXT AFTER GREEN] Real Representative Dataset Acquisition / Normalization
-- trustworthy BTC/ETH/SOL historical OI at 5m cadence
-- PIT rolling 24h notional volume from historical records only
-- historical 1h candles -> completed-bar htf_trend
-- merge OI + rolling volume + trend with 5m candles/funding events
-- canonical BTC/ETH/SOL 5m datasets + manifests
-- preserve provider identity, routes/request IDs, UTC ranges, cadence, gaps, checksums, limitations
-- require source audit GREEN
-- never current-state-backfill metaAndAssetCtxs
-- if trustworthy PIT context unavailable, stay blocked rather than weaken gates
+  - choose explicit representative UTC date range(s) suitable for regime coverage
+  - execute source-plan generation for BTC/ETH/SOL
+  - acquire 5m + 1h Hyperliquid candles and fundingHistory over exact range
+  - acquire timestamped 5m BTC/ETH/SOL historical OI from a verified provider/export
+  - derive PIT trailing-24h notional volume from historical data only
+  - derive explicit htf_trend from completed 1h candles only
+  - merge OI + rolling-volume + HTF trend with 5m candles/funding events
+  - generate canonical BTC-5m.csv / ETH-5m.csv / SOL-5m.csv plus manifests
+  - preserve provider identity, API/export route, request IDs where available, UTC ranges, cadence, gaps, checksums, limitations
+  - require source_audit ready_for_locked_baseline_batch=true
+  - never current-state-backfill metaAndAssetCtxs
+  - if trustworthy PIT context unavailable, stay blocked rather than weaken gates
 
 [THEN] Locked Baseline Historical Batch Research
-- BTC/ETH/SOL representative periods/regimes
-- metrics/trades/manifests
-- expectancy R, WR, PF, total R, drawdown, costs, sample size, regime/symbol behavior
-- exact locked thresholds/PIT discipline
-- no automatic promotion
+  - BTC/ETH/SOL representative periods/regimes
+  - metrics/trades/manifests
+  - expectancy R, WR, PF, total R, drawdown, costs, sample size, regime/symbol behavior
+  - exact locked thresholds/PIT discipline
+  - no automatic promotion
 
 [THEN] Research Candidate Batch Comparison
-- candidates isolated from production baseline
-- identical datasets/assumptions/costs
-- protected holdouts
-- no automatic retuning/live unlock
+  - candidates isolated from production baseline
+  - identical datasets/assumptions/costs
+  - protected holdouts
+  - no automatic retuning/live unlock
 
 [THEN] PAPER/SHADOW Operations Checkpoint
-- startup/recovery, live market data, signals, simulated fills, exits, durable logs/dashboard, prospective evidence, restart integrity
+  - startup/recovery, live market data, signals, simulated fills, exits, durable logs/dashboard, prospective evidence, restart integrity
 
 [THEN — DESKTOP OPERATIONAL INTEGRATION]
-- inspect exact Project Atlas.lnk / Stop Atlas.lnk targets and arguments
-- launch intended services/dependencies/UI
-- reconcile API dashboard + Next.js /research surfaces
-- expose research/backtest readiness/results/operator surfaces
-- validate failures, stale cleanup, restart/recovery, shutdown, logs, persistence
-- launch/stop smoke test
-- Atlas not operationally finished until GREEN
+  - inspect exact Project Atlas.lnk / Stop Atlas.lnk targets and arguments
+  - launch intended services/dependencies/UI
+  - reconcile API dashboard + Next.js /research surfaces
+  - expose research/backtest readiness/results/operator surfaces
+  - validate failures, stale cleanup, restart/recovery, shutdown, logs, persistence
+  - launch/stop smoke test
+  - Atlas not operationally finished until GREEN
 
 [ONGOING] V6 prospective evidence and Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion only after sufficient evidence. Live remains separate.
@@ -97,25 +94,30 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE REAL-DATA BACKTESTING
-1. Retest HTF hardening + context v2 + funding-event reconciliation locally.
-2. Acquire trustworthy PIT BTC/ETH/SOL historical OI + rolling-volume + 1h candles.
-3. Normalize/import canonical BTC/ETH/SOL v2 datasets + manifests.
-4. Require source audit GREEN.
-5. Run locked-baseline historical batches.
-6. Run candidate comparisons with holdouts.
-7. Continue PAPER/SHADOW prospective evidence/operations.
-8. Complete desktop operational integration.
+1. Verify representative historical source acquisition plan locally.
+2. Acquire trustworthy PIT BTC/ETH/SOL historical OI + 5m/1h candles + funding.
+3. Derive PIT rolling-volume and HTF context.
+4. Normalize/import canonical BTC/ETH/SOL v2 datasets + manifests.
+5. Require source audit GREEN.
+6. Run locked-baseline historical batches.
+7. Run candidate comparisons with holdouts.
+8. Continue PAPER/SHADOW prospective evidence/operations.
+9. Complete desktop operational integration.
 
 LIVE READINESS
-Last fully verified checkpoint: 656 passed at 374f748. New HTF/context-v2/funding work remains LOCAL RETEST PENDING after the stale test repair. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 667 passed at e85bf20. Source acquisition plan is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-LOCAL UPDATE / RETEST
+LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_funding_events.py tests/test_backtest_context_v2.py tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_source_plan.py tests/test_backtest_funding_events.py tests/test_backtest_context_v2.py tests/test_backtest_htf_context.py tests/test_backtest_provider_normalize.py tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
+
+SOURCE PLAN COMMAND
+backend\.venv\Scripts\python.exe -m app.backtest.source_plan --start 2026-01-01T00:00:00Z --end 2026-02-01T00:00:00Z --output backend\data\research\historical\source-plan.json
+Date range above is an operator example only until representative regimes are explicitly selected.
 
 SOURCE READINESS COMMAND
 backend\.venv\Scripts\python.exe -m app.backtest.source_audit --root backend\data\research\historical --timeframe 5m
@@ -125,6 +127,6 @@ CANONICAL BACKTEST COMMAND
 backend\.venv\Scripts\python.exe -m app.backtest.cli --dataset <CANONICAL_DATASET> --output-dir backend\data\research\backtests
 
 NEXT EXECUTION AFTER GREEN
-Acquire/normalize real BTC/ETH/SOL PIT v2 datasets and require source-audit GREEN, then locked-baseline historical batch research. Desktop integration remains mandatory before Atlas is finished.
+Select representative UTC research windows and begin real BTC/ETH/SOL source acquisition/normalization. Desktop integration remains mandatory before Atlas is finished.
 
 END OF MASTER ROADMAP
