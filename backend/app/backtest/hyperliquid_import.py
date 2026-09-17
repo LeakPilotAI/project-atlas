@@ -35,20 +35,28 @@ def _index_context(rows:Iterable[HistoricalMarketContext])->dict[str,HistoricalM
     return out
 
 
-def _index_funding(rows:Sequence[Mapping])->list[tuple[int,float]]:
-    out=[]
+def _index_funding(rows:Sequence[Mapping])->dict[int,float]:
+    """Index realized funding-rate events by their exact exchange timestamp.
+
+    Hyperliquid fundingHistory is event history. A rate observed at an hourly funding
+    timestamp must not be carried forward onto every 5m candle until the next event.
+    Multiple different rates for the same timestamp fail closed.
+    """
+    out:dict[int,float]={}
     for row in rows:
-        try:out.append((int(row.get("time") or 0),float(row.get("funding_rate") or row.get("fundingRate") or 0.0)))
+        raw_time=row.get("time")
+        raw_rate=row.get("funding_rate") if row.get("funding_rate") not in (None,"") else row.get("fundingRate")
+        if raw_time in (None,"") or raw_rate in (None,""):continue
+        try:ts=int(raw_time);rate=float(raw_rate)
         except (TypeError,ValueError):continue
-    return sorted(out)
+        if ts<=0:continue
+        if ts in out and out[ts]!=rate:raise ValueError(f"conflicting funding events at {ts}")
+        out[ts]=rate
+    return out
 
 
-def _funding_at(timestamp_ms:int,index:list[tuple[int,float]])->float:
-    value=0.0
-    for ts,rate in index:
-        if ts>timestamp_ms:break
-        value=rate
-    return value
+def _funding_event_at(timestamp_ms:int,index:dict[int,float])->float:
+    return index.get(timestamp_ms,0.0)
 
 
 def normalize_hyperliquid_history(*,symbol:str,timeframe:str,candles:Sequence[Mapping],funding_history:Sequence[Mapping],historical_context:Iterable[HistoricalMarketContext])->list[HistoricalContext]:
@@ -60,7 +68,7 @@ def normalize_hyperliquid_history(*,symbol:str,timeframe:str,candles:Sequence[Ma
             timestamp=_iso_from_ms(ts_ms)
             ctx=context_index.get(timestamp)
             if ctx is None:raise ValueError(f"missing point-in-time OI/volume/HTF context for {timestamp}")
-            bar=HistoricalBar(timestamp=timestamp,symbol=symbol.upper(),timeframe=timeframe,open=float(candle["open"]),high=float(candle["high"]),low=float(candle["low"]),close=float(candle["close"]),volume=float(candle["volume"]),funding_rate=_funding_at(ts_ms,funding_index))
+            bar=HistoricalBar(timestamp=timestamp,symbol=symbol.upper(),timeframe=timeframe,open=float(candle["open"]),high=float(candle["high"]),low=float(candle["low"]),close=float(candle["close"]),volume=float(candle["volume"]),funding_rate=_funding_event_at(ts_ms,funding_index))
             out.append(HistoricalContext(bar,ctx.open_interest_usd,ctx.volume_24h_usd,ctx.htf_regime_aligned,ctx.htf_trend.upper() if ctx.htf_trend else None))
         except KeyError as exc:raise ValueError(f"candle missing field: {exc.args[0]}") from exc
     timestamps=[x.bar.timestamp for x in out]
