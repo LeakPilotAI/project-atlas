@@ -19,12 +19,15 @@ def _contexts(trend="UNKNOWN"):
 
 
 def test_signal_respects_locked_liquidity_and_htf():
-    rows=_contexts("DOWN")
-    fn=_signal_fn(rows,LockedThresholds())
-    sig=fn(tuple(x.bar for x in rows))
+    permitted=_contexts("UP")
+    sig=_signal_fn(permitted,LockedThresholds())(tuple(x.bar for x in permitted))
     assert sig is not None and sig.side=="LONG"
-    blocked=[HistoricalContext(x.bar,x.open_interest_usd,x.volume_24h_usd,x.htf_regime_aligned,"UP") for x in rows]
+
+    blocked=[HistoricalContext(x.bar,x.open_interest_usd,x.volume_24h_usd,x.htf_regime_aligned,"DOWN") for x in permitted]
     assert _signal_fn(blocked,LockedThresholds())(tuple(x.bar for x in blocked)) is None
+
+    thin=[HistoricalContext(x.bar,74_999.0,x.volume_24h_usd,x.htf_regime_aligned,"UP") for x in permitted]
+    assert _signal_fn(thin,LockedThresholds())(tuple(x.bar for x in thin)) is None
 
 
 def test_thresholds_are_locked_defaults():
