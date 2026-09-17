@@ -1,8 +1,8 @@
 """Runtime evidence enrichment for Quality Dips V2.1 operational repair.
 
-Uses only evidence Atlas already persisted: scored components, explicit provider analyst
-price targets, and stored point-in-time daily OHLCV. Missing evidence stays missing.
-No brokerage actions and no invented normalization values.
+Uses only evidence Atlas already persisted or explicitly fetched: scored components,
+provider analyst price targets, and stored point-in-time daily OHLCV. Missing evidence
+stays missing. No brokerage actions and no invented normalization values.
 """
 from __future__ import annotations
 
@@ -33,19 +33,11 @@ def _measured_value(raw: Any) -> tuple[float | None, str | None]:
 
 
 def _quality_score(row: dict[str, Any]) -> float | None:
-    """Conservative business-quality composite from already-scored independent pillars."""
     components = dict(row.get("components") or {})
-    vals = [
-        _float(components.get("fundamentals")),
-        _float(components.get("balance_sheet")),
-        _float(components.get("cash_flow")),
-        _float(components.get("thesis_integrity")),
-    ]
+    vals = [_float(components.get("fundamentals")), _float(components.get("balance_sheet")), _float(components.get("cash_flow")), _float(components.get("thesis_integrity"))]
     present = [v for v in vals if v is not None]
     if len(present) < 2:
         return None
-    # Median prevents one missing/noisy subcomponent from manufacturing A+ quality,
-    # while still requiring multiple independent business-quality pillars.
     return round(float(median(present)), 2)
 
 
@@ -53,21 +45,16 @@ def _valuation_sources(row: dict[str, Any]) -> list[dict[str, Any]]:
     snap = dict(row.get("input_snapshot") or {})
     valuation = dict(snap.get("valuation") or {})
     sources: list[dict[str, Any]] = []
-    for key, label in (
-        ("target_low_price", "analyst target low"),
-        ("target_mean_price", "analyst target mean"),
-        ("target_high_price", "analyst target high"),
-    ):
+    for key, label in (("target_low_price", "analyst target low"), ("target_mean_price", "analyst target mean"), ("target_high_price", "analyst target high")):
         value, as_of = _measured_value(valuation.get(key))
         if value is not None:
-            sources.append({
-                "value": value,
-                "provenance": "ANALYST_CONSENSUS",
-                "as_of": as_of,
-                "confidence": "EXTERNAL_CONSENSUS",
-                "note": label + "; provider-supplied, not an Atlas guarantee",
-            })
-    return sources
+            sources.append({"value": value, "provenance": "ANALYST_CONSENSUS", "as_of": as_of, "confidence": "EXTERNAL_CONSENSUS", "note": label + "; provider-supplied, not an Atlas guarantee"})
+    if len(sources) >= 3:
+        return sources
+    # Operational cache is populated by the API from the same explicit provider fields.
+    from app.investment.quality_dips_v2_target_cache import quality_dips_v2_target_cache
+    cached = quality_dips_v2_target_cache.sources(str(row.get("symbol") or ""))
+    return cached if len(cached) >= 3 else sources
 
 
 def _trend(row: dict[str, Any]) -> dict[str, Any]:
@@ -89,31 +76,19 @@ def _trend(row: dict[str, Any]) -> dict[str, Any]:
         avg = ma(n)
         if avg is None:
             return "UNKNOWN"
-        band = 0.01
-        if last > avg * (1 + band):
+        if last > avg * 1.01:
             return "UP"
-        if last < avg * (1 - band):
+        if last < avg * 0.99:
             return "DOWN"
         return "NEUTRAL"
 
     momentum = None
     if len(closes) >= 64 and closes[-64] > 0:
         momentum = round((last / closes[-64] - 1.0) * 100.0, 2)
-    return {
-        "short_term": label(20),
-        "intermediate_term": label(50),
-        "long_term": label(200),
-        "momentum": momentum,
-        "relative_strength": None,
-        "sector_regime": None,
-        "market_regime": None,
-        "source": "STORED_DAILY_OHLCV_MA_20_50_200",
-        "as_of": clean[-1][0] + "T23:59:59+00:00",
-    }
+    return {"short_term": label(20), "intermediate_term": label(50), "long_term": label(200), "momentum": momentum, "relative_strength": None, "sector_regime": None, "market_regime": None, "source": "STORED_DAILY_OHLCV_MA_20_50_200", "as_of": clean[-1][0] + "T23:59:59+00:00"}
 
 
 def enrich_research_row(row: dict[str, Any]) -> dict[str, Any]:
-    """Return a copy with V2-required runtime evidence when explicitly derivable."""
     out = dict(row)
     components = dict(out.get("components") or {})
     if components.get("quality") is None:
@@ -122,12 +97,10 @@ def enrich_research_row(row: dict[str, Any]) -> dict[str, Any]:
             components["quality"] = quality
             out["components"] = components
             out["quality_score_provenance"] = "MEDIAN_OF_SCORED_BUSINESS_PILLARS"
-
     if not out.get("valuation_sources") and not out.get("normalization_sources"):
         sources = _valuation_sources(out)
         if sources:
             out["valuation_sources"] = sources
-
     existing_trend = dict(out.get("trend") or out.get("trend_analysis") or {})
     if not existing_trend.get("as_of"):
         trend = _trend(out)
