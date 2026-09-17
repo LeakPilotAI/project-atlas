@@ -1,18 +1,21 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
-Updated: 2026-09-16
+Updated: 2026-09-17
 Branch: chatgpt/atlas-rebuild-v1
 
 PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly. After EVERY execution: exact commits/files, PowerShell update/tests, never claim local tests passed until user posts them, update full roadmap, never git clean -fdx, preserve backend/data. Engineering != live readiness. No automatic real-money execution/retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 PERMANENT REPOSITORY SECURITY GATE
-Never commit credentials, AWS access/secret/session keys, tokens, passwords, private keys, seed phrases, .env secrets, ~/.aws files, local cloud credential stores, or raw credential exports. Atlas CLIs accept profile names only, never secret material. Before security-sensitive writes, inspect tracked/config paths and keep credential material local. .gitignore explicitly excludes AWS/local credential paths in addition to existing environment/secret exclusions.
+Never commit credentials, AWS access/secret/session keys, tokens, passwords, private keys, seed phrases, .env secrets, ~/.aws files, local cloud credential stores, or raw credential exports. Keep credential protections even though AWS is no longer part of the active Atlas research path.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Commit 2ea3eb3 branch state: focused historical/archive stack 63 passed in 1.19s; full regression 690 passed, 2 warnings in 36.58s; 0 failures. Python lz4 archive decoding VERIFIED. AWS CLI 2.36.47 works on PATH. Python lz4 4.4.5 works in Atlas venv. aws configure list-profiles returned no profiles.
+63 focused historical/archive tests passed in 1.19s; full regression 690 passed, 2 warnings in 36.58s; 0 failures. Python LZ4 decoding VERIFIED. Credential-safety ignore rules were locally verified: .aws/credentials and generic credentials paths are ignored. ATLAS_RUNTIME_AUDIT.json remains an untracked local runtime artifact and must not be committed blindly.
 
-FIRST REAL 2024-H2 ACQUISITION RESULT
-BTC/ETH/SOL each: REST 5m candles=0; REST 1h candles=0; funding=3096. Historical OI pending. Official REST candle retention cannot reach locked 2024-H2. Funding history succeeded. Historical context pivots to first-party asset_ctxs archive before external OI vendor.
+OPERATOR DECISION — LOCAL-ONLY RESEARCH PATH
+AWS/requester-pays S3 acquisition is REMOVED FROM THE ACTIVE ROADMAP. No AWS account, credit card, AWS login, profile, or requester-paid download is required for the active Atlas workflow. Existing Hyperliquid archive code remains research tooling only and is not a prerequisite for local backtesting. Do not request AWS setup again unless the user explicitly re-enables that optional source in the future.
+
+IMPORTANT DATA LIMITATION
+The previously attempted official REST acquisition for locked 2024-H2 produced BTC/ETH/SOL funding history but zero 5m/1h candles because candleSnapshot retention does not reach that window. Therefore the 2024-H2 locked historical baseline is NOT data-ready yet. Do not fabricate/backfill historical OI/volume from current state and do not claim routine historical backtesting is ready on 2024-H2 until trustworthy local/provider data is ingested.
 
 LOCKED PRODUCTION
 OI >=75k USD; volume >=150k USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; min R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock. Live capital locked; automated real-money execution disabled.
@@ -27,59 +30,68 @@ ROADMAP
 [COMPLETE/VERIFIED] PIT importer + manifests/operator import + source readiness
 [COMPLETE/VERIFIED] Provider normalization + HTF semantics + context v2 + funding events
 [COMPLETE/VERIFIED] Representative source acquisition plan + UTC window lock
-[COMPLETE/VERIFIED] Official Hyperliquid acquisition CLI + candle-retention fail-closed hardening
-[COMPLETE/VERIFIED] First-party asset_ctxs archive acquisition/planning + cross-platform tests
-[COMPLETE/VERIFIED] Raw asset_ctxs schema inspector
-[COMPLETE/VERIFIED] Self-contained Python LZ4 archive decoding — 690 full tests
-[COMPLETE, LOCAL TEST PENDING] Credential-safety .gitignore hardening for .aws/local credential paths
+[COMPLETE/VERIFIED] Official Hyperliquid REST acquisition CLI + candle-retention fail-closed hardening
+[COMPLETE/VERIFIED] Optional first-party asset_ctxs archive planner + schema inspector + Python LZ4 decoding
+[COMPLETE/VERIFIED] Credential-safety .gitignore hardening locally verified
+[REMOVED FROM ACTIVE PATH] AWS authentication and requester-paid S3 archive acquisition
 
-[CURRENT OPERATOR GATE] AWS profile does not yet exist. Configure authentication locally only. AWS documentation recommends temporary/federated authentication for purpose-built software/real data rather than long-term IAM-user credentials where practical. `aws login` or IAM Identity Center/SSO are preferred when available; `aws configure --profile atlas-research` is supported when access-key credentials are intentionally used. Credentials remain under the Windows user profile, outside Project Atlas and Git.
+[CURRENT] LOCAL HISTORICAL DATA READINESS / BACKTEST START
+1. Audit what trustworthy historical market data already exists under backend/data without deleting or overwriting it.
+2. Run source_audit against existing canonical historical bundles/manifests.
+3. If canonical BTC/ETH/SOL 5m + 1h + PIT context are already complete, begin the locked DEVELOPMENT baseline immediately.
+4. If not complete, implement a no-AWS historical candle/context ingestion/reconstruction path. Prefer free/local/first-party non-requester-paid data where trustworthy; otherwise require an explicitly approved provider rather than fabricating data.
+5. Preserve exact provenance, checksums, gaps, PIT semantics, and completed-1h HTF derivation.
+6. Require source_audit ready_for_locked_baseline_batch=true before claiming the locked 2024-H2 baseline data-ready.
 
-[NEXT AFTER AUTH] Validate only profile metadata/identity without printing secrets. Then execute exactly one requester-paid archive day (2024-07-01), run archive inspector, and prove actual BTC/ETH/SOL PIT OI + day-notional-volume schema/cadence. Do not full-download 184 days before the probe is GREEN.
+[THEN] LOCKED BASELINE DEVELOPMENT RESEARCH
+Run calendar-locked DEVELOPMENT windows first. Record trades, assumptions, costs, expectancy R, WR, PF, total R, drawdown, sample size, symbol/regime behavior, provenance and deterministic run IDs. Do not tune on HOLDOUT.
 
-[THEN] Full 2024-H2 context acquisition only after probe validation.
-[THEN] Trustworthy historical 5m/1h bars; no current-state synthesis; exact provenance/coverage/checksums/gaps; derive completed 1h HTF; merge funding + PIT OI/volume + candles; canonical BTC/ETH/SOL v2 bundles/manifests; source_audit ready_for_locked_baseline_batch=true.
-[THEN] Locked baseline DEVELOPMENT research -> freeze decisions -> HOLDOUT evaluation -> isolated candidate comparison -> PAPER/SHADOW operational checkpoint -> final desktop operational integration.
+[THEN] FREEZE DEVELOPMENT DECISIONS
+Freeze any candidate/exit/filter decisions before opening holdout results.
+
+[THEN] HOLDOUT EVALUATION
+Evaluate untouched HOLDOUT windows chronologically. No automatic gate changes or live unlock.
+
+[THEN] CANDIDATE COMPARISON
+Candidates isolated; identical datasets/cost assumptions; DEVELOPMENT tuning only; HOLDOUT evaluation only.
+
+[THEN] PAPER/SHADOW OPERATIONAL CHECKPOINT
+Validate startup/recovery, live market data, signals, simulated fills, exits, durable logs/dashboard, prospective evidence, and restart integrity. PAPER and SHADOW remain separate populations.
+
+[THEN] FINAL DESKTOP OPERATIONAL INTEGRATION
+Validate exact shortcuts:
+C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
+C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
+Reconcile launcher/service/UI behavior, research/backtest surfaces, visible failures, stale-process cleanup, restart/recovery/shutdown, logging and persistent paths. Atlas is not operationally finished until this is GREEN.
 
 RESEARCH STATUS
-932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
+Existing prospective report: PAPER n=903, WR=43.41%, expectancy=-0.0114R, total=-10.3104R, PF=0.9787. Chronological later holdout n=301, WR=44.19%, expectancy=-0.1474R, total=-44.369R. Stable positive edge NOT ESTABLISHED. These results do not justify live capital or gate changes.
 
-LOCAL UPDATE / SAFETY VALIDATION
+LOCAL UPDATE
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
 git status --short
-git check-ignore -v .aws/credentials
-git check-ignore -v credentials
 
-AUTHENTICATION GATE
-aws configure list-profiles
-# Preferred when supported by the user's AWS account/authentication setup: temporary/federated auth such as `aws login` or `aws configure sso`.
-# If intentionally using access-key credentials, configure them locally only:
-aws configure --profile atlas-research
-# NEVER paste the prompted Access Key ID or Secret Access Key into chat, code, PowerShell history, or the repository.
-# Profile name is safe to share.
-aws configure list --profile atlas-research
-aws sts get-caller-identity --profile atlas-research
+LOCAL DATA READINESS CHECK
+backend\.venv\Scripts\python.exe -m app.backtest.source_audit --root backend\data\research\historical --timeframe 5m
 
-ONE-DAY REQUESTER-PAID PROBE — ONLY AFTER AUTH IS VALID
-backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive --start 2024-07-01T00:00:00Z --end 2024-07-02T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-probe --manifest backend\data\research\historical\hyperliquid-asset-ctxs-probe-20240701.json --execute --aws-profile atlas-research
-
-INSPECT PROBE
-backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive_inspect --input backend\data\research\raw\historical\dev-2024-h2-probe\asset_ctxs\20240701.csv.lz4 --output backend\data\research\historical\hyperliquid-asset-ctxs-inspection-20240701.json
-Do not assume pit_context_candidate=true before real output proves it.
+DO NOT RUN
+Do not run aws login, aws configure, or requester-paid Hyperliquid archive acquisition as part of the active roadmap. AWS CLI may be uninstalled locally if the user wants; it is no longer an Atlas prerequisite.
 
 WHAT REMAINS
-1 Verify credential-safety .gitignore hardening locally.
-2 Configure/validate local AWS authentication without sharing secrets.
-3 One-day requester-paid archive probe.
-4 Inspect real schema/cadence and prove PIT OI/volume suitability.
-5 Full 2024-H2 context acquisition only after probe validation.
-6 Acquire/reconstruct trustworthy 5m/1h candles.
-7 Canonical datasets/manifests + source audit GREEN.
-8 Locked baseline DEVELOPMENT research.
-9 HOLDOUT evaluation/candidate comparison.
-10 PAPER/SHADOW operations + final desktop integration.
+1 Audit existing local historical data/source readiness.
+2 If source audit GREEN, run locked DEVELOPMENT baseline now.
+3 If source audit not GREEN, build/ingest trustworthy no-AWS historical 5m/1h + PIT context.
+4 Canonical BTC/ETH/SOL datasets/manifests + source audit GREEN.
+5 Locked DEVELOPMENT baseline research.
+6 Freeze development decisions.
+7 HOLDOUT evaluation and isolated candidate comparison.
+8 PAPER/SHADOW operational checkpoint.
+9 Final desktop integration and launch/stop smoke test.
+
+LIVE STATUS
+Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
 
 END OF MASTER ROADMAP
