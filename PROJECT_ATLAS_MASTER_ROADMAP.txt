@@ -9,20 +9,18 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-DEVELOPMENT decision freeze is GREEN and COMPLETE. Focused tests: 3 passed in 0.30s. Full regression: 764 passed, 2 warnings in 39.84s; 0 failures. Freeze execution recorded development_result=FAILED_NEGATIVE, parameters_frozen=true, threshold_retuning_allowed=false, same_window_optimization_allowed=false, holdout_data_touched=false, and preserved the exact locked thresholds and per-symbol run evidence.
+Untouched HOLDOUT runner import fix is GREEN. Focused HOLDOUT tests: 2 passed in 0.14s. Full regression: 766 passed, 2 warnings in 43.63s; 0 failures. DEVELOPMENT freeze remains intact: development_result=FAILED_NEGATIVE, parameters_frozen=true, threshold_retuning_allowed=false, same_window_optimization_allowed=false, holdout_data_touched=false.
 
 LOCKED DEVELOPMENT BASELINE — VERIFIED NEGATIVE EVIDENCE
 Aggregate: trade_count=659, total_r=-117.21753020091131, expectancy_r=-0.17787182124569242.
-BTC: 127 trades, win_rate=0.2992125984251969, expectancy_r=-0.24497867956413943, total_r=-31.11229230464571, profit_factor=0.6736527513765005, run_id=e84cb2b8a191c8a0b3c2.
-ETH: 206 trades, win_rate=0.3592233009708738, expectancy_r=-0.08322733855596981, total_r=-17.14483174252978, profit_factor=0.8796660660219333, run_id=048d6203cdb33594a3a3.
-SOL: 326 trades, win_rate=0.3128834355828221, expectancy_r=-0.21153498820164363, total_r=-68.96040615373582, profit_factor=0.7147090311474995, run_id=d0834633cc5edf771dc3.
+BTC: 127 trades, expectancy_r=-0.24497867956413943, total_r=-31.11229230464571, profit_factor=0.6736527513765005.
+ETH: 206 trades, expectancy_r=-0.08322733855596981, total_r=-17.14483174252978, profit_factor=0.8796660660219333.
+SOL: 326 trades, expectancy_r=-0.21153498820164363, total_r=-68.96040615373582, profit_factor=0.7147090311474995.
 
-UNTOUCHED HOLDOUT RUNNER — IMPORT ERROR DIAGNOSED
-Local focused test collection failed because backend/app/backtest/holdout_evaluation.py imported _load_json from development_decision_freeze.py, but that helper never existed there. This was a module import bug in the newly added HOLDOUT runner, not a strategy or data failure.
-
-FIX EXECUTED — LOCAL RETEST PENDING
-f812123 atlas: fix holdout freeze loader import
-Updated backend/app/backtest/holdout_evaluation.py to define its own small JSON-object loader and removed the invalid cross-module private import. DEVELOPMENT freeze code and frozen evidence were not changed.
+EXECUTED UNTOUCHED HOLDOUT PREPARATION PLAN — LOCAL TEST PENDING
+3a53aef atlas: add untouched holdout preparation plan
+22c1c26 atlas: test untouched holdout preparation plan
+The new stage defines the independent holdout-2025-h2 window [2025-07-01,2026-01-01), separate BTC/ETH/SOL data roots for candles/OI/rolling volume/HTF/funding/funded/canonical outputs, forbids DEVELOPMENT evidence mutation, threshold retuning, same-window optimization, and HOLDOUT evaluation before source_audit GREEN. It does not download or evaluate HOLDOUT data by itself.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -42,69 +40,67 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] Credential security hardening
 [REMOVED] AWS requester-paid active path
 [COMPLETE/VERIFIED] No-AWS public candle acquisition
-[COMPLETE/VERIFIED] Full real 2024-H2 candle batch — 36 raw objects -> 6 normalized outputs
-[COMPLETE/VERIFIED] Historical PIT metrics acquisition
+[COMPLETE/VERIFIED] Full real 2024-H2 candle batch
 [COMPLETE/VERIFIED] Full 2024-H2 OI normalization — sparse source missingness preserved
-[COMPLETE/VERIFIED] Exact rolling 24h quote-volume — 3 outputs
-[COMPLETE/VERIFIED] Completed-1h HTF — 3 outputs
-[COMPLETE/VERIFIED] Paginated first-party Hyperliquid funding — 3 outputs
-[COMPLETE/VERIFIED] Exact funding PIT merge — 3 outputs
-[COMPLETE/VERIFIED] Canonical BTC/ETH/SOL PIT datasets — 52,990 rows each; 2 incomplete OI rows excluded
-[COMPLETE/VERIFIED GREEN] Canonical source audit — ready_for_locked_baseline_batch=true
-[COMPLETE/VERIFIED] Locked DEVELOPMENT input freeze — total_rows=158970; holdout untouched
-[COMPLETE/VERIFIED] Corrected locked baseline HTF tests
+[COMPLETE/VERIFIED] Exact rolling 24h quote-volume
+[COMPLETE/VERIFIED] Completed-1h HTF
+[COMPLETE/VERIFIED] Paginated first-party Hyperliquid funding
+[COMPLETE/VERIFIED] Exact funding PIT merge
+[COMPLETE/VERIFIED] Canonical BTC/ETH/SOL PIT DEVELOPMENT datasets
+[COMPLETE/VERIFIED GREEN] DEVELOPMENT source audit
+[COMPLETE/VERIFIED] DEVELOPMENT input freeze
 [COMPLETE/VERIFIED] Optimized deterministic locked DEVELOPMENT baseline runner
 [COMPLETE/VERIFIED NEGATIVE] Locked DEVELOPMENT baseline — 659 trades, -117.2175R, -0.17787R expectancy
 [COMPLETE/VERIFIED] DEVELOPMENT decision/parameter freeze — FAILED_NEGATIVE, parameters frozen
+[COMPLETE/VERIFIED] Untouched HOLDOUT evaluation runner — import fix verified; 766 full tests GREEN
 
-[CURRENT, LOCAL RETEST PENDING] UNTOUCHED HOLDOUT EVALUATION RUNNER
-- invalid private helper import removed
-- runner owns its freeze JSON loader
-- requires DEVELOPMENT_DECISIONS_FROZEN
-- exact frozen thresholds only; no retuning
-- requires separate holdout canonical source_audit GREEN
-- strict PIT signal history
-- same deterministic fee/slippage/funding/next-bar-fill semantics
-- per-symbol deterministic run artifacts + aggregate summary
-- threshold_retuning_allowed=false
-- same_window_optimization_allowed=false
-- production_strategy_modified=false
-- live_capital_allowed=false
-- automatic_real_money_execution=false
+[CURRENT, LOCAL TEST PENDING] UNTOUCHED HOLDOUT PREPARATION PLAN
+- holdout-2025-h2 = [2025-07-01T00:00:00Z,2026-01-01T00:00:00Z)
+- BTC/ETH/SOL only
+- separate holdout paths; no dev-2024-h2 overwrite
+- no AWS
+- DEVELOPMENT evidence mutation forbidden
+- threshold retuning disabled
+- same-window optimization disabled
+- HOLDOUT evaluation forbidden before independent source_audit GREEN
+- live capital disabled
+- automatic real-money execution disabled
 
-[NEXT AFTER LOCAL GREEN] Re-run the HOLDOUT focused/full tests. Then acquire/normalize/canonicalize the untouched holdout-2025-h2 BTC/ETH/SOL data with the same PIT provenance controls used for DEVELOPMENT. Do not evaluate HOLDOUT until its independent source_audit is GREEN.
+[NEXT AFTER LOCAL GREEN] Generate the HOLDOUT preparation plan, then acquire/normalize the real holdout-2025-h2 candles, historical PIT OI, exact rolling 24h quote volume, completed-1h HTF, and first-party funding into the separate HOLDOUT roots. Preserve exact provenance/checksums and real source missingness; never fabricate context.
 
-[THEN] Run the exact frozen DEVELOPMENT configuration on holdout-2025-h2 and capture per-symbol/aggregate out-of-sample metrics without retuning.
+[GATE] Assemble canonical-holdout-2025-h2 BTC/ETH/SOL and require independent source_audit ready_for_locked_baseline_batch=true.
 
-[THEN] Record the out-of-sample conclusion. If DEVELOPMENT and HOLDOUT both fail, preserve the frozen experiment as failed evidence and create a separate future research cycle rather than mutating these results.
+[THEN] Run the exact frozen DEVELOPMENT configuration on HOLDOUT and record out-of-sample metrics without retuning.
+
+[THEN] If DEVELOPMENT and HOLDOUT both fail, preserve this experiment as failed evidence and start a separate future research cycle rather than mutating it.
 
 [THEN] PAPER/SHADOW operational checkpoint remains separate.
 
 [FINAL] Desktop integration after research-state handling and operational verification.
-
-DESKTOP END STATE
-Validate C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk and C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk; services/UI/research/backtests/recovery/shutdown/logging/persistence GREEN.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_holdout_evaluation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_holdout_prepare_plan.py tests/test_backtest_holdout_evaluation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-HOLDOUT EVALUATION — ONLY AFTER HOLDOUT CANONICAL SOURCE AUDIT GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.holdout_evaluation --freeze backend\data\research\historical\development-decision-freeze-dev-2024-h2.json --canonical-root backend\data\research\historical\canonical-holdout-2025-h2 --output-root backend\data\research\historical\holdout-runs\holdout-2025-h2 --summary backend\data\research\historical\holdout-summary-2025-h2.json --timeframe 5m --research-window holdout-2025-h2
-Expected controls: status=UNTOUCHED_HOLDOUT_EVALUATION_COMPLETE, parameters_frozen=true, threshold_retuning_allowed=false, same_window_optimization_allowed=false, production_strategy_modified=false, live_capital_allowed=false.
+HOLDOUT PLAN — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.holdout_prepare_plan --root backend\data\research\historical --output backend\data\research\historical\holdout-preparation-plan-2025-h2.json
+Expected: status=HOLDOUT_PREPARATION_PLAN_READY, research_window=holdout-2025-h2, threshold_retuning_allowed=false, holdout_evaluation_allowed_before_source_audit_green=false.
 
 WHAT REMAINS
-1 Retest untouched HOLDOUT runner focused/full tests.
-2 Acquire/normalize/canonicalize holdout-2025-h2 BTC/ETH/SOL without touching frozen DEVELOPMENT evidence.
-3 Independent holdout source_audit GREEN.
-4 Run exact frozen configuration on HOLDOUT and record out-of-sample metrics.
-5 Preserve failed experiment or start isolated next-cycle research only after HOLDOUT evidence.
-6 PAPER/SHADOW operational checkpoint.
-7 Final desktop integration.
+1 Validate HOLDOUT preparation-plan focused/full tests.
+2 Generate the holdout-2025-h2 preparation artifact.
+3 Acquire/normalize holdout-2025-h2 BTC/ETH/SOL candles/OI/rolling volume/HTF/funding.
+4 Exact funding PIT merge for HOLDOUT.
+5 Canonical HOLDOUT datasets/manifests.
+6 Independent HOLDOUT source_audit GREEN.
+7 Run frozen configuration on HOLDOUT and record out-of-sample evidence.
+8 Preserve failed experiment or start isolated next-cycle research only after HOLDOUT evidence.
+9 PAPER/SHADOW operational checkpoint.
+10 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 Current locked DEVELOPMENT baseline: n=659 expectancy=-0.17787182124569242R total=-117.21753020091131R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
