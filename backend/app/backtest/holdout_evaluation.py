@@ -9,13 +9,19 @@ from __future__ import annotations
 import argparse,json
 from pathlib import Path
 
-from app.backtest.development_decision_freeze import _load_json
 from app.backtest.locked_development_baseline_run import LockedThresholds,_signal_fn
 from app.backtest.historical import BacktestAssumptions,run_historical_backtest,persist_backtest_result
 from app.backtest.io import load_historical_contexts
 from app.backtest.source_audit import audit_representative_bundle
 
 SYMBOLS=("BTC","ETH","SOL")
+
+
+def _load_json(path:Path)->dict:
+    payload=json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(payload,dict):
+        raise ValueError("freeze payload must be a JSON object")
+    return payload
 
 
 def _thresholds_from_freeze(payload:dict)->LockedThresholds:
