@@ -6,14 +6,17 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; never git clean -fdx; preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: a68285181676fff34ba431b4b6efda4ccb25ab57
-Focused Hyperliquid-import + smoke/loader/baseline/foundation suite: 16 passed in 0.57s. Full regression: 643 passed, 2 warnings in 35.08s. Failures: 0.
+Tested commit: cf3924706417746783e51bf3559e30e7ec0fa4b1
+Focused import/manifest/PIT/backtest suite: 23 passed in 0.68s. Full regression: 650 passed, 2 warnings in 36.83s. Failures: 0.
 
 LOCKED PRODUCTION
 OI >= 75,000 USD; volume >= 150,000 USD; RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8; HTF alignment enabled. No automatic retuning/live unlock.
 
 DESKTOP / OPERATOR END-STATE REQUIREMENT
-When Atlas is finished, launching the desktop shortcut must bring up the intended operational research stack cleanly and consistently: Docker dependencies, API/backend services, intended dashboard/UI, paper/shadow systems, research evidence surfaces, and backtesting/operator workflows. The launcher must fail visibly when required dependencies/data are unavailable, must not silently drop required services, and must preserve research/live separation. Final operational validation must reconcile the current API-served dashboard with the intended Next.js /research surface and backtest controls/status before Atlas is considered finished.
+Final desktop integration must validate these user-supplied shortcut paths on the Windows machine:
+- C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
+- C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
+Launching Atlas must bring up the intended research stack cleanly; Stop Atlas must terminate the intended Atlas runtime cleanly. Validate dependencies, backend/API, intended UI, paper/shadow, research/backtesting surfaces, restart/recovery, logs, persistence, stale-process cleanup, and visible failures before Atlas is called finished.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
@@ -24,40 +27,33 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Canonical Backtest Data Loader + CLI / Operator Workflow
 [COMPLETE, VERIFIED] Deterministic Smoke Backtest Reconciliation
 [COMPLETE, VERIFIED] Hyperliquid Historical Dataset PIT Import Foundation
-  - verified by 16 focused + 643 full tests at a682851
+[COMPLETE, VERIFIED] Historical Dataset Provenance / Manifest Foundation + Historical Source Operator Import Command
+  - verified by 23 focused + 650 full tests at cf39247
 
-[COMPLETE, LOCAL TEST PENDING] Historical Dataset Provenance / Manifest Foundation
-  - deterministic manifest binds canonical dataset checksum/range/symbol/timeframe and candle/funding/OI/rolling-volume/HTF provenance
-  - PIT alignment mandatory; current-state backfill forbidden; tampering fails closed
+[COMPLETE, LOCAL TEST PENDING] Representative Historical Source Readiness Audit
+  - backend/app/backtest/source_audit.py audits canonical BTC/ETH/SOL datasets and sibling manifests before batch research
+  - verifies dataset existence, manifest existence/checksum, symbol identity, named provenance, PIT alignment, forbidden current-state backfill, and raw source checksum provenance
+  - emits deterministic audit_id and explicit ready_for_locked_baseline_batch flag
+  - missing/unverified source material blocks the locked-baseline batch rather than weakening production gates
+  - remains research-only with live capital and automatic real-money execution disabled
+  - focused tests cover all-three-ready, missing-SOL blocking, and provenance/symbol failure cases
 
-[COMPLETE, LOCAL TEST PENDING] Historical Source Operator Import Command
-  - backend/app/backtest/import_cli.py accepts local raw candle, funding, and timestamp-aligned historical context files
-  - raw inputs support CSV plus JSON/JSONL/NDJSON where applicable
-  - context requires timestamp, historical open_interest_usd, historical volume_24h_usd, and htf_regime_aligned
-  - no current API snapshot is used to fabricate old OI/volume/HTF state
-  - normalization emits canonical Atlas CSV and sibling .manifest.json together
-  - manifest records named source/provider identities and SHA-256 checksums for all three raw source files
-  - missing raw files or missing PIT timestamp context fail closed
-  - focused tests cover successful canonical+manifest emission, raw checksum provenance, missing timestamp context, and missing raw source rejection
-
-[NEXT] Local focused import-command + manifest + PIT-normalization + smoke/loader/baseline/foundation tests and full regression.
-[NEXT AFTER GREEN] Representative Historical Dataset Source/Normalization Checkpoint
-  - acquire timestamp-aligned historical OI/rolling-volume source material for BTC/ETH/SOL without current-state backfill
-  - use operator import command to produce canonical files + verified manifests
-  - document source date ranges, intervals, coverage/gaps, and any provider limitations
-  - if no trustworthy historical OI source is available, keep baseline batch blocked rather than weaken the production gate
+[NEXT] Local source-audit + import/manifest/PIT/backtest tests and full regression.
+[NEXT AFTER GREEN] Real Representative Dataset Acquisition / Normalization
+  - obtain trustworthy timestamp-aligned historical OI + rolling-volume source material for BTC/ETH/SOL
+  - normalize each through app.backtest.import_cli into backend/data/research/historical
+  - run app.backtest.source_audit; locked-baseline batch may start only when ready_for_locked_baseline_batch=true
+  - document provider/date range/coverage/gaps; never use current metaAndAssetCtxs as historical context
 [THEN] Locked Baseline Historical Batch Research
   - run baseline across representative symbols/periods/regimes; persist comparable metrics/trades/run metadata
 [THEN] Research Candidate Batch Comparison
   - candidates isolated from production and compared against locked baseline only in research outputs
 [THEN] PAPER/SHADOW Operations Checkpoint
   - startup/recovery, data ingestion, signals, simulated fills, logs/dashboard, durable prospective evidence
-[THEN — DESKTOP OPERATIONAL INTEGRATION] Final shortcut/runtime audit
-  - verify desktop shortcut launches every intended Atlas service and intended UI
-  - reconcile API-served dashboard with Next.js /research surfaces so no completed capability is unreachable from normal launch
+[THEN — DESKTOP OPERATIONAL INTEGRATION] Final shortcut/runtime audit using exact .lnk paths above
+  - reconcile API-served dashboard with Next.js /research surfaces
   - surface backtest status/results/operator entry points in normal Atlas operation
-  - validate dependency failures, restart/recovery, shutdown, stale-process cleanup, logs and persistent data paths
-  - execute complete desktop-launch smoke test before declaring Atlas operationally finished
+  - execute complete launch + stop smoke test before declaring Atlas operationally finished
 [ONGOING] V6 prospective evidence and Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion only after sufficient evidence. Live remains separate.
 
@@ -65,28 +61,30 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE REAL-DATA BACKTESTING
-1. Verify provenance manifest + historical operator import command locally.
-2. Acquire trustworthy timestamp-aligned historical OI/rolling-volume source material and normalize representative BTC/ETH/SOL datasets.
-3. Run locked-baseline historical batches across representative periods/regimes.
-4. Run isolated research-candidate comparison batches.
-5. Continue PAPER/SHADOW prospective evidence.
-6. Complete desktop operational integration and shortcut smoke test before Atlas is called finished.
+1. Verify representative-source readiness audit locally.
+2. Acquire trustworthy PIT OI/rolling-volume material and normalize BTC/ETH/SOL datasets with manifests.
+3. Require source audit GREEN before locked-baseline batch execution.
+4. Run locked-baseline historical batches across representative periods/regimes.
+5. Run isolated research-candidate comparisons.
+6. Continue PAPER/SHADOW prospective evidence.
+7. Complete desktop operational integration using the exact Project Atlas.lnk and Stop Atlas.lnk paths.
 
 LIVE READINESS
-Last fully verified checkpoint: 643 passed at a682851. Manifest/import-command additions are LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified checkpoint: 650 passed at cf39247. Source-readiness audit is LOCAL TEST PENDING. Stable positive expectancy NOT ESTABLISHED. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
 LOCAL UPDATE / TEST
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_source_audit.py tests/test_backtest_import_cli.py tests/test_backtest_manifest.py tests/test_hyperliquid_historical_import.py tests/test_backtest_smoke_reconciliation.py tests/test_backtest_io_cli.py tests/test_perp_micro_baseline_backtest.py tests/test_historical_backtest_foundation.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-OPERATOR IMPORT COMMAND AFTER GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.import_cli --symbol BTC --timeframe 5m --candles <RAW_CANDLES> --funding <RAW_FUNDING> --context <PIT_CONTEXT> --output backend\data\research\historical\BTC-5m.csv --candles-source <SOURCE> --funding-source <SOURCE> --oi-source <SOURCE> --rolling-volume-source <SOURCE> --htf-context-source <SOURCE>
+SOURCE READINESS COMMAND AFTER GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.source_audit --root backend\data\research\historical --timeframe 5m
+Exit 0 / ready_for_locked_baseline_batch=true is required before representative locked-baseline research.
 
 NEXT EXECUTION AFTER GREEN
-Representative historical source acquisition/normalization for BTC/ETH/SOL, then locked-baseline batch research. Desktop operational integration remains mandatory before Atlas is considered finished.
+Acquire/normalize real representative BTC/ETH/SOL PIT datasets, then run source readiness audit and locked-baseline batch research. Desktop operational integration remains mandatory before Atlas is considered finished.
 
 END OF MASTER ROADMAP
