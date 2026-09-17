@@ -6,8 +6,8 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: 8ef2e4a00c261c121f8eafffe2a6e190a117e386
-Focused maturity-run-boundary + maturity-run-length suite: 5 passed in 0.40s. Full regression: 622 passed, 2 warnings in 44.28s. Failures: 0.
+Tested commit: 7bc68cd49bd85d0a4835442cf7ae9e3159e13e24
+Frontend production build GREEN. Focused maturity-run-boundary/evidence-ui/page-contract suite: 16 passed in 0.52s. Full regression: 623 passed, 2 warnings in 35.34s. Failures: 0.
 All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
 
 LOCKED PRODUCTION
@@ -49,17 +49,16 @@ ENGINEERING ROADMAP
 [COMPLETE, VERIFIED] Maturity Sequence Run-Length / Recent-Streak Diagnostics
 [COMPLETE, VERIFIED] Maturity Sequence Run-Length Lightweight Surface + Presentation
 [COMPLETE, VERIFIED] Maturity Sequence Run Boundary Transition Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Maturity Sequence Run Boundary Lightweight Surface + Presentation
-  - research_evidence_ui now exposes maturity_sequence_run_boundary_diagnostics through the durable lightweight endpoint
+[COMPLETE, VERIFIED] Maturity Sequence Run Boundary Lightweight Surface + Presentation
+  - research_evidence_ui exposes maturity_sequence_run_boundary_diagnostics through the durable lightweight endpoint
   - all eight dimensions preserve chronological boundary_count, boundaries, latest_boundary, current_run_outcome, and current_run_length
   - each boundary exposes boundary_index, from_outcome, from_length, to_outcome, to_length, and transition
-  - /research adds a dedicated maturity sequence run boundary transition diagnostics panel
+  - /research includes a dedicated maturity sequence run boundary transition diagnostics panel
   - panel renders boundary count, latest boundary, current run, and complete chronological boundary history
   - evidence-ui tests cover normal and missing-file fail-closed run-boundary behavior
   - page contract verifies method, boundary count, latest boundary, boundary history, current run, and maturity_sequence_run_boundary_diagnostics presence
   - automatic_scoring=False, weighted_scoring=False, readiness_percentage=None; no ranking, tuning, production promotion, or live-capital unlock
-[NEXT] Local frontend production build + focused maturity-run-boundary/evidence-ui/page-contract regression + full regression.
-[NEXT AFTER GREEN] Maturity Sequence Run Boundary Recurrence Diagnostics: describe recurrence/frequency of exact adjacent-run transition forms per dimension without scoring, ranking, promotion, or live unlock.
+[NEXT] Maturity Sequence Run Boundary Recurrence Diagnostics: describe recurrence/frequency of exact adjacent-run transition forms per dimension without scoring, ranking, promotion, or live unlock.
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -68,20 +67,9 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 LIVE READINESS
-Last fully verified build+regression checkpoint: 622 passed at 8ef2e4a. Current Maturity Sequence Run Boundary Lightweight Surface + Presentation is LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified build+regression checkpoint: 623 passed at 7bc68cd with frontend production build GREEN. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-LOCAL UPDATE / TEST
-cd "D:\Work\Project Atlas"
-git fetch origin
-git checkout chatgpt/atlas-rebuild-v1
-git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_sequence_run_boundaries.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
-backend\.venv\Scripts\python.exe -m pytest -q
-
-NEXT EXECUTION AFTER GREEN
+NEXT EXECUTION
 Maturity Sequence Run Boundary Recurrence Diagnostics:
 - consume chronological per-dimension boundary histories only;
 - group exact from_outcome -> to_outcome boundary forms and report counts descriptively;
