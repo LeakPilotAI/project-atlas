@@ -15,7 +15,7 @@ Make Atlas materially more patient. Prefer exceptional discounts in high-quality
 STATE MODEL
 WATCH -> ACCUMULATION -> DEEP_VALUE -> GENERATIONAL
 Any failed thesis -> THESIS_BROKEN.
-GENERATONAL is intentionally rare and must never be awarded from drawdown alone.
+GENERATIONAL is intentionally rare and must never be awarded from drawdown alone.
 
 PHASE 1 — COMPLETE / USER-LOCAL VERIFIED GREEN
 Focused verification: 8 passed.
@@ -34,64 +34,67 @@ Focused verification: 30 passed.
 Full regression: 827 passed, 2 warnings.
 
 PHASE 5 — COMPLETE / USER-LOCAL VERIFIED GREEN
-Focused verification: 37 passed in 0.30s.
-Full regression: 834 passed, 2 warnings in 38.09s.
+Focused verification: 37 passed.
+Full regression: 834 passed, 2 warnings.
 
 PHASE 6 — COMPLETE / USER-LOCAL VERIFIED GREEN
-b69906d backend/app/investment/quality_dips_v2_position_monitor.py
-e2853c6 tests/test_quality_dips_v2_position_monitor.py
-eba2002 PROJECT_ATLAS_MASTER_ROADMAP.txt
-Focused verification: 45 passed in 0.35s.
-Full regression: 842 passed, 2 warnings in 38.81s.
+Focused verification: 45 passed.
+Full regression: 842 passed, 2 warnings.
 
-PHASE 7 — EXECUTED / LOCAL TEST PENDING
+PHASE 7 — COMPLETE / USER-LOCAL VERIFIED GREEN
 44c95d5 backend/app/investment/quality_dips_v2_validation.py
-- point-in-time validation helpers for Quality Dips V2
-- validates symbol histories remain nondecreasing by timestamp; does not sort away violations
-- computes 29/40/50% conservative-upside hurdle occurrence from recorded PIT observations only
-- evaluates recorded post-entry states only after entry timestamp
-- blocks lookahead and same-window retuning by contract
-- outputs screening-frequency summaries only; never labels them realized return or forecast
+f79c652 tests/test_quality_dips_v2_validation.py
+8a641aa PROJECT_ATLAS_MASTER_ROADMAP.txt
+Focused verification: 53 passed in 0.44s.
+Full regression: 850 passed, 2 warnings in 41.64s.
+
+PHASE 8 — EXECUTED / LOCAL TEST PENDING
+617bd6b backend/app/investment/quality_dips_v2_freeze.py
+- frozen DEVELOPMENT policy manifest with deterministic SHA-256 fingerprint
+- locks 29/40/50% research hurdles and L1/L2/L3/L4 = 29/35/40/50
+- explicit DEVELOPMENT window: 2024-01-01 through 2025-06-30T23:59:59
+- explicit untouched HOLDOUT window: 2025-07-01 through 2025-12-31T23:59:59
+- same-window retuning forbidden
+- lookahead forbidden
+- fail-closed partition classifier and HOLDOUT-boundary audit
 - MANUAL_ONLY / no-live controls preserved
 
-f79c652 tests/test_quality_dips_v2_validation.py
-- 29/40/50 hurdle arithmetic
-- invalid price/value handling
-- monotonic PIT-order validation
-- backward timestamp violation detection
-- screening-frequency interpretation lock
-- post-entry state counting
-- pre-entry state violation detection
-- unknown state handling without invention
-- no-live controls
+3da376b tests/test_quality_dips_v2_freeze.py
+- frozen policy/no-live contract
+- hurdle lock coverage
+- deterministic fingerprint
+- lookahead/retuning rejection
+- DEVELOPMENT/HOLDOUT partition classification
+- clean HOLDOUT boundary GREEN
+- cross-partition contamination BLOCKED
 
 FULL ROADMAP — QUALITY DIPS V2
 [COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
 [COMPLETE/VERIFIED GREEN] Phase 1: patient-capital policy + tests + specification
-[COMPLETE/VERIFIED GREEN] Phase 2: read-only V2 evidence adapter + trend evidence passthrough
+[COMPLETE/VERIFIED GREEN] Phase 2: read-only evidence adapter + trend evidence passthrough
 [COMPLETE/VERIFIED GREEN] Phase 3: hard value-trap / thesis-integrity / evidence-freshness gate
 [COMPLETE/VERIFIED GREEN] Phase 4: conservative/base/optimistic normalization-value model with provenance
 [COMPLETE/VERIFIED GREEN] Phase 5: staged L1/L2/L3/L4 entry-zone planner + frozen entry snapshots
 [COMPLETE/VERIFIED GREEN] Phase 6: active-position trend/thesis/cost-basis monitor
-[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 7: historical/PIT validation harness for 29/40/50% hurdles + position-state behavior without lookahead
-[REMAINING] Phase 8: freeze DEVELOPMENT policy + untouched HOLDOUT
+[COMPLETE/VERIFIED GREEN] Phase 7: PIT validation of 29/40/50% hurdles + position-state behavior without lookahead
+[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 8: freeze DEVELOPMENT policy + untouched HOLDOUT boundary
 [REMAINING] Phase 9: integrate validated V2 board + active-position fields into Quality Dips API/dashboard; MANUAL_ONLY
 [REMAINING] Phase 10: state-transition / exceptional-zone / thesis-change alerts with cooldown + dedupe
 [REMAINING] Phase 11: desktop regression + operational smoke + V2 evidence decision/closure
 
 NEXT GREEN GATE
-Pull latest branch, run Phase 1 through Phase 7 focused tests, then full regression. Do not call Phase 7 verified until user posts GREEN output.
+Pull latest branch, run Phase 1 through Phase 8 focused tests, then full regression. Do not call Phase 8 verified until user posts GREEN output.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py tests/test_quality_dips_v2_position_monitor.py tests/test_quality_dips_v2_validation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py tests/test_quality_dips_v2_position_monitor.py tests/test_quality_dips_v2_validation.py tests/test_quality_dips_v2_freeze.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 AFTER GREEN
-Proceed directly to Phase 8: freeze the V2 DEVELOPMENT policy and define an untouched HOLDOUT boundary. No same-window retuning after the freeze.
+Proceed directly to Phase 9: integrate validated V2 research/entry/active-position fields into the Quality Dips API/dashboard while preserving MANUAL_ONLY/no-live execution controls. HOLDOUT evidence remains untouched; no retuning of the frozen Phase 8 policy.
 
 NORMAL DESKTOP WORKFLOW REMAINS
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
