@@ -29,7 +29,10 @@ def run_cli(argv:list[str]|None=None)->int:
 
     def signal(history):
         current=by_timestamp[history[-1].timestamp]
-        eligible=current.open_interest_usd>=75_000 and current.volume_24h_usd>=150_000
+        eligible=(
+            current.open_interest_usd>=cfg.min_open_interest_usd
+            and current.volume_24h_usd>=cfg.min_volume_24h_usd
+        )
         return locked_perp_micro_signal(
             history,
             config=cfg,
