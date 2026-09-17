@@ -9,7 +9,7 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Untouched HOLDOUT preparation boundary is GREEN and COMPLETE. Focused tests: 4 passed in 0.15s. Full regression: 768 passed, 2 warnings in 41.89s; 0 failures. Preparation artifact confirms holdout-2025-h2=[2025-07-01T00:00:00Z,2026-01-01T00:00:00Z), separate HOLDOUT roots for candles/OI/volume/HTF/funding/funded/canonical, development_evidence_mutated=false, threshold_retuning_allowed=false, same_window_optimization_allowed=false, and holdout_evaluation_allowed_before_source_audit_green=false.
+Untouched HOLDOUT data-build plan is GREEN and COMPLETE. Focused tests: 6 passed in 0.35s. Full regression: 770 passed, 2 warnings in 40.96s; 0 failures. Build-plan artifact confirms holdout-2025-h2=[2025-07-01T00:00:00Z,2026-01-01T00:00:00Z), ordered stages candles -> OI -> rolling volume -> HTF -> funding -> funding merge -> canonical -> source_audit GATE, separate HOLDOUT roots, development_evidence_mutated=false, threshold_retuning_allowed=false, same_window_optimization_allowed=false, and holdout_evaluation_allowed_before_source_audit_green=false.
 
 LOCKED DEVELOPMENT BASELINE — VERIFIED NEGATIVE EVIDENCE
 Aggregate: trade_count=659, total_r=-117.21753020091131, expectancy_r=-0.17787182124569242.
@@ -18,10 +18,10 @@ ETH: 206 trades, expectancy_r=-0.08322733855596981, total_r=-17.14483174252978, 
 SOL: 326 trades, expectancy_r=-0.21153498820164363, total_r=-68.96040615373582, profit_factor=0.7147090311474995.
 DEVELOPMENT decisions remain frozen: development_result=FAILED_NEGATIVE, parameters_frozen=true, same_window_optimization_allowed=false.
 
-EXECUTED UNTOUCHED HOLDOUT DATA BUILD PLAN — LOCAL TEST PENDING
-dee991d atlas: add untouched holdout data build plan
-c3f7063 atlas: test untouched holdout data build plan
-The new research-only build plan converts the HOLDOUT preparation boundary into an ordered, auditable data-build sequence using the existing proven Atlas stages: public Binance candles, historical PIT OI, exact rolling 24h quote volume, completed-1h HTF, paginated first-party Hyperliquid funding, exact funding PIT merge, canonical assembly, then independent source_audit as the mandatory gate. All outputs remain under holdout-2025-h2 roots. It does not evaluate the strategy or touch frozen DEVELOPMENT evidence.
+EXECUTED UNTOUCHED HOLDOUT CANDLE BATCH — LOCAL TEST PENDING
+82eb681 atlas: add untouched holdout candle batch
+e90a080 atlas: test untouched holdout candle batch
+The new research-only wrapper fixes the holdout-2025-h2 boundaries and invokes the existing proven no-AWS Binance public candle batch under HOLDOUT-only paths. It writes raw and normalized 5m/1h BTC/ETH/SOL candle artifacts only under holdout-2025-h2-candles, preserves the existing CHECKSUM/SHA-256 provenance behavior, never writes into DEVELOPMENT roots, does not mutate frozen evidence, and cannot enable HOLDOUT evaluation or live execution.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -55,24 +55,28 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] DEVELOPMENT decision/parameter freeze — FAILED_NEGATIVE, parameters frozen
 [COMPLETE/VERIFIED] Untouched HOLDOUT evaluation runner — 766 full tests GREEN
 [COMPLETE/VERIFIED] Untouched HOLDOUT preparation boundary — 768 full tests GREEN
+[COMPLETE/VERIFIED] Untouched HOLDOUT data-build plan — 770 full tests GREEN
 
-[CURRENT, LOCAL TEST PENDING] UNTOUCHED HOLDOUT DATA BUILD PLAN
-- research window: holdout-2025-h2=[2025-07-01T00:00:00Z,2026-01-01T00:00:00Z)
-- separate roots for candles/OI/rolling volume/HTF/funding/funded/canonical
-- ordered required stages: candles -> OI -> rolling volume -> HTF -> funding -> funding merge -> canonical -> source audit
-- preserve real source missingness; no interpolation/fabrication
-- DEVELOPMENT evidence mutation forbidden
+[CURRENT, LOCAL TEST PENDING] UNTOUCHED HOLDOUT CANDLE ACQUISITION/NORMALIZATION
+- research window fixed to [2025-07-01T00:00:00Z,2026-01-01T00:00:00Z)
+- BTC/ETH/SOL 5m + 1h Binance USD-M public candles
+- no AWS; public data.binance.vision path through existing batch
+- raw ZIP + CHECKSUM/SHA-256 provenance preserved by existing acquisition path
+- raw/normalized outputs isolated to holdout-2025-h2-candles
+- no DEVELOPMENT overwrite
+- development_evidence_mutated=false
 - threshold retuning disabled
-- same-window optimization disabled
-- HOLDOUT evaluation forbidden before independent source_audit GREEN
+- HOLDOUT evaluation still forbidden before independent source_audit GREEN
 - live capital disabled
 - automatic real-money execution disabled
 
-[NEXT AFTER LOCAL GREEN] Generate the HOLDOUT data-build plan artifact. Then execute the existing acquisition/normalization stages against holdout-2025-h2, starting with the public Binance candle batch and historical PIT OI under the separate HOLDOUT roots. Keep each stage GREEN before advancing; do not run holdout_evaluation yet.
+[NEXT AFTER LOCAL GREEN] Run the HOLDOUT candle wrapper in plan mode first, then execute the real no-AWS candle acquisition/normalization. Verify the expected 36 raw monthly objects and 6 normalized outputs for BTC/ETH/SOL 5m + 1h across the locked 2025-H2 window before advancing to historical PIT OI.
 
-[THEN] Derive exact rolling 24h quote volume and completed-1h HTF for HOLDOUT, acquire paginated first-party funding, and perform exact funding PIT merge.
+[THEN] Execute HOLDOUT historical PIT OI acquisition/normalization with real missingness preserved.
 
-[GATE] Assemble canonical-holdout-2025-h2 BTC/ETH/SOL and require independent source_audit ready_for_locked_baseline_batch=true.
+[THEN] Derive HOLDOUT exact rolling 24h quote volume and completed-1h HTF, acquire first-party funding, perform exact funding PIT merge, then assemble canonical HOLDOUT datasets/manifests.
+
+[GATE] Independent HOLDOUT source_audit ready_for_locked_baseline_batch=true.
 
 [THEN] Run the exact frozen DEVELOPMENT configuration on HOLDOUT and record out-of-sample metrics without retuning.
 
@@ -87,26 +91,29 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_holdout_build_plan.py tests/test_backtest_holdout_prepare_plan.py tests/test_backtest_holdout_evaluation.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_holdout_candle_batch.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-HOLDOUT DATA BUILD PLAN — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.holdout_build_plan --root backend\data\research\historical --output backend\data\research\historical\holdout-data-build-plan-2025-h2.json
-Expected: status=HOLDOUT_DATA_BUILD_PLAN_READY, research_window=holdout-2025-h2, ordered stages ending in source_audit GATE, threshold_retuning_allowed=false, holdout_evaluation_allowed_before_source_audit_green=false.
+HOLDOUT CANDLE PLAN — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.holdout_candle_batch --root backend\data\research\historical --manifest backend\data\research\historical\holdout-candle-stage-2025-h2.json
+Expected: status=HOLDOUT_CANDLE_BATCH_PLANNED, batch_status=PLANNED_NOT_DOWNLOADED, development_evidence_mutated=false.
+
+HOLDOUT CANDLE EXECUTION — AFTER PLAN GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.holdout_candle_batch --root backend\data\research\historical --manifest backend\data\research\historical\holdout-candle-stage-2025-h2.json --execute
+Expected: status=HOLDOUT_CANDLE_BATCH_EXECUTED, object_count=36, normalized_output_count=6, batch_status=ACQUIRED_AND_NORMALIZED_CANDLES_CONTEXT_STILL_REQUIRED.
 
 WHAT REMAINS
-1 Validate HOLDOUT data-build-plan focused/full tests.
-2 Generate the HOLDOUT data-build-plan artifact.
-3 Execute HOLDOUT candle acquisition/normalization.
-4 Execute HOLDOUT historical PIT OI acquisition/normalization.
-5 Derive HOLDOUT exact rolling 24h volume and completed-1h HTF.
-6 Acquire HOLDOUT first-party funding and exact-event PIT merge.
-7 Assemble canonical HOLDOUT datasets/manifests.
-8 Independent HOLDOUT source_audit GREEN.
-9 Run frozen configuration on HOLDOUT and record out-of-sample evidence.
-10 Preserve failed experiment or start isolated next-cycle research only after HOLDOUT evidence.
-11 PAPER/SHADOW operational checkpoint.
-12 Final desktop integration.
+1 Validate HOLDOUT candle wrapper focused/full tests.
+2 Run HOLDOUT candle plan and real acquisition/normalization.
+3 Execute HOLDOUT historical PIT OI acquisition/normalization.
+4 Derive HOLDOUT exact rolling 24h volume and completed-1h HTF.
+5 Acquire HOLDOUT first-party funding and exact-event PIT merge.
+6 Assemble canonical HOLDOUT datasets/manifests.
+7 Independent HOLDOUT source_audit GREEN.
+8 Run frozen configuration on HOLDOUT and record out-of-sample evidence.
+9 Preserve failed experiment or start isolated next-cycle research only after HOLDOUT evidence.
+10 PAPER/SHADOW operational checkpoint.
+11 Final desktop integration.
 
 RESEARCH/LIVE STATUS
 Current locked DEVELOPMENT baseline: n=659 expectancy=-0.17787182124569242R total=-117.21753020091131R. Stable positive edge NOT ESTABLISHED. Live capital locked. Automated real-money execution disabled.
