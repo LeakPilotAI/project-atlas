@@ -14,6 +14,15 @@ credentials.json
 secrets/
 **/secrets/
 
+# AWS/local cloud credentials must never enter the repository.
+.aws/
+**/.aws/
+aws_credentials
+aws_credentials.*
+credentials
+**/credentials
+.aws-sam/
+
 # =========================
 # Python
 # =========================
