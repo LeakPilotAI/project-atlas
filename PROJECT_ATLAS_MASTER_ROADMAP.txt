@@ -28,25 +28,19 @@ Phase 7: 53 focused in 0.44s / 850 full, 2 warnings in 41.64s GREEN.
 Phase 8: 60 focused in 0.43s / 857 full, 2 warnings in 42.94s GREEN.
 
 PHASE 9 — REPAIRED / LOCAL TEST PENDING
-Initial user-local run exposed two concrete integration defects:
-1. quality_dips_v2_board.py called build_entry_ladder with obsolete keyword names conservative_value/valuation_complete. Result: 3 failures, 61 passes.
-2. quality_dips.html did not yet contain V2 patient-capital rendering. Result: API surface 2 passes, 1 dashboard-contract failure.
+User-local focused V2 suite after first repairs: 67 passed in 0.55s.
+Full regression after first repairs: 863 passed, 1 failed, 2 warnings in 40.00s.
+Remaining failure was legacy dashboard compatibility only:
+- tests/test_investment_board_api_v4.py required exact text EQUITY INVESTMENT.
+- V2 header had replaced that marker.
 
 Repair commits:
 cd83a8b atlas: fix Quality Dips V2 ladder integration
-- uses the real build_entry_ladder contract: symbol, normalization_value, valuation_window_complete, current_price
-- preserves fail-closed valuation completeness
-- aligns missing-source evidence_gate and entry_ladder shapes with current V2 contracts
-
 7e3136c atlas: surface Quality Dips V2 patient capital fields
-- safely merged against latest dashboard blob after prior SHA conflicts
-- dashboard now explicitly renders QUALITY DIPS V2 / PATIENT CAPITAL
-- patient state, conservative/base/optimistic values, conservative upside
-- evidence-gate state/blockers
-- L1/L2/L3/L4 29/35/40/50 patient entry prices
-- trend evidence
-- V2 state counts
-- explicit screening-not-guarantee and MANUAL_ONLY/no-live language
+bcdb352 atlas: restore equity investment dashboard contract
+- preserves QUALITY DIPS V2 / PATIENT CAPITAL UI
+- restores exact EQUITY INVESTMENT compatibility marker
+- does not add perp API calls or live execution
 
 Earlier Phase 9 commits retained:
 c506a60 backend/app/investment/quality_dips_v2_board.py
@@ -70,14 +64,14 @@ FULL ROADMAP — QUALITY DIPS V2
 [REMAINING] Phase 11: desktop regression + operational smoke + V2 evidence decision/closure
 
 NEXT GREEN GATE
-Pull latest branch and rerun Phase 1-9 focused tests plus full regression. Do not call Phase 9 verified until user posts GREEN output.
+Pull latest branch and rerun focused Phase 1-9 tests plus full regression. Do not call Phase 9 verified until user posts GREEN output.
 
 LOCAL UPDATE / VALIDATION
 cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py tests/test_quality_dips_v2_position_monitor.py tests/test_quality_dips_v2_validation.py tests/test_quality_dips_v2_freeze.py tests/test_quality_dips_v2_board.py tests/test_quality_dips_v2_api_surface.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py tests/test_quality_dips_v2_evidence.py tests/test_quality_dips_v2_gate.py tests/test_quality_dips_v2_valuation.py tests/test_quality_dips_v2_entries.py tests/test_quality_dips_v2_position_monitor.py tests/test_quality_dips_v2_validation.py tests/test_quality_dips_v2_freeze.py tests/test_quality_dips_v2_board.py tests/test_quality_dips_v2_api_surface.py tests/test_investment_board_api_v4.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
 AFTER GREEN
