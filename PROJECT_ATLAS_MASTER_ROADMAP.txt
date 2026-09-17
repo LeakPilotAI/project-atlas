@@ -17,10 +17,12 @@ BTC: 127 trades, win_rate=0.2992125984251969, expectancy_r=-0.24497867956413943,
 ETH: 206 trades, win_rate=0.3592233009708738, expectancy_r=-0.08322733855596981, total_r=-17.14483174252978, profit_factor=0.8796660660219333, run_id=048d6203cdb33594a3a3.
 SOL: 326 trades, win_rate=0.3128834355828221, expectancy_r=-0.21153498820164363, total_r=-68.96040615373582, profit_factor=0.7147090311474995, run_id=d0834633cc5edf771dc3.
 
-EXECUTED UNTOUCHED HOLDOUT EVALUATION RUNNER — LOCAL TEST PENDING
-4d2c371 atlas: add untouched holdout evaluation
-2b94cc3 atlas: test untouched holdout evaluation
-The new research-only holdout runner refuses to run unless DEVELOPMENT decisions are frozen, reconstructs the exact frozen LockedThresholds from the freeze artifact, requires the holdout canonical source audit to be GREEN, and evaluates BTC/ETH/SOL with the same deterministic PIT engine. It records holdout_data_touched=true only at this explicit out-of-sample stage, forbids threshold retuning/same-window optimization, leaves production strategy state unchanged, and cannot enable live capital or automatic real-money execution.
+UNTOUCHED HOLDOUT RUNNER — IMPORT ERROR DIAGNOSED
+Local focused test collection failed because backend/app/backtest/holdout_evaluation.py imported _load_json from development_decision_freeze.py, but that helper never existed there. This was a module import bug in the newly added HOLDOUT runner, not a strategy or data failure.
+
+FIX EXECUTED — LOCAL RETEST PENDING
+f812123 atlas: fix holdout freeze loader import
+Updated backend/app/backtest/holdout_evaluation.py to define its own small JSON-object loader and removed the invalid cross-module private import. DEVELOPMENT freeze code and frozen evidence were not changed.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, requester-paid download, or VPS is required.
@@ -55,7 +57,9 @@ FULL ROADMAP
 [COMPLETE/VERIFIED NEGATIVE] Locked DEVELOPMENT baseline — 659 trades, -117.2175R, -0.17787R expectancy
 [COMPLETE/VERIFIED] DEVELOPMENT decision/parameter freeze — FAILED_NEGATIVE, parameters frozen
 
-[CURRENT, LOCAL TEST PENDING] UNTOUCHED HOLDOUT EVALUATION RUNNER
+[CURRENT, LOCAL RETEST PENDING] UNTOUCHED HOLDOUT EVALUATION RUNNER
+- invalid private helper import removed
+- runner owns its freeze JSON loader
 - requires DEVELOPMENT_DECISIONS_FROZEN
 - exact frozen thresholds only; no retuning
 - requires separate holdout canonical source_audit GREEN
@@ -68,7 +72,7 @@ FULL ROADMAP
 - live_capital_allowed=false
 - automatic_real_money_execution=false
 
-[NEXT AFTER LOCAL GREEN] Validate the holdout runner. Then acquire/normalize/canonicalize the untouched holdout-2025-h2 BTC/ETH/SOL data with the same PIT provenance controls used for DEVELOPMENT. Do not evaluate HOLDOUT until its independent source_audit is GREEN.
+[NEXT AFTER LOCAL GREEN] Re-run the HOLDOUT focused/full tests. Then acquire/normalize/canonicalize the untouched holdout-2025-h2 BTC/ETH/SOL data with the same PIT provenance controls used for DEVELOPMENT. Do not evaluate HOLDOUT until its independent source_audit is GREEN.
 
 [THEN] Run the exact frozen DEVELOPMENT configuration on holdout-2025-h2 and capture per-symbol/aggregate out-of-sample metrics without retuning.
 
@@ -94,7 +98,7 @@ backend\.venv\Scripts\python.exe -m app.backtest.holdout_evaluation --freeze bac
 Expected controls: status=UNTOUCHED_HOLDOUT_EVALUATION_COMPLETE, parameters_frozen=true, threshold_retuning_allowed=false, same_window_optimization_allowed=false, production_strategy_modified=false, live_capital_allowed=false.
 
 WHAT REMAINS
-1 Validate untouched HOLDOUT runner focused/full tests.
+1 Retest untouched HOLDOUT runner focused/full tests.
 2 Acquire/normalize/canonicalize holdout-2025-h2 BTC/ETH/SOL without touching frozen DEVELOPMENT evidence.
 3 Independent holdout source_audit GREEN.
 4 Run exact frozen configuration on HOLDOUT and record out-of-sample metrics.
