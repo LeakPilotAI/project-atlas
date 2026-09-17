@@ -6,63 +6,66 @@ PERMANENT EXECUTION PROTOCOL
 When user says execute, implement next roadmap item directly when tooling permits. After EVERY execution: audit GitHub; exact changed files; exact PowerShell fetch/reset + focused/full tests; never claim local tests passed until user posts them; update roadmap; downloadable TXT + roadmap in chat. Never git clean -fdx. Preserve backend/data. Engineering != live readiness. No automatic real-money execution or production retuning. PAPER/SHADOW separate. Quality Dips/perps separate. Optimize expectancy after costs/robustness. Preserve PIT/history integrity.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Tested commit: dc82c03d192b94052ded88304a61b58aab8a3669
-Focused maturity-run-boundary-recurrence + run-boundary suite: 5 passed in 0.43s. Full regression: 626 passed, 2 warnings in 35.41s. Failures: 0.
-All changes after this checkpoint remain LOCAL TEST/BUILD PENDING.
+Tested commit: b0039a700b43789c42f3073402a4ed175c4e6464
+Frontend production build GREEN. Focused recurrence/evidence-ui/page-contract suite: 18 passed in 0.45s. Full regression: 627 passed, 2 warnings in 35.84s. Failures: 0.
 
 LOCKED PRODUCTION
-RSI long <=28; RSI short >=72; extension >=1.4%; minimum R:R 1.8. No automatic retuning/live unlock.
+RSI long <=28; RSI short >=72; extension >=1.4%; max extension 3.5%; minimum R:R 1.8. No automatic retuning/live unlock.
 
 ENGINEERING ROADMAP
 [COMPLETE] Core rebuild / Hyperliquid cockpit / manual-to-auto PAPER / recovery / Quality Dips
 [COMPLETE, VERIFIED] V6 research stack through Snapshot Independence Hardening
-[COMPLETE, VERIFIED] Research Evidence Front-End Panel
-[COMPLETE, VERIFIED] Forward Evidence Window Diversity / Regime Coverage Diagnostics
-[COMPLETE, VERIFIED] Lightweight Diversity Integration + Navigation
-[COMPLETE, VERIFIED] Forward Evidence Diversity Trend / History Diagnostics
-[COMPLETE, VERIFIED] Longitudinal Diversity Presentation + Method Boundary
-[COMPLETE, VERIFIED] Fixed-Duration Forward Diversity Window Research
-[COMPLETE, VERIFIED] Fixed-Window Diversity Presentation
-[COMPLETE, VERIFIED] Predeclared Multi-Window Diversity Diagnostics
-[COMPLETE, VERIFIED] Multi-Window Lightweight Presentation
-[COMPLETE, VERIFIED] Prospective Multi-Window Consistency History Engine
-[COMPLETE, VERIFIED] Prospective Multi-Window Consistency History Lightweight Surface
-[COMPLETE, VERIFIED] Prospective Consistency History Front-End Presentation
-[COMPLETE, VERIFIED] Prospective Consistency Change Diagnostics
-[COMPLETE, VERIFIED] Consistency Change Lightweight Surface + Front-End Presentation
-[COMPLETE, VERIFIED] Transition Persistence / Reversal Diagnostics
-[COMPLETE, VERIFIED] Transition Persistence Lightweight Surface + Presentation
-[COMPLETE, VERIFIED] Confirmation Sequence Diagnostics
-[COMPLETE, VERIFIED] Confirmation Sequence Lightweight Surface + Presentation
-[COMPLETE, VERIFIED] Evidence Sufficiency Gap Diagnostics
-[COMPLETE, VERIFIED] Evidence Sufficiency Gap Lightweight Surface + Presentation
-[COMPLETE, VERIFIED] Research Evidence Maturity / Missing-Evidence Summary
-[COMPLETE, VERIFIED] Research Evidence Maturity Lightweight Presentation
-[COMPLETE, VERIFIED] Maturity Change History / New-Evidence Transition Diagnostics
-[COMPLETE, VERIFIED] Maturity Change History Lightweight Surface + Presentation
-[COMPLETE, VERIFIED] Maturity Transition Persistence / Reversal Diagnostics
-[COMPLETE, VERIFIED] Maturity Transition Persistence Lightweight Surface + Presentation
-[COMPLETE, VERIFIED] Maturity Confirmation Sequence Diagnostics
-[COMPLETE, VERIFIED] Maturity Confirmation Sequence Lightweight Surface + Presentation
-[COMPLETE, VERIFIED] Maturity Sequence Stability / Repetition Diagnostics
-[COMPLETE, VERIFIED] Maturity Sequence Stability Lightweight Surface + Presentation
-[COMPLETE, VERIFIED] Maturity Sequence Run-Length / Recent-Streak Diagnostics
-[COMPLETE, VERIFIED] Maturity Sequence Run-Length Lightweight Surface + Presentation
-[COMPLETE, VERIFIED] Maturity Sequence Run Boundary Transition Diagnostics
-[COMPLETE, VERIFIED] Maturity Sequence Run Boundary Lightweight Surface + Presentation
-[COMPLETE, VERIFIED] Maturity Sequence Run Boundary Recurrence Diagnostics
-[COMPLETE, LOCAL TEST/BUILD PENDING] Maturity Sequence Run Boundary Recurrence Lightweight Surface + Presentation
-  - research_evidence_ui exposes maturity_sequence_run_boundary_recurrence_diagnostics through the durable lightweight endpoint
-  - all eight dimensions preserve boundary_count, distinct_transition_count, recurrence rows, latest occurrence run-length context, and current run context
-  - /research includes a dedicated recurrence panel showing exact transition forms, recurrence counts, latest occurrence index/run lengths, and current run
-  - no frequent-transition ranking, favorable-pattern selection, tuning, production promotion, or live-capital unlock is performed
-  - evidence-ui tests cover normal and missing-file fail-closed recurrence behavior
-  - page contract verifies method, distinct forms, recurrence display, latest occurrence, and explicit no-ranking boundary
-[NEXT] Local frontend production build + focused recurrence/evidence-ui/page-contract regression + full regression.
-[NEXT AFTER GREEN — BACKTESTING READINESS AUDIT] Audit existing Atlas backtest/replay/data paths, CLI/API entry points, PIT guarantees, cost/slippage/funding assumptions, result persistence, and operator workflow. Repair only gaps that block safe repeatable historical backtesting.
-[THEN — BACKTEST RUNNER CHECKPOINT] Provide one repeatable local command/workflow to run historical backtests, save results, compare locked baseline vs research candidates, and keep all outputs research-only.
-[THEN — SMOKE + BATCH BACKTESTS] Verify deterministic smoke replay, then run baseline/candidate historical batches across multiple periods/regimes.
-[THEN — SHADOW/PAPER OPERATIONS CHECKPOINT] Validate startup/recovery, market-data ingestion, signal generation, simulated fills, logs, dashboard visibility, and durable evidence collection before any consideration of live capital.
+[COMPLETE, VERIFIED] Research Evidence Front-End Panel and all maturity/sequence diagnostics through Run Boundary Recurrence
+[COMPLETE, VERIFIED] Maturity Sequence Run Boundary Recurrence Lightweight Surface + Presentation
+
+[COMPLETE — AUDIT FINDINGS RECORDED] Backtesting Readiness Audit
+  - backend/app/backtest/engine.py exists, but it is currently a signal/decision helper, not a complete historical backtest runner
+  - current engine computes RSI, direction scores, multi-timeframe agreement, invalidation, and suggested R:R only
+  - no canonical historical dataset iteration loop exists in backend/app/backtest
+  - no explicit deterministic fill simulator exists there
+  - no explicit fee/slippage/funding accounting exists there
+  - no portfolio/equity curve or drawdown accounting exists there
+  - no canonical persisted trade ledger/result bundle exists there
+  - no canonical CLI/operator command exists for repeatable historical runs
+  - locked production thresholds are centralized in Settings and can be consumed by a baseline backtest profile without changing production configuration
+  - README describes Atlas as an alert/analysis system that does not auto-trade; historical backtesting can remain isolated research-only
+
+[CURRENT — BUILD REQUIRED] Deterministic Historical Backtest Runner Foundation
+  1. define canonical OHLCV historical input contract with timestamps and symbol/timeframe identity
+  2. build deterministic replay loop that only exposes bars available at each simulated decision timestamp
+  3. adapt/bridge locked perp-micro baseline rules separately from legacy generic decide_direction helper
+  4. implement explicit entry/exit fill assumptions
+  5. implement explicit fee/slippage/funding assumptions with all costs included in net PnL
+  6. implement position sizing and R-based accounting
+  7. persist run metadata, config snapshot, trade ledger, metrics, and deterministic run identifier
+  8. guarantee research-only output cannot mutate production gates or enable live capital
+  9. add deterministic-repeatability and no-lookahead tests
+
+[NEXT AFTER FOUNDATION GREEN] Canonical Backtest CLI / Operator Workflow
+  - one repeatable PowerShell command
+  - explicit dataset path / symbols / date range / baseline-or-candidate selection
+  - deterministic output directory under research/backtest results
+  - baseline vs research candidate separation
+
+[THEN] Smoke Backtest Reconciliation
+  - tiny known dataset
+  - inspect every signal, entry, stop/target, cost, R result, equity update
+  - repeat same run twice and require identical output
+
+[THEN] Historical Batch Research
+  - locked baseline first
+  - research candidates second
+  - multiple periods/regimes
+  - comparable persisted metrics including n, WR, expectancy R, total R, PF, drawdown, costs
+
+[THEN] PAPER/SHADOW Operations Checkpoint
+  - startup/recovery
+  - live market-data ingestion
+  - signal generation
+  - simulated fills
+  - logs/dashboard
+  - durable prospective evidence
+
 [ONGOING] V6 prospective evidence.
 [ONGOING] Quality Dips PIT/forward evidence.
 [FUTURE] Human-reviewed promotion framework only after sufficient forward evidence, uncertainty, risk stability, independence, diversity, longitudinal robustness, and operational review.
@@ -71,40 +74,24 @@ RESEARCH CHECKPOINT
 932 closes; WR 43.03%; expectancy -0.0212R; total -19.7381R; PF 0.9614. Later holdout n=310 expectancy -0.1723R. Stable positive edge NOT ESTABLISHED.
 
 WHAT REMAINS BEFORE ROUTINE BACKTESTING / ATLAS RESEARCH RUNS
-1. Verify the recurrence lightweight surface + /research presentation locally: frontend build + focused + full regression.
-2. Perform the dedicated backtesting-readiness audit of historical data inputs, PIT protections, fee/slippage/funding model, replay/backtest entry points, persistence, baseline-vs-candidate comparison, and failure/recovery behavior.
-3. Repair only audit findings that block deterministic, repeatable, research-only backtesting.
-4. Establish and verify the canonical Atlas backtest runner command and result/output location.
-5. Run a deterministic smoke backtest and reconcile trades/metrics.
-6. Run baseline/candidate historical batches across representative periods/regimes and persist comparable results.
-7. Run Atlas PAPER/SHADOW for prospective evidence collection and operational validation while historical backtesting continues.
+1. Build deterministic historical replay foundation listed above.
+2. Add focused tests for PIT/no-lookahead, costs, fills, R accounting, persistence, and repeatability.
+3. Establish the canonical backtest CLI/operator command and result location.
+4. Run and reconcile a deterministic smoke backtest.
+5. Begin locked-baseline historical batches, then research candidates across representative periods/regimes.
+6. In parallel, continue PAPER/SHADOW prospective evidence collection after the historical runner is healthy.
 
 IMPORTANT DISTINCTION
-The maturity-diagnostics chain stops here for pre-backtest gating. We do NOT need additional evidence-observability layers before historical backtesting. Once this recurrence surface is GREEN and the dedicated backtesting-readiness audit is green, routine research backtesting can begin. Live trading remains a separate, much later gate.
+The evidence-observability/maturity chain is complete for pre-backtest purposes. The blocker is no longer diagnostics; it is that the existing backtest module is not yet a complete historical simulator. Historical backtesting may begin as soon as the deterministic runner foundation + smoke checkpoint are GREEN. Live trading remains a separate, much later gate.
 
 LIVE READINESS
-Last fully verified build+regression checkpoint: 626 passed at dc82c03. Current Maturity Sequence Run Boundary Recurrence Lightweight Surface + Presentation is LOCAL TEST/BUILD PENDING. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
+Last fully verified build+regression checkpoint: 627 passed at b0039a7 with frontend production build GREEN. Stable positive expectancy NOT ESTABLISHED. Statistical stability LOW. Live capital NOT READY/LOCKED. Automated real-money execution DISABLED.
 
-LOCAL UPDATE / TEST
-cd "D:\Work\Project Atlas"
-git fetch origin
-git checkout chatgpt/atlas-rebuild-v1
-git reset --hard origin/chatgpt/atlas-rebuild-v1
-Push-Location frontend
-npm run build
-Pop-Location
-backend\.venv\Scripts\python.exe -m pytest tests/test_v6_maturity_sequence_run_boundary_recurrence.py tests/test_v6_research_evidence_ui.py tests/test_v6_research_page_contract.py -q
-backend\.venv\Scripts\python.exe -m pytest -q
-
-NEXT EXECUTION AFTER GREEN
-BACKTESTING READINESS AUDIT:
-- identify all current historical data sources, loaders, replay/backtest services, CLI/API entry points, outputs, and storage paths;
-- verify point-in-time integrity and no-lookahead constraints;
-- verify fees, slippage, funding, position sizing, stops/targets, and fill assumptions are explicit and reproducible;
-- verify deterministic repeated runs and result persistence;
-- verify locked baseline is separated from research candidates;
-- verify backtesting cannot alter production gates or enable live capital;
-- repair only blockers required for safe repeatable historical backtesting;
-- end with one canonical operator command and a smoke-test workflow.
+NEXT EXECUTION
+Deterministic Historical Backtest Runner Foundation:
+- create the historical input/replay/fill/cost/result architecture without changing locked production settings;
+- research-only; no real-money execution;
+- add tests first around deterministic replay and no-lookahead invariants;
+- then expose a canonical operator runner.
 
 END OF MASTER ROADMAP
