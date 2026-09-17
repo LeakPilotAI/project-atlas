@@ -15,7 +15,8 @@ def test_desktop_launch_contract_is_intact():
 
     assert "Atlas-Launch.ps1" in batch
     assert "Atlas-Stop.ps1" in batch
-    assert "backend\\.venv\\Scripts\\python.exe" in launch
+    assert '$Backend = Join-Path $Root "backend"' in launch
+    assert '$VenvPy = Join-Path $Backend ".venv\\Scripts\\python.exe"' in launch
     assert '"-m", "uvicorn", "app.main:app"' in launch
     assert '"--host", "127.0.0.1"' in launch
     assert '"--port", "8000"' in launch
