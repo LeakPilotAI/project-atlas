@@ -9,12 +9,12 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from active Atlas. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-Header compatibility and real-data inspection are GREEN. Focused inspector tests: 7 passed in 0.35s. Full regression: 702 passed, 2 warnings in 36.55s; 0 failures. Real BTCUSDT July-2024 5m archive: 8928 rows, header_present=true, schema_valid=true, cadence_consistent=true, ascending_unique=true. Real BTCUSDT July-2024 1h archive: 744 rows with the same GREEN validation. 2024-H2 plan remains 36 objects; BTC July probe has 2 checksum-verified real archives.
+Normalizer checkpoint GREEN: 6 focused passed in 0.26s. Full regression = 708 passed, 2 warnings in 36.61s; 0 failures. Real BTCUSDT July-2024 normalization succeeded exactly: 5m row_count=8928, first=2024-07-01T00:00:00Z, last=2024-07-31T23:55:00Z, output SHA256=e68ca85cb761a689ee80bd9f8a8e050f92307ae140601be9cdbe3f66616cf30a. 1h row_count=744, first=2024-07-01T00:00:00Z, last=2024-07-31T23:00:00Z, output SHA256=17d304dcffa050b0027ca11a2351a1500222e99124f649e577252e9d3f43ecbd. Both remain research-only and pit_context_complete=false.
 
 EXECUTED NEXT STEP — LOCAL TEST PENDING
-- d9141a6 atlas: add deterministic Binance public candle normalizer
-- 6209602 atlas: test deterministic Binance candle normalization
-Normalizer supports BTCUSDT/ETHUSDT/SOLUSDT -> BTC/ETH/SOL, headered/headerless verified ZIPs, exact half-open UTC windows, strict cadence alignment, unique timestamps, gap detection, OHLC/volume validation, deterministic Atlas candle CSV output, output/raw SHA-256 provenance, and research/live safety flags. It explicitly does NOT fabricate PIT OI/rolling-volume context and cannot make source readiness GREEN alone.
+57b75a4 atlas: add full public candle acquisition normalization batch
+5021403 atlas: test public candle batch orchestration
+New batch module plans/acquires the locked representative BTC/ETH/SOL x 5m/1h monthly window using checksum-verified raw public archives, then normalizes six non-canonical research outputs through the already-verified deterministic normalizer. It retains raw ZIP/CHECKSUM provenance and explicitly leaves pit_context_complete=false/live disabled.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, or requester-paid download required.
@@ -37,29 +37,25 @@ FULL ROADMAP
 [COMPLETE/VERIFIED] No-AWS public candle acquisition
 [COMPLETE/VERIFIED] 2024-H2 public plan — 36 objects
 [COMPLETE/VERIFIED] BTC July acquisition probe — 2 checksum-verified objects
-[COMPLETE/VERIFIED] Real Binance header compatibility + BTC 5m/1h schema/cadence inspection — 7 focused / 702 full
+[COMPLETE/VERIFIED] Real Binance header compatibility + BTC 5m/1h schema/cadence inspection
+[COMPLETE/VERIFIED] Deterministic public candle normalizer — 6 focused / 708 full
+[COMPLETE/VERIFIED] Real BTC July normalization — 5m=8928 / 1h=744, exact half-open window, SHA-256 provenance
 
-[CURRENT, LOCAL TEST PENDING] DETERMINISTIC PUBLIC CANDLE NORMALIZER
-- backend/app/backtest/binance_public_normalize.py
-- tests/test_backtest_binance_public_normalize.py
-- exact half-open [start,end) UTC windows
-- window boundaries must align to 5m/1h cadence
-- recognized headered or headerless 12-column archives
-- BTCUSDT/ETHUSDT/SOLUSDT mapping only
-- duplicate timestamps fail closed
-- cadence/window gaps fail closed
-- malformed OHLC/negative volume fail closed
-- deterministic Atlas fields: timestamp,symbol,timeframe,open,high,low,close,volume
-- raw archive SHA-256 + normalized output SHA-256 report
-- pit_context_complete=false; live/automatic execution=false
+[CURRENT, LOCAL TEST PENDING] FULL 2024-H2 PUBLIC CANDLE BATCH ORCHESTRATION
+- backend/app/backtest/binance_public_batch.py
+- tests/test_backtest_binance_public_batch.py
+- plan mode should produce 36 objects and zero normalized outputs
+- execute mode acquires checksum-verified raw ZIP/CHECKSUM files and normalizes six outputs: BTC/ETH/SOL x 5m/1h
+- all outputs remain non-canonical research candles until PIT OI/rolling-volume context is complete
+- live_capital_allowed=false, automatic_real_money_execution=false
 
-[NEXT AFTER LOCAL GREEN] Normalize the two real BTC July-2024 probe archives into non-canonical research candle CSVs and verify exact expected row counts: 5m=8928 and 1h=744. Do not call them canonical or source-audit-ready.
+[NEXT AFTER LOCAL GREEN] Run full 2024-H2 batch with --execute against backend/data/research/raw/historical/dev-2024-h2 and write normalized research candles under backend/data/research/historical/dev-2024-h2-candles. Expect objects=36 and normalized_outputs=6. Preserve all raw data; do not run git clean -fdx.
 
-[THEN] Full 2024-H2 36-object BTC/ETH/SOL 5m+1h acquisition + normalization with raw ZIP/CHECKSUM retention.
+[THEN] Audit full 2024-H2 normalized candle row counts/gaps/provenance for all six outputs and derive completed-1h HTF context from the verified historical 1h candles.
 
-[THEN] Trustworthy no-AWS historical PIT OI + rolling 24h notional volume. Funding already exists from first-party Hyperliquid history. Derive completed 1h HTF from historical candles. If trustworthy historical OI cannot be established freely, prospective PIT collection is preferred over weakening/fabricating the OI gate.
+[THEN] Trustworthy no-AWS historical PIT OI + rolling 24h notional volume. Funding already exists from first-party Hyperliquid history. If trustworthy historical OI cannot be established freely, begin prospective PIT collection rather than weakening/fabricating the gate.
 
-[THEN] Merge candles + funding + PIT OI/volume + HTF -> canonical BTC/ETH/SOL datasets/manifests -> source_audit ready_for_locked_baseline_batch=true.
+[THEN] Merge candles + funding + PIT OI/volume + completed HTF -> canonical BTC/ETH/SOL datasets/manifests -> source_audit ready_for_locked_baseline_batch=true.
 
 [THEN] Locked DEVELOPMENT baseline -> freeze decisions -> untouched HOLDOUT -> isolated candidates -> PAPER/SHADOW operational checkpoint -> final desktop integration.
 
@@ -71,19 +67,17 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_normalize.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_batch.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-REAL BTC 5M NORMALIZATION — AFTER TESTS GREEN
-backend\.venv\Scripts\python.exe -m app.backtest.binance_public_normalize --input backend\data\research\raw\historical\dev-2024-h2-probe\binance_public\BTCUSDT\5m\BTCUSDT-5m-2024-07.zip --provider-symbol BTCUSDT --interval 5m --start 2024-07-01T00:00:00Z --end 2024-08-01T00:00:00Z --output backend\data\research\historical\probe\BTC-5m-2024-07.csv --report backend\data\research\historical\probe\BTC-5m-2024-07.normalization.json
-
-REAL BTC 1H NORMALIZATION
-backend\.venv\Scripts\python.exe -m app.backtest.binance_public_normalize --input backend\data\research\raw\historical\dev-2024-h2-probe\binance_public\BTCUSDT\1h\BTCUSDT-1h-2024-07.zip --provider-symbol BTCUSDT --interval 1h --start 2024-07-01T00:00:00Z --end 2024-08-01T00:00:00Z --output backend\data\research\historical\probe\BTC-1h-2024-07.csv --report backend\data\research\historical\probe\BTC-1h-2024-07.normalization.json
+FULL 2024-H2 BATCH — AFTER TESTS GREEN
+backend\.venv\Scripts\python.exe -m app.backtest.binance_public_batch --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2 --output-root backend\data\research\historical\dev-2024-h2-candles --manifest backend\data\research\historical\binance-public-batch-dev-2024-h2.json --execute
+Expected final line: objects=36 normalized_outputs=6 status=ACQUIRED_AND_NORMALIZED_CANDLES_CONTEXT_STILL_REQUIRED
 
 WHAT REMAINS
-1 Validate normalizer focused tests/full regression locally.
-2 Normalize real BTC July 5m/1h probe and verify 8928/744 rows.
-3 Full 36-object 2024-H2 acquisition/normalization.
+1 Validate batch tests/full regression locally.
+2 Execute full 36-object 2024-H2 acquisition/normalization.
+3 Audit all six normalized outputs and derive completed 1h HTF.
 4 Trustworthy no-AWS PIT OI + rolling volume, or prospective collection if historical unavailable.
 5 Merge funding/context/HTF and build canonical datasets/manifests.
 6 source_audit GREEN.
