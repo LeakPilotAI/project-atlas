@@ -1,6 +1,6 @@
 from pathlib import Path
-import csv,io,zipfile
-from app.backtest.binance_public_metrics import plan,inspect_metrics_zip
+import csv,hashlib,io,zipfile
+from app.backtest.binance_public_metrics import plan,inspect_metrics_zip,acquire
 
 
 def _write_metrics_zip(path:Path):
@@ -40,3 +40,15 @@ def test_inspect_missing_required_column_fails(tmp_path:Path):
     try:inspect_metrics_zip(p)
     except RuntimeError as e:assert "missing required columns" in str(e)
     else:raise AssertionError("expected schema failure")
+
+
+def test_acquire_skips_already_checksum_verified_local_object(tmp_path:Path):
+    payload=plan(start_utc="2024-07-01T00:00:00Z",end_utc="2024-07-02T00:00:00Z",raw_root=tmp_path,symbols=("BTC",))
+    obj=payload["objects"][0]
+    zp=Path(obj["local_zip"]);cp=Path(obj["local_checksum"])
+    zp.parent.mkdir(parents=True,exist_ok=True);_write_metrics_zip(zp)
+    digest=hashlib.sha256(zp.read_bytes()).hexdigest();cp.write_text(f"{digest}  {zp.name}\n",encoding="utf-8")
+    result=acquire(payload)
+    assert result["acquisition_status"]=="ACQUIRED_RAW_METRICS_CHECKSUM_VERIFIED"
+    assert result["objects"][0]["status"]=="ALREADY_ACQUIRED_CHECKSUM_VERIFIED"
+    assert result["objects"][0]["sha256"]==digest
