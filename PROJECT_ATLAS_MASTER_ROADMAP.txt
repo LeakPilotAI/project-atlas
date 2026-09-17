@@ -8,6 +8,9 @@ When user says execute, implement next roadmap item directly. After EVERY execut
 LATEST VERIFIED CHECKPOINT — USER LOCAL
 Commit 6378bf12a601dc5189a0245841ce1edf48a18431: focused historical stack 53 passed in 1.00s; full regression 680 passed, 2 warnings in 35.56s; 0 failures. Candle-retention fail-closed hardening VERIFIED.
 
+LATEST EXECUTION — LOCAL TEST PENDING
+Commit 533a67c67da03c72645515fc7b6fec86d47edd06 fixes the Windows-only archive test failure by making local-path assertions platform-agnostic with pathlib. No archive planner production logic changed; the previous failure was caused by the test expecting POSIX '/' separators while Windows emitted '\\'.
+
 FIRST REAL 2024-H2 ACQUISITION RESULT
 BTC/ETH/SOL each: 5m candles=0; 1h candles=0; funding=3096. Historical OI pending. Root cause: official candleSnapshot retention cannot reach locked 2024-H2. Official historical docs instead expose requester-pays asset_ctxs daily archives and market_data; no historical candles are supplied through that S3 archive. Funding history succeeded.
 
@@ -37,8 +40,9 @@ ROADMAP
 - expected context fields include openInterest/dayNtlVlm/mark/oracle/mid/premium based on documented/current asset context shape, but actual archive header remains authoritative
 - research-only/live-disabled/current-state-backfill forbidden
 - tests/test_backtest_hyperliquid_archive.py
+- cross-platform local path assertion fix committed at 533a67c; needs local retest
 
-[NEXT] Local focused + full regression.
+[NEXT] Re-run focused archive/historical stack and full regression.
 
 [NEXT AFTER GREEN] Run PLAN ONLY first for 2024-H2 asset_ctxs. Then, if user has an AWS profile configured and accepts requester-pays transfer cost, execute a narrow one-day archive probe before any 184-day download. Inspect raw CSV header/schema/cadence and verify BTC/ETH/SOL OI + dayNtlVlm semantics. Only after probe validation should full 2024-H2 archive acquisition occur.
 
@@ -73,7 +77,7 @@ backend\.venv\Scripts\python.exe -m app.backtest.hyperliquid_archive --start 202
 Do not run the 184-day requester-paid download before the one-day probe is inspected.
 
 WHAT REMAINS
-1 Verify archive acquisition code locally.
+1 Verify cross-platform archive test fix and archive acquisition code locally.
 2 Generate no-cost 184-day plan.
 3 One-day requester-paid asset_ctxs probe with user's configured AWS profile.
 4 Inspect schema/cadence and prove PIT OI/volume suitability.
