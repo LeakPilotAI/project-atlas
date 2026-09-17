@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import time
 import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass
@@ -106,20 +107,27 @@ def plan(*, start_utc: str, end_utc: str, raw_root: Path,
     }
 
 
-def _download(url: str, path: Path) -> None:
+def _download(url: str, path: Path, *, timeout: int = 20, attempts: int = 3) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".part")
-    try:
-        with urllib.request.urlopen(url, timeout=60) as response, tmp.open("wb") as fh:
-            while True:
-                chunk = response.read(1024 * 1024)
-                if not chunk:
-                    break
-                fh.write(chunk)
-        tmp.replace(path)
-    except Exception:
-        tmp.unlink(missing_ok=True)
-        raise
+    last: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as response, tmp.open("wb") as fh:
+                while True:
+                    chunk = response.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    fh.write(chunk)
+            tmp.replace(path)
+            return
+        except Exception as exc:
+            last = exc
+            tmp.unlink(missing_ok=True)
+            if attempt < attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+    assert last is not None
+    raise last
 
 
 def _published_sha256(checksum_path: Path) -> str:
@@ -130,18 +138,39 @@ def _published_sha256(checksum_path: Path) -> str:
     return token
 
 
+def _verified_existing(zip_path: Path, checksum_path: Path) -> tuple[bool, str | None]:
+    if not zip_path.exists() or not checksum_path.exists():
+        return False, None
+    try:
+        published = _published_sha256(checksum_path)
+        actual = _sha256(zip_path)
+    except Exception:
+        return False, None
+    return published == actual, actual if published == actual else None
+
+
 def acquire(payload: dict) -> dict:
     results = []
-    for obj in payload["objects"]:
+    total = len(payload["objects"])
+    for index, obj in enumerate(payload["objects"], start=1):
         zip_path, checksum_path = Path(obj["local_zip"]), Path(obj["local_checksum"])
-        try:
-            _download(obj["checksum_url"], checksum_path)
-            _download(obj["url"], zip_path)
-        except urllib.error.HTTPError as exc:
-            raise RuntimeError(f"public candle acquisition failed for {obj['provider_symbol']} {obj['interval']} {obj['month']}: HTTP {exc.code}") from exc
-        published, actual = _published_sha256(checksum_path), _sha256(zip_path)
-        if published != actual:
-            raise RuntimeError(f"checksum mismatch for {zip_path}: published={published} actual={actual}")
+        verified, existing_sha = _verified_existing(zip_path, checksum_path)
+        if verified:
+            print(f"[{index}/{total}] {obj['provider_symbol']} {obj['interval']} {obj['month']} skip verified", flush=True)
+            published = _published_sha256(checksum_path)
+            actual = existing_sha or _sha256(zip_path)
+        else:
+            print(f"[{index}/{total}] {obj['provider_symbol']} {obj['interval']} {obj['month']} download", flush=True)
+            try:
+                _download(obj["checksum_url"], checksum_path)
+                _download(obj["url"], zip_path)
+            except urllib.error.HTTPError as exc:
+                raise RuntimeError(f"public candle acquisition failed for {obj['provider_symbol']} {obj['interval']} {obj['month']}: HTTP {exc.code}") from exc
+            except Exception as exc:
+                raise RuntimeError(f"public candle acquisition failed for {obj['provider_symbol']} {obj['interval']} {obj['month']}: {type(exc).__name__}: {exc}") from exc
+            published, actual = _published_sha256(checksum_path), _sha256(zip_path)
+            if published != actual:
+                raise RuntimeError(f"checksum mismatch for {zip_path}: published={published} actual={actual}")
         results.append({**obj, "bytes": zip_path.stat().st_size, "sha256": actual,
                         "published_sha256": published, "status": "ACQUIRED_CHECKSUM_VERIFIED"})
     return {**payload, "objects": results,
