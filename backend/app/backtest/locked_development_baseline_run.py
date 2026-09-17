@@ -7,7 +7,7 @@ historical engine at the next 5m bar open.
 """
 from __future__ import annotations
 
-import argparse,csv,json
+import argparse,json
 from dataclasses import asdict,dataclass
 from pathlib import Path
 
@@ -34,16 +34,22 @@ class LockedThresholds:
 
 def _signal_fn(contexts:list[HistoricalContext],thresholds:LockedThresholds):
     by_ts={c.bar.timestamp:c for c in contexts}
+    index_by_ts={c.bar.timestamp:i for i,c in enumerate(contexts)}
+    closes=tuple(c.bar.close for c in contexts)
+    min_history=max(thresholds.rsi_period+1,thresholds.extension_lookback_bars+1)
     def signal(history):
-        if len(history)<max(thresholds.rsi_period+1,thresholds.extension_lookback_bars+1):return None
+        if len(history)<min_history:return None
         current=history[-1]
         ctx=by_ts[current.timestamp]
         if ctx.open_interest_usd<thresholds.min_open_interest_usd:return None
         if ctx.volume_24h_usd<thresholds.min_volume_24h_usd:return None
-        closes=[b.close for b in history]
-        rv=rsi(closes,thresholds.rsi_period)
+        idx=index_by_ts[current.timestamp]
+        rsi_start=idx-thresholds.rsi_period
+        rv=rsi(closes[rsi_start:idx+1],thresholds.rsi_period)
         if rv is None:return None
-        anchor=closes[-(thresholds.extension_lookback_bars+1)]
+        anchor_idx=idx-thresholds.extension_lookback_bars
+        if anchor_idx<0:return None
+        anchor=closes[anchor_idx]
         if anchor<=0:return None
         extension=(current.close/anchor-1.0)*100.0
         abs_extension=abs(extension)
