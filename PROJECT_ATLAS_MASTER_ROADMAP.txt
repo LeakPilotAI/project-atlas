@@ -1,69 +1,72 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-17
 Branch: chatgpt/atlas-rebuild-v1
-Status: ENGINEERING ROADMAP CLOSED / OPERATIONAL CHECKPOINT RECORDED
+Current cycle: QUALITY DIPS V2 — PATIENT CAPITAL
 
-PERMANENT SECURITY / EVIDENCE BOUNDARY
-Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. Preserve backend/data. Engineering completion does not establish profitability or live readiness. PAPER/SHADOW remains separate from live. No automatic real-money execution or silent retuning. Preserve point-in-time/history integrity.
+PRESERVED CLOSED CHECKPOINT
+The prior Project Atlas engineering/historical cycle remains closed and immutable as evidence. Historical perps experiment: FAILED_NEGATIVE. Final desktop operational checkpoint recorded. PAPER/SHADOW recovery GREEN. This V2 cycle does not relabel, retune, or overwrite those results.
 
-FINAL VERIFIED USER-LOCAL REGRESSION
-Focused desktop/API hardening: 9 passed. Full regression: 797 passed, 2 deprecation warnings in 40.27s.
+PERMANENT SECURITY / EXECUTION BOUNDARY
+Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local credential stores, or raw credential exports. Preserve backend/data. Quality Dips V2 is research/decision support during development. Brokerage execution is MANUAL_ONLY. live_capital_allowed=false. automatic_real_money_execution=false. No claimed or guaranteed bottom, return, recovery, or fair value.
 
-FINAL DESKTOP OPERATIONAL EVIDENCE
-Atlas was launched from C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk. A real desktop smoke returned ATLAS_DESKTOP_SMOKE_GREEN with start/stop shortcut targets correct; /health=200; /dashboard=200; /api/research=200; /api/command-center/summary=200; atlas-postgres and atlas-redis running; paper_shadow_only=true; live_capital_allowed=false; automatic_real_money_execution=false.
+QUALITY DIPS V2 OBJECTIVE
+Make Atlas materially more patient. Prefer exceptional discounts in high-quality businesses over frequent dip buying. Work backward from conservative/base/optimistic normalization values. A minimum 29% upside hurdle and preferred 50% GENERATIONAL hurdle are screening requirements only, not promised returns.
 
-A later repeat smoke again had health/dashboard/research HTTP 200 but command-center exceeded the strict smoke client timeout once. This observation is retained explicitly. The bounded command-center surface is read-only/no-order-actions and the successful real desktop smoke remains verified; future reliability tuning, if desired, belongs to a new operational-hardening cycle rather than altering the closed checkpoint.
+STATE MODEL
+WATCH -> ACCUMULATION -> DEEP_VALUE -> GENERATIONAL
+Any failed thesis -> THESIS_BROKEN.
+GENERATONAL is intentionally rare and must never be awarded from drawdown alone.
 
-FINAL SHADOW RECOVERY EVIDENCE
-Latest user-local shadow checkpoint after desktop runtime verification:
-- status=PAPER_SHADOW_CHECKPOINT_GREEN
-- event_count=29242
-- event_store_corruption=null
-- persistent_recovery_ready=true
-- shadow_isolation_ready=true
-- legacy_state_mutated=false
-- real_order_actions=false
-- recovered_open=2
-- closed=110
-- open=2
-- mode=SHADOW_ONLY
-- live_capital_allowed=false
-- automatic_real_money_execution=false
-Point-in-time recovered opens: CRV SHORT and ZEC LONG.
+PHASE 1 — EXECUTED / LOCAL TEST PENDING
+87e0531 backend/app/investment/quality_dips_v2.py
+- isolated V2 policy; not wired to production board
+- 29% minimum conservative-upside patience hurdle
+- 50% preferred GENERATIONAL hurdle
+- reverse entry-price math from valuation target
+- conservative/base/optimistic valuation scenarios
+- thesis-broken and value-trap overrides
+- research-only/manual-only/no-live metadata
 
-FINAL OPERATIONAL ARTIFACT
-docs/operations/FINAL_DESKTOP_OPERATIONAL_CHECKPOINT_2026-09-17.md
+44be030 tests/test_quality_dips_v2_policy.py
+- locks upside arithmetic and reverse entry math
+- locks 29% wait threshold
+- locks thesis-broken override and value-trap rejection
+- locks ACCUMULATION/DEEP_VALUE/GENERATIONAL separation
+- locks rare >=50% GENERATIONAL requirement
+- locks no-live/no-guarantee contract
 
-FULL ROADMAP — CLOSED
-[COMPLETE/VERIFIED] Core rebuild / cockpit / PAPER / recovery / Quality Dips
-[COMPLETE/VERIFIED] V6 evidence stack
-[COMPLETE/VERIFIED] Historical/PIT/source infrastructure
-[COMPLETE/VERIFIED NEGATIVE] DEVELOPMENT baseline
-[COMPLETE/VERIFIED] DEVELOPMENT decision freeze
-[COMPLETE/VERIFIED] HOLDOUT acquisition/context/funding/canonical + audit
-[COMPLETE/VERIFIED NEGATIVE] Frozen untouched HOLDOUT evaluation
-[COMPLETE/VERIFIED] Immutable HOLDOUT evidence freeze
-[COMPLETE/CLOSED] Historical experiment — FAILED_NEGATIVE
-[COMPLETE/VERIFIED GREEN] PAPER/SHADOW operational checkpoint
-[COMPLETE/VERIFIED GREEN] Desktop shortcut wiring/start/stop core path
-[COMPLETE/VERIFIED GREEN] Bounded research + command-center implementation and regression coverage
-[COMPLETE/VERIFIED GREEN] Real shortcut-launched desktop smoke
-[COMPLETE/VERIFIED GREEN] Post-runtime shadow persistence/recovery checkpoint
-[COMPLETE] Final operational artifact recorded
-[COMPLETE/CLOSED] Project Atlas engineering roadmap
+7d2504e docs/research/QUALITY_DIPS_V2_PATIENT_CAPITAL.md
+- formal V2 research specification and phased roadmap
 
-NORMAL USER WORKFLOW
+FULL ROADMAP — QUALITY DIPS V2
+[COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
+[CURRENT — CODE COMPLETE, LOCAL TEST PENDING] Phase 1: inspect existing Quality Dips; freeze V2 patient-capital policy + tests + spec
+[REMAINING] Phase 2: evidence adapter from existing investment research rows; do not mutate legacy scoring
+[REMAINING] Phase 3: hard value-trap/thesis-integrity/freshness gate
+[REMAINING] Phase 4: conservative/base/optimistic normalization-value model with provenance
+[REMAINING] Phase 5: integrate patient state classifier + staged entry-zone planner
+[REMAINING] Phase 6: historical/PIT validation dataset; evaluate 29/40/50% hurdle behavior without lookahead
+[REMAINING] Phase 7: freeze DEVELOPMENT policy; evaluate untouched HOLDOUT
+[REMAINING] Phase 8: integrate validated V2 fields into Quality Dips API/dashboard; MANUAL_ONLY
+[REMAINING] Phase 9: transition/exceptional-zone alerts with cooldown + dedupe
+[REMAINING] Phase 10: desktop regression + operational smoke + V2 evidence decision/closure
+
+NEXT GREEN GATE
+Run focused V2 tests and full regression locally. Do not call Phase 1 verified until user posts GREEN output.
+
+LOCAL UPDATE / VALIDATION
+cd "D:\Work\Project Atlas"
+git fetch origin
+git checkout chatgpt/atlas-rebuild-v1
+git reset --hard origin/chatgpt/atlas-rebuild-v1
+backend\.venv\Scripts\python.exe -m pytest tests/test_quality_dips_v2_policy.py -q
+backend\.venv\Scripts\python.exe -m pytest -q
+
+AFTER GREEN
+Proceed directly to Phase 2: build a read-only V2 evidence adapter over existing investment research rows, preserving legacy scoring and the closed historical evidence record.
+
+NORMAL DESKTOP WORKFLOW REMAINS
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
 STOP: C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
-No PowerShell is required for ordinary use.
-
-RESEARCH/LIVE STATUS AT CLOSURE
-Stable positive edge NOT ESTABLISHED.
-Historical experiment CLOSED FAILED_NEGATIVE.
-PAPER/SHADOW operational recovery GREEN.
-Live capital LOCKED.
-Automated real-money execution DISABLED.
-
-Any future strategy research, live-readiness work, or additional reliability hardening must be a new explicitly isolated cycle and must not rewrite this closed evidence checkpoint.
 
 END OF MASTER ROADMAP
