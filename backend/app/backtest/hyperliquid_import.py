@@ -1,10 +1,4 @@
-"""Point-in-time safe Hyperliquid historical import normalization for Atlas research.
-
-Hyperliquid candleSnapshot and fundingHistory can be fetched historically, but current
-metaAndAssetCtxs values MUST NOT be projected backward onto historical candles. This
-module therefore requires externally supplied, timestamp-aligned historical OI/24h
-volume/HTF context and rejects incomplete rows rather than fabricating them.
-"""
+"""Point-in-time safe Hyperliquid historical import normalization for Atlas research."""
 from __future__ import annotations
 
 import csv
@@ -22,7 +16,8 @@ class HistoricalMarketContext:
     timestamp: str
     open_interest_usd: float
     volume_24h_usd: float
-    htf_regime_aligned: bool
+    htf_regime_aligned: bool|None = None
+    htf_trend: str|None = None
 
 
 def _iso_from_ms(value:int)->str:
@@ -34,6 +29,8 @@ def _index_context(rows:Iterable[HistoricalMarketContext])->dict[str,HistoricalM
     for row in rows:
         if row.timestamp in out:raise ValueError(f"duplicate historical context timestamp: {row.timestamp}")
         if row.open_interest_usd<0 or row.volume_24h_usd<0:raise ValueError(f"negative historical market context at {row.timestamp}")
+        if row.htf_trend is None and row.htf_regime_aligned is None:raise ValueError(f"missing historical HTF context at {row.timestamp}")
+        if row.htf_trend is not None and row.htf_trend.upper() not in {"UP","DOWN","FLAT","UNKNOWN","OFF"}:raise ValueError(f"invalid historical htf_trend at {row.timestamp}: {row.htf_trend}")
         out[row.timestamp]=row
     return out
 
@@ -64,7 +61,7 @@ def normalize_hyperliquid_history(*,symbol:str,timeframe:str,candles:Sequence[Ma
             ctx=context_index.get(timestamp)
             if ctx is None:raise ValueError(f"missing point-in-time OI/volume/HTF context for {timestamp}")
             bar=HistoricalBar(timestamp=timestamp,symbol=symbol.upper(),timeframe=timeframe,open=float(candle["open"]),high=float(candle["high"]),low=float(candle["low"]),close=float(candle["close"]),volume=float(candle["volume"]),funding_rate=_funding_at(ts_ms,funding_index))
-            out.append(HistoricalContext(bar,ctx.open_interest_usd,ctx.volume_24h_usd,ctx.htf_regime_aligned))
+            out.append(HistoricalContext(bar,ctx.open_interest_usd,ctx.volume_24h_usd,ctx.htf_regime_aligned,ctx.htf_trend.upper() if ctx.htf_trend else None))
         except KeyError as exc:raise ValueError(f"candle missing field: {exc.args[0]}") from exc
     timestamps=[x.bar.timestamp for x in out]
     if not out:raise ValueError("no historical candles supplied")
@@ -74,9 +71,13 @@ def normalize_hyperliquid_history(*,symbol:str,timeframe:str,candles:Sequence[Ma
 
 def write_canonical_csv(rows:Sequence[HistoricalContext],path:Path)->Path:
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
-    fields=["timestamp","symbol","timeframe","open","high","low","close","volume","funding_rate","open_interest_usd","volume_24h_usd","htf_regime_aligned"]
+    use_trend=all(row.htf_trend is not None for row in rows)
+    fields=["timestamp","symbol","timeframe","open","high","low","close","volume","funding_rate","open_interest_usd","volume_24h_usd"]+(["htf_trend"] if use_trend else ["htf_regime_aligned"])
     with path.open("w",encoding="utf-8",newline="") as fh:
         w=csv.DictWriter(fh,fieldnames=fields);w.writeheader()
         for row in rows:
-            b=row.bar;w.writerow({"timestamp":b.timestamp,"symbol":b.symbol,"timeframe":b.timeframe,"open":b.open,"high":b.high,"low":b.low,"close":b.close,"volume":b.volume,"funding_rate":b.funding_rate,"open_interest_usd":row.open_interest_usd,"volume_24h_usd":row.volume_24h_usd,"htf_regime_aligned":str(row.htf_regime_aligned).lower()})
+            b=row.bar;data={"timestamp":b.timestamp,"symbol":b.symbol,"timeframe":b.timeframe,"open":b.open,"high":b.high,"low":b.low,"close":b.close,"volume":b.volume,"funding_rate":b.funding_rate,"open_interest_usd":row.open_interest_usd,"volume_24h_usd":row.volume_24h_usd}
+            if use_trend:data["htf_trend"]=row.htf_trend
+            else:data["htf_regime_aligned"]=str(row.htf_regime_aligned).lower()
+            w.writerow(data)
     return path
