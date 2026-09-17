@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from app.investment.accumulation_ladder import LADDER_PCTS, accumulation_ladder_store
 from app.investment.board import build_quality_dips_board
 from app.investment.quality_dip_quotes import apply_quote_overlay, quality_dip_quote_service, quote_health
+from app.investment.quality_dips_v2_board import attach_v2_board
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 
 router = APIRouter(prefix="/investments", tags=["investments"])
@@ -44,18 +45,22 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         if str(row.get("symbol") or "").strip()
     }
     quotes = await quality_dip_quote_service.get_many(symbols)
-    board = build_quality_dips_board(apply_quote_overlay(research, quotes), plans, limit=limit)
+    quoted_research = apply_quote_overlay(research, quotes)
+    board = build_quality_dips_board(quoted_research, plans, limit=limit)
+    board = attach_v2_board(board, quoted_research)
 
-    # Browser refreshes also reconcile level hits so the visual state updates as soon
-    # as a fresh supported quote crosses a frozen level. The hit remains queued for
-    # Discord until the background monitor confirms DM delivery.
+    # Browser refreshes also reconcile legacy accumulation-level hits so the visual
+    # state updates immediately. V2 fields remain research-only and do not place orders.
     pending_hits = accumulation_ladder_store.sync(board)
     board = accumulation_ladder_store.overlay(board)
 
     counts = {"ACCUMULATE": 0, "PREPARE": 0, "WATCH": 0, "STAND_DOWN": 0}
+    v2_counts = {"WATCH": 0, "ACCUMULATION": 0, "DEEP_VALUE": 0, "GENERATIONAL": 0, "THESIS_BROKEN": 0}
     for row in board:
         stance = str(row.get("stance") or "WATCH")
         counts[stance] = counts.get(stance, 0) + 1
+        state = str((row.get("quality_dips_v2") or {}).get("patient_state") or "WATCH")
+        v2_counts[state] = v2_counts.get(state, 0) + 1
 
     active_ladders = sum(1 for row in board if row.get("accumulation_ladder"))
     pending_dm = sum(
@@ -68,6 +73,17 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         "execution": "MANUAL_ONLY",
         "count": len(board),
         "counts": counts,
+        "quality_dips_v2": {
+            "cycle": "QUALITY_DIPS_V2_PATIENT_CAPITAL",
+            "counts": v2_counts,
+            "minimum_upside_hurdle_pct": 29.0,
+            "generational_upside_hurdle_pct": 50.0,
+            "levels": {"L1": 29.0, "L2": 35.0, "L3": 40.0, "L4": 50.0},
+            "execution": "MANUAL_ONLY",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+            "price_alone_breaks_thesis": False,
+        },
         "quote_health": quote_health(quotes),
         "accumulation_alerts": {
             "active_ladders": active_ladders,
@@ -82,9 +98,8 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         },
         "board": board,
         "note": (
-            "Research observations and timestamped market quotes are kept separate and labeled with source, session, and freshness. "
-            "Atlas prefers Robinhood read-only underlying bid/ask when available and uses the ask for manual buy-limit level monitoring. "
-            "ACCUMULATE names carry a frozen dip ladder when a LIVE/FRESH quote is available. Browser refreshes reconcile hits immediately; Discord delivery remains durable and retryable. Atlas never places a Robinhood order."
+            "Legacy Quality Dips scoring remains intact. Quality Dips V2 is attached as a read-only patient-capital research projection with explicit valuation, trend, and staged-entry fields. "
+            "Research observations and timestamped market quotes stay separate and labeled. Atlas never places a Robinhood order."
         ),
     }
 
