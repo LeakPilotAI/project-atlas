@@ -23,6 +23,8 @@ class PerpMicroBaselineConfig:
     max_extension_pct: float
     min_rr: float
     risk_usd: float
+    min_open_interest_usd: float
+    min_volume_24h_usd: float
     require_oi_volume: bool = True
     require_htf_alignment: bool = True
 
@@ -36,6 +38,8 @@ class PerpMicroBaselineConfig:
             max_extension_pct=float(s.perp_micro_max_extension_pct),
             min_rr=float(s.perp_micro_min_rr),
             risk_usd=float(s.perp_micro_risk_usd),
+            min_open_interest_usd=float(s.perp_micro_min_oi),
+            min_volume_24h_usd=float(s.perp_micro_min_vol),
             require_oi_volume=True,
             require_htf_alignment=bool(s.perp_micro_htf_align),
         )
@@ -99,6 +103,8 @@ def baseline_metadata(config:PerpMicroBaselineConfig|None=None)->dict:
         "max_extension_pct":cfg.max_extension_pct,
         "min_rr":cfg.min_rr,
         "risk_usd":cfg.risk_usd,
+        "min_open_interest_usd":cfg.min_open_interest_usd,
+        "min_volume_24h_usd":cfg.min_volume_24h_usd,
         "requires_oi_volume_eligibility":cfg.require_oi_volume,
         "requires_htf_alignment":cfg.require_htf_alignment,
         "production_strategy_modified":False,
