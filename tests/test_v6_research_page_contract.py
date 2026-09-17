@@ -135,3 +135,14 @@ def test_research_page_renders_maturity_sequence_run_boundary_contract():
     assert "latest boundary" in page
     assert "boundaries:" in page
     assert "current run" in page
+
+
+def test_research_page_renders_maturity_sequence_run_boundary_recurrence_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Maturity sequence run boundary recurrence diagnostics" in page
+    assert "DESCRIPTIVE_MATURITY_RUN_BOUNDARY_RECURRENCE" in page
+    assert "maturity_sequence_run_boundary_recurrence_diagnostics" in page
+    assert "distinct forms" in page
+    assert "recurrences:" in page
+    assert "latest #" in page
+    assert "does not rank frequent transitions" in page
