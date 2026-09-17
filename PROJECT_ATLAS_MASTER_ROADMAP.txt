@@ -28,19 +28,21 @@ Phase 7: 53 focused in 0.44s / 850 full, 2 warnings in 41.64s GREEN.
 Phase 8: 60 focused in 0.43s / 857 full, 2 warnings in 42.94s GREEN.
 
 PHASE 9 — REPAIRED / LOCAL TEST PENDING
-Latest user-local focused suite: 68 passed, 1 failed, 2 warnings in 3.21s.
-Remaining failure was another legacy dashboard compatibility marker:
-- tests/test_investment_board_api_v4.py required exact text LIVE SUPPORTED PRICE.
-- V2 dashboard had changed the label to LATEST SUPPORTED PRICE.
+Latest user-local focused suite before this repair: 68 passed, 1 failed, 2 warnings in 3.38s.
+Remaining failure was legacy dashboard compatibility only:
+- tests/test_investment_board_api_v4.py required exact text LAST SUPPORTED PRICE.
 
 Repair commits:
 cd83a8b atlas: fix Quality Dips V2 ladder integration
 7e3136c atlas: surface Quality Dips V2 patient capital fields
 bcdb352 atlas: restore equity investment dashboard contract
 6365b45 atlas: restore live supported price dashboard contract
+3e8ae18 atlas: restore last supported price dashboard contract
 - preserves QUALITY DIPS V2 / PATIENT CAPITAL UI
 - preserves exact EQUITY INVESTMENT marker
-- restores exact LIVE SUPPORTED PRICE marker
+- preserves exact LIVE SUPPORTED PRICE marker
+- restores exact LAST SUPPORTED PRICE marker
+- LIVE/FRESH quote quality shows LIVE SUPPORTED PRICE; stale/reference/missing quality shows LAST SUPPORTED PRICE
 - does not add perp API calls or live execution
 
 Earlier Phase 9 commits retained:
