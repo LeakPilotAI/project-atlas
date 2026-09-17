@@ -9,7 +9,7 @@ PERMANENT SECURITY GATE
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local cloud credential stores, or raw credential exports. AWS is removed from the active Atlas path. Preserve backend/data and raw research data locally.
 
 LATEST VERIFIED CHECKPOINT — USER LOCAL
-63 focused historical/archive tests passed in 1.19s; full regression 690 passed, 2 warnings in 36.58s; 0 failures. Python LZ4 verified. Credential ignore rules verified. Source audit fef498458128fe534977 is RED because BTC/ETH/SOL canonical 5m datasets and provenance manifests are missing. ready_for_locked_baseline_batch=false.
+Public candle acquisition checkpoint is GREEN: tests/test_backtest_binance_public_acquire.py = 5 passed in 0.32s. Full regression = 695 passed, 2 warnings in 36.47s; 0 failures. 2024-H2 no-download plan produced exactly 36 objects with PLANNED_NOT_DOWNLOADED. Source audit remains RED because canonical BTC/ETH/SOL historical datasets/manifests do not yet exist.
 
 OPERATOR DECISION — LOCAL/NO-AWS PATH
 No AWS account, credit card, login, profile, or requester-paid download is required. Existing optional archive tooling is not a prerequisite. Do not request AWS setup unless explicitly re-enabled.
@@ -29,30 +29,30 @@ ROADMAP
 [COMPLETE/VERIFIED] Credential-safety hardening
 [REMOVED ACTIVE PATH] AWS authentication/requester-paid S3
 [COMPLETE/VERIFIED RED] Local source audit: canonical BTC/ETH/SOL datasets/manifests absent
+[COMPLETE/VERIFIED] Free no-AWS Binance public candle acquisition — 5 focused / 695 full
+[COMPLETE/VERIFIED] 2024-H2 public-candle plan — 36 objects, no download
 
-[COMPLETE, LOCAL TEST PENDING] FREE NO-AWS PUBLIC CANDLE ACQUISITION
-- backend/app/backtest/binance_public_acquire.py
-- tests/test_backtest_binance_public_acquire.py
-- source: public Binance USD-M futures monthly klines on data.binance.vision
-- BTCUSDT/ETHUSDT/SOLUSDT
-- locked intervals: 5m and 1h
-- 2024-H2 plan = 36 raw monthly ZIP objects (3 symbols x 2 intervals x 6 months)
-- no account/API key/AWS/paid service
-- downloads published CHECKSUM sidecars and verifies SHA-256 before accepting raw ZIP
-- deterministic month planning
-- fail-closed symbols/intervals
-- raw files retained under backend/data/research/raw/historical/binance_public
-- explicit candles_only=true and pit_oi_context_complete=false
-- cannot make source_audit GREEN by itself
-- no current-state backfill/live-capital path
+[COMPLETE, LOCAL TEST PENDING] RAW BINANCE KLINE INSPECTOR
+- backend/app/backtest/binance_public_inspect.py
+- tests/test_backtest_binance_public_inspect.py
+- validates exactly one CSV member per ZIP
+- validates 12-column Binance USD-M kline schema
+- validates positive open timestamps, unique strictly ascending order and exact 5m/1h cadence
+- reports row count / first+last timestamps / cadence / schema state
+- research-only, PIT OI context incomplete, live capital disabled
+- does not normalize into canonical Atlas datasets yet
 
-[NEXT AFTER LOCAL GREEN] Run 2024-H2 PLAN ONLY first; verify exactly 36 objects and no download. Then execute a ONE-MONTH BTC 5m+1h public-data probe, verify published checksums, inspect raw kline schema, and only then acquire all 36 2024-H2 candle objects.
+[CURRENT AFTER LOCAL GREEN] ONE-MONTH BTC REAL PUBLIC-DATA PROBE
+Download BTCUSDT 2024-07 5m + 1h only. Acquisition verifies Binance-published SHA-256 CHECKSUM sidecars before accepting raw ZIPs. Then run the raw inspector against both ZIPs. Do not acquire all 36 objects until both probe ZIPs pass schema/cadence inspection.
 
 [THEN] PUBLIC CANDLE NORMALIZATION
-Normalize verified ZIP contents into deterministic Atlas candle inputs; enforce exact half-open UTC window, unique ascending timestamps, expected 5m/1h cadence, gap reporting, symbol mapping and raw checksums. Do not create canonical source-audit-passing bundles until PIT context is complete.
+Normalize verified ZIP contents into deterministic Atlas candle inputs; enforce exact half-open UTC windows, unique ascending timestamps, expected 5m/1h cadence, gap reporting, symbol mapping, source archive SHA-256 and provider metadata. Do not create source-audit-passing canonical bundles until PIT context is complete.
+
+[THEN] FULL 2024-H2 CANDLE ACQUISITION
+After the one-month probe and normalizer are GREEN, acquire all 36 BTC/ETH/SOL 5m+1h monthly 2024-H2 objects and normalize them. Retain raw ZIP/CHECKSUM provenance.
 
 [THEN] NO-AWS PIT CONTEXT
-Acquire/derive trustworthy historical PIT OI and rolling 24h notional volume without current-state synthesis. Funding already exists from first-party Hyperliquid history. Derive completed 1h HTF from historical candles. If a trustworthy free historical OI source cannot be established, start prospective PIT collection rather than weakening/faking the OI gate.
+Acquire/derive trustworthy historical PIT OI and rolling 24h notional volume without current-state synthesis. Funding already exists from first-party Hyperliquid history. Derive completed 1h HTF from historical candles. If trustworthy historical OI cannot be established without a paid source, begin prospective PIT collection rather than weakening or fabricating the OI gate.
 
 [THEN] CANONICAL BUNDLES + SOURCE AUDIT GREEN
 Merge candles + funding + PIT OI/volume + completed 1h HTF. Generate BTC-5m.csv, ETH-5m.csv, SOL-5m.csv plus provenance manifests with raw SHA-256 values. Require ready_for_locked_baseline_batch=true.
@@ -73,24 +73,26 @@ cd "D:\Work\Project Atlas"
 git fetch origin
 git checkout chatgpt/atlas-rebuild-v1
 git reset --hard origin/chatgpt/atlas-rebuild-v1
-backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_acquire.py -q
+backend\.venv\Scripts\python.exe -m pytest tests/test_backtest_binance_public_acquire.py tests/test_backtest_binance_public_inspect.py -q
 backend\.venv\Scripts\python.exe -m pytest -q
 
-AFTER GREEN — PLAN ONLY, NO DOWNLOAD
-backend\.venv\Scripts\python.exe -m app.backtest.binance_public_acquire --start 2024-07-01T00:00:00Z --end 2025-01-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2 --manifest backend\data\research\historical\binance-public-candles-plan-dev-2024-h2.json
-Expected: objects=36 status=PLANNED_NOT_DOWNLOADED
-
-ONE-MONTH PROBE ONLY AFTER TESTS/PLAN GREEN
+ONE-MONTH BTC PROBE — AFTER TESTS GREEN
 backend\.venv\Scripts\python.exe -m app.backtest.binance_public_acquire --start 2024-07-01T00:00:00Z --end 2024-08-01T00:00:00Z --raw-root backend\data\research\raw\historical\dev-2024-h2-probe --manifest backend\data\research\historical\binance-public-candles-probe-btc-202407.json --symbols BTC --intervals 5m 1h --execute
 Expected: objects=2 status=ACQUIRED_RAW_CANDLES_CHECKSUM_VERIFIED_CONTEXT_STILL_REQUIRED
 
+INSPECT 5M
+backend\.venv\Scripts\python.exe -m app.backtest.binance_public_inspect --input backend\data\research\raw\historical\dev-2024-h2-probe\binance_public\BTCUSDT\5m\BTCUSDT-5m-2024-07.zip --provider-symbol BTCUSDT --interval 5m --output backend\data\research\historical\binance-public-inspection-BTCUSDT-5m-2024-07.json
+
+INSPECT 1H
+backend\.venv\Scripts\python.exe -m app.backtest.binance_public_inspect --input backend\data\research\raw\historical\dev-2024-h2-probe\binance_public\BTCUSDT\1h\BTCUSDT-1h-2024-07.zip --provider-symbol BTCUSDT --interval 1h --output backend\data\research\historical\binance-public-inspection-BTCUSDT-1h-2024-07.json
+
 WHAT REMAINS
-1 Local tests for public candle acquisition checkpoint.
-2 36-object 2024-H2 no-download plan.
-3 One-month BTC checksum-verified probe.
-4 Raw kline schema/cadence inspection + candle normalizer.
-5 Full 2024-H2 candle acquisition after probe GREEN.
-6 Trustworthy no-AWS PIT OI + rolling-volume context (or prospective collection if unavailable).
+1 Local tests for raw public kline inspector.
+2 One-month BTC checksum-verified probe.
+3 Inspect real 5m/1h schema/cadence.
+4 Implement deterministic candle normalizer with gap/window enforcement.
+5 Full 2024-H2 36-object candle acquisition + normalization.
+6 Trustworthy no-AWS PIT OI + rolling-volume context, or prospective collection if historical OI unavailable.
 7 Canonical datasets/manifests + source audit GREEN.
 8 Locked DEVELOPMENT baseline.
 9 Freeze -> HOLDOUT -> candidates.
