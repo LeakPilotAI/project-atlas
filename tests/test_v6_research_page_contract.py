@@ -112,3 +112,15 @@ def test_research_page_renders_maturity_sequence_stability_contract():
     assert "MIXED SEQUENCE" in page
     assert "INSUFFICIENT HISTORY" in page
     assert "repeated latest" in page
+
+
+def test_research_page_renders_maturity_sequence_run_length_contract():
+    page=Path("frontend/src/app/research/page.tsx").read_text(encoding="utf-8")
+    assert "Maturity sequence run-length / recent-streak diagnostics" in page
+    assert "DESCRIPTIVE_MATURITY_SEQUENCE_RUN_LENGTH" in page
+    assert "maturity_sequence_run_length_diagnostics" in page
+    assert "current run" in page
+    assert "previous run" in page
+    assert "run count" in page
+    assert "boundary" in page
+    assert "runs:" in page
