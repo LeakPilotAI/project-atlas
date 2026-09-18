@@ -20,6 +20,7 @@ from typing import Any
 
 from app.core.logging import get_logger
 from app.services.paper_journal import JOURNAL_PATH, iter_jsonl, paper_journal
+from app.services.paper_risk import check_paper_risk
 from app.trading_core.perp_board import build_perp_board
 
 log = get_logger("perp_setup_paper_mirror")
@@ -225,13 +226,18 @@ class PerpSetupPaperMirror:
         if not self._limit_touched(side=side, mark=mark, limit_price=limit_price):
             return False
 
+        open_positions = list(paper_journal.list_open())
         open_pairs = {
             (str(p.get("symbol") or "").upper(), str(p.get("side") or "").upper())
-            for p in paper_journal.list_open()
+            for p in open_positions
             if str(p.get("trade_type") or "PAPER").upper() == "PAPER"
         }
         if (symbol, side) in open_pairs:
             self._cancel_pending(instance, reason="PAPER_POSITION_ALREADY_OPEN", mark=mark)
+            return False
+        risk_decision = check_paper_risk(open_positions=open_positions, requested_risk_usd=1.0)
+        if not risk_decision["allowed"]:
+            self._cancel_pending(instance, reason="PAPER_RISK_BLOCK", mark=mark)
             return False
 
         features = {
