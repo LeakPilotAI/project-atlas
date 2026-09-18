@@ -282,3 +282,36 @@ STATUS AFTER REPAIR:
 [NEXT] fee/slippage realism and observability
 [NEXT] desktop runtime verification
 [BLOCKED] real-money automatic execution until separate positive-evidence gate
+
+
+THIRD PASS REPAIR RE-RUN — TEST CONTRACT CORRECTION REQUIRED
+User local evidence after lifecycle-precedence repair:
+- focused repair suite: 28 passed, 1 failed in 1.82s
+- full suite: 904 passed, 1 failed, 2 warnings in 39.31s
+- the two original lifecycle regressions are repaired: detached cleanup now uses DETACHED_AFTER_RETENTION and retained discovery-stale pending limits remain intact.
+Remaining failure:
+- test_stale_pending_limit_expires_before_fill expected EXPIRED_PENDING_LIMIT while supplying no current setup.
+- under the corrected lifecycle contract, no current setup means detached after retention and therefore DETACHED_AFTER_RETENTION correctly takes precedence.
+Resolution:
+- production lifecycle code remains unchanged.
+- expiry test corrected to represent its intended scenario: an old pending limit whose setup is still present, valid, non-discovery-stale, and not otherwise invalidated. Only that scenario should reach EXPIRED_PENDING_LIMIT.
+Commit:
+a255580 atlas: align expiry test with retained setup lifecycle
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 focused / 896 full
+[GREEN] V3/perps pass 2 — 20 focused / 901 full
+[REPAIR RETEST PENDING] V3/perps pass 3 — V3 alerts/frozen snapshots + pending lifecycle/expiry
+[NEXT] Retry-safe V3 notification delivery through existing alert channel
+[NEXT] V3 PIT DEVELOPMENT validation, freeze, then untouched HOLDOUT
+[NEXT] Stronger paper execution idempotency from signal -> arm -> fill -> close
+[NEXT] Paper risk engine: exposure caps, per-trade risk, session loss stop, kill switch, stale-data rejection
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Full desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
