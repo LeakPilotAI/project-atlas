@@ -203,6 +203,12 @@ async def lifespan(app: FastAPI):
 
     log.info("Project Atlas shutting down")
     try:
+        from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
+        cancelled_pending = perp_setup_paper_mirror.cancel_all_pending(reason="ATLAS_SHUTDOWN")
+        log.info("paper pending-limit shutdown reconciliation", cancelled=cancelled_pending)
+    except Exception as e:
+        log.warning("paper pending-limit shutdown reconciliation failed", error=str(e)[:200])
+    try:
         from app.services.paper_journal import paper_journal
         persisted = paper_journal.persist_open_marks()
         interrupted = paper_journal.interrupt_open_for_shutdown()
