@@ -28,11 +28,12 @@ Phase 8: 60 focused / 857 full GREEN.
 Phase 9: 69 focused, 2 warnings / 864 full, 2 warnings GREEN.
 Phase 10: 80 focused, 2 warnings / 875 full, 2 warnings GREEN.
 Phase 11 automated gate: 84 focused, 2 warnings / 879 full, 2 warnings GREEN.
+V2.1 runtime repair gate: 88 focused, 2 warnings in 5.55s / 883 full, 2 warnings in 43.73s GREEN.
 
 WHY V2.1 WAS OPENED
 The frozen V2 policy was valid but the live board could remain permanently blocked when runtime research rows did not contain the V2-specific quality composite, three explicit normalization values, or trend timestamps. V2.1 repairs evidence plumbing only; it does not loosen thresholds or manufacture upside.
 
-V2.1 — CODE EXECUTED / LOCAL GREEN PENDING
+V2.1 — COMPLETE / VERIFIED LOCAL GREEN
 Commits:
 aa173cf atlas: ingest explicit analyst normalization targets
 8a3f8d5 atlas: populate Quality Dips V2 runtime evidence
@@ -43,6 +44,7 @@ fd26468 atlas: use cached analyst targets for V2 normalization
 1801079 atlas: test V2 runtime evidence population
 4f52aa9 atlas: isolate incomplete target runtime test
 532d36f atlas: isolate V4 API test from live V2 target refresh
+d3de59b atlas: restore immutable historical result contract
 
 V2.1 BEHAVIOR
 - Quality score is populated only when at least two existing scored business pillars are available; current implementation uses the median of fundamentals, balance-sheet, cash-flow, and thesis-integrity scores.
@@ -67,11 +69,35 @@ FULL ROADMAP — CURRENT
 [COMPLETE/VERIFIED GREEN] Phase 9: V2 board + API/dashboard integration; MANUAL_ONLY
 [COMPLETE/VERIFIED GREEN] Phase 10: durable state-transition / exceptional-zone / thesis-change alerts
 [COMPLETE/VERIFIED GREEN — AUTOMATED] Phase 11: desktop-contract regression + V2 evidence decision/closure
-[CURRENT — CODE EXECUTED, LOCAL GREEN PENDING] V2.1: runtime quality + normalization + trend evidence plumbing
-[AFTER GREEN] V2.1 desktop/API smoke: confirm board receives normalization evidence where provider targets exist, trend timestamps render, scanner stays running, shortcuts work, and no broker execution exists
+[COMPLETE/VERIFIED LOCAL GREEN] V2.1: runtime quality + normalization + trend evidence plumbing
+[CURRENT — FINAL EXTERNAL OPERATIONAL SMOKE] Desktop/API live runtime verification
+[AFTER GREEN] Close V2.1 as RESEARCH_READY_MANUAL_ONLY and require a new cycle for future model/threshold changes
 
-LOCAL VALIDATION REQUIRED BEFORE CALLING V2.1 GREEN
-Run the focused V2/V4/runtime suite, then the complete pytest suite. After automated GREEN, start Atlas from the normal desktop shortcut and inspect /health and /api/investments/quality-dips/view. The API now reports normalization_evidence_complete_symbols and normalization_evidence_requested_symbols so runtime target coverage is directly visible.
+FINAL EXTERNAL OPERATIONAL SMOKE
+1. Start Atlas from C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk.
+2. Confirm Atlas stays running and dashboard opens.
+3. Confirm http://127.0.0.1:8000/health responds.
+4. Open http://127.0.0.1:8000/api/investments/quality-dips and confirm:
+   - quality_dips_v2.operational_repair = V2_1_RUNTIME_EVIDENCE
+   - normalization_evidence_requested_symbols > 0
+   - normalization_evidence_complete_symbols is reported
+   - execution = MANUAL_ONLY
+   - automatic_real_money_execution = false
+5. Open http://127.0.0.1:8000/api/investments/quality-dips/view and confirm:
+   - V2 conservative/base/optimistic values populate for symbols where provider targets exist
+   - trend short/intermediate/long fields are no longer universally UNKNOWN where stored history exists
+   - incomplete provider evidence still displays WAIT/BLOCKED rather than fabricated values
+6. Let Atlas remain open for several minutes and confirm the launcher stays alive.
+7. Run C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk and confirm Atlas services stop while Docker Desktop/Genesis remain running.
+
+FINAL EVIDENCE DECISION
+RESEARCH_READY_MANUAL_ONLY
+
+NOT:
+LIVE_CAPITAL_READY
+GUARANTEED_BOTTOM
+GUARANTEED_29_PERCENT
+GUARANTEED_50_PERCENT
 
 NORMAL DESKTOP WORKFLOW
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
