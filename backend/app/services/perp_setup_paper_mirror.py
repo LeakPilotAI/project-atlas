@@ -359,10 +359,20 @@ class PerpSetupPaperMirror:
         self._seed()
         opened = closed = marked = skipped = armed = filled = cancelled = recovered = expired = 0
 
+        current_by_symbol = {
+            str(s.get("symbol") or "").upper(): s
+            for s in setups
+            if str(s.get("symbol") or "").strip()
+        }
+
         for trade in list(paper_journal.list_open()):
             if str(trade.get("source") or "") != SOURCE:
                 continue
             symbol = str(trade.get("symbol") or "").upper()
+            setup_for_symbol = current_by_symbol.get(symbol)
+            if setup_for_symbol is not None and not self._fresh_mark_timestamp(setup_for_symbol):
+                skipped += 1
+                continue
             mark = price_map.get(symbol)
             if mark is None or mark <= 0:
                 continue
