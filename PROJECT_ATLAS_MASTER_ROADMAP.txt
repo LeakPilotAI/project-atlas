@@ -1,7 +1,7 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-17
 Branch: chatgpt/atlas-rebuild-v1
-Current cycle: QUALITY DIPS V2.1 — RUNTIME OPERATIONAL REPAIR
+Current cycle: QUALITY DIPS V2.1 — CLOSED / RESEARCH_READY_MANUAL_ONLY
 
 PRESERVED CLOSED CHECKPOINT
 Prior Atlas engineering/historical evidence remains closed and immutable. Historical perps experiment: FAILED_NEGATIVE. PAPER/SHADOW recovery GREEN. Frozen Quality Dips V2 policy/hurdles and historical evidence are not retuned or relabeled by V2.1. Quality Dips V2.1 does not relabel, retune, or overwrite those results.
@@ -30,9 +30,6 @@ Phase 10: 80 focused, 2 warnings / 875 full, 2 warnings GREEN.
 Phase 11 automated gate: 84 focused, 2 warnings / 879 full, 2 warnings GREEN.
 V2.1 runtime repair gate: 88 focused, 2 warnings in 5.55s / 883 full, 2 warnings in 43.73s GREEN.
 
-WHY V2.1 WAS OPENED
-The frozen V2 policy was valid but the live board could remain permanently blocked when runtime research rows did not contain the V2-specific quality composite, three explicit normalization values, or trend timestamps. V2.1 repairs evidence plumbing only; it does not loosen thresholds or manufacture upside.
-
 V2.1 — COMPLETE / VERIFIED LOCAL GREEN
 Commits:
 aa173cf atlas: ingest explicit analyst normalization targets
@@ -45,18 +42,32 @@ fd26468 atlas: use cached analyst targets for V2 normalization
 4f52aa9 atlas: isolate incomplete target runtime test
 532d36f atlas: isolate V4 API test from live V2 target refresh
 d3de59b atlas: restore immutable historical result contract
+b87b8e0 atlas: mark V2.1 runtime repair local GREEN
 
-V2.1 BEHAVIOR
-- Quality score is populated only when at least two existing scored business pillars are available; current implementation uses the median of fundamentals, balance-sheet, cash-flow, and thesis-integrity scores.
-- Conservative/base/optimistic normalization values come from explicit provider-supplied analyst low/mean/high targets, either from newly ingested snapshot fields or a six-hour runtime cache.
-- Three valid explicit target values are still required for a complete normalization window; incomplete evidence stays incomplete.
-- Short/intermediate/long trend is populated from stored daily OHLCV using 20/50/200-day moving-average relationships, with an explicit as-of timestamp.
-- Existing provider targets on research snapshots take precedence over runtime cache.
-- Provider/cache failure stays missing and fails closed.
-- Legacy Quality Dips, V4 dashboard literals, quote overlay, accumulation alerts, and durable V2 alert policy remain preserved.
-- No brokerage execution was added.
+FINAL LIVE RUNTIME EVIDENCE — VERIFIED
+The user launched the normal desktop Atlas workflow and supplied the rendered Quality Dips output.
+Observed:
+- Quality Dips V2 / Patient Capital / Manual Research rendered successfully.
+- Runtime board remained MANUAL_ONLY / NO BROKER ORDERS / NO LIVE CAPITAL.
+- Board summary rendered V2 G 0 / DV 0 / A 0 / W 27 at this market snapshot. Zero qualifying entries is valid and is not treated as a malfunction.
+- Conservative/base/optimistic normalization values populated across supported equities (examples in supplied output: ADBE, NFLX, BRK-B, UNH, AVGO, COST, GOOGL, META, AMZN, NVDA, MSFT and others).
+- L1/L2/L3/L4 patient entry hurdles populated from conservative normalization values.
+- Short/intermediate/long trend fields populated across the board from stored history rather than remaining universally UNKNOWN.
+- Insufficient evidence still fails closed. ETF rows without the required fundamentals/quality/normalization evidence remain WATCH/BLOCKED with WAIT — valuation evidence incomplete rather than fabricated values.
+- Thesis-under-pressure rows can fail closed to THESIS_BROKEN.
+- Legacy quote display and legacy research classifications remain present.
+- No broker execution was introduced.
 
-FULL ROADMAP — CURRENT
+FINAL EVIDENCE DECISION
+RESEARCH_READY_MANUAL_ONLY
+
+NOT:
+LIVE_CAPITAL_READY
+GUARANTEED_BOTTOM
+GUARANTEED_29_PERCENT
+GUARANTEED_50_PERCENT
+
+FULL ROADMAP — CLOSED
 [COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
 [COMPLETE/VERIFIED GREEN] Phase 1: patient-capital policy + specification
 [COMPLETE/VERIFIED GREEN] Phase 2: evidence adapter + trend passthrough
@@ -70,34 +81,11 @@ FULL ROADMAP — CURRENT
 [COMPLETE/VERIFIED GREEN] Phase 10: durable state-transition / exceptional-zone / thesis-change alerts
 [COMPLETE/VERIFIED GREEN — AUTOMATED] Phase 11: desktop-contract regression + V2 evidence decision/closure
 [COMPLETE/VERIFIED LOCAL GREEN] V2.1: runtime quality + normalization + trend evidence plumbing
-[CURRENT — FINAL EXTERNAL OPERATIONAL SMOKE] Desktop/API live runtime verification
-[AFTER GREEN] Close V2.1 as RESEARCH_READY_MANUAL_ONLY and require a new cycle for future model/threshold changes
+[COMPLETE/VERIFIED LIVE RUNTIME] V2.1 Quality Dips dashboard evidence population and fail-closed behavior
+[CLOSED] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
 
-FINAL EXTERNAL OPERATIONAL SMOKE
-1. Start Atlas from C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk.
-2. Confirm Atlas stays running and dashboard opens.
-3. Confirm http://127.0.0.1:8000/health responds.
-4. Open http://127.0.0.1:8000/api/investments/quality-dips and confirm:
-   - quality_dips_v2.operational_repair = V2_1_RUNTIME_EVIDENCE
-   - normalization_evidence_requested_symbols > 0
-   - normalization_evidence_complete_symbols is reported
-   - execution = MANUAL_ONLY
-   - automatic_real_money_execution = false
-5. Open http://127.0.0.1:8000/api/investments/quality-dips/view and confirm:
-   - V2 conservative/base/optimistic values populate for symbols where provider targets exist
-   - trend short/intermediate/long fields are no longer universally UNKNOWN where stored history exists
-   - incomplete provider evidence still displays WAIT/BLOCKED rather than fabricated values
-6. Let Atlas remain open for several minutes and confirm the launcher stays alive.
-7. Run C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk and confirm Atlas services stop while Docker Desktop/Genesis remain running.
-
-FINAL EVIDENCE DECISION
-RESEARCH_READY_MANUAL_ONLY
-
-NOT:
-LIVE_CAPITAL_READY
-GUARANTEED_BOTTOM
-GUARANTEED_29_PERCENT
-GUARANTEED_50_PERCENT
+CLOSURE RULE
+Preserve V2/V2.1 policy, validation evidence, and runtime-repair artifacts. Do not silently retune the frozen 29/35/40/50 thresholds or historical evidence. Any substantive future model, threshold, scoring, or normalization-policy change opens a new cycle. Operational bug fixes may be handled separately without relabeling historical results.
 
 NORMAL DESKTOP WORKFLOW
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
