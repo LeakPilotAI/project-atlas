@@ -199,3 +199,50 @@ Second-pass behavior:
 
 NEXT VALIDATION:
 Run focused V3 state + pending-limit shutdown + paper shutdown + board tests, then full pytest. Do not label this second pass GREEN until local output is supplied.
+
+
+V3 / PERPS HARDENING — SECOND PASS LOCAL GREEN
+User local validation received:
+- 20 focused passed in 1.04s
+- 901 full-suite passed, 2 warnings in 41.92s
+Warnings remain dependency deprecations only (discord audioop, Starlette TestClient/httpx).
+
+THIRD IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+f4ca169 atlas: add V3 research alerts and frozen entry snapshots
+eee8447 atlas: persist V3 event payloads for frozen evidence
+d54fa79 atlas: freeze V3 entry evidence on first level hit
+9ed36ad atlas: test V3 alert snapshots and manual boundary
+692e829 atlas: expire stale pending paper limits deterministically
+6569af4 atlas: test deterministic expiry of stale paper limits
+
+Third-pass behavior:
+- first V3 L1/L2/L3/L4 reach freezes the complete V3 plan snapshot used at that event
+- V3 event payloads are persisted durably with explicit MANUAL_ONLY / no-broker wording
+- repeated identical events remain deduped
+- pending auto-paper perp limits now expire deterministically after 6 hours if never filled
+- expiry is append-only CANCELLED evidence and prevents stale phantom fills
+- graceful shutdown cancellation and open-position interruption behavior remain intact
+- completed historical outcomes remain immutable
+- real-money automatic execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + perps evidence cycle
+[FAILED_NEGATIVE/PRESERVED] Historical perps experiment — 546 HOLDOUT trades, -26.7235R, -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 runtime evidence — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix local validation
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[CODE COMPLETE / TEST PENDING] V3/perps hardening pass 3 — alerts/snapshots + stale pending expiry
+[NEXT] Deliver V3 state/level notifications through the existing alert channel with retry-safe delivery semantics
+[NEXT] Add point-in-time DEVELOPMENT/HOLDOUT validation harness for V3; freeze DEVELOPMENT before untouched HOLDOUT
+[NEXT] Add stronger paper execution idempotency across signal -> pending -> fill -> close lifecycle
+[NEXT] Add paper risk controls: max concurrent exposure, per-trade risk ceiling, session loss stop, stale market-data rejection
+[NEXT] Improve fee/slippage realism and execution observability
+[NEXT] Run full local regression and desktop runtime verification
+[BLOCKED UNTIL EVIDENCE] Any live-capital automatic execution gate
+[PERMANENT UNTIL SEPARATE GREEN GATE] Robinhood Quality Dips remains manual order placement only
+
+LIVE-CAPITAL RULE
+Automatic real-money execution is NOT enabled by these changes. A future live gate requires separate validated positive evidence, risk controls, reconciliation, explicit user-controlled enablement, and must not overwrite the historical FAILED_NEGATIVE perps result.
