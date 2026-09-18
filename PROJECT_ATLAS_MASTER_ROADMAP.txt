@@ -4,7 +4,7 @@ Branch: chatgpt/atlas-rebuild-v1
 Current cycle: QUALITY DIPS V2.1 — RUNTIME OPERATIONAL REPAIR
 
 PRESERVED CLOSED CHECKPOINT
-Prior Atlas engineering/historical evidence remains closed and immutable. Historical perps experiment: FAILED_NEGATIVE. PAPER/SHADOW recovery GREEN. Frozen Quality Dips V2 policy/hurdles and historical evidence are not retuned or relabeled by V2.1.
+Prior Atlas engineering/historical evidence remains closed and immutable. Historical perps experiment: FAILED_NEGATIVE. PAPER/SHADOW recovery GREEN. Frozen Quality Dips V2 policy/hurdles and historical evidence are not retuned or relabeled by V2.1. Quality Dips V2.1 does not relabel, retune, or overwrite those results.
 
 PERMANENT SECURITY / EXECUTION BOUNDARY
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local credential stores, or raw credential exports. Preserve backend/data. Quality Dips remains research/decision support. Brokerage execution=MANUAL_ONLY. live_capital_allowed=false. automatic_real_money_execution=false. No guaranteed bottom, return, recovery, fair value, hold duration, or exit price.
