@@ -792,3 +792,57 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 10 — VERIFIED LOCAL GREEN
+User local validation:
+- focused pass-10 suite: 11 passed in 0.90s
+- full suite: 927 passed, 2 warnings in 39.61s
+- warnings remain dependency deprecations only
+Pass 10 is CLOSED/GREEN.
+
+ELEVENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+0e33168 atlas: expose paper kill switch operator API
+dea5314 atlas: expose V3 forward readiness in Quality Dips API
+aaa23a6 atlas: reject stale marks for open paper position decisions
+993c499 atlas: test paper kill switch operator API
+e1ce3b4 atlas: test stale open-paper mark decisions are ignored
+
+Eleventh-pass behavior:
+- operator API exposes PAPER-only risk status at /api/perps/paper-risk
+- operator API can toggle the durable PAPER kill switch through /api/perps/paper-risk/kill-switch
+- endpoint explicitly reports live_execution=false
+- Quality Dips API now exposes current V3 forward-readiness counters/thresholds
+- already-open auto-paper positions no longer update excursion or trigger stop/TP decisions from stale setup mark timestamps
+- stale open-position marks are ignored rather than generating phantom exits
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 11 — operator PAPER risk API + V3 readiness API + stale open-position protection
+[NEXT AFTER GREEN] Add visible kill-switch/readiness controls to dashboard UI
+[NEXT] Automatically derive PAPER session_net_r from the active session journal instead of manual persisted state
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Add forward V3 readiness trend/coverage diagnostics
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
