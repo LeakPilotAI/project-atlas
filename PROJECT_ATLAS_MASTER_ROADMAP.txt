@@ -530,3 +530,56 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
+
+
+PASS 6 — VERIFIED LOCAL GREEN
+User local validation received:
+- focused pass-6 suite: 15 passed in 0.90s
+- full suite: 915 passed, 2 warnings in 42.43s
+- warnings remain dependency deprecations only
+Pass 6 is CLOSED/GREEN.
+
+SEVENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+ec08df6 atlas: load fail-closed V3 PIT rows from stored observations
+0d6afb0 atlas: reject stale market data before paper arm
+4708058 atlas: test stale market-data rejection before paper arm
+ef029a6 atlas: add fail-closed paper exposure guard
+35010f9 atlas: test paper exposure guard
+db192e7 atlas: apply paper exposure guard before fill
+
+Seventh-pass behavior:
+- V3 can now load existing timestamped PIT-compatible rows from investment observation storage
+- loader is fail-closed: it does not synthesize historical V3 states from current/future data
+- stale perp mark timestamps older than 30 seconds block new paper arming
+- malformed mark timestamps fail closed
+- paper risk guard blocks a fourth concurrent PAPER position
+- paper risk guard blocks requested risk above $25 per simulated trade
+- current auto-paper mirror uses $1 simulated risk and must pass risk guard before fill
+- blocked fills are append-only cancelled with PAPER_RISK_BLOCK
+- live-capital execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 7 — stored PIT loader + stale-data rejection + first paper risk guard
+[NEXT AFTER GREEN] Run V3 DEVELOPMENT report against available stored PIT evidence and record coverage/gaps
+[NEXT] If DEVELOPMENT evidence is sufficient, freeze parameters and run untouched HOLDOUT
+[NEXT] Add session-loss stop and operator kill switch to PAPER
+[NEXT] Add stale-data rejection on fill/mark path, not only arm
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
