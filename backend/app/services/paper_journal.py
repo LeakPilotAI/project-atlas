@@ -454,6 +454,11 @@ class PaperJournal:
         }
         return self._last_reconcile
 
+    def trade_terminal(self, trade_id: str) -> bool:
+        """True if an append-only close already exists for this trade id."""
+        _, close_row = self._scan_trade(trade_id)
+        return bool(close_row)
+
     def _scan_trade(self, trade_id: str) -> tuple:
         open_row: Optional[Dict[str, Any]] = None
         close_row: Optional[Dict[str, Any]] = None
