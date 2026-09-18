@@ -269,7 +269,7 @@ class PerpSetupPaperMirror:
             "manual_trigger_mirror": True,
             "recovered_limit_cross": bool(row.get("recovered_limit_cross")),
             "paper_order_model": "RESTING_L1_LIMIT",
-            "paper_fill_model": "LIMIT_TOUCH",
+            "paper_fill_model": "LIMIT_TOUCH_PLUS_BUFFER",
             "paper_order_armed_at": row.get("timestamp"),
             "paper_filled_at": _now(),
             "setup_rr": float(row.get("target_rr") or 1.8),
