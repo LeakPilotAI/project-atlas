@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from app.services.paper_journal import JOURNAL_PATH, iter_jsonl
+from app.services.paper_execution_model import execution_assumptions
 from app.services.perp_setup_paper_mirror import PENDING_EVENT_PATH, SOURCE
 
 COHORT_MARKER_PATH = Path(__file__).resolve().parents[2] / "data" / "perp_manual_auto_observability_v1.json"
@@ -176,6 +177,7 @@ def build_paper_observability(setups: Iterable[dict[str, Any]] = ()) -> dict[str
         "pending_health": pending_health(setups),
         "clean_cohort": cohort_summary(),
         "reconciliation": reconciliation_summary(),
+        "execution_model": execution_assumptions(),
         "execution": "PAPER_ONLY",
         "real_order_actions": False,
     }
