@@ -13,6 +13,7 @@ from app.investment.quality_dip_quotes import apply_quote_overlay, quality_dip_q
 from app.investment.quality_dips_v2_board import attach_v2_board
 from app.investment.quality_dips_v2_target_cache import quality_dips_v2_target_cache
 from app.investment.quality_dips_v3_alerts import freeze_v3_entry_snapshot, format_v3_alert
+from app.investment.quality_dips_v3_delivery import deliver_v3_events
 from app.investment.quality_dips_v3_state import detect_v3_events, quality_dips_v3_state_store
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 
@@ -80,6 +81,7 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
                 v3_events.append(payload)
         quality_dips_v3_state_store.remember(symbol, v3)
     quality_dips_v3_state_store.save()
+    v3_delivery = await deliver_v3_events(v3_events)
 
     counts = {"ACCUMULATE": 0, "PREPARE": 0, "WATCH": 0, "STAND_DOWN": 0}
     v2_counts = {"WATCH": 0, "ACCUMULATION": 0, "DEEP_VALUE": 0, "GENERATIONAL": 0, "THESIS_BROKEN": 0}
@@ -119,6 +121,7 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "cycle": "QUALITY_DIPS_V3_MARGIN_OF_SAFETY",
             "events_seen_this_request": len(v3_events),
             "events": v3_events,
+            "delivery": v3_delivery,
             "execution": "MANUAL_ONLY",
             "live_capital_allowed": False,
             "automatic_real_money_execution": False,
