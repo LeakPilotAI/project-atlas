@@ -315,3 +315,37 @@ FULL ROADMAP STATUS — CURRENT
 [NEXT] Full desktop runtime verification and longevity check
 [BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
 [MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+
+THIRD PASS REPAIR — EXPIRY TEST IDENTITY FIX
+Latest user rerun after corrected lifecycle test contract:
+- focused subset: 11 passed, 1 failed in 1.89s
+- remaining failure was test_stale_pending_limit_expires_before_fill
+- observed cancellation reason DETACHED_AFTER_RETENTION, meaning the test's pending setup_instance_id did not match the live setup identity
+Root cause:
+- pending key/setup_instance_id used BTC|a|a
+- production _instance_id(setup) correctly generates BTC:LONG|a|a from setup_key + first_seen_at + epoch
+- therefore the order was correctly treated as detached, never eligible for age-expiry semantics
+Repair:
+- production code unchanged
+- expiry test now uses the exact production setup_instance_id BTC:LONG|a|a
+Commit:
+63388ce atlas: fix expiry test setup instance identity
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[REPAIR RETEST PENDING] V3/perps hardening pass 3 — alerts/snapshots + lifecycle/expiry
+[NEXT AFTER GREEN] Retry-safe V3 notification delivery
+[NEXT] V3 PIT DEVELOPMENT validation -> freeze -> untouched HOLDOUT
+[NEXT] Stronger paper execution idempotency
+[NEXT] Paper risk engine: max exposure, per-trade risk, session stop, kill switch, stale-data rejection
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
