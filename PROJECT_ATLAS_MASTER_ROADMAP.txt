@@ -431,3 +431,53 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No current GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 4 — VERIFIED LOCAL GREEN
+User local validation received:
+- focused pass-4 suite: 15 passed, 1 warning in 1.54s
+- full suite: 908 passed, 2 warnings in 42.13s
+- warnings remain dependency deprecations only
+Pass 4 is CLOSED/GREEN.
+
+FIFTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+7c70705 atlas: add V3 PIT development holdout validation
+6d00fc1 atlas: test V3 PIT development holdout boundaries
+0b79e31 atlas: expose paper terminal-state idempotency check
+cc38afb atlas: test idempotent paper close acknowledgement
+
+Fifth-pass behavior:
+- V3 now has explicit PIT validation windows matching the frozen historical methodology:
+  DEVELOPMENT 2024-01-01 through 2025-06-30
+  HOLDOUT 2025-07-01 through 2025-12-31
+- per-symbol timestamp order is validated without sorting away violations
+- unknown V3 patient states fail validation
+- holdout retuning remains forbidden
+- lookahead remains forbidden
+- no live-capital execution is enabled
+- paper journal exposes terminal-state detection for a trade id
+- duplicate close acknowledgement remains append-only idempotent: an existing close is returned and no second close row is written
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 5 — PIT validation + paper close idempotency
+[NEXT AFTER GREEN] Build V3 DEVELOPMENT evaluation report from stored PIT evidence; freeze parameters before HOLDOUT
+[NEXT] Run untouched HOLDOUT evaluation and record evidence decision
+[NEXT] Broader paper fill idempotency and stale market-data rejection
+[NEXT] Paper risk engine: max exposure, per-trade risk, session loss stop, kill switch
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
