@@ -481,3 +481,52 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
+
+
+PASS 5 — VERIFIED LOCAL GREEN
+User local validation received twice:
+- focused pass-5 suite: 17 passed, 1 warning in 1.21s / 1.23s
+- full suite: 912 passed, 2 warnings in 43.37s / 41.80s
+- warnings remain dependency deprecations only
+Pass 5 is CLOSED/GREEN.
+
+SIXTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+516cab9 atlas: add V3 development evaluation freeze report
+6e097d6 atlas: test V3 development report and freeze
+3a6fcd7 atlas: block terminal pending instance from duplicate fill
+ddac29b atlas: test terminal pending instance cannot double fill
+
+Sixth-pass behavior:
+- V3 DEVELOPMENT evaluation can now produce a formal report from already-recorded PIT rows
+- report includes DEVELOPMENT observation count, symbol coverage, patient-state frequency and a frozen parameter artifact
+- L1/L2/L3/L4 margins are explicitly frozen after DEVELOPMENT
+- HOLDOUT retuning remains forbidden
+- invalid PIT ordering blocks the DEVELOPMENT report
+- no live-capital execution is enabled
+- paper pending fill path now checks terminal pending-order evidence before filling
+- a filled/cancelled setup instance cannot double-fill even if stale in-memory state exists
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 6 — DEVELOPMENT report/freeze + duplicate-fill protection
+[NEXT AFTER GREEN] Feed real stored PIT V3 evidence into DEVELOPMENT report and inspect signal frequency/coverage
+[NEXT] Freeze V3 parameters and run untouched HOLDOUT evaluation
+[NEXT] Add stale market-data rejection before paper fill
+[NEXT] Paper risk engine: max exposure, max concurrent positions, per-trade risk, session loss stop, kill switch
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
