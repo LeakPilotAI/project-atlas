@@ -26,11 +26,11 @@ def _quote(symbol: str) -> dict:
 def test_quality_dips_api_is_mounted_under_investment_domain(monkeypatch):
     async def fake_get_many(symbols, **kwargs):
         return {symbol: _quote(symbol) for symbol in symbols}
-    async def fake_refresh_many(symbols):
-        return None
+    def fake_schedule_refresh(symbols):
+        return True
 
     monkeypatch.setattr("app.api.investment_board.quality_dip_quote_service.get_many", fake_get_many)
-    monkeypatch.setattr("app.api.investment_board.quality_dips_v2_target_cache.refresh_many", fake_refresh_many)
+    monkeypatch.setattr("app.api.investment_board.quality_dips_v2_target_cache.schedule_refresh", fake_schedule_refresh)
     monkeypatch.setattr("app.api.investment_board.accumulation_ladder_store", FakeLadderStore())
     r = client.get("/api/investments/quality-dips")
     assert r.status_code == 200
@@ -47,6 +47,8 @@ def test_quality_dips_api_is_mounted_under_investment_domain(monkeypatch):
     assert "pending_dm" in data["accumulation_alerts"]
     assert data["accumulation_alerts"]["broker_execution"] is False
     assert data["quality_dips_v2"]["operational_repair"] == "V2_1_RUNTIME_EVIDENCE"
+    assert data["quality_dips_v2"]["normalization_refresh_mode"] == "BACKGROUND_STALE_WHILE_REVALIDATE"
+    assert data["quality_dips_v2"]["normalization_refresh_scheduled"] is True
 
 
 def test_quality_dips_view_is_stock_only_and_has_no_perp_api_calls():
