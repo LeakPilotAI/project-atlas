@@ -14,6 +14,7 @@ from app.investment.quality_dips_v2_board import attach_v2_board
 from app.investment.quality_dips_v2_target_cache import quality_dips_v2_target_cache
 from app.investment.quality_dips_v3_alerts import freeze_v3_entry_snapshot, format_v3_alert
 from app.investment.quality_dips_v3_delivery import deliver_v3_events
+from app.investment.quality_dips_v3_forward_store import append_v3_forward_observation
 from app.investment.quality_dips_v3_state import detect_v3_events, quality_dips_v3_state_store
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 
@@ -61,6 +62,13 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         v3 = dict((row.get("quality_dips_v2") or {}).get("quality_dips_v3") or {})
         if not symbol or not v3:
             continue
+        source_row = next((x for x in quoted_research if str(x.get("symbol") or "").upper().strip() == symbol), {})
+        append_v3_forward_observation(
+            symbol=symbol,
+            price=source_row.get("price") if isinstance(source_row, dict) else None,
+            plan=v3,
+            source_timestamp=str((source_row or {}).get("timestamp") or "") if isinstance(source_row, dict) else None,
+        )
         previous = quality_dips_v3_state_store.previous(symbol)
         for event in detect_v3_events(previous, v3):
             if not quality_dips_v3_state_store.event_seen(str(event.get("key") or "")):
