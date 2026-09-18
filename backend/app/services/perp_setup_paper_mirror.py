@@ -205,9 +205,12 @@ class PerpSetupPaperMirror:
         })
         log.info("Auto paper resting limit cancelled", symbol=row.get("symbol"), reason=reason)
 
-    async def _fill_pending(self, instance: str, *, mark: float) -> bool:
+    async def _fill_pending(self, instance: str, *, mark: float, setup: dict[str, Any] | None = None) -> bool:
         row = self._pending.get(instance)
         if not row:
+            return False
+        if setup is not None and not self._fresh_mark_timestamp(setup):
+            self._cancel_pending(instance, reason="STALE_MARK_BEFORE_FILL", mark=mark)
             return False
         if self._has_terminal_pending_event(instance):
             self._pending.pop(instance, None)
@@ -435,7 +438,7 @@ class PerpSetupPaperMirror:
                 continue
             before = instance in self._pending
             try:
-                if await self._fill_pending(instance, mark=mark):
+                if await self._fill_pending(instance, mark=mark, setup=current_by_instance.get(instance)):
                     filled += 1
                     opened += 1
                 elif before and instance not in self._pending:
