@@ -8,9 +8,30 @@ from app.services.perp_alert_delivery import perp_alert_delivery_service
 from app.services.perp_manual_service import perp_manual_service
 from app.services.perp_paper_observability import build_paper_observability
 from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
+from app.services.paper_risk_controls import paper_risk_controls
 from app.trading_core.perp_board import build_perp_board
 
 router = APIRouter(prefix="/api/perps", tags=["manual-perps"])
+
+
+@router.get("/paper-risk")
+async def paper_risk_status() -> Dict[str, Any]:
+    return {
+        **paper_risk_controls.snapshot(),
+        "mode": "PAPER_ONLY",
+        "live_execution": False,
+    }
+
+
+@router.post("/paper-risk/kill-switch")
+async def set_paper_kill_switch(enabled: bool = Query(...)) -> Dict[str, Any]:
+    paper_risk_controls.kill_switch = bool(enabled)
+    paper_risk_controls.save()
+    return {
+        "ok": True,
+        **paper_risk_controls.snapshot(),
+        "note": "PAPER only. Does not enable or disable real-money execution.",
+    }
 
 
 @router.get("/manual")
