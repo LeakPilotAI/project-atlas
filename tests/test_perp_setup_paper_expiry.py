@@ -23,10 +23,22 @@ def test_stale_pending_limit_expires_before_fill(tmp_path):
             "tp2": 120.0,
         }
     }
-    out = asyncio.run(mirror.sync([], {"BTC": 99.0}))
+    setup = {
+        "setup_key": "BTC:LONG",
+        "first_seen_at": "a",
+        "paper_mirror_epoch_at": "a",
+        "symbol": "BTC",
+        "side": "LONG",
+        "state": "PREPARE",
+        "discovery_stale": False,
+        "price": 101.0,
+        "levels": {"l1": 100.0, "l2": 98.0, "l3": 97.0, "stop": 95.0, "tp1": 110.0, "tp2": 120.0},
+    }
+    out = asyncio.run(mirror.sync([setup], {"BTC": 101.0}))
     assert out["expired"] == 1
     assert out["cancelled"] >= 1
     assert mirror.status()["pending_count"] == 0
+    assert "EXPIRED_PENDING_LIMIT" in path.read_text(encoding="utf-8")
 
 
 def test_retained_discovery_stale_setup_is_not_age_expired(tmp_path):
