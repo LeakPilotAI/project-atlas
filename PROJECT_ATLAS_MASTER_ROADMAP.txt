@@ -172,3 +172,30 @@ Implemented:
 
 VALIDATION REQUIRED BEFORE GREEN:
 Run focused V3 + board + shutdown reconciliation tests, then full pytest. Do not label GREEN until local output is supplied.
+
+
+V3 / PERPS HARDENING — SECOND IMPLEMENTATION PASS
+Local GREEN received for prior gate:
+- 15 focused passed in 0.40s
+- 896 full-suite passed, 2 warnings in 39.86s
+
+New commits:
+b824c8f atlas: cancel pending auto-paper limits on shutdown
+65c910c atlas: cancel pending paper limits before shutdown
+f40d530 atlas: test pending paper-limit shutdown cleanup
+cba3d40 atlas: add durable V3 state transition tracking
+7e8ce4e atlas: persist V3 state and entry-level transitions
+0c00631 atlas: test durable V3 transitions and dedupe
+
+Second-pass behavior:
+- every verified manual resting-L1 perp instruction still mirrors into PAPER automatically
+- graceful Atlas shutdown cancels all outstanding simulated resting limits with append-only cancellation evidence
+- cancelled pending limits do not recover after restart
+- open PAPER positions are separately recorded INTERRUPTED/non-performance on graceful shutdown
+- completed historical outcomes remain immutable
+- V3 state transitions and first-time L1-L4 reaches are now durable and deduplicated
+- V3 event persistence remains MANUAL_ONLY and does not place brokerage orders
+- real-money automatic execution remains disabled
+
+NEXT VALIDATION:
+Run focused V3 state + pending-limit shutdown + paper shutdown + board tests, then full pytest. Do not label this second pass GREEN until local output is supplied.
