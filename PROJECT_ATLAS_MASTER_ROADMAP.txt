@@ -1,7 +1,8 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
-Updated: 2026-09-17
+Updated: 2026-09-18
 Branch: chatgpt/atlas-rebuild-v1
-Current cycle: QUALITY DIPS V2.1 — CLOSED / RESEARCH_READY_MANUAL_ONLY\nOperational reliability hotfix: VERIFIED LOCAL GREEN
+Current cycle: QUALITY DIPS V3 — OPEN / RESEARCH_AND_PAPER_VALIDATION
+Operational reliability hotfix: VERIFIED LOCAL GREEN
 
 PRESERVED CLOSED CHECKPOINT
 Prior Atlas engineering/historical evidence remains closed and immutable. Historical perps experiment: FAILED_NEGATIVE. PAPER/SHADOW recovery GREEN. Frozen Quality Dips V2 policy/hurdles and historical evidence are not retuned or relabeled by V2.1. Quality Dips V2.1 does not relabel, retune, or overwrite those results.
@@ -119,3 +120,34 @@ Local validation:
 
 Runtime activation required:
 Restart Atlas once so the running Python process loads these commits, then stress the Quality Dips endpoint repeatedly and confirm no Failed to fetch regression.
+
+
+QUALITY DIPS V3 — OPEN (2026-09-18)
+Goal: replace V2 double-conservative entry math with a professional evidence-weighted margin-of-safety model while preserving V2/V2.1 unchanged.
+Initial implementation commits:
+439f3e9 atlas: open V3 evidence-weighted margin-of-safety cycle
+2df5a80 atlas: attach V3 entry research beside frozen V2
+
+V3 initial policy:
+- robust fair-value anchor requires complete conservative/base/optimistic normalization distribution
+- L1/L2/L3/L4 research zones use 15/20/25/30 percent margins of safety from the robust anchor
+- ACCUMULATION requires >=15 percent discount plus MEDIUM/HIGH evidence, quality >=75, fundamentals >=70, valuation >=50, intact thesis, and no value-trap gate
+- DEEP_VALUE and GENERATIONAL require progressively stronger quality/fundamentals/valuation/drawdown/evidence stacks
+- zero qualifying stocks is valid
+- no guarantee of undervaluation, bottom, return, or recovery
+- V3 remains MANUAL_ONLY until point-in-time DEVELOPMENT/HOLDOUT validation is GREEN
+
+NEXT ENGINEERING GATES — DO NOT SKIP
+1. Add focused V3 tests for fail-closed evidence, realistic entry math, state boundaries, and no-lookahead behavior.
+2. Render V3 clearly in Quality Dips UI and remove ambiguity between legacy ACCUMULATE, frozen V2, and V3.
+3. Add durable V3 L1 transition alerts and frozen entry snapshots.
+4. Run DEVELOPMENT then untouched HOLDOUT validation. Do not tune on HOLDOUT.
+5. Perps: preserve historical FAILED_NEGATIVE result; improve PAPER/SHADOW only. Manual signals must flow through the same paper execution simulator so missed human clicks are represented in testing.
+6. Add explicit paper order lifecycle: CREATED -> PENDING -> FILLED/CANCELLED/EXPIRED/INTERRUPTED. On graceful Atlas shutdown, unfilled paper orders become INTERRUPTED/CANCELLED and must never become phantom fills after restart. Preserve closed fills/trades for clean research; do not delete historical outcomes.
+7. Add startup reconciliation for orphaned paper orders after crashes/forced shutdown.
+8. Add execution idempotency/dedupe so one signal cannot create duplicate simulated/live orders.
+9. Add kill switch, max loss/exposure limits, stale-data rejection, slippage/fee modeling, and broker/exchange acknowledgement reconciliation before any future live-capital gate.
+10. Automatic REAL-MONEY trading remains disabled. A future live gate requires separate validation evidence and explicit user-controlled enablement; it must not be enabled merely because PAPER is GREEN.
+
+PERPS HISTORICAL RESULT — STILL IMMUTABLE
+Historical experiment remains FAILED_NEGATIVE. Aggregate HOLDOUT 546 trades / -26.7235R / -0.04894R expectancy. Do not relabel, erase, or tune this result. New perps work is a separate PAPER/SHADOW recovery cycle.
