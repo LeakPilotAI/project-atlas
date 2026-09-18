@@ -67,6 +67,19 @@ class QualityDipsV3StateStore:
         row = self.events.get(str(key or ""))
         return deepcopy(row) if isinstance(row, dict) else None
 
+    def mark_delivery(self, key: str, *, delivered: bool) -> None:
+        row = self.events.get(str(key or ""))
+        if not isinstance(row, dict):
+            return
+        delivery = dict(row.get("delivery") or {})
+        delivery["attempts"] = int(delivery.get("attempts") or 0) + 1
+        delivery["delivered"] = bool(delivered)
+        delivery["last_attempt_at"] = datetime.now(timezone.utc).isoformat()
+        if delivered:
+            delivery["delivered_at"] = delivery["last_attempt_at"]
+        row["delivery"] = delivery
+        self.events[str(key)] = row
+
 
 def detect_v3_events(previous: dict[str, Any] | None, current: dict[str, Any]) -> list[dict[str, Any]]:
     sym = str(current.get("symbol") or "").upper()
