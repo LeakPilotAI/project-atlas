@@ -35,3 +35,29 @@ def touched_with_buffer(*, side: str, mark: float, limit_price: float, buffer_bp
     if side_u == "SHORT":
         return float(mark) >= float(limit_price) + buffer
     return False
+
+
+def conservative_stop_exit(*, side: str, mark: float, stop_price: float, slippage_bps: float = DEFAULT_SLIPPAGE_BPS_PER_SIDE) -> float:
+    """Model a stop exit at the worse of observed mark or stop plus adverse slippage."""
+    mark_f=float(mark); stop_f=float(stop_price)
+    side_u=str(side or "").upper()
+    if side_u=="LONG":
+        base=min(mark_f,stop_f)
+        return base*(1.0-float(slippage_bps)/10000.0)
+    if side_u=="SHORT":
+        base=max(mark_f,stop_f)
+        return base*(1.0+float(slippage_bps)/10000.0)
+    return mark_f
+
+
+def conservative_target_exit(*, side: str, mark: float, target_price: float, slippage_bps: float = DEFAULT_SLIPPAGE_BPS_PER_SIDE) -> float:
+    """Cap favorable target exits at target and apply adverse slippage."""
+    mark_f=float(mark); target_f=float(target_price)
+    side_u=str(side or "").upper()
+    if side_u=="LONG":
+        base=min(mark_f,target_f)
+        return base*(1.0-float(slippage_bps)/10000.0)
+    if side_u=="SHORT":
+        base=max(mark_f,target_f)
+        return base*(1.0+float(slippage_bps)/10000.0)
+    return mark_f
