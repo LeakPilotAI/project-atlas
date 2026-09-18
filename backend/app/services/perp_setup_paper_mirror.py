@@ -240,10 +240,15 @@ class PerpSetupPaperMirror:
             self._cancel_pending(instance, reason="PAPER_POSITION_ALREADY_OPEN", mark=mark)
             return False
         control = paper_risk_controls.snapshot()
+        try:
+            session_stats = await paper_journal.stats()
+            session_net_r = float(session_stats.get("sum_r") or 0.0)
+        except Exception:
+            session_net_r = float(control.get("session_net_r") or 0.0)
         risk_decision = check_paper_risk(
             open_positions=open_positions,
             requested_risk_usd=1.0,
-            session_net_r=float(control.get("session_net_r") or 0.0),
+            session_net_r=session_net_r,
             kill_switch=bool(control.get("kill_switch")),
         )
         if not risk_decision["allowed"]:
