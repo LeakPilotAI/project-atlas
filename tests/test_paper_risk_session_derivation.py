@@ -28,6 +28,6 @@ def test_fill_uses_journal_session_r_for_loss_stop(tmp_path, monkeypatch):
         "limit_price":99.0,"stop":95.0,"tp1":105.0,"tp2":110.0,"signal_price":100.0,"signal_score":80,
         "target_rr":1.8,"tier":"QUALIFIED",
     }}
-    assert asyncio.run(mirror._fill_pending(instance, mark=99.0)) is False
+    assert asyncio.run(mirror._fill_pending(instance, mark=98.98)) is False
     assert not journal.open_calls
     assert "PAPER_RISK_BLOCK" in (tmp_path/"pending.jsonl").read_text(encoding="utf-8")
