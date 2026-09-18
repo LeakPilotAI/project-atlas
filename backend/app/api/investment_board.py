@@ -15,7 +15,7 @@ from app.investment.quality_dips_v2_target_cache import quality_dips_v2_target_c
 from app.investment.quality_dips_v3_alerts import freeze_v3_entry_snapshot, format_v3_alert
 from app.investment.quality_dips_v3_delivery import deliver_v3_events
 from app.investment.quality_dips_v3_forward_store import append_v3_forward_observation
-from app.investment.quality_dips_v3_forward_readiness import forward_readiness
+from app.investment.quality_dips_v3_forward_readiness import forward_readiness, forward_diagnostics
 from app.investment.quality_dips_v3_state import detect_v3_events, quality_dips_v3_state_store
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 
@@ -132,6 +132,7 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "events": v3_events,
             "delivery": v3_delivery,
             "forward_readiness": forward_readiness(),
+            "forward_diagnostics": forward_diagnostics(),
             "execution": "MANUAL_ONLY",
             "live_capital_allowed": False,
             "automatic_real_money_execution": False,
