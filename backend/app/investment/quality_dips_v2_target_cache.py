@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Any, Iterable
 
 from app.investment.storage import DATA_DIR, ensure_dirs
@@ -39,6 +38,7 @@ class QualityDipsV2TargetCache:
         self.client = YFinanceClient(min_interval_sec=0.05, timeout_sec=8.0)
         self._rows: dict[str, dict[str, Any]] = {}
         self._lock = asyncio.Lock()
+        self._refresh_task: asyncio.Task | None = None
         self._load()
 
     def _load(self) -> None:
@@ -53,7 +53,9 @@ class QualityDipsV2TargetCache:
     def _save(self) -> None:
         ensure_dirs()
         CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        CACHE_PATH.write_text(json.dumps({"symbols": self._rows}, indent=2), encoding="utf-8")
+        tmp = CACHE_PATH.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps({"symbols": self._rows}, indent=2), encoding="utf-8")
+        tmp.replace(CACHE_PATH)
 
     def get(self, symbol: str) -> dict[str, Any]:
         return dict(self._rows.get(str(symbol).upper()) or {})
@@ -73,6 +75,28 @@ class QualityDipsV2TargetCache:
         fetched = _dt(self.get(symbol).get("fetched_at"))
         return fetched is not None and _now() - fetched <= TTL
 
+    def schedule_refresh(self, symbols: Iterable[str]) -> bool:
+        """Schedule refresh without blocking an API request. One refresh may run at a time."""
+        clean = tuple(sorted({str(s or "").upper().strip() for s in symbols if str(s or "").strip()}))
+        if not clean or all(self._fresh(s) for s in clean):
+            return False
+        if self._refresh_task is not None and not self._refresh_task.done():
+            return False
+        loop = asyncio.get_running_loop()
+        self._refresh_task = loop.create_task(self.refresh_many(clean), name="quality-dips-v2-target-refresh")
+        self._refresh_task.add_done_callback(self._consume_refresh_result)
+        return True
+
+    @staticmethod
+    def _consume_refresh_result(task: asyncio.Task) -> None:
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            # Provider/cache refresh must never take the Quality Dips API down.
+            pass
+
     async def refresh_many(self, symbols: Iterable[str]) -> None:
         clean = sorted({str(s or "").upper().strip() for s in symbols if str(s or "").strip()})
         needed = [s for s in clean if not self._fresh(s)]
@@ -80,21 +104,27 @@ class QualityDipsV2TargetCache:
             return
         sem = asyncio.Semaphore(5)
 
-        async def one(symbol: str) -> tuple[str, dict[str, Any]]:
+        async def one(symbol: str) -> tuple[str, dict[str, Any] | None]:
             async with sem:
                 try:
                     info = await self.client.info(symbol)
                     targets = {"low": _float(info.get("targetLowPrice")), "mean": _float(info.get("targetMeanPrice")), "high": _float(info.get("targetHighPrice"))}
                     valid = [v for v in targets.values() if v is not None]
                     return symbol, {"targets": targets, "as_of": _now().isoformat(), "fetched_at": _now().isoformat(), "source": "yfinance_info", "complete": len(valid) >= 3}
-                except Exception as exc:
-                    return symbol, {"targets": {}, "as_of": None, "fetched_at": _now().isoformat(), "source": "yfinance_info", "complete": False, "error": type(exc).__name__}
+                except Exception:
+                    # Keep the last-known-good row. A transient provider failure must
+                    # not erase usable normalization evidence from the cache.
+                    return symbol, None
 
         results = await asyncio.gather(*(one(s) for s in needed))
         async with self._lock:
+            changed = False
             for symbol, row in results:
-                self._rows[symbol] = row
-            self._save()
+                if row is not None:
+                    self._rows[symbol] = row
+                    changed = True
+            if changed:
+                self._save()
 
 
 quality_dips_v2_target_cache = QualityDipsV2TargetCache()
