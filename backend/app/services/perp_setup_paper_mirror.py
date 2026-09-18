@@ -125,6 +125,17 @@ class PerpSetupPaperMirror:
             return previous_price < l1 and mark >= l1
         return False
 
+    def _has_terminal_pending_event(self, instance: str) -> bool:
+        """Return True when this exact setup instance already terminally resolved."""
+        for row in iter_jsonl(self._pending_path):
+            if row.get("event") == "_malformed":
+                continue
+            if str(row.get("setup_instance_id") or "") != instance:
+                continue
+            if str(row.get("event") or "").lower() in {"filled", "cancelled"}:
+                return True
+        return False
+
     def _arm(self, setup: dict[str, Any], *, mark: float, instruction: dict[str, Any]) -> bool:
         tier = str(setup.get("tier") or "").upper()
         symbol = str(setup.get("symbol") or "").upper()
@@ -142,6 +153,7 @@ class PerpSetupPaperMirror:
             not instance
             or instance in self._mirrored_instances
             or instance in self._pending
+            or self._has_terminal_pending_event(instance)
             or symbol == ""
             or side not in {"LONG", "SHORT"}
             or str(instruction.get("action") or "") != "PLACE_RESTING_L1"
