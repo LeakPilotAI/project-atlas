@@ -52,7 +52,7 @@ class QualityDipsV3StateStore:
     def event_seen(self, key: str) -> bool:
         return str(key or "") in self.events
 
-    def mark_event(self, key: str, *, symbol: str, event_type: str) -> None:
+    def mark_event(self, key: str, *, symbol: str, event_type: str, payload: dict[str, Any] | None = None) -> None:
         if not key:
             return
         self.events[key] = {
@@ -60,7 +60,12 @@ class QualityDipsV3StateStore:
             "symbol": str(symbol or "").upper(),
             "event_type": event_type,
             "at": datetime.now(timezone.utc).isoformat(),
+            "payload": deepcopy(payload or {}),
         }
+
+    def get_event(self, key: str) -> dict[str, Any] | None:
+        row = self.events.get(str(key or ""))
+        return deepcopy(row) if isinstance(row, dict) else None
 
 
 def detect_v3_events(previous: dict[str, Any] | None, current: dict[str, Any]) -> list[dict[str, Any]]:
