@@ -41,3 +41,49 @@ def test_runtime_preserves_manual_only_v2_boundary():
     assert out["execution"] == "MANUAL_ONLY"
     assert out["live_capital_allowed"] is False
     assert out["automatic_real_money_execution"] is False
+
+
+def test_target_cache_schedule_refresh_is_non_blocking(monkeypatch):
+    import asyncio
+    from app.investment.quality_dips_v2_target_cache import QualityDipsV2TargetCache
+
+    async def run():
+        cache = QualityDipsV2TargetCache()
+        cache._rows = {}
+        started = asyncio.Event()
+        release = asyncio.Event()
+
+        async def slow_refresh(symbols):
+            started.set()
+            await release.wait()
+
+        monkeypatch.setattr(cache, "refresh_many", slow_refresh)
+        assert cache.schedule_refresh(["MSFT"]) is True
+        await asyncio.wait_for(started.wait(), timeout=0.2)
+        assert cache._refresh_task is not None
+        assert cache._refresh_task.done() is False
+        release.set()
+        await cache._refresh_task
+
+    asyncio.run(run())
+
+
+def test_target_cache_transient_failure_preserves_last_good(monkeypatch):
+    import asyncio
+    from app.investment.quality_dips_v2_target_cache import QualityDipsV2TargetCache
+
+    async def run():
+        cache = QualityDipsV2TargetCache()
+        old = {"targets": {"low": 100.0, "mean": 120.0, "high": 140.0}, "as_of": "2026-09-17T00:00:00+00:00", "fetched_at": "2020-01-01T00:00:00+00:00", "source": "yfinance_info", "complete": True}
+        cache._rows = {"MSFT": old}
+
+        async def fail_info(symbol):
+            raise RuntimeError("provider down")
+
+        monkeypatch.setattr(cache.client, "info", fail_info)
+        monkeypatch.setattr(cache, "_save", lambda: None)
+        await cache.refresh_many(["MSFT"])
+        assert cache.get("MSFT") == old
+        assert len(cache.sources("MSFT")) == 3
+
+    asyncio.run(run())
