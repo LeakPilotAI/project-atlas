@@ -12,6 +12,7 @@ from app.investment.board import build_quality_dips_board
 from app.investment.quality_dip_quotes import apply_quote_overlay, quality_dip_quote_service, quote_health
 from app.investment.quality_dips_v2_board import attach_v2_board
 from app.investment.quality_dips_v2_target_cache import quality_dips_v2_target_cache
+from app.investment.quality_dips_v3_state import detect_v3_events, quality_dips_v3_state_store
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 
 router = APIRouter(prefix="/investments", tags=["investments"])
@@ -52,6 +53,24 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
     pending_hits = accumulation_ladder_store.sync(board)
     board = accumulation_ladder_store.overlay(board)
 
+    v3_events: list[dict[str, Any]] = []
+    for row in board:
+        symbol = str(row.get("symbol") or "").upper().strip()
+        v3 = dict((row.get("quality_dips_v2") or {}).get("quality_dips_v3") or {})
+        if not symbol or not v3:
+            continue
+        previous = quality_dips_v3_state_store.previous(symbol)
+        for event in detect_v3_events(previous, v3):
+            if not quality_dips_v3_state_store.event_seen(str(event.get("key") or "")):
+                quality_dips_v3_state_store.mark_event(
+                    str(event.get("key") or ""),
+                    symbol=symbol,
+                    event_type=str(event.get("event_type") or "UNKNOWN"),
+                )
+                v3_events.append(event)
+        quality_dips_v3_state_store.remember(symbol, v3)
+    quality_dips_v3_state_store.save()
+
     counts = {"ACCUMULATE": 0, "PREPARE": 0, "WATCH": 0, "STAND_DOWN": 0}
     v2_counts = {"WATCH": 0, "ACCUMULATION": 0, "DEEP_VALUE": 0, "GENERATIONAL": 0, "THESIS_BROKEN": 0}
     for row in board:
@@ -86,6 +105,14 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "price_alone_breaks_thesis": False,
         },
         "quote_health": quote_health(quotes),
+        "quality_dips_v3": {
+            "cycle": "QUALITY_DIPS_V3_MARGIN_OF_SAFETY",
+            "events_seen_this_request": len(v3_events),
+            "events": v3_events,
+            "execution": "MANUAL_ONLY",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        },
         "accumulation_alerts": {
             "active_ladders": active_ladders,
             "monitor_interval_sec": 30,
