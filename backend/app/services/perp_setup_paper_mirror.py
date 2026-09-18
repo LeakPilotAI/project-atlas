@@ -314,21 +314,6 @@ class PerpSetupPaperMirror:
         self._seed()
         opened = closed = marked = skipped = armed = filled = cancelled = recovered = expired = 0
 
-        now = datetime.now(timezone.utc)
-        for instance, row in list(self._pending.items()):
-            raw = row.get("timestamp")
-            try:
-                armed_at = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
-                if armed_at.tzinfo is None:
-                    armed_at = armed_at.replace(tzinfo=timezone.utc)
-                age = (now - armed_at.astimezone(timezone.utc)).total_seconds()
-            except Exception:
-                age = MAX_PENDING_AGE_SEC + 1
-            if age > MAX_PENDING_AGE_SEC:
-                self._cancel_pending(instance, reason="EXPIRED_PENDING_LIMIT")
-                expired += 1
-                cancelled += 1
-
         for trade in list(paper_journal.list_open()):
             if str(trade.get("source") or "") != SOURCE:
                 continue
@@ -366,6 +351,27 @@ class PerpSetupPaperMirror:
                 continue
             if str(setup.get("state") or "").upper() in {"INVALIDATED", "TP1_HIT", "TP2_HIT"}:
                 self._cancel_pending(instance, reason=f"SETUP_{str(setup.get('state')).upper()}")
+                cancelled += 1
+
+        # Age expiry is a secondary safety net, not a replacement for lifecycle
+        # semantics. A retained discovery-stale setup intentionally keeps its
+        # already-published pending order during the retention grace window.
+        now = datetime.now(timezone.utc)
+        for instance, row in list(self._pending.items()):
+            setup = current_by_instance.get(instance)
+            if setup is not None and bool(setup.get("discovery_stale")):
+                continue
+            raw = row.get("timestamp")
+            try:
+                armed_at = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+                if armed_at.tzinfo is None:
+                    armed_at = armed_at.replace(tzinfo=timezone.utc)
+                age = (now - armed_at.astimezone(timezone.utc)).total_seconds()
+            except Exception:
+                age = MAX_PENDING_AGE_SEC + 1
+            if age > MAX_PENDING_AGE_SEC:
+                self._cancel_pending(instance, reason="EXPIRED_PENDING_LIMIT")
+                expired += 1
                 cancelled += 1
 
         for setup in setups:
