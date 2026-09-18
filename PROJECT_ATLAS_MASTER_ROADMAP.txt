@@ -151,3 +151,24 @@ NEXT ENGINEERING GATES — DO NOT SKIP
 
 PERPS HISTORICAL RESULT — STILL IMMUTABLE
 Historical experiment remains FAILED_NEGATIVE. Aggregate HOLDOUT 546 trades / -26.7235R / -0.04894R expectancy. Do not relabel, erase, or tune this result. New perps work is a separate PAPER/SHADOW recovery cycle.
+
+
+V3 / EXECUTION HARDENING IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+e5f0dd1 atlas: test V3 margin-of-safety entry policy
+36dc8ba atlas: render V3 margin-of-safety research in Quality Dips
+297fe5b atlas: test V3 projection beside immutable V2
+6df1b4a atlas: interrupt unfinished paper trades on shutdown
+1cef51a atlas: reconcile paper state before graceful shutdown
+2b9ee71 atlas: test clean paper shutdown reconciliation
+
+Implemented:
+- V3 visible above frozen V2 in Quality Dips; legacy/V2/V3 remain distinguishable.
+- V3 focused tests cover robust normalization, 15/20/25/30 MOS ladder, fail-closed evidence, ACCUMULATION/DEEP_VALUE/GENERATIONAL boundaries, zero-signal validity, and no-guarantee contract.
+- graceful shutdown now persists open paper marks then records unfinished PAPER positions as INTERRUPTED/non-performance records
+- interrupted paper rows remain append-only evidence, are not deleted, are excluded from performance tallies, and cannot reopen as phantom positions on restart
+- completed historical trades remain untouched
+- real-money execution remains disabled
+
+VALIDATION REQUIRED BEFORE GREEN:
+Run focused V3 + board + shutdown reconciliation tests, then full pytest. Do not label GREEN until local output is supplied.
