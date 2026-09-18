@@ -202,6 +202,13 @@ async def lifespan(app: FastAPI):
     yield
 
     log.info("Project Atlas shutting down")
+    try:
+        from app.services.paper_journal import paper_journal
+        persisted = paper_journal.persist_open_marks()
+        interrupted = paper_journal.interrupt_open_for_shutdown()
+        log.info("paper shutdown reconciliation", persisted_marks=persisted, interrupted=len(interrupted))
+    except Exception as e:
+        log.warning("paper shutdown reconciliation failed", error=str(e)[:200])
     if not boot_task.done():
         boot_task.cancel()
         try:
