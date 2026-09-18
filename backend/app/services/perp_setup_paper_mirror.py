@@ -26,6 +26,8 @@ from app.services.paper_execution_model import (
     DEFAULT_FEE_BPS_PER_SIDE,
     DEFAULT_SLIPPAGE_BPS_PER_SIDE,
     touched_with_buffer,
+    conservative_stop_exit,
+    conservative_target_exit,
 )
 from app.trading_core.perp_board import build_perp_board
 
@@ -397,10 +399,12 @@ class PerpSetupPaperMirror:
             hit_stop = (side == "LONG" and mark <= stop) or (side == "SHORT" and mark >= stop)
             hit_tp1 = (side == "LONG" and mark >= tp1) or (side == "SHORT" and mark <= tp1)
             if hit_stop:
-                await paper_journal.close_trade(tid, exit_price=float(mark), result="LOSS", exit_reason="SETUP_STOP")
+                exit_price = conservative_stop_exit(side=side, mark=float(mark), stop_price=stop)
+                await paper_journal.close_trade(tid, exit_price=exit_price, result="LOSS", exit_reason="SETUP_STOP")
                 closed += 1
             elif hit_tp1:
-                await paper_journal.close_trade(tid, exit_price=float(mark), result="WIN", exit_reason="SETUP_TP1")
+                exit_price = conservative_target_exit(side=side, mark=float(mark), target_price=tp1)
+                await paper_journal.close_trade(tid, exit_price=exit_price, result="WIN", exit_reason="SETUP_TP1")
                 closed += 1
 
         # A discovery-stale retained setup remains present during the lifecycle grace
