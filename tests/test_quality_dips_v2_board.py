@@ -68,3 +68,14 @@ def test_projection_surfaces_trend_for_future_active_position_display():
     assert out["trend"]["short_term"] == "DOWN"
     assert out["trend"]["long_term"] == "UP"
     assert out["policy"]["price_alone_breaks_thesis"] is False
+
+
+def test_projection_attaches_v3_without_mutating_v2_contract():
+    out = build_v2_projection(_row())
+    v3 = out["quality_dips_v3"]
+    assert v3["cycle"] == "QUALITY_DIPS_V3_MARGIN_OF_SAFETY"
+    assert v3["fair_value_anchor"] == 140.0
+    assert [x["limit_price"] for x in v3["entry_ladder"]["levels"]] == [119.0, 112.0, 105.0, 98.0]
+    assert out["policy"]["minimum_upside_hurdle_pct"] == 29.0
+    assert out["entry_ladder"]["levels"][0]["required_upside_pct"] == 29.0
+    assert v3["execution"] == "MANUAL_ONLY"
