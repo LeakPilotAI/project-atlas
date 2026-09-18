@@ -12,6 +12,7 @@ from app.investment.board import build_quality_dips_board
 from app.investment.quality_dip_quotes import apply_quote_overlay, quality_dip_quote_service, quote_health
 from app.investment.quality_dips_v2_board import attach_v2_board
 from app.investment.quality_dips_v2_target_cache import quality_dips_v2_target_cache
+from app.investment.quality_dips_v3_alerts import freeze_v3_entry_snapshot, format_v3_alert
 from app.investment.quality_dips_v3_state import detect_v3_events, quality_dips_v3_state_store
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 
@@ -62,12 +63,21 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         previous = quality_dips_v3_state_store.previous(symbol)
         for event in detect_v3_events(previous, v3):
             if not quality_dips_v3_state_store.event_seen(str(event.get("key") or "")):
+                payload = dict(event)
+                if str(event.get("event_type") or "") == "ENTRY_LEVEL_REACHED":
+                    payload["frozen_entry_snapshot"] = freeze_v3_entry_snapshot(
+                        symbol=symbol,
+                        event=event,
+                        plan=v3,
+                    )
+                payload["message"] = format_v3_alert(event, v3)
                 quality_dips_v3_state_store.mark_event(
                     str(event.get("key") or ""),
                     symbol=symbol,
                     event_type=str(event.get("event_type") or "UNKNOWN"),
+                    payload=payload,
                 )
-                v3_events.append(event)
+                v3_events.append(payload)
         quality_dips_v3_state_store.remember(symbol, v3)
     quality_dips_v3_state_store.save()
 
