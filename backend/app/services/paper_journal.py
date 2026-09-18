@@ -346,6 +346,37 @@ class PaperJournal:
                 pass
         return n
 
+    def interrupt_open_for_shutdown(self) -> List[str]:
+        """Close unfinished PAPER trades as non-performance INTERRUPTED records.
+
+        Graceful shutdown must not leave an in-flight simulated position able to
+        become a phantom fill/close after restart. Historical completed trades stay
+        untouched. Interrupted rows are excluded from performance tallies.
+        """
+        interrupted: List[str] = []
+        for tid, p in list(self._open.items()):
+            if str(p.get("trade_type") or "PAPER").upper() != "PAPER":
+                continue
+            mark = p.get("mark") or p.get("actual_entry_price") or p.get("entry") or 0.0
+            try:
+                mark_f = float(mark)
+            except (TypeError, ValueError):
+                mark_f = 0.0
+            row = {
+                **{k: v for k, v in p.items() if k != "event" and not str(k).startswith("_")},
+                "event": "close", "status": "interrupted", "timestamp": _iso(),
+                "exit_timestamp": _iso(), "actual_exit_price": mark_f,
+                "exit_reason": "atlas_shutdown", "result": "INTERRUPTED",
+                "interrupted": True, "scratch": True, "win": False,
+                "counts_for_live": False, "R_multiple": 0.0,
+                "gross_pnl_r": 0.0, "net_pnl_r": 0.0,
+                "notes": "Interrupted by graceful Atlas shutdown; excluded from strategy performance.",
+            }
+            self._append(JOURNAL_PATH, row)
+            self._open.pop(tid, None)
+            interrupted.append(str(tid))
+        return interrupted
+
     def reconcile_from_disk(self) -> Dict[str, Any]:
         """Journal file is source of truth.
 
@@ -682,7 +713,7 @@ class PaperJournal:
                     continue
                 if str(row.get("trade_type") or "PAPER").upper() == "TEST":
                     continue
-                if _is_session_roll(row):
+                if _is_session_roll(row) or str(row.get("result") or "").upper() == "INTERRUPTED":
                     continue
                 all_rows.append(row)
                 if _opened_in_session(row, started):
