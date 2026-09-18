@@ -583,3 +583,54 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
+
+
+PASS 7 — VERIFIED LOCAL GREEN
+User local validation received:
+- focused pass-7 suite: 18 passed in 1.08s
+- full suite: 920 passed, 2 warnings in 48.57s
+- warnings remain dependency deprecations only
+Pass 7 is CLOSED/GREEN.
+
+EIGHTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+adce6a3 atlas: add local V3 development report runner
+4fafe07 atlas: add paper session-loss stop and kill switch
+325a685 atlas: test paper session stop and kill switch
+71a99a2 atlas: reject stale mark before paper fill
+96ee871 atlas: test stale mark rejection before paper fill
+
+Eighth-pass behavior:
+- operator can now run a local V3 DEVELOPMENT evidence report against backend/data/investment/observations.jsonl
+- runner writes backend/data/investment/quality_dips_v3_development_report.json atomically
+- it remains fail-closed and does not synthesize missing historical V3 states
+- paper risk guard now supports a -3R session loss stop
+- operator kill switch blocks new PAPER risk immediately
+- stale mark timestamps are rejected again immediately before paper fill, not only at initial arm
+- stale-fill rejection appends STALE_MARK_BEFORE_FILL cancellation evidence
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 8 — local DEVELOPMENT runner + session stop/kill switch + stale-fill rejection
+[NEXT AFTER GREEN] Run the local V3 DEVELOPMENT report and inspect actual coverage/gaps
+[NEXT] If DEVELOPMENT evidence is sufficient, freeze V3 and run untouched HOLDOUT
+[NEXT] Wire session-loss state/kill switch into runtime operator controls
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
