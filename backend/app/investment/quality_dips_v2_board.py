@@ -13,6 +13,7 @@ from app.investment.quality_dips_v2_entries import build_entry_ladder
 from app.investment.quality_dips_v2_gate import evaluate_v2_gate
 from app.investment.quality_dips_v2_runtime import enrich_research_row
 from app.investment.quality_dips_v2_valuation import from_research_row as valuation_from_research_row
+from app.investment.quality_dips_v3 import build_v3_entry_plan
 
 
 def _merge_valuation(row: dict[str, Any]) -> tuple[dict[str, Any], bool]:
@@ -36,6 +37,19 @@ def build_v2_projection(row: dict[str, Any]) -> dict[str, Any]:
         normalization_value=dict(evidence.get("normalization_value") or {}),
         valuation_window_complete=(valuation_complete and not bool(evidence.get("missing_v2_evidence"))),
         current_price=evidence.get("price"),
+    )
+
+    v3 = build_v3_entry_plan(
+        symbol=str(evidence.get("symbol") or ""),
+        current_price=evidence.get("price"),
+        normalization=dict(evidence.get("normalization_value") or {}),
+        quality_score=evidence.get("quality_score"),
+        fundamentals_score=evidence.get("fundamentals_score"),
+        valuation_score=evidence.get("valuation_score"),
+        drawdown_percentile=evidence.get("drawdown_percentile"),
+        evidence_quality=evidence.get("evidence_quality"),
+        thesis_intact=bool(evidence.get("thesis_intact")),
+        value_trap=bool(evidence.get("value_trap")),
     )
 
     return {
@@ -64,6 +78,7 @@ def build_v2_projection(row: dict[str, Any]) -> dict[str, Any]:
         "read_only": True,
         "live_capital_allowed": False,
         "automatic_real_money_execution": False,
+        "quality_dips_v3": v3,
     }
 
 
