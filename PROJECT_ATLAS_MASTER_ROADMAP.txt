@@ -1085,3 +1085,60 @@ FULL ROADMAP STATUS — CURRENT
 [NEXT] Desktop runtime/longevity verification
 [BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
 [MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 14 — VERIFIED LOCAL GREEN
+User local validation:
+- focused pass-14 suite: 20 passed, 1 warning in 1.06s
+- full suite: 936 passed, 2 warnings in 42.95s
+- warnings remain dependency deprecations only
+Pass 14 is CLOSED/GREEN.
+
+FIFTEENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+7450fc5 atlas: add conservative paper exit price models
+2e7be16 atlas: apply conservative gap and target exit pricing
+6aa7649 atlas: trigger reconciliation warnings from runtime service
+c8a5e7f atlas: surface V3 forward state diagnostics in UI
+b7a61ed atlas: test conservative paper stop and target exits
+
+Fifteenth-pass behavior:
+- gap-through-stop PAPER exits now use the worse observed mark versus stop, plus adverse slippage
+- TP1 exits cap favorable fills at the target and then apply adverse slippage rather than granting the full observed overshoot
+- runtime perp delivery loop now executes the read-only reconciliation warning check each cycle
+- reconciliation warning failures do not stop the paper mirror or normal alert loop
+- Quality Dips UI now surfaces non-WATCH forward counts/rate and WATCH/ACCUMULATION/DEEP_VALUE/GENERATIONAL state distribution
+- historical perps evidence remains immutable
+- real-money automatic execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[GREEN] V3/perps pass 11 — 19 focused / 929 full
+[GREEN] V3/perps pass 12 — 21 focused / 930 full
+[GREEN] V3/perps pass 13 — 19 focused / 932 full
+[GREEN] V3/perps pass 14 — 20 focused / 936 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 15 — runtime reconciliation trigger + conservative exits + richer V3 diagnostics UI
+[NEXT AFTER GREEN] Reconciliation alert dedupe/cooldown so one persistent anomaly cannot spam Discord
+[NEXT] Add malformed-event counts and acknowledgement health to reconciliation diagnostics
+[NEXT] Add forward evidence trend diagnostics over rolling windows without retuning V3
+[NEXT] Desktop runtime/longevity verification
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
