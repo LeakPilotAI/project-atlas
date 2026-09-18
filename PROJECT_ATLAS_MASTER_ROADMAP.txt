@@ -1,7 +1,7 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-09-17
 Branch: chatgpt/atlas-rebuild-v1
-Current cycle: QUALITY DIPS V2.1 — CLOSED / RESEARCH_READY_MANUAL_ONLY
+Current cycle: QUALITY DIPS V2.1 — CLOSED / RESEARCH_READY_MANUAL_ONLY\nOperational reliability hotfix: VERIFIED LOCAL GREEN
 
 PRESERVED CLOSED CHECKPOINT
 Prior Atlas engineering/historical evidence remains closed and immutable. Historical perps experiment: FAILED_NEGATIVE. PAPER/SHADOW recovery GREEN. Frozen Quality Dips V2 policy/hurdles and historical evidence are not retuned or relabeled by V2.1. Quality Dips V2.1 does not relabel, retune, or overwrite those results.
@@ -92,3 +92,30 @@ START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
 STOP: C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
 
 END OF MASTER ROADMAP
+
+
+OPERATIONAL RELIABILITY HOTFIX — VERIFIED LOCAL GREEN
+Problem observed after hours of runtime: Quality Dips intermittently disappeared / browser reported Failed to fetch.
+Root cause repaired: the Quality Dips API awaited external analyst-target refreshes, allowing provider latency/rate limiting to stall the board request.
+
+Commits:
+4186290 atlas: make V2 target refresh non-blocking and stale-safe
+99dc7e2 atlas: isolate Quality Dips board from target provider latency
+de84c6d atlas: test non-blocking Quality Dips target refresh
+85b7e5f atlas: test stale-safe background target refresh
+
+Behavior after repair:
+- analyst-target refresh runs in background instead of blocking the API response
+- last-known-good target evidence remains usable during transient provider failures
+- failed refreshes do not erase valid cached normalization evidence
+- cache write uses atomic temp-file replacement
+- only one background target refresh runs at a time
+- API exposes normalization_refresh_mode=BACKGROUND_STALE_WHILE_REVALIDATE
+- no policy thresholds, historical evidence, or broker-execution boundaries changed
+
+Local validation:
+12 focused passed, 2 warnings in 5.19s
+885 full-suite passed, 2 warnings in 44.45s
+
+Runtime activation required:
+Restart Atlas once so the running Python process loads these commits, then stress the Quality Dips endpoint repeatedly and confirm no Failed to fetch regression.
