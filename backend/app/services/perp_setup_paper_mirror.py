@@ -28,6 +28,7 @@ SOURCE = "perp_manual_auto"
 STRATEGY = "perp_setup_auto_v2_resting_limit"
 PENDING_EVENT_PATH = Path(__file__).resolve().parents[2] / "data" / "perp_setup_paper_limits.jsonl"
 MAX_PENDING_AGE_SEC = 6 * 3600
+MAX_MARK_AGE_SEC = 30
 
 
 def _now() -> str:
@@ -324,6 +325,19 @@ class PerpSetupPaperMirror:
             "closed_total": len(closed_ids),
         }
 
+    @staticmethod
+    def _fresh_mark_timestamp(setup: dict[str, Any]) -> bool:
+        raw = setup.get("mark_timestamp") or setup.get("price_timestamp") or setup.get("updated_at")
+        if not raw:
+            return True
+        try:
+            ts = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            return (datetime.now(timezone.utc) - ts.astimezone(timezone.utc)).total_seconds() <= MAX_MARK_AGE_SEC
+        except Exception:
+            return False
+
     async def sync(self, setups: list[dict[str, Any]], price_map: dict[str, float]) -> dict[str, int]:
         """Mirror every fresh manual resting-limit instruction into PAPER."""
         self._seed()
@@ -392,7 +406,7 @@ class PerpSetupPaperMirror:
         for setup in setups:
             symbol = str(setup.get("symbol") or "").upper()
             mark = float(price_map.get(symbol) or setup.get("price") or setup.get("mark") or 0.0)
-            if mark <= 0:
+            if mark <= 0 or not self._fresh_mark_timestamp(setup):
                 skipped += 1
                 continue
             instruction = self._instruction(setup)
