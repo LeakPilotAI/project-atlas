@@ -10,10 +10,10 @@ def test_stale_pending_limit_expires_before_fill(tmp_path):
     mirror._seeded = True
     old = (datetime.now(timezone.utc) - timedelta(hours=7)).isoformat()
     mirror._pending = {
-        "BTC|a|a": {
+        "BTC:LONG|a|a": {
             "timestamp": old,
             "event": "armed",
-            "setup_instance_id": "BTC|a|a",
+            "setup_instance_id": "BTC:LONG|a|a",
             "setup_key": "BTC:LONG",
             "symbol": "BTC",
             "side": "LONG",
