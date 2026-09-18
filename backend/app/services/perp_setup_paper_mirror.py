@@ -268,6 +268,21 @@ class PerpSetupPaperMirror:
         self._mirrored_instances.add(instance)
         return True
 
+    def cancel_all_pending(self, *, reason: str = "ATLAS_SHUTDOWN") -> int:
+        """Cancel every outstanding simulated resting limit without deleting history.
+
+        Graceful shutdown should leave no pending paper order that can fill after a
+        later restart. Each cancellation is appended to the pending-order journal.
+        """
+        self._seed()
+        n = 0
+        for instance in list(self._pending):
+            if instance not in self._pending:
+                continue
+            self._cancel_pending(instance, reason=reason)
+            n += 1
+        return n
+
     def status(self) -> dict[str, int]:
         self._seed()
         rows = iter_jsonl(JOURNAL_PATH)
