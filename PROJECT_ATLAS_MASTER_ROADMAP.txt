@@ -634,3 +634,66 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
+
+
+PASS 8 — VERIFIED LOCAL GREEN
+User local validation:
+- focused pass-8 suite: 14 passed in 1.10s
+- full suite: 923 passed, 2 warnings in 42.69s
+- warnings remain dependency deprecations only
+Pass 8 is CLOSED/GREEN.
+
+V3 DEVELOPMENT EVIDENCE CHECKPOINT — BLOCKED BY MISSING HISTORICAL V3 PIT DATA
+Local runner result:
+- decision: BLOCKED
+- DEVELOPMENT observations: 0
+- HOLDOUT observations: 0
+- symbols: []
+- state_counts: {}
+- PIT ordering valid: true
+- lookahead_allowed: false
+- holdout_retuning_allowed: false
+- automatic_real_money_execution: false
+
+Interpretation:
+- Atlas correctly refused to fabricate historical V3 states from present-day data.
+- Existing investment observation storage does not contain timestamped V3-compatible patient states for the frozen DEVELOPMENT/HOLDOUT windows.
+- Therefore a genuine retrospective V3 DEVELOPMENT/HOLDOUT study cannot be claimed from current stored evidence.
+- Do not synthesize or backfill V3 states using current normalization/targets/fundamentals.
+- V3 must accumulate clean forward PIT/shadow observations from this point forward before evidence-based promotion.
+
+ROADMAP CHANGE:
+- replace retrospective V3 HOLDOUT gate with FORWARD_SHADOW_V3 evidence accumulation
+- persist every V3 evaluation with timestamp, price, fair-value anchor, evidence inputs, patient state, and reached L1-L4 status
+- define a future frozen forward evaluation window only after enough observations exist
+- keep current 15/20/25/30 MOS parameters frozen during forward evidence collection unless a NEW development cycle is explicitly opened
+- zero signals remain valid
+- Quality Dips stays MANUAL_ONLY
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[NEXT] Forward V3 PIT/shadow evidence recorder
+[NEXT] Persist full V3 evidence snapshots on every evaluation
+[NEXT] Define forward validation minimum-coverage gate before any model evidence decision
+[NEXT] Wire PAPER session loss stop and operator kill switch into runtime operator controls
+[NEXT] Add stale-data rejection to open-position mark/exit decisions
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
