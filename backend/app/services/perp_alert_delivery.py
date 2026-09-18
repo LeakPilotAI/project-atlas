@@ -106,6 +106,7 @@ class PerpAlertDeliveryService:
         self.running = False
         self.last_result: Dict[str, int] = {"attempted": 0, "delivered": 0, "acknowledged": 0, "failed": 0}
         self.last_paper_result: Dict[str, int] = {"opened": 0, "closed": 0, "marked": 0, "skipped": 0}
+        self.last_reconciliation_result: Dict[str, Any] = {"attempted": 0, "delivered": 0, "reconciliation_ok": True}
         self.last_error: Optional[str] = None
         self._task: Optional[asyncio.Task] = None
 
@@ -168,6 +169,11 @@ class PerpAlertDeliveryService:
             except Exception as exc:
                 self.last_error = f"{type(exc).__name__}: {str(exc)[:180]}"
                 log.warning("Manual perp Discord delivery pass failed", error=self.last_error)
+            try:
+                from app.services.paper_reconciliation_alert import alert_reconciliation_if_needed
+                self.last_reconciliation_result = await alert_reconciliation_if_needed()
+            except Exception as exc:
+                log.warning("PAPER reconciliation alert pass failed", error=f"{type(exc).__name__}: {str(exc)[:180]}")
             await asyncio.sleep(self.interval_seconds)
 
 
