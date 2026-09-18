@@ -846,3 +846,29 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 11 VALIDATION — FOCUSED GREEN / FULL REGRESSION REPAIRED, RETEST REQUIRED
+User local validation:
+- focused pass-11 suite: 9 passed, 2 warnings in 2.58s
+- full suite: 922 passed, 7 failed, 2 warnings in 44.17s
+- all 7 failures were in test_perp_setup_paper_mirror_v4 and logged PAPER_RISK_BLOCK
+Root cause:
+- test_paper_risk_api mutated the process-global paper_risk_controls.kill_switch to true and did not restore it
+- the full pytest process therefore leaked operator control state into later mirror tests
+- production risk blocking behaved correctly; the regression was test isolation
+Repair:
+- test_paper_risk_api now snapshots and restores path, kill_switch, and session_net_r in finally
+- production PAPER risk policy and execution thresholds are unchanged
+Commit:
+6780087 atlas: isolate paper risk API test state
+
+STATUS:
+[REPAIR CODE COMPLETE / LOCAL RETEST PENDING] Pass 11
+[NEXT AFTER GREEN] dashboard PAPER kill-switch + V3 readiness UI
+[NEXT] derive PAPER session_net_r from active session journal
+[NEXT] fee/slippage/fill realism and observability
+[NEXT] forward V3 coverage diagnostics
+[NEXT] desktop runtime/longevity verification
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
