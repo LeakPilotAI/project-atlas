@@ -62,3 +62,20 @@ def forward_readiness(path: Path = V3_FORWARD_PATH) -> dict[str, Any]:
         "live_capital_allowed":False,
         "automatic_real_money_execution":False,
     }
+
+
+def forward_diagnostics(path: Path = V3_FORWARD_PATH) -> dict[str, Any]:
+    rows=load_forward_rows(path)
+    by_day=Counter(d for d in (_parse_day(r.get("timestamp")) for r in rows) if d)
+    by_symbol=Counter(str(r.get("symbol") or "").upper() for r in rows if str(r.get("symbol") or ""))
+    states=Counter(str(r.get("patient_state") or "UNKNOWN").upper() for r in rows)
+    non_watch=sum(v for k,v in states.items() if k not in {"WATCH","UNKNOWN"})
+    return {
+        "evaluations_per_day": dict(sorted(by_day.items())),
+        "top_symbols": dict(by_symbol.most_common(20)),
+        "state_counts": dict(states),
+        "non_watch_evaluations": non_watch,
+        "non_watch_rate": round(non_watch/len(rows),4) if rows else 0.0,
+        "execution":"MANUAL_ONLY",
+        "live_capital_allowed":False,
+    }
