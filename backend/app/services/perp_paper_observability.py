@@ -175,6 +175,41 @@ def build_paper_observability(setups: Iterable[dict[str, Any]] = ()) -> dict[str
     return {
         "pending_health": pending_health(setups),
         "clean_cohort": cohort_summary(),
+        "reconciliation": reconciliation_summary(),
         "execution": "PAPER_ONLY",
         "real_order_actions": False,
+    }
+
+
+def reconciliation_summary() -> dict[str, Any]:
+    opens: dict[str, dict[str, Any]] = {}
+    closes: set[str] = set()
+    fills: Counter[str] = Counter()
+    for row in iter_jsonl(JOURNAL_PATH):
+        if row.get("event") == "_malformed":
+            continue
+        tid = str(row.get("trade_id") or "")
+        if not tid:
+            continue
+        ev = str(row.get("event") or "").lower()
+        if ev == "open" and str(row.get("source") or "") == SOURCE:
+            opens[tid] = row
+        elif ev == "close":
+            closes.add(tid)
+    for row in iter_jsonl(PENDING_EVENT_PATH):
+        if row.get("event") == "_malformed":
+            continue
+        if str(row.get("event") or "").lower() == "filled":
+            fills[str(row.get("setup_instance_id") or "")] += 1
+    duplicate_fill_instances = sorted(k for k,v in fills.items() if k and v > 1)
+    orphan_open_ids = sorted(tid for tid in opens if tid not in closes)
+    return {
+        "journal_open_events": len(opens),
+        "journal_closed_events": sum(1 for tid in opens if tid in closes),
+        "journal_currently_open": len(orphan_open_ids),
+        "duplicate_fill_instances": duplicate_fill_instances,
+        "duplicate_fill_count": len(duplicate_fill_instances),
+        "reconciliation_ok": len(duplicate_fill_instances) == 0,
+        "execution": "PAPER_ONLY",
+        "live_capital_allowed": False,
     }
