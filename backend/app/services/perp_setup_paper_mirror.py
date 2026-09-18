@@ -207,6 +207,9 @@ class PerpSetupPaperMirror:
         row = self._pending.get(instance)
         if not row:
             return False
+        if self._has_terminal_pending_event(instance):
+            self._pending.pop(instance, None)
+            return False
         symbol = str(row.get("symbol") or "").upper()
         side = str(row.get("side") or "").upper()
         limit_price = float(row.get("limit_price") or 0.0)
