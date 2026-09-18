@@ -27,6 +27,7 @@ log = get_logger("perp_setup_paper_mirror")
 SOURCE = "perp_manual_auto"
 STRATEGY = "perp_setup_auto_v2_resting_limit"
 PENDING_EVENT_PATH = Path(__file__).resolve().parents[2] / "data" / "perp_setup_paper_limits.jsonl"
+MAX_PENDING_AGE_SEC = 6 * 3600
 
 
 def _now() -> str:
@@ -311,7 +312,22 @@ class PerpSetupPaperMirror:
     async def sync(self, setups: list[dict[str, Any]], price_map: dict[str, float]) -> dict[str, int]:
         """Mirror every fresh manual resting-limit instruction into PAPER."""
         self._seed()
-        opened = closed = marked = skipped = armed = filled = cancelled = recovered = 0
+        opened = closed = marked = skipped = armed = filled = cancelled = recovered = expired = 0
+
+        now = datetime.now(timezone.utc)
+        for instance, row in list(self._pending.items()):
+            raw = row.get("timestamp")
+            try:
+                armed_at = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+                if armed_at.tzinfo is None:
+                    armed_at = armed_at.replace(tzinfo=timezone.utc)
+                age = (now - armed_at.astimezone(timezone.utc)).total_seconds()
+            except Exception:
+                age = MAX_PENDING_AGE_SEC + 1
+            if age > MAX_PENDING_AGE_SEC:
+                self._cancel_pending(instance, reason="EXPIRED_PENDING_LIMIT")
+                expired += 1
+                cancelled += 1
 
         for trade in list(paper_journal.list_open()):
             if str(trade.get("source") or "") != SOURCE:
@@ -396,6 +412,7 @@ class PerpSetupPaperMirror:
             "marked": marked,
             "cancelled": cancelled,
             "recovered": recovered,
+            "expired": expired,
             "skipped": skipped,
         }
 
