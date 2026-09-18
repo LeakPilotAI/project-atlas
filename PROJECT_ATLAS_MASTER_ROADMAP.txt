@@ -246,3 +246,39 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution is NOT enabled by these changes. A future live gate requires separate validated positive evidence, risk controls, reconciliation, explicit user-controlled enablement, and must not overwrite the historical FAILED_NEGATIVE perps result.
+
+
+THIRD PASS VALIDATION — FAILED / REPAIRED, LOCAL RE-RUN REQUIRED
+User local validation:
+- focused third-pass suite: 23 passed in 1.54s
+- full suite: 902 passed, 2 failed, 2 warnings in 40.09s
+Failures:
+1. test_detached_pending_limit_is_cancelled_instead_of_living_forever
+   - regression: age expiry fired before detached lifecycle cleanup
+   - expected cancellation reason DETACHED_AFTER_RETENTION
+2. test_retained_stale_setup_keeps_existing_pending_limit
+   - regression: age expiry incorrectly cancelled a discovery-stale setup still inside lifecycle retention semantics
+
+Repair commits:
+2c45a67 atlas: preserve lifecycle precedence over paper-limit expiry
+d72d3af atlas: test retained stale setup expiry precedence
+
+Corrected lifecycle:
+- detached pending orders are cancelled first with DETACHED_AFTER_RETENTION
+- explicitly invalidated/TP-hit setups are cancelled by setup state
+- discovery-stale setups retained by the setup lifecycle keep their existing pending limit during retention
+- age-based EXPIRED_PENDING_LIMIT applies only after lifecycle checks and only to still-valid non-retained-stale pending orders
+- graceful shutdown cancellation remains higher-level cleanup
+- real-money execution remains disabled
+
+STATUS AFTER REPAIR:
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[REPAIR CODE COMPLETE / LOCAL TEST PENDING] V3/perps hardening pass 3
+[NEXT AFTER GREEN] retry-safe V3 alert delivery
+[NEXT] V3 DEVELOPMENT/HOLDOUT PIT validation
+[NEXT] stronger paper idempotency
+[NEXT] paper risk controls and stale-data rejection
+[NEXT] fee/slippage realism and observability
+[NEXT] desktop runtime verification
+[BLOCKED] real-money automatic execution until separate positive-evidence gate
