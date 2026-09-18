@@ -21,6 +21,7 @@ from typing import Any
 from app.core.logging import get_logger
 from app.services.paper_journal import JOURNAL_PATH, iter_jsonl, paper_journal
 from app.services.paper_risk import check_paper_risk
+from app.services.paper_risk_controls import paper_risk_controls
 from app.trading_core.perp_board import build_perp_board
 
 log = get_logger("perp_setup_paper_mirror")
@@ -238,7 +239,13 @@ class PerpSetupPaperMirror:
         if (symbol, side) in open_pairs:
             self._cancel_pending(instance, reason="PAPER_POSITION_ALREADY_OPEN", mark=mark)
             return False
-        risk_decision = check_paper_risk(open_positions=open_positions, requested_risk_usd=1.0)
+        control = paper_risk_controls.snapshot()
+        risk_decision = check_paper_risk(
+            open_positions=open_positions,
+            requested_risk_usd=1.0,
+            session_net_r=float(control.get("session_net_r") or 0.0),
+            kill_switch=bool(control.get("kill_switch")),
+        )
         if not risk_decision["allowed"]:
             self._cancel_pending(instance, reason="PAPER_RISK_BLOCK", mark=mark)
             return False
