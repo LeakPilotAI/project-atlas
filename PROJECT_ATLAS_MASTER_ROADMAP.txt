@@ -349,3 +349,36 @@ FULL ROADMAP STATUS — CURRENT
 [NEXT] Desktop runtime verification and longevity check
 [BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
 [MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+
+THIRD PASS REPAIR — FRESH RE-ARM TEST CONTRACT FIX
+Latest user rerun:
+- focused lifecycle subset: 11 passed, 1 failed in 1.53s
+- production cancellation correctly emitted EXPIRED_PENDING_LIMIT
+- remaining assertion expected pending_count == 0
+Root cause:
+- after expiring the old pending limit, the same sync pass is allowed to evaluate the still-valid live setup and arm a fresh replacement resting-L1 order
+- therefore pending_count may be 1 even though the stale order was correctly removed
+Resolution:
+- production code unchanged
+- test now asserts the real invariant: EXPIRED_PENDING_LIMIT occurred for the old order; any pending order after sync must be the current runtime pending state, potentially a newly armed replacement
+Commit:
+0c9e5ad atlas: test expiry without forbidding fresh re-arm
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[REPAIR RETEST PENDING] V3/perps hardening pass 3 — alerts/frozen snapshots + corrected pending lifecycle/expiry semantics
+[NEXT AFTER GREEN] Retry-safe V3 notification delivery
+[NEXT] V3 PIT DEVELOPMENT validation -> freeze -> untouched HOLDOUT
+[NEXT] Stronger paper execution idempotency
+[NEXT] Paper risk engine: max exposure, per-trade risk, session stop, kill switch, stale-data rejection
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
