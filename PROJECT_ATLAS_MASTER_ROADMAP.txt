@@ -382,3 +382,52 @@ FULL ROADMAP STATUS — CURRENT
 [NEXT] Desktop runtime verification and longevity check
 [BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
 [MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+
+THIRD PASS — VERIFIED LOCAL GREEN
+User local validation received:
+- lifecycle-focused subset: 12 passed in 1.56s
+- full suite: 905 passed, 2 warnings in 39.26s
+- warnings remain dependency deprecations only
+Pass 3 is CLOSED/GREEN.
+
+FOURTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+add764a atlas: add retry-safe V3 event delivery
+5c4640b atlas: persist V3 notification delivery attempts
+a93a506 atlas: deliver V3 events with retry-safe state
+370e33a atlas: test retry-safe V3 event delivery
+097d885 atlas: harden paper arm idempotency across restarts
+742faef atlas: test terminal paper instance cannot rearm
+
+Fourth-pass behavior:
+- durable V3 state/level events now deliver through the existing Discord alert channel
+- successful deliveries persist delivered=true and are skipped on repeats
+- failed deliveries persist attempt count and remain retryable
+- delivery state is stored alongside the durable V3 event
+- V3 messages remain MANUAL_ONLY and never place Robinhood orders
+- paper resting-L1 arm path now rejects a setup instance that already has a terminal filled/cancelled event in the pending-order journal
+- this prevents the exact same setup instance from rearming after restart/shutdown cleanup
+- real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 4 — retry-safe alert delivery + restart idempotency
+[NEXT AFTER GREEN] V3 PIT DEVELOPMENT validation harness
+[NEXT] Freeze V3 parameters after DEVELOPMENT, then untouched HOLDOUT
+[NEXT] Broader paper lifecycle idempotency around fill/close acknowledgement
+[NEXT] Paper risk engine: max exposure, per-trade risk, session loss stop, kill switch, stale-data rejection
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No current GREEN checkpoint establishes live-capital readiness.
