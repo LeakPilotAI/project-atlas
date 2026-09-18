@@ -22,6 +22,11 @@ from app.core.logging import get_logger
 from app.services.paper_journal import JOURNAL_PATH, iter_jsonl, paper_journal
 from app.services.paper_risk import check_paper_risk
 from app.services.paper_risk_controls import paper_risk_controls
+from app.services.paper_execution_model import (
+    DEFAULT_FEE_BPS_PER_SIDE,
+    DEFAULT_SLIPPAGE_BPS_PER_SIDE,
+    touched_with_buffer,
+)
 from app.trading_core.perp_board import build_perp_board
 
 log = get_logger("perp_setup_paper_mirror")
@@ -97,7 +102,7 @@ class PerpSetupPaperMirror:
 
     @staticmethod
     def _limit_touched(*, side: str, mark: float, limit_price: float) -> bool:
-        return (side == "LONG" and mark <= limit_price) or (side == "SHORT" and mark >= limit_price)
+        return touched_with_buffer(side=side, mark=mark, limit_price=limit_price)
 
     @staticmethod
     def _invalidated_before_fill(*, side: str, mark: float, stop: float) -> bool:
@@ -288,8 +293,8 @@ class PerpSetupPaperMirror:
             notes="Auto paper fill of Atlas manual resting L1 instruction; no live order placed.",
             features=features,
             counts_for_live=False,
-            fees_bps=2.0,
-            slippage_bps=1.0,
+            fees_bps=DEFAULT_FEE_BPS_PER_SIDE,
+            slippage_bps=DEFAULT_SLIPPAGE_BPS_PER_SIDE,
             trade_type="PAPER",
         )
         self._append_pending_event({
