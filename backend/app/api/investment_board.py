@@ -41,9 +41,9 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
     research = _load_jsonl(OPPORTUNITIES_PATH)
     plans = _load_jsonl(PLANS_PATH)
     symbols = {str(row.get("symbol") or "").upper().strip() for row in research if str(row.get("symbol") or "").strip()}
-    # Refresh explicit analyst low/mean/high target evidence before the synchronous V2
-    # projection. Cached for six hours; failures stay missing and therefore fail closed.
-    await quality_dips_v2_target_cache.refresh_many(symbols)
+    # Never make the dashboard wait for an external analyst-target provider. Serve
+    # last-known evidence immediately and refresh stale/missing targets in background.
+    target_refresh_scheduled = quality_dips_v2_target_cache.schedule_refresh(symbols)
     quotes = await quality_dip_quote_service.get_many(symbols)
     quoted_research = apply_quote_overlay(research, quotes)
     board = build_quality_dips_board(quoted_research, plans, limit=limit)
@@ -75,6 +75,8 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "counts": v2_counts,
             "normalization_evidence_complete_symbols": target_complete,
             "normalization_evidence_requested_symbols": len(symbols),
+            "normalization_refresh_mode": "BACKGROUND_STALE_WHILE_REVALIDATE",
+            "normalization_refresh_scheduled": target_refresh_scheduled,
             "minimum_upside_hurdle_pct": 29.0,
             "generational_upside_hurdle_pct": 50.0,
             "levels": {"L1": 29.0, "L2": 35.0, "L3": 40.0, "L4": 50.0},
