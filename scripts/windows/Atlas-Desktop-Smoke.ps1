@@ -17,6 +17,8 @@ $StopBat = Join-Path $Root "ATLAS-STOP.bat"
 $StartLink = Join-Path $Desktop "Project Atlas.lnk"
 $StopLink = Join-Path $Desktop "Stop Atlas.lnk"
 $Installer = Join-Path $PSScriptRoot "Install-DesktopShortcut.ps1"
+$ApiErrLog = Join-Path $Root "logs\api.err.log"
+$ApiOutLog = Join-Path $Root "logs\api.out.log"
 
 if ($InstallShortcuts) { & $Installer }
 
@@ -35,6 +37,28 @@ function Test-Http([string]$Url) {
     } catch {
         return @{ ok=$false; status=$null; error=$_.Exception.Message }
     }
+}
+
+function Get-ApiProcessSnapshot {
+    $rows = @()
+    try {
+        Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction SilentlyContinue | ForEach-Object {
+            $cl = [string]$_.CommandLine
+            if ($cl -match "uvicorn" -and $cl -match "app\.main:app") {
+                $rows += @{
+                    pid = [int]$_.ProcessId
+                    command_line = $cl
+                    executable = [string]$_.ExecutablePath
+                }
+            }
+        }
+    } catch { }
+    return @($rows)
+}
+
+function Get-LogTail([string]$Path, [int]$Lines = 60) {
+    if (-not (Test-Path $Path)) { return @() }
+    try { return @(Get-Content $Path -Tail $Lines -ErrorAction SilentlyContinue) } catch { return @() }
 }
 
 $start = Test-Shortcut $StartLink $LaunchBat
@@ -72,6 +96,8 @@ $longevity = [ordered]@{
     finished_at = $null
     green = $true
     auto_started_atlas = $autoStarted
+    first_failure_probe = $null
+    failure_snapshot = $null
 }
 if ($longevity.requested_seconds -gt 0) {
     $longevity.started_at = (Get-Date).ToUniversalTime().ToString("o")
@@ -79,15 +105,29 @@ if ($longevity.requested_seconds -gt 0) {
     while ((Get-Date) -lt $deadline) {
         $longevity.probes++
         Write-Host ("Longevity probe {0}: checking API + reconciliation..." -f $longevity.probes)
+        $probeResults = @{}
         foreach ($url in @(
             "http://127.0.0.1:8000/health",
             "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
         )) {
             $probe = Test-Http $url
+            $probeResults[$url] = $probe
             if (-not $probe.ok) {
                 $longevity.failures++
                 $longevity.green = $false
             }
+        }
+        if (-not $longevity.green -and $null -eq $longevity.first_failure_probe) {
+            $longevity.first_failure_probe = $longevity.probes
+            $longevity.failure_snapshot = @{
+                captured_at = (Get-Date).ToUniversalTime().ToString("o")
+                probe_results = $probeResults
+                api_processes = @(Get-ApiProcessSnapshot)
+                atlas_containers = @(& docker ps --filter "name=atlas" --format "{{.Names}}" 2>$null)
+                api_err_tail = @(Get-LogTail $ApiErrLog 80)
+                api_out_tail = @(Get-LogTail $ApiOutLog 80)
+            }
+            Write-Host "  captured failure snapshot" -ForegroundColor Yellow
         }
         if ($longevity.green) { Write-Host "  GREEN" -ForegroundColor Green } else { Write-Host "  failure recorded" -ForegroundColor Red }
         Start-Sleep -Seconds $longevity.probe_interval_seconds
