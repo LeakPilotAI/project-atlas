@@ -6,6 +6,8 @@ param(
     [switch]$InstallShortcuts,
     [int]$LongevitySeconds = 0,
     [int]$ProbeIntervalSeconds = 15,
+    [int]$StartupStableChecks = 2,
+    [int]$StartupStableIntervalSeconds = 5,
     [switch]$StartAtlasIfNeeded
 )
 
@@ -28,6 +30,17 @@ function Test-Shortcut([string]$Path, [string]$ExpectedTarget) {
     $s = $w.CreateShortcut($Path)
     $target = [string]$s.TargetPath
     return @{ exists=$true; target_ok=($target -ieq $ExpectedTarget); target=$target }
+}
+
+function Test-HttpJson([string]$Url) {
+    try {
+        $r = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 5
+        $body = $null
+        try { $body = $r.Content | ConvertFrom-Json } catch { }
+        return @{ ok=($r.StatusCode -ge 200 -and $r.StatusCode -lt 400); status=[int]$r.StatusCode; error=$null; body=$body }
+    } catch {
+        return @{ ok=$false; status=$null; error=$_.Exception.Message; body=$null }
+    }
 }
 
 function Test-Http([string]$Url) {
@@ -140,6 +153,43 @@ if ($StartAtlasIfNeeded -and -not $health.ok) {
     $reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
 }
 
+$startupStabilization = [ordered]@{
+    required_consecutive_checks = [Math]::Max(1, $StartupStableChecks)
+    interval_seconds = [Math]::Max(1, $StartupStableIntervalSeconds)
+    attempts = 0
+    consecutive_green = 0
+    green = $false
+    last_results = $null
+}
+if ($StartAtlasIfNeeded -and $autoStarted) {
+    Write-Host "Atlas API is reachable; waiting for operator surfaces to stabilize before longevity timing..." -ForegroundColor Yellow
+    for ($i = 1; $i -le 24; $i++) {
+        $startupStabilization.attempts++
+        $readyResults = [ordered]@{
+            health = Test-Http "http://127.0.0.1:8000/health"
+            research = Test-Http "http://127.0.0.1:8000/api/research"
+            command_center = Test-Http "http://127.0.0.1:8000/api/command-center/summary"
+            reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+        }
+        $startupStabilization.last_results = $readyResults
+        $allReady = $readyResults.health.ok -and $readyResults.research.ok -and $readyResults.command_center.ok -and $readyResults.reconciliation.ok
+        if ($allReady) {
+            $startupStabilization.consecutive_green++
+            Write-Host ("  startup stability check {0}: GREEN ({1}/{2} consecutive)" -f $i, $startupStabilization.consecutive_green, $startupStabilization.required_consecutive_checks) -ForegroundColor Green
+            if ($startupStabilization.consecutive_green -ge $startupStabilization.required_consecutive_checks) {
+                $startupStabilization.green = $true
+                break
+            }
+        } else {
+            $startupStabilization.consecutive_green = 0
+            Write-Host ("  startup stability check {0}: warming" -f $i) -ForegroundColor Yellow
+        }
+        Start-Sleep -Seconds $startupStabilization.interval_seconds
+    }
+} else {
+    $startupStabilization.green = [bool]$health.ok
+}
+
 $longevity = [ordered]@{
     requested_seconds = [Math]::Max(0, $LongevitySeconds)
     probe_interval_seconds = [Math]::Max(5, $ProbeIntervalSeconds)
@@ -204,7 +254,7 @@ if ($longevity.requested_seconds -gt 0) {
                 atlas_containers = @(& docker ps --filter "name=atlas" --format "{{.Names}}" 2>$null)
                 api_err_tail = @(Get-LogTail $ApiErrLog 80)
                 api_out_tail = @(Get-LogTail $ApiOutLog 80)
-                runtime_latency = Test-Http "http://127.0.0.1:8000/diagnostics/runtime-latency"
+                runtime_latency = Test-HttpJson "http://127.0.0.1:8000/diagnostics/runtime-latency"
             }
             Write-Host "  captured failure snapshot" -ForegroundColor Yellow
         }
@@ -237,6 +287,7 @@ $result = [ordered]@{
     research = $research
     command_center = $command
     reconciliation = $reconciliation
+    startup_stabilization = $startupStabilization
     longevity = $longevity
     atlas_containers = $containers
     paper_shadow_only = $true
@@ -246,7 +297,7 @@ $result = [ordered]@{
 $result.status = if (
     $result.launch_bat_exists -and $result.stop_bat_exists -and
     $start.exists -and $start.target_ok -and $stop.exists -and $stop.target_ok -and
-    $health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok -and $longevity.green
+    $health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok -and $startupStabilization.green -and $longevity.green
 ) { "ATLAS_DESKTOP_SMOKE_GREEN" } else { "ATLAS_DESKTOP_SMOKE_BLOCKED" }
 
 $json = $result | ConvertTo-Json -Depth 6
