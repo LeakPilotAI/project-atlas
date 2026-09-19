@@ -108,3 +108,18 @@ def test_desktop_smoke_does_not_assign_reserved_powershell_pid_variable():
     assert "$processId = [int]$p.ProcessId" in text
     assert "$pid = [int]$_.OwningProcess" not in text
     assert "$pid = [int]$p.ProcessId" not in text
+
+
+def test_desktop_smoke_stabilizes_autostart_before_longevity_measurement():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "[int]$StartupStableChecks = 2" in text
+    assert "waiting for operator surfaces to stabilize before longevity timing" in text
+    assert "startup_stabilization = $startupStabilization" in text
+    assert "$startupStabilization.green -and $longevity.green" in text
+
+
+def test_desktop_smoke_captures_runtime_latency_json_body():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "function Test-HttpJson" in text
+    assert "$body = $r.Content | ConvertFrom-Json" in text
+    assert 'runtime_latency = Test-HttpJson "http://127.0.0.1:8000/diagnostics/runtime-latency"' in text
