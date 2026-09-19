@@ -127,8 +127,9 @@ async def diagnostics_paper_reconciliation() -> Dict[str, Any]:
     from app.services.perp_alert_delivery import perp_alert_delivery_service
     from app.services.perp_paper_observability import reconciliation_summary
 
+    current = await asyncio.to_thread(reconciliation_summary)
     return {
-        "current": reconciliation_summary(),
+        "current": current,
         "runtime": perp_alert_delivery_service.reconciliation_status(),
         "read_only": True,
         "execution": "PAPER_ONLY",
