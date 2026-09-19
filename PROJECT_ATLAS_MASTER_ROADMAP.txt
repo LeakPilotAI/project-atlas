@@ -1898,3 +1898,11 @@ Strict 300-second repaired-runtime longevity run is PENDING. Pass 17 is NOT GREE
 Historical FAILED_NEGATIVE: 546 trades / -26.7235R / -0.04894R unchanged.
 Retrospective V3 evidence remains BLOCKED/EVIDENCE_INSUFFICIENT.
 live_capital_allowed=false; automatic_real_money_execution=false; MANUAL_ONLY.
+
+PASS 17 — SECOND MEASURED BOTTLENECK
+Runtime stack samples after the scan-offload repair identified repeated full
+trading_v4_shadow.jsonl replay from JsonlEventStore.append on every shadow mark.
+Loop stall reached 13.672 seconds. Added locked event-ID/sequence append index;
+revalidate on initial load or external size/mtime/inode change. Durable flush/fsync
+and corruption/duplicate/sequence validation are preserved. No evidence rewritten.
+Event-store/replay/shadow regressions: 24 passed in 1.83s. Longevity still pending.

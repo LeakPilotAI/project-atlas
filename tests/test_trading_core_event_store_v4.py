@@ -114,3 +114,33 @@ def test_closed_trade_id_cannot_reopen(tmp_path):
     rt.mark("t1", _q(102, 1))
     with pytest.raises(ValueError):
         rt.open(_intent(), _q(100, 2))
+
+
+def test_append_does_not_rescan_unchanged_history(tmp_path, monkeypatch):
+    store = JsonlEventStore(tmp_path / "events.jsonl")
+    store.append(event_type=TradingEventType.SIGNAL_CREATED, trade_id="t1", symbol="BTC", payload={})
+    def forbidden():
+        raise AssertionError("unchanged journal must not be replayed per mark")
+    monkeypatch.setattr(store, "load", forbidden)
+    for sequence in range(2, 12):
+        event = store.append(event_type=TradingEventType.POSITION_MARKED, trade_id="t1", symbol="BTC", payload={})
+        assert event.sequence == sequence
+
+
+def test_append_refreshes_index_after_external_writer(tmp_path):
+    path = tmp_path / "events.jsonl"
+    a, b = JsonlEventStore(path), JsonlEventStore(path)
+    first = a.append(event_type=TradingEventType.SIGNAL_CREATED, trade_id="t1", symbol="BTC", payload={})
+    second = b.append(event_type=TradingEventType.POSITION_MARKED, trade_id="t1", symbol="BTC", payload={})
+    third = a.append(event_type=TradingEventType.POSITION_MARKED, trade_id="t1", symbol="BTC", payload={})
+    assert [first.sequence, second.sequence, third.sequence] == [1, 2, 3]
+    assert len(a.load()) == 3
+
+
+def test_cached_append_still_rejects_external_corruption(tmp_path):
+    path = tmp_path / "events.jsonl"
+    store = JsonlEventStore(path)
+    store.append(event_type=TradingEventType.SIGNAL_CREATED, trade_id="t1", symbol="BTC", payload={})
+    path.write_text('broken\n{}\n', encoding="utf-8")
+    with pytest.raises(EventStoreCorruption):
+        store.append(event_type=TradingEventType.POSITION_MARKED, trade_id="t1", symbol="BTC", payload={})

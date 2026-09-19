@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import uuid
+import threading
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
@@ -19,6 +20,24 @@ class JsonlEventStore:
     def __init__(self, path: Path) -> None:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._append_lock = threading.RLock()
+        self._indexed_stamp = None
+        self._by_id = {}
+        self._sequences = {}
+
+    def _stamp(self):
+        try:
+            stat = self.path.stat()
+            return (stat.st_size, stat.st_mtime_ns, stat.st_ino)
+        except FileNotFoundError:
+            return None
+
+    def _index(self, events):
+        self._by_id = {event.event_id: event for event in events}
+        self._sequences = {}
+        for event in events:
+            self._sequences[event.trade_id] = event.sequence
+        self._indexed_stamp = self._stamp()
 
     def _read_rows(self) -> List[dict]:
         rows: List[dict] = []
@@ -41,9 +60,11 @@ class JsonlEventStore:
         return rows
 
     def load(self) -> List[TradingEvent]:
-        events = [TradingEvent.from_dict(r) for r in self._read_rows()]
-        self._validate_sequences(events)
-        return events
+        with self._append_lock:
+            events = [TradingEvent.from_dict(r) for r in self._read_rows()]
+            self._validate_sequences(events)
+            self._index(events)
+            return events
 
     @staticmethod
     def _validate_sequences(events: Iterable[TradingEvent]) -> None:
@@ -80,26 +101,33 @@ class JsonlEventStore:
         timestamp: Optional[str] = None,
         event_id: Optional[str] = None,
     ) -> TradingEvent:
-        existing = self.load()
-        eid = event_id or uuid.uuid4().hex
-        if any(e.event_id == eid for e in existing):
-            return next(e for e in existing if e.event_id == eid)
-        sequence = 1 + max((e.sequence for e in existing if e.trade_id == trade_id), default=0)
-        event = TradingEvent(
-            event_id=eid,
-            event_type=event_type,
-            trade_id=trade_id,
-            symbol=symbol.upper(),
-            timestamp=timestamp or utc_now_iso(),
-            sequence=sequence,
-            payload=dict(payload),
-        )
-        line = json.dumps(event.to_dict(), sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
-        with self.path.open("a", encoding="utf-8") as f:
-            f.write(line)
-            f.flush()
-            try:
-                os.fsync(f.fileno())
-            except OSError:
-                pass
-        return event
+        with self._append_lock:
+            # Revalidate if another writer changed/replaced the file. Our own durable
+            # appends update the index, avoiding a full history replay for every mark.
+            if self._indexed_stamp != self._stamp() or not self._by_id:
+                self.load()
+            eid = event_id or uuid.uuid4().hex
+            if eid in self._by_id:
+                return self._by_id[eid]
+            sequence = self._sequences.get(trade_id, 0) + 1
+            event = TradingEvent(
+                event_id=eid,
+                event_type=event_type,
+                trade_id=trade_id,
+                symbol=symbol.upper(),
+                timestamp=timestamp or utc_now_iso(),
+                sequence=sequence,
+                payload=dict(payload),
+            )
+            line = json.dumps(event.to_dict(), sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
+            with self.path.open("a", encoding="utf-8") as f:
+                f.write(line)
+                f.flush()
+                try:
+                    os.fsync(f.fileno())
+                except OSError:
+                    pass
+            self._by_id[event.event_id] = event
+            self._sequences[trade_id] = sequence
+            self._indexed_stamp = self._stamp()
+            return event
