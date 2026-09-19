@@ -1308,3 +1308,58 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — VALIDATION RESULT / BLOCKED FOR ENVIRONMENT PRECONDITION
+Local validation:
+- focused: 19 passed, 1 dependency warning
+- full suite: 950 passed, 2 dependency warnings
+- desktop longevity smoke: BLOCKED
+- smoke completed 16 probes / 32 failures because Atlas API was not running
+- /health, dashboard, research, command-center, reconciliation were unreachable
+- no atlas containers were running
+This is not evidence of a runtime crash: the smoke began with the service already offline.
+
+PASS 17 RECOVERY PATCH
+- 76e8b67 Atlas smoke can start the normal desktop launcher when API is absent
+- 5faf2cf tests self-start behavior and visible longevity progress
+- smoke now prints each longevity probe so it no longer appears frozen
+- StartAtlasIfNeeded remains opt-in and uses the existing ATLAS.bat launcher
+- live-capital controls unchanged
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[PARTIAL GREEN / RUNTIME RETEST REQUIRED] Pass 17
+- focused 19 GREEN
+- full 950 GREEN
+- first longevity run invalid/blocked because Atlas was offline before probing
+- recovery patch complete; self-starting 5-minute longevity retest required
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Forward-evidence accumulation for V3 Quality Dips
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
