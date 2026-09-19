@@ -6,7 +6,9 @@ param(
     [switch]$InstallShortcuts,
     [int]$LongevitySeconds = 0,
     [int]$ProbeIntervalSeconds = 15,
-    [switch]$StartAtlasIfNeeded
+    [switch]$StartAtlasIfNeeded,
+    [int]$StartupTimeoutSeconds = 180,
+    [int]$StableChecksRequired = 3
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,10 +32,12 @@ function Test-Shortcut([string]$Path, [string]$ExpectedTarget) {
     return @{ exists=$true; target_ok=($target -ieq $ExpectedTarget); target=$target }
 }
 
-function Test-Http([string]$Url) {
+function Test-Http([string]$Url, [switch]$IncludeBody) {
     try {
         $r = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 5
-        return @{ ok=($r.StatusCode -ge 200 -and $r.StatusCode -lt 400); status=[int]$r.StatusCode; error=$null }
+        $body = $null
+        if ($IncludeBody) { $body = $r.Content | ConvertFrom-Json }
+        return @{ body=$body; ok=($r.StatusCode -ge 200 -and $r.StatusCode -lt 400); status=[int]$r.StatusCode; error=$null }
     } catch {
         return @{ ok=$false; status=$null; error=$_.Exception.Message }
     }
@@ -107,6 +111,22 @@ function Get-ApiProcessTreeSnapshot {
     return @($rows)
 }
 
+function Test-RuntimeOwnership {
+    $listeners = @(Get-ApiPortOwnershipSnapshot)
+    $rootPrefix = $Root + "\"
+    $listenerOk = $listeners.Count -eq 1
+    foreach ($listener in $listeners) {
+        $owned = ([string]$listener.executable).StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase) -or
+            ([string]$listener.parent_executable).StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)
+        $listenerOk = $listenerOk -and $owned -and ($listener.command_line -match "uvicorn.*app\.main:app")
+    }
+    $containerStates = @()
+    try { $containerStates = @(& docker inspect -f '{{.Name}} {{.State.Running}} {{.State.Health.Status}}' atlas-postgres atlas-redis 2>$null) } catch { }
+    $containersOk = ($containerStates.Count -eq 2 -and @($containerStates | Where-Object { $_ -notmatch ' true healthy$' }).Count -eq 0)
+    $launcherAlive = if ($launcherPid) { [bool](Get-Process -Id $launcherPid -ErrorAction SilentlyContinue) } else { $null }
+    return @{ ok=($listenerOk -and $containersOk -and ($launcherAlive -ne $false)); listeners=$listeners; containers=$containerStates; launcher_alive=$launcherAlive }
+}
+
 function Get-LogTail([string]$Path, [int]$Lines = 60) {
     if (-not (Test-Path $Path)) { return @() }
     try { return @([System.IO.File]::ReadLines($Path) | Select-Object -Last $Lines | ForEach-Object { [string]$_ }) } catch { return @() }
@@ -123,7 +143,7 @@ $autoStarted = $false
 $launcherPid = $null
 if ($StartAtlasIfNeeded -and -not $health.ok) {
     Write-Host "Atlas API is not running; starting the normal desktop launcher..." -ForegroundColor Yellow
-    $launcherProcess = Start-Process -FilePath $LaunchBat -PassThru
+    $launcherProcess = Start-Process -FilePath $LaunchBat -WindowStyle Hidden -PassThru
     $launcherPid = [int]$launcherProcess.Id
     for ($i = 1; $i -le 60; $i++) {
         Start-Sleep -Seconds 2
@@ -140,10 +160,33 @@ if ($StartAtlasIfNeeded -and -not $health.ok) {
     $reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
 }
 
+# Warm-up is separate from measured longevity; never discard measured failures.
+$stabilization = @{ green=$false; checks=0; failed_checks=0; consecutive_green=0; required=[Math]::Max(2, $StableChecksRequired) }
+$warmupDeadline = (Get-Date).AddSeconds([Math]::Max(1, $StartupTimeoutSeconds))
+do {
+    $health = Test-Http "http://127.0.0.1:8000/health"
+    $dashboard = Test-Http "http://127.0.0.1:8000/dashboard"
+    $research = Test-Http "http://127.0.0.1:8000/api/research"
+    $command = Test-Http "http://127.0.0.1:8000/api/command-center/summary"
+    $reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+    $stabilization.checks++
+    if ($health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok) {
+        $stabilization.consecutive_green++
+    } else {
+        $stabilization.failed_checks++
+        $stabilization.last_failure = @{ health=$health; research=$research; command_center=$command; reconciliation=$reconciliation }
+        $stabilization.consecutive_green=0
+    }
+    if ($stabilization.consecutive_green -ge $stabilization.required) { $stabilization.green=$true; break }
+    Write-Host "Startup stabilization: $($stabilization.consecutive_green)/$($stabilization.required) consecutive healthy checks"
+    Start-Sleep -Seconds 5
+} while ((Get-Date) -lt $warmupDeadline)
+
 $longevity = [ordered]@{
     requested_seconds = [Math]::Max(0, $LongevitySeconds)
     probe_interval_seconds = [Math]::Max(5, $ProbeIntervalSeconds)
     probes = 0
+    runtime_failures = 0
     failures = 0
     failed_probe_count = 0
     consecutive_failed_probes = 0
@@ -151,13 +194,13 @@ $longevity = [ordered]@{
     recovered_after_failure = $false
     started_at = $null
     finished_at = $null
-    green = $true
+    green = $stabilization.green
     auto_started_atlas = $autoStarted
-    launcher_process_id = $null
+    launcher_process_id = $launcherPid
     first_failure_probe = $null
     failure_snapshot = $null
 }
-if ($longevity.requested_seconds -gt 0) {
+if ($stabilization.green -and $longevity.requested_seconds -gt 0) {
     $longevity.started_at = (Get-Date).ToUniversalTime().ToString("o")
     $longevity.launcher_process_id = $launcherPid
     $deadline = (Get-Date).AddSeconds($longevity.requested_seconds)
@@ -168,6 +211,8 @@ if ($longevity.requested_seconds -gt 0) {
         $probeFailed = $false
         foreach ($url in @(
             "http://127.0.0.1:8000/health",
+            "http://127.0.0.1:8000/api/research",
+            "http://127.0.0.1:8000/api/command-center/summary",
             "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
         )) {
             $probe = Test-Http $url
@@ -177,6 +222,9 @@ if ($longevity.requested_seconds -gt 0) {
                 $probeFailed = $true
             }
         }
+        $runtime = Test-RuntimeOwnership
+        $longevity.last_runtime = $runtime
+        if (-not $runtime.ok) { $probeFailed=$true; $longevity.runtime_failures++ }
         if ($probeFailed) {
             $longevity.failed_probe_count++
             $longevity.consecutive_failed_probes++
@@ -204,7 +252,7 @@ if ($longevity.requested_seconds -gt 0) {
                 atlas_containers = @(& docker ps --filter "name=atlas" --format "{{.Names}}" 2>$null)
                 api_err_tail = @(Get-LogTail $ApiErrLog 80)
                 api_out_tail = @(Get-LogTail $ApiOutLog 80)
-                runtime_latency = Test-Http "http://127.0.0.1:8000/diagnostics/runtime-latency"
+                runtime_latency = Test-Http "http://127.0.0.1:8000/diagnostics/runtime-latency" -IncludeBody
             }
             Write-Host "  captured failure snapshot" -ForegroundColor Yellow
         }
@@ -237,6 +285,8 @@ $result = [ordered]@{
     research = $research
     command_center = $command
     reconciliation = $reconciliation
+    runtime_latency = Test-Http "http://127.0.0.1:8000/diagnostics/runtime-latency" -IncludeBody
+    startup_stabilization = $stabilization
     longevity = $longevity
     atlas_containers = $containers
     paper_shadow_only = $true
@@ -249,7 +299,7 @@ $result.status = if (
     $health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok -and $longevity.green
 ) { "ATLAS_DESKTOP_SMOKE_GREEN" } else { "ATLAS_DESKTOP_SMOKE_BLOCKED" }
 
-$json = $result | ConvertTo-Json -Depth 6
+$json = $result | ConvertTo-Json -Depth 12
 $json
 $artifactDir = Join-Path $Root "logs\diagnostics"
 New-Item -ItemType Directory -Force $artifactDir | Out-Null

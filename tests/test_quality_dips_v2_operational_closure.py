@@ -30,8 +30,10 @@ def test_desktop_stop_contract_preserves_other_apps():
 
     assert "Atlas-Stop.ps1" in batch
     assert "Never quits Docker Desktop or Genesis" in stop
-    assert "Stop-ListenPort 8000" in stop
-    assert "Stop-ListenPort 3000" in stop
+    assert "Stop-ListenPort" not in stop
+    assert "Test-AtlasProcess" in stop
+    assert "$rootOwned -and $serverRole" in stop
+    assert "Stop-ListenPort 3000" not in stop
     assert "docker compose down --remove-orphans" in stop
     assert "Docker Desktop / Genesis were not touched" in stop
 

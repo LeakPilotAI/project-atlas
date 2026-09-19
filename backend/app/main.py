@@ -196,11 +196,14 @@ async def lifespan(app: FastAPI):
             log.warning("investment scanner start failed; trading continues", error=str(e)[:200])
         log.info("Background services booted")
 
+    from app.services.runtime_watchdog import runtime_watchdog
+    await runtime_watchdog.start()
     boot_task = asyncio.create_task(_boot_services(), name="atlas_boot")
     log.info("API is serving /health; services starting in background")
 
     yield
 
+    await runtime_watchdog.stop()
     log.info("Project Atlas shutting down")
     try:
         from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror

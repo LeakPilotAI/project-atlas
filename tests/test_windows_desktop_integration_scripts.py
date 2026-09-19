@@ -85,7 +85,7 @@ def test_desktop_smoke_keeps_diagnostics_compact_and_tracks_launcher():
     assert "[System.IO.File]::ReadLines($Path)" in text
     assert "launcher_process_id" in text
     assert "launcher_alive" in text
-    assert "ConvertTo-Json -Depth 6" in text
+    assert "ConvertTo-Json -Depth 12" in text
     assert "Get-Content $Path -Tail" not in text
 
 
@@ -108,3 +108,27 @@ def test_desktop_smoke_does_not_assign_reserved_powershell_pid_variable():
     assert "$processId = [int]$p.ProcessId" in text
     assert "$pid = [int]$_.OwningProcess" not in text
     assert "$pid = [int]$p.ProcessId" not in text
+
+
+def test_stop_never_kills_by_generic_server_name_or_port():
+    text = _text("scripts/windows/Atlas-Stop.ps1")
+    assert "Stop-ListenPort" not in text
+    assert '$markers = @("uvicorn"' not in text
+    assert "Test-AtlasProcess" in text
+    assert '$exe -ieq $VenvPy' in text
+    assert '$cl.IndexOf($Root + "\\"' in text
+
+
+def test_startup_gate_precedes_measured_clock_and_is_fail_closed():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert text.index("$stabilization =") < text.index("$longevity.started_at =")
+    assert "if ($stabilization.green -and $longevity.requested_seconds -gt 0)" in text
+    assert "green = $stabilization.green" in text
+    assert "$stabilization.consecutive_green=0" in text
+    assert "startup_stabilization = $stabilization" in text
+
+
+def test_runtime_diagnostic_captures_json_body():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert '$r.Content | ConvertFrom-Json' in text
+    assert 'runtime_latency = Test-Http "http://127.0.0.1:8000/diagnostics/runtime-latency" -IncludeBody' in text

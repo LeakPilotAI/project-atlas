@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import json
 import os
 import uuid
@@ -712,6 +714,9 @@ class PaperJournal:
         }
 
     async def stats(self) -> Dict[str, Any]:
+        return await asyncio.to_thread(self._stats_snapshot)
+
+    def _stats_snapshot(self) -> Dict[str, Any]:
         session = self.current_session()
         started = session.get("started_at")
         all_rows: List[Dict[str, Any]] = []

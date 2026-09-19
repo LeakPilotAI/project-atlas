@@ -1873,3 +1873,28 @@ FULL ROADMAP STATUS â€” CURRENT
 [NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
 [BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
 [MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 17 — AUTONOMOUS MEASURED STALL REPAIR (2026-09-19)
+Branch remains chatgpt/atlas-rebuild-v1; starting HEAD 9b5e095.
+Actual checkout lacked the described startup gate and JSON runtime body capture.
+Added consecutive startup checks, separate warm-up accounting, all four operator
+surfaces in longevity probes, runtime ownership/container checks, and JSON bodies.
+Preserved prior failed run in logs/diagnostics/pass17-startup-blocked.json:
+7/7 startup checks failed; 0 measured probes; BLOCKED (not a longevity pass).
+Bounded watchdog captured API-loop stalls exceeding 11 seconds. Stack evidence:
+- quality_dip_scanner._ladder_once: JSONL load and V2 history enrichment
+- investment_board.quality_dips_board: synchronous opportunity-history load
+- manual_perps/manual_perp_board: journal reconciliation/cohort scans
+- paper_journal.stats: synchronous historical tally
+Moved these measured synchronous reads/calculations to worker threads. Async
+networking/alert delivery remains on its existing loop; no nested asyncio.run.
+Focused repair gate: 61 passed, 2 dependency warnings in 31.98s.
+Sandbox pytest fixture permissions required running tests outside the sandbox.
+No tests were weakened: old kill-by-port assertions now require root-qualified
+server ownership, because killing arbitrary :8000/:3000 owners violates scope.
+Shutdown no longer matches generic uvicorn, app.main, next/frontend, or ports alone.
+Strict 300-second repaired-runtime longevity run is PENDING. Pass 17 is NOT GREEN.
+Historical FAILED_NEGATIVE: 546 trades / -26.7235R / -0.04894R unchanged.
+Retrospective V3 evidence remains BLOCKED/EVIDENCE_INSUFFICIENT.
+live_capital_allowed=false; automatic_real_money_execution=false; MANUAL_ONLY.

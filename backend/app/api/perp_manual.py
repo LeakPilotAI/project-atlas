@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException, Query
@@ -55,7 +56,7 @@ async def manual_perps() -> Dict[str, Any]:
         "last_pass": dict(perp_alert_delivery_service.last_paper_result),
         "mode": "RESTING_L1_LIMIT_TOUCH",
         "live_execution": False,
-        "observability": build_paper_observability(snapshot.get("setups") or []),
+        "observability": await asyncio.to_thread(build_paper_observability, snapshot.get("setups") or []),
     }
     return snapshot
 
@@ -76,7 +77,7 @@ async def manual_perp_board(limit: int = Query(8, ge=1, le=25)) -> Dict[str, Any
         "alert_delivery_running": perp_alert_delivery_service.running,
         "auto_paper": {
             **perp_setup_paper_mirror.status(),
-            "observability": build_paper_observability(setups),
+            "observability": await asyncio.to_thread(build_paper_observability, setups),
         },
         "note": "Real Hyperliquid execution is manual-only. Each verified manual resting-L1 instruction is mirrored as a PAPER limit and fills only on an L1 touch/cross.",
     }

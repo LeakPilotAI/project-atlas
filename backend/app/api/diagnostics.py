@@ -126,12 +126,15 @@ async def diagnostics_root() -> Dict[str, Any]:
 async def diagnostics_runtime_latency() -> Dict[str, Any]:
     from app.services.perp_alert_delivery import perp_alert_delivery_service
 
+    from app.services.runtime_watchdog import runtime_watchdog
+
     loop = asyncio.get_running_loop()
     started = loop.time()
     await asyncio.sleep(0)
     event_loop_yield_ms = round((loop.time() - started) * 1000.0, 3)
     return {
         "event_loop_yield_ms": event_loop_yield_ms,
+        "event_loop_stalls": runtime_watchdog.snapshot(),
         "perp_alert_delivery": perp_alert_delivery_service.reconciliation_status(),
         "read_only": True,
         "execution": "PAPER_ONLY",

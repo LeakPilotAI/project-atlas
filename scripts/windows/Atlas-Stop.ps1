@@ -17,45 +17,20 @@ function Stop-Tree([int]$ProcessId) {
     & taskkill.exe /F /PID $ProcessId /T 2>$null | Out-Null
 }
 
-function Stop-ListenPort([int]$Port) {
-    $out = & netstat.exe -ano 2>$null | Select-String ":$Port\s+.*LISTENING"
-    foreach ($line in $out) {
-        $procId = ($line.ToString().Trim() -split "\s+")[-1]
-        if ($procId -match "^\d+$" -and [int]$procId -gt 4) {
-            Stop-Tree ([int]$procId)
-        }
-    }
-}
-
-function Stop-AtlasPython {
-    $markers = @("uvicorn", "app.main", "Project Atlas", "project-atlas")
-    try {
-        Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction SilentlyContinue | ForEach-Object {
-            $cl = [string]$_.CommandLine
-            $exe = [string]$_.ExecutablePath
-            $hit = $false
-            foreach ($m in $markers) {
-                if ($cl -like "*$m*" -or $exe -like "*$m*") { $hit = $true; break }
-            }
-            if ($VenvPy -and $exe -and ($exe -ieq $VenvPy)) { $hit = $true }
-            if ($hit -and $_.ProcessId -gt 4) {
-                Stop-Tree ([int]$_.ProcessId)
-            }
-        }
-    } catch { }
+# Only root-qualified executables/commands prove ownership. taskkill /T includes
+# the base-Python child of the Atlas venv without matching unrelated uvicorns.
+function Test-AtlasProcess($Process) {
+    $exe = [string]$Process.ExecutablePath
+    $cl = [string]$Process.CommandLine
+    $rootOwned = ($exe -ieq $VenvPy -or $cl.IndexOf($Root + "\", [StringComparison]::OrdinalIgnoreCase) -ge 0)
+    $serverRole = ($cl -match "uvicorn\s+app\.main:app" -or ($Process.Name -eq "node.exe" -and $cl -match "next"))
+    return ($rootOwned -and $serverRole)
 }
 
 Write-Host "[stop] Atlas Python..."
-foreach ($p in $ChildPids) { Stop-Tree $p }
-Stop-AtlasPython
-Stop-ListenPort 8000
-Stop-ListenPort 3000
-
-Get-Process -Name "node" -ErrorAction SilentlyContinue | ForEach-Object {
-    try {
-        $cl = (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)").CommandLine
-        if ($cl -match "next|frontend") { Stop-Tree $_.Id }
-    } catch { }
+$owned = @(Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe' OR Name='node.exe'" -ErrorAction SilentlyContinue | Where-Object { Test-AtlasProcess $_ })
+foreach ($process in $owned) {
+    if ($process.ProcessId -gt 4) { Stop-Tree ([int]$process.ProcessId) }
 }
 
 Write-Host "[stop] Atlas containers (Docker Desktop + Genesis stay up)..."

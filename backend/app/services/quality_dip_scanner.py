@@ -185,8 +185,8 @@ class QualityDipScanner:
         from app.investment.board import build_quality_dips_board
         from app.investment.quality_dip_quotes import apply_quote_overlay, quality_dip_quote_service
 
-        research = _load_jsonl(OPPORTUNITIES_PATH)
-        plans = _load_jsonl(PLANS_PATH)
+        research = await asyncio.to_thread(_load_jsonl, OPPORTUNITIES_PATH)
+        plans = await asyncio.to_thread(_load_jsonl, PLANS_PATH)
         base = build_quality_dips_board(research, plans, limit=100)
         symbols = [r.get("symbol") for r in base if str(r.get("stance") or "").upper() == "ACCUMULATE"]
         if not symbols:
@@ -311,8 +311,8 @@ class QualityDipScanner:
             log.info("accumulation ladder level hit", **event)
 
         if discord_enabled:
-            research = _load_jsonl(OPPORTUNITIES_PATH)
-            v2_board = attach_v2_board(board, research)
+            research = await asyncio.to_thread(_load_jsonl, OPPORTUNITIES_PATH)
+            v2_board = await asyncio.to_thread(attach_v2_board, board, research)
             hours = float(getattr(settings, "quality_dip_cooldown_hours", 12) or 12)
             await self._process_v2_alerts(v2_board, hours)
 

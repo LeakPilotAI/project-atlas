@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from typing import Any, Dict
@@ -43,8 +44,8 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 @router.get("/quality-dips")
 async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, Any]:
-    research = _load_jsonl(OPPORTUNITIES_PATH)
-    plans = _load_jsonl(PLANS_PATH)
+    research = await asyncio.to_thread(_load_jsonl, OPPORTUNITIES_PATH)
+    plans = await asyncio.to_thread(_load_jsonl, PLANS_PATH)
     symbols = {str(row.get("symbol") or "").upper().strip() for row in research if str(row.get("symbol") or "").strip()}
     # Never make the dashboard wait for an external analyst-target provider. Serve
     # last-known evidence immediately and refresh stale/missing targets in background.
@@ -52,7 +53,7 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
     quotes = await quality_dip_quote_service.get_many(symbols)
     quoted_research = apply_quote_overlay(research, quotes)
     board = build_quality_dips_board(quoted_research, plans, limit=limit)
-    board = attach_v2_board(board, quoted_research)
+    board = await asyncio.to_thread(attach_v2_board, board, quoted_research)
 
     pending_hits = accumulation_ladder_store.sync(board)
     board = accumulation_ladder_store.overlay(board)
@@ -131,8 +132,8 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "events_seen_this_request": len(v3_events),
             "events": v3_events,
             "delivery": v3_delivery,
-            "forward_readiness": forward_readiness(),
-            "forward_diagnostics": forward_diagnostics(),
+            "forward_readiness": await asyncio.to_thread(forward_readiness),
+            "forward_diagnostics": await asyncio.to_thread(forward_diagnostics),
             "execution": "MANUAL_ONLY",
             "live_capital_allowed": False,
             "automatic_real_money_execution": False,
