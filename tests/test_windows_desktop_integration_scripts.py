@@ -58,3 +58,13 @@ def test_desktop_smoke_can_self_start_and_reports_probe_progress():
     assert "starting the normal desktop launcher" in text
     assert "Longevity probe" in text
     assert "auto_started_atlas" in text
+
+
+def test_desktop_smoke_captures_first_failure_diagnostics():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "first_failure_probe" in text
+    assert "failure_snapshot" in text
+    assert "api_processes" in text
+    assert "api_err_tail" in text
+    assert "api_out_tail" in text
+    assert "captured failure snapshot" in text
