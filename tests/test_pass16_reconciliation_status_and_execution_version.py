@@ -42,3 +42,8 @@ def test_reconciliation_diagnostics_exposes_current_and_runtime(monkeypatch):
     assert out["current"]["reconciliation_ok"] is True
     assert out["runtime"]["last_result"]["reconciliation_ok"] is True
     assert out["automatic_real_money_execution"] is False
+
+
+def test_reconciliation_diagnostics_offloads_durable_history_scan():
+    text = (ROOT / "backend/app/api/diagnostics.py").read_text(encoding="utf-8")
+    assert "await asyncio.to_thread(reconciliation_summary)" in text
