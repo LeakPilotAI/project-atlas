@@ -1482,3 +1482,65 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — TRANSIENT FAILURE ARTIFACT ANALYZED / COMPACT-DIAGNOSTIC FIX
+Uploaded desktop-smoke-latest.json from 2026-09-19:
+- desktop start/stop shortcuts target the expected root batch files
+- initial health/dashboard/research/command-center/reconciliation checks returned HTTP 200
+- 300-second longevity run completed 17 probes
+- 2 probes failed; maximum consecutive failed probes = 1
+- runtime recovered after the transient failures
+- first failure occurred at probe 5
+- failure snapshot showed Atlas uvicorn process presence while the endpoint probe failed
+- diagnostic artifact became extremely large because PowerShell Get-Content output was serialized with extended provider metadata; this is diagnostic bloat, not useful runtime evidence
+
+Pass-17 compact-diagnostic patch:
+- d9dd87e reads log tails as plain strings so PowerShell provider metadata cannot explode JSON artifacts
+- self-start now records the launcher process id
+- first-failure snapshot records whether the launcher process is still alive
+- JSON depth reduced to 6 after log-tail normalization
+- c904085 adds regression coverage for compact log serialization + launcher lifecycle fields
+- automatic real-money execution remains disabled
+- local validation of this patch is pending
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- latest prior focused local result: 20 GREEN
+- latest prior full local result: 951 GREEN
+- launcher self-start: GREEN
+- latest 5-minute run: 17 probes / 2 transient failed probes / max consecutive 1 / recovered
+- compact diagnostics + launcher-lifecycle capture: CODE COMPLETE / LOCAL TEST PENDING
+[NEXT] Validate focused suite and rerun one compact 5-minute longevity smoke
+[NEXT] If any probe fails, use compact snapshot to isolate launcher exit vs API unresponsiveness
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
