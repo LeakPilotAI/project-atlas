@@ -181,7 +181,12 @@ class PerpAlertDeliveryService:
                 log.warning("Manual perp Discord delivery pass failed", error=self.last_error)
             try:
                 from app.services.paper_reconciliation_alert import alert_reconciliation_if_needed
-                self.last_reconciliation_result = await alert_reconciliation_if_needed()
+                # reconciliation_summary scans durable JSONL histories synchronously.
+                # Keep that disk work off the FastAPI event loop so health/operator
+                # endpoints remain responsive while the PAPER warning pass runs.
+                self.last_reconciliation_result = await asyncio.to_thread(
+                    lambda: asyncio.run(alert_reconciliation_if_needed())
+                )
             except Exception as exc:
                 log.warning("PAPER reconciliation alert pass failed", error=f"{type(exc).__name__}: {str(exc)[:180]}")
             await asyncio.sleep(self.interval_seconds)
