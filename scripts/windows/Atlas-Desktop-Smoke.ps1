@@ -58,7 +58,7 @@ function Get-ApiProcessSnapshot {
 
 function Get-LogTail([string]$Path, [int]$Lines = 60) {
     if (-not (Test-Path $Path)) { return @() }
-    try { return @(Get-Content $Path -Tail $Lines -ErrorAction SilentlyContinue) } catch { return @() }
+    try { return @([System.IO.File]::ReadLines($Path) | Select-Object -Last $Lines | ForEach-Object { [string]$_ }) } catch { return @() }
 }
 
 $start = Test-Shortcut $StartLink $LaunchBat
@@ -69,9 +69,11 @@ $research = Test-Http "http://127.0.0.1:8000/api/research"
 $command = Test-Http "http://127.0.0.1:8000/api/command-center/summary"
 $reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
 $autoStarted = $false
+$launcherPid = $null
 if ($StartAtlasIfNeeded -and -not $health.ok) {
     Write-Host "Atlas API is not running; starting the normal desktop launcher..." -ForegroundColor Yellow
-    Start-Process -FilePath $LaunchBat | Out-Null
+    $launcherProcess = Start-Process -FilePath $LaunchBat -PassThru
+    $launcherPid = [int]$launcherProcess.Id
     for ($i = 1; $i -le 60; $i++) {
         Start-Sleep -Seconds 2
         $health = Test-Http "http://127.0.0.1:8000/health"
@@ -100,11 +102,13 @@ $longevity = [ordered]@{
     finished_at = $null
     green = $true
     auto_started_atlas = $autoStarted
+    launcher_process_id = $null
     first_failure_probe = $null
     failure_snapshot = $null
 }
 if ($longevity.requested_seconds -gt 0) {
     $longevity.started_at = (Get-Date).ToUniversalTime().ToString("o")
+    $longevity.launcher_process_id = $launcherPid
     $deadline = (Get-Date).AddSeconds($longevity.requested_seconds)
     while ((Get-Date) -lt $deadline) {
         $longevity.probes++
@@ -142,6 +146,8 @@ if ($longevity.requested_seconds -gt 0) {
                 captured_at = (Get-Date).ToUniversalTime().ToString("o")
                 probe_results = $probeResults
                 api_processes = @(Get-ApiProcessSnapshot)
+                launcher_process_id = $launcherPid
+                launcher_alive = if ($launcherPid) { [bool](Get-Process -Id $launcherPid -ErrorAction SilentlyContinue) } else { $null }
                 atlas_containers = @(& docker ps --filter "name=atlas" --format "{{.Names}}" 2>$null)
                 api_err_tail = @(Get-LogTail $ApiErrLog 80)
                 api_out_tail = @(Get-LogTail $ApiOutLog 80)
@@ -189,7 +195,7 @@ $result.status = if (
     $health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok -and $longevity.green
 ) { "ATLAS_DESKTOP_SMOKE_GREEN" } else { "ATLAS_DESKTOP_SMOKE_BLOCKED" }
 
-$json = $result | ConvertTo-Json -Depth 8
+$json = $result | ConvertTo-Json -Depth 6
 $json
 $artifactDir = Join-Path $Root "logs\diagnostics"
 New-Item -ItemType Directory -Force $artifactDir | Out-Null
