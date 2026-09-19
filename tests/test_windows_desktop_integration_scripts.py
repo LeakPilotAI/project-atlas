@@ -50,3 +50,11 @@ def test_desktop_smoke_supports_longevity_and_reconciliation_probes():
     assert "/diagnostics/paper-reconciliation" in text
     assert "longevity = $longevity" in text
     assert "$longevity.green" in text
+
+
+def test_desktop_smoke_can_self_start_and_reports_probe_progress():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "[switch]$StartAtlasIfNeeded" in text
+    assert "starting the normal desktop launcher" in text
+    assert "Longevity probe" in text
+    assert "auto_started_atlas" in text
