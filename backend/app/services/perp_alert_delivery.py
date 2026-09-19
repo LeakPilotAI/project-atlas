@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Any, Awaitable, Callable, Dict, Iterable, Optional
 
 from app.alerts.discord import send_discord_alert
@@ -108,6 +109,8 @@ class PerpAlertDeliveryService:
         self.last_paper_result: Dict[str, int] = {"opened": 0, "closed": 0, "marked": 0, "skipped": 0}
         self.last_reconciliation_result: Dict[str, Any] = {"attempted": 0, "delivered": 0, "reconciliation_ok": True}
         self.last_error: Optional[str] = None
+        self.last_step_timings_ms: Dict[str, float] = {}
+        self.last_cycle_elapsed_ms: float = 0.0
         self._task: Optional[asyncio.Task] = None
 
     async def start(self) -> None:
@@ -165,25 +168,38 @@ class PerpAlertDeliveryService:
             "execution": "PAPER_ONLY",
             "live_capital_allowed": False,
             "automatic_real_money_execution": False,
+            "last_step_timings_ms": dict(self.last_step_timings_ms),
+            "last_cycle_elapsed_ms": round(float(self.last_cycle_elapsed_ms), 3),
         }
 
     async def _loop(self) -> None:
         await asyncio.sleep(5)
         while self.running:
+            cycle_started = time.perf_counter()
+            step_started = time.perf_counter()
             try:
                 await self.paper_once()
             except Exception as exc:
                 log.warning("Manual perp paper mirror pass failed", error=f"{type(exc).__name__}: {str(exc)[:180]}")
+            finally:
+                self.last_step_timings_ms["paper_once"] = round((time.perf_counter() - step_started) * 1000.0, 3)
+            step_started = time.perf_counter()
             try:
                 await self.deliver_once()
             except Exception as exc:
                 self.last_error = f"{type(exc).__name__}: {str(exc)[:180]}"
                 log.warning("Manual perp Discord delivery pass failed", error=self.last_error)
+            finally:
+                self.last_step_timings_ms["deliver_once"] = round((time.perf_counter() - step_started) * 1000.0, 3)
+            step_started = time.perf_counter()
             try:
                 from app.services.paper_reconciliation_alert import alert_reconciliation_if_needed
                 self.last_reconciliation_result = await alert_reconciliation_if_needed()
             except Exception as exc:
                 log.warning("PAPER reconciliation alert pass failed", error=f"{type(exc).__name__}: {str(exc)[:180]}")
+            finally:
+                self.last_step_timings_ms["reconciliation"] = round((time.perf_counter() - step_started) * 1000.0, 3)
+                self.last_cycle_elapsed_ms = round((time.perf_counter() - cycle_started) * 1000.0, 3)
             await asyncio.sleep(self.interval_seconds)
 
 
