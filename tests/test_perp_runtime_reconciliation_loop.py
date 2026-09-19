@@ -25,8 +25,8 @@ def test_runtime_loop_tracks_reconciliation_result(monkeypatch):
     assert service.last_reconciliation_result["reconciliation_ok"] is False
 
 
-def test_runtime_reconciliation_scan_is_offloaded_from_event_loop():
+def test_runtime_reconciliation_alert_stays_on_main_event_loop():
     from pathlib import Path
     text = (Path(__file__).resolve().parents[1] / "backend/app/services/perp_alert_delivery.py").read_text(encoding="utf-8")
-    assert "await asyncio.to_thread(" in text
-    assert "asyncio.run(alert_reconciliation_if_needed())" in text
+    assert "self.last_reconciliation_result = await alert_reconciliation_if_needed()" in text
+    assert "asyncio.run(alert_reconciliation_if_needed())" not in text
