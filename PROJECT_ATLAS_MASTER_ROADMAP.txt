@@ -1830,3 +1830,46 @@ FULL ROADMAP STATUS — CURRENT
 [NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
 [BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
 [MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 17 — BROADER EVENT-LOOP / BACKGROUND-STEP INSTRUMENTATION
+Evidence from latest local run:
+- focused suite: 28 passed / 1 dependency warning
+- longevity: 17 probes / 3 failed probes / max consecutive 3 / recovery observed
+- after recovery, probes 5-17 were GREEN
+- final operator checks timed out on research, command-center, and reconciliation while health remained HTTP 200
+- valid TCP evidence still shows exactly one :8000 listener child process; duplicate-server hypothesis remains rejected
+
+Instrumentation implemented:
+- d911115 records elapsed milliseconds for perp alert-delivery background steps: paper_once, deliver_once, reconciliation, plus total cycle elapsed
+- 30b8625 adds read-only /diagnostics/runtime-latency endpoint exposing event-loop yield latency and service timing state
+- 13fbaf6 captures runtime-latency diagnostics in first smoke failure snapshot
+- 60d8117 adds regression coverage for runtime step timing state
+- no strategy thresholds or execution permissions changed
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 passes 1-16 through Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- focused suite before latest instrumentation: 28 GREEN
+- duplicate-server hypothesis: REJECTED
+- reconciliation source offload: implemented
+- broader operator-surface stalls: confirmed
+- background-step timing + runtime-latency instrumentation: CODE COMPLETE / LOCAL RETEST PENDING
+[NEXT] Focused regression validation
+[NEXT] Diagnostic 5-minute longevity run
+[NEXT] Use timing evidence to identify/offload remaining blocking work
+[NEXT] Require clean 0-failure longevity run
+[NEXT] Full pytest suite
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
