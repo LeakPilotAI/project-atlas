@@ -3,7 +3,9 @@
 #Requires -Version 5.1
 param(
     [string]$Root = "",
-    [switch]$InstallShortcuts
+    [switch]$InstallShortcuts,
+    [int]$LongevitySeconds = 0,
+    [int]$ProbeIntervalSeconds = 15
 )
 
 $ErrorActionPreference = "Stop"
@@ -40,6 +42,36 @@ $health = Test-Http "http://127.0.0.1:8000/health"
 $dashboard = Test-Http "http://127.0.0.1:8000/dashboard"
 $research = Test-Http "http://127.0.0.1:8000/api/research"
 $command = Test-Http "http://127.0.0.1:8000/api/command-center/summary"
+$reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+
+$longevity = [ordered]@{
+    requested_seconds = [Math]::Max(0, $LongevitySeconds)
+    probe_interval_seconds = [Math]::Max(5, $ProbeIntervalSeconds)
+    probes = 0
+    failures = 0
+    started_at = $null
+    finished_at = $null
+    green = $true
+}
+if ($longevity.requested_seconds -gt 0) {
+    $longevity.started_at = (Get-Date).ToUniversalTime().ToString("o")
+    $deadline = (Get-Date).AddSeconds($longevity.requested_seconds)
+    while ((Get-Date) -lt $deadline) {
+        $longevity.probes++
+        foreach ($url in @(
+            "http://127.0.0.1:8000/health",
+            "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+        )) {
+            $probe = Test-Http $url
+            if (-not $probe.ok) {
+                $longevity.failures++
+                $longevity.green = $false
+            }
+        }
+        Start-Sleep -Seconds $longevity.probe_interval_seconds
+    }
+    $longevity.finished_at = (Get-Date).ToUniversalTime().ToString("o")
+}
 
 $containers = @()
 if (Get-Command docker -ErrorAction SilentlyContinue) {
@@ -58,6 +90,8 @@ $result = [ordered]@{
     dashboard = $dashboard
     research = $research
     command_center = $command
+    reconciliation = $reconciliation
+    longevity = $longevity
     atlas_containers = $containers
     paper_shadow_only = $true
     live_capital_allowed = $false
@@ -66,7 +100,7 @@ $result = [ordered]@{
 $result.status = if (
     $result.launch_bat_exists -and $result.stop_bat_exists -and
     $start.exists -and $start.target_ok -and $stop.exists -and $stop.target_ok -and
-    $health.ok -and $dashboard.ok -and $research.ok -and $command.ok
+    $health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok -and $longevity.green
 ) { "ATLAS_DESKTOP_SMOKE_GREEN" } else { "ATLAS_DESKTOP_SMOKE_BLOCKED" }
 
 $result | ConvertTo-Json -Depth 8
