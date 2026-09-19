@@ -122,6 +122,21 @@ async def diagnostics_root() -> Dict[str, Any]:
     return base
 
 
+@router.get("/paper-reconciliation")
+async def diagnostics_paper_reconciliation() -> Dict[str, Any]:
+    from app.services.perp_alert_delivery import perp_alert_delivery_service
+    from app.services.perp_paper_observability import reconciliation_summary
+
+    return {
+        "current": reconciliation_summary(),
+        "runtime": perp_alert_delivery_service.reconciliation_status(),
+        "read_only": True,
+        "execution": "PAPER_ONLY",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+    }
+
+
 @router.get("/discord")
 async def diagnostics_discord() -> Dict[str, Any]:
     from app.alerts.discord import bot, get_subscriber_ids, is_discord_ready

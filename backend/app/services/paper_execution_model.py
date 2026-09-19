@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
+PAPER_EXECUTION_MODEL_VERSION = "paper-exec-v2-conservative-gap-target"
 DEFAULT_FEE_BPS_PER_SIDE = 2.0
 DEFAULT_SLIPPAGE_BPS_PER_SIDE = 2.0
 DEFAULT_TOUCH_BUFFER_BPS = 1.0
@@ -14,6 +15,7 @@ DEFAULT_TOUCH_BUFFER_BPS = 1.0
 
 def execution_assumptions() -> dict[str, Any]:
     return {
+        "version": PAPER_EXECUTION_MODEL_VERSION,
         "fee_bps_per_side": DEFAULT_FEE_BPS_PER_SIDE,
         "slippage_bps_per_side": DEFAULT_SLIPPAGE_BPS_PER_SIDE,
         "touch_buffer_bps": DEFAULT_TOUCH_BUFFER_BPS,

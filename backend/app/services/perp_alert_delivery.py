@@ -157,6 +157,16 @@ class PerpAlertDeliveryService:
         self.last_paper_result = result
         return result
 
+    def reconciliation_status(self) -> Dict[str, Any]:
+        return {
+            "running": bool(self.running),
+            "last_result": dict(self.last_reconciliation_result),
+            "last_error": self.last_error,
+            "execution": "PAPER_ONLY",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+
     async def _loop(self) -> None:
         await asyncio.sleep(5)
         while self.running:

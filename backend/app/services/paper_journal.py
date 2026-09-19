@@ -158,7 +158,7 @@ class PaperJournal:
             "score": score,
             "regime": regime,
             "strategy": strategy,
-            "features": features or {},
+            "features": feature_payload,
             "reject_reason": reject_reason,
         }
         self._append(CANDIDATE_PATH, row)
@@ -210,6 +210,10 @@ class PaperJournal:
         sig_px = float(signal_price) if signal_price is not None else actual_entry
         risk = abs(actual_entry - float(stop)) or 1e-12
         ttype = str(trade_type or "PAPER").upper()
+        feature_payload = dict(features or {})
+        if ttype == "PAPER":
+            from app.services.paper_execution_model import PAPER_EXECUTION_MODEL_VERSION
+            feature_payload.setdefault("paper_execution_model_version", PAPER_EXECUTION_MODEL_VERSION)
         row = {
             "event": "open",
             "trade_id": tid,
@@ -227,7 +231,7 @@ class PaperJournal:
             "risk_price": risk,
             "position_size": float(risk_usd) / risk if risk > 0 else 0.0,
             "regime": regime,
-            "regime_normalized": str((features or {}).get("regime_normalized") or regime or "UNKNOWN"),
+            "regime_normalized": str(feature_payload.get("regime_normalized") or regime or "UNKNOWN"),
             "strategy": strategy,
             "signal_score": float(signal_score),
             "features": features or {},
@@ -243,14 +247,14 @@ class PaperJournal:
             "mae_price": actual_entry,
             "mark": actual_entry,
             "status": "open",
-            "exit_mode": str((features or {}).get("exit_mode") or "SCALP"),
-            "scalp_tp_r": float((features or {}).get("scalp_tp_r") or 1.0),
+            "exit_mode": str(feature_payload.get("exit_mode") or "SCALP"),
+            "scalp_tp_r": float(feature_payload.get("scalp_tp_r") or 1.0),
             "be_after_r": float(
-                (features or {}).get("be_after_r")
-                if (features or {}).get("be_after_r") is not None
+                feature_payload.get("be_after_r")
+                if feature_payload.get("be_after_r") is not None
                 else 0.5
             ),
-            "setup_rr": float((features or {}).get("setup_rr") or 1.8),
+            "setup_rr": float(feature_payload.get("setup_rr") or 1.8),
             "initial_stop": float(stop),
             "working_stop": float(stop),
             "be_armed": False,
