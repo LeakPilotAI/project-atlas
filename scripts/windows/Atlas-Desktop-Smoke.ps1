@@ -204,6 +204,7 @@ if ($longevity.requested_seconds -gt 0) {
                 atlas_containers = @(& docker ps --filter "name=atlas" --format "{{.Names}}" 2>$null)
                 api_err_tail = @(Get-LogTail $ApiErrLog 80)
                 api_out_tail = @(Get-LogTail $ApiOutLog 80)
+                runtime_latency = Test-Http "http://127.0.0.1:8000/diagnostics/runtime-latency"
             }
             Write-Host "  captured failure snapshot" -ForegroundColor Yellow
         }
