@@ -5,7 +5,8 @@ param(
     [string]$Root = "",
     [switch]$InstallShortcuts,
     [int]$LongevitySeconds = 0,
-    [int]$ProbeIntervalSeconds = 15
+    [int]$ProbeIntervalSeconds = 15,
+    [switch]$StartAtlasIfNeeded
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,6 +44,24 @@ $dashboard = Test-Http "http://127.0.0.1:8000/dashboard"
 $research = Test-Http "http://127.0.0.1:8000/api/research"
 $command = Test-Http "http://127.0.0.1:8000/api/command-center/summary"
 $reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+$autoStarted = $false
+if ($StartAtlasIfNeeded -and -not $health.ok) {
+    Write-Host "Atlas API is not running; starting the normal desktop launcher..." -ForegroundColor Yellow
+    Start-Process -FilePath $LaunchBat | Out-Null
+    for ($i = 1; $i -le 60; $i++) {
+        Start-Sleep -Seconds 2
+        $health = Test-Http "http://127.0.0.1:8000/health"
+        if ($health.ok) {
+            $autoStarted = $true
+            break
+        }
+        Write-Host ("  waiting for Atlas API ({0}/60)" -f $i)
+    }
+    $dashboard = Test-Http "http://127.0.0.1:8000/dashboard"
+    $research = Test-Http "http://127.0.0.1:8000/api/research"
+    $command = Test-Http "http://127.0.0.1:8000/api/command-center/summary"
+    $reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+}
 
 $longevity = [ordered]@{
     requested_seconds = [Math]::Max(0, $LongevitySeconds)
@@ -52,12 +71,14 @@ $longevity = [ordered]@{
     started_at = $null
     finished_at = $null
     green = $true
+    auto_started_atlas = $autoStarted
 }
 if ($longevity.requested_seconds -gt 0) {
     $longevity.started_at = (Get-Date).ToUniversalTime().ToString("o")
     $deadline = (Get-Date).AddSeconds($longevity.requested_seconds)
     while ((Get-Date) -lt $deadline) {
         $longevity.probes++
+        Write-Host ("Longevity probe {0}: checking API + reconciliation..." -f $longevity.probes)
         foreach ($url in @(
             "http://127.0.0.1:8000/health",
             "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
@@ -68,6 +89,7 @@ if ($longevity.requested_seconds -gt 0) {
                 $longevity.green = $false
             }
         }
+        if ($longevity.green) { Write-Host "  GREEN" -ForegroundColor Green } else { Write-Host "  failure recorded" -ForegroundColor Red }
         Start-Sleep -Seconds $longevity.probe_interval_seconds
     }
     $longevity.finished_at = (Get-Date).ToUniversalTime().ToString("o")
