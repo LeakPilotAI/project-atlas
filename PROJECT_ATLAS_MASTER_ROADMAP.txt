@@ -1732,3 +1732,49 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — PID DIAGNOSTIC CAPTURE BUG FOUND AND REPAIRED
+Latest user validation:
+- focused suite: 26 passed / 1 dependency warning in 12.52s
+- Atlas self-start succeeded
+- initial health/dashboard/research HTTP 200; command-center and reconciliation timed out during startup
+- longevity: 14 probes / 4 failed probes / 6 endpoint failures / max consecutive 1 / recovery observed
+- first failure snapshot showed launcher alive and Atlas containers alive
+- port_8000_listeners and api_process_tree were unexpectedly empty while api_processes still found both uvicorn command lines
+
+Root cause in diagnostic instrumentation:
+- PowerShell $PID is an automatic read-only variable (case-insensitive)
+- the new snapshot helpers assigned to $pid, causing their try blocks to fail and silently return empty arrays
+- therefore the empty listener/process-tree arrays are invalid diagnostic evidence and MUST NOT be interpreted as port 8000 having no listener
+
+Repair:
+- 43fc594 renames local capture variables to $ownerPid and $processId
+- 8828f6b adds regression coverage forbidding assignment to reserved $PID
+- production runtime behavior is unchanged; diagnostic capture only
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 passes 1-16 through Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- focused suite before diagnostic repair: 26 GREEN
+- latest longevity remains BLOCKED: 14 probes / 4 failed / 6 endpoint failures
+- listener/process-tree snapshot from that run is INVALID due reserved-$PID instrumentation bug
+- PID-safe exact TCP :8000 owner/process-tree capture: CODE COMPLETE / LOCAL RETEST PENDING
+[NEXT] Focused regression validation
+[NEXT] Diagnostic longevity run with valid listener/process-tree capture
+[NEXT] Decide process-lifecycle vs backend-blocking fix from valid evidence
+[NEXT] Require 0-failure longevity run
+[NEXT] Full pytest suite
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
