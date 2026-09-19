@@ -87,3 +87,16 @@ def test_desktop_smoke_keeps_diagnostics_compact_and_tracks_launcher():
     assert "launcher_alive" in text
     assert "ConvertTo-Json -Depth 6" in text
     assert "Get-Content $Path -Tail" not in text
+
+
+def test_desktop_smoke_captures_port_owner_and_process_tree():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "Get-ApiPortOwnershipSnapshot" in text
+    assert "Get-NetTCPConnection -LocalPort 8000 -State Listen" in text
+    assert "owning_pid" in text
+    assert "parent_pid" in text
+    assert "parent_command_line" in text
+    assert "Get-ApiProcessTreeSnapshot" in text
+    assert "owns_port_8000" in text
+    assert "port_8000_listeners" in text
+    assert "api_process_tree" in text
