@@ -100,3 +100,11 @@ def test_desktop_smoke_captures_port_owner_and_process_tree():
     assert "owns_port_8000" in text
     assert "port_8000_listeners" in text
     assert "api_process_tree" in text
+
+
+def test_desktop_smoke_does_not_assign_reserved_powershell_pid_variable():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "$ownerPid = [int]$_.OwningProcess" in text
+    assert "$processId = [int]$p.ProcessId" in text
+    assert "$pid = [int]$_.OwningProcess" not in text
+    assert "$pid = [int]$p.ProcessId" not in text
