@@ -132,3 +132,13 @@ def test_runtime_diagnostic_captures_json_body():
     text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
     assert '$r.Content | ConvertFrom-Json' in text
     assert 'runtime_latency = Test-Http "http://127.0.0.1:8000/diagnostics/runtime-latency" -IncludeBody' in text
+
+
+def test_longevity_verifies_runtime_ownership_and_reported_safety():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "$runtime = Test-RuntimeOwnership" in text
+    assert "$longevity.runtime_failures++" in text
+    assert "$listenerOk -and $containersOk" in text
+    assert "$result.safety_verified -and" in text
+    assert "$safetyBody.live_capital_allowed -eq $false" in text
+    assert "$safetyBody.automatic_real_money_execution -eq $false" in text

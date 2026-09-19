@@ -293,7 +293,13 @@ $result = [ordered]@{
     live_capital_allowed = $false
     automatic_real_money_execution = $false
 }
+$safetyBody = $result.runtime_latency.body
+$result.safety_verified = [bool]($result.runtime_latency.ok -and $safetyBody -and
+    $safetyBody.execution -eq "PAPER_ONLY" -and
+    $safetyBody.live_capital_allowed -eq $false -and
+    $safetyBody.automatic_real_money_execution -eq $false)
 $result.status = if (
+    $result.safety_verified -and
     $result.launch_bat_exists -and $result.stop_bat_exists -and
     $start.exists -and $start.target_ok -and $stop.exists -and $stop.target_ok -and
     $health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok -and $longevity.green

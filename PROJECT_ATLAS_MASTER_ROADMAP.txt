@@ -1906,3 +1906,13 @@ Loop stall reached 13.672 seconds. Added locked event-ID/sequence append index;
 revalidate on initial load or external size/mtime/inode change. Durable flush/fsync
 and corruption/duplicate/sequence validation are preserved. No evidence rewritten.
 Event-store/replay/shadow regressions: 24 passed in 1.83s. Longevity still pending.
+
+PASS 17 — INVESTMENT OUTCOME-ENRICHMENT STALL
+The saved before-event-index diagnostic also captured a 47.718-second loop stall
+in investment.scan.run_once -> _enrich_past -> load_bars. Isolated that synchronous
+pass with asyncio.to_thread and reused each symbol's history within the pass.
+Existing investment collection/outcome/no-lookahead suite: 50 passed in 22.86s.
+New regression: 1 passed in 0.65s; verifies one read per symbol and no enrichment
+of future observations. The software still does not manufacture historical V3 PIT.
+Added final smoke safety verification from actual runtime JSON; fail closed if
+PAPER_ONLY/false/false cannot be verified. Longevity still not GREEN.
