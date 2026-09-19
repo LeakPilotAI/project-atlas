@@ -1873,3 +1873,50 @@ FULL ROADMAP STATUS — CURRENT
 [NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
 [BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
 [MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 17 — STARTUP STABILIZATION GATE + TIMING PAYLOAD CAPTURE
+Latest user evidence:
+- focused suite: 29 passed / 1 dependency warning in 22.61s
+- Atlas was auto-started and /health first became reachable after three launcher waits
+- longevity probe 1 immediately failed, then probe 2 recovered
+- later failures at probes 5-6, 8-9, and 11 prove startup alone does not explain all instability
+- 15 total probes / 6 failed probes / 8 endpoint failures / max consecutive 2 / recovery observed
+- first failure snapshot had valid single TCP :8000 listener parent/child process chain
+- runtime-latency endpoint itself returned HTTP 200 during first failure, but old smoke captured only HTTP status rather than JSON timing body
+
+Implementation:
+- f01f615 adds an explicit post-autostart stabilization gate before longevity timing begins
+- stabilization requires consecutive GREEN checks across health, research, command-center, and reconciliation
+- startup warm-up is recorded separately and is NOT silently counted as longevity failure
+- later failures after stabilization remain fail-closed and still block Pass 17
+- failure snapshot now uses Test-HttpJson for /diagnostics/runtime-latency and persists the actual timing payload body
+- 3319129 adds regression coverage for startup stabilization and JSON timing-body capture
+- no trading thresholds, evidence labels, or execution permissions changed
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 passes 1-16 through Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- latest focused result before startup-gate patch: 29 GREEN
+- startup probe-1 noise hypothesis: SUPPORTED for immediate first failure only
+- post-start failures: STILL PRESENT and meaningful
+- startup stabilization gate: CODE COMPLETE / LOCAL RETEST PENDING
+- runtime timing JSON-body capture: CODE COMPLETE / LOCAL RETEST PENDING
+[NEXT] Focused regression validation
+[NEXT] Stabilized 5-minute longevity run
+[NEXT] If post-stabilization failures remain, use captured timing payload to repair measured blocker
+[NEXT] Require 0 post-stabilization longevity failures
+[NEXT] Full pytest suite
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
