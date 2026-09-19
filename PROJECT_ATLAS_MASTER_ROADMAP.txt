@@ -1363,3 +1363,65 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — REAL LONGEVITY FAILURE CAPTURED
+Local validation:
+- focused suite: 20 passed, 1 dependency warning
+- full suite: 951 passed, 2 dependency warnings
+- desktop launcher self-start succeeded
+- initial HTTP surfaces all returned 200
+- longevity probes 1-4 GREEN
+- failure began at probe 5
+- run finished with 16 probes / 2 endpoint failures
+- atlas-postgres and atlas-redis remained running
+- failure therefore isolated to API/runtime disappearance, not Docker startup
+Pass 17 is NOT GREEN.
+
+PASS 17 DIAGNOSTIC PATCH
+- 7a26817 captures first runtime failure snapshot during longevity smoke
+- 45d1a04 tests the failure-snapshot contract
+- snapshot records health/reconciliation probe results, uvicorn process presence, Atlas containers, api.err.log tail, and api.out.log tail
+- this is diagnostic instrumentation only; no strategy thresholds or live-capital controls changed
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17 — desktop runtime/longevity
+- focused 20 GREEN
+- full 951 GREEN
+- launcher self-start GREEN
+- initial operator HTTP surfaces GREEN
+- probes 1-4 GREEN
+- runtime/API disappeared starting probe 5
+- Docker containers remained alive
+- first-failure crash snapshot instrumentation now code complete
+[NEXT] Reproduce once with crash snapshot and fix root cause
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Forward-evidence accumulation for V3 Quality Dips
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
