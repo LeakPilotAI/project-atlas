@@ -1,8 +1,11 @@
 import asyncio
+from pathlib import Path
 
 from app.api.diagnostics import diagnostics_paper_reconciliation
 from app.services.paper_execution_model import PAPER_EXECUTION_MODEL_VERSION, execution_assumptions
 from app.services.perp_alert_delivery import PerpAlertDeliveryService
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_execution_assumptions_are_versioned():
