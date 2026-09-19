@@ -158,7 +158,7 @@ class PaperJournal:
             "score": score,
             "regime": regime,
             "strategy": strategy,
-            "features": feature_payload,
+            "features": features or {},
             "reject_reason": reject_reason,
         }
         self._append(CANDIDATE_PATH, row)
@@ -234,7 +234,7 @@ class PaperJournal:
             "regime_normalized": str(feature_payload.get("regime_normalized") or regime or "UNKNOWN"),
             "strategy": strategy,
             "signal_score": float(signal_score),
-            "features": features or {},
+            "features": feature_payload,
             "notes": notes,
             "source": source,
             "tier": tier,
