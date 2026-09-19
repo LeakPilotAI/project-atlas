@@ -41,3 +41,12 @@ def test_desktop_smoke_is_fail_closed_and_no_live():
     assert 'automatic_real_money_execution = $false' in text
     assert 'ATLAS_DESKTOP_SMOKE_BLOCKED' in text
     assert 'exit 2' in text
+
+
+def test_desktop_smoke_supports_longevity_and_reconciliation_probes():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "[int]$LongevitySeconds = 0" in text
+    assert "[int]$ProbeIntervalSeconds = 15" in text
+    assert "/diagnostics/paper-reconciliation" in text
+    assert "longevity = $longevity" in text
+    assert "$longevity.green" in text
