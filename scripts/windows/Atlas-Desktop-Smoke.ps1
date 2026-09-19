@@ -56,6 +56,57 @@ function Get-ApiProcessSnapshot {
     return @($rows)
 }
 
+function Get-ApiPortOwnershipSnapshot {
+    $rows = @()
+    try {
+        Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+            $pid = [int]$_.OwningProcess
+            $proc = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $pid) -ErrorAction SilentlyContinue
+            $parent = $null
+            if ($proc -and $proc.ParentProcessId) {
+                $parent = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f [int]$proc.ParentProcessId) -ErrorAction SilentlyContinue
+            }
+            $rows += @{
+                local_address = [string]$_.LocalAddress
+                local_port = [int]$_.LocalPort
+                state = [string]$_.State
+                owning_pid = $pid
+                executable = if ($proc) { [string]$proc.ExecutablePath } else { $null }
+                command_line = if ($proc) { [string]$proc.CommandLine } else { $null }
+                parent_pid = if ($proc) { [int]$proc.ParentProcessId } else { $null }
+                parent_executable = if ($parent) { [string]$parent.ExecutablePath } else { $null }
+                parent_command_line = if ($parent) { [string]$parent.CommandLine } else { $null }
+            }
+        }
+    } catch { }
+    return @($rows)
+}
+
+function Get-ApiProcessTreeSnapshot {
+    $rows = @()
+    $seen = @{}
+    try {
+        $all = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue)
+        $uvicorn = @($all | Where-Object {
+            ([string]$_.CommandLine -match "uvicorn") -and ([string]$_.CommandLine -match "app\.main:app")
+        })
+        foreach ($p in $uvicorn) {
+            $pid = [int]$p.ProcessId
+            if (-not $seen.ContainsKey($pid)) {
+                $seen[$pid] = $true
+                $rows += @{
+                    pid = $pid
+                    parent_pid = [int]$p.ParentProcessId
+                    executable = [string]$p.ExecutablePath
+                    command_line = [string]$p.CommandLine
+                    owns_port_8000 = [bool](Get-NetTCPConnection -LocalPort 8000 -State Listen -OwningProcess $pid -ErrorAction SilentlyContinue)
+                }
+            }
+        }
+    } catch { }
+    return @($rows)
+}
+
 function Get-LogTail([string]$Path, [int]$Lines = 60) {
     if (-not (Test-Path $Path)) { return @() }
     try { return @([System.IO.File]::ReadLines($Path) | Select-Object -Last $Lines | ForEach-Object { [string]$_ }) } catch { return @() }
@@ -146,6 +197,8 @@ if ($longevity.requested_seconds -gt 0) {
                 captured_at = (Get-Date).ToUniversalTime().ToString("o")
                 probe_results = $probeResults
                 api_processes = @(Get-ApiProcessSnapshot)
+                api_process_tree = @(Get-ApiProcessTreeSnapshot)
+                port_8000_listeners = @(Get-ApiPortOwnershipSnapshot)
                 launcher_process_id = $launcherPid
                 launcher_alive = if ($launcherPid) { [bool](Get-Process -Id $launcherPid -ErrorAction SilentlyContinue) } else { $null }
                 atlas_containers = @(& docker ps --filter "name=atlas" --format "{{.Names}}" 2>$null)
