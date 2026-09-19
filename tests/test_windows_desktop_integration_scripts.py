@@ -78,3 +78,12 @@ def test_desktop_smoke_distinguishes_transient_probe_failure_and_persists_artifa
     assert "$probeFailed" in text
     assert "GREEN (runtime recovered after earlier transient failure)" in text
     assert "desktop-smoke-latest.json" in text
+
+
+def test_desktop_smoke_keeps_diagnostics_compact_and_tracks_launcher():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "[System.IO.File]::ReadLines($Path)" in text
+    assert "launcher_process_id" in text
+    assert "launcher_alive" in text
+    assert "ConvertTo-Json -Depth 6" in text
+    assert "Get-Content $Path -Tail" not in text
