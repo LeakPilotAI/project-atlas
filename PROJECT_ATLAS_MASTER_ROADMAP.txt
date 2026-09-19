@@ -1778,3 +1778,55 @@ FULL ROADMAP STATUS — CURRENT
 [NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
 [BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
 [MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 17 — VALID PROCESS EVIDENCE + RECONCILIATION SOURCE-OFFLOAD REPAIR
+Latest user local validation:
+- focused suite: 27 passed / 1 dependency warning in 12.69s
+- valid TCP/process capture obtained
+- TCP 127.0.0.1:8000 had exactly one LISTEN owner: system Python PID 1680
+- PID 1680 parent was venv Python PID 27840
+- venv PID 27840 did NOT own port 8000; child PID 1680 DID own port 8000
+- therefore the two uvicorn-looking process records are a parent/child interpreter chain, not evidence of two independent Atlas servers
+- launcher PID remained alive; atlas-postgres and atlas-redis remained alive
+- first failure had /health HTTP 200 while /diagnostics/paper-reconciliation timed out
+- longevity remained BLOCKED: 14 probes / 5 failed probes / max consecutive 2 / recovery observed
+
+Interpretation:
+- process duplication hypothesis is rejected by valid listener ownership evidence
+- reconciliation remains a directly observed timeout surface
+- prior runtime patch offloaded the entire async alert coroutine to a worker thread using asyncio.run, which unnecessarily moved async Discord/send behavior off the main loop
+- durable JSONL reconciliation_summary is the synchronous work that should be offloaded at its source
+
+Repair:
+- c2db38f: paper_reconciliation_alert now awaits asyncio.to_thread(reconciliation_summary)
+- be48bec: PerpAlertDeliveryService again directly awaits alert_reconciliation_if_needed on the main event loop
+- 9d41910: regression test requires source-level reconciliation scan offload
+- 7ec239c: regression test forbids nested asyncio.run runtime ownership pattern
+- diagnostics HTTP endpoint already independently offloads reconciliation_summary
+- no strategy/live execution behavior changed
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 passes 1-16 through Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / REPAIR CODE COMPLETE / LOCAL RETEST PENDING] Pass 17
+- focused suite before latest repair: 27 GREEN
+- process duplication hypothesis: REJECTED by valid TCP ownership evidence
+- reconciliation timeout path: directly observed
+- source-level blocking scan offload: CODE COMPLETE
+- async alert sender remains on main event loop
+[NEXT] Focused regression validation
+[NEXT] Clean 5-minute longevity smoke; require 0 failed probes
+[NEXT] Full pytest suite if longevity GREEN
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
