@@ -66,3 +66,9 @@ def test_reconciliation_alert_sends_immediately_when_signature_changes(monkeypat
     out = asyncio.run(alert_mod.alert_reconciliation_if_needed(sender=_sender, cooldown_seconds=900, now=t0 + timedelta(seconds=10)))
     assert out["attempted"] == 1
     assert out["suppressed"] is False
+
+
+def test_reconciliation_alert_offloads_history_scan_from_event_loop():
+    from pathlib import Path
+    text = (Path(__file__).resolve().parents[1] / "backend/app/services/paper_reconciliation_alert.py").read_text(encoding="utf-8")
+    assert "rec = await asyncio.to_thread(reconciliation_summary)" in text
