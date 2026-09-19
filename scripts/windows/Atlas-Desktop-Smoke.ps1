@@ -60,8 +60,8 @@ function Get-ApiPortOwnershipSnapshot {
     $rows = @()
     try {
         Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
-            $pid = [int]$_.OwningProcess
-            $proc = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $pid) -ErrorAction SilentlyContinue
+            $ownerPid = [int]$_.OwningProcess
+            $proc = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $ownerPid) -ErrorAction SilentlyContinue
             $parent = $null
             if ($proc -and $proc.ParentProcessId) {
                 $parent = Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f [int]$proc.ParentProcessId) -ErrorAction SilentlyContinue
@@ -70,7 +70,7 @@ function Get-ApiPortOwnershipSnapshot {
                 local_address = [string]$_.LocalAddress
                 local_port = [int]$_.LocalPort
                 state = [string]$_.State
-                owning_pid = $pid
+                owning_pid = $ownerPid
                 executable = if ($proc) { [string]$proc.ExecutablePath } else { $null }
                 command_line = if ($proc) { [string]$proc.CommandLine } else { $null }
                 parent_pid = if ($proc) { [int]$proc.ParentProcessId } else { $null }
@@ -91,15 +91,15 @@ function Get-ApiProcessTreeSnapshot {
             ([string]$_.CommandLine -match "uvicorn") -and ([string]$_.CommandLine -match "app\.main:app")
         })
         foreach ($p in $uvicorn) {
-            $pid = [int]$p.ProcessId
-            if (-not $seen.ContainsKey($pid)) {
-                $seen[$pid] = $true
+            $processId = [int]$p.ProcessId
+            if (-not $seen.ContainsKey($processId)) {
+                $seen[$processId] = $true
                 $rows += @{
-                    pid = $pid
+                    pid = $processId
                     parent_pid = [int]$p.ParentProcessId
                     executable = [string]$p.ExecutablePath
                     command_line = [string]$p.CommandLine
-                    owns_port_8000 = [bool](Get-NetTCPConnection -LocalPort 8000 -State Listen -OwningProcess $pid -ErrorAction SilentlyContinue)
+                    owns_port_8000 = [bool](Get-NetTCPConnection -LocalPort 8000 -State Listen -OwningProcess $processId -ErrorAction SilentlyContinue)
                 }
             }
         }
