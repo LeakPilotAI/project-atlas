@@ -1668,3 +1668,67 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — PORT OWNERSHIP / PROCESS-TREE DIAGNOSTICS
+Latest user longevity validation:
+- focused suite remains 25 GREEN / 1 dependency warning
+- initial desktop surfaces all HTTP 200
+- longevity probes 1-14 GREEN
+- probe 15 transient failure; probe 16 recovered; probes 17-18 failed
+- 18 total probes / 3 failed probes / max consecutive 2
+- first failure: /health timeout while /diagnostics/paper-reconciliation returned 200
+- atlas-postgres and atlas-redis remained running
+- process snapshot again displayed venv python and system Python uvicorn command lines
+- current evidence does NOT yet prove two independent servers; Windows venv launch can involve parent/child interpreter processes
+
+Diagnostic implementation:
+- 355f4b0 captures the actual TCP :8000 LISTEN owner PID, executable, command line, parent PID, and parent command line at first failure
+- captures uvicorn process tree and marks which process actually owns TCP :8000
+- b1b0df4 adds regression coverage for listener ownership and process-tree diagnostics
+- no runtime/strategy thresholds changed; this is diagnostic-only
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- focused suite: 25 GREEN before new diagnostic test
+- initial HTTP surfaces GREEN
+- latest longevity: 18 probes / 3 failed / max consecutive 2 / recovery observed
+- reconciliation event-loop offloads implemented
+- exact TCP :8000 owner + parent/process-tree capture: CODE COMPLETE / LOCAL TEST PENDING
+[NEXT] Focused regression validation
+[NEXT] One diagnostic 5-minute longevity run if focused tests GREEN
+[NEXT] Use exact listener ownership evidence to decide whether a process-lifecycle fix is needed
+[NEXT] Require 0-failure longevity run before Pass 17 GREEN
+[NEXT] Full pytest suite
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
