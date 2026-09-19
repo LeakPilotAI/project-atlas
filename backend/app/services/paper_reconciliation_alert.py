@@ -1,6 +1,8 @@
 """Read-only alerting for PAPER reconciliation failures."""
 from __future__ import annotations
 
+import asyncio
+
 from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable
 
@@ -32,7 +34,7 @@ async def alert_reconciliation_if_needed(
     now: datetime | None = None,
 ) -> dict[str, Any]:
     global _last_alert_signature, _last_alert_at
-    rec = reconciliation_summary()
+    rec = await asyncio.to_thread(reconciliation_summary)
     checked_at = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     signature = _signature(rec)
     if rec.get("reconciliation_ok"):
