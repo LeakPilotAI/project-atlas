@@ -68,3 +68,13 @@ def test_desktop_smoke_captures_first_failure_diagnostics():
     assert "api_err_tail" in text
     assert "api_out_tail" in text
     assert "captured failure snapshot" in text
+
+
+def test_desktop_smoke_distinguishes_transient_probe_failure_and_persists_artifact():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert "failed_probe_count" in text
+    assert "max_consecutive_failed_probes" in text
+    assert "recovered_after_failure" in text
+    assert "$probeFailed" in text
+    assert "GREEN (runtime recovered after earlier transient failure)" in text
+    assert "desktop-smoke-latest.json" in text
