@@ -92,6 +92,10 @@ $longevity = [ordered]@{
     probe_interval_seconds = [Math]::Max(5, $ProbeIntervalSeconds)
     probes = 0
     failures = 0
+    failed_probe_count = 0
+    consecutive_failed_probes = 0
+    max_consecutive_failed_probes = 0
+    recovered_after_failure = $false
     started_at = $null
     finished_at = $null
     green = $true
@@ -106,6 +110,7 @@ if ($longevity.requested_seconds -gt 0) {
         $longevity.probes++
         Write-Host ("Longevity probe {0}: checking API + reconciliation..." -f $longevity.probes)
         $probeResults = @{}
+        $probeFailed = $false
         foreach ($url in @(
             "http://127.0.0.1:8000/health",
             "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
@@ -114,10 +119,24 @@ if ($longevity.requested_seconds -gt 0) {
             $probeResults[$url] = $probe
             if (-not $probe.ok) {
                 $longevity.failures++
-                $longevity.green = $false
+                $probeFailed = $true
             }
         }
-        if (-not $longevity.green -and $null -eq $longevity.first_failure_probe) {
+        if ($probeFailed) {
+            $longevity.failed_probe_count++
+            $longevity.consecutive_failed_probes++
+            $longevity.max_consecutive_failed_probes = [Math]::Max(
+                $longevity.max_consecutive_failed_probes,
+                $longevity.consecutive_failed_probes
+            )
+            $longevity.green = $false
+        } else {
+            if ($longevity.consecutive_failed_probes -gt 0) {
+                $longevity.recovered_after_failure = $true
+            }
+            $longevity.consecutive_failed_probes = 0
+        }
+        if ($probeFailed -and $null -eq $longevity.first_failure_probe) {
             $longevity.first_failure_probe = $longevity.probes
             $longevity.failure_snapshot = @{
                 captured_at = (Get-Date).ToUniversalTime().ToString("o")
@@ -129,7 +148,12 @@ if ($longevity.requested_seconds -gt 0) {
             }
             Write-Host "  captured failure snapshot" -ForegroundColor Yellow
         }
-        if ($longevity.green) { Write-Host "  GREEN" -ForegroundColor Green } else { Write-Host "  failure recorded" -ForegroundColor Red }
+        if (-not $probeFailed) {
+            if ($longevity.recovered_after_failure) { Write-Host "  GREEN (runtime recovered after earlier transient failure)" -ForegroundColor Green }
+            else { Write-Host "  GREEN" -ForegroundColor Green }
+        } else {
+            Write-Host ("  FAILED (consecutive failed probes: {0})" -f $longevity.consecutive_failed_probes) -ForegroundColor Red
+        }
         Start-Sleep -Seconds $longevity.probe_interval_seconds
     }
     $longevity.finished_at = (Get-Date).ToUniversalTime().ToString("o")
@@ -165,5 +189,11 @@ $result.status = if (
     $health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok -and $longevity.green
 ) { "ATLAS_DESKTOP_SMOKE_GREEN" } else { "ATLAS_DESKTOP_SMOKE_BLOCKED" }
 
-$result | ConvertTo-Json -Depth 8
+$json = $result | ConvertTo-Json -Depth 8
+$json
+$artifactDir = Join-Path $Root "logs\diagnostics"
+New-Item -ItemType Directory -Force $artifactDir | Out-Null
+$artifactPath = Join-Path $artifactDir "desktop-smoke-latest.json"
+$json | Set-Content -Path $artifactPath -Encoding UTF8
+Write-Host ("Diagnostic artifact: {0}" -f $artifactPath) -ForegroundColor Cyan
 if ($result.status -ne "ATLAS_DESKTOP_SMOKE_GREEN") { exit 2 }
