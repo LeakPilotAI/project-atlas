@@ -1605,3 +1605,17 @@ FULL ROADMAP STATUS — CURRENT
 
 LIVE-CAPITAL RULE
 Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — REGRESSION TEST HARNESS REPAIR
+Latest user local validation after responsiveness patch:
+- focused suite: 24 passed / 1 failed / 1 dependency warning
+- sole failure was test_reconciliation_diagnostics_offloads_durable_history_scan
+- failure cause: test referenced ROOT without defining it; production code was not implicated by this failure
+- user had already started the 5-minute desktop smoke immediately afterward; its result is still required before judging the runtime fix
+
+Repair:
+- 6a67774 defines ROOT in tests/test_pass16_reconciliation_status_and_execution_version.py using Path(__file__).resolve().parents[1]
+- no production behavior, strategy logic, evidence, or live-capital controls changed
+- focused rerun required
+- Pass 17 remains FIX CODE COMPLETE / LOCAL RETEST PENDING
