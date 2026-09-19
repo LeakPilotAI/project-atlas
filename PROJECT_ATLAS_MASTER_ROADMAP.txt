@@ -1619,3 +1619,52 @@ Repair:
 - no production behavior, strategy logic, evidence, or live-capital controls changed
 - focused rerun required
 - Pass 17 remains FIX CODE COMPLETE / LOCAL RETEST PENDING
+
+
+PASS 17 — FOCUSED REGRESSION SUITE VERIFIED LOCAL GREEN
+Latest user local validation after test-harness repair:
+- focused Pass-17 suite: 25 passed / 1 dependency warning in 12.40s
+- prior NameError in regression test harness is resolved
+- production responsiveness/event-loop offload patches remain under validation
+- 5-minute longevity smoke still required before Pass 17 can be marked GREEN
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[PARTIAL GREEN / LONGEVITY RETEST REQUIRED] Pass 17
+- focused suite: 25 GREEN
+- compact diagnostics: GREEN
+- launcher/Docker/uvicorn liveness instrumentation: GREEN
+- event-loop starvation mitigation code: GREEN by focused tests
+- 5-minute longevity validation: PENDING
+[NEXT] Run clean 5-minute desktop smoke; require 0 failed probes
+[NEXT] Full pytest suite after longevity GREEN
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
