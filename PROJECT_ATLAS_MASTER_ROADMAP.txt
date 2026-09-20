@@ -1916,3 +1916,19 @@ New regression: 1 passed in 0.65s; verifies one read per symbol and no enrichmen
 of future observations. The software still does not manufacture historical V3 PIT.
 Added final smoke safety verification from actual runtime JSON; fail closed if
 PAPER_ONLY/false/false cannot be verified. Longevity still not GREEN.
+
+
+RESUME 2026-09-20 - STRICT PRIORITY CONTINUED
+Repair 3 is committed at b4f1701; no prior tracked work was discarded.
+Focused resume gate: 85 passed, 1 audioop dependency warning in 13.91s.
+Cold-start stack samples identified additional blocking validation endpoints:
+validation_summary/readiness_report and edge_endpoint/edge_report scan histories
+on the API loop (latest sample 12.625 seconds). These fully synchronous handlers
+now use FastAPI worker-thread dispatch. HTTP regression verifies execution off
+loop. Targeted validation/API gate: 21 passed, 2 dependency warnings in 2.14s.
+No new dependencies/services, no paid services, no live execution added.
+Expanded requested roadmap is accepted AFTER Pass 17: operator/log hardening,
+cohorts, prospective evidence/outcomes/lifecycle, versioned valuation/actionability,
+ETF/total-return/compounding, manual daily portfolio plans, immutable plan history,
+benchmark/opportunity-cost/calibration/challengers and read-only readiness.
+No downstream completion is claimed while Pass 17 remains under validation.

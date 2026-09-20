@@ -227,7 +227,7 @@ try {
     docker info 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) { $engineUp = $true }
     if (-not $engineUp) {
-        Start-Process $dd | Out-Null
+        Start-Process $dd -WindowStyle Hidden | Out-Null
         if (-not (Wait-Docker 150)) {
             Write-Host "[ERROR] Docker engine did not start. Open Docker Desktop once, then retry." -ForegroundColor Red
             cmd /c pause

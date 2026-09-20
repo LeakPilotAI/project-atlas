@@ -85,3 +85,35 @@ def test_paper_stats_scan_runs_off_event_loop(monkeypatch):
         return {"closed": 3}
     monkeypatch.setattr(paper_journal, "_stats_snapshot", scan)
     assert asyncio.run(paper_journal.stats()) == {"closed": 3}
+
+
+def test_validation_history_reports_use_fastapi_worker_threads(monkeypatch):
+    import threading
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from app.api.validation import router
+    import app.services.edge_diagnostics as edge
+    import app.services.paper_validation as validation
+    loop_thread = []
+    worker_threads = []
+    app = FastAPI()
+    app.include_router(router)
+    @app.middleware("http")
+    async def capture_thread(request, call_next):
+        loop_thread.append(threading.get_ident())
+        return await call_next(request)
+    def edge_report():
+        worker_threads.append(threading.get_ident())
+        return {"ok": True, "live_capital_allowed": False}
+    def readiness(rows):
+        worker_threads.append(threading.get_ident())
+        return dict.fromkeys(["closed_trades", "observed_wr", "observed_expectancy", "total_r", "data_sufficiency", "statistical_stability", "performance", "risk", "data_integrity", "conclusion", "milestone"], 0)
+    monkeypatch.setattr(edge, "edge_report", edge_report)
+    monkeypatch.setattr(validation, "load_paper_closes", lambda: [])
+    monkeypatch.setattr(validation, "readiness_report", readiness)
+    monkeypatch.setattr(validation, "uncertainty", lambda rows: {})
+    with TestClient(app) as client:
+        assert client.get("/api/validation/edge").status_code == 200
+        assert client.get("/api/validation/summary").status_code == 200
+    assert len(worker_threads) == 2
+    assert all(worker not in loop_thread for worker in worker_threads)
