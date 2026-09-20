@@ -1875,7 +1875,7 @@ FULL ROADMAP STATUS â€” CURRENT
 [MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
 
 
-PASS 17 — AUTONOMOUS MEASURED STALL REPAIR (2026-09-19)
+PASS 17 â€” AUTONOMOUS MEASURED STALL REPAIR (2026-09-19)
 Branch remains chatgpt/atlas-rebuild-v1; starting HEAD 9b5e095.
 Actual checkout lacked the described startup gate and JSON runtime body capture.
 Added consecutive startup checks, separate warm-up accounting, all four operator
@@ -1899,7 +1899,7 @@ Historical FAILED_NEGATIVE: 546 trades / -26.7235R / -0.04894R unchanged.
 Retrospective V3 evidence remains BLOCKED/EVIDENCE_INSUFFICIENT.
 live_capital_allowed=false; automatic_real_money_execution=false; MANUAL_ONLY.
 
-PASS 17 — SECOND MEASURED BOTTLENECK
+PASS 17 â€” SECOND MEASURED BOTTLENECK
 Runtime stack samples after the scan-offload repair identified repeated full
 trading_v4_shadow.jsonl replay from JsonlEventStore.append on every shadow mark.
 Loop stall reached 13.672 seconds. Added locked event-ID/sequence append index;
@@ -1907,7 +1907,7 @@ revalidate on initial load or external size/mtime/inode change. Durable flush/fs
 and corruption/duplicate/sequence validation are preserved. No evidence rewritten.
 Event-store/replay/shadow regressions: 24 passed in 1.83s. Longevity still pending.
 
-PASS 17 — INVESTMENT OUTCOME-ENRICHMENT STALL
+PASS 17 â€” INVESTMENT OUTCOME-ENRICHMENT STALL
 The saved before-event-index diagnostic also captured a 47.718-second loop stall
 in investment.scan.run_once -> _enrich_past -> load_bars. Isolated that synchronous
 pass with asyncio.to_thread and reused each symbol's history within the pass.
@@ -1932,3 +1932,28 @@ cohorts, prospective evidence/outcomes/lifecycle, versioned valuation/actionabil
 ETF/total-return/compounding, manual daily portfolio plans, immutable plan history,
 benchmark/opportunity-cost/calibration/challengers and read-only readiness.
 No downstream completion is claimed while Pass 17 remains under validation.
+
+
+PASS 17 - VERIFIED GREEN (2026-09-20)
+Runtime repair HEAD: cdd2470; previous repairs e0b1e02 / 8bb73a3 / b4f1701.
+Focused resume gate: 85 passed / 1 warning; validation repair: 21 / 2 warnings.
+Normal desktop cold restart loaded every repair. Startup: 4 checks, 1 warm-up
+failure, then 3 consecutive GREEN checks. Warm-up excluded from measured stats.
+Measured UTC window 2026-09-20T13:33:49.8694186Z to 13:39:08.5220541Z:
+318.653 seconds, 16 probes, 15-second configured interval; 0 failed probes,
+0 endpoint failures, 0 runtime failures; green=true; ATLAS_DESKTOP_SMOKE_GREEN.
+All four operator surfaces were probed throughout. Launcher PID 6952 alive.
+One 127.0.0.1:8000 listener PID 13384, parent venv PID 35656; correct Atlas tree.
+atlas-postgres and atlas-redis healthy at every runtime check.
+Both desktop shortcut targets verified against ATLAS.bat / ATLAS-STOP.bat.
+Runtime JSON safety_verified=true: PAPER_ONLY / false / false.
+Artifact: logs/diagnostics/pass17-green.json (retained compact local evidence).
+Full pytest after longevity: 972 passed, 2 warnings in 65.34s.
+Warnings: Python audioop deprecation; Starlette/httpx TestClient deprecation.
+Initial full run was 971 passed / 1 failed due three non-UTF8 roadmap dashes;
+encoding repaired without changing historical content; complete rerun GREEN.
+[GREEN] Pass 17 desktop longevity and post-longevity full regression.
+[NEXT] Operator hardening, log retention and clean shutdown verification.
+Remaining expanded research roadmap stays pending; no completion implied.
+Historical HOLDOUT remains 546 / -26.7235R / -0.04894R, FAILED_NEGATIVE.
+Retrospective V3 remains BLOCKED/EVIDENCE_INSUFFICIENT; live flags false.
