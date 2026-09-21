@@ -1983,3 +1983,25 @@ stop-latest.json, desktop-smoke-latest.json. Guide: docs/ATLAS_OPERATOR_GUIDE.md
 All expanded prospective research tasks remain pending; no evidence fabricated.
 Historical HOLDOUT preserved: 546 / -26.7235R / -0.04894R FAILED_NEGATIVE.
 New paid services=0; live_capital_allowed=false; automatic_real_money_execution=false.
+
+POST-PASS-17 DIAGNOSTIC CLEANUP AND MODEL COHORTS (2026-09-20)
+Removed seven obsolete local repeated runtime snapshots/console dump: 202361
+bytes. Explicit file paths checked under logs/diagnostics before deletion.
+Cleanup manifest retained locally. Preserved pass17-green.json, full pytest log,
+prior failure/reproduction evidence, all research/PAPER/PIT journals, and the
+pre-existing untracked ATLAS_RUNTIME_AUDIT.json. No stale operational .old/.bak
+files found in logs. Logs/diagnostics and rotated operational logs are Git-ignored.
+[COMPLETE] Bounded diagnostic cleanup; no paid logging/monitoring added.
+Execution-version cohorts now exposed in existing PAPER observability response.
+Distinct trade IDs, open/closed/resolved/unknown/interrupted counts, win/loss/
+scratch counts, win rate, total/expectancy/median R, chronological closed-equity
+maximum drawdown R and evidence dates. Unknown dates yield unknown drawdown.
+TEST/DIAGNOSTIC excluded across all events of a trade. Legacy missing versions
+remain UNKNOWN/legacy. Conflicting versions/closes remain unresolved. Duplicate
+identical closes count once. Net zero never falls through to positive gross R.
+No pooled performance; no historical records relabeled or rewritten.
+Cohort/observability/version integration tests: 11 passed, 1 dependency warning.
+[COMPLETE] PAPER execution-model cohort reporting.
+[NEXT] Genuine automated forward PIT observations and outcomes/evidence lifecycle.
+Remaining adaptive valuation, daily plans, ETF/total return, policy learning,
+calibration, benchmarking/dashboard and read-only readiness work remain pending.
