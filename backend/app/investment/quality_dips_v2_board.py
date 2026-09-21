@@ -54,6 +54,8 @@ def build_v2_projection(row: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "symbol": evidence.get("symbol"),
+        "decision_inputs": evidence,
+        "evidence_quality": evidence.get("evidence_quality", "UNKNOWN"),
         "patient_state": evidence.get("patient_state"),
         "state_reasons": list(evidence.get("state_reasons") or []),
         "evidence_gate": gate,

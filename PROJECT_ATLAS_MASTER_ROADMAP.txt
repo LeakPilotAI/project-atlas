@@ -2005,3 +2005,28 @@ Cohort/observability/version integration tests: 11 passed, 1 dependency warning.
 [NEXT] Genuine automated forward PIT observations and outcomes/evidence lifecycle.
 Remaining adaptive valuation, daily plans, ETF/total return, policy learning,
 calibration, benchmarking/dashboard and read-only readiness work remain pending.
+
+PROSPECTIVE EVIDENCE CHECKPOINT (2026-09-20 local)
+Existing quality-dip background monitor now collects without dashboard visits
+or Discord delivery. Separate prospective_v3_observations.jsonl preserves legacy
+V3 evidence unchanged. One first-seen UTC-day/symbol/frozen-policy observation;
+source snapshot, actual observation/source timestamps, complete decision inputs,
+valuation provenance, classification, confidence/missingness, strategy/policy/
+execution version, FORWARD_COLLECTION and initially UNKNOWN outcome.
+Future-dated and TEST/DIAGNOSTIC source observations rejected. Writes flushed/
+fsynced; malformed evidence fails visibly. Current policy margins unchanged.
+Outcome revisions in separate prospective_v3_outcomes.jsonl preserve originals.
+Only completed later daily sessions used; path, horizons, MFE/MAE and target
+touches measured. No frozen stop/order means fill/stop/R stay UNKNOWN rather
+than inventing favorable executions. Unresolved and losing evidence retained.
+Prospective policy-freeze library requires future boundaries, immutable version
+and rationale. Existing DEVELOPMENT/TEST/DIAGNOSTIC never becomes HOLDOUT.
+No policy freeze or champion promotion fabricated during this implementation.
+Focused V2 board/runtime + prospective tests: 19 passed. Lifecycle/prospective
+tests: 9 passed. Cold startup: ATLAS_DESKTOP_SMOKE_GREEN, safety_verified=true.
+Actual autonomous runtime: 36 observations / 36 symbols, FORWARD_COLLECTION;
+36 outcome revisions, all UNKNOWN (no eligible subsequent sessions yet).
+[IMPLEMENTED/RUNTIME VERIFIED] Genuine forward collection and outcome tracking.
+[IMPLEMENTED/TESTED] Prospective freeze/classification library; operator surface pending.
+[BLOCKED BY TIME/EVIDENCE] Mature outcomes and untouched V3 holdout conclusions.
+Adaptive valuation/plans/ETF/calibration/reporting work remains active.

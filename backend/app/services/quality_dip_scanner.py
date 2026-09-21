@@ -310,9 +310,14 @@ class QualityDipScanner:
             self.last_alerts = ([event] + self.last_alerts)[:20]
             log.info("accumulation ladder level hit", **event)
 
+        # Prospective evidence collection must not depend on dashboard visits or DMs.
+        research = await asyncio.to_thread(_load_jsonl, OPPORTUNITIES_PATH)
+        v2_board = await asyncio.to_thread(attach_v2_board, board, research)
+        from app.investment.prospective_evidence import collect_board
+        await asyncio.to_thread(collect_board, v2_board, research)
+        from app.investment.prospective_outcomes import refresh_outcomes
+        await asyncio.to_thread(refresh_outcomes)
         if discord_enabled:
-            research = await asyncio.to_thread(_load_jsonl, OPPORTUNITIES_PATH)
-            v2_board = await asyncio.to_thread(attach_v2_board, board, research)
             hours = float(getattr(settings, "quality_dip_cooldown_hours", 12) or 12)
             await self._process_v2_alerts(v2_board, hours)
 
