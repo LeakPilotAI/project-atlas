@@ -2048,3 +2048,54 @@ Runtime was stopped on resume. Preserved evidence baseline: 36 observations,
 d2a5e820c8f1e197abfceb906948543ae9dcfb35dbc89101a4e5ac3dc7fe64e7.
 [TESTED/CODE COMPLETE] Current responsiveness repair; cold longevity pending.
 Historical Pass 17 remains GREEN and its earlier evidence is unchanged.
+
+POST-994 COLD RUNTIME GATE - GREEN (2026-09-21)
+Repair commit bc01821. Startup: 3 checks / 0 failures / 3 consecutive healthy.
+Measured 2026-09-21T12:14:21.6978869Z to 12:19:36.5228433Z:
+314.825 seconds, 14 probes, 0 endpoint failures, 0 runtime failures.
+Launcher alive; one verified Atlas 127.0.0.1:8000 listener; PostgreSQL and Redis
+healthy throughout; safety_verified=true. Artifact logs/diagnostics/post994-green.json.
+Actual prospective report: 36 observations, 1 saved BUY_NOTHING_TODAY plan,
+4 ETFs, INSUFFICIENT_EVIDENCE. Browser calculator verified hypothetical 100
+capital / zero contributions / one year at -10%, 0%, +10% gives 90/100/110.
+Original observations/outcomes/plan retained. Full regression rerun in progress.
+
+RESEARCH FOUNDATION AND INTEGRITY REFINEMENT (2026-09-21)
+Post-repair full regression: 1001 passed / 2 warnings in 78.60s.
+Completed previously uncommitted manual daily plan, local ETF/total-return/
+compounding, valuation revisions, benchmark arithmetic and research page.
+Original daily plan remains immutable; absent portfolio/cash/risk configuration
+produces BUY_NOTHING_TODAY. Explicit staged research budgets respect shared
+sector/position limits and reserve cash. No broker account/credential required.
+Current valuation revisions now run independently of daily-plan creation,
+using actual changed evidence and preserving old/new values, source timestamps,
+policy/model versions, reason and confidence. Price-driven score changes or
+source timestamp refresh alone cannot justify changed targets. Actionability
+honors the existing freshness/quality gate; valuation L levels stay unchanged.
+ETF metrics use local completed daily bars or dated explicit facts. Missing
+expense/holdings/cash distributions stay UNKNOWN; future-dated facts rejected.
+Compounding distinguishes price growth/distributions and reinvestment; no
+guaranteed results, no implicit tax assumptions, no double-counted distributions.
+Benchmark reporting joins genuine original observation/source timestamps and
+identical subsequent dates. Negative comparisons remain visible. These are
+reference-price comparisons, NOT executed-strategy equity or proof of edge.
+Calibration and opportunity-cost outputs retain unresolved outcomes; no invented
+fills or R results. Champion unchanged; challenger evaluation cannot promote.
+Holdout classification now also requires matching policy-definition hash.
+Original 36 records are not backfilled with missing hashes or reclassified.
+Readiness remains INSUFFICIENT_EVIDENCE with explicit maturity, version, benchmark
+and missing economic-validation facts. No easy acceptance thresholds invented.
+UI overflow repaired; main dashboard links the daily research page.
+Guide/cost audit: docs/ATLAS_PROSPECTIVE_RESEARCH.md. New paid services=0;
+no dependencies/containers/external services added. Source search found no
+order submission/signing endpoint or enabled live-capital flag in app code.
+Final regression after refinements: 1007 passed, 2 warnings in 83.75s.
+Warnings remain audioop deprecation and Starlette/httpx TestClient deprecation.
+[IMPLEMENTED/TESTED] Core autonomous research pipeline and reporting foundation.
+[BLOCKED BY INPUTS] Personalized allocation without genuine portfolio/risk inputs.
+[BLOCKED BY DATA] ETF expense/holdings/distribution fields absent in local sources.
+[BLOCKED BY TIME/EVIDENCE] Mature forward calibration, economic strategy conclusions,
+untouched holdout, meaningful challenger promotion and live-readiness conclusions.
+No historical V3 or perps evidence rewritten. Historical HOLDOUT remains
+546 / -26.7235R / -0.04894R FAILED_NEGATIVE / IMMUTABLE.
+Final cold runtime/stop validation follows; do not infer it from unit tests.

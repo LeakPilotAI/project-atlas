@@ -315,8 +315,12 @@ class QualityDipScanner:
         v2_board = await asyncio.to_thread(attach_v2_board, board, research)
         from app.investment.prospective_evidence import collect_board
         await asyncio.to_thread(collect_board, v2_board, research)
+        from app.investment.adaptive_valuation import review_current_valuations
+        await asyncio.to_thread(review_current_valuations, v2_board, research)
         from app.investment.prospective_outcomes import refresh_outcomes
         await asyncio.to_thread(refresh_outcomes)
+        from app.investment.daily_research_plan import persist_daily_plan
+        await asyncio.to_thread(persist_daily_plan)
         if discord_enabled:
             hours = float(getattr(settings, "quality_dip_cooldown_hours", 12) or 12)
             await self._process_v2_alerts(v2_board, hours)
