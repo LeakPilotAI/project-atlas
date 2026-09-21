@@ -29,8 +29,28 @@ function Test-AtlasProcess($Process) {
 
 Write-Host "[stop] Atlas Python..."
 $owned = @(Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe' OR Name='node.exe'" -ErrorAction SilentlyContinue | Where-Object { Test-AtlasProcess $_ })
+# Ask this desktop run to execute Uvicorn/lifespan cleanup before force fallback.
+$controlDir = Join-Path $Root "logs\runtime"
+$requestedGraceful = $false
+try {
+    $manifest = Get-Content (Join-Path $controlDir "runtime.json") -Raw -ErrorAction Stop | ConvertFrom-Json
+    if ($owned.Count -gt 0 -and $manifest.run_id) {
+        @{run_id=[string]$manifest.run_id} | ConvertTo-Json | Set-Content (Join-Path $controlDir "stop.json") -Encoding UTF8
+        $requestedGraceful = $true
+        $deadline = (Get-Date).AddSeconds(30)
+        do {
+            $remaining = @($owned | Where-Object { Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue })
+            if ($remaining.Count -eq 0) { break }
+            Start-Sleep -Milliseconds 500
+        } while ((Get-Date) -lt $deadline)
+    }
+} catch { }
+$forced = 0
 foreach ($process in $owned) {
-    if ($process.ProcessId -gt 4) { Stop-Tree ([int]$process.ProcessId) }
+    if ($process.ProcessId -gt 4 -and (Get-Process -Id $process.ProcessId -ErrorAction SilentlyContinue)) {
+        $forced++
+        Stop-Tree ([int]$process.ProcessId)
+    }
 }
 
 Write-Host "[stop] Atlas containers (Docker Desktop + Genesis stay up)..."
@@ -50,4 +70,7 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
     Write-Host "[stop] docker CLI not in PATH - Python was still killed"
 }
 
+$diagnostics = Join-Path $Root "logs\diagnostics"
+New-Item -ItemType Directory -Force $diagnostics | Out-Null
+@{requested_graceful=$requestedGraceful; forced_process_trees=$forced; finished_at=(Get-Date).ToUniversalTime().ToString("o")} | ConvertTo-Json | Set-Content (Join-Path $diagnostics "stop-latest.json") -Encoding UTF8
 Write-Host "[stop] done. Docker Desktop / Genesis were not touched."

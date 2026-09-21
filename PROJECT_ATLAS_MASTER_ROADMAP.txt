@@ -1957,3 +1957,29 @@ encoding repaired without changing historical content; complete rerun GREEN.
 Remaining expanded research roadmap stays pending; no completion implied.
 Historical HOLDOUT remains 546 / -26.7235R / -0.04894R, FAILED_NEGATIVE.
 Retrospective V3 remains BLOCKED/EVIDENCE_INSUFFICIENT; live flags false.
+
+
+POST-PASS-17 OPERATOR HARDENING - VERIFIED (2026-09-20 local)
+Normal launcher now requires three consecutive healthy operator checks before
+opening the dashboard. Desktop logging rotates at 20 MiB with three backups;
+rotation exercised with real file handlers. Global WSL settings are untouched.
+Desktop stop uses a per-run local handshake, bounded 30-second graceful wait,
+then only root-qualified Atlas server process trees as fallback.
+Cold desktop startup: ATLAS_DESKTOP_SMOKE_GREEN; both shortcut targets correct,
+operator HTTP surfaces healthy, Atlas listener ownership and healthy containers
+verified, PAPER_ONLY and both live flags false. This was a startup check, not a
+replacement for the preserved 318.653-second Pass 17 longevity acceptance.
+First stop had clean application shutdown but inconsistent summary (false);
+retained as an unresolved diagnostic discrepancy, not counted as verified.
+Repeat captured launch/stop: requested_graceful=true, forced_process_trees=0,
+finished 2026-09-21T02:28:33.9380183Z. API shutdown completed, no :8000 listener,
+no Atlas server/launcher process remained, Atlas containers removed; Docker
+Desktop remained running. No unrelated containers were running before the test.
+Operator/shutdown/lifecycle regression: 30 passed in 1.14 seconds.
+Artifacts: logs/diagnostics/operator-launch.*.log, operator-stop-console.log,
+stop-latest.json, desktop-smoke-latest.json. Guide: docs/ATLAS_OPERATOR_GUIDE.md.
+[COMPLETE/GREEN] Operator hardening implemented and repeat runtime verified.
+[NEXT] Bounded diagnostic cleanup, then execution-model cohort reporting.
+All expanded prospective research tasks remain pending; no evidence fabricated.
+Historical HOLDOUT preserved: 546 / -26.7235R / -0.04894R FAILED_NEGATIVE.
+New paid services=0; live_capital_allowed=false; automatic_real_money_execution=false.

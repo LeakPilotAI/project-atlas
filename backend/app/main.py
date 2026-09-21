@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict
@@ -196,6 +197,9 @@ async def lifespan(app: FastAPI):
             log.warning("investment scanner start failed; trading continues", error=str(e)[:200])
         log.info("Background services booted")
 
+    from app.services.desktop_control import DesktopControl
+    desktop_control = DesktopControl(os.getenv("ATLAS_DESKTOP_CONTROL_DIR"), os.getenv("ATLAS_DESKTOP_RUN_ID"))
+    await desktop_control.start()
     from app.services.runtime_watchdog import runtime_watchdog
     await runtime_watchdog.start()
     boot_task = asyncio.create_task(_boot_services(), name="atlas_boot")
@@ -272,6 +276,7 @@ async def lifespan(app: FastAPI):
         await engine.dispose()
     except Exception:
         pass
+    await desktop_control.stop()
     log.info("Project Atlas shutdown complete")
 
 

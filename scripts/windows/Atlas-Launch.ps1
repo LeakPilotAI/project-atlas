@@ -49,6 +49,11 @@ function Rotate-Log([string]$Path, [int]$MaxBytes = 20971520) {
 function Stop-All {
     if ($script:Stopped) { return }
     $script:Stopped = $true
+    # An external Stop Atlas invocation owns cleanup for this run.
+    try {
+        $request = Get-Content (Join-Path $Root "logs\runtime\stop.json") -Raw -ErrorAction Stop | ConvertFrom-Json
+        if ($request.run_id -eq $env:ATLAS_DESKTOP_RUN_ID) { return }
+    } catch { }
     Write-Host ""
     Write-Host "Shutting down Atlas bot (Python). Docker Desktop stays up." -ForegroundColor Yellow
     $pids = @()
@@ -213,7 +218,7 @@ try {
     & $StopScript -Root $Root -KeepDockerDesktop
     Start-Sleep -Seconds 2
 
-    Ensure-WslMemoryCap
+    # Do not modify global WSL/Docker resource settings for an Atlas launch.
 
     $dd = Get-DockerDesktop
     if (-not $dd) {
@@ -246,7 +251,7 @@ try {
         exit 1
     }
     if (-not (Wait-Postgres 90)) {
-        Write-Host "[WARN] postgres not healthy yet - starting API anyway" -ForegroundColor Yellow
+        throw "Atlas postgres did not become healthy"
     }
 
     $logDir = Join-Path $Root "logs"
@@ -268,12 +273,18 @@ try {
     }
     Write-Host "    imports ok"
 
+    $env:ATLAS_DESKTOP_CONTROL_DIR = Join-Path $Root "logs\runtime"
+    $env:ATLAS_DESKTOP_RUN_ID = [guid]::NewGuid().ToString()
+    New-Item -ItemType Directory -Force $env:ATLAS_DESKTOP_CONTROL_DIR | Out-Null
+    $loggingConfig = Join-Path $Root "deploy\logging-desktop.json"
     Write-Step "Starting Atlas API (port 8000)"
     $api = Start-Process -FilePath $VenvPy -ArgumentList @(
         "-m", "uvicorn", "app.main:app",
         "--host", "127.0.0.1",
-        "--port", "8000"
-    ) -WorkingDirectory $Backend -PassThru -NoNewWindow -RedirectStandardOutput $apiOut -RedirectStandardError $apiErr
+        "--port", "8000",
+        "--log-config", ('"' + $loggingConfig + '"'),
+        "--timeout-graceful-shutdown", "20"
+    ) -WorkingDirectory $Backend -PassThru -NoNewWindow
     if (-not $api) {
         Write-Host "[ERROR] failed to start python/uvicorn" -ForegroundColor Red
         cmd /c pause
@@ -295,6 +306,10 @@ try {
     } else {
         Write-Host "    API healthy"
     }
+
+    Write-Step "Stabilizing operator surfaces"
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "Atlas-Ready.ps1") -Root $Root
+    if ($LASTEXITCODE -ne 0) { throw "Atlas operator surfaces did not stabilize" }
 
     Write-Step "Opening dashboard"
     $dash = Join-Path $Backend "app\static\dashboard.html"
