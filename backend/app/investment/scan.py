@@ -602,7 +602,8 @@ class InvestmentScanner:
         if persist:
             append_scan_log(report)
             try:
-                save_last_cycle(cycle_summary(report))
+                summary = await asyncio.to_thread(cycle_summary, report)
+                await asyncio.to_thread(save_last_cycle, summary)
             except Exception as e:
                 log.warning("last cycle persist failed", error=str(e)[:160])
             try:

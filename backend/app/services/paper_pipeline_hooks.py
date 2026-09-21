@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import asyncio
 
 
 def apply() -> None:
@@ -59,13 +60,13 @@ def apply() -> None:
             }
             try:
                 sync = await perp_setup_paper_mirror.sync(list(snap.get("setups") or []), price_map)
-                stats = _auto_paper_stats()
+                stats = await asyncio.to_thread(_auto_paper_stats)
                 stats["last_sync"] = dict(sync)
                 stats["updated_at"] = datetime.now(timezone.utc).isoformat()
                 self.last_snapshot["auto_paper"] = stats
             except Exception as exc:
                 self.last_snapshot["auto_paper"] = {
-                    **_auto_paper_stats(),
+                    **(await asyncio.to_thread(_auto_paper_stats)),
                     "error": f"{type(exc).__name__}: {str(exc)[:180]}",
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }

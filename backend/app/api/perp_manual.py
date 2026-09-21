@@ -52,7 +52,7 @@ async def manual_perps() -> Dict[str, Any]:
         "last_error": perp_alert_delivery_service.last_error,
     }
     snapshot["auto_paper"] = {
-        **perp_setup_paper_mirror.status(),
+        **(await asyncio.to_thread(perp_setup_paper_mirror.status)),
         "last_pass": dict(perp_alert_delivery_service.last_paper_result),
         "mode": "RESTING_L1_LIMIT_TOUCH",
         "live_execution": False,
@@ -76,7 +76,7 @@ async def manual_perp_board(limit: int = Query(8, ge=1, le=25)) -> Dict[str, Any
         "entered_count": sum(1 for row in board if str(row.get("trade_status")) == "ENTERED"),
         "alert_delivery_running": perp_alert_delivery_service.running,
         "auto_paper": {
-            **perp_setup_paper_mirror.status(),
+            **(await asyncio.to_thread(perp_setup_paper_mirror.status)),
             "observability": await asyncio.to_thread(build_paper_observability, setups),
         },
         "note": "Real Hyperliquid execution is manual-only. Each verified manual resting-L1 instruction is mirrored as a PAPER limit and fills only on an L1 touch/cross.",

@@ -2030,3 +2030,21 @@ Actual autonomous runtime: 36 observations / 36 symbols, FORWARD_COLLECTION;
 [IMPLEMENTED/TESTED] Prospective freeze/classification library; operator surface pending.
 [BLOCKED BY TIME/EVIDENCE] Mature outcomes and untouched V3 holdout conclusions.
 Adaptive valuation/plans/ETF/calibration/reporting work remains active.
+
+POST-994 RESPONSIVENESS REPAIR (2026-09-21 resume)
+Verified HEAD c44d6cf and preserved all uncommitted research components.
+The previous full gate was 994 passed / 2 dependency warnings in 74.59s;
+additional report/ETF/benchmark/plan gate was 10 passed / 1 warning.
+Measured subsequent startup stall: cycle_summary -> dataset_stats ->
+load_observations, 6421 ms on API loop. Smaller measured scans: manual-refresh
+_auto_paper_stats (1828 ms), manual endpoint paper-mirror status (1015 ms).
+Only synchronous sections moved to asyncio.to_thread: cycle_summary and its
+file persistence, auto-paper journal statistics including error path, and
+status scans in both manual endpoints. Async refresh/sync stay on their loop.
+Three behavioral regression tests verify worker thread identity and async loop
+identity; combined collection/PAPER/cohort gate: 30 passed, 1 audioop warning.
+Runtime was stopped on resume. Preserved evidence baseline: 36 observations,
+36 initial outcomes, 1 daily plan; original observation SHA256
+d2a5e820c8f1e197abfceb906948543ae9dcfb35dbc89101a4e5ac3dc7fe64e7.
+[TESTED/CODE COMPLETE] Current responsiveness repair; cold longevity pending.
+Historical Pass 17 remains GREEN and its earlier evidence is unchanged.
