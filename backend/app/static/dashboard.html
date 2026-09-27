@@ -38,7 +38,7 @@
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+  html, body { margin: 0; background: radial-gradient(circle at 12% -10%, #12283b 0, transparent 26%), var(--bg); color: var(--fg); font: 16px/1.55 var(--font); -webkit-font-smoothing: antialiased; }
   button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
   header {
     position: sticky; top: 0; z-index: 8;
@@ -55,15 +55,15 @@
     display: grid; place-items: center;
     font: 500 13px/1 var(--mono); letter-spacing: 0.06em; color: var(--accent);
   }
-  h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; }
+  h1 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; }
   .kicker { font: 500 10px/1 var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--subtle); }
-  .sub { color: var(--muted); font-size: 12.5px; }
+  .sub { color: var(--muted); font-size: 14px; }
   .ok { color: var(--long); } .bad { color: var(--short); } .muted { color: var(--muted); }
   .head-meta { text-align: right; font: 400 12px/1.45 var(--mono); color: var(--muted); }
   .live { display: inline-flex; align-items: center; gap: 8px; }
   .dot { width: 7px; height: 7px; border-radius: 99px; background: var(--short); }
   .dot.on { background: var(--long); box-shadow: 0 0 0 3px color-mix(in oklab, var(--long) 22%, transparent); }
-  main { max-width: 1240px; margin: 0 auto; padding: 22px 28px 80px; display: flex; flex-direction: column; gap: 18px; }
+  main { max-width: 1560px; margin: 0 auto; padding: 22px 28px 80px; display: flex; flex-direction: column; gap: 18px; }
   .pills { display: flex; flex-wrap: wrap; gap: 6px; }
   .pill {
     border: 1px solid var(--border); border-radius: 999px;
@@ -94,10 +94,14 @@
   .g3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
   .g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius-xl); padding: 18px;
+    background: linear-gradient(145deg,#121820,#0c1016); border: 1px solid var(--border);
+    border-radius: var(--radius-xl); padding: 20px;
+    transition: transform 180ms var(--ease), border-color 180ms var(--ease), box-shadow 180ms var(--ease);
   }
-  .card h3 { margin: 0 0 12px; font-size: 14px; font-weight: 600; letter-spacing: -0.02em; }
+  .card:hover { transform: translateY(-2px); border-color: #31566e; box-shadow: 0 18px 50px rgba(0,0,0,.24); }
+  .mark { animation: atlasPulse 3.4s ease-in-out infinite; }
+  @keyframes atlasPulse { 0%,100%{box-shadow:0 0 0 0 rgba(92,229,255,0)} 50%{box-shadow:0 0 22px rgba(92,229,255,.16)} }
+  .card h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
   .bar { height: 44px; display: flex; align-items: end; margin-bottom: 8px; }
   .bar > i { display: block; width: 100%; background: color-mix(in oklab, var(--accent) 55%, transparent); border-radius: 3px; }
   .n { font: 500 22px/1.1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; color: var(--fg); }
@@ -141,7 +145,7 @@
 </style>
 </head>
 <body>
-<div style="padding:10px 24px"><a href="/api/investments/prospective/view" style="color:#9bdcc8">Daily manual investment research · forward evidence</a></div>
+<div style="padding:13px 28px;background:#071019;border-bottom:1px solid #183246"><a href="/api/investments/prospective/view" style="color:#72e7ff;font-size:14px;font-weight:600;text-decoration:none">Daily manual investment research · forward evidence →</a></div>
 <header>
   <div class="brand">
     <div class="mark" aria-hidden="true">AT</div>
