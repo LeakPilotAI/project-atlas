@@ -329,12 +329,17 @@ class PerpSetupPaperMirror:
         return True
 
     def cancel_all_pending(self, *, reason: str = "ATLAS_SHUTDOWN") -> int:
-        """Cancel every outstanding simulated resting limit without deleting history.
+        """Cancel pending limits only for an explicit non-restart shutdown reason.
 
-        Graceful shutdown should leave no pending paper order that can fill after a
-        later restart. Each cancellation is appended to the pending-order journal.
+        A normal Atlas shutdown is not evidence that the user's already-published
+        manual resting limit ceased to exist. Preserve those pending PAPER mirrors
+        so restart seeding can resume them; lifecycle invalidation/expiry still
+        cancels them on a later sync. Explicit operator/test cancellation reasons
+        remain append-only terminal events.
         """
         self._seed()
+        if str(reason or "").upper() == "ATLAS_SHUTDOWN":
+            return 0
         n = 0
         for instance in list(self._pending):
             if instance not in self._pending:
