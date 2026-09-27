@@ -138,9 +138,26 @@ class PerpSetupPaperMirror:
         return False
 
     def _has_terminal_pending_event(self, instance: str) -> bool:
-        """O(1) terminal lookup populated once during durable startup seeding."""
+        """Fast terminal lookup, with a compatibility fallback for pre-seeded tests/tools.
+
+        Normal runtime seeds the append-only file once and then stays O(1).  Some
+        callers intentionally construct a mirror with _seeded=True; in that case
+        the cache has never been hydrated, so perform the legacy one-time lookup
+        for the requested identity and cache the result.
+        """
         self._seed()
-        return instance in self._terminal_pending_instances
+        if instance in self._terminal_pending_instances:
+            return True
+        if self._seeded and not self._terminal_pending_instances:
+            for row in iter_jsonl(self._pending_path):
+                if row.get("event") == "_malformed":
+                    continue
+                if str(row.get("setup_instance_id") or "") != instance:
+                    continue
+                if str(row.get("event") or "").lower() in {"filled", "cancelled"}:
+                    self._terminal_pending_instances.add(instance)
+                    return True
+        return False
 
     def _arm(self, setup: dict[str, Any], *, mark: float, instruction: dict[str, Any]) -> bool:
         tier = str(setup.get("tier") or "").upper()
