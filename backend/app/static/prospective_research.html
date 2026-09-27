@@ -14,7 +14,7 @@
 <label>Distribution yield %<input name="distribution_yield" type="number" min="0" step="any" value="0"></label><label>Annual fee %<input name="annual_fee" type="number" min="0" max="99" step="any" value="0"></label><label>Reinvest<select name="reinvest"><option value="true">Yes</option><option value="false">No</option></select></label><button>Calculate scenarios</button></form><div id="scenarios"></div></section>
 <footer>No brokerage connection or order controls. Daily plans preserve their original inputs. Unknown fields remain unknown.</footer>
 <script>
-document.getElementById('atlasBack').addEventListener('click',e=>{e.preventDefault();window.location.assign('/dashboard');});
+document.getElementById('atlasBack').addEventListener('click',e=>{e.preventDefault();window.top.location.assign('/dashboard');});
 const el=id=>document.getElementById(id), fmt=v=>v===null||v===undefined?'UNKNOWN':typeof v==='number'?v.toLocaleString(undefined,{maximumFractionDigits:2}):String(v);
 function cell(tr,text){const td=document.createElement('td');td.textContent=text;tr.append(td)}
 async function load(){try{const response=await fetch('/api/investments/prospective/report');if(!response.ok)throw Error('Report unavailable');const r=await response.json(),p=r.daily_plan;el('status').textContent=p?'Saved '+p.timestamp+' · Policy '+p.policy_version:'Waiting for the first genuine daily snapshot.';
