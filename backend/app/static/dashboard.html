@@ -280,11 +280,27 @@ document.querySelectorAll(".tabs button").forEach(btn=>{
     });
   });
 });
+let liveFailureStreak=0;
+async function fetchLiveWithRetry(){
+  let lastError=null;
+  for(let attempt=0;attempt<3;attempt++){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),6500);
+    try{
+      const r=await fetch("/api/live",{cache:"no-store",signal:controller.signal});
+      if(!r.ok) throw new Error("live "+r.status);
+      return await r.json();
+    }catch(e){
+      lastError=e;
+      if(attempt<2) await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+    }finally{clearTimeout(timer)}
+  }
+  throw lastError||new Error("live request failed");
+}
 async function load(){
   try{
-    const r = await fetch("/api/live");
-    if(!r.ok) throw new Error("live "+r.status);
-    const L = await r.json();
+    const L = await fetchLiveWithRetry();
+    liveFailureStreak=0;
     document.getElementById("err").innerHTML = "";
     document.getElementById("stamp").textContent = "refresh 8s · "+ago(L.updated_at);
     document.getElementById("api").textContent = "API connected";
@@ -505,10 +521,13 @@ async function load(){
       document.getElementById("edgebody").innerHTML = '<div class="err">Edge diagnostics request failed. Journal not modified.</div>';
     }
   } catch (e) {
-    document.getElementById("api").textContent = "API down";
-    document.getElementById("api").className = "bad";
-    document.getElementById("dot").classList.remove("on");
-    document.getElementById("err").innerHTML = '<div class="err">Cannot reach API. Keep the Atlas window open.</div>';
+    liveFailureStreak++;
+    if(liveFailureStreak>=2){
+      document.getElementById("api").textContent = "API reconnecting";
+      document.getElementById("api").className = "bad";
+      document.getElementById("dot").classList.remove("on");
+      document.getElementById("err").innerHTML = '<div class="err">Atlas API is temporarily unreachable. Retrying automatically; last good dashboard data is preserved.</div>';
+    }
   }
 }
 load();
