@@ -48,6 +48,7 @@ class PerpSetupPaperMirror:
     def __init__(self, *, pending_path: Path | None = None) -> None:
         self._seeded = False
         self._mirrored_instances: set[str] = set()
+        self._terminal_pending_instances: set[str] = set()
         self._pending: dict[str, dict[str, Any]] = {}
         self._pending_path = pending_path or PENDING_EVENT_PATH
 
@@ -89,6 +90,7 @@ class PerpSetupPaperMirror:
                 pending[instance] = dict(row)
             elif event in {"filled", "cancelled"}:
                 pending.pop(instance, None)
+                self._terminal_pending_instances.add(instance)
                 if event == "filled":
                     self._mirrored_instances.add(instance)
         self._pending = pending
@@ -136,15 +138,9 @@ class PerpSetupPaperMirror:
         return False
 
     def _has_terminal_pending_event(self, instance: str) -> bool:
-        """Return True when this exact setup instance already terminally resolved."""
-        for row in iter_jsonl(self._pending_path):
-            if row.get("event") == "_malformed":
-                continue
-            if str(row.get("setup_instance_id") or "") != instance:
-                continue
-            if str(row.get("event") or "").lower() in {"filled", "cancelled"}:
-                return True
-        return False
+        """O(1) terminal lookup populated once during durable startup seeding."""
+        self._seed()
+        return instance in self._terminal_pending_instances
 
     def _arm(self, setup: dict[str, Any], *, mark: float, instruction: dict[str, Any]) -> bool:
         tier = str(setup.get("tier") or "").upper()
@@ -211,6 +207,7 @@ class PerpSetupPaperMirror:
             "reason": reason,
             "mark": mark,
         })
+        self._terminal_pending_instances.add(instance)
         log.info("Auto paper resting limit cancelled", symbol=row.get("symbol"), reason=reason)
 
     async def _fill_pending(self, instance: str, *, mark: float, setup: dict[str, Any] | None = None) -> bool:
@@ -311,6 +308,7 @@ class PerpSetupPaperMirror:
         })
         self._pending.pop(instance, None)
         self._mirrored_instances.add(instance)
+        self._terminal_pending_instances.add(instance)
         return True
 
     def cancel_all_pending(self, *, reason: str = "ATLAS_SHUTDOWN") -> int:
