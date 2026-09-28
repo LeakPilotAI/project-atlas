@@ -98,3 +98,28 @@ def test_mark_researched_rotates_unclassified_discovery_queue(tmp_path):
     registry.mark_researched(first, researched_at="2026-09-28T13:00:00+00:00", path=path)
     second = registry.research_candidates(limit=1, path=path)[0]["symbol"]
     assert second != first
+
+
+def test_neutral_discovery_refresh_keeps_existing_research_lane(tmp_path):
+    path = tmp_path / "universe.json"
+    events = tmp_path / "events.jsonl"
+    registry.upsert_discovery(
+        [{"symbol": "KEEP", "listing_state": "TRADABLE", "tradable": True}],
+        source="discovery",
+        path=path,
+        events_path=events,
+    )
+    registry.set_research_lane(
+        "KEEP",
+        "EMERGING_COMPOUNDER",
+        reason="test evidence",
+        path=path,
+        events_path=events,
+    )
+    registry.upsert_discovery(
+        [{"symbol": "KEEP", "listing_state": "TRADABLE", "tradable": True, "research_lane": "UNCLASSIFIED"}],
+        source="discovery-refresh",
+        path=path,
+        events_path=events,
+    )
+    assert registry.snapshot(path)["symbols"]["KEEP"]["research_lane"] == "EMERGING_COMPOUNDER"
