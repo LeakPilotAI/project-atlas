@@ -102,7 +102,7 @@ def upsert_discovery(
             "symbol": symbol,
             "name": raw.get("name") or previous.get("name"),
             "listing_state": listing_state,
-            "research_lane": lane,
+            "research_lane": (previous.get("research_lane") if previous and lane == "UNCLASSIFIED" else lane),
             "instrument_type": raw.get("instrument_type") or previous.get("instrument_type"),
             "source": source,
             "source_reference": raw.get("source_reference"),
