@@ -85,6 +85,48 @@ class QualityDipQuoteService:
         except Exception as exc:
             provider_errors.append(f"robinhood:{type(exc).__name__}")
 
+        # Robinhood is the preferred live source. Do not fan out into two blocking
+        # yfinance calls when RH already supplied a valid timestamped quote. The
+        # dashboard polls frequently and the old behavior could enqueue dozens of
+        # yfinance worker-thread jobs every refresh, starving the API/GIL and
+        # growing the process to multiple GB even though the quote was already
+        # available. Yahoo remains an independent fallback only when RH produced
+        # no usable candidate.
+        if candidates:
+            chosen = max(candidates, key=lambda x: (x["timestamp"], int(x.get("source_priority") or 0)))
+            ts = chosen["timestamp"]
+            age = max(0.0, (retrieved - ts).total_seconds())
+            if age <= LIVE_AGE_SEC:
+                quality = "LIVE"
+            elif age <= FRESH_AGE_SEC:
+                quality = "FRESH"
+            elif age <= MAX_REFERENCE_AGE_SEC:
+                quality = "REFERENCE"
+            else:
+                quality = "STALE"
+            actionable = quality in {"LIVE", "FRESH"}
+            return {
+                "symbol": symbol,
+                "price": chosen["price"],
+                "display_price": chosen["price"],
+                "trigger_price": chosen.get("trigger_price") if actionable else None,
+                "bid": chosen.get("bid"),
+                "ask": chosen.get("ask"),
+                "source": chosen["source"],
+                "session": chosen["session"],
+                "market_state": market_state,
+                "effective_timestamp": ts.isoformat(),
+                "retrieved_at": retrieved.isoformat(),
+                "age_sec": round(age, 1),
+                "quality": quality,
+                "fresh_for_display": quality in {"LIVE", "FRESH", "REFERENCE"},
+                "tradable_for_ladder": actionable,
+                "is_live": quality == "LIVE",
+                "error": None,
+                "provider_notes": provider_errors,
+                "raw_kind": chosen.get("raw_kind"),
+            }
+
         # Independent Yahoo 1-minute fallback with pre/post-market enabled.
         try:
             history = await self.client.history(symbol, period="5d", interval="1m", prepost=True)
