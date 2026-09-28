@@ -49,8 +49,12 @@ class PerpSetupPaperMirror:
         self._seeded = False
         self._mirrored_instances: set[str] = set()
         self._terminal_pending_instances: set[str] = set()
+        self._terminal_cache_hydrated = False
         self._pending: dict[str, dict[str, Any]] = {}
         self._pending_path = pending_path or PENDING_EVENT_PATH
+        self._source_open_ids: set[str] = set()
+        self._opened_total = 0
+        self._closed_total = 0
 
     def _instance_id(self, setup: dict[str, Any]) -> str:
         key = str(setup.get("setup_key") or "")
@@ -72,11 +76,29 @@ class PerpSetupPaperMirror:
     def _seed(self) -> None:
         if self._seeded:
             return
+        source_ids: set[str] = set()
+        source_open_ids: set[str] = set()
+        opened_ids: set[str] = set()
+        closed_ids: set[str] = set()
         for row in iter_jsonl(JOURNAL_PATH):
             features = row.get("features") if isinstance(row.get("features"), dict) else {}
             instance = str(features.get("setup_instance_id") or "")
             if instance:
                 self._mirrored_instances.add(instance)
+            tid = str(row.get("trade_id") or "")
+            if not tid:
+                continue
+            event = str(row.get("event") or "")
+            if event == "open" and str(row.get("source") or "") == SOURCE:
+                source_ids.add(tid)
+                source_open_ids.add(tid)
+                opened_ids.add(tid)
+            elif event == "close" and tid in source_ids:
+                closed_ids.add(tid)
+                source_open_ids.discard(tid)
+        self._source_open_ids = source_open_ids
+        self._opened_total = len(opened_ids)
+        self._closed_total = len(closed_ids)
 
         pending: dict[str, dict[str, Any]] = {}
         for row in iter_jsonl(self._pending_path):
@@ -94,6 +116,7 @@ class PerpSetupPaperMirror:
                 if event == "filled":
                     self._mirrored_instances.add(instance)
         self._pending = pending
+        self._terminal_cache_hydrated = True
         self._seeded = True
 
     @staticmethod
@@ -148,16 +171,15 @@ class PerpSetupPaperMirror:
         self._seed()
         if instance in self._terminal_pending_instances:
             return True
-        if self._seeded and not self._terminal_pending_instances:
+        if not self._terminal_cache_hydrated:
             for row in iter_jsonl(self._pending_path):
                 if row.get("event") == "_malformed":
                     continue
-                if str(row.get("setup_instance_id") or "") != instance:
-                    continue
-                if str(row.get("event") or "").lower() in {"filled", "cancelled"}:
-                    self._terminal_pending_instances.add(instance)
-                    return True
-        return False
+                candidate = str(row.get("setup_instance_id") or "")
+                if candidate and str(row.get("event") or "").lower() in {"filled", "cancelled"}:
+                    self._terminal_pending_instances.add(candidate)
+            self._terminal_cache_hydrated = True
+        return instance in self._terminal_pending_instances
 
     def _arm(self, setup: dict[str, Any], *, mark: float, instruction: dict[str, Any]) -> bool:
         tier = str(setup.get("tier") or "").upper()
@@ -293,7 +315,7 @@ class PerpSetupPaperMirror:
             "momentum_pct": row.get("momentum_pct"),
             "trend_pct": row.get("trend_pct"),
         }
-        await paper_journal.open_trade(
+        trade_id = await paper_journal.open_trade(
             symbol=symbol,
             side=side,
             entry=limit_price,
@@ -313,6 +335,8 @@ class PerpSetupPaperMirror:
             slippage_bps=DEFAULT_SLIPPAGE_BPS_PER_SIDE,
             trade_type="PAPER",
         )
+        self._source_open_ids.add(str(trade_id))
+        self._opened_total += 1
         self._append_pending_event({
             "event": "filled",
             "setup_instance_id": instance,
@@ -349,28 +373,13 @@ class PerpSetupPaperMirror:
         return n
 
     def status(self) -> dict[str, int]:
+        """Return the in-memory mirror index; durable journals are scanned only at seed/reload."""
         self._seed()
-        rows = iter_jsonl(JOURNAL_PATH)
-        source_open_ids: set[str] = set()
-        opened_ids: set[str] = set()
-        closed_ids: set[str] = set()
-        source_ids: set[str] = set()
-        for row in rows:
-            tid = str(row.get("trade_id") or "")
-            if not tid:
-                continue
-            if row.get("event") == "open" and str(row.get("source") or "") == SOURCE:
-                source_ids.add(tid)
-                opened_ids.add(tid)
-                source_open_ids.add(tid)
-            elif row.get("event") == "close" and tid in source_ids:
-                closed_ids.add(tid)
-                source_open_ids.discard(tid)
         return {
             "pending_count": len(self._pending),
-            "open_count": len(source_open_ids),
-            "opened_total": len(opened_ids),
-            "closed_total": len(closed_ids),
+            "open_count": len(self._source_open_ids),
+            "opened_total": int(self._opened_total),
+            "closed_total": int(self._closed_total),
         }
 
     @staticmethod
@@ -421,10 +430,14 @@ class PerpSetupPaperMirror:
             if hit_stop:
                 exit_price = conservative_stop_exit(side=side, mark=float(mark), stop_price=stop)
                 await paper_journal.close_trade(tid, exit_price=exit_price, result="LOSS", exit_reason="SETUP_STOP")
+                self._source_open_ids.discard(tid)
+                self._closed_total += 1
                 closed += 1
             elif hit_tp1:
                 exit_price = conservative_target_exit(side=side, mark=float(mark), target_price=tp1)
                 await paper_journal.close_trade(tid, exit_price=exit_price, result="WIN", exit_reason="SETUP_TP1")
+                self._source_open_ids.discard(tid)
+                self._closed_total += 1
                 closed += 1
 
         # A discovery-stale retained setup remains present during the lifecycle grace
