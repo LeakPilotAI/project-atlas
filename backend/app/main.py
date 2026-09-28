@@ -41,6 +41,7 @@ from app.services.perp_manual_service import perp_manual_service
 from app.services.perp_micro_coach import perp_micro_coach
 from app.services.quality_dip_scanner import quality_dip_scanner
 from app.services.robinhood_brief import robinhood_brief_service
+from app.services.robinhood_universe_research import robinhood_universe_research_service
 from app.services.scanner import scanner
 from app.services.weekly_summary import weekly_summary_service
 
@@ -165,6 +166,7 @@ async def lifespan(app: FastAPI):
             ("weekly_summary", weekly_summary_service.start),
             ("quality_dip", quality_dip_scanner.start),
             ("robinhood_brief", robinhood_brief_service.start),
+            ("robinhood_universe_research", robinhood_universe_research_service.start),
             ("command_center", command_center.start),
             ("perp_micro_coach", perp_micro_coach.start),
             ("perp_manual", perp_manual_service.start),
@@ -246,6 +248,7 @@ async def lifespan(app: FastAPI):
         ("perp_manual", perp_manual_service.stop),
         ("perp_micro_coach", perp_micro_coach.stop),
         ("command_center", command_center.stop),
+        ("robinhood_universe_research", robinhood_universe_research_service.stop),
         ("robinhood_brief", robinhood_brief_service.stop),
         ("quality_dip", quality_dip_scanner.stop),
         ("weekly_summary", weekly_summary_service.stop),
@@ -387,6 +390,7 @@ async def health() -> Dict[str, Any]:
         "day_trade_domain": "HYPERLIQUID_PERPS",
         "legacy_equity_day_trade_running": False,
         "robinhood_brief_running": bool(getattr(robinhood_brief_service, "running", False)),
+        "robinhood_universe_research_running": bool(getattr(robinhood_universe_research_service, "running", False)),
         "command_center_running": bool(getattr(command_center, "running", False)),
         "perp_micro_running": bool(getattr(perp_micro_coach, "running", False)),
         "perp_manual_running": bool(getattr(perp_manual_service, "running", False)),
