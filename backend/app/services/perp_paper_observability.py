@@ -8,6 +8,8 @@ separately from older paper history.
 from __future__ import annotations
 
 import json
+import threading
+import time
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -185,7 +187,28 @@ def build_paper_observability(setups: Iterable[dict[str, Any]] = ()) -> dict[str
     }
 
 
-def reconciliation_summary() -> dict[str, Any]:
+_RECONCILIATION_CACHE_TTL_SECONDS = 60.0
+_reconciliation_cache: dict[str, Any] | None = None
+_reconciliation_cache_at = 0.0
+_reconciliation_cache_signature: tuple[int, int, int, int] | None = None
+_reconciliation_lock = threading.Lock()
+
+
+def _file_signature(path: Path) -> tuple[int, int]:
+    try:
+        stat = path.stat()
+        return int(stat.st_size), int(stat.st_mtime_ns)
+    except OSError:
+        return 0, 0
+
+
+def _reconciliation_file_signature() -> tuple[int, int, int, int]:
+    journal_size, journal_mtime = _file_signature(JOURNAL_PATH)
+    pending_size, pending_mtime = _file_signature(PENDING_EVENT_PATH)
+    return journal_size, journal_mtime, pending_size, pending_mtime
+
+
+def _scan_reconciliation() -> dict[str, Any]:
     opens: dict[str, dict[str, Any]] = {}
     closes: set[str] = set()
     fills: Counter[str] = Counter()
@@ -205,7 +228,7 @@ def reconciliation_summary() -> dict[str, Any]:
             continue
         if str(row.get("event") or "").lower() == "filled":
             fills[str(row.get("setup_instance_id") or "")] += 1
-    duplicate_fill_instances = sorted(k for k,v in fills.items() if k and v > 1)
+    duplicate_fill_instances = sorted(k for k, v in fills.items() if k and v > 1)
     orphan_open_ids = sorted(tid for tid in opens if tid not in closes)
     return {
         "journal_open_events": len(opens),
@@ -216,4 +239,37 @@ def reconciliation_summary() -> dict[str, Any]:
         "reconciliation_ok": len(duplicate_fill_instances) == 0,
         "execution": "PAPER_ONLY",
         "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
     }
+
+
+def reconciliation_summary(*, force: bool = False) -> dict[str, Any]:
+    """Return a cached durable reconciliation snapshot.
+
+    The append-only journals are scanned at most once per unchanged-file/TTL
+    window. Dashboard and diagnostics callers therefore do not repeatedly parse
+    the whole history as it grows. A file-size/mtime change invalidates the
+    snapshot immediately; force=True is available to explicit audit callers.
+    """
+    global _reconciliation_cache, _reconciliation_cache_at, _reconciliation_cache_signature
+    now = time.monotonic()
+    signature = _reconciliation_file_signature()
+    with _reconciliation_lock:
+        fresh = (
+            not force
+            and _reconciliation_cache is not None
+            and signature == _reconciliation_cache_signature
+            and (now - _reconciliation_cache_at) < _RECONCILIATION_CACHE_TTL_SECONDS
+        )
+        if fresh:
+            result = dict(_reconciliation_cache)
+            result["cache_hit"] = True
+            result["cache_age_seconds"] = round(now - _reconciliation_cache_at, 3)
+            return result
+        result = _scan_reconciliation()
+        _reconciliation_cache = dict(result)
+        _reconciliation_cache_signature = signature
+        _reconciliation_cache_at = time.monotonic()
+        result["cache_hit"] = False
+        result["cache_age_seconds"] = 0.0
+        return result
