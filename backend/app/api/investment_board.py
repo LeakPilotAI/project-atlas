@@ -132,6 +132,9 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "events_seen_this_request": len(v3_events),
             "events": v3_events,
             "delivery": v3_delivery,
+            # Both reports share one file-signature cached PIT load. Keep the
+            # immutable evidence file intact without allocating/parsing it twice
+            # per dashboard refresh.
             "forward_readiness": await asyncio.to_thread(forward_readiness),
             "forward_diagnostics": await asyncio.to_thread(forward_diagnostics),
             "execution": "MANUAL_ONLY",
