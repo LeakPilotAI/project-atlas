@@ -160,3 +160,64 @@ def upsert_discovery(
         "live_capital_allowed": False,
         "automatic_real_money_execution": False,
     }
+
+
+def research_candidates(
+    *,
+    limit: int = 40,
+    path: Path = ROBINHOOD_UNIVERSE_PATH,
+) -> list[dict[str, Any]]:
+    """Return a bounded discovery queue; never the whole catalog at scan cadence.
+
+    Priority is deterministic: explicitly classified research lanes first, then
+    newly discovered tradable symbols. Existing Quality Dips remain in their
+    normal investment scanner; this queue is for broad-universe discovery.
+    """
+    state = _load(path)
+    symbols = state.get("symbols") or {}
+    lane_rank = {
+        "EMERGING_COMPOUNDER": 0,
+        "ESTABLISHED_COMPOUNDER": 1,
+        "QUALITY_DIPS": 2,
+        "FRONTIER_RESEARCH": 3,
+        "UNCLASSIFIED": 4,
+        "EXCLUDED": 99,
+    }
+    eligible = [
+        dict(row)
+        for row in symbols.values()
+        if isinstance(row, dict)
+        and bool(row.get("tradable"))
+        and str(row.get("listing_state") or "").upper() == "TRADABLE"
+        and str(row.get("research_lane") or "UNCLASSIFIED").upper() != "EXCLUDED"
+    ]
+    eligible.sort(
+        key=lambda row: (
+            lane_rank.get(str(row.get("research_lane") or "UNCLASSIFIED").upper(), 50),
+            str(row.get("last_researched_at") or ""),
+            str(row.get("first_seen_at") or ""),
+            str(row.get("symbol") or ""),
+        )
+    )
+    return eligible[: max(1, min(int(limit), 200))]
+
+
+def mark_researched(
+    symbol: str,
+    *,
+    researched_at: str | None = None,
+    path: Path = ROBINHOOD_UNIVERSE_PATH,
+) -> None:
+    """Record scheduling metadata only; this is not an investment conclusion."""
+    state = _load(path)
+    symbols = dict(state.get("symbols") or {})
+    key = str(symbol or "").upper().strip()
+    if not key or key not in symbols:
+        return
+    row = dict(symbols[key])
+    row["last_researched_at"] = researched_at or _now()
+    symbols[key] = row
+    state["symbols"] = symbols
+    state["updated_at"] = researched_at or _now()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
