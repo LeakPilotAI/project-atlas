@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -58,7 +59,7 @@ async def live() -> Dict[str, Any]:
     settings = get_settings()
     paper: Dict[str, Any] = {}
     try:
-        paper = paper_pipeline.as_json()
+        paper = await asyncio.to_thread(paper_pipeline.as_json)
     except Exception as e:
         paper = {"error": str(e)[:200]}
 
@@ -93,7 +94,7 @@ async def live() -> Dict[str, Any]:
         inv = {
             "enabled": bool(getattr(settings, "investment_scan_enabled", False)),
             "running": bool(getattr(investment_scanner, "running", False)),
-            "last_cycle": load_last_cycle() or {},
+            "last_cycle": await asyncio.to_thread(load_last_cycle) or {},
             "opportunities": [
                 r
                 for r in (getattr(quality_dip_scanner, "last_snapshot", []) or [])
@@ -121,7 +122,7 @@ async def live() -> Dict[str, Any]:
     try:
         from app.investment.paper_book import PaperBook
 
-        dip_paper = PaperBook.load().snapshot()
+        dip_paper = await asyncio.to_thread(lambda: PaperBook.load().snapshot())
     except Exception:
         dip_paper = {}
 
