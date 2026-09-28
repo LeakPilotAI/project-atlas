@@ -66,6 +66,13 @@ def snapshot(path: Path = ROBINHOOD_UNIVERSE_PATH) -> dict[str, Any]:
     return _load(path)
 
 
+def _append_event(path: Path, event: dict[str, Any]) -> None:
+    """Append one immutable registry event."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(event, sort_keys=True) + "\n")
+
+
 def upsert_discovery(
     rows: Iterable[dict[str, Any]],
     *,
