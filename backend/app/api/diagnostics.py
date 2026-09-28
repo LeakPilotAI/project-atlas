@@ -174,6 +174,9 @@ async def diagnostics_paper_reconciliation() -> Dict[str, Any]:
     from app.services.perp_alert_delivery import perp_alert_delivery_service
     from app.services.perp_paper_observability import reconciliation_summary
 
+    # Never make a dashboard/diagnostic request pay for a full durable-history
+    # scan. The observability layer caches by journal signature and TTL; the scan
+    # itself remains off the event loop on a cache miss.
     current = await asyncio.to_thread(reconciliation_summary)
     return {
         "current": current,
