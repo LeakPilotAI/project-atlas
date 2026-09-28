@@ -112,6 +112,8 @@ class PerpAlertDeliveryService:
         self.last_step_timings_ms: Dict[str, float] = {}
         self.last_cycle_elapsed_ms: float = 0.0
         self._reconciliation_task: Optional[asyncio.Task] = None
+        self._last_reconciliation_started_at: float = 0.0
+        self._reconciliation_interval_seconds: float = 60.0
         self._task: Optional[asyncio.Task] = None
 
     async def start(self) -> None:
@@ -207,12 +209,17 @@ class PerpAlertDeliveryService:
             # Durable reconciliation scans append-only evidence and can take seconds as
             # history grows. Keep at most one scan in flight and do not make the alert
             # loop wait for it. reconciliation_summary itself runs in a worker thread.
-            if self._reconciliation_task is None or self._reconciliation_task.done():
+            reconciliation_due = (
+                self._last_reconciliation_started_at <= 0.0
+                or (time.monotonic() - self._last_reconciliation_started_at) >= self._reconciliation_interval_seconds
+            )
+            if reconciliation_due and (self._reconciliation_task is None or self._reconciliation_task.done()):
                 if self._reconciliation_task is not None:
                     try:
                         self._reconciliation_task.result()
                     except Exception:
                         pass
+                self._last_reconciliation_started_at = time.monotonic()
                 self._reconciliation_started = time.perf_counter()
                 self._reconciliation_task = asyncio.create_task(
                     self._run_reconciliation(), name="paper_reconciliation"
