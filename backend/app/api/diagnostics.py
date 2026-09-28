@@ -13,7 +13,11 @@ router = APIRouter(prefix="/diagnostics", tags=["diagnostics"])
 # Heavy research is read-only but may scan large durable JSONL histories. Keep the
 # desktop/API surface responsive while a single background refresh completes.
 _RESEARCH_RESPONSE_BUDGET_SECONDS = 2.5
+# Heavy JSONL research can hold the CPython GIL long enough to starve /health even
+# when it runs in a worker thread. Do not rebuild it on every dashboard poll.
+_RESEARCH_CACHE_TTL_SECONDS = 60.0
 _research_cache: Optional[Dict[str, Any]] = None
+_research_cache_monotonic: float = 0.0
 _research_task: Optional[asyncio.Task] = None
 
 
@@ -70,36 +74,58 @@ def _research_warming_payload() -> Dict[str, Any]:
 
 @router.get("/research")
 async def diagnostics_research() -> Dict[str, Any]:
-    global _research_cache, _research_task
+    global _research_cache, _research_cache_monotonic, _research_task
+
+    loop = asyncio.get_running_loop()
+    now = loop.time()
 
     if _research_task is not None and _research_task.done():
         try:
             _research_cache = _research_task.result()
+            _research_cache_monotonic = now
         except Exception:
             pass
         _research_task = None
 
+    cache_age = now - _research_cache_monotonic if _research_cache is not None else None
+    if _research_cache is not None and cache_age is not None and cache_age < _RESEARCH_CACHE_TTL_SECONDS:
+        fresh = dict(_research_cache)
+        fresh["operational_surface"] = {
+            "state": "FRESH",
+            "background_refresh": False,
+            "cache_age_seconds": round(cache_age, 3),
+            "read_only": True,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+        return fresh
+
     if _research_task is None:
         _research_task = asyncio.create_task(asyncio.to_thread(_research_payload))
+
+    # Once a usable snapshot exists, never make a dashboard poll wait behind the
+    # expensive refresh. Serve last-good data immediately while one refresh runs.
+    if _research_cache is not None:
+        stale = dict(_research_cache)
+        stale["operational_surface"] = {
+            "state": "STALE_WHILE_REFRESHING",
+            "background_refresh": True,
+            "cache_age_seconds": round(cache_age or 0.0, 3),
+            "read_only": True,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+        return stale
 
     try:
         result = await asyncio.wait_for(
             asyncio.shield(_research_task), timeout=_RESEARCH_RESPONSE_BUDGET_SECONDS
         )
         _research_cache = result
+        _research_cache_monotonic = loop.time()
         _research_task = None
         return result
     except asyncio.TimeoutError:
-        if _research_cache is not None:
-            stale = dict(_research_cache)
-            stale["operational_surface"] = {
-                "state": "STALE_WHILE_REFRESHING",
-                "background_refresh": True,
-                "read_only": True,
-                "live_capital_allowed": False,
-                "automatic_real_money_execution": False,
-            }
-            return stale
         return _research_warming_payload()
 
 
