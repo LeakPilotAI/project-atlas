@@ -354,17 +354,12 @@ async def api_funnel() -> Dict[str, Any]:
 
 @app.get("/health")
 async def health() -> Dict[str, Any]:
+    # Liveness must remain local and constant-time. A network round-trip to Redis
+    # made the desktop readiness probe inherit Redis/event-loop stalls, causing the
+    # UI to report "API reconnecting" even while Atlas continued scanning. Redis
+    # connectivity belongs in deeper diagnostics, not the liveness endpoint.
     settings = get_settings()
-    redis_ok = "unknown"
-    try:
-        r = await get_redis_client()
-        if r is not None:
-            await r.ping()
-            redis_ok = "ok"
-        else:
-            redis_ok = "missing"
-    except Exception:
-        redis_ok = "error"
+    redis_ok = "configured" if bool(getattr(settings, "redis_url", None)) else "missing"
 
     adapters: list[str] = []
     try:
