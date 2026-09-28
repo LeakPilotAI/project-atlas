@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import threading
+import time
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -12,6 +14,9 @@ from app.investment.quality_dips_v3_forward_store import V3_FORWARD_PATH
 MIN_UNIQUE_DAYS = 20
 MIN_SYMBOLS = 10
 MIN_EVALUATIONS = 200
+_CACHE_TTL_SEC = 60.0
+_cache_lock = threading.Lock()
+_cache: dict[str, Any] = {"signature": None, "loaded_at": 0.0, "rows": []}
 
 
 def _parse_day(ts: Any) -> str | None:
@@ -22,18 +27,41 @@ def _parse_day(ts: Any) -> str | None:
 
 
 def load_forward_rows(path: Path = V3_FORWARD_PATH) -> list[dict[str, Any]]:
+    """Load immutable PIT evidence once per exact file version.
+
+    The production file is now well over 100 MB. readiness() and diagnostics()
+    used to each read_text/splitlines/JSON-decode the whole file on every
+    dashboard request, temporarily materializing several copies in memory.
+    """
     if not path.exists():
         return []
-    rows=[]
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        if not raw.strip():
-            continue
-        try:
-            row=json.loads(raw)
-        except Exception:
-            continue
-        if isinstance(row,dict):
-            rows.append(row)
+    try:
+        stat = path.stat()
+        signature = (str(path.resolve()), int(stat.st_size), int(stat.st_mtime_ns))
+    except OSError:
+        return []
+    now = time.monotonic()
+    with _cache_lock:
+        if _cache["signature"] == signature and now - float(_cache["loaded_at"]) <= _CACHE_TTL_SEC:
+            return _cache["rows"]
+
+    rows: list[dict[str, Any]] = []
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            for raw in handle:
+                if not raw.strip():
+                    continue
+                try:
+                    row = json.loads(raw)
+                except Exception:
+                    continue
+                if isinstance(row, dict):
+                    rows.append(row)
+    except OSError:
+        return []
+
+    with _cache_lock:
+        _cache.update({"signature": signature, "loaded_at": now, "rows": rows})
     return rows
 
 
