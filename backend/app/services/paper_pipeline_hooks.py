@@ -51,22 +51,19 @@ def apply() -> None:
             }
 
         async def _manual_refresh(self):
+            # PerpAlertDeliveryService is the single owner of manual-limit PAPER
+            # reconciliation.  The manual market refresh must not run a second
+            # mirror pass: duplicate passes caused repeated journal work/fsync on
+            # the API event loop as the evidence files grew.
             snap = await orig_manual_refresh(self)
-            markets = list(snap.get("markets") or [])
-            price_map = {
-                str(row.get("symbol") or "").upper(): float(row.get("price") or 0.0)
-                for row in markets
-                if str(row.get("symbol") or "").strip() and float(row.get("price") or 0.0) > 0
-            }
             try:
-                sync = await perp_setup_paper_mirror.sync(list(snap.get("setups") or []), price_map)
-                stats = await asyncio.to_thread(_auto_paper_stats)
-                stats["last_sync"] = dict(sync)
+                stats = perp_setup_paper_mirror.status()
+                stats["managed_by"] = "perp_alert_delivery"
                 stats["updated_at"] = datetime.now(timezone.utc).isoformat()
                 self.last_snapshot["auto_paper"] = stats
             except Exception as exc:
                 self.last_snapshot["auto_paper"] = {
-                    **(await asyncio.to_thread(_auto_paper_stats)),
+                    "managed_by": "perp_alert_delivery",
                     "error": f"{type(exc).__name__}: {str(exc)[:180]}",
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
