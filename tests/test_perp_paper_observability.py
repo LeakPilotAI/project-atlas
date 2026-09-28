@@ -100,3 +100,77 @@ def test_clean_cohort_is_entry_time_scoped(tmp_path, monkeypatch):
     assert out["open"] == 1
     assert out["entry_time_scoped"] is True
     assert out["live_capital_allowed"] is False
+
+
+def test_reconciliation_summary_caches_unchanged_journals_and_invalidates_on_change(tmp_path, monkeypatch):
+    import app.services.perp_paper_observability as obs
+
+    journal = tmp_path / "paper.jsonl"
+    pending = tmp_path / "pending.jsonl"
+    _write_jsonl(journal, [
+        {"event": "open", "trade_id": "p1", "source": obs.SOURCE},
+        {"event": "close", "trade_id": "p1"},
+    ])
+    _write_jsonl(pending, [
+        {"event": "armed", "setup_instance_id": "i1"},
+        {"event": "filled", "setup_instance_id": "i1"},
+    ])
+    monkeypatch.setattr(obs, "JOURNAL_PATH", journal)
+    monkeypatch.setattr(obs, "PENDING_EVENT_PATH", pending)
+    monkeypatch.setattr(obs, "_reconciliation_cache", None)
+    monkeypatch.setattr(obs, "_reconciliation_cache_at", 0.0)
+    monkeypatch.setattr(obs, "_reconciliation_cache_signature", None)
+
+    calls = []
+    original = obs.iter_jsonl
+
+    def counted(path):
+        calls.append(path)
+        return original(path)
+
+    monkeypatch.setattr(obs, "iter_jsonl", counted)
+    first = obs.reconciliation_summary()
+    second = obs.reconciliation_summary()
+
+    assert first["cache_hit"] is False
+    assert second["cache_hit"] is True
+    assert len(calls) == 2
+    assert second["reconciliation_ok"] is True
+    assert second["automatic_real_money_execution"] is False
+
+    with pending.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"event": "filled", "setup_instance_id": "i1"}) + "\n")
+
+    third = obs.reconciliation_summary()
+    assert third["cache_hit"] is False
+    assert third["reconciliation_ok"] is False
+    assert third["duplicate_fill_count"] == 1
+    assert len(calls) == 4
+
+
+def test_reconciliation_force_bypasses_cache(tmp_path, monkeypatch):
+    import app.services.perp_paper_observability as obs
+
+    journal = tmp_path / "paper.jsonl"
+    pending = tmp_path / "pending.jsonl"
+    _write_jsonl(journal, [])
+    _write_jsonl(pending, [])
+    monkeypatch.setattr(obs, "JOURNAL_PATH", journal)
+    monkeypatch.setattr(obs, "PENDING_EVENT_PATH", pending)
+    monkeypatch.setattr(obs, "_reconciliation_cache", None)
+    monkeypatch.setattr(obs, "_reconciliation_cache_at", 0.0)
+    monkeypatch.setattr(obs, "_reconciliation_cache_signature", None)
+
+    calls = []
+    original = obs.iter_jsonl
+
+    def counted(path):
+        calls.append(path)
+        return original(path)
+
+    monkeypatch.setattr(obs, "iter_jsonl", counted)
+    obs.reconciliation_summary()
+    forced = obs.reconciliation_summary(force=True)
+
+    assert forced["cache_hit"] is False
+    assert len(calls) == 4
