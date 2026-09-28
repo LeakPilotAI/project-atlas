@@ -167,6 +167,12 @@ async def quality_dips_view() -> FileResponse:
     return FileResponse(QUALITY_DIPS_HTML, media_type="text/html", headers={"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"})
 
 
+@router.get("/robinhood-universe/research-status")
+async def robinhood_research_status() -> Dict[str, Any]:
+    from app.services.robinhood_universe_research import robinhood_universe_research_service
+    return robinhood_universe_research_service.status()
+
+
 @router.post("/robinhood-universe/research-batch")
 async def robinhood_research_batch(limit: int = Query(4, ge=1, le=8)) -> Dict[str, Any]:
     """Explicit bounded research pass; never brokerage execution."""
