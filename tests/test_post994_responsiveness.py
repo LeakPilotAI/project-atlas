@@ -38,33 +38,45 @@ def test_manual_endpoints_offload_status_scans(monkeypatch):
     assert all(value != loop_thread for value in calls)
 
 
-def test_manual_refresh_keeps_sync_async_and_offloads_journal(monkeypatch):
+def test_manual_refresh_uses_cached_status_and_leaves_mirror_to_alert_owner(monkeypatch):
     import app.services.paper_pipeline_hooks as hooks
-    import app.services.paper_journal as journal
     import app.services.perp_manual_service as manual
     import app.services.perp_setup_paper_mirror as mirror
     import app.services.perp_micro_coach as coach
     import app.services.v4_journal_observer as observer
-    from app.services.perp_setup_paper_mirror import SOURCE
-    calls = []
+
     loop_thread = threading.get_ident()
+    sync_calls = []
+    status_calls = []
+
     async def refresh(self):
         assert threading.get_ident() == loop_thread
-        return {'markets': [], 'setups': []}
-    async def sync(*args):
-        assert threading.get_ident() == loop_thread
-        return {'ok': True}
-    def rows(path):
-        calls.append(threading.get_ident())
-        return iter([{'source': SOURCE, 'trade_id': 'test-only', 'event': 'open'}])
+        self.last_snapshot = {'markets': [], 'setups': []}
+        return self.last_snapshot
+
+    async def forbidden_sync(*args, **kwargs):
+        sync_calls.append((args, kwargs))
+        raise AssertionError('manual refresh must not run PAPER mirror reconciliation')
+
+    def cached_status():
+        status_calls.append(threading.get_ident())
+        return {'pending_count': 2, 'open_count': 1, 'opened_total': 4, 'closed_total': 3}
+
     monkeypatch.setattr(manual.PerpManualService, '_atlas_auto_paper_hooked', False, raising=False)
     monkeypatch.setattr(manual.PerpManualService, 'refresh', refresh)
     monkeypatch.setattr(coach.PerpMicroCoach, '_atlas_pipeline_hooked', True, raising=False)
     monkeypatch.setattr(observer, 'install_paper_journal_observer', lambda obj: None)
-    monkeypatch.setattr(journal, 'iter_jsonl', rows)
-    monkeypatch.setattr(mirror.perp_setup_paper_mirror, 'sync', sync)
+    monkeypatch.setattr(mirror.perp_setup_paper_mirror, 'sync', forbidden_sync)
+    monkeypatch.setattr(mirror.perp_setup_paper_mirror, 'status', cached_status)
+
     hooks.apply()
-    service = SimpleNamespace(last_snapshot={}, snapshot=lambda: {})
-    asyncio.run(manual.PerpManualService.refresh(service))
-    assert calls and all(value != loop_thread for value in calls)
+    service = SimpleNamespace(last_snapshot={}, snapshot=lambda: service.last_snapshot)
+    result = asyncio.run(manual.PerpManualService.refresh(service))
+
+    assert sync_calls == []
+    assert len(status_calls) == 1
+    assert service.last_snapshot['auto_paper']['managed_by'] == 'perp_alert_delivery'
+    assert service.last_snapshot['auto_paper']['pending_count'] == 2
     assert service.last_snapshot['auto_paper']['open_count'] == 1
+    assert result['auto_paper']['managed_by'] == 'perp_alert_delivery'
+
