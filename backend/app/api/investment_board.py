@@ -19,6 +19,8 @@ from app.investment.quality_dips_v3_forward_store import append_v3_forward_obser
 from app.investment.quality_dips_v3_forward_readiness import forward_readiness, forward_diagnostics
 from app.investment.quality_dips_v3_state import detect_v3_events, quality_dips_v3_state_store
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
+from app.investment.robinhood_universe_registry import snapshot as robinhood_universe_snapshot
+from app.investment.robinhood_universe_discovery import sync_official_rhj_assets
 
 router = APIRouter(prefix="/investments", tags=["investments"])
 QUALITY_DIPS_HTML = Path(__file__).resolve().parents[1] / "static" / "quality_dips.html"
@@ -163,3 +165,42 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
 @router.get("/quality-dips/view", include_in_schema=False)
 async def quality_dips_view() -> FileResponse:
     return FileResponse(QUALITY_DIPS_HTML, media_type="text/html", headers={"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"})
+
+
+@router.get("/robinhood-universe")
+async def robinhood_universe(sync: bool = Query(False)) -> Dict[str, Any]:
+    """Read-only coverage view. Optional sync never authenticates or trades."""
+    sync_result: dict[str, Any] | None = None
+    if sync:
+        try:
+            sync_result = await sync_official_rhj_assets()
+        except Exception as exc:
+            sync_result = {
+                "error": type(exc).__name__,
+                "coverage_scope": "OFFICIAL_ROBINHOOD_STOCK_TOKEN_ASSETS_NOT_FULL_US_BROKERAGE_UNIVERSE",
+            }
+    state = await asyncio.to_thread(robinhood_universe_snapshot)
+    symbols = state.get("symbols") if isinstance(state, dict) else {}
+    rows = list(symbols.values()) if isinstance(symbols, dict) else []
+    listing_counts: dict[str, int] = {}
+    lane_counts: dict[str, int] = {}
+    for row in rows:
+        listing = str(row.get("listing_state") or "UNKNOWN")
+        lane = str(row.get("research_lane") or "UNCLASSIFIED")
+        listing_counts[listing] = listing_counts.get(listing, 0) + 1
+        lane_counts[lane] = lane_counts.get(lane, 0) + 1
+    return {
+        "coverage": {
+            "total_symbols": len(rows),
+            "listing_state_counts": listing_counts,
+            "research_lane_counts": lane_counts,
+            "updated_at": state.get("updated_at") if isinstance(state, dict) else None,
+            "full_robinhood_brokerage_coverage_proven": False,
+            "note": "Coverage registry is durable. Official RHJ assets are a verified source but are not the complete Robinhood Financial US brokerage catalog.",
+        },
+        "sync": sync_result,
+        "symbols": sorted(rows, key=lambda row: str(row.get("symbol") or "")),
+        "execution": "RESEARCH_ONLY_MANUAL",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+    }
