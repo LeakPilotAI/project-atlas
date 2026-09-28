@@ -221,3 +221,47 @@ def mark_researched(
     state["updated_at"] = researched_at or _now()
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def set_research_lane(
+    symbol: str,
+    lane: str,
+    *,
+    reason: str,
+    researched_at: str | None = None,
+    path: Path = ROBINHOOD_UNIVERSE_PATH,
+    events_path: Path = ROBINHOOD_UNIVERSE_EVENTS_PATH,
+) -> dict[str, Any]:
+    """Persist an evidence-derived lane transition without changing tradability."""
+    lane_norm = str(lane or "").upper().strip()
+    if lane_norm not in RESEARCH_LANES:
+        raise ValueError(f"unsupported research lane: {lane}")
+    state = _load(path)
+    symbols = dict(state.get("symbols") or {})
+    key = str(symbol or "").upper().strip()
+    if not key or key not in symbols:
+        return {"updated": False, "reason": "symbol_not_found"}
+    row = dict(symbols[key])
+    old_lane = str(row.get("research_lane") or "UNCLASSIFIED")
+    at = researched_at or _now()
+    row["research_lane"] = lane_norm
+    row["last_researched_at"] = at
+    row["research_lane_reason"] = str(reason or "")[:500]
+    symbols[key] = row
+    state["symbols"] = symbols
+    state["updated_at"] = at
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+    if old_lane != lane_norm:
+        _append_event(events_path, {
+            "event": "RESEARCH_LANE_CHANGED",
+            "symbol": key,
+            "observed_at": at,
+            "old_research_lane": old_lane,
+            "research_lane": lane_norm,
+            "reason": row["research_lane_reason"],
+            "execution": "RESEARCH_ONLY_MANUAL",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        })
+    return {"updated": True, "changed": old_lane != lane_norm, "symbol": key, "research_lane": lane_norm}
