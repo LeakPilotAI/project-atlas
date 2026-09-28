@@ -19,7 +19,7 @@ from app.investment.quality_dips_v3_forward_store import append_v3_forward_obser
 from app.investment.quality_dips_v3_forward_readiness import forward_readiness, forward_diagnostics
 from app.investment.quality_dips_v3_state import detect_v3_events, quality_dips_v3_state_store
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
-from app.investment.robinhood_universe_registry import snapshot as robinhood_universe_snapshot
+from app.investment.robinhood_universe_registry import snapshot as robinhood_universe_snapshot, research_candidates
 from app.investment.robinhood_universe_discovery import sync_official_rhj_assets
 
 router = APIRouter(prefix="/investments", tags=["investments"])
@@ -165,6 +165,19 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
 @router.get("/quality-dips/view", include_in_schema=False)
 async def quality_dips_view() -> FileResponse:
     return FileResponse(QUALITY_DIPS_HTML, media_type="text/html", headers={"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"})
+
+
+@router.get("/robinhood-universe/research-queue")
+async def robinhood_research_queue(limit: int = Query(40, ge=1, le=200)) -> Dict[str, Any]:
+    rows = await asyncio.to_thread(research_candidates, limit=limit)
+    return {
+        "count": len(rows),
+        "candidates": rows,
+        "policy": "BOUNDED_DISCOVERY_QUEUE_NOT_FULL_CATALOG_HIGH_FREQUENCY_SCAN",
+        "execution": "RESEARCH_ONLY_MANUAL",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+    }
 
 
 @router.get("/robinhood-universe")
