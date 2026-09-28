@@ -234,7 +234,7 @@ def set_research_lane(
 ) -> dict[str, Any]:
     """Persist an evidence-derived lane transition without changing tradability."""
     lane_norm = str(lane or "").upper().strip()
-    if lane_norm not in RESEARCH_LANES:
+    if lane_norm not in VALID_LANES:
         raise ValueError(f"unsupported research lane: {lane}")
     state = _load(path)
     symbols = dict(state.get("symbols") or {})
