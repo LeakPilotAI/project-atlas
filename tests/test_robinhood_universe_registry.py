@@ -59,3 +59,42 @@ def test_missing_from_batch_does_not_delist_existing_symbol(tmp_path):
     )
     registry.upsert_discovery([], source="test", path=path, events_path=events)
     assert registry.snapshot(path)["symbols"]["AAA"]["listing_state"] == "TRADABLE"
+
+
+def test_research_queue_is_bounded_and_prioritizes_classified_lanes(tmp_path):
+    path = tmp_path / "universe.json"
+    events = tmp_path / "events.jsonl"
+    registry.upsert_discovery(
+        [
+            {"symbol": "ZZZ", "listing_state": "TRADABLE", "tradable": True, "research_lane": "UNCLASSIFIED"},
+            {"symbol": "EMG", "listing_state": "TRADABLE", "tradable": True, "research_lane": "EMERGING_COMPOUNDER"},
+            {"symbol": "EST", "listing_state": "TRADABLE", "tradable": True, "research_lane": "ESTABLISHED_COMPOUNDER"},
+            {"symbol": "PRE", "listing_state": "PRE_LISTING", "tradable": False, "research_lane": "EMERGING_COMPOUNDER"},
+            {"symbol": "NOPE", "listing_state": "TRADABLE", "tradable": True, "research_lane": "EXCLUDED"},
+        ],
+        source="test",
+        path=path,
+        events_path=events,
+    )
+    rows = registry.research_candidates(limit=2, path=path)
+    assert [row["symbol"] for row in rows] == ["EMG", "EST"]
+    assert all(row["symbol"] not in {"PRE", "NOPE"} for row in rows)
+
+
+def test_mark_researched_rotates_unclassified_discovery_queue(tmp_path):
+    path = tmp_path / "universe.json"
+    events = tmp_path / "events.jsonl"
+    registry.upsert_discovery(
+        [
+            {"symbol": "AAA", "listing_state": "TRADABLE", "tradable": True},
+            {"symbol": "BBB", "listing_state": "TRADABLE", "tradable": True},
+        ],
+        source="test",
+        observed_at="2026-09-28T12:00:00+00:00",
+        path=path,
+        events_path=events,
+    )
+    first = registry.research_candidates(limit=1, path=path)[0]["symbol"]
+    registry.mark_researched(first, researched_at="2026-09-28T13:00:00+00:00", path=path)
+    second = registry.research_candidates(limit=1, path=path)[0]["symbol"]
+    assert second != first
