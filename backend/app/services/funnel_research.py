@@ -449,6 +449,10 @@ class FunnelResearch:
         funnel = self.sequential_funnel()
         dist = self.distributions()
         bn = self.bottleneck()
+        # sequential_funnel() already requested the same 24h shadow stats.
+        # The ShadowResearch signature cache makes this second consumer O(1)
+        # unless the evidence file changed in between; do not independently
+        # materialize shadow history here.
         sh = shadow_research.funnel_stats(24.0)
         paper = paper_performance()
         shadow_out = shadow_performance()
