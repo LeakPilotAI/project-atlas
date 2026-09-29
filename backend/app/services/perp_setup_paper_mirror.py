@@ -372,14 +372,50 @@ class PerpSetupPaperMirror:
             n += 1
         return n
 
-    def status(self) -> dict[str, int]:
-        """Return the in-memory mirror index; durable journals are scanned only at seed/reload."""
+    def status(self) -> dict[str, Any]:
+        """Expose PAPER mirror lifecycle without changing execution or risk policy."""
         self._seed()
+        pending_orders = [
+            {
+                "setup_instance_id": instance,
+                "setup_key": row.get("setup_key"),
+                "symbol": row.get("symbol"),
+                "side": row.get("side"),
+                "limit_price": row.get("limit_price"),
+                "armed_at": row.get("timestamp"),
+                "state": "PENDING_LIMIT",
+            }
+            for instance, row in self._pending.items()
+        ]
+        recent_terminal: list[dict[str, Any]] = []
+        for row in iter_jsonl(self._pending_path):
+            if row.get("event") == "_malformed":
+                continue
+            event = str(row.get("event") or "").lower()
+            if event not in {"filled", "cancelled"}:
+                continue
+            reason = str(row.get("reason") or "")
+            state = "FILLED" if event == "filled" else ("BLOCKED" if reason == "PAPER_RISK_BLOCK" else "CANCELLED")
+            recent_terminal.append({
+                "timestamp": row.get("timestamp"),
+                "setup_instance_id": row.get("setup_instance_id"),
+                "setup_key": row.get("setup_key"),
+                "symbol": row.get("symbol"),
+                "side": row.get("side"),
+                "state": state,
+                "reason": reason or None,
+                "mark": row.get("mark") or row.get("touch_mark"),
+            })
         return {
             "pending_count": len(self._pending),
             "open_count": len(self._source_open_ids),
             "opened_total": int(self._opened_total),
             "closed_total": int(self._closed_total),
+            "pending_orders": pending_orders,
+            "recent_terminal": recent_terminal[-20:],
+            "execution": "PAPER_ONLY",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
         }
 
     @staticmethod
