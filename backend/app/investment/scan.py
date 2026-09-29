@@ -662,7 +662,7 @@ class InvestmentScanner:
         if plan.valuation:
             fetch_state.touch(entry.symbol, valuation=now)
 
-        raw_bars = load_bars(entry.symbol, root=self.history_root or getattr(ing, "history_root", None))
+        raw_bars = await asyncio.to_thread(load_bars, entry.symbol, root=self.history_root or getattr(ing, "history_root", None))
         bars = filter_bars_as_of(raw_bars, now)
         rec = self.research.score_snapshot(snap, bars, as_of=now)
         rec.timestamp = now
@@ -675,7 +675,7 @@ class InvestmentScanner:
             rec.explain.invalidation.extend(dnotes)
 
         headlines: List[dict] = []
-        intel = evaluate_equity_move(
+        intel = await asyncio.to_thread(evaluate_equity_move,
             entry,
             rec,
             universe=universe,
@@ -689,7 +689,7 @@ class InvestmentScanner:
                 from app.investment.cause import fetch_yahoo_headlines
 
                 headlines = await fetch_yahoo_headlines(entry.symbol)
-                intel = evaluate_equity_move(
+                intel = await asyncio.to_thread(evaluate_equity_move,
                     entry,
                     rec,
                     universe=universe,

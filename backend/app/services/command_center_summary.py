@@ -6,15 +6,10 @@ from typing import Any, Iterable
 from app.investment.board import build_quality_dips_board
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 
-def _load_jsonl(path:Path)->list[dict[str,Any]]:
-    if not path.exists(): return []
-    rows=[]
-    with path.open("r",encoding="utf-8") as f:
-        for line in f:
-            try: row=json.loads(line.strip())
-            except Exception: continue
-            if isinstance(row,dict): rows.append(row)
-    return rows
+def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+    from app.investment.latest_index import latest_index
+    return latest_index.read(path)
+
 
 def _perp_summary(snapshot:dict[str,Any])->dict[str,Any]:
     setups=list(snapshot.get("setups") or []); plans=list(snapshot.get("plans") or []); auto=dict(snapshot.get("auto_paper") or {}); obs=dict(auto.get("observability") or {}); ph=dict(obs.get("pending_health") or {}); cc=dict(obs.get("clean_cohort") or {}); actionable={"PREPARE","L1_ACTIVE","L2_ACTIVE","L3_ACTIVE"}; top=setups[0] if setups else None

@@ -27,21 +27,10 @@ QUALITY_DIPS_HTML = Path(__file__).resolve().parents[1] / "static" / "quality_di
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-    out: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            raw = line.strip()
-            if not raw:
-                continue
-            try:
-                row = json.loads(raw)
-            except Exception:
-                continue
-            if isinstance(row, dict):
-                out.append(row)
-    return out
+    from app.investment.latest_index import latest_index
+    return latest_index.read(path)
+
+
 
 
 @router.get("/quality-dips")

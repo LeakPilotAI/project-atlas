@@ -19,3 +19,6 @@ def test_watchdog_captures_blocked_loop_without_locals_and_stops():
     assert all(set(frame) == {"file", "line", "function"} for frame in rows[0]["stack"])
     assert monitor._stop.is_set()
     assert monitor.samples.maxlen == 8
+    assert monitor.metrics()["stall_samples"] >= 1
+    assert monitor.thread_samples.maxlen == 60
+    assert monitor.metrics()["tasks"] > 0

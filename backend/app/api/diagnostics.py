@@ -161,6 +161,7 @@ async def diagnostics_runtime_latency() -> Dict[str, Any]:
     return {
         "event_loop_yield_ms": event_loop_yield_ms,
         "event_loop_stalls": runtime_watchdog.snapshot(),
+        "runtime_metrics": runtime_watchdog.metrics(),
         "perp_alert_delivery": perp_alert_delivery_service.reconciliation_status(),
         "read_only": True,
         "execution": "PAPER_ONLY",

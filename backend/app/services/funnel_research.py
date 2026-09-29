@@ -113,7 +113,7 @@ class FunnelResearch:
 
     def __init__(self) -> None:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
-        self._rows: Deque[Tuple[datetime, Dict[str, Any]]] = deque()
+        self._rows: Deque[Tuple[datetime, Dict[str, Any]]] = deque(maxlen=MAX_IN_MEMORY)
         self._load()
 
     def _load(self) -> None:

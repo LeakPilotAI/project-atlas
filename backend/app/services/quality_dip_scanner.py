@@ -39,24 +39,10 @@ def _parse(raw: Optional[str]) -> Optional[datetime]:
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-    out: list[dict[str, Any]] = []
-    try:
-        with path.open("r", encoding="utf-8") as f:
-            for line in f:
-                raw = line.strip()
-                if not raw:
-                    continue
-                try:
-                    row = json.loads(raw)
-                except Exception:
-                    continue
-                if isinstance(row, dict):
-                    out.append(row)
-    except Exception:
-        return []
-    return out
+    from app.investment.latest_index import latest_index
+    return latest_index.read(path)
+
+
 
 
 class QualityDipScanner:

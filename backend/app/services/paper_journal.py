@@ -42,26 +42,9 @@ def _opened_in_session(row: Dict[str, Any], started: Optional[str]) -> bool:
     return opened >= str(started)
 
 
-def iter_jsonl(path: Path) -> List[Dict[str, Any]]:
-    """Parse jsonl line-by-line. A truncated/corrupt line does not abort the file."""
-    rows: List[Dict[str, Any]] = []
-    if not path.exists():
-        return rows
-    with path.open("r", encoding="utf-8") as f:
-        for i, line in enumerate(f, start=1):
-            raw = line.strip()
-            if not raw:
-                continue
-            try:
-                row = json.loads(raw)
-            except Exception:
-                rows.append({"event": "_malformed", "line": i, "raw": raw[:200]})
-                continue
-            if isinstance(row, dict):
-                rows.append(row)
-            else:
-                rows.append({"event": "_malformed", "line": i, "raw": raw[:200]})
-    return rows
+def iter_jsonl(path: Path):
+    from app.services.runtime_hardening import stream_jsonl
+    return stream_jsonl(path)
 
 
 class PaperJournal:

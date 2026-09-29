@@ -17,11 +17,11 @@ from typing import Any
 import httpx
 
 
-def safe_iter_jsonl(path: Path) -> list[dict[str, Any]]:
-    """Best-effort JSONL reader that never raises for bad bytes/truncated rows."""
-    rows: list[dict[str, Any]] = []
+def stream_jsonl(path: Path):
+    """Stream tolerant rows without retaining the decoded journal."""
+    import time
     if not path.exists():
-        return rows
+        return
     try:
         with path.open("r", encoding="utf-8", errors="replace") as handle:
             for line_no, line in enumerate(handle, start=1):
@@ -31,15 +31,17 @@ def safe_iter_jsonl(path: Path) -> list[dict[str, Any]]:
                 try:
                     row = json.loads(raw)
                 except Exception:
-                    rows.append({"event": "_malformed", "line": line_no, "raw": raw[:200]})
-                    continue
-                if isinstance(row, dict):
-                    rows.append(row)
-                else:
-                    rows.append({"event": "_malformed", "line": line_no, "raw": raw[:200]})
+                    row = None
+                yield row if isinstance(row, dict) else {"event": "_malformed", "line": line_no, "raw": raw[:200]}
+                if line_no % 256 == 0:
+                    time.sleep(0)
     except OSError as exc:
-        rows.append({"event": "_malformed", "line": 0, "raw": f"journal read error: {type(exc).__name__}: {exc}"[:200]})
-    return rows
+        yield {"event": "_malformed", "line": 0, "raw": f"journal read error: {type(exc).__name__}: {exc}"[:200]}
+
+
+def safe_iter_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Compatibility list API; runtime consumers use the streaming iterator."""
+    return list(stream_jsonl(path))
 
 
 def harden_adapter(adapter: Any) -> Any:
@@ -124,6 +126,6 @@ def install_runtime_hardening(adapter: Any) -> None:
 
     try:
         from app.services import paper_journal as paper_journal_module
-        paper_journal_module.iter_jsonl = safe_iter_jsonl
+        paper_journal_module.iter_jsonl = stream_jsonl
     except Exception:
         pass
