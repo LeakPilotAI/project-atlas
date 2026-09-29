@@ -26,6 +26,11 @@ EVENTS_PATH = DATA_DIR / "shadow_events.jsonl"
 
 SHADOW_MIN_SCORE = 50.0
 DEDUP_SECONDS = 900
+# Repeated dedup decisions are expected on every micro evaluation. Logging each
+# one at INFO turns the hot research loop into sustained console/file I/O and
+# makes the desktop API compete with thousands of no-op log writes. Preserve
+# counters/evidence semantics; only rate-limit the diagnostic message.
+DEDUP_LOG_INTERVAL_SECONDS = 60.0
 SHADOW_EXPIRE_SECONDS = 6 * 3600
 MAX_OPEN_SHADOWS = 80
 
@@ -54,6 +59,7 @@ class ShadowResearch:
         self._recent_fp: Dict[str, datetime] = {}
         self._stats_cache: Dict[float, Tuple[Tuple[int, int], float, Dict[str, Any]]] = {}
         self._stats_cache_lock = threading.Lock()
+        self._last_dedup_log: Dict[str, float] = {}
         self._load_open()
 
     def _append(self, path: Path, row: Dict[str, Any]) -> None:
@@ -135,7 +141,13 @@ class ShadowResearch:
         last_seen = self._recent_fp.get(fp)
         if not self._dedup_ok(fp):
             paper_pipeline.inc("shadow_candidates_deduped")
-            log.info("SHADOW DEDUP", symbol=symbol, side=side_s, decision="skip")
+            # Dedup is a normal no-op, not an operational event. Emit at most one
+            # DEBUG line per fingerprint/minute so research cannot flood the API
+            # process with synchronous log I/O.
+            now_mono = time.monotonic()
+            if now_mono - self._last_dedup_log.get(fp, 0.0) >= DEDUP_LOG_INTERVAL_SECONDS:
+                self._last_dedup_log[fp] = now_mono
+                log.debug("SHADOW DEDUP", symbol=symbol, side=side_s, decision="skip")
             return None
 
         cid = str(uuid.uuid4())[:12]
