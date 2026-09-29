@@ -67,7 +67,8 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
         if not symbol or not v3:
             continue
         source_row = next((x for x in quoted_research if str(x.get("symbol") or "").upper().strip() == symbol), {})
-        append_v3_forward_observation(
+        await asyncio.to_thread(
+            append_v3_forward_observation,
             symbol=symbol,
             price=source_row.get("price") if isinstance(source_row, dict) else None,
             plan=v3,
