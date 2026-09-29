@@ -15,6 +15,7 @@ MIN_UNIQUE_DAYS = 20
 MIN_SYMBOLS = 10
 MIN_EVALUATIONS = 200
 _CACHE_TTL_SEC = 60.0
+_MAX_CACHE_BYTES = 32 * 1024 * 1024
 _cache_lock = threading.Lock()
 _cache: dict[str, Any] = {"signature": None, "loaded_at": 0.0, "rows": []}
 
@@ -60,8 +61,15 @@ def load_forward_rows(path: Path = V3_FORWARD_PATH) -> list[dict[str, Any]]:
     except OSError:
         return []
 
+    # Large immutable PIT files can contain hundreds of MB of JSON objects.
+    # Keeping the fully decoded list alive indefinitely creates severe process
+    # pressure. Cache only modest files; large files are released after the
+    # readiness/diagnostic caller finishes.
     with _cache_lock:
-        _cache.update({"signature": signature, "loaded_at": now, "rows": rows})
+        if int(stat.st_size) <= _MAX_CACHE_BYTES:
+            _cache.update({"signature": signature, "loaded_at": now, "rows": rows})
+        else:
+            _cache.update({"signature": None, "loaded_at": 0.0, "rows": []})
     return rows
 
 
