@@ -856,7 +856,10 @@ class PerpMicroCoach:
 
         self._roll_day()
         settings = get_settings()
-        self._rehydrate_open(reason="cycle")
+        # Durable journal reconciliation performs synchronous JSONL I/O.
+        # Keep the async market-data cycle responsive; the dedicated PAPER
+        # reconciliation service remains responsible for durable disk repair.
+        await asyncio.to_thread(self._rehydrate_open, "cycle")
         tickers = await self._fetch_tickers()
         log.info("Micro coach tickers", count=len(tickers))
 
