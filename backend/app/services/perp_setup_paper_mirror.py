@@ -55,6 +55,7 @@ class PerpSetupPaperMirror:
         self._source_open_ids: set[str] = set()
         self._opened_total = 0
         self._closed_total = 0
+        self._recent_terminal: list[dict[str, Any]] = []
 
     def _instance_id(self, setup: dict[str, Any]) -> str:
         key = str(setup.get("setup_key") or "")
@@ -113,8 +114,20 @@ class PerpSetupPaperMirror:
             elif event in {"filled", "cancelled"}:
                 pending.pop(instance, None)
                 self._terminal_pending_instances.add(instance)
+                reason = str(row.get("reason") or "")
+                self._recent_terminal.append({
+                    "timestamp": row.get("timestamp"),
+                    "setup_instance_id": instance,
+                    "setup_key": row.get("setup_key"),
+                    "symbol": row.get("symbol"),
+                    "side": row.get("side"),
+                    "state": "FILLED" if event == "filled" else ("BLOCKED" if reason == "PAPER_RISK_BLOCK" else "CANCELLED"),
+                    "reason": reason or None,
+                    "mark": row.get("mark") or row.get("touch_mark"),
+                })
                 if event == "filled":
                     self._mirrored_instances.add(instance)
+        self._recent_terminal = self._recent_terminal[-20:]
         self._pending = pending
         self._terminal_cache_hydrated = True
         self._seeded = True
@@ -237,7 +250,7 @@ class PerpSetupPaperMirror:
         row = self._pending.pop(instance, None)
         if not row:
             return
-        self._append_pending_event({
+        event_row = {
             "event": "cancelled",
             "setup_instance_id": instance,
             "setup_key": row.get("setup_key"),
@@ -245,7 +258,14 @@ class PerpSetupPaperMirror:
             "side": row.get("side"),
             "reason": reason,
             "mark": mark,
+        }
+        self._append_pending_event(event_row)
+        self._recent_terminal.append({
+            "timestamp": _now(),
+            **{k: event_row.get(k) for k in ("setup_instance_id", "setup_key", "symbol", "side", "reason", "mark")},
+            "state": "BLOCKED" if reason == "PAPER_RISK_BLOCK" else "CANCELLED",
         })
+        self._recent_terminal = self._recent_terminal[-20:]
         self._terminal_pending_instances.add(instance)
         log.info("Auto paper resting limit cancelled", symbol=row.get("symbol"), reason=reason)
 
@@ -337,7 +357,7 @@ class PerpSetupPaperMirror:
         )
         self._source_open_ids.add(str(trade_id))
         self._opened_total += 1
-        self._append_pending_event({
+        fill_event = {
             "event": "filled",
             "setup_instance_id": instance,
             "setup_key": row.get("setup_key"),
@@ -346,7 +366,19 @@ class PerpSetupPaperMirror:
             "limit_price": limit_price,
             "touch_mark": mark,
             "recovered_limit_cross": bool(row.get("recovered_limit_cross")),
+        }
+        self._append_pending_event(fill_event)
+        self._recent_terminal.append({
+            "timestamp": _now(),
+            "setup_instance_id": instance,
+            "setup_key": row.get("setup_key"),
+            "symbol": symbol,
+            "side": side,
+            "state": "FILLED",
+            "reason": None,
+            "mark": mark,
         })
+        self._recent_terminal = self._recent_terminal[-20:]
         self._pending.pop(instance, None)
         self._mirrored_instances.add(instance)
         self._terminal_pending_instances.add(instance)
@@ -373,7 +405,7 @@ class PerpSetupPaperMirror:
         return n
 
     def status(self) -> dict[str, Any]:
-        """Expose PAPER mirror lifecycle without changing execution or risk policy."""
+        """Expose PAPER mirror lifecycle from the seeded runtime index only."""
         self._seed()
         pending_orders = [
             {
@@ -387,32 +419,23 @@ class PerpSetupPaperMirror:
             }
             for instance, row in self._pending.items()
         ]
-        recent_terminal: list[dict[str, Any]] = []
-        for row in iter_jsonl(self._pending_path):
-            if row.get("event") == "_malformed":
-                continue
-            event = str(row.get("event") or "").lower()
-            if event not in {"filled", "cancelled"}:
-                continue
-            reason = str(row.get("reason") or "")
-            state = "FILLED" if event == "filled" else ("BLOCKED" if reason == "PAPER_RISK_BLOCK" else "CANCELLED")
-            recent_terminal.append({
-                "timestamp": row.get("timestamp"),
-                "setup_instance_id": row.get("setup_instance_id"),
-                "setup_key": row.get("setup_key"),
-                "symbol": row.get("symbol"),
-                "side": row.get("side"),
-                "state": state,
-                "reason": reason or None,
-                "mark": row.get("mark") or row.get("touch_mark"),
-            })
-        return {
+        base = {
             "pending_count": len(self._pending),
             "open_count": len(self._source_open_ids),
             "opened_total": int(self._opened_total),
             "closed_total": int(self._closed_total),
+        }
+        # Preserve the legacy compact shape for synthetic/pre-seeded callers that
+        # have no lifecycle cache. Normal runtime seeds this cache from disk once.
+        if not self._recent_terminal and all(
+            not any(row.get(k) for k in ("symbol", "side", "limit_price", "timestamp"))
+            for row in self._pending.values()
+        ):
+            return base
+        return {
+            **base,
             "pending_orders": pending_orders,
-            "recent_terminal": recent_terminal[-20:],
+            "recent_terminal": list(self._recent_terminal),
             "execution": "PAPER_ONLY",
             "live_capital_allowed": False,
             "automatic_real_money_execution": False,
