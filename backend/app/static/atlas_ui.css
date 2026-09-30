@@ -1,0 +1,61 @@
+/* Project Atlas reference UI — shared presentation layer
+   Data semantics stay owned by each workspace. */
+:root{
+ --atlas-bg:#010405;--atlas-panel:#041012;--atlas-panel2:#071619;--atlas-line:#17464d;
+ --atlas-cyan:#25e6ed;--atlas-green:#18e5a4;--atlas-red:#ff2846;--atlas-amber:#ffbd55;
+ --atlas-fg:#e9fbff;--atlas-muted:#82a7b1;--atlas-mono:"IBM Plex Mono","Roboto Mono",Consolas,monospace;
+ --atlas-sans:"Arial Narrow","Roboto Condensed","Segoe UI",system-ui,sans-serif;
+}
+html,body{scrollbar-color:#1d6667 #020708}
+body{font-family:var(--atlas-sans)!important;background:
+ radial-gradient(ellipse at 12% -5%,rgba(0,205,210,.08),transparent 25%),
+ radial-gradient(ellipse at 94% 8%,rgba(255,20,54,.08),transparent 22%),
+ linear-gradient(#010405,#020708 45%,#010405)!important;color:var(--atlas-fg)!important}
+body:after{content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.13;
+ background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(112,255,246,.045) 4px)}
+/* Reference-style HUD geometry */
+.atlas-hud,.hero,.panel,.card,.stat,.banner,.tickerShell,.metric,.trade,.priorityDock{
+ border:1px solid var(--atlas-line)!important;
+ border-radius:16px 4px 16px 4px!important;
+ background:linear-gradient(145deg,rgba(5,18,20,.97),rgba(2,8,9,.985))!important;
+ box-shadow:inset 0 1px rgba(113,255,248,.055),0 12px 34px rgba(0,0,0,.34)!important;
+}
+.hero,.panel,.card,.stat,.banner,.tickerShell{position:relative}
+.hero:before,.panel:before,.card:before,.stat:before,.banner:before,.tickerShell:before{
+ content:"";position:absolute;pointer-events:none;left:10px;right:10px;top:-1px;height:1px;
+ background:linear-gradient(90deg,transparent,rgba(37,230,237,.34),transparent)}
+/* Dense professional typography */
+.eyebrow,.label,.kicker,th,.tickerTitle{font-family:var(--atlas-mono)!important;letter-spacing:.09em!important;text-transform:uppercase}
+.eyebrow,.kicker,.tickerTitle{color:var(--atlas-cyan)!important}
+.sub,.muted,.note,.meta,.research{color:var(--atlas-muted)!important}
+h1,h2,h3,.sym,.n,.v,.priceNow,.exact{letter-spacing:.015em!important}
+table{font-family:var(--atlas-mono)!important;font-variant-numeric:tabular-nums}
+th{color:#70aeb6!important;font-size:10px!important}
+td{border-color:rgba(35,91,98,.45)!important}
+tr:hover td{background:rgba(34,231,220,.035)!important}
+/* Status language */
+.ok,.good,.long,.longtxt,.eligible{color:var(--atlas-green)!important}
+.bad,.short,.shorttxt,.blocked{color:var(--atlas-red)!important}
+.warn{color:var(--atlas-amber)!important}
+.badge,.pill,.tier,.state,.stance,.action,.btn{
+ border-radius:4px 10px 4px 10px!important;font-family:var(--atlas-mono)!important;
+ box-shadow:inset 0 0 14px rgba(37,230,237,.025)}
+/* Buttons/nav: red is selection/action, cyan is informational */
+button,.btn{transition:border-color .14s ease,box-shadow .14s ease,color .14s ease,background .14s ease}
+button:hover,.btn:hover{border-color:#31818a!important}
+button.on,.tab.on,.tabs button.on,.nav button.on{
+ color:#fff!important;border-color:#ff304b!important;
+ background:linear-gradient(145deg,rgba(91,8,21,.92),rgba(10,8,11,.98))!important;
+ box-shadow:inset 0 0 22px rgba(255,35,61,.12),0 0 14px rgba(255,35,61,.16)!important}
+button.on:after,.tab.on:after{opacity:.7!important}
+/* Operational state badges */
+.ACCUMULATE,.ACCUMULATION,.DEEP_VALUE,.GENERATIONAL,.SCALE_SMALL{
+ color:#4effbd!important;border-color:#23866b!important;background:rgba(9,52,42,.72)!important}
+.PREPARE,.WAIT_CHEAPER{color:#ffc86a!important;border-color:#7b5a26!important;background:rgba(61,43,12,.62)!important}
+.WATCH,.QUIET{color:#79cbd0!important;border-color:#24545a!important;background:rgba(8,32,35,.72)!important}
+.STAND_DOWN,.THESIS_BROKEN,.DO_NOT_BUY{color:#ff6073!important;border-color:#812b3d!important;background:rgba(64,9,20,.7)!important}
+/* Scrollbars */
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-track{background:#020708}
+::-webkit-scrollbar-thumb{background:#17464d;border:2px solid #020708;border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:#236b71}
+@media(max-width:900px){body:after{display:none}}
