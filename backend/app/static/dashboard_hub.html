@@ -22,12 +22,12 @@
   <nav class="tabs" aria-label="Atlas workspaces">
     <button class="tab on" data-pane="perps" data-domain="HYPERLIQUID_PERPS">Perp Day Trade</button>
     <button class="tab" data-pane="quality" data-domain="EQUITY_INVESTMENT">Quality Dips</button>
-    <button class="tab" data-pane="legacy" data-domain="ORCHESTRATION / RESEARCH">Command Center / Paper</button>
+    <button class="tab" data-pane="legacy" data-domain="ORCHESTRATION / RESEARCH">Command Center</button>
   </nav>
 </header>
-<section id="pane-perps" class="pane on"><iframe class="frame" src="/dashboard/perps" title="Hyperliquid Perp Day Trade"></iframe></section>
+<section id="pane-perps" class="pane on"><iframe class="frame" src="/dashboard/perps?embed=1" title="Hyperliquid Perp Day Trade"></iframe></section>
 <section id="pane-quality" class="pane"><iframe class="frame" data-src="/api/investments/quality-dips/view" title="Quality Dips Investment Research"></iframe></section>
-<section id="pane-legacy" class="pane"><iframe class="frame" data-src="/dashboard/legacy" title="Legacy Atlas Command Center"></iframe></section>
+<section id="pane-legacy" class="pane"><iframe class="frame" data-src="/dashboard/legacy?embed=1" title="Legacy Atlas Command Center"></iframe></section>
 <script>
 const domain=document.getElementById('domain');
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
