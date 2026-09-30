@@ -18,3 +18,15 @@ def test_paper_risk_allows_small_simulated_risk():
     out=check_paper_risk(open_positions=[],requested_risk_usd=1)
     assert out["allowed"] is True
     assert out["automatic_real_money_execution"] is False
+
+
+def test_paper_risk_blocks_at_session_loss_boundary():
+    out=check_paper_risk(open_positions=[],requested_risk_usd=1,session_net_r=-3.0)
+    assert out["allowed"] is False
+    assert "paper session loss stop reached" in out["blockers"]
+
+
+def test_paper_risk_preserves_kill_switch():
+    out=check_paper_risk(open_positions=[],requested_risk_usd=1,kill_switch=True)
+    assert out["allowed"] is False
+    assert "operator kill switch enabled" in out["blockers"]
