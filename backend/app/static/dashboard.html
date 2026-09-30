@@ -142,7 +142,21 @@
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
-body.embed header,body.embed #research-link,body.embed .quality-summary-tab{display:none}body.embed main{padding-top:22px}</style>
+body.embed header,body.embed #research-link,body.embed .quality-summary-tab{display:none}body.embed main{padding-top:22px}
+/* ATLAS XENOFORM UI — presentation only */
+:root{--bg:#020405;--bg-2:#05080a;--surface:#07100f;--elevated:#0b1715;--fg:#e9fff8;--muted:#8aa79f;--subtle:#55766d;--border:#173b35;--border-strong:#2a675b;--accent:#5dffe0;--accent-fg:#00110d;--long:#52ffad;--short:#ff334f;--warn:#ffc766}
+html,body{background:
+radial-gradient(ellipse at 12% 0%,rgba(0,255,195,.09),transparent 28%),
+radial-gradient(ellipse at 92% 18%,rgba(255,20,55,.08),transparent 24%),
+repeating-linear-gradient(115deg,rgba(90,255,220,.018) 0 1px,transparent 1px 18px),#020405}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background:radial-gradient(circle at 30% 20%,transparent 0 3px,rgba(65,255,195,.05) 4px,transparent 6px);background-size:47px 43px;mix-blend-mode:screen}
+.card,.banner,.tabs{background:linear-gradient(145deg,rgba(8,20,18,.97),rgba(3,8,8,.98));border-color:#1b4c43;box-shadow:inset 0 1px rgba(126,255,225,.05),0 16px 44px rgba(0,0,0,.38)}
+.card{position:relative;overflow:hidden}.card:after{content:"";position:absolute;inset:auto -10% -35px 35%;height:52px;border-radius:50%;background:rgba(58,255,184,.035);filter:blur(12px);pointer-events:none}
+.tabs{border-radius:18px 7px 18px 7px}.tabs button.on{background:linear-gradient(135deg,#10251f,#07110f);color:#8ffff0;box-shadow:inset 0 0 18px rgba(70,255,210,.08)}
+.kicker{color:#63d9c3}.pill.on{box-shadow:0 0 14px rgba(82,255,173,.09)}table{font-family:var(--mono)}th{color:#638e83}tr:hover td{background:rgba(75,255,205,.035)}
+.accumulation-panel{border-color:#2c6b5b;box-shadow:inset 0 0 35px rgba(48,255,183,.025),0 22px 65px rgba(0,0,0,.42)}
+.inv-table-wrap{overflow-x:auto}.accumulation-table{min-width:1180px}.accumulation-table .inv-symbol{font-size:15px;font-weight:700;color:#eafff8}.accumulation-table .level{color:#5dffe0;font-weight:600}.accumulation-table .plan{min-width:245px;color:#86a99f;font-size:11px}.accumulation-table tr.inv-ACCUMULATE td,.accumulation-table tr.inv-SCALE_SMALL td{background:rgba(52,255,169,.025)}
+</style>
 </head>
 <body>
 <div id="research-link" style="padding:13px 28px;background:#071019;border-bottom:1px solid #183246"><a href="/api/investments/prospective/view" target="_top" style="color:#72e7ff;font-size:14px;font-weight:600;text-decoration:none">Daily manual investment research · forward evidence →</a></div>
@@ -212,17 +226,17 @@ body.embed header,body.embed #research-link,body.embed .quality-summary-tab{disp
   </section>
 
   <section id="tab-invest" class="hidden">
-    <div class="grid g2">
-      <div class="card">
-        <h3>Investment scan</h3>
-        <div id="invstatus" class="sub"></div>
-        <div id="invopps" style="margin-top:12px"></div>
-      </div>
-      <div class="card">
-        <h3>Equity majors</h3>
-        <div class="sub" id="eqhead"></div>
-        <div id="eqtape"></div>
-      </div>
+    <div class="card accumulation-panel">
+      <div class="kicker">LONG-HORIZON EQUITY RESEARCH // ACCUMULATION MATRIX</div>
+      <h3 style="font-size:21px;margin-top:7px">Investment Accumulation Plan</h3>
+      <div id="invstatus" class="sub"></div>
+      <div class="note" style="margin:8px 0 14px">ACCUMULATE / SCALE SMALL candidates appear first. Lower L-levels are Atlas research zones for adding only if price falls and the thesis remains intact. Manual execution only; these are not broker orders or guaranteed returns.</div>
+      <div id="invopps"></div>
+    </div>
+    <div class="card">
+      <h3>Equity Majors // Threat & Opportunity Tape</h3>
+      <div class="sub" id="eqhead"></div>
+      <div id="eqtape"></div>
     </div>
   </section>
 
@@ -422,13 +436,19 @@ async function load(){
     const cycle = inv.last_cycle||{};
     document.getElementById("invstatus").innerHTML =
       `Scan ${inv.enabled?"enabled":"off"} · running ${inv.running?"yes":"no"} · last cycle ${cycle.finished_at?ago(cycle.finished_at):"waiting"} · ${cycle.symbols_scanned||0} names`;
-    const iopps = (inv.opportunities||prep).filter(d => ["PREPARE","ACCUMULATE","STAND_DOWN","WATCH"].includes(d.action));
-    document.getElementById("invopps").innerHTML = iopps.length? `<table><tr><th></th><th>Symbol</th><th>Stance</th><th>Falling</th><th>T1</th><th>Off high</th></tr>${
-      iopps.slice(0,16).map(d=>{
-        const t1 = (d.ladder&&d.ladder[0]) ? ("$"+fmt(d.ladder[0].limit,2)) : "—";
-        return `<tr><td>${actionBadge(d.stance||d.action)}</td><td>${esc(d.symbol)}</td><td>${esc(d.stance||d.action||"")}</td><td>${d.bottom_risk==null?"—":d.bottom_risk}</td><td>${t1}</td><td>${fmt(d.pct_from_high,1)}%</td></tr>`;
+    const iopps = (inv.opportunities||prep).filter(d => ["PREPARE","ACCUMULATE","STAND_DOWN","WATCH","SCALE_SMALL","WAIT_CHEAPER"].includes(d.action)||["SCALE_SMALL","WAIT_CHEAPER"].includes(d.stance));
+    const invRank={ACCUMULATE:0,SCALE_SMALL:0,PREPARE:1,WAIT_CHEAPER:1,WATCH:2,STAND_DOWN:3};
+    iopps.sort((a,b)=>(invRank[a.stance||a.action]??9)-(invRank[b.stance||b.action]??9));
+    document.getElementById("invopps").innerHTML = iopps.length? `<div class="inv-table-wrap"><table class="accumulation-table"><tr><th>Research state</th><th>Symbol</th><th>Current / Ref</th><th>Off high</th><th>Falling risk</th><th>L1</th><th>L2</th><th>L3</th><th>L4</th><th>Plan</th></tr>${
+      iopps.slice(0,24).map(d=>{
+        const levels=(d.ladder||[]).slice(0,4);
+        const lp=i=>levels[i]&&Number.isFinite(Number(levels[i].limit))?"$"+fmt(levels[i].limit,2):"—";
+        const px=d.price??d.current_price??d.last_price??d.quote_display_price;
+        const state=d.stance||d.action||"WATCH";
+        const plan=["ACCUMULATE","SCALE_SMALL"].includes(state)?"ACCUMULATION ACTIVE · scale small; deeper levels remain staged":(["PREPARE","WAIT_CHEAPER"].includes(state)?"WAIT FOR LOWER RESEARCH LEVELS":"MONITOR · thesis/evidence controls");
+        return `<tr class="inv-${esc(state)}"><td>${actionBadge(state)}</td><td class="inv-symbol">${esc(d.symbol)}</td><td>${px==null?"—":"$"+fmt(px,2)}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.bottom_risk==null?"—":d.bottom_risk}</td><td class="level">${lp(0)}</td><td class="level">${lp(1)}</td><td class="level">${lp(2)}</td><td class="level">${lp(3)}</td><td class="plan">${plan}</td></tr>`;
       }).join("")
-    }</table>` : '<div class="sub">No investment opportunities on this scan. Alerts still DM when a quality name enters PREPARE.</div>';
+    }</table></div>` : '<div class="sub">No accumulation or prepare candidates on this scan. Atlas will surface them here when the research engine qualifies one.</div>';
 
     const tape = L.major_tape||{};
     const mkeys = Object.keys(tape);
