@@ -21,7 +21,7 @@ from typing import Any
 from app.core.logging import get_logger
 from app.services.paper_journal import JOURNAL_PATH, iter_jsonl, paper_journal
 from app.services.paper_risk import check_paper_risk
-from app.services.paper_risk_controls import paper_risk_controls
+from app.services.paper_risk_controls import paper_risk_controls\nfrom app.services.paper_risk_window import utc_day_risk_snapshot
 from app.services.paper_execution_model import (
     DEFAULT_FEE_BPS_PER_SIDE,
     DEFAULT_SLIPPAGE_BPS_PER_SIDE,
@@ -246,7 +246,14 @@ class PerpSetupPaperMirror:
         self._pending[instance] = {"timestamp": _now(), **row}
         return True
 
-    def _cancel_pending(self, instance: str, *, reason: str, mark: float | None = None) -> None:
+    def _cancel_pending(
+        self,
+        instance: str,
+        *,
+        reason: str,
+        mark: float | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
         row = self._pending.pop(instance, None)
         if not row:
             return
@@ -258,6 +265,7 @@ class PerpSetupPaperMirror:
             "side": row.get("side"),
             "reason": reason,
             "mark": mark,
+            "details": dict(details or {}),
         }
         self._append_pending_event(event_row)
         self._recent_terminal.append({
@@ -304,10 +312,15 @@ class PerpSetupPaperMirror:
             return False
         control = paper_risk_controls.snapshot()
         try:
-            session_stats = await paper_journal.stats()
-            session_net_r = float(session_stats.get("sum_r") or 0.0)
+            risk_window = await asyncio.to_thread(utc_day_risk_snapshot)
+            session_net_r = float(risk_window.get("net_r") or 0.0)
         except Exception:
-            session_net_r = float(control.get("session_net_r") or 0.0)
+            risk_window = {
+                "net_r": float(control.get("session_net_r") or 0.0),
+                "window": "DURABLE_CONTROL_FALLBACK",
+                "source": "PAPER_RISK_CONTROL_STORE",
+            }
+            session_net_r = float(risk_window["net_r"])
         risk_decision = check_paper_risk(
             open_positions=open_positions,
             requested_risk_usd=1.0,
@@ -315,7 +328,21 @@ class PerpSetupPaperMirror:
             kill_switch=bool(control.get("kill_switch")),
         )
         if not risk_decision["allowed"]:
-            self._cancel_pending(instance, reason="PAPER_RISK_BLOCK", mark=mark)
+            self._cancel_pending(
+                instance,
+                reason="PAPER_RISK_BLOCK",
+                mark=mark,
+                details={
+                    "blockers": list(risk_decision.get("blockers") or []),
+                    "risk_window": risk_window,
+                    "requested_risk_usd": 1.0,
+                    "open_paper_positions": sum(
+                        1
+                        for p in open_positions
+                        if str(p.get("trade_type") or "PAPER").upper() == "PAPER"
+                    ),
+                },
+            )
             return False
 
         features = {
