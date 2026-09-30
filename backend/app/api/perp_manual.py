@@ -9,7 +9,8 @@ from app.services.perp_alert_delivery import perp_alert_delivery_service
 from app.services.perp_manual_service import perp_manual_service
 from app.services.perp_paper_observability import build_paper_observability
 from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
-from app.services.paper_risk_controls import paper_risk_controls\nfrom app.services.paper_risk_window import utc_day_risk_snapshot
+from app.services.paper_risk_controls import paper_risk_controls
+from app.services.paper_risk_window import utc_day_risk_snapshot
 from app.services.paper_journal import paper_journal
 from app.trading_core.perp_board import build_perp_board
 
