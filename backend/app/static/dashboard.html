@@ -306,6 +306,8 @@ document.querySelectorAll(".tabs button").forEach(btn=>{
     });
   });
 });
+const requestedTab=new URLSearchParams(location.search).get("tab");
+if(requestedTab){const requestedButton=document.querySelector('.tabs button[data-tab="'+requestedTab+'"]');if(requestedButton)requestedButton.click();}
 let liveFailureStreak=0;
 let optionalUpdated=0;
 let reconnectEvents=0;
