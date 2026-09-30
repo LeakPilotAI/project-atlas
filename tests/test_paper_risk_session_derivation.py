@@ -73,6 +73,7 @@ def test_fill_uses_current_utc_day_r_for_loss_stop(tmp_path, monkeypatch):
     journal = _Journal(20.0)
     monkeypatch.setattr(mirror_mod, "paper_journal", journal)
     monkeypatch.setattr(mirror_mod.paper_risk_controls, "kill_switch", False)
+    monkeypatch.setattr(mirror_mod.asyncio, "to_thread", _inline_to_thread)
     monkeypatch.setattr(
         mirror_mod,
         "utc_day_risk_snapshot",
