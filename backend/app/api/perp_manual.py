@@ -9,7 +9,7 @@ from app.services.perp_alert_delivery import perp_alert_delivery_service
 from app.services.perp_manual_service import perp_manual_service
 from app.services.perp_paper_observability import build_paper_observability
 from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
-from app.services.paper_risk_controls import paper_risk_controls
+from app.services.paper_risk_controls import paper_risk_controls\nfrom app.services.paper_risk_window import utc_day_risk_snapshot
 from app.services.paper_journal import paper_journal
 from app.trading_core.perp_board import build_perp_board
 
@@ -19,14 +19,20 @@ router = APIRouter(prefix="/api/perps", tags=["manual-perps"])
 @router.get("/paper-risk")
 async def paper_risk_status() -> Dict[str, Any]:
     try:
-        session_stats = await paper_journal.stats()
-        session_net_r = float(session_stats.get("sum_r") or 0.0)
+        risk_window = await asyncio.to_thread(utc_day_risk_snapshot)
+        session_net_r = float(risk_window.get("net_r") or 0.0)
     except Exception:
-        session_net_r = float(paper_risk_controls.session_net_r or 0.0)
+        risk_window = {
+            "net_r": float(paper_risk_controls.session_net_r or 0.0),
+            "window": "DURABLE_CONTROL_FALLBACK",
+            "source": "PAPER_RISK_CONTROL_STORE",
+        }
+        session_net_r = float(risk_window["net_r"])
     return {
         **paper_risk_controls.snapshot(),
         "session_net_r": session_net_r,
-        "session_net_r_source": "PAPER_JOURNAL",
+        "session_net_r_source": str(risk_window.get("source") or "UNKNOWN"),
+        "risk_window": risk_window,
         "mode": "PAPER_ONLY",
         "live_execution": False,
     }
