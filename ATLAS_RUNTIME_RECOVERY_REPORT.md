@@ -1,4 +1,4 @@
-# Atlas runtime recovery — validation in progress
+# Atlas runtime recovery — COMPLETE
 
 Original starting HEAD: `92405d60276d7b32a817e28e73c28b3a80e203df`.
 Branch: `chatgpt/atlas-rebuild-v1`. First repair: `a2b7117`.
@@ -34,8 +34,8 @@ user-provided failure/audit artifacts are preserved.
 
 First full Python suite (including actual JavaScript contract execution):
 1037 passed, 0 failed, 0 skipped, two known dependency warnings, 70.76 seconds.
-Follow-up critical tests: 28 passed. Index rotation/caller-isolation checks were
-added afterward, so a final full run is still required.
+Follow-up critical tests: 28 passed. Index rotation/caller-isolation checks were added afterward. The exact-source
+pre-soak gate below subsequently completed with 1038 passing tests.
 
 ## Runtime comparison (not the final soak)
 
@@ -45,24 +45,39 @@ Python threads 20, OS threads 33–39, no queued executor jobs in latest sample.
 Health samples 2–30 ms. PAPER duplicate fills zero and reconciliation true.
 These short observations do not establish long-duration success.
 
-## Next validation
+## Final long-duration runtime acceptance
 
-Run full suite after final source checks, commit, stop/relaunch through the
-normal Windows scripts, then run:
+Tested commit: `d33b71aa9994846225af2717df8a22789e59f68e`.
+Operator startup used the normal supported Atlas desktop path. The dedicated
+`scripts/runtime_recovery_soak.py` sampler verified the server PID against the
+desktop runtime manifest before collecting evidence.
 
-```powershell
-.\backend\.venv\Scripts\python.exe -m pytest -q --basetemp=logs/diagnostics/pytest-emergency-final
-Start-Process -FilePath 'D:\Work\Project Atlas\ATLAS.bat' -WindowStyle Hidden
-.\backend\.venv\Scripts\python.exe scripts/runtime_recovery_soak.py --seconds 1800 --output logs/diagnostics/recovery-soak-final
-```
+Measured soak:
+- Target: 1800 seconds; captured 900 samples through 1799.03 seconds.
+- Private memory: 845.77 MB start, 901.14 MB peak, 901.04 MB end.
+- Five-minute mean private-memory buckets: 865.60, 882.98, 885.77, 893.43,
+  900.56, 901.04 MB. The final five-minute bucket was flat at 901.04 MB.
+- OS threads: 33–36, ending at 33; no upward ratchet.
+- 1306 recorded HTTP/API probes, zero failures.
+- /health: 900 successful probes; median 1.798 ms, p95 26.595 ms.
+- Runtime watchdog: zero >=1 second stalls; maximum sampled heartbeat age 781 ms.
+- CPU: median sampled one-core utilization 12.5%; transient peak 114.06% without
+  associated request failures, thread growth, executor backlog, or watchdog stall.
+- PAPER reconciliation remained healthy: 124 open and 124 closed journal events,
+  zero currently open, zero duplicate fills, reconciliation_ok=true, service
+  running, PAPER_ONLY, live capital disabled.
+- /api/live and the manual perp board each produced a new updated_at value on all
+  30 rotating surface samples, confirming continuing runtime/scanner progress.
+- Investment/research/Command Center surfaces were also probed 30 times each with
+  no HTTP failure.
+- Operator exercised the real frontend during the soak and reported all intended
+  frontend data remained visible with no observed timeout/reconnect recurrence.
 
-Sampler records process identity/start time, private/RSS memory, CPU relative to
-one core, OS threads/children, health latency every two seconds, rotating surface
-latency, scanner timestamps, watchdog/tasks/executor queue, refresh counters and
-PAPER reconciliation. Exercise real browser workspace navigation during sampling.
-Capture final integrity, stop cleanly, and update this report with measured results.
+Memory warmed by roughly 55 MB and then plateaued. It did not reproduce the
+previous 2.60 GB -> 4.47 GB runaway. Thread/task behavior remained bounded and
+the runtime stayed responsive for the full acceptance interval.
 
-Status: NOT YET VALIDATED — 30-minute final soak has not started.
+Status: **ATLAS LONG-DURATION RUNTIME ACCEPTANCE: PASS**
 
 ## Exact-source pre-soak gate
 
