@@ -19,6 +19,10 @@ class _Journal:
         return "t1"
 
 
+async def _inline_to_thread(func, *args, **kwargs):
+    return func(*args, **kwargs)
+
+
 def _armed_mirror(tmp_path):
     mirror = mirror_mod.PerpSetupPaperMirror(pending_path=tmp_path / "pending.jsonl")
     mirror._seeded = True
@@ -47,6 +51,7 @@ def test_fill_does_not_use_lifetime_journal_r_for_daily_loss_stop(tmp_path, monk
     journal = _Journal(-30.0)
     monkeypatch.setattr(mirror_mod, "paper_journal", journal)
     monkeypatch.setattr(mirror_mod.paper_risk_controls, "kill_switch", False)
+    monkeypatch.setattr(mirror_mod.asyncio, "to_thread", _inline_to_thread)
     monkeypatch.setattr(
         mirror_mod,
         "utc_day_risk_snapshot",
