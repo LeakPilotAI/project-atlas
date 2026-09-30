@@ -26,8 +26,8 @@
   </nav>
 </header>
 <section id="pane-perps" class="pane on"><iframe class="frame" src="/dashboard/perps" title="Hyperliquid Perp Day Trade"></iframe></section>
-<section id="pane-quality" class="pane"><iframe class="frame" src="/api/investments/quality-dips/view" title="Quality Dips Investment Research"></iframe></section>
-<section id="pane-legacy" class="pane"><iframe class="frame" src="/dashboard/legacy" title="Legacy Atlas Command Center"></iframe></section>
+<section id="pane-quality" class="pane"><iframe class="frame" data-src="/api/investments/quality-dips/view" title="Quality Dips Investment Research"></iframe></section>
+<section id="pane-legacy" class="pane"><iframe class="frame" data-src="/dashboard/legacy" title="Legacy Atlas Command Center"></iframe></section>
 <script>
 const domain=document.getElementById('domain');
 document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
@@ -35,6 +35,8 @@ document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>
   document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById('pane-'+btn.dataset.pane).classList.add('on');
+  const frame=document.querySelector('#pane-'+btn.dataset.pane+' iframe');
+  if(!frame.getAttribute('src'))frame.src=frame.dataset.src;
   domain.textContent=btn.dataset.domain;
 }));
 </script>

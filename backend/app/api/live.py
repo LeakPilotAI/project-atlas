@@ -45,8 +45,7 @@ def _open_row(row: Dict[str, Any], coach: Optional[Dict[str, Any]] = None) -> Di
     }
 
 
-@router.get("/live")
-async def live() -> Dict[str, Any]:
+async def _build_live() -> Dict[str, Any]:
     from app.services.opportunity_tracker import opportunity_tracker
     from app.services.paper_journal import paper_journal
     from app.services.paper_pipeline import paper_pipeline
@@ -212,3 +211,12 @@ async def live() -> Dict[str, Any]:
     except Exception as e:
         payload["paper_lifecycle"] = {"error": str(e)[:160]}
     return payload
+
+
+from app.services.runtime_snapshot import RuntimeSnapshot
+_live_snapshot = RuntimeSnapshot(ttl=2)
+
+
+@router.get("/live")
+async def live() -> Dict[str, Any]:
+    return await _live_snapshot.get(_build_live, {"live_capital_allowed": False}, budget=1)

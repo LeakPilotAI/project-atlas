@@ -1,6 +1,8 @@
 """HTTP for Phase 6 paper validation. Read-only production controls; research endpoints never place orders."""
 from __future__ import annotations
 import json
+import asyncio
+from app.services.runtime_snapshot import RuntimeSnapshot
 from typing import Any, Dict
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
@@ -17,21 +19,38 @@ def _clean_policy_guard_errors(body:Any)->Any:
 async def validation_report()->Dict[str,Any]:
     from app.services.paper_validation import full_report
     return full_report()
-@router.get("/summary")
-def validation_summary()->Dict[str,Any]:
+def _validation_summary()->Dict[str,Any]:
     from app.services.paper_validation import readiness_report,uncertainty,load_paper_closes
     rows=load_paper_closes();rd=readiness_report(rows);return {"closed":rd["closed_trades"],"winrate":rd["observed_wr"],"expectancy":rd["observed_expectancy"],"total_r":rd["total_r"],"uncertainty":uncertainty(rows),"data_sufficiency":rd["data_sufficiency"],"statistical_stability":rd["statistical_stability"],"performance":rd["performance"],"risk":rd["risk"],"data_integrity":rd["data_integrity"],"conclusion":rd["conclusion"],"live_capital_allowed":False,"milestone":rd["milestone"]}
 @router.get("/text")
 async def validation_text_endpoint()->Dict[str,str]:
     from app.services.paper_validation import validation_text
     return {"text":validation_text()}
-@router.get("/edge")
-def edge_endpoint()->JSONResponse:
+def _edge_endpoint()->JSONResponse:
     try:
         from app.services.edge_diagnostics import edge_report
         body=_clean_policy_guard_errors(edge_report())
     except Exception as e:body={"ok":False,"title":"ATLAS EDGE DIAGNOSTICS","error":f"{type(e).__name__}: {str(e)[:240]}","live_capital_allowed":False}
     return _json_http(body)
+_summary_snapshot = RuntimeSnapshot(ttl=60)
+_edge_snapshot = RuntimeSnapshot(ttl=60)
+
+
+@router.get("/summary")
+async def validation_summary():
+    async def build():
+        return await asyncio.to_thread(_validation_summary)
+    return await _summary_snapshot.get(build, {"conclusion": "Validation warming", "live_capital_allowed": False})
+
+
+@router.get("/edge")
+async def edge_endpoint():
+    async def build():
+        response = await asyncio.to_thread(_edge_endpoint)
+        return json.loads(response.body)
+    return await _edge_snapshot.get(build, {"ok": False, "error": "Research warming", "live_capital_allowed": False})
+
+
 @router.get("/edge/text")
 async def edge_text_endpoint()->JSONResponse:
     try:

@@ -158,10 +158,24 @@ async def diagnostics_runtime_latency() -> Dict[str, Any]:
     started = loop.time()
     await asyncio.sleep(0)
     event_loop_yield_ms = round((loop.time() - started) * 1000.0, 3)
+    from app.investment.latest_index import latest_index
+    from app.investment.history import _bar_cache
+    from app.api.live import _live_snapshot
+    from app.api.investment_board import _quality_snapshots
+    from app.api.validation import _summary_snapshot, _edge_snapshot
+    snapshots = {"live": _live_snapshot, "quality50": _quality_snapshots[50],
+                 "quality100": _quality_snapshots[100], "validation": _summary_snapshot,
+                 "edge": _edge_snapshot}
     return {
         "event_loop_yield_ms": event_loop_yield_ms,
         "event_loop_stalls": runtime_watchdog.snapshot(),
         "runtime_metrics": runtime_watchdog.metrics(),
+        "read_models": {name: {"refreshes": cache.refreshes, "duration_ms": cache.duration_ms,
+                                "in_flight": cache.task is not None, "error": cache.error}
+                        for name, cache in snapshots.items()},
+        "bounded_indexes": {"investment_files": len(latest_index.files),
+                            "investment_rows_parsed": latest_index.parsed_rows,
+                            "daily_history_files": len(_bar_cache)},
         "perp_alert_delivery": perp_alert_delivery_service.reconciliation_status(),
         "read_only": True,
         "execution": "PAPER_ONLY",

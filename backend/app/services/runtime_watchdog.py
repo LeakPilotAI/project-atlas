@@ -1,5 +1,6 @@
 """Bounded, read-only stack samples when the API event loop stops yielding."""
 import asyncio
+import os
 import sys
 import threading
 import time
@@ -46,9 +47,10 @@ class RuntimeWatchdog:
                         break
                     filename = frame.f_code.co_filename.replace("\\", "/")
                     if "/app/" in filename and "runtime_watchdog.py" not in filename:
-                        active.append((filename.split("/app/", 1)[1], frame.f_code.co_name))
+                        active.append((filename.split("/app/", 1)[1], f'{frame.f_code.co_name}:{frame.f_lineno}'))
                         break
                     frame = frame.f_back
+            frame = None  # never retain a sampled thread's live locals between ticks
             self.thread_samples.append(active)
             lag = time.monotonic() - self._last_tick
             self.max_lag_ms = max(self.max_lag_ms, round(lag * 1000, 3))
@@ -63,6 +65,7 @@ class RuntimeWatchdog:
                               "line": frame.f_lineno,
                               "function": frame.f_code.co_name})
                 frame = frame.f_back
+            frame = None
             self.samples.append({"lag_ms": round(lag * 1000, 3), "stack": stack})
 
     async def stop(self):
@@ -79,7 +82,7 @@ class RuntimeWatchdog:
 
     def metrics(self):
         counts = Counter(item for batch in list(self.thread_samples) for item in batch)
-        return {"stall_samples": self.stall_count, "max_heartbeat_age_ms": self.max_lag_ms,
+        return {"pid": os.getpid(), "stall_samples": self.stall_count, "max_heartbeat_age_ms": self.max_lag_ms,
                 "tasks": self.task_count, "threads": threading.active_count(),
                 "executor_pending": self.executor_pending,
                 "thread_profile_60s": [{"file": key[0], "function": key[1], "samples": n}

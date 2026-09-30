@@ -24,6 +24,11 @@ def _quote(symbol: str) -> dict:
 
 
 def test_quality_dips_api_is_mounted_under_investment_domain(monkeypatch):
+    # Contract tests must not read market-session history or append forward evidence.
+    monkeypatch.setattr("app.api.investment_board._load_jsonl", lambda path: [])
+    monkeypatch.setattr("app.api.investment_board.quality_dips_v3_state_store.save", lambda: None)
+    monkeypatch.setattr("app.api.investment_board.forward_readiness", lambda: {})
+    monkeypatch.setattr("app.api.investment_board.forward_diagnostics", lambda: {})
     async def fake_get_many(symbols, **kwargs):
         return {symbol: _quote(symbol) for symbol in symbols}
     def fake_schedule_refresh(symbols):

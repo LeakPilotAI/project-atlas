@@ -134,6 +134,13 @@ async def lifespan(app: FastAPI):
         raise last_err
 
     async def _boot_services() -> None:
+        # Hydrate before consumers can collide with Python's module import lock or
+        # trigger synchronous V4 replay on the event loop. HTTP is already serving.
+        def hydrate_runtime():
+            from app.services.funnel_research import funnel_research
+            from app.trading_core.shadow_coordinator import v4_shadow_coordinator
+            return v4_shadow_coordinator.runtime
+        await asyncio.to_thread(hydrate_runtime)
         try:
             hl = HyperliquidAdapter()
             registry.register(hl)
@@ -145,7 +152,7 @@ async def lifespan(app: FastAPI):
         try:
             from app.services.paper_journal import paper_journal
 
-            session_info = paper_journal.bootstrap_session()
+            session_info = await asyncio.to_thread(paper_journal.bootstrap_session)
             log.info(
                 "paper session bootstrap",
                 **{
@@ -324,6 +331,11 @@ def _dashboard_response(path: Path) -> FileResponse:
             "Pragma": "no-cache",
         },
     )
+
+
+@app.get("/static/runtime_poll.js", include_in_schema=False)
+async def runtime_poll_script() -> FileResponse:
+    return FileResponse(STATIC_DIR / "runtime_poll.js", media_type="application/javascript", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/dashboard")

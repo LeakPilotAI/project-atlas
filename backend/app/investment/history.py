@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import threading
 from collections import OrderedDict
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set
@@ -152,4 +153,4 @@ def load_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
         _bar_cache.move_to_end(path)
         while len(_bar_cache) > 64:
             _bar_cache.popitem(last=False)
-        return list(cached[1])
+        return [replace(bar, issues=list(bar.issues)) for bar in cached[1]]

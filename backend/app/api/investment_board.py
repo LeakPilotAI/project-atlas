@@ -33,8 +33,7 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 
-@router.get("/quality-dips")
-async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, Any]:
+async def _build_quality_dips_board(limit: int) -> Dict[str, Any]:
     research = await asyncio.to_thread(_load_jsonl, OPPORTUNITIES_PATH)
     plans = await asyncio.to_thread(_load_jsonl, PLANS_PATH)
     symbols = {str(row.get("symbol") or "").upper().strip() for row in research if str(row.get("symbol") or "").strip()}
@@ -150,6 +149,28 @@ async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, 
             "V2.1 runtime evidence uses provider-supplied analyst targets, scored business-quality pillars, and stored daily OHLCV; missing evidence fails closed. Atlas never places a Robinhood order."
         ),
     }
+
+
+from app.services.runtime_snapshot import RuntimeSnapshot
+_quality_snapshots = {50: RuntimeSnapshot(ttl=10), 100: RuntimeSnapshot(ttl=10)}
+
+
+@router.get("/quality-dips")
+async def quality_dips_board(limit: int = Query(50, ge=1, le=100)) -> Dict[str, Any]:
+    # Two bounded refresh cohorts preserve default coverage and larger requests.
+    cohort = 50 if limit <= 50 else 100
+    async def build():
+        return await _build_quality_dips_board(cohort)
+    result = await _quality_snapshots[cohort].get(build, {
+        "domain": "EQUITY_INVESTMENT", "execution": "MANUAL_ONLY",
+        "board": [], "counts": {}, "quote_health": {},
+        "live_capital_allowed": False, "automatic_real_money_execution": False,
+    }, budget=2.0)
+    result["board"] = result["board"][:limit]
+    result["count"] = len(result["board"])
+    result["counts"] = {state: sum(row.get("stance") == state for row in result["board"])
+                        for state in ("ACCUMULATE", "PREPARE", "WATCH", "STAND_DOWN")}
+    return result
 
 
 @router.get("/quality-dips/view", include_in_schema=False)

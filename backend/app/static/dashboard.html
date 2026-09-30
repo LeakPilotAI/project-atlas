@@ -249,6 +249,7 @@
     </div>
   </section>
 </main>
+<script src="/static/runtime_poll.js"></script>
 <script>
 const FUNNEL = [
   ["markets","Markets"],["liquid","Liquid"],["evaluated","Evaluated"],
@@ -281,6 +282,8 @@ document.querySelectorAll(".tabs button").forEach(btn=>{
   });
 });
 let liveFailureStreak=0;
+let optionalUpdated=0;
+let reconnectEvents=0;
 async function fetchLiveWithRetry(){
   let lastError=null;
   for(let attempt=0;attempt<3;attempt++){
@@ -298,12 +301,15 @@ async function fetchLiveWithRetry(){
   throw lastError||new Error("live request failed");
 }
 async function load(){
+  let liveReceived=false;
   try{
     const L = await fetchLiveWithRetry();
+    liveReceived=true;
+    if(L.runtime_refresh?.state === "WARMING") throw Error("Dashboard warming");
     liveFailureStreak=0;
     document.getElementById("err").innerHTML = "";
     document.getElementById("stamp").textContent = "refresh 8s · "+ago(L.updated_at);
-    document.getElementById("api").textContent = "API connected";
+    document.getElementById("api").textContent = L.runtime_refresh?.state === "STALE" ? "API connected · dashboard stale" : "API connected";
     document.getElementById("api").className = "ok";
     document.getElementById("dot").classList.add("on");
     const h = L.health||{};
@@ -464,8 +470,10 @@ async function load(){
         <span class="pill">Max ext ${fmt(g.max_extension_pct||3.5,1)}%</span>
       </div>
       <div class="note" style="margin-top:10px">Gates stay locked. Session WR is the score to watch. All-time archive is on the Archive tab.</div>`;
+    if(Date.now()-optionalUpdated < 60000) return;
+    optionalUpdated=Date.now();
     try {
-      const vr = await fetch("/api/validation/summary");
+      const vr = await atlasFetch("/api/validation/summary");
       if (vr.ok) {
         const V = await vr.json();
         const ci = (V.uncertainty && V.uncertainty.winrate_ci95) || [null,null];
@@ -480,12 +488,10 @@ async function load(){
           `<div>Live capital: <b>no</b> · ${esc((V.milestone&&V.milestone.current_label)||"INSUFFICIENT SAMPLE")}</div>`+
           `<div class="muted">Archive only. Does not replace this session on Paper. Gates unchanged.</div>`;
       }
-    } catch (e) {}
+    } catch (e) { document.getElementById("valbody").textContent="Validation stale; retrying on next research refresh."; }
     try {
-      const er = await fetch("/api/validation/edge");
-      const etxt = await er.text();
-      let E = null;
-      try { E = JSON.parse(etxt); } catch (e) { E = null; }
+      const er = await atlasFetch("/api/validation/edge");
+      const E = await er.json();
       if (!er.ok || !E) {
         document.getElementById("edgebody").innerHTML =
           `<div class="err">Edge diagnostics HTTP ${er.status}. Response was not usable JSON. Journal not modified.</div>`;
@@ -521,8 +527,21 @@ async function load(){
       document.getElementById("edgebody").innerHTML = '<div class="err">Edge diagnostics request failed. Journal not modified.</div>';
     }
   } catch (e) {
+    if(liveReceived){
+      document.getElementById("api").textContent="API connected · dashboard degraded";
+      document.getElementById("err").textContent="Dashboard update incomplete; last good data preserved.";
+      console.warn("Atlas dashboard render",e.name,e.message);return;
+    }
+    try{
+      await atlasFetch('/health',2000);
+      document.getElementById("api").textContent="API connected · dashboard stale";
+      document.getElementById("err").textContent="Dashboard refresh delayed; last good data preserved.";return;
+    }catch(transportError){}
     liveFailureStreak++;
     if(liveFailureStreak>=2){
+      const status=document.getElementById("api");
+      if(status.textContent!=="API reconnecting")reconnectEvents++;
+      status.dataset.reconnectEvents=String(reconnectEvents);
       document.getElementById("api").textContent = "API reconnecting";
       document.getElementById("api").className = "bad";
       document.getElementById("dot").classList.remove("on");
@@ -530,8 +549,7 @@ async function load(){
     }
   }
 }
-load();
-setInterval(load, 8000);
+atlasPoll(load,8000);
 </script>
 </body>
 </html>

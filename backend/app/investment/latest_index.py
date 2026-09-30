@@ -4,6 +4,7 @@ import threading
 import time
 from collections import OrderedDict
 from pathlib import Path
+from copy import deepcopy
 
 
 class LatestIndex:
@@ -25,10 +26,16 @@ class LatestIndex:
                     or (stat.st_size == state['size'] and stat.st_mtime_ns != state['mtime'])):
                 state = {'inode': stat.st_ino, 'offset': 0, 'rows': {}}
             with path.open('rb') as stream:
+                # Detect a truncate-and-regrow between polls even when the inode
+                # survived and the new file is larger than the previous offset.
+                if state['offset']:
+                    stream.seek(max(0, state['offset'] - 128))
+                    if stream.read(min(128, state['offset'])) != state.get('anchor'):
+                        state = {'inode': stat.st_ino, 'offset': 0, 'rows': {}}
                 stream.seek(state['offset'])
-                while True:
+                while stream.tell() < stat.st_size:
                     raw = stream.readline()
-                    if not raw or not raw.endswith(b'\n'):
+                    if not raw or not raw.endswith(b'\n') or stream.tell() > stat.st_size:
                         break  # an append in progress is incorporated next refresh
                     state['offset'] = stream.tell()
                     try:
@@ -45,12 +52,14 @@ class LatestIndex:
                         state['rows'][symbol] = row
                     if self.parsed_rows % 256 == 0:
                         time.sleep(0)  # let HTTP/background coroutines acquire the GIL
+                stream.seek(max(0, state['offset'] - 128))
+                state['anchor'] = stream.read(min(128, state['offset']))
             state.update(size=stat.st_size, mtime=stat.st_mtime_ns)
             self.files[path] = state
             self.files.move_to_end(path)
             while len(self.files) > 8:
                 self.files.popitem(last=False)
-            return list(state['rows'].values())
+            return deepcopy(list(state['rows'].values()))
 
 
 latest_index = LatestIndex()
