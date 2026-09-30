@@ -59,3 +59,23 @@ button.on:after,.tab.on:after{opacity:.7!important}
 ::-webkit-scrollbar-thumb{background:#17464d;border:2px solid #020708;border-radius:8px}
 ::-webkit-scrollbar-thumb:hover{background:#236b71}
 @media(max-width:900px){body:after{display:none}}
+
+/* Reference fidelity pass */
+body{font-size:14px!important}
+main{isolation:isolate}
+.hero,.panel,.card,.stat,.banner,.tickerShell,.metric,.trade,.priorityDock{
+ backdrop-filter:blur(8px);overflow:hidden}
+.hero:after,.panel:after,.card:after,.stat:after,.banner:after,.tickerShell:after{
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background:linear-gradient(115deg,rgba(39,235,229,.018),transparent 34%,transparent 68%,rgba(255,35,61,.018))}
+.stats{gap:10px!important}.stat{padding:15px 17px!important;min-height:88px!important}
+.stat .v{font-size:clamp(24px,2vw,32px)!important;line-height:1.08!important}
+.grid{gap:12px!important}.card{padding:16px!important}
+.sym{font-size:clamp(23px,2vw,31px)!important}.score{font-size:25px!important}
+.priceNow{font-size:30px!important}.exact{font-size:clamp(27px,2.4vw,38px)!important}
+.hero{padding:20px 22px!important}h1{font-size:clamp(27px,2.5vw,36px)!important}
+.empty{background:linear-gradient(145deg,rgba(6,17,19,.9),rgba(2,7,8,.95));border-style:solid!important}
+input,select{background:#061013!important;border:1px solid #244850!important;color:#dffcff!important}
+input:focus,select:focus{outline:none!important;border-color:#27a8ad!important;box-shadow:0 0 0 2px rgba(37,230,237,.08)!important}
+.tickerShell{top:8px!important}
+@media(min-width:1500px){.wrap,main{max-width:1900px!important}}
