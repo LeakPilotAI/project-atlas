@@ -12,6 +12,7 @@ This keeps manual opportunity logging and paper evidence aligned.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from datetime import datetime, timezone
