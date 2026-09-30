@@ -21,7 +21,8 @@ from typing import Any
 from app.core.logging import get_logger
 from app.services.paper_journal import JOURNAL_PATH, iter_jsonl, paper_journal
 from app.services.paper_risk import check_paper_risk
-from app.services.paper_risk_controls import paper_risk_controls\nfrom app.services.paper_risk_window import utc_day_risk_snapshot
+from app.services.paper_risk_controls import paper_risk_controls
+from app.services.paper_risk_window import utc_day_risk_snapshot
 from app.services.paper_execution_model import (
     DEFAULT_FEE_BPS_PER_SIDE,
     DEFAULT_SLIPPAGE_BPS_PER_SIDE,
