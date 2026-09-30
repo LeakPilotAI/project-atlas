@@ -142,10 +142,10 @@
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
-</style>
+body.embed header,body.embed #research-link,body.embed .quality-summary-tab{display:none}body.embed main{padding-top:22px}</style>
 </head>
 <body>
-<div style="padding:13px 28px;background:#071019;border-bottom:1px solid #183246"><a href="/api/investments/prospective/view" target="_top" style="color:#72e7ff;font-size:14px;font-weight:600;text-decoration:none">Daily manual investment research · forward evidence →</a></div>
+<div id="research-link" style="padding:13px 28px;background:#071019;border-bottom:1px solid #183246"><a href="/api/investments/prospective/view" target="_top" style="color:#72e7ff;font-size:14px;font-weight:600;text-decoration:none">Daily manual investment research · forward evidence →</a></div>
 <header>
   <div class="brand">
     <div class="mark" aria-hidden="true">AT</div>
@@ -166,7 +166,7 @@
   <div class="pills" id="pills"></div>
   <div class="tabs" role="tablist">
     <button class="on" data-tab="trading">Paper</button>
-    <button data-tab="dips">Quality dip</button>
+    <button class="quality-summary-tab" data-tab="dips">Quality dip</button>
     <button data-tab="invest">Investment</button>
     <button data-tab="research">Archive</button>
   </div>
@@ -249,7 +249,7 @@
     </div>
   </section>
 </main>
-<script src="/static/runtime_poll.js"></script>
+<script>if(new URLSearchParams(location.search).get("embed")==="1")document.body.classList.add("embed");</script><script src="/static/runtime_poll.js"></script>
 <script>
 const FUNNEL = [
   ["markets","Markets"],["liquid","Liquid"],["evaluated","Evaluated"],
