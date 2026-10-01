@@ -129,7 +129,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <section class="marketBoard" aria-label="Live market board">
   <div class="boardStrip"><div><span class="boardTitle">LIVE MARKET BOARD</span><span id="refreshInline">—</span></div><span class="boardHint">REAL HYPERLIQUID SNAPSHOT · MANUAL ONLY</span></div>
   <div class="tableWrap boardTable"><table><thead><tr><th>Symbol</th><th>Side</th><th>Tier</th><th>State</th><th>Score</th><th>Mark</th><th>L1</th><th>Stop</th><th>TP1</th><th>L1 dist</th><th>Instruction</th></tr></thead><tbody id="boardBody"></tbody></table></div>
-  <p class="boardFooter" title="CHART UNAVAILABLE: candle series is not on the manual board payload">Display filters do not change the scanner. Live snapshot levels only · candle history unavailable.</p>
+  <p class="boardFooter" title="Candlestick history is fetched separately from Hyperliquid and never fabricated.">Display filters do not change the scanner. The chart uses separate read-only Hyperliquid candle history; the board remains the ranked manual snapshot.</p>
   </section>
   <div id="priorityDock" class="priorityDock hidden"></div>
 </main>
