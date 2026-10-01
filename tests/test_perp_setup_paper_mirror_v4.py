@@ -9,6 +9,7 @@ class FakeJournal:
         self.open_calls = []
         self.close_calls = []
         self.mark_calls = []
+        self.adaptive_calls = []
 
     def list_open(self):
         return list(self.open_rows)
@@ -26,6 +27,11 @@ class FakeJournal:
             "working_stop": kwargs["stop"],
             "tp1_price": kwargs["tp1"],
             "tp2_price": kwargs["tp2"],
+            "working_target": kwargs["tp1"],
+            "mfe_r": 0.0,
+            "mae_r": 0.0,
+            "fees_bps": kwargs.get("fees_bps", 2.0),
+            "slippage_bps": kwargs.get("slippage_bps", 2.0),
             "features": kwargs.get("features") or {},
         }
         self.open_rows.append(row)
@@ -33,6 +39,26 @@ class FakeJournal:
 
     def update_excursion(self, trade_id, mark):
         self.mark_calls.append((trade_id, mark))
+        row = next((r for r in self.open_rows if r.get("trade_id") == trade_id), None)
+        if not row:
+            return
+        entry = float(row.get("actual_entry_price") or 0.0)
+        risk = abs(entry - float(row.get("stop_price") or 0.0)) or 1e-12
+        side = str(row.get("side") or "").upper()
+        fav = (mark - entry) / risk if side == "LONG" else (entry - mark) / risk
+        adv = (entry - mark) / risk if side == "LONG" else (mark - entry) / risk
+        row["mark"] = mark
+        row["mfe_r"] = max(float(row.get("mfe_r") or 0.0), fav)
+        row["mae_r"] = max(float(row.get("mae_r") or 0.0), adv)
+
+    def note_adaptive_exit(self, trade_id, **kwargs):
+        self.adaptive_calls.append((trade_id, dict(kwargs)))
+        row = next((r for r in self.open_rows if r.get("trade_id") == trade_id), None)
+        if row:
+            row["working_stop"] = kwargs["working_stop"]
+            row["working_target"] = kwargs["working_target"]
+            row["adaptive_stage"] = kwargs["stage"]
+        return True
 
     async def close_trade(self, trade_id, **kwargs):
         self.close_calls.append((trade_id, dict(kwargs)))
@@ -103,6 +129,7 @@ def test_pending_limit_fills_once_only_after_price_touches_l1(tmp_path):
     assert call["features"]["manual_trigger_mirror"] is True
     assert call["features"]["paper_order_model"] == "RESTING_L1_LIMIT"
     assert call["features"]["paper_fill_model"] == "LIMIT_TOUCH_PLUS_BUFFER"
+    assert call["features"]["adaptive_exit_policy_version"] == mod.ADAPTIVE_EXIT_POLICY_VERSION
 
 
 def test_pending_limit_survives_restart_and_fills(tmp_path, monkeypatch):
