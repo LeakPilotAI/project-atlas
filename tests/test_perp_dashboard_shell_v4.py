@@ -23,7 +23,8 @@ def test_dashboard_shell_preserves_existing_dashboard_workspace():
 
 def test_main_serves_shell_and_legacy_dashboard():
     main = _read("backend/app/main.py")
-    assert 'DASHBOARD_HTML = STATIC_DIR / "dashboard_shell.html"' in main
+    assert 'DASHBOARD_HTML = STATIC_DIR / "dashboard_hub.html"' in main
+    assert 'PERP_DASHBOARD_HTML = STATIC_DIR / "dashboard_shell.html"' in main
     assert 'LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"' in main
     assert '@app.get("/dashboard/legacy")' in main
 
@@ -55,3 +56,14 @@ def test_perp_shell_uses_auto_paper_counter_instead_of_manual_fill_counter():
     assert "paper opens only when price touches or crosses L1" in html
     assert "PRIME/QUALIFIED manual setup" not in html
     assert '<div class="label">Manual fills</div>' not in html
+
+
+def test_perp_shell_has_contextual_views_without_fabricated_chart():
+    html = _read("backend/app/static/dashboard_shell.html")
+    for label in ("Live Board", "Open Positions", "Paper Journal", "Risk Monitor", "Market Map", "Scanner", "Alerts"):
+        assert label in html
+    assert "/api/perps/paper-risk" in html
+    assert "execution_model_cohorts" in html
+    assert "CHART UNAVAILABLE" in html
+    assert "candle series is not on the manual board payload" in html
+    assert "No positions, journal rows, or health figures are fabricated." in html

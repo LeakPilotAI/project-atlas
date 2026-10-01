@@ -12,14 +12,16 @@ LEGACY = ROOT / "backend" / "app" / "static" / "dashboard.html"
 
 def test_dashboard_hub_has_three_isolated_domains():
     text = HUB.read_text(encoding="utf-8")
-    assert "Perp Day Trade" in text
-    assert "Quality Dips" in text
-    assert "Command Center / Paper" in text
-    assert 'src="/dashboard/perps"' in text
-    assert 'src="/api/investments/quality-dips/view"' in text
-    assert 'src="/dashboard/legacy"' in text
-    assert "HYPERLIQUID_PERPS" in text
-    assert "EQUITY_INVESTMENT" in text
+    for name in ("Perp Day Trade", "Quality Dips", "Investment", "Archive", "Command Center"):
+        assert name in text
+    assert 'src="/dashboard/perps?embed=1"' in text
+    assert 'data-src="/api/investments/quality-dips/view"' in text
+    assert 'data-src="/dashboard/legacy?embed=1&tab=invest"' in text
+    assert 'data-src="/dashboard/legacy?embed=1&tab=research"' in text
+    assert "COMING SOON" in text
+    command = text.split('id="pane-command"', 1)[1].split("</section>", 1)[0]
+    assert "<iframe" not in command
+    assert "if(frame && !frame.getAttribute('src'))" in text
 
 
 def test_dashboard_routes_preserve_perp_and_legacy_views():
