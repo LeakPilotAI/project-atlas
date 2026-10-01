@@ -237,6 +237,17 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;ba
   </section>
 
   <section id="tab-invest" class="hidden">
+    <div class="banner investment-hero">
+      <div class="kicker">LONG-HORIZON CAPITAL INTELLIGENCE</div>
+      <div class="n" style="font-size:20px;margin-top:7px">Accumulation Pipeline</div>
+      <div class="sub" style="margin-top:5px">Atlas keeps the research funnel visible even when no name has reached an actionable accumulation state.</div>
+    </div>
+    <div class="grid g5 investment-pipeline">
+      <div class="card"><div class="kicker">WATCH</div><div class="n" id="pipeWatch">0</div><div class="note">Research universe under observation</div></div>
+      <div class="card"><div class="kicker">APPROACHING</div><div class="n" id="pipeApproaching">0</div><div class="note">Waiting cheaper / nearing research levels</div></div>
+      <div class="card"><div class="kicker">PREPARE</div><div class="n" id="pipePrepare">0</div><div class="note">Qualified for patient preparation</div></div>
+      <div class="card"><div class="kicker">ACCUMULATE</div><div class="n" id="pipeAccumulate">0</div><div class="note">Active research accumulation state</div></div>
+    </div>
     <div class="card accumulation-panel">
       <div class="kicker">LONG-HORIZON EQUITY RESEARCH // ACCUMULATION MATRIX</div>
       <h3 style="font-size:21px;margin-top:7px">Investment Accumulation Plan</h3>
@@ -252,6 +263,11 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;ba
   </section>
 
   <section id="tab-research" class="hidden">
+    <div class="banner archive-hero">
+      <div class="kicker">DURABLE EVIDENCE // HISTORICAL RECORD</div>
+      <div class="n" style="font-size:20px;margin-top:7px">Atlas Archive</div>
+      <div class="sub" style="margin-top:5px">Historical PAPER outcomes and validation evidence live here. Nothing in Archive changes current execution gates.</div>
+    </div>
     <div class="banner">
       <h2>Archive — all-time journal</h2>
       <div class="n" style="font-size:16px;margin-top:8px">Not this session</div>
@@ -452,6 +468,11 @@ async function load(){
     const iopps = (inv.opportunities||prep).filter(d => ["PREPARE","ACCUMULATE","STAND_DOWN","WATCH","SCALE_SMALL","WAIT_CHEAPER"].includes(d.action)||["SCALE_SMALL","WAIT_CHEAPER"].includes(d.stance));
     const invRank={ACCUMULATE:0,SCALE_SMALL:0,PREPARE:1,WAIT_CHEAPER:1,WATCH:2,STAND_DOWN:3};
     iopps.sort((a,b)=>(invRank[a.stance||a.action]??9)-(invRank[b.stance||b.action]??9));
+    const pipeStates=iopps.map(d=>String(d.stance||d.action||"WATCH"));
+    document.getElementById("pipeWatch").textContent=pipeStates.filter(s=>s==="WATCH"||s==="STAND_DOWN").length;
+    document.getElementById("pipeApproaching").textContent=pipeStates.filter(s=>s==="WAIT_CHEAPER").length;
+    document.getElementById("pipePrepare").textContent=pipeStates.filter(s=>s==="PREPARE").length;
+    document.getElementById("pipeAccumulate").textContent=pipeStates.filter(s=>s==="ACCUMULATE"||s==="SCALE_SMALL").length;
     document.getElementById("invopps").innerHTML = iopps.length? `<div class="inv-table-wrap"><table class="accumulation-table"><tr><th>Research state</th><th>Symbol</th><th>Current / Ref</th><th>Off high</th><th>Falling risk</th><th>L1</th><th>L2</th><th>L3</th><th>L4</th><th>Plan</th></tr>${
       iopps.slice(0,24).map(d=>{
         const levels=(d.ladder||[]).slice(0,4);
