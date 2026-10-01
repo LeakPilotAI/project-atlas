@@ -72,6 +72,9 @@ def test_perp_shell_has_contextual_views_and_real_candle_chart_contract():
     for timeframe in ("1m", "5m", "15m", "1h", "4h"):
         assert f"'{timeframe}'" in html
     assert "CANDLE HISTORY TEMPORARILY UNAVAILABLE" in html
+    assert 'id="chartOhlc"' in html
+    assert "canvas.onmousemove" in html
+    assert "cursor:crosshair" in html
     assert "No positions, journal rows, or health figures are fabricated." in html
 
 
