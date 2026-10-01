@@ -75,6 +75,9 @@ def test_perp_shell_has_contextual_views_and_real_candle_chart_contract():
     assert 'id="chartOhlc"' in html
     assert "canvas.onmousemove" in html
     assert "cursor:crosshair" in html
+    assert "VIEW CHART" in html
+    assert "function selectSetup(key)" in html
+    assert "data-copy-price" in html
     assert "No positions, journal rows, or health figures are fabricated." in html
 
 
