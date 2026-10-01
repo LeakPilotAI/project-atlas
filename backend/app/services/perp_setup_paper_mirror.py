@@ -492,7 +492,7 @@ class PerpSetupPaperMirror:
     async def sync(self, setups: list[dict[str, Any]], price_map: dict[str, float]) -> dict[str, int]:
         """Mirror every fresh manual resting-limit instruction into PAPER."""
         self._seed()
-        opened = closed = marked = skipped = armed = filled = cancelled = recovered = expired = 0
+        opened = closed = marked = skipped = armed = filled = cancelled = recovered = expired = adaptive_updates = 0
 
         current_by_symbol = {
             str(s.get("symbol") or "").upper(): s
@@ -522,7 +522,7 @@ class PerpSetupPaperMirror:
             target = float(adaptive.get("working_target") or trade.get("working_target") or trade.get("tp1_price") or 0.0)
             if adaptive.get("eligible") and hasattr(paper_journal, "note_adaptive_exit"):
                 try:
-                    paper_journal.note_adaptive_exit(
+                    changed = paper_journal.note_adaptive_exit(
                         tid,
                         working_stop=stop,
                         working_target=target,
@@ -531,6 +531,8 @@ class PerpSetupPaperMirror:
                         reason=str(adaptive.get("reason") or ""),
                         evidence=dict(adaptive.get("evidence") or {}),
                     )
+                    if changed:
+                        adaptive_updates += 1
                 except Exception as exc:
                     log.warning("Adaptive PAPER exit journal note failed", trade_id=tid, error=str(exc)[:160])
 
@@ -650,6 +652,7 @@ class PerpSetupPaperMirror:
             "cancelled": cancelled,
             "recovered": recovered,
             "expired": expired,
+            "adaptive_updates": adaptive_updates,
             "skipped": skipped,
         }
 
