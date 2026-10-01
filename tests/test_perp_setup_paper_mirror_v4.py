@@ -131,6 +131,10 @@ def test_pending_limit_fills_once_only_after_price_touches_l1(tmp_path):
     assert call["features"]["paper_fill_model"] == "LIMIT_TOUCH_PLUS_BUFFER"
     assert call["features"]["adaptive_exit_policy_version"] == mod.ADAPTIVE_EXIT_POLICY_VERSION
     assert call["features"]["paper_execution_model_version"] == mod.ADAPTIVE_EXECUTION_COHORT_VERSION
+    status = m.status()
+    assert status["open_count"] == 1
+    assert status["open_positions"][0]["symbol"] == "BTC"
+    assert status["open_positions"][0]["adaptive_exit_policy_version"] == mod.ADAPTIVE_EXIT_POLICY_VERSION
 
 
 def test_pending_limit_survives_restart_and_fills(tmp_path, monkeypatch):
