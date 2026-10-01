@@ -91,6 +91,12 @@ class PaperJournal:
                     opens[tid]["be_armed"] = True
                 if row.get("working_stop") is not None:
                     opens[tid]["working_stop"] = row.get("working_stop")
+                if row.get("working_target") is not None:
+                    opens[tid]["working_target"] = row.get("working_target")
+                if row.get("adaptive_stage"):
+                    opens[tid]["adaptive_stage"] = row.get("adaptive_stage")
+                if row.get("adaptive_exit_policy_version"):
+                    opens[tid]["adaptive_exit_policy_version"] = row.get("adaptive_exit_policy_version")
                 if row.get("exit_mode"):
                     opens[tid]["exit_mode"] = row.get("exit_mode")
             elif ev == "close":
@@ -242,6 +248,8 @@ class PaperJournal:
             "setup_rr": float(feature_payload.get("setup_rr") or 1.8),
             "initial_stop": float(stop),
             "working_stop": float(stop),
+            "working_target": float(tp1),
+            "adaptive_stage": "STATIC",
             "be_armed": False,
         }
         self._open[tid] = row
@@ -320,6 +328,75 @@ class PaperJournal:
                 "trade_type": p.get("trade_type", "PAPER"),
             },
         )
+
+    def note_adaptive_exit(
+        self,
+        trade_id: str,
+        *,
+        working_stop: float,
+        working_target: float,
+        stage: str,
+        policy_version: str,
+        reason: str,
+        evidence: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Persist an append-only PAPER working stop/target adjustment.
+
+        Returns True only when the effective stop, target, or stage changed. This
+        keeps the 10-second PAPER review loop from flooding the journal with
+        identical evidence rows.
+        """
+        p = self._open.get(trade_id)
+        if not p:
+            return False
+        try:
+            new_stop = float(working_stop)
+            new_target = float(working_target)
+        except (TypeError, ValueError):
+            return False
+        if min(new_stop, new_target) <= 0:
+            return False
+
+        old_stop = float(p.get("working_stop") or p.get("stop_price") or 0.0)
+        old_target = float(p.get("working_target") or p.get("tp1_price") or 0.0)
+        old_stage = str(p.get("adaptive_stage") or "STATIC")
+        eps_stop = max(1e-12, abs(old_stop) * 1e-9)
+        eps_target = max(1e-12, abs(old_target) * 1e-9)
+        changed = (
+            abs(new_stop - old_stop) > eps_stop
+            or abs(new_target - old_target) > eps_target
+            or str(stage) != old_stage
+        )
+        if not changed:
+            return False
+
+        p["working_stop"] = new_stop
+        p["working_target"] = new_target
+        p["adaptive_stage"] = str(stage)
+        p["adaptive_exit_policy_version"] = str(policy_version)
+        p["be_armed"] = bool(
+            (str(p.get("side") or "").upper() == "LONG" and new_stop >= float(p.get("actual_entry_price") or 0.0))
+            or (str(p.get("side") or "").upper() == "SHORT" and new_stop <= float(p.get("actual_entry_price") or 0.0))
+        )
+        payload = {
+            "event": "mark",
+            "trade_id": trade_id,
+            "timestamp": _iso(),
+            "mark": p.get("mark"),
+            "mfe_r": round(float(p.get("mfe_r") or 0), 4),
+            "mae_r": round(float(p.get("mae_r") or 0), 4),
+            "working_stop": new_stop,
+            "working_target": new_target,
+            "adaptive_stage": str(stage),
+            "adaptive_exit_policy_version": str(policy_version),
+            "adaptive_reason": str(reason or ""),
+            "adaptive_evidence": dict(evidence or {}),
+            "be_armed": bool(p.get("be_armed")),
+            "exit_mode": p.get("exit_mode") or "SCALP",
+            "trade_type": p.get("trade_type", "PAPER"),
+        }
+        self._append(JOURNAL_PATH, payload)
+        return True
 
     def persist_open_marks(self) -> int:
         """Force a mark event for every in-memory open. Used on graceful shutdown."""
