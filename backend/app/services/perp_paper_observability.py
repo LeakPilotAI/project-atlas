@@ -18,6 +18,7 @@ from typing import Any, Iterable
 from app.services.paper_journal import JOURNAL_PATH, iter_jsonl
 from app.services.paper_execution_model import execution_assumptions
 from app.services.paper_execution_cohorts import execution_model_cohorts
+from app.services.paper_adaptive_exit import policy_metadata as adaptive_exit_policy_metadata
 from app.services.perp_setup_paper_mirror import PENDING_EVENT_PATH, SOURCE
 
 COHORT_MARKER_PATH = Path(__file__).resolve().parents[2] / "data" / "perp_manual_auto_observability_v1.json"
@@ -181,6 +182,7 @@ def build_paper_observability(setups: Iterable[dict[str, Any]] = ()) -> dict[str
         "clean_cohort": cohort_summary(),
         "reconciliation": reconciliation_summary(),
         "execution_model": execution_assumptions(),
+        "adaptive_exit_policy": adaptive_exit_policy_metadata(),
         "execution_model_cohorts": execution_model_cohorts(iter_jsonl(JOURNAL_PATH)),
         "execution": "PAPER_ONLY",
         "real_order_actions": False,
