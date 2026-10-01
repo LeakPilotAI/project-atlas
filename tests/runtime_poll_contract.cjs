@@ -1,10 +1,10 @@
 const assert=require('node:assert/strict'), fs=require('node:fs'), vm=require('node:vm');
 const poll=fs.readFileSync('backend/app/static/runtime_poll.js','utf8');
-const dashboard=fs.readFileSync('backend/app/static/dashboard.html','utf8').split('<script>')[1].split('</script>')[0];
+const dashboard=fs.readFileSync('backend/app/static/dashboard.html','utf8').split('<script>')[2].split('</script>')[0];
 async function states(){
   const elements={};let mode='optional', payload={};
   const document={querySelectorAll:()=>[],getElementById:id=>elements[id]??=({dataset:{},classList:{add(){},remove(){},toggle(){}},innerHTML:'',textContent:''})};
-  const c=vm.createContext({document,console:{warn(){}},AbortController,
+  const c=vm.createContext({document,location:{search:""},URLSearchParams,console:{warn(){}},AbortController,
     setTimeout:f=>{queueMicrotask(f);return 1},clearTimeout(){},
     atlasPoll(){},atlasFetch:async url=>{if(mode==='transport'||url!='/health')throw Error('unavailable');return {ok:true,json:async()=>({})}},
     fetch:async()=>{if(mode==='transport'||mode==='stale')throw Error('unavailable');return {ok:true,json:async()=>payload}}});
