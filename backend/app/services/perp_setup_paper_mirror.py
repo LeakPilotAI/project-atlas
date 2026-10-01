@@ -487,7 +487,10 @@ class PerpSetupPaperMirror:
             })
         base = {
             "pending_count": len(self._pending),
-            "open_count": len(open_positions),
+            # Preserve the established hot-path contract: this count comes from
+            # the mirror's seeded runtime ownership index, not a secondary view.
+            # open_positions below is supplemental observability only.
+            "open_count": len(self._source_open_ids),
             "opened_total": int(self._opened_total),
             "closed_total": int(self._closed_total),
         }
