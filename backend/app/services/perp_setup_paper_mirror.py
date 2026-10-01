@@ -32,6 +32,7 @@ from app.services.paper_execution_model import (
     conservative_target_exit,
 )
 from app.services.paper_adaptive_exit import (
+    ADAPTIVE_EXECUTION_COHORT_VERSION,
     ADAPTIVE_EXIT_POLICY_VERSION,
     evaluate_adaptive_exit,
 )
@@ -369,6 +370,7 @@ class PerpSetupPaperMirror:
             "trend_pct": row.get("trend_pct"),
             "adaptive_exit_policy_version": ADAPTIVE_EXIT_POLICY_VERSION,
             "adaptive_exit_evidence_interval": "5m",
+            "paper_execution_model_version": ADAPTIVE_EXECUTION_COHORT_VERSION,
         }
         trade_id = await paper_journal.open_trade(
             symbol=symbol,
