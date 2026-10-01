@@ -78,6 +78,9 @@ def test_perp_shell_has_contextual_views_and_real_candle_chart_contract():
     assert "VIEW CHART" in html
     assert "function selectSetup(key)" in html
     assert "data-copy-price" in html
+    assert "open_positions" in html
+    assert "adaptive_stage" in html
+    assert "MFE " in html
     assert "No positions, journal rows, or health figures are fabricated." in html
 
 
