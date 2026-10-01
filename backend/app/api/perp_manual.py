@@ -5,6 +5,8 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.adapters.registry import registry
+
 from app.services.perp_alert_delivery import perp_alert_delivery_service
 from app.services.perp_manual_service import perp_manual_service
 from app.services.perp_paper_observability import build_paper_observability
@@ -87,6 +89,60 @@ async def manual_perp_board(limit: int = Query(8, ge=1, le=25)) -> Dict[str, Any
             "observability": await asyncio.to_thread(build_paper_observability, setups),
         },
         "note": "Real Hyperliquid execution is manual-only. Each verified manual resting-L1 instruction is mirrored as a PAPER limit and fills only on an L1 touch/cross.",
+    }
+
+
+@router.get("/candles")
+async def perp_candles(
+    symbol: str = Query(..., min_length=1, max_length=32),
+    interval: str = Query("5m"),
+    lookback: int = Query(96, ge=24, le=240),
+) -> Dict[str, Any]:
+    """Read-only Hyperliquid OHLC history for the Perp cockpit chart."""
+    allowed_intervals = {"1m", "5m", "15m", "1h", "4h"}
+    interval = str(interval).strip()
+    if interval not in allowed_intervals:
+        raise HTTPException(status_code=400, detail="unsupported candle interval")
+
+    clean_symbol = str(symbol).strip().upper()
+    if not clean_symbol or not clean_symbol.replace("-", "").replace("_", "").isalnum():
+        raise HTTPException(status_code=400, detail="invalid symbol")
+
+    adapter = registry.get("hyperliquid")
+    if adapter is None or not hasattr(adapter, "get_candles"):
+        raise HTTPException(status_code=503, detail="Hyperliquid candle history unavailable")
+
+    try:
+        candles = await adapter.get_candles(
+            clean_symbol,
+            interval=interval,
+            lookback=lookback,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Hyperliquid candle history request failed") from exc
+
+    cleaned = [
+        {
+            "time": int(row.get("time") or 0),
+            "open": float(row.get("open") or 0.0),
+            "high": float(row.get("high") or 0.0),
+            "low": float(row.get("low") or 0.0),
+            "close": float(row.get("close") or 0.0),
+            "volume": float(row.get("volume") or 0.0),
+        }
+        for row in (candles or [])
+        if isinstance(row, dict)
+        and int(row.get("time") or 0) > 0
+        and float(row.get("high") or 0.0) > 0
+        and float(row.get("low") or 0.0) > 0
+    ]
+    return {
+        "source": "hyperliquid",
+        "symbol": clean_symbol,
+        "interval": interval,
+        "count": len(cleaned),
+        "candles": cleaned,
+        "live_execution": False,
     }
 
 
