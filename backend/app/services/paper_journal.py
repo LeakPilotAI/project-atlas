@@ -485,6 +485,16 @@ class PaperJournal:
                         opens[tid]["mfe_price"] = row.get("mfe_price")
                     if row.get("mae_price") is not None:
                         opens[tid]["mae_price"] = row.get("mae_price")
+                    if row.get("working_stop") is not None:
+                        opens[tid]["working_stop"] = row.get("working_stop")
+                    if row.get("working_target") is not None:
+                        opens[tid]["working_target"] = row.get("working_target")
+                    if row.get("adaptive_stage"):
+                        opens[tid]["adaptive_stage"] = row.get("adaptive_stage")
+                    if row.get("adaptive_exit_policy_version"):
+                        opens[tid]["adaptive_exit_policy_version"] = row.get("adaptive_exit_policy_version")
+                    if row.get("be_armed"):
+                        opens[tid]["be_armed"] = True
                 elif ev == "close":
                     closed_ids.add(tid)
         self._malformed_lines = malformed
@@ -509,6 +519,9 @@ class PaperJournal:
                     pass
                 if mem.get("entry_timestamp") is None:
                     mem["entry_timestamp"] = row.get("entry_timestamp")
+                for key in ("mark", "mfe_price", "mae_price", "working_stop", "working_target", "adaptive_stage", "adaptive_exit_policy_version", "be_armed"):
+                    if row.get(key) is not None:
+                        mem[key] = row.get(key)
         duplicates = sum(1 for tid, n in open_counts.items() if n > 1 and tid not in closed_ids)
         self._last_reconcile = {
             "added": added,
