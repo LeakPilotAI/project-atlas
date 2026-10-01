@@ -16,6 +16,7 @@ from math import log10
 from typing import Any
 
 ADAPTIVE_EXIT_POLICY_VERSION = "paper-exit-v1-evidence-protect"
+ADAPTIVE_EXECUTION_COHORT_VERSION = "paper-exec-v2-conservative-gap-target+adaptive-exit-v1"
 ADAPTIVE_EVIDENCE_INTERVAL = "5m"
 ADAPTIVE_STRUCTURE_LOOKBACK_BARS = 48
 ADAPTIVE_EVIDENCE_WINDOW = "48x5m + trade path + 24h liquidity"
@@ -123,6 +124,7 @@ def _structure_evidence(side: str, setup: dict[str, Any] | None) -> dict[str, An
 def policy_metadata() -> dict[str, Any]:
     return {
         "version": ADAPTIVE_EXIT_POLICY_VERSION,
+        "execution_cohort_version": ADAPTIVE_EXECUTION_COHORT_VERSION,
         "mode": "PAPER_ONLY",
         "evidence_interval": ADAPTIVE_EVIDENCE_INTERVAL,
         "structure_lookback_bars": ADAPTIVE_STRUCTURE_LOOKBACK_BARS,
