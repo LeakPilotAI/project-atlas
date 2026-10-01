@@ -31,6 +31,10 @@ from app.services.paper_execution_model import (
     conservative_stop_exit,
     conservative_target_exit,
 )
+from app.services.paper_adaptive_exit import (
+    ADAPTIVE_EXIT_POLICY_VERSION,
+    evaluate_adaptive_exit,
+)
 from app.trading_core.perp_board import build_perp_board
 
 log = get_logger("perp_setup_paper_mirror")
@@ -363,6 +367,8 @@ class PerpSetupPaperMirror:
             "volatility_pct": row.get("volatility_pct"),
             "momentum_pct": row.get("momentum_pct"),
             "trend_pct": row.get("trend_pct"),
+            "adaptive_exit_policy_version": ADAPTIVE_EXIT_POLICY_VERSION,
+            "adaptive_exit_evidence_interval": "5m",
         }
         trade_id = await paper_journal.open_trade(
             symbol=symbol,
@@ -511,19 +517,54 @@ class PerpSetupPaperMirror:
             paper_journal.update_excursion(tid, float(mark))
             marked += 1
             side = str(trade.get("side") or "").upper()
-            stop = float(trade.get("working_stop") or trade.get("stop_price") or 0.0)
-            tp1 = float(trade.get("tp1_price") or 0.0)
+            adaptive = evaluate_adaptive_exit(trade, setup_for_symbol)
+            stop = float(adaptive.get("working_stop") or trade.get("working_stop") or trade.get("stop_price") or 0.0)
+            target = float(adaptive.get("working_target") or trade.get("working_target") or trade.get("tp1_price") or 0.0)
+            if adaptive.get("eligible") and hasattr(paper_journal, "note_adaptive_exit"):
+                try:
+                    paper_journal.note_adaptive_exit(
+                        tid,
+                        working_stop=stop,
+                        working_target=target,
+                        stage=str(adaptive.get("stage") or "WARMUP"),
+                        policy_version=str(adaptive.get("policy_version") or ADAPTIVE_EXIT_POLICY_VERSION),
+                        reason=str(adaptive.get("reason") or ""),
+                        evidence=dict(adaptive.get("evidence") or {}),
+                    )
+                except Exception as exc:
+                    log.warning("Adaptive PAPER exit journal note failed", trade_id=tid, error=str(exc)[:160])
+
             hit_stop = (side == "LONG" and mark <= stop) or (side == "SHORT" and mark >= stop)
-            hit_tp1 = (side == "LONG" and mark >= tp1) or (side == "SHORT" and mark <= tp1)
+            hit_target = (side == "LONG" and mark >= target) or (side == "SHORT" and mark <= target)
             if hit_stop:
                 exit_price = conservative_stop_exit(side=side, mark=float(mark), stop_price=stop)
-                await paper_journal.close_trade(tid, exit_price=exit_price, result="LOSS", exit_reason="SETUP_STOP")
+                entry = float(trade.get("actual_entry_price") or 0.0)
+                gross_positive = (side == "LONG" and exit_price > entry) or (side == "SHORT" and exit_price < entry)
+                reason = (
+                    f"ADAPTIVE_{str(adaptive.get('stage') or 'PROTECT')}_STOP"
+                    if adaptive.get("eligible") and str(adaptive.get("stage") or "") not in {"", "WARMUP", "STATIC"}
+                    else "SETUP_STOP"
+                )
+                await paper_journal.close_trade(
+                    tid,
+                    exit_price=exit_price,
+                    result="WIN" if gross_positive else "LOSS",
+                    exit_reason=reason,
+                )
                 self._source_open_ids.discard(tid)
                 self._closed_total += 1
                 closed += 1
-            elif hit_tp1:
-                exit_price = conservative_target_exit(side=side, mark=float(mark), target_price=tp1)
-                await paper_journal.close_trade(tid, exit_price=exit_price, result="WIN", exit_reason="SETUP_TP1")
+            elif hit_target:
+                exit_price = conservative_target_exit(side=side, mark=float(mark), target_price=target)
+                tp1 = float(trade.get("tp1_price") or 0.0)
+                tp2 = float(trade.get("tp2_price") or 0.0)
+                extended = adaptive.get("eligible") and tp2 > 0 and abs(target - tp2) <= max(1e-12, abs(tp2) * 1e-9)
+                await paper_journal.close_trade(
+                    tid,
+                    exit_price=exit_price,
+                    result="WIN",
+                    exit_reason="ADAPTIVE_TP2" if extended else "SETUP_TP1",
+                )
                 self._source_open_ids.discard(tid)
                 self._closed_total += 1
                 closed += 1
