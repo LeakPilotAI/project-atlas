@@ -77,9 +77,11 @@ body.embed .top{display:none}body.embed .wrap{padding:12px 16px 28px}
 #pane-perps .filters{gap:10px;margin-bottom:11px}#pane-perps .filters input,#pane-perps .filters select{font-size:14px;padding:10px 11px;min-height:40px}
 #pane-perps .btn,#pane-perps .copyBtn{font-size:13px;padding:10px 12px;min-height:40px}
 #pane-perps table{font-size:14px}#pane-perps th{font-size:12px;padding:11px 10px}#pane-perps td{padding:10px}
-#pane-perps .priorityDock{padding:16px;margin-bottom:14px}#pane-perps .priorityTitle,#pane-perps .priorityCount{font-size:13px}
-#pane-perps .priorityGrid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}#pane-perps .priorityItem{padding:13px}
-#pane-perps .prioritySymbol{font-size:19px}#pane-perps .priorityStage{font-size:12px}#pane-perps .priorityAction{font-size:14px}#pane-perps .priorityPrice{font-size:27px}#pane-perps .priorityMeta{font-size:13px}
+#pane-perps .priorityDock{padding:10px;margin:0;border-radius:10px 2px 10px 2px!important}
+#pane-perps .priorityTitle,#pane-perps .priorityCount{font-size:11px}
+#pane-perps .priorityGrid{grid-template-columns:1fr;gap:7px}
+#pane-perps .priorityItem{padding:9px}
+#pane-perps .prioritySymbol{font-size:14px}#pane-perps .priorityStage{font-size:10px}#pane-perps .priorityAction{font-size:11px}#pane-perps .priorityPrice{font-size:19px}#pane-perps .priorityMeta{font-size:10px}
 #pane-perps .instruction{padding:15px;margin:12px 0}#pane-perps .instruction h3{font-size:16px}#pane-perps .instruction p{font-size:15px;line-height:1.55}#pane-perps .exact{font-size:25px;padding:13px}
 #pane-perps .levels{gap:8px;margin:11px 0}#pane-perps .lv{padding:11px}#pane-perps .lv b{font-size:12px}#pane-perps .lv span{font-size:16px}
 #pane-perps .note{font-size:13px;line-height:1.5}#pane-perps .kv{font-size:14px;gap:7px 12px}#pane-perps .empty,#pane-perps .unavailable{font-size:14px;line-height:1.5}
@@ -111,10 +113,10 @@ body.embed .top{display:none}body.embed .wrap{padding:12px 16px 28px}
 .leftRail .scanBtn{grid-column:1/-1;min-height:44px!important;color:#fff!important;border-color:#ff2846!important;background:linear-gradient(135deg,#5a0c1a,#14070a)!important;box-shadow:0 0 18px rgba(255,36,61,.15)!important}
 .topSetup{display:grid;grid-template-columns:26px 1fr auto;gap:7px;align-items:center;padding:7px 0;border-top:1px solid rgba(35,91,98,.35);font:700 11px var(--mono)}.topSetup:first-child{border-top:0}.topRank{color:#6e8b99}.topMain b{font-size:12px}.topMain small{display:block;color:#6f8d9b;margin-top:2px}.topScore{font-size:12px;color:#dffcff}
 .mixLine{display:grid;grid-template-columns:68px 1fr 30px;gap:6px;align-items:center;margin:6px 0;font:700 10px var(--mono);color:#8da8b4}.mixTrack{height:7px;background:#071418;border-radius:5px;overflow:hidden}.mixFill{height:100%;background:linear-gradient(90deg,#12a9af,#38e7df)}
-.focusPanel{position:relative;min-height:320px;border:1px solid #17464d;border-radius:12px 3px 12px 3px;overflow:hidden;background:linear-gradient(180deg,rgba(3,13,17,.98),rgba(1,6,8,.99))}
+.focusPanel{position:relative;min-height:390px;border:1px solid #17464d;border-radius:12px 3px 12px 3px;overflow:hidden;background:linear-gradient(180deg,rgba(3,13,17,.98),rgba(1,6,8,.99))}
 .focusPanel:before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(37,230,237,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(37,230,237,.04) 1px,transparent 1px);background-size:100% 42px,64px 100%;pointer-events:none}
 .focusHead{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px}.focusSymbol{font:900 19px var(--mono)}.focusPrice{font:900 27px var(--mono);margin-top:3px}.focusMeta{font:700 10px var(--mono);color:#7694a2}.focusNotice{font:800 9px var(--mono);letter-spacing:.1em;color:#6fdce4;text-align:right}
-.levelMap{position:relative;height:225px;margin:0 14px 12px;border-top:1px solid rgba(34,101,109,.25);border-bottom:1px solid rgba(34,101,109,.25)}
+.levelMap{position:relative;height:295px;margin:0 14px 12px;border-top:1px solid rgba(34,101,109,.25);border-bottom:1px solid rgba(34,101,109,.25)}
 .levelLine{position:absolute;left:0;right:0;height:1px;background:#31525c}.levelLine:before{content:"";position:absolute;left:0;top:-2px;width:5px;height:5px;border-radius:50%;background:currentColor}.levelLine span{position:absolute;right:4px;top:-9px;padding:1px 5px;background:#02090c;font:800 10px var(--mono);color:inherit}.levelLine.mark{color:#f4f8ff;background:#9eb2bd}.levelLine.stop{color:#ff3854;background:#8b2235}.levelLine.target{color:#1cf0b3;background:#147d64}.levelLine.entry{color:#55dce8;background:#277f8c}
 .boardStrip{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #17464d;border-bottom:0;background:#031015;border-radius:9px 3px 0 0}.boardTitle{font:900 11px var(--mono);letter-spacing:.1em;color:#dffcff}.boardStrip #refreshInline{margin-left:10px;font:700 10px var(--mono);color:#6f919e}.boardHint{font:700 9px var(--mono);letter-spacing:.08em;color:#4fc4cf}
 .boardTable{max-height:350px!important;border-radius:0 0 10px 3px!important}
@@ -141,7 +143,6 @@ body.embed .top{display:none}body.embed .wrap{padding:12px 16px 28px}
   <div class="card railCard"><div class="railTitle">◌ SETUP MIX</div><div id="liveMix"></div></div>
 </aside>
 <main class="centerRail">
-  <div id="priorityDock" class="priorityDock hidden"></div>
   <div id="focusPanel" class="focusPanel"></div>
   <div class="boardStrip"><div><span class="boardTitle">LIVE MARKET BOARD</span><span id="refreshInline">—</span></div><span class="boardHint">REAL HYPERLIQUID SNAPSHOT · MANUAL ONLY</span></div>
   <div class="tableWrap boardTable"><table><thead><tr><th>Symbol</th><th>Side</th><th>Tier</th><th>State</th><th>Score</th><th>Mark</th><th>L1</th><th>Stop</th><th>TP1</th><th>L1 dist</th><th>Instruction</th></tr></thead><tbody id="boardBody"></tbody></table></div>
@@ -149,6 +150,7 @@ body.embed .top{display:none}body.embed .wrap{padding:12px 16px 28px}
 </main>
 <aside class="rightRail">
   <div id="detail"></div>
+  <div id="priorityDock" class="priorityDock hidden"></div>
   <div class="card railCard"><div class="railTitle">◉ PAPER ORDERS / OPEN</div><div id="livePositions"></div></div>
   <div class="card railCard riskRail"><div class="railTitle">◉ DAILY RISK <span>(UTC DAY)</span></div><div id="liveRisk"></div></div>
 </aside>
