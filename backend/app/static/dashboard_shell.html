@@ -62,6 +62,31 @@ tr.pick{cursor:pointer}tr.pick.on td,tr.pick:hover td{background:rgba(34,231,220
 @media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr)}.liveGrid,.split{grid-template-columns:1fr}}
 @media(max-width:760px){.top,.wrap{padding-left:10px;padding-right:10px}.stats{grid-template-columns:1fr 1fr}.levels{grid-template-columns:1fr 1fr}}
 body.embed .top{display:none}body.embed .wrap{padding:12px 16px 28px}
+
+/* Perp readability pass — larger desktop UI without changing behavior. */
+#pane-perps .wrap{max-width:1980px;padding:22px 26px 48px}
+#pane-perps .hero{padding:22px 24px;gap:24px}
+#pane-perps .eyebrow{font-size:13px}#pane-perps h1{font-size:34px;line-height:1.15}
+#pane-perps .hero .sub{font-size:15px;line-height:1.55}
+#pane-perps .badge{font-size:13px;padding:6px 10px}
+#pane-perps .subnav{gap:8px;margin:14px 0}#pane-perps .subnav .sub{font-size:13px;padding:11px 15px;min-height:40px}
+#pane-perps .stats{gap:12px;margin:14px 0}#pane-perps .stat,#pane-perps .card{padding:16px 18px}
+#pane-perps .stat .v{font-size:32px}#pane-perps .label{font-size:12px}#pane-perps .hint{font-size:12px;line-height:1.45}
+#pane-perps .autoExplainer{font-size:13px;line-height:1.55;padding:13px 15px;margin-bottom:14px}
+#pane-perps .liveGrid{grid-template-columns:minmax(0,1fr) 430px;gap:14px}
+#pane-perps .filters{gap:10px;margin-bottom:11px}#pane-perps .filters input,#pane-perps .filters select{font-size:14px;padding:10px 11px;min-height:40px}
+#pane-perps .btn,#pane-perps .copyBtn{font-size:13px;padding:10px 12px;min-height:40px}
+#pane-perps table{font-size:14px}#pane-perps th{font-size:12px;padding:11px 10px}#pane-perps td{padding:10px}
+#pane-perps .priorityDock{padding:16px;margin-bottom:14px}#pane-perps .priorityTitle,#pane-perps .priorityCount{font-size:13px}
+#pane-perps .priorityGrid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}#pane-perps .priorityItem{padding:13px}
+#pane-perps .prioritySymbol{font-size:19px}#pane-perps .priorityStage{font-size:12px}#pane-perps .priorityAction{font-size:14px}#pane-perps .priorityPrice{font-size:27px}#pane-perps .priorityMeta{font-size:13px}
+#pane-perps .instruction{padding:15px;margin:12px 0}#pane-perps .instruction h3{font-size:16px}#pane-perps .instruction p{font-size:15px;line-height:1.55}#pane-perps .exact{font-size:25px;padding:13px}
+#pane-perps .levels{gap:8px;margin:11px 0}#pane-perps .lv{padding:11px}#pane-perps .lv b{font-size:12px}#pane-perps .lv span{font-size:16px}
+#pane-perps .note{font-size:13px;line-height:1.5}#pane-perps .kv{font-size:14px;gap:7px 12px}#pane-perps .empty,#pane-perps .unavailable{font-size:14px;line-height:1.5}
+#pane-perps .barline{grid-template-columns:135px 1fr 48px;font-size:13px}#pane-perps .track{height:10px}
+@media(max-width:1400px){#pane-perps .liveGrid{grid-template-columns:minmax(0,1fr) 390px}#pane-perps table{font-size:13px}}
+@media(max-width:1100px){#pane-perps .liveGrid{grid-template-columns:1fr}#pane-perps .stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){#pane-perps .wrap{padding:14px 10px 32px}#pane-perps .stats{grid-template-columns:1fr 1fr}#pane-perps .hero{padding:16px}#pane-perps h1{font-size:30px}}
 </style><link rel="stylesheet" href="/static/atlas_ui.css"/></head><body>
 <div class="top"><div class="toprow"><div class="brand"><div class="logo">AT</div><div><div class="title">Project Atlas</div><div class="sub">Manual intelligence · paper validation · investment research</div></div></div><div class="status"><div id="conn">Connecting…</div><div id="fresh">—</div></div></div><div class="tabs"><button class="tab on" data-pane="perps">Perp Day Trade</button><button class="tab" data-pane="legacy">Command Center / Paper / Quality Dips</button></div></div>
 <section id="pane-perps" class="pane on"><div class="wrap">
