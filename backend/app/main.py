@@ -343,6 +343,11 @@ async def dashboard_page() -> FileResponse:
     return _dashboard_response(DASHBOARD_HTML)
 
 
+@app.get("/static/atlas-perp-backdrop.png", include_in_schema=False)
+async def perp_backdrop() -> FileResponse:
+    return FileResponse(STATIC_DIR / "atlas-perp-backdrop.png", media_type="image/png")
+
+
 @app.get("/dashboard/perps")
 async def perp_dashboard_page() -> FileResponse:
     return _dashboard_response(PERP_DASHBOARD_HTML)

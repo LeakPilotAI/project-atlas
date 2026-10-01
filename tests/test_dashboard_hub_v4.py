@@ -31,6 +31,13 @@ def test_dashboard_routes_preserve_perp_and_legacy_views():
     assert client.get("/dashboard/legacy").status_code == 200
 
 
+def test_perp_decorative_backdrop_is_served_as_an_image():
+    response = TestClient(app).get("/static/atlas-perp-backdrop.png")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert response.content.startswith(b"\x89PNG\r\n\x1a\n")
+
+
 def test_root_advertises_domain_specific_dashboard_routes():
     client = TestClient(app)
     payload = client.get("/").json()
