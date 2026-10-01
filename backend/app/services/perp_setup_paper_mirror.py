@@ -454,9 +454,38 @@ class PerpSetupPaperMirror:
             }
             for instance, row in self._pending.items()
         ]
+        open_positions = []
+        for trade in paper_journal.list_open():
+            if str(trade.get("source") or "") != SOURCE:
+                continue
+            open_positions.append({
+                "trade_id": trade.get("trade_id"),
+                "symbol": trade.get("symbol"),
+                "side": trade.get("side"),
+                "entry_price": trade.get("actual_entry_price"),
+                "mark": trade.get("mark"),
+                "initial_stop": trade.get("initial_stop") or trade.get("stop_price"),
+                "working_stop": trade.get("working_stop") or trade.get("stop_price"),
+                "working_target": trade.get("working_target") or trade.get("tp1_price"),
+                "tp1_price": trade.get("tp1_price"),
+                "tp2_price": trade.get("tp2_price"),
+                "mfe_r": trade.get("mfe_r"),
+                "mae_r": trade.get("mae_r"),
+                "adaptive_stage": trade.get("adaptive_stage") or "STATIC",
+                "adaptive_exit_policy_version": (
+                    trade.get("adaptive_exit_policy_version")
+                    or (
+                        (trade.get("features") or {}).get("adaptive_exit_policy_version")
+                        if isinstance(trade.get("features"), dict)
+                        else None
+                    )
+                ),
+                "opened_at": trade.get("entry_timestamp"),
+                "state": "OPEN_PAPER",
+            })
         base = {
             "pending_count": len(self._pending),
-            "open_count": len(self._source_open_ids),
+            "open_count": len(open_positions),
             "opened_total": int(self._opened_total),
             "closed_total": int(self._closed_total),
         }
@@ -470,6 +499,7 @@ class PerpSetupPaperMirror:
         return {
             **base,
             "pending_orders": pending_orders,
+            "open_positions": open_positions,
             "recent_terminal": list(self._recent_terminal),
             "execution": "PAPER_ONLY",
             "live_capital_allowed": False,
