@@ -572,17 +572,16 @@ class PerpSetupPaperMirror:
             hit_target = (side == "LONG" and mark >= target) or (side == "SHORT" and mark <= target)
             if hit_stop:
                 exit_price = conservative_stop_exit(side=side, mark=float(mark), stop_price=stop)
-                entry = float(trade.get("actual_entry_price") or 0.0)
-                gross_positive = (side == "LONG" and exit_price > entry) or (side == "SHORT" and exit_price < entry)
+                adaptive_stop = adaptive.get("eligible") and str(adaptive.get("stage") or "") not in {"", "WARMUP", "STATIC"}
                 reason = (
                     f"ADAPTIVE_{str(adaptive.get('stage') or 'PROTECT')}_STOP"
-                    if adaptive.get("eligible") and str(adaptive.get("stage") or "") not in {"", "WARMUP", "STATIC"}
+                    if adaptive_stop
                     else "SETUP_STOP"
                 )
                 await paper_journal.close_trade(
                     tid,
                     exit_price=exit_price,
-                    result="WIN" if gross_positive else "LOSS",
+                    result="ADAPTIVE_EXIT" if adaptive_stop else "LOSS",
                     exit_reason=reason,
                 )
                 self._source_open_ids.discard(tid)
