@@ -46,6 +46,7 @@ async def main() -> int:
             "candidate_samples": [
                 {
                     "ticker": row.get("ticker"),
+                    "market_status": row.get("market_status"),
                     "side": row.get("side"),
                     "stage": row.get("evaluation_stage"),
                     "occurrence_datetime": row.get("occurrence_datetime"),
