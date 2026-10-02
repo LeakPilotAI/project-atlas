@@ -335,7 +335,7 @@ ARCHIVE_SNAPSHOTS_HTML = STATIC_DIR / "archive_snapshots.html"
 COMMAND_CENTER_HTML = STATIC_DIR / "command_center.html"
 COMMAND_CENTER_HEALTH_HTML = STATIC_DIR / "command_center_health.html"
 COMMAND_CENTER_RISK_HTML = STATIC_DIR / "command_center_risk.html"
-FUTURE_OVERVIEW_HTML = STATIC_DIR / "future_overview.html"
+FUTURE_OVERVIEW_HTML = STATIC_DIR / "future_overview.html"\nPREDICTION_PAPER_HTML = STATIC_DIR / "prediction_paper.html"
 LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 
 
@@ -418,6 +418,11 @@ async def command_center_risk_dashboard_page() -> FileResponse:
 @app.get("/dashboard/future")
 async def future_overview_dashboard_page() -> FileResponse:
     return _dashboard_response(FUTURE_OVERVIEW_HTML)
+
+
+@app.get("/dashboard/prediction-paper")
+async def prediction_paper_dashboard_page() -> FileResponse:
+    return _dashboard_response(PREDICTION_PAPER_HTML)
 
 
 @app.get("/dashboard/legacy")
@@ -507,6 +512,7 @@ async def root() -> Dict[str, str]:
         "dashboard_command_center_health": "/dashboard/command-center/health",
         "dashboard_command_center_risk": "/dashboard/command-center/risk",
         "dashboard_future": "/dashboard/future",
+        "dashboard_prediction_paper": "/dashboard/prediction-paper",
         "dashboard_legacy": "/dashboard/legacy",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
