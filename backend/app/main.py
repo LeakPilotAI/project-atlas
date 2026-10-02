@@ -22,6 +22,7 @@ from app.api.investment_board import router as investment_board_router
 from app.api.prospective_research import router as prospective_research_router
 from app.api.live import router as live_router
 from app.api.perp_manual import router as perp_manual_router
+from app.api.prediction import router as prediction_router
 from app.api.validation import router as validation_router
 from app.api.validation_proof import router as validation_proof_router
 from app.core.config import get_settings
@@ -315,6 +316,7 @@ app.include_router(investment_board_router, prefix="/api")
 app.include_router(prospective_research_router)
 app.include_router(live_router)
 app.include_router(perp_manual_router)
+app.include_router(prediction_router)
 app.include_router(validation_router)
 app.include_router(validation_proof_router)
 
@@ -506,4 +508,6 @@ async def root() -> Dict[str, str]:
         "research": "/api/research",
         "funnel": "/api/funnel",
         "manual_perps": "/api/perps/manual",
+        "prediction_status": "/api/prediction/status",
+        "prediction_markets": "/api/prediction/markets",
     }
