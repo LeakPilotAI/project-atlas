@@ -443,6 +443,8 @@ async def root() -> Dict[str, str]:
         "dashboard": "/dashboard",
         "dashboard_perps": "/dashboard/perps",
         "dashboard_quality_dips": "/api/investments/quality-dips/view",
+        "dashboard_investment": "/dashboard/investment",
+        "dashboard_archive": "/dashboard/archive",
         "dashboard_legacy": "/dashboard/legacy",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
