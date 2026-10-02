@@ -139,6 +139,7 @@ $dashboard = Test-Http "http://127.0.0.1:8000/dashboard"
 $research = Test-Http "http://127.0.0.1:8000/api/research"
 $command = Test-Http "http://127.0.0.1:8000/api/command-center/summary"
 $reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+$predictionAutomation = Test-Http "http://127.0.0.1:8000/api/prediction/paper/automation/status" -IncludeBody
 $autoStarted = $false
 $launcherPid = $null
 if ($StartAtlasIfNeeded -and -not $health.ok) {
@@ -158,6 +159,7 @@ if ($StartAtlasIfNeeded -and -not $health.ok) {
     $research = Test-Http "http://127.0.0.1:8000/api/research"
     $command = Test-Http "http://127.0.0.1:8000/api/command-center/summary"
     $reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+    $predictionAutomation = Test-Http "http://127.0.0.1:8000/api/prediction/paper/automation/status" -IncludeBody
 }
 
 # Warm-up is separate from measured longevity; never discard measured failures.
@@ -169,12 +171,21 @@ do {
     $research = Test-Http "http://127.0.0.1:8000/api/research"
     $command = Test-Http "http://127.0.0.1:8000/api/command-center/summary"
     $reconciliation = Test-Http "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+    $predictionAutomation = Test-Http "http://127.0.0.1:8000/api/prediction/paper/automation/status" -IncludeBody
+    $predictionBody = $predictionAutomation.body
+    $predictionHealthy = [bool]($predictionAutomation.ok -and $predictionBody -and
+        $predictionBody.running -eq $true -and
+        $predictionBody.execution -eq "PAPER_ONLY" -and
+        $predictionBody.unattended_paper_open_enabled -eq $false -and
+        $predictionBody.automatic_paper_position_opening -eq $false -and
+        $predictionBody.live_capital_allowed -eq $false -and
+        $predictionBody.automatic_real_money_execution -eq $false)
     $stabilization.checks++
-    if ($health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok) {
+    if ($health.ok -and $dashboard.ok -and $research.ok -and $command.ok -and $reconciliation.ok -and $predictionHealthy) {
         $stabilization.consecutive_green++
     } else {
         $stabilization.failed_checks++
-        $stabilization.last_failure = @{ health=$health; research=$research; command_center=$command; reconciliation=$reconciliation }
+        $stabilization.last_failure = @{ health=$health; research=$research; command_center=$command; reconciliation=$reconciliation; prediction_automation=$predictionAutomation }
         $stabilization.consecutive_green=0
     }
     if ($stabilization.consecutive_green -ge $stabilization.required) { $stabilization.green=$true; break }
@@ -213,7 +224,8 @@ if ($stabilization.green -and $longevity.requested_seconds -gt 0) {
             "http://127.0.0.1:8000/health",
             "http://127.0.0.1:8000/api/research",
             "http://127.0.0.1:8000/api/command-center/summary",
-            "http://127.0.0.1:8000/diagnostics/paper-reconciliation"
+            "http://127.0.0.1:8000/diagnostics/paper-reconciliation",
+            "http://127.0.0.1:8000/api/prediction/paper/automation/status"
         )) {
             $probe = Test-Http $url
             $probeResults[$url] = $probe
@@ -285,6 +297,7 @@ $result = [ordered]@{
     research = $research
     command_center = $command
     reconciliation = $reconciliation
+    prediction_paper_automation = $predictionAutomation
     runtime_latency = Test-Http "http://127.0.0.1:8000/diagnostics/runtime-latency" -IncludeBody
     startup_stabilization = $stabilization
     longevity = $longevity
@@ -294,10 +307,18 @@ $result = [ordered]@{
     automatic_real_money_execution = $false
 }
 $safetyBody = $result.runtime_latency.body
+$predictionBody = $result.prediction_paper_automation.body
 $result.safety_verified = [bool]($result.runtime_latency.ok -and $safetyBody -and
     $safetyBody.execution -eq "PAPER_ONLY" -and
     $safetyBody.live_capital_allowed -eq $false -and
-    $safetyBody.automatic_real_money_execution -eq $false)
+    $safetyBody.automatic_real_money_execution -eq $false -and
+    $result.prediction_paper_automation.ok -and $predictionBody -and
+    $predictionBody.running -eq $true -and
+    $predictionBody.execution -eq "PAPER_ONLY" -and
+    $predictionBody.unattended_paper_open_enabled -eq $false -and
+    $predictionBody.automatic_paper_position_opening -eq $false -and
+    $predictionBody.live_capital_allowed -eq $false -and
+    $predictionBody.automatic_real_money_execution -eq $false)
 $result.status = if (
     $result.safety_verified -and
     $result.launch_bat_exists -and $result.stop_bat_exists -and
