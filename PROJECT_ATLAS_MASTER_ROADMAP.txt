@@ -2228,6 +2228,64 @@ For each frozen investment observation/call:
 Investment readiness must be based on mature prospective evidence, not the fact
 that the Investment UI/research pipeline is feature-complete.
 
+PHASE G2 — QUALITY EXTREMES / LONG-SHORT POSITION RESEARCH
+[PLANNED / PAPER-FIRST]
+Purpose: complement Quality Dips with a separately measured long-duration short /
+hedge research family so Atlas can study both downside dislocations and upside
+exhaustion without assuming that an all-time high is itself bearish.
+
+Decision surface:
+- ACCUMULATE / LONG when the long thesis independently qualifies.
+- HOLD / DO NOTHING when neither side has sufficient evidence.
+- SHORT / HEDGE only when a separately versioned exhaustion thesis qualifies.
+Long and short evidence, policies, outcomes and readiness remain independently
+measured; weak long performance is never justification for forcing short trades.
+
+Short-candidate research may consider, where captured and validated:
+- proximity/distance to all-time or major multi-period highs
+- failed breakout / rejection behavior
+- momentum deterioration or divergence
+- weakening relative strength
+- volume/participation deterioration or abnormal distribution
+- volatility expansion / instability
+- extension from relevant trend/valuation anchors
+- macro/sector/regime context
+- executable liquidity, spread, borrow/funding/carry costs where applicable
+- explicit thesis invalidation and exit conditions
+Near an all-time high alone MUST NOT qualify a short. Strong assets can continue
+price discovery; Atlas must distinguish strength from evidence-backed exhaustion.
+
+Long-duration PAPER short / hedge safety:
+- begin with unlevered or approximately 1x effective exposure in research/PAPER
+  where the instrument model permits it
+- any leverage variant must be a separate PAPER cohort and remain deliberately low
+- never claim liquidation is impossible; measure collateral/liquidation headroom
+  for instruments that can liquidate
+- small bounded position risk and portfolio-level exposure limits
+- account for funding, borrow, fees and carry rather than treating them as zero
+- no averaging down / pyramiding merely because price continues to make highs
+- explicit invalidation, maximum loss/risk and exit policy
+- no live short execution until separately authorized after positive evidence
+
+Prospective long/short evidence:
+- freeze entry thesis and all available decision inputs before the outcome
+- track 1d / 5d / 20d / 60d and longer horizons when mature/useful
+- track MAE/MFE, drawdown, financing/carry, fees and opportunity cost
+- compare against appropriate benchmark/reference behavior
+- record thesis-break, profit-taking, time exit and other exit rationale
+- retain losing, squeezed, unresolved and invalidated shorts
+- preserve regime labels and policy/model/execution versions
+- never backfill hindsight facts into the original decision
+
+Quality Extremes validation:
+- long and short cohorts get independent scorecards
+- compare short/hedge results against HOLD/DO NOTHING and relevant benchmarks
+- require prospective/out-of-sample evidence before promotion
+- evaluate whether a hedge improves portfolio drawdown/risk-adjusted behavior, not
+  merely whether individual shorts occasionally produce large wins
+- disable/challenge persistently negative-edge variants instead of optimizing them
+  indefinitely on the same evidence
+
 PHASE H — LIVE-READINESS GATE
 [BLOCKED UNTIL POSITIVE EVIDENCE]
 A small live-capital pilot may be CONSIDERED only after all applicable evidence
@@ -2269,8 +2327,10 @@ ORDER OF OPERATIONS
 7. Run walk-forward/out-of-sample validation and fresh frozen PAPER confirmation.
 8. Continue maturing the Investment prospective 1d/5d/20d/60d evidence and
    benchmark/opportunity-cost/calibration reporting.
-9. Perform a formal read-only live-readiness review.
-10. Only after positive evidence and explicit authorization consider a bounded
+9. Build and prospectively validate Quality Extremes long/short position research,
+   including conservative leverage/carry/liquidation-headroom evidence where relevant.
+10. Perform a formal read-only live-readiness review.
+11. Only after positive evidence and explicit authorization consider a bounded
     small live-capital pilot. Real-money automation is not implied or pre-approved.
 
 STATUS AT ADDENDUM
@@ -2279,7 +2339,23 @@ STATUS AT ADDENDUM
   evidence/improvement; historical negative PAPER evidence remains preserved.
 - Investment research platform: substantial prospective foundation exists, but
   mature forward evidence remains the limiting factor.
+- Quality Extremes long/short research: PLANNED after the Prediction milestone;
+  PAPER-first, separately versioned, with no ATH-only short signal and no live leverage.
 - The roadmap therefore optimizes next for PROVABLE EDGE AND EXECUTION QUALITY,
   not additional feature count and not premature live-capital activation.
+
+CONTINUOUS ATLAS REFINEMENT MODE — AFTER REMAINING BUILD PHASES
+Once the planned engineering/research surfaces above are implemented and verified,
+Atlas transitions from feature expansion to a continuing evidence loop across:
+Prediction Markets, Day Trading, Investment/Quality Dips, and Quality Extremes.
+For each strategy family:
+collect prospective PAPER/shadow evidence -> attribute wins/losses -> analyze
+regimes/execution/costs -> propose a versioned challenger -> freeze -> validate on
+unseen evidence -> retain/reject based on evidence -> repeat.
+This loop may continue indefinitely while edge is uncertain or improving.
+Software completion never converts PAPER to live automatically. Each live-capital
+step requires a separate evidence review, bounded risk design, explicit operator
+authorization, and continued ability to return to PAPER/shadow on degradation.
+Real-money automation remains NOT AUTHORIZED by this roadmap addendum.
 ================================================================================
 
