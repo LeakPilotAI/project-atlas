@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prediction PAPER — Atlas</title>
+<style>
+:root{color-scheme:dark;--bg:#02070a;--panel:#041016;--line:#17404b;--cyan:#35e5ee;--green:#00ddb0;--red:#ff304c;--amber:#efb35a;--fg:#e2f0f5;--muted:#86a5b5;--mono:Consolas,monospace;--sans:"Segoe UI",Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:transparent;color:var(--fg);font:13px/1.4 var(--sans)}button{font:inherit}.wrap{max-width:2400px;margin:auto;padding:12px 20px 28px}.head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:12px}.eyebrow{font:10px var(--mono);letter-spacing:.16em;color:var(--cyan)}h1{margin:3px 0 4px;font-size:25px;letter-spacing:.05em}.sub{color:var(--muted);font-size:11px}.lock{border:1px solid #6d3941;background:#17080c;border-radius:8px;padding:8px 11px;color:#ff8293;font:10px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.metrics{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin-bottom:10px}.metric,.panel{border:1px solid var(--line);background:linear-gradient(145deg,rgba(5,18,24,.98),rgba(1,7,10,.98));box-shadow:inset 0 1px #35e5ee10}.metric{min-height:78px;padding:10px 11px;border-radius:12px 4px 12px 4px}.label{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.value{font:21px/1.2 var(--mono);margin-top:6px}.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--amber)}.cyan{color:var(--cyan)}
+.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(350px,.75fr);gap:10px}.panel{border-radius:13px 4px 13px 4px;padding:11px;min-width:0}.panel h2{margin:0 0 9px;color:var(--cyan);font-size:13px;letter-spacing:.07em;text-transform:uppercase}.tableWrap{max-height:470px;overflow:auto;border-top:1px solid #15343e}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:11px;font-variant-numeric:tabular-nums}th{position:sticky;top:0;z-index:1;background:#071219;color:#83a7b5;text-transform:uppercase;font-size:8px;letter-spacing:.07em}td,th{padding:7px 8px;border-bottom:1px solid #13323b;text-align:left}tbody tr{cursor:pointer}tbody tr:hover,tbody tr.on{background:#08212a}.pill{display:inline-block;border:1px solid currentColor;border-radius:4px;padding:2px 6px;font:9px var(--mono)}.reasons{max-width:360px;overflow:hidden;text-overflow:ellipsis}.mono{font-family:var(--mono)}
+.stack{display:grid;gap:10px}.kv{display:grid;grid-template-columns:1fr auto;gap:5px 12px;padding:8px 0;border-bottom:1px solid #12313a}.kv span:nth-child(odd){color:var(--muted)}.kv span:nth-child(even){font-family:var(--mono);text-align:right}.detail{white-space:pre-wrap;word-break:break-word;max-height:310px;overflow:auto;background:#02090c;border:1px solid #12343e;padding:9px;border-radius:5px;color:#a9c7d2;font:10px/1.5 var(--mono)}
+.events{margin-top:10px}.empty{padding:26px;color:var(--muted);text-align:center}.safety{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px}.safety div{border:1px solid #1b4a51;padding:7px;border-radius:5px;text-align:center;color:var(--green);font:9px var(--mono);text-transform:uppercase}
+@media(max-width:1350px){.metrics{grid-template-columns:repeat(4,1fr)}.grid{grid-template-columns:1fr}.tableWrap{max-height:390px}}@media(max-width:720px){.wrap{padding:9px}.metrics{grid-template-columns:repeat(2,1fr)}.head{display:block}.lock{margin-top:8px}.safety{grid-template-columns:repeat(2,1fr)}.tableWrap{overflow-x:auto}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+<script src="/static/runtime_poll.js"></script>
+</head>
+<body><main class="wrap">
+<div class="head"><div><div class="eyebrow">PREDICTION MARKETS / PAPER EVIDENCE</div><h1>Pre-Event Repricing Monitor</h1><div class="sub">Scanner evidence, depth-aware PAPER fills, rejection reasons, and mandatory auto-flat state.</div></div><div class="lock" id="lock">AUTO-OPEN LOCKED · LIVE OFF</div></div>
+<section class="metrics">
+<div class="metric"><div class="label">Discovered</div><div class="value" id="discovered">—</div></div>
+<div class="metric"><div class="label">Full Evaluations</div><div class="value cyan" id="evaluated">—</div></div>
+<div class="metric"><div class="label">Eligible</div><div class="value good" id="eligible">—</div></div>
+<div class="metric"><div class="label">Rejected</div><div class="value" id="rejected">—</div></div>
+<div class="metric"><div class="label">Errors / Timeouts</div><div class="value" id="errors">—</div></div>
+<div class="metric"><div class="label">Open Positions</div><div class="value" id="positions">—</div></div>
+<div class="metric"><div class="label">Closed Trades</div><div class="value" id="closed">—</div></div>
+<div class="metric"><div class="label">Net PAPER PnL</div><div class="value" id="pnl">—</div></div>
+</section>
+<section class="grid">
+<div class="panel"><h2>Recent Candidate Evidence</h2><div class="tableWrap"><table><thead><tr><th>Time</th><th>Ticker</th><th>Side</th><th>Stage</th><th>Score</th><th>VWAP</th><th>Spread</th><th>Edge/ct</th><th>Result</th><th>Reasons</th></tr></thead><tbody id="candidates"></tbody></table></div></div>
+<div class="stack">
+<div class="panel"><h2>Automation / Safety</h2><div class="kv" id="automation"></div><div class="safety"><div>PAPER ONLY</div><div>LIVE CAPITAL OFF</div><div>1 POSITION MAX</div><div>PRE-EVENT EXIT</div></div></div>
+<div class="panel"><h2>Selected Evidence</h2><div id="detail" class="detail">Select a candidate row to inspect persisted evidence.</div></div>
+</div>
+</section>
+<section class="panel events"><h2>PAPER Position / Trade Events</h2><div class="tableWrap"><table><thead><tr><th>Event</th><th>Ticker</th><th>Side</th><th>Qty</th><th>Entry VWAP</th><th>Exit VWAP</th><th>Net PnL</th><th>Exit Reason</th><th>Flat Violation</th></tr></thead><tbody id="events"></tbody></table></div></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>v===null||v===undefined||v===''?'—':String(v);
+const money=v=>v===null||v===undefined||v===''?'—':'$'+Number(v).toFixed(2);
+const price=v=>v===null||v===undefined||v===''?'—':Number(v).toFixed(4);
+const when=v=>{if(!v)return'—';const d=new Date(v);return isNaN(d)?esc(v):d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})};
+function candidateRow(c,i){
+ const fill=c.entry_fill||{}, reasons=(c.rejection_reasons||[]).join(', ');
+ const cls=c.eligible?'good':'bad', result=c.eligible?'ELIGIBLE':'REJECT';
+ return '<tr data-i="'+i+'"><td>'+when(c.timestamp||c.observed_at)+'</td><td class="mono">'+esc(c.ticker)+'</td><td>'+esc(c.side)+'</td><td>'+esc(c.evaluation_stage||'FULL')+'</td><td>'+num(c.score)+'</td><td>'+price(fill.vwap_dollars)+'</td><td>'+price(c.spread_dollars)+'</td><td>'+price(c.projected_net_edge_per_contract_dollars)+'</td><td><span class="pill '+cls+'">'+result+'</span></td><td class="reasons" title="'+esc(reasons)+'">'+esc(reasons||'—')+'</td></tr>';
+}
+function eventRow(e){
+ return '<tr><td>'+esc(e.event)+'</td><td class="mono">'+esc(e.ticker||'—')+'</td><td>'+esc(e.side||'—')+'</td><td>'+num(e.quantity_contracts)+'</td><td>'+price(e.actual_entry_price)+'</td><td>'+price(e.actual_exit_price)+'</td><td>'+money(e.net_pnl_dollars)+'</td><td>'+esc(e.exit_reason||'—')+'</td><td>'+(e.violated_flat_deadline===true?'YES':'NO')+'</td></tr>';
+}
+function automationView(a){
+ const s=a.scanner||{}, f=a.auto_flat||{};
+ const rows=[
+  ['Worker',a.running?'RUNNING':'STOPPED'],['Last cycle',s.cycle_id||'—'],['YES / NO',num(s.yes_evaluations)+' / '+num(s.no_evaluations)],
+  ['Scanner errors',num(s.error_count)+' / '+num(s.timeout_count)+' timeouts'],['Auto-flat',f.last_action||'IDLE'],['Auto-flat blocked',String(!!f.blocked).toUpperCase()],
+  ['Deadline violation',String(!!f.deadline_violation).toUpperCase()],['Auto-open',a.automatic_paper_position_opening?'ENABLED':'LOCKED']
+ ];
+ $('automation').innerHTML=rows.map(x=>'<span>'+esc(x[0])+'</span><span>'+esc(x[1])+'</span>').join('');
+}
+async function refresh(){
+ const [sr,cr]=await Promise.all([atlasFetch('/api/prediction/paper/status?limit=100'),atlasFetch('/api/prediction/paper/candidates?limit=200')]);
+ const status=await sr.json(), evidence=await cr.json(), a=status.automation||{}, s=a.scanner||{}, summary=status.summary||{};
+ $('discovered').textContent=num(s.markets_discovered);$('evaluated').textContent=num(s.markets_fully_evaluated);$('eligible').textContent=num(s.eligible_count);
+ $('rejected').textContent=num(s.rejected_count);$('errors').textContent=num(s.error_count)+' / '+num(s.timeout_count);$('positions').textContent=num(summary.open_positions);
+ $('closed').textContent=num(summary.closed_trades);$('pnl').textContent=money(summary.net_pnl_dollars);
+ const locked=!a.automatic_paper_position_opening && !a.live_capital_allowed;$('lock').textContent=locked?'AUTO-OPEN LOCKED · LIVE OFF':'SAFETY STATE CHANGED';
+ $('lock').className='lock'+(locked?'':' bad');automationView(a);
+ const candidates=(evidence.candidates||[]).slice().reverse();$('candidates').innerHTML=candidates.length?candidates.map(candidateRow).join(''):'<tr><td colspan="10" class="empty">No candidate evidence yet.</td></tr>';
+ [...$('candidates').querySelectorAll('tr[data-i]')].forEach(row=>row.addEventListener('click',()=>{[...$('candidates').children].forEach(x=>x.classList.remove('on'));row.classList.add('on');$('detail').textContent=JSON.stringify(candidates[Number(row.dataset.i)],null,2)}));
+ const events=(status.events||[]).slice().reverse();$('events').innerHTML=events.length?events.map(eventRow).join(''):'<tr><td colspan="9" class="empty">No Prediction PAPER position events yet.</td></tr>';
+}
+atlasPoll(refresh,10000);
+</script></body></html>
