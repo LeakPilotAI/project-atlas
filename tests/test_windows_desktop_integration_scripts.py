@@ -55,9 +55,19 @@ def test_desktop_smoke_supports_longevity_and_reconciliation_probes():
 def test_desktop_smoke_can_self_start_and_reports_probe_progress():
     text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
     assert "[switch]$StartAtlasIfNeeded" in text
-    assert "starting the normal desktop launcher" in text
+    assert "starting an isolated desktop launcher" in text
     assert "Longevity probe" in text
     assert "auto_started_atlas" in text
+
+
+def test_desktop_smoke_self_start_isolated_from_validation_console_ctrl_c():
+    text = _text("scripts/windows/Atlas-Desktop-Smoke.ps1")
+    assert '$LauncherScript = Join-Path $PSScriptRoot "Atlas-Launch.ps1"' in text
+    assert 'Start-Process -FilePath "powershell.exe"' in text
+    assert '("-File", (' not in text  # guard against malformed tuple-style PowerShell
+    assert '"-File", (\'"{0}"\' -f $LauncherScript)' in text
+    assert "-WorkingDirectory $Root -WindowStyle Hidden -PassThru" in text
+    assert "Start-Process -FilePath $LaunchBat -WindowStyle Hidden -PassThru" not in text
 
 
 def test_desktop_smoke_captures_first_failure_diagnostics():
