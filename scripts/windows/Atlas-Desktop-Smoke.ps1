@@ -19,6 +19,7 @@ $StopBat = Join-Path $Root "ATLAS-STOP.bat"
 $StartLink = Join-Path $Desktop "Project Atlas.lnk"
 $StopLink = Join-Path $Desktop "Stop Atlas.lnk"
 $Installer = Join-Path $PSScriptRoot "Install-DesktopShortcut.ps1"
+$LauncherScript = Join-Path $PSScriptRoot "Atlas-Launch.ps1"
 $ApiErrLog = Join-Path $Root "logs\api.err.log"
 $ApiOutLog = Join-Path $Root "logs\api.out.log"
 
@@ -143,8 +144,17 @@ $predictionAutomation = Test-Http "http://127.0.0.1:8000/api/prediction/paper/au
 $autoStarted = $false
 $launcherPid = $null
 if ($StartAtlasIfNeeded -and -not $health.ok) {
-    Write-Host "Atlas API is not running; starting the normal desktop launcher..." -ForegroundColor Yellow
-    $launcherProcess = Start-Process -FilePath $LaunchBat -WindowStyle Hidden -PassThru
+    Write-Host "Atlas API is not running; starting an isolated desktop launcher..." -ForegroundColor Yellow
+    # Do not start the .bat wrapper from this validation console. An inherited/shared
+    # console control event (for example Ctrl+C while inspecting smoke output) must
+    # never be able to stop the Atlas launcher that this smoke run just started.
+    # An explicit powershell.exe child receives its own hidden process/console boundary
+    # while still running the canonical Atlas-Launch.ps1 lifecycle and stop handling.
+    $launcherProcess = Start-Process -FilePath "powershell.exe" -ArgumentList @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", ('"{0}"' -f $LauncherScript)
+    ) -WorkingDirectory $Root -WindowStyle Hidden -PassThru
     $launcherPid = [int]$launcherProcess.Id
     for ($i = 1; $i -le 60; $i++) {
         Start-Sleep -Seconds 2
