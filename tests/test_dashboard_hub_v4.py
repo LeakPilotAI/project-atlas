@@ -19,8 +19,9 @@ def test_dashboard_hub_has_three_isolated_domains():
     assert 'data-src="/dashboard/investment"' in text
     assert 'data-src="/dashboard/archive"' in text
     assert "COMING SOON" in text
+    assert 'data-src="/dashboard/command-center"' in text
     command = text.split('id="pane-command"', 1)[1].split("</section>", 1)[0]
-    assert "<iframe" not in command
+    assert "<iframe" in command
     assert "if(frame && !frame.getAttribute('src'))" in text
 
 
@@ -34,6 +35,7 @@ def test_dashboard_routes_preserve_perp_and_legacy_views():
     assert client.get("/dashboard/archive/paper-trades").status_code == 200
     assert client.get("/dashboard/archive/research").status_code == 200
     assert client.get("/dashboard/archive/snapshots").status_code == 200
+    assert client.get("/dashboard/command-center").status_code == 200
     assert client.get("/dashboard/legacy").status_code == 200
 
 
@@ -56,6 +58,7 @@ def test_root_advertises_domain_specific_dashboard_routes():
     assert payload["dashboard_archive_paper_trades"] == "/dashboard/archive/paper-trades"
     assert payload["dashboard_archive_research"] == "/dashboard/archive/research"
     assert payload["dashboard_archive_snapshots"] == "/dashboard/archive/snapshots"
+    assert payload["dashboard_command_center"] == "/dashboard/command-center"
     assert payload["dashboard_legacy"] == "/dashboard/legacy"
 
 
