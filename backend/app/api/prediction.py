@@ -6,6 +6,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, HTTPException, Query
 
 from app.prediction.kalshi_public import ALLOWED_STATUSES, PredictionProviderError, kalshi_public
+from app.prediction.policy import policy_snapshot
 
 router = APIRouter(prefix="/api/prediction", tags=["prediction-research"])
 
@@ -39,7 +40,8 @@ async def prediction_status() -> Dict[str, Any]:
         "live_execution": False,
         "live_capital_allowed": False,
         "automatic_real_money_execution": False,
-        "note": "Phase 1 exposes Kalshi public market discovery only. No account or order endpoints are wired.",
+        "strategy_policy": policy_snapshot(),
+        "note": "Phase 1 exposes Kalshi public single-market research only. Combos/parlays/multivariate markets are permanently blocked; no account or order endpoints are wired.",
     }
 
 
