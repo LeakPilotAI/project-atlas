@@ -14,6 +14,8 @@ def test_launcher_is_api_served_and_preserves_docker_desktop():
     assert 'http://127.0.0.1:8000/dashboard?v=desk-v7' in text
     assert 'Docker Desktop and other apps (Genesis, etc.) stay running.' in text
     assert 'Start-Process "http://127.0.0.1:3000' not in text
+    assert '-not [string]::IsNullOrWhiteSpace([string]$_)' in text
+    assert 'Join-Path ([string]$_) "Docker\\\\Docker\\\\Docker Desktop.exe"' in text
 
 
 def test_stop_script_scopes_shutdown_to_atlas():
