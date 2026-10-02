@@ -12,6 +12,12 @@ from app.services.perp_manual_service import perp_manual_service
 from app.services.perp_paper_observability import build_paper_observability
 from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
 from app.services.paper_risk_controls import paper_risk_controls
+from app.services.paper_risk import (
+    MAX_CONCURRENT_PAPER,
+    MAX_RISK_USD_PER_TRADE,
+    MAX_SESSION_LOSS_R,
+    check_paper_risk,
+)
 from app.services.paper_risk_window import utc_day_risk_snapshot
 from app.services.paper_journal import paper_journal
 from app.trading_core.perp_board import build_perp_board
@@ -31,13 +37,38 @@ async def paper_risk_status() -> Dict[str, Any]:
             "source": "PAPER_RISK_CONTROL_STORE",
         }
         session_net_r = float(risk_window["net_r"])
+    open_positions = list(paper_journal.list_open())
+    paper_open_count = sum(
+        1
+        for row in open_positions
+        if str(row.get("trade_type") or "PAPER").upper() == "PAPER"
+    )
+    standard_probe = check_paper_risk(
+        open_positions=open_positions,
+        requested_risk_usd=1.0,
+        session_net_r=session_net_r,
+        kill_switch=bool(paper_risk_controls.kill_switch),
+    )
     return {
         **paper_risk_controls.snapshot(),
         "session_net_r": session_net_r,
         "session_net_r_source": str(risk_window.get("source") or "UNKNOWN"),
         "risk_window": risk_window,
+        "paper_open_count": paper_open_count,
+        "limits": {
+            "max_concurrent_paper": MAX_CONCURRENT_PAPER,
+            "max_risk_usd_per_trade": MAX_RISK_USD_PER_TRADE,
+            "max_session_loss_r": MAX_SESSION_LOSS_R,
+        },
+        "standard_auto_mirror_probe": {
+            "requested_risk_usd": 1.0,
+            "allowed": bool(standard_probe.get("allowed")),
+            "blockers": list(standard_probe.get("blockers") or []),
+        },
         "mode": "PAPER_ONLY",
         "live_execution": False,
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
     }
 
 
