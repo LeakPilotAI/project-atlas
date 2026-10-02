@@ -67,6 +67,7 @@ def test_normalize_market_preserves_public_fixed_point_fields():
     assert row["rules"]["primary"].startswith("Resolves yes")
     assert row["market_structure"]["single_market"] is True
     assert row["market_structure"]["multivariate"] is False
+    assert row["timing"]["occurrence_datetime"] == "2026-10-03T00:00:00Z"
 
 
 def test_public_client_market_discovery_is_bounded_and_normalized(monkeypatch):
@@ -111,6 +112,8 @@ def test_prediction_status_is_explicitly_research_only():
     assert payload["provider"] == "kalshi"
     assert payload["provider_mode"] == "PUBLIC_MARKET_DATA_ONLY"
     assert payload["paper_ledger"] is False
+    assert payload["executable_orderbook"] is True
+    assert payload["historical_pre_event_prices"] is True
     assert payload["authenticated_provider_access"] is False
     assert payload["order_submission"] is False
     assert payload["portfolio_access"] is False
