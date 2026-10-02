@@ -612,3 +612,35 @@ This phase does not change any eligibility threshold, discovery bound, fill mode
 position limit, or auto-flat behavior. The remaining validation gate is still a
 genuine eligible candidate followed by a manual PAPER open and observed end-to-end
 auto-flat.
+
+## Phase 1.7 — Genuine eligible PAPER position under live auto-flat observation
+
+On 2026-10-02 the supported desktop runtime produced a completed Prediction scan with
+real public provider data:
+
+- metadata markets seen: 400
+- selected markets: 40
+- markets fully evaluated: 39
+- YES evaluations: 39
+- NO evaluations: 39
+- eligible candidates: 6
+- scanner errors: 0
+- scanner timeouts: 0
+- Discord eligible alerts: 1 delivered, 5 durably deduped, 0 failed
+
+The manual PAPER endpoint then re-evaluated `KXRAIN-26OCT03-PIT` YES at requested size
+10 and independently returned `eligible=true`, score 100. The canonical PAPER journal
+opened trade `21aa114b-10d` at executable entry VWAP $0.0200 with the conservative fee
+model. No live order was sent.
+
+The position has occurrence datetime `2026-10-05T05:00:00+00:00` and mandatory flat
+deadline `2026-10-05T04:30:00+00:00`. The running auto-flat worker has claimed the
+trade and reports `WAITING_FOR_FLAT_DEADLINE`, with blocked=false,
+deadline_violation=false, and no worker error.
+
+This is intentionally not counted as completed auto-flat validation yet. The gate
+`AUTO_FLAT_LIVE_VALIDATION_REQUIRED` remains in force until the real worker reaches
+the deadline and a truthful exit is persisted from executable bid depth. Unattended
+PAPER opening remains disabled. Live execution, live capital, and automatic real-money
+execution remain disabled.
+
