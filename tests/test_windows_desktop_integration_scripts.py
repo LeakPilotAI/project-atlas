@@ -65,7 +65,9 @@ def test_desktop_smoke_self_start_isolated_from_validation_console_ctrl_c():
     assert '$LauncherScript = Join-Path $PSScriptRoot "Atlas-Launch.ps1"' in text
     assert 'Start-Process -FilePath "powershell.exe"' in text
     assert '("-File", (' not in text  # guard against malformed tuple-style PowerShell
-    assert '"-File", (\'"{0}"\' -f $LauncherScript)' in text
+    assert '$launcherArgs = (\'-NoProfile -ExecutionPolicy Bypass -File "{0}"\' -f $LauncherScript)' in text
+    assert '-ArgumentList $launcherArgs' in text
+    assert '"-File", (\'"{0}"\' -f $LauncherScript)' not in text
     assert "-WorkingDirectory $Root -WindowStyle Hidden -PassThru" in text
     assert "Start-Process -FilePath $LaunchBat -WindowStyle Hidden -PassThru" not in text
 
