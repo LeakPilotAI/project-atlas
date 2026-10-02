@@ -92,3 +92,34 @@ The API explicitly reports:
 
 Real-money prediction-market execution is not part of this phase and requires a
 separate explicit future gate.
+
+
+## Permanent single-market policy
+
+Atlas prediction-market research now has a permanent provider-independent guardrail:
+
+- single market only
+- maximum one open prediction position at a time
+- combos banned
+- parlays banned
+- multivariate-event markets banned
+- stacking / pyramiding banned
+- pre-event entries only
+- mandatory exit before the event starts
+- no holding through event start
+- no holding to settlement
+- live execution disabled
+
+Kalshi discovery always sends `mve_filter=exclude`, and Atlas independently rejects
+rows that contain `mve_collection_ticker` or non-empty `mve_selected_legs`. The
+second guard remains in place even if a provider-side filter changes or regresses.
+
+## Planned paper strategy: pre-event repricing
+
+The next PAPER phase will test a pre-event repricing strategy, not an outcome-settlement
+strategy. Atlas will estimate the executable price available before event start and will
+only simulate an entry when the expected pre-event exit bid exceeds the executable entry
+ask by enough to cover spread, fees, modeled slippage and the required research margin.
+
+The paper engine must use executable orderbook prices and available size; it must never
+credit a fill from midpoint-only or chart-only movement.
