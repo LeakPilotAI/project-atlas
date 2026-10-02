@@ -212,6 +212,7 @@ def test_archive_research_page_contract():
         assert label in text
     assert "/api/archive/research-archive" in text
     assert "scores are ordinal, not probabilities" in text
+    assert ".preview{height:574px;overflow-y:auto" in text
     assert "Research win rate and executed-idea returns are therefore not shown." in text
     # Guard against copying mock reference telemetry into production while allowing
     # incidental digits in CSS or implementation details.
