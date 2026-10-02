@@ -353,7 +353,7 @@ class KalshiPublicMarketClient:
     async def get_candlesticks(
         self,
         *,
-        series_ticker: str,
+        series_ticker: str | None,
         ticker: str,
         start_ts: int,
         end_ts: int,
@@ -373,8 +373,29 @@ class KalshiPublicMarketClient:
             raise ValueError("Kalshi candlestick range exceeds Atlas bounded window")
 
         market_payload = await self.get_market(ticker)
+        resolved_series = str(series_ticker or "").strip().upper()
+        if not resolved_series:
+            event_ticker = str(
+                (market_payload.get("market") or {}).get("event_ticker") or ""
+            ).strip().upper()
+            if not event_ticker:
+                raise PredictionProviderError(
+                    "Kalshi market does not expose an event ticker for series resolution"
+                )
+            event_payload = await self._request(f"/events/{event_ticker}")
+            event = event_payload.get("event")
+            if not isinstance(event, dict):
+                raise PredictionProviderError(
+                    "Kalshi event response did not contain an event"
+                )
+            resolved_series = str(event.get("series_ticker") or "").strip().upper()
+            if not resolved_series:
+                raise PredictionProviderError(
+                    "Kalshi event did not expose a series ticker"
+                )
+
         payload = await self._request(
-            f"/series/{series_ticker}/markets/{ticker}/candlesticks",
+            f"/series/{resolved_series}/markets/{ticker}/candlesticks",
             params={
                 "start_ts": start,
                 "end_ts": end,
@@ -396,7 +417,8 @@ class KalshiPublicMarketClient:
             "execution": "DISABLED",
             "live_capital_allowed": False,
             "automatic_real_money_execution": False,
-            "series_ticker": series_ticker,
+            "series_ticker": resolved_series,
+            "series_resolution": "CALLER" if series_ticker else "EVENT_LOOKUP",
             "ticker": ticker,
             "period_interval_minutes": interval,
             "start_ts": start,
