@@ -46,6 +46,8 @@ def test_root_advertises_domain_specific_dashboard_routes():
     assert payload["dashboard"] == "/dashboard"
     assert payload["dashboard_perps"] == "/dashboard/perps"
     assert payload["dashboard_quality_dips"] == "/api/investments/quality-dips/view"
+    assert payload["dashboard_investment"] == "/dashboard/investment"
+    assert payload["dashboard_archive"] == "/dashboard/archive"
     assert payload["dashboard_legacy"] == "/dashboard/legacy"
 
 
