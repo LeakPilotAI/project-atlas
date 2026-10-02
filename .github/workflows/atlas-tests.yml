@@ -46,3 +46,7 @@ jobs:
           tests/test_future_overview_v4.py
           tests/test_dashboard_hub_v4.py
           tests/test_frontend_freeze_v4.py
+      - name: Run live Prediction PAPER scanner smoke
+        env:
+          PYTHONPATH: backend
+        run: python scripts/prediction_paper_live_smoke.py
