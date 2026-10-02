@@ -324,6 +324,7 @@ PERP_DASHBOARD_HTML = STATIC_DIR / "dashboard_shell.html"
 INVESTMENT_DASHBOARD_HTML = STATIC_DIR / "investment.html"
 ARCHIVE_DASHBOARD_HTML = STATIC_DIR / "archive.html"
 ARCHIVE_EXPORT_HTML = STATIC_DIR / "archive_export.html"
+ARCHIVE_PAPER_TRADES_HTML = STATIC_DIR / "archive_paper_trades.html"
 LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 
 
@@ -371,6 +372,11 @@ async def archive_dashboard_page() -> FileResponse:
 @app.get("/dashboard/archive/export")
 async def archive_export_dashboard_page() -> FileResponse:
     return _dashboard_response(ARCHIVE_EXPORT_HTML)
+
+
+@app.get("/dashboard/archive/paper-trades")
+async def archive_paper_trades_dashboard_page() -> FileResponse:
+    return _dashboard_response(ARCHIVE_PAPER_TRADES_HTML)
 
 
 @app.get("/dashboard/legacy")
@@ -452,6 +458,7 @@ async def root() -> Dict[str, str]:
         "dashboard_investment": "/dashboard/investment",
         "dashboard_archive": "/dashboard/archive",
         "dashboard_archive_export": "/dashboard/archive/export",
+        "dashboard_archive_paper_trades": "/dashboard/archive/paper-trades",
         "dashboard_legacy": "/dashboard/legacy",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
