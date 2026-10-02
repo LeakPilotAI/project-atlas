@@ -2283,6 +2283,15 @@ STATUS AT ADDENDUM
   not additional feature count and not premature live-capital activation.
 
 CONTINUOUS ATLAS REFINEMENT MODE — AFTER REMAINING BUILD PHASES
+SCOPE FREEZE:
+- Do not add new strategy families or speculative feature branches by default.
+- New work must address a demonstrated need in safety, data integrity, execution
+  realism, reliability, observability, evidence quality, or measured strategy weakness.
+- Prefer long-duration PAPER/shadow evidence and refinement of existing systems over
+  expanding Atlas simply because another trade idea is possible.
+- Prediction Markets, Day Trading, and Investment/Quality Dips are the intended
+  strategy/research scope unless the operator explicitly changes that scope later.
+
 Once the planned engineering/research surfaces above are implemented and verified,
 Atlas transitions from feature expansion to a continuing evidence loop across:
 Prediction Markets, Day Trading, and Investment/Quality Dips.
