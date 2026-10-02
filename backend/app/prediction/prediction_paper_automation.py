@@ -297,31 +297,32 @@ class PredictionPaperAutomation:
                     }
                     for row in eligible[:5]
                 ]
-                try:
-                    alert_result = await deliver_prediction_eligible_alerts(eligible)
-                    state["eligible_alerts_attempted"] = int(
-                        alert_result.get("attempted") or 0
-                    )
-                    state["eligible_alerts_delivered"] = int(
-                        alert_result.get("delivered") or 0
-                    )
-                    state["eligible_alerts_deduped"] = int(
-                        alert_result.get("deduped") or 0
-                    )
-                    state["eligible_alerts_failed"] = int(
-                        alert_result.get("failed") or 0
-                    )
-                    state["eligible_alert_last_key"] = alert_result.get(
-                        "last_alert_key"
-                    )
-                    state["eligible_alert_last_error"] = alert_result.get(
-                        "last_error"
-                    )
-                except Exception as exc:
-                    # Alert transport must never invalidate scanner evidence or
-                    # create an execution side effect. Failed delivery is retryable.
-                    state["eligible_alerts_failed"] = len(eligible)
-                    state["eligible_alert_last_error"] = type(exc).__name__
+                if eligible:
+                    try:
+                        alert_result = await deliver_prediction_eligible_alerts(eligible)
+                        state["eligible_alerts_attempted"] = int(
+                            alert_result.get("attempted") or 0
+                        )
+                        state["eligible_alerts_delivered"] = int(
+                            alert_result.get("delivered") or 0
+                        )
+                        state["eligible_alerts_deduped"] = int(
+                            alert_result.get("deduped") or 0
+                        )
+                        state["eligible_alerts_failed"] = int(
+                            alert_result.get("failed") or 0
+                        )
+                        state["eligible_alert_last_key"] = alert_result.get(
+                            "last_alert_key"
+                        )
+                        state["eligible_alert_last_error"] = alert_result.get(
+                            "last_error"
+                        )
+                    except Exception as exc:
+                        # Alert transport must never invalidate scanner evidence or
+                        # create an execution side effect. Failed delivery is retryable.
+                        state["eligible_alerts_failed"] = len(eligible)
+                        state["eligible_alert_last_error"] = type(exc).__name__
                 success = True
             except asyncio.CancelledError:
                 raise
