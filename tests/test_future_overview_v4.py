@@ -18,7 +18,7 @@ def test_future_overview_contract():
         "Prediction Markets",
         "Market Overview",
         "Price Chart",
-        "Current Setup / Future Prediction Hub",
+        "Current Setup / Prediction Research",
         "Recent PAPER Trades",
         "Performance",
         "Expanded Atlas Roadmap",
@@ -35,13 +35,16 @@ def test_future_overview_contract():
         "/api/archive/paper-trades?limit=100",
         "/api/investments/quality-dips?limit=8",
         "/api/perps/candles?symbol=",
+        "/api/prediction/status",
+        "/api/prediction/markets?status=open&limit=6",
     ):
         assert endpoint in text
 
-    assert "No Kalshi or other prediction-market provider is connected" in text
-    assert "PAPER-only outcome ledger first" in text
-    assert "Separate future live-capital gate" in text
-    assert "prediction markets are not connected" in text
+    assert "Kalshi Public Market Research" in text
+    assert "Public market discovery / normalized metadata" in text
+    assert "No Kalshi API key or portfolio access" in text
+    assert "No order submission or live execution" in text
+    assert "PAPER outcome ledger, settlement verification and calibration remain" in text
     assert "no automatic real-money execution" in text
 
     # Reference mock telemetry must not be copied into the real future shell.
