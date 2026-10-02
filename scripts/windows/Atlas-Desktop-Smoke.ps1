@@ -150,11 +150,14 @@ if ($StartAtlasIfNeeded -and -not $health.ok) {
     # never be able to stop the Atlas launcher that this smoke run just started.
     # An explicit powershell.exe child receives its own hidden process/console boundary
     # while still running the canonical Atlas-Launch.ps1 lifecycle and stop handling.
-    $launcherProcess = Start-Process -FilePath "powershell.exe" -ArgumentList @(
-        "-NoProfile",
-        "-ExecutionPolicy", "Bypass",
-        "-File", ('"{0}"' -f $LauncherScript)
-    ) -WorkingDirectory $Root -WindowStyle Hidden -PassThru
+    # Use a single command-line string here. Windows PowerShell 5.1 Start-Process
+    # joins ArgumentList elements before CreateProcess; embedded quoting in an array
+    # can be lost for paths containing spaces (for example Project Atlas).
+    # A fully quoted string preserves the -File path while retaining a separate
+    # hidden powershell.exe process/console boundary.
+    $launcherArgs = ('-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $LauncherScript)
+    $launcherProcess = Start-Process -FilePath "powershell.exe" -ArgumentList $launcherArgs `
+        -WorkingDirectory $Root -WindowStyle Hidden -PassThru
     $launcherPid = [int]$launcherProcess.Id
     for ($i = 1; $i -le 60; $i++) {
         Start-Sleep -Seconds 2
