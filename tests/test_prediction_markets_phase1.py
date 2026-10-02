@@ -404,7 +404,6 @@ def test_public_candlestick_read_resolves_series_from_event(monkeypatch):
     start = 1_700_000_000
     payload = asyncio.run(
         client.get_candlesticks(
-            series_ticker=None,
             ticker="KXTEST-26OCT02-Y",
             start_ts=start,
             end_ts=start + 3600,
