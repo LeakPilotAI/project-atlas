@@ -6,7 +6,8 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.prediction.kalshi_public import KalshiPublicMarketClient, normalize_market
+from app.prediction.kalshi_public import KalshiPublicMarketClient, PredictionProviderError, normalize_market
+from app.prediction.policy import is_multivariate_market, policy_snapshot
 import app.api.prediction as prediction_api
 
 
@@ -42,6 +43,8 @@ def sample_market():
         "rules_secondary": "",
         "exchange_index": 0,
         "is_provisional": False,
+        "mve_collection_ticker": "",
+        "mve_selected_legs": [],
     }
 
 
@@ -55,6 +58,8 @@ def test_normalize_market_preserves_public_fixed_point_fields():
     assert row["activity"]["volume_contracts"] == "125.50"
     assert row["activity"]["liquidity_dollars"] == "512.3400"
     assert row["rules"]["primary"].startswith("Resolves yes")
+    assert row["market_structure"]["single_market"] is True
+    assert row["market_structure"]["multivariate"] is False
 
 
 def test_public_client_market_discovery_is_bounded_and_normalized(monkeypatch):
@@ -80,12 +85,18 @@ def test_public_client_market_discovery_is_bounded_and_normalized(monkeypatch):
     assert captured["params"]["status"] == "open"
     assert captured["params"]["limit"] == 200
     assert captured["params"]["series_ticker"] == "KXTEST"
+    assert captured["params"]["mve_filter"] == "exclude"
     assert payload["count"] == 1
     assert payload["cursor"] == "NEXT"
     assert payload["mode"] == "RESEARCH_ONLY"
     assert payload["execution"] == "DISABLED"
     assert payload["live_capital_allowed"] is False
     assert payload["automatic_real_money_execution"] is False
+    assert payload["filters"]["mve_filter"] == "exclude"
+    assert payload["policy"]["combos_allowed"] is False
+    assert payload["policy"]["parlays_allowed"] is False
+    assert payload["policy"]["stacking_allowed"] is False
+    assert payload["policy"]["max_concurrent_prediction_positions"] == 1
 
 
 def test_prediction_status_is_explicitly_research_only():
@@ -99,6 +110,17 @@ def test_prediction_status_is_explicitly_research_only():
     assert payload["live_execution"] is False
     assert payload["live_capital_allowed"] is False
     assert payload["automatic_real_money_execution"] is False
+    policy = payload["strategy_policy"]
+    assert policy["single_market_only"] is True
+    assert policy["max_concurrent_prediction_positions"] == 1
+    assert policy["combos_allowed"] is False
+    assert policy["parlays_allowed"] is False
+    assert policy["multivariate_allowed"] is False
+    assert policy["stacking_allowed"] is False
+    assert policy["pre_event_only"] is True
+    assert policy["must_exit_before_event_start"] is True
+    assert policy["hold_through_event_start"] is False
+    assert policy["hold_to_settlement"] is False
 
 
 def test_prediction_markets_route_uses_read_only_provider(monkeypatch):
@@ -148,6 +170,69 @@ def test_prediction_routes_reject_invalid_status_and_ticker():
     client = TestClient(app)
     assert client.get("/api/prediction/markets?status=trading").status_code == 400
     assert client.get("/api/prediction/markets/not%20safe").status_code == 400
+
+
+def test_multivariate_market_detection_uses_provider_metadata():
+    single = sample_market()
+    assert is_multivariate_market(single) is False
+
+    combo = sample_market()
+    combo["mve_collection_ticker"] = "KXMVE-COLLECTION"
+    assert is_multivariate_market(combo) is True
+
+    combo2 = sample_market()
+    combo2["mve_selected_legs"] = [{"market_ticker": "LEG-1", "side": "yes"}]
+    assert is_multivariate_market(combo2) is True
+
+
+def test_market_discovery_drops_combo_rows_even_if_provider_returns_them(monkeypatch):
+    client = KalshiPublicMarketClient()
+    combo = sample_market()
+    combo["ticker"] = "KXMVE-BLOCKED"
+    combo["mve_collection_ticker"] = "KXMVE-COLLECTION"
+    combo["mve_selected_legs"] = [{"market_ticker": "LEG-1", "side": "yes"}]
+
+    async def fake_request(path, *, params=None):
+        assert params["mve_filter"] == "exclude"
+        return {"markets": [combo, sample_market()], "cursor": None}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    payload = asyncio.run(client.get_markets(status="open", limit=5))
+    assert payload["count"] == 1
+    assert payload["provider_rows_blocked_by_single_market_policy"] == 1
+    assert payload["markets"][0]["ticker"] == "KXTEST-26OCT02-Y"
+
+
+def test_market_detail_hard_blocks_multivariate_market(monkeypatch):
+    client = KalshiPublicMarketClient()
+    combo = sample_market()
+    combo["mve_collection_ticker"] = "KXMVE-COLLECTION"
+
+    async def fake_request(path, *, params=None):
+        return {"market": combo}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    try:
+        asyncio.run(client.get_market("KXMVE-BLOCKED"))
+    except PredictionProviderError as exc:
+        assert "single-market policy" in str(exc)
+    else:
+        raise AssertionError("combo market detail must be blocked")
+
+
+def test_permanent_prediction_policy_is_single_market_pre_event_only():
+    policy = policy_snapshot()
+    assert policy["single_market_only"] is True
+    assert policy["max_concurrent_prediction_positions"] == 1
+    assert policy["combos_allowed"] is False
+    assert policy["parlays_allowed"] is False
+    assert policy["multivariate_allowed"] is False
+    assert policy["stacking_allowed"] is False
+    assert policy["pre_event_only"] is True
+    assert policy["must_exit_before_event_start"] is True
+    assert policy["hold_through_event_start"] is False
+    assert policy["hold_to_settlement"] is False
+    assert policy["live_execution"] is False
 
 
 def test_prediction_phase_one_contains_no_authenticated_or_order_surface():
