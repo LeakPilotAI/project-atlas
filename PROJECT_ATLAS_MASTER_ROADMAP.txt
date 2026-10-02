@@ -2241,6 +2241,18 @@ Decision surface:
 Long and short evidence, policies, outcomes and readiness remain independently
 measured; weak long performance is never justification for forcing short trades.
 
+Operator modes — mirror Quality Dips:
+- MANUAL PAPER: Atlas surfaces a qualified Quality Extremes opportunity with frozen
+  thesis/evidence and the operator may explicitly open/close a PAPER position.
+- AUTO PAPER: Atlas may automatically open/manage qualifying PAPER positions only
+  after its own safety/evidence gate is implemented and verified.
+- Both modes use the same canonical PAPER fill/cost/risk/evidence model and persist
+  an explicit execution_origin = MANUAL_PAPER or AUTO_PAPER for cohort comparison.
+- Manual PAPER remains available even when AUTO PAPER is disabled.
+- AUTO PAPER never implies LIVE AUTO. Live execution is a separate later gate.
+- Max positions, sizing, exposure, invalidation, exits and portfolio risk must be
+  explicit and bounded before AUTO PAPER is enabled.
+
 Short-candidate research may consider, where captured and validated:
 - proximity/distance to all-time or major multi-period highs
 - failed breakout / rejection behavior
@@ -2254,6 +2266,20 @@ Short-candidate research may consider, where captured and validated:
 - explicit thesis invalidation and exit conditions
 Near an all-time high alone MUST NOT qualify a short. Strong assets can continue
 price discovery; Atlas must distinguish strength from evidence-backed exhaustion.
+
+Instrument-model research — keep distinct:
+- CASH LONG of a -1x inverse ETF may model bearish index exposure without the
+  operator directly borrowing stock; record the fund's daily-reset/compounding
+  behavior, expense ratio, tracking difference and holding-period drift.
+- DIRECT STOCK SHORT is a borrowed-share/margin-account instrument even when Atlas
+  deliberately sizes gross exposure near 1x; model borrow availability/fees,
+  maintenance requirements, buy-in/forced-close risk and theoretically unbounded
+  upside loss.
+- DERIVATIVE/perpetual/options variants are separate cohorts; never mix their
+  leverage, liquidation, funding, expiry or convexity economics into cash/inverse
+  ETF evidence.
+- Atlas must not label any short mechanism "safe", "no liquidation", or equivalent;
+  instrument-specific forced-close/loss risks remain visible.
 
 Long-duration PAPER short / hedge safety:
 - begin with unlevered or approximately 1x effective exposure in research/PAPER
