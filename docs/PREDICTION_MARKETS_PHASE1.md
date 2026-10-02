@@ -206,3 +206,119 @@ When series_ticker is omitted from the Atlas candlestick route, Atlas:
 This keeps the browser/PAPER layer market-ticker driven while preserving the provider's
 required series path parameter. The response records series_resolution as CALLER or
 EVENT_LOOKUP.
+
+
+## Phase 1.2 — Prediction PAPER repricing engine
+
+Atlas now has an isolated append-only prediction PAPER engine. It is separate from
+the Hyperliquid PAPER journal and does not use authenticated Kalshi account or order
+surfaces.
+
+### PAPER storage
+
+- backend/data/prediction/paper_candidates.jsonl
+- backend/data/prediction/paper_trades.jsonl
+
+### PAPER API
+
+- GET /api/prediction/paper/status
+- POST /api/prediction/paper/evaluate/{ticker}
+- POST /api/prediction/paper/open/{ticker}
+- POST /api/prediction/paper/close
+
+These endpoints mutate Atlas PAPER evidence only. They do not create, cancel, amend,
+or query live Kalshi orders or positions.
+
+### Strategy model
+
+Version:
+- prediction-paper-reprice-v1
+
+Initial scorer:
+- PRE_EVENT_RECENT_RECLAIM_V1
+
+The scorer is deliberately conservative. It does not predict final settlement probability.
+Its projected pre-event exit is the highest recently observed executable bid from the
+selected side's recent quote history.
+
+Candidate inputs include:
+
+- single-market policy status
+- occurrence_datetime
+- time remaining to the mandatory flat deadline
+- executable entry depth
+- current executable spread
+- 24h volume
+- open interest
+- recent bid/ask quote history
+- recent quote instability
+- recent executable reclaim level
+- estimated entry/exit fees
+- estimated net edge per contract
+
+Default rejection conditions include:
+
+- combo / multivariate market
+- missing occurrence time
+- too close to event start
+- mandatory flat window reached
+- insufficient executable depth
+- missing executable quote
+- spread wider than $0.08
+- 24h volume below 20 contracts
+- open interest below 20 contracts
+- fewer than 5 usable quote-history bars
+- quote jump greater than $0.20
+- no recent reclaim edge
+- net PAPER edge below $0.02 per contract after estimated fees
+
+These defaults are PAPER research settings, not live trading authorization.
+
+### Fill realism
+
+PAPER entry:
+- BUY the selected YES/NO side
+- consume real ask depth cheapest-first
+- require complete fill
+- store level-by-level quantity and price
+- store VWAP
+- store depth slippage versus best ask
+
+PAPER exit:
+- SELL the same side
+- consume real bid depth best-first
+- require complete fill
+- store VWAP and level-by-level fill evidence
+
+No midpoint fill, chart-touch fill, hidden liquidity assumption, stacking, averaging down,
+or multi-position prediction exposure is permitted.
+
+### Fees
+
+The PAPER engine currently uses a conservative general taker fee estimator based on the
+published Kalshi prediction-market formula:
+
+fee = round up to the next cent of 0.07 * contracts * price * (1 - price)
+
+Atlas computes the estimate per consumed depth level and sums the result. Kalshi can use
+different schedules for some products, so this PAPER fee model is explicitly versioned
+and is not treated as an exact promise of a future live fee.
+
+Fee model version:
+- kalshi-general-taker-conservative-v1
+
+### Position policy
+
+- maximum one open prediction PAPER position
+- one side only
+- no stacking / pyramiding
+- no combos / parlays / multivariate markets
+- mandatory exit before event start
+- no settlement holding
+- counts_for_live = false
+
+### UI status
+
+Prediction PAPER backend functionality now exists, but the dedicated Prediction Paper
+Trades frontend remains intentionally disabled / COMING SOON until the backend validation
+gate is complete.
