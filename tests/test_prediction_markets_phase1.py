@@ -6,7 +6,13 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.prediction.kalshi_public import KalshiPublicMarketClient, PredictionProviderError, normalize_market
+from app.prediction.kalshi_public import (
+    KalshiPublicMarketClient,
+    PredictionProviderError,
+    normalize_candlestick,
+    normalize_market,
+    normalize_orderbook,
+)
 from app.prediction.policy import is_multivariate_market, policy_snapshot
 import app.api.prediction as prediction_api
 
@@ -39,6 +45,7 @@ def sample_market():
         "updated_time": "2026-10-02T00:00:00Z",
         "open_time": "2026-10-01T00:00:00Z",
         "close_time": "2026-10-03T00:00:00Z",
+        "occurrence_datetime": "2026-10-03T00:00:00Z",
         "rules_primary": "Resolves yes if the stated condition occurs.",
         "rules_secondary": "",
         "exchange_index": 0,
@@ -233,6 +240,208 @@ def test_permanent_prediction_policy_is_single_market_pre_event_only():
     assert policy["hold_through_event_start"] is False
     assert policy["hold_to_settlement"] is False
     assert policy["live_execution"] is False
+
+
+def test_orderbook_normalization_derives_executable_asks_from_opposite_bids():
+    book = normalize_orderbook(
+        {
+            "orderbook_fp": {
+                "yes_dollars": [["0.4200", "40.00"], ["0.4000", "10.00"]],
+                "no_dollars": [["0.5600", "30.00"], ["0.5400", "20.00"]],
+            }
+        }
+    )
+    assert book["yes"]["best_bid_dollars"] == "0.4200"
+    assert book["yes"]["best_ask_dollars"] == "0.4400"
+    assert book["yes"]["spread_dollars"] == "0.0200"
+    assert book["yes"]["asks"][0]["quantity_contracts"] == "30.00"
+    assert book["no"]["best_bid_dollars"] == "0.5600"
+    assert book["no"]["best_ask_dollars"] == "0.5800"
+    assert book["no"]["spread_dollars"] == "0.0200"
+
+
+def test_public_orderbook_read_is_single_market_and_depth_bounded(monkeypatch):
+    client = KalshiPublicMarketClient()
+    calls = []
+
+    async def fake_request(path, *, params=None):
+        calls.append((path, dict(params or {})))
+        if path.endswith("/orderbook"):
+            return {
+                "orderbook_fp": {
+                    "yes_dollars": [["0.4100", "25.00"]],
+                    "no_dollars": [["0.5700", "30.00"]],
+                }
+            }
+        return {"market": sample_market()}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    payload = asyncio.run(client.get_orderbook("KXTEST-26OCT02-Y", depth=999))
+    assert calls[0][0] == "/markets/KXTEST-26OCT02-Y"
+    assert calls[1] == ("/markets/KXTEST-26OCT02-Y/orderbook", {"depth": 100})
+    assert payload["depth"] == 100
+    assert payload["orderbook"]["yes"]["best_bid_dollars"] == "0.4100"
+    assert payload["orderbook"]["yes"]["best_ask_dollars"] == "0.4300"
+    assert payload["orderbook"]["yes"]["asks"][0]["quantity_contracts"] == "30.00"
+    assert payload["execution"] == "DISABLED"
+    assert payload["live_capital_allowed"] is False
+
+
+def test_candlestick_normalization_preserves_bid_ask_and_activity():
+    row = normalize_candlestick(
+        {
+            "end_period_ts": 123,
+            "yes_bid": {
+                "open_dollars": "0.4000",
+                "low_dollars": "0.3900",
+                "high_dollars": "0.4300",
+                "close_dollars": "0.4200",
+            },
+            "yes_ask": {
+                "open_dollars": "0.4300",
+                "low_dollars": "0.4200",
+                "high_dollars": "0.4500",
+                "close_dollars": "0.4400",
+            },
+            "price": {
+                "open_dollars": "0.4100",
+                "low_dollars": "0.4000",
+                "high_dollars": "0.4400",
+                "close_dollars": "0.4300",
+                "mean_dollars": "0.4250",
+                "previous_dollars": "0.4050",
+                "min_dollars": "0.4000",
+                "max_dollars": "0.4400",
+            },
+            "volume_fp": "19.50",
+            "open_interest_fp": "88.00",
+        }
+    )
+    assert row["end_period_ts"] == 123
+    assert row["yes_bid"]["close_dollars"] == "0.4200"
+    assert row["yes_ask"]["close_dollars"] == "0.4400"
+    assert row["price"]["mean_dollars"] == "0.4250"
+    assert row["volume_contracts"] == "19.50"
+    assert row["open_interest_contracts"] == "88.00"
+
+
+def test_public_candlestick_read_is_bounded_and_single_market(monkeypatch):
+    client = KalshiPublicMarketClient()
+    calls = []
+
+    async def fake_request(path, *, params=None):
+        calls.append((path, dict(params or {})))
+        if path.endswith("/candlesticks"):
+            return {
+                "ticker": "KXTEST-26OCT02-Y",
+                "candlesticks": [
+                    {
+                        "end_period_ts": 200,
+                        "yes_bid": {"close_dollars": "0.4300"},
+                        "yes_ask": {"close_dollars": "0.4500"},
+                        "price": {"close_dollars": "0.4400"},
+                        "volume_fp": "2.00",
+                        "open_interest_fp": "5.00",
+                    },
+                    {
+                        "end_period_ts": 100,
+                        "yes_bid": {"close_dollars": "0.4100"},
+                        "yes_ask": {"close_dollars": "0.4300"},
+                        "price": {"close_dollars": "0.4200"},
+                        "volume_fp": "1.00",
+                        "open_interest_fp": "4.00",
+                    },
+                ],
+            }
+        return {"market": sample_market()}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    start = 1_700_000_000
+    end = start + 60 * 60 * 24
+    payload = asyncio.run(
+        client.get_candlesticks(
+            series_ticker="KXTEST",
+            ticker="KXTEST-26OCT02-Y",
+            start_ts=start,
+            end_ts=end,
+            period_interval=60,
+            include_latest_before_start=True,
+        )
+    )
+    assert calls[0][0] == "/markets/KXTEST-26OCT02-Y"
+    assert calls[1][0] == "/series/KXTEST/markets/KXTEST-26OCT02-Y/candlesticks"
+    assert calls[1][1]["period_interval"] == 60
+    assert calls[1][1]["include_latest_before_start"] is True
+    assert payload["count"] == 2
+    assert [row["end_period_ts"] for row in payload["candlesticks"]] == [100, 200]
+    assert payload["candlesticks"][0]["yes_ask"]["close_dollars"] == "0.4300"
+
+
+def test_public_candlestick_read_rejects_unbounded_window():
+    client = KalshiPublicMarketClient()
+    start = 1_700_000_000
+    try:
+        asyncio.run(
+            client.get_candlesticks(
+                series_ticker="KXTEST",
+                ticker="KXTEST-26OCT02-Y",
+                start_ts=start,
+                end_ts=start + (60 * 60 * 1001),
+                period_interval=60,
+            )
+        )
+    except ValueError as exc:
+        assert "bounded window" in str(exc)
+    else:
+        raise AssertionError("oversized candlestick range must be rejected")
+
+
+def test_prediction_orderbook_route_uses_read_only_provider(monkeypatch):
+    async def fake_orderbook(ticker, *, depth=20):
+        return {
+            "provider": "kalshi",
+            "mode": "RESEARCH_ONLY",
+            "execution": "DISABLED",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+            "ticker": ticker,
+            "depth": depth,
+            "orderbook": {"yes": {"best_bid_dollars": "0.4100", "best_ask_dollars": "0.4300"}},
+        }
+
+    monkeypatch.setattr(prediction_api.kalshi_public, "get_orderbook", fake_orderbook)
+    response = TestClient(app).get("/api/prediction/markets/KXTEST-26OCT02-Y/orderbook?depth=25")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["depth"] == 25
+    assert payload["orderbook"]["yes"]["best_ask_dollars"] == "0.4300"
+
+
+def test_prediction_candlestick_route_uses_read_only_provider(monkeypatch):
+    async def fake_candles(**kwargs):
+        return {
+            "provider": "kalshi",
+            "mode": "RESEARCH_ONLY",
+            "execution": "DISABLED",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+            "series_ticker": kwargs["series_ticker"],
+            "ticker": kwargs["ticker"],
+            "period_interval_minutes": kwargs["period_interval"],
+            "count": 1,
+            "candlesticks": [{"end_period_ts": kwargs["end_ts"], "yes_bid": {}, "yes_ask": {}}],
+        }
+
+    monkeypatch.setattr(prediction_api.kalshi_public, "get_candlesticks", fake_candles)
+    response = TestClient(app).get(
+        "/api/prediction/markets/KXTEST-26OCT02-Y/candlesticks"
+        "?series_ticker=KXTEST&start_ts=1700000000&end_ts=1700003600&period_interval=60"
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["series_ticker"] == "KXTEST"
+    assert payload["ticker"] == "KXTEST-26OCT02-Y"
+    assert payload["count"] == 1
 
 
 def test_prediction_phase_one_contains_no_authenticated_or_order_surface():
