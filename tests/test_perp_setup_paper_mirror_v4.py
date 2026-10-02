@@ -1,6 +1,31 @@
 import asyncio
 
+import pytest
+
 import app.services.perp_setup_paper_mirror as mod
+
+
+@pytest.fixture(autouse=True)
+def _isolate_unit_tests_from_runtime_paper_risk(monkeypatch):
+    """Keep mirror unit tests deterministic and independent of the operator's real PAPER journal.
+
+    Production must continue to enforce the durable UTC-day loss window. These tests use a
+    FakeJournal, so letting utc_day_risk_snapshot() read backend/data/paper_journal.jsonl
+    makes their result depend on whatever PAPER PnL the local Atlas runtime accumulated today.
+    Dedicated paper-risk tests cover the real loss-stop and kill-switch behavior separately.
+    """
+    monkeypatch.setattr(mod.paper_risk_controls, "kill_switch", False)
+    monkeypatch.setattr(
+        mod,
+        "utc_day_risk_snapshot",
+        lambda: {
+            "net_r": 0.0,
+            "closed": 0,
+            "window": "UTC_DAY",
+            "window_date": "UNIT_TEST",
+            "source": "TEST_ISOLATED_PAPER_JOURNAL",
+        },
+    )
 
 
 class FakeJournal:
