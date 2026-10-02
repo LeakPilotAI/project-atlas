@@ -17,7 +17,7 @@
 <body><main class="wrap">
 <div class="head"><div><div class="eyebrow">PREDICTION MARKETS / PAPER EVIDENCE</div><h1>Pre-Event Repricing Monitor</h1><div class="sub">Scanner evidence, depth-aware PAPER fills, rejection reasons, and mandatory auto-flat state.</div></div><div class="lock" id="lock">AUTO-OPEN LOCKED · LIVE OFF</div></div>
 <section class="metrics">
-<div class="metric"><div class="label">Discovered</div><div class="value" id="discovered">—</div></div>
+<div class="metric"><div class="label">Pool / Selected</div><div class="value" id="discovered">—</div></div>
 <div class="metric"><div class="label">Full Evaluations</div><div class="value cyan" id="evaluated">—</div></div>
 <div class="metric"><div class="label">Eligible</div><div class="value good" id="eligible">—</div></div>
 <div class="metric"><div class="label">Rejected</div><div class="value" id="rejected">—</div></div>
@@ -62,7 +62,7 @@ function automationView(a){
 async function refresh(){
  const [sr,cr]=await Promise.all([atlasFetch('/api/prediction/paper/status?limit=100'),atlasFetch('/api/prediction/paper/candidates?limit=200')]);
  const status=await sr.json(), evidence=await cr.json(), a=status.automation||{}, s=a.scanner||{}, summary=status.summary||{};
- $('discovered').textContent=num(s.markets_discovered);$('evaluated').textContent=num(s.markets_fully_evaluated);$('eligible').textContent=num(s.eligible_count);
+ $('discovered').textContent=num(s.metadata_markets_seen)+' / '+num(s.markets_selected??s.markets_discovered);$('evaluated').textContent=num(s.markets_fully_evaluated);$('eligible').textContent=num(s.eligible_count);
  $('rejected').textContent=num(s.rejected_count);$('errors').textContent=num(s.error_count)+' / '+num(s.timeout_count);$('positions').textContent=num(summary.open_positions);
  $('closed').textContent=num(summary.closed_trades);$('pnl').textContent=money(summary.net_pnl_dollars);
  const locked=!a.automatic_paper_position_opening && !a.live_capital_allowed;$('lock').textContent=locked?'AUTO-OPEN LOCKED · LIVE OFF':'SAFETY STATE CHANGED';
