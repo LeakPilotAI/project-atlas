@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Archive / Paper Trades — Atlas</title>
+<style>
+:root{color-scheme:dark;--cyan:#35e5ee;--green:#00ddb0;--red:#ff304c;--amber:#efb35a;--text:#e1eef5;--muted:#86a5b5;--panel:#031016;--line:#173d49;--mono:Consolas,monospace;--sans:"Segoe UI",Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:transparent;color:var(--text);font:14px/1.38 var(--sans)}button,input,select{font:inherit;color:inherit}.workspace{max-width:2280px;margin:auto;padding:8px 24px 16px}
+.context{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:9px}.context button{min-height:42px;border:1px solid #1c4655;background:#031017;border-radius:5px;text-transform:uppercase;font-size:12px;color:#c7d9e2;letter-spacing:.035em;cursor:pointer}.context button.active{border-color:var(--red);background:linear-gradient(120deg,#3b0912,#08090d);box-shadow:inset 0 0 18px #ff304c22,0 0 12px #ff304c2b;color:white}.context button[disabled]{opacity:.65;cursor:not-allowed}
+.metric,.panel{position:relative;border:1px solid #65313a;background:linear-gradient(145deg,rgba(5,18,24,.97),rgba(1,6,9,.98));box-shadow:inset 0 1px #36e5ef12,0 0 9px #ff304c12}.metric:before,.panel:before{content:"";position:absolute;pointer-events:none;inset:-1px;border-radius:inherit;border-top:1px solid #2d7b8a;border-bottom:1px solid #b9223a;mask-image:linear-gradient(115deg,#000,transparent 30%,transparent 68%,#000)}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin-bottom:10px}.metric{border-radius:14px 4px 14px 4px;padding:12px 13px;min-height:92px;display:flex;align-items:center;gap:10px}.icon{width:46px;height:46px;border:1px solid #17606b;border-radius:50%;display:grid;place-items:center;font-size:21px;color:var(--cyan);flex:none;box-shadow:inset 0 0 16px #25dfe818}.label{font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}.value{font:23px/1.08 var(--mono);margin:4px 0 2px}.note,.sub{font-size:11px;color:var(--muted)}.good{color:var(--green)!important}.warn{color:var(--amber)!important}.bad{color:var(--red)!important}.cyan{color:var(--cyan)!important}
+.panel{border-radius:15px 4px 15px 4px;padding:12px}.panelHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.panelHead h2{margin:0;font-size:15px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan)}.panelHead h2:before{content:"◇";margin-right:8px}
+.filters{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.filters label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.filters select,.filters input{border:1px solid #1c4655;background:#031017;border-radius:5px;padding:7px 9px;font-size:11px}.filters input{margin-left:auto;min-width:190px}
+.mainGrid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(430px,.92fr);gap:10px;align-items:start}.tableWrap{height:420px;overflow:auto;border-top:1px solid #15333d;scrollbar-color:#1c5360 #02080b}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px;font-variant-numeric:tabular-nums}th{position:sticky;top:0;background:#071117;color:#7ea1b2;font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:550;z-index:1}td,th{padding:7px 8px;border-bottom:1px solid #14313a;text-align:left}tbody tr{cursor:pointer}tbody tr:hover,tbody tr.on{background:#08202a}.symbol{font-weight:700}.mono{font-family:var(--mono)}.state{display:inline-flex;min-width:58px;justify-content:center;padding:3px 7px;border:1px solid currentColor;border-radius:4px;font-size:10px;font-weight:650}.WIN{color:var(--green)}.LOSS{color:var(--red)}.SCRATCH{color:var(--amber)}
+.stack{display:flex;flex-direction:column;gap:10px}.chartWrap{position:relative;min-height:250px;border:1px solid #163b46;background:#020a0d;border-radius:5px;overflow:hidden}.chartWrap canvas{display:block;width:100%;height:250px}.chartTitle{position:absolute;left:10px;top:7px;font-size:10px;color:var(--muted);z-index:2}.chartTabs{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:7px}.chartTabs button{border:1px solid #1c4655;background:#031017;border-radius:5px;padding:6px;font-size:10px;cursor:pointer}.chartTabs button.on{border-color:var(--red);box-shadow:0 0 8px #ff304c27;color:#fff}
+.breakGrid{display:grid;grid-template-columns:1.25fr .8fr;gap:10px}.breakList{display:flex;flex-direction:column;gap:6px}.breakRow{display:grid;grid-template-columns:95px 45px 1fr 58px;gap:7px;align-items:center;font-size:11px}.bar{height:7px;background:#0b2028;border-radius:2px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#00a5b0,var(--cyan))}.direction{display:grid;grid-template-columns:1fr 1fr;gap:8px}.dirCard{border:1px solid #173d49;background:#041219;padding:10px;border-radius:5px}.dirCard b{font:20px var(--mono)}.dirCard small{display:block;color:var(--muted)}
+.bottomGrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(430px,.8fr);gap:10px;margin-top:10px}.tradeGrid{display:grid;grid-template-columns:220px minmax(0,1fr) 270px;gap:10px}.factGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.fact{padding:9px;border:1px solid #183f4b;background:#041017;border-radius:5px}.fact small{color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em}.fact b{display:block;font:16px var(--mono);margin-top:4px}.tradeChart{position:relative;min-height:265px;border:1px solid #163b46;background:#020a0d;border-radius:5px;overflow:hidden}.tradeChart canvas{width:100%;height:265px;display:block}.tradeChart .caption{position:absolute;left:9px;top:7px;color:var(--muted);font-size:10px;z-index:2}.notesBox{border:1px solid #173d49;background:#041219;border-radius:5px;padding:11px;min-height:265px}.notesBox h3{margin:0 0 9px;font-size:12px;color:var(--cyan);text-transform:uppercase}.noteLine{padding:7px 0;border-bottom:1px solid #14313a}.noteLine:last-child{border-bottom:0}
+.statGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.stat{border:1px solid #173d49;background:#041219;padding:9px;border-radius:5px}.stat small{display:block;color:var(--muted);font-size:9px;text-transform:uppercase}.stat b{font:18px var(--mono)}.unavailable{display:grid;place-content:center;text-align:center;min-height:96px;padding:14px;border:1px dashed #23434d;background:repeating-linear-gradient(0deg,transparent,transparent 23px,#1a56600d 24px);color:var(--muted);font-size:11px;border-radius:5px}.unavailable strong{display:block;color:var(--amber);font-size:12px;margin-bottom:5px}.footer{padding:8px 2px 0;color:var(--muted);font-size:10px}
+@media(max-width:1180px){.metrics{grid-template-columns:repeat(3,1fr)}.mainGrid,.bottomGrid{grid-template-columns:1fr}.tradeGrid{grid-template-columns:1fr}.breakGrid{grid-template-columns:1fr}}@media(max-width:760px){.workspace{padding:6px 10px}.context{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:1fr 1fr}.filters input{margin-left:0;width:100%}.direction{grid-template-columns:1fr}.statGrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="workspace">
+  <nav class="context" aria-label="Archive workspace views">
+    <button class="active">Paper Trades</button>
+    <button onclick="location.href='/dashboard/archive'">Investment History</button>
+    <button disabled>Research Archive</button>
+    <button disabled>Snapshots</button>
+    <button onclick="location.href='/dashboard/archive/export'">Export</button>
+  </nav>
+
+  <div class="filters">
+    <label>Date Range</label><select id="dateRange"><option value="all">All Time</option><option value="30d">Last 30 Days</option><option value="90d">Last 90 Days</option><option value="365d">Last 365 Days</option></select>
+    <label>Symbol</label><select id="symbol"><option value="">All</option></select>
+    <label>Setup Type</label><select id="setup"><option value="">All</option></select>
+    <input id="search" placeholder="Search trades…">
+  </div>
+
+  <section class="metrics">
+    <div class="metric"><div class="icon">▰</div><div><div class="label">Total Paper Trades</div><div class="value" id="total">—</div><div class="note">closed eligible PAPER trades</div></div></div>
+    <div class="metric"><div class="icon">◯</div><div><div class="label">Win Rate</div><div class="value" id="winRate">—</div><div class="note" id="record">—</div></div></div>
+    <div class="metric"><div class="icon">◇</div><div><div class="label">Total R (Realized)</div><div class="value" id="sumR">—</div><div class="note">net PAPER R</div></div></div>
+    <div class="metric"><div class="icon">↕</div><div><div class="label">Avg R Per Trade</div><div class="value" id="avgR">—</div><div class="note" id="avgDetail">—</div></div></div>
+    <div class="metric"><div class="icon good">↑</div><div><div class="label">Best Trade</div><div class="value good" id="bestR">—</div><div class="note" id="bestName">—</div></div></div>
+    <div class="metric"><div class="icon bad">↓</div><div><div class="label">Worst Trade</div><div class="value bad" id="worstR">—</div><div class="note" id="worstName">—</div></div></div>
+  </section>
+
+  <div class="mainGrid">
+    <section class="panel">
+      <div class="panelHead"><div><h2>Paper Trades History</h2><div class="sub" id="tableMeta">Loading durable PAPER journal…</div></div><span class="sub">TEST / SESSION_ROLL / INTERRUPTED excluded</span></div>
+      <div class="tableWrap"><table><thead><tr><th>Date</th><th>Symbol</th><th>Setup</th><th>Direction</th><th>Entry</th><th>Exit</th><th>R (Realized)</th><th>Status</th><th>Notes</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+
+    <aside class="stack">
+      <section class="panel">
+        <div class="panelHead"><h2>Paper Performance</h2><span class="sub" id="curveMeta">Cumulative R</span></div>
+        <div class="chartWrap"><div class="chartTitle" id="chartTitle">Cumulative realized R · eligible PAPER closes</div><canvas id="perfChart"></canvas></div>
+        <div class="chartTabs"><button class="on" data-chart="cumulative">Cumulative R</button><button data-chart="daily">Daily R</button><button data-chart="winrate">Win Rate</button><button data-chart="equity">Equity Curve</button><button data-chart="drawdown">Drawdown</button></div>
+      </section>
+      <section class="breakGrid">
+        <div class="panel"><div class="panelHead"><h2>Setup Breakdown</h2><span class="sub">by strategy/setup</span></div><div class="breakList" id="setupBreak"></div></div>
+        <div class="panel"><div class="panelHead"><h2>Direction</h2><span class="sub">closed PAPER</span></div><div class="direction" id="directionBreak"></div></div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="bottomGrid">
+    <section class="panel">
+      <div class="panelHead"><div><h2>Trade Details</h2><div class="sub" id="detailMeta">Select a closed PAPER trade</div></div><span class="state" id="detailStatus">—</span></div>
+      <div class="tradeGrid">
+        <div class="factGrid">
+          <div class="fact"><small>Symbol</small><b id="dSymbol">—</b></div><div class="fact"><small>Direction</small><b id="dDirection">—</b></div>
+          <div class="fact"><small>Setup</small><b id="dSetup">—</b></div><div class="fact"><small>Entry</small><b id="dEntry">—</b></div>
+          <div class="fact"><small>Exit</small><b id="dExit">—</b></div><div class="fact"><small>Stop</small><b id="dStop">—</b></div>
+          <div class="fact"><small>Target</small><b id="dTarget">—</b></div><div class="fact"><small>Realized R</small><b id="dR">—</b></div>
+        </div>
+        <div class="tradeChart"><div class="caption" id="tradeChartCaption">Persisted entry / mark / exit path</div><canvas id="tradeChart"></canvas></div>
+        <div class="notesBox"><h3>Trade Notes</h3><div class="noteLine"><span class="sub">Journal note</span><div id="dNotes">—</div></div><div class="noteLine"><span class="sub">Exit reason</span><div id="dExitReason">—</div></div><div class="noteLine"><span class="sub">MFE / MAE</span><div id="dExcursion">—</div></div><div class="noteLine"><span class="sub">Holding time</span><div id="dHold">—</div></div><div class="noteLine"><span class="sub">Execution model</span><div>PAPER ONLY · no live capital</div></div></div>
+      </div>
+    </section>
+    <aside class="panel">
+      <div class="panelHead"><h2>Paper Statistics</h2><span class="sub">selected filters</span></div>
+      <div class="statGrid">
+        <div class="stat"><small>Total Trades</small><b id="sTotal">—</b></div><div class="stat"><small>Win Rate</small><b id="sWR">—</b></div>
+        <div class="stat"><small>Total R</small><b id="sR">—</b></div><div class="stat"><small>Avg R</small><b id="sAvg">—</b></div>
+        <div class="stat"><small>Profit Factor</small><b id="sPF">—</b></div><div class="stat"><small>Avg Win</small><b id="sWin">—</b></div>
+        <div class="stat"><small>Avg Loss</small><b id="sLoss">—</b></div><div class="stat"><small>Max Drawdown</small><b id="sDD">—</b></div>
+        <div class="stat"><small>Consec Wins</small><b id="sCW">—</b></div><div class="stat"><small>Consec Losses</small><b id="sCL">—</b></div>
+      </div>
+    </aside>
+  </div>
+  <div class="footer">Archive Paper Trades is read-only · durable Hyperliquid PAPER journal · no live execution · filtered performance excludes TEST, SESSION_ROLL and INTERRUPTED closes.</div>
+</div>
+<script src="/static/runtime_poll.js"></script>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=(v,d=2)=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:d}):'—'},money=v=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:6}):'—'},rFmt=v=>{const n=Number(v);return Number.isFinite(n)?(n>0?'+':'')+n.toFixed(2)+'R':'—'},pct=v=>{const n=Number(v);return Number.isFinite(n)?(n*100).toFixed(1)+'%':'—'};
+const date=v=>{const d=new Date(v||'');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString()},tone=v=>{const n=Number(v);return Number.isFinite(n)?(n>0?'good':n<0?'bad':'warn'):'warn'};
+let DATA=null,selectedTrade=null,detailMarks=[],chartMode='cumulative';
+
+function qs(){return '?date_range='+encodeURIComponent($('dateRange').value)+'&symbol='+encodeURIComponent($('symbol').value)+'&setup='+encodeURIComponent($('setup').value)+'&limit=1000'}
+function renderMetrics(){
+ const s=DATA.summary||{},best=s.best_trade||{},worst=s.worst_trade||{};
+ $('total').textContent=num(s.total,0);$('winRate').textContent=pct(s.win_rate);$('record').textContent=num(s.wins,0)+' wins · '+num(s.losses,0)+' losses · '+num(s.scratches,0)+' scratches';
+ $('sumR').textContent=rFmt(s.sum_r);$('sumR').className='value '+tone(s.sum_r);$('avgR').textContent=rFmt(s.avg_r);$('avgR').className='value '+tone(s.avg_r);$('avgDetail').textContent='avg win '+rFmt(s.avg_win_r)+' · avg loss '+rFmt(s.avg_loss_r);
+ $('bestR').textContent=best.trade_id?rFmt(best.r):'—';$('bestName').textContent=best.trade_id?(best.symbol+' · '+date(best.exit_timestamp)):'No eligible closes';
+ $('worstR').textContent=worst.trade_id?rFmt(worst.r):'—';$('worstName').textContent=worst.trade_id?(worst.symbol+' · '+date(worst.exit_timestamp)):'No eligible closes';
+ $('sTotal').textContent=num(s.total,0);$('sWR').textContent=pct(s.win_rate);$('sR').textContent=rFmt(s.sum_r);$('sAvg').textContent=rFmt(s.avg_r);$('sPF').textContent=s.profit_factor==null?'—':num(s.profit_factor,2);$('sWin').textContent=rFmt(s.avg_win_r);$('sLoss').textContent=rFmt(s.avg_loss_r);$('sDD').textContent=rFmt(s.max_drawdown_r);$('sCW').textContent=num(s.max_consecutive_wins,0);$('sCL').textContent=num(s.max_consecutive_losses,0);
+}
+function renderFilters(){
+ const s=DATA.summary||{},currentSym=$('symbol').value,currentSetup=$('setup').value;
+ $('symbol').innerHTML='<option value="">All</option>'+(s.symbols||[]).map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
+ $('setup').innerHTML='<option value="">All</option>'+(s.setups||[]).map(x=>'<option value="'+esc(x)+'">'+esc(x.replaceAll('_',' '))+'</option>').join('');
+ $('symbol').value=(s.symbols||[]).includes(currentSym)?currentSym:'';$('setup').value=(s.setups||[]).includes(currentSetup)?currentSetup:'';
+}
+function filteredTrades(){const q=$('search').value.trim().toUpperCase();return (DATA.trades||[]).filter(t=>!q||[t.symbol,t.setup,t.direction,t.notes,t.exit_reason].some(v=>String(v||'').toUpperCase().includes(q)))}
+function renderRows(){
+ const rows=filteredTrades();$('tableMeta').textContent=num(rows.length,0)+' shown · '+num(DATA.summary?.total,0)+' eligible closes in selected filters';
+ $('rows').innerHTML=rows.length?rows.map(t=>'<tr data-trade="'+esc(t.trade_id||'')+'" class="'+(t.trade_id===selectedTrade?'on':'')+'"><td>'+date(t.exit_timestamp)+'</td><td class="symbol">'+esc(t.symbol||'—')+'</td><td>'+esc(String(t.setup||'UNKNOWN').replaceAll('_',' '))+'</td><td class="'+(t.direction==='LONG'?'good':t.direction==='SHORT'?'bad':'')+'">'+esc(t.direction||'—')+'</td><td class="mono">'+money(t.entry)+'</td><td class="mono">'+money(t.exit)+'</td><td class="'+tone(t.r)+'">'+rFmt(t.r)+'</td><td><span class="state '+esc(t.status)+'">'+esc(t.status)+'</span></td><td title="'+esc(t.notes||'')+'">'+esc(t.notes||t.exit_reason||'—')+'</td></tr>').join(''):'<tr><td colspan="9"><div class="unavailable"><strong>NO ELIGIBLE PAPER CLOSES</strong><span>No durable PAPER trades match the selected filters.</span></div></td></tr>';
+ document.querySelectorAll('[data-trade]').forEach(tr=>tr.addEventListener('click',()=>selectTrade(tr.dataset.trade)));
+}
+function renderBreakdowns(){
+ const setups=DATA.summary?.by_setup||[],max=Math.max(1,...setups.map(x=>Number(x.trades)||0));
+ $('setupBreak').innerHTML=setups.length?setups.slice(0,8).map(x=>'<div class="breakRow"><span>'+esc(String(x.setup||'UNKNOWN').replaceAll('_',' '))+'</span><b>'+num(x.trades,0)+'</b><div class="bar"><i style="width:'+Math.max(2,(Number(x.trades)||0)/max*100)+'%"></i></div><span>'+pct(x.win_rate)+'</span></div>').join(''):'<div class="unavailable"><strong>NO SETUP BREAKDOWN</strong><span>No eligible closed PAPER trades.</span></div>';
+ const dirs=DATA.summary?.by_direction||[];$('directionBreak').innerHTML=dirs.length?dirs.map(x=>'<div class="dirCard"><small>'+esc(x.direction)+'</small><b>'+num(x.trades,0)+'</b><small>'+pct(x.win_rate)+' win · '+rFmt(x.sum_r)+'</small></div>').join(''):'<div class="unavailable"><strong>NO DIRECTION DATA</strong><span>No eligible closed PAPER trades.</span></div>';
+}
+function perfSeries(){
+ const s=DATA.summary||{};
+ if(chartMode==='daily')return (s.daily_r||[]).map((x,i)=>({x:i,y:Number(x.r)||0,label:x.date}));
+ const curve=s.equity_curve||[];
+ if(chartMode==='winrate')return curve.map(x=>({x:x.index,y:(Number(x.win_rate)||0)*100,label:x.timestamp}));
+ if(chartMode==='drawdown')return curve.map(x=>({x:x.index,y:Number(x.drawdown_r)||0,label:x.timestamp}));
+ return curve.map(x=>({x:x.index,y:Number(x.cumulative_r)||0,label:x.timestamp}));
+}
+function drawPerf(){
+ const canvas=$('perfChart'),dpr=window.devicePixelRatio||1,w=Math.max(320,canvas.clientWidth),h=250;canvas.width=w*dpr;canvas.height=h*dpr;const c=canvas.getContext('2d');c.scale(dpr,dpr);c.fillStyle='#020a0d';c.fillRect(0,0,w,h);c.strokeStyle='#12313a';for(let i=1;i<5;i++){const y=i*h/5;c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke()}
+ const rows=perfSeries();const labels={cumulative:'Cumulative realized R',daily:'Daily realized R',winrate:'Rolling win rate %',equity:'Paper R curve',drawdown:'Drawdown R'};$('chartTitle').textContent=labels[chartMode]+' · '+rows.length+' observations';$('curveMeta').textContent=labels[chartMode];
+ if(rows.length<2){c.fillStyle='#7898a8';c.textAlign='center';c.font='12px Segoe UI';c.fillText('Not enough closed PAPER history for this chart',w/2,h/2);return}
+ const vals=rows.map(x=>x.y),lo=Math.min(0,...vals),hi=Math.max(0,...vals),pad=(hi-lo||1)*.08,min=lo-pad,max=hi+pad,x=i=>20+i*(w-40)/Math.max(1,rows.length-1),y=v=>15+(max-v)/(max-min)*(h-35);
+ c.strokeStyle=chartMode==='drawdown'?'#ff304c':'#21dfd8';c.lineWidth=1.7;c.beginPath();rows.forEach((r,i)=>i?c.lineTo(x(i),y(r.y)):c.moveTo(x(i),y(r.y)));c.stroke();c.strokeStyle='#5a7885';c.lineWidth=1;c.beginPath();c.moveTo(0,y(0));c.lineTo(w,y(0));c.stroke();c.fillStyle='#dfeff5';c.textAlign='right';c.font='11px Consolas';c.fillText((chartMode==='winrate'?rows.at(-1).y.toFixed(1)+'%':rFmt(rows.at(-1).y)),w-8,y(rows.at(-1).y)-6)
+}
+async function selectTrade(id){
+ const t=(DATA.trades||[]).find(x=>x.trade_id===id);if(!t)return;selectedTrade=id;renderRows();$('detailStatus').textContent=t.status;$('detailStatus').className='state '+t.status;$('detailMeta').textContent=t.symbol+' · '+date(t.exit_timestamp)+' · '+String(t.setup||'UNKNOWN').replaceAll('_',' ');
+ $('dSymbol').textContent=t.symbol;$('dDirection').textContent=t.direction;$('dSetup').textContent=String(t.setup||'UNKNOWN').replaceAll('_',' ');$('dEntry').textContent=money(t.entry);$('dExit').textContent=money(t.exit);$('dStop').textContent=money(t.stop);$('dTarget').textContent=money(t.target);$('dR').textContent=rFmt(t.r);$('dR').className=tone(t.r);$('dNotes').textContent=t.notes||'No journal note recorded.';$('dExitReason').textContent=t.exit_reason||t.result||'—';$('dExcursion').textContent='MFE '+rFmt(t.mfe_r)+' · MAE '+rFmt(t.mae_r);$('dHold').textContent=t.holding_time_sec==null?'—':formatDuration(t.holding_time_sec);
+ try{const r=await atlasFetch('/api/archive/paper-trades/'+encodeURIComponent(id),8000);const d=await r.json();detailMarks=d.marks||[];drawTrade(t,detailMarks)}catch(e){detailMarks=[];drawTrade(t,[])}
+}
+function formatDuration(sec){let n=Math.max(0,Number(sec)||0);if(n<60)return Math.round(n)+'s';if(n<3600)return Math.round(n/60)+'m';if(n<86400)return (n/3600).toFixed(1)+'h';return (n/86400).toFixed(1)+'d'}
+function drawTrade(t,marks){
+ const canvas=$('tradeChart'),dpr=window.devicePixelRatio||1,w=Math.max(320,canvas.clientWidth),h=265;canvas.width=w*dpr;canvas.height=h*dpr;const c=canvas.getContext('2d');c.scale(dpr,dpr);c.fillStyle='#020a0d';c.fillRect(0,0,w,h);c.strokeStyle='#12313a';for(let i=1;i<5;i++){const yy=i*h/5;c.beginPath();c.moveTo(0,yy);c.lineTo(w,yy);c.stroke()}
+ const points=marks.filter(m=>Number.isFinite(Number(m.price)));$('tradeChartCaption').textContent=t.symbol+' · '+points.length+' persisted entry/mark/exit observations';
+ if(points.length<2){c.fillStyle='#7898a8';c.textAlign='center';c.font='12px Segoe UI';c.fillText('Persisted mark path unavailable for this trade',w/2,h/2);return}
+ const levels=[...points.map(x=>Number(x.price)),Number(t.stop),Number(t.target)].filter(Number.isFinite),lo=Math.min(...levels),hi=Math.max(...levels),pad=(hi-lo||1)*.08,min=lo-pad,max=hi+pad,x=i=>24+i*(w-48)/Math.max(1,points.length-1),y=v=>18+(max-v)/(max-min)*(h-38);
+ const line=(v,color,label)=>{if(!Number.isFinite(Number(v)))return;c.strokeStyle=color;c.setLineDash([5,4]);c.beginPath();c.moveTo(0,y(Number(v)));c.lineTo(w,y(Number(v)));c.stroke();c.setLineDash([]);c.fillStyle=color;c.font='10px Consolas';c.textAlign='left';c.fillText(label+' '+money(v),7,y(Number(v))-4)};line(t.stop,'#ff304c','STOP');line(t.target,'#efb35a','TARGET');
+ c.strokeStyle='#21dfd8';c.lineWidth=1.6;c.beginPath();points.forEach((p,i)=>i?c.lineTo(x(i),y(Number(p.price))):c.moveTo(x(i),y(Number(p.price))));c.stroke();points.forEach((p,i)=>{c.fillStyle=p.event==='CLOSE'?(t.r>=0?'#00ddb0':'#ff304c'):p.event==='OPEN'?'#efb35a':'#35e5ee';c.beginPath();c.arc(x(i),y(Number(p.price)),p.event==='MARK'?2.2:4,0,Math.PI*2);c.fill()})
+}
+function renderAll(){renderMetrics();renderFilters();renderRows();renderBreakdowns();drawPerf();if(!selectedTrade&&DATA.trades?.length)selectTrade(DATA.trades[0].trade_id)}
+async function load(){try{const r=await atlasFetch('/api/archive/paper-trades'+qs(),10000);DATA=await r.json();selectedTrade=null;renderAll()}catch(e){$('tableMeta').textContent='PAPER archive temporarily unavailable';$('rows').innerHTML='<tr><td colspan="9"><div class="unavailable"><strong>ARCHIVE TEMPORARILY UNAVAILABLE</strong><span>Retrying on the next refresh.</span></div></td></tr>'}}
+['dateRange','symbol','setup'].forEach(id=>$(id).addEventListener('change',load));$('search').addEventListener('input',renderRows);document.querySelectorAll('[data-chart]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-chart]').forEach(x=>x.classList.remove('on'));b.classList.add('on');chartMode=b.dataset.chart;drawPerf()}));window.addEventListener('resize',()=>{drawPerf();if(selectedTrade){const t=(DATA?.trades||[]).find(x=>x.trade_id===selectedTrade);if(t)drawTrade(t,detailMarks)}});
+atlasPoll(load,30000);
+</script>
+</body></html>
