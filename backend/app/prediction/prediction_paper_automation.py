@@ -224,12 +224,24 @@ class PredictionPaperAutomation:
                     return_exceptions=True,
                 )
                 eligible = []
-                for result in results:
+                for market, result in zip(survivors, results):
                     if isinstance(result, BaseException):
                         state["error_count"] += 1
-                        if isinstance(result, asyncio.TimeoutError):
+                        timed_out = isinstance(result, asyncio.TimeoutError)
+                        if timed_out:
                             state["timeout_count"] += 1
                         state["last_error"] = type(result).__name__
+                        reason = (
+                            "SCANNER_EVALUATION_TIMEOUT"
+                            if timed_out else "SCANNER_EVALUATION_ERROR"
+                        )
+                        for side in ("YES", "NO"):
+                            prediction_paper_journal.log_candidate(
+                                self._error_candidate(
+                                    market, side, reason, cycle_id, current, result
+                                )
+                            )
+                            state["rejected_count"] += 1
                         continue
                     state["markets_fully_evaluated"] += 1
                     for evaluation in result:
@@ -340,6 +352,37 @@ class PredictionPaperAutomation:
             "flat_deadline": _iso(flat_deadline) if flat_deadline else None,
             "rejection_reasons": reasons,
             "warnings": [],
+            "fee_model": FEE_MODEL_VERSION,
+            "observed_at": _iso(now),
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+
+    def _error_candidate(
+        self,
+        market: dict[str, Any],
+        side: str,
+        reason: str,
+        cycle_id: str,
+        now: datetime,
+        error: BaseException,
+    ) -> dict[str, Any]:
+        return {
+            "engine_version": PAPER_ENGINE_VERSION,
+            "automation_version": AUTOMATION_VERSION,
+            "policy_version": POLICY_VERSION,
+            "strategy": "PRE_EVENT_RECENT_RECLAIM_V1",
+            "mode": "PAPER_RESEARCH_ONLY",
+            "evaluation_stage": "FULL_EVALUATION_ERROR",
+            "scan_cycle_id": cycle_id,
+            "eligible": False,
+            "score": 0,
+            "ticker": market.get("ticker"),
+            "side": side,
+            "quantity_contracts": _fixed(self.config.quantity),
+            "rejection_reasons": [reason],
+            "warnings": [],
+            "error_type": type(error).__name__,
             "fee_model": FEE_MODEL_VERSION,
             "observed_at": _iso(now),
             "live_capital_allowed": False,
