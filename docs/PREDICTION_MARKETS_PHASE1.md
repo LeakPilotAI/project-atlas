@@ -419,6 +419,12 @@ completed and a genuine eligible PAPER position provides a safe opportunity to v
 the auto-flat worker end-to-end. Filters must not be weakened and rejected candidates
 must not be force-opened just to manufacture that evidence.
 
+The supported Windows desktop smoke now includes
+/api/prediction/paper/automation/status in startup stabilization and requires the
+Prediction automation service to report running=true with PAPER_ONLY execution,
+unattended/automatic PAPER opening disabled, and all live-capital flags false before
+ATLAS_DESKTOP_SMOKE_GREEN can be emitted.
+
 ### Regression evidence
 
 The deterministic Atlas CI gate includes the Prediction automation tests plus the
