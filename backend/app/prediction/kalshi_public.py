@@ -15,6 +15,8 @@ from app.prediction.policy import is_multivariate_market, policy_snapshot
 
 BASE_URL = "https://external-api.kalshi.com/trade-api/v2"
 ALLOWED_STATUSES = {"unopened", "open", "paused", "closed", "settled"}
+ALLOWED_CANDLE_INTERVALS = {1, 60, 1440}
+MAX_CANDLE_POINTS = 1000
 
 
 class PredictionProviderError(RuntimeError):
@@ -39,6 +41,132 @@ def _midpoint(bid: Any, ask: Any) -> str | None:
     if b < 0 or a < 0 or a < b:
         return None
     return format((a + b) / Decimal("2"), "f")
+
+
+def _spread(bid: Any, ask: Any) -> str | None:
+    try:
+        b = Decimal(str(bid))
+        a = Decimal(str(ask))
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+    if b < 0 or a < b:
+        return None
+    return format(a - b, "f")
+
+
+def _complement(price: Any) -> str | None:
+    try:
+        p = Decimal(str(price))
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+    if p < 0 or p > 1:
+        return None
+    return format(Decimal("1") - p, "f")
+
+
+def _normalize_bid_levels(levels: Any) -> list[dict[str, str]]:
+    cleaned: list[dict[str, str]] = []
+    if not isinstance(levels, list):
+        return cleaned
+    for level in levels:
+        if not isinstance(level, (list, tuple)) or len(level) < 2:
+            continue
+        price = _fixed(level[0])
+        quantity = _fixed(level[1])
+        if price is None or quantity is None:
+            continue
+        try:
+            p = Decimal(price)
+            q = Decimal(quantity)
+        except InvalidOperation:
+            continue
+        if p < 0 or p > 1 or q < 0:
+            continue
+        cleaned.append({"price_dollars": price, "quantity_contracts": quantity})
+    cleaned.sort(key=lambda row: Decimal(row["price_dollars"]), reverse=True)
+    return cleaned
+
+
+def _implied_ask_levels(opposite_bids: list[dict[str, str]]) -> list[dict[str, str]]:
+    asks = []
+    for row in opposite_bids:
+        price = _complement(row.get("price_dollars"))
+        if price is None:
+            continue
+        asks.append(
+            {
+                "price_dollars": price,
+                "quantity_contracts": str(row.get("quantity_contracts") or "0"),
+            }
+        )
+    asks.sort(key=lambda row: Decimal(row["price_dollars"]))
+    return asks
+
+
+def normalize_orderbook(payload: dict[str, Any]) -> dict[str, Any]:
+    raw = payload.get("orderbook_fp")
+    raw = raw if isinstance(raw, dict) else {}
+    yes_bids = _normalize_bid_levels(raw.get("yes_dollars"))
+    no_bids = _normalize_bid_levels(raw.get("no_dollars"))
+    yes_asks = _implied_ask_levels(no_bids)
+    no_asks = _implied_ask_levels(yes_bids)
+
+    best_yes_bid = yes_bids[0]["price_dollars"] if yes_bids else None
+    best_yes_ask = yes_asks[0]["price_dollars"] if yes_asks else None
+    best_no_bid = no_bids[0]["price_dollars"] if no_bids else None
+    best_no_ask = no_asks[0]["price_dollars"] if no_asks else None
+
+    return {
+        "yes": {
+            "bids": yes_bids,
+            "asks": yes_asks,
+            "best_bid_dollars": best_yes_bid,
+            "best_ask_dollars": best_yes_ask,
+            "spread_dollars": _spread(best_yes_bid, best_yes_ask),
+        },
+        "no": {
+            "bids": no_bids,
+            "asks": no_asks,
+            "best_bid_dollars": best_no_bid,
+            "best_ask_dollars": best_no_ask,
+            "spread_dollars": _spread(best_no_bid, best_no_ask),
+        },
+        "derivation": (
+            "Kalshi public orderbook returns YES and NO bids only. Atlas derives each side's "
+            "ask from 1.0000 minus the opposite side bid at identical size."
+        ),
+    }
+
+
+def _normalize_price_bar(value: Any) -> dict[str, str | None]:
+    row = value if isinstance(value, dict) else {}
+    return {
+        "open_dollars": _fixed(row.get("open_dollars")),
+        "low_dollars": _fixed(row.get("low_dollars")),
+        "high_dollars": _fixed(row.get("high_dollars")),
+        "close_dollars": _fixed(row.get("close_dollars")),
+    }
+
+
+def normalize_candlestick(row: dict[str, Any]) -> dict[str, Any]:
+    price = row.get("price") if isinstance(row.get("price"), dict) else {}
+    normalized_price = _normalize_price_bar(price)
+    normalized_price.update(
+        {
+            "mean_dollars": _fixed(price.get("mean_dollars")),
+            "previous_dollars": _fixed(price.get("previous_dollars")),
+            "min_dollars": _fixed(price.get("min_dollars")),
+            "max_dollars": _fixed(price.get("max_dollars")),
+        }
+    )
+    return {
+        "end_period_ts": int(row.get("end_period_ts") or 0),
+        "yes_bid": _normalize_price_bar(row.get("yes_bid")),
+        "yes_ask": _normalize_price_bar(row.get("yes_ask")),
+        "price": normalized_price,
+        "volume_contracts": _fixed(row.get("volume_fp")),
+        "open_interest_contracts": _fixed(row.get("open_interest_fp")),
+    }
 
 
 def normalize_market(row: dict[str, Any]) -> dict[str, Any]:
@@ -79,6 +207,7 @@ def normalize_market(row: dict[str, Any]) -> dict[str, Any]:
             "expected_expiration_time": row.get("expected_expiration_time"),
             "expiration_time": row.get("expiration_time"),
             "settlement_ts": row.get("settlement_ts"),
+            "occurrence_datetime": row.get("occurrence_datetime"),
         },
         "settlement": {
             "can_close_early": row.get("can_close_early"),
@@ -193,6 +322,92 @@ class KalshiPublicMarketClient:
             "policy": policy_snapshot(),
             "market": normalize_market(row),
         }
+
+
+    async def get_orderbook(self, ticker: str, *, depth: int = 20) -> dict[str, Any]:
+        """Return executable public depth for one permitted single market.
+
+        The provider returns YES and NO bids. Atlas derives executable asks from the
+        opposite-side bids and preserves quantities for realistic PAPER fill modeling.
+        """
+        clean_depth = max(0, min(int(depth), 100))
+        market_payload = await self.get_market(ticker)
+        payload = await self._request(
+            f"/markets/{ticker}/orderbook",
+            params={"depth": clean_depth},
+        )
+        return {
+            "provider": "kalshi",
+            "provider_endpoint": "/markets/{ticker}/orderbook",
+            "mode": "RESEARCH_ONLY",
+            "execution": "DISABLED",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+            "ticker": ticker,
+            "depth": clean_depth,
+            "policy": policy_snapshot(),
+            "market": market_payload["market"],
+            "orderbook": normalize_orderbook(payload),
+        }
+
+    async def get_candlesticks(
+        self,
+        *,
+        series_ticker: str,
+        ticker: str,
+        start_ts: int,
+        end_ts: int,
+        period_interval: int = 60,
+        include_latest_before_start: bool = False,
+    ) -> dict[str, Any]:
+        """Return bounded public price history for pre-event research."""
+        interval = int(period_interval)
+        if interval not in ALLOWED_CANDLE_INTERVALS:
+            raise ValueError("unsupported Kalshi candlestick interval")
+        start = int(start_ts)
+        end = int(end_ts)
+        if start <= 0 or end <= start:
+            raise ValueError("invalid Kalshi candlestick time range")
+        max_seconds = interval * 60 * MAX_CANDLE_POINTS
+        if end - start > max_seconds:
+            raise ValueError("Kalshi candlestick range exceeds Atlas bounded window")
+
+        market_payload = await self.get_market(ticker)
+        payload = await self._request(
+            f"/series/{series_ticker}/markets/{ticker}/candlesticks",
+            params={
+                "start_ts": start,
+                "end_ts": end,
+                "period_interval": interval,
+                "include_latest_before_start": bool(include_latest_before_start),
+            },
+        )
+        rows = payload.get("candlesticks")
+        candles = [
+            normalize_candlestick(row)
+            for row in rows
+            if isinstance(row, dict)
+        ] if isinstance(rows, list) else []
+        candles.sort(key=lambda row: int(row.get("end_period_ts") or 0))
+        return {
+            "provider": "kalshi",
+            "provider_endpoint": "/series/{series_ticker}/markets/{ticker}/candlesticks",
+            "mode": "RESEARCH_ONLY",
+            "execution": "DISABLED",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+            "series_ticker": series_ticker,
+            "ticker": ticker,
+            "period_interval_minutes": interval,
+            "start_ts": start,
+            "end_ts": end,
+            "include_latest_before_start": bool(include_latest_before_start),
+            "count": len(candles),
+            "policy": policy_snapshot(),
+            "market": market_payload["market"],
+            "candlesticks": candles,
+        }
+
 
 
 kalshi_public = KalshiPublicMarketClient()
