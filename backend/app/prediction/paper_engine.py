@@ -479,6 +479,17 @@ class PredictionPaperJournal:
         self._append(self.candidate_path, row)
         return row
 
+    def log_event(self, event: dict[str, Any]) -> dict[str, Any]:
+        """Append a non-fill Prediction PAPER safety/observability event."""
+        row = dict(event)
+        row.setdefault("event", "paper_event")
+        row.setdefault("timestamp", _iso())
+        row.setdefault("trade_type", "PREDICTION_PAPER")
+        row.setdefault("live_capital_allowed", False)
+        row.setdefault("automatic_real_money_execution", False)
+        self._append(self.journal_path, row)
+        return row
+
     def open_from_evaluation(self, evaluation: dict[str, Any]) -> dict[str, Any]:
         if not evaluation.get("eligible"):
             raise PredictionPaperError("candidate is not eligible for PAPER entry")
