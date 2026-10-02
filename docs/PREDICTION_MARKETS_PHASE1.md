@@ -322,3 +322,116 @@ Fee model version:
 Prediction PAPER backend functionality now exists, but the dedicated Prediction Paper
 Trades frontend remains intentionally disabled / COMING SOON until the backend validation
 gate is complete.
+
+
+## Phase 1.3 — Bounded scanner + mandatory PAPER auto-flat
+
+Implemented on 2026-10-02 after the first live repricing evaluation gate.
+
+### Automatic bounded candidate scanner
+
+Atlas now owns a background Prediction PAPER scanner with these hard bounds:
+
+- discovery limit: 40 public single markets per cycle
+- expensive evaluation concurrency: 4 markets
+- orderbook depth: 20
+- quote-history window: 180 minutes
+- default PAPER quantity: 10 contracts
+- scanner interval: 60 seconds
+- unattended PAPER position opening: disabled
+
+The scanner performs cheap policy/timing/activity rejection before orderbook and
+candlestick requests. Surviving markets reuse one orderbook/history acquisition and are
+then scored independently for YES and NO through the existing
+PRE_EVENT_RECENT_RECLAIM_V1 evaluator. Requested-size executable depth VWAP remains the
+authoritative entry price.
+
+Every prefilter rejection, full evaluation, and contained evaluation error is persisted
+to the append-only Prediction PAPER candidate journal with explicit reason codes.
+A failed/timeout market does not abort the rest of the bounded cycle.
+
+Live public-data acceptance found a provider semantic detail: Kalshi's status=open
+discovery request currently returns market rows whose status field is active. Atlas
+therefore treats provider status open and active as the same discovery-open state. This
+only fixes provider status normalization; no strategy threshold was weakened.
+
+Live scanner acceptance evidence at the corrected gate:
+
+- 40 public open markets discovered
+- 39 rejected by cheap prefilter
+- 1 market reached full expensive evaluation
+- YES evaluated independently: 1
+- NO evaluated independently: 1
+- scanner errors: 0
+- scanner timeouts: 0
+- eligible candidates: 0
+- PAPER positions opened: 0
+- the fully evaluated market was rejected for QUOTE_INSTABILITY and
+  NO_RECENT_RECLAIM_EDGE
+
+Zero eligible candidates is a valid scanner outcome.
+
+### Mandatory Prediction PAPER auto-flat worker
+
+A separate runtime worker now monitors only the isolated Prediction PAPER journal.
+It does not touch Hyperliquid PAPER state or any authenticated Kalshi/account/order
+surface.
+
+At the mandatory flat deadline it attempts one complete PAPER exit through the existing
+canonical depth-aware close model:
+
+- sell the held YES/NO side into real executable bid depth
+- require the full position quantity
+- walk multiple bid levels when necessary
+- preserve exit VWAP, fill levels, depth slippage, and estimated fee evidence
+- never use midpoint fills, hidden liquidity, partial-fill success, or settlement as a
+  manufactured exit
+
+If executable depth is missing/insufficient or the public provider fails, Atlas preserves
+the position as open, records an explicit auto-flat blocked safety event, and retries on
+the bounded worker cadence while still pre-event. If event start is reached without a
+valid exit, Atlas records AUTO_FLAT_DEADLINE_VIOLATION and still does not manufacture a
+settlement fill.
+
+The worker is idempotent around already/manual-closed positions and shares the
+PredictionPaperJournal as the authoritative position owner.
+
+### Runtime / safety status
+
+Prediction PAPER automation status is exposed through:
+
+- GET /api/prediction/paper/status
+- GET /api/prediction/paper/automation/status
+
+The status includes scanner counts, recent errors/timeouts, top eligible candidates,
+auto-flat safety state, and configured bounds.
+
+The following remain hard-disabled:
+
+- unattended_paper_open_enabled = false
+- automatic_paper_position_opening = false
+- live_execution = false
+- live_capital_allowed = false
+- automatic_real_money_execution = false
+
+Unattended PAPER opening remains blocked until the supported desktop runtime gate is
+completed and a genuine eligible PAPER position provides a safe opportunity to validate
+the auto-flat worker end-to-end. Filters must not be weakened and rejected candidates
+must not be force-opened just to manufacture that evidence.
+
+### Regression evidence
+
+The deterministic Atlas CI gate includes the Prediction automation tests plus the
+existing Prediction/Future Overview/Dashboard/frontend-freeze regressions. The corrected
+gate reached:
+
+- 96 passed in the existing PAPER/manual-perp suite
+- 47 passed in the Prediction/automation/frontend gate
+- 0 failures
+
+The live public scanner smoke remains available as:
+
+- python scripts/prediction_paper_live_smoke.py
+
+It is intentionally diagnostic-only rather than part of every CI run so external
+provider availability cannot make deterministic repository regression CI flaky.
