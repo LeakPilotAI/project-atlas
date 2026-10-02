@@ -192,6 +192,13 @@ async def prediction_paper_automation_status() -> Dict[str, Any]:
     return prediction_paper_automation.status()
 
 
+@router.get("/paper/candidates")
+async def prediction_paper_candidates(
+    limit: int = Query(200, ge=1, le=1000),
+) -> Dict[str, Any]:
+    return prediction_paper_journal.candidate_snapshot(limit=limit)
+
+
 @router.post("/paper/evaluate/{ticker}")
 async def prediction_paper_evaluate(
     ticker: str,
