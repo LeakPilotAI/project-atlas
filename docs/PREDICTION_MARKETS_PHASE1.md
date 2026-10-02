@@ -441,3 +441,81 @@ The live public scanner smoke remains available as:
 
 It is intentionally diagnostic-only rather than part of every CI run so external
 provider availability cannot make deterministic repository regression CI flaky.
+
+
+## Phase 1.4 — Desktop runtime acceptance + Prediction PAPER evidence UI
+
+Completed after the bounded scanner/auto-flat worker reached the supported Windows
+desktop lifecycle gate.
+
+### Desktop runtime acceptance
+
+The supported Atlas desktop smoke was run from the normal launcher after a clean stop.
+Acceptance evidence:
+
+- startup stabilization: 3/3 consecutive healthy checks
+- failed startup checks: 0
+- status: ATLAS_DESKTOP_SMOKE_GREEN
+- safety_verified: true
+- Prediction PAPER automation running: true
+- live cycle discovered: 40 markets
+- cheap-prefilter rejected: 37
+- full expensive evaluations: 3
+- YES evaluations: 3
+- NO evaluations: 3
+- eligible candidates: 0
+- scanner errors: 0
+- scanner timeouts: 0
+- open Prediction PAPER positions: 0
+- live capital: disabled
+- automatic real-money execution: disabled
+
+This closes the worker lifecycle/runtime-validation gate. Zero eligible candidates remains
+a valid outcome and no rejected market was force-opened.
+
+### Prediction PAPER evidence workspace
+
+The Prediction Markets tab now opens a dedicated read-only PAPER evidence dashboard at:
+
+- /dashboard/prediction-paper
+
+The surface exposes:
+
+- current scanner discovery/evaluation/rejection/error counts
+- independent YES/NO evaluation counts
+- recent persisted candidate evidence and explicit rejection reasons
+- scorer score, executable entry VWAP, spread, and projected net edge when available
+- selected raw persisted candidate evidence
+- current Prediction PAPER position/trade events
+- entry/exit VWAP and net PAPER PnL evidence
+- mandatory auto-flat state, blocked state, and deadline-violation state
+- explicit PAPER-only / live-off safety indicators
+
+The UI intentionally contains no PAPER open/close control, no threshold editor, no
+force-open action, no authenticated Kalshi control, and no live-order control.
+
+Recent candidate retrieval uses a bounded JSONL tail reader rather than rescanning the
+entire append-only candidate journal on every UI poll.
+
+### Unattended PAPER opening remains locked
+
+Desktop runtime validation is complete, so the remaining block reason is now:
+
+- AUTO_FLAT_LIVE_VALIDATION_REQUIRED
+
+Automatic/unattended PAPER position opening remains false. The next execution gate must
+wait for a genuinely eligible candidate. That candidate may be opened through the
+existing manual PAPER path, after which the automatic flat worker can be observed
+end-to-end against a real PAPER position. Rejected candidates must not be force-opened
+and strategy thresholds must not be weakened to manufacture this evidence.
+
+### Regression gate
+
+The Prediction PAPER evidence UI implementation reached:
+
+- 96 passed in the existing PAPER/manual-perp suite
+- 50 passed in the Prediction/automation/frontend suite
+- 0 failures
+
+The next gate is genuine eligible-candidate observation and end-to-end automatic PAPER
+flat validation. Unattended PAPER opening remains disabled until that evidence exists.
