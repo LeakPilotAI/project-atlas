@@ -101,7 +101,7 @@ def test_prediction_paper_workspace_is_read_only_evidence_surface():
         "/api/prediction/paper/candidates?limit=200",
         "Recent Candidate Evidence",
         "PAPER Position / Trade Events",
-        "Depth-aware",
+        "depth-aware",
         "atlasPoll(refresh,10000)",
     ):
         assert token in text
