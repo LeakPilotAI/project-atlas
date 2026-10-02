@@ -179,3 +179,82 @@ def test_auto_flat_insufficient_depth_records_block_not_fake_close(monkeypatch, 
     assert not [r for r in rows if r.get("event") == "close"]
     assert len([r for r in rows if r.get("event") == "auto_flat_blocked"]) == 1
     assert "AUTO_FLAT_SAFETY_BLOCKED" in service.status()["unattended_paper_open_block_reasons"]
+
+
+def test_scanner_isolates_market_failure_and_persists_error_candidates(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    journal = _journal(tmp_path)
+    monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
+    good = _market(now)
+    good["ticker"] = "KXTEST-GOOD"
+    bad = _market(now)
+    bad["ticker"] = "KXTEST-BAD"
+
+    async def markets(**kwargs):
+        return {"markets": [bad, good]}
+    async def book(ticker, **kwargs):
+        if ticker == "KXTEST-BAD":
+            raise RuntimeError("synthetic provider failure")
+        return {"orderbook": _book()}
+    async def candles(*args, **kwargs):
+        return {"candlesticks": _candles()}
+
+    monkeypatch.setattr(automation_module.kalshi_public, "get_markets", markets)
+    monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
+    monkeypatch.setattr(automation_module.kalshi_public, "get_candlesticks", candles)
+
+    state = asyncio.run(PredictionPaperAutomation().run_scan_once(now=now))
+    assert state["error_count"] == 1
+    assert state["markets_fully_evaluated"] == 1
+    rows = journal._rows(journal.candidate_path)
+    bad_rows = [row for row in rows if row.get("ticker") == "KXTEST-BAD"]
+    good_rows = [row for row in rows if row.get("ticker") == "KXTEST-GOOD"]
+    assert {row["side"] for row in bad_rows} == {"YES", "NO"}
+    assert all(row["rejection_reasons"] == ["SCANNER_EVALUATION_ERROR"] for row in bad_rows)
+    assert {row["side"] for row in good_rows} == {"YES", "NO"}
+
+
+def test_auto_flat_provider_failure_preserves_open_position(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    journal = _journal(tmp_path)
+    _open(journal, now)
+    monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
+
+    async def book(*args, **kwargs):
+        raise automation_module.PredictionProviderError("synthetic provider failure")
+    monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
+
+    service = PredictionPaperAutomation()
+    state = asyncio.run(service.run_auto_flat_once(now=now))
+    assert state["last_reason"] == "AUTO_FLAT_PROVIDER_ERROR"
+    assert state["blocked"] is True
+    assert journal.open_trade() is not None
+    assert not [r for r in journal._rows(journal.journal_path) if r.get("event") == "close"]
+
+
+def test_auto_flat_event_start_violation_never_manufactures_settlement_fill(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    journal = _journal(tmp_path)
+    opened = journal.open_from_evaluation({
+        "eligible": True, "ticker": "KXTEST-A", "side": "YES",
+        "quantity_contracts": "10",
+        "occurrence_datetime": (now - timedelta(seconds=1)).isoformat(),
+        "flat_deadline": (now - timedelta(minutes=30)).isoformat(),
+        "strategy": "PRE_EVENT_RECENT_RECLAIM_V1", "score": 90,
+        "engine_version": "prediction-paper-reprice-v1",
+        "entry_fill": {"fillable": True, "vwap_dollars": "0.42",
+                       "notional_dollars": "4.20", "estimated_taker_fee_dollars": "0.17",
+                       "depth_slippage_dollars_per_contract": "0",
+                       "levels": [{"price_dollars": "0.42", "quantity_contracts": "10"}]},
+    })
+    monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
+
+    async def forbidden(*args, **kwargs):
+        raise AssertionError("event-start violation must not manufacture a provider exit")
+    monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", forbidden)
+
+    state = asyncio.run(PredictionPaperAutomation().run_auto_flat_once(now=now))
+    assert state["last_reason"] == "AUTO_FLAT_DEADLINE_VIOLATION"
+    assert state["deadline_violation"] is True
+    assert journal.open_trade()["trade_id"] == opened["trade_id"]
+    assert not [r for r in journal._rows(journal.journal_path) if r.get("event") == "close"]
