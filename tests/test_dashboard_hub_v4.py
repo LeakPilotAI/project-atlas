@@ -30,6 +30,7 @@ def test_dashboard_routes_preserve_perp_and_legacy_views():
     assert client.get("/dashboard/perps").status_code == 200
     assert client.get("/dashboard/investment").status_code == 200
     assert client.get("/dashboard/archive").status_code == 200
+    assert client.get("/dashboard/archive/export").status_code == 200
     assert client.get("/dashboard/legacy").status_code == 200
 
 
@@ -48,6 +49,7 @@ def test_root_advertises_domain_specific_dashboard_routes():
     assert payload["dashboard_quality_dips"] == "/api/investments/quality-dips/view"
     assert payload["dashboard_investment"] == "/dashboard/investment"
     assert payload["dashboard_archive"] == "/dashboard/archive"
+    assert payload["dashboard_archive_export"] == "/dashboard/archive/export"
     assert payload["dashboard_legacy"] == "/dashboard/legacy"
 
 
