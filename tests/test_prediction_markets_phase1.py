@@ -598,6 +598,19 @@ def test_prediction_paper_journal_keeps_one_open_position(tmp_path):
         raise AssertionError("prediction PAPER stacking must remain blocked")
 
 
+def test_prediction_paper_status_exposes_locked_automation_gate():
+    payload = TestClient(app).get("/api/prediction/paper/status").json()
+    automation = payload["automation"]
+    assert automation["execution"] == "PAPER_ONLY"
+    assert automation["unattended_paper_open_enabled"] is False
+    assert automation["unattended_paper_open_blocked"] is True
+    assert automation["live_execution"] is False
+    assert automation["live_capital_allowed"] is False
+    assert automation["automatic_real_money_execution"] is False
+    assert automation["bounds"]["discovery_limit"] <= 40
+    assert automation["bounds"]["max_concurrency"] <= 4
+
+
 def test_prediction_phase_one_contains_no_authenticated_or_live_order_surface():
     source = SOURCE.read_text(encoding="utf-8")
     assert "KALSHI-ACCESS-KEY" not in source
