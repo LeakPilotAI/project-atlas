@@ -41,6 +41,10 @@ def test_command_center_health_page_contract():
 
     assert "page-observed average" in text
     assert "page session samples" in text
+    assert "investmentHealth()" in text
+    assert "DATA.live?.investment" in text
+    assert "Investment Scanner" in text
+    assert "DISABLED" in text
     assert "live capital OFF" in text
     assert "99.98%" not in text
     assert "42 ms" not in text
