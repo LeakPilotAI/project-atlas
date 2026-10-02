@@ -63,8 +63,8 @@ class PredictionPaperAutomation:
         self.running = False
         self._scanner_task: asyncio.Task | None = None
         self._flat_task: asyncio.Task | None = None
-        self._scan_lock = asyncio.Lock()
-        self._flat_lock = asyncio.Lock()
+        self._scan_lock: asyncio.Lock | None = None
+        self._flat_lock: asyncio.Lock | None = None
         self._state_lock = threading.RLock()
         self._last_scan = self._empty_scan_state()
         self._last_successful_scan: dict[str, Any] | None = None
@@ -88,6 +88,16 @@ class PredictionPaperAutomation:
             "last_reason": None, "blocked": False, "deadline_violation": False,
             "last_error": None,
         }
+
+    def _scan_guard(self) -> asyncio.Lock:
+        if self._scan_lock is None:
+            self._scan_lock = asyncio.Lock()
+        return self._scan_lock
+
+    def _flat_guard(self) -> asyncio.Lock:
+        if self._flat_lock is None:
+            self._flat_lock = asyncio.Lock()
+        return self._flat_lock
 
     async def start(self) -> None:
         if self.running:
@@ -153,10 +163,11 @@ class PredictionPaperAutomation:
         }
 
     async def run_scan_once(self, *, now: datetime | None = None) -> dict[str, Any]:
-        if self._scan_lock.locked():
+        scan_lock = self._scan_guard()
+        if scan_lock.locked():
             with self._state_lock:
                 return {**self._last_scan, "duplicate_cycle_skipped": True}
-        async with self._scan_lock:
+        async with scan_lock:
             current = now or _now()
             cycle_id = str(uuid.uuid4())[:12]
             state = self._empty_scan_state()
@@ -374,10 +385,11 @@ class PredictionPaperAutomation:
     async def run_auto_flat_once(
         self, *, now: datetime | None = None
     ) -> dict[str, Any]:
-        if self._flat_lock.locked():
+        flat_lock = self._flat_guard()
+        if flat_lock.locked():
             with self._state_lock:
                 return {**self._last_flat, "duplicate_check_skipped": True}
-        async with self._flat_lock:
+        async with flat_lock:
             current = now or _now()
             state = self._empty_flat_state()
             state["last_check_at"] = _iso(current)
