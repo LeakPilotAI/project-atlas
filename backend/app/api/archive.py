@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import csv
+import hashlib
 import io
 import json
 from collections import Counter, deque
@@ -533,6 +534,313 @@ async def paper_trade_detail(trade_id: str) -> Dict[str, Any]:
         "execution": "PAPER_ONLY",
         "live_capital_allowed": False,
     }
+
+
+# --------------------------------
+# Read-only investment research archive
+# --------------------------------
+
+def _research_record_id(row: dict[str, Any]) -> str:
+    raw = "|".join(
+        [
+            str(row.get("timestamp") or ""),
+            str(row.get("symbol") or ""),
+            str(row.get("scoring_version") or ""),
+            str(row.get("classification") or ""),
+        ]
+    )
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _research_sector(row: dict[str, Any]) -> str:
+    snap = row.get("input_snapshot") if isinstance(row.get("input_snapshot"), dict) else {}
+    asset = snap.get("asset") if isinstance(snap.get("asset"), dict) else {}
+    return str(asset.get("sector") or "").strip()
+
+
+def _research_name(row: dict[str, Any]) -> str:
+    value = str(row.get("name") or "").strip()
+    if value:
+        return value
+    snap = row.get("input_snapshot") if isinstance(row.get("input_snapshot"), dict) else {}
+    asset = snap.get("asset") if isinstance(snap.get("asset"), dict) else {}
+    return str(asset.get("name") or "").strip()
+
+
+def _research_ts(row: dict[str, Any]) -> datetime | None:
+    raw = row.get("timestamp")
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def _research_archive_row(row: dict[str, Any]) -> dict[str, Any]:
+    explain = row.get("explain") if isinstance(row.get("explain"), dict) else {}
+    components = row.get("components") if isinstance(row.get("components"), dict) else {}
+    drawdown = row.get("drawdown") if isinstance(row.get("drawdown"), dict) else {}
+    score = row.get("opportunity_score")
+    try:
+        score = int(score) if score is not None else None
+    except (TypeError, ValueError):
+        score = None
+    return {
+        "record_id": _research_record_id(row),
+        "timestamp": row.get("timestamp"),
+        "symbol": str(row.get("symbol") or "").upper(),
+        "name": _research_name(row),
+        "asset_type": str(row.get("asset_type") or "UNKNOWN").upper(),
+        "sector": _research_sector(row),
+        "classification": str(row.get("classification") or "UNKNOWN").upper(),
+        "opportunity_score": score,
+        "evidence_quality": str(row.get("evidence_quality") or "UNKNOWN").upper(),
+        "thesis": str(row.get("thesis") or "UNKNOWN").upper(),
+        "price": row.get("price"),
+        "scoring_version": row.get("scoring_version"),
+        "coverage_label": row.get("coverage_label"),
+        "components": components,
+        "drawdown": drawdown,
+        "why_this_asset": list(explain.get("why_this_asset") or []),
+        "why_interesting": list(explain.get("why_interesting") or []),
+        "why_now": list(explain.get("why_now") or []),
+        "supports_thesis": list(explain.get("supports_thesis") or []),
+        "weakens_thesis": list(explain.get("weakens_thesis") or []),
+        "missing_data": list(explain.get("missing_data") or row.get("missing_critical") or []),
+        "invalidation": list(explain.get("invalidation") or []),
+        "risks": list(explain.get("risks") or []),
+        "data_quality_notes": list(explain.get("data_quality_notes") or []),
+        "generational_blockers": list(row.get("generational_blockers") or []),
+        "disclaimer": row.get("disclaimer"),
+    }
+
+
+def _research_filtered_rows(
+    *,
+    date_range: str = "all",
+    asset_type: str = "",
+    sector: str = "",
+    classification: str = "",
+    evidence: str = "",
+    thesis: str = "",
+    scoring_version: str = "",
+    search: str = "",
+) -> list[dict[str, Any]]:
+    rows = _read_dataset(OPPORTUNITIES_PATH)
+    token = str(date_range or "all").lower()
+    days = {"30d": 30, "90d": 90, "365d": 365}.get(token)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days) if days else None
+    a = str(asset_type or "").upper().strip()
+    sec = str(sector or "").upper().strip()
+    cls = str(classification or "").upper().strip()
+    ev = str(evidence or "").upper().strip()
+    th = str(thesis or "").upper().strip()
+    ver = str(scoring_version or "").strip()
+    q = str(search or "").upper().strip()
+    selected = []
+    for row in rows:
+        if cutoff is not None:
+            ts = _research_ts(row)
+            if ts is not None and ts < cutoff:
+                continue
+        mapped = _research_archive_row(row)
+        if a and mapped["asset_type"] != a:
+            continue
+        if sec and mapped["sector"].upper() != sec:
+            continue
+        if cls and mapped["classification"] != cls:
+            continue
+        if ev and mapped["evidence_quality"] != ev:
+            continue
+        if th and mapped["thesis"] != th:
+            continue
+        if ver and str(mapped.get("scoring_version") or "") != ver:
+            continue
+        if q:
+            haystack = " ".join(
+                [
+                    mapped["symbol"],
+                    mapped["name"],
+                    mapped["sector"],
+                    mapped["classification"],
+                    mapped["evidence_quality"],
+                    mapped["thesis"],
+                    " ".join(mapped["why_now"]),
+                    " ".join(mapped["supports_thesis"]),
+                    " ".join(mapped["risks"]),
+                ]
+            ).upper()
+            if q not in haystack:
+                continue
+        selected.append(mapped)
+    selected.sort(
+        key=lambda row: (
+            _research_ts(row) or datetime.min.replace(tzinfo=timezone.utc),
+            str(row.get("symbol") or ""),
+        )
+    )
+    return selected
+
+
+def _build_research_archive(
+    *,
+    date_range: str,
+    asset_type: str,
+    sector: str,
+    classification: str,
+    evidence: str,
+    thesis: str,
+    scoring_version: str,
+    search: str,
+    limit: int,
+) -> dict[str, Any]:
+    rows = _research_filtered_rows(
+        date_range=date_range,
+        asset_type=asset_type,
+        sector=sector,
+        classification=classification,
+        evidence=evidence,
+        thesis=thesis,
+        scoring_version=scoring_version,
+        search=search,
+    )
+    symbols = sorted({row["symbol"] for row in rows if row["symbol"]})
+    sectors = sorted({row["sector"] for row in rows if row["sector"]})
+    asset_types = sorted({row["asset_type"] for row in rows if row["asset_type"]})
+    classifications = sorted({row["classification"] for row in rows if row["classification"]})
+    evidence_levels = sorted({row["evidence_quality"] for row in rows if row["evidence_quality"]})
+    thesis_states = sorted({row["thesis"] for row in rows if row["thesis"]})
+    versions = sorted({str(row["scoring_version"]) for row in rows if row.get("scoring_version")})
+
+    class_counts = Counter(row["classification"] for row in rows)
+    sector_counts = Counter(row["sector"] or "UNCLASSIFIED" for row in rows)
+    evidence_counts = Counter(row["evidence_quality"] for row in rows)
+    monthly_counts = Counter(
+        str(row.get("timestamp") or "")[:7]
+        for row in rows
+        if str(row.get("timestamp") or "")[:7]
+    )
+
+    scored = [row for row in rows if row.get("opportunity_score") is not None]
+    top_scores = sorted(
+        scored,
+        key=lambda row: (
+            int(row.get("opportunity_score") or 0),
+            str(row.get("timestamp") or ""),
+        ),
+        reverse=True,
+    )[:8]
+    latest = max((str(row.get("timestamp") or "") for row in rows), default=None)
+    high_evidence = sum(1 for row in rows if row.get("evidence_quality") == "HIGH")
+    thesis_intact = sum(1 for row in rows if row.get("thesis") in {"STRONG", "INTACT"})
+
+    return {
+        "domain": "INVESTMENT_RESEARCH_ARCHIVE",
+        "execution": "RESEARCH_ONLY",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+        "summary": {
+            "records": len(rows),
+            "tracked_symbols": len(symbols),
+            "classification_count": len(class_counts),
+            "high_evidence_records": high_evidence,
+            "intact_or_strong_thesis_records": thesis_intact,
+            "last_updated": latest,
+            "outcome_linkage_supported": False,
+            "research_win_rate": None,
+        },
+        "filters": {
+            "date_range": date_range,
+            "asset_type": asset_type or "ALL",
+            "sector": sector or "ALL",
+            "classification": classification or "ALL",
+            "evidence": evidence or "ALL",
+            "thesis": thesis or "ALL",
+            "scoring_version": scoring_version or "ALL",
+            "search": search,
+        },
+        "facets": {
+            "symbols": symbols,
+            "sectors": sectors,
+            "asset_types": asset_types,
+            "classifications": classifications,
+            "evidence_levels": evidence_levels,
+            "thesis_states": thesis_states,
+            "scoring_versions": versions,
+        },
+        "breakdowns": {
+            "classification": [
+                {"name": key, "count": count}
+                for key, count in class_counts.most_common()
+            ],
+            "sector": [
+                {"name": key, "count": count}
+                for key, count in sector_counts.most_common()
+            ],
+            "evidence": [
+                {"name": key, "count": count}
+                for key, count in evidence_counts.most_common()
+            ],
+            "monthly_activity": [
+                {"month": month, "count": monthly_counts[month]}
+                for month in sorted(monthly_counts)
+            ],
+        },
+        "top_research_scores": top_scores,
+        "records": list(reversed(rows[-limit:])),
+        "note": (
+            "Append-only scored investment research records. Opportunity scores are ordinal "
+            "research rankings, not probabilities, recommendations, or realized-return claims."
+        ),
+        "outcome_note": (
+            "Atlas does not currently persist a one-to-one executed-outcome linkage for these "
+            "research records, so research win rate and executed-idea performance remain unavailable."
+        ),
+    }
+
+
+@router.get("/research-archive")
+async def research_archive(
+    date_range: str = Query("all"),
+    asset_type: str = Query(""),
+    sector: str = Query(""),
+    classification: str = Query(""),
+    evidence: str = Query(""),
+    thesis: str = Query(""),
+    scoring_version: str = Query(""),
+    search: str = Query(""),
+    limit: int = Query(500, ge=25, le=2000),
+) -> Dict[str, Any]:
+    return await asyncio.to_thread(
+        _build_research_archive,
+        date_range=date_range,
+        asset_type=asset_type,
+        sector=sector,
+        classification=classification,
+        evidence=evidence,
+        thesis=thesis,
+        scoring_version=scoring_version,
+        search=search,
+        limit=limit,
+    )
+
+
+@router.get("/research-archive/{record_id}")
+async def research_archive_detail(record_id: str) -> Dict[str, Any]:
+    requested = str(record_id or "").strip()
+    for row in reversed(_read_dataset(OPPORTUNITIES_PATH)):
+        if _research_record_id(row) == requested:
+            return {
+                "record": _research_archive_row(row),
+                "execution": "RESEARCH_ONLY",
+                "live_capital_allowed": False,
+                "automatic_real_money_execution": False,
+            }
+    raise HTTPException(status_code=404, detail="Research record not found")
 
 
 # ----------------------------
