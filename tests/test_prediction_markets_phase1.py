@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -14,6 +16,12 @@ from app.prediction.kalshi_public import (
     normalize_orderbook,
 )
 from app.prediction.policy import is_multivariate_market, policy_snapshot
+from app.prediction.paper_engine import (
+    PredictionPaperJournal,
+    evaluate_pre_event_repricing,
+    kalshi_general_taker_fee,
+    walk_executable_depth,
+)
 import app.api.prediction as prediction_api
 
 
@@ -474,6 +482,121 @@ def test_prediction_candlestick_route_uses_read_only_provider(monkeypatch):
     payload = response.json()
     assert payload["ticker"] == "KXTEST-26OCT02-Y"
     assert payload["count"] == 1
+
+
+def test_prediction_paper_fee_and_depth_model_are_conservative():
+    fee = kalshi_general_taker_fee(Decimal("10"), Decimal("0.52"))
+    assert fee == Decimal("0.18")
+
+    book = {
+        "yes": {
+            "asks": [
+                {"price_dollars": "0.5000", "quantity_contracts": "10"},
+                {"price_dollars": "0.5200", "quantity_contracts": "10"},
+            ],
+            "bids": [{"price_dollars": "0.4800", "quantity_contracts": "50"}],
+        }
+    }
+    fill = walk_executable_depth(
+        book,
+        side="YES",
+        action="BUY",
+        quantity=Decimal("15"),
+    )
+    assert fill["fillable"] is True
+    assert fill["filled_quantity"] == "15"
+    assert Decimal(fill["vwap_dollars"]) > Decimal("0.50")
+    assert Decimal(fill["depth_slippage_dollars_per_contract"]) > 0
+    assert len(fill["levels"]) == 2
+
+
+def test_prediction_paper_repricing_rejects_wide_spread():
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    market = {
+        "ticker": "KXTEST-SINGLE",
+        "market_structure": {"single_market": True, "multivariate": False},
+        "timing": {"occurrence_datetime": (now + timedelta(hours=3)).isoformat()},
+        "activity": {
+            "volume_24h_contracts": "500.00",
+            "open_interest_contracts": "300.00",
+        },
+    }
+    book = {
+        "yes": {
+            "bids": [{"price_dollars": "0.3800", "quantity_contracts": "100"}],
+            "asks": [{"price_dollars": "0.5100", "quantity_contracts": "100"}],
+            "best_bid_dollars": "0.3800",
+            "best_ask_dollars": "0.5100",
+            "spread_dollars": "0.1300",
+        },
+        "no": {
+            "bids": [{"price_dollars": "0.4900", "quantity_contracts": "100"}],
+            "asks": [{"price_dollars": "0.6200", "quantity_contracts": "100"}],
+            "best_bid_dollars": "0.4900",
+            "best_ask_dollars": "0.6200",
+            "spread_dollars": "0.1300",
+        },
+    }
+    candles = [
+        {
+            "yes_bid": {"close_dollars": "0.50", "high_dollars": "0.58", "low_dollars": "0.49"},
+            "yes_ask": {"close_dollars": "0.53", "high_dollars": "0.55", "low_dollars": "0.52"},
+        }
+        for _ in range(6)
+    ]
+    result = evaluate_pre_event_repricing(
+        market=market,
+        orderbook=book,
+        candles=candles,
+        side="YES",
+        quantity=Decimal("10"),
+        now=now,
+    )
+    assert result["eligible"] is False
+    assert "SPREAD_TOO_WIDE" in result["rejection_reasons"]
+    assert result["live_capital_allowed"] is False
+
+
+def test_prediction_paper_journal_keeps_one_open_position(tmp_path):
+    journal = PredictionPaperJournal(
+        journal_path=tmp_path / "prediction-paper.jsonl",
+        candidate_path=tmp_path / "prediction-candidates.jsonl",
+    )
+    evaluation = {
+        "eligible": True,
+        "ticker": "KXTEST-SINGLE",
+        "side": "YES",
+        "quantity_contracts": "10",
+        "occurrence_datetime": "2026-10-02T15:00:00+00:00",
+        "flat_deadline": "2026-10-02T14:30:00+00:00",
+        "strategy": "PRE_EVENT_RECENT_RECLAIM_V1",
+        "score": 88,
+        "engine_version": "prediction-paper-reprice-v1",
+        "entry_fill": {
+            "fillable": True,
+            "vwap_dollars": "0.5200",
+            "notional_dollars": "5.2000",
+            "estimated_taker_fee_dollars": "0.18",
+            "depth_slippage_dollars_per_contract": "0.0000",
+            "levels": [
+                {
+                    "price_dollars": "0.5200",
+                    "quantity_contracts": "10",
+                    "estimated_taker_fee_dollars": "0.18",
+                }
+            ],
+        },
+    }
+    first = journal.open_from_evaluation(evaluation)
+    assert first["status"] == "open"
+    assert journal.snapshot()["summary"]["open_positions"] == 1
+
+    try:
+        journal.open_from_evaluation(evaluation)
+    except Exception as exc:
+        assert "already open" in str(exc)
+    else:
+        raise AssertionError("prediction PAPER stacking must remain blocked")
 
 
 def test_prediction_phase_one_contains_no_authenticated_or_live_order_surface():
