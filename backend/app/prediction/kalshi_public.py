@@ -353,7 +353,7 @@ class KalshiPublicMarketClient:
     async def get_candlesticks(
         self,
         *,
-        series_ticker: str | None,
+        series_ticker: str | None = None,
         ticker: str,
         start_ts: int,
         end_ts: int,
