@@ -213,7 +213,10 @@ def test_archive_research_page_contract():
     assert "/api/archive/research-archive" in text
     assert "scores are ordinal, not probabilities" in text
     assert "Research win rate and executed-idea returns are therefore not shown." in text
-    assert "412" not in text
+    # Guard against copying mock reference telemetry into production while allowing
+    # incidental digits in CSS or implementation details.
+    assert "412 research" not in text.lower()
+    assert ">412<" not in text
     assert "71.4%" not in text
     assert "+21.8%" not in text
     assert "NVDA +208.4%" not in text
