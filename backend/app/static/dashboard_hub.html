@@ -82,8 +82,14 @@ function paneState(pane,state,message){
 function armFrame(pane,frame){
   if(!frame || frame.dataset.shellArmed==='1')return;
   frame.dataset.shellArmed='1';
-  frame.addEventListener('load',()=>paneState(pane,'ready',''));
+  frame.addEventListener('load',()=>{frame.dataset.shellLoaded='1';paneState(pane,'ready','')});
   frame.addEventListener('error',()=>paneState(pane,'error','Atlas could not load this workspace. Retry without leaving the shell.'));
+  try{
+    if(frame.contentDocument && frame.contentDocument.readyState==='complete'){
+      frame.dataset.shellLoaded='1';
+      paneState(pane,'ready','');
+    }
+  }catch(e){}
 }
 function activate(btn){
   tabs.forEach(x=>{x.classList.remove('on');x.setAttribute('aria-selected','false')});
