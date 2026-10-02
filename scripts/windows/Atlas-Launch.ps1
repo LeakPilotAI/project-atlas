@@ -148,10 +148,12 @@ swap=0
 }
 
 function Get-DockerDesktop {
-    @(
-        (Join-Path $env:ProgramFiles "Docker\Docker\Docker Desktop.exe"),
-        (Join-Path ${env:ProgramFiles(x86)} "Docker\Docker\Docker Desktop.exe")
-    ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+    $roots = @($env:ProgramFiles, ${env:ProgramFiles(x86)}) | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_)
+    }
+    @($roots | ForEach-Object {
+        Join-Path ([string]$_) "Docker\\Docker\\Docker Desktop.exe"
+    }) | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
 
 function Wait-Docker([int]$Seconds = 120) {
