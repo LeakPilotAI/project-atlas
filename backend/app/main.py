@@ -327,6 +327,7 @@ ARCHIVE_EXPORT_HTML = STATIC_DIR / "archive_export.html"
 ARCHIVE_PAPER_TRADES_HTML = STATIC_DIR / "archive_paper_trades.html"
 ARCHIVE_RESEARCH_HTML = STATIC_DIR / "archive_research.html"
 ARCHIVE_SNAPSHOTS_HTML = STATIC_DIR / "archive_snapshots.html"
+COMMAND_CENTER_HTML = STATIC_DIR / "command_center.html"
 LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 
 
@@ -389,6 +390,11 @@ async def archive_research_dashboard_page() -> FileResponse:
 @app.get("/dashboard/archive/snapshots")
 async def archive_snapshots_dashboard_page() -> FileResponse:
     return _dashboard_response(ARCHIVE_SNAPSHOTS_HTML)
+
+
+@app.get("/dashboard/command-center")
+async def command_center_dashboard_page() -> FileResponse:
+    return _dashboard_response(COMMAND_CENTER_HTML)
 
 
 @app.get("/dashboard/legacy")
@@ -473,6 +479,7 @@ async def root() -> Dict[str, str]:
         "dashboard_archive_paper_trades": "/dashboard/archive/paper-trades",
         "dashboard_archive_research": "/dashboard/archive/research",
         "dashboard_archive_snapshots": "/dashboard/archive/snapshots",
+        "dashboard_command_center": "/dashboard/command-center",
         "dashboard_legacy": "/dashboard/legacy",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
