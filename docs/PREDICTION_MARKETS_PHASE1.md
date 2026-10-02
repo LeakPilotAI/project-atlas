@@ -123,3 +123,69 @@ ask by enough to cover spread, fees, modeled slippage and the required research 
 
 The paper engine must use executable orderbook prices and available size; it must never
 credit a fill from midpoint-only or chart-only movement.
+
+
+## Phase 1.1 — Executable depth + pre-event price history
+
+Atlas now reads two additional public Kalshi market-data surfaces for realistic PAPER
+research:
+
+- GET /api/prediction/markets/{ticker}/orderbook?depth=N
+- GET /api/prediction/markets/{ticker}/candlesticks
+
+Provider basis:
+
+- Kalshi market orderbook:
+  GET /markets/{ticker}/orderbook
+- Kalshi market candlesticks:
+  GET /series/{series_ticker}/markets/{ticker}/candlesticks
+
+### Orderbook handling
+
+Kalshi returns YES and NO bids only. Atlas therefore derives executable asks from the
+opposite-side bids using the binary-market complement relation:
+
+- YES ask = 1.0000 - best NO bid
+- NO ask = 1.0000 - best YES bid
+
+The corresponding provider quantity is preserved at each derived ask level. Atlas sorts
+bids best-first and asks cheapest-first, and reports the executable spread for each side.
+
+Every orderbook read first passes through Atlas's single-market detail check, so a
+multivariate/combo market is blocked before its depth can enter PAPER research.
+
+Orderbook depth is bounded to 0..100 provider levels.
+
+### Candlestick handling
+
+Supported intervals match the public provider contract:
+
+- 1 minute
+- 60 minutes
+- 1440 minutes
+
+Atlas bounds any one request to at most 1,000 requested periods. Returned candles retain:
+
+- YES bid OHLC
+- YES ask OHLC
+- trade/price OHLC
+- mean / previous / min / max price
+- fixed-point volume
+- fixed-point open interest
+
+The normalized market timing contract also now retains occurrence_datetime so the
+future PAPER engine can enforce the mandatory pre-event flat deadline.
+
+### PAPER realism contract
+
+These reads are data acquisition only. They do not place orders.
+
+The planned PAPER engine must use:
+
+- executable ask + available size for entry
+- executable bid + available size for exit
+- actual spread
+- modeled fees/slippage
+- pre-event timing
+
+It may not credit midpoint-only or chart-touch-only fills.
