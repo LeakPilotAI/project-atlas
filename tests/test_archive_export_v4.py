@@ -104,7 +104,11 @@ def test_archive_export_page_contract():
     assert "this browser session only" in text
     assert "Atlas does not persist export-generation history" in text
     assert "No background export jobs" in text
-    assert "86" not in text
+    # Guard against copying mock reference telemetry into production without
+    # rejecting incidental CSS/color literals that may contain the same digits.
+    assert "86 Exports" not in text
+    assert "86 exports" not in text
+    assert ">86<" not in text
     assert "482 MB" not in text
 
 
