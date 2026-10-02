@@ -88,7 +88,10 @@ def test_scanner_prefilters_before_expensive_reads_and_never_opens(monkeypatch, 
     assert journal.open_trade() is None
     rows = journal._rows(journal.candidate_path)
     assert {row["side"] for row in rows} == {"YES", "NO"}
-    assert service.status()["unattended_paper_open_enabled"] is False
+    status = service.status()
+    assert status["unattended_paper_open_enabled"] is False
+    assert status["automatic_paper_position_opening"] is False
+    assert status["unattended_paper_open_block_reasons"] == ["AUTO_FLAT_LIVE_VALIDATION_REQUIRED"]
 
 
 def test_scanner_accepts_provider_active_status_from_open_discovery(monkeypatch, tmp_path):
