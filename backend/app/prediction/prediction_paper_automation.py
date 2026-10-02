@@ -511,7 +511,11 @@ class PredictionPaperAutomation:
                 and self._last_flat.get("blocked") is True
             )
         if not duplicate:
-            prediction_paper_journal.log_event(row)
+            logger = getattr(prediction_paper_journal, "log_event", None)
+            if callable(logger):
+                logger(row)
+            else:
+                prediction_paper_journal._append(prediction_paper_journal.journal_path, row)
         state.update(
             {
                 "last_action": "BLOCKED",
