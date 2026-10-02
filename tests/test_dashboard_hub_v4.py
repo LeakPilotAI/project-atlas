@@ -12,7 +12,7 @@ LEGACY = ROOT / "backend" / "app" / "static" / "dashboard.html"
 
 def test_dashboard_hub_has_three_isolated_domains():
     text = HUB.read_text(encoding="utf-8")
-    for name in ("Perp Day Trade", "Quality Dips", "Investment", "Archive", "Command Center"):
+    for name in ("Perp Day Trade", "Quality Dips", "Investment", "Archive", "Command Center", "Prediction Markets"):
         assert name in text
     assert 'src="/dashboard/perps?embed=1"' in text
     assert 'data-src="/api/investments/quality-dips/view"' in text
@@ -20,6 +20,12 @@ def test_dashboard_hub_has_three_isolated_domains():
     assert 'data-src="/dashboard/archive"' in text
     assert "COMING SOON" in text
     assert 'data-src="/dashboard/command-center"' in text
+    assert 'data-src="/dashboard/future?embed=1"' in text
+    assert '.nav .tab[data-pane="analytics"],.nav .tab[data-pane="portfolio"]{display:none}' in text
+    assert '.nav .tab[data-pane="prediction"]' not in text.split('{display:none}', 1)[0].splitlines()[-1]
+    command_pos = text.index('data-pane="command"')
+    prediction_pos = text.index('data-pane="prediction"')
+    assert command_pos < prediction_pos
     command = text.split('id="pane-command"', 1)[1].split("</section>", 1)[0]
     assert "<iframe" in command
     assert "if(frame && !frame.getAttribute('src'))" in text
