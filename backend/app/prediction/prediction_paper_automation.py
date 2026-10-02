@@ -33,6 +33,8 @@ DEFAULT_SCAN_INTERVAL_SECONDS = 60.0
 DEFAULT_FLAT_INTERVAL_SECONDS = 5.0
 DEFAULT_FLAT_LEAD_SECONDS = 5.0
 DEFAULT_DISCOVERY_LIMIT = 40
+DEFAULT_DISCOVERY_POOL_LIMIT = 400
+DEFAULT_DISCOVERY_PAGE_SIZE = 200
 DEFAULT_MAX_CONCURRENCY = 4
 DEFAULT_ORDERBOOK_DEPTH = 20
 DEFAULT_HISTORY_MINUTES = 180
@@ -49,6 +51,8 @@ class PredictionAutomationConfig:
     flat_interval_seconds: float = DEFAULT_FLAT_INTERVAL_SECONDS
     flat_lead_seconds: float = DEFAULT_FLAT_LEAD_SECONDS
     discovery_limit: int = DEFAULT_DISCOVERY_LIMIT
+    discovery_pool_limit: int = DEFAULT_DISCOVERY_POOL_LIMIT
+    discovery_page_size: int = DEFAULT_DISCOVERY_PAGE_SIZE
     max_concurrency: int = DEFAULT_MAX_CONCURRENCY
     orderbook_depth: int = DEFAULT_ORDERBOOK_DEPTH
     history_minutes: int = DEFAULT_HISTORY_MINUTES
@@ -75,8 +79,10 @@ class PredictionPaperAutomation:
     def _empty_scan_state() -> dict[str, Any]:
         return {
             "cycle_id": None, "running": False, "started_at": None, "finished_at": None,
-            "markets_discovered": 0, "markets_prefilter_rejected": 0,
-            "markets_fully_evaluated": 0, "yes_evaluations": 0, "no_evaluations": 0,
+            "metadata_markets_seen": 0, "markets_discovered": 0, "markets_selected": 0,
+            "selection_viable_count": 0, "selection_activity_qualified_count": 0,
+            "markets_prefilter_rejected": 0, "markets_fully_evaluated": 0,
+            "yes_evaluations": 0, "no_evaluations": 0,
             "eligible_count": 0, "rejected_count": 0, "error_count": 0,
             "timeout_count": 0, "last_error": None, "top_eligible": [],
         }
@@ -145,6 +151,8 @@ class PredictionPaperAutomation:
                 "flat_interval_seconds": self.config.flat_interval_seconds,
                 "flat_lead_seconds": self.config.flat_lead_seconds,
                 "discovery_limit": self.config.discovery_limit,
+                "discovery_pool_limit": self.config.discovery_pool_limit,
+                "discovery_page_size": self.config.discovery_page_size,
                 "max_concurrency": self.config.max_concurrency,
                 "orderbook_depth": self.config.orderbook_depth,
                 "history_minutes": self.config.history_minutes,
@@ -180,18 +188,25 @@ class PredictionPaperAutomation:
                 self._last_scan = dict(state)
             success = False
             try:
-                payload = await asyncio.wait_for(
-                    kalshi_public.get_markets(
-                        status="open",
-                        limit=max(1, min(int(self.config.discovery_limit), 200)),
-                    ),
-                    timeout=12.0,
+                pool = await asyncio.wait_for(
+                    self._discover_market_pool(),
+                    timeout=20.0,
                 )
-                rows = payload.get("markets") if isinstance(payload, dict) else []
-                markets = [
-                    row for row in rows if isinstance(row, dict)
-                ][: self.config.discovery_limit]
+                state["metadata_markets_seen"] = len(pool)
+                cfg = RepricingConfig()
+                state["selection_viable_count"] = sum(
+                    1 for market in pool if not self._prefilter_reasons(market, current)
+                )
+                state["selection_activity_qualified_count"] = sum(
+                    1 for market in pool
+                    if self._activity_qualified(market, cfg)
+                )
+                markets = sorted(
+                    pool,
+                    key=lambda market: self._selection_key(market, current),
+                )[: max(1, int(self.config.discovery_limit))]
                 state["markets_discovered"] = len(markets)
+                state["markets_selected"] = len(markets)
 
                 survivors = []
                 for market in markets:
@@ -284,6 +299,85 @@ class PredictionPaperAutomation:
                     if success:
                         self._last_successful_scan = dict(state)
             return dict(state)
+
+    async def _discover_market_pool(self) -> list[dict[str, Any]]:
+        """Collect a bounded metadata-only pool before spending expensive reads."""
+        pool_limit = max(
+            1,
+            min(int(self.config.discovery_pool_limit), 1000),
+        )
+        page_size = max(
+            1,
+            min(int(self.config.discovery_page_size), 200, pool_limit),
+        )
+        markets: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        cursor: str | None = None
+        while len(markets) < pool_limit:
+            payload = await kalshi_public.get_markets(
+                status="open",
+                limit=min(page_size, pool_limit - len(markets)),
+                cursor=cursor,
+            )
+            rows = payload.get("markets") if isinstance(payload, dict) else []
+            added = 0
+            for row in rows if isinstance(rows, list) else []:
+                if not isinstance(row, dict):
+                    continue
+                ticker = str(row.get("ticker") or "").strip().upper()
+                if not ticker or ticker in seen:
+                    continue
+                seen.add(ticker)
+                markets.append(row)
+                added += 1
+                if len(markets) >= pool_limit:
+                    break
+            next_cursor = (
+                str(payload.get("cursor") or "").strip()
+                if isinstance(payload, dict) else ""
+            )
+            if not next_cursor or next_cursor == cursor or added == 0:
+                break
+            cursor = next_cursor
+        return markets
+
+    @staticmethod
+    def _activity_qualified(
+        market: dict[str, Any], cfg: RepricingConfig
+    ) -> bool:
+        activity = (
+            market.get("activity")
+            if isinstance(market.get("activity"), dict) else {}
+        )
+        volume = _d(activity.get("volume_24h_contracts"))
+        oi = _d(activity.get("open_interest_contracts"))
+        return bool(
+            volume is not None
+            and oi is not None
+            and volume >= cfg.min_24h_volume
+            and oi >= cfg.min_open_interest
+        )
+
+    def _selection_key(
+        self, market: dict[str, Any], now: datetime
+    ) -> tuple[Any, ...]:
+        """Prefer markets nearest to passing cheap gates without relaxing any gate."""
+        reasons = self._prefilter_reasons(market, now)
+        activity = (
+            market.get("activity")
+            if isinstance(market.get("activity"), dict) else {}
+        )
+        volume = _d(activity.get("volume_24h_contracts")) or Decimal("0")
+        oi = _d(activity.get("open_interest_contracts")) or Decimal("0")
+        activity_floor = min(volume, oi)
+        return (
+            0 if not reasons else 1,
+            len(reasons),
+            -activity_floor,
+            -volume,
+            -oi,
+            str(market.get("ticker") or ""),
+        )
 
     def _prefilter_reasons(
         self, market: dict[str, Any], now: datetime
