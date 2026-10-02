@@ -98,15 +98,15 @@ async def prediction_market_orderbook(
 @router.get("/markets/{ticker}/candlesticks")
 async def prediction_market_candlesticks(
     ticker: str,
-    series_ticker: str = Query(..., min_length=1, max_length=160),
+    series_ticker: str | None = Query(None, min_length=1, max_length=160),
     start_ts: int = Query(..., gt=0),
     end_ts: int = Query(..., gt=0),
     period_interval: int = Query(60),
     include_latest_before_start: bool = Query(False),
 ) -> Dict[str, Any]:
     clean = _ticker(ticker, required=True)
-    series = _ticker(series_ticker, required=True)
-    assert clean is not None and series is not None
+    series = _ticker(series_ticker)
+    assert clean is not None
     try:
         return await kalshi_public.get_candlesticks(
             series_ticker=series,
