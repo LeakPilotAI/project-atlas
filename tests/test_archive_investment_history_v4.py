@@ -94,6 +94,8 @@ def test_archive_investment_history_page_contract():
     assert "Current Book Allocation" in text
     assert "Position Notes" in text
     assert "OHLC + volume" in text
+    assert 'aria-label="Archive investment side rail"' in text
+    assert "max-height:535px" in text
     assert 'data-range="22"' in text
     assert 'data-range="264"' in text
     # Honest disclosure may mention unsupported realized metrics by name.
