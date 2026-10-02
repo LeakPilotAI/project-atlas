@@ -91,7 +91,10 @@ def test_archive_investment_history_page_contract():
     assert "/api/archive/investment-history/" in text
     assert "PAPER research only" in text
     assert "no live brokerage execution" in text
-    assert "Win rate" not in text
+    # Honest disclosure may mention unsupported realized metrics by name.
+    # Guard against rendering fake realized-performance metric cards/values instead.
+    assert '<div class="label">Win Rate</div>' not in text
+    assert "68.1%" not in text
     assert "BEST POSITION" not in text
 
 
