@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.prediction.kalshi_public import ALLOWED_STATUSES, PredictionProviderError, kalshi_public
 from app.prediction.policy import policy_snapshot
+from app.prediction.prediction_paper_automation import prediction_paper_automation
 from app.prediction.paper_engine import (
     PAPER_ENGINE_VERSION,
     PredictionPaperError,
@@ -181,7 +182,14 @@ async def _build_prediction_paper_evaluation(
 async def prediction_paper_status(
     limit: int = Query(100, ge=1, le=1000),
 ) -> Dict[str, Any]:
-    return prediction_paper_journal.snapshot(limit=limit)
+    payload = prediction_paper_journal.snapshot(limit=limit)
+    payload["automation"] = prediction_paper_automation.status()
+    return payload
+
+
+@router.get("/paper/automation/status")
+async def prediction_paper_automation_status() -> Dict[str, Any]:
+    return prediction_paper_automation.status()
 
 
 @router.post("/paper/evaluate/{ticker}")
