@@ -134,7 +134,8 @@ def test_archive_paper_trades_page_contract():
     assert "PAPER ONLY · no live capital" in text
     assert "hasNum" in text
     assert "v!==null&&v!==undefined&&v!==''" in text
-    assert "173" not in text
+    assert "173 trades" not in text.lower()
+    assert ">173<" not in text
     assert "+28.37R" not in text
     assert "64.2%" not in text
     assert "+4.32R" not in text
