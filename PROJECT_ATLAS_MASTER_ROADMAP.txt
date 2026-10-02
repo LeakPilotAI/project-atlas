@@ -2217,6 +2217,21 @@ PHASE F — WALK-FORWARD / OUT-OF-SAMPLE VALIDATION
 PHASE G — INVESTMENT PROGRAM PROSPECTIVE SCORECARD
 [PLANNED / BUILDS ON EXISTING PROSPECTIVE PIPELINE]
 Investment research is evaluated separately from intraday trading.
+
+PERMANENT INVESTMENT SCOPE — LONG ONLY
+- The Atlas Investment / Quality Dips program is long-only.
+- Long-duration investment shorting is permanently out of scope.
+- Do not add or revisit Quality Extremes, ATH-exhaustion short strategies, direct
+  borrowed-share investment shorts, inverse-ETF bearish investment strategies,
+  long-duration bearish hedging strategies, or leveraged bearish investment trades.
+- Do not add margin/borrow-based investment execution as a future Atlas milestone.
+- HOLD / WAIT / BUY_NOTHING_TODAY is the bearish or insufficient-edge response for
+  the Investment program; Atlas is not required to monetize every downward thesis.
+- This permanent exclusion does not rewrite preserved historical intraday PAPER
+  execution evidence; it governs the Investment / long-horizon roadmap and future work.
+- Reintroducing investment shorting is not a deferred task and is not part of the
+  continuous refinement loop.
+
 For each frozen investment observation/call:
 - preserve only information available at observation time
 - evaluate forward horizons such as 1d / 5d / 20d / 60d when mature
@@ -2290,7 +2305,9 @@ SCOPE FREEZE:
 - Prefer long-duration PAPER/shadow evidence and refinement of existing systems over
   expanding Atlas simply because another trade idea is possible.
 - Prediction Markets, Day Trading, and Investment/Quality Dips are the intended
-  strategy/research scope unless the operator explicitly changes that scope later.
+  strategy/research scope.
+- Investment/Quality Dips remains LONG ONLY permanently; continuous refinement must
+  not generate, propose, or schedule long-horizon short/hedge/inverse strategies.
 
 Once the planned engineering/research surfaces above are implemented and verified,
 Atlas transitions from feature expansion to a continuing evidence loop across:
