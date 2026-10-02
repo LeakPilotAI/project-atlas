@@ -296,7 +296,10 @@ class PredictionPaperAutomation:
         )
         if structure.get("single_market") is not True or structure.get("multivariate") is True:
             reasons.append("NOT_SINGLE_MARKET")
-        if str(market.get("status") or "").lower() != "open":
+        # Kalshi's status=open discovery filter currently normalizes returned
+        # market rows as status=active. Treat both provider representations as
+        # the same open/tradable discovery state; this does not relax strategy gates.
+        if str(market.get("status") or "").lower() not in {"open", "active"}:
             reasons.append("MARKET_NOT_OPEN")
         if market.get("is_provisional") is True:
             reasons.append("PROVISIONAL_MARKET")
