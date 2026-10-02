@@ -380,6 +380,36 @@ def test_public_candlestick_read_is_bounded_and_single_market(monkeypatch):
     assert payload["candlesticks"][0]["yes_ask"]["close_dollars"] == "0.4300"
 
 
+def test_public_candlestick_read_resolves_series_from_event(monkeypatch):
+    client = KalshiPublicMarketClient()
+    calls = []
+
+    async def fake_request(path, *, params=None):
+        calls.append((path, dict(params or {})))
+        if path.startswith("/events/"):
+            return {"event": {"event_ticker": "KXTEST-26OCT02", "series_ticker": "KXTEST"}}
+        if path.endswith("/candlesticks"):
+            return {"ticker": "KXTEST-26OCT02-Y", "candlesticks": []}
+        return {"market": sample_market()}
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    start = 1_700_000_000
+    payload = asyncio.run(
+        client.get_candlesticks(
+            series_ticker=None,
+            ticker="KXTEST-26OCT02-Y",
+            start_ts=start,
+            end_ts=start + 3600,
+            period_interval=60,
+        )
+    )
+    assert calls[0][0] == "/markets/KXTEST-26OCT02-Y"
+    assert calls[1][0] == "/events/KXTEST-26OCT02"
+    assert calls[2][0] == "/series/KXTEST/markets/KXTEST-26OCT02-Y/candlesticks"
+    assert payload["series_ticker"] == "KXTEST"
+    assert payload["series_resolution"] == "EVENT_LOOKUP"
+
+
 def test_public_candlestick_read_rejects_unbounded_window():
     client = KalshiPublicMarketClient()
     start = 1_700_000_000
@@ -438,11 +468,10 @@ def test_prediction_candlestick_route_uses_read_only_provider(monkeypatch):
     monkeypatch.setattr(prediction_api.kalshi_public, "get_candlesticks", fake_candles)
     response = TestClient(app).get(
         "/api/prediction/markets/KXTEST-26OCT02-Y/candlesticks"
-        "?series_ticker=KXTEST&start_ts=1700000000&end_ts=1700003600&period_interval=60"
+        "?start_ts=1700000000&end_ts=1700003600&period_interval=60"
     )
     assert response.status_code == 200
     payload = response.json()
-    assert payload["series_ticker"] == "KXTEST"
     assert payload["ticker"] == "KXTEST-26OCT02-Y"
     assert payload["count"] == 1
 
