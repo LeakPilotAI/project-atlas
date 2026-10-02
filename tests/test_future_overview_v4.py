@@ -48,7 +48,10 @@ def test_future_overview_contract():
     assert "$426,318.24" not in text
     assert "64.2%" not in text
     assert "111 wins / 62 losses" not in text
-    assert "234" not in text
+    # Guard the mock "234 markets tracked" telemetry without matching incidental
+    # CSS hex fragments such as "#23434d".
+    assert ">234<" not in text
+    assert "234 markets" not in text.lower()
     assert "PLACE PAPER ORDER" not in text
     assert "Create Custom Markets" not in text
     assert "Trade Event Outcomes" not in text
