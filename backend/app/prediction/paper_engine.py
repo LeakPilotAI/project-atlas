@@ -454,6 +454,53 @@ class PredictionPaperJournal:
             return []
         return rows
 
+    @staticmethod
+    def _tail_rows(path: Path, limit: int) -> list[dict[str, Any]]:
+        """Read only the newest JSONL rows without rescanning an ever-growing journal."""
+        wanted = max(1, min(int(limit), 1000))
+        try:
+            with path.open("rb") as handle:
+                handle.seek(0, 2)
+                position = handle.tell()
+                chunks: list[bytes] = []
+                newline_count = 0
+                block_size = 65536
+                while position > 0 and newline_count <= wanted:
+                    read_size = min(block_size, position)
+                    position -= read_size
+                    handle.seek(position)
+                    chunk = handle.read(read_size)
+                    chunks.append(chunk)
+                    newline_count += chunk.count(b"\n")
+        except OSError:
+            return []
+
+        raw = b"".join(reversed(chunks)).decode("utf-8", errors="replace")
+        parsed: list[dict[str, Any]] = []
+        for line in raw.splitlines()[-wanted:]:
+            try:
+                row = json.loads(line)
+            except Exception:
+                continue
+            if isinstance(row, dict):
+                parsed.append(row)
+        return parsed
+
+    def candidate_snapshot(self, limit: int = 200) -> dict[str, Any]:
+        rows = self._tail_rows(self.candidate_path, limit)
+        eligible = [row for row in rows if row.get("eligible") is True]
+        rejected = [row for row in rows if row.get("eligible") is not True]
+        return {
+            "domain": "PREDICTION_PAPER",
+            "execution": "PAPER_ONLY",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+            "window_size": len(rows),
+            "eligible_in_window": len(eligible),
+            "rejected_in_window": len(rejected),
+            "candidates": rows,
+        }
+
     def open_trade(self) -> dict[str, Any] | None:
         opens: dict[str, dict[str, Any]] = {}
         closed: set[str] = set()
