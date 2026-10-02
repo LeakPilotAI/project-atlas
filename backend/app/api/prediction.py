@@ -78,3 +78,43 @@ async def prediction_market(ticker: str) -> Dict[str, Any]:
         return await kalshi_public.get_market(clean)
     except PredictionProviderError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get("/markets/{ticker}/orderbook")
+async def prediction_market_orderbook(
+    ticker: str,
+    depth: int = Query(20, ge=0, le=100),
+) -> Dict[str, Any]:
+    clean = _ticker(ticker, required=True)
+    assert clean is not None
+    try:
+        return await kalshi_public.get_orderbook(clean, depth=depth)
+    except PredictionProviderError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get("/markets/{ticker}/candlesticks")
+async def prediction_market_candlesticks(
+    ticker: str,
+    series_ticker: str = Query(..., min_length=1, max_length=160),
+    start_ts: int = Query(..., gt=0),
+    end_ts: int = Query(..., gt=0),
+    period_interval: int = Query(60),
+    include_latest_before_start: bool = Query(False),
+) -> Dict[str, Any]:
+    clean = _ticker(ticker, required=True)
+    series = _ticker(series_ticker, required=True)
+    assert clean is not None and series is not None
+    try:
+        return await kalshi_public.get_candlesticks(
+            series_ticker=series,
+            ticker=clean,
+            start_ts=start_ts,
+            end_ts=end_ts,
+            period_interval=period_interval,
+            include_latest_before_start=include_latest_before_start,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except PredictionProviderError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
