@@ -33,6 +33,9 @@ def test_investment_workspace_is_dedicated_and_honest():
     assert "UNKNOWN remains unknown" in text
     assert "candidate distribution, not portfolio exposure" in text
     assert "no automatic broker execution" in text
+    assert "SECTOR CLASSIFICATION UNAVAILABLE" in text
+    assert "Atlas will not infer portfolio or sector exposure." in text
+    assert "entryGrid" in text
 
 
 def test_investment_workspace_route_serves_no_cache_html():
