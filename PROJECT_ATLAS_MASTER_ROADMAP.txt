@@ -2099,3 +2099,187 @@ untouched holdout, meaningful challenger promotion and live-readiness conclusion
 No historical V3 or perps evidence rewritten. Historical HOLDOUT remains
 546 / -26.7235R / -0.04894R FAILED_NEGATIVE / IMMUTABLE.
 Final cold runtime/stop validation follows; do not infer it from unit tests.
+
+================================================================================
+2026-10-02 ROADMAP ADDENDUM — PREDICTION MARKETS FIRST, THEN STRATEGY EVIDENCE
+================================================================================
+
+PURPOSE
+Atlas is now mature enough that software/platform completion and strategy readiness
+must be treated as separate gates. A feature-complete trading platform is NOT proof
+of profitable edge and is NOT, by itself, authorization for live capital.
+
+CURRENT PRIORITY — FINISH THE PREDICTION MARKETS PAPER LAYER
+[ACTIVE] Complete the genuine Prediction PAPER auto-flat validation already in
+progress before beginning the strategy-readiness program below.
+- Preserve single-market / one-position-max Prediction PAPER safety.
+- Preserve real executable orderbook depth for PAPER entry/exit evidence.
+- Preserve mandatory pre-event flattening.
+- Preserve eligible-candidate Discord notification-only workflow.
+- Do not weaken scoring, liquidity, spread, history, stability, edge, or timing
+  filters merely to manufacture eligible candidates or favorable PAPER results.
+- Do not enable unattended Prediction PAPER opening until a genuine eligible
+  position has been observed through its real mandatory auto-flat path and the
+  persisted exit evidence is verified.
+- Live Prediction execution remains disabled regardless of PAPER auto-flat result.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+
+[NEXT AFTER PREDICTION AUTO-FLAT VALIDATION]
+DAY TRADING + INVESTMENT STRATEGY EVIDENCE / LIVE-READINESS PROGRAM
+
+PRINCIPLE
+The next phase is not "add features until Atlas feels finished." It is:
+measure -> explain -> improve -> freeze -> validate on unseen evidence -> repeat.
+Poor/subpar PAPER performance is evidence to investigate, not a reason to loosen
+risk controls, overfit historical data, increase trade frequency, or rush live.
+
+PHASE A — FREEZE A COMPARABLE DAY-TRADING BASELINE
+[PLANNED]
+- Freeze the current core strategy/policy/execution versions for a bounded evidence
+  window. Continue fixing software/data-integrity defects, but do not silently tune
+  strategy parameters between sessions.
+- Persist exact strategy, policy, execution-model and relevant configuration
+  versions with every candidate/trade/outcome.
+- Treat materially changed strategy logic as a new cohort/version.
+- Preserve negative evidence. Never rewrite historical PAPER results after tuning.
+- Use macro/high-volatility sessions as labeled regimes, not one-off excuses or
+  opportunities for ad-hoc parameter changes.
+
+PHASE B — AUTOMATIC LOSS / TRADE ATTRIBUTION
+[PLANNED]
+For every closed PAPER trade, preserve enough evidence to distinguish at least:
+- direction/signal failure
+- entry too early / entry too late
+- signal decay before execution
+- spread/slippage/liquidity degradation
+- stop/exit behavior
+- target/repricing assumption failure
+- time-of-day effects
+- market-regime mismatch
+- macro/event interference
+- execution-model/data-quality issue
+- genuinely negative strategy edge / unresolved cause
+Attribution must be evidence-backed; UNKNOWN remains valid when causality cannot
+be established from captured data.
+
+PHASE C — REGIME-AWARE PERFORMANCE ANALYSIS
+[PLANNED]
+Measure strategy cohorts independently across:
+- trend vs chop/range
+- high vs normal/low volatility
+- opening period / morning / midday / afternoon
+- macro-event vs ordinary sessions
+- broad risk-on / risk-off where supported by captured evidence
+- liquidity/spread conditions
+Do not assume one setup should trade identically in every regime.
+Do not introduce regime filters unless they are supported by prospective or
+properly separated validation evidence.
+
+PHASE D — STRATEGY-LEVEL SCORECARDS
+[PLANNED]
+Per strategy/version/regime report:
+- sample size and evidence dates
+- win/loss/scratch counts and win rate
+- average/median win and loss
+- expectancy
+- profit factor where mathematically defined
+- cumulative PAPER R / PnL under the recorded execution model
+- maximum drawdown
+- MAE/MFE where captured
+- spread, slippage and fees
+- holding time and time-of-day
+- unresolved/invalid evidence counts
+No strategy is promoted merely for a high win rate. Economic expectancy and
+drawdown matter, and insufficient sample sizes remain INSUFFICIENT_EVIDENCE.
+
+PHASE E — RETIRE OR CHALLENGE NEGATIVE-EDGE BEHAVIOR
+[PLANNED]
+- Strategies with sufficiently mature, consistently negative out-of-sample evidence
+  become candidates for disablement/replacement rather than endless parameter
+  optimization.
+- Challengers must be versioned and evaluated without rewriting champion history.
+- Do not cherry-pick only favorable regimes or delete losing observations.
+- No automatic strategy promotion without predefined evidence criteria and an
+  untouched validation segment.
+
+PHASE F — WALK-FORWARD / OUT-OF-SAMPLE VALIDATION
+[PLANNED]
+- Development/tuning evidence and validation evidence must be separated.
+- Freeze each candidate policy before evaluating the next unseen segment.
+- Record every freeze boundary, policy hash/version, rationale and outcome.
+- Require performance to survive multiple unseen periods/regimes rather than one
+  favorable day/week.
+- Follow with fresh live-market PAPER/shadow validation using the same frozen
+  policy and execution assumptions.
+- No hindsight reclassification of losing validation periods.
+
+PHASE G — INVESTMENT PROGRAM PROSPECTIVE SCORECARD
+[PLANNED / BUILDS ON EXISTING PROSPECTIVE PIPELINE]
+Investment research is evaluated separately from intraday trading.
+For each frozen investment observation/call:
+- preserve only information available at observation time
+- evaluate forward horizons such as 1d / 5d / 20d / 60d when mature
+- compare against an appropriate recorded benchmark/reference series
+- retain drawdown, opportunity-cost and unresolved outcomes
+- retain calibration by confidence/score bucket where sample size supports it
+- preserve valuation/actionability provenance and policy/model version
+- never backfill hindsight facts into the original decision
+Investment readiness must be based on mature prospective evidence, not the fact
+that the Investment UI/research pipeline is feature-complete.
+
+PHASE H — LIVE-READINESS GATE
+[BLOCKED UNTIL POSITIVE EVIDENCE]
+A small live-capital pilot may be CONSIDERED only after all applicable evidence
+gates are satisfied. No fixed profitability threshold is invented here merely to
+unlock live trading. The readiness review must include:
+- stable/versioned strategy definition
+- adequate prospective/out-of-sample sample size
+- positive economic expectancy after recorded costs under the tested model
+- understood drawdown/loss distribution
+- acceptable execution quality/slippage/liquidity behavior
+- evidence across relevant regimes rather than a single favorable period
+- no unresolved material data-integrity/runtime defects
+- successful fresh PAPER/shadow validation after the final strategy freeze
+- explicit operator review and separate authorization
+Until then:
+- Day Trading remains PAPER/shadow where automatic execution is concerned.
+- Investment remains research/manual decision support.
+- Prediction Markets remain PAPER research unless separately authorized later.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+
+PHASE I — IF A FUTURE SMALL LIVE PILOT IS EXPLICITLY AUTHORIZED
+[NOT AUTHORIZED / FUTURE ONLY]
+- Start deliberately small and bounded.
+- Hard daily/session/position loss limits and kill switch.
+- No automatic scaling from early wins.
+- Compare live fills/slippage/behavior against the validated PAPER assumptions.
+- Any material divergence returns the strategy to PAPER/shadow investigation.
+- Scaling requires a new evidence review; it is never implied by software uptime.
+
+ORDER OF OPERATIONS
+1. Finish current Prediction Markets genuine PAPER auto-flat validation.
+2. Close any remaining Prediction PAPER integrity/observability defects found by
+   that real validation.
+3. Freeze the Day Trading baseline and begin comparable forward evidence.
+4. Add automatic trade/loss attribution and regime labeling/reporting.
+5. Produce strategy/version/regime scorecards.
+6. Retire or challenge negative-edge behavior using preserved evidence.
+7. Run walk-forward/out-of-sample validation and fresh frozen PAPER confirmation.
+8. Continue maturing the Investment prospective 1d/5d/20d/60d evidence and
+   benchmark/opportunity-cost/calibration reporting.
+9. Perform a formal read-only live-readiness review.
+10. Only after positive evidence and explicit authorization consider a bounded
+    small live-capital pilot. Real-money automation is not implied or pre-approved.
+
+STATUS AT ADDENDUM
+- Prediction Markets: active priority; genuine PAPER auto-flat validation pending.
+- Day Trading platform: operationally mature, strategy edge still requires further
+  evidence/improvement; historical negative PAPER evidence remains preserved.
+- Investment research platform: substantial prospective foundation exists, but
+  mature forward evidence remains the limiting factor.
+- The roadmap therefore optimizes next for PROVABLE EDGE AND EXECUTION QUALITY,
+  not additional feature count and not premature live-capital activation.
+================================================================================
+
