@@ -14,8 +14,8 @@
 .tableWrap{height:435px;overflow:auto;scrollbar-color:#1c5360 #02080b;border-top:1px solid #15333d}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:13px;font-variant-numeric:tabular-nums}th{position:sticky;top:0;z-index:1;background:#071117;color:#7ea1b2;font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:550}td,th{padding:7px 8px;border-bottom:1px solid #14313a;text-align:left}tbody tr{cursor:pointer}tbody tr:hover,tbody tr.on{background:#08202a}.symbol{font-weight:700}.mono{font-family:var(--mono)}.state{display:inline-flex;min-width:82px;justify-content:center;padding:3px 7px;border:1px solid currentColor;border-radius:4px;font-size:10px;font-weight:650}.PAPER_FILLED,.OPEN_PAPER_INVESTMENT{color:var(--green)}.OPEN_LIMIT{color:var(--amber)}.CANCELLED{color:var(--muted)}
 .unavailable{display:grid;place-content:center;text-align:center;min-height:92px;padding:14px;border:1px dashed #23434d;background:repeating-linear-gradient(0deg,transparent,transparent 23px,#1a56600d 24px);color:var(--muted);font-size:11px;border-radius:5px}.unavailable strong{display:block;color:var(--amber);font-size:12px;margin-bottom:5px}
 .factGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fact{padding:10px;border:1px solid #183f4b;background:#041017;border-radius:5px}.fact small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}.fact b{display:block;font:18px var(--mono);margin:4px 0}.positionList{display:flex;flex-direction:column;gap:7px}.pos{border:1px solid #19414d;background:#041319;padding:9px;border-radius:5px;cursor:pointer}.pos.on{border-color:var(--cyan);box-shadow:inset 0 0 15px #2be8e813}.pos .row{display:flex;justify-content:space-between;gap:8px}.pos small{color:var(--muted)}
-.detailGrid{display:grid;grid-template-columns:220px 1fr;gap:10px}.detailFacts{display:grid;grid-template-columns:1fr 1fr;gap:7px}.chartWrap{position:relative;min-height:235px;border:1px solid #163b46;background:#020a0d;border-radius:5px;overflow:hidden}.chartWrap canvas{display:block;width:100%;height:235px}.chartNote{position:absolute;left:10px;top:8px;font-size:10px;color:var(--muted)}.planList{max-height:245px;overflow:auto}.plan{padding:8px 0;border-bottom:1px solid #14313a}.plan:last-child{border-bottom:0}.plan b{font-size:12px}.footer{padding:8px 2px 0;color:var(--muted);font-size:10px}
-@media(max-width:1180px){.metrics{grid-template-columns:repeat(3,1fr)}.mainGrid{grid-template-columns:1fr}.detailGrid{grid-template-columns:1fr}}@media(max-width:760px){.workspace{padding:6px 10px}.context{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:1fr 1fr}.factGrid{grid-template-columns:1fr}.toolbar input{margin-left:0;width:100%}}
+.detailGrid{display:grid;grid-template-columns:245px minmax(0,1fr) 260px;gap:10px}.detailFacts{display:grid;grid-template-columns:1fr 1fr;gap:7px}.chartWrap{position:relative;min-height:265px;border:1px solid #163b46;background:#020a0d;border-radius:5px;overflow:hidden}.chartWrap canvas{display:block;width:100%;height:265px}.chartNote{position:absolute;left:10px;top:8px;font-size:10px;color:var(--muted);z-index:2}.chartTools{position:absolute;right:8px;top:6px;display:flex;gap:4px;z-index:3}.chartTools button{border:1px solid #1d4652;background:#031116;color:#91aebd;border-radius:4px;padding:4px 7px;font:10px var(--mono)}.chartTools button.on{border-color:var(--cyan);color:#dfffff;box-shadow:0 0 8px #34e6ef24}.notesBox{border:1px solid #183f4b;background:#041017;border-radius:5px;padding:11px;min-height:265px}.notesBox h3{margin:0 0 9px;color:var(--cyan);font-size:12px;text-transform:uppercase;letter-spacing:.06em}.noteLine{padding:7px 0;border-bottom:1px solid #14313a}.noteLine:last-child{border-bottom:0}.bookBars{display:flex;flex-direction:column;gap:8px}.bookBar{display:grid;grid-template-columns:66px 1fr 74px;gap:8px;align-items:center;font-size:11px}.bookBarTrack{height:8px;background:#0a2029;border-radius:2px;overflow:hidden}.bookBarTrack i{display:block;height:100%;background:linear-gradient(90deg,#00a5b0,var(--cyan))}.planList{max-height:245px;overflow:auto}.plan{padding:8px 0;border-bottom:1px solid #14313a}.plan:last-child{border-bottom:0}.plan b{font-size:12px}.footer{padding:8px 2px 0;color:var(--muted);font-size:10px}
+@media(max-width:1180px){.metrics{grid-template-columns:repeat(3,1fr)}.mainGrid{grid-template-columns:1fr}.detailGrid{grid-template-columns:1fr}.notesBox{min-height:auto}}@media(max-width:760px){.workspace{padding:6px 10px}.context{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:1fr 1fr}.factGrid{grid-template-columns:1fr}.toolbar input{margin-left:0;width:100%}}
 </style>
 </head>
 <body>
@@ -57,6 +57,7 @@
 
     <aside class="stack">
       <section class="panel"><div class="panelHead"><h2>Open Investment Book</h2><span class="sub" id="bookCount">—</span></div><div class="positionList" id="positions"></div></section>
+      <section class="panel"><div class="panelHead"><h2>Current Book Allocation</h2><span class="sub">by marked market value</span></div><div class="bookBars" id="bookBars"></div></section>
       <section class="panel"><div class="panelHead"><h2>Book Summary</h2><span class="sub">PAPER research only</span></div><div class="factGrid"><div class="fact"><small>Cash</small><b id="cash">—</b></div><div class="fact"><small>Invested</small><b id="invested">—</b></div><div class="fact"><small>Open orders</small><b id="openOrders">—</b></div><div class="fact"><small>Ledger events</small><b id="ledgerEvents">—</b></div></div></section>
       <section class="panel"><div class="panelHead"><h2>Daily Research Plans</h2><span class="sub">durable plan archive</span></div><div class="planList" id="plans"></div></section>
     </aside>
@@ -75,7 +76,12 @@
         <div class="fact"><small>Unrealized return</small><b id="dReturn">—</b></div>
         <div class="fact"><small>Realized exit</small><b class="warn">NOT RECORDED</b></div>
       </div>
-      <div class="chartWrap"><div class="chartNote" id="chartNote">Daily investment history · read-only</div><canvas id="historyChart"></canvas></div>
+      <div class="chartWrap">
+        <div class="chartNote" id="chartNote">Daily investment history · read-only</div>
+        <div class="chartTools" id="chartTools"><button data-range="22">1M</button><button data-range="66" class="on">3M</button><button data-range="132">6M</button><button data-range="264">1Y</button><button data-range="0">ALL</button></div>
+        <canvas id="historyChart"></canvas>
+      </div>
+      <div class="notesBox"><h3>Position Notes</h3><div class="noteLine"><span class="sub">Latest accumulation reason</span><div id="dReason">—</div></div><div class="noteLine"><span class="sub">Latest recorded activity</span><div id="dActivity">—</div></div><div class="noteLine"><span class="sub">Exit record</span><div class="warn">NOT RECORDED</div></div><div class="noteLine"><span class="sub">Archive rule</span><div>Open PAPER position only; realized performance is not inferred.</div></div></div>
     </div>
   </section>
 
@@ -89,7 +95,7 @@ const num=(v,d=2)=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString
 const money=v=>{const n=Number(v);return Number.isFinite(n)?'$'+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'—'};
 const pct=v=>{const n=Number(v);return Number.isFinite(n)?n.toFixed(2)+'%':'—'};
 const date=v=>{const d=new Date(v||'');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString()};
-let DATA=null,selectedSymbol=null,kind='ALL',lastGood=null;
+let DATA=null,selectedSymbol=null,kind='ALL',lastGood=null,selectedBars=[],chartRange=66;
 
 function tone(v){const n=Number(v);return Number.isFinite(n)?(n>0?'good':n<0?'bad':''):''}
 function renderSummary(){
@@ -109,6 +115,8 @@ function renderHistory(){
 function renderPositions(){
  const rows=DATA.positions||[];$('bookCount').textContent=rows.length+' open';
  $('positions').innerHTML=rows.length?rows.map(r=>'<div class="pos '+(r.symbol===selectedSymbol?'on':'')+'" data-position="'+esc(r.symbol)+'"><div class="row"><b>'+esc(r.symbol)+'</b><span class="'+tone(r.unrealized_pnl)+'">'+money(r.unrealized_pnl)+'</span></div><div class="row"><small>'+num(r.shares,4)+' shares · avg '+money(r.avg_cost)+'</small><small class="'+tone(r.unrealized_return_pct)+'">'+pct(r.unrealized_return_pct)+'</small></div></div>').join(''):'<div class="unavailable"><strong>NO OPEN PAPER INVESTMENTS</strong><span>The isolated investment paper book currently has no open positions.</span></div>';
+ const total=rows.reduce((a,r)=>a+Math.max(0,Number(r.market_value)||0),0);
+ $('bookBars').innerHTML=rows.length?rows.slice(0,8).map(r=>{const v=Math.max(0,Number(r.market_value)||0),share=total>0?v/total*100:0;return '<div class="bookBar"><b>'+esc(r.symbol)+'</b><div class="bookBarTrack"><i style="width:'+Math.max(2,Math.min(100,share))+'%"></i></div><span>'+share.toFixed(1)+'%</span></div>'}).join(''):'<div class="unavailable"><strong>NO BOOK ALLOCATION</strong><span>No open PAPER investment market values are available.</span></div>';
  document.querySelectorAll('[data-position]').forEach(x=>x.addEventListener('click',()=>selectPosition(x.dataset.position)));
 }
 function renderPlans(){
@@ -117,19 +125,21 @@ function renderPlans(){
 async function selectPosition(symbol){
  const row=(DATA.positions||[]).find(x=>x.symbol===symbol);if(!row)return;selectedSymbol=symbol;renderPositions();
  $('dSymbol').textContent=row.symbol;$('dShares').textContent=num(row.shares,4);$('dCost').textContent=money(row.avg_cost);$('dMark').textContent=money(row.market_price);$('dValue').textContent=money(row.market_value);$('dPnl').textContent=money(row.unrealized_pnl);$('dPnl').className=tone(row.unrealized_pnl);$('dReturn').textContent=pct(row.unrealized_return_pct);$('dReturn').className=tone(row.unrealized_return_pct);$('detailSubtitle').textContent='Open PAPER investment · no realized exit recorded';
- try{const r=await atlasFetch('/api/archive/investment-history/'+encodeURIComponent(symbol)+'/bars?limit=120',7000);const b=await r.json();drawChart(b.bars||[],symbol)}catch(e){drawChart([],symbol)}
+ const related=(DATA.events||[]).filter(x=>String(x.symbol||'').toUpperCase()===String(symbol).toUpperCase()),latest=related[0]||{};
+ $('dReason').textContent=latest.reason||'No accumulation reason recorded.';$('dActivity').textContent=latest.at?(date(latest.at)+' · '+String(latest.status||latest.event||'UNKNOWN').replaceAll('_',' ')):'No ledger activity recorded.';
+ try{const r=await atlasFetch('/api/archive/investment-history/'+encodeURIComponent(symbol)+'/bars?limit=400',7000);const b=await r.json();selectedBars=b.bars||[];drawChart(selectedBars,symbol)}catch(e){selectedBars=[];drawChart([],symbol)}
 }
 function drawChart(bars,symbol){
- const canvas=$('historyChart'),dpr=window.devicePixelRatio||1,w=Math.max(300,canvas.clientWidth),h=235;canvas.width=w*dpr;canvas.height=h*dpr;const c=canvas.getContext('2d');c.scale(dpr,dpr);c.clearRect(0,0,w,h);c.fillStyle='#020a0d';c.fillRect(0,0,w,h);c.strokeStyle='#12313a';c.lineWidth=1;for(let i=1;i<5;i++){const y=i*h/5;c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke()}
- const rows=bars.filter(x=>Number.isFinite(Number(x.close))).slice(-120);$('chartNote').textContent=symbol+' · '+rows.length+' real daily bars · investment history';
+ const canvas=$('historyChart'),dpr=window.devicePixelRatio||1,w=Math.max(300,canvas.clientWidth),h=265;canvas.width=w*dpr;canvas.height=h*dpr;const c=canvas.getContext('2d');c.scale(dpr,dpr);c.clearRect(0,0,w,h);c.fillStyle='#020a0d';c.fillRect(0,0,w,h);c.strokeStyle='#12313a';c.lineWidth=1;for(let i=1;i<5;i++){const gy=i*h/5;c.beginPath();c.moveTo(0,gy);c.lineTo(w,gy);c.stroke()}
+ let rows=bars.filter(x=>Number.isFinite(Number(x.close)));if(chartRange>0)rows=rows.slice(-chartRange);$('chartNote').textContent=symbol+' · '+rows.length+' real daily bars · OHLC + volume';
  if(rows.length<2){c.fillStyle='#7898a8';c.font='12px Segoe UI';c.textAlign='center';c.fillText('Daily price history unavailable for this symbol',w/2,h/2);return}
- const vals=rows.flatMap(x=>[Number(x.low??x.close),Number(x.high??x.close)]),lo=Math.min(...vals),hi=Math.max(...vals),pad=(hi-lo||1)*.08,min=lo-pad,max=hi+pad;const x=i=>18+i*(w-36)/Math.max(1,rows.length-1),y=v=>14+(max-v)/(max-min)*(h-32);
- c.strokeStyle='#1ddfd8';c.lineWidth=1.5;c.beginPath();rows.forEach((r,i)=>{const yy=y(Number(r.close));i?c.lineTo(x(i),yy):c.moveTo(x(i),yy)});c.stroke();
- const last=rows[rows.length-1];c.fillStyle='#dfeff5';c.font='11px Consolas';c.textAlign='right';c.fillText(money(last.close),w-8,y(Number(last.close))-6)
+ const priceH=h-58,vals=rows.flatMap(x=>[Number(x.low??x.close),Number(x.high??x.close)]),lo=Math.min(...vals),hi=Math.max(...vals),pad=(hi-lo||1)*.08,min=lo-pad,max=hi+pad;const step=(w-56)/Math.max(1,rows.length),x=i=>28+(i+.5)*step,y=v=>16+(max-v)/(max-min)*(priceH-28),maxVol=Math.max(1,...rows.map(r=>Number(r.volume)||0)),body=Math.max(2,Math.min(8,step*.55));
+ rows.forEach((r,i)=>{const o=Number(r.open??r.close),cl=Number(r.close),high=Number(r.high??r.close),low=Number(r.low??r.close),xx=x(i),up=cl>=o;c.strokeStyle=up?'#00dcb0':'#ff304c';c.fillStyle=c.strokeStyle;c.lineWidth=1;c.beginPath();c.moveTo(xx,y(high));c.lineTo(xx,y(low));c.stroke();const top=Math.min(y(o),y(cl)),bh=Math.max(1,Math.abs(y(cl)-y(o)));c.fillRect(xx-body/2,top,body,bh);const vol=(Number(r.volume)||0)/maxVol*38;c.globalAlpha=.35;c.fillRect(xx-body/2,h-9-vol,body,vol);c.globalAlpha=1});
+ const first=rows[0],last=rows[rows.length-1];c.fillStyle='#dfeff5';c.font='11px Consolas';c.textAlign='right';c.fillText(money(last.close),w-8,y(Number(last.close))-6);c.fillStyle='#7898a8';c.textAlign='left';c.fillText(String(first.date||''),8,h-8);c.textAlign='right';c.fillText(String(last.date||''),w-8,h-8)
 }
 function renderAll(){renderSummary();renderHistory();renderPositions();renderPlans();if(!selectedSymbol&&DATA.positions?.length)selectedSymbol=DATA.positions[0].symbol;if(selectedSymbol)selectPosition(selectedSymbol);else drawChart([],'—')}
 async function load(){try{const r=await atlasFetch('/api/archive/investment-history?limit=400',8000);const d=await r.json();DATA=d;lastGood=d;renderAll()}catch(e){if(lastGood){DATA=lastGood;renderAll();$('historyStatus').textContent='STALE · last good archive snapshot'}else{$('historyRows').innerHTML='<tr><td colspan="10"><div class="unavailable"><strong>ARCHIVE TEMPORARILY UNAVAILABLE</strong><span>Retrying automatically.</span></div></td></tr>'}}}
-document.querySelectorAll('[data-kind]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-kind]').forEach(x=>x.classList.remove('on'));b.classList.add('on');kind=b.dataset.kind;renderHistory()}));$('search').addEventListener('input',renderHistory);window.addEventListener('resize',()=>{if(selectedSymbol)selectPosition(selectedSymbol)});
+document.querySelectorAll('[data-kind]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-kind]').forEach(x=>x.classList.remove('on'));b.classList.add('on');kind=b.dataset.kind;renderHistory()}));document.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-range]').forEach(x=>x.classList.remove('on'));b.classList.add('on');chartRange=Number(b.dataset.range)||0;drawChart(selectedBars,selectedSymbol||'—')}));$('search').addEventListener('input',renderHistory);window.addEventListener('resize',()=>drawChart(selectedBars,selectedSymbol||'—'));
 atlasPoll(load,15000);load();
 </script>
 </body></html>
