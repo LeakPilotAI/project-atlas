@@ -519,3 +519,66 @@ The Prediction PAPER evidence UI implementation reached:
 
 The next gate is genuine eligible-candidate observation and end-to-end automatic PAPER
 flat validation. Unattended PAPER opening remains disabled until that evidence exists.
+
+
+## Phase 1.5 — Activity-aware bounded discovery pool
+
+Implemented after runtime candidate evidence showed the first-page discovery slice was
+systematically inactive: the latest 200 persisted side rows all failed both the
+20-contract 24h-volume floor and the 20-contract open-interest floor.
+
+The strategy thresholds were not changed.
+
+Kalshi's public Get Markets endpoint supports cursor pagination. Atlas now separates
+cheap metadata discovery from the expensive evaluation budget:
+
+- metadata pool limit: 400 single markets per cycle
+- metadata page size: 200
+- selected market budget: 40
+- expensive evaluation concurrency: 4
+- orderbook/history evaluation remains restricted to selected markets that pass every
+  cheap prefilter
+- provider cursor pagination is bounded and ticker-deduplicated
+
+Selection prioritizes markets that already satisfy the unchanged cheap policy, timing,
+24h-volume, and open-interest gates. If fewer than 40 markets pass every cheap gate,
+remaining slots are ranked by fewest cheap rejection reasons and strongest minimum
+activity. This changes discovery quality only; it does not make any market easier to
+become eligible.
+
+Scanner status now exposes:
+
+- metadata_markets_seen
+- markets_selected
+- selection_activity_qualified_count
+- selection_viable_count
+
+The Prediction PAPER dashboard displays pool/selected counts plus activity-qualified and
+cheap-gate-viable counts.
+
+### Live acceptance
+
+A one-off public-data smoke on 2026-10-02 produced:
+
+- metadata markets seen: 400
+- selected markets: 40
+- activity-qualified in pool: 28
+- passed every cheap gate in pool: 17
+- selected markets rejected by cheap prefilter: 23
+- markets fully evaluated: 17
+- YES evaluations: 17
+- NO evaluations: 17
+- scanner errors: 0
+- scanner timeouts: 0
+- eligible candidates: 0
+- PAPER positions opened: 0
+
+The deeper evaluator rejected the full-evaluation candidates for real strategy reasons,
+including quote instability, no recent reclaim edge, spread, missing executable
+quote/depth, insufficient pre-event history, repricing target, and net-edge checks.
+
+This confirms that the previous all-activity rejection window was a discovery-slice
+problem rather than evidence that the 20-contract activity floors should be weakened.
+
+The live smoke remains diagnostic-only after acceptance so external provider
+availability cannot make deterministic CI flaky.
