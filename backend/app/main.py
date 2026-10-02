@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse
 from app.adapters.hyperliquid import HyperliquidAdapter
 from app.adapters.registry import registry
 from app.alerts.discord import is_discord_ready, start_discord_bot, stop_discord_bot
+from app.api.archive import router as archive_router
 from app.api.command_center import router as command_center_router
 from app.api.diagnostics import router as diagnostics_router
 from app.api.investment_board import router as investment_board_router
@@ -306,6 +307,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(archive_router)
 app.include_router(command_center_router)
 app.include_router(diagnostics_router)
 app.include_router(performance_router)
@@ -320,6 +322,7 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 DASHBOARD_HTML = STATIC_DIR / "dashboard_hub.html"
 PERP_DASHBOARD_HTML = STATIC_DIR / "dashboard_shell.html"
 INVESTMENT_DASHBOARD_HTML = STATIC_DIR / "investment.html"
+ARCHIVE_DASHBOARD_HTML = STATIC_DIR / "archive.html"
 LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 
 
@@ -357,6 +360,11 @@ async def perp_dashboard_page() -> FileResponse:
 @app.get("/dashboard/investment")
 async def investment_dashboard_page() -> FileResponse:
     return _dashboard_response(INVESTMENT_DASHBOARD_HTML)
+
+
+@app.get("/dashboard/archive")
+async def archive_dashboard_page() -> FileResponse:
+    return _dashboard_response(ARCHIVE_DASHBOARD_HTML)
 
 
 @app.get("/dashboard/legacy")
