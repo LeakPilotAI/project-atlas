@@ -8,17 +8,28 @@ closed long-horizon investment exits suitable for realized win-rate/P&L claims.
 from __future__ import annotations
 
 import asyncio
+import csv
+import io
 import json
 from collections import deque
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import Response
 
 from app.investment.daily_research_plan import PLAN_PATH
 from app.investment.history import load_bars
 from app.investment.paper_book import PaperBook
-from app.investment.storage import LEDGER_PATH, PAPER_STATE_PATH
+from app.investment.storage import (
+    LEDGER_PATH,
+    OPPORTUNITIES_PATH,
+    PAPER_STATE_PATH,
+    SNAPSHOTS_PATH,
+    UNIVERSE_PATH,
+)
+from app.services.paper_journal import JOURNAL_PATH
 
 router = APIRouter(prefix="/api/archive", tags=["archive"])
 
@@ -195,3 +206,274 @@ async def investment_history_bars(
         "execution": "READ_ONLY",
         "live_capital_allowed": False,
     }
+
+
+# ----------------------------
+# Read-only Archive export API
+# ----------------------------
+
+_EXPORT_LABELS = {
+    "paper_trades": "Paper Trades",
+    "investment_history": "Investment History",
+    "research_archive": "Research Archive",
+    "snapshots": "Snapshots",
+    "daily_plans": "Daily Research Plans",
+    "investment_universe": "Investment Universe",
+}
+
+
+def _export_sources() -> dict[str, Path]:
+    # Kept as a function so tests may monkeypatch the module-level paths safely.
+    return {
+        "paper_trades": JOURNAL_PATH,
+        "investment_history": LEDGER_PATH,
+        "research_archive": OPPORTUNITIES_PATH,
+        "snapshots": SNAPSHOTS_PATH,
+        "daily_plans": PLAN_PATH,
+        "investment_universe": UNIVERSE_PATH,
+    }
+
+
+def _count_rows(path: Path) -> int:
+    if not path.exists():
+        return 0
+    if path.suffix.lower() == ".json":
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return 0
+        if isinstance(payload, list):
+            return len(payload)
+        if isinstance(payload, dict):
+            for key in ("symbols", "items", "rows", "data"):
+                value = payload.get(key)
+                if isinstance(value, dict):
+                    return len(value)
+                if isinstance(value, list):
+                    return len(value)
+            return len(payload)
+        return 0
+    count = 0
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            for raw in handle:
+                if raw.strip():
+                    count += 1
+    except OSError:
+        return 0
+    return count
+
+
+def _read_dataset(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    if path.suffix.lower() == ".json":
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return []
+        if isinstance(payload, list):
+            return [row for row in payload if isinstance(row, dict)]
+        if isinstance(payload, dict):
+            for key in ("symbols", "items", "rows", "data"):
+                value = payload.get(key)
+                if isinstance(value, dict):
+                    rows = []
+                    for name, row in value.items():
+                        if isinstance(row, dict):
+                            item = dict(row)
+                            item.setdefault("symbol", name)
+                            rows.append(item)
+                    return rows
+                if isinstance(value, list):
+                    return [row for row in value if isinstance(row, dict)]
+            return [payload]
+        return []
+    rows: list[dict[str, Any]] = []
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            for raw in handle:
+                if not raw.strip():
+                    continue
+                try:
+                    row = json.loads(raw)
+                except Exception:
+                    continue
+                if isinstance(row, dict):
+                    rows.append(row)
+    except OSError:
+        return []
+    return rows
+
+
+def _timestamp_value(row: dict[str, Any]) -> datetime | None:
+    for key in (
+        "timestamp",
+        "at",
+        "retrieved_at",
+        "entry_timestamp",
+        "exit_timestamp",
+        "source_timestamp",
+        "date",
+    ):
+        raw = row.get(key)
+        if not raw:
+            continue
+        try:
+            parsed = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc)
+        except Exception:
+            continue
+    return None
+
+
+def _filter_date_range(rows: list[dict[str, Any]], date_range: str) -> list[dict[str, Any]]:
+    token = str(date_range or "all").lower()
+    days = {"30d": 30, "90d": 90, "365d": 365}.get(token)
+    if days is None:
+        return rows
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    filtered = []
+    for row in rows:
+        ts = _timestamp_value(row)
+        if ts is None or ts >= cutoff:
+            # Preserve rows with no parseable timestamp rather than silently deleting data.
+            filtered.append(row)
+    return filtered
+
+
+def _csv_cell(value: Any) -> Any:
+    if isinstance(value, (dict, list, tuple)):
+        return json.dumps(value, default=str, separators=(",", ":"))
+    return value
+
+
+def _csv_bytes(rows: list[dict[str, Any]]) -> bytes:
+    keys: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        for key in row:
+            if key not in seen:
+                seen.add(key)
+                keys.append(str(key))
+    stream = io.StringIO(newline="")
+    if keys:
+        writer = csv.DictWriter(stream, fieldnames=keys, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: _csv_cell(row.get(key)) for key in keys})
+    return stream.getvalue().encode("utf-8-sig")
+
+
+def _jsonl_bytes(rows: list[dict[str, Any]]) -> bytes:
+    if not rows:
+        return b""
+    return ("\n".join(json.dumps(row, default=str, ensure_ascii=False) for row in rows) + "\n").encode("utf-8")
+
+
+def _export_summary() -> dict[str, Any]:
+    sources = []
+    total_bytes = 0
+    total_rows = 0
+    for key, path in _export_sources().items():
+        try:
+            size = int(path.stat().st_size) if path.exists() else 0
+        except OSError:
+            size = 0
+        rows = _count_rows(path)
+        total_bytes += size
+        total_rows += rows
+        sources.append(
+            {
+                "key": key,
+                "label": _EXPORT_LABELS[key],
+                "rows": rows,
+                "bytes": size,
+                "available": path.exists(),
+                "format": "JSON" if path.suffix.lower() == ".json" else "JSONL",
+            }
+        )
+    return {
+        "domain": "ARCHIVE_EXPORT",
+        "mode": "READ_ONLY_DOWNLOAD",
+        "sources": sources,
+        "totals": {
+            "sources": len(sources),
+            "available_sources": sum(1 for row in sources if row["available"]),
+            "rows": total_rows,
+            "bytes": total_bytes,
+        },
+        "capabilities": {
+            "csv": True,
+            "jsonl": True,
+            "persistent_export_history": False,
+            "scheduled_exports": False,
+            "background_export_jobs": False,
+        },
+        "note": (
+            "Exports are generated on demand from existing Atlas archive files. "
+            "Atlas does not persist download history or scheduled export jobs."
+        ),
+    }
+
+
+@router.get("/export/summary")
+async def export_summary() -> Dict[str, Any]:
+    return await asyncio.to_thread(_export_summary)
+
+
+@router.get("/export/preview")
+async def export_preview(
+    dataset: str = Query("paper_trades"),
+    date_range: str = Query("all"),
+    limit: int = Query(12, ge=1, le=50),
+) -> Dict[str, Any]:
+    sources = _export_sources()
+    if dataset not in sources:
+        raise HTTPException(status_code=404, detail="Unknown archive export dataset")
+    rows = await asyncio.to_thread(_read_dataset, sources[dataset])
+    rows = _filter_date_range(rows, date_range)
+    return {
+        "dataset": dataset,
+        "label": _EXPORT_LABELS[dataset],
+        "rows": rows[-limit:][::-1],
+        "row_count": len(rows),
+        "date_range": date_range,
+        "mode": "READ_ONLY_PREVIEW",
+    }
+
+
+@router.get("/export/download")
+async def export_download(
+    dataset: str = Query("paper_trades"),
+    format: str = Query("csv"),
+    date_range: str = Query("all"),
+) -> Response:
+    sources = _export_sources()
+    if dataset not in sources:
+        raise HTTPException(status_code=404, detail="Unknown archive export dataset")
+    fmt = str(format or "csv").lower()
+    if fmt not in {"csv", "jsonl"}:
+        raise HTTPException(status_code=400, detail="Supported formats are csv and jsonl")
+    rows = await asyncio.to_thread(_read_dataset, sources[dataset])
+    rows = _filter_date_range(rows, date_range)
+    if fmt == "csv":
+        body = _csv_bytes(rows)
+        media_type = "text/csv; charset=utf-8"
+        ext = "csv"
+    else:
+        body = _jsonl_bytes(rows)
+        media_type = "application/x-ndjson; charset=utf-8"
+        ext = "jsonl"
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    filename = f"atlas_{dataset}_{stamp}.{ext}"
+    return Response(
+        content=body,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+    )
