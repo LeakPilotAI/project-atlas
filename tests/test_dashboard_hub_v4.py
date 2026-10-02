@@ -20,7 +20,8 @@ def test_dashboard_hub_has_three_isolated_domains():
     assert 'data-src="/dashboard/archive"' in text
     assert "COMING SOON" in text
     assert 'data-src="/dashboard/command-center"' in text
-    assert 'data-src="/dashboard/future?embed=1"' in text
+    assert 'data-src="/dashboard/prediction-paper"' in text
+    assert 'Prediction Markets <span class="soon">PAPER</span>' in text
     assert '.nav .tab[data-pane="analytics"],.nav .tab[data-pane="portfolio"]{display:none}' in text
     assert '.nav .tab[data-pane="prediction"]' not in text.split('{display:none}', 1)[0].splitlines()[-1]
     command_pos = text.index('data-pane="command"')
@@ -45,6 +46,7 @@ def test_dashboard_routes_preserve_perp_and_legacy_views():
     assert client.get("/dashboard/command-center/health").status_code == 200
     assert client.get("/dashboard/command-center/risk").status_code == 200
     assert client.get("/dashboard/future").status_code == 200
+    assert client.get("/dashboard/prediction-paper").status_code == 200
     assert client.get("/dashboard/legacy").status_code == 200
 
 
@@ -71,6 +73,7 @@ def test_root_advertises_domain_specific_dashboard_routes():
     assert payload["dashboard_command_center_health"] == "/dashboard/command-center/health"
     assert payload["dashboard_command_center_risk"] == "/dashboard/command-center/risk"
     assert payload["dashboard_future"] == "/dashboard/future"
+    assert payload["dashboard_prediction_paper"] == "/dashboard/prediction-paper"
     assert payload["dashboard_legacy"] == "/dashboard/legacy"
 
 
@@ -88,3 +91,20 @@ def test_legacy_dashboard_escapes_dynamic_html():
     assert "'<':'&lt;'" in text
     assert "'>':'&gt;'" in text
     assert "'\"':'&quot;'" in text
+
+
+def test_prediction_paper_workspace_is_read_only_evidence_surface():
+    text = (ROOT / "backend" / "app" / "static" / "prediction_paper.html").read_text(encoding="utf-8")
+    for token in (
+        "AUTO-OPEN LOCKED · LIVE OFF",
+        "/api/prediction/paper/status?limit=100",
+        "/api/prediction/paper/candidates?limit=200",
+        "Recent Candidate Evidence",
+        "PAPER Position / Trade Events",
+        "Depth-aware",
+        "atlasPoll(refresh,10000)",
+    ):
+        assert token in text
+    assert "/paper/open/" not in text
+    assert "/paper/close" not in text
+    assert "LIVE CAPITAL OFF" in text
