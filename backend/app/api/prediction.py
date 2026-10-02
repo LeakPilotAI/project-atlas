@@ -32,6 +32,8 @@ async def prediction_status() -> Dict[str, Any]:
         "provider_mode": "PUBLIC_MARKET_DATA_ONLY",
         "research": True,
         "paper_ledger": False,
+        "executable_orderbook": True,
+        "historical_pre_event_prices": True,
         "settlement_verification": False,
         "calibration": False,
         "authenticated_provider_access": False,
@@ -41,7 +43,7 @@ async def prediction_status() -> Dict[str, Any]:
         "live_capital_allowed": False,
         "automatic_real_money_execution": False,
         "strategy_policy": policy_snapshot(),
-        "note": "Phase 1 exposes Kalshi public single-market research only. Combos/parlays/multivariate markets are permanently blocked; no account or order endpoints are wired.",
+        "note": "Phase 1 exposes Kalshi public single-market research with executable orderbook depth and bounded candlestick history. Combos/parlays/multivariate markets are permanently blocked; no account or order endpoints are wired.",
     }
 
 
