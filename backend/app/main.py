@@ -46,6 +46,7 @@ from app.services.robinhood_brief import robinhood_brief_service
 from app.services.robinhood_universe_research import robinhood_universe_research_service
 from app.services.scanner import scanner
 from app.services.weekly_summary import weekly_summary_service
+from app.prediction.prediction_paper_automation import prediction_paper_automation
 
 
 async def _announce_session(info: Dict[str, Any]) -> None:
@@ -182,6 +183,7 @@ async def lifespan(app: FastAPI):
             ("perp_alert_delivery", perp_alert_delivery_service.start),
             ("daily_paper_recap", daily_paper_recap.start),
             ("micro_heartbeat", micro_heartbeat.start),
+            ("prediction_paper_automation", prediction_paper_automation.start),
         ]:
             try:
                 await starter()
@@ -252,6 +254,7 @@ async def lifespan(app: FastAPI):
         pass
     for name, stopper in [
         ("micro_heartbeat", micro_heartbeat.stop),
+        ("prediction_paper_automation", prediction_paper_automation.stop),
         ("daily_paper_recap", daily_paper_recap.stop),
         ("perp_alert_delivery", perp_alert_delivery_service.stop),
         ("perp_manual", perp_manual_service.stop),
@@ -478,6 +481,7 @@ async def health() -> Dict[str, Any]:
         "perp_alert_delivery_running": bool(getattr(perp_alert_delivery_service, "running", False)),
         "daily_paper_recap_running": bool(getattr(daily_paper_recap, "running", False)),
         "micro_heartbeat_running": bool(getattr(micro_heartbeat, "running", False)),
+        "prediction_paper_automation_running": bool(getattr(prediction_paper_automation, "running", False)),
         "discord_ready": is_discord_ready(),
         "perp_allowlist_enabled": bool(settings.perp_allowlist_enabled),
         "liquid_count": int(getattr(perp_micro_coach, "liquid_count", 0) or 0),
