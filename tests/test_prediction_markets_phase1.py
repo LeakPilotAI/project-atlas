@@ -629,3 +629,38 @@ def test_prediction_phase_one_contains_no_authenticated_or_live_order_surface():
         assert "/orders" not in path
         assert "/portfolio" not in path
         assert "/account" not in path
+
+
+def test_prediction_candidate_snapshot_is_bounded_and_read_only(tmp_path):
+    journal = PredictionPaperJournal(
+        journal_path=tmp_path / "paper.jsonl",
+        candidate_path=tmp_path / "candidates.jsonl",
+    )
+    for i in range(5):
+        journal.log_candidate({
+            "ticker": f"KXTEST-{i}",
+            "side": "YES" if i % 2 == 0 else "NO",
+            "eligible": i == 4,
+            "rejection_reasons": [] if i == 4 else ["TEST_REJECT"],
+        })
+    payload = journal.candidate_snapshot(limit=3)
+    assert payload["execution"] == "PAPER_ONLY"
+    assert payload["live_capital_allowed"] is False
+    assert payload["automatic_real_money_execution"] is False
+    assert payload["window_size"] == 3
+    assert payload["eligible_in_window"] == 1
+    assert payload["rejected_in_window"] == 2
+    assert [row["ticker"] for row in payload["candidates"]] == [
+        "KXTEST-2", "KXTEST-3", "KXTEST-4"
+    ]
+
+
+def test_prediction_candidate_evidence_endpoint_is_reachable():
+    response = TestClient(app).get("/api/prediction/paper/candidates?limit=5")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["domain"] == "PREDICTION_PAPER"
+    assert payload["execution"] == "PAPER_ONLY"
+    assert payload["live_capital_allowed"] is False
+    assert payload["automatic_real_money_execution"] is False
+    assert len(payload["candidates"]) <= 5
