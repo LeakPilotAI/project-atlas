@@ -91,6 +91,31 @@ def test_scanner_prefilters_before_expensive_reads_and_never_opens(monkeypatch, 
     assert service.status()["unattended_paper_open_enabled"] is False
 
 
+def test_scanner_accepts_provider_active_status_from_open_discovery(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    journal = _journal(tmp_path)
+    monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
+    market = _market(now)
+    market["status"] = "active"
+
+    async def markets(**kwargs):
+        return {"markets": [market]}
+    async def book(*args, **kwargs):
+        return {"orderbook": _book()}
+    async def candles(*args, **kwargs):
+        return {"candlesticks": _candles()}
+
+    monkeypatch.setattr(automation_module.kalshi_public, "get_markets", markets)
+    monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
+    monkeypatch.setattr(automation_module.kalshi_public, "get_candlesticks", candles)
+
+    state = asyncio.run(PredictionPaperAutomation().run_scan_once(now=now))
+    assert state["markets_prefilter_rejected"] == 0
+    assert state["markets_fully_evaluated"] == 1
+    assert state["yes_evaluations"] == 1
+    assert state["no_evaluations"] == 1
+
+
 def test_scanner_evaluates_yes_and_no_with_one_market_data_read(monkeypatch, tmp_path):
     now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
     journal = _journal(tmp_path)
