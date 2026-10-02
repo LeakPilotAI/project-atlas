@@ -93,8 +93,8 @@
 </div>
 <script src="/static/runtime_poll.js"></script>
 <script>
-const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const num=(v,d=2)=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:d}):'—'},money=v=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:6}):'—'},rFmt=v=>{const n=Number(v);return Number.isFinite(n)?(n>0?'+':'')+n.toFixed(2)+'R':'—'},pct=v=>{const n=Number(v);return Number.isFinite(n)?(n*100).toFixed(1)+'%':'—'};
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),hasNum=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
+const num=(v,d=2)=>hasNum(v)?Number(v).toLocaleString(undefined,{maximumFractionDigits:d}):'—',money=v=>hasNum(v)?Number(v).toLocaleString(undefined,{maximumFractionDigits:6}):'—',rFmt=v=>hasNum(v)?(Number(v)>0?'+':'')+Number(v).toFixed(2)+'R':'—',pct=v=>hasNum(v)?(Number(v)*100).toFixed(1)+'%':'—';
 const date=v=>{const d=new Date(v||'');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString()},tone=v=>{const n=Number(v);return Number.isFinite(n)?(n>0?'good':n<0?'bad':'warn'):'warn'};
 let DATA=null,selectedTrade=null,detailMarks=[],chartMode='cumulative';
 
