@@ -582,3 +582,33 @@ problem rather than evidence that the 20-contract activity floors should be weak
 
 The live smoke remains diagnostic-only after acceptance so external provider
 availability cannot make deterministic CI flaky.
+
+
+## Phase 1.6 — Eligible candidate notification
+
+Atlas now sends a DM through the existing Discord alert channel when the Prediction
+scanner produces a genuine eligible=true PAPER candidate.
+
+This is notification-only:
+
+- no PAPER position is opened by the notification path
+- unattended Prediction PAPER opening remains disabled and blocked
+- live execution remains false
+- live capital remains false
+- automatic real-money execution remains false
+- the message explicitly says manual review is required and no position was opened
+
+The durable alert identity is ticker + side + occurrence datetime + strategy. Atlas
+persists an eligible_candidate_alert_delivered event only after Discord confirms a
+successful delivery. A successfully delivered candidate is therefore deduped across
+later scan cycles and process restarts. Failed or unavailable Discord delivery is not
+acknowledged and remains retryable on a later scan.
+
+Scanner status exposes per-cycle attempted, delivered, deduped, and failed eligible
+alert counts plus the last alert key/error. The Prediction PAPER dashboard surfaces
+those delivery counters and labels the channel as DM-only.
+
+This phase does not change any eligibility threshold, discovery bound, fill model,
+position limit, or auto-flat behavior. The remaining validation gate is still a
+genuine eligible candidate followed by a manual PAPER open and observed end-to-end
+auto-flat.
