@@ -21,6 +21,7 @@ SURFACES = (
     "command_center_health.html",
     "command_center_risk.html",
     "future_overview.html",
+    "prediction_paper.html",
 )
 
 
@@ -81,6 +82,7 @@ def test_frontend_freeze_routes_are_reachable():
         "/dashboard/command-center/health",
         "/dashboard/command-center/risk",
         "/dashboard/future",
+        "/dashboard/prediction-paper",
     )
     for route in routes:
         response = client.get(route)
