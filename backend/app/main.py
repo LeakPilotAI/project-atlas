@@ -319,6 +319,7 @@ app.include_router(validation_proof_router)
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 DASHBOARD_HTML = STATIC_DIR / "dashboard_hub.html"
 PERP_DASHBOARD_HTML = STATIC_DIR / "dashboard_shell.html"
+INVESTMENT_DASHBOARD_HTML = STATIC_DIR / "investment.html"
 LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 
 
@@ -351,6 +352,11 @@ async def perp_backdrop() -> FileResponse:
 @app.get("/dashboard/perps")
 async def perp_dashboard_page() -> FileResponse:
     return _dashboard_response(PERP_DASHBOARD_HTML)
+
+
+@app.get("/dashboard/investment")
+async def investment_dashboard_page() -> FileResponse:
+    return _dashboard_response(INVESTMENT_DASHBOARD_HTML)
 
 
 @app.get("/dashboard/legacy")
