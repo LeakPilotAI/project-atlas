@@ -11,7 +11,7 @@ import asyncio
 import csv
 import io
 import json
-from collections import deque
+from collections import Counter, deque
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict
@@ -204,6 +204,333 @@ async def investment_history_bars(
         ],
         "source": "investment_daily_history",
         "execution": "READ_ONLY",
+        "live_capital_allowed": False,
+    }
+
+
+# --------------------------------
+# Read-only Hyperliquid PAPER archive
+# --------------------------------
+
+def _paper_trade_setup(row: dict[str, Any]) -> str:
+    features = row.get("features") if isinstance(row.get("features"), dict) else {}
+    return str(
+        row.get("setup_type")
+        or features.get("setup_type")
+        or row.get("strategy")
+        or row.get("source")
+        or row.get("exit_mode")
+        or "UNKNOWN"
+    ).upper()
+
+
+def _paper_trade_r(row: dict[str, Any]) -> float:
+    raw = row.get("net_pnl_r")
+    if raw is None:
+        raw = row.get("R_multiple")
+    try:
+        return float(raw or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _paper_close_time(row: dict[str, Any]) -> datetime | None:
+    for key in ("exit_timestamp", "timestamp", "entry_timestamp"):
+        raw = row.get(key)
+        if not raw:
+            continue
+        try:
+            value = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc)
+        except Exception:
+            continue
+    return None
+
+
+def _eligible_paper_close(row: dict[str, Any]) -> bool:
+    if str(row.get("event") or "").lower() != "close":
+        return False
+    if str(row.get("trade_type") or "PAPER").upper() == "TEST":
+        return False
+    if bool(row.get("session_roll")):
+        return False
+    if str(row.get("result") or "").upper() in {"SESSION_ROLL", "INTERRUPTED"}:
+        return False
+    return True
+
+
+def _paper_trade_row(row: dict[str, Any]) -> dict[str, Any]:
+    r = _paper_trade_r(row)
+    scratch = bool(row.get("scratch")) or str(row.get("result") or "").upper() in {"BE", "SCRATCH"} or abs(r) < 1e-12
+    status = "SCRATCH" if scratch else ("WIN" if r > 0 else "LOSS")
+    entry = row.get("actual_entry_price")
+    if entry is None:
+        entry = row.get("entry")
+    exit_price = row.get("actual_exit_price")
+    return {
+        "trade_id": row.get("trade_id"),
+        "entry_timestamp": row.get("entry_timestamp") or row.get("signal_timestamp"),
+        "exit_timestamp": row.get("exit_timestamp") or row.get("timestamp"),
+        "symbol": str(row.get("symbol") or "").upper(),
+        "setup": _paper_trade_setup(row),
+        "direction": str(row.get("side") or "UNKNOWN").upper(),
+        "entry": entry,
+        "exit": exit_price,
+        "stop": row.get("initial_stop") if row.get("initial_stop") is not None else row.get("stop_price"),
+        "target": row.get("working_target") if row.get("working_target") is not None else row.get("tp1_price"),
+        "r": round(r, 4),
+        "gross_r": row.get("gross_pnl_r"),
+        "result": row.get("result"),
+        "status": status,
+        "exit_reason": row.get("exit_reason"),
+        "notes": row.get("notes") or row.get("exit_reason") or "",
+        "risk_dollars": row.get("risk_dollars"),
+        "position_size": row.get("position_size"),
+        "holding_time_sec": row.get("holding_time_sec") or row.get("duration_sec"),
+        "mfe_r": row.get("mfe_r"),
+        "mae_r": row.get("mae_r"),
+        "exit_mode": row.get("exit_mode"),
+        "strategy": row.get("strategy"),
+        "adaptive_stage": row.get("adaptive_stage"),
+        "adaptive_exit_policy_version": row.get("adaptive_exit_policy_version"),
+        "counts_for_live": bool(row.get("counts_for_live")),
+    }
+
+
+def _paper_filtered_rows(
+    *,
+    date_range: str = "all",
+    symbol: str = "",
+    setup: str = "",
+) -> list[dict[str, Any]]:
+    rows = [row for row in _read_dataset(JOURNAL_PATH) if _eligible_paper_close(row)]
+    token = str(date_range or "all").lower()
+    days = {"30d": 30, "90d": 90, "365d": 365}.get(token)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days) if days else None
+    sym = str(symbol or "").upper().strip()
+    setup_token = str(setup or "").upper().strip()
+    selected = []
+    for row in rows:
+        if cutoff is not None:
+            ts = _paper_close_time(row)
+            if ts is not None and ts < cutoff:
+                continue
+        if sym and str(row.get("symbol") or "").upper() != sym:
+            continue
+        if setup_token and _paper_trade_setup(row) != setup_token:
+            continue
+        selected.append(row)
+    selected.sort(key=lambda row: _paper_close_time(row) or datetime.min.replace(tzinfo=timezone.utc))
+    return selected
+
+
+def _paper_archive_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    mapped = [_paper_trade_row(row) for row in rows]
+    wins = [row for row in mapped if row["status"] == "WIN"]
+    losses = [row for row in mapped if row["status"] == "LOSS"]
+    scratches = [row for row in mapped if row["status"] == "SCRATCH"]
+    total = len(mapped)
+    sum_r = sum(float(row["r"]) for row in mapped)
+    avg_r = sum_r / total if total else 0.0
+    avg_win = sum(float(row["r"]) for row in wins) / len(wins) if wins else 0.0
+    avg_loss = sum(float(row["r"]) for row in losses) / len(losses) if losses else 0.0
+    profit_factor = (
+        sum(float(row["r"]) for row in wins) / abs(sum(float(row["r"]) for row in losses))
+        if losses and abs(sum(float(row["r"]) for row in losses)) > 1e-12
+        else None
+    )
+
+    cumulative = 0.0
+    peak = 0.0
+    max_drawdown = 0.0
+    equity_curve = []
+    daily: dict[str, float] = {}
+    win_series = []
+    running_wins = 0
+    consec_wins = consec_losses = max_consec_wins = max_consec_losses = 0
+    for idx, row in enumerate(mapped, start=1):
+        r = float(row["r"])
+        cumulative += r
+        peak = max(peak, cumulative)
+        max_drawdown = min(max_drawdown, cumulative - peak)
+        ts = row.get("exit_timestamp")
+        day = str(ts or "")[:10] or f"trade-{idx}"
+        daily[day] = daily.get(day, 0.0) + r
+        if row["status"] == "WIN":
+            running_wins += 1
+            consec_wins += 1
+            consec_losses = 0
+        elif row["status"] == "LOSS":
+            consec_losses += 1
+            consec_wins = 0
+        else:
+            consec_wins = 0
+            consec_losses = 0
+        max_consec_wins = max(max_consec_wins, consec_wins)
+        max_consec_losses = max(max_consec_losses, consec_losses)
+        win_series.append(round(running_wins / idx, 4))
+        equity_curve.append(
+            {
+                "index": idx,
+                "timestamp": ts,
+                "cumulative_r": round(cumulative, 4),
+                "drawdown_r": round(cumulative - peak, 4),
+                "win_rate": win_series[-1],
+            }
+        )
+
+    def breakdown(key: str) -> list[dict[str, Any]]:
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for row in mapped:
+            grouped.setdefault(str(row.get(key) or "UNKNOWN"), []).append(row)
+        out = []
+        for name, items in grouped.items():
+            n = len(items)
+            w = sum(1 for row in items if row["status"] == "WIN")
+            out.append(
+                {
+                    key: name,
+                    "trades": n,
+                    "wins": w,
+                    "losses": sum(1 for row in items if row["status"] == "LOSS"),
+                    "scratches": sum(1 for row in items if row["status"] == "SCRATCH"),
+                    "win_rate": round(w / n, 4) if n else 0.0,
+                    "sum_r": round(sum(float(row["r"]) for row in items), 4),
+                    "avg_r": round(sum(float(row["r"]) for row in items) / n, 4) if n else 0.0,
+                }
+            )
+        return sorted(out, key=lambda item: (-int(item["trades"]), str(item.get(key))))
+
+    best = max(mapped, key=lambda row: float(row["r"]), default=None)
+    worst = min(mapped, key=lambda row: float(row["r"]), default=None)
+    symbols = sorted({row["symbol"] for row in mapped if row["symbol"]})
+    setups = sorted({row["setup"] for row in mapped if row["setup"]})
+    return {
+        "total": total,
+        "wins": len(wins),
+        "losses": len(losses),
+        "scratches": len(scratches),
+        "win_rate": round(len(wins) / total, 4) if total else 0.0,
+        "sum_r": round(sum_r, 4),
+        "avg_r": round(avg_r, 4),
+        "avg_win_r": round(avg_win, 4),
+        "avg_loss_r": round(avg_loss, 4),
+        "profit_factor": round(profit_factor, 4) if profit_factor is not None else None,
+        "max_drawdown_r": round(max_drawdown, 4),
+        "max_consecutive_wins": max_consec_wins,
+        "max_consecutive_losses": max_consec_losses,
+        "best_trade": best,
+        "worst_trade": worst,
+        "by_setup": breakdown("setup"),
+        "by_direction": breakdown("direction"),
+        "symbols": symbols,
+        "setups": setups,
+        "equity_curve": equity_curve,
+        "daily_r": [{"date": day, "r": round(value, 4)} for day, value in sorted(daily.items())],
+    }
+
+
+def _build_paper_trades_archive(
+    *,
+    date_range: str,
+    symbol: str,
+    setup: str,
+    limit: int,
+) -> dict[str, Any]:
+    rows = _paper_filtered_rows(date_range=date_range, symbol=symbol, setup=setup)
+    summary = _paper_archive_summary(rows)
+    trades = [_paper_trade_row(row) for row in reversed(rows[-limit:])]
+    return {
+        "domain": "PAPER_TRADE_ARCHIVE",
+        "execution": "PAPER_ONLY",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+        "filters": {
+            "date_range": date_range,
+            "symbol": symbol or "ALL",
+            "setup": setup or "ALL",
+        },
+        "summary": summary,
+        "trades": trades,
+        "note": (
+            "Closed Hyperliquid PAPER trades only. TEST, SESSION_ROLL and INTERRUPTED "
+            "rows are excluded from performance statistics."
+        ),
+    }
+
+
+@router.get("/paper-trades")
+async def paper_trades_archive(
+    date_range: str = Query("all"),
+    symbol: str = Query(""),
+    setup: str = Query(""),
+    limit: int = Query(500, ge=25, le=2000),
+) -> Dict[str, Any]:
+    return await asyncio.to_thread(
+        _build_paper_trades_archive,
+        date_range=date_range,
+        symbol=symbol,
+        setup=setup,
+        limit=limit,
+    )
+
+
+@router.get("/paper-trades/{trade_id}")
+async def paper_trade_detail(trade_id: str) -> Dict[str, Any]:
+    requested = str(trade_id or "").strip()
+    if not requested:
+        raise HTTPException(status_code=404, detail="Paper trade not found")
+    events = [
+        row
+        for row in _read_dataset(JOURNAL_PATH)
+        if str(row.get("trade_id") or "") == requested
+        and str(row.get("trade_type") or "PAPER").upper() != "TEST"
+    ]
+    if not events:
+        raise HTTPException(status_code=404, detail="Paper trade not found")
+    open_row = next((row for row in events if str(row.get("event") or "").lower() == "open"), {})
+    close_row = next((row for row in reversed(events) if str(row.get("event") or "").lower() == "close"), {})
+    source = close_row or open_row
+    marks = []
+    for row in events:
+        event = str(row.get("event") or "").lower()
+        if event == "open":
+            price = row.get("actual_entry_price")
+            timestamp = row.get("entry_timestamp") or row.get("timestamp")
+        elif event == "mark":
+            price = row.get("mark")
+            timestamp = row.get("timestamp")
+        elif event == "close":
+            price = row.get("actual_exit_price")
+            timestamp = row.get("exit_timestamp") or row.get("timestamp")
+        else:
+            continue
+        try:
+            price_value = float(price)
+        except (TypeError, ValueError):
+            continue
+        marks.append(
+            {
+                "event": event.upper(),
+                "timestamp": timestamp,
+                "price": price_value,
+                "mfe_r": row.get("mfe_r"),
+                "mae_r": row.get("mae_r"),
+                "adaptive_stage": row.get("adaptive_stage"),
+                "working_stop": row.get("working_stop"),
+                "working_target": row.get("working_target"),
+            }
+        )
+    return {
+        "trade": _paper_trade_row(source) if close_row else {
+            **_paper_trade_row({**open_row, "event": "close", "result": "OPEN"}),
+            "status": "OPEN",
+        },
+        "marks": marks,
+        "event_count": len(events),
+        "execution": "PAPER_ONLY",
         "live_capital_allowed": False,
     }
 
