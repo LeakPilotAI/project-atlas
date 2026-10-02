@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
-from app.alerts.discord import is_discord_ready
+from app.alerts.discord import get_subscriber_ids, is_discord_ready
 from app.prediction.eligible_alerts import deliver_prediction_eligible_alerts
 from app.prediction.kalshi_public import PredictionProviderError, kalshi_public
 from app.prediction.paper_engine import (
@@ -154,6 +154,7 @@ class PredictionPaperAutomation:
             "eligible_notifications": {
                 "channel": "DISCORD_DM",
                 "delivery_ready": is_discord_ready(),
+                "recipient_count": len(get_subscriber_ids()),
                 "notification_only": True,
                 "manual_review_required": True,
                 "durable_success_dedupe": True,
