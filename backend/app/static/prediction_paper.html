@@ -53,8 +53,8 @@ function eventRow(e){
 function automationView(a){
  const s=a.scanner||{}, f=a.auto_flat||{};
  const rows=[
-  ['Worker',a.running?'RUNNING':'STOPPED'],['Last cycle',s.cycle_id||'—'],['YES / NO',num(s.yes_evaluations)+' / '+num(s.no_evaluations)],
-  ['Scanner errors',num(s.error_count)+' / '+num(s.timeout_count)+' timeouts'],['Auto-flat',f.last_action||'IDLE'],['Auto-flat blocked',String(!!f.blocked).toUpperCase()],
+  ['Worker',a.running?'RUNNING':'STOPPED'],['Last cycle',s.cycle_id||'—'],['Pool viable',num(s.selection_viable_count)],['Activity qualified',num(s.selection_activity_qualified_count)],
+  ['YES / NO',num(s.yes_evaluations)+' / '+num(s.no_evaluations)],['Scanner errors',num(s.error_count)+' / '+num(s.timeout_count)+' timeouts'],['Auto-flat',f.last_action||'IDLE'],['Auto-flat blocked',String(!!f.blocked).toUpperCase()],
   ['Deadline violation',String(!!f.deadline_violation).toUpperCase()],['Auto-open',a.automatic_paper_position_opening?'ENABLED':'LOCKED']
  ];
  $('automation').innerHTML=rows.map(x=>'<span>'+esc(x[0])+'</span><span>'+esc(x[1])+'</span>').join('');
