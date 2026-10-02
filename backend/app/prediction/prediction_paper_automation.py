@@ -24,6 +24,7 @@ from app.prediction.paper_engine import (
     _iso,
     _parse_dt,
     evaluate_pre_event_repricing,
+    walk_executable_depth,
     prediction_paper_journal,
 )
 from app.prediction.policy import POLICY_VERSION, policy_snapshot
@@ -424,8 +425,30 @@ class PredictionPaperAutomation:
                     ),
                     timeout=12.0,
                 )
+                orderbook = payload.get("orderbook") or {}
+                quantity = _d(opened.get("quantity_contracts"))
+                if quantity is None or quantity <= 0:
+                    return self._record_flat_block(
+                        opened, state, "AUTO_FLAT_INVALID_QUANTITY", current
+                    )
+                exit_fill = walk_executable_depth(
+                    orderbook,
+                    side=str(opened.get("side") or ""),
+                    action="SELL",
+                    quantity=quantity,
+                )
+                if not exit_fill.get("fillable"):
+                    raw_reason = str(exit_fill.get("reason") or "EXIT_NOT_FILLABLE")
+                    reason = (
+                        "AUTO_FLAT_BLOCKED_INSUFFICIENT_DEPTH"
+                        if raw_reason == "INSUFFICIENT_EXECUTABLE_DEPTH"
+                        else "AUTO_FLAT_BLOCKED_NO_DEPTH"
+                    )
+                    return self._record_flat_block(
+                        opened, state, reason, current, error=raw_reason
+                    )
                 closed = prediction_paper_journal.close_from_orderbook(
-                    orderbook=payload.get("orderbook") or {},
+                    orderbook=orderbook,
                     exit_reason="AUTO_FLAT_EXECUTED",
                     now=current,
                 )
