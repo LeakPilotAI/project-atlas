@@ -122,6 +122,8 @@ class PredictionPaperAutomation:
                 pass
         self._scanner_task = None
         self._flat_task = None
+        self._scan_lock = None
+        self._flat_lock = None
 
     def status(self) -> dict[str, Any]:
         with self._state_lock:
