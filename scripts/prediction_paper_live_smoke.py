@@ -25,6 +25,8 @@ async def main() -> int:
         service = PredictionPaperAutomation(
             config=PredictionAutomationConfig(
                 discovery_limit=40,
+                discovery_pool_limit=400,
+                discovery_page_size=200,
                 max_concurrency=4,
                 orderbook_depth=20,
                 history_minutes=180,
@@ -59,7 +61,9 @@ async def main() -> int:
         }
         print(json.dumps(payload, indent=2, sort_keys=True))
 
-        assert 0 < state["markets_discovered"] <= 40
+        assert 0 < state["metadata_markets_seen"] <= 400
+        assert 0 < state["markets_selected"] <= 40
+        assert state["markets_discovered"] == state["markets_selected"]
         assert state["error_count"] == 0
         assert state["yes_evaluations"] == state["no_evaluations"]
         assert status["execution"] == "PAPER_ONLY"
