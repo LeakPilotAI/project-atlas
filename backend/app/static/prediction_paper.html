@@ -43,9 +43,9 @@ const money=v=>v===null||v===undefined||v===''?'—':'$'+Number(v).toFixed(2);
 const price=v=>v===null||v===undefined||v===''?'—':Number(v).toFixed(4);
 const when=v=>{if(!v)return'—';const d=new Date(v);return isNaN(d)?esc(v):d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})};
 function candidateRow(c,i){
- const fill=c.entry_fill||{}, reasons=(c.rejection_reasons||[]).join(', ');
+ const fill=c.entry_fill||{}, quote=c.current_quote||{}, projected=c.projected||{}, reasons=(c.rejection_reasons||[]).join(', ');
  const cls=c.eligible?'good':'bad', result=c.eligible?'ELIGIBLE':'REJECT';
- return '<tr data-i="'+i+'"><td>'+when(c.timestamp||c.observed_at)+'</td><td class="mono">'+esc(c.ticker)+'</td><td>'+esc(c.side)+'</td><td>'+esc(c.evaluation_stage||'FULL')+'</td><td>'+num(c.score)+'</td><td>'+price(fill.vwap_dollars)+'</td><td>'+price(c.spread_dollars)+'</td><td>'+price(c.projected_net_edge_per_contract_dollars)+'</td><td><span class="pill '+cls+'">'+result+'</span></td><td class="reasons" title="'+esc(reasons)+'">'+esc(reasons||'—')+'</td></tr>';
+ return '<tr data-i="'+i+'"><td>'+when(c.timestamp||c.observed_at)+'</td><td class="mono">'+esc(c.ticker)+'</td><td>'+esc(c.side)+'</td><td>'+esc(c.evaluation_stage||'FULL')+'</td><td>'+num(c.score)+'</td><td>'+price(fill.vwap_dollars)+'</td><td>'+price(quote.spread_dollars)+'</td><td>'+price(projected.net_edge_dollars_per_contract)+'</td><td><span class="pill '+cls+'">'+result+'</span></td><td class="reasons" title="'+esc(reasons)+'">'+esc(reasons||'—')+'</td></tr>';
 }
 function eventRow(e){
  return '<tr><td>'+esc(e.event)+'</td><td class="mono">'+esc(e.ticker||'—')+'</td><td>'+esc(e.side||'—')+'</td><td>'+num(e.quantity_contracts)+'</td><td>'+price(e.actual_entry_price)+'</td><td>'+price(e.actual_exit_price)+'</td><td>'+money(e.net_pnl_dollars)+'</td><td>'+esc(e.exit_reason||'—')+'</td><td>'+(e.violated_flat_deadline===true?'YES':'NO')+'</td></tr>';
