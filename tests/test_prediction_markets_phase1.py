@@ -119,7 +119,7 @@ def test_prediction_status_is_explicitly_research_only():
     payload = TestClient(app).get("/api/prediction/status").json()
     assert payload["provider"] == "kalshi"
     assert payload["provider_mode"] == "PUBLIC_MARKET_DATA_ONLY"
-    assert payload["paper_ledger"] is False
+    assert payload["paper_ledger"] is True
     assert payload["executable_orderbook"] is True
     assert payload["historical_pre_event_prices"] is True
     assert payload["authenticated_provider_access"] is False
