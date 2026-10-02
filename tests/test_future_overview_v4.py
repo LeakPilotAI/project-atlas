@@ -46,6 +46,8 @@ def test_future_overview_contract():
     assert "No order submission or live execution" in text
     assert "PAPER outcome ledger, settlement verification and calibration remain" in text
     assert "no automatic real-money execution" in text
+    assert "body.embedded .domainNav{display:none}" in text
+    assert "new URLSearchParams(location.search).get('embed')==='1'" in text
 
     # Reference mock telemetry must not be copied into the real future shell.
     assert "$426,318.24" not in text
