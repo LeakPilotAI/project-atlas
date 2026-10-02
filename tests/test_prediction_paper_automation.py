@@ -195,6 +195,60 @@ def test_scanner_evaluates_yes_and_no_with_one_market_data_read(monkeypatch, tmp
     assert journal.open_trade() is None
 
 
+def test_scanner_notifies_eligible_candidates_without_opening(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    journal = _journal(tmp_path)
+    monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
+    notified = []
+
+    async def markets(**kwargs):
+        return {"markets": [_market(now)], "cursor": None}
+
+    async def book(*args, **kwargs):
+        return {"orderbook": _book()}
+
+    async def candles(*args, **kwargs):
+        return {"candlesticks": _candles()}
+
+    def eligible_eval(*, market, side, quantity, **kwargs):
+        return {
+            "eligible": True,
+            "ticker": market["ticker"],
+            "side": side,
+            "score": 91,
+            "quantity_contracts": str(quantity),
+            "occurrence_datetime": market["timing"]["occurrence_datetime"],
+            "flat_deadline": (now + timedelta(hours=2, minutes=30)).isoformat(),
+            "strategy": "PRE_EVENT_RECENT_RECLAIM_V1",
+            "projected": {"net_edge_dollars_per_contract": "0.04"},
+            "entry_fill": {"fillable": True, "vwap_dollars": "0.42"},
+        }
+
+    async def notify(candidates):
+        notified.extend(candidates)
+        return {
+            "attempted": len(candidates),
+            "delivered": len(candidates),
+            "deduped": 0,
+            "failed": 0,
+            "last_alert_key": "synthetic",
+            "last_error": None,
+        }
+
+    monkeypatch.setattr(automation_module.kalshi_public, "get_markets", markets)
+    monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
+    monkeypatch.setattr(automation_module.kalshi_public, "get_candlesticks", candles)
+    monkeypatch.setattr(automation_module, "evaluate_pre_event_repricing", eligible_eval)
+    monkeypatch.setattr(automation_module, "deliver_prediction_eligible_alerts", notify)
+
+    state = asyncio.run(PredictionPaperAutomation().run_scan_once(now=now))
+    assert state["eligible_count"] == 2
+    assert state["eligible_alerts_attempted"] == 2
+    assert state["eligible_alerts_delivered"] == 2
+    assert {row["side"] for row in notified} == {"YES", "NO"}
+    assert journal.open_trade() is None
+
+
 def test_auto_flat_waits_before_deadline(monkeypatch, tmp_path):
     now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
     journal = _journal(tmp_path)
