@@ -140,6 +140,7 @@ class PredictionPaperAutomation:
             },
             "unattended_paper_open_enabled": False,
             "unattended_paper_open_blocked": True,
+            "automatic_paper_position_opening": False,
             "unattended_paper_open_block_reasons": (
                 ["AUTO_FLAT_SAFETY_BLOCKED", "RUNTIME_VALIDATION_REQUIRED"]
                 if blocked else ["RUNTIME_VALIDATION_REQUIRED"]
