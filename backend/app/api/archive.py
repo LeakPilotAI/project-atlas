@@ -843,6 +843,329 @@ async def research_archive_detail(record_id: str) -> Dict[str, Any]:
     raise HTTPException(status_code=404, detail="Research record not found")
 
 
+# -----------------------------
+# Read-only investment snapshots
+# -----------------------------
+
+def _snapshot_record_id(row: dict[str, Any]) -> str:
+    asset = row.get("asset") if isinstance(row.get("asset"), dict) else {}
+    price = row.get("price") if isinstance(row.get("price"), dict) else {}
+    raw = "|".join(
+        [
+            str(row.get("retrieved_at") or ""),
+            str(asset.get("symbol") or row.get("symbol") or ""),
+            str(price.get("source") or ""),
+            str(price.get("value") or ""),
+        ]
+    )
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _snapshot_ts(row: dict[str, Any]) -> datetime | None:
+    raw = row.get("retrieved_at")
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+    except Exception:
+        return None
+
+
+def _measured_value(row: dict[str, Any] | None) -> Any:
+    if not isinstance(row, dict):
+        return None
+    return row.get("value")
+
+
+def _measured_quality(row: dict[str, Any] | None) -> str:
+    if not isinstance(row, dict):
+        return "UNKNOWN"
+    return str(row.get("quality") or "UNKNOWN").upper()
+
+
+def _measured_source(row: dict[str, Any] | None) -> str:
+    if not isinstance(row, dict):
+        return ""
+    return str(row.get("source") or "").strip()
+
+
+def _snapshot_archive_row(row: dict[str, Any]) -> dict[str, Any]:
+    asset = row.get("asset") if isinstance(row.get("asset"), dict) else {}
+    price = row.get("price") if isinstance(row.get("price"), dict) else {}
+    market_cap = row.get("market_cap") if isinstance(row.get("market_cap"), dict) else {}
+    latest_bar = row.get("latest_bar") if isinstance(row.get("latest_bar"), dict) else {}
+    fundamentals = row.get("fundamentals") if isinstance(row.get("fundamentals"), dict) else {}
+    valuation = row.get("valuation") if isinstance(row.get("valuation"), dict) else {}
+    failures = row.get("failures") if isinstance(row.get("failures"), list) else []
+
+    usable_fundamentals = sum(
+        1
+        for value in fundamentals.values()
+        if isinstance(value, dict)
+        and bool(value.get("availability"))
+        and value.get("value") is not None
+    )
+    usable_valuation = sum(
+        1
+        for value in valuation.values()
+        if isinstance(value, dict)
+        and bool(value.get("availability"))
+        and value.get("value") is not None
+    )
+    sources = sorted(
+        {
+            str(value.get("source") or "").strip()
+            for value in [price, market_cap, *fundamentals.values(), *valuation.values()]
+            if isinstance(value, dict) and str(value.get("source") or "").strip()
+        }
+    )
+    return {
+        "record_id": _snapshot_record_id(row),
+        "retrieved_at": row.get("retrieved_at"),
+        "symbol": str(asset.get("symbol") or row.get("symbol") or "").upper(),
+        "name": str(asset.get("name") or "").strip(),
+        "asset_type": str(asset.get("asset_type") or "UNKNOWN").upper(),
+        "sector": str(asset.get("sector") or "").strip(),
+        "industry": str(asset.get("industry") or "").strip(),
+        "exchange": str(asset.get("exchange") or "").strip(),
+        "currency": str(asset.get("currency") or "USD").strip(),
+        "price": _measured_value(price),
+        "price_quality": _measured_quality(price),
+        "price_source": _measured_source(price),
+        "price_timestamp": price.get("effective_timestamp") or price.get("timestamp"),
+        "market_cap": _measured_value(market_cap),
+        "market_cap_quality": _measured_quality(market_cap),
+        "latest_bar": latest_bar or None,
+        "history_rows_stored": int(row.get("history_rows_stored") or 0),
+        "fundamental_fields": len(fundamentals),
+        "usable_fundamental_fields": usable_fundamentals,
+        "valuation_fields": len(valuation),
+        "usable_valuation_fields": usable_valuation,
+        "failure_count": len(failures),
+        "failures": failures,
+        "sources": sources,
+        "fundamentals": fundamentals,
+        "valuation": valuation,
+    }
+
+
+def _snapshot_filtered_rows(
+    *,
+    date_range: str = "all",
+    asset_type: str = "",
+    symbol: str = "",
+    sector: str = "",
+    quality: str = "",
+    source: str = "",
+    search: str = "",
+) -> list[dict[str, Any]]:
+    token = str(date_range or "all").lower()
+    days = {"30d": 30, "90d": 90, "365d": 365}.get(token)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days) if days else None
+    at = str(asset_type or "").upper().strip()
+    sym = str(symbol or "").upper().strip()
+    sec = str(sector or "").upper().strip()
+    qual = str(quality or "").upper().strip()
+    src = str(source or "").upper().strip()
+    q = str(search or "").upper().strip()
+
+    selected = []
+    for raw in _read_dataset(SNAPSHOTS_PATH):
+        if cutoff is not None:
+            ts = _snapshot_ts(raw)
+            if ts is not None and ts < cutoff:
+                continue
+        row = _snapshot_archive_row(raw)
+        if at and row["asset_type"] != at:
+            continue
+        if sym and row["symbol"] != sym:
+            continue
+        if sec and row["sector"].upper() != sec:
+            continue
+        if qual and row["price_quality"] != qual:
+            continue
+        if src and src not in {item.upper() for item in row["sources"]}:
+            continue
+        if q:
+            haystack = " ".join(
+                [
+                    row["symbol"],
+                    row["name"],
+                    row["asset_type"],
+                    row["sector"],
+                    row["industry"],
+                    row["exchange"],
+                    row["price_source"],
+                    " ".join(row["sources"]),
+                ]
+            ).upper()
+            if q not in haystack:
+                continue
+        selected.append(row)
+
+    selected.sort(
+        key=lambda row: (
+            _snapshot_ts({"retrieved_at": row.get("retrieved_at")})
+            or datetime.min.replace(tzinfo=timezone.utc),
+            row.get("symbol") or "",
+        )
+    )
+    return selected
+
+
+def _build_snapshot_archive(
+    *,
+    date_range: str,
+    asset_type: str,
+    symbol: str,
+    sector: str,
+    quality: str,
+    source: str,
+    search: str,
+    limit: int,
+) -> dict[str, Any]:
+    rows = _snapshot_filtered_rows(
+        date_range=date_range,
+        asset_type=asset_type,
+        symbol=symbol,
+        sector=sector,
+        quality=quality,
+        source=source,
+        search=search,
+    )
+
+    symbols = sorted({row["symbol"] for row in rows if row["symbol"]})
+    sectors = sorted({row["sector"] for row in rows if row["sector"]})
+    asset_types = sorted({row["asset_type"] for row in rows if row["asset_type"]})
+    qualities = sorted({row["price_quality"] for row in rows if row["price_quality"]})
+    sources = sorted({source_name for row in rows for source_name in row["sources"]})
+    quality_counts = Counter(row["price_quality"] for row in rows)
+    asset_type_counts = Counter(row["asset_type"] for row in rows)
+    asset_counts = Counter(row["symbol"] for row in rows if row["symbol"])
+    monthly_counts = Counter(
+        str(row.get("retrieved_at") or "")[:7]
+        for row in rows
+        if str(row.get("retrieved_at") or "")[:7]
+    )
+    latest = max((str(row.get("retrieved_at") or "") for row in rows), default=None)
+    with_failures = sum(1 for row in rows if int(row.get("failure_count") or 0) > 0)
+    fresh = sum(1 for row in rows if row.get("price_quality") == "FRESH")
+
+    # A lightweight real price-history map for gallery sparklines and preview context.
+    price_history: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        if not row["symbol"]:
+            continue
+        try:
+            price_value = float(row["price"])
+        except (TypeError, ValueError):
+            continue
+        price_history.setdefault(row["symbol"], []).append(
+            {
+                "retrieved_at": row["retrieved_at"],
+                "price": price_value,
+                "quality": row["price_quality"],
+            }
+        )
+
+    return {
+        "domain": "INVESTMENT_SNAPSHOT_ARCHIVE",
+        "execution": "READ_ONLY",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+        "summary": {
+            "snapshots": len(rows),
+            "tracked_symbols": len(symbols),
+            "asset_type_count": len(asset_type_counts),
+            "fresh_price_records": fresh,
+            "records_with_failures": with_failures,
+            "last_updated": latest,
+        },
+        "filters": {
+            "date_range": date_range,
+            "asset_type": asset_type or "ALL",
+            "symbol": symbol or "ALL",
+            "sector": sector or "ALL",
+            "quality": quality or "ALL",
+            "source": source or "ALL",
+            "search": search,
+        },
+        "facets": {
+            "symbols": symbols,
+            "sectors": sectors,
+            "asset_types": asset_types,
+            "qualities": qualities,
+            "sources": sources,
+        },
+        "breakdowns": {
+            "asset_type": [
+                {"name": key, "count": count}
+                for key, count in asset_type_counts.most_common()
+            ],
+            "quality": [
+                {"name": key, "count": count}
+                for key, count in quality_counts.most_common()
+            ],
+            "monthly_activity": [
+                {"month": month, "count": monthly_counts[month]}
+                for month in sorted(monthly_counts)
+            ],
+            "top_assets": [
+                {"symbol": key, "count": count}
+                for key, count in asset_counts.most_common(8)
+            ],
+        },
+        "price_history": price_history,
+        "records": list(reversed(rows[-limit:])),
+        "note": (
+            "Structured InvestmentSnapshot records only. Atlas does not currently archive "
+            "user-created screenshots, chart images, notes, favorites, or arbitrary attachments "
+            "in this snapshot store."
+        ),
+    }
+
+
+@router.get("/snapshots")
+async def snapshots_archive(
+    date_range: str = Query("all"),
+    asset_type: str = Query(""),
+    symbol: str = Query(""),
+    sector: str = Query(""),
+    quality: str = Query(""),
+    source: str = Query(""),
+    search: str = Query(""),
+    limit: int = Query(500, ge=25, le=2000),
+) -> Dict[str, Any]:
+    return await asyncio.to_thread(
+        _build_snapshot_archive,
+        date_range=date_range,
+        asset_type=asset_type,
+        symbol=symbol,
+        sector=sector,
+        quality=quality,
+        source=source,
+        search=search,
+        limit=limit,
+    )
+
+
+@router.get("/snapshots/{record_id}")
+async def snapshot_archive_detail(record_id: str) -> Dict[str, Any]:
+    requested = str(record_id or "").strip()
+    for raw in reversed(_read_dataset(SNAPSHOTS_PATH)):
+        if _snapshot_record_id(raw) == requested:
+            return {
+                "record": _snapshot_archive_row(raw),
+                "execution": "READ_ONLY",
+                "live_capital_allowed": False,
+                "automatic_real_money_execution": False,
+            }
+    raise HTTPException(status_code=404, detail="Snapshot record not found")
+
+
 # ----------------------------
 # Read-only Archive export API
 # ----------------------------
