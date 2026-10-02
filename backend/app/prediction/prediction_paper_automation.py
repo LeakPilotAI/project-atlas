@@ -154,8 +154,8 @@ class PredictionPaperAutomation:
             "unattended_paper_open_blocked": True,
             "automatic_paper_position_opening": False,
             "unattended_paper_open_block_reasons": (
-                ["AUTO_FLAT_SAFETY_BLOCKED", "RUNTIME_VALIDATION_REQUIRED"]
-                if blocked else ["RUNTIME_VALIDATION_REQUIRED"]
+                ["AUTO_FLAT_SAFETY_BLOCKED", "AUTO_FLAT_LIVE_VALIDATION_REQUIRED"]
+                if blocked else ["AUTO_FLAT_LIVE_VALIDATION_REQUIRED"]
             ),
             "execution": "PAPER_ONLY",
             "live_execution": False,
