@@ -36,6 +36,7 @@ def test_dashboard_routes_preserve_perp_and_legacy_views():
     assert client.get("/dashboard/archive/research").status_code == 200
     assert client.get("/dashboard/archive/snapshots").status_code == 200
     assert client.get("/dashboard/command-center").status_code == 200
+    assert client.get("/dashboard/command-center/health").status_code == 200
     assert client.get("/dashboard/legacy").status_code == 200
 
 
@@ -59,6 +60,7 @@ def test_root_advertises_domain_specific_dashboard_routes():
     assert payload["dashboard_archive_research"] == "/dashboard/archive/research"
     assert payload["dashboard_archive_snapshots"] == "/dashboard/archive/snapshots"
     assert payload["dashboard_command_center"] == "/dashboard/command-center"
+    assert payload["dashboard_command_center_health"] == "/dashboard/command-center/health"
     assert payload["dashboard_legacy"] == "/dashboard/legacy"
 
 
