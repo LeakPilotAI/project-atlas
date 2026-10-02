@@ -335,7 +335,8 @@ ARCHIVE_SNAPSHOTS_HTML = STATIC_DIR / "archive_snapshots.html"
 COMMAND_CENTER_HTML = STATIC_DIR / "command_center.html"
 COMMAND_CENTER_HEALTH_HTML = STATIC_DIR / "command_center_health.html"
 COMMAND_CENTER_RISK_HTML = STATIC_DIR / "command_center_risk.html"
-FUTURE_OVERVIEW_HTML = STATIC_DIR / "future_overview.html"\nPREDICTION_PAPER_HTML = STATIC_DIR / "prediction_paper.html"
+FUTURE_OVERVIEW_HTML = STATIC_DIR / "future_overview.html"
+PREDICTION_PAPER_HTML = STATIC_DIR / "prediction_paper.html"
 LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 
 
