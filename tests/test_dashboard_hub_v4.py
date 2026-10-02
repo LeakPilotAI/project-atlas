@@ -16,7 +16,7 @@ def test_dashboard_hub_has_three_isolated_domains():
         assert name in text
     assert 'src="/dashboard/perps?embed=1"' in text
     assert 'data-src="/api/investments/quality-dips/view"' in text
-    assert 'data-src="/dashboard/legacy?embed=1&tab=invest"' in text
+    assert 'data-src="/dashboard/investment"' in text
     assert 'data-src="/dashboard/legacy?embed=1&tab=research"' in text
     assert "COMING SOON" in text
     command = text.split('id="pane-command"', 1)[1].split("</section>", 1)[0]
@@ -28,6 +28,7 @@ def test_dashboard_routes_preserve_perp_and_legacy_views():
     client = TestClient(app)
     assert client.get("/dashboard").status_code == 200
     assert client.get("/dashboard/perps").status_code == 200
+    assert client.get("/dashboard/investment").status_code == 200
     assert client.get("/dashboard/legacy").status_code == 200
 
 
