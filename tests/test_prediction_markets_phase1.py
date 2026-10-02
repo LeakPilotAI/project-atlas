@@ -476,7 +476,7 @@ def test_prediction_candlestick_route_uses_read_only_provider(monkeypatch):
     assert payload["count"] == 1
 
 
-def test_prediction_phase_one_contains_no_authenticated_or_order_surface():
+def test_prediction_phase_one_contains_no_authenticated_or_live_order_surface():
     source = SOURCE.read_text(encoding="utf-8")
     assert "KALSHI-ACCESS-KEY" not in source
     assert "/orders" not in source
@@ -484,6 +484,13 @@ def test_prediction_phase_one_contains_no_authenticated_or_order_surface():
 
     for route in app.routes:
         path = getattr(route, "path", "")
-        if path.startswith("/api/prediction"):
-            methods = set(getattr(route, "methods", set()) or set())
+        if not path.startswith("/api/prediction"):
+            continue
+        methods = set(getattr(route, "methods", set()) or set())
+        if path.startswith("/api/prediction/paper"):
+            assert methods <= {"GET", "HEAD", "POST"}
+        else:
             assert methods <= {"GET", "HEAD"}
+        assert "/orders" not in path
+        assert "/portfolio" not in path
+        assert "/account" not in path
