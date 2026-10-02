@@ -94,6 +94,55 @@ def test_scanner_prefilters_before_expensive_reads_and_never_opens(monkeypatch, 
     assert status["unattended_paper_open_block_reasons"] == ["AUTO_FLAT_LIVE_VALIDATION_REQUIRED"]
 
 
+def test_scanner_paginates_metadata_pool_and_prioritizes_viable_market(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    journal = _journal(tmp_path)
+    monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
+    low_a = _market(now, volume="1", oi="1")
+    low_a["ticker"] = "KXTEST-LOW-A"
+    low_b = _market(now, volume="2", oi="2")
+    low_b["ticker"] = "KXTEST-LOW-B"
+    good = _market(now, volume="500", oi="300")
+    good["ticker"] = "KXTEST-GOOD"
+    calls = {"markets": [], "book": [], "candles": []}
+
+    async def markets(**kwargs):
+        calls["markets"].append(dict(kwargs))
+        if not kwargs.get("cursor"):
+            return {"markets": [low_a, low_b], "cursor": "NEXT"}
+        return {"markets": [good], "cursor": None}
+
+    async def book(ticker, **kwargs):
+        calls["book"].append(ticker)
+        return {"orderbook": _book()}
+
+    async def candles(*args, **kwargs):
+        calls["candles"].append(kwargs["ticker"])
+        return {"candlesticks": _candles()}
+
+    monkeypatch.setattr(automation_module.kalshi_public, "get_markets", markets)
+    monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
+    monkeypatch.setattr(automation_module.kalshi_public, "get_candlesticks", candles)
+
+    service = PredictionPaperAutomation(config=PredictionAutomationConfig(
+        discovery_limit=1,
+        discovery_pool_limit=3,
+        discovery_page_size=2,
+    ))
+    state = asyncio.run(service.run_scan_once(now=now))
+    assert state["metadata_markets_seen"] == 3
+    assert state["markets_selected"] == 1
+    assert state["selection_viable_count"] == 1
+    assert state["selection_activity_qualified_count"] == 1
+    assert state["markets_fully_evaluated"] == 1
+    assert calls["markets"][0]["cursor"] is None
+    assert calls["markets"][1]["cursor"] == "NEXT"
+    assert calls["book"] == ["KXTEST-GOOD"]
+    assert calls["candles"] == ["KXTEST-GOOD"]
+    rows = journal._rows(journal.candidate_path)
+    assert {row["ticker"] for row in rows} == {"KXTEST-GOOD"}
+
+
 def test_scanner_accepts_provider_active_status_from_open_discovery(monkeypatch, tmp_path):
     now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
     journal = _journal(tmp_path)
@@ -126,7 +175,7 @@ def test_scanner_evaluates_yes_and_no_with_one_market_data_read(monkeypatch, tmp
     calls = {"book": 0, "candles": 0}
 
     async def markets(**kwargs):
-        assert kwargs["limit"] <= 40
+        assert kwargs["limit"] <= 200
         return {"markets": [_market(now)]}
     async def book(*args, **kwargs):
         calls["book"] += 1
