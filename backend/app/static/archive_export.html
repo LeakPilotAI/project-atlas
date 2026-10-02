@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Archive / Export — Atlas</title>
+<style>
+:root{color-scheme:dark;--cyan:#35e5ee;--green:#00ddb0;--red:#ff304c;--amber:#efb35a;--text:#e1eef5;--muted:#86a5b5;--panel:#031016;--mono:Consolas,monospace;--sans:"Segoe UI",Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:transparent;color:var(--text);font:14px/1.38 var(--sans)}button,input,select{font:inherit;color:inherit}.workspace{max-width:2280px;margin:auto;padding:8px 24px 16px}
+.context{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:9px}.context button{min-height:42px;border:1px solid #1c4655;background:#031017;border-radius:5px;text-transform:uppercase;font-size:12px;color:#c7d9e2;letter-spacing:.035em;cursor:pointer}.context button.active{border-color:var(--red);background:linear-gradient(120deg,#3b0912,#08090d);box-shadow:inset 0 0 18px #ff304c22,0 0 12px #ff304c2b;color:white}.context button[disabled]{opacity:.65;cursor:not-allowed}
+.metric,.panel{position:relative;border:1px solid #65313a;background:linear-gradient(145deg,rgba(5,18,24,.97),rgba(1,6,9,.98));box-shadow:inset 0 1px #36e5ef12,0 0 9px #ff304c12}.metric:before,.panel:before{content:"";position:absolute;pointer-events:none;inset:-1px;border-radius:inherit;border-top:1px solid #2d7b8a;border-bottom:1px solid #b9223a;mask-image:linear-gradient(115deg,#000,transparent 30%,transparent 68%,#000)}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:10px}.metric{border-radius:14px 4px 14px 4px;padding:12px 14px;min-height:94px;display:flex;align-items:center;gap:12px}.icon{width:50px;height:50px;border:1px solid #17606b;border-radius:50%;display:grid;place-items:center;font-size:23px;color:var(--cyan);flex:none;box-shadow:inset 0 0 16px #25dfe818}.label{font-size:10px;color:var(--muted);letter-spacing:.07em;text-transform:uppercase}.value{font:25px/1.1 var(--mono);margin:4px 0 2px}.note,.sub{font-size:11px;color:var(--muted)}.good{color:var(--green)!important}.warn{color:var(--amber)!important}.bad{color:var(--red)!important}
+.panel{border-radius:15px 4px 15px 4px;padding:12px}.panelHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.panelHead h2{margin:0;font-size:15px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan)}.panelHead h2:before{content:"◇";margin-right:8px}
+.mainGrid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:10px;align-items:start}.bottomGrid{display:grid;grid-template-columns:1.15fr 1fr .9fr;gap:10px;margin-top:10px}
+.sourceList{display:flex;flex-direction:column;gap:6px}.source{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;padding:9px;border:1px solid #173d49;background:#041219;border-radius:5px;cursor:pointer}.source.on{border-color:var(--cyan);box-shadow:inset 0 0 14px #2be8e813}.source input{accent-color:var(--cyan)}.source b{font-size:12px}.source small{display:block;color:var(--muted)}
+.control{margin-top:10px}.control label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}.control select{width:100%;border:1px solid #1c4655;background:#031017;border-radius:5px;padding:8px 10px}.generate{width:100%;margin-top:12px;min-height:52px;border:1px solid var(--red);background:linear-gradient(120deg,#4d0b15,#10080c);box-shadow:inset 0 0 18px #ff304c22,0 0 12px #ff304c28;border-radius:6px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}.generate:disabled{opacity:.55;cursor:not-allowed}
+.previewHead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.previewHead button{border:1px solid #1c4655;background:#031017;border-radius:5px;padding:6px 10px;font-size:11px}.previewHead button.on{border-color:var(--red);color:#fff}.tableWrap{height:470px;overflow:auto;border-top:1px solid #15333d;scrollbar-color:#1c5360 #02080b;margin-top:8px}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px;font-variant-numeric:tabular-nums}th{position:sticky;top:0;background:#071117;color:#7ea1b2;font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:550;z-index:1}td,th{padding:7px 8px;border-bottom:1px solid #14313a;text-align:left}td{max-width:260px;overflow:hidden;text-overflow:ellipsis}.mono{font-family:var(--mono)}
+.inventory{display:flex;flex-direction:column;gap:7px}.invRow{display:grid;grid-template-columns:1fr 80px 95px;gap:8px;padding:8px;border-bottom:1px solid #14313a;align-items:center}.bar{height:7px;background:#0b2028;border-radius:2px;overflow:hidden;margin-top:4px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#00a5b0,var(--cyan))}
+.sessionList{display:flex;flex-direction:column;gap:6px;max-height:250px;overflow:auto}.sessionRow{padding:8px;border:1px solid #173d49;background:#041219;border-radius:5px}.sessionRow .row{display:flex;justify-content:space-between;gap:8px}.quick{display:grid;grid-template-columns:1fr 1fr;gap:7px}.quick button{border:1px solid #1c4655;background:#031017;border-radius:5px;padding:9px;text-align:left;cursor:pointer}.quick button:hover{border-color:var(--cyan)}
+.unavailable{display:grid;place-content:center;text-align:center;min-height:118px;padding:15px;border:1px dashed #23434d;background:repeating-linear-gradient(0deg,transparent,transparent 23px,#1a56600d 24px);color:var(--muted);font-size:11px;border-radius:5px}.unavailable strong{display:block;color:var(--amber);font-size:12px;margin-bottom:5px}.footer{padding:8px 2px 0;color:var(--muted);font-size:10px}
+@media(max-width:1180px){.metrics{grid-template-columns:repeat(2,1fr)}.mainGrid{grid-template-columns:1fr}.bottomGrid{grid-template-columns:1fr}}@media(max-width:760px){.workspace{padding:6px 10px}.context{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:1fr}.quick{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="workspace">
+  <nav class="context" aria-label="Archive workspace views">
+    <button disabled>Paper Trades</button>
+    <button onclick="location.href='/dashboard/archive'">Investment History</button>
+    <button disabled>Research Archive</button>
+    <button disabled>Snapshots</button>
+    <button class="active">Export</button>
+  </nav>
+
+  <section class="metrics">
+    <div class="metric"><div class="icon">⇩</div><div><div class="label">Available Sources</div><div class="value" id="availableSources">—</div><div class="note">readable archive datasets</div></div></div>
+    <div class="metric"><div class="icon">▤</div><div><div class="label">Archive Rows</div><div class="value" id="totalRows">—</div><div class="note">across supported export sources</div></div></div>
+    <div class="metric"><div class="icon">◉</div><div><div class="label">Source Volume</div><div class="value" id="totalBytes">—</div><div class="note">stored source data size</div></div></div>
+    <div class="metric"><div class="icon">◇</div><div><div class="label">Formats</div><div class="value" style="font-size:18px">CSV · JSONL</div><div class="note">generated on demand only</div></div></div>
+  </section>
+
+  <div class="mainGrid">
+    <aside class="panel">
+      <div class="panelHead"><h2>Export Options</h2><span class="sub">one source at a time</span></div>
+      <div class="sourceList" id="sourceList"></div>
+      <div class="control"><label for="dateRange">Date range</label><select id="dateRange"><option value="all">All Time</option><option value="30d">Last 30 Days</option><option value="90d">Last 90 Days</option><option value="365d">Last 365 Days</option></select></div>
+      <div class="control"><label for="format">Format</label><select id="format"><option value="csv">CSV Spreadsheet</option><option value="jsonl">JSON Lines</option></select></div>
+      <button class="generate" id="generate">⇩ Generate Export</button>
+      <div class="note" style="margin-top:9px">Downloads are created from existing Atlas archive files. No source journal is modified.</div>
+    </aside>
+
+    <section class="panel">
+      <div class="panelHead"><div><h2>Export Preview</h2><div class="sub" id="previewMeta">Loading source preview…</div></div><div class="previewHead"><button class="on">Table</button><button disabled>Chart</button><button disabled>Raw Data</button></div></div>
+      <div class="tableWrap"><table><thead id="previewHeadRow"></thead><tbody id="previewRows"></tbody></table></div>
+    </section>
+  </div>
+
+  <div class="bottomGrid">
+    <section class="panel"><div class="panelHead"><h2>Archive Source Inventory</h2><span class="sub">real files only</span></div><div class="inventory" id="inventory"></div></section>
+    <section class="panel"><div class="panelHead"><h2>Export History</h2><span class="sub">this browser session only</span></div><div class="sessionList" id="sessionHistory"><div class="unavailable"><strong>NO SESSION EXPORTS YET</strong><span>Atlas does not persist export-generation history. Downloads created here will appear in this panel only until the page is refreshed.</span></div></div></section>
+    <section class="panel"><div class="panelHead"><h2>Quick Exports</h2><span class="sub">CSV</span></div><div class="quick" id="quickExports"></div><div class="unavailable" style="margin-top:10px;min-height:96px"><strong>SCHEDULED EXPORTS NOT ENABLED</strong><span>No background export jobs or recurring export schedules exist in Atlas yet.</span></div></section>
+  </div>
+  <div class="footer">Archive Export is read-only · no broker actions · no source-file rewrites · persistent export history and scheduled exports are not yet supported.</div>
+</div>
+<script src="/static/runtime_poll.js"></script>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=(v,d=0)=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:d}):'—'};
+const bytes=v=>{let n=Number(v)||0;if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';if(n<1073741824)return (n/1048576).toFixed(1)+' MB';return (n/1073741824).toFixed(2)+' GB'};
+let SUMMARY=null,selected='paper_trades',sessionHistory=[];
+
+function renderSummary(){
+ const t=SUMMARY.totals||{};$('availableSources').textContent=num(t.available_sources);$('totalRows').textContent=num(t.rows);$('totalBytes').textContent=bytes(t.bytes);
+ const rows=SUMMARY.sources||[],max=Math.max(1,...rows.map(x=>Number(x.bytes)||0));
+ $('sourceList').innerHTML=rows.map(r=>'<label class="source '+(r.key===selected?'on':'')+'"><input type="radio" name="source" value="'+esc(r.key)+'" '+(r.key===selected?'checked':'')+' '+(!r.available?'disabled':'')+'><span><b>'+esc(r.label)+'</b><small>'+num(r.rows)+' rows · '+bytes(r.bytes)+'</small></span><span class="'+(r.available?'good':'warn')+'">'+(r.available?'READY':'EMPTY')+'</span></label>').join('');
+ $('inventory').innerHTML=rows.map(r=>'<div class="invRow"><div><b>'+esc(r.label)+'</b><div class="bar"><i style="width:'+Math.max(2,(Number(r.bytes)||0)/max*100)+'%"></i></div></div><span>'+num(r.rows)+' rows</span><span>'+bytes(r.bytes)+'</span></div>').join('');
+ $('quickExports').innerHTML=rows.filter(r=>r.available).map(r=>'<button data-quick="'+esc(r.key)+'">⇩ '+esc(r.label)+'</button>').join('');
+ document.querySelectorAll('input[name="source"]').forEach(x=>x.addEventListener('change',()=>{selected=x.value;renderSummary();loadPreview()}));
+ document.querySelectorAll('[data-quick]').forEach(x=>x.addEventListener('click',()=>download(x.dataset.quick,'csv')));
+}
+function displayCell(v){if(v==null)return '—';if(typeof v==='object')return JSON.stringify(v);return String(v)}
+function renderPreview(payload){
+ const rows=payload.rows||[];$('previewMeta').textContent=payload.label+' · '+num(payload.row_count)+' rows in selected range · latest '+rows.length+' shown';
+ const keys=[];const seen=new Set();rows.forEach(r=>Object.keys(r||{}).forEach(k=>{if(!seen.has(k)&&keys.length<9){seen.add(k);keys.push(k)}}));
+ if(!keys.length){$('previewHeadRow').innerHTML='<tr><th>Archive Preview</th></tr>';$('previewRows').innerHTML='<tr><td><div class="unavailable"><strong>NO ROWS AVAILABLE</strong><span>This archive source has no supported rows for the selected date range.</span></div></td></tr>';return}
+ $('previewHeadRow').innerHTML='<tr>'+keys.map(k=>'<th>'+esc(k.replaceAll('_',' '))+'</th>').join('')+'</tr>';
+ $('previewRows').innerHTML=rows.map(r=>'<tr>'+keys.map(k=>'<td title="'+esc(displayCell(r[k]))+'">'+esc(displayCell(r[k]))+'</td>').join('')+'</tr>').join('');
+}
+async function loadPreview(){try{const r=await atlasFetch('/api/archive/export/preview?dataset='+encodeURIComponent(selected)+'&date_range='+encodeURIComponent($('dateRange').value)+'&limit=14',8000);renderPreview(await r.json())}catch(e){$('previewMeta').textContent='Preview temporarily unavailable';$('previewRows').innerHTML='<tr><td><div class="unavailable"><strong>PREVIEW UNAVAILABLE</strong><span>Retrying on the next selection change.</span></div></td></tr>'}}
+function recordSession(dataset,format){const src=(SUMMARY.sources||[]).find(x=>x.key===dataset)||{};sessionHistory.unshift({label:src.label||dataset,format:format.toUpperCase(),range:$('dateRange').value,at:new Date()});sessionHistory=sessionHistory.slice(0,12);$('sessionHistory').innerHTML=sessionHistory.map(r=>'<div class="sessionRow"><div class="row"><b>'+esc(r.label)+'</b><span class="good">DOWNLOADED</span></div><div class="sub">'+esc(r.format)+' · '+esc(r.range)+' · '+r.at.toLocaleTimeString()+'</div></div>').join('')}
+function download(dataset,fmt){const range=$('dateRange').value;recordSession(dataset,fmt);window.location.href='/api/archive/export/download?dataset='+encodeURIComponent(dataset)+'&format='+encodeURIComponent(fmt)+'&date_range='+encodeURIComponent(range)}
+$('generate').addEventListener('click',()=>download(selected,$('format').value));$('dateRange').addEventListener('change',loadPreview);
+async function load(){try{const r=await atlasFetch('/api/archive/export/summary',8000);SUMMARY=await r.json();const first=(SUMMARY.sources||[]).find(x=>x.available);if(first&&!SUMMARY.sources.some(x=>x.key===selected&&x.available))selected=first.key;renderSummary();loadPreview()}catch(e){$('sourceList').innerHTML='<div class="unavailable"><strong>EXPORT SOURCES UNAVAILABLE</strong><span>Atlas could not read the archive source inventory.</span></div>'}}
+load();
+</script>
+</body></html>
