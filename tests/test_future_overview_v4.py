@@ -63,6 +63,45 @@ def test_future_overview_contract():
     assert "method:'POST'" not in text
 
 
+
+
+def test_prediction_subnav_only_exposes_implemented_overview():
+    text = PAGE.read_text(encoding="utf-8")
+    subnav = text.split('<nav class="subNav">', 1)[1].split("</nav>", 1)[0]
+
+    assert '<button class="current" aria-current="page">Overview</button>' in subnav
+
+    for label in (
+        "Paper Trades",
+        "Investment Research",
+        "Market Scanner",
+        "Prediction Hub",
+        "Automation",
+        "Social / News",
+        "Wallet / Port",
+    ):
+        assert label in subnav
+        fragment = subnav.split(label, 1)[0].rsplit("<button", 1)[1]
+        assert "disabled" in fragment
+        assert 'aria-disabled="true"' in fragment
+
+    live_fragment = subnav.split("Live Trading", 1)[0].rsplit("<button", 1)[1]
+    assert "disabled" in live_fragment
+    assert "LOCKED" in subnav
+    assert subnav.count("COMING SOON") == 7
+
+    # Prediction sub-navigation must never redirect into unrelated Atlas domains.
+    assert "data-go=" not in subnav
+
+
+def test_unimplemented_prediction_domain_buttons_are_disabled():
+    text = PAGE.read_text(encoding="utf-8")
+    domain = text.split('<nav class="domainNav">', 1)[1].split("</nav>", 1)[0]
+    assert 'disabled aria-disabled="true">Analytics' in domain
+    assert 'disabled aria-disabled="true">Portfolio' in domain
+    assert 'class="current" aria-current="page">Prediction Markets' in domain
+
+
 def test_future_overview_route_serves_no_cache_html():
     response = TestClient(app).get("/dashboard/future")
     assert response.status_code == 200
