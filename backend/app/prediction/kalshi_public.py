@@ -11,6 +11,8 @@ from typing import Any
 
 import httpx
 
+from app.prediction.policy import is_multivariate_market, policy_snapshot
+
 BASE_URL = "https://external-api.kalshi.com/trade-api/v2"
 ALLOWED_STATUSES = {"unopened", "open", "paused", "closed", "settled"}
 
@@ -90,6 +92,10 @@ def normalize_market(row: dict[str, Any]) -> dict[str, Any]:
         },
         "exchange_index": row.get("exchange_index"),
         "is_provisional": row.get("is_provisional"),
+        "market_structure": {
+            "single_market": not is_multivariate_market(row),
+            "multivariate": is_multivariate_market(row),
+        },
     }
 
 
@@ -124,7 +130,11 @@ class KalshiPublicMarketClient:
         clean_status = str(status or "").lower().strip()
         if clean_status and clean_status not in ALLOWED_STATUSES:
             raise ValueError("unsupported Kalshi market status")
-        params: dict[str, Any] = {"limit": max(1, min(int(limit), 200))}
+        params: dict[str, Any] = {
+            "limit": max(1, min(int(limit), 200)),
+            # Permanent Atlas policy: provider-side combo exclusion.
+            "mve_filter": "exclude",
+        }
         if clean_status:
             params["status"] = clean_status
         if cursor:
@@ -136,7 +146,11 @@ class KalshiPublicMarketClient:
 
         payload = await self._request("/markets", params=params)
         rows = payload.get("markets")
-        markets = [normalize_market(row) for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+        raw_rows = [row for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
+        # Defense in depth: even if provider filtering regresses, Atlas never surfaces
+        # a multivariate/combo market into the prediction research lane.
+        single_rows = [row for row in raw_rows if not is_multivariate_market(row)]
+        markets = [normalize_market(row) for row in single_rows]
         return {
             "provider": "kalshi",
             "provider_endpoint": "/markets",
@@ -152,7 +166,10 @@ class KalshiPublicMarketClient:
                 "limit": params["limit"],
                 "series_ticker": series_ticker,
                 "event_ticker": event_ticker,
+                "mve_filter": "exclude",
             },
+            "policy": policy_snapshot(),
+            "provider_rows_blocked_by_single_market_policy": len(raw_rows) - len(single_rows),
             "markets": markets,
         }
 
@@ -161,6 +178,10 @@ class KalshiPublicMarketClient:
         row = payload.get("market")
         if not isinstance(row, dict):
             raise PredictionProviderError("Kalshi market response did not contain a market")
+        if is_multivariate_market(row):
+            raise PredictionProviderError(
+                "Kalshi market blocked by Atlas permanent single-market policy"
+            )
         return {
             "provider": "kalshi",
             "provider_endpoint": "/markets/{ticker}",
@@ -169,6 +190,7 @@ class KalshiPublicMarketClient:
             "execution": "DISABLED",
             "live_capital_allowed": False,
             "automatic_real_money_execution": False,
+            "policy": policy_snapshot(),
             "market": normalize_market(row),
         }
 
