@@ -16,7 +16,14 @@ def test_paper_risk_api_exposes_and_updates_kill_switch(tmp_path, monkeypatch):
         client = TestClient(app)
         r = client.get("/api/perps/paper-risk")
         assert r.status_code == 200
-        assert r.json()["live_execution"] is False
+        payload = r.json()
+        assert payload["live_execution"] is False
+        assert payload["live_capital_allowed"] is False
+        assert payload["automatic_real_money_execution"] is False
+        assert payload["limits"]["max_concurrent_paper"] == 3
+        assert payload["limits"]["max_risk_usd_per_trade"] == 25.0
+        assert payload["limits"]["max_session_loss_r"] == 3.0
+        assert payload["standard_auto_mirror_probe"]["requested_risk_usd"] == 1.0
         r = client.post("/api/perps/paper-risk/kill-switch?enabled=true")
         assert r.status_code == 200
         assert r.json()["kill_switch"] is True
