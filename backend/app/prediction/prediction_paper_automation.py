@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
+from app.prediction.eligible_alerts import deliver_prediction_eligible_alerts
 from app.prediction.kalshi_public import PredictionProviderError, kalshi_public
 from app.prediction.paper_engine import (
     FEE_MODEL_VERSION,
@@ -85,6 +86,9 @@ class PredictionPaperAutomation:
             "yes_evaluations": 0, "no_evaluations": 0,
             "eligible_count": 0, "rejected_count": 0, "error_count": 0,
             "timeout_count": 0, "last_error": None, "top_eligible": [],
+            "eligible_alerts_attempted": 0, "eligible_alerts_delivered": 0,
+            "eligible_alerts_deduped": 0, "eligible_alerts_failed": 0,
+            "eligible_alert_last_key": None, "eligible_alert_last_error": None,
         }
 
     @staticmethod
@@ -146,6 +150,16 @@ class PredictionPaperAutomation:
             "scanner": scan,
             "last_successful_scan": last_good,
             "auto_flat": flat,
+            "eligible_notifications": {
+                "channel": "DISCORD_DM",
+                "notification_only": True,
+                "manual_review_required": True,
+                "durable_success_dedupe": True,
+                "retry_failed_delivery": True,
+                "automatic_paper_position_opening": False,
+                "live_execution": False,
+                "live_capital_allowed": False,
+            },
             "bounds": {
                 "scan_interval_seconds": self.config.scan_interval_seconds,
                 "flat_interval_seconds": self.config.flat_interval_seconds,
@@ -283,6 +297,31 @@ class PredictionPaperAutomation:
                     }
                     for row in eligible[:5]
                 ]
+                try:
+                    alert_result = await deliver_prediction_eligible_alerts(eligible)
+                    state["eligible_alerts_attempted"] = int(
+                        alert_result.get("attempted") or 0
+                    )
+                    state["eligible_alerts_delivered"] = int(
+                        alert_result.get("delivered") or 0
+                    )
+                    state["eligible_alerts_deduped"] = int(
+                        alert_result.get("deduped") or 0
+                    )
+                    state["eligible_alerts_failed"] = int(
+                        alert_result.get("failed") or 0
+                    )
+                    state["eligible_alert_last_key"] = alert_result.get(
+                        "last_alert_key"
+                    )
+                    state["eligible_alert_last_error"] = alert_result.get(
+                        "last_error"
+                    )
+                except Exception as exc:
+                    # Alert transport must never invalidate scanner evidence or
+                    # create an execution side effect. Failed delivery is retryable.
+                    state["eligible_alerts_failed"] = len(eligible)
+                    state["eligible_alert_last_error"] = type(exc).__name__
                 success = True
             except asyncio.CancelledError:
                 raise
