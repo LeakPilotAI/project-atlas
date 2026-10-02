@@ -132,6 +132,8 @@ def test_archive_paper_trades_page_contract():
     assert "/api/archive/paper-trades" in text
     assert "TEST / SESSION_ROLL / INTERRUPTED excluded" in text
     assert "PAPER ONLY · no live capital" in text
+    assert "hasNum" in text
+    assert "v!==null&&v!==undefined&&v!==''" in text
     assert "173" not in text
     assert "+28.37R" not in text
     assert "64.2%" not in text
