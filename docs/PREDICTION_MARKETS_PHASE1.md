@@ -189,3 +189,20 @@ The planned PAPER engine must use:
 - pre-event timing
 
 It may not credit midpoint-only or chart-touch-only fills.
+
+
+### Automatic series resolution
+
+Callers do not need to know Kalshi's series ticker in advance.
+
+When series_ticker is omitted from the Atlas candlestick route, Atlas:
+
+1. loads the permitted single market,
+2. reads its event_ticker,
+3. calls the public Kalshi GET /events/{event_ticker} endpoint,
+4. reads event.series_ticker,
+5. requests the market candlesticks from that resolved series.
+
+This keeps the browser/PAPER layer market-ticker driven while preserving the provider's
+required series path parameter. The response records series_resolution as CALLER or
+EVENT_LOOKUP.
