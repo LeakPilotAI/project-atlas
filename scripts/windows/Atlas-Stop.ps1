@@ -17,45 +17,40 @@ function Stop-Tree([int]$ProcessId) {
     & taskkill.exe /F /PID $ProcessId /T 2>$null | Out-Null
 }
 
-function Stop-ListenPort([int]$Port) {
-    $out = & netstat.exe -ano 2>$null | Select-String ":$Port\s+.*LISTENING"
-    foreach ($line in $out) {
-        $procId = ($line.ToString().Trim() -split "\s+")[-1]
-        if ($procId -match "^\d+$" -and [int]$procId -gt 4) {
-            Stop-Tree ([int]$procId)
-        }
-    }
-}
-
-function Stop-AtlasPython {
-    $markers = @("uvicorn", "app.main", "Project Atlas", "project-atlas")
-    try {
-        Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction SilentlyContinue | ForEach-Object {
-            $cl = [string]$_.CommandLine
-            $exe = [string]$_.ExecutablePath
-            $hit = $false
-            foreach ($m in $markers) {
-                if ($cl -like "*$m*" -or $exe -like "*$m*") { $hit = $true; break }
-            }
-            if ($VenvPy -and $exe -and ($exe -ieq $VenvPy)) { $hit = $true }
-            if ($hit -and $_.ProcessId -gt 4) {
-                Stop-Tree ([int]$_.ProcessId)
-            }
-        }
-    } catch { }
+# Only root-qualified executables/commands prove ownership. taskkill /T includes
+# the base-Python child of the Atlas venv without matching unrelated uvicorns.
+function Test-AtlasProcess($Process) {
+    $exe = [string]$Process.ExecutablePath
+    $cl = [string]$Process.CommandLine
+    $rootOwned = ($exe -ieq $VenvPy -or $cl.IndexOf($Root + "\", [StringComparison]::OrdinalIgnoreCase) -ge 0)
+    $serverRole = ($cl -match "uvicorn\s+app\.main:app" -or ($Process.Name -eq "node.exe" -and $cl -match "next"))
+    return ($rootOwned -and $serverRole)
 }
 
 Write-Host "[stop] Atlas Python..."
-foreach ($p in $ChildPids) { Stop-Tree $p }
-Stop-AtlasPython
-Stop-ListenPort 8000
-Stop-ListenPort 3000
-
-Get-Process -Name "node" -ErrorAction SilentlyContinue | ForEach-Object {
-    try {
-        $cl = (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.Id)").CommandLine
-        if ($cl -match "next|frontend") { Stop-Tree $_.Id }
-    } catch { }
+$owned = @(Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe' OR Name='node.exe'" -ErrorAction SilentlyContinue | Where-Object { Test-AtlasProcess $_ })
+# Ask this desktop run to execute Uvicorn/lifespan cleanup before force fallback.
+$controlDir = Join-Path $Root "logs\runtime"
+$requestedGraceful = $false
+try {
+    $manifest = Get-Content (Join-Path $controlDir "runtime.json") -Raw -ErrorAction Stop | ConvertFrom-Json
+    if ($owned.Count -gt 0 -and $manifest.run_id) {
+        @{run_id=[string]$manifest.run_id} | ConvertTo-Json | Set-Content (Join-Path $controlDir "stop.json") -Encoding UTF8
+        $requestedGraceful = $true
+        $deadline = (Get-Date).AddSeconds(30)
+        do {
+            $remaining = @($owned | Where-Object { Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue })
+            if ($remaining.Count -eq 0) { break }
+            Start-Sleep -Milliseconds 500
+        } while ((Get-Date) -lt $deadline)
+    }
+} catch { }
+$forced = 0
+foreach ($process in $owned) {
+    if ($process.ProcessId -gt 4 -and (Get-Process -Id $process.ProcessId -ErrorAction SilentlyContinue)) {
+        $forced++
+        Stop-Tree ([int]$process.ProcessId)
+    }
 }
 
 Write-Host "[stop] Atlas containers (Docker Desktop + Genesis stay up)..."
@@ -75,4 +70,7 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
     Write-Host "[stop] docker CLI not in PATH - Python was still killed"
 }
 
+$diagnostics = Join-Path $Root "logs\diagnostics"
+New-Item -ItemType Directory -Force $diagnostics | Out-Null
+@{requested_graceful=$requestedGraceful; forced_process_trees=$forced; finished_at=(Get-Date).ToUniversalTime().ToString("o")} | ConvertTo-Json | Set-Content (Join-Path $diagnostics "stop-latest.json") -Encoding UTF8
 Write-Host "[stop] done. Docker Desktop / Genesis were not touched."

@@ -1,20 +1,28 @@
-"""Quality-dip view. Thin consumer of the investment engine. No second Yahoo loop."""
+"""Quality-dip view and durable accumulation/V2 research alert monitor.
+
+The investment engine remains the source of truth. Real brokerage execution is
+always manual. Legacy accumulation alerts are preserved. Quality Dips V2 adds durable
+state-transition, exceptional-zone, and thesis-change research alerts with cooldown
+and dedupe.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import json
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import structlog
 
 from app.core.config import get_settings
-from app.investment.storage import DATA_DIR, ensure_dirs
+from app.investment.storage import DATA_DIR, OPPORTUNITIES_PATH, PLANS_PATH, ensure_dirs
 
 log = structlog.get_logger(__name__)
 
 ALERT_COOLDOWN_PATH = DATA_DIR / "quality_dip_alerts.json"
+LADDER_MONITOR_INTERVAL_SEC = 30.0
 
 
 def _now() -> datetime:
@@ -30,9 +38,17 @@ def _parse(raw: Optional[str]) -> Optional[datetime]:
         return None
 
 
+def _load_jsonl(path: Path) -> list[dict[str, Any]]:
+    from app.investment.latest_index import latest_index
+    return latest_index.read(path)
+
+
+
+
 class QualityDipScanner:
     def __init__(self) -> None:
         self._task: Optional[asyncio.Task] = None
+        self._ladder_task: Optional[asyncio.Task] = None
         self._running = False
         self.last_scan_at: Optional[str] = None
         self.last_snapshot: List[Dict[str, Any]] = []
@@ -74,27 +90,40 @@ class QualityDipScanner:
             return
         self._running = True
         self._task = asyncio.create_task(self._loop(), name="quality_dip_consumer")
+        self._ladder_task = asyncio.create_task(self._ladder_loop(), name="quality_dip_ladder_monitor")
         log.info("Quality dip consumer started (investment engine is source of truth)")
 
     async def stop(self) -> None:
         self._running = False
-        if self._task:
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-            self._task = None
+        for task in (self._task, self._ladder_task):
+            if task:
+                task.cancel()
+        for task in (self._task, self._ladder_task):
+            if task:
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+        self._task = None
+        self._ladder_task = None
         log.info("Quality dip consumer stopped")
 
+    def _research_gate(self, row: Dict[str, Any]) -> Dict[str, Any]:
+        from app.investment.buy_prep import from_tape_row
+        from app.investment.high_conviction import from_quality_tape
+
+        prep = from_tape_row(row)
+        return from_quality_tape(row, prep)
+
     def _should_notify(self, row: Dict[str, Any], hours: float) -> bool:
-        if not row.get("notify"):
+        gate = self._research_gate(row)
+        if not bool(gate.get("high_conviction")):
             return False
         sym = str(row.get("symbol") or "").upper()
         if not sym:
             return False
         prev = self._cooldowns.get(sym) or {}
-        if str(prev.get("action") or "") == str(row.get("action") or ""):
+        if str(prev.get("action") or "") == "A+_QUALITY_DIP":
             last = _parse(prev.get("last_at"))
             if last and _now() - last < timedelta(hours=max(1.0, hours)):
                 return False
@@ -102,30 +131,185 @@ class QualityDipScanner:
 
     async def _emit(self, row: Dict[str, Any]) -> None:
         from app.investment.buy_prep import format_quality_dip_alert, from_tape_row
+        from app.investment.high_conviction import from_quality_tape
         from app.investment.notify import deliver_investment_alert
 
         prep = from_tape_row(row)
+        gate = from_quality_tape(row, prep)
         text = format_quality_dip_alert(row, prep)
+        runway = gate.get("recovery_runway_pct")
+        runway_line = "UNKNOWN" if runway is None else f"{float(runway):.1f}%"
+        text = (
+            "A+ QUALITY DIP RESEARCH CANDIDATE\n"
+            f"Recovery runway to prior high: {runway_line}\n"
+            "25% is a screening hurdle, not a promised return.\n\n"
+            + text
+        )
         ok = await deliver_investment_alert(
             text,
             symbol=str(row.get("symbol") or ""),
-            priority=str(prep.get("priority") or "NORMAL"),
-            title=f"ATLAS QUALITY DIP — {prep.get('action')} · {row.get('symbol')}",
+            priority="HIGH",
+            title=f"ATLAS A+ QUALITY DIP · {row.get('symbol')}",
         )
         now = _now().isoformat()
         self._cooldowns[str(row.get("symbol") or "").upper()] = {
-            "action": row.get("action"),
+            "action": "A+_QUALITY_DIP",
             "last_at": now,
             "delivered": bool(ok),
         }
         self._save_cooldowns()
-        self.last_alerts = ([{"symbol": row.get("symbol"), "action": row.get("action"), "at": now, "delivered": bool(ok)}] + self.last_alerts)[:20]
-        log.info(
-            "quality dip alert",
-            symbol=row.get("symbol"),
-            action=row.get("action"),
-            delivered=bool(ok),
+        self.last_alerts = ([{
+            "symbol": row.get("symbol"),
+            "action": "A+_QUALITY_DIP",
+            "at": now,
+            "delivered": bool(ok),
+            "recovery_runway_pct": runway,
+        }] + self.last_alerts)[:20]
+        log.info("A+ quality dip research alert", symbol=row.get("symbol"), recovery_runway_pct=runway, delivered=bool(ok))
+
+    async def _accumulation_board(self) -> list[dict[str, Any]]:
+        from app.investment.board import build_quality_dips_board
+        from app.investment.quality_dip_quotes import apply_quote_overlay, quality_dip_quote_service
+
+        research = await asyncio.to_thread(_load_jsonl, OPPORTUNITIES_PATH)
+        plans = await asyncio.to_thread(_load_jsonl, PLANS_PATH)
+        base = build_quality_dips_board(research, plans, limit=100)
+        symbols = [r.get("symbol") for r in base if str(r.get("stance") or "").upper() == "ACCUMULATE"]
+        if not symbols:
+            return base
+        quotes = await quality_dip_quote_service.get_many(symbols, max_cache_age_sec=20.0)
+        return build_quality_dips_board(apply_quote_overlay(research, quotes), plans, limit=100)
+
+    async def _emit_ladder_hit(self, hit: Any) -> bool:
+        from app.investment.notify import deliver_investment_alert
+
+        text = "\n".join([
+            f"ACCUMULATION DIP LEVEL HIT · {hit.level}",
+            f"{hit.symbol}",
+            "",
+            f"Frozen {hit.level} research limit: ${hit.level_price:,.2f}",
+            f"Latest supported quote: ${hit.market_price:,.2f}",
+            f"Accumulation-cycle anchor: ${hit.anchor_price:,.2f}",
+            f"Depth from anchor: {hit.pct_below_anchor:.1f}%",
+            f"Quote session: {hit.quote_session}",
+            f"Quote timestamp: {hit.quote_timestamp or 'UNKNOWN'}",
+            "",
+            "MANUAL ACTION:",
+            f"Review {hit.symbol} in Robinhood now. Atlas detected the price reaching/crossing this frozen dip level.",
+            "This alert does not place a brokerage order and is not a guarantee the dip will reverse.",
+            "The next lower level remains armed if the accumulation thesis stays active.",
+        ])
+        return await deliver_investment_alert(
+            text,
+            symbol=hit.symbol,
+            priority="HIGH" if hit.level in {"L3", "L4"} else "NORMAL",
+            title=f"ATLAS ACCUMULATION · {hit.symbol} · {hit.level} HIT",
         )
+
+    async def _process_v2_alerts(self, board: list[dict[str, Any]], cooldown_hours: float) -> None:
+        from app.investment.notify import deliver_investment_alert
+        from app.investment.quality_dips_v2_alert_store import quality_dips_v2_alert_store
+        from app.investment.quality_dips_v2_alerts import decide_v2_alert, format_v2_alert
+
+        for row in board:
+            symbol = str(row.get("symbol") or "").upper().strip()
+            current = dict(row.get("quality_dips_v2") or {})
+            if not symbol or not current:
+                continue
+            previous = quality_dips_v2_alert_store.previous(symbol)
+            # First observation establishes durable baseline; do not emit historical catch-up noise.
+            if previous is None:
+                quality_dips_v2_alert_store.remember_snapshot(symbol, current)
+                continue
+            probe = decide_v2_alert(
+                symbol=symbol,
+                previous=previous,
+                current=current,
+                cooldown_hours=cooldown_hours,
+            )
+            prior_event = quality_dips_v2_alert_store.prior_event(str(probe.get("dedupe_key") or ""))
+            decision = decide_v2_alert(
+                symbol=symbol,
+                previous=previous,
+                current=current,
+                prior_event=prior_event,
+                cooldown_hours=cooldown_hours,
+            )
+            if decision.get("notify"):
+                text = format_v2_alert(symbol, decision, current)
+                delivered = False
+                try:
+                    delivered = await deliver_investment_alert(
+                        text,
+                        symbol=symbol,
+                        priority=str(decision.get("priority") or "NORMAL"),
+                        title=f"ATLAS QUALITY DIPS V2 · {symbol} · {decision.get('event_type')}",
+                    )
+                except Exception as exc:
+                    log.warning("Quality Dips V2 notify failed", symbol=symbol, error=str(exc)[:160])
+                quality_dips_v2_alert_store.mark_event(
+                    dedupe_key=str(decision.get("dedupe_key") or ""),
+                    delivered=bool(delivered),
+                    event_type=str(decision.get("event_type") or "UNKNOWN"),
+                    symbol=symbol,
+                )
+                event = {
+                    "symbol": symbol,
+                    "action": "QUALITY_DIPS_V2_ALERT",
+                    "event_type": decision.get("event_type"),
+                    "dedupe_key": decision.get("dedupe_key"),
+                    "delivered": bool(delivered),
+                    "at": _now().isoformat(),
+                }
+                self.last_alerts = ([event] + self.last_alerts)[:20]
+                log.info("Quality Dips V2 research alert", **event)
+            quality_dips_v2_alert_store.remember_snapshot(symbol, current)
+        quality_dips_v2_alert_store.save()
+
+    async def _ladder_once(self) -> None:
+        from app.investment.accumulation_ladder import accumulation_ladder_store
+        from app.investment.quality_dips_v2_board import attach_v2_board
+
+        board = await self._accumulation_board()
+        hits = accumulation_ladder_store.sync(board)
+        settings = get_settings()
+        discord_enabled = bool(getattr(settings, "quality_dip_discord_enabled", False))
+        for hit in hits:
+            delivered = False
+            if discord_enabled:
+                try:
+                    delivered = await self._emit_ladder_hit(hit)
+                except Exception as exc:
+                    log.warning("accumulation ladder DM failed", symbol=hit.symbol, level=hit.level, error=str(exc)[:160])
+            if delivered:
+                accumulation_ladder_store.mark_delivered(hit.symbol, hit.cycle_id, hit.level)
+            event = {
+                "symbol": hit.symbol,
+                "action": "ACCUMULATION_LEVEL_HIT",
+                "level": hit.level,
+                "level_price": hit.level_price,
+                "market_price": hit.market_price,
+                "cycle_id": hit.cycle_id,
+                "at": _now().isoformat(),
+                "delivered": delivered,
+            }
+            self.last_alerts = ([event] + self.last_alerts)[:20]
+            log.info("accumulation ladder level hit", **event)
+
+        # Prospective evidence collection must not depend on dashboard visits or DMs.
+        research = await asyncio.to_thread(_load_jsonl, OPPORTUNITIES_PATH)
+        v2_board = await asyncio.to_thread(attach_v2_board, board, research)
+        from app.investment.prospective_evidence import collect_board
+        await asyncio.to_thread(collect_board, v2_board, research)
+        from app.investment.adaptive_valuation import review_current_valuations
+        await asyncio.to_thread(review_current_valuations, v2_board, research)
+        from app.investment.prospective_outcomes import refresh_outcomes
+        await asyncio.to_thread(refresh_outcomes)
+        from app.investment.daily_research_plan import persist_daily_plan
+        await asyncio.to_thread(persist_daily_plan)
+        if discord_enabled:
+            hours = float(getattr(settings, "quality_dip_cooldown_hours", 12) or 12)
+            await self._process_v2_alerts(v2_board, hours)
 
     async def _consume(self) -> None:
         from app.investment.scan import investment_scanner
@@ -153,12 +337,20 @@ class QualityDipScanner:
             except Exception as e:
                 log.warning("quality dip notify failed", symbol=row.get("symbol"), error=str(e)[:160])
 
+    async def _ladder_loop(self) -> None:
+        await asyncio.sleep(8)
+        while self._running:
+            try:
+                await self._ladder_once()
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                log.warning("accumulation ladder monitor failed", error=str(exc)[:200])
+            await asyncio.sleep(LADDER_MONITOR_INTERVAL_SEC)
+
     async def _loop(self) -> None:
         settings = get_settings()
-        interval = max(
-            180.0,
-            float(getattr(settings, "quality_dip_scan_interval_minutes", 15) or 15) * 60.0,
-        )
+        interval = max(180.0, float(getattr(settings, "quality_dip_scan_interval_minutes", 15) or 15) * 60.0)
         await asyncio.sleep(8)
         while self._running:
             try:

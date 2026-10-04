@@ -1,0 +1,2325 @@
+PROJECT ATLAS — MASTER CONTINUITY ROADMAP
+Updated: 2026-09-18
+Branch: chatgpt/atlas-rebuild-v1
+Current cycle: QUALITY DIPS V3 — OPEN / RESEARCH_AND_PAPER_VALIDATION
+Operational reliability hotfix: VERIFIED LOCAL GREEN
+
+PRESERVED CLOSED CHECKPOINT
+Prior Atlas engineering/historical evidence remains closed and immutable. Historical perps experiment: FAILED_NEGATIVE. PAPER/SHADOW recovery GREEN. Frozen Quality Dips V2 policy/hurdles and historical evidence are not retuned or relabeled by V2.1. Quality Dips V2.1 does not relabel, retune, or overwrite those results.
+
+PERMANENT SECURITY / EXECUTION BOUNDARY
+Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local credential stores, or raw credential exports. Preserve backend/data. Quality Dips remains research/decision support. Brokerage execution=MANUAL_ONLY. live_capital_allowed=false. automatic_real_money_execution=false. No guaranteed bottom, return, recovery, fair value, hold duration, or exit price.
+
+QUALITY DIPS POLICY — FROZEN
+WATCH -> ACCUMULATION -> DEEP_VALUE -> GENERATIONAL; failed thesis -> THESIS_BROKEN.
+Minimum conservative-upside screening hurdle: 29%.
+Preferred GENERATIONAL conservative-upside hurdle: 50%.
+L1/L2/L3/L4: 29/35/40/50.
+These are screening hurdles, not promised returns.
+
+VERIFIED HISTORY — UNCHANGED
+Phase 1: 8 focused / 805 full GREEN.
+Phase 2: 16 focused / 813 full GREEN.
+Phase 3: 24 focused / 821 full GREEN.
+Phase 4: 30 focused / 827 full GREEN.
+Phase 5: 37 focused / 834 full GREEN.
+Phase 6: 45 focused / 842 full GREEN.
+Phase 7: 53 focused / 850 full GREEN.
+Phase 8: 60 focused / 857 full GREEN.
+Phase 9: 69 focused, 2 warnings / 864 full, 2 warnings GREEN.
+Phase 10: 80 focused, 2 warnings / 875 full, 2 warnings GREEN.
+Phase 11 automated gate: 84 focused, 2 warnings / 879 full, 2 warnings GREEN.
+V2.1 runtime repair gate: 88 focused, 2 warnings in 5.55s / 883 full, 2 warnings in 43.73s GREEN.
+
+V2.1 — COMPLETE / VERIFIED LOCAL GREEN
+Commits:
+aa173cf atlas: ingest explicit analyst normalization targets
+8a3f8d5 atlas: populate Quality Dips V2 runtime evidence
+b965276 atlas: wire runtime evidence into V2 board
+7bb89d9 atlas: add V2 analyst target evidence cache
+fd26468 atlas: use cached analyst targets for V2 normalization
+25e7200 atlas: refresh V2 normalization evidence on board load
+1801079 atlas: test V2 runtime evidence population
+4f52aa9 atlas: isolate incomplete target runtime test
+532d36f atlas: isolate V4 API test from live V2 target refresh
+d3de59b atlas: restore immutable historical result contract
+b87b8e0 atlas: mark V2.1 runtime repair local GREEN
+
+FINAL LIVE RUNTIME EVIDENCE — VERIFIED
+The user launched the normal desktop Atlas workflow and supplied the rendered Quality Dips output.
+Observed:
+- Quality Dips V2 / Patient Capital / Manual Research rendered successfully.
+- Runtime board remained MANUAL_ONLY / NO BROKER ORDERS / NO LIVE CAPITAL.
+- Board summary rendered V2 G 0 / DV 0 / A 0 / W 27 at this market snapshot. Zero qualifying entries is valid and is not treated as a malfunction.
+- Conservative/base/optimistic normalization values populated across supported equities (examples in supplied output: ADBE, NFLX, BRK-B, UNH, AVGO, COST, GOOGL, META, AMZN, NVDA, MSFT and others).
+- L1/L2/L3/L4 patient entry hurdles populated from conservative normalization values.
+- Short/intermediate/long trend fields populated across the board from stored history rather than remaining universally UNKNOWN.
+- Insufficient evidence still fails closed. ETF rows without the required fundamentals/quality/normalization evidence remain WATCH/BLOCKED with WAIT — valuation evidence incomplete rather than fabricated values.
+- Thesis-under-pressure rows can fail closed to THESIS_BROKEN.
+- Legacy quote display and legacy research classifications remain present.
+- No broker execution was introduced.
+
+FINAL EVIDENCE DECISION
+RESEARCH_READY_MANUAL_ONLY
+
+NOT:
+LIVE_CAPITAL_READY
+GUARANTEED_BOTTOM
+GUARANTEED_29_PERCENT
+GUARANTEED_50_PERCENT
+
+FULL ROADMAP — CLOSED
+[COMPLETE/PRESERVED] Prior Atlas engineering + historical evidence cycle
+[COMPLETE/VERIFIED GREEN] Phase 1: patient-capital policy + specification
+[COMPLETE/VERIFIED GREEN] Phase 2: evidence adapter + trend passthrough
+[COMPLETE/VERIFIED GREEN] Phase 3: value-trap / thesis / freshness gate
+[COMPLETE/VERIFIED GREEN] Phase 4: normalization-value model + provenance
+[COMPLETE/VERIFIED GREEN] Phase 5: L1/L2/L3/L4 planner + frozen entry snapshots
+[COMPLETE/VERIFIED GREEN] Phase 6: active-position trend/thesis/cost-basis monitor
+[COMPLETE/VERIFIED GREEN] Phase 7: PIT/no-lookahead validation
+[COMPLETE/VERIFIED GREEN] Phase 8: DEVELOPMENT freeze + untouched HOLDOUT boundary
+[COMPLETE/VERIFIED GREEN] Phase 9: V2 board + API/dashboard integration; MANUAL_ONLY
+[COMPLETE/VERIFIED GREEN] Phase 10: durable state-transition / exceptional-zone / thesis-change alerts
+[COMPLETE/VERIFIED GREEN — AUTOMATED] Phase 11: desktop-contract regression + V2 evidence decision/closure
+[COMPLETE/VERIFIED LOCAL GREEN] V2.1: runtime quality + normalization + trend evidence plumbing
+[COMPLETE/VERIFIED LIVE RUNTIME] V2.1 Quality Dips dashboard evidence population and fail-closed behavior
+[CLOSED] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+
+CLOSURE RULE
+Preserve V2/V2.1 policy, validation evidence, and runtime-repair artifacts. Do not silently retune the frozen 29/35/40/50 thresholds or historical evidence. Any substantive future model, threshold, scoring, or normalization-policy change opens a new cycle. Operational bug fixes may be handled separately without relabeling historical results.
+
+NORMAL DESKTOP WORKFLOW
+START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
+STOP: C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
+
+END OF MASTER ROADMAP
+
+
+OPERATIONAL RELIABILITY HOTFIX — VERIFIED LOCAL GREEN
+Problem observed after hours of runtime: Quality Dips intermittently disappeared / browser reported Failed to fetch.
+Root cause repaired: the Quality Dips API awaited external analyst-target refreshes, allowing provider latency/rate limiting to stall the board request.
+
+Commits:
+4186290 atlas: make V2 target refresh non-blocking and stale-safe
+99dc7e2 atlas: isolate Quality Dips board from target provider latency
+de84c6d atlas: test non-blocking Quality Dips target refresh
+85b7e5f atlas: test stale-safe background target refresh
+
+Behavior after repair:
+- analyst-target refresh runs in background instead of blocking the API response
+- last-known-good target evidence remains usable during transient provider failures
+- failed refreshes do not erase valid cached normalization evidence
+- cache write uses atomic temp-file replacement
+- only one background target refresh runs at a time
+- API exposes normalization_refresh_mode=BACKGROUND_STALE_WHILE_REVALIDATE
+- no policy thresholds, historical evidence, or broker-execution boundaries changed
+
+Local validation:
+12 focused passed, 2 warnings in 5.19s
+885 full-suite passed, 2 warnings in 44.45s
+
+Runtime activation required:
+Restart Atlas once so the running Python process loads these commits, then stress the Quality Dips endpoint repeatedly and confirm no Failed to fetch regression.
+
+
+QUALITY DIPS V3 — OPEN (2026-09-18)
+Goal: replace V2 double-conservative entry math with a professional evidence-weighted margin-of-safety model while preserving V2/V2.1 unchanged.
+Initial implementation commits:
+439f3e9 atlas: open V3 evidence-weighted margin-of-safety cycle
+2df5a80 atlas: attach V3 entry research beside frozen V2
+
+V3 initial policy:
+- robust fair-value anchor requires complete conservative/base/optimistic normalization distribution
+- L1/L2/L3/L4 research zones use 15/20/25/30 percent margins of safety from the robust anchor
+- ACCUMULATION requires >=15 percent discount plus MEDIUM/HIGH evidence, quality >=75, fundamentals >=70, valuation >=50, intact thesis, and no value-trap gate
+- DEEP_VALUE and GENERATIONAL require progressively stronger quality/fundamentals/valuation/drawdown/evidence stacks
+- zero qualifying stocks is valid
+- no guarantee of undervaluation, bottom, return, or recovery
+- V3 remains MANUAL_ONLY until point-in-time DEVELOPMENT/HOLDOUT validation is GREEN
+
+NEXT ENGINEERING GATES — DO NOT SKIP
+1. Add focused V3 tests for fail-closed evidence, realistic entry math, state boundaries, and no-lookahead behavior.
+2. Render V3 clearly in Quality Dips UI and remove ambiguity between legacy ACCUMULATE, frozen V2, and V3.
+3. Add durable V3 L1 transition alerts and frozen entry snapshots.
+4. Run DEVELOPMENT then untouched HOLDOUT validation. Do not tune on HOLDOUT.
+5. Perps: preserve historical FAILED_NEGATIVE result; improve PAPER/SHADOW only. Manual signals must flow through the same paper execution simulator so missed human clicks are represented in testing.
+6. Add explicit paper order lifecycle: CREATED -> PENDING -> FILLED/CANCELLED/EXPIRED/INTERRUPTED. On graceful Atlas shutdown, unfilled paper orders become INTERRUPTED/CANCELLED and must never become phantom fills after restart. Preserve closed fills/trades for clean research; do not delete historical outcomes.
+7. Add startup reconciliation for orphaned paper orders after crashes/forced shutdown.
+8. Add execution idempotency/dedupe so one signal cannot create duplicate simulated/live orders.
+9. Add kill switch, max loss/exposure limits, stale-data rejection, slippage/fee modeling, and broker/exchange acknowledgement reconciliation before any future live-capital gate.
+10. Automatic REAL-MONEY trading remains disabled. A future live gate requires separate validation evidence and explicit user-controlled enablement; it must not be enabled merely because PAPER is GREEN.
+
+PERPS HISTORICAL RESULT — STILL IMMUTABLE
+Historical experiment remains FAILED_NEGATIVE. Aggregate HOLDOUT 546 trades / -26.7235R / -0.04894R expectancy. Do not relabel, erase, or tune this result. New perps work is a separate PAPER/SHADOW recovery cycle.
+
+
+V3 / EXECUTION HARDENING IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+e5f0dd1 atlas: test V3 margin-of-safety entry policy
+36dc8ba atlas: render V3 margin-of-safety research in Quality Dips
+297fe5b atlas: test V3 projection beside immutable V2
+6df1b4a atlas: interrupt unfinished paper trades on shutdown
+1cef51a atlas: reconcile paper state before graceful shutdown
+2b9ee71 atlas: test clean paper shutdown reconciliation
+
+Implemented:
+- V3 visible above frozen V2 in Quality Dips; legacy/V2/V3 remain distinguishable.
+- V3 focused tests cover robust normalization, 15/20/25/30 MOS ladder, fail-closed evidence, ACCUMULATION/DEEP_VALUE/GENERATIONAL boundaries, zero-signal validity, and no-guarantee contract.
+- graceful shutdown now persists open paper marks then records unfinished PAPER positions as INTERRUPTED/non-performance records
+- interrupted paper rows remain append-only evidence, are not deleted, are excluded from performance tallies, and cannot reopen as phantom positions on restart
+- completed historical trades remain untouched
+- real-money execution remains disabled
+
+VALIDATION REQUIRED BEFORE GREEN:
+Run focused V3 + board + shutdown reconciliation tests, then full pytest. Do not label GREEN until local output is supplied.
+
+
+V3 / PERPS HARDENING — SECOND IMPLEMENTATION PASS
+Local GREEN received for prior gate:
+- 15 focused passed in 0.40s
+- 896 full-suite passed, 2 warnings in 39.86s
+
+New commits:
+b824c8f atlas: cancel pending auto-paper limits on shutdown
+65c910c atlas: cancel pending paper limits before shutdown
+f40d530 atlas: test pending paper-limit shutdown cleanup
+cba3d40 atlas: add durable V3 state transition tracking
+7e8ce4e atlas: persist V3 state and entry-level transitions
+0c00631 atlas: test durable V3 transitions and dedupe
+
+Second-pass behavior:
+- every verified manual resting-L1 perp instruction still mirrors into PAPER automatically
+- graceful Atlas shutdown cancels all outstanding simulated resting limits with append-only cancellation evidence
+- cancelled pending limits do not recover after restart
+- open PAPER positions are separately recorded INTERRUPTED/non-performance on graceful shutdown
+- completed historical outcomes remain immutable
+- V3 state transitions and first-time L1-L4 reaches are now durable and deduplicated
+- V3 event persistence remains MANUAL_ONLY and does not place brokerage orders
+- real-money automatic execution remains disabled
+
+NEXT VALIDATION:
+Run focused V3 state + pending-limit shutdown + paper shutdown + board tests, then full pytest. Do not label this second pass GREEN until local output is supplied.
+
+
+V3 / PERPS HARDENING — SECOND PASS LOCAL GREEN
+User local validation received:
+- 20 focused passed in 1.04s
+- 901 full-suite passed, 2 warnings in 41.92s
+Warnings remain dependency deprecations only (discord audioop, Starlette TestClient/httpx).
+
+THIRD IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+f4ca169 atlas: add V3 research alerts and frozen entry snapshots
+eee8447 atlas: persist V3 event payloads for frozen evidence
+d54fa79 atlas: freeze V3 entry evidence on first level hit
+9ed36ad atlas: test V3 alert snapshots and manual boundary
+692e829 atlas: expire stale pending paper limits deterministically
+6569af4 atlas: test deterministic expiry of stale paper limits
+
+Third-pass behavior:
+- first V3 L1/L2/L3/L4 reach freezes the complete V3 plan snapshot used at that event
+- V3 event payloads are persisted durably with explicit MANUAL_ONLY / no-broker wording
+- repeated identical events remain deduped
+- pending auto-paper perp limits now expire deterministically after 6 hours if never filled
+- expiry is append-only CANCELLED evidence and prevents stale phantom fills
+- graceful shutdown cancellation and open-position interruption behavior remain intact
+- completed historical outcomes remain immutable
+- real-money automatic execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + perps evidence cycle
+[FAILED_NEGATIVE/PRESERVED] Historical perps experiment — 546 HOLDOUT trades, -26.7235R, -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 runtime evidence — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix local validation
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[CODE COMPLETE / TEST PENDING] V3/perps hardening pass 3 — alerts/snapshots + stale pending expiry
+[NEXT] Deliver V3 state/level notifications through the existing alert channel with retry-safe delivery semantics
+[NEXT] Add point-in-time DEVELOPMENT/HOLDOUT validation harness for V3; freeze DEVELOPMENT before untouched HOLDOUT
+[NEXT] Add stronger paper execution idempotency across signal -> pending -> fill -> close lifecycle
+[NEXT] Add paper risk controls: max concurrent exposure, per-trade risk ceiling, session loss stop, stale market-data rejection
+[NEXT] Improve fee/slippage realism and execution observability
+[NEXT] Run full local regression and desktop runtime verification
+[BLOCKED UNTIL EVIDENCE] Any live-capital automatic execution gate
+[PERMANENT UNTIL SEPARATE GREEN GATE] Robinhood Quality Dips remains manual order placement only
+
+LIVE-CAPITAL RULE
+Automatic real-money execution is NOT enabled by these changes. A future live gate requires separate validated positive evidence, risk controls, reconciliation, explicit user-controlled enablement, and must not overwrite the historical FAILED_NEGATIVE perps result.
+
+
+THIRD PASS VALIDATION — FAILED / REPAIRED, LOCAL RE-RUN REQUIRED
+User local validation:
+- focused third-pass suite: 23 passed in 1.54s
+- full suite: 902 passed, 2 failed, 2 warnings in 40.09s
+Failures:
+1. test_detached_pending_limit_is_cancelled_instead_of_living_forever
+   - regression: age expiry fired before detached lifecycle cleanup
+   - expected cancellation reason DETACHED_AFTER_RETENTION
+2. test_retained_stale_setup_keeps_existing_pending_limit
+   - regression: age expiry incorrectly cancelled a discovery-stale setup still inside lifecycle retention semantics
+
+Repair commits:
+2c45a67 atlas: preserve lifecycle precedence over paper-limit expiry
+d72d3af atlas: test retained stale setup expiry precedence
+
+Corrected lifecycle:
+- detached pending orders are cancelled first with DETACHED_AFTER_RETENTION
+- explicitly invalidated/TP-hit setups are cancelled by setup state
+- discovery-stale setups retained by the setup lifecycle keep their existing pending limit during retention
+- age-based EXPIRED_PENDING_LIMIT applies only after lifecycle checks and only to still-valid non-retained-stale pending orders
+- graceful shutdown cancellation remains higher-level cleanup
+- real-money execution remains disabled
+
+STATUS AFTER REPAIR:
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[REPAIR CODE COMPLETE / LOCAL TEST PENDING] V3/perps hardening pass 3
+[NEXT AFTER GREEN] retry-safe V3 alert delivery
+[NEXT] V3 DEVELOPMENT/HOLDOUT PIT validation
+[NEXT] stronger paper idempotency
+[NEXT] paper risk controls and stale-data rejection
+[NEXT] fee/slippage realism and observability
+[NEXT] desktop runtime verification
+[BLOCKED] real-money automatic execution until separate positive-evidence gate
+
+
+THIRD PASS REPAIR RE-RUN — TEST CONTRACT CORRECTION REQUIRED
+User local evidence after lifecycle-precedence repair:
+- focused repair suite: 28 passed, 1 failed in 1.82s
+- full suite: 904 passed, 1 failed, 2 warnings in 39.31s
+- the two original lifecycle regressions are repaired: detached cleanup now uses DETACHED_AFTER_RETENTION and retained discovery-stale pending limits remain intact.
+Remaining failure:
+- test_stale_pending_limit_expires_before_fill expected EXPIRED_PENDING_LIMIT while supplying no current setup.
+- under the corrected lifecycle contract, no current setup means detached after retention and therefore DETACHED_AFTER_RETENTION correctly takes precedence.
+Resolution:
+- production lifecycle code remains unchanged.
+- expiry test corrected to represent its intended scenario: an old pending limit whose setup is still present, valid, non-discovery-stale, and not otherwise invalidated. Only that scenario should reach EXPIRED_PENDING_LIMIT.
+Commit:
+a255580 atlas: align expiry test with retained setup lifecycle
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 focused / 896 full
+[GREEN] V3/perps pass 2 — 20 focused / 901 full
+[REPAIR RETEST PENDING] V3/perps pass 3 — V3 alerts/frozen snapshots + pending lifecycle/expiry
+[NEXT] Retry-safe V3 notification delivery through existing alert channel
+[NEXT] V3 PIT DEVELOPMENT validation, freeze, then untouched HOLDOUT
+[NEXT] Stronger paper execution idempotency from signal -> arm -> fill -> close
+[NEXT] Paper risk engine: exposure caps, per-trade risk, session loss stop, kill switch, stale-data rejection
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Full desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+
+THIRD PASS REPAIR — EXPIRY TEST IDENTITY FIX
+Latest user rerun after corrected lifecycle test contract:
+- focused subset: 11 passed, 1 failed in 1.89s
+- remaining failure was test_stale_pending_limit_expires_before_fill
+- observed cancellation reason DETACHED_AFTER_RETENTION, meaning the test's pending setup_instance_id did not match the live setup identity
+Root cause:
+- pending key/setup_instance_id used BTC|a|a
+- production _instance_id(setup) correctly generates BTC:LONG|a|a from setup_key + first_seen_at + epoch
+- therefore the order was correctly treated as detached, never eligible for age-expiry semantics
+Repair:
+- production code unchanged
+- expiry test now uses the exact production setup_instance_id BTC:LONG|a|a
+Commit:
+63388ce atlas: fix expiry test setup instance identity
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[REPAIR RETEST PENDING] V3/perps hardening pass 3 — alerts/snapshots + lifecycle/expiry
+[NEXT AFTER GREEN] Retry-safe V3 notification delivery
+[NEXT] V3 PIT DEVELOPMENT validation -> freeze -> untouched HOLDOUT
+[NEXT] Stronger paper execution idempotency
+[NEXT] Paper risk engine: max exposure, per-trade risk, session stop, kill switch, stale-data rejection
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+
+THIRD PASS REPAIR — FRESH RE-ARM TEST CONTRACT FIX
+Latest user rerun:
+- focused lifecycle subset: 11 passed, 1 failed in 1.53s
+- production cancellation correctly emitted EXPIRED_PENDING_LIMIT
+- remaining assertion expected pending_count == 0
+Root cause:
+- after expiring the old pending limit, the same sync pass is allowed to evaluate the still-valid live setup and arm a fresh replacement resting-L1 order
+- therefore pending_count may be 1 even though the stale order was correctly removed
+Resolution:
+- production code unchanged
+- test now asserts the real invariant: EXPIRED_PENDING_LIMIT occurred for the old order; any pending order after sync must be the current runtime pending state, potentially a newly armed replacement
+Commit:
+0c9e5ad atlas: test expiry without forbidding fresh re-arm
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[REPAIR RETEST PENDING] V3/perps hardening pass 3 — alerts/frozen snapshots + corrected pending lifecycle/expiry semantics
+[NEXT AFTER GREEN] Retry-safe V3 notification delivery
+[NEXT] V3 PIT DEVELOPMENT validation -> freeze -> untouched HOLDOUT
+[NEXT] Stronger paper execution idempotency
+[NEXT] Paper risk engine: max exposure, per-trade risk, session stop, kill switch, stale-data rejection
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+
+THIRD PASS — VERIFIED LOCAL GREEN
+User local validation received:
+- lifecycle-focused subset: 12 passed in 1.56s
+- full suite: 905 passed, 2 warnings in 39.26s
+- warnings remain dependency deprecations only
+Pass 3 is CLOSED/GREEN.
+
+FOURTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+add764a atlas: add retry-safe V3 event delivery
+5c4640b atlas: persist V3 notification delivery attempts
+a93a506 atlas: deliver V3 events with retry-safe state
+370e33a atlas: test retry-safe V3 event delivery
+097d885 atlas: harden paper arm idempotency across restarts
+742faef atlas: test terminal paper instance cannot rearm
+
+Fourth-pass behavior:
+- durable V3 state/level events now deliver through the existing Discord alert channel
+- successful deliveries persist delivered=true and are skipped on repeats
+- failed deliveries persist attempt count and remain retryable
+- delivery state is stored alongside the durable V3 event
+- V3 messages remain MANUAL_ONLY and never place Robinhood orders
+- paper resting-L1 arm path now rejects a setup instance that already has a terminal filled/cancelled event in the pending-order journal
+- this prevents the exact same setup instance from rearming after restart/shutdown cleanup
+- real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 4 — retry-safe alert delivery + restart idempotency
+[NEXT AFTER GREEN] V3 PIT DEVELOPMENT validation harness
+[NEXT] Freeze V3 parameters after DEVELOPMENT, then untouched HOLDOUT
+[NEXT] Broader paper lifecycle idempotency around fill/close acknowledgement
+[NEXT] Paper risk engine: max exposure, per-trade risk, session loss stop, kill switch, stale-data rejection
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No current GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 4 — VERIFIED LOCAL GREEN
+User local validation received:
+- focused pass-4 suite: 15 passed, 1 warning in 1.54s
+- full suite: 908 passed, 2 warnings in 42.13s
+- warnings remain dependency deprecations only
+Pass 4 is CLOSED/GREEN.
+
+FIFTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+7c70705 atlas: add V3 PIT development holdout validation
+6d00fc1 atlas: test V3 PIT development holdout boundaries
+0b79e31 atlas: expose paper terminal-state idempotency check
+cc38afb atlas: test idempotent paper close acknowledgement
+
+Fifth-pass behavior:
+- V3 now has explicit PIT validation windows matching the frozen historical methodology:
+  DEVELOPMENT 2024-01-01 through 2025-06-30
+  HOLDOUT 2025-07-01 through 2025-12-31
+- per-symbol timestamp order is validated without sorting away violations
+- unknown V3 patient states fail validation
+- holdout retuning remains forbidden
+- lookahead remains forbidden
+- no live-capital execution is enabled
+- paper journal exposes terminal-state detection for a trade id
+- duplicate close acknowledgement remains append-only idempotent: an existing close is returned and no second close row is written
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 5 — PIT validation + paper close idempotency
+[NEXT AFTER GREEN] Build V3 DEVELOPMENT evaluation report from stored PIT evidence; freeze parameters before HOLDOUT
+[NEXT] Run untouched HOLDOUT evaluation and record evidence decision
+[NEXT] Broader paper fill idempotency and stale market-data rejection
+[NEXT] Paper risk engine: max exposure, per-trade risk, session loss stop, kill switch
+[NEXT] Fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
+
+
+PASS 5 — VERIFIED LOCAL GREEN
+User local validation received twice:
+- focused pass-5 suite: 17 passed, 1 warning in 1.21s / 1.23s
+- full suite: 912 passed, 2 warnings in 43.37s / 41.80s
+- warnings remain dependency deprecations only
+Pass 5 is CLOSED/GREEN.
+
+SIXTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+516cab9 atlas: add V3 development evaluation freeze report
+6e097d6 atlas: test V3 development report and freeze
+3a6fcd7 atlas: block terminal pending instance from duplicate fill
+ddac29b atlas: test terminal pending instance cannot double fill
+
+Sixth-pass behavior:
+- V3 DEVELOPMENT evaluation can now produce a formal report from already-recorded PIT rows
+- report includes DEVELOPMENT observation count, symbol coverage, patient-state frequency and a frozen parameter artifact
+- L1/L2/L3/L4 margins are explicitly frozen after DEVELOPMENT
+- HOLDOUT retuning remains forbidden
+- invalid PIT ordering blocks the DEVELOPMENT report
+- no live-capital execution is enabled
+- paper pending fill path now checks terminal pending-order evidence before filling
+- a filled/cancelled setup instance cannot double-fill even if stale in-memory state exists
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 6 — DEVELOPMENT report/freeze + duplicate-fill protection
+[NEXT AFTER GREEN] Feed real stored PIT V3 evidence into DEVELOPMENT report and inspect signal frequency/coverage
+[NEXT] Freeze V3 parameters and run untouched HOLDOUT evaluation
+[NEXT] Add stale market-data rejection before paper fill
+[NEXT] Paper risk engine: max exposure, max concurrent positions, per-trade risk, session loss stop, kill switch
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
+
+
+PASS 6 — VERIFIED LOCAL GREEN
+User local validation received:
+- focused pass-6 suite: 15 passed in 0.90s
+- full suite: 915 passed, 2 warnings in 42.43s
+- warnings remain dependency deprecations only
+Pass 6 is CLOSED/GREEN.
+
+SEVENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+ec08df6 atlas: load fail-closed V3 PIT rows from stored observations
+0d6afb0 atlas: reject stale market data before paper arm
+4708058 atlas: test stale market-data rejection before paper arm
+ef029a6 atlas: add fail-closed paper exposure guard
+35010f9 atlas: test paper exposure guard
+db192e7 atlas: apply paper exposure guard before fill
+
+Seventh-pass behavior:
+- V3 can now load existing timestamped PIT-compatible rows from investment observation storage
+- loader is fail-closed: it does not synthesize historical V3 states from current/future data
+- stale perp mark timestamps older than 30 seconds block new paper arming
+- malformed mark timestamps fail closed
+- paper risk guard blocks a fourth concurrent PAPER position
+- paper risk guard blocks requested risk above $25 per simulated trade
+- current auto-paper mirror uses $1 simulated risk and must pass risk guard before fill
+- blocked fills are append-only cancelled with PAPER_RISK_BLOCK
+- live-capital execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 7 — stored PIT loader + stale-data rejection + first paper risk guard
+[NEXT AFTER GREEN] Run V3 DEVELOPMENT report against available stored PIT evidence and record coverage/gaps
+[NEXT] If DEVELOPMENT evidence is sufficient, freeze parameters and run untouched HOLDOUT
+[NEXT] Add session-loss stop and operator kill switch to PAPER
+[NEXT] Add stale-data rejection on fill/mark path, not only arm
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
+
+
+PASS 7 — VERIFIED LOCAL GREEN
+User local validation received:
+- focused pass-7 suite: 18 passed in 1.08s
+- full suite: 920 passed, 2 warnings in 48.57s
+- warnings remain dependency deprecations only
+Pass 7 is CLOSED/GREEN.
+
+EIGHTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+adce6a3 atlas: add local V3 development report runner
+4fafe07 atlas: add paper session-loss stop and kill switch
+325a685 atlas: test paper session stop and kill switch
+71a99a2 atlas: reject stale mark before paper fill
+96ee871 atlas: test stale mark rejection before paper fill
+
+Eighth-pass behavior:
+- operator can now run a local V3 DEVELOPMENT evidence report against backend/data/investment/observations.jsonl
+- runner writes backend/data/investment/quality_dips_v3_development_report.json atomically
+- it remains fail-closed and does not synthesize missing historical V3 states
+- paper risk guard now supports a -3R session loss stop
+- operator kill switch blocks new PAPER risk immediately
+- stale mark timestamps are rejected again immediately before paper fill, not only at initial arm
+- stale-fill rejection appends STALE_MARK_BEFORE_FILL cancellation evidence
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[CODE COMPLETE / TEST PENDING] V3/perps pass 8 — local DEVELOPMENT runner + session stop/kill switch + stale-fill rejection
+[NEXT AFTER GREEN] Run the local V3 DEVELOPMENT report and inspect actual coverage/gaps
+[NEXT] If DEVELOPMENT evidence is sufficient, freeze V3 and run untouched HOLDOUT
+[NEXT] Wire session-loss state/kill switch into runtime operator controls
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint currently establishes live-capital readiness.
+
+
+PASS 8 — VERIFIED LOCAL GREEN
+User local validation:
+- focused pass-8 suite: 14 passed in 1.10s
+- full suite: 923 passed, 2 warnings in 42.69s
+- warnings remain dependency deprecations only
+Pass 8 is CLOSED/GREEN.
+
+V3 DEVELOPMENT EVIDENCE CHECKPOINT — BLOCKED BY MISSING HISTORICAL V3 PIT DATA
+Local runner result:
+- decision: BLOCKED
+- DEVELOPMENT observations: 0
+- HOLDOUT observations: 0
+- symbols: []
+- state_counts: {}
+- PIT ordering valid: true
+- lookahead_allowed: false
+- holdout_retuning_allowed: false
+- automatic_real_money_execution: false
+
+Interpretation:
+- Atlas correctly refused to fabricate historical V3 states from present-day data.
+- Existing investment observation storage does not contain timestamped V3-compatible patient states for the frozen DEVELOPMENT/HOLDOUT windows.
+- Therefore a genuine retrospective V3 DEVELOPMENT/HOLDOUT study cannot be claimed from current stored evidence.
+- Do not synthesize or backfill V3 states using current normalization/targets/fundamentals.
+- V3 must accumulate clean forward PIT/shadow observations from this point forward before evidence-based promotion.
+
+ROADMAP CHANGE:
+- replace retrospective V3 HOLDOUT gate with FORWARD_SHADOW_V3 evidence accumulation
+- persist every V3 evaluation with timestamp, price, fair-value anchor, evidence inputs, patient state, and reached L1-L4 status
+- define a future frozen forward evaluation window only after enough observations exist
+- keep current 15/20/25/30 MOS parameters frozen during forward evidence collection unless a NEW development cycle is explicitly opened
+- zero signals remain valid
+- Quality Dips stays MANUAL_ONLY
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[NEXT] Forward V3 PIT/shadow evidence recorder
+[NEXT] Persist full V3 evidence snapshots on every evaluation
+[NEXT] Define forward validation minimum-coverage gate before any model evidence decision
+[NEXT] Wire PAPER session loss stop and operator kill switch into runtime operator controls
+[NEXT] Add stale-data rejection to open-position mark/exit decisions
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+NINTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+eeef065 atlas: add forward V3 PIT shadow recorder
+ca6631f atlas: persist forward V3 PIT evidence on board evaluation
+fe6c3e1 atlas: test forward V3 PIT shadow persistence
+
+Ninth-pass behavior:
+- every future Quality Dips V3 board evaluation now appends a point-in-time shadow observation
+- forward rows include timestamp, source timestamp, symbol, price, patient state, fair-value anchor, discount, blockers, full entry ladder, and frozen policy fields
+- rows explicitly retain MANUAL_ONLY / no-live-capital boundaries
+- this forward dataset replaces the impossible retrospective V3 backfill path
+- no historical V3 states are fabricated
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 9 — forward PIT/shadow recorder
+[NEXT AFTER GREEN] Define forward-validation minimum coverage (days, symbols, evaluations) and report readiness
+[NEXT] Wire PAPER session-loss stop and kill switch into runtime operator controls/state
+[NEXT] Add stale-data rejection to open-position mark/exit decisions
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+
+PASS 9 — VERIFIED LOCAL GREEN
+User local validation:
+- focused pass-9 suite: 19 passed, 1 warning in 1.33s
+- full suite: 924 passed, 2 warnings in 44.04s
+- warnings remain dependency deprecations only
+Pass 9 is CLOSED/GREEN.
+
+TENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+ca61c4c atlas: add forward V3 shadow readiness thresholds
+7795317 atlas: test forward V3 readiness thresholds
+8bd379c atlas: persist paper kill switch and session loss state
+7ef3274 atlas: wire runtime paper risk controls into fill gate
+e01a362 atlas: test durable paper risk controls
+
+Tenth-pass behavior:
+- forward V3 shadow evidence now has an explicit readiness gate:
+  minimum 200 evaluations
+  minimum 10 symbols
+  minimum 20 unique calendar days
+- readiness remains descriptive research only; it does not imply alpha or live-capital readiness
+- durable PAPER runtime control store persists kill_switch and session_net_r
+- auto-paper fill gate now consumes those runtime controls
+- kill switch blocks new simulated fills immediately
+- -3R session stop remains enforced through the existing paper risk engine
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 10 — forward readiness gate + durable runtime paper controls
+[NEXT AFTER GREEN] Expose PAPER kill switch/session state through operator API/dashboard controls
+[NEXT] Add stale-data rejection to open-position mark/exit decisions
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Add forward V3 readiness report to Quality Dips UI/API
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 10 — VERIFIED LOCAL GREEN
+User local validation:
+- focused pass-10 suite: 11 passed in 0.90s
+- full suite: 927 passed, 2 warnings in 39.61s
+- warnings remain dependency deprecations only
+Pass 10 is CLOSED/GREEN.
+
+ELEVENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+0e33168 atlas: expose paper kill switch operator API
+dea5314 atlas: expose V3 forward readiness in Quality Dips API
+aaa23a6 atlas: reject stale marks for open paper position decisions
+993c499 atlas: test paper kill switch operator API
+e1ce3b4 atlas: test stale open-paper mark decisions are ignored
+
+Eleventh-pass behavior:
+- operator API exposes PAPER-only risk status at /api/perps/paper-risk
+- operator API can toggle the durable PAPER kill switch through /api/perps/paper-risk/kill-switch
+- endpoint explicitly reports live_execution=false
+- Quality Dips API now exposes current V3 forward-readiness counters/thresholds
+- already-open auto-paper positions no longer update excursion or trigger stop/TP decisions from stale setup mark timestamps
+- stale open-position marks are ignored rather than generating phantom exits
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 11 — operator PAPER risk API + V3 readiness API + stale open-position protection
+[NEXT AFTER GREEN] Add visible kill-switch/readiness controls to dashboard UI
+[NEXT] Automatically derive PAPER session_net_r from the active session journal instead of manual persisted state
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Add forward V3 readiness trend/coverage diagnostics
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 11 VALIDATION — FOCUSED GREEN / FULL REGRESSION REPAIRED, RETEST REQUIRED
+User local validation:
+- focused pass-11 suite: 9 passed, 2 warnings in 2.58s
+- full suite: 922 passed, 7 failed, 2 warnings in 44.17s
+- all 7 failures were in test_perp_setup_paper_mirror_v4 and logged PAPER_RISK_BLOCK
+Root cause:
+- test_paper_risk_api mutated the process-global paper_risk_controls.kill_switch to true and did not restore it
+- the full pytest process therefore leaked operator control state into later mirror tests
+- production risk blocking behaved correctly; the regression was test isolation
+Repair:
+- test_paper_risk_api now snapshots and restores path, kill_switch, and session_net_r in finally
+- production PAPER risk policy and execution thresholds are unchanged
+Commit:
+6780087 atlas: isolate paper risk API test state
+
+STATUS:
+[REPAIR CODE COMPLETE / LOCAL RETEST PENDING] Pass 11
+[NEXT AFTER GREEN] dashboard PAPER kill-switch + V3 readiness UI
+[NEXT] derive PAPER session_net_r from active session journal
+[NEXT] fee/slippage/fill realism and observability
+[NEXT] forward V3 coverage diagnostics
+[NEXT] desktop runtime/longevity verification
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 11 — VERIFIED LOCAL GREEN
+User local validation after state-isolation repair:
+- focused repair suite: 19 passed, 2 warnings in 2.92s
+- full suite: 929 passed, 2 warnings in 43.28s
+- warnings remain dependency deprecations only
+Pass 11 is CLOSED/GREEN.
+
+TWELFTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+1cbaf65 atlas: derive paper session R from active journal
+a50828a atlas: expose journal-derived paper session R
+7894f7e atlas: show V3 forward readiness in Quality Dips UI
+2eb5c3d atlas: add PAPER kill switch control to perp dashboard
+af732a1 atlas: test journal-derived paper session loss stop
+
+Twelfth-pass behavior:
+- auto-paper fill gate now derives current session sum_r from paper_journal.stats()
+- if journal stats are unavailable, the existing persisted session_net_r remains a fail-safe fallback
+- operator PAPER-risk API exposes journal-derived session_net_r and identifies PAPER_JOURNAL as its source
+- perp dashboard now shows current PAPER session R and kill-switch state and provides an operator toggle
+- Quality Dips UI now shows forward V3 readiness progress: evaluations, symbols, days, and READY/COLLECTING
+- no real-money controls were added
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[GREEN] V3/perps pass 11 — 19 focused / 929 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 12 — dashboard controls + journal-derived session R + V3 readiness UI
+[NEXT AFTER GREEN] Add forward V3 coverage diagnostics/reporting beyond readiness counters
+[NEXT] Improve fee/slippage/fill realism and execution observability
+[NEXT] Add explicit paper fill/close acknowledgement diagnostics and reconciliation status
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 12 — VERIFIED LOCAL GREEN
+User local validation:
+- focused pass-12 suite: 21 passed, 2 warnings in 2.74s
+- full suite: 930 passed, 2 warnings in 40.85s
+- warnings remain dependency deprecations only
+Pass 12 is CLOSED/GREEN.
+
+THIRTEENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+cb7815a atlas: add V3 forward evidence diagnostics
+230c22e atlas: expose V3 forward diagnostics in Quality Dips API
+d4f2ba5 atlas: add paper fill close reconciliation diagnostics
+c239658 atlas: test V3 diagnostics and paper reconciliation
+
+Thirteenth-pass behavior:
+- V3 forward diagnostics now report evaluations/day, symbol coverage concentration, patient-state mix, non-WATCH count, and non-WATCH rate
+- Quality Dips API exposes these diagnostics alongside readiness counters
+- PAPER observability now reports reconciliation status across auto-paper journal opens/closes and durable pending fill events
+- duplicate filled setup instances are surfaced explicitly and make reconciliation_ok=false
+- currently-open auto-paper trade IDs remain distinguishable from closed journal records
+- diagnostics are read-only; they do not mutate paper history or enable real-money execution
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[GREEN] V3/perps pass 11 — 19 focused / 929 full
+[GREEN] V3/perps pass 12 — 21 focused / 930 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 13 — forward diagnostics + paper reconciliation observability
+[NEXT AFTER GREEN] Improve fee/slippage/fill realism with explicit conservative assumptions
+[NEXT] Add reconciliation alerting when duplicate/malformed execution evidence appears
+[NEXT] Surface reconciliation/forward diagnostics in dashboard UI
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 13 — VERIFIED LOCAL GREEN
+User local validation:
+- focused pass-13 suite: 19 passed in 0.99s
+- full suite: 932 passed, 2 warnings in 45.18s
+- warnings remain dependency deprecations only
+Pass 13 is CLOSED/GREEN.
+
+FOURTEENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+60860d6 atlas: add conservative paper execution assumptions
+08491c0 atlas: apply conservative paper fill and cost model
+7b46a9d atlas: test conservative paper execution model
+8357c1e atlas: expose paper execution assumptions in observability
+12f84e0 atlas: add paper reconciliation warning alert
+37eaf52 atlas: test paper reconciliation alerting
+41a55ee atlas: show paper reconciliation and execution model in dashboard
+
+Fourteenth-pass behavior:
+- PAPER execution assumptions now use explicit conservative settings:
+  2 bps fee per side
+  2 bps slippage per side
+  1 bp limit-touch buffer
+  LIMIT_TOUCH_PLUS_BUFFER fill model
+- exact equality with L1 no longer counts as a simulated fill; the mark must trade through the limit by the buffer
+- paper journal continues charging round-trip fees/slippage in R
+- observability API/dashboard exposes the active execution assumptions
+- PAPER reconciliation warnings can be sent through the existing Discord alert path when duplicate fill evidence is detected
+- reconciliation alerting is read-only and never changes trade history or order state
+- dashboard shows reconciliation OK/CHECK and the active fill model
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused lifecycle subset / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[GREEN] V3/perps pass 11 — 19 focused / 929 full
+[GREEN] V3/perps pass 12 — 21 focused / 930 full
+[GREEN] V3/perps pass 13 — 19 focused / 932 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 14 — conservative execution realism + reconciliation alerts + dashboard diagnostics
+[NEXT AFTER GREEN] Schedule/trigger reconciliation warning checks from runtime service
+[NEXT] Expand execution realism with gap-through-stop handling and conservative exit fill modeling
+[NEXT] Surface V3 forward diagnostics in UI beyond readiness counters
+[NEXT] Desktop runtime verification and longevity check
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage order placement
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 14 LOCAL VALIDATION — CONTRACT REPAIR REQUIRED
+User focused validation at 281685a:
+- 13 passed, 7 failed, 1 warning in 1.61s
+- failures are confined to tests that still encoded the pre-Pass-14 exact-touch fill contract plus one risk test that never crossed the new buffer
+- no evidence here of a production failure in the conservative buffered fill implementation
+Observed contract mismatch:
+- LONG L1 99.00 at mark 99.00 is intentionally NOT a fill under LIMIT_TOUCH_PLUS_BUFFER
+- SHORT L1 101.00 at mark 101.00 is intentionally NOT a fill
+- downstream TP/stop tests never opened because their setup used the obsolete exact-touch fill
+Repairs:
+c59f473 atlas: align mirror tests with conservative buffered fills
+63ccbf4 atlas: record buffered fill model in paper evidence
+1f047bd atlas: exercise session risk after buffered limit crossing
+Production conservative fill rule remains unchanged.
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[GREEN] V3/perps pass 11 — 19 focused / 929 full
+[GREEN] V3/perps pass 12 — 21 focused / 930 full
+[GREEN] V3/perps pass 13 — 19 focused / 932 full
+[REPAIR CODE COMPLETE / LOCAL RETEST PENDING] Pass 14 — conservative execution realism + reconciliation alerts + dashboard diagnostics
+[NEXT AFTER GREEN] Runtime-triggered reconciliation warnings
+[NEXT] Conservative gap-through-stop/exit modeling
+[NEXT] Richer V3 forward diagnostics UI
+[NEXT] Desktop runtime/longevity verification
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 14 — VERIFIED LOCAL GREEN
+User local validation:
+- focused pass-14 suite: 20 passed, 1 warning in 1.06s
+- full suite: 936 passed, 2 warnings in 42.95s
+- warnings remain dependency deprecations only
+Pass 14 is CLOSED/GREEN.
+
+FIFTEENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+7450fc5 atlas: add conservative paper exit price models
+2e7be16 atlas: apply conservative gap and target exit pricing
+6aa7649 atlas: trigger reconciliation warnings from runtime service
+c8a5e7f atlas: surface V3 forward state diagnostics in UI
+b7a61ed atlas: test conservative paper stop and target exits
+
+Fifteenth-pass behavior:
+- gap-through-stop PAPER exits now use the worse observed mark versus stop, plus adverse slippage
+- TP1 exits cap favorable fills at the target and then apply adverse slippage rather than granting the full observed overshoot
+- runtime perp delivery loop now executes the read-only reconciliation warning check each cycle
+- reconciliation warning failures do not stop the paper mirror or normal alert loop
+- Quality Dips UI now surfaces non-WATCH forward counts/rate and WATCH/ACCUMULATION/DEEP_VALUE/GENERATIONAL state distribution
+- historical perps evidence remains immutable
+- real-money automatic execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[GREEN] V3/perps pass 11 — 19 focused / 929 full
+[GREEN] V3/perps pass 12 — 21 focused / 930 full
+[GREEN] V3/perps pass 13 — 19 focused / 932 full
+[GREEN] V3/perps pass 14 — 20 focused / 936 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 15 — runtime reconciliation trigger + conservative exits + richer V3 diagnostics UI
+[NEXT AFTER GREEN] Reconciliation alert dedupe/cooldown so one persistent anomaly cannot spam Discord
+[NEXT] Add malformed-event counts and acknowledgement health to reconciliation diagnostics
+[NEXT] Add forward evidence trend diagnostics over rolling windows without retuning V3
+[NEXT] Desktop runtime/longevity verification
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 14 — VERIFIED LOCAL GREEN
+User local validation after buffered-fill repair:
+- focused pass-14 suite: 20 passed, 1 warning in 1.06s
+- full suite: 936 passed, 2 warnings in 42.95s
+- warnings remain dependency deprecations only
+Pass 14 is CLOSED/GREEN.
+
+FIFTEENTH IMPLEMENTATION PASS — CODE COMPLETE, LOCAL VALIDATION PENDING
+Commits:
+ae3fe50 atlas: confirm runtime reconciliation alert loop
+e37c1e0 atlas: test conservative gap and target exits
+6c66c34 atlas: surface V3 forward coverage diagnostics in UI
+454cc19 atlas: test runtime reconciliation warning loop
+
+Existing branch behavior confirmed before this pass:
+- runtime alert service already invokes PAPER reconciliation warning checks each loop and stores last_reconciliation_result
+- conservative_stop_exit and conservative_target_exit are already wired into auto-paper close decisions
+- V3 forward diagnostics were already available in API and partially visible in UI
+
+Pass-15 additions:
+- focused tests now lock in conservative gap-through-stop behavior
+- favorable TP fills are capped at target and still charged adverse slippage
+- runtime reconciliation loop has a dedicated test contract
+- Quality Dips UI now shows latest-day evaluation volume and top-symbol coverage next to readiness/state mix
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT: 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[GREEN] V3/perps pass 11 — 19 focused / 929 full
+[GREEN] V3/perps pass 12 — 21 focused / 930 full
+[GREEN] V3/perps pass 13 — 19 focused / 932 full
+[GREEN] V3/perps pass 14 — 20 focused / 936 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored V3 PIT observations
+[CODE COMPLETE / TEST PENDING] V3/perps pass 15 — runtime reconciliation test + conservative gap/TP exit contracts + richer V3 UI diagnostics
+[NEXT AFTER GREEN] Add reconciliation alert dedupe/cooldown so persistent anomalies do not spam Discord
+[NEXT] Expose reconciliation last-result/status in operator API/dashboard
+[NEXT] Add execution-model versioning to PAPER journal features for cohort analysis
+[NEXT] Desktop runtime/longevity verification
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 16 — VERIFIED LOCAL GREEN
+User local validation after reconciliation dedupe/status + execution-model versioning:
+- focused pass-16 suite: 15 passed, 1 warning in 11.16s
+- full suite: 949 passed, 2 warnings in 55.51s
+- warnings remain dependency deprecations only
+Pass 16 is CLOSED/GREEN.
+
+PASS 16 DELIVERED
+- reconciliation alerts now dedupe identical persistent anomalies inside a cooldown window
+- changed reconciliation signatures can alert immediately
+- latest reconciliation status/result is exposed through operator diagnostics
+- PAPER execution assumptions carry explicit model version: paper-exec-v2-conservative-gap-target
+- PAPER journal open features now persist paper_execution_model_version for clean cohort analysis
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT
+- 546 trades
+- -26.7235R
+- -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 implementation pass 1 — 15 focused / 896 full
+[GREEN] V3/perps hardening pass 2 — 20 focused / 901 full
+[GREEN] V3/perps hardening pass 3 — 12 focused / 905 full
+[GREEN] V3/perps pass 4 — 15 focused / 908 full
+[GREEN] V3/perps pass 5 — 17 focused / 912 full
+[GREEN] V3/perps pass 6 — 15 focused / 915 full
+[GREEN] V3/perps pass 7 — 18 focused / 920 full
+[GREEN] V3/perps pass 8 — 14 focused / 923 full
+[GREEN] V3/perps pass 9 — 19 focused / 924 full
+[GREEN] V3/perps pass 10 — 11 focused / 927 full
+[GREEN] V3/perps pass 11 — 19 focused / 929 full
+[GREEN] V3/perps pass 12 — 21 focused / 930 full
+[GREEN] V3/perps pass 13 — 19 focused / 932 full
+[GREEN] V3/perps pass 14 — 20 focused / 936 full
+[GREEN] V3/perps pass 15 — 22 focused / 943 full
+[GREEN] V3/perps pass 16 — 15 focused / 949 full
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT
+- 0 genuine stored historical V3 PIT observations
+[NEXT / ACTIVE] Pass 17 — desktop runtime/longevity verification
+- verify desktop launcher/runtime remains alive over extended operation
+- verify API remains responsive during repeated background loops
+- verify reconciliation cooldown prevents repeat Discord spam over time
+- verify paper mirror/reconciliation loop does not leak duplicate state
+- verify graceful stop preserves/reconciles PAPER state correctly
+- capture operator-facing runtime health evidence
+[NEXT AFTER GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Forward-evidence accumulation for V3 Quality Dips
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN checkpoint establishes live-capital readiness.
+
+
+PASS 17 — CODE COMPLETE / LOCAL RUNTIME VALIDATION PENDING
+Commits:
+- 63b2148 atlas: add desktop longevity probes
+- e9dbf7a atlas: test desktop longevity smoke contract
+
+Pass-17 implementation:
+- Atlas desktop smoke can now run timed longevity probes with configurable duration/interval
+- each longevity cycle checks /health and /diagnostics/paper-reconciliation
+- any failed probe makes the smoke fail closed
+- reconciliation operator endpoint is now part of the normal desktop smoke gate
+- existing launcher remains single-window API-served and scoped to Atlas
+- shutdown reconciliation tests remain part of the focused validation set
+- no strategy thresholds or live-capital controls changed
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[CODE COMPLETE / TEST PENDING] Pass 17 — desktop runtime/longevity verification
+[NEXT AFTER GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Forward-evidence accumulation for V3 Quality Dips
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — VALIDATION RESULT / BLOCKED FOR ENVIRONMENT PRECONDITION
+Local validation:
+- focused: 19 passed, 1 dependency warning
+- full suite: 950 passed, 2 dependency warnings
+- desktop longevity smoke: BLOCKED
+- smoke completed 16 probes / 32 failures because Atlas API was not running
+- /health, dashboard, research, command-center, reconciliation were unreachable
+- no atlas containers were running
+This is not evidence of a runtime crash: the smoke began with the service already offline.
+
+PASS 17 RECOVERY PATCH
+- 76e8b67 Atlas smoke can start the normal desktop launcher when API is absent
+- 5faf2cf tests self-start behavior and visible longevity progress
+- smoke now prints each longevity probe so it no longer appears frozen
+- StartAtlasIfNeeded remains opt-in and uses the existing ATLAS.bat launcher
+- live-capital controls unchanged
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[PARTIAL GREEN / RUNTIME RETEST REQUIRED] Pass 17
+- focused 19 GREEN
+- full 950 GREEN
+- first longevity run invalid/blocked because Atlas was offline before probing
+- recovery patch complete; self-starting 5-minute longevity retest required
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Forward-evidence accumulation for V3 Quality Dips
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — REAL LONGEVITY FAILURE CAPTURED
+Local validation:
+- focused suite: 20 passed, 1 dependency warning
+- full suite: 951 passed, 2 dependency warnings
+- desktop launcher self-start succeeded
+- initial HTTP surfaces all returned 200
+- longevity probes 1-4 GREEN
+- failure began at probe 5
+- run finished with 16 probes / 2 endpoint failures
+- atlas-postgres and atlas-redis remained running
+- failure therefore isolated to API/runtime disappearance, not Docker startup
+Pass 17 is NOT GREEN.
+
+PASS 17 DIAGNOSTIC PATCH
+- 7a26817 captures first runtime failure snapshot during longevity smoke
+- 45d1a04 tests the failure-snapshot contract
+- snapshot records health/reconciliation probe results, uvicorn process presence, Atlas containers, api.err.log tail, and api.out.log tail
+- this is diagnostic instrumentation only; no strategy thresholds or live-capital controls changed
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17 — desktop runtime/longevity
+- focused 20 GREEN
+- full 951 GREEN
+- launcher self-start GREEN
+- initial operator HTTP surfaces GREEN
+- probes 1-4 GREEN
+- runtime/API disappeared starting probe 5
+- Docker containers remained alive
+- first-failure crash snapshot instrumentation now code complete
+[NEXT] Reproduce once with crash snapshot and fix root cause
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Forward-evidence accumulation for V3 Quality Dips
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — DIAGNOSTIC INTERPRETATION CORRECTION
+Uploaded text inspected. It is an older Atlas research/runtime snapshot captured 2026-09-13, not the new desktop-smoke failure artifact; it therefore cannot identify the Pass-17 probe failure.
+Important correction from the actual prior smoke summary:
+- 16 total longevity probes
+- only 2 endpoint failures total
+- because each probe checks exactly 2 endpoints, this is consistent with one failed probe, not probes 5-16 all failing
+- prior console wording stayed "failure recorded" after the first failure because longevity.green was latched false; that wording overstated persistence
+Pass 17 remains NOT GREEN because even one failed probe requires diagnosis, but evidence currently supports a transient outage rather than a proven permanent API exit.
+
+PASS 17 TRANSIENT-DIAGNOSTICS PATCH
+- 88c24d1 tracks failed probes separately from failed endpoints, consecutive failures, maximum consecutive failures, and recovery after failure
+- probe console status now reflects the CURRENT probe instead of the latched overall result
+- smoke automatically persists logs/diagnostics/desktop-smoke-latest.json
+- eff9542 tests transient-failure/recovery diagnostics and artifact persistence
+- no strategy or live-capital controls changed
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- focused latest local result 20 GREEN
+- full latest local result 951 GREEN
+- launcher self-start GREEN
+- prior 5-minute run had 16 probes and only 2 endpoint failures total
+- previous display incorrectly made later successful probes look failed after first failure
+- transient-aware diagnostics and automatic JSON artifact now code complete
+[NEXT] One transient-aware 5-minute reproduction; inspect desktop-smoke-latest.json
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Forward-evidence accumulation for V3 Quality Dips
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — TRANSIENT FAILURE ARTIFACT ANALYZED / COMPACT-DIAGNOSTIC FIX
+Uploaded desktop-smoke-latest.json from 2026-09-19:
+- desktop start/stop shortcuts target the expected root batch files
+- initial health/dashboard/research/command-center/reconciliation checks returned HTTP 200
+- 300-second longevity run completed 17 probes
+- 2 probes failed; maximum consecutive failed probes = 1
+- runtime recovered after the transient failures
+- first failure occurred at probe 5
+- failure snapshot showed Atlas uvicorn process presence while the endpoint probe failed
+- diagnostic artifact became extremely large because PowerShell Get-Content output was serialized with extended provider metadata; this is diagnostic bloat, not useful runtime evidence
+
+Pass-17 compact-diagnostic patch:
+- d9dd87e reads log tails as plain strings so PowerShell provider metadata cannot explode JSON artifacts
+- self-start now records the launcher process id
+- first-failure snapshot records whether the launcher process is still alive
+- JSON depth reduced to 6 after log-tail normalization
+- c904085 adds regression coverage for compact log serialization + launcher lifecycle fields
+- automatic real-money execution remains disabled
+- local validation of this patch is pending
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- latest prior focused local result: 20 GREEN
+- latest prior full local result: 951 GREEN
+- launcher self-start: GREEN
+- latest 5-minute run: 17 probes / 2 transient failed probes / max consecutive 1 / recovered
+- compact diagnostics + launcher-lifecycle capture: CODE COMPLETE / LOCAL TEST PENDING
+[NEXT] Validate focused suite and rerun one compact 5-minute longevity smoke
+[NEXT] If any probe fails, use compact snapshot to isolate launcher exit vs API unresponsiveness
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — API RESPONSIVENESS ROOT-CAUSE FIX / LOCAL VALIDATION PENDING
+Latest local evidence supplied by user:
+- focused suite: 23 passed / 1 dependency warning
+- desktop self-start succeeded
+- 300-second longevity: 17 probes / 3 failed probes / 4 endpoint failures
+- max consecutive failed probes: 2; runtime recovered
+- first failure: /health timed out while /diagnostics/paper-reconciliation returned 200
+- launcher remained alive and atlas-postgres/atlas-redis remained alive
+- uvicorn process remained present
+- initial command-center and reconciliation requests also timed out
+Interpretation: evidence supports intermittent event-loop/API starvation, not launcher or Docker disappearance.
+
+Fixes:
+- b375304 offloads /diagnostics/paper-reconciliation durable reconciliation_summary JSONL scan with asyncio.to_thread
+- 33faefe adds regression coverage for nonblocking reconciliation diagnostics
+- e6dbdc5 offloads the runtime reconciliation warning pass from the FastAPI event loop; its synchronous durable-history scan now executes in a worker thread
+- a56ec78 adds regression coverage for runtime reconciliation event-loop isolation
+- no strategy thresholds changed
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / FIX CODE COMPLETE / LOCAL RETEST PENDING] Pass 17
+- latest focused result before fix: 23 GREEN
+- launcher + Docker + uvicorn remained alive during transient failures
+- event-loop/API starvation path identified and patched
+[NEXT] Focused regression validation
+[NEXT] Clean 5-minute longevity smoke; require 0 failed probes
+[NEXT] Full pytest suite if longevity is GREEN
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — REGRESSION TEST HARNESS REPAIR
+Latest user local validation after responsiveness patch:
+- focused suite: 24 passed / 1 failed / 1 dependency warning
+- sole failure was test_reconciliation_diagnostics_offloads_durable_history_scan
+- failure cause: test referenced ROOT without defining it; production code was not implicated by this failure
+- user had already started the 5-minute desktop smoke immediately afterward; its result is still required before judging the runtime fix
+
+Repair:
+- 6a67774 defines ROOT in tests/test_pass16_reconciliation_status_and_execution_version.py using Path(__file__).resolve().parents[1]
+- no production behavior, strategy logic, evidence, or live-capital controls changed
+- focused rerun required
+- Pass 17 remains FIX CODE COMPLETE / LOCAL RETEST PENDING
+
+
+PASS 17 — FOCUSED REGRESSION SUITE VERIFIED LOCAL GREEN
+Latest user local validation after test-harness repair:
+- focused Pass-17 suite: 25 passed / 1 dependency warning in 12.40s
+- prior NameError in regression test harness is resolved
+- production responsiveness/event-loop offload patches remain under validation
+- 5-minute longevity smoke still required before Pass 17 can be marked GREEN
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[PARTIAL GREEN / LONGEVITY RETEST REQUIRED] Pass 17
+- focused suite: 25 GREEN
+- compact diagnostics: GREEN
+- launcher/Docker/uvicorn liveness instrumentation: GREEN
+- event-loop starvation mitigation code: GREEN by focused tests
+- 5-minute longevity validation: PENDING
+[NEXT] Run clean 5-minute desktop smoke; require 0 failed probes
+[NEXT] Full pytest suite after longevity GREEN
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — PORT OWNERSHIP / PROCESS-TREE DIAGNOSTICS
+Latest user longevity validation:
+- focused suite remains 25 GREEN / 1 dependency warning
+- initial desktop surfaces all HTTP 200
+- longevity probes 1-14 GREEN
+- probe 15 transient failure; probe 16 recovered; probes 17-18 failed
+- 18 total probes / 3 failed probes / max consecutive 2
+- first failure: /health timeout while /diagnostics/paper-reconciliation returned 200
+- atlas-postgres and atlas-redis remained running
+- process snapshot again displayed venv python and system Python uvicorn command lines
+- current evidence does NOT yet prove two independent servers; Windows venv launch can involve parent/child interpreter processes
+
+Diagnostic implementation:
+- 355f4b0 captures the actual TCP :8000 LISTEN owner PID, executable, command line, parent PID, and parent command line at first failure
+- captures uvicorn process tree and marks which process actually owns TCP :8000
+- b1b0df4 adds regression coverage for listener ownership and process-tree diagnostics
+- no runtime/strategy thresholds changed; this is diagnostic-only
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 pass 1 — 15 / 896
+[GREEN] Pass 2 — 20 / 901
+[GREEN] Pass 3 — 12 / 905
+[GREEN] Pass 4 — 15 / 908
+[GREEN] Pass 5 — 17 / 912
+[GREEN] Pass 6 — 15 / 915
+[GREEN] Pass 7 — 18 / 920
+[GREEN] Pass 8 — 14 / 923
+[GREEN] Pass 9 — 19 / 924
+[GREEN] Pass 10 — 11 / 927
+[GREEN] Pass 11 — 19 / 929
+[GREEN] Pass 12 — 21 / 930
+[GREEN] Pass 13 — 19 / 932
+[GREEN] Pass 14 — 20 / 936
+[GREEN] Pass 15 — 22 / 943
+[GREEN] Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- focused suite: 25 GREEN before new diagnostic test
+- initial HTTP surfaces GREEN
+- latest longevity: 18 probes / 3 failed / max consecutive 2 / recovery observed
+- reconciliation event-loop offloads implemented
+- exact TCP :8000 owner + parent/process-tree capture: CODE COMPLETE / LOCAL TEST PENDING
+[NEXT] Focused regression validation
+[NEXT] One diagnostic 5-minute longevity run if focused tests GREEN
+[NEXT] Use exact listener ownership evidence to decide whether a process-lifecycle fix is needed
+[NEXT] Require 0-failure longevity run before Pass 17 GREEN
+[NEXT] Full pytest suite
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+LIVE-CAPITAL RULE
+Automatic real-money execution remains disabled. No GREEN engineering checkpoint establishes live-capital readiness.
+
+
+PASS 17 — PID DIAGNOSTIC CAPTURE BUG FOUND AND REPAIRED
+Latest user validation:
+- focused suite: 26 passed / 1 dependency warning in 12.52s
+- Atlas self-start succeeded
+- initial health/dashboard/research HTTP 200; command-center and reconciliation timed out during startup
+- longevity: 14 probes / 4 failed probes / 6 endpoint failures / max consecutive 1 / recovery observed
+- first failure snapshot showed launcher alive and Atlas containers alive
+- port_8000_listeners and api_process_tree were unexpectedly empty while api_processes still found both uvicorn command lines
+
+Root cause in diagnostic instrumentation:
+- PowerShell $PID is an automatic read-only variable (case-insensitive)
+- the new snapshot helpers assigned to $pid, causing their try blocks to fail and silently return empty arrays
+- therefore the empty listener/process-tree arrays are invalid diagnostic evidence and MUST NOT be interpreted as port 8000 having no listener
+
+Repair:
+- 43fc594 renames local capture variables to $ownerPid and $processId
+- 8828f6b adds regression coverage forbidding assignment to reserved $PID
+- production runtime behavior is unchanged; diagnostic capture only
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 passes 1-16 through Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- focused suite before diagnostic repair: 26 GREEN
+- latest longevity remains BLOCKED: 14 probes / 4 failed / 6 endpoint failures
+- listener/process-tree snapshot from that run is INVALID due reserved-$PID instrumentation bug
+- PID-safe exact TCP :8000 owner/process-tree capture: CODE COMPLETE / LOCAL RETEST PENDING
+[NEXT] Focused regression validation
+[NEXT] Diagnostic longevity run with valid listener/process-tree capture
+[NEXT] Decide process-lifecycle vs backend-blocking fix from valid evidence
+[NEXT] Require 0-failure longevity run
+[NEXT] Full pytest suite
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 17 — VALID PROCESS EVIDENCE + RECONCILIATION SOURCE-OFFLOAD REPAIR
+Latest user local validation:
+- focused suite: 27 passed / 1 dependency warning in 12.69s
+- valid TCP/process capture obtained
+- TCP 127.0.0.1:8000 had exactly one LISTEN owner: system Python PID 1680
+- PID 1680 parent was venv Python PID 27840
+- venv PID 27840 did NOT own port 8000; child PID 1680 DID own port 8000
+- therefore the two uvicorn-looking process records are a parent/child interpreter chain, not evidence of two independent Atlas servers
+- launcher PID remained alive; atlas-postgres and atlas-redis remained alive
+- first failure had /health HTTP 200 while /diagnostics/paper-reconciliation timed out
+- longevity remained BLOCKED: 14 probes / 5 failed probes / max consecutive 2 / recovery observed
+
+Interpretation:
+- process duplication hypothesis is rejected by valid listener ownership evidence
+- reconciliation remains a directly observed timeout surface
+- prior runtime patch offloaded the entire async alert coroutine to a worker thread using asyncio.run, which unnecessarily moved async Discord/send behavior off the main loop
+- durable JSONL reconciliation_summary is the synchronous work that should be offloaded at its source
+
+Repair:
+- c2db38f: paper_reconciliation_alert now awaits asyncio.to_thread(reconciliation_summary)
+- be48bec: PerpAlertDeliveryService again directly awaits alert_reconciliation_if_needed on the main event loop
+- 9d41910: regression test requires source-level reconciliation scan offload
+- 7ec239c: regression test forbids nested asyncio.run runtime ownership pattern
+- diagnostics HTTP endpoint already independently offloads reconciliation_summary
+- no strategy/live execution behavior changed
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 passes 1-16 through Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / REPAIR CODE COMPLETE / LOCAL RETEST PENDING] Pass 17
+- focused suite before latest repair: 27 GREEN
+- process duplication hypothesis: REJECTED by valid TCP ownership evidence
+- reconciliation timeout path: directly observed
+- source-level blocking scan offload: CODE COMPLETE
+- async alert sender remains on main event loop
+[NEXT] Focused regression validation
+[NEXT] Clean 5-minute longevity smoke; require 0 failed probes
+[NEXT] Full pytest suite if longevity GREEN
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 17 — BROADER EVENT-LOOP / BACKGROUND-STEP INSTRUMENTATION
+Evidence from latest local run:
+- focused suite: 28 passed / 1 dependency warning
+- longevity: 17 probes / 3 failed probes / max consecutive 3 / recovery observed
+- after recovery, probes 5-17 were GREEN
+- final operator checks timed out on research, command-center, and reconciliation while health remained HTTP 200
+- valid TCP evidence still shows exactly one :8000 listener child process; duplicate-server hypothesis remains rejected
+
+Instrumentation implemented:
+- d911115 records elapsed milliseconds for perp alert-delivery background steps: paper_once, deliver_once, reconciliation, plus total cycle elapsed
+- 30b8625 adds read-only /diagnostics/runtime-latency endpoint exposing event-loop yield latency and service timing state
+- 13fbaf6 captures runtime-latency diagnostics in first smoke failure snapshot
+- 60d8117 adds regression coverage for runtime step timing state
+- no strategy thresholds or execution permissions changed
+- automatic real-money execution remains disabled
+
+FULL ROADMAP STATUS — CURRENT
+[COMPLETE/PRESERVED] Historical Atlas engineering + evidence cycle
+[FAILED_NEGATIVE/IMMUTABLE] Historical perps HOLDOUT — 546 trades / -26.7235R / -0.04894R expectancy
+[COMPLETE/GREEN] Quality Dips V2 Phases 1-11
+[CLOSED/GREEN] Quality Dips V2.1 — RESEARCH_READY_MANUAL_ONLY
+[GREEN] V2.1 operational reliability hotfix
+[GREEN] V3 passes 1-16 through Pass 16 — 15 / 949
+[BLOCKED/EVIDENCE-INSUFFICIENT] Retrospective V3 DEVELOPMENT/HOLDOUT — 0 genuine stored historical V3 PIT observations
+[BLOCKED / ACTIVE DIAGNOSIS] Pass 17
+- focused suite before latest instrumentation: 28 GREEN
+- duplicate-server hypothesis: REJECTED
+- reconciliation source offload: implemented
+- broader operator-surface stalls: confirmed
+- background-step timing + runtime-latency instrumentation: CODE COMPLETE / LOCAL RETEST PENDING
+[NEXT] Focused regression validation
+[NEXT] Diagnostic 5-minute longevity run
+[NEXT] Use timing evidence to identify/offload remaining blocking work
+[NEXT] Require clean 0-failure longevity run
+[NEXT] Full pytest suite
+[NEXT AFTER PASS 17 GREEN] Final operator hardening / longevity diagnostics surface
+[NEXT] Final temporary diagnostic artifact cleanup + clean desktop shortcut launch/stop verification
+[NEXT] Cohort reporting by paper_execution_model_version
+[NEXT] Genuine V3 Quality Dips forward-evidence accumulation/backtesting workflow
+[BLOCKED UNTIL SEPARATE POSITIVE EVIDENCE] Automatic real-money perps execution
+[MANUAL_ONLY] Quality Dips / Robinhood brokerage execution
+
+
+PASS 17 — AUTONOMOUS MEASURED STALL REPAIR (2026-09-19)
+Branch remains chatgpt/atlas-rebuild-v1; starting HEAD 9b5e095.
+Actual checkout lacked the described startup gate and JSON runtime body capture.
+Added consecutive startup checks, separate warm-up accounting, all four operator
+surfaces in longevity probes, runtime ownership/container checks, and JSON bodies.
+Preserved prior failed run in logs/diagnostics/pass17-startup-blocked.json:
+7/7 startup checks failed; 0 measured probes; BLOCKED (not a longevity pass).
+Bounded watchdog captured API-loop stalls exceeding 11 seconds. Stack evidence:
+- quality_dip_scanner._ladder_once: JSONL load and V2 history enrichment
+- investment_board.quality_dips_board: synchronous opportunity-history load
+- manual_perps/manual_perp_board: journal reconciliation/cohort scans
+- paper_journal.stats: synchronous historical tally
+Moved these measured synchronous reads/calculations to worker threads. Async
+networking/alert delivery remains on its existing loop; no nested asyncio.run.
+Focused repair gate: 61 passed, 2 dependency warnings in 31.98s.
+Sandbox pytest fixture permissions required running tests outside the sandbox.
+No tests were weakened: old kill-by-port assertions now require root-qualified
+server ownership, because killing arbitrary :8000/:3000 owners violates scope.
+Shutdown no longer matches generic uvicorn, app.main, next/frontend, or ports alone.
+Strict 300-second repaired-runtime longevity run is PENDING. Pass 17 is NOT GREEN.
+Historical FAILED_NEGATIVE: 546 trades / -26.7235R / -0.04894R unchanged.
+Retrospective V3 evidence remains BLOCKED/EVIDENCE_INSUFFICIENT.
+live_capital_allowed=false; automatic_real_money_execution=false; MANUAL_ONLY.
+
+PASS 17 — SECOND MEASURED BOTTLENECK
+Runtime stack samples after the scan-offload repair identified repeated full
+trading_v4_shadow.jsonl replay from JsonlEventStore.append on every shadow mark.
+Loop stall reached 13.672 seconds. Added locked event-ID/sequence append index;
+revalidate on initial load or external size/mtime/inode change. Durable flush/fsync
+and corruption/duplicate/sequence validation are preserved. No evidence rewritten.
+Event-store/replay/shadow regressions: 24 passed in 1.83s. Longevity still pending.
+
+PASS 17 — INVESTMENT OUTCOME-ENRICHMENT STALL
+The saved before-event-index diagnostic also captured a 47.718-second loop stall
+in investment.scan.run_once -> _enrich_past -> load_bars. Isolated that synchronous
+pass with asyncio.to_thread and reused each symbol's history within the pass.
+Existing investment collection/outcome/no-lookahead suite: 50 passed in 22.86s.
+New regression: 1 passed in 0.65s; verifies one read per symbol and no enrichment
+of future observations. The software still does not manufacture historical V3 PIT.
+Added final smoke safety verification from actual runtime JSON; fail closed if
+PAPER_ONLY/false/false cannot be verified. Longevity still not GREEN.
+
+
+RESUME 2026-09-20 - STRICT PRIORITY CONTINUED
+Repair 3 is committed at b4f1701; no prior tracked work was discarded.
+Focused resume gate: 85 passed, 1 audioop dependency warning in 13.91s.
+Cold-start stack samples identified additional blocking validation endpoints:
+validation_summary/readiness_report and edge_endpoint/edge_report scan histories
+on the API loop (latest sample 12.625 seconds). These fully synchronous handlers
+now use FastAPI worker-thread dispatch. HTTP regression verifies execution off
+loop. Targeted validation/API gate: 21 passed, 2 dependency warnings in 2.14s.
+No new dependencies/services, no paid services, no live execution added.
+Expanded requested roadmap is accepted AFTER Pass 17: operator/log hardening,
+cohorts, prospective evidence/outcomes/lifecycle, versioned valuation/actionability,
+ETF/total-return/compounding, manual daily portfolio plans, immutable plan history,
+benchmark/opportunity-cost/calibration/challengers and read-only readiness.
+No downstream completion is claimed while Pass 17 remains under validation.
+
+
+PASS 17 - VERIFIED GREEN (2026-09-20)
+Runtime repair HEAD: cdd2470; previous repairs e0b1e02 / 8bb73a3 / b4f1701.
+Focused resume gate: 85 passed / 1 warning; validation repair: 21 / 2 warnings.
+Normal desktop cold restart loaded every repair. Startup: 4 checks, 1 warm-up
+failure, then 3 consecutive GREEN checks. Warm-up excluded from measured stats.
+Measured UTC window 2026-09-20T13:33:49.8694186Z to 13:39:08.5220541Z:
+318.653 seconds, 16 probes, 15-second configured interval; 0 failed probes,
+0 endpoint failures, 0 runtime failures; green=true; ATLAS_DESKTOP_SMOKE_GREEN.
+All four operator surfaces were probed throughout. Launcher PID 6952 alive.
+One 127.0.0.1:8000 listener PID 13384, parent venv PID 35656; correct Atlas tree.
+atlas-postgres and atlas-redis healthy at every runtime check.
+Both desktop shortcut targets verified against ATLAS.bat / ATLAS-STOP.bat.
+Runtime JSON safety_verified=true: PAPER_ONLY / false / false.
+Artifact: logs/diagnostics/pass17-green.json (retained compact local evidence).
+Full pytest after longevity: 972 passed, 2 warnings in 65.34s.
+Warnings: Python audioop deprecation; Starlette/httpx TestClient deprecation.
+Initial full run was 971 passed / 1 failed due three non-UTF8 roadmap dashes;
+encoding repaired without changing historical content; complete rerun GREEN.
+[GREEN] Pass 17 desktop longevity and post-longevity full regression.
+[NEXT] Operator hardening, log retention and clean shutdown verification.
+Remaining expanded research roadmap stays pending; no completion implied.
+Historical HOLDOUT remains 546 / -26.7235R / -0.04894R, FAILED_NEGATIVE.
+Retrospective V3 remains BLOCKED/EVIDENCE_INSUFFICIENT; live flags false.
+
+
+POST-PASS-17 OPERATOR HARDENING - VERIFIED (2026-09-20 local)
+Normal launcher now requires three consecutive healthy operator checks before
+opening the dashboard. Desktop logging rotates at 20 MiB with three backups;
+rotation exercised with real file handlers. Global WSL settings are untouched.
+Desktop stop uses a per-run local handshake, bounded 30-second graceful wait,
+then only root-qualified Atlas server process trees as fallback.
+Cold desktop startup: ATLAS_DESKTOP_SMOKE_GREEN; both shortcut targets correct,
+operator HTTP surfaces healthy, Atlas listener ownership and healthy containers
+verified, PAPER_ONLY and both live flags false. This was a startup check, not a
+replacement for the preserved 318.653-second Pass 17 longevity acceptance.
+First stop had clean application shutdown but inconsistent summary (false);
+retained as an unresolved diagnostic discrepancy, not counted as verified.
+Repeat captured launch/stop: requested_graceful=true, forced_process_trees=0,
+finished 2026-09-21T02:28:33.9380183Z. API shutdown completed, no :8000 listener,
+no Atlas server/launcher process remained, Atlas containers removed; Docker
+Desktop remained running. No unrelated containers were running before the test.
+Operator/shutdown/lifecycle regression: 30 passed in 1.14 seconds.
+Artifacts: logs/diagnostics/operator-launch.*.log, operator-stop-console.log,
+stop-latest.json, desktop-smoke-latest.json. Guide: docs/ATLAS_OPERATOR_GUIDE.md.
+[COMPLETE/GREEN] Operator hardening implemented and repeat runtime verified.
+[NEXT] Bounded diagnostic cleanup, then execution-model cohort reporting.
+All expanded prospective research tasks remain pending; no evidence fabricated.
+Historical HOLDOUT preserved: 546 / -26.7235R / -0.04894R FAILED_NEGATIVE.
+New paid services=0; live_capital_allowed=false; automatic_real_money_execution=false.
+
+POST-PASS-17 DIAGNOSTIC CLEANUP AND MODEL COHORTS (2026-09-20)
+Removed seven obsolete local repeated runtime snapshots/console dump: 202361
+bytes. Explicit file paths checked under logs/diagnostics before deletion.
+Cleanup manifest retained locally. Preserved pass17-green.json, full pytest log,
+prior failure/reproduction evidence, all research/PAPER/PIT journals, and the
+pre-existing untracked ATLAS_RUNTIME_AUDIT.json. No stale operational .old/.bak
+files found in logs. Logs/diagnostics and rotated operational logs are Git-ignored.
+[COMPLETE] Bounded diagnostic cleanup; no paid logging/monitoring added.
+Execution-version cohorts now exposed in existing PAPER observability response.
+Distinct trade IDs, open/closed/resolved/unknown/interrupted counts, win/loss/
+scratch counts, win rate, total/expectancy/median R, chronological closed-equity
+maximum drawdown R and evidence dates. Unknown dates yield unknown drawdown.
+TEST/DIAGNOSTIC excluded across all events of a trade. Legacy missing versions
+remain UNKNOWN/legacy. Conflicting versions/closes remain unresolved. Duplicate
+identical closes count once. Net zero never falls through to positive gross R.
+No pooled performance; no historical records relabeled or rewritten.
+Cohort/observability/version integration tests: 11 passed, 1 dependency warning.
+[COMPLETE] PAPER execution-model cohort reporting.
+[NEXT] Genuine automated forward PIT observations and outcomes/evidence lifecycle.
+Remaining adaptive valuation, daily plans, ETF/total return, policy learning,
+calibration, benchmarking/dashboard and read-only readiness work remain pending.
+
+PROSPECTIVE EVIDENCE CHECKPOINT (2026-09-20 local)
+Existing quality-dip background monitor now collects without dashboard visits
+or Discord delivery. Separate prospective_v3_observations.jsonl preserves legacy
+V3 evidence unchanged. One first-seen UTC-day/symbol/frozen-policy observation;
+source snapshot, actual observation/source timestamps, complete decision inputs,
+valuation provenance, classification, confidence/missingness, strategy/policy/
+execution version, FORWARD_COLLECTION and initially UNKNOWN outcome.
+Future-dated and TEST/DIAGNOSTIC source observations rejected. Writes flushed/
+fsynced; malformed evidence fails visibly. Current policy margins unchanged.
+Outcome revisions in separate prospective_v3_outcomes.jsonl preserve originals.
+Only completed later daily sessions used; path, horizons, MFE/MAE and target
+touches measured. No frozen stop/order means fill/stop/R stay UNKNOWN rather
+than inventing favorable executions. Unresolved and losing evidence retained.
+Prospective policy-freeze library requires future boundaries, immutable version
+and rationale. Existing DEVELOPMENT/TEST/DIAGNOSTIC never becomes HOLDOUT.
+No policy freeze or champion promotion fabricated during this implementation.
+Focused V2 board/runtime + prospective tests: 19 passed. Lifecycle/prospective
+tests: 9 passed. Cold startup: ATLAS_DESKTOP_SMOKE_GREEN, safety_verified=true.
+Actual autonomous runtime: 36 observations / 36 symbols, FORWARD_COLLECTION;
+36 outcome revisions, all UNKNOWN (no eligible subsequent sessions yet).
+[IMPLEMENTED/RUNTIME VERIFIED] Genuine forward collection and outcome tracking.
+[IMPLEMENTED/TESTED] Prospective freeze/classification library; operator surface pending.
+[BLOCKED BY TIME/EVIDENCE] Mature outcomes and untouched V3 holdout conclusions.
+Adaptive valuation/plans/ETF/calibration/reporting work remains active.
+
+POST-994 RESPONSIVENESS REPAIR (2026-09-21 resume)
+Verified HEAD c44d6cf and preserved all uncommitted research components.
+The previous full gate was 994 passed / 2 dependency warnings in 74.59s;
+additional report/ETF/benchmark/plan gate was 10 passed / 1 warning.
+Measured subsequent startup stall: cycle_summary -> dataset_stats ->
+load_observations, 6421 ms on API loop. Smaller measured scans: manual-refresh
+_auto_paper_stats (1828 ms), manual endpoint paper-mirror status (1015 ms).
+Only synchronous sections moved to asyncio.to_thread: cycle_summary and its
+file persistence, auto-paper journal statistics including error path, and
+status scans in both manual endpoints. Async refresh/sync stay on their loop.
+Three behavioral regression tests verify worker thread identity and async loop
+identity; combined collection/PAPER/cohort gate: 30 passed, 1 audioop warning.
+Runtime was stopped on resume. Preserved evidence baseline: 36 observations,
+36 initial outcomes, 1 daily plan; original observation SHA256
+d2a5e820c8f1e197abfceb906948543ae9dcfb35dbc89101a4e5ac3dc7fe64e7.
+[TESTED/CODE COMPLETE] Current responsiveness repair; cold longevity pending.
+Historical Pass 17 remains GREEN and its earlier evidence is unchanged.
+
+POST-994 COLD RUNTIME GATE - GREEN (2026-09-21)
+Repair commit bc01821. Startup: 3 checks / 0 failures / 3 consecutive healthy.
+Measured 2026-09-21T12:14:21.6978869Z to 12:19:36.5228433Z:
+314.825 seconds, 14 probes, 0 endpoint failures, 0 runtime failures.
+Launcher alive; one verified Atlas 127.0.0.1:8000 listener; PostgreSQL and Redis
+healthy throughout; safety_verified=true. Artifact logs/diagnostics/post994-green.json.
+Actual prospective report: 36 observations, 1 saved BUY_NOTHING_TODAY plan,
+4 ETFs, INSUFFICIENT_EVIDENCE. Browser calculator verified hypothetical 100
+capital / zero contributions / one year at -10%, 0%, +10% gives 90/100/110.
+Original observations/outcomes/plan retained. Full regression rerun in progress.
+
+RESEARCH FOUNDATION AND INTEGRITY REFINEMENT (2026-09-21)
+Post-repair full regression: 1001 passed / 2 warnings in 78.60s.
+Completed previously uncommitted manual daily plan, local ETF/total-return/
+compounding, valuation revisions, benchmark arithmetic and research page.
+Original daily plan remains immutable; absent portfolio/cash/risk configuration
+produces BUY_NOTHING_TODAY. Explicit staged research budgets respect shared
+sector/position limits and reserve cash. No broker account/credential required.
+Current valuation revisions now run independently of daily-plan creation,
+using actual changed evidence and preserving old/new values, source timestamps,
+policy/model versions, reason and confidence. Price-driven score changes or
+source timestamp refresh alone cannot justify changed targets. Actionability
+honors the existing freshness/quality gate; valuation L levels stay unchanged.
+ETF metrics use local completed daily bars or dated explicit facts. Missing
+expense/holdings/cash distributions stay UNKNOWN; future-dated facts rejected.
+Compounding distinguishes price growth/distributions and reinvestment; no
+guaranteed results, no implicit tax assumptions, no double-counted distributions.
+Benchmark reporting joins genuine original observation/source timestamps and
+identical subsequent dates. Negative comparisons remain visible. These are
+reference-price comparisons, NOT executed-strategy equity or proof of edge.
+Calibration and opportunity-cost outputs retain unresolved outcomes; no invented
+fills or R results. Champion unchanged; challenger evaluation cannot promote.
+Holdout classification now also requires matching policy-definition hash.
+Original 36 records are not backfilled with missing hashes or reclassified.
+Readiness remains INSUFFICIENT_EVIDENCE with explicit maturity, version, benchmark
+and missing economic-validation facts. No easy acceptance thresholds invented.
+UI overflow repaired; main dashboard links the daily research page.
+Guide/cost audit: docs/ATLAS_PROSPECTIVE_RESEARCH.md. New paid services=0;
+no dependencies/containers/external services added. Source search found no
+order submission/signing endpoint or enabled live-capital flag in app code.
+Final regression after refinements: 1007 passed, 2 warnings in 83.75s.
+Warnings remain audioop deprecation and Starlette/httpx TestClient deprecation.
+[IMPLEMENTED/TESTED] Core autonomous research pipeline and reporting foundation.
+[BLOCKED BY INPUTS] Personalized allocation without genuine portfolio/risk inputs.
+[BLOCKED BY DATA] ETF expense/holdings/distribution fields absent in local sources.
+[BLOCKED BY TIME/EVIDENCE] Mature forward calibration, economic strategy conclusions,
+untouched holdout, meaningful challenger promotion and live-readiness conclusions.
+No historical V3 or perps evidence rewritten. Historical HOLDOUT remains
+546 / -26.7235R / -0.04894R FAILED_NEGATIVE / IMMUTABLE.
+Final cold runtime/stop validation follows; do not infer it from unit tests.
+
+================================================================================
+2026-10-02 ROADMAP ADDENDUM — PREDICTION MARKETS FIRST, THEN STRATEGY EVIDENCE
+================================================================================
+
+PURPOSE
+Atlas is now mature enough that software/platform completion and strategy readiness
+must be treated as separate gates. A feature-complete trading platform is NOT proof
+of profitable edge and is NOT, by itself, authorization for live capital.
+
+CURRENT PRIORITY — FINISH THE PREDICTION MARKETS PAPER LAYER
+[ACTIVE] Complete the genuine Prediction PAPER auto-flat validation already in
+progress before beginning the strategy-readiness program below.
+- Preserve single-market / one-position-max Prediction PAPER safety.
+- Preserve real executable orderbook depth for PAPER entry/exit evidence.
+- Preserve mandatory pre-event flattening.
+- Preserve eligible-candidate Discord notification-only workflow.
+- Do not weaken scoring, liquidity, spread, history, stability, edge, or timing
+  filters merely to manufacture eligible candidates or favorable PAPER results.
+- Do not enable unattended Prediction PAPER opening until a genuine eligible
+  position has been observed through its real mandatory auto-flat path and the
+  persisted exit evidence is verified.
+- Live Prediction execution remains disabled regardless of PAPER auto-flat result.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+
+[NEXT AFTER PREDICTION AUTO-FLAT VALIDATION]
+DAY TRADING + INVESTMENT STRATEGY EVIDENCE / LIVE-READINESS PROGRAM
+
+PRINCIPLE
+The next phase is not "add features until Atlas feels finished." It is:
+measure -> explain -> improve -> freeze -> validate on unseen evidence -> repeat.
+Poor/subpar PAPER performance is evidence to investigate, not a reason to loosen
+risk controls, overfit historical data, increase trade frequency, or rush live.
+
+PHASE A — FREEZE A COMPARABLE DAY-TRADING BASELINE
+[PLANNED]
+- Freeze the current core strategy/policy/execution versions for a bounded evidence
+  window. Continue fixing software/data-integrity defects, but do not silently tune
+  strategy parameters between sessions.
+- Persist exact strategy, policy, execution-model and relevant configuration
+  versions with every candidate/trade/outcome.
+- Treat materially changed strategy logic as a new cohort/version.
+- Preserve negative evidence. Never rewrite historical PAPER results after tuning.
+- Use macro/high-volatility sessions as labeled regimes, not one-off excuses or
+  opportunities for ad-hoc parameter changes.
+
+PHASE B — AUTOMATIC LOSS / TRADE ATTRIBUTION
+[PLANNED]
+For every closed PAPER trade, preserve enough evidence to distinguish at least:
+- direction/signal failure
+- entry too early / entry too late
+- signal decay before execution
+- spread/slippage/liquidity degradation
+- stop/exit behavior
+- target/repricing assumption failure
+- time-of-day effects
+- market-regime mismatch
+- macro/event interference
+- execution-model/data-quality issue
+- genuinely negative strategy edge / unresolved cause
+Attribution must be evidence-backed; UNKNOWN remains valid when causality cannot
+be established from captured data.
+
+PHASE C — REGIME-AWARE PERFORMANCE ANALYSIS
+[PLANNED]
+Measure strategy cohorts independently across:
+- trend vs chop/range
+- high vs normal/low volatility
+- opening period / morning / midday / afternoon
+- macro-event vs ordinary sessions
+- broad risk-on / risk-off where supported by captured evidence
+- liquidity/spread conditions
+Do not assume one setup should trade identically in every regime.
+Do not introduce regime filters unless they are supported by prospective or
+properly separated validation evidence.
+
+PHASE D — STRATEGY-LEVEL SCORECARDS
+[PLANNED]
+Per strategy/version/regime report:
+- sample size and evidence dates
+- win/loss/scratch counts and win rate
+- average/median win and loss
+- expectancy
+- profit factor where mathematically defined
+- cumulative PAPER R / PnL under the recorded execution model
+- maximum drawdown
+- MAE/MFE where captured
+- spread, slippage and fees
+- holding time and time-of-day
+- unresolved/invalid evidence counts
+No strategy is promoted merely for a high win rate. Economic expectancy and
+drawdown matter, and insufficient sample sizes remain INSUFFICIENT_EVIDENCE.
+
+PHASE E — RETIRE OR CHALLENGE NEGATIVE-EDGE BEHAVIOR
+[PLANNED]
+- Strategies with sufficiently mature, consistently negative out-of-sample evidence
+  become candidates for disablement/replacement rather than endless parameter
+  optimization.
+- Challengers must be versioned and evaluated without rewriting champion history.
+- Do not cherry-pick only favorable regimes or delete losing observations.
+- No automatic strategy promotion without predefined evidence criteria and an
+  untouched validation segment.
+
+PHASE F — WALK-FORWARD / OUT-OF-SAMPLE VALIDATION
+[PLANNED]
+- Development/tuning evidence and validation evidence must be separated.
+- Freeze each candidate policy before evaluating the next unseen segment.
+- Record every freeze boundary, policy hash/version, rationale and outcome.
+- Require performance to survive multiple unseen periods/regimes rather than one
+  favorable day/week.
+- Follow with fresh live-market PAPER/shadow validation using the same frozen
+  policy and execution assumptions.
+- No hindsight reclassification of losing validation periods.
+
+PHASE G — INVESTMENT PROGRAM PROSPECTIVE SCORECARD
+[PLANNED / BUILDS ON EXISTING PROSPECTIVE PIPELINE]
+Investment research is evaluated separately from intraday trading.
+
+PERMANENT INVESTMENT SCOPE — LONG ONLY
+- The Atlas Investment / Quality Dips program is long-only.
+- Long-duration investment shorting is permanently out of scope.
+- Do not add or revisit Quality Extremes, ATH-exhaustion short strategies, direct
+  borrowed-share investment shorts, inverse-ETF bearish investment strategies,
+  long-duration bearish hedging strategies, or leveraged bearish investment trades.
+- Do not add margin/borrow-based investment execution as a future Atlas milestone.
+- HOLD / WAIT / BUY_NOTHING_TODAY is the bearish or insufficient-edge response for
+  the Investment program; Atlas is not required to monetize every downward thesis.
+- This permanent exclusion does not rewrite preserved historical intraday PAPER
+  execution evidence; it governs the Investment / long-horizon roadmap and future work.
+- Reintroducing investment shorting is not a deferred task and is not part of the
+  continuous refinement loop.
+
+For each frozen investment observation/call:
+- preserve only information available at observation time
+- evaluate forward horizons such as 1d / 5d / 20d / 60d when mature
+- compare against an appropriate recorded benchmark/reference series
+- retain drawdown, opportunity-cost and unresolved outcomes
+- retain calibration by confidence/score bucket where sample size supports it
+- preserve valuation/actionability provenance and policy/model version
+- never backfill hindsight facts into the original decision
+Investment readiness must be based on mature prospective evidence, not the fact
+that the Investment UI/research pipeline is feature-complete.
+
+PHASE H — LIVE-READINESS GATE
+[BLOCKED UNTIL POSITIVE EVIDENCE]
+A small live-capital pilot may be CONSIDERED only after all applicable evidence
+gates are satisfied. No fixed profitability threshold is invented here merely to
+unlock live trading. The readiness review must include:
+- stable/versioned strategy definition
+- adequate prospective/out-of-sample sample size
+- positive economic expectancy after recorded costs under the tested model
+- understood drawdown/loss distribution
+- acceptable execution quality/slippage/liquidity behavior
+- evidence across relevant regimes rather than a single favorable period
+- no unresolved material data-integrity/runtime defects
+- successful fresh PAPER/shadow validation after the final strategy freeze
+- explicit operator review and separate authorization
+Until then:
+- Day Trading remains PAPER/shadow where automatic execution is concerned.
+- Investment remains research/manual decision support.
+- Prediction Markets remain PAPER research unless separately authorized later.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+
+PHASE I — IF A FUTURE SMALL LIVE PILOT IS EXPLICITLY AUTHORIZED
+[NOT AUTHORIZED / FUTURE ONLY]
+- Start deliberately small and bounded.
+- Hard daily/session/position loss limits and kill switch.
+- No automatic scaling from early wins.
+- Compare live fills/slippage/behavior against the validated PAPER assumptions.
+- Any material divergence returns the strategy to PAPER/shadow investigation.
+- Scaling requires a new evidence review; it is never implied by software uptime.
+
+ORDER OF OPERATIONS
+1. Finish current Prediction Markets genuine PAPER auto-flat validation.
+2. Close any remaining Prediction PAPER integrity/observability defects found by
+   that real validation.
+3. Freeze the Day Trading baseline and begin comparable forward evidence.
+4. Add automatic trade/loss attribution and regime labeling/reporting.
+5. Produce strategy/version/regime scorecards.
+6. Retire or challenge negative-edge behavior using preserved evidence.
+7. Run walk-forward/out-of-sample validation and fresh frozen PAPER confirmation.
+8. Continue maturing the Investment prospective 1d/5d/20d/60d evidence and
+   benchmark/opportunity-cost/calibration reporting.
+9. Perform a formal read-only live-readiness review.
+10. Only after positive evidence and explicit authorization consider a bounded
+    small live-capital pilot. Real-money automation is not implied or pre-approved.
+
+STATUS AT ADDENDUM
+- Prediction Markets: active priority; genuine PAPER auto-flat validation pending.
+- Day Trading platform: operationally mature, strategy edge still requires further
+  evidence/improvement; historical negative PAPER evidence remains preserved.
+- Investment research platform: substantial prospective foundation exists, but
+  mature forward evidence remains the limiting factor.
+- The roadmap therefore optimizes next for PROVABLE EDGE AND EXECUTION QUALITY,
+  not additional feature count and not premature live-capital activation.
+
+CONTINUOUS ATLAS REFINEMENT MODE — AFTER REMAINING BUILD PHASES
+SCOPE FREEZE:
+- Do not add new strategy families or speculative feature branches by default.
+- New work must address a demonstrated need in safety, data integrity, execution
+  realism, reliability, observability, evidence quality, or measured strategy weakness.
+- Prefer long-duration PAPER/shadow evidence and refinement of existing systems over
+  expanding Atlas simply because another trade idea is possible.
+- Prediction Markets, Day Trading, and Investment/Quality Dips are the intended
+  strategy/research scope.
+- Investment/Quality Dips remains LONG ONLY permanently; continuous refinement must
+  not generate, propose, or schedule long-horizon short/hedge/inverse strategies.
+
+Once the planned engineering/research surfaces above are implemented and verified,
+Atlas transitions from feature expansion to a continuing evidence loop across:
+Prediction Markets, Day Trading, and Investment/Quality Dips.
+For each strategy family:
+collect prospective PAPER/shadow evidence -> attribute wins/losses -> analyze
+regimes/execution/costs -> propose a versioned challenger -> freeze -> validate on
+unseen evidence -> retain/reject based on evidence -> repeat.
+This loop may continue indefinitely while edge is uncertain or improving.
+Software completion never converts PAPER to live automatically. Each live-capital
+step requires a separate evidence review, bounded risk design, explicit operator
+authorization, and continued ability to return to PAPER/shadow on degradation.
+Real-money automation remains NOT AUTHORIZED by this roadmap addendum.
+================================================================================
+

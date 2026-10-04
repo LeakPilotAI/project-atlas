@@ -17,7 +17,8 @@ def _parse(raw: object) -> Optional[datetime]:
     if isinstance(raw, datetime):
         return raw if raw.tzinfo else raw.replace(tzinfo=timezone.utc)
     try:
-        return datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
     except Exception:
         return None
 
@@ -65,6 +66,7 @@ def audit_observation(row: dict) -> Dict[str, Any]:
         f.startswith("missing") or "cannot reconstruct" in f for f in flags
     ) and "missing as_of timestamp" not in flags
     lookahead = any("look-ahead" in f or "look_ahead_protected is false" in f for f in flags)
+    validation_eligible = bool(reconstructable and not lookahead and not leaked)
     return {
         "observation_id": row.get("observation_id"),
         "symbol": row.get("symbol"),
@@ -73,7 +75,13 @@ def audit_observation(row: dict) -> Dict[str, Any]:
         "ok": not flags,
         "reconstructable": reconstructable and not lookahead,
         "lookahead": lookahead,
+        "validation_eligible": validation_eligible,
     }
+
+
+def is_validation_eligible(row: dict) -> bool:
+    """True only when the historical row is safe to use in outcome validation."""
+    return bool(audit_observation(row).get("validation_eligible"))
 
 
 def pit_audit(observations_path: Optional[Path] = None) -> Dict[str, Any]:
@@ -82,6 +90,7 @@ def pit_audit(observations_path: Optional[Path] = None) -> Dict[str, Any]:
     flagged = [r for r in results if not r["ok"]]
     lookahead_n = sum(1 for r in results if r["lookahead"])
     recon_n = sum(1 for r in results if r["reconstructable"])
+    eligible_n = sum(1 for r in results if r["validation_eligible"])
     n = len(results)
     return {
         "observations": n,
@@ -90,9 +99,15 @@ def pit_audit(observations_path: Optional[Path] = None) -> Dict[str, Any]:
         "lookahead_violations": lookahead_n,
         "reconstructable": recon_n,
         "reconstructable_rate": (recon_n / n) if n else None,
+        "validation_eligible": eligible_n,
+        "validation_quarantined": n - eligible_n,
+        "validation_eligible_rate": (eligible_n / n) if n else None,
         "flags": flagged[:50],
         "clean": lookahead_n == 0,
-        "note": "Audit only. Does not change scores. Future prices must not sit on the T observation.",
+        "note": (
+            "Audit only. Unsafe historical rows are never rewritten; validation code must quarantine "
+            "rows that are not validation_eligible. Future prices must not sit on the T observation."
+        ),
     }
 
 
@@ -102,9 +117,11 @@ def format_pit_audit(report: Optional[Dict[str, Any]] = None, **kwargs) -> str:
         "**POINT-IN-TIME INTEGRITY AUDIT**",
         f"Observations: {r['observations']}",
         f"Reconstructable: {r['reconstructable']}",
+        f"Validation eligible: {r['validation_eligible']}",
+        f"Validation quarantined: {r['validation_quarantined']}",
         f"Flagged: {r['flagged']}",
         f"Look-ahead violations: {r['lookahead_violations']}",
-        f"Clean: {'YES' if r['clean'] else 'NO'}",
+        f"Clean raw corpus: {'YES' if r['clean'] else 'NO'}",
         "",
     ]
     flags = r.get("flags") or []

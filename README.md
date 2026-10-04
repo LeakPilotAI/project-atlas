@@ -56,8 +56,7 @@ This is an **alert and analysis system**. It does not auto-trade.
 
 ## Quick start (Windows)
 
-**One desktop shortcut.** It starts Docker, the API, and the frontend dashboard,
-then opens your browser. Close that window to stop everything (including Docker Desktop).
+**Project Atlas** starts its local Postgres/Redis dependencies, the API and research services, waits for operator readiness, and opens the API-served dashboard. **Stop Atlas** requests graceful shutdown of Atlas-owned resources. Docker Desktop and other projects stay running.
 
 Full copy-from-GitHub steps: [`docs/WINDOWS.md`](docs/WINDOWS.md)
 
@@ -70,4 +69,6 @@ powershell -ExecutionPolicy Bypass -File scripts\windows\Fresh-Setup.ps1
 
 Then double-click **Project Atlas** on the desktop.
 
-Do not use separate Start / Stop icons. Dashboard: http://127.0.0.1:3000
+Use **Project Atlas** to start and **Stop Atlas** to stop. Dashboard: http://127.0.0.1:8000/dashboard
+
+See [the operator guide](docs/ATLAS_OPERATOR_GUIDE.md).

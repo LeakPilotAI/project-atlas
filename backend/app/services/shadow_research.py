@@ -8,6 +8,8 @@ Does not change qualification thresholds or scoring weights.
 from __future__ import annotations
 
 import json
+import threading
+import time
 import uuid
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
@@ -24,6 +26,11 @@ EVENTS_PATH = DATA_DIR / "shadow_events.jsonl"
 
 SHADOW_MIN_SCORE = 50.0
 DEDUP_SECONDS = 900
+# Repeated dedup decisions are expected on every micro evaluation. Logging each
+# one at INFO turns the hot research loop into sustained console/file I/O and
+# makes the desktop API compete with thousands of no-op log writes. Preserve
+# counters/evidence semantics; only rate-limit the diagnostic message.
+DEDUP_LOG_INTERVAL_SECONDS = 60.0
 SHADOW_EXPIRE_SECONDS = 6 * 3600
 MAX_OPEN_SHADOWS = 80
 
@@ -50,6 +57,9 @@ class ShadowResearch:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         self._open_shadows: Dict[str, Dict[str, Any]] = {}
         self._recent_fp: Dict[str, datetime] = {}
+        self._stats_cache: Dict[float, Tuple[Tuple[int, int], float, Dict[str, Any]]] = {}
+        self._stats_cache_lock = threading.Lock()
+        self._last_dedup_log: Dict[str, float] = {}
         self._load_open()
 
     def _append(self, path: Path, row: Dict[str, Any]) -> None:
@@ -131,7 +141,13 @@ class ShadowResearch:
         last_seen = self._recent_fp.get(fp)
         if not self._dedup_ok(fp):
             paper_pipeline.inc("shadow_candidates_deduped")
-            log.info("SHADOW DEDUP", symbol=symbol, side=side_s, decision="skip")
+            # Dedup is a normal no-op, not an operational event. Emit at most one
+            # DEBUG line per fingerprint/minute so research cannot flood the API
+            # process with synchronous log I/O.
+            now_mono = time.monotonic()
+            if now_mono - self._last_dedup_log.get(fp, 0.0) >= DEDUP_LOG_INTERVAL_SECONDS:
+                self._last_dedup_log[fp] = now_mono
+                log.debug("SHADOW DEDUP", symbol=symbol, side=side_s, decision="skip")
             return None
 
         cid = str(uuid.uuid4())[:12]
@@ -330,6 +346,21 @@ class ShadowResearch:
         return misses[:limit]
 
     def funnel_stats(self, hours: float = 24.0) -> Dict[str, Any]:
+        # This file is ~100 MB on long-running Atlas installs. The research
+        # payload historically scanned it multiple times per request, producing
+        # heavy JSON allocation churn and process-wide API starvation. Cache only
+        # against an exact file signature; any append invalidates immediately.
+        try:
+            st = CANDIDATES_PATH.stat()
+            signature = (int(st.st_size), int(st.st_mtime_ns))
+        except OSError:
+            signature = (0, 0)
+        cache_key = float(hours)
+        with self._stats_cache_lock:
+            cached = self._stats_cache.get(cache_key)
+            if cached and cached[0] == signature and time.monotonic() - cached[1] <= 60.0:
+                return dict(cached[2])
+
         cutoff = _now() - timedelta(hours=hours)
         raw = 0
         qualified = 0
@@ -386,7 +417,7 @@ class ShadowResearch:
             except Exception as e:
                 log.warning("funnel_stats failed", error=str(e)[:200])
         closed = wins + losses
-        return {
+        result = {
             "hours": hours,
             "raw_candidates": raw,
             "qualified": qualified,
@@ -403,13 +434,18 @@ class ShadowResearch:
             "by_score": {},
             "by_regime": dict(by_regime),
             "by_side": dict(by_side),
-            "nearest_misses": self.nearest_misses(5, hours),
+            # Keep nearest-miss detail lazy. Calling nearest_misses here forced a
+            # second complete pass over the same giant file for every stats read.
+            "nearest_misses": [],
             "pipeline_24h": {
                 "raw": raw,
                 "resolved": resolved_n,
                 "open": len(self._open_shadows),
             },
         }
+        with self._stats_cache_lock:
+            self._stats_cache[cache_key] = (signature, time.monotonic(), dict(result))
+        return result
 
     def _empty_funnel(self, hours: float) -> Dict[str, Any]:
         return self.funnel_stats(hours)

@@ -2,22 +2,34 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/diagnostics", tags=["diagnostics"])
 
+# Heavy research is read-only but may scan large durable JSONL histories. Keep the
+# desktop/API surface responsive while a single background refresh completes.
+_RESEARCH_RESPONSE_BUDGET_SECONDS = 2.5
+# Heavy JSONL research can hold the CPython GIL long enough to starve /health even
+# when it runs in a worker thread. Do not rebuild it on every dashboard poll.
+_RESEARCH_CACHE_TTL_SECONDS = 60.0
+_research_cache: Optional[Dict[str, Any]] = None
+_research_cache_monotonic: float = 0.0
+_research_task: Optional[asyncio.Task] = None
 
-@router.get("/research")
-async def diagnostics_research() -> Dict[str, Any]:
+
+def _research_payload() -> Dict[str, Any]:
     from app.services.funnel_research import funnel_research
     from app.services.paper_pipeline import paper_pipeline
     from app.services.shadow_research import shadow_research
 
     payload = funnel_research.research_payload()
-    shadow = shadow_research.funnel_stats(24.0)
+    # research_payload already contains the expensive shadow aggregation. Reuse it
+    # instead of scanning the shadow history yet again.
+    shadow = payload.get("shadow") or {}
     return {
         "last_24h": paper_pipeline.last_24h(),
         "bottleneck": payload.get("bottleneck"),
@@ -29,8 +41,92 @@ async def diagnostics_research() -> Dict[str, Any]:
         "shadow": shadow,
         "why_no_trade": payload.get("why_no_paper_trades"),
         "effective_config": paper_pipeline.effective_config(),
-        "research_text": funnel_research.research_summary_text(),
+        # Avoid research_summary_text(), which recomputes the full research payload.
+        "research_text": "ATLAS research snapshot loaded. Detailed research remains read-only.",
+        "operational_surface": {"state": "FRESH", "background_refresh": False},
     }
+
+
+def _research_warming_payload() -> Dict[str, Any]:
+    from app.services.paper_pipeline import paper_pipeline
+
+    return {
+        "last_24h": paper_pipeline.last_24h(),
+        "bottleneck": None,
+        "funnel": None,
+        "funnel_text": paper_pipeline.funnel_24h_text(),
+        "independent_gates": {},
+        "distributions": {},
+        "sensitivity": {},
+        "shadow": {},
+        "why_no_trade": None,
+        "effective_config": paper_pipeline.effective_config(),
+        "research_text": "Research snapshot is refreshing in the background.",
+        "operational_surface": {
+            "state": "WARMING",
+            "background_refresh": True,
+            "read_only": True,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        },
+    }
+
+
+@router.get("/research")
+async def diagnostics_research() -> Dict[str, Any]:
+    global _research_cache, _research_cache_monotonic, _research_task
+
+    loop = asyncio.get_running_loop()
+    now = loop.time()
+
+    if _research_task is not None and _research_task.done():
+        try:
+            _research_cache = _research_task.result()
+            _research_cache_monotonic = now
+        except Exception:
+            pass
+        _research_task = None
+
+    cache_age = now - _research_cache_monotonic if _research_cache is not None else None
+    if _research_cache is not None and cache_age is not None and cache_age < _RESEARCH_CACHE_TTL_SECONDS:
+        fresh = dict(_research_cache)
+        fresh["operational_surface"] = {
+            "state": "FRESH",
+            "background_refresh": False,
+            "cache_age_seconds": round(cache_age, 3),
+            "read_only": True,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+        return fresh
+
+    if _research_task is None:
+        _research_task = asyncio.create_task(asyncio.to_thread(_research_payload))
+
+    # Once a usable snapshot exists, never make a dashboard poll wait behind the
+    # expensive refresh. Serve last-good data immediately while one refresh runs.
+    if _research_cache is not None:
+        stale = dict(_research_cache)
+        stale["operational_surface"] = {
+            "state": "STALE_WHILE_REFRESHING",
+            "background_refresh": True,
+            "cache_age_seconds": round(cache_age or 0.0, 3),
+            "read_only": True,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+        return stale
+
+    try:
+        result = await asyncio.wait_for(
+            asyncio.shield(_research_task), timeout=_RESEARCH_RESPONSE_BUDGET_SECONDS
+        )
+        _research_cache = result
+        _research_cache_monotonic = loop.time()
+        _research_task = None
+        return result
+    except asyncio.TimeoutError:
+        return _research_warming_payload()
 
 
 @router.get("/paper")
@@ -50,6 +146,61 @@ async def diagnostics_root() -> Dict[str, Any]:
     base["independent_gates"] = funnel_research.independent_gates()
     base["funnel"] = funnel_research.sequential_funnel()
     return base
+
+
+@router.get("/runtime-latency")
+async def diagnostics_runtime_latency() -> Dict[str, Any]:
+    from app.services.perp_alert_delivery import perp_alert_delivery_service
+
+    from app.services.runtime_watchdog import runtime_watchdog
+
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    await asyncio.sleep(0)
+    event_loop_yield_ms = round((loop.time() - started) * 1000.0, 3)
+    from app.investment.latest_index import latest_index
+    from app.investment.history import _bar_cache
+    from app.api.live import _live_snapshot
+    from app.api.investment_board import _quality_snapshots
+    from app.api.validation import _summary_snapshot, _edge_snapshot
+    snapshots = {"live": _live_snapshot, "quality50": _quality_snapshots[50],
+                 "quality100": _quality_snapshots[100], "validation": _summary_snapshot,
+                 "edge": _edge_snapshot}
+    return {
+        "event_loop_yield_ms": event_loop_yield_ms,
+        "event_loop_stalls": runtime_watchdog.snapshot(),
+        "runtime_metrics": runtime_watchdog.metrics(),
+        "read_models": {name: {"refreshes": cache.refreshes, "duration_ms": cache.duration_ms,
+                                "in_flight": cache.task is not None, "error": cache.error}
+                        for name, cache in snapshots.items()},
+        "bounded_indexes": {"investment_files": len(latest_index.files),
+                            "investment_rows_parsed": latest_index.parsed_rows,
+                            "daily_history_files": len(_bar_cache)},
+        "perp_alert_delivery": perp_alert_delivery_service.reconciliation_status(),
+        "read_only": True,
+        "execution": "PAPER_ONLY",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+    }
+
+
+@router.get("/paper-reconciliation")
+async def diagnostics_paper_reconciliation() -> Dict[str, Any]:
+    from app.services.perp_alert_delivery import perp_alert_delivery_service
+    from app.services.perp_paper_observability import reconciliation_summary
+
+    # Never make a dashboard/diagnostic request pay for a full durable-history
+    # scan. The observability layer caches by journal signature and TTL; the scan
+    # itself remains off the event loop on a cache miss.
+    current = await asyncio.to_thread(reconciliation_summary)
+    return {
+        "current": current,
+        "runtime": perp_alert_delivery_service.reconciliation_status(),
+        "read_only": True,
+        "execution": "PAPER_ONLY",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+    }
 
 
 @router.get("/discord")
