@@ -2580,3 +2580,159 @@ The goal is not for Atlas to change itself frequently. The goal is for Atlas to 
 progressively harder to fool: by hype, overfitting, stale data, unrealistic fills,
 lucky wallets, favorable regimes, hidden costs, or its own prior assumptions.
 ================================================================================
+
+
+================================================================================
+2026-10-04 ROADMAP ADDENDUM — REVERSAL / SELECTIVITY RESEARCH LESSONS
+================================================================================
+
+SOURCE HANDLING
+These items were extracted from an external trading-education video and are hypotheses
+or research-design lessons, NOT validated Atlas edge. Creator profit/win-rate/account
+claims are not imported as evidence. Atlas must reproduce any useful mechanism with
+its own point-in-time PAPER/shadow data.
+
+HIGH-VALUE PRINCIPLE — SELECTIVITY OVER TRADE FREQUENCY
+[ADOPT AS RESEARCH/GOVERNANCE PRINCIPLE]
+- Atlas must never interpret "day trading" as a requirement to produce a trade daily.
+- Zero-trade sessions are valid when the frozen edge is absent.
+- Measure opportunity quality and expectancy rather than rewarding raw trade count.
+- Do not loosen filters to satisfy activity targets.
+- Scorecards should expose trade frequency alongside expectancy so increased activity
+  cannot masquerade as strategy improvement.
+
+CHALLENGER FAMILY — OVEREXTENSION REVERSAL
+[PLANNED / PAPER-SHADOW RESEARCH ONLY]
+Create a versioned OVEREXTENSION_REVERSAL_V1 challenger only after current evidence
+priorities permit it; do not silently alter the incumbent perps strategy.
+Test the hypothesis that unusually extended directional moves may mean-revert when
+multiple independent conditions align.
+Candidate point-in-time features:
+- normalized displacement/extension from recent range or channel
+- acceleration outside an established directional channel
+- raw volume and relative-volume expansion
+- distance to higher-timeframe support/resistance / prior swing extremes
+- multi-timeframe trend/range context
+- spread, liquidity, volatility and executable depth
+- time-of-day/session bucket
+- scheduled macro/event proximity
+- reversal confirmation available before entry
+Fair-value-gap concepts may be encoded as testable price-imbalance features, but the
+name/pattern itself is not presumed predictive.
+
+MULTI-TIMEFRAME CONTEXT
+[ADD TO REGIME/FEATURE RESEARCH]
+Where data permits, preserve higher-timeframe context alongside the execution
+timeframe. Test whether setup performance changes when an intraday signal occurs:
+- at/near a major higher-timeframe extreme
+- in the middle of a range
+- with/against the higher-timeframe trend
+- during directional, choppy, or volatile regimes
+Do not hard-code the video's discretionary chart interpretation as truth. Quantify it
+and require prospective/OOS evidence.
+
+RAW-MARKET-DATA VS DERIVED-INDICATOR AUDIT
+[PLANNED]
+For each challenger, distinguish raw observations (price, volume, spread, depth,
+timestamps) from derived indicators. Derived indicators are allowed, but Atlas should
+test whether they add incremental out-of-sample information beyond their underlying
+price/volume inputs. Remove redundant complexity when it adds no demonstrated edge.
+
+TIME-OF-DAY / EVENT CONDITIONING
+[EXPAND EXISTING REGIME ANALYSIS]
+- Preserve entry/decision timestamps and session buckets.
+- Evaluate setup expectancy by opening period, morning, midday, afternoon and other
+  statistically supported buckets rather than assuming a universal "magic time."
+- Join scheduled macro/event context point-in-time where reliable evidence exists.
+- Never blindly trade a clock time or infer causality from a few examples.
+- Macro/event filters require independent prospective validation.
+
+SETUP QUALITY GRADING
+[PLANNED / MUST BE CALIBRATED]
+Research an evidence-based setup-quality score/tier (for example A/B/C internally)
+built from frozen, measurable features. Do NOT copy subjective grades or risk sizes
+from a creator.
+Required validation:
+- reliability/calibration: do higher grades actually have better forward expectancy?
+- sample size per grade
+- expectancy/profit factor/drawdown/MFE/MAE after costs
+- regime and time-of-day stability
+- no circular grading using future outcome
+Until calibrated, setup grade is descriptive only and must not increase live risk.
+
+R-MULTIPLE / PAYOFF DISCIPLINE
+[ADOPT / EXTEND SCORECARDS]
+Continue using R-normalized outcomes so strategy quality is not confused with account
+dollars. Explicitly report:
+- win rate
+- average/median winner and loser in R
+- expectancy in R
+- payoff ratio
+- profit factor
+- max drawdown in R
+A low win-rate strategy can be valid only if forward net expectancy after realistic
+costs is positive; high win rate alone is never sufficient.
+
+EXIT / PROFIT-CAPTURE CHALLENGERS
+[PLANNED / PAPER RESEARCH]
+Use existing MFE/MAE and attribution evidence to test exit-management alternatives
+without rewriting entries:
+- fixed target/stop baseline
+- break-even transition rules
+- partial scale-out variants
+- trailing-stop variants
+- runner/remainder variants
+- time-based exits
+Every exit policy must be a separately versioned execution-policy cohort. Compare
+net expectancy, drawdown, captured-MFE efficiency, costs and tail outcomes. Do not
+assume scaling out is superior merely because it feels safer.
+
+PRE-TRADE PLAN / POST-TRADE ATTRIBUTION
+[EXPAND DECISION JOURNAL]
+Before PAPER entry, freeze:
+- setup thesis and version
+- invalidation/stop logic
+- initial target / expected reward-to-risk
+- optional stretch objective if defined by policy
+- setup-quality features/grade
+- regime/time/event context
+After close, compare plan vs execution and outcome:
+- planned vs actual entry
+- planned vs actual exit
+- MFE/MAE
+- profit capture/giveback
+- execution costs
+- whether management followed the frozen policy
+This separates strategy weakness from discretionary/execution drift.
+
+SKIPPED-OPPORTUNITY EVIDENCE
+[REINFORCE]
+Preserve qualifying setups Atlas deliberately skips/rejects and mature their forward
+paths without fabricating fills. Measure missed winners, avoided losers and rejected
+setup expectancy. This is necessary to determine whether selectivity improves edge
+rather than merely reducing trade count.
+
+ANTI-LESSON — DO NOT IMPORT THESE CLAIMS AS POLICY
+[PERMANENT CAUTION]
+Do not adopt from external creator anecdotes:
+- fixed morning-only windows without Atlas evidence
+- claimed reversal times as universal signals
+- creator A+/A/B sizing percentages
+- exponential account-growth assumptions
+- account-dollar goals
+- the claim that one indicator/pattern guarantees reversal
+- creator-reported P&L or win rate as validation
+- larger risk simply because a setup is labeled high quality
+Any future risk scaling requires Atlas-specific calibration, adequate forward/OOS
+evidence, hard caps, and the separate live-risk governance gate.
+
+RELATION TO CONTROLLED SELF-IMPROVEMENT
+The Strategy Researcher may use these measurements to generate hypotheses such as
+"losses cluster in mid-range/choppy conditions" or "positive MFE is repeatedly given
+back by the current exit policy." It may propose a versioned challenger. It may NOT
+retroactively change the incumbent, tune on untouched HOLDOUT, or increase live risk.
+
+STATUS
+[ROADMAP ONLY] No runtime strategy, thresholds, risk, PAPER position, Prediction
+auto-flat process, or live-capital permission changed by this addendum.
+================================================================================
