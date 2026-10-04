@@ -2323,3 +2323,260 @@ authorization, and continued ability to return to PAPER/shadow on degradation.
 Real-money automation remains NOT AUTHORIZED by this roadmap addendum.
 ================================================================================
 
+
+
+================================================================================
+2026-10-04 ROADMAP ADDENDUM — CONTROLLED STRATEGY RESEARCH & PREDICTION EXPANSION
+================================================================================
+
+PURPOSE
+Capture the useful research concepts identified during external strategy brainstorming
+without treating videos, screenshots, promotional claims, or creator P&L as proof of
+edge. Atlas must independently reproduce every useful hypothesis with realistic,
+timestamped PAPER/shadow evidence before it can influence live-capital readiness.
+
+GOVERNING PRINCIPLE
+BRAINSTORM AGGRESSIVELY; CHANGE PRODUCTION CONSERVATIVELY.
+Idea -> mechanism -> risks -> frozen hypothesis -> PAPER/shadow -> attribution ->
+regime/cost analysis -> versioned challenger -> unseen validation -> retain/reject.
+External claims are hypotheses only. Atlas evidence outranks promotional evidence.
+
+CURRENT RUNTIME PROTECTION
+[ACTIVE / DO NOT DISRUPT]
+- Finish and verify the currently running genuine Prediction PAPER auto-flat lifecycle
+  before pulling/restarting Atlas for this addendum.
+- This roadmap update is documentation/research scope only and must not alter the
+  current runtime, thresholds, PAPER position, auto-flat behavior, or safety flags.
+- After the auto-flat checkpoint: verify exactly-once legitimate close, executable
+  bid depth/VWAP, fees, pre-event timing, journal durability, and no deadline violation
+  or fabricated fill before syncing/restarting.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+
+PREDICTION RESEARCH FAMILY 1 — EXISTING EARLY-ENTRY STRATEGY
+[PRESERVE / DO NOT CONTAMINATE]
+PRE_EVENT_RECENT_RECLAIM_V1 remains an independent cohort.
+- Preserve the user's original early-buy / pre-event repricing concept.
+- Single market only; max one applicable Prediction PAPER position under current policy.
+- Real executable orderbook evidence only.
+- Mandatory pre-event flattening.
+- No hold-to-settlement behavior where the strategy contract requires pre-event exit.
+- Do not merge results with future 15-minute or arbitrage cohorts.
+
+PREDICTION RESEARCH FAMILY 2 — 15-MINUTE CRYPTO + METALS/COMMODITIES
+[PLANNED / PAPER ONLY]
+Create a separately versioned FIFTEEN_MINUTE_MARKETS_V1 research cohort after the
+current Prediction lifecycle gate is complete.
+Research goals:
+- Discover supported rolling 15-minute crypto and metals/commodity markets.
+- Preserve contract/reference/settlement metadata rather than assuming spot equivalence.
+- Record underlying reference movement, strike/target, time remaining, volatility,
+  momentum, Kalshi YES/NO bid/ask, spread, depth, executable size, and timestamps.
+- Model PAPER entry/exit only from executable depth; never midpoint/chart-touch fills.
+- Record consumed levels, VWAP, fees, slippage, MFE, MAE, exit, resolution, and
+  unresolved/data-quality states.
+- Analyze performance by asset family separately; do not assume crypto and metals share
+  one probability model.
+- Analyze entry timing/time-to-expiry buckets and market microstructure.
+- Compare implied prediction probability with an independently estimated probability
+  only when the underlying/reference mapping is valid and point-in-time.
+- Require net edge after fees, spread, slippage, uncertainty, and execution constraints.
+- Build a meaningful forward PAPER sample before any live-readiness consideration.
+
+PREDICTION RESEARCH FAMILY 3 — CROSS-VENUE ARBITRAGE
+[PLANNED / RESEARCH + PAPER/SHADOW ONLY]
+Create CROSS_VENUE_ARB_V1 only for venues/products the operator is permitted to use.
+Do not design Atlas to bypass geographic, platform, account, or product restrictions.
+A candidate is not an arbitrage merely because titles look similar.
+Require a contract-equivalence gate covering:
+- same economic event/outcome
+- compatible resolution criteria and edge cases
+- compatible cutoff/observation times
+- compatible settlement/reference source and definitions
+- compatible cancellation/voiding treatment where relevant
+- sufficiently synchronized executable orderbook timestamps
+For a verified equivalent pair calculate:
+guaranteed payout - executable YES leg - executable NO leg - fees - slippage -
+latency/legging reserve = conservative net arb.
+Reject when either leg lacks sufficient executable depth or equivalence is uncertain.
+Model one-leg fill/second-leg movement explicitly; never label a trade risk-free.
+Measure capital-hours locked, realized convergence time, early-exit vs settlement
+economics, fill failure, stale quote rate, and opportunity persistence.
+No automatic real-money cross-venue execution is authorized.
+
+PERMANENT PREDICTION CONSTRAINT — NO COMBOS EVER
+[PERMANENT]
+- No parlays.
+- No combo/multivariate products.
+- No correlated-outcome stacking packaged as one trade.
+- No strategy may silently reintroduce combos under another name.
+- Strategy research remains independently attributable by market and cohort.
+
+PREDICTION WALLET INTELLIGENCE
+[PLANNED / FEATURE + RESEARCH LAYER, NOT BLIND COPY TRADING]
+Build wallet intelligence only where public/permitted data supports it.
+Rank/characterize wallets using evidence such as:
+- ROI/economic performance
+- consistency and concentration of returns
+- sample size and evidence window
+- category-specific skill (crypto, macro, sports, politics, etc.)
+- liquidity/copyability
+- typical entry timing
+- price movement between source-wallet entry and Atlas-observable entry
+- spread/depth at Atlas-observable time
+- one-hit-wonder / concentrated-profit risk
+For each observed wallet signal classify COPY_CANDIDATE / WATCH / SKIP for PAPER
+research, with explicit reasons and evidence. Do not treat a profitable wallet as
+universally skilled.
+Required falsification baseline:
+- compare filtered wallet intelligence against blind copying of the same eligible
+  wallet universe under identical PAPER execution assumptions.
+- track missed winners and avoided losers as well as copied outcomes.
+- if the intelligence layer cannot beat the baseline robustly out of sample, it adds
+  no demonstrated edge and must not be promoted.
+Wallet activity may become corroborating evidence for an Atlas strategy but must not
+override execution, liquidity, safety, contract-validity, or evidence gates.
+
+ATLAS STRATEGY RESEARCHER — CONTROLLED SELF-IMPROVEMENT
+[PLANNED / READ-ONLY PROPOSAL AUTHORITY FIRST]
+Build a supervisory research loop on top of the existing journals, attribution,
+regime diagnostics, scorecards, prospective evidence, and versioned cohorts.
+Loop:
+1. observe frozen strategy outcomes
+2. detect statistically/economically meaningful weakness
+3. distinguish execution/data defect from possible strategy defect
+4. form an evidence-backed hypothesis
+5. propose ONE controlled change where feasible
+6. create a new challenger version/cohort
+7. keep incumbent history immutable
+8. run PAPER/shadow development evidence
+9. freeze challenger before unseen validation
+10. evaluate on unseen/forward evidence
+11. retain/reject; never rewrite the losing history
+12. repeat only when evidence justifies another hypothesis
+The Researcher must never optimize directly on untouched HOLDOUT evidence.
+UNKNOWN/INSUFFICIENT_EVIDENCE are valid conclusions.
+No automatic promotion to live capital.
+
+ATLAS STRATEGY SUPERVISOR
+[PLANNED / OBSERVABILITY + GOVERNANCE]
+Add a supervisor that asks whether deterioration is likely:
+- normal variance / insufficient sample
+- regime-specific weakness
+- execution/slippage/liquidity degradation
+- data/provider defect
+- strategy/policy degradation
+- unresolved
+Monitor:
+- rolling expectancy and profit factor where meaningful
+- drawdown and loss clustering
+- MFE/MAE and exit capture
+- costs/slippage/spread
+- fill/rejection/timeout/reconciliation quality
+- regime distribution
+- stale/missing data
+- strategy/version drift
+- sample maturity
+The supervisor may flag, pause PAPER research, or propose a challenger according to
+future explicit policy, but it must not silently rewrite an active strategy.
+
+IMMUTABLE RISK / GOVERNANCE BOUNDARY
+[PERMANENT]
+No research agent, strategy supervisor, LLM, optimizer, or automated rule updater may:
+- enable live trading
+- increase live risk/exposure limits
+- disable kill switches
+- remove stale-data/liquidity/execution gates
+- introduce combos/parlays
+- alter the permanent long-only Investment scope
+- erase/relabel negative historical evidence
+- promote a strategy solely from in-sample performance
+- silently change an incumbent strategy while its evidence window is active
+Risk constraints and live authorization sit outside strategy-learning authority.
+
+CHANGE CONTROL / ANTI-OVERFITTING
+[REQUIRED]
+- Prefer one-variable challenger changes where scientifically meaningful.
+- Every change requires version, timestamp, rationale, evidence reference, and diff.
+- Preserve champion and challenger results independently.
+- Do not tune after every loss.
+- Require minimum evidence maturity before diagnosing edge failure.
+- Correct software/data defects without pretending they are strategy improvements.
+- Multiple-comparison/data-mining risk must be acknowledged when many challengers are
+  tried; repeated experimentation does not make a lucky winner proven.
+- Fresh forward PAPER/shadow evidence is required after the final freeze.
+
+DECISION JOURNAL EXPANSION
+[PLANNED]
+For every candidate decision, including rejected/skipped opportunities where feasible,
+preserve:
+- strategy/version and policy hash
+- point-in-time features and provenance
+- decision: ENTER/COPY_CANDIDATE/WATCH/SKIP/REJECT as applicable
+- explicit reason codes
+- executable market state
+- regime/context
+- subsequent outcome path
+- whether a skip avoided a loser or missed a winner
+- attribution after maturity
+This journal supports learning from both actions and non-actions without fabricating
+counterfactual fills.
+
+EVIDENCE-BASED PROMOTION LADDER
+[PLANNED]
+RESEARCH_IDEA
+-> PAPER_DEVELOPMENT
+-> FROZEN_CHALLENGER
+-> UNSEEN_VALIDATION
+-> FRESH_FORWARD_PAPER/SHADOW
+-> READ_ONLY_LIVE_READINESS_REVIEW
+-> only with separate explicit operator authorization: BOUNDED_LIVE_PILOT
+No stage is automatically promoted by uptime, AI confidence, a YouTube claim, a
+backtest, one profitable day, or a visually impressive dashboard.
+
+DEFI / FLASH-LOAN ARBITRAGE
+[DEFERRED / NOT CURRENT ATLAS SCOPE]
+Same-chain DEX/flash-loan arbitrage is technically legitimate research but introduces
+a separate stack: smart contracts, DEX routing, simulation, MEV competition, private
+transaction infrastructure, chain-specific failure modes, and smart-contract risk.
+Do not add it to the current Atlas implementation roadmap unless future evidence and
+operator intent justify opening a separate explicitly scoped cycle/project.
+Never import or fund unverified third-party "AI arbitrage bot" contracts.
+
+EXTERNAL-IDEA INTAKE POLICY
+[PERMANENT]
+Videos, posts, screenshots, creator dashboards, affiliate tools, and claimed profits
+may generate research hypotheses only.
+For each external idea Atlas development should ask:
+- What is the actual mechanism?
+- What must be true for the edge to exist?
+- What execution/cost/latency risks are omitted?
+- Can it be tested with point-in-time data?
+- What falsification baseline should beat it?
+- Can Atlas reproduce it prospectively without trusting the creator's P&L?
+Reject ideas that cannot be tested cleanly or that require bypassing access rules,
+unsafe custody, unverifiable smart contracts, or fabricated execution assumptions.
+
+UPDATED ORDER AFTER CURRENT AUTO-FLAT CHECKPOINT
+1. Verify current Prediction genuine auto-flat evidence before restart/sync.
+2. Sync pending Atlas commits; restart cleanly; validate attribution/scorecards and
+   ACTIONABLE ONLY display filter without changing strategy thresholds.
+3. Continue Day Trading baseline/attribution/regime/scorecard evidence program.
+4. Add 15-minute crypto + metals/commodity Prediction PAPER collection as an
+   independent cohort.
+5. Add contract-equivalence and cross-venue arbitrage research infrastructure where
+   permitted data/venues support it.
+6. Add Prediction wallet-intelligence research with blind-copy baseline.
+7. Add controlled Strategy Researcher/Supervisor proposal and governance surfaces.
+8. Run versioned challengers through development -> freeze -> unseen -> fresh forward
+   PAPER/shadow validation.
+9. Continue maturing long-only Investment prospective evidence independently.
+10. Formal read-only live-readiness review only after positive mature evidence.
+11. Any real-money pilot remains separate, deliberately small, bounded, kill-switched,
+    explicitly authorized, and reversible to PAPER/shadow.
+
+SUCCESS DEFINITION
+The goal is not for Atlas to change itself frequently. The goal is for Atlas to become
+progressively harder to fool: by hype, overfitting, stale data, unrealistic fills,
+lucky wallets, favorable regimes, hidden costs, or its own prior assumptions.
+================================================================================
