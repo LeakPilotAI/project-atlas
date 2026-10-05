@@ -300,3 +300,35 @@ def test_retention_anchor_is_diagnostic_only_and_does_not_invent_continuity(tmp_
     assert before["lanes"] == after["lanes"]
     assert after["live_capital_allowed"] is False
     assert after["automatic_real_money_execution"] is False
+
+
+def test_window_completeness_reports_retention_without_inference(tmp_path):
+    from app.services.evidence_checkpoint_history import window_completeness
+    path=tmp_path / "checkpoints.jsonl"
+    def row(hour,n): return {"observed_at":f"2026-10-05T{hour:02d}:00:00+00:00","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":n}}}
+    path.write_text("".join(json.dumps(row(h,h))+"\n" for h in (10,11,12)),encoding="utf-8")
+    complete=window_completeness(path,3); truncated=window_completeness(path,2)
+    assert complete["status"] == "COMPLETE"
+    assert truncated["status"] == "RETENTION_TRUNCATED"
+    assert truncated["reasons"] == ["RETENTION_TRUNCATED"]
+    assert truncated["missing_observations_inferred"] is False
+    assert truncated["continuity_inferred"] is False
+    assert truncated["performance_inferred"] is False
+
+
+def test_window_completeness_reports_diagnostic_filters_without_strategy_effect(tmp_path):
+    from app.services.evidence_checkpoint_history import window_completeness
+    path=tmp_path / "checkpoints.jsonl"
+    good={"observed_at":"2026-10-05T10:00:00+00:00","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":7}}}
+    unknown=dict(good); unknown["observed_at"]="2026-10-05T11:00:00+00:00"; unknown["scorecard_version"]="future-v99"
+    bad_time=dict(good); bad_time["observed_at"]="not-a-time"
+    path.write_text(json.dumps(good)+"\n"+json.dumps(unknown)+"\n"+json.dumps(bad_time)+"\n",encoding="utf-8")
+    before=_report(2); result=window_completeness(path,50); after=_report(2)
+    assert result["status"] == "DIAGNOSTICALLY_FILTERED"
+    assert "SCHEMA_FILTERED" in result["reasons"]
+    assert "SEQUENCE_FILTERED" in result["reasons"]
+    assert result["strategy_action"] is None
+    assert result["history_rewritten"] is False
+    assert before["lanes"] == after["lanes"]
+    assert after["live_capital_allowed"] is False
+    assert after["automatic_real_money_execution"] is False

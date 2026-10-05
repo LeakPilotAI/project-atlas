@@ -351,3 +351,33 @@ def provenance_anchor(path: Path = CHECKPOINT_PATH, limit: int = MAX_HISTORY) ->
         "strategy_action": None,
         "automatic_response": None,
     }
+
+
+def window_completeness(path: Path = CHECKPOINT_PATH, limit: int = MAX_HISTORY) -> Dict[str, Any]:
+    anchor = provenance_anchor(path, limit)
+    schema = schema_compatibility(path)
+    replay = replay_diagnostics(path)
+    sequence = sequence_diagnostics(path)
+    reasons: list[str] = []
+    if anchor.get("accepted_checkpoints_before_window", 0) > 0:
+        reasons.append("RETENTION_TRUNCATED")
+    if schema.get("unknown_version_rows", 0) > 0 or schema.get("malformed_rows", 0) > 0:
+        reasons.append("SCHEMA_FILTERED")
+    if replay.get("adjacent_duplicate_rows", 0) > 0 or replay.get("nonadjacent_replay_rows", 0) > 0:
+        reasons.append("REPLAY_FILTERED")
+    if sequence.get("ordering_anomaly_rows", 0) > 0 or sequence.get("invalid_timestamp_rows", 0) > 0:
+        reasons.append("SEQUENCE_FILTERED")
+    status = "COMPLETE" if not reasons else ("RETENTION_TRUNCATED" if reasons == ["RETENTION_TRUNCATED"] else "DIAGNOSTICALLY_FILTERED")
+    return {
+        "status": status,
+        "reasons": reasons,
+        "visible_usable_checkpoints": len(load_history(path, max(1, int(limit)))),
+        "missing_observations_inferred": False,
+        "continuity_inferred": False,
+        "performance_inferred": False,
+        "history_rewritten": False,
+        "telemetry_only": True,
+        "performance_interpretation": None,
+        "strategy_action": None,
+        "automatic_response": None,
+    }

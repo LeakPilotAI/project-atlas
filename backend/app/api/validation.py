@@ -84,6 +84,8 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
         body["checkpoint_provenance_chain"]=provenance_chain()
         from app.services.evidence_checkpoint_history import provenance_anchor
         body["checkpoint_provenance_anchor"]=provenance_anchor()
+        from app.services.evidence_checkpoint_history import window_completeness
+        body["checkpoint_window_completeness"]=window_completeness()
         body["latest_scorecard"]=report
         body["persistence"]=write
         body["execution"]="READ_ONLY_PAPER_RESEARCH"
