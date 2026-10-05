@@ -31,6 +31,7 @@ from app.investment.storage import (
     UNIVERSE_PATH,
 )
 from app.services.paper_journal import JOURNAL_PATH
+from app.investment.quality_dips_paper import portfolio_snapshot as quality_dips_paper_snapshot
 
 router = APIRouter(prefix="/api/archive", tags=["archive"])
 
@@ -801,6 +802,12 @@ def _build_research_archive(
             "research records, so research win rate and executed-idea performance remain unavailable."
         ),
     }
+
+
+@router.get("/investment-paper-v1")
+async def investment_paper_v1() -> Dict[str, Any]:
+    """Read-only Quality Dips V3 PAPER portfolio reconstructed from its journal."""
+    return await asyncio.to_thread(quality_dips_paper_snapshot)
 
 
 @router.get("/research-archive")
