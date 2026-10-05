@@ -2842,15 +2842,37 @@ Purpose:
   not manufacture PAPER PnL.
 
 Validation status:
-- Commit is on chatgpt/atlas-rebuild-v1.
-- This new regression has NOT yet been run locally.
-- Next controlled maintenance sequence: stop Atlas normally with the desktop
-  shortcut, pull the branch, run the focused Prediction suite, then run the full
-  regression suite.
-- Do not claim this new checkpoint passed until those tests complete successfully.
+- PASSED controlled local validation on 2026-10-05 after sync through commit 26081e3.
+- Focused Prediction automation regression: 15 passed, 0 failed, 1 known dependency warning.
+- Full Atlas regression: 1154 passed, 0 failed, 2 known dependency deprecation warnings.
+- The added terminal-accounting regression is now locally GREEN.
+- Classification: PREDICTION TERMINAL ACCOUNTING REGRESSION PASSED.
 
 Operational state:
 - The running Atlas instance was intentionally left untouched while evidence was
   collected.
 - No live-capital or automatic-real-money permissions were enabled.
 - AUTO_FLAT_LIVE_VALIDATION_REQUIRED remains in force.
+
+
+===============================================================================
+2026-10-05 CONTROLLED MAINTENANCE ACCEPTANCE
+===============================================================================
+Atlas was stopped normally before synchronization. Local branch was fast-forwarded
+from 3678e56 through 26081e3 with no tracked-worktree conflict; existing untracked
+evidence/archive artifacts were intentionally preserved.
+
+Validation evidence:
+- tests/test_prediction_paper_automation.py: 15 passed, 0 failed in 1.45s.
+- Full pytest suite: 1154 passed, 0 failed in 94.70s.
+- Warnings were limited to the known Starlette/httpx TestClient deprecation and
+  discord audioop deprecation.
+- No strategy thresholds, live permissions, or real-money execution boundaries were
+  changed by this maintenance checkpoint.
+
+Decision:
+- Terminal lifecycle accounting regression checkpoint is GREEN.
+- EXPIRED_UNCLOSED remains separate from normal closed-trade performance accounting.
+- AUTO_FLAT_SAFETY_BLOCKED and AUTO_FLAT_LIVE_VALIDATION_REQUIRED remain required.
+- A future genuine successful exactly-once pre-deadline auto-flat is still required
+  before that separate Prediction lifecycle gate can pass.
