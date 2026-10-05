@@ -419,6 +419,34 @@ def portfolio_snapshot(
                 "unrealized_pnl": round(g["market_value"] - g["cost"], 8),
             }
         )
+    lot_details = []
+    for lot_id, lot in opened.items():
+        close = closes.get(lot_id)
+        lot_timeline = [
+            row for row in rows
+            if row.get("lot_id") == lot_id and row.get("event") in {"open_lot", "mark_lot", "close_lot"}
+        ]
+        lot_details.append({
+            "lot_id": lot_id,
+            "symbol": lot.get("symbol"),
+            "level": lot.get("level"),
+            "status": "CLOSED" if close else "OPEN",
+            "entry": lot,
+            "marks": marks.get(lot_id, []),
+            "terminal": close,
+            "timeline": lot_timeline,
+            "provenance": {
+                "observation_id": lot.get("observation_id"),
+                "source_timestamp": lot.get("source_timestamp"),
+                "classification": lot.get("classification"),
+                "evidence_class": lot.get("evidence_class"),
+                "strategy_version": lot.get("strategy_version"),
+                "policy_version": lot.get("policy_version"),
+                "paper_policy_version": lot.get("paper_policy_version"),
+                "execution_model_version": lot.get("execution_model_version"),
+                "execution": "PAPER_ONLY",
+            },
+        })
     return {
         "paper_policy_version": PAPER_POLICY_VERSION,
         "execution": "PAPER_ONLY",
@@ -431,6 +459,7 @@ def portfolio_snapshot(
         "positions": positions,
         "by_symbol": by_symbol,
         "closed_lots": closed_positions,
+        "lots": lot_details,
         "timeline": [row for row in rows if row.get("event") in {"open_lot", "mark_lot", "close_lot"}],
         "live_capital_allowed": False,
         "automatic_real_money_execution": False,

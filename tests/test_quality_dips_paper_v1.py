@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from app.investment.quality_dips_paper_terminal import close_terminal_quality_dips_paper
 from app.investment.quality_dips_paper import (
     PAPER_POLICY_VERSION,
     execute_broker_order,
@@ -152,3 +153,43 @@ def test_closed_paper_lot_rejects_new_mark(tmp_path: Path):
     close_lot(lot["lot_id"], exit_price=510, reason="TEST_CLOSE", path=path)
     with pytest.raises(ValueError, match="closed"):
         mark_lot(lot["lot_id"], market_price=520, path=path)
+
+
+def test_temp_journal_full_lifecycle_reconstructs_after_restart(tmp_path: Path):
+    path = tmp_path / "quality_dips_paper_restart.jsonl"
+    lot = open_lot(observation(), level="L1", paper_notional_dollars=100, path=path)
+    mark_lot(lot["lot_id"], market_price=515, observed_at="2026-10-05T15:00:00+00:00", path=path)
+    mark_lot(lot["lot_id"], market_price=490, observed_at="2026-10-05T15:30:00+00:00", path=path)
+
+    board = [{
+        "symbol": "MSFT",
+        "quality_dips_v2": {"quality_dips_v3": {"patient_state": "THESIS_BROKEN", "blockers": []}},
+    }]
+    quotes = {"MSFT": {
+        "quality": "LIVE",
+        "price": 505.0,
+        "effective_timestamp": "2026-10-05T16:00:00+00:00",
+    }}
+    first_close = close_terminal_quality_dips_paper(board, quotes, path=path)
+    duplicate_close = close_terminal_quality_dips_paper(board, quotes, path=path)
+    assert first_close["closed_lots"] == 1
+    assert duplicate_close["closed_lots"] == 0
+
+    persisted = read_events(path)
+    assert [row["event"] for row in persisted] == ["open_lot", "mark_lot", "mark_lot", "close_lot"]
+    assert sum(row["event"] == "close_lot" for row in persisted) == 1
+
+    # Reconstruct only from durable journal bytes, matching a fresh-process restart.
+    rebuilt = portfolio_snapshot(read_events(path))
+    assert rebuilt["summary"]["open_lots"] == 0
+    assert rebuilt["summary"]["closed_lots"] == 1
+    assert rebuilt["summary"]["realized_pnl"] == pytest.approx(1.0)
+    detail = rebuilt["lots"][0]
+    assert detail["status"] == "CLOSED"
+    assert [event["event"] for event in detail["timeline"]] == [
+        "open_lot", "mark_lot", "mark_lot", "close_lot"
+    ]
+    assert detail["terminal"]["reason"] == "THESIS_BROKEN"
+    assert detail["terminal"]["exit_price"] == 505.0
+    assert detail["provenance"]["execution"] == "PAPER_ONLY"
+    assert detail["provenance"]["observation_id"] == observation()["observation_id"]

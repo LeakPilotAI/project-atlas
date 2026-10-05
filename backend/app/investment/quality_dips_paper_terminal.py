@@ -5,9 +5,11 @@ close an open PAPER lot. This is append-only PAPER accounting, never brokerage.
 """
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
 
 from app.investment.quality_dips_paper import close_lot, open_lots, read_events
+from app.investment.storage import QUALITY_DIPS_PAPER_JOURNAL_PATH
 from app.investment.quality_dips_paper_exit_policy import evaluate_exit
 
 CLOSABLE_QUOTE_QUALITIES = frozenset({"LIVE", "FRESH"})
@@ -18,9 +20,10 @@ def close_terminal_quality_dips_paper(
     quotes: Dict[str, Dict[str, Any]],
     *,
     events: Optional[Iterable[Dict[str, Any]]] = None,
+    path: Path = QUALITY_DIPS_PAPER_JOURNAL_PATH,
 ) -> Dict[str, Any]:
     """Close terminal PAPER lots exactly once at a fresh observed quote."""
-    rows = list(events) if events is not None else read_events()
+    rows = list(events) if events is not None else read_events(path)
     opened = open_lots(rows)
     by_symbol: Dict[str, Dict[str, Any]] = {}
     for row in board:
@@ -57,6 +60,7 @@ def close_terminal_quality_dips_paper(
                 exit_price=price,
                 reason=str(terminal["terminal_reason"]),
                 closed_at=str(observed_at),
+                path=path,
             )
         )
     return {
