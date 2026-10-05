@@ -295,3 +295,36 @@ def sequence_diagnostics(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
     usable=len(load_history(path,MAX_HISTORY))
     status="ORDERING_ANOMALY" if ordering_anomalies else ("INVALID_TIMESTAMP" if invalid_timestamps else "MONOTONIC")
     return {"status":status,"physical_supported_rows":supported_rows,"usable_monotonic_rows":usable,"ordering_anomaly_rows":ordering_anomalies,"invalid_timestamp_rows":invalid_timestamps,"newest_monotonic_checkpoint":newest_monotonic_at.isoformat() if newest_monotonic_at else None,"ordering_anomalies_used_for_transitions":False,"history_rewritten":False,"telemetry_only":True,"performance_interpretation":None,"strategy_action":None,"automatic_response":None}
+
+
+def provenance_chain(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
+    history = load_history(path, MAX_HISTORY)
+    links: list[Dict[str, Any]] = []
+    previous: Optional[Dict[str, Any]] = None
+    for row in history:
+        fingerprint = row.get("checkpoint_fingerprint") or checkpoint_fingerprint(row)
+        links.append({
+            "observed_at": row.get("observed_at"),
+            "checkpoint_fingerprint": fingerprint,
+            "previous_checkpoint_fingerprint": (previous or {}).get("checkpoint_fingerprint"),
+            "position": len(links),
+        })
+        previous = {"checkpoint_fingerprint": fingerprint}
+    discontinuities = 0
+    for index, link in enumerate(links):
+        expected = None if index == 0 else links[index - 1]["checkpoint_fingerprint"]
+        if link["previous_checkpoint_fingerprint"] != expected:
+            discontinuities += 1
+    return {
+        "status": "CONTIGUOUS" if discontinuities == 0 else "DISCONTINUITY",
+        "accepted_checkpoints": len(links),
+        "derived_links": links,
+        "chain_discontinuities": discontinuities,
+        "chain_metadata_derived_only": True,
+        "durable_history_rewritten": False,
+        "backfill_performed": False,
+        "telemetry_only": True,
+        "performance_interpretation": None,
+        "strategy_action": None,
+        "automatic_response": None,
+    }

@@ -240,3 +240,33 @@ def test_invalid_timestamp_cannot_become_current_evidence_or_change_permissions(
     assert before["lanes"] == after["lanes"]
     assert after["live_capital_allowed"] is False
     assert after["automatic_real_money_execution"] is False
+
+
+def test_provenance_chain_links_only_accepted_monotonic_checkpoints(tmp_path):
+    from app.services.evidence_checkpoint_history import provenance_chain
+    path=tmp_path / "checkpoints.jsonl"
+    def row(at,n): return {"observed_at":at,"scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":n}}}
+    first=row("2026-10-05T10:00:00+00:00",7); second=row("2026-10-05T12:00:00+00:00",8); regressed=row("2026-10-05T11:00:00+00:00",999999)
+    path.write_text(json.dumps(first)+"\n"+json.dumps(second)+"\n"+json.dumps(regressed)+"\n",encoding="utf-8")
+    chain=provenance_chain(path)
+    assert chain["status"] == "CONTIGUOUS"
+    assert chain["accepted_checkpoints"] == 2
+    assert len(chain["derived_links"]) == 2
+    assert chain["derived_links"][0]["previous_checkpoint_fingerprint"] is None
+    assert chain["derived_links"][1]["previous_checkpoint_fingerprint"] == chain["derived_links"][0]["checkpoint_fingerprint"]
+    assert chain["durable_history_rewritten"] is False
+    assert chain["backfill_performed"] is False
+
+
+def test_provenance_chain_is_diagnostic_only_and_cannot_change_strategy(tmp_path):
+    from app.services.evidence_checkpoint_history import provenance_chain
+    path=tmp_path / "checkpoints.jsonl"
+    row={"observed_at":"2026-10-05T10:00:00+00:00","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":7}}}
+    path.write_text(json.dumps(row)+"\n",encoding="utf-8")
+    before=_report(2); chain=provenance_chain(path); after=_report(2)
+    assert chain["chain_metadata_derived_only"] is True
+    assert chain["strategy_action"] is None
+    assert chain["automatic_response"] is None
+    assert before["lanes"] == after["lanes"]
+    assert after["live_capital_allowed"] is False
+    assert after["automatic_real_money_execution"] is False
