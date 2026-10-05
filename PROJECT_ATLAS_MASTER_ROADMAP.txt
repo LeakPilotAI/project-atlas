@@ -4587,3 +4587,73 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 22 — CHECKPOINT EXCLUSION ACCOUNTING
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added read-only exclusion accounting for every nonblank physical checkpoint row.
+- Categories: usable, malformed_or_non_telemetry, unsupported_schema,
+  replay_or_duplicate, invalid_timestamp, ordering_anomaly.
+- Reports physical_rows, categorized_rows and reconciled.
+- Excluded rows are never treated as evidence.
+- All inference/action fields remain false/null and telemetry-only.
+- Archive V2 displays reconciliation and category totals.
+- No strategy engine, native journal, threshold, sizing, order, exit, promotion
+  or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 29 passed in 8.02s.
+- git diff --check GREEN.
+- Full Atlas regression: 1204 passed, 2 known warnings in 127.27s.
+- Zero failures.
+- Duplicate and invalid-timestamp regressions cannot inflate evidence or alter
+  native strategy evidence/live permissions.
+
+Implementation commit:
+- 8801c81 checkpoint exclusion accounting
+
+Runtime acceptance:
+- Supported stop left Docker Desktop and Genesis untouched.
+- Atlas restarted in the required persistent launcher session.
+- API healthy; startup stabilization reached 3/3.
+- Live accounting: RECONCILED; physical_rows=1; categorized_rows=1; usable=1.
+- All exclusion buckets are zero.
+- excluded_rows_used_as_evidence=false; missing_rows_inferred=false;
+  performance_inferred=false; history_rewritten=false.
+- No synthetic evidence was created; PAPER/live prohibitions remain intact.
+
+
+MARKET-OPEN READINESS STATUS:
+- The planned engineering chain through Execution 22 is complete.
+- No known market-open-critical code change remains on the canonical roadmap.
+- Atlas should remain running in PAPER/research mode through market open so the
+  frozen strategy can collect genuine forward evidence.
+- Do not add speculative pre-open tuning merely to create work.
+- Remaining work is observation-driven: collect genuine forward samples, inspect
+  runtime health/evidence after market activity, and only create a new controlled
+  execution if real evidence or a diagnosed runtime defect justifies it.
+- Optional future hardening/polish is non-blocking.
+
+NEXT CONTROLLED PHASE — MARKET-OPEN PAPER OBSERVATION:
+1. Keep Atlas running through the U.S. regular-session open.
+2. Preserve frozen Quality Dips V3 policy and all PAPER-only boundaries.
+3. Observe health, data freshness, candidate generation, journal integrity and
+   genuine Quality Dips/Prediction evidence without manufacturing samples.
+4. If a real defect appears, capture evidence first and create the smallest
+   controlled repair execution.
+5. If runtime remains healthy, continue untouched evidence collection and
+   reassess from genuine forward data.
+
+Safety:
+- PAPER/research only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent workflow remains mandatory for any future controlled code execution:
+update this roadmap, preserve prior history, record exact commits and validation
+/runtime evidence, commit/push it, and provide a fresh downloadable TXT copy.
