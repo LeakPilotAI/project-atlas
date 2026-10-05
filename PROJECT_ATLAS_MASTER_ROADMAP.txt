@@ -3370,3 +3370,15 @@ Safety:
 - No strategy thresholds changed.
 - No legacy/V1 ledger mixing.
 - No fabricated realized performance or retroactive favorable exits.
+
+
+Runtime acceptance:
+- Atlas restarted successfully and launcher reported API healthy.
+- GET /api/archive/investment-paper-v1 returned execution=PAPER_ONLY,
+  open_lots=0, closed_lots=0, realized_pnl=0.0, unrealized_pnl=0.0 and
+  live_capital_allowed=false.
+- GET /dashboard/archive returned HTTP 200 and the served page contains both the
+  Quality Dips PAPER V1 lot surface and /api/archive/investment-paper-v1 binding.
+- Empty V1 journal is therefore represented honestly as zero lots/zero P&L,
+  not synthetic history.
+- Execution 6 runtime acceptance: [GREEN].
