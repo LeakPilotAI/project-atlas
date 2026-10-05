@@ -3220,3 +3220,52 @@ Safety:
 - No automatic exit policy was invented in this slice.
 - No strategy thresholds or live permissions changed.
 - No historical evidence rewritten.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 4 — FRESH MARKING + ARCHIVE PROVENANCE
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added Quality Dips PAPER marking service using the existing read-only Quality
+  Dip quote provider.
+- Only LIVE/FRESH timestamped quotes may create PAPER marks.
+- REFERENCE/STALE/MISSING or timestamp-less quotes are skipped and cannot alter
+  PAPER performance.
+- Marking only observes already-open PAPER lots; it cannot open or close them.
+- Enhanced reconstructed closed-lot archive with entry/exit, realized P&L/return,
+  observed MFE/MAE, holding hours, close reason, source observation ID,
+  classification, evidence class, PAPER policy version and execution model.
+- Added append-only lifecycle timeline for open/mark/close evidence.
+- No automatic exit rule was introduced; close decisions remain explicit until a
+  prospective exit policy is separately frozen and validated.
+
+Validation:
+- Focused Quality Dips PAPER/marking/prospective suite: 19 passed in 0.60s.
+- Full Atlas regression: 1167 passed, 2 warnings in 109.70s.
+- Zero failures; only known Starlette/httpx and discord audioop warnings.
+
+Commits:
+- f077559 feat(investment): add fresh quote paper marking
+- fb88f9e test(investment): lock fresh quote paper marking
+- e4a1ce5 feat(investment): enrich paper archive lifecycle provenance
+
+Next controlled slice:
+1. Freeze QUALITY_DIPS_PAPER_V1 prospective exit/terminal policy before wiring
+   any automatic PAPER close.
+2. Wire safe periodic marking into the investment runtime using existing quote
+   polling without duplicate provider pressure.
+3. Upgrade Investment History UI to consume /api/archive/investment-paper-v1 and
+   display V1 lots, realized/unrealized separation, MFE/MAE, holding duration,
+   policy/version and evidence provenance.
+4. Add endpoint/UI regression tests and runtime acceptance.
+5. Then design the cross-strategy read-only scorecard without combining
+   incompatible family metrics.
+
+Safety:
+- PAPER ONLY / long-only.
+- Fresh observed marks only; no retroactive/chart-touch/future-price marking.
+- No broker orders, live capital, automatic real-money execution or strategy
+  threshold changes.
+- No automatic PAPER exits yet.
