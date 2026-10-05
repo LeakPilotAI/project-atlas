@@ -4004,3 +4004,83 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 15 — TELEMETRY JOURNAL INTEGRITY
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added independent integrity inspection for the evidence-health checkpoint
+  telemetry journal itself.
+- Reports status, readable valid telemetry rows, malformed JSON rows,
+  ignored non-telemetry rows, newest valid checkpoint and retention status.
+- Malformed/non-telemetry rows are excluded from checkpoint history rather than
+  trusted or converted into evidence.
+- Integrity output is telemetry_only=true with performance_interpretation=null,
+  strategy_action=null and automatic_response=null.
+- Archive V2 now displays telemetry journal integrity alongside capture cadence
+  and lane diagnostics.
+- Added corruption isolation regression proving a malformed telemetry journal
+  cannot change native scorecard lane evidence, comparison rules or live-capital
+  prohibitions.
+- No strategy engine, native strategy journal, threshold, sizing, order, exit,
+  promotion or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 15 passed in 7.51s.
+- Archive inline JavaScript node --check GREEN.
+- git diff --check GREEN.
+- Full Atlas regression: 1190 passed, 2 warnings in 118.65s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+
+Implementation commit:
+- cd2e23e feat(validation): harden checkpoint journal integrity
+- Full implementation SHA: cd2e23e1d17d3c4988227dead222b616c9aa09a9
+
+Runtime acceptance:
+- Supported Atlas stop completed cleanly and explicitly reported Docker Desktop
+  and Genesis were not touched.
+- Atlas restarted through ATLAS.bat.
+- Launcher readiness: checks=3, failed_checks=0, green=true,
+  consecutive_green=3, required=3.
+- Post-restart Uvicorn application startup completed and is running on
+  127.0.0.1:8000.
+- Live telemetry-journal integrity: status=OK, readable_rows=1,
+  malformed_rows=0, ignored_non_telemetry_rows=0,
+  retention_status=WITHIN_LIMIT.
+- Newest valid checkpoint remains 2026-10-05T11:13:15.189867+00:00.
+- History remains exactly one genuine checkpoint.
+- Capture status remains DEDUP_WINDOW; no synthetic second checkpoint was
+  created.
+- Durable checkpoint still records Day Trading 1127 closed samples,
+  Quality Dips V1 0 open / 0 closed and Prediction 0 closed.
+- All three lane integrity states remain OK with malformed_records=0.
+- Live-capital and automatic-real-money execution prohibitions remain intact.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 16:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; absence of evidence remains valid.
+2. Add read-only telemetry schema/version validation so future checkpoint-format
+   drift is explicit and older/unknown rows cannot silently masquerade as
+   current evidence-health observations.
+3. Add compatibility/status metadata for supported vs unknown checkpoint
+   versions while preserving valid historical rows for diagnostics.
+4. Add regressions proving unsupported telemetry versions fail closed and cannot
+   alter native strategy evidence, metrics, thresholds, sizing, orders, exits,
+   promotion or live permissions.
+5. Preserve long-only Investment, Prediction PAPER isolation, native accounting
+   units, no pooled metric and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
