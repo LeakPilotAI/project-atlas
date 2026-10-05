@@ -270,3 +270,33 @@ def test_provenance_chain_is_diagnostic_only_and_cannot_change_strategy(tmp_path
     assert before["lanes"] == after["lanes"]
     assert after["live_capital_allowed"] is False
     assert after["automatic_real_money_execution"] is False
+
+
+def test_provenance_anchor_distinguishes_true_origin_from_retained_window(tmp_path):
+    from app.services.evidence_checkpoint_history import provenance_anchor
+    path=tmp_path / "checkpoints.jsonl"
+    def row(hour,n): return {"observed_at":f"2026-10-05T{hour:02d}:00:00+00:00","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":n}}}
+    path.write_text("".join(json.dumps(row(h,h))+"\n" for h in (10,11,12)),encoding="utf-8")
+    full=provenance_anchor(path,3); bounded=provenance_anchor(path,2)
+    assert full["status"] == "TRUE_JOURNAL_ORIGIN"
+    assert full["accepted_checkpoints_before_window"] == 0
+    assert bounded["status"] == "RETAINED_WINDOW_ORIGIN"
+    assert bounded["accepted_checkpoints_before_window"] == 1
+    assert bounded["first_retained_observed_at"] == "2026-10-05T11:00:00+00:00"
+    assert bounded["missing_predecessor_fabricated"] is False
+    assert bounded["pruned_history_reconstructed"] is False
+
+
+def test_retention_anchor_is_diagnostic_only_and_does_not_invent_continuity(tmp_path):
+    from app.services.evidence_checkpoint_history import provenance_anchor
+    path=tmp_path / "checkpoints.jsonl"
+    def row(hour,n): return {"observed_at":f"2026-10-05T{hour:02d}:00:00+00:00","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":n}}}
+    path.write_text(json.dumps(row(10,7))+"\n"+json.dumps(row(11,8))+"\n",encoding="utf-8")
+    before=_report(2); anchor=provenance_anchor(path,1); after=_report(2)
+    assert anchor["status"] == "RETAINED_WINDOW_ORIGIN"
+    assert anchor["predecessor_known_within_retained_window"] is False
+    assert anchor["backfill_performed"] is False
+    assert anchor["strategy_action"] is None
+    assert before["lanes"] == after["lanes"]
+    assert after["live_capital_allowed"] is False
+    assert after["automatic_real_money_execution"] is False

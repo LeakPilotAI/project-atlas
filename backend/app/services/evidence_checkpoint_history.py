@@ -328,3 +328,26 @@ def provenance_chain(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
         "strategy_action": None,
         "automatic_response": None,
     }
+
+
+def provenance_anchor(path: Path = CHECKPOINT_PATH, limit: int = MAX_HISTORY) -> Dict[str, Any]:
+    full_history = load_history(path, MAX_HISTORY)
+    retained = full_history[-max(1, int(limit)):] if full_history else []
+    first = retained[0] if retained else None
+    pruned_accepted = max(0, len(full_history) - len(retained))
+    origin_kind = "NO_EVIDENCE" if first is None else ("RETAINED_WINDOW_ORIGIN" if pruned_accepted else "TRUE_JOURNAL_ORIGIN")
+    return {
+        "status": origin_kind,
+        "retained_checkpoints": len(retained),
+        "accepted_checkpoints_before_window": pruned_accepted,
+        "first_retained_observed_at": (first or {}).get("observed_at"),
+        "first_retained_fingerprint": (first or {}).get("checkpoint_fingerprint"),
+        "predecessor_known_within_retained_window": False,
+        "missing_predecessor_fabricated": False,
+        "pruned_history_reconstructed": False,
+        "backfill_performed": False,
+        "telemetry_only": True,
+        "performance_interpretation": None,
+        "strategy_action": None,
+        "automatic_response": None,
+    }
