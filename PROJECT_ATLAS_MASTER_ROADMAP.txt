@@ -3063,3 +3063,60 @@ Decision:
 - Preserve current filters and negative evidence.
 - Continue forward collection while preparing the next controlled development window
   for the Universal PAPER Portfolio / Investment Archive V2 work.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 1 — QUALITY_DIPS_PAPER_V1 DURABLE CORE
+===============================================================================
+Status: [GREEN — FIRST SAFE IMPLEMENTATION SLICE]
+
+Implemented:
+- Added dedicated durable append-only journal path:
+  backend/data/investment/quality_dips_paper_journal.jsonl
+- Added backend/app/investment/quality_dips_paper.py.
+- Frozen identifiers:
+  strategy_version=QUALITY_DIPS_V3
+  policy_version=quality-dips-v3-mos-15-20-25-30-v1
+  paper_policy_version=QUALITY_DIPS_PAPER_V1
+  execution_model_version=quality-dips-paper-v1-explicit-notional-no-broker
+- Added idempotent frozen-decision records so HOLD/WAIT/skipped decisions can be
+  preserved without fabricating fills.
+- Added idempotent long-only L1/L2/L3/L4 PAPER lot opens.
+- PAPER notional is mandatory and must be positive/finite; Atlas does not infer
+  live buying power or silently invent sizing.
+- PAPER quantity is derived only from explicit PAPER notional and observed/supplied
+  simulated fill price.
+- Every PAPER lot explicitly records broker_order_created=false,
+  live_capital_allowed=false, automatic_real_money_execution=false.
+- Added hard broker-execution failure path.
+- Added restart-safe open-lot reconstruction from append-only events.
+- Existing legacy paper_investment_ledger.jsonl remains untouched; no historical
+  rows were rewritten or migrated.
+
+Not implemented yet:
+- No automatic Quality Dips observation -> PAPER fill wiring yet.
+- No close/mark/MFE/MAE lifecycle yet.
+- No Archive V2 API/UI wiring yet.
+- No brokerage/live execution.
+- No strategy threshold changes.
+- No production sizing policy invented.
+
+Validation:
+- Focused QUALITY_DIPS_PAPER_V1 regression: 4 passed in 0.23s.
+- Full Atlas regression: 1158 passed, 2 warnings in 108.69s.
+- Warnings remain the known Starlette/httpx TestClient deprecation and discord
+  audioop Python 3.13 deprecation.
+- No test failures.
+
+Commits:
+- 9d93de2 feat(investment): add quality dips paper journal path
+- 75376d5 feat(investment): add durable quality dips paper journal
+- acb9a85 test(investment): lock quality dips paper journal safety
+
+Next controlled implementation slice:
+1. Define deterministic prospective PAPER sizing/fill contract from frozen V3
+   observations without using live buying power.
+2. Wire qualifying forward observations into idempotent PAPER decision/lot events.
+3. Add mark/close/terminal accounting and restart/idempotency tests.
+4. Expose read-only investment PAPER portfolio/archive API.
+5. Build Investment Archive V2 UI on that evidence.
