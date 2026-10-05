@@ -3170,3 +3170,53 @@ Safety:
 - No strategy thresholds changed.
 - No live permissions changed.
 - No historical evidence rewritten.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 3 — LOT ACCOUNTING + ARCHIVE API
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- QUALITY_DIPS_PAPER_V1 append-only mark_lot lifecycle.
+- Explicit observed PAPER marks calculate market value, unrealized P&L and return.
+- Closed lots reject later marks.
+- Idempotent close_lot lifecycle with explicit observed exit price and reason.
+- Duplicate close acknowledgement cannot rewrite the original exit.
+- portfolio_snapshot rebuilds state entirely from durable journal events.
+- Open-lot accounting includes latest mark, unrealized P&L/return, observed MFE/MAE.
+- Per-symbol aggregation includes shares, weighted cost basis, cost basis,
+  market value and unrealized P&L.
+- Closed-lot accounting separates realized P&L from open unrealized P&L.
+- Added read-only GET /api/archive/investment-paper-v1 for Archive V2 consumers.
+- Endpoint is reconstructed from QUALITY_DIPS_PAPER_V1 journal and retains
+  PAPER_ONLY / live_capital_allowed=false / automatic_real_money_execution=false.
+
+Validation:
+- Focused Quality Dips PAPER + prospective evidence: 16 passed in 0.60s.
+- Full Atlas regression: 1164 passed, 2 warnings in 111.89s.
+- Warnings are the known Starlette/httpx TestClient and discord audioop
+  deprecations only.
+- Zero failures.
+
+Commits:
+- 7f55be0 feat(investment): add paper mark close accounting lifecycle
+- 192fb6b test(investment): lock paper lifecycle accounting
+- eaa9d9a feat(archive): expose quality dips paper portfolio
+
+Next controlled slice:
+1. Wire point-in-time quote marks into open Quality Dips PAPER lots without
+   inventing prices or retroactive marks.
+2. Define prospective V1 exit/terminal policy before any automatic PAPER close.
+3. Extend Archive V2 API with timeline/holding duration/closed-lot MFE/MAE and
+   evidence/provenance fields.
+4. Upgrade Investment History UI to consume the V1 portfolio/archive surface.
+5. Add cross-strategy read-only scorecard only after family-specific archive
+   semantics remain distinct.
+
+Safety:
+- PAPER ONLY and long-only.
+- No broker orders or Robinhood execution.
+- No automatic exit policy was invented in this slice.
+- No strategy thresholds or live permissions changed.
+- No historical evidence rewritten.
