@@ -3320,3 +3320,53 @@ Safety:
   permissions.
 - No price-only exit, profit-target exit or stop-loss exit added.
 - No historical evidence rewrite or strategy-threshold relaxation.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 6 — INVESTMENT ARCHIVE V2 SURFACE
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Investment History now consumes /api/archive/investment-paper-v1 alongside the
+  existing legacy investment-history endpoint.
+- The two ledgers remain visibly and logically isolated; V1 evidence is not
+  folded into legacy summary/accounting.
+- Added Quality Dips PAPER V1 lot table with OPEN/CLOSED state, symbol, L1-L4
+  level, entry, fresh mark or exit, P/L, return, MFE, MAE, holding duration,
+  evidence class and execution-model provenance.
+- Added V1 summary cards for open lots, closed lots, unrealized P/L, realized
+  P/L and PAPER policy version.
+- Empty V1 evidence renders explicitly as no lots; performance is never
+  fabricated.
+- Existing legacy open-book/history/chart remains intact for continuity.
+
+Validation:
+- Focused Archive + Quality Dips PAPER suite: 20 passed, 2 warnings in 3.49s.
+- Archive inline JavaScript compile regression is included in that focused suite.
+- Full Atlas regression: 1170 passed, 2 warnings in 112.18s.
+- Zero failures; warnings are the known Starlette/httpx and discord audioop
+  deprecations.
+
+Commits:
+- 13260a6 feat(archive): surface Quality Dips paper v1 lots
+- d27b658 test(archive): lock investment paper v1 ui contract
+
+Next controlled slice:
+1. Runtime-accept the Archive V2 page/API after restart.
+2. Add V1 selected-lot detail/timeline and clearer policy/evidence metadata where
+   useful without inventing unsupported analytics.
+3. Wire terminal-event-to-PAPER-close only from the already frozen exit policy,
+   requiring a fresh observed price and append-only exactly-once close.
+4. Add lifecycle/idempotency/restart regression for terminal closes.
+5. Collect untouched forward PAPER evidence before judging expectancy.
+6. Build cross-strategy read-only scorecard only after preserving each strategy
+   family's incompatible metrics and accounting semantics.
+
+Safety:
+- PAPER ONLY / long-only.
+- No broker orders, live capital, automatic real-money execution or live
+  permissions.
+- No strategy thresholds changed.
+- No legacy/V1 ledger mixing.
+- No fabricated realized performance or retroactive favorable exits.
