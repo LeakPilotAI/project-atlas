@@ -34,7 +34,7 @@
     <div class="metric"><div class="icon">◈</div><div><div class="label">Paper Portfolio</div><div class="value" id="portfolioValue">—</div><div class="note">cash + marked positions</div></div></div>
     <div class="metric"><div class="icon">↗</div><div><div class="label">Unrealized P&amp;L</div><div class="value" id="unrealized">—</div><div class="note">open positions only</div></div></div>
     <div class="metric"><div class="icon">⌄</div><div><div class="label">Paper Drawdown</div><div class="value" id="drawdown">—</div><div class="note">current vs peak equity</div></div></div>
-    <div class="metric"><div class="icon bad">!</div><div><div class="label">Realized History</div><div class="value warn" style="font-size:16px">UNAVAILABLE</div><div class="note">no closed investment exits recorded</div></div></div>
+    <div class="metric"><div class="icon">✓</div><div><div class="label">V1 Realized P&amp;L</div><div class="value" id="v1Realized">—</div><div class="note" id="v1ClosedNote">prospective closed lots</div></div></div>
   </section>
 
   <div class="mainGrid">
@@ -85,7 +85,11 @@
     </div>
   </section>
 
-  <section class="panel" style="margin-top:10px"><div class="unavailable"><strong>REALIZED INVESTMENT PERFORMANCE NOT YET SUPPORTED</strong><span>Atlas currently records simulated accumulation fills and open long-horizon positions, but no closed investment exits. Win rate, average realized return, closed-position P/L and realized equity curves stay unavailable instead of being fabricated.</span></div></section>
+  <section class="panel" style="margin-top:10px">
+    <div class="panelHead"><div><h2>Quality Dips PAPER V1 Lots</h2><div class="sub">Prospective append-only evidence · isolated from legacy investment ledger</div></div><span class="state OPEN_PAPER_INVESTMENT">PAPER ONLY</span></div>
+    <div class="factGrid" style="grid-template-columns:repeat(4,1fr);margin-bottom:9px"><div class="fact"><small>Open lots</small><b id="v1Open">—</b></div><div class="fact"><small>Closed lots</small><b id="v1Closed">—</b></div><div class="fact"><small>Unrealized P/L</small><b id="v1Unrealized">—</b></div><div class="fact"><small>Policy</small><b id="v1Policy" style="font-size:11px">—</b></div></div>
+    <div class="tableWrap" style="height:300px"><table><thead><tr><th>State</th><th>Symbol</th><th>Level</th><th>Entry</th><th>Mark / Exit</th><th>P/L</th><th>Return</th><th>MFE</th><th>MAE</th><th>Held</th><th>Evidence</th><th>Model</th></tr></thead><tbody id="v1Rows"></tbody></table></div>
+  </section>
   <div class="footer">Archive is read-only · investment PAPER book is isolated from Hyperliquid PAPER · no live brokerage execution.</div>
 </div>
 <script src="/static/runtime_poll.js"></script>
@@ -95,7 +99,7 @@ const num=(v,d=2)=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString
 const money=v=>{const n=Number(v);return Number.isFinite(n)?'$'+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'—'};
 const pct=v=>{const n=Number(v);return Number.isFinite(n)?n.toFixed(2)+'%':'—'};
 const date=v=>{const d=new Date(v||'');return Number.isNaN(d.getTime())?'—':d.toLocaleDateString()};
-let DATA=null,selectedSymbol=null,kind='ALL',lastGood=null,selectedBars=[],chartRange=66;
+let DATA=null,V1=null,selectedSymbol=null,kind='ALL',lastGood=null,lastGoodV1=null,selectedBars=[],chartRange=66;
 
 function tone(v){const n=Number(v);return Number.isFinite(n)?(n>0?'good':n<0?'bad':''):''}
 function renderSummary(){
@@ -137,8 +141,17 @@ function drawChart(bars,symbol){
  rows.forEach((r,i)=>{const o=Number(r.open??r.close),cl=Number(r.close),high=Number(r.high??r.close),low=Number(r.low??r.close),xx=x(i),up=cl>=o;c.strokeStyle=up?'#00dcb0':'#ff304c';c.fillStyle=c.strokeStyle;c.lineWidth=1;c.beginPath();c.moveTo(xx,y(high));c.lineTo(xx,y(low));c.stroke();const top=Math.min(y(o),y(cl)),bh=Math.max(1,Math.abs(y(cl)-y(o)));c.fillRect(xx-body/2,top,body,bh);const vol=(Number(r.volume)||0)/maxVol*38;c.globalAlpha=.35;c.fillRect(xx-body/2,h-9-vol,body,vol);c.globalAlpha=1});
  const first=rows[0],last=rows[rows.length-1];c.fillStyle='#dfeff5';c.font='11px Consolas';c.textAlign='right';c.fillText(money(last.close),w-8,y(Number(last.close))-6);c.fillStyle='#7898a8';c.textAlign='left';c.fillText(String(first.date||''),8,h-8);c.textAlign='right';c.fillText(String(last.date||''),w-8,h-8)
 }
-function renderAll(){renderSummary();renderHistory();renderPositions();renderPlans();if(!selectedSymbol&&DATA.positions?.length)selectedSymbol=DATA.positions[0].symbol;if(selectedSymbol)selectPosition(selectedSymbol);else drawChart([],'—')}
-async function load(){try{const r=await atlasFetch('/api/archive/investment-history?limit=400',8000);const d=await r.json();DATA=d;lastGood=d;renderAll()}catch(e){if(lastGood){DATA=lastGood;renderAll();$('historyStatus').textContent='STALE · last good archive snapshot'}else{$('historyRows').innerHTML='<tr><td colspan="10"><div class="unavailable"><strong>ARCHIVE TEMPORARILY UNAVAILABLE</strong><span>Retrying automatically.</span></div></td></tr>'}}}
+function renderV1(){
+ const d=V1||{},s=d.summary||{},open=d.positions||[],closed=d.closed_lots||[];
+ $('v1Open').textContent=num(s.open_lots,0);$('v1Closed').textContent=num(s.closed_lots,0);$('v1Realized').textContent=money(s.realized_pnl);$('v1Realized').className='value '+tone(s.realized_pnl);$('v1ClosedNote').textContent=num(s.closed_lots,0)+' prospective closed lots';
+ $('v1Unrealized').textContent=money(s.unrealized_pnl);$('v1Unrealized').className=tone(s.unrealized_pnl);$('v1Policy').textContent=d.paper_policy_version||'—';
+ const openRows=open.map(r=>({state:'OPEN',symbol:r.symbol,level:r.level,entry:r.fill_price,mark:r.market_price,pnl:r.unrealized_pnl,ret:r.unrealized_return_pct,mfe:r.mfe_pct,mae:r.mae_pct,held:null,evidence:r.evidence_class,model:r.execution_model_version}));
+ const closedRows=closed.map(r=>({state:'CLOSED',symbol:r.symbol,level:r.level,entry:r.entry_price,mark:r.exit_price,pnl:r.realized_pnl,ret:r.realized_return_pct,mfe:r.mfe_pct,mae:r.mae_pct,held:r.holding_hours,evidence:r.evidence_class,model:r.execution_model_version}));
+ const rows=openRows.concat(closedRows);
+ $('v1Rows').innerHTML=rows.length?rows.map(r=>'<tr><td><span class="state '+(r.state==='OPEN'?'OPEN_PAPER_INVESTMENT':'CANCELLED')+'">'+r.state+'</span></td><td class="symbol">'+esc(r.symbol||'—')+'</td><td>'+esc(r.level||'—')+'</td><td class="mono">'+money(r.entry)+'</td><td class="mono">'+money(r.mark)+'</td><td class="'+tone(r.pnl)+'">'+money(r.pnl)+'</td><td class="'+tone(r.ret)+'">'+pct(r.ret)+'</td><td>'+pct(r.mfe)+'</td><td>'+pct(r.mae)+'</td><td>'+(Number.isFinite(Number(r.held))?num(r.held,1)+'h':'OPEN')+'</td><td>'+esc(r.evidence||'—')+'</td><td class="sub">'+esc(r.model||'—')+'</td></tr>').join(''):'<tr><td colspan="12"><div class="unavailable"><strong>NO QUALITY DIPS PAPER V1 LOTS YET</strong><span>The prospective V1 journal has no open or closed lots. Atlas will not fabricate performance.</span></div></td></tr>';
+}
+function renderAll(){renderSummary();renderHistory();renderPositions();renderPlans();renderV1();if(!selectedSymbol&&DATA.positions?.length)selectedSymbol=DATA.positions[0].symbol;if(selectedSymbol)selectPosition(selectedSymbol);else drawChart([],'—')}
+async function load(){try{const responses=await Promise.all([atlasFetch('/api/archive/investment-history?limit=400',8000),atlasFetch('/api/archive/investment-paper-v1',8000)]);const legacy=await responses[0].json(),v1=await responses[1].json();DATA=legacy;V1=v1;lastGood=legacy;lastGoodV1=v1;renderAll()}catch(e){if(lastGood){DATA=lastGood;V1=lastGoodV1||V1;renderAll();$('historyStatus').textContent='STALE · last good archive snapshot'}else{$('historyRows').innerHTML='<tr><td colspan="10"><div class="unavailable"><strong>ARCHIVE TEMPORARILY UNAVAILABLE</strong><span>Retrying automatically.</span></div></td></tr>'}}}
 document.querySelectorAll('[data-kind]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-kind]').forEach(x=>x.classList.remove('on'));b.classList.add('on');kind=b.dataset.kind;renderHistory()}));document.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-range]').forEach(x=>x.classList.remove('on'));b.classList.add('on');chartRange=Number(b.dataset.range)||0;drawChart(selectedBars,selectedSymbol||'—')}));$('search').addEventListener('input',renderHistory);window.addEventListener('resize',()=>drawChart(selectedBars,selectedSymbol||'—'));
 atlasPoll(load,15000);load();
 </script>
