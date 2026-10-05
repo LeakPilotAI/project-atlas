@@ -68,3 +68,46 @@ def test_cross_strategy_scorecard_keeps_missing_samples_unavailable_not_zero():
         assert lane["win_rate"] is None
         assert lane["realized_status"] == "NO_CLOSED_SAMPLE"
     assert report["comparison_rules"]["missing_metrics_are_zero"] is False
+
+
+def test_evidence_health_and_provenance_are_interpretive_only():
+    day = [{"net_pnl_r": 0.5, "exit_timestamp": "2026-10-05T10:00:00+00:00"}]
+    report = build_cross_strategy_scorecard(
+        day_rows=day,
+        investment_snapshot={"paper_policy_version": "QUALITY_DIPS_PAPER_V1", "summary": {}, "closed_lots": [], "timeline": []},
+        prediction_snapshot={"engine_version": "p1", "summary": {}, "events": []},
+    )
+    lanes = {row["lane"]: row for row in report["lanes"]}
+    assert lanes["DAY_TRADING"]["evidence_health"]["band"] == "THIN"
+    assert lanes["DAY_TRADING"]["evidence_health"]["strategy_action"] is None
+    assert lanes["DAY_TRADING"]["evidence_health"]["threshold_change"] is None
+    assert lanes["DAY_TRADING"]["evidence_health"]["sizing_change"] is None
+    assert lanes["DAY_TRADING"]["evidence_health"]["promotion_allowed"] is False
+    assert lanes["DAY_TRADING"]["provenance"]["durable_source"] == "DAY_TRADING_PAPER_JOURNAL"
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["evidence_health"]["band"] == "NO_EVIDENCE"
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["provenance"]["durable_source"] == "QUALITY_DIPS_PAPER_V1_JOURNAL"
+    assert lanes["PREDICTION"]["provenance"]["durable_source"] == "PREDICTION_PAPER_TRADE_JOURNAL"
+    assert report["comparison_rules"]["evidence_health_is_strategy_action"] is False
+
+
+def test_reconstruction_from_same_durable_snapshots_preserves_truth_with_empty_lanes():
+    day = [
+        {"net_pnl_r": 1.0, "exit_timestamp": "2026-10-05T10:00:00+00:00"},
+        {"net_pnl_r": -0.25, "exit_timestamp": "2026-10-05T11:00:00+00:00"},
+    ]
+    investment = {"paper_policy_version": "QUALITY_DIPS_PAPER_V1", "summary": {"open_lots": 0, "closed_lots": 0}, "closed_lots": [], "timeline": []}
+    prediction = {"engine_version": "p1", "summary": {"open_positions": 0, "closed_trades": 0, "net_pnl_dollars": 0.0}, "events": []}
+
+    first = build_cross_strategy_scorecard(day_rows=list(day), investment_snapshot=dict(investment), prediction_snapshot=dict(prediction))
+    rebuilt = build_cross_strategy_scorecard(day_rows=list(day), investment_snapshot=dict(investment), prediction_snapshot=dict(prediction))
+    first_lanes = {row["lane"]: row for row in first["lanes"]}
+    rebuilt_lanes = {row["lane"]: row for row in rebuilt["lanes"]}
+
+    for lane in first_lanes:
+        assert rebuilt_lanes[lane]["sample_size"] == first_lanes[lane]["sample_size"]
+        assert rebuilt_lanes[lane]["expectancy"] == first_lanes[lane]["expectancy"]
+        assert rebuilt_lanes[lane]["realized_status"] == first_lanes[lane]["realized_status"]
+        assert rebuilt_lanes[lane]["provenance"] == first_lanes[lane]["provenance"]
+    assert rebuilt_lanes["INVESTMENT_QUALITY_DIPS_V1"]["expectancy"] is None
+    assert rebuilt_lanes["PREDICTION"]["expectancy"] is None
+    assert rebuilt["comparison_rules"]["universal_expectancy"] is None

@@ -14,7 +14,7 @@ from app.prediction.paper_engine import prediction_paper_journal
 from app.services.edge_diagnostics import load_paper_closes_safe
 from app.services.paper_validation import metrics
 
-SCORECARD_VERSION = "cross-strategy-evidence-health-v1"
+SCORECARD_VERSION = "cross-strategy-evidence-health-v2"
 
 
 def _dt(value: Any) -> Optional[datetime]:
@@ -45,6 +45,34 @@ def _freshness(rows: Iterable[Dict[str, Any]], keys: tuple[str, ...]) -> Dict[st
         "latest_evidence_at": latest.isoformat() if latest else None,
         "age_hours": round(age_hours, 2) if age_hours is not None else None,
         "timestamp_coverage": round(len(timestamps) / max(1, len(list(rows))), 4),
+    }
+
+
+def _evidence_health(sample_size: int, freshness: Dict[str, Any]) -> Dict[str, Any]:
+    coverage = float(freshness.get("timestamp_coverage") or 0.0)
+    age = freshness.get("age_hours")
+    if sample_size <= 0:
+        band, reason = "NO_EVIDENCE", "No closed sample exists."
+    elif coverage < 0.8:
+        band, reason = "LIMITED", "Timestamp coverage is below 80%."
+    elif age is None:
+        band, reason = "LIMITED", "Evidence freshness cannot be established."
+    elif age > 720:
+        band, reason = "STALE", "Newest evidence is older than 30 days."
+    elif sample_size < 20:
+        band, reason = "THIN", "Fewer than 20 closed observations."
+    elif sample_size < 50:
+        band, reason = "DEVELOPING", "20-49 closed observations."
+    else:
+        band, reason = "SUBSTANTIAL", "At least 50 closed observations with usable timestamp coverage."
+    return {
+        "band": band,
+        "reason": reason,
+        "interpretation_only": True,
+        "strategy_action": None,
+        "threshold_change": None,
+        "sizing_change": None,
+        "promotion_allowed": False,
     }
 
 
@@ -89,10 +117,17 @@ def build_cross_strategy_scorecard(
             "expectancy_unit": "R_PER_CLOSED_TRADE",
             "win_rate": day.get("winrate") if day_closed else None,
             "freshness": day_fresh,
+            "evidence_health": _evidence_health(day_closed, day_fresh),
             "coverage": {
                 "malformed_records": int(malformed_day_rows),
                 "finite_closed_records": day_closed,
             },
+            "provenance": {
+                "durable_source": "DAY_TRADING_PAPER_JOURNAL",
+                "record_class": "paper_close",
+                "metric_basis": "finite closed PAPER trades only",
+                "reconstruction": "append-only journal -> validated closes -> R metrics",
+            }
         },
         {
             "lane": "INVESTMENT_QUALITY_DIPS_V1",
@@ -111,10 +146,17 @@ def build_cross_strategy_scorecard(
                 if inv_closed else None
             ),
             "freshness": inv_fresh,
+            "evidence_health": _evidence_health(inv_closed, inv_fresh),
             "coverage": {
                 "lifecycle_events": len(inv_events),
                 "paper_policy_version": investment.get("paper_policy_version"),
             },
+            "provenance": {
+                "durable_source": "QUALITY_DIPS_PAPER_V1_JOURNAL",
+                "record_class": "open_lot/mark_lot/close_lot",
+                "metric_basis": "terminally closed prospective V1 lots only",
+                "reconstruction": "append-only lifecycle journal -> portfolio snapshot",
+            }
         },
         {
             "lane": "PREDICTION",
@@ -130,11 +172,18 @@ def build_cross_strategy_scorecard(
             "expectancy_unit": "NET_DOLLARS_PER_CLOSED_REPRICING_TRADE",
             "win_rate": pred_summary.get("win_rate") if pred_closed else None,
             "freshness": pred_fresh,
+            "evidence_health": _evidence_health(pred_closed, pred_fresh),
             "coverage": {
                 "journal_events": len(pred_events),
                 "expired_unclosed_trades": int(pred_summary.get("expired_unclosed_trades") or 0),
                 "engine_version": prediction.get("engine_version"),
             },
+            "provenance": {
+                "durable_source": "PREDICTION_PAPER_TRADE_JOURNAL",
+                "record_class": "entry/expired_unclosed/close",
+                "metric_basis": "depth/fee-aware closed PAPER repricing trades only",
+                "reconstruction": "isolated prediction journal -> PAPER snapshot",
+            }
         },
     ]
 
@@ -150,6 +199,7 @@ def build_cross_strategy_scorecard(
             "native_accounting_units_preserved": True,
             "thin_samples_are_proof": False,
             "missing_metrics_are_zero": False,
+            "evidence_health_is_strategy_action": False,
             "thresholds_modified": False,
             "production_strategy_modified": False,
         },
