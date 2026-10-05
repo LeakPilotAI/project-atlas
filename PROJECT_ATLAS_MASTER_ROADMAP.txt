@@ -3521,3 +3521,82 @@ Safety:
   permissions.
 - No price-only exits, arbitrary targets/stops, threshold relaxation, historical
   rewrite, ledger mixing or favorable backfilled exits.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 9 — CROSS-STRATEGY EVIDENCE HEALTH
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added a read-only cross-strategy PAPER evidence-health scorecard spanning:
+  DAY_TRADING, INVESTMENT_QUALITY_DIPS_V1 and PREDICTION.
+- Preserved native accounting semantics instead of pooling incompatible results:
+  Day Trading expectancy = R per closed trade;
+  Quality Dips V1 expectancy = mean realized return percent per closed lot;
+  Prediction expectancy = net repricing dollars per closed trade.
+- Added comparable evidence-health fields for each lane:
+  closed sample size, open sample size, realized/unrealized availability,
+  freshness/latest evidence timestamp, timestamp coverage and lane-specific
+  coverage/provenance.
+- Missing closed samples remain unavailable/null, never silently converted into
+  zero expectancy or zero win rate.
+- Universal win rate = unavailable, universal expectancy = unavailable and
+  pooled lane P/L = forbidden by explicit comparison contract.
+- Added GET /api/validation/cross-strategy-scorecard.
+- Added the Cross-Strategy Evidence Health surface to Archive V2.
+- No strategy engine, threshold, sizing, journal, order path, exit rule or
+  historical evidence was modified.
+
+Validation:
+- New scorecard contract tests: 2 passed.
+- Focused scorecard + Quality Dips V1 suite: 12 passed.
+- Archive inline JavaScript: node --check GREEN.
+- Full Atlas regression: 1177 passed, 2 warnings in 114.11s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+- git diff --check GREEN.
+
+Implementation commit:
+- 0e1629a feat(validation): add cross-strategy evidence health
+
+Runtime acceptance:
+- Supported Atlas stop/restart completed while leaving Docker Desktop and
+  Genesis alone.
+- Startup again showed the known transient Windows/Docker warm-up behavior:
+  Redis timeout and WinError 64 database retries. Existing bounded retry logic
+  recovered without application/config changes and Atlas returned /health=ok.
+- Live scorecard endpoint returned execution=READ_ONLY_PAPER_RESEARCH with
+  exactly 3 lanes.
+- Current live evidence counts at acceptance:
+  Day Trading closed PAPER sample = 1127.
+  Quality Dips V1 closed sample = 0.
+  Prediction closed sample = 0.
+- Scorecard returned universal_win_rate=null, universal_expectancy=null and
+  pool_lane_pnl=false.
+- scorecard live_capital_allowed=false.
+- scorecard automatic_real_money_execution=false.
+- Quality Dips V1 remained PAPER_ONLY with 0 open lots and 0 closed lots.
+- Archive returned HTTP 200 and served the Cross-Strategy Evidence Health UI.
+- Execution 9 runtime acceptance: [GREEN].
+
+Next controlled slice:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   the frozen V3 policy; never create samples merely to populate the scorecard.
+2. Add read-only scorecard drill-down/provenance so each lane can explain which
+   durable journal/evidence class supports its displayed sample and metric.
+3. Add explicit evidence-health interpretation bands based on sample/freshness/
+   coverage only; these must describe evidence sufficiency, never auto-promote,
+   retune, resize or alter a strategy.
+4. Add restart/runtime regression proving the cross-strategy scorecard remains
+   reconstructable and truthful when one or more lanes have no evidence.
+5. Preserve long-only Investment, Prediction PAPER isolation and all current
+   live-capital prohibitions.
+
+Safety:
+- PAPER/research only.
+- No broker orders, live capital, automatic real-money execution or live
+  permissions.
+- No pooled cross-strategy win rate, expectancy or P/L.
+- No threshold relaxation, strategy retuning, historical rewrite, ledger mixing,
+  synthetic samples or favorable backfilled outcomes.
