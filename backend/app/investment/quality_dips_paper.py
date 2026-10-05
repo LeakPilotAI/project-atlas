@@ -241,5 +241,168 @@ def mirror_forward_observation(
     return {"decision": decision, "opened_lots": lots}
 
 
+
+def _lot_by_id(lot_id: str, events: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
+    for row in events:
+        if row.get("event") == "open_lot" and row.get("lot_id") == lot_id:
+            return row
+    raise ValueError("unknown PAPER lot_id")
+
+
+def mark_lot(
+    lot_id: str,
+    *,
+    market_price: Any,
+    observed_at: Optional[str] = None,
+    path: Path = QUALITY_DIPS_PAPER_JOURNAL_PATH,
+) -> Dict[str, Any]:
+    """Append a point-in-time PAPER mark; never mutates the opening lot."""
+    price = _positive_number(market_price, "market_price")
+    events = read_events(path)
+    lot = _lot_by_id(str(lot_id), events)
+    if any(row.get("event") == "close_lot" and row.get("lot_id") == lot_id for row in events):
+        raise ValueError("cannot mark a closed PAPER lot")
+    ts = str(observed_at or _now())
+    eid = _event_id("mark_lot", lot_id, ts, round(price, 8))
+    for row in events:
+        if row.get("event_id") == eid:
+            return row
+    entry = float(lot["fill_price"])
+    qty = float(lot["quantity_shares"])
+    unrealized = (price - entry) * qty
+    return _append(
+        {
+            "schema_version": 1,
+            "event": "mark_lot",
+            "event_id": eid,
+            "lot_id": lot_id,
+            "timestamp": ts,
+            "symbol": lot["symbol"],
+            "market_price": round(price, 8),
+            "market_value": round(price * qty, 8),
+            "unrealized_pnl": round(unrealized, 8),
+            "unrealized_return_pct": round(((price / entry) - 1.0) * 100.0, 8),
+            "execution": "PAPER_ONLY",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        },
+        Path(path),
+    )
+
+
+def close_lot(
+    lot_id: str,
+    *,
+    exit_price: Any,
+    reason: str,
+    closed_at: Optional[str] = None,
+    path: Path = QUALITY_DIPS_PAPER_JOURNAL_PATH,
+) -> Dict[str, Any]:
+    """Close a PAPER lot exactly once using an explicit observed exit price."""
+    price = _positive_number(exit_price, "exit_price")
+    events = read_events(path)
+    lot = _lot_by_id(str(lot_id), events)
+    for row in events:
+        if row.get("event") == "close_lot" and row.get("lot_id") == lot_id:
+            return row
+    entry = float(lot["fill_price"])
+    qty = float(lot["quantity_shares"])
+    pnl = (price - entry) * qty
+    return _append(
+        {
+            "schema_version": 1,
+            "event": "close_lot",
+            "event_id": _event_id("close_lot", lot_id),
+            "lot_id": lot_id,
+            "timestamp": str(closed_at or _now()),
+            "symbol": lot["symbol"],
+            "exit_price": round(price, 8),
+            "quantity_shares": qty,
+            "realized_pnl": round(pnl, 8),
+            "realized_return_pct": round(((price / entry) - 1.0) * 100.0, 8),
+            "reason": str(reason or "UNSPECIFIED"),
+            "status": "CLOSED",
+            "execution": "PAPER_ONLY",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        },
+        Path(path),
+    )
+
+
+def portfolio_snapshot(
+    events: Optional[Iterable[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    """Rebuild read-only PAPER accounting from the append-only journal."""
+    rows = list(events) if events is not None else read_events()
+    opened = {r["lot_id"]: r for r in rows if r.get("event") == "open_lot" and r.get("lot_id")}
+    closes = {r["lot_id"]: r for r in rows if r.get("event") == "close_lot" and r.get("lot_id")}
+    marks: Dict[str, list[Dict[str, Any]]] = {}
+    for row in rows:
+        if row.get("event") == "mark_lot" and row.get("lot_id"):
+            marks.setdefault(row["lot_id"], []).append(row)
+
+    positions = []
+    realized = 0.0
+    unrealized = 0.0
+    for lot_id, lot in opened.items():
+        if lot_id in closes:
+            realized += float(closes[lot_id].get("realized_pnl") or 0.0)
+            continue
+        lot_marks = marks.get(lot_id, [])
+        latest = lot_marks[-1] if lot_marks else None
+        entry = float(lot["fill_price"])
+        qty = float(lot["quantity_shares"])
+        mark_price = float(latest["market_price"]) if latest else entry
+        lot_unrealized = (mark_price - entry) * qty
+        unrealized += lot_unrealized
+        observed_prices = [entry] + [float(x["market_price"]) for x in lot_marks]
+        positions.append(
+            {
+                **lot,
+                "market_price": round(mark_price, 8),
+                "market_value": round(mark_price * qty, 8),
+                "unrealized_pnl": round(lot_unrealized, 8),
+                "unrealized_return_pct": round(((mark_price / entry) - 1.0) * 100.0, 8),
+                "mfe_pct": round((max(observed_prices) / entry - 1.0) * 100.0, 8),
+                "mae_pct": round((min(observed_prices) / entry - 1.0) * 100.0, 8),
+            }
+        )
+    grouped: Dict[str, Dict[str, float]] = {}
+    for pos in positions:
+        g = grouped.setdefault(pos["symbol"], {"shares": 0.0, "cost": 0.0, "market_value": 0.0})
+        qty = float(pos["quantity_shares"])
+        g["shares"] += qty
+        g["cost"] += qty * float(pos["fill_price"])
+        g["market_value"] += float(pos["market_value"])
+    by_symbol = []
+    for symbol, g in sorted(grouped.items()):
+        by_symbol.append(
+            {
+                "symbol": symbol,
+                "shares": round(g["shares"], 12),
+                "weighted_cost_basis": round(g["cost"] / g["shares"], 8) if g["shares"] else None,
+                "cost_basis": round(g["cost"], 8),
+                "market_value": round(g["market_value"], 8),
+                "unrealized_pnl": round(g["market_value"] - g["cost"], 8),
+            }
+        )
+    return {
+        "paper_policy_version": PAPER_POLICY_VERSION,
+        "execution": "PAPER_ONLY",
+        "summary": {
+            "open_lots": len(positions),
+            "closed_lots": len(closes),
+            "realized_pnl": round(realized, 8),
+            "unrealized_pnl": round(unrealized, 8),
+        },
+        "positions": positions,
+        "by_symbol": by_symbol,
+        "closed_lots": [closes[k] for k in sorted(closes)],
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+    }
+
+
 def execute_broker_order(*_args: Any, **_kwargs: Any) -> None:
     raise RuntimeError("QUALITY_DIPS_PAPER_V1 is PAPER ONLY; brokerage execution is forbidden.")
