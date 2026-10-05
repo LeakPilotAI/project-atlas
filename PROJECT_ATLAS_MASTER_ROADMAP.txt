@@ -4338,3 +4338,89 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 19 — CHECKPOINT PROVENANCE CHAIN
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added read-only derived provenance chain over accepted checkpoint history.
+- Chain input is load_history(), so only supported, de-duplicated, monotonic
+  observations can receive provenance links.
+- Each accepted link records checkpoint_fingerprint,
+  previous_checkpoint_fingerprint, observed_at and position.
+- Rejected schema rows, duplicates, invalid timestamps and ordering regressions
+  cannot become provenance links.
+- Chain reports CONTIGUOUS/DISCONTINUITY, accepted checkpoint count and
+  discontinuity count.
+- Explicit chain_metadata_derived_only=true,
+  durable_history_rewritten=false, backfill_performed=false,
+  telemetry_only=true, performance_interpretation=null,
+  strategy_action=null and automatic_response=null.
+- Archive V2 now displays provenance-chain status.
+- No strategy engine, native strategy journal, threshold, sizing, order, exit,
+  promotion or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 23 passed in 9.03s.
+- Archive inline JavaScript node --check GREEN.
+- git diff --check GREEN.
+- Full Atlas regression: 1198 passed, 2 warnings in 143.48s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+- Regression proves an out-of-order row carrying fabricated sample size 999999
+  receives no provenance link.
+- Diagnostic-chain generation cannot alter native scorecard evidence or live
+  permissions.
+
+Implementation commit:
+- 0c02eb1 feat(validation): derive checkpoint provenance chain
+- Full implementation SHA: 0c02eb108082f3372bd079dd1a5013abc9be2dd2
+
+Runtime acceptance:
+- Supported Atlas stop completed cleanly and explicitly reported Docker Desktop
+  and Genesis were not touched.
+- Atlas restarted through ATLAS.bat.
+- Launcher readiness: checks=3, failed_checks=0, green=true,
+  consecutive_green=3, required=3.
+- Fresh Uvicorn application startup completed and is running on
+  127.0.0.1:8000.
+- Live provenance chain: CONTIGUOUS.
+- accepted_checkpoints=1; chain_discontinuities=0.
+- First accepted checkpoint fingerprint:
+  aecb7635b3f905d716d65798e9a91e90f338de3225ae647f7f97f32ce87bf143
+- previous_checkpoint_fingerprint=null as required for chain origin.
+- chain_metadata_derived_only=true.
+- durable_history_rewritten=false; backfill_performed=false.
+- Durable checkpoint remains the single genuine V3 observation with Day Trading
+  1127 closed samples, Quality Dips V1 0 open / 0 closed and Prediction 0
+  closed.
+- No synthetic evidence/checkpoint was created.
+- Live-capital and automatic-real-money execution prohibitions remain intact.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 20:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; zero evidence remains a valid outcome.
+2. Add read-only checkpoint provenance summary/anchor metadata so bounded
+   retention can explicitly distinguish chain origin from retained-window
+   origin without pretending older pruned checkpoints are present.
+3. Make retention-boundary provenance explicit and diagnostic-only; never
+   reconstruct, backfill or fabricate missing predecessor observations.
+4. Add regressions proving bounded-retention origin semantics cannot fabricate
+   continuity, evidence growth or alter native strategy evidence, thresholds,
+   sizing, orders, exits, promotion or live permissions.
+5. Preserve long-only Investment, Prediction PAPER isolation, native accounting
+   units, no pooled metric and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
