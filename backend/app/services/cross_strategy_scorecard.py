@@ -7,14 +7,50 @@ returns, and prediction-market dollar repricing are not interchangeable.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
+from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
 
 from app.investment.quality_dips_paper import portfolio_snapshot
-from app.prediction.paper_engine import prediction_paper_journal
+from app.investment.storage import QUALITY_DIPS_PAPER_JOURNAL_PATH
+from app.prediction.paper_engine import JOURNAL_PATH as PREDICTION_JOURNAL_PATH, prediction_paper_journal
 from app.services.edge_diagnostics import load_paper_closes_safe
+from app.services.paper_journal import JOURNAL_PATH as DAY_JOURNAL_PATH
 from app.services.paper_validation import metrics
 
-SCORECARD_VERSION = "cross-strategy-evidence-health-v2"
+SCORECARD_VERSION = "cross-strategy-evidence-health-v3"
+
+
+def _journal_integrity(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        return {"status": "MISSING_EMPTY", "readable_records": 0, "malformed_records": 0, "last_durable_evidence_at": None}
+    readable = malformed = 0
+    latest = None
+    try:
+        with path.open(encoding="utf-8") as stream:
+            for raw in stream:
+                if not raw.strip():
+                    continue
+                try:
+                    row = json.loads(raw)
+                    if not isinstance(row, dict):
+                        raise ValueError("non-object JSONL row")
+                    readable += 1
+                    candidate = _dt(row.get("exit_timestamp") or row.get("timestamp") or row.get("entry_timestamp"))
+                    if candidate is not None and (latest is None or candidate > latest):
+                        latest = candidate
+                except Exception:
+                    malformed += 1
+    except OSError:
+        return {"status": "UNREADABLE", "readable_records": 0, "malformed_records": None, "last_durable_evidence_at": None}
+    return {"status": "OK" if malformed == 0 else "PARTIAL", "readable_records": readable, "malformed_records": malformed, "last_durable_evidence_at": latest.isoformat() if latest else None}
+
+
+def _checkpoint(sample_size: int, freshness: Dict[str, Any], previous: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    prior = previous or {}
+    prior_n = prior.get("sample_size")
+    movement = "BASELINE" if prior_n is None else ("GROWING" if sample_size > int(prior_n) else "UNCHANGED" if sample_size == int(prior_n) else "RECONSTRUCTION_WARNING")
+    return {"sample_size": sample_size, "latest_evidence_at": freshness.get("latest_evidence_at"), "age_hours": freshness.get("age_hours"), "movement": movement, "performance_interpretation": None}
 
 
 def _dt(value: Any) -> Optional[datetime]:
@@ -82,12 +118,20 @@ def build_cross_strategy_scorecard(
     investment_snapshot: Optional[Dict[str, Any]] = None,
     prediction_snapshot: Optional[Dict[str, Any]] = None,
     malformed_day_rows: int = 0,
+    previous_checkpoints: Optional[Dict[str, Dict[str, Any]]] = None,
+    integrity: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     if day_rows is None:
         day_rows, malformed, _counts = load_paper_closes_safe()
         malformed_day_rows = len(malformed)
     investment = investment_snapshot if investment_snapshot is not None else portfolio_snapshot()
     prediction = prediction_snapshot if prediction_snapshot is not None else prediction_paper_journal.snapshot(limit=1000)
+    previous_checkpoints = previous_checkpoints or {}
+    integrity = integrity or {
+        "DAY_TRADING": _journal_integrity(DAY_JOURNAL_PATH),
+        "INVESTMENT_QUALITY_DIPS_V1": _journal_integrity(QUALITY_DIPS_PAPER_JOURNAL_PATH),
+        "PREDICTION": _journal_integrity(PREDICTION_JOURNAL_PATH),
+    }
 
     day = metrics(day_rows)
     inv_summary = investment.get("summary") or {}
@@ -118,6 +162,8 @@ def build_cross_strategy_scorecard(
             "win_rate": day.get("winrate") if day_closed else None,
             "freshness": day_fresh,
             "evidence_health": _evidence_health(day_closed, day_fresh),
+            "evidence_checkpoint": _checkpoint(day_closed, day_fresh, previous_checkpoints.get("DAY_TRADING")),
+            "journal_integrity": integrity.get("DAY_TRADING", {"status": "UNKNOWN"}),
             "coverage": {
                 "malformed_records": int(malformed_day_rows),
                 "finite_closed_records": day_closed,
@@ -147,6 +193,8 @@ def build_cross_strategy_scorecard(
             ),
             "freshness": inv_fresh,
             "evidence_health": _evidence_health(inv_closed, inv_fresh),
+            "evidence_checkpoint": _checkpoint(inv_closed, inv_fresh, previous_checkpoints.get("INVESTMENT_QUALITY_DIPS_V1")),
+            "journal_integrity": integrity.get("INVESTMENT_QUALITY_DIPS_V1", {"status": "UNKNOWN"}),
             "coverage": {
                 "lifecycle_events": len(inv_events),
                 "paper_policy_version": investment.get("paper_policy_version"),
@@ -173,6 +221,8 @@ def build_cross_strategy_scorecard(
             "win_rate": pred_summary.get("win_rate") if pred_closed else None,
             "freshness": pred_fresh,
             "evidence_health": _evidence_health(pred_closed, pred_fresh),
+            "evidence_checkpoint": _checkpoint(pred_closed, pred_fresh, previous_checkpoints.get("PREDICTION")),
+            "journal_integrity": integrity.get("PREDICTION", {"status": "UNKNOWN"}),
             "coverage": {
                 "journal_events": len(pred_events),
                 "expired_unclosed_trades": int(pred_summary.get("expired_unclosed_trades") or 0),
@@ -210,4 +260,23 @@ def build_cross_strategy_scorecard(
 
 
 def cross_strategy_scorecard() -> Dict[str, Any]:
-    return build_cross_strategy_scorecard()
+    """Build each lane defensively so one damaged journal cannot contaminate peers."""
+    day_rows, malformed, _counts = load_paper_closes_safe()
+    integrity = {
+        "DAY_TRADING": _journal_integrity(DAY_JOURNAL_PATH),
+        "INVESTMENT_QUALITY_DIPS_V1": _journal_integrity(QUALITY_DIPS_PAPER_JOURNAL_PATH),
+        "PREDICTION": _journal_integrity(PREDICTION_JOURNAL_PATH),
+    }
+    try:
+        investment = portfolio_snapshot()
+    except Exception:
+        investment = {"paper_policy_version": "QUALITY_DIPS_PAPER_V1", "summary": {"open_lots": 0, "closed_lots": 0}, "closed_lots": [], "timeline": []}
+        integrity["INVESTMENT_QUALITY_DIPS_V1"]["reconstruction_status"] = "FAILED_ISOLATED"
+    try:
+        prediction = prediction_paper_journal.snapshot(limit=1000)
+    except Exception:
+        prediction = {"engine_version": None, "summary": {"open_positions": 0, "closed_trades": 0, "net_pnl_dollars": 0.0}, "events": []}
+        integrity["PREDICTION"]["reconstruction_status"] = "FAILED_ISOLATED"
+    for lane in integrity.values():
+        lane.setdefault("reconstruction_status", "OK" if lane.get("status") in {"OK", "MISSING_EMPTY"} else "PARTIAL")
+    return build_cross_strategy_scorecard(day_rows=day_rows, malformed_day_rows=len(malformed), investment_snapshot=investment, prediction_snapshot=prediction, integrity=integrity)

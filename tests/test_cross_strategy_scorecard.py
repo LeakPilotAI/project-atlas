@@ -111,3 +111,42 @@ def test_reconstruction_from_same_durable_snapshots_preserves_truth_with_empty_l
     assert rebuilt_lanes["INVESTMENT_QUALITY_DIPS_V1"]["expectancy"] is None
     assert rebuilt_lanes["PREDICTION"]["expectancy"] is None
     assert rebuilt["comparison_rules"]["universal_expectancy"] is None
+
+
+def test_evidence_checkpoint_tracks_growth_without_performance_claim():
+    day = [{"net_pnl_r": 0.5, "exit_timestamp": "2026-10-05T10:00:00+00:00"}]
+    report = build_cross_strategy_scorecard(
+        day_rows=day,
+        investment_snapshot={"summary": {}, "closed_lots": [], "timeline": []},
+        prediction_snapshot={"summary": {}, "events": []},
+        previous_checkpoints={"DAY_TRADING": {"sample_size": 0}},
+        integrity={"DAY_TRADING": {"status": "OK"}, "INVESTMENT_QUALITY_DIPS_V1": {"status": "MISSING_EMPTY"}, "PREDICTION": {"status": "MISSING_EMPTY"}},
+    )
+    lane = {row["lane"]: row for row in report["lanes"]}["DAY_TRADING"]
+    assert lane["evidence_checkpoint"]["movement"] == "GROWING"
+    assert lane["evidence_checkpoint"]["performance_interpretation"] is None
+    assert lane["journal_integrity"]["status"] == "OK"
+
+
+def test_partial_lane_integrity_cannot_create_or_contaminate_performance():
+    day = [{"net_pnl_r": 1.0, "exit_timestamp": "2026-10-05T10:00:00+00:00"}]
+    integrity = {
+        "DAY_TRADING": {"status": "OK", "malformed_records": 0},
+        "INVESTMENT_QUALITY_DIPS_V1": {"status": "PARTIAL", "malformed_records": 1, "reconstruction_status": "FAILED_ISOLATED"},
+        "PREDICTION": {"status": "MISSING_EMPTY", "malformed_records": 0},
+    }
+    report = build_cross_strategy_scorecard(
+        day_rows=day,
+        investment_snapshot={"summary": {"open_lots": 0, "closed_lots": 0}, "closed_lots": [], "timeline": []},
+        prediction_snapshot={"summary": {"open_positions": 0, "closed_trades": 0, "net_pnl_dollars": 0.0}, "events": []},
+        integrity=integrity,
+    )
+    lanes = {row["lane"]: row for row in report["lanes"]}
+    assert lanes["DAY_TRADING"]["sample_size"] == 1
+    assert lanes["DAY_TRADING"]["expectancy"] == 1.0
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["sample_size"] == 0
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["expectancy"] is None
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["journal_integrity"]["reconstruction_status"] == "FAILED_ISOLATED"
+    assert lanes["PREDICTION"]["sample_size"] == 0
+    assert lanes["PREDICTION"]["expectancy"] is None
+    assert report["comparison_rules"]["universal_expectancy"] is None
