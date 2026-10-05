@@ -61,6 +61,25 @@ async def cross_strategy_scorecard_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/cross-strategy-checkpoints")
+async def cross_strategy_checkpoints_endpoint()->JSONResponse:
+    try:
+        from app.services.cross_strategy_scorecard import cross_strategy_scorecard
+        from app.services.evidence_checkpoint_history import history_view, load_history, persist, previous_lanes
+        history=await asyncio.to_thread(load_history)
+        report=await asyncio.to_thread(lambda: cross_strategy_scorecard(previous_checkpoints=previous_lanes(history)))
+        write=await asyncio.to_thread(persist,report)
+        body=history_view()
+        body["latest_scorecard"]=report
+        body["persistence"]=write
+        body["execution"]="READ_ONLY_PAPER_RESEARCH"
+        body["live_capital_allowed"]=False
+        body["automatic_real_money_execution"]=False
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
 @router.get("/attribution")
 async def paper_attribution_endpoint()->JSONResponse:
     try:

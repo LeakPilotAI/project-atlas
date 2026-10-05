@@ -259,7 +259,7 @@ def build_cross_strategy_scorecard(
     }
 
 
-def cross_strategy_scorecard() -> Dict[str, Any]:
+def cross_strategy_scorecard(previous_checkpoints: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Build each lane defensively so one damaged journal cannot contaminate peers."""
     day_rows, malformed, _counts = load_paper_closes_safe()
     integrity = {
@@ -279,4 +279,4 @@ def cross_strategy_scorecard() -> Dict[str, Any]:
         integrity["PREDICTION"]["reconstruction_status"] = "FAILED_ISOLATED"
     for lane in integrity.values():
         lane.setdefault("reconstruction_status", "OK" if lane.get("status") in {"OK", "MISSING_EMPTY"} else "PARTIAL")
-    return build_cross_strategy_scorecard(day_rows=day_rows, malformed_day_rows=len(malformed), investment_snapshot=investment, prediction_snapshot=prediction, integrity=integrity)
+    return build_cross_strategy_scorecard(day_rows=day_rows, malformed_day_rows=len(malformed), investment_snapshot=investment, prediction_snapshot=prediction, previous_checkpoints=previous_checkpoints, integrity=integrity)
