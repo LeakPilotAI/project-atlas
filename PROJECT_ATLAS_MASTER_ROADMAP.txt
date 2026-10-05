@@ -1,5 +1,5 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
-Updated: 2026-09-18
+Updated: 2026-10-05
 Branch: chatgpt/atlas-rebuild-v1
 Current cycle: QUALITY DIPS V3 — OPEN / RESEARCH_AND_PAPER_VALIDATION
 Operational reliability hotfix: VERIFIED LOCAL GREEN
@@ -9,6 +9,9 @@ Prior Atlas engineering/historical evidence remains closed and immutable. Histor
 
 PERMANENT SECURITY / EXECUTION BOUNDARY
 Never commit credentials, tokens, passwords, private keys, seed phrases, .env secrets, local credential stores, or raw credential exports. Preserve backend/data. Quality Dips remains research/decision support. Brokerage execution=MANUAL_ONLY. live_capital_allowed=false. automatic_real_money_execution=false. No guaranteed bottom, return, recovery, fair value, hold duration, or exit price.
+
+PERMANENT EXECUTION / ROADMAP WORKFLOW
+After every completed Atlas execution/checkpoint: update this full canonical roadmap without erasing prior history; record exact commits, validation, runtime evidence, current status, remaining work and exact next execution; then provide a fresh downloadable TXT copy of the full roadmap. The downloadable roadmap must never lag behind the state reported in chat.
 
 QUALITY DIPS POLICY — FROZEN
 WATCH -> ACCUMULATION -> DEEP_VALUE -> GENERATIONAL; failed thesis -> THESIS_BROKEN.
@@ -3451,3 +3454,70 @@ Execution 7 runtime acceptance:
   live_capital_allowed=false.
 - No synthetic terminal event or close was created during runtime acceptance.
 - Execution 7 runtime acceptance: [GREEN].
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 8 — ARCHIVE V1 LOT LIFECYCLE + RESTART RECONSTRUCTION
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Finished the Investment Archive V2 Quality Dips PAPER V1 selected-lot detail view.
+- Every selectable V1 lot now exposes its immutable opening entry, all recorded
+  marks, terminal close/reason when present, event IDs and source/policy/model
+  provenance.
+- Added a per-lot lifecycle payload reconstructed directly from the append-only
+  journal; legacy investment accounting remains isolated and unchanged.
+- Added optional journal-path injection to the terminal processor solely so the
+  production terminal-close path can be exercised against an isolated temporary
+  journal. Default runtime behavior still uses the canonical V1 journal.
+- Added end-to-end lifecycle regression proving:
+  open -> mark -> mark -> exactly-once terminal close -> duplicate close rejected
+  -> fresh reconstruction from durable journal bytes.
+- No price-only exit, threshold, sizing, broker, live-capital or historical
+  evidence behavior was changed.
+
+Validation:
+- Focused PAPER terminal/marking/exit/archive suite: 25 passed, 2 warnings in 4.32s.
+- Archive inline JavaScript: node --check GREEN.
+- Full Atlas regression: 1175 passed, 2 warnings in 133.02s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+- git diff --check GREEN; only the normal Windows LF->CRLF notice appeared for
+  the edited test file.
+
+Commit:
+- ebdb71d feat(archive): add paper lot lifecycle detail
+
+Runtime acceptance:
+- Supported Atlas stop/restart completed without touching Docker Desktop or
+  Genesis.
+- Docker/Postgres startup produced transient Redis timeout and WinError 64
+  database retries on attempts 1-4; the existing retry policy recovered without
+  code/config changes and database initialization succeeded on attempt 5.
+- /health returned status=ok.
+- /api/archive/investment-paper-v1 returned execution=PAPER_ONLY,
+  open_lots=0, closed_lots=0, realized_pnl=0.0, unrealized_pnl=0.0,
+  live_capital_allowed=false and automatic_real_money_execution=false.
+- /dashboard/archive returned HTTP 200 and the served page contains both the
+  Selected V1 Lot and Immutable Lifecycle Timeline surfaces.
+- The genuine V1 journal currently contains zero lots, so the archive correctly
+  shows no fabricated lifecycle/performance data.
+- Execution 8 runtime acceptance: [GREEN].
+
+Next controlled slice:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   the frozen V3 policy; do not tune thresholds on final forward evidence.
+2. Add a read-only cross-strategy scorecard design that keeps Day Trading,
+   Investment and Prediction accounting/expectancy semantics separate.
+3. Define comparable evidence-health fields (sample size, freshness, coverage,
+   realized/unrealized status and strategy-specific expectancy availability)
+   without inventing a single misleading universal win-rate.
+4. Preserve the current long-only Investment and PAPER-only execution boundary.
+
+Safety:
+- PAPER ONLY / long-only.
+- No broker orders, live capital, automatic real-money execution or live
+  permissions.
+- No price-only exits, arbitrary targets/stops, threshold relaxation, historical
+  rewrite, ledger mixing or favorable backfilled exits.
