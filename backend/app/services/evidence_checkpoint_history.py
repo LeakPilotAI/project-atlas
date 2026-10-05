@@ -381,3 +381,40 @@ def window_completeness(path: Path = CHECKPOINT_PATH, limit: int = MAX_HISTORY) 
         "strategy_action": None,
         "automatic_response": None,
     }
+
+
+def exclusion_accounting(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
+    categories = {"usable": 0, "malformed_or_non_telemetry": 0, "unsupported_schema": 0, "replay_or_duplicate": 0, "invalid_timestamp": 0, "ordering_anomaly": 0}
+    physical = 0
+    previous_accepted_at: Optional[datetime] = None
+    seen_fingerprints: set[str] = set()
+    if path.exists():
+        try:
+            with path.open(encoding="utf-8") as stream:
+                for raw in stream:
+                    if not raw.strip():
+                        continue
+                    physical += 1
+                    try:
+                        row = json.loads(raw)
+                    except (json.JSONDecodeError, TypeError):
+                        categories["malformed_or_non_telemetry"] += 1; continue
+                    if not isinstance(row, dict) or row.get("telemetry_only") is not True:
+                        categories["malformed_or_non_telemetry"] += 1; continue
+                    if row.get("scorecard_version") not in SUPPORTED_SCORECARD_VERSIONS:
+                        categories["unsupported_schema"] += 1; continue
+                    observed = _dt(row.get("observed_at"))
+                    if observed is None:
+                        categories["invalid_timestamp"] += 1; continue
+                    fingerprint = checkpoint_fingerprint(row)
+                    if fingerprint in seen_fingerprints:
+                        categories["replay_or_duplicate"] += 1; continue
+                    if previous_accepted_at is not None and observed <= previous_accepted_at:
+                        categories["ordering_anomaly"] += 1; continue
+                    categories["usable"] += 1
+                    seen_fingerprints.add(fingerprint)
+                    previous_accepted_at = observed
+        except OSError:
+            return {"status":"UNREADABLE","physical_rows":0,"categorized_rows":0,"reconciled":False,"categories":categories,"excluded_rows_used_as_evidence":False,"telemetry_only":True,"strategy_action":None}
+    categorized = sum(categories.values())
+    return {"status":"RECONCILED" if categorized == physical else "MISMATCH","physical_rows":physical,"categorized_rows":categorized,"reconciled":categorized == physical,"categories":categories,"excluded_rows_used_as_evidence":False,"missing_rows_inferred":False,"performance_inferred":False,"history_rewritten":False,"telemetry_only":True,"performance_interpretation":None,"strategy_action":None,"automatic_response":None}

@@ -332,3 +332,32 @@ def test_window_completeness_reports_diagnostic_filters_without_strategy_effect(
     assert before["lanes"] == after["lanes"]
     assert after["live_capital_allowed"] is False
     assert after["automatic_real_money_execution"] is False
+
+
+def test_exclusion_accounting_reconciles_supported_rows(tmp_path):
+    from app.services.evidence_checkpoint_history import exclusion_accounting
+    path=tmp_path / "checkpoint_rows.jsonl"
+    first={"observed_at":"2026-10-05T10:00:00+00:00","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":1}}}
+    duplicate=dict(first); duplicate["observed_at"]="2026-10-05T11:00:00+00:00"
+    path.write_text(json.dumps(first)+"\n"+json.dumps(duplicate)+"\n",encoding="utf-8")
+    result=exclusion_accounting(path)
+    assert result["status"] == "RECONCILED"
+    assert result["physical_rows"] == result["categorized_rows"] == 2
+    assert result["categories"]["usable"] == 1
+    assert result["categories"]["replay_or_duplicate"] == 1
+    assert result["excluded_rows_used_as_evidence"] is False
+
+
+def test_exclusion_accounting_is_diagnostic_only(tmp_path):
+    from app.services.evidence_checkpoint_history import exclusion_accounting
+    path=tmp_path / "checkpoint_rows.jsonl"
+    row={"observed_at":"invalid-time","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{}}
+    path.write_text(json.dumps(row)+"\n",encoding="utf-8")
+    before=_report(2)
+    result=exclusion_accounting(path)
+    after=_report(2)
+    assert result["reconciled"] is True and result["categories"]["invalid_timestamp"] == 1
+    assert result["performance_inferred"] is False and result["strategy_action"] is None
+    assert before["lanes"] == after["lanes"]
+    assert after["live_capital_allowed"] is False
+    assert after["automatic_real_money_execution"] is False
