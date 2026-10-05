@@ -3843,3 +3843,85 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 13 — ARCHIVE CHECKPOINT TRANSITIONS
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added read-only adjacent checkpoint transition summaries to the durable
+  evidence-health telemetry layer.
+- Transition summaries derive only from the two newest telemetry observations:
+  sample delta, latest-evidence timestamp delta, integrity transition,
+  reconstruction transition and evidence-health-band transition.
+- Transition summaries explicitly carry telemetry_only=true,
+  performance_interpretation=null and strategy_action=null.
+- One-checkpoint history returns BASELINE with no invented lane deltas.
+- Added Archive V2 Evidence Checkpoint History panel with bounded history count,
+  retention limit, latest observation timestamp and lane transition details.
+- Archive now fetches the dedicated checkpoint diagnostics endpoint and retains
+  the last good checkpoint payload during transient refresh failures.
+- UI safety copy states telemetry only / no performance interpretation or
+  strategy action.
+- No strategy engine, threshold, sizing, order, exit, promotion, native journal
+  writer or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 11 passed in 7.25s.
+- Archive inline JavaScript node --check GREEN.
+- git diff --check GREEN.
+- Full Atlas regression: 1186 passed, 2 warnings in 118.12s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+
+Implementation commit:
+- 78f5783 feat(archive): show evidence checkpoint transitions
+- Full implementation SHA: 78f57830928c177833faa0d45ec007d67c6e79d6
+
+Runtime acceptance:
+- Supported Atlas stop completed cleanly and explicitly reported Docker Desktop
+  and Genesis were not touched.
+- Atlas restarted through ATLAS.bat.
+- Launcher readiness artifact reports checks=3, failed_checks=0, green=true,
+  consecutive_green=3, required=3.
+- Uvicorn application startup completed and is running on 127.0.0.1:8000.
+- Fresh post-restart /health requests returned HTTP 200.
+- Durable evidence checkpoint journal remains truthful with one genuine
+  checkpoint only; therefore live history is BASELINE and no adjacent
+  transition is fabricated.
+- Existing durable checkpoint remains telemetry_only=true,
+  performance_interpretation=null and strategy_action=null.
+- Day Trading checkpoint: 1127 closed samples, SUBSTANTIAL, integrity OK,
+  reconstruction OK, malformed 0.
+- Quality Dips V1 checkpoint: 0 open / 0 closed, NO_EVIDENCE, integrity OK,
+  reconstruction OK, malformed 0.
+- Prediction checkpoint: 0 open / 0 closed, NO_EVIDENCE, integrity OK,
+  reconstruction OK, malformed 0.
+- No synthetic Quality Dips evidence was created.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 14:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; never manufacture evidence to populate telemetry history.
+2. Add explicit read-only checkpoint capture cadence/status visibility so the
+   Archive can distinguish baseline, next eligible capture and deduplicated
+   observations without causing high-frequency writes.
+3. Add integrity-transition alert semantics for diagnostics only (for example
+   OK->PARTIAL / FAILED_ISOLATED) with no strategy action or automatic response.
+4. Add regressions proving cadence/status and diagnostic alerts cannot modify
+   strategy journals, thresholds, sizing, orders, exits, promotion or live
+   permissions.
+5. Preserve native accounting semantics, Prediction PAPER isolation, long-only
+   Investment, no pooled metric and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
