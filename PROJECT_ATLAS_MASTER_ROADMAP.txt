@@ -2736,3 +2736,41 @@ STATUS
 [ROADMAP ONLY] No runtime strategy, thresholds, risk, PAPER position, Prediction
 auto-flat process, or live-capital permission changed by this addendum.
 ================================================================================
+
+
+================================================================================
+2026-10-05 PREDICTION AUTO-FLAT OBSERVATION — SAFE FAILURE / LIQUIDITY HARDENING
+================================================================================
+OBSERVED EVIDENCE
+- Genuine PAPER trade 21aa114b-10d reached the mandatory flatten window.
+- Auto-flat attempted against the real public orderbook and found no executable bid
+  depth for the required exit.
+- Atlas recorded AUTO_FLAT_BLOCKED_NO_DEPTH / NO_EXECUTABLE_DEPTH.
+- Atlas did NOT manufacture a close, settlement fill, midpoint fill, or hidden depth.
+- The trade remained open in the PAPER journal and unattended PAPER opening remained
+  blocked by AUTO_FLAT_SAFETY_BLOCKED + AUTO_FLAT_LIVE_VALIDATION_REQUIRED.
+- Classification: AUTO-FLAT VALIDATION FAILED SAFELY.
+- Negative evidence is permanent and must not be rewritten as a pass.
+
+ENGINEERING RESPONSE
+[IMPLEMENTED ON GITHUB; REQUIRES CONTROLLED LOCAL VALIDATION]
+- Candidate eligibility now requires full executable SELL depth for the requested
+  quantity at entry time, in addition to executable BUY depth.
+- New rejection evidence distinguishes no exit depth vs insufficient exit depth.
+- Candidate evidence stores an exit_liquidity_at_entry snapshot.
+- Mandatory auto-flat attempts now begin 10 minutes before the strategy's existing
+  flat deadline rather than only five seconds before it.
+- The worker continues retrying on its existing five-second cadence; lack of depth
+  remains a hard block and never creates a fake close.
+- Tests were added for the exit-liquidity entry gate and early auto-flat retry window.
+- These GitHub tests are not considered passed until run in a controlled local/CI
+  environment.
+
+SAFETY / PROMOTION GATE
+- Do NOT remove AUTO_FLAT_LIVE_VALIDATION_REQUIRED from this failed observation.
+- Do NOT enable unattended Prediction PAPER opening yet.
+- Require a future genuine PAPER lifecycle to demonstrate an executable, exactly-once,
+  pre-deadline auto-flat after these hardening changes.
+- Current changes reduce entry/exit-liquidity risk; they do not prove future liquidity.
+- Live execution and automatic real-money execution remain false.
+================================================================================
