@@ -3436,3 +3436,18 @@ Safety:
   permissions.
 - No price-only exits, arbitrary profit targets or stop losses.
 - No threshold relaxation, historical rewrite or favorable backfilled exit.
+
+
+Execution 7 runtime acceptance:
+- Atlas restarted successfully; launcher reported API healthy.
+- First Quality Dips request used the bounded RuntimeSnapshot fallback while the
+  background board build was still warming; no terminal action was exposed or
+  fabricated from that fallback.
+- After the board snapshot completed, /api/investments/quality-dips exposed:
+  terminal_candidates=0, closed_lots=0, skipped_lots=0,
+  execution=PAPER_ONLY, live_capital_allowed=false and
+  automatic_real_money_execution=false.
+- /api/archive/investment-paper-v1 remained open_lots=0, closed_lots=0 with
+  live_capital_allowed=false.
+- No synthetic terminal event or close was created during runtime acceptance.
+- Execution 7 runtime acceptance: [GREEN].
