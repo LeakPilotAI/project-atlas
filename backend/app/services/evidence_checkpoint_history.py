@@ -53,6 +53,13 @@ def load_history(path: Path = CHECKPOINT_PATH, limit: int = DEFAULT_LIMIT) -> li
                     fingerprint = checkpoint_fingerprint(row)
                     if rows and checkpoint_fingerprint(rows[-1]) == fingerprint:
                         continue
+                    observed = _dt(row.get("observed_at"))
+                    if observed is None:
+                        continue
+                    if rows:
+                        previous_observed = _dt(rows[-1].get("observed_at"))
+                        if previous_observed is not None and observed <= previous_observed:
+                            continue
                     item = dict(row)
                     item["checkpoint_fingerprint"] = fingerprint
                     rows.append(item)
@@ -262,3 +269,29 @@ def replay_diagnostics(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
     usable=len(load_history(path,MAX_HISTORY))
     status="REPLAY_PRESENT" if replayed_nonadjacent else ("DUPLICATE_PRESENT" if duplicates else "CLEAN")
     return {"status":status,"physical_supported_rows":physical_supported,"usable_history_rows":usable,"adjacent_duplicate_rows":duplicates,"nonadjacent_replay_rows":replayed_nonadjacent,"unique_fingerprints":len(fingerprints),"duplicates_inflate_usable_history":False,"telemetry_only":True,"performance_interpretation":None,"strategy_action":None,"automatic_response":None}
+
+
+def sequence_diagnostics(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
+    supported_rows = invalid_timestamps = ordering_anomalies = 0
+    previous_at: Optional[datetime] = None
+    newest_monotonic_at: Optional[datetime] = None
+    if path.exists():
+        try:
+            with path.open(encoding="utf-8") as stream:
+                for raw in stream:
+                    if not raw.strip(): continue
+                    try: row=json.loads(raw)
+                    except (json.JSONDecodeError,TypeError): continue
+                    if not isinstance(row,dict) or row.get("telemetry_only") is not True or row.get("scorecard_version") not in SUPPORTED_SCORECARD_VERSIONS: continue
+                    supported_rows += 1
+                    observed=_dt(row.get("observed_at"))
+                    if observed is None:
+                        invalid_timestamps += 1; continue
+                    if previous_at is not None and observed <= previous_at:
+                        ordering_anomalies += 1; continue
+                    previous_at=observed; newest_monotonic_at=observed
+        except OSError:
+            return {"status":"UNREADABLE","telemetry_only":True,"strategy_action":None}
+    usable=len(load_history(path,MAX_HISTORY))
+    status="ORDERING_ANOMALY" if ordering_anomalies else ("INVALID_TIMESTAMP" if invalid_timestamps else "MONOTONIC")
+    return {"status":status,"physical_supported_rows":supported_rows,"usable_monotonic_rows":usable,"ordering_anomaly_rows":ordering_anomalies,"invalid_timestamp_rows":invalid_timestamps,"newest_monotonic_checkpoint":newest_monotonic_at.isoformat() if newest_monotonic_at else None,"ordering_anomalies_used_for_transitions":False,"history_rewritten":False,"telemetry_only":True,"performance_interpretation":None,"strategy_action":None,"automatic_response":None}

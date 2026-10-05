@@ -209,3 +209,34 @@ def test_replayed_checkpoint_cannot_fabricate_growth_or_change_native_scorecard(
     assert before["lanes"] == after["lanes"]
     assert after["live_capital_allowed"] is False
     assert after["automatic_real_money_execution"] is False
+
+
+def test_out_of_order_checkpoint_is_excluded_from_transition_history(tmp_path):
+    from app.services.evidence_checkpoint_history import sequence_diagnostics
+    path=tmp_path / "checkpoints.jsonl"
+    def row(at,n): return {"observed_at":at,"scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":n}}}
+    first=row("2026-10-05T10:00:00+00:00",7); forward=row("2026-10-05T12:00:00+00:00",8); regressed=row("2026-10-05T11:00:00+00:00",999999)
+    path.write_text(json.dumps(first)+"\n"+json.dumps(forward)+"\n"+json.dumps(regressed)+"\n",encoding="utf-8")
+    history=load_history(path)
+    diag=sequence_diagnostics(path)
+    assert [x["lanes"]["DAY_TRADING"]["sample_size"] for x in history] == [7,8]
+    assert diag["status"] == "ORDERING_ANOMALY"
+    assert diag["ordering_anomaly_rows"] == 1
+    assert diag["ordering_anomalies_used_for_transitions"] is False
+    assert diag["history_rewritten"] is False
+
+
+def test_invalid_timestamp_cannot_become_current_evidence_or_change_permissions(tmp_path):
+    from app.services.evidence_checkpoint_history import sequence_diagnostics
+    path=tmp_path / "checkpoints.jsonl"
+    row={"observed_at":"not-a-time","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":999999}}}
+    path.write_text(json.dumps(row)+"\n",encoding="utf-8")
+    assert load_history(path) == []
+    diag=sequence_diagnostics(path)
+    before=_report(2); after=_report(2)
+    assert diag["status"] == "INVALID_TIMESTAMP"
+    assert diag["invalid_timestamp_rows"] == 1
+    assert diag["strategy_action"] is None
+    assert before["lanes"] == after["lanes"]
+    assert after["live_capital_allowed"] is False
+    assert after["automatic_real_money_execution"] is False

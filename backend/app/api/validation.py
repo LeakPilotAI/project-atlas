@@ -78,6 +78,8 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
         body["checkpoint_schema_compatibility"]=schema_compatibility()
         from app.services.evidence_checkpoint_history import replay_diagnostics
         body["checkpoint_replay_diagnostics"]=replay_diagnostics()
+        from app.services.evidence_checkpoint_history import sequence_diagnostics
+        body["checkpoint_sequence_diagnostics"]=sequence_diagnostics()
         body["latest_scorecard"]=report
         body["persistence"]=write
         body["execution"]="READ_ONLY_PAPER_RESEARCH"
