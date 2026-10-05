@@ -4253,3 +4253,88 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 18 — CHECKPOINT SEQUENCE INTEGRITY
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added fail-closed monotonic timestamp gate to supported, de-duplicated
+  checkpoint history before previous_lanes, cadence or transition math.
+- Supported rows with invalid observed_at timestamps are excluded from usable
+  history.
+- Supported rows whose observed_at is less than or equal to the last accepted
+  checkpoint are excluded as ordering anomalies.
+- Durable physical journal rows are never rewritten or deleted by this
+  diagnostic gate.
+- Added sequence diagnostics reporting physical supported rows, usable monotonic
+  rows, ordering anomalies, invalid timestamps and newest monotonic checkpoint.
+- Explicit ordering_anomalies_used_for_transitions=false,
+  history_rewritten=false, telemetry_only=true,
+  performance_interpretation=null, strategy_action=null and
+  automatic_response=null.
+- Archive V2 now displays sequence integrity.
+- No strategy engine, native strategy journal, threshold, sizing, order, exit,
+  promotion or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 21 passed in 7.29s.
+- Archive inline JavaScript node --check GREEN.
+- git diff --check GREEN.
+- Full Atlas regression: 1196 passed, 2 warnings in 121.55s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+- Regression proves an out-of-order supported row carrying a fabricated 999999
+  sample count remains physically durable but is excluded from usable history.
+- Invalid timestamps likewise cannot become current evidence or change live
+  permissions.
+
+Implementation commit:
+- 781fb17 feat(validation): enforce checkpoint sequence integrity
+- Full implementation SHA: 781fb17854f8b50f240bad577c3ec03f59d89b4a
+
+Runtime acceptance:
+- Supported Atlas stop completed cleanly and explicitly reported Docker Desktop
+  and Genesis were not touched.
+- Atlas restarted through ATLAS.bat.
+- Launcher readiness: checks=3, failed_checks=0, green=true,
+  consecutive_green=3, required=3.
+- Fresh Uvicorn application startup completed and is running on
+  127.0.0.1:8000.
+- Live sequence diagnostics: MONOTONIC.
+- physical_supported_rows=1; usable_monotonic_rows=1.
+- ordering_anomaly_rows=0; invalid_timestamp_rows=0.
+- newest_monotonic_checkpoint=2026-10-05T11:13:15.189867+00:00.
+- ordering_anomalies_used_for_transitions=false.
+- history_rewritten=false.
+- Durable checkpoint remains the single genuine V3 observation with Day Trading
+  1127 closed samples, Quality Dips V1 0 open / 0 closed and Prediction 0
+  closed.
+- No synthetic evidence/checkpoint was created.
+- Live-capital and automatic-real-money execution prohibitions remain intact.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 19:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; zero evidence remains a valid outcome.
+2. Add read-only telemetry provenance/chain metadata linking accepted checkpoint
+   fingerprints so gaps or unexpected chain discontinuities are explicit.
+3. Keep chain metadata diagnostic-only and derived; never rewrite or backfill
+   historical durable observations.
+4. Add regressions proving chain gaps/discontinuities cannot fabricate growth,
+   alter native strategy evidence, thresholds, sizing, orders, exits, promotion
+   or live permissions.
+5. Preserve long-only Investment, Prediction PAPER isolation, native accounting
+   units, no pooled metric and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
