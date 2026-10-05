@@ -3651,3 +3651,59 @@ Safety:
 - PAPER/research only.
 - Health labels describe evidence sufficiency, not trading signals.
 - No strategy promotion, sizing changes, threshold changes, broker orders, live capital, automatic real-money execution, synthetic samples, pooled metrics, historical rewrite or favorable backfill.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 11 — EVIDENCE CHECKPOINTS + INTEGRITY ISOLATION
+===============================================================================
+Status: [CODE GREEN / RUNTIME ACCEPTANCE BLOCKED BY LOCAL DOCKER CLI]
+
+Implemented:
+- Advanced cross-strategy evidence scorecard to v3.
+- Added read-only evidence checkpoints per lane with sample size, latest evidence,
+  evidence age and movement state (BASELINE/GROWING/UNCHANGED/RECONSTRUCTION_WARNING).
+- Checkpoint movement explicitly has performance_interpretation=null and cannot
+  alter strategy behavior.
+- Added per-lane JSONL integrity diagnostics: OK/PARTIAL/MISSING_EMPTY/UNREADABLE,
+  readable count, malformed count, last durable evidence timestamp and
+  reconstruction status.
+- Added defensive lane isolation so a failed Investment or Prediction
+  reconstruction cannot contaminate peer lanes or create synthetic performance.
+- Archive V2 lane detail now exposes checkpoint movement and journal integrity.
+- No strategy engine, thresholds, sizing, order path, exit policy, journal
+  writer, historical evidence or live-capital permission changed.
+
+Validation:
+- Focused scorecard + Quality Dips V1: 16 passed.
+- Archive inline JavaScript: node --check GREEN.
+- git diff --check GREEN; normal Windows LF->CRLF notices only.
+- Full Atlas regression: 1181 passed, 2 warnings in 119.22s.
+- Zero failures; same known Starlette/httpx and discord audioop warnings.
+
+Implementation commit:
+- ecf4af9 feat(validation): isolate evidence integrity diagnostics
+
+Runtime acceptance:
+- Supported Atlas stop performed graceful application shutdown.
+- Stop then stalled in Atlas-only Docker CLI cleanup (docker stop/down); Docker
+  Desktop and Genesis were not terminated.
+- Only Atlas-owned stuck CLI/wrapper processes were terminated; Docker Desktop
+  and Genesis remained untouched.
+- Direct API recovery was attempted because postgres/redis host ports remained
+  listening, but application startup remained blocked on local infrastructure
+  (Redis timeout observed). Port 8000 therefore did not become healthy.
+- Runtime acceptance is NOT marked GREEN and no runtime evidence is fabricated.
+
+Next controlled action:
+1. Recover the local Atlas Docker postgres/redis service health without
+   terminating Docker Desktop or Genesis.
+2. Re-run /health, scorecard v3, Quality Dips V1 and Archive UI acceptance.
+3. Only after runtime acceptance is GREEN, close Execution 11 and proceed to
+   the next evidence-only slice.
+4. Continue untouched forward QUALITY_DIPS_PAPER_V1 collection under frozen V3.
+
+Safety:
+- PAPER/research only.
+- No live capital, automatic real-money execution, strategy promotion, sizing
+  change, threshold change, synthetic sample, pooled cross-strategy metric,
+  historical rewrite or favorable backfill.
