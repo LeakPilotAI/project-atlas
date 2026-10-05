@@ -60,3 +60,31 @@ def test_history_reader_ignores_malformed_and_view_is_bounded(tmp_path):
     assert view["retention_max"] == MAX_HISTORY
     assert view["returned"] == 50
     assert len(view["checkpoints"]) == 50
+
+
+def test_transition_summary_is_adjacent_telemetry_not_performance():
+    from app.services.evidence_checkpoint_history import transition_summary
+    history=[
+        {"observed_at":"2026-10-05T10:00:00+00:00","lanes":{"DAY_TRADING":{"sample_size":10,"latest_evidence_at":"2026-10-05T09:00:00+00:00","integrity_status":"OK","reconstruction_status":"OK","evidence_health_band":"THIN"}}},
+        {"observed_at":"2026-10-05T11:00:00+00:00","lanes":{"DAY_TRADING":{"sample_size":12,"latest_evidence_at":"2026-10-05T10:30:00+00:00","integrity_status":"PARTIAL","reconstruction_status":"PARTIAL","evidence_health_band":"THIN"}}},
+    ]
+    result=transition_summary(history)
+    lane=result["lanes"]["DAY_TRADING"]
+    assert result["telemetry_only"] is True
+    assert result["performance_interpretation"] is None
+    assert result["strategy_action"] is None
+    assert lane["sample_delta"] == 2
+    assert lane["freshness_delta_hours"] == 1.5
+    assert lane["integrity_transition"] == "OK->PARTIAL"
+    assert lane["reconstruction_transition"] == "OK->PARTIAL"
+    assert lane["health_transition"] == "THIN->THIN"
+    assert lane["performance_interpretation"] is None
+    assert lane["strategy_action"] is None
+
+
+def test_transition_summary_baseline_has_no_invented_delta():
+    from app.services.evidence_checkpoint_history import transition_summary
+    result=transition_summary([{"observed_at":"2026-10-05T10:00:00+00:00","lanes":{}}])
+    assert result["status"] == "BASELINE"
+    assert result["lanes"] == {}
+    assert result["performance_interpretation"] is None

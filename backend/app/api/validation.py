@@ -65,11 +65,12 @@ async def cross_strategy_scorecard_endpoint()->JSONResponse:
 async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     try:
         from app.services.cross_strategy_scorecard import cross_strategy_scorecard
-        from app.services.evidence_checkpoint_history import history_view, load_history, persist, previous_lanes
+        from app.services.evidence_checkpoint_history import history_view, load_history, persist, previous_lanes, transition_summary
         history=await asyncio.to_thread(load_history)
         report=await asyncio.to_thread(lambda: cross_strategy_scorecard(previous_checkpoints=previous_lanes(history)))
         write=await asyncio.to_thread(persist,report)
         body=history_view()
+        body["transition_summary"]=transition_summary(body["checkpoints"])
         body["latest_scorecard"]=report
         body["persistence"]=write
         body["execution"]="READ_ONLY_PAPER_RESEARCH"

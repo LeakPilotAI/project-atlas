@@ -118,3 +118,33 @@ def history_view(path: Path = CHECKPOINT_PATH, limit: int = DEFAULT_LIMIT) -> Di
         "returned": len(rows),
         "checkpoints": rows,
     }
+
+
+def transition_summary(history: list[Dict[str, Any]]) -> Dict[str, Any]:
+    """Describe adjacent telemetry movement without interpreting performance."""
+    if len(history) < 2:
+        return {"status": "BASELINE", "telemetry_only": True, "performance_interpretation": None, "strategy_action": None, "lanes": {}}
+    previous, current = history[-2], history[-1]
+    previous_lanes_map = previous.get("lanes") or {}
+    current_lanes_map = current.get("lanes") or {}
+    lanes: Dict[str, Dict[str, Any]] = {}
+    for name in sorted(set(previous_lanes_map) | set(current_lanes_map)):
+        before = previous_lanes_map.get(name) or {}
+        after = current_lanes_map.get(name) or {}
+        before_sample = int(before.get("sample_size") or 0)
+        after_sample = int(after.get("sample_size") or 0)
+        before_time = _dt(before.get("latest_evidence_at"))
+        after_time = _dt(after.get("latest_evidence_at"))
+        freshness_delta = None
+        if before_time is not None and after_time is not None:
+            freshness_delta = round((after_time - before_time).total_seconds() / 3600.0, 4)
+        lanes[name] = {
+            "sample_delta": after_sample - before_sample,
+            "freshness_delta_hours": freshness_delta,
+            "integrity_transition": str(before.get("integrity_status") or "UNKNOWN") + "->" + str(after.get("integrity_status") or "UNKNOWN"),
+            "reconstruction_transition": str(before.get("reconstruction_status") or "UNKNOWN") + "->" + str(after.get("reconstruction_status") or "UNKNOWN"),
+            "health_transition": str(before.get("evidence_health_band") or "UNKNOWN") + "->" + str(after.get("evidence_health_band") or "UNKNOWN"),
+            "performance_interpretation": None,
+            "strategy_action": None,
+        }
+    return {"status": "ADJACENT_CHECKPOINTS", "telemetry_only": True, "performance_interpretation": None, "strategy_action": None, "from_observed_at": previous.get("observed_at"), "to_observed_at": current.get("observed_at"), "lanes": lanes}
