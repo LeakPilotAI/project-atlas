@@ -290,6 +290,21 @@ def evaluate_pre_event_repricing(
     if not fill.get("fillable"):
         reasons.append(str(fill.get("reason") or "ENTRY_NOT_FILLABLE"))
 
+    # Entry safety must consider the mandatory exit path too. A PAPER position that
+    # can be bought but cannot currently be sold at the requested size is not
+    # eligible for a pre-event strategy with a hard flattening requirement.
+    exit_liquidity = walk_executable_depth(
+        orderbook, side=side_u, action="SELL", quantity=quantity
+    )
+    if not exit_liquidity.get("fillable"):
+        exit_reason = str(exit_liquidity.get("reason") or "EXIT_NOT_FILLABLE")
+        if exit_reason == "NO_EXECUTABLE_DEPTH":
+            reasons.append("NO_EXECUTABLE_EXIT_DEPTH_AT_ENTRY")
+        elif exit_reason == "INSUFFICIENT_EXECUTABLE_DEPTH":
+            reasons.append("INSUFFICIENT_EXECUTABLE_EXIT_DEPTH_AT_ENTRY")
+        else:
+            reasons.append("EXIT_NOT_FILLABLE_AT_ENTRY")
+
     side_book = orderbook.get(side_u.lower()) if isinstance(orderbook, dict) else {}
     bid = _d(side_book.get("best_bid_dollars") if isinstance(side_book, dict) else None)
     ask = _d(side_book.get("best_ask_dollars") if isinstance(side_book, dict) else None)
@@ -365,6 +380,15 @@ def evaluate_pre_event_repricing(
         "minutes_to_start": round(minutes_to_start, 2) if minutes_to_start is not None else None,
         "minutes_to_flat": round(minutes_to_flat, 2) if minutes_to_flat is not None else None,
         "entry_fill": fill,
+        "exit_liquidity_at_entry": {
+            "required_for_eligibility": True,
+            "fillable": bool(exit_liquidity.get("fillable")),
+            "reason": exit_liquidity.get("reason"),
+            "vwap_dollars": exit_liquidity.get("vwap_dollars"),
+            "notional_dollars": exit_liquidity.get("notional_dollars"),
+            "available_quantity_contracts": exit_liquidity.get("available_quantity_contracts"),
+            "levels": exit_liquidity.get("levels") or [],
+        },
         "current_quote": {
             "best_bid_dollars": _fixed(bid),
             "best_ask_dollars": _fixed(ask),
