@@ -8,6 +8,9 @@ from app.investment.quality_dips_paper import (
     open_lot,
     open_lots,
     mirror_forward_observation,
+    mark_lot,
+    close_lot,
+    portfolio_snapshot,
     read_events,
     record_decision,
 )
@@ -121,3 +124,31 @@ def test_mirror_rejects_non_forward_or_wrong_policy_evidence(tmp_path: Path):
     with pytest.raises(ValueError, match="policy_version"):
         mirror_forward_observation(row, path=path)
     assert read_events(path) == []
+
+
+def test_paper_position_accounting_lifecycle(tmp_path: Path):
+    path = tmp_path / "quality_dips_paper.jsonl"
+    lot = open_lot(observation(), level="L1", paper_notional_dollars=100, path=path)
+    mark_lot(lot["lot_id"], market_price=550, observed_at="2026-10-05T15:00:00+00:00", path=path)
+    mark_lot(lot["lot_id"], market_price=450, observed_at="2026-10-05T16:00:00+00:00", path=path)
+    snap = portfolio_snapshot(read_events(path))
+    pos = snap["positions"][0]
+    assert pos["unrealized_pnl"] == pytest.approx(-10.0)
+    assert pos["mfe_pct"] == pytest.approx(10.0)
+    assert pos["mae_pct"] == pytest.approx(-10.0)
+    assert snap["by_symbol"][0]["weighted_cost_basis"] == 500.0
+    closed = close_lot(lot["lot_id"], exit_price=525, reason="THESIS_EXIT", path=path)
+    again = close_lot(lot["lot_id"], exit_price=999, reason="DUPLICATE", path=path)
+    assert again["event_id"] == closed["event_id"]
+    assert again["exit_price"] == 525
+    final = portfolio_snapshot(read_events(path))
+    assert final["summary"]["open_lots"] == 0
+    assert final["summary"]["realized_pnl"] == pytest.approx(5.0)
+
+
+def test_closed_paper_lot_rejects_new_mark(tmp_path: Path):
+    path = tmp_path / "quality_dips_paper.jsonl"
+    lot = open_lot(observation(), level="L1", paper_notional_dollars=100, path=path)
+    close_lot(lot["lot_id"], exit_price=510, reason="TEST_CLOSE", path=path)
+    with pytest.raises(ValueError, match="closed"):
+        mark_lot(lot["lot_id"], market_price=520, path=path)
