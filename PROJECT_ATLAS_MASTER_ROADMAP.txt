@@ -4506,3 +4506,84 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 21 — TELEMETRY WINDOW COMPLETENESS
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added consolidated read-only checkpoint window completeness metadata.
+- Verdicts: COMPLETE, RETENTION_TRUNCATED, or DIAGNOSTICALLY_FILTERED.
+- Diagnostic reasons are derived from existing retention, schema, replay and
+  sequence gates: RETENTION_TRUNCATED, SCHEMA_FILTERED, REPLAY_FILTERED,
+  SEQUENCE_FILTERED.
+- Reports visible usable checkpoint count.
+- Explicit missing_observations_inferred=false, continuity_inferred=false,
+  performance_inferred=false, history_rewritten=false, telemetry_only=true,
+  performance_interpretation=null, strategy_action=null and
+  automatic_response=null.
+- Archive V2 now displays completeness status and reasons.
+- No strategy engine, native strategy journal, threshold, sizing, order, exit,
+  promotion or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 27 passed in 10.91s.
+- Archive inline JavaScript node --check GREEN.
+- git diff --check GREEN.
+- Full Atlas regression: 1202 passed, 2 warnings in 133.93s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+- Regression proves bounded retention reports RETENTION_TRUNCATED without
+  inferring missing observations, continuity or performance.
+- Combined unknown-schema + invalid-timestamp fixture reports
+  DIAGNOSTICALLY_FILTERED without changing native strategy evidence or live
+  permissions.
+
+Implementation commit:
+- 8e23bbd checkpoint completeness diagnostics
+- Full implementation SHA: 8e23bbdf88f1e7918103f0e6c19daa145e528283
+
+Runtime acceptance:
+- Supported Atlas stop explicitly reported Docker Desktop / Genesis untouched.
+- Initial detached Start-Process launcher attempts started then exited because
+  ATLAS.bat intentionally binds the API lifetime to its launcher window/job.
+- No product-code defect was masked; acceptance was stabilized using the
+  supported persistent ATLAS.bat launcher session.
+- Persistent launcher reached Startup stabilization 3/3 healthy checks.
+- API healthy on http://127.0.0.1:8000/health and dashboard opened through the
+  launcher.
+- Live completeness verdict: COMPLETE.
+- reasons=[]; visible_usable_checkpoints=1.
+- missing_observations_inferred=false; continuity_inferred=false;
+  performance_inferred=false; history_rewritten=false.
+- Durable checkpoint remains the genuine V3 observation; Quality Dips V1
+  remains 0 open / 0 closed.
+- No synthetic evidence/checkpoint was created.
+- Live-capital and automatic-real-money execution prohibitions remain intact.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 22:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; zero evidence remains a valid outcome.
+2. Add read-only telemetry exclusion accounting so every physical checkpoint row
+   is categorized as usable, malformed/non-telemetry, unsupported schema,
+   replay/duplicate, invalid timestamp, or ordering anomaly.
+3. Require category totals to reconcile to physical rows without treating
+   excluded rows as evidence.
+4. Add regressions proving exclusion accounting cannot fabricate growth,
+   continuity, freshness, performance or alter native strategy evidence,
+   thresholds, sizing, orders, exits, promotion or live permissions.
+5. Preserve long-only Investment, Prediction PAPER isolation, native accounting
+   units, no pooled metric and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
