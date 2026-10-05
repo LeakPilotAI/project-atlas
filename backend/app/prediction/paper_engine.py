@@ -527,18 +527,90 @@ class PredictionPaperJournal:
 
     def open_trade(self) -> dict[str, Any] | None:
         opens: dict[str, dict[str, Any]] = {}
-        closed: set[str] = set()
+        terminal: set[str] = set()
         for row in self._rows(self.journal_path):
             trade_id = str(row.get("trade_id") or "")
             if not trade_id:
                 continue
             if row.get("event") == "open":
                 opens[trade_id] = row
-            elif row.get("event") == "close":
-                closed.add(trade_id)
-        active = [row for tid, row in opens.items() if tid not in closed]
+            elif row.get("event") in {"close", "expired_unclosed"}:
+                terminal.add(trade_id)
+        active = [row for tid, row in opens.items() if tid not in terminal]
         active.sort(key=lambda row: str(row.get("entry_timestamp") or ""))
         return active[-1] if active else None
+
+    def latest_expired_unclosed(self) -> dict[str, Any] | None:
+        rows = [
+            row for row in self._rows(self.journal_path)
+            if row.get("event") == "expired_unclosed"
+        ]
+        return rows[-1] if rows else None
+
+    def expire_unclosed(
+        self,
+        *,
+        opened: dict[str, Any],
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Terminalize a PAPER trade that reached event start without an exit fill.
+
+        This is accounting state only: it records no exit price, PnL, settlement,
+        or synthetic fill. The failed lifecycle remains explicit evidence.
+        """
+        trade_id = str(opened.get("trade_id") or "")
+        if not trade_id:
+            raise PredictionPaperError("open PAPER trade id is missing")
+        rows = self._rows(self.journal_path)
+        existing = next(
+            (
+                row for row in reversed(rows)
+                if row.get("event") == "expired_unclosed"
+                and str(row.get("trade_id") or "") == trade_id
+            ),
+            None,
+        )
+        if existing is not None:
+            return existing
+
+        blockers = [
+            row for row in rows
+            if row.get("event") == "auto_flat_blocked"
+            and str(row.get("trade_id") or "") == trade_id
+            and row.get("reason") != "AUTO_FLAT_DEADLINE_VIOLATION"
+        ]
+        last_blocker = blockers[-1] if blockers else None
+        blocker_reason = str((last_blocker or {}).get("reason") or "")
+        if blocker_reason in {
+            "AUTO_FLAT_BLOCKED_NO_DEPTH",
+            "AUTO_FLAT_BLOCKED_INSUFFICIENT_DEPTH",
+        }:
+            terminal_reason = "EXIT_FAILED_NO_LIQUIDITY"
+        else:
+            terminal_reason = "EXIT_FAILED_BEFORE_EVENT_START"
+
+        row = {
+            **opened,
+            "event": "expired_unclosed",
+            "status": "EXPIRED_UNCLOSED",
+            "terminal_timestamp": _iso(now or _now()),
+            "terminal_reason": terminal_reason,
+            "last_pre_event_block_reason": blocker_reason or None,
+            "last_pre_event_block_error": (last_blocker or {}).get("error"),
+            "actual_exit_price": None,
+            "exit_notional_dollars": None,
+            "exit_fee_dollars": None,
+            "exit_fill_levels": [],
+            "gross_pnl_dollars": None,
+            "net_pnl_dollars": None,
+            "net_roi": None,
+            "counts_as_closed_trade": False,
+            "counts_for_live": False,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+        self._append(self.journal_path, row)
+        return row
 
     def log_candidate(self, evaluation: dict[str, Any]) -> dict[str, Any]:
         row = {
@@ -680,8 +752,12 @@ class PredictionPaperJournal:
             "engine_version": PAPER_ENGINE_VERSION,
             "fee_model": FEE_MODEL_VERSION,
             "open_trade": self.open_trade(),
+            "latest_expired_unclosed": self.latest_expired_unclosed(),
             "summary": {
                 "open_positions": 1 if self.open_trade() else 0,
+                "expired_unclosed_trades": len(
+                    [row for row in rows if row.get("event") == "expired_unclosed"]
+                ),
                 "closed_trades": len(closes),
                 "wins": len(wins),
                 "losses_or_scratches": len(closes) - len(wins),
