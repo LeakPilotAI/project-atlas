@@ -119,6 +119,13 @@ def collect_board(board, research, path=OBSERVATIONS):
                 "automatic_real_money_execution": False,
             }
             append_record(path, row)
+            # Every newly frozen forward observation is mirrored into the
+            # dedicated PAPER-only Quality Dips journal. This happens only after
+            # the immutable observation append succeeds, so PAPER can never
+            # precede its source evidence. The mirror is idempotent by
+            # observation_id + frozen ladder level.
+            from app.investment.quality_dips_paper import mirror_forward_observation
+            mirror_forward_observation(row)
             existing.add(oid)
             created.append(row)
         return created
