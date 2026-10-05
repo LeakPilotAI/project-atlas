@@ -2825,3 +2825,32 @@ Validation status:
 - This pass validates safe accounting/reconciliation of a failed exit. It does NOT
   satisfy the separate future requirement for a genuine successful exactly-once
   pre-deadline auto-flat lifecycle.
+
+
+===============================================================================
+PREDICTION TERMINAL ACCOUNTING REGRESSION CHECKPOINT — 2026-10-05
+===============================================================================
+Commit:
+- fadd53c05deb4864fe5f707ae5ead3c506314ac2
+- test(prediction): lock terminal lifecycle accounting
+
+Purpose:
+- Lock the accepted EXPIRED_UNCLOSED accounting semantics in an additional
+  regression test without changing the running Prediction runtime.
+- Assert terminal-unclosed evidence is not an active position, not a normal closed
+  trade, never counts for live, increments only expired_unclosed_trades, and does
+  not manufacture PAPER PnL.
+
+Validation status:
+- Commit is on chatgpt/atlas-rebuild-v1.
+- This new regression has NOT yet been run locally.
+- Next controlled maintenance sequence: stop Atlas normally with the desktop
+  shortcut, pull the branch, run the focused Prediction suite, then run the full
+  regression suite.
+- Do not claim this new checkpoint passed until those tests complete successfully.
+
+Operational state:
+- The running Atlas instance was intentionally left untouched while evidence was
+  collected.
+- No live-capital or automatic-real-money permissions were enabled.
+- AUTO_FLAT_LIVE_VALIDATION_REQUIRED remains in force.
