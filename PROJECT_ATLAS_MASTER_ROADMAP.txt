@@ -3004,3 +3004,62 @@ STATUS:
 [ROADMAP AUTHORIZED / IMPLEMENTATION NOT YET STARTED]
 This roadmap update changes no runtime strategy, PAPER position, brokerage behavior,
 threshold, or live-capital permission.
+
+
+===============================================================================
+2026-10-05 POST-458846F FORWARD RUNTIME HARVEST — ~3.5 HOUR CHECKPOINT
+===============================================================================
+Capture method:
+- Read-only Desktop Commander inspection while Atlas remained running.
+- No Atlas process stop/restart, runtime mutation, threshold change, or PAPER/live
+  permission change was performed during the harvest.
+
+Runtime evidence:
+- Prediction candidate journal remained actively writing through 2026-10-05
+  09:06:05Z and had 162,456 rows at capture.
+- Prediction trade/event journal had 40 rows and remained safety-consistent.
+- A new eligible Prediction alert was delivered at 2026-10-05 08:31:05Z for
+  KXNFLTD-26OCT08TBDAL-TBTJOHNSON15-2 YES, score 100. It was notification-only;
+  automatic PAPER opening remained false.
+- Prediction status: open_positions=0, expired_unclosed_trades=1, closed_trades=0,
+  net_pnl_dollars=0. The prior KXRAIN trade remains EXPIRED_UNCLOSED with
+  EXIT_FAILED_NO_LIQUIDITY and no fabricated exit/PnL.
+- Prediction automation was running. Durable auto-flat state remained
+  TERMINAL_UNCLOSED, blocked=true, deadline_violation=true.
+- live_capital_allowed=false and automatic_real_money_execution=false.
+
+Day Trading / perps forward evidence:
+- PAPER candidate and journal files remained actively writing through approximately
+  09:05Z.
+- Recent genuine PAPER examples included NEAR LONG closed TP1 with net +0.8484R and
+  PENDLE LONG closed TP1 with net +0.8764R; both retained modeled fees/slippage and
+  excursion evidence.
+- Current read-only attribution aggregate at capture:
+  n=1079, wins=466, losses=613, winrate=0.4319, total_r=-103.3737,
+  expectancy=-0.0958R, profit_factor=0.844, max_drawdown_r=178.4482.
+- This aggregate remains negative. Recent winners do not override the negative body
+  of evidence and do not authorize threshold loosening or live promotion.
+- Attribution execution remained READ_ONLY_PAPER_RESEARCH; live capital false.
+
+Investment evidence:
+- Quality Dips V3 state/provider files were present and recently updated.
+- Latest captured investment cycle classification counts:
+  WATCH=26, ACCUMULATION=6, DEEP_VALUE=0, GENERATIONAL_OPPORTUNITY=0,
+  NO_ACTION=5, THESIS_BROKEN=0.
+- Provider health reported status OK, success_rate approximately 0.9970,
+  failure_rate approximately 0.0030, timeout_rate approximately 0.0009,
+  and zero HTTP 401/429 rates.
+- Existing paper_investment_ledger.jsonl is present but had only 11 rows and had not
+  been updated since 2026-08-31, reinforcing the already-authorized need for
+  QUALITY_DIPS_PAPER_V1 + Investment Archive V2 rather than treating the current
+  investment ledger as equivalent to the active perps PAPER lifecycle.
+
+Decision:
+- Runtime collection is healthy enough to continue.
+- Prediction successful exactly-once pre-deadline auto-flat gate remains NOT PASSED;
+  no new genuine successful lifecycle was observed in this harvest.
+- Day Trading evidence remains materially negative in aggregate and therefore stays
+  PAPER/research only.
+- Preserve current filters and negative evidence.
+- Continue forward collection while preparing the next controlled development window
+  for the Universal PAPER Portfolio / Investment Archive V2 work.
