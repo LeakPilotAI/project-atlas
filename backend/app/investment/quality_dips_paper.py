@@ -343,11 +343,43 @@ def portfolio_snapshot(
             marks.setdefault(row["lot_id"], []).append(row)
 
     positions = []
+    closed_positions = []
     realized = 0.0
     unrealized = 0.0
     for lot_id, lot in opened.items():
         if lot_id in closes:
-            realized += float(closes[lot_id].get("realized_pnl") or 0.0)
+            close = closes[lot_id]
+            realized += float(close.get("realized_pnl") or 0.0)
+            lot_marks = marks.get(lot_id, [])
+            entry = float(lot["fill_price"])
+            observed_prices = [entry] + [float(x["market_price"]) for x in lot_marks] + [float(close["exit_price"])]
+            try:
+                opened_dt = datetime.fromisoformat(str(lot.get("timestamp") or "").replace("Z", "+00:00"))
+                closed_dt = datetime.fromisoformat(str(close.get("timestamp") or "").replace("Z", "+00:00"))
+                holding_hours = max(0.0, (closed_dt - opened_dt).total_seconds() / 3600.0)
+            except Exception:
+                holding_hours = None
+            closed_positions.append({
+                "lot_id": lot_id,
+                "symbol": lot["symbol"],
+                "level": lot.get("level"),
+                "entry_price": entry,
+                "exit_price": float(close["exit_price"]),
+                "quantity_shares": float(lot["quantity_shares"]),
+                "realized_pnl": float(close.get("realized_pnl") or 0.0),
+                "realized_return_pct": float(close.get("realized_return_pct") or 0.0),
+                "mfe_pct": round((max(observed_prices) / entry - 1.0) * 100.0, 8),
+                "mae_pct": round((min(observed_prices) / entry - 1.0) * 100.0, 8),
+                "opened_at": lot.get("timestamp"),
+                "closed_at": close.get("timestamp"),
+                "holding_hours": None if holding_hours is None else round(holding_hours, 4),
+                "close_reason": close.get("reason"),
+                "observation_id": lot.get("observation_id"),
+                "classification": lot.get("classification"),
+                "evidence_class": lot.get("evidence_class"),
+                "paper_policy_version": lot.get("paper_policy_version"),
+                "execution_model_version": lot.get("execution_model_version"),
+            })
             continue
         lot_marks = marks.get(lot_id, [])
         latest = lot_marks[-1] if lot_marks else None
@@ -398,7 +430,8 @@ def portfolio_snapshot(
         },
         "positions": positions,
         "by_symbol": by_symbol,
-        "closed_lots": [closes[k] for k in sorted(closes)],
+        "closed_lots": closed_positions,
+        "timeline": [row for row in rows if row.get("event") in {"open_lot", "mark_lot", "close_lot"}],
         "live_capital_allowed": False,
         "automatic_real_money_execution": False,
     }
