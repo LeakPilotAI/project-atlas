@@ -3269,3 +3269,54 @@ Safety:
 - No broker orders, live capital, automatic real-money execution or strategy
   threshold changes.
 - No automatic PAPER exits yet.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 5 — EXIT CONTRACT + RUNTIME MARKING
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Froze QUALITY_DIPS_PAPER_V1 prospective exit policy as
+  quality-dips-paper-exit-v1-thesis-integrity.
+- Price decline alone is never an investment exit signal.
+- No profit-target or stop-loss exit was invented for the long-horizon strategy.
+- Explicit THESIS_BROKEN / thesis-integrity terminal evidence is the only frozen
+  terminal family in V1.
+- Wired PAPER marking into the existing Quality Dips board refresh after the
+  quote cache is populated.
+- Marking reuses existing cached quote infrastructure rather than adding a new
+  high-frequency provider loop.
+- Existing mark safety remains: only LIVE/FRESH timestamped observations can
+  affect open PAPER lot marks; marking cannot open or close lots.
+- Automatic PAPER closing is NOT wired yet. The terminal policy is frozen first
+  so subsequent lifecycle implementation cannot retrofit exits to performance.
+
+Validation:
+- Focused Quality Dips PAPER/marking/exit/prospective suite: 22 passed in 0.73s.
+- Full Atlas regression: 1170 passed, 2 warnings in 111.27s.
+- Zero failures; only known Starlette/httpx and discord audioop warnings.
+
+Commits:
+- d6a6075 feat(investment): freeze paper thesis exit policy
+- b8d596f test(investment): lock prospective paper exit policy
+- cb9dc8f feat(investment): wire cached paper marking into board refresh
+
+Next controlled slice:
+1. Upgrade Investment History UI to consume /api/archive/investment-paper-v1
+   alongside the legacy isolated paper book without mixing ledgers.
+2. Display V1 open/closed lots, realized/unrealized separation, MFE/MAE,
+   holding duration, policy/version and evidence provenance.
+3. Add Archive V2 endpoint/UI contract tests and JavaScript compile regression.
+4. Perform runtime acceptance against the restarted Atlas API.
+5. Only after UI/evidence acceptance, implement terminal-event-to-PAPER-close
+   wiring using the already frozen exit policy and a fresh observed executable
+   mark; never a retroactive favorable price.
+6. Then design cross-strategy read-only scorecard.
+
+Safety:
+- PAPER ONLY / long-only.
+- No broker orders, live capital, automatic real-money execution or live
+  permissions.
+- No price-only exit, profit-target exit or stop-loss exit added.
+- No historical evidence rewrite or strategy-threshold relaxation.
