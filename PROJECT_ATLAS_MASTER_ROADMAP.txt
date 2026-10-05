@@ -3707,3 +3707,56 @@ Safety:
 - No live capital, automatic real-money execution, strategy promotion, sizing
   change, threshold change, synthetic sample, pooled cross-strategy metric,
   historical rewrite or favorable backfill.
+
+
+-------------------------------------------------------------------------------
+2026-10-05 EXECUTION 11 CLOSURE — RUNTIME ACCEPTANCE RECOVERED
+-------------------------------------------------------------------------------
+Final status: [GREEN]
+
+Infrastructure recovery:
+- Local Docker/WSL recovered without changing Atlas code or strategy policy.
+- atlas-postgres: healthy.
+- atlas-redis: healthy.
+- Supported Atlas launcher active; API listening on 127.0.0.1:8000.
+- Genesis remained running; stinky-postgres, stinky-redis and stinky-minio healthy.
+- Docker Desktop remained running.
+
+Live runtime acceptance:
+- /health = ok.
+- scorecard_version = cross-strategy-evidence-health-v3.
+- DAY_TRADING: 1127 closed, integrity OK, reconstruction OK, malformed 0,
+  evidence health SUBSTANTIAL.
+- INVESTMENT_QUALITY_DIPS_V1: 0 open / 0 closed, integrity OK,
+  reconstruction OK, malformed 0, evidence health NO_EVIDENCE.
+- PREDICTION: 0 open / 0 closed, integrity OK, reconstruction OK,
+  malformed 0, evidence health NO_EVIDENCE.
+- universal_win_rate = null; universal_expectancy = null; pool_lane_pnl = false.
+- live_capital_allowed = false; automatic_real_money_execution = false.
+- Quality Dips V1 execution = PAPER_ONLY.
+- Archive V2 HTTP 200; Evidence checkpoint and Journal integrity UI present.
+- Post-recovery scorecard regression: 6 passed.
+- Execution 11 full regression remains 1181 passed, 2 known warnings.
+
+Execution 11 commits:
+- ecf4af9 feat(validation): isolate evidence integrity diagnostics
+- 427529d docs: record execution 11 runtime block
+- This closure commit records recovered runtime acceptance.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 12:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; never synthesize samples or tune from absent/thin evidence.
+2. Persist read-only cross-strategy evidence checkpoints so sample growth,
+   freshness aging and integrity transitions can be compared across real
+   runtime observations rather than only within one response.
+3. Add bounded checkpoint history/drill-down with durable provenance and
+   retention controls; history is evidence-health telemetry only.
+4. Add regression proving checkpoint persistence/reconstruction cannot alter
+   strategy state, sizing, thresholds, orders, exits or native journals.
+5. Preserve long-only Investment, Prediction PAPER isolation, native accounting
+   units, no pooled metric and all live-capital prohibitions.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact validation/runtime evidence and next
+  execution, commit/push it, and provide a fresh downloadable TXT copy.
