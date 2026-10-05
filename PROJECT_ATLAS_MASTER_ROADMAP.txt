@@ -3925,3 +3925,82 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 14 — CHECKPOINT CADENCE + DIAGNOSTICS
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added read-only capture cadence/status visibility for durable evidence-health
+  checkpoints without requiring or causing a checkpoint write.
+- Capture states: BASELINE_DUE, DEDUP_WINDOW, ELIGIBLE and
+  TIMESTAMP_UNAVAILABLE.
+- Exposes last observation, next eligible observation, seconds until eligible
+  and the frozen 3600-second unchanged-observation dedup interval.
+- Added lane-scoped integrity/reconstruction diagnostic alerts.
+- Alerts are DIAGNOSTIC only and explicitly contain telemetry_only=true,
+  performance_interpretation=null, strategy_action=null and
+  automatic_response=null.
+- Healthy OK->OK transitions do not generate alerts.
+- Archive V2 Evidence Checkpoint History now shows capture cadence, next
+  eligibility, countdown and any diagnostic-only lane alerts.
+- No strategy engine, strategy journal, threshold, sizing, order, exit,
+  promotion or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 13 passed in 6.39s.
+- Archive inline JavaScript node --check GREEN.
+- git diff --check GREEN.
+- Full Atlas regression: 1188 passed, 2 warnings in 117.80s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+
+Implementation commit:
+- 5b99dd0 feat(validation): expose checkpoint cadence diagnostics
+- Full implementation SHA: 5b99dd08176737cb6ef6429cbd88536971e38e1d
+
+Runtime acceptance:
+- Supported Atlas stop completed cleanly and explicitly reported Docker Desktop
+  and Genesis were not touched.
+- Atlas restarted through ATLAS.bat.
+- Launcher readiness artifact: checks=3, failed_checks=0, green=true,
+  consecutive_green=3, required=3.
+- Post-restart Uvicorn startup completed on 127.0.0.1:8000.
+- Fresh post-restart /health requests returned HTTP 200.
+- Durable evidence checkpoint journal still contains exactly one genuine
+  telemetry-only checkpoint; no synthetic observation was created.
+- Day Trading durable checkpoint remains 1127 closed samples, SUBSTANTIAL,
+  integrity OK, reconstruction OK, malformed 0.
+- Quality Dips V1 remains 0 open / 0 closed, NO_EVIDENCE, integrity OK,
+  reconstruction OK, malformed 0.
+- Prediction remains 0 closed, NO_EVIDENCE, integrity OK, reconstruction OK,
+  malformed 0.
+- Live-capital and automatic-real-money execution prohibitions remain intact.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 15:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; zero evidence remains valid and must not be manufactured.
+2. Add read-only checkpoint-history integrity metadata for the telemetry journal
+   itself (readable rows, malformed rows, newest valid checkpoint, retention
+   status) so telemetry corruption is visible rather than silently trusted.
+3. Add fail-closed API/UI behavior for malformed checkpoint-history rows while
+   preserving valid prior observations and never converting corruption into
+   strategy action.
+4. Add regressions proving telemetry-journal corruption cannot contaminate
+   native strategy evidence, performance metrics, thresholds, sizing, orders,
+   exits, promotion or live permissions.
+5. Preserve long-only Investment, Prediction PAPER isolation, native accounting
+   units, no pooled metric and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
