@@ -3382,3 +3382,57 @@ Runtime acceptance:
 - Empty V1 journal is therefore represented honestly as zero lots/zero P&L,
   not synthetic history.
 - Execution 6 runtime acceptance: [GREEN].
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 7 — THESIS TERMINAL PAPER CLOSURE
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added prospective QUALITY_DIPS_PAPER_V1 terminal closure processor.
+- Existing open PAPER lots can close only when the current V3 board produces a
+  frozen terminal thesis condition AND the same refresh has a LIVE/FRESH quote
+  with an effective timestamp.
+- THESIS_BROKEN and the frozen thesis-integrity terminal blocker family are the
+  only V1 close triggers.
+- A price decline by itself cannot close a lot, regardless of magnitude.
+- REFERENCE/stale/missing-price/missing-timestamp quotes cannot create an exit;
+  terminal candidates remain open and are recorded as skipped by the processor.
+- Close uses the observed quote and effective timestamp, never a retroactive
+  favorable price.
+- Existing append-only close_lot accounting remains exactly-once/idempotent.
+- Terminal processor is wired after current V3 board construction and fresh
+  quote collection; results are exposed read-only in the investment board
+  response under quality_dips_paper.terminal.
+- PAPER ONLY; no brokerage path was added.
+
+Validation:
+- Focused terminal/exit/marking/PAPER/archive suite: 24 passed, 2 warnings in 4.49s.
+- Full Atlas regression: 1174 passed, 2 warnings in 140.70s.
+- Zero failures; warnings are the known Starlette/httpx and discord audioop
+  deprecations.
+
+Commits:
+- 3475271 feat(investment): add prospective paper terminal closure
+- 0e3156c feat(investment): wire thesis terminal paper closes
+- 1b560cb test(investment): lock terminal paper closure safety
+
+Next controlled slice:
+1. Runtime-accept the terminal processor after Atlas restart with no fabricated
+   closes and live_capital_allowed=false.
+2. Add selected-lot V1 detail/timeline to Investment Archive V2, including
+   immutable entry, mark history, terminal reason/exit and provenance.
+3. Add an end-to-end temp-journal lifecycle test proving open -> marks ->
+   exactly-once terminal close -> restart reconstruction.
+4. Continue untouched forward PAPER collection; do not tune on final forward
+   evidence.
+5. Then design the cross-strategy read-only scorecard without collapsing
+   incompatible Day Trading, Investment and Prediction metrics.
+
+Safety:
+- PAPER ONLY / long-only.
+- No broker orders, live capital, automatic real-money execution or live
+  permissions.
+- No price-only exits, arbitrary profit targets or stop losses.
+- No threshold relaxation, historical rewrite or favorable backfilled exit.
