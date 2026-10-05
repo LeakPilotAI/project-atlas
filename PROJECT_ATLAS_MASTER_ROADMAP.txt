@@ -4084,3 +4084,88 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 16 — CHECKPOINT SCHEMA VERSION GATE
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added explicit supported checkpoint schema/version gate.
+- Current supported telemetry version:
+  cross-strategy-evidence-health-v3.
+- load_history now accepts only telemetry-only rows whose scorecard_version is
+  explicitly supported.
+- Unknown/missing versions remain durable on disk for diagnostics but cannot
+  feed current history, previous_lanes, transitions, cadence or evidence-health
+  observations.
+- Added schema compatibility diagnostics: status, supported rows, unknown
+  version rows, malformed rows, supported versions and unknown versions.
+- Compatibility diagnostics explicitly state
+  unknown_rows_used_as_current_evidence=false, telemetry_only=true,
+  performance_interpretation=null, strategy_action=null and
+  automatic_response=null.
+- Archive V2 now displays checkpoint schema compatibility.
+- Existing integrity fixture was corrected to explicitly identify its supported
+  V3 schema; fail-closed production behavior was not relaxed.
+- No strategy engine, native strategy journal, threshold, sizing, order, exit,
+  promotion or live permission changed.
+
+Validation:
+- Initial focused run correctly rejected an old fixture with missing version;
+  fixture was updated to explicit V3 rather than weakening the gate.
+- Focused retry: 17 passed in 6.51s.
+- Archive inline JavaScript node --check GREEN.
+- git diff --check GREEN.
+- Full Atlas regression: 1192 passed, 2 warnings in 118.26s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+
+Implementation commit:
+- 8f775b5 feat(validation): gate checkpoint schema versions
+- Full implementation SHA: 8f775b5e2b613f8802c248966171968808a603ee
+
+Runtime acceptance:
+- Supported Atlas stop completed cleanly and explicitly reported Docker Desktop
+  and Genesis were not touched.
+- Atlas restarted through ATLAS.bat.
+- Launcher readiness: checks=3, failed_checks=0, green=true,
+  consecutive_green=3, required=3.
+- Post-restart Uvicorn application startup completed and is running on
+  127.0.0.1:8000.
+- Live schema compatibility: COMPATIBLE.
+- supported_rows=1; unknown_version_rows=0; malformed_rows=0.
+- supported_versions=[cross-strategy-evidence-health-v3].
+- unknown_versions=[].
+- unknown_rows_used_as_current_evidence=false.
+- Current supported history remains exactly one genuine checkpoint.
+- Durable checkpoint remains V3 and records Day Trading 1127 closed samples,
+  Quality Dips V1 0 open / 0 closed and Prediction 0 closed.
+- No synthetic evidence/checkpoint was created.
+- Live-capital and automatic-real-money execution prohibitions remain intact.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 17:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; absence of evidence remains valid.
+2. Add read-only telemetry checkpoint identity/fingerprint metadata so duplicate
+   or replayed durable observations can be diagnosed across restarts without
+   changing evidence semantics.
+3. Add duplicate/replay diagnostics that distinguish legitimate unchanged
+   cadence deduplication from duplicated persisted rows.
+4. Add regressions proving duplicate/replayed telemetry cannot inflate sample
+   history, fabricate growth, alter native strategy evidence, thresholds,
+   sizing, orders, exits, promotion or live permissions.
+5. Preserve long-only Investment, Prediction PAPER isolation, native accounting
+   units, no pooled metric and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
