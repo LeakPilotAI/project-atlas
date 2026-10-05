@@ -19,6 +19,7 @@ from app.investment.quality_dips_v3_forward_store import append_v3_forward_obser
 from app.investment.quality_dips_v3_forward_readiness import forward_readiness, forward_diagnostics
 from app.investment.quality_dips_v3_state import detect_v3_events, quality_dips_v3_state_store
 from app.investment.quality_dips_paper_marking import mark_open_quality_dips_paper
+from app.investment.quality_dips_paper_terminal import close_terminal_quality_dips_paper
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 from app.investment.robinhood_universe_registry import snapshot as robinhood_universe_snapshot, research_candidates
 from app.investment.robinhood_universe_discovery import sync_official_rhj_assets
@@ -87,6 +88,9 @@ async def _build_quality_dips_board(limit: int) -> Dict[str, Any]:
     # Reuse the quote cache already populated above. This observes existing PAPER
     # lots only and rejects non-fresh quotes; it never opens/closes a lot.
     paper_marking = await mark_open_quality_dips_paper()
+    # Terminal closure is evaluated only after the same refresh has produced the
+    # current V3 board and fresh quote cache. Price alone can never close a lot.
+    paper_terminal = await asyncio.to_thread(close_terminal_quality_dips_paper, board, quotes)
 
     counts = {"ACCUMULATE": 0, "PREPARE": 0, "WATCH": 0, "STAND_DOWN": 0}
     v2_counts = {"WATCH": 0, "ACCUMULATION": 0, "DEEP_VALUE": 0, "GENERATIONAL": 0, "THESIS_BROKEN": 0}
@@ -122,6 +126,7 @@ async def _build_quality_dips_board(limit: int) -> Dict[str, Any]:
             "price_alone_breaks_thesis": False,
         },
         "quote_health": quote_health(quotes),
+        "quality_dips_paper": {"marking": paper_marking, "terminal": paper_terminal},
         "quality_dips_v3": {
             "cycle": "QUALITY_DIPS_V3_MARGIN_OF_SAFETY",
             "events_seen_this_request": len(v3_events),
