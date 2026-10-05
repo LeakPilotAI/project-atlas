@@ -14,6 +14,7 @@ CHECKPOINT_PATH = Path(__file__).resolve().parents[2] / "data" / "evidence_healt
 MAX_HISTORY = 500
 DEFAULT_LIMIT = 50
 MIN_UNCHANGED_INTERVAL_SECONDS = 3600
+SUPPORTED_SCORECARD_VERSIONS = {"cross-strategy-evidence-health-v3"}
 
 
 def _dt(value: Any) -> Optional[datetime]:
@@ -41,7 +42,7 @@ def load_history(path: Path = CHECKPOINT_PATH, limit: int = DEFAULT_LIMIT) -> li
                     row = json.loads(raw)
                 except (json.JSONDecodeError, TypeError):
                     continue
-                if isinstance(row, dict) and row.get("telemetry_only") is True:
+                if isinstance(row, dict) and row.get("telemetry_only") is True and row.get("scorecard_version") in SUPPORTED_SCORECARD_VERSIONS:
                     rows.append(row)
     except OSError:
         return []
@@ -203,3 +204,24 @@ def journal_integrity(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
     status="PARTIAL" if malformed or ignored else "OK"
     retention="OVER_LIMIT" if readable > MAX_HISTORY else "WITHIN_LIMIT"
     return {"status":status,"readable_rows":readable,"malformed_rows":malformed,"ignored_non_telemetry_rows":ignored,"newest_valid_checkpoint":newest,"retention_status":retention,"telemetry_only":True,"performance_interpretation":None,"strategy_action":None,"automatic_response":None}
+
+
+def schema_compatibility(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
+    supported = unknown = malformed = 0
+    unknown_versions: set[str] = set()
+    if not path.exists():
+        return {"status":"NO_ROWS","supported_rows":0,"unknown_version_rows":0,"malformed_rows":0,"supported_versions":sorted(SUPPORTED_SCORECARD_VERSIONS),"unknown_versions":[],"telemetry_only":True,"strategy_action":None}
+    try:
+        with path.open(encoding="utf-8") as stream:
+            for raw in stream:
+                if not raw.strip(): continue
+                try: row=json.loads(raw)
+                except (json.JSONDecodeError,TypeError): malformed += 1; continue
+                if not isinstance(row,dict) or row.get("telemetry_only") is not True: continue
+                version=str(row.get("scorecard_version") or "MISSING")
+                if version in SUPPORTED_SCORECARD_VERSIONS: supported += 1
+                else: unknown += 1; unknown_versions.add(version)
+    except OSError:
+        return {"status":"UNREADABLE","supported_rows":0,"unknown_version_rows":0,"malformed_rows":0,"supported_versions":sorted(SUPPORTED_SCORECARD_VERSIONS),"unknown_versions":[],"telemetry_only":True,"strategy_action":None}
+    status="UNKNOWN_VERSION_PRESENT" if unknown else ("MALFORMED_PRESENT" if malformed else "COMPATIBLE")
+    return {"status":status,"supported_rows":supported,"unknown_version_rows":unknown,"malformed_rows":malformed,"supported_versions":sorted(SUPPORTED_SCORECARD_VERSIONS),"unknown_versions":sorted(unknown_versions),"unknown_rows_used_as_current_evidence":False,"telemetry_only":True,"performance_interpretation":None,"strategy_action":None,"automatic_response":None}

@@ -118,7 +118,7 @@ def test_diagnostic_alerts_are_non_actionable_and_lane_scoped():
 def test_checkpoint_journal_integrity_reports_malformed_without_losing_valid_rows(tmp_path):
     from app.services.evidence_checkpoint_history import journal_integrity
     path=tmp_path / "checkpoints.jsonl"
-    valid={"observed_at":"2026-10-05T10:00:00+00:00","telemetry_only":True,"lanes":{}}
+    valid={"observed_at":"2026-10-05T10:00:00+00:00","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{}}
     path.write_text(json.dumps(valid)+"\nnot-json\n"+json.dumps({"telemetry_only":False})+"\n",encoding="utf-8")
     result=journal_integrity(path)
     assert result["status"] == "PARTIAL"
@@ -144,4 +144,35 @@ def test_checkpoint_corruption_does_not_change_native_scorecard_evidence(tmp_pat
     assert before["lanes"] == after["lanes"]
     assert before["comparison_rules"] == after["comparison_rules"]
     assert before["live_capital_allowed"] is False
+    assert after["automatic_real_money_execution"] is False
+
+
+def test_unknown_checkpoint_version_is_diagnostic_only_and_excluded_from_current_history(tmp_path):
+    from app.services.evidence_checkpoint_history import schema_compatibility
+    path=tmp_path / "checkpoints.jsonl"
+    supported={"observed_at":"2026-10-05T10:00:00+00:00","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":2}}}
+    unknown={"observed_at":"2026-10-05T11:00:00+00:00","scorecard_version":"future-v99","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":999999}}}
+    path.write_text(json.dumps(supported)+"\n"+json.dumps(unknown)+"\n",encoding="utf-8")
+    history=load_history(path)
+    compat=schema_compatibility(path)
+    assert len(history) == 1
+    assert history[0]["scorecard_version"] == "cross-strategy-evidence-health-v3"
+    assert previous_lanes(history)["DAY_TRADING"]["sample_size"] == 2
+    assert compat["status"] == "UNKNOWN_VERSION_PRESENT"
+    assert compat["supported_rows"] == 1
+    assert compat["unknown_version_rows"] == 1
+    assert compat["unknown_versions"] == ["future-v99"]
+    assert compat["unknown_rows_used_as_current_evidence"] is False
+    assert compat["strategy_action"] is None
+
+
+def test_unknown_version_cannot_change_native_scorecard_or_live_permissions(tmp_path):
+    path=tmp_path / "checkpoints.jsonl"
+    path.write_text(json.dumps({"scorecard_version":"future-v99","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":999999}}})+"\n",encoding="utf-8")
+    assert load_history(path) == []
+    before=_report(2)
+    after=_report(2)
+    assert before["lanes"] == after["lanes"]
+    assert before["comparison_rules"] == after["comparison_rules"]
+    assert after["live_capital_allowed"] is False
     assert after["automatic_real_money_execution"] is False
