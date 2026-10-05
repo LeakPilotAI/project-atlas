@@ -585,6 +585,21 @@ class PredictionPaperAutomation:
             state["last_check_at"] = _iso(current)
             opened = prediction_paper_journal.open_trade()
             if not opened:
+                terminal = prediction_paper_journal.latest_expired_unclosed()
+                if terminal is not None:
+                    state.update(
+                        {
+                            "last_trade_id": terminal.get("trade_id"),
+                            "last_action": "TERMINAL_UNCLOSED",
+                            "last_reason": terminal.get("terminal_reason"),
+                            "blocked": True,
+                            "deadline_violation": True,
+                        }
+                    )
+                    with self._state_lock:
+                        self._flat_blocked = True
+                        self._last_flat = dict(state)
+                    return state
                 with self._state_lock:
                     self._flat_blocked = False
                     self._last_flat = dict(state)
@@ -607,13 +622,22 @@ class PredictionPaperAutomation:
                     self._last_flat = dict(state)
                 return state
             if occurrence is not None and current >= occurrence:
-                return self._record_flat_block(
-                    opened,
-                    state,
-                    "AUTO_FLAT_DEADLINE_VIOLATION",
-                    current,
-                    deadline_violation=True,
+                terminal = prediction_paper_journal.expire_unclosed(
+                    opened=opened,
+                    now=current,
                 )
+                state.update(
+                    {
+                        "last_action": "TERMINAL_UNCLOSED",
+                        "last_reason": terminal.get("terminal_reason"),
+                        "blocked": True,
+                        "deadline_violation": True,
+                    }
+                )
+                with self._state_lock:
+                    self._flat_blocked = True
+                    self._last_flat = dict(state)
+                return state
 
             ticker = str(opened.get("ticker") or "").strip().upper()
             if not ticker:
