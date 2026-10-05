@@ -88,3 +88,28 @@ def test_transition_summary_baseline_has_no_invented_delta():
     assert result["status"] == "BASELINE"
     assert result["lanes"] == {}
     assert result["performance_interpretation"] is None
+
+
+def test_capture_status_exposes_dedup_cadence_without_strategy_action():
+    from datetime import datetime, timezone
+    from app.services.evidence_checkpoint_history import capture_status
+    history=[{"observed_at":"2026-10-05T10:00:00+00:00","telemetry_only":True}]
+    result=capture_status(history, datetime(2026,10,5,10,30,tzinfo=timezone.utc))
+    assert result["status"] == "DEDUP_WINDOW"
+    assert result["seconds_until_eligible"] == 1800
+    assert result["minimum_unchanged_interval_seconds"] == 3600
+    assert result["telemetry_only"] is True
+    assert result["strategy_action"] is None
+
+
+def test_diagnostic_alerts_are_non_actionable_and_lane_scoped():
+    from app.services.evidence_checkpoint_history import diagnostic_alerts
+    transitions={"lanes":{"DAY_TRADING":{"integrity_transition":"OK->OK","reconstruction_transition":"OK->OK"},"INVESTMENT_QUALITY_DIPS_V1":{"integrity_transition":"OK->PARTIAL","reconstruction_transition":"OK->FAILED_ISOLATED"}}}
+    alerts=diagnostic_alerts(transitions)
+    assert len(alerts) == 1
+    assert alerts[0]["lane"] == "INVESTMENT_QUALITY_DIPS_V1"
+    assert alerts[0]["severity"] == "DIAGNOSTIC"
+    assert alerts[0]["telemetry_only"] is True
+    assert alerts[0]["performance_interpretation"] is None
+    assert alerts[0]["strategy_action"] is None
+    assert alerts[0]["automatic_response"] is None

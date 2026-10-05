@@ -148,3 +148,30 @@ def transition_summary(history: list[Dict[str, Any]]) -> Dict[str, Any]:
             "strategy_action": None,
         }
     return {"status": "ADJACENT_CHECKPOINTS", "telemetry_only": True, "performance_interpretation": None, "strategy_action": None, "from_observed_at": previous.get("observed_at"), "to_observed_at": current.get("observed_at"), "lanes": lanes}
+
+
+def capture_status(history: list[Dict[str, Any]], now: Optional[datetime] = None) -> Dict[str, Any]:
+    """Expose checkpoint cadence without causing or requiring a write."""
+    current = now or datetime.now(timezone.utc)
+    if not history:
+        return {"status": "BASELINE_DUE", "last_observed_at": None, "next_eligible_at": current.isoformat(), "seconds_until_eligible": 0, "minimum_unchanged_interval_seconds": MIN_UNCHANGED_INTERVAL_SECONDS, "telemetry_only": True, "strategy_action": None}
+    last_at = _dt(history[-1].get("observed_at"))
+    if last_at is None:
+        return {"status": "TIMESTAMP_UNAVAILABLE", "last_observed_at": history[-1].get("observed_at"), "next_eligible_at": None, "seconds_until_eligible": None, "minimum_unchanged_interval_seconds": MIN_UNCHANGED_INTERVAL_SECONDS, "telemetry_only": True, "strategy_action": None}
+    elapsed = max(0.0, (current - last_at).total_seconds())
+    remaining = max(0, int(MIN_UNCHANGED_INTERVAL_SECONDS - elapsed))
+    next_at = last_at.timestamp() + MIN_UNCHANGED_INTERVAL_SECONDS
+    return {"status": "ELIGIBLE" if remaining == 0 else "DEDUP_WINDOW", "last_observed_at": last_at.isoformat(), "next_eligible_at": datetime.fromtimestamp(next_at, timezone.utc).isoformat(), "seconds_until_eligible": remaining, "minimum_unchanged_interval_seconds": MIN_UNCHANGED_INTERVAL_SECONDS, "telemetry_only": True, "strategy_action": None}
+
+
+def diagnostic_alerts(transitions: Dict[str, Any]) -> list[Dict[str, Any]]:
+    """Return integrity/reconstruction diagnostics only; never an action signal."""
+    alerts: list[Dict[str, Any]] = []
+    for lane, item in (transitions.get("lanes") or {}).items():
+        integrity = str(item.get("integrity_transition") or "")
+        reconstruction = str(item.get("reconstruction_transition") or "")
+        integrity_after = integrity.split("->")[-1]
+        reconstruction_after = reconstruction.split("->")[-1]
+        if integrity_after not in {"OK", "MISSING_EMPTY", "UNKNOWN"} or reconstruction_after not in {"OK", "UNKNOWN"}:
+            alerts.append({"lane": lane, "severity": "DIAGNOSTIC", "integrity_transition": integrity, "reconstruction_transition": reconstruction, "telemetry_only": True, "performance_interpretation": None, "strategy_action": None, "automatic_response": None})
+    return alerts
