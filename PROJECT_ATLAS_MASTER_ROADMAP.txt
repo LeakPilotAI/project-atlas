@@ -4424,3 +4424,85 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 20 — RETENTION-BOUNDARY PROVENANCE
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added read-only provenance anchor metadata for bounded checkpoint history.
+- Explicitly distinguishes TRUE_JOURNAL_ORIGIN, RETAINED_WINDOW_ORIGIN and
+  NO_EVIDENCE.
+- Reports retained checkpoint count, accepted checkpoints before the visible
+  window, first retained timestamp and first retained fingerprint.
+- A retained-window origin never pretends its missing predecessor is present.
+- Explicit predecessor_known_within_retained_window=false,
+  missing_predecessor_fabricated=false, pruned_history_reconstructed=false,
+  backfill_performed=false, telemetry_only=true,
+  performance_interpretation=null, strategy_action=null and
+  automatic_response=null.
+- Archive V2 now displays retention-origin semantics.
+- No strategy engine, native strategy journal, threshold, sizing, order, exit,
+  promotion or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 25 passed in 7.06s.
+- Archive inline JavaScript node --check GREEN.
+- git diff --check GREEN.
+- Full Atlas regression: 1200 passed, 2 warnings in 130.70s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+- Regression proves a bounded two-row view of three accepted checkpoints reports
+  RETAINED_WINDOW_ORIGIN with one accepted checkpoint before the window rather
+  than fabricating true-origin continuity.
+- Retention-anchor generation cannot alter native scorecard evidence or live
+  permissions.
+
+Implementation commit:
+- 37bcdb0 feat(validation): expose checkpoint retention origin
+- Full implementation SHA: 37bcdb0acdf32f25151413afd5af8093be91737a
+
+Runtime acceptance:
+- Supported Atlas stop completed cleanly and explicitly reported Docker Desktop
+  and Genesis were not touched.
+- Atlas restarted through ATLAS.bat.
+- Launcher readiness: checks=3, failed_checks=0, green=true,
+  consecutive_green=3, required=3.
+- Fresh Uvicorn application startup completed and is running on
+  127.0.0.1:8000.
+- Live provenance anchor: TRUE_JOURNAL_ORIGIN.
+- retained_checkpoints=1; accepted_checkpoints_before_window=0.
+- first retained checkpoint remains the genuine V3 observation at
+  2026-10-05T11:13:15.189867+00:00.
+- missing_predecessor_fabricated=false.
+- pruned_history_reconstructed=false; backfill_performed=false.
+- Quality Dips V1 remains 0 open / 0 closed; absence of evidence remains valid.
+- No synthetic evidence/checkpoint was created.
+- Live-capital and automatic-real-money execution prohibitions remain intact.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 21:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; zero evidence remains a valid outcome.
+2. Add read-only telemetry window completeness metadata that reports whether the
+   visible history is complete, retention-truncated or diagnostically filtered
+   by schema/replay/sequence gates.
+3. Keep completeness diagnostic-only and never infer missing observations,
+   performance or continuity.
+4. Add regressions proving filtered/truncated telemetry cannot fabricate sample
+   growth, freshness movement, continuity or alter native strategy evidence,
+   thresholds, sizing, orders, exits, promotion or live permissions.
+5. Preserve long-only Investment, Prediction PAPER isolation, native accounting
+   units, no pooled metric and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
