@@ -494,3 +494,31 @@ def test_expired_unclosed_preserves_no_liquidity_failure_without_fake_pnl(monkey
     assert snapshot["summary"]["open_positions"] == 0
     assert snapshot["summary"]["expired_unclosed_trades"] == 1
     assert snapshot["summary"]["closed_trades"] == 0
+
+
+
+def test_terminal_unclosed_is_not_counted_as_active_or_closed_trade(tmp_path):
+    journal = _journal(tmp_path)
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    opened = journal.open_from_evaluation({
+        "eligible": True, "ticker": "KXTEST-TERMINAL", "side": "YES",
+        "quantity_contracts": "10",
+        "occurrence_datetime": (now + timedelta(hours=2)).isoformat(),
+        "flat_deadline": (now + timedelta(hours=1)).isoformat(),
+        "strategy": "PRE_EVENT_RECENT_RECLAIM_V1", "score": 90,
+        "engine_version": "prediction-paper-reprice-v1",
+        "entry_fill": {"fillable": True, "vwap_dollars": "0.42",
+                       "notional_dollars": "4.20", "estimated_taker_fee_dollars": "0.17",
+                       "depth_slippage_dollars_per_contract": "0",
+                       "levels": [{"price_dollars": "0.42", "quantity_contracts": "10"}]},
+    })
+    terminal = journal.expire_unclosed(opened=opened, now=now + timedelta(hours=2))
+    snapshot = journal.snapshot()
+    assert terminal["status"] == "EXPIRED_UNCLOSED"
+    assert terminal["counts_as_closed_trade"] is False
+    assert terminal["counts_for_live"] is False
+    assert journal.open_trade() is None
+    assert snapshot["summary"]["open_positions"] == 0
+    assert snapshot["summary"]["expired_unclosed_trades"] == 1
+    assert snapshot["summary"]["closed_trades"] == 0
+    assert snapshot["summary"]["net_pnl_dollars"] == "0"
