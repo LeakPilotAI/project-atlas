@@ -113,3 +113,35 @@ def test_diagnostic_alerts_are_non_actionable_and_lane_scoped():
     assert alerts[0]["performance_interpretation"] is None
     assert alerts[0]["strategy_action"] is None
     assert alerts[0]["automatic_response"] is None
+
+
+def test_checkpoint_journal_integrity_reports_malformed_without_losing_valid_rows(tmp_path):
+    from app.services.evidence_checkpoint_history import journal_integrity
+    path=tmp_path / "checkpoints.jsonl"
+    valid={"observed_at":"2026-10-05T10:00:00+00:00","telemetry_only":True,"lanes":{}}
+    path.write_text(json.dumps(valid)+"\nnot-json\n"+json.dumps({"telemetry_only":False})+"\n",encoding="utf-8")
+    result=journal_integrity(path)
+    assert result["status"] == "PARTIAL"
+    assert result["readable_rows"] == 1
+    assert result["malformed_rows"] == 1
+    assert result["ignored_non_telemetry_rows"] == 1
+    assert result["newest_valid_checkpoint"] == valid["observed_at"]
+    assert result["retention_status"] == "WITHIN_LIMIT"
+    assert result["strategy_action"] is None
+    assert result["automatic_response"] is None
+    assert len(load_history(path)) == 1
+
+
+def test_checkpoint_corruption_does_not_change_native_scorecard_evidence(tmp_path):
+    from app.services.evidence_checkpoint_history import journal_integrity
+    path=tmp_path / "checkpoints.jsonl"
+    path.write_text("broken\n",encoding="utf-8")
+    before=_report(2)
+    integrity=journal_integrity(path)
+    after=_report(2)
+    assert integrity["status"] == "PARTIAL"
+    assert integrity["readable_rows"] == 0
+    assert before["lanes"] == after["lanes"]
+    assert before["comparison_rules"] == after["comparison_rules"]
+    assert before["live_capital_allowed"] is False
+    assert after["automatic_real_money_execution"] is False

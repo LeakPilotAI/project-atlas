@@ -175,3 +175,31 @@ def diagnostic_alerts(transitions: Dict[str, Any]) -> list[Dict[str, Any]]:
         if integrity_after not in {"OK", "MISSING_EMPTY", "UNKNOWN"} or reconstruction_after not in {"OK", "UNKNOWN"}:
             alerts.append({"lane": lane, "severity": "DIAGNOSTIC", "integrity_transition": integrity, "reconstruction_transition": reconstruction, "telemetry_only": True, "performance_interpretation": None, "strategy_action": None, "automatic_response": None})
     return alerts
+
+
+def journal_integrity(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
+    """Inspect the telemetry journal itself without trusting malformed rows."""
+    if not path.exists():
+        return {"status":"MISSING_EMPTY","readable_rows":0,"malformed_rows":0,"ignored_non_telemetry_rows":0,"newest_valid_checkpoint":None,"retention_status":"WITHIN_LIMIT","telemetry_only":True,"strategy_action":None}
+    readable = malformed = ignored = 0
+    newest = None
+    try:
+        with path.open(encoding="utf-8") as stream:
+            for raw in stream:
+                if not raw.strip():
+                    continue
+                try:
+                    row=json.loads(raw)
+                except (json.JSONDecodeError, TypeError):
+                    malformed += 1
+                    continue
+                if not isinstance(row,dict) or row.get("telemetry_only") is not True:
+                    ignored += 1
+                    continue
+                readable += 1
+                newest=row.get("observed_at") or newest
+    except OSError:
+        return {"status":"UNREADABLE","readable_rows":0,"malformed_rows":0,"ignored_non_telemetry_rows":0,"newest_valid_checkpoint":None,"retention_status":"UNKNOWN","telemetry_only":True,"strategy_action":None}
+    status="PARTIAL" if malformed or ignored else "OK"
+    retention="OVER_LIMIT" if readable > MAX_HISTORY else "WITHIN_LIMIT"
+    return {"status":status,"readable_rows":readable,"malformed_rows":malformed,"ignored_non_telemetry_rows":ignored,"newest_valid_checkpoint":newest,"retention_status":retention,"telemetry_only":True,"performance_interpretation":None,"strategy_action":None,"automatic_response":None}
