@@ -3120,3 +3120,53 @@ Next controlled implementation slice:
 3. Add mark/close/terminal accounting and restart/idempotency tests.
 4. Expose read-only investment PAPER portfolio/archive API.
 5. Build Investment Archive V2 UI on that evidence.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 2 — FORWARD V3 -> PAPER MIRROR
+===============================================================================
+Status: [GREEN FOCUSED / FULL REGRESSION ENVIRONMENT BLOCKED]
+
+Implemented:
+- Newly created immutable QUALITY_DIPS_V3 FORWARD_COLLECTION observations now
+  mirror automatically into QUALITY_DIPS_PAPER_V1 immediately after the source
+  evidence append succeeds.
+- PAPER can never precede its frozen source observation.
+- The existing mirror contract remains deterministic and long-only:
+  only V3 actionable states plus ladder levels already marked reached may create
+  PAPER lots; WATCH/no-reached-level observations record PAPER_NO_FILL instead.
+- Mirror remains idempotent by frozen observation + ladder level.
+- No historical/backfill evidence may create PAPER lots.
+- No broker state, Robinhood buying power, future price, or chart-touch fill is
+  consulted.
+- No live-capital or brokerage execution was enabled.
+
+Validation:
+- Focused Quality Dips PAPER + prospective evidence suite: 14 passed in 0.41s.
+- A normal full-suite run reached the end of test execution but pytest cleanup
+  hit the pre-existing Windows Temp permission problem at
+  C:\Users\renal\AppData\Local\Temp\pytest-of-renal\pytest-current.
+- A second attempt relocating TEMP/TMP caused broad environment/setup errors and
+  was terminated; those errors are not accepted as product regressions.
+- Therefore this checkpoint does NOT claim a fresh full-suite GREEN. The last
+  accepted full-suite GREEN remains 1158 passed / 2 warnings from Execution 1.
+
+Commits:
+- fdb1091 feat(investment): mirror forward V3 observations into paper
+- 423a913 test(investment): lock forward observation paper mirror
+
+Next controlled slice:
+1. Add PAPER mark events and deterministic close/terminal lifecycle.
+2. Add realized/unrealized accounting, MFE/MAE and weighted cost basis.
+3. Expose read-only investment PAPER portfolio/archive API.
+4. Build Investment Archive V2 UI.
+5. Re-run full regression using the known-good isolated pytest temp workflow
+   before labeling the broader checkpoint GREEN.
+
+Safety:
+- PAPER ONLY.
+- Long-only Quality Dips.
+- No broker orders.
+- No strategy thresholds changed.
+- No live permissions changed.
+- No historical evidence rewritten.
