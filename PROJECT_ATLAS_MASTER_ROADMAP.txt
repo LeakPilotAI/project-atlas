@@ -3760,3 +3760,86 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact validation/runtime evidence and next
   execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 12 — DURABLE EVIDENCE CHECKPOINT HISTORY
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added a diagnostics-only append-only evidence-health checkpoint journal,
+  separate from Day Trading, Quality Dips V1 and Prediction native journals.
+- Persisted observations contain sample/open counts, freshness provenance,
+  evidence-health band, integrity/reconstruction state, malformed count and last
+  durable evidence timestamp for each lane.
+- Every checkpoint is explicitly telemetry_only=true with
+  performance_interpretation=null and strategy_action=null.
+- Added bounded retention: maximum 500 durable observations; API view defaults
+  to the newest 50.
+- Unchanged observations inside one hour are deduplicated rather than creating
+  polling noise.
+- Malformed checkpoint-history rows are ignored and telemetry write failure
+  fails closed without modifying strategy evidence.
+- Existing scorecard reconstruction can now accept the most recent persisted
+  lane checkpoint so movement is BASELINE/GROWING/UNCHANGED/
+  RECONSTRUCTION_WARNING across real observations.
+- Added dedicated GET /api/validation/cross-strategy-checkpoints. Ordinary
+  cross-strategy scorecard reads remain non-persisting.
+- No strategy engine, thresholds, sizing, native journal writer, order path,
+  exit policy, historical evidence or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 9 passed in 6.48s.
+- Full Atlas regression: 1184 passed, 2 warnings in 117.83s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+- git diff --check GREEN.
+
+Implementation commit:
+- 0c7fe16 feat(validation): persist evidence health checkpoints
+
+Runtime acceptance:
+- Supported Atlas stop completed cleanly and explicitly reported Docker Desktop
+  and Genesis were not touched.
+- Atlas restarted through ATLAS.bat; API, Redis and Postgres connections active.
+- /health returned status=ok.
+- First /api/validation/cross-strategy-checkpoints call persisted one genuine
+  runtime observation.
+- Immediate second call returned persisted=false /
+  UNCHANGED_WITHIN_INTERVAL and history remained one checkpoint.
+- Second live scorecard reconstructed movement=UNCHANGED for all three lanes.
+- Day Trading: 1127 closed PAPER samples, SUBSTANTIAL, integrity OK,
+  reconstruction OK, malformed 0.
+- Quality Dips V1: 0 open / 0 closed, NO_EVIDENCE, integrity OK,
+  reconstruction OK, malformed 0.
+- Prediction: 0 open / 0 closed, NO_EVIDENCE, integrity OK,
+  reconstruction OK, malformed 0.
+- universal_win_rate=null; universal_expectancy=null; pool_lane_pnl=false.
+- live_capital_allowed=false; automatic_real_money_execution=false.
+- /api/archive/investment-paper-v1 remained PAPER_ONLY with 0 open / 0 closed.
+- No synthetic Quality Dips sample or performance outcome was created.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 13:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; zero evidence remains valid.
+2. Add Archive V2 read-only checkpoint-history drill-down so evidence growth,
+   aging and integrity transitions can be inspected over time without implying
+   performance.
+3. Add lane transition summaries (sample delta, freshness delta, integrity
+   transition) derived only from adjacent telemetry checkpoints.
+4. Add regressions proving history/transition rendering cannot write strategy
+   journals or change thresholds, sizing, state, orders, exits or promotion.
+5. Preserve native accounting semantics, Prediction PAPER isolation, long-only
+   Investment and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
