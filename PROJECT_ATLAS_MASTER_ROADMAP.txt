@@ -2876,3 +2876,131 @@ Decision:
 - AUTO_FLAT_SAFETY_BLOCKED and AUTO_FLAT_LIVE_VALIDATION_REQUIRED remain required.
 - A future genuine successful exactly-once pre-deadline auto-flat is still required
   before that separate Prediction lifecycle gate can pass.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER PORTFOLIO / INVESTMENT ARCHIVE EXPANSION
+===============================================================================
+Operator goal:
+- Evolve Atlas so every supported strategy family can be evaluated through a common,
+  durable PAPER execution/evidence lifecycle before any future live-capital review.
+- Make Archive -> Investment History materially more useful for Quality Dips and
+  future investment strategies rather than treating it as a passive history screen.
+- Preserve the separation between PAPER evidence and real brokerage execution.
+
+Observed UI reference supplied 2026-10-05:
+- Archive currently provides PAPER TRADES, INVESTMENT HISTORY, RESEARCH ARCHIVE,
+  SNAPSHOTS, and EXPORT.
+- Existing PAPER archive already exposes aggregate performance, strategy/setup
+  breakdowns, direction, trade details, MFE/MAE, holding time, and an equity curve.
+- This is the design baseline to extend rather than replace.
+
+TARGET ARCHITECTURE — UNIVERSAL PAPER EXECUTION
+[PLANNED]
+Create a shared PAPER portfolio/execution contract capable of serving:
+- Day Trading / perps
+- Quality Dips / long-only investments
+- Prediction Markets
+- future strategy families only after their own explicit policy and safety contract
+
+Each family keeps its own strategy/scoring rules. The common layer owns durable
+simulation concerns: candidate -> intended order -> executable PAPER fill -> open
+position -> management -> exit/terminal state -> immutable archive evidence.
+No strategy becomes live merely because it is supported by the common PAPER layer.
+
+QUALITY DIPS PAPER PORTFOLIO
+[PLANNED / LONG ONLY]
+Add a dedicated versioned Quality Dips PAPER policy that mirrors qualifying frozen
+investment decisions into simulated positions without placing Robinhood/broker orders.
+Requirements:
+- Preserve the current long-only Investment boundary permanently.
+- Record policy/version, symbol, point-in-time thesis/evidence, V3 state, L1-L4 level,
+  intended quantity/notional policy, observed market price, simulated fill model,
+  timestamp, cost basis, position size, and provenance.
+- Track partial staged accumulation as explicit PAPER lots rather than silently
+  rewriting average cost.
+- Never average down merely because price fell; each simulated addition must satisfy
+  the frozen Quality Dips policy at that point in time.
+- Preserve thesis changes, THESIS_BROKEN, stale evidence, HOLD/WAIT/BUY_NOTHING_TODAY,
+  and skipped opportunities.
+- Model fees/slippage where applicable; never assume a fill from a chart touch alone.
+- Define versioned PAPER exit/management rules before scoring performance. Do not
+  invent exits retrospectively from favorable future prices.
+- Shutdown/restart must preserve open PAPER investment positions and journal state.
+
+INVESTMENT ARCHIVE V2
+[PLANNED]
+Upgrade Archive -> Investment History into an evidence dashboard with:
+- open vs closed PAPER investment positions
+- realized and unrealized PAPER P&L clearly separated
+- cumulative return/equity curve and drawdown
+- per-symbol and per-policy/version attribution
+- L1/L2/L3/L4 lot history and weighted cost basis
+- thesis state and thesis-change timeline
+- holding duration
+- MFE/MAE and capture/giveback after positions close
+- skipped/rejected opportunity outcomes without fabricated fills
+- benchmark comparison where point-in-time benchmark data is available
+- regime/time-period breakdown
+- execution/fill provenance and data freshness
+- filters for strategy version, symbol, state, date, and evidence maturity
+- explicit PAPER ONLY / NO BROKER ORDER labeling
+
+UNIVERSAL ARCHIVE / CROSS-STRATEGY SCORECARD
+[PLANNED]
+Build a common read-only portfolio research surface that can compare strategy families
+without mixing incompatible units. Report dollars/percent/R/contract metrics only where
+appropriate and preserve family-specific statistics. Include:
+- sample size and maturity
+- net expectancy after modeled costs
+- win/loss or resolved outcome statistics where meaningful
+- drawdown
+- exposure and concurrency
+- holding time
+- execution quality
+- regime attribution
+- strategy/version
+- non-performance terminal states
+- untouched forward evidence window
+Do not combine Day Trading, Investment, and Prediction results into a misleading single
+win rate.
+
+PAPER-TO-LIVE PROMOTION CONTRACT
+[REQUIRED]
+Universal PAPER support is evidence infrastructure, not live authorization.
+A future strategy may approach a bounded live pilot only after:
+1. implementation/regression safety is GREEN;
+2. realistic PAPER execution semantics are validated;
+3. strategy policy/version is frozen;
+4. unseen and fresh forward evidence is positive after costs;
+5. drawdown/tail behavior and regime dependence are acceptable;
+6. reconciliation, stale-data, exposure, loss-stop and kill-switch controls pass;
+7. a read-only live-readiness review passes;
+8. the operator separately and explicitly authorizes a deliberately small live pilot.
+No automatic transition from PAPER to live is permitted.
+
+EARNINGS / OPTIMIZATION PRINCIPLE
+[PERMANENT]
+Atlas optimizes for demonstrated risk-adjusted net expectancy and capital protection,
+not daily profit quotas or maximum trade count. Zero-trade/zero-investment days are
+valid. Never loosen filters, force fills, increase risk, or rewrite negative evidence
+to manufacture daily earnings.
+
+IMPLEMENTATION ORDER
+[NEXT AFTER CURRENT FORWARD COLLECTION WINDOW]
+1. Audit existing Investment History data/API/UI and Quality Dips V3 durable evidence.
+2. Specify QUALITY_DIPS_PAPER_V1 entry, lot, sizing, mark, exit and terminal contracts.
+3. Add append-only investment PAPER journal and restart-safe state.
+4. Add deterministic PAPER fill/cost model and explicit skipped/rejected evidence.
+5. Add focused lifecycle/idempotency/accounting tests.
+6. Upgrade Investment History UI to Archive V2.
+7. Add cross-strategy read-only scorecard without mixing incompatible metrics.
+8. Run full regression and desktop runtime acceptance.
+9. Collect untouched Quality Dips forward PAPER evidence; do not tune on the final
+   holdout/forward window.
+10. Only after mature positive evidence, open a separate live-readiness review.
+
+STATUS:
+[ROADMAP AUTHORIZED / IMPLEMENTATION NOT YET STARTED]
+This roadmap update changes no runtime strategy, PAPER position, brokerage behavior,
+threshold, or live-capital permission.
