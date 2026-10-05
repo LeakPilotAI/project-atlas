@@ -76,6 +76,8 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
         body["checkpoint_journal_integrity"]=journal_integrity()
         from app.services.evidence_checkpoint_history import schema_compatibility
         body["checkpoint_schema_compatibility"]=schema_compatibility()
+        from app.services.evidence_checkpoint_history import replay_diagnostics
+        body["checkpoint_replay_diagnostics"]=replay_diagnostics()
         body["latest_scorecard"]=report
         body["persistence"]=write
         body["execution"]="READ_ONLY_PAPER_RESEARCH"

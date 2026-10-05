@@ -176,3 +176,36 @@ def test_unknown_version_cannot_change_native_scorecard_or_live_permissions(tmp_
     assert before["comparison_rules"] == after["comparison_rules"]
     assert after["live_capital_allowed"] is False
     assert after["automatic_real_money_execution"] is False
+
+
+def test_adjacent_duplicate_checkpoint_is_diagnosed_and_cannot_inflate_history(tmp_path):
+    from app.services.evidence_checkpoint_history import checkpoint_fingerprint, replay_diagnostics
+    path=tmp_path / "checkpoints.jsonl"
+    base={"observed_at":"2026-10-05T10:00:00+00:00","scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":7}}}
+    duplicate=dict(base); duplicate["observed_at"]="2026-10-05T11:00:00+00:00"
+    assert checkpoint_fingerprint(base) == checkpoint_fingerprint(duplicate)
+    path.write_text(json.dumps(base)+"\n"+json.dumps(duplicate)+"\n",encoding="utf-8")
+    history=load_history(path)
+    diag=replay_diagnostics(path)
+    assert len(history) == 1
+    assert diag["status"] == "DUPLICATE_PRESENT"
+    assert diag["physical_supported_rows"] == 2
+    assert diag["usable_history_rows"] == 1
+    assert diag["adjacent_duplicate_rows"] == 1
+    assert diag["duplicates_inflate_usable_history"] is False
+
+
+def test_replayed_checkpoint_cannot_fabricate_growth_or_change_native_scorecard(tmp_path):
+    from app.services.evidence_checkpoint_history import replay_diagnostics
+    path=tmp_path / "checkpoints.jsonl"
+    def row(at,n): return {"observed_at":at,"scorecard_version":"cross-strategy-evidence-health-v3","telemetry_only":True,"lanes":{"DAY_TRADING":{"sample_size":n}}}
+    a=row("2026-10-05T10:00:00+00:00",7); b=row("2026-10-05T11:00:00+00:00",8); replay=row("2026-10-05T12:00:00+00:00",7)
+    path.write_text(json.dumps(a)+"\n"+json.dumps(b)+"\n"+json.dumps(replay)+"\n",encoding="utf-8")
+    diag=replay_diagnostics(path)
+    before=_report(2); after=_report(2)
+    assert diag["status"] == "REPLAY_PRESENT"
+    assert diag["nonadjacent_replay_rows"] == 1
+    assert diag["strategy_action"] is None
+    assert before["lanes"] == after["lanes"]
+    assert after["live_capital_allowed"] is False
+    assert after["automatic_real_money_execution"] is False

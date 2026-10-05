@@ -6,6 +6,7 @@ cannot place orders or change strategy state, thresholds, sizing, or exits.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -29,6 +30,12 @@ def _dt(value: Any) -> Optional[datetime]:
         return None
 
 
+def checkpoint_fingerprint(row: Dict[str, Any]) -> str:
+    identity = {"scorecard_version": row.get("scorecard_version"), "lanes": row.get("lanes") or {}}
+    payload = json.dumps(identity, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
 def load_history(path: Path = CHECKPOINT_PATH, limit: int = DEFAULT_LIMIT) -> list[Dict[str, Any]]:
     if not path.exists():
         return []
@@ -43,7 +50,12 @@ def load_history(path: Path = CHECKPOINT_PATH, limit: int = DEFAULT_LIMIT) -> li
                 except (json.JSONDecodeError, TypeError):
                     continue
                 if isinstance(row, dict) and row.get("telemetry_only") is True and row.get("scorecard_version") in SUPPORTED_SCORECARD_VERSIONS:
-                    rows.append(row)
+                    fingerprint = checkpoint_fingerprint(row)
+                    if rows and checkpoint_fingerprint(rows[-1]) == fingerprint:
+                        continue
+                    item = dict(row)
+                    item["checkpoint_fingerprint"] = fingerprint
+                    rows.append(item)
     except OSError:
         return []
     return rows[-max(1, min(int(limit), MAX_HISTORY)):]
@@ -225,3 +237,28 @@ def schema_compatibility(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
         return {"status":"UNREADABLE","supported_rows":0,"unknown_version_rows":0,"malformed_rows":0,"supported_versions":sorted(SUPPORTED_SCORECARD_VERSIONS),"unknown_versions":[],"telemetry_only":True,"strategy_action":None}
     status="UNKNOWN_VERSION_PRESENT" if unknown else ("MALFORMED_PRESENT" if malformed else "COMPATIBLE")
     return {"status":status,"supported_rows":supported,"unknown_version_rows":unknown,"malformed_rows":malformed,"supported_versions":sorted(SUPPORTED_SCORECARD_VERSIONS),"unknown_versions":sorted(unknown_versions),"unknown_rows_used_as_current_evidence":False,"telemetry_only":True,"performance_interpretation":None,"strategy_action":None,"automatic_response":None}
+
+
+def replay_diagnostics(path: Path = CHECKPOINT_PATH) -> Dict[str, Any]:
+    physical_supported = duplicates = 0
+    previous_fingerprint = None
+    fingerprints: set[str] = set()
+    replayed_nonadjacent = 0
+    if path.exists():
+        try:
+            with path.open(encoding="utf-8") as stream:
+                for raw in stream:
+                    if not raw.strip(): continue
+                    try: row=json.loads(raw)
+                    except (json.JSONDecodeError,TypeError): continue
+                    if not isinstance(row,dict) or row.get("telemetry_only") is not True or row.get("scorecard_version") not in SUPPORTED_SCORECARD_VERSIONS: continue
+                    physical_supported += 1
+                    fp=checkpoint_fingerprint(row)
+                    if fp == previous_fingerprint: duplicates += 1
+                    elif fp in fingerprints: replayed_nonadjacent += 1
+                    fingerprints.add(fp); previous_fingerprint=fp
+        except OSError:
+            return {"status":"UNREADABLE","telemetry_only":True,"strategy_action":None}
+    usable=len(load_history(path,MAX_HISTORY))
+    status="REPLAY_PRESENT" if replayed_nonadjacent else ("DUPLICATE_PRESENT" if duplicates else "CLEAN")
+    return {"status":status,"physical_supported_rows":physical_supported,"usable_history_rows":usable,"adjacent_duplicate_rows":duplicates,"nonadjacent_replay_rows":replayed_nonadjacent,"unique_fingerprints":len(fingerprints),"duplicates_inflate_usable_history":False,"telemetry_only":True,"performance_interpretation":None,"strategy_action":None,"automatic_response":None}
