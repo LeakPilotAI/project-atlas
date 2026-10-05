@@ -22,6 +22,8 @@ POLICY_VERSION = "quality-dips-v3-mos-15-20-25-30-v1"
 PAPER_POLICY_VERSION = "QUALITY_DIPS_PAPER_V1"
 EXECUTION_MODEL_VERSION = "quality-dips-paper-v1-explicit-notional-no-broker"
 VALID_LEVELS = frozenset({"L1", "L2", "L3", "L4"})
+PAPER_NOTIONAL_BY_LEVEL = {"L1": 100.0, "L2": 100.0, "L3": 100.0, "L4": 100.0}
+ACTIONABLE_STATES = frozenset({"ACCUMULATION", "DEEP_VALUE", "GENERATIONAL"})
 _lock = RLock()
 
 
@@ -172,6 +174,71 @@ def open_lots(events: Optional[Iterable[Dict[str, Any]]] = None) -> list[Dict[st
         elif row.get("event") == "close_lot" and lot_id:
             closed.add(lot_id)
     return [row for lot_id, row in opened.items() if lot_id not in closed]
+
+
+
+def _reached_levels(observation: Dict[str, Any]) -> list[str]:
+    prediction = observation.get("prediction") or {}
+    ladder = prediction.get("entry_ladder") or {}
+    if not ladder.get("ready"):
+        return []
+    reached = []
+    for item in ladder.get("levels") or []:
+        level = str(item.get("level") or "").upper()
+        if level in VALID_LEVELS and item.get("reached") is True:
+            reached.append(level)
+    return sorted(set(reached), key=lambda x: int(x[1:]))
+
+
+def mirror_forward_observation(
+    observation: Dict[str, Any],
+    *,
+    paper_notional_by_level: Optional[Dict[str, Any]] = None,
+    path: Path = QUALITY_DIPS_PAPER_JOURNAL_PATH,
+) -> Dict[str, Any]:
+    """Mirror one frozen forward V3 observation into deterministic PAPER evidence.
+
+    Only levels already marked reached by the frozen V3 policy can open. The
+    simulated fill uses the observation's point-in-time price; no chart-touch,
+    future price, live buying power, or broker state is consulted.
+    """
+    if str(observation.get("strategy_version") or "") != STRATEGY_VERSION:
+        raise ValueError("observation is not QUALITY_DIPS_V3")
+    if str(observation.get("policy_version") or "") != POLICY_VERSION:
+        raise ValueError("observation policy_version does not match frozen V3 policy")
+    if str(observation.get("evidence_class") or "").upper() != "FORWARD_COLLECTION":
+        raise ValueError("only FORWARD_COLLECTION observations may create PAPER lots")
+    state = str(observation.get("classification") or "").upper()
+    reached = _reached_levels(observation)
+    if state not in ACTIONABLE_STATES or not reached:
+        row = record_decision(
+            observation,
+            decision="PAPER_NO_FILL",
+            reason="V3 state not actionable or no frozen ladder level reached",
+            path=path,
+        )
+        return {"decision": row, "opened_lots": []}
+
+    notionals = dict(PAPER_NOTIONAL_BY_LEVEL)
+    if paper_notional_by_level is not None:
+        notionals.update(paper_notional_by_level)
+    decision = record_decision(
+        observation,
+        decision="PAPER_OPEN_" + "_".join(reached),
+        reason="Frozen V3 forward observation reached eligible long-only ladder level(s)",
+        path=path,
+    )
+    lots = [
+        open_lot(
+            observation,
+            level=level,
+            paper_notional_dollars=notionals[level],
+            fill_price=observation.get("price"),
+            path=path,
+        )
+        for level in reached
+    ]
+    return {"decision": decision, "opened_lots": lots}
 
 
 def execute_broker_order(*_args: Any, **_kwargs: Any) -> None:
