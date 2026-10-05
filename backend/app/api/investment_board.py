@@ -18,6 +18,7 @@ from app.investment.quality_dips_v3_delivery import deliver_v3_events
 from app.investment.quality_dips_v3_forward_store import append_v3_forward_observation
 from app.investment.quality_dips_v3_forward_readiness import forward_readiness, forward_diagnostics
 from app.investment.quality_dips_v3_state import detect_v3_events, quality_dips_v3_state_store
+from app.investment.quality_dips_paper_marking import mark_open_quality_dips_paper
 from app.investment.storage import OPPORTUNITIES_PATH, PLANS_PATH
 from app.investment.robinhood_universe_registry import snapshot as robinhood_universe_snapshot, research_candidates
 from app.investment.robinhood_universe_discovery import sync_official_rhj_assets
@@ -83,6 +84,9 @@ async def _build_quality_dips_board(limit: int) -> Dict[str, Any]:
         quality_dips_v3_state_store.remember(symbol, v3)
     quality_dips_v3_state_store.save()
     v3_delivery = await deliver_v3_events(v3_events)
+    # Reuse the quote cache already populated above. This observes existing PAPER
+    # lots only and rejects non-fresh quotes; it never opens/closes a lot.
+    paper_marking = await mark_open_quality_dips_paper()
 
     counts = {"ACCUMULATE": 0, "PREPARE": 0, "WATCH": 0, "STAND_DOWN": 0}
     v2_counts = {"WATCH": 0, "ACCUMULATION": 0, "DEEP_VALUE": 0, "GENERATIONAL": 0, "THESIS_BROKEN": 0}
@@ -123,6 +127,7 @@ async def _build_quality_dips_board(limit: int) -> Dict[str, Any]:
             "events_seen_this_request": len(v3_events),
             "events": v3_events,
             "delivery": v3_delivery,
+            "paper_marking": paper_marking,
             # Both reports share one file-signature cached PIT load. Keep the
             # immutable evidence file intact without allocating/parsing it twice
             # per dashboard refresh.
