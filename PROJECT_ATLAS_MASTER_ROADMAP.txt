@@ -2774,3 +2774,37 @@ SAFETY / PROMOTION GATE
 - Current changes reduce entry/exit-liquidity risk; they do not prove future liquidity.
 - Live execution and automatic real-money execution remain false.
 ================================================================================
+
+
+================================================================================
+PREDICTION EXPIRED-UNCLOSED TERMINAL ACCOUNTING — 2026-10-05
+================================================================================
+
+Observed post-restart evidence showed PAPER trade 21aa114b-10d remained journal-open
+after its event occurrence because mandatory auto-flat had no executable bid depth.
+Atlas correctly refused to fabricate a close and later reported a deadline violation.
+
+Hardening added:
+- A trade that reaches event start without an executable exit is now append-only
+  terminal state EXPIRED_UNCLOSED, not a synthetic close.
+- No exit price, exit notional, exit fee, fill levels, gross/net PnL, ROI, settlement
+  result, or win/loss is manufactured for this state.
+- The most recent pre-event auto-flat blocker is preserved. No/insufficient depth
+  maps to terminal reason EXIT_FAILED_NO_LIQUIDITY; other unresolved failures map
+  to EXIT_FAILED_BEFORE_EVENT_START.
+- EXPIRED_UNCLOSED no longer counts as an active/open position and does not count
+  as a closed trade. It is reported separately in Prediction PAPER summary.
+- Reconciliation is idempotent: repeated worker checks do not append duplicate
+  terminal rows.
+- A durable EXPIRED_UNCLOSED state keeps AUTO_FLAT_SAFETY_BLOCKED active after
+  restart/reconciliation.
+- AUTO_FLAT_LIVE_VALIDATION_REQUIRED remains in force. Unattended Prediction PAPER
+  opening remains disabled. Live execution/capital remain disabled.
+- No combos/parlays/multivariate/stacking policy was changed.
+- Tests were added/updated for terminal accounting, no fake PnL/fill, idempotence,
+  liquidity-failure attribution, and durable safety blocking.
+
+Validation status:
+- Code committed to GitHub branch chatgpt/atlas-rebuild-v1.
+- New/updated tests have NOT yet been run locally or in CI at the time of this
+  roadmap entry. Do not claim this hardening passed until validation is executed.
