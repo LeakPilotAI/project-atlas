@@ -83,16 +83,21 @@ def test_archive_investment_history_page_contract():
         "Open Investment Book",
         "Daily Research Plans",
         "Position Details",
-        "REALIZED INVESTMENT PERFORMANCE NOT YET SUPPORTED",
-        "no closed investment exits recorded",
+        "Quality Dips PAPER V1 Lots",
+        "Prospective append-only evidence",
     ):
         assert label in text
     assert "/api/archive/investment-history?limit=400" in text
+    assert "/api/archive/investment-paper-v1" in text
     assert "/api/archive/investment-history/" in text
     assert "PAPER research only" in text
     assert "no live brokerage execution" in text
     assert "Current Book Allocation" in text
     assert "Position Notes" in text
+    assert "V1 Realized P&amp;L" in text
+    assert "MFE" in text and "MAE" in text
+    assert "paper_policy_version" in text
+    assert "execution_model_version" in text
     assert "OHLC + volume" in text
     assert 'aria-label="Archive investment side rail"' in text
     assert "max-height:535px" in text
