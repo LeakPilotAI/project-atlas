@@ -4169,3 +4169,87 @@ Permanent execution workflow remains mandatory:
 - After every completed execution/checkpoint, update this full canonical roadmap,
   preserve prior history, record exact commits, validation/runtime evidence and
   next execution, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+===============================================================================
+2026-10-05 UNIVERSAL PAPER EXECUTION 17 — CHECKPOINT IDENTITY + REPLAY DIAGNOSTICS
+===============================================================================
+Status: [GREEN]
+
+Implemented:
+- Added deterministic SHA-256 checkpoint fingerprint identity derived only from
+  scorecard_version + lane evidence state; observed_at is intentionally excluded
+  so timestamp-only duplicate observations share identity.
+- Supported checkpoint history now collapses consecutive identical fingerprints
+  before transition/cadence math, preventing duplicate persisted rows from
+  inflating usable history or fabricating growth.
+- Physical rows remain untouched on disk for forensic diagnostics.
+- Added replay diagnostics distinguishing adjacent duplicates from nonadjacent
+  replayed identities.
+- Diagnostics report physical supported rows, usable history rows, adjacent
+  duplicate rows, nonadjacent replay rows and unique fingerprints.
+- Explicit duplicates_inflate_usable_history=false, telemetry_only=true,
+  performance_interpretation=null, strategy_action=null and
+  automatic_response=null.
+- Archive V2 now displays replay diagnostics.
+- No strategy engine, native strategy journal, threshold, sizing, order, exit,
+  promotion or live permission changed.
+
+Validation:
+- Focused scorecard + checkpoint-history suite: 19 passed in 6.10s.
+- Archive inline JavaScript node --check GREEN.
+- git diff --check GREEN.
+- Full Atlas regression: 1194 passed, 2 warnings in 117.36s.
+- Zero failures; warnings remain the known Starlette/httpx and discord audioop
+  deprecations.
+- Regressions prove timestamp-only duplicates collapse to one usable history
+  observation and nonadjacent replay diagnostics cannot change native scorecard
+  evidence or live permissions.
+
+Implementation commit:
+- d8eb010 feat(validation): diagnose checkpoint replay identity
+- Full implementation SHA: d8eb010760a2ddebb204d2da7350a92d73c3b5a6
+
+Runtime acceptance:
+- Supported Atlas stop completed cleanly and explicitly reported Docker Desktop
+  and Genesis were not touched.
+- Atlas restarted through ATLAS.bat.
+- Launcher readiness: checks=3, failed_checks=0, green=true,
+  consecutive_green=3, required=3.
+- Fresh Uvicorn application startup completed and is running on
+  127.0.0.1:8000.
+- Live replay diagnostics: CLEAN.
+- physical_supported_rows=1; usable_history_rows=1.
+- adjacent_duplicate_rows=0; nonadjacent_replay_rows=0.
+- unique_fingerprints=1.
+- duplicates_inflate_usable_history=false.
+- Durable checkpoint remains the single genuine V3 observation with Day Trading
+  1127 closed samples, Quality Dips V1 0 open / 0 closed and Prediction 0
+  closed.
+- No synthetic evidence/checkpoint was created.
+- Live-capital and automatic-real-money execution prohibitions remain intact.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 18:
+1. Continue untouched forward QUALITY_DIPS_PAPER_V1 evidence collection under
+   frozen V3; zero evidence remains a valid outcome.
+2. Add read-only checkpoint chain/sequence diagnostics so ordering anomalies
+   (out-of-order timestamps or time regression) are explicit without rewriting
+   durable history.
+3. Ensure transition math uses only monotonic, supported, de-duplicated telemetry
+   observations and reports excluded ordering anomalies diagnostically.
+4. Add regressions proving out-of-order/replayed telemetry cannot fabricate
+   growth/freshness movement or alter native strategy evidence, thresholds,
+   sizing, orders, exits, promotion or live permissions.
+5. Preserve long-only Investment, Prediction PAPER isolation, native accounting
+   units, no pooled metric and all live-capital prohibitions.
+
+Safety:
+- PAPER/research telemetry only.
+- No broker orders, live capital, automatic real-money execution, strategy
+  promotion, sizing change, threshold change, synthetic samples, pooled metrics,
+  historical rewrite or favorable backfill.
+
+Permanent execution workflow remains mandatory:
+- After every completed execution/checkpoint, update this full canonical roadmap,
+  preserve prior history, record exact commits, validation/runtime evidence and
+  next execution, commit/push it, and provide a fresh downloadable TXT copy.
