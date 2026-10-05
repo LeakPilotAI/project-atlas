@@ -2805,6 +2805,23 @@ Hardening added:
   liquidity-failure attribution, and durable safety blocking.
 
 Validation status:
-- Code committed to GitHub branch chatgpt/atlas-rebuild-v1.
-- New/updated tests have NOT yet been run locally or in CI at the time of this
-  roadmap entry. Do not claim this hardening passed until validation is executed.
+- PASSED controlled local validation on 2026-10-05 after sync to commit 3678e56.
+- Focused Prediction automation regression: 14 passed, 0 failed.
+- Full Atlas regression: 1153 passed, 0 failed; only the two previously known
+  dependency deprecation warnings remained.
+- Genuine journal trade 21aa114b-10d reconciled at runtime to EXPIRED_UNCLOSED with
+  terminal reason EXIT_FAILED_NO_LIQUIDITY.
+- Runtime reconciliation preserved the prior AUTO_FLAT_BLOCKED_NO_DEPTH /
+  NO_EXECUTABLE_DEPTH evidence and manufactured no exit price, exit notional, fee,
+  fill, gross/net PnL, ROI, settlement result, or closed-trade outcome.
+- Runtime auto-flat state reported TERMINAL_UNCLOSED, blocked=true and
+  deadline_violation=true.
+- Scanner remained healthy during acceptance: 400 metadata markets seen, 40 selected,
+  7 fully evaluated, 0 scanner errors and 0 timeouts in the captured cycle.
+- AUTO_FLAT_SAFETY_BLOCKED and AUTO_FLAT_LIVE_VALIDATION_REQUIRED remain active.
+  Unattended Prediction PAPER opening remains disabled; live execution/capital and
+  automatic real-money execution remain false.
+- Classification: EXPIRED-UNCLOSED LIFECYCLE HARDENING PASSED.
+- This pass validates safe accounting/reconciliation of a failed exit. It does NOT
+  satisfy the separate future requirement for a genuine successful exactly-once
+  pre-deadline auto-flat lifecycle.
