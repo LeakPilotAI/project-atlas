@@ -33,7 +33,10 @@ from app.prediction.policy import POLICY_VERSION, policy_snapshot
 AUTOMATION_VERSION = "prediction-paper-automation-v1"
 DEFAULT_SCAN_INTERVAL_SECONDS = 60.0
 DEFAULT_FLAT_INTERVAL_SECONDS = 5.0
-DEFAULT_FLAT_LEAD_SECONDS = 5.0
+# Begin mandatory flatten attempts well before the strategy's flat deadline.
+# The worker still retries every DEFAULT_FLAT_INTERVAL_SECONDS. This gives thin
+# books time to recover without ever fabricating a PAPER exit.
+DEFAULT_FLAT_LEAD_SECONDS = 600.0
 DEFAULT_DISCOVERY_LIMIT = 40
 DEFAULT_DISCOVERY_POOL_LIMIT = 400
 DEFAULT_DISCOVERY_PAGE_SIZE = 200
