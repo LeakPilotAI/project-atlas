@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import app.prediction.prediction_paper_automation as automation_module
 from app.prediction.kalshi_public import normalize_market
-from app.prediction.paper_engine import PredictionPaperJournal
+from app.prediction.paper_engine import PredictionPaperJournal, evaluate_pre_event_repricing
 from app.prediction.prediction_paper_automation import (
     PredictionAutomationConfig,
     PredictionPaperAutomation,
@@ -252,7 +252,7 @@ def test_scanner_notifies_eligible_candidates_without_opening(monkeypatch, tmp_p
 def test_auto_flat_waits_before_deadline(monkeypatch, tmp_path):
     now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
     journal = _journal(tmp_path)
-    _open(journal, now, flat_minutes=10)
+    _open(journal, now, flat_minutes=11)
     monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
 
     async def forbidden(*args, **kwargs):
@@ -261,6 +261,51 @@ def test_auto_flat_waits_before_deadline(monkeypatch, tmp_path):
 
     state = asyncio.run(PredictionPaperAutomation().run_auto_flat_once(now=now))
     assert state["last_action"] == "WAITING_FOR_FLAT_DEADLINE"
+    assert journal.open_trade() is not None
+
+
+def test_candidate_requires_full_executable_exit_depth_at_entry():
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    market = _market(now)
+    book_data = _book()
+    # Entry asks remain deep enough for 10 contracts, but only two contracts can
+    # currently be sold. A mandatory-flat strategy must reject this asymmetry.
+    book_data["yes"]["bids"] = [
+        {"price_dollars": "0.50", "quantity_contracts": "2"}
+    ]
+    evaluation = evaluate_pre_event_repricing(
+        market=market,
+        orderbook=book_data,
+        candles=_candles(),
+        side="YES",
+        quantity=Decimal("10"),
+        now=now,
+    )
+    assert evaluation["eligible"] is False
+    assert "INSUFFICIENT_EXECUTABLE_EXIT_DEPTH_AT_ENTRY" in evaluation["rejection_reasons"]
+    assert evaluation["exit_liquidity_at_entry"]["required_for_eligibility"] is True
+    assert evaluation["exit_liquidity_at_entry"]["fillable"] is False
+
+
+def test_auto_flat_begins_retry_window_ten_minutes_before_flat_deadline(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    journal = _journal(tmp_path)
+    _open(journal, now, flat_minutes=10)
+    monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
+    calls = {"book": 0}
+    book_data = _book()
+    book_data["yes"]["bids"] = []
+
+    async def book(*args, **kwargs):
+        calls["book"] += 1
+        return {"orderbook": book_data}
+
+    monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
+    service = PredictionPaperAutomation()
+    state = asyncio.run(service.run_auto_flat_once(now=now))
+    assert calls["book"] == 1
+    assert state["last_reason"] == "AUTO_FLAT_BLOCKED_NO_DEPTH"
+    assert state["blocked"] is True
     assert journal.open_trade() is not None
 
 
