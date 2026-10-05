@@ -429,8 +429,68 @@ def test_auto_flat_event_start_violation_never_manufactures_settlement_fill(monk
         raise AssertionError("event-start violation must not manufacture a provider exit")
     monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", forbidden)
 
-    state = asyncio.run(PredictionPaperAutomation().run_auto_flat_once(now=now))
-    assert state["last_reason"] == "AUTO_FLAT_DEADLINE_VIOLATION"
+    service = PredictionPaperAutomation()
+    state = asyncio.run(service.run_auto_flat_once(now=now))
+    assert state["last_action"] == "TERMINAL_UNCLOSED"
+    assert state["last_reason"] == "EXIT_FAILED_BEFORE_EVENT_START"
     assert state["deadline_violation"] is True
-    assert journal.open_trade()["trade_id"] == opened["trade_id"]
+    assert journal.open_trade() is None
+    terminal = journal.latest_expired_unclosed()
+    assert terminal["trade_id"] == opened["trade_id"]
+    assert terminal["status"] == "EXPIRED_UNCLOSED"
+    assert terminal["actual_exit_price"] is None
+    assert terminal["net_pnl_dollars"] is None
+    assert terminal["counts_as_closed_trade"] is False
     assert not [r for r in journal._rows(journal.journal_path) if r.get("event") == "close"]
+
+    # Repeated checks are idempotent and preserve the durable safety block.
+    again = asyncio.run(service.run_auto_flat_once(now=now + timedelta(seconds=5)))
+    assert again["last_action"] == "TERMINAL_UNCLOSED"
+    terminals = [
+        r for r in journal._rows(journal.journal_path)
+        if r.get("event") == "expired_unclosed"
+    ]
+    assert len(terminals) == 1
+    assert "AUTO_FLAT_SAFETY_BLOCKED" in service.status()["unattended_paper_open_block_reasons"]
+
+
+def test_expired_unclosed_preserves_no_liquidity_failure_without_fake_pnl(monkeypatch, tmp_path):
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    journal = _journal(tmp_path)
+    opened = journal.open_from_evaluation({
+        "eligible": True, "ticker": "KXTEST-A", "side": "YES",
+        "quantity_contracts": "10",
+        "occurrence_datetime": (now + timedelta(seconds=1)).isoformat(),
+        "flat_deadline": (now - timedelta(minutes=30)).isoformat(),
+        "strategy": "PRE_EVENT_RECENT_RECLAIM_V1", "score": 90,
+        "engine_version": "prediction-paper-reprice-v1",
+        "entry_fill": {"fillable": True, "vwap_dollars": "0.42",
+                       "notional_dollars": "4.20", "estimated_taker_fee_dollars": "0.17",
+                       "depth_slippage_dollars_per_contract": "0",
+                       "levels": [{"price_dollars": "0.42", "quantity_contracts": "10"}]},
+    })
+    journal.log_event({
+        "event": "auto_flat_blocked",
+        "trade_id": opened["trade_id"],
+        "reason": "AUTO_FLAT_BLOCKED_NO_DEPTH",
+        "error": "NO_EXECUTABLE_DEPTH",
+    })
+    monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
+
+    service = PredictionPaperAutomation()
+    state = asyncio.run(
+        service.run_auto_flat_once(now=now + timedelta(seconds=2))
+    )
+    assert state["last_reason"] == "EXIT_FAILED_NO_LIQUIDITY"
+    terminal = journal.latest_expired_unclosed()
+    assert terminal["status"] == "EXPIRED_UNCLOSED"
+    assert terminal["terminal_reason"] == "EXIT_FAILED_NO_LIQUIDITY"
+    assert terminal["last_pre_event_block_reason"] == "AUTO_FLAT_BLOCKED_NO_DEPTH"
+    assert terminal["actual_exit_price"] is None
+    assert terminal["gross_pnl_dollars"] is None
+    assert terminal["net_pnl_dollars"] is None
+    assert journal.open_trade() is None
+    snapshot = journal.snapshot()
+    assert snapshot["summary"]["open_positions"] == 0
+    assert snapshot["summary"]["expired_unclosed_trades"] == 1
+    assert snapshot["summary"]["closed_trades"] == 0
