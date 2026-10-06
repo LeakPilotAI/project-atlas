@@ -8737,3 +8737,62 @@ NEXT - EXECUTION 77
 7. Keep residual Discord lifecycle paths gated; no bulk migration.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 77 - GLOBAL READ-ONLY RESEARCH NAVIGATION - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added a minimal Research Surfaces link to the existing sticky Command Center header without changing its live runtime polling, status indicators, or watch-only behavior.
+- Standardized the bounded navigation loop: Command Center -> Research Surfaces -> Forward Evidence, with return navigation to Command Center.
+- The E76 Research Surfaces overview now exposes explicit Forward Evidence and Command Center navigation under an accessible Research navigation landmark.
+- Existing /research Forward Evidence navigation from E76 remains intact: Research Surfaces and Command Center.
+- Navigation changes introduce no API endpoint, fetch path, mutation, scoring, strategy-selection, threshold, promotion, PAPER, execution, scheduler, repair, or live-capital control.
+- E72-E76 public/read-only/fail-closed contracts remain unchanged.
+
+VALIDATION
+- Focused E77 + E76-E73 frontend contract stack: 20 passed, 0 failed in 0.90s.
+- Full Python regression: 1,421 passed, 0 failed, 2 known dependency warnings in 131.78s.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint across Command Center, Forward Evidence, and Research Surfaces: exit 0.
+- Next.js optimized production build: exit 0; /, /_not-found, /research, and /research/surfaces prerender successfully.
+- git diff --check clean.
+- Existing Command Center runtime data path and Forward Evidence backend contract were not modified.
+
+IMPLEMENTATION COMMIT
+- e48e450 e77 connect global research navigation
+
+DECISION
+- E77 GREEN. Atlas now has a discoverable, consistent read-only navigation loop across its primary operator and research surfaces without expanding trading authority.
+
+VISUAL STATUS AFTER E77
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
+[DONE] E73 frontend-safe fail-closed Crypto Quality Dips consumer/view-model.
+[DONE] E74 visible read-only Crypto Quality Dips Command Center panel.
+[DONE] E75 freshness/transport/contract-failure operator UX hardening.
+[DONE] E76 read-only Research Surfaces overview / information architecture.
+[DONE] E77 global read-only navigation among Command Center, Research Surfaces, and Forward Evidence.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] consistent product-facing surface vocabulary/polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Core operator/research surfaces are now separated and mutually discoverable; next establish a shared read-only status vocabulary so ACTIVE, RESEARCH ONLY, GATED, and operational states mean the same thing across frontend surfaces.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Broader product-facing frontend polish remains after status vocabulary: consistent surface framing and operator ergonomics without hiding safety boundaries.
+6. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 78
+1. Introduce a small shared frontend read-only status vocabulary/presentation primitive for surface states such as ACTIVE EVIDENCE, RESEARCH ONLY, OPERATIONAL VIEW, and GATED.
+2. Apply it first to /research/surfaces only; do not refactor the large Command Center or Forward Evidence pages in bulk.
+3. Freeze labels and authority semantics with source-contract tests so presentation cannot imply production readiness or trading permission.
+4. Add no new API calls, mutation controls, scoring, PAPER, execution, promotion, threshold, scheduler, or live-capital behavior.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. Keep residual Discord lifecycle paths gated; no bulk migration.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
