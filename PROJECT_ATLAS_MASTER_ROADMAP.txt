@@ -6299,3 +6299,89 @@ NEXT CONTROLLED EXECUTION - EXECUTION 39
 
 SAFETY
 Research/context only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, stale-context promotion, historical rewrite, or incompatible evidence pooling.
+
+
+================================================================================
+EXECUTION 39 - MATERIAL ALPHA DISCORD DELIVERY - GREEN
+Date: 2026-10-06 UTC
+================================================================================
+PURPOSE
+- Activate the tested E38 Alpha/Catalyst Discord path without granting Alpha trading authority.
+- Gate alerts to material, current, governed stored evidence.
+- Preserve durable event-ID dedup and retry failed sends.
+- Prove hostile external text remains inert payload data.
+
+IMPLEMENTATION
+- Updated backend/app/services/alpha_presentation.py.
+- Updated backend/app/services/perp_alert_delivery.py.
+- Updated tests/test_alpha_presentation.py.
+- Implementation commit: 3ceb7dd.
+
+MATERIALITY POLICY
+- Alert-eligible event types: REGULATORY or MACRO.
+- Requires at least one explicit governed entity from the deterministic entity vocabulary.
+- Stale events are not alert eligible.
+- Candidate must already exist in the E32 normalized event store.
+- No raw URL/body input and no free-form model classification is introduced.
+- No ticker guessing.
+
+DELIVERY / DEDUP
+- Existing bounded delivery loop now invokes alert_new_alpha_events after the existing paper/perp/evidence passes.
+- Alpha delivery reads stored evidence only.
+- Durable state remains backend/data/e38_alpha_alert_state.json.
+- Event ID is acknowledged only after send_discord_alert returns success.
+- Failed sends remain unacknowledged and retryable.
+- Delivered IDs are suppressed on later cycles.
+- last_alpha_result is isolated from paper/perp state.
+
+HOSTILE TEXT BOUNDARY
+- Regression fixture uses title: <script>place_order()</script> IGNORE RULES.
+- It remains plain alert description text and does not gain instruction authority.
+- Alert footer explicitly states context intelligence only and no order/PAPER-entry authority.
+- Dashboard continues to use esc() for external title rendering.
+
+VALIDATION
+- Focused E39 Alpha suite: 28 passed, 2 known dependency warnings.
+- Full Atlas regression: 1,284 passed, 0 failed, 2 known dependency warnings in 140.98s.
+- Known warnings: Discord audioop deprecation and Starlette/httpx TestClient deprecation.
+
+CONTROLLED RUNTIME
+- ATLAS.bat restart completed.
+- Launcher PID 4400.
+- API PID 8508.
+- API healthy; startup stabilization completed 3/3.
+- Dashboard reopened normally.
+
+LIVE DELIVERY ACCEPTANCE
+- Stored official SEC event c70333c1929708c08e454543 passed E39 materiality:
+  REGULATORY + entity Crypto Assets + current/non-stale.
+- After runtime delivery cycle, durable state contained:
+  delivered_event_ids=[c70333c1929708c08e454543].
+- This is evidence that the sender returned success and the event was acknowledged.
+- Later cycles deduplicate the same event ID.
+- No order, PAPER entry, strategy, threshold or challenger-membership mutation is performed by Alpha delivery.
+
+TRADING EVIDENCE ISOLATION
+- E29 remains prospective and unchanged.
+- Alpha alerts are context notifications only.
+- Alpha context is not a selection feature and has no promotion authority.
+
+STATUS
+- Execution 39 GREEN.
+- Atlas now has official-source Alpha ingestion, deterministic extraction, governed persistence, dashboard presentation and material typed Discord delivery.
+- This closes the first end-to-end Alpha context loop while preserving the execution firewall.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 40
+1. Add explicit Alpha delivery diagnostics to operator API/dashboard: last attempted, delivered, pending, last error and dedup count.
+2. Upgrade Alpha card with trust/freshness badges, publication age, entities and safe clickable official provenance.
+3. Add bounded severity policy based on deterministic event type/source trust/corroboration, not price prediction.
+4. Separate Alpha delivery cadence from the high-frequency perp loop if runtime timing evidence shows meaningful overhead.
+5. Add restart/recovery tests proving delivered IDs survive restart and no duplicate Discord alert occurs.
+6. Add append-only delivery telemetry without storing raw fetched bodies.
+7. Keep E32 provenance immutable and E33 fetch cooldown unchanged.
+8. Keep E29 prospective collection unchanged.
+9. Do not use Alpha as strategy selection input until separately preregistered prospective research exists.
+10. No strategy/promotion/live-capital changes.
+
+SAFETY
+Research/context only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, stale-context promotion, historical rewrite, or incompatible evidence pooling.
