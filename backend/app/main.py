@@ -445,6 +445,13 @@ async def api_funnel() -> Dict[str, Any]:
     return await diagnostics_funnel()
 
 
+@app.get("/api/observability/discord-delivery")
+async def api_discord_delivery_observability() -> Dict[str, Any]:
+    from app.services.e48_discord_events import delivery_observability
+
+    return delivery_observability()
+
+
 @app.get("/health")
 async def health() -> Dict[str, Any]:
     # Liveness must remain local and constant-time. A network round-trip to Redis
