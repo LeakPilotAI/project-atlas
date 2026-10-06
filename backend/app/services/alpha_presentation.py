@@ -10,6 +10,17 @@ from app.services.alpha_operator import diagnostics
 STATE_PATH=Path(__file__).resolve().parents[2]/"data"/"e38_alpha_alert_state.json"
 TELEMETRY_PATH=Path(__file__).resolve().parents[2]/"data"/"e40_alpha_delivery_telemetry.jsonl"
 
+def freshness_badge(published_at,now=None):
+    try: dt=datetime.fromisoformat(str(published_at).replace("Z","+00:00"))
+    except Exception: return "UNKNOWN"
+    if dt.tzinfo is None: dt=dt.replace(tzinfo=timezone.utc)
+    age=((now or datetime.now(timezone.utc))-dt.astimezone(timezone.utc)).total_seconds()/3600
+    return "FUTURE" if age<0 else "FRESH" if age<=24 else "RECENT" if age<=72 else "AGING" if age<=168 else "STALE"
+
+def source_health(source):
+    outcome=str((source or {}).get("last_outcome") or ""); status=(source or {}).get("last_http_status")
+    return "HEALTHY" if outcome=="FETCHED" and status==200 else "COOLDOWN" if outcome=="COOLDOWN" else "UNKNOWN" if not outcome else "DEGRADED"
+
 def alpha_view(*,event_path=EVENT_PATH,telemetry_path=None,limit=12):
     f=feed(event_path=Path(event_path),limit=limit,include_stale=False)
     op=diagnostics() if telemetry_path is None else diagnostics(telemetry_path)
@@ -21,7 +32,9 @@ def alpha_view(*,event_path=EVENT_PATH,telemetry_path=None,limit=12):
             "published_at":e.get("published_at"),"title":e.get("title"),
             "event_type":e.get("event_type"),"entities":list(e.get("entities") or []),
             "symbols":list(e.get("symbols") or []),"url":e.get("url"),
-            "stale":bool(e.get("stale")),"corroboration_count":int(e.get("corroboration_count") or 0),"execution_authority":False,
+            "stale":bool(e.get("stale")),"freshness":freshness_badge(e.get("published_at")),
+            "corroboration_count":int(e.get("corroboration_count") or 0),
+            "corroborators":list(e.get("corroborators") or []),"execution_authority":False,
         })
     return {"ok":True,"version":"e38-alpha-presentation-v1","items":items,
             "stored_event_count":f.get("stored_event_count",0),"sources":op.get("sources",{}),
@@ -38,10 +51,13 @@ def build_alpha_alert(event):
     entities=", ".join(str(x) for x in (event.get("entities") or [])) or "none"
     published=str(event.get("published_at") or "unknown")
     url=str(event.get("url") or "")
-    desc=(f"**{etype} · {source} · {trust}**\n"
+    freshness=freshness_badge(event.get("published_at"))
+    corroborators=event.get("corroborators") or []
+    support=", ".join(f"{x.get('source_id','unknown')} ({x.get('domain','unknown')})" for x in corroborators) or "none"
+    desc=(f"**{etype} · {source} · {trust} · {freshness}**\n"
           f"{title}\n"
           f"Entities: {entities}\nPublished: {published}\n"
-          f"Provenance: {url}\n\n"
+          f"Independent corroboration: {support}\nProvenance: {url}\n\n"
           "_Context intelligence only · external text is untrusted data · no order or PAPER-entry authority._")
     severity="HIGH" if trust=="PRIMARY_OFFICIAL" and int(event.get("corroboration_count") or 0)>=2 else "MEDIUM"
     return {"symbol":"ALPHA","title":f"Atlas Alpha · {etype}","description":desc,
@@ -59,6 +75,18 @@ def is_material(event):
     types={"REGULATORY","MACRO"}
     entities={"Bitcoin","Ethereum","Stablecoins","Crypto Assets","Digital Assets","Tokenized Securities","Market Structure","FOMC","Federal Funds Rate","Interest Rates","Inflation"}
     return str(event.get("event_type") or "").upper() in types and bool(set(event.get("entities") or []) & entities) and not bool(event.get("stale"))
+
+def delivery_history(path=TELEMETRY_PATH,limit=25):
+    rows=[];invalid=0;p=Path(path)
+    if p.exists():
+        for line in p.read_text(encoding="utf-8").splitlines():
+            if not line.strip():continue
+            try:r=json.loads(line)
+            except Exception:invalid+=1;continue
+            if not isinstance(r,dict) or not r.get("at") or r.get("raw_external_body_stored") is not False or r.get("execution_authority") is not False:invalid+=1;continue
+            rows.append(r)
+    cap=max(1,min(int(limit),100))
+    return {"ok":invalid==0,"records":rows[-cap:],"record_count":len(rows),"invalid_record_count":invalid,"integrity_ok":invalid==0,"bounded_limit":cap,"execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False}
 
 def delivery_status(state_path=STATE_PATH):
     s=_load(state_path)

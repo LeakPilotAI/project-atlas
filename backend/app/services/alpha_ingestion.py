@@ -59,7 +59,7 @@ def _event_from_row(row):
     from app.services.alpha_intelligence import IntelligenceEvent
     allowed=set(IntelligenceEvent.__dataclass_fields__)
     data={k:v for k,v in row.items() if k in allowed}
-    for k in ("symbols","entities"):
+    for k in ("symbols","entities","corroborators"):
         if isinstance(data.get(k),list):data[k]=tuple(data[k])
     return IntelligenceEvent(**data)
 

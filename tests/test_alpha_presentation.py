@@ -42,3 +42,29 @@ def test_severity_is_deterministic_not_predictive():
  assert build_alpha_alert(x)["severity"]=="MEDIUM"
  x["corroboration_count"]=2
  assert build_alpha_alert(x)["severity"]=="HIGH"
+
+
+def test_freshness_and_source_health():
+ from datetime import datetime,timezone,timedelta
+ from app.services.alpha_presentation import freshness_badge,source_health
+ now=datetime(2026,10,6,tzinfo=timezone.utc)
+ assert freshness_badge((now-timedelta(hours=2)).isoformat(),now)=="FRESH"
+ assert freshness_badge((now-timedelta(hours=48)).isoformat(),now)=="RECENT"
+ assert freshness_badge((now-timedelta(hours=100)).isoformat(),now)=="AGING"
+ assert source_health({"last_outcome":"FETCHED","last_http_status":200})=="HEALTHY"
+ assert source_health({"last_outcome":"COOLDOWN"})=="COOLDOWN"
+
+def test_delivery_history_bounded_and_integrity(tmp_path):
+ from app.services.alpha_presentation import delivery_history
+ p=tmp_path/"t"
+ good={"at":"2026-10-06T00:00:00+00:00","raw_external_body_stored":False,"execution_authority":False}
+ p.write_text("\n".join(json.dumps(good|{"attempted":i}) for i in range(4))+"\n",encoding="utf-8")
+ h=delivery_history(p,2)
+ assert h["integrity_ok"] and h["record_count"]==4 and len(h["records"])==2
+ with p.open("a",encoding="utf-8") as f:f.write("{bad json\n")
+ assert delivery_history(p)["integrity_ok"] is False
+
+def test_alert_names_corroborating_sources():
+ x=row();x["corroboration_count"]=2;x["corroborators"]=[{"source_id":"reuters","domain":"www.reuters.com"},{"source_id":"federal_reserve","domain":"www.federalreserve.gov"}]
+ a=build_alpha_alert(x)
+ assert a["severity"]=="HIGH" and "reuters (www.reuters.com)" in a["description"] and "federal_reserve" in a["description"]

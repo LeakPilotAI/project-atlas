@@ -43,6 +43,7 @@ class IntelligenceEvent:
     retrieved_at:str; published_at:str|None; title:str; summary:str; event_type:str
     symbols:tuple[str,...]; entities:tuple[str,...]; content_fingerprint:str
     stale:bool; rumor_only:bool; contradiction:bool; corroboration_count:int
+    corroborators:tuple[dict,...]=()
     untrusted_external_text:bool=True; execution_authority:bool=False
     strategy_mutation_authority:bool=False; membership_mutation_authority:bool=False
     threshold_mutation_authority:bool=False
@@ -73,6 +74,7 @@ def annotate_context(events:Iterable[IntelligenceEvent])->list[IntelligenceEvent
         related=[x for x in rows if x.event_id!=e.event_id and x.event_type==e.event_type and set(x.symbols)&set(e.symbols)]
         contradiction=any(_is_contradiction(e,x) for x in related)
         data=asdict(e); data["corroboration_count"]=len({x.domain for x in corroborators}); data["contradiction"]=contradiction
+        data["corroborators"]=tuple({"source_id":x.source_id,"domain":x.domain,"trust_tier":x.trust_tier,"url":x.url} for x in sorted(corroborators,key=lambda z:(z.source_id,z.url)))
         if data["corroboration_count"]>0:data["rumor_only"]=False
         out.append(IntelligenceEvent(**data))
     return out

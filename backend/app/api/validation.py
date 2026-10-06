@@ -115,6 +115,14 @@ async def e37_alpha_run_endpoint(request:E37AlphaRunRequest)->JSONResponse:
     except Exception as e:
         return _json_http({"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False},500)
 
+@router.get("/e41-alpha-delivery-history")
+async def e41_alpha_delivery_history_endpoint(limit: int = 25):
+    from app.services.alpha_presentation import delivery_history, alpha_view, source_health
+    h=delivery_history(limit=limit); v=alpha_view()
+    h["source_health"]={k:source_health(x) for k,x in v.get("sources",{}).items()}
+    h["current_events"]=[{"event_id":x["event_id"],"freshness":x["freshness"],"corroboration_count":x["corroboration_count"],"corroborators":x["corroborators"]} for x in v.get("items",[])]
+    return _json_http(h)
+
 @router.get("/e40-alpha-delivery")
 async def e40_alpha_delivery_endpoint():
     from app.services.alpha_presentation import delivery_status
