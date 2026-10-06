@@ -6985,3 +6985,87 @@ NEXT - EXECUTION 47
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
 - After every GREEN execution, update the complete canonical roadmap append-only, refresh the visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap with the complete canonical file, and report completed-vs-remaining progress.
 - Never advance GREEN on blocked validation and never manufacture evidence/readiness.
+
+
+================================================================================
+EXECUTION 47 - READ-ONLY ALPHA OPERATOR SURFACE - GREEN - 2026-10-06
+================================================================================
+
+OBJECTIVE
+- Expose historical/current Alpha cadence maturity, threshold/drift/split state, source observed/fetched timing, health, and corroboration provenance to the operator dashboard.
+- Keep every Alpha surface context-only and preserve zero trading authority.
+- Add deterministic API/UI contracts for zero corroboration, provenance, source observability, and cadence maturity.
+
+IMPLEMENTATION
+- Extended /api/validation/e42-alpha-governance with source_observability per governed source:
+  health, last_observed_at, last_fetched_at, last_finished_at, last_outcome, last_http_status, last_parse_result.
+- Added explicit strategy_mutation_authority=false, membership_mutation_authority=false, and threshold_mutation_authority=false to governance response.
+- Upgraded dashboard Alpha card to explicitly state read-only intelligence/context-only boundaries.
+- Dashboard now renders governed event trust tier, freshness/age, entities, corroborators, and official provenance URL.
+- Dashboard now renders historical cadence maturity and current <=24h cadence maturity.
+- Dashboard now renders threshold breach, drift flag, and scheduler split recommendation.
+- Dashboard now renders per-source health, last outcome, observed/fetched timestamps, and HTTP status.
+- Zero corroboration renders explicitly as none; no synthetic support is created.
+- Added tests/test_e47_alpha_operator_surface.py.
+
+VALIDATION
+- One initial focused command referenced a nonexistent old test filename and therefore ran zero tests; no product failure occurred.
+- First corrected collection exposed a missing quote in the newly authored E47 test file; fixed before checkpoint evaluation.
+- Correct focused E42-E47/operator suite: 23 passed, 0 failed, 2 known dependency warnings in 2.86s.
+- git diff --check clean.
+- Full Atlas regression: 1,312 passed, 0 failed, 2 known dependency warnings in 135.20s.
+- Known warnings unchanged: discord audioop deprecation; Starlette/httpx TestClient deprecation.
+
+IMPLEMENTATION COMMIT
+- 53ddebd e47_alpha_operator_surface
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS-STOP.bat -> ATLAS.bat restart completed successfully.
+- Launcher PID 28132; API PID 32520.
+- Dashboard opened from API launcher and Atlas reported running.
+- Live governance source_observability present for federal_reserve, sec, and hyperliquid_docs.
+- Source health: federal_reserve=HEALTHY, sec=COOLDOWN, hyperliquid_docs=HEALTHY.
+- Historical cadence is retention-bounded at 240 observations; alpha p95=15.273 ms; alpha/cycle p95 share=7.873995%; decouple_recommended=false.
+- Current <=24h cadence observations=196; alpha p95=14.614 ms; alpha/cycle p95 share=7.855281%; threshold_breach=false; drift_flag=false; decouple_recommended=false.
+- Cadence store valid_count=253, invalid_count=0, integrity_ok=true; retained decision window remains 240.
+- E29 unchanged: membership_records=0, baseline closed_trades=0, challenger closed_trades=0, status=NOT_READY, promotion_allowed=false.
+
+DECISION
+- Execution 47 GREEN.
+- Alpha operator observability is now materially richer while remaining read-only/context-only.
+- Unified Alpha scheduler remains retained by frozen cadence evidence.
+- No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital authority was added.
+
+VISUAL PROJECT STATUS AFTER E47
+[DONE] Core runtime recovery / PAPER safety / evidence preservation.
+[DONE] Perps decomposition + prospective challenger infrastructure.
+[ACTIVE] E29 forward strategy evidence: 0 baseline / 0 challenger closes; NOT_READY.
+[DONE] Alpha E31-E47 controlled intelligence, ingestion, governed fetch/extraction, presentation, typed delivery, observability, provenance, cadence governance, age-aware cadence, deterministic corroboration, and read-only operator UI.
+[DONE] Historical cadence maturity: retained decision window 240/30; unified scheduler retained.
+[DONE] Current <=24h cadence maturity: 196/30; no threshold breach or drift flag.
+[ACTIVE] Continue passive cadence monitoring for future regime/runtime drift.
+[ACTIVE] Accumulate genuine governed cross-source Alpha claims; do not manufacture corroboration.
+[GATED] Alpha strategy-selection use pending separately preregistered prospective evidence.
+[DONE] Prediction no-liquidity lifecycle truth + executable entry/exit depth eligibility.
+[GATED] Unattended Prediction PAPER opening pending prospective validation.
+[GATED] QUALITY_DIPS_PAPER_V1 pending genuine qualifying lifecycle evidence.
+[TODO] Broader frontend/operator UI redesign.
+[DONE] Alpha typed Discord context alerts + durable dedup.
+[TODO] Full cross-lane Discord typed event pipeline/routing/cooldown/ack schema.
+[GATED] Additional venues/Kalshi until Hyperliquid prospective PAPER evidence is trustworthy.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+[GATED] Automated real-money execution and strategy promotion remain disabled.
+
+NEXT - EXECUTION 48
+1. Design and implement a bounded typed cross-lane Discord event envelope for existing Atlas context/alert lanes.
+2. Preserve per-lane provenance, event identity, severity/materiality, dedup/cooldown, delivery acknowledgement, and retry semantics.
+3. Keep Discord strictly downstream/context-only: no strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital authority.
+4. Add hostile-text/instruction-injection tests proving external payload text remains inert data.
+5. Add deterministic routing tests proving only explicitly eligible event types reach configured destinations and duplicates cannot flood.
+6. Continue genuine E29 forward evidence collection unchanged; no synthetic samples.
+7. Continue genuine Alpha/cadence/corroboration evidence collection without changing frozen E42/E45/E46 thresholds from observed outcomes.
+8. No automated real-money execution and no strategy promotion.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
+- After every GREEN execution, update the complete canonical roadmap append-only, refresh the visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap with the complete canonical file, and report completed-vs-remaining progress.
+- Never advance GREEN on blocked validation and never manufacture evidence/readiness.
