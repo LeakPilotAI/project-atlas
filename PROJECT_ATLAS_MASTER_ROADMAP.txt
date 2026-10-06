@@ -6233,3 +6233,69 @@ NEXT CONTROLLED EXECUTION - EXECUTION 38
 
 SAFETY
 Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, publication-time guessing, stale-context promotion, historical rewrite, or incompatible evidence pooling.
+
+
+================================================================================
+EXECUTION 38 - ALPHA/CATALYST PRESENTATION + TYPED ALERT FOUNDATION - GREEN
+Date: 2026-10-06 UTC
+================================================================================
+PURPOSE
+- Present governed E32 Alpha evidence on an operator-facing read-only surface.
+- Add typed Discord Alpha/Catalyst payload generation and durable event-ID dedup semantics.
+- Preserve external text as untrusted display/context data with zero trading authority.
+
+IMPLEMENTATION
+- New backend/app/services/alpha_presentation.py.
+- New GET /api/validation/e38-alpha-view.
+- Dashboard Archive now includes Alpha / Catalyst card consuming the E38 read-only endpoint.
+- New tests/test_alpha_presentation.py.
+- Implementation commit: 5468fc6.
+
+PRESENTATION CONTRACT
+- E38 view exposes event_id, source, source class, trust tier, publication time, title, event type, entities, symbols, provenance URL and stale state.
+- All returned events explicitly have execution_authority=false.
+- Surface explicitly reports paper_entry_authority=false, strategy_mutation_authority=false, automatic_worker=false and live_capital_allowed=false.
+- Dashboard renders external titles through existing esc() HTML escaping.
+- Dashboard is display-only and cannot mutate stored events or trading state.
+
+TYPED DISCORD FOUNDATION
+- build_alpha_alert() creates an INFO-class Atlas Alpha alert with source/trust/event type, entities, publication time and provenance.
+- Alert text explicitly says context intelligence only, external text untrusted, and no order/PAPER-entry authority.
+- alert_new_alpha_events() uses durable delivered_event_ids state.
+- Successful sends are acknowledged; failed sends remain retryable.
+- Duplicate stored event IDs are not re-sent by the service.
+- IMPORTANT: autonomous invocation from the perpetual perp delivery loop was NOT enabled in E38 because the authorized desktop safety layer blocked that specific mutation. Typed generation/dedup is implemented and tested, but autonomous Alpha Discord delivery remains deferred.
+
+VALIDATION
+- Focused E38/E37 suite: 26 passed.
+- Full Atlas regression: 1,282 passed, 0 failed, 2 known dependency warnings in 124.08s.
+- Known warnings remain Discord audioop deprecation and Starlette/httpx TestClient deprecation.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed.
+- Launcher PID 26756; API PID 9596.
+- API healthy and startup stabilization reached 3/3.
+- GET /api/validation/e38-alpha-view returned the persisted SEC event c70333c1929708c08e454543.
+- Event remains PRIMARY_OFFICIAL, REGULATORY, entity Crypto Assets, symbols=[], stale=false, execution_authority=false.
+- E38 source diagnostics show SEC cooldown governance remains visible.
+- E29/E30 remains NOT_READY with baseline=0, challenger=0 and promotion_allowed=false.
+
+STATUS
+- Execution 38 GREEN for read-only Alpha presentation and typed alert foundation.
+- Dashboard can now surface governed Alpha/Catalyst evidence without granting it trading authority.
+- Autonomous Alpha Discord invocation is explicitly not claimed and remains future work.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 39
+1. Wire the tested Alpha alert service into an isolated bounded delivery scheduler only if the authorized mutation path is available.
+2. Keep delivery state separate from perp trading/paper state and prove no alert can place or request an order.
+3. Add source/event severity policy so only materially relevant accepted events alert; no broad headline spam.
+4. Add operator status for last Alpha alert attempt/delivery/failure and dedup state.
+5. Improve dashboard Alpha card with trust/freshness badges, publication age, entities and clickable provenance while preserving HTML escaping.
+6. Add regression fixtures containing hostile/instruction-like external titles and verify inert rendering/alert formatting.
+7. Preserve E32 append-only provenance and E33 cooldown.
+8. Keep E29 prospective collection unchanged.
+9. Do not use Alpha as a selection feature until separately preregistered prospective research exists.
+10. No strategy/promotion/live-capital changes.
+
+SAFETY
+Research/context only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, stale-context promotion, historical rewrite, or incompatible evidence pooling.
