@@ -33,7 +33,7 @@ export default function ResearchSurfacesPage(){
    </dl>
   </section>
   <section aria-labelledby="navigable-surfaces-title">
-   <div className="mb-3"><h2 id="navigable-surfaces-title" className="text-sm font-medium text-zinc-300">Current navigable surfaces</h2><p className="mt-1 text-xs text-zinc-600">Existing read-only destinations with established presentation contracts.</p></div>
+   <div className="mb-3"><h2 id="navigable-surfaces-title" className="text-sm font-medium text-zinc-300">Current navigable surfaces</h2><p className="mt-1 text-xs text-zinc-600">Purpose: open established read-only operator and research views. Authority: navigation and observation do not grant trading authority.</p></div>
    <div className="grid gap-4 lg:grid-cols-3" aria-label="Atlas research surfaces">
    {surfaces.map(surface=><article key={surface.title} className="flex min-h-64 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-5">
     <SurfaceStatusBadge status={surface.status}/>
@@ -49,7 +49,7 @@ export default function ResearchSurfacesPage(){
    </div>
   </section>
   <section aria-labelledby="gated-capabilities-title">
-   <div className="mb-3"><h2 id="gated-capabilities-title" className="text-sm font-medium text-zinc-300">Gated roadmap capabilities</h2><p className="mt-1 text-xs text-zinc-600">Roadmap-confirmed boundaries shown for operator context. These are not destinations or disabled controls.</p></div>
+   <div className="mb-3"><h2 id="gated-capabilities-title" className="text-sm font-medium text-zinc-300">Gated roadmap capabilities</h2><p className="mt-1 text-xs text-zinc-600">Roadmap-confirmed boundaries shown for operator context. These are not destinations or disabled controls. Purpose: show roadmap-confirmed unavailable capabilities for operator context. Authority: gated items are not destinations, controls, or readiness claims.</p></div>
    <div className="grid gap-3 md:grid-cols-2">
     {gatedCapabilities.map(capability=><article key={capability.title} className="rounded-2xl border border-white/8 bg-[#0c0e13] p-4">
      <SurfaceStatusBadge status="GATED"/>
@@ -60,7 +60,7 @@ export default function ResearchSurfacesPage(){
   </section>
   <section className="rounded-2xl border border-white/8 bg-[#10131a] p-5" aria-labelledby="active-evidence-title">
    <h2 id="active-evidence-title" className="text-sm font-medium text-zinc-300">Active evidence collection</h2>
-   <p className="mt-1 text-xs text-zinc-600">Genuine evidence accumulation currently in progress. Gated capabilities are listed separately above.</p>
+   <p className="mt-1 text-xs text-zinc-600">Genuine evidence accumulation currently in progress. Gated capabilities are listed separately above. Purpose: show genuine evidence accumulation currently in progress. Authority: active evidence does not unlock strategy selection, promotion, PAPER, or execution.</p>
    <div className="mt-3 grid gap-2 text-xs md:grid-cols-2">
     <State label="E29 forward strategy evidence" value="ACTIVE · genuine evidence only"/>
     <State label="Alpha / cadence / corroboration" value="ACTIVE · strategy selection gated"/>
