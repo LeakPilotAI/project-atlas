@@ -8138,3 +8138,51 @@ NEXT - EXECUTION 66
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 66 - STORED EVIDENCE IDENTITY INTEGRITY + BOUNDED OPERATOR AUDIT - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- CryptoProspectiveEvidenceStore now recomputes observation_identity for every parsed stored row during reload.
+- Stored rows whose observation_id does not match their current content are quarantined: integrity ok=false, identity_mismatch_lines increments, and the row is excluded from records/readiness.
+- Existing E65 fail-closed append behavior therefore blocks all new appends while any identity mismatch or malformed-line integrity failure exists; no repair/rewrite is performed.
+- Manual operator ingestion now keeps bounded audit metadata only: operator_attempts, intent_rejections, integrity_rejections, last_result, last_reasons.
+- Observability explicitly reports raw_evidence_retained=false and retains no outcome/performance data or secrets.
+- No HTTP mutation route, scheduler, autonomous feed, score, dip state, alert, PAPER entry, strategy/threshold mutation, promotion or live-capital authority was added.
+
+VALIDATION
+- Focused E66-E62 + Stock V3 compatibility: 22 passed, 0 failed, 2 known warnings, exit 0.
+- Full regression: 1,377 passed, 0 failed, 2 known warnings in 124.59s, exit 0.
+- git diff --check clean; exact E66 implementation files staged only.
+- Tests prove identity-tampered records contribute zero readiness observations, compromised stores reject append, valid identities survive reload, and audit metadata contains no raw evidence/outcome/performance fields.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- 5e41e07 e66 evidence identity integrity
+
+RUNTIME
+- E66 changes only internal store reload/in-memory operator audit logic and adds no runtime graph registration or route. No restart is required for execution correctness; no fresh-runtime claim is made.
+
+DECISION
+- E66 GREEN. Prospective crypto evidence now has content-bound identity verification and bounded operator audit metadata while remaining research-only and zero-authority.
+
+VISUAL STATUS AFTER E66
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E65 Crypto Quality Dips research boundary through operator invocation and fail-closed log integrity.
+[DONE] E66 content-bound stored evidence identity verification + bounded operator audit.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+NEXT - EXECUTION 67
+1. Add deterministic append-log sequence metadata/hash chaining for new prospective crypto evidence records so truncation/reordering/tampering can be detected without changing evidence semantics.
+2. Preserve backward compatibility for existing pre-chain records through an explicit legacy/unverified integrity state; never silently bless historical rows as chain-verified.
+3. Expose bounded chain-integrity status read-only without raw evidence or mutation controls.
+4. Prove reordered/removed/chain-tampered records fail closed for new append/readiness eligibility as defined prospectively, while Stock V3/PAPER/execution remain untouched.
+5. Keep residual Discord lifecycle paths gated; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
