@@ -4831,3 +4831,58 @@ NEXT PHASE AFTER EXECUTION 23
 6. Keep Kalshi Perps as a gated future venue after Hyperliquid forward PAPER validation.
 7. Any new defect discovered in real operation must be captured first and repaired with the
    smallest controlled execution.
+
+
+================================================================================
+EXECUTION 24 — DAY-TRADING PAPER COHORT ATTRIBUTION — GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Decompose Execution 23's aggregate Day-Trading evidence without tuning from an incompatible pooled sample.
+- Reconstruct preserved PAPER closes by strategy/version and durable cohort metadata.
+- Keep attribution deterministic, read-only, and non-executing.
+
+EVIDENCE
+- Durable journal: 9,721 readable rows = 1,145 open + 1,145 close + 7,424 mark + 7 session_start.
+- Overall 1,145 closes: -109.5033R total, -0.0956R expectancy, 0.414 win rate.
+- rsi_extension_v1: n=926, -3.7660R, -0.0041R/trade, 0.4309 win rate.
+- perp_setup_auto_v1: n=16, -5.3888R, -0.3368R/trade, 0.4375 win rate.
+- perp_setup_auto_v2_resting_limit: n=203, -100.3485R, -0.4943R/trade, 0.3350 win rate.
+- V2 LONG: n=111, -18.2434R, -0.1644R/trade.
+- V2 SHORT: n=92, -82.1051R, -0.8924R/trade.
+- V2 SETUP_STOP: n=74, -175.7067R, -2.3744R average.
+- V2 SETUP_TP1: n=25, +75.2231R, +3.0089R average.
+- Current adaptive-exit execution-model cohort: n=76, -21.4043R, -0.2816R/trade, 0.2763 win rate.
+- Preserved regime UNKNOWN remains UNKNOWN; no hindsight backfill.
+- Initial API-unreachable observation during this execution was a coordinated clean shutdown with reconciliation and no traceback, coincident with remote launcher lifecycle handling; no internal Atlas crash was inferred.
+
+IMPLEMENTATION
+- New backend/app/services/day_trading_cohort_diagnostics.py.
+- New GET /api/validation/day-trading-cohorts.
+- New tests/test_day_trading_cohort_diagnostics.py.
+- Cohorts: strategy, side, preserved regime, execution-model version, exit reason.
+- Native unit remains R. Diagnostic output has no authority to change strategy or permissions.
+
+VALIDATION
+- Focused cohort + cross-strategy + checkpoint suite: 32 passed in 9.57s.
+- Full Atlas regression: 1,208 passed, 0 failed, 2 known dependency warnings in 125.67s.
+- Implementation commit: 986d22fc8158ee91cc1e1a69d7bc61ade044578a.
+- Runtime restarted through supported launcher; Docker Desktop / Genesis untouched.
+- Launcher stabilization 3/3 GREEN.
+- Live cohort endpoint: 1,145 finite closes, 0 malformed.
+- Live health: status ok; Opportunity Tracker, Day Trade, Prediction and Discord true.
+- live_capital_allowed=false; automatic_real_money_execution=false.
+- No threshold, sizing, entry, exit, promotion or historical evidence mutation.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 25
+1. Continue genuine forward PAPER evidence unchanged.
+2. Add read-only V2 setup attribution crossing signal-score cohort, side, entry-to-stop realized geometry, fill/slippage/gap behavior, MFE/MAE, and exit family.
+3. Separate selection quality from simulated execution geometry and exit behavior.
+4. Preserve strategy/version/time boundaries; do not use legacy RSI evidence for V2 causal claims.
+5. Do not backfill UNKNOWN regimes or fabricate missing historical features.
+6. Any strategy modification must be a later separately versioned challenger validated prospectively.
+7. Continue Quality Dips V1 and Prediction PAPER evidence untouched.
+8. Internet/Alpha Intelligence and Kalshi Perps remain future gated roadmap tracks.
+
+SAFETY
+PAPER/research only. No broker orders, live capital, automatic real-money execution, strategy mutation, synthetic samples, historical rewrite, favorable backfill, or pooled cross-strategy performance claims.
