@@ -6042,3 +6042,84 @@ NEXT CONTROLLED EXECUTION - EXECUTION 36
 
 SAFETY
 Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, guessed ticker/entity claims, publication-time guessing, historical rewrite, or incompatible evidence pooling.
+
+
+================================================================================
+EXECUTION 36 - SEC TRUSTED TIME + ENTITY/FRESHNESS + OPERATOR DIAGNOSTICS - GREEN
+Date: 2026-10-05 CT / 2026-10-06 UTC
+================================================================================
+PURPOSE
+- Add trustworthy SEC publication-time extraction from official listing structure.
+- Add deterministic entity/topic linking without ticker guessing.
+- Add freshness gating and explicit stale/future rejection diagnostics.
+- Expose read-only operator diagnostics while preserving zero execution authority.
+
+IMPLEMENTATION
+- Updated backend/app/services/alpha_extract.py.
+- New backend/app/services/alpha_operator.py.
+- Updated backend/app/api/validation.py with GET /api/validation/e36-alpha-operator.
+- Updated tests/test_alpha_extract.py.
+- New tests/test_alpha_operator.py.
+- Implementation commit: 81216ce.
+
+SEC TRUSTED PUBLICATION TIME
+- SEC listing parser now associates official <time datetime> values from each table row with its release link.
+- Numeric SEC release IDs are never interpreted as dates.
+- Missing/malformed official time is rejected as missing_publication_time.
+- Federal Reserve continues deterministic date extraction from official individual-release URL paths.
+
+FRESHNESS
+- MAX_AGE_HOURS=168.
+- Candidates older than seven days or materially future-dated are rejected.
+- Diagnostics add stale_or_future.
+- Retrieval time is not substituted for publication time.
+
+ENTITY/TOPIC LINKING
+- Literal deterministic entities only: Bitcoin, Ethereum, Stablecoins, Crypto Assets, Digital Assets, Tokenized Securities, Market Structure, FOMC, Federal Funds Rate, Interest Rates, Inflation.
+- symbols remains [] unless a future explicit ticker linker is separately validated.
+- Ambiguous names are not converted into tickers.
+
+OPERATOR DIAGNOSTICS
+- GET /api/validation/e36-alpha-operator reports latest governed source telemetry and E32 store status.
+- Endpoint is read-only.
+- execution_authority=false, paper_entry_authority=false, automatic_worker=false, live_capital_allowed=false.
+
+BOUNDED LIVE ACCEPTANCE
+- SEC official listing fetch: HTTP 200, 97,066 bytes.
+- Dry run diagnostics: accepted=1, off_domain=7, unsupported_path=120, unsupported_event_type=9, irrelevant_topic=14, missing_publication_time=0, stale_or_future=1.
+- The accepted candidate was discovered only in dry-run mode; persist=false, so E32 remained raw=0 / normalized=0.
+- Immediate second SEC request correctly hit E33 cooldown rather than bypassing network governance.
+
+VALIDATION
+- Core extractor/pipeline/fetch fixtures: 23 passed.
+- Final focused Alpha suite: 41 passed.
+- Full Atlas regression: 1,271 passed, 0 failed, 2 known dependency warnings in 143.66s.
+- Warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed.
+- Launcher PID 7068; API PID 27572.
+- API healthy on attempt 2; startup stabilization reached 3/3.
+- E36 operator endpoint live and read-only.
+- E32 store remains raw_records=0, normalized_records=0.
+- E29/E30 remains NOT_READY with baseline=0, challenger=0.
+- No Alpha data has trading or PAPER-entry authority.
+
+STATUS
+- Execution 36 GREEN.
+- Atlas can now recover trustworthy SEC listing timestamps, reject stale/future context, attach literal supported entities, and expose source/store diagnostics without granting execution authority.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 37
+1. Add a bounded research-only manual Alpha run endpoint with an explicit source allowlist and no arbitrary URL/body input.
+2. Persist only current relevant candidates after dry-run diagnostics pass; preserve duplicate protection and append-only E32 evidence.
+3. Return accepted/rejected counts, event IDs, source, publication time, entities and reasons to the operator surface.
+4. Add endpoint-level cooldown/rate protections so manual runs cannot bypass E33 governance.
+5. Add tests proving the endpoint cannot accept arbitrary source IDs, URLs, external instructions, execution flags, strategy changes, threshold changes or PAPER-entry requests.
+6. Perform bounded live acceptance against SEC/Fed and verify any persisted event is exactly attributable to the official source.
+7. Add dashboard Alpha/Catalyst diagnostics card only after endpoint evidence is stable.
+8. Keep Alpha disconnected from E28/E29 selection/execution.
+9. Keep E29 prospective collection unchanged.
+10. No strategy/promotion changes.
+
+SAFETY
+Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, guessed ticker/entity claims, publication-time guessing, stale-context promotion, historical rewrite, or incompatible evidence pooling.
