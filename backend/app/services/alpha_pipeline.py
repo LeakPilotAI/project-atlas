@@ -20,4 +20,6 @@ def run_source(source_id,*,telemetry_path=FETCH_LOG,raw_path=None,event_path=Non
         if event_path is not None:kwargs["event_path"]=Path(event_path)
         stored=promote(source_id,body,now.isoformat(),fetched["url"],now=now,**kwargs)
         result["accepted_count"]=stored["accepted_count"]
+        result["storage_results"]=stored["results"]
+        result["event_ids"]=[x.get("event_id") for x in stored["results"] if x.get("event_id")]
     return result

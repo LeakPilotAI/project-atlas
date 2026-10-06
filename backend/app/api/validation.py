@@ -6,6 +6,12 @@ from app.services.runtime_snapshot import RuntimeSnapshot
 from typing import Any, Dict
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict
+
+class E37AlphaRunRequest(BaseModel):
+    model_config=ConfigDict(extra="forbid")
+    source_id:str
+    persist:bool=True
 router=APIRouter(prefix="/api/validation",tags=["validation"])
 def _json_http(body:Any,status_code:int=200)->JSONResponse:
     try:payload=json.loads(json.dumps(body,allow_nan=False,default=str))
@@ -97,6 +103,17 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
         body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
     return _json_http(body)
 
+
+@router.post("/e37-alpha-run")
+async def e37_alpha_run_endpoint(request:E37AlphaRunRequest)->JSONResponse:
+    try:
+        from app.services.alpha_manual import manual_run
+        body=await asyncio.to_thread(manual_run,request.source_id,persist=request.persist)
+        return _json_http({"ok":True,**body})
+    except ValueError as e:
+        return _json_http({"ok":False,"error":str(e),"execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False},400)
+    except Exception as e:
+        return _json_http({"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False},500)
 
 @router.get("/e36-alpha-operator")
 async def e36_alpha_operator_endpoint()->JSONResponse:
