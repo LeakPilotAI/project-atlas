@@ -10,4 +10,6 @@ def source_health(source,now=None):
     try: seen=datetime.fromisoformat(str(stamp).replace("Z","+00:00"))
     except Exception:return "UNKNOWN"
     if seen.tzinfo is None:seen=seen.replace(tzinfo=timezone.utc)
-    return "STALE" if ((now or datetime.now(timezone.utc))-seen.astimezone(timezone.utc)).total_seconds()>86400 else "HEALTHY"
+    age=((now or datetime.now(timezone.utc))-seen.astimezone(timezone.utc)).total_seconds()
+    if age < -300:return "FUTURE"
+    return "STALE" if age>86400 else "HEALTHY"
