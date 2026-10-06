@@ -15,11 +15,11 @@ def observation_identity(record: dict[str, Any]) -> str:
 class CryptoProspectiveEvidenceStore:
     def __init__(self,path):
         self.path=Path(path); self.records=[]; self._ids=set()
-        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0}
+        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0}
         self.reload()
     def reload(self):
         self.records=[]; self._ids=set()
-        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0}
+        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0}
         if not self.path.exists(): return
         for line in self.path.read_text(encoding="utf-8").splitlines():
             if not line.strip(): continue
@@ -27,6 +27,9 @@ class CryptoProspectiveEvidenceStore:
                 row=json.loads(line); oid=str(row["observation_id"])
             except (json.JSONDecodeError,KeyError,TypeError,ValueError):
                 self.integrity["ok"]=False; self.integrity["malformed_lines"]+=1
+                continue
+            if oid != observation_identity(row):
+                self.integrity["ok"]=False; self.integrity["identity_mismatch_lines"]+=1
                 continue
             if oid in self._ids:
                 self.integrity["duplicate_lines"]+=1

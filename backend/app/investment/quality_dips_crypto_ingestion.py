@@ -22,6 +22,7 @@ class ManualCryptoEvidenceIngestion:
     def __init__(self,store: CryptoProspectiveEvidenceStore):
         self.store=store
         self.counters={"attempted":0,"accepted":0,"persisted":0,"duplicate":0,"rejected":0}
+        self.audit={"operator_attempts":0,"intent_rejections":0,"integrity_rejections":0,"last_result":"NONE","last_reasons":[]}
 
     def ingest(self,*,symbol:str,allowlisted:bool,liquidity_qualified:bool,raw_evidence:dict[str,Any],observed_at:str,max_age_seconds:int):
         self.counters["attempted"]+=1
@@ -47,13 +48,18 @@ class ManualCryptoEvidenceIngestion:
         return IngestionResult(True,persisted,not persisted,())
 
     def observability(self):
-        return {**self.counters,"read_only":True,"outcomes_inferred":False,"performance_inferred":False,"execution_authority":False,"paper_entry_authority":False,"strategy_mutation_authority":False,"threshold_mutation_authority":False,"promotion_authority":False,"live_capital_allowed":False}
+        return {**self.counters,"audit":dict(self.audit),"read_only":True,"raw_evidence_retained":False,"outcomes_inferred":False,"performance_inferred":False,"execution_authority":False,"paper_entry_authority":False,"strategy_mutation_authority":False,"threshold_mutation_authority":False,"promotion_authority":False,"live_capital_allowed":False}
 
 
 def invoke_operator_ingestion(service: ManualCryptoEvidenceIngestion, *, operator_intent: bool, **submission):
     """Local operator-only invocation boundary; not an HTTP route."""
+    service.audit["operator_attempts"]+=1
     if operator_intent is not True:
+        service.audit.update(intent_rejections=service.audit["intent_rejections"]+1,last_result="REJECTED",last_reasons=["EXPLICIT_OPERATOR_INTENT_REQUIRED"])
         return IngestionResult(False,False,False,("EXPLICIT_OPERATOR_INTENT_REQUIRED",))
     if not service.store.integrity["ok"]:
+        service.audit.update(integrity_rejections=service.audit["integrity_rejections"]+1,last_result="REJECTED",last_reasons=["EVIDENCE_STORE_INTEGRITY_FAILED"])
         return IngestionResult(False,False,False,("EVIDENCE_STORE_INTEGRITY_FAILED",))
-    return service.ingest(**submission)
+    result=service.ingest(**submission)
+    service.audit.update(last_result="ACCEPTED" if result.accepted else "REJECTED",last_reasons=list(result.reasons))
+    return result
