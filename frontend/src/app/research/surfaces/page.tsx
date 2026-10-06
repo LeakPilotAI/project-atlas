@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ReadOnlyPageShell } from "@/app/components/ReadOnlyPageShell";
 import { GATED_CAPABILITIES, RESEARCH_SURFACES } from "./catalog";
 import { AUTHORITY_LEGEND, SECTION_POSTURE } from "./presentation";
 import { GatedCapabilityCard, ResearchSurfaceCard } from "./SurfaceCards";
@@ -6,7 +7,7 @@ import { SectionHeading } from "./SectionHeading";
 import { ActiveEvidenceState, AuthorityLegendItem } from "./ResearchPrimitives";
 
 export default function ResearchSurfacesPage(){
- return <div className="min-h-screen bg-[#07080b] text-zinc-200"><main className="mx-auto max-w-6xl space-y-5 px-5 py-7 sm:px-6 sm:py-8">
+ return <ReadOnlyPageShell>
   <header className="flex flex-wrap items-start justify-between gap-4">
    <div><p className="text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">Atlas research architecture</p><h1 className="mt-1 text-2xl font-semibold text-white">Research Surfaces</h1><p className="mt-1 max-w-2xl text-xs text-zinc-500">Read-only map of operator and research surfaces. Evidence presentation does not create strategy-selection, PAPER, execution, promotion, or live-capital authority.</p></div>
    <nav className="flex gap-2" aria-label="Research navigation"><Link href="/research" className="rounded-lg border border-cyan-500/20 px-3 py-2 text-xs text-cyan-300">Forward Evidence</Link><Link href="/" className="rounded-lg border border-white/10 px-3 py-2 text-xs text-zinc-400">Command Center</Link></nav>
@@ -41,5 +42,5 @@ export default function ResearchSurfacesPage(){
     <ActiveEvidenceState label="Alpha / cadence / corroboration" value="ACTIVE · strategy selection gated"/>
    </div>
   </section>
- </main></div>
+ </ReadOnlyPageShell>
 }

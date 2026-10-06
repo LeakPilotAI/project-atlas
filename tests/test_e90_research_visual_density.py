@@ -2,11 +2,13 @@ from pathlib import Path
 
 PAGE=Path("frontend/src/app/research/surfaces/page.tsx")
 CARDS=Path("frontend/src/app/research/surfaces/SurfaceCards.tsx")
+SHELL=Path("frontend/src/app/components/ReadOnlyPageShell.tsx")
 
 def test_e90_bounded_density_classes_are_present():
     page=PAGE.read_text(encoding="utf-8")
     cards=CARDS.read_text(encoding="utf-8")
-    assert 'space-y-5 px-5 py-7 sm:px-6 sm:py-8' in page
+    shell=SHELL.read_text(encoding="utf-8")
+    assert 'space-y-5 px-5 py-7 sm:px-6 sm:py-8' in shell
     assert 'bg-amber-500/5 p-4 sm:p-5' in page
     assert page.count('bg-[#10131a] p-4 sm:p-5') >= 2
     assert 'min-h-60 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-4 sm:p-5' in cards
