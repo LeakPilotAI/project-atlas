@@ -5694,3 +5694,104 @@ NEXT CONTROLLED EXECUTION - EXECUTION 32
 
 SAFETY
 Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, post-entry leakage, historical rewrite, synthetic evidence, or incompatible evidence pooling.
+
+================================================================================
+EXECUTION 32 - GOVERNED ALPHA INGESTION STORE + READ-ONLY CATALYST FEED - GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Convert the E31 context contract into an auditable ingestion/store pipeline.
+- Use a small explicit governed source registry rather than open-ended crawling.
+- Preserve raw external observations separately from normalized intelligence events.
+- Expose a read-only Alpha/Catalyst feed with zero execution or strategy authority.
+- Keep E29 forward Perps collection unchanged.
+
+IMPLEMENTATION
+- New backend/app/services/alpha_ingestion.py.
+- New GET /api/validation/e32-alpha-store.
+- New GET /api/validation/e32-alpha-feed.
+- New tests/test_alpha_ingestion.py.
+- Store version: alpha-ingestion-store-v1.
+- No autonomous web crawler/fetch worker is started in E32.
+
+GOVERNED SOURCE REGISTRY V1
+- Hyperliquid official docs: OFFICIAL / PRIMARY_OFFICIAL / hyperliquid.gitbook.io.
+- Coinbase official: OFFICIAL / PRIMARY_OFFICIAL / www.coinbase.com.
+- U.S. SEC: OFFICIAL / PRIMARY_OFFICIAL / www.sec.gov.
+- Federal Reserve: MACRO / PRIMARY_OFFICIAL / www.federalreserve.gov.
+- Reuters: NEWS / REPUTABLE_REPORTING / www.reuters.com.
+- Unknown source IDs are rejected before storage.
+- URL hostname must match the governed source record through the E31 normalizer.
+
+AUDITABLE TWO-LAYER STORAGE
+- Raw append-only observations: backend/data/alpha_intelligence_raw.jsonl.
+- Normalized append-only events: backend/data/alpha_intelligence_events.jsonl.
+- Raw records preserve observed_at, source_id, complete payload, untrusted_external_text=true and execution_authority=false.
+- Normalized records preserve E31 source/trust/provenance/freshness/event metadata.
+- File writes flush and fsync before returning.
+- Duplicate event_id is rejected without appending a second raw or normalized record.
+- Storage is auditable even when the operator feed later deduplicates equivalent claims.
+
+READ-ONLY ALPHA/CATALYST FEED
+- Reconstructs normalized events from the append-only store.
+- Applies E31 corroboration/contradiction annotation.
+- Optional stale filtering.
+- Deduplicates equivalent claims for operator presentation while retaining stored evidence.
+- Prefers higher-trust source when equivalent claims collapse to one feed item.
+- Returns source_count, stored_event_count, feed_count and normalized items.
+- Feed and store status both carry the E31 zero-authority safety contract.
+
+IMPORTANT PIPELINE FIX FOUND BY TESTS
+- Initial focused run exposed an ordering flaw: a stale duplicate with a valid publication timestamp could win dedup before freshness filtering and suppress a fresher observation with malformed/missing publication time.
+- Corrected before commit to annotate -> freshness filter -> deduplicate.
+- Stale evidence remains in append-only storage but cannot suppress fresher usable context from a non-stale feed.
+
+MALICIOUS / INSTRUCTION-LIKE TEXT
+- Test stores text equivalent to instructions to ignore rules, place a live order, and change challenger thresholds/membership.
+- Text remains preserved verbatim as untrusted external data.
+- It receives no execution, PAPER-entry, threshold, membership or strategy mutation authority.
+- No external text is interpreted as Atlas instructions.
+
+VALIDATION
+- Initial E32 focused run: 24 passed, 1 failed; failure exposed stale-before-dedup ordering issue.
+- Corrected before commit.
+- Final focused E32/E31/E30/E29 suite: 25 passed, 0 failed.
+- git diff --check GREEN.
+- Full Atlas regression: 1,247 passed, 0 failed, 2 known dependency warnings in 134.66s.
+- Known warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+- E32 implementation commit: a8699e5.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed.
+- Startup was slower than recent runs and required 17/40 launcher health attempts, but recovered within the existing bounded launcher acceptance and completed stabilization.
+- Atlas reported running; no E32 autonomous fetcher was involved in startup.
+- Live health: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- Live store version: alpha-ingestion-store-v1.
+- Governed sources: 5.
+- Live raw records: 0.
+- Live normalized records: 0.
+- Live feed count: 0.
+- Zero feed state is expected because E32 does not manufacture events or start autonomous fetching.
+- Live feed safety: execution=false, PAPER entry=false, strategy mutation=false, membership mutation=false, threshold mutation=false, live capital=false, automatic real-money execution=false.
+- E29 remains NOT_READY with baseline closes=0 and challenger closes=0.
+
+STATUS
+- Execution 32 GREEN.
+- Atlas now has the safe ingestion/storage/feed substrate required before real external fetch adapters are enabled.
+- No synthetic news/events were inserted to make the feed look active.
+- No Alpha data affects Perps selection or execution.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 33
+1. Add the first bounded real fetch adapters for a small subset of the governed registry.
+2. Prefer machine-readable official sources where practical; do not introduce open-ended crawling.
+3. Enforce timeouts, response-size limits, content-type checks, source-domain validation and per-source cooldowns.
+4. Parse fetched documents into candidate context events without executing embedded instructions/scripts.
+5. Require every accepted event to pass the E31 normalizer and E32 append-only store.
+6. Record fetch outcome telemetry separately from event truth: success/failure, HTTP status, latency, bytes, parse result and rejection reason.
+7. Add deterministic fixture tests before any live network acceptance.
+8. Perform a bounded live acceptance fetch only from governed public sources; do not create events when the parser cannot establish a supported claim.
+9. Keep the Alpha feed read-only and disconnected from E28/E29 selection/execution.
+10. Keep E29 prospective collection running unchanged.
+
+SAFETY
+Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, synthetic events, historical rewrite, or incompatible evidence pooling.
