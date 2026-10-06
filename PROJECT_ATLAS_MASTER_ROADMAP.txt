@@ -7728,3 +7728,58 @@ NEXT - EXECUTION 58
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
+
+
+EXECUTION 58 - STARTUP SESSION TYPED DISCORD + SPECIALIZED CONTRACT DESIGN - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Migrated the bounded paper-session reset announcement in main.py through typed SYSTEM/SESSION delivery.
+- Identity is paper-session-reset:<session_id>; provenance paper-session-bootstrap. Existing 12-second delay, Discord-ready gate, and session-created caller gate remain unchanged.
+- Tests prove one typed send per direct announcement invocation, no send when Discord is not ready, no title/description leakage into observability, and zero execution authority.
+- /diagnostics/paper-test confirmed as explicit operator-triggered GET+POST compatibility path. It is not classified as an autonomous producer and was not migrated in E58.
+- Opportunity Tracker remains gated: its direct send carries an AnomalySignal plus chart_bytes. Future typed support must preserve signal fields and attachment metadata/bytes without granting execution authority; the current text legacy adapter is intentionally insufficient.
+
+CRYPTO QUALITY DIPS DESIGN CONTRACT - DESIGN ONLY
+- Future lane remains research-only and inactive in E58.
+- Initial universe must be explicitly allowlisted/liquidity-qualified rather than every token discovered on-chain.
+- Evidence dimensions: liquidity/depth and slippage resilience; market-structure/drawdown regime; supply/emissions/unlock concentration where applicable; venue/custody/contract risk; network/activity evidence; manipulation/rug-risk controls; provenance/freshness for each input.
+- Output must carry asset class CRYPTO, evidence provenance/freshness, quality dimensions, risk flags, and a reasoned dip context separate from stock fundamentals.
+- No automatic execution, sizing, strategy selection, threshold mutation, or promotion authority. Crypto Quality Dips must earn separate prospective evidence before any strategy-selection use.
+- Existing stock Quality Dips universe/scoring/thresholds remain unchanged.
+
+VALIDATION
+- Two preliminary diagnostics-route assertions failed because the test guessed the mounted app path; inspection confirmed router prefix /diagnostics and the test was corrected to inspect the authoritative APIRouter directly. Production behavior was not changed for those failures.
+- Final focused E58/E57/E51 gate: 10 passed, 0 failed, 1 known warning.
+- Full Atlas regression: 1,353 passed, 0 failed, 2 known dependency warnings in 128.40s.
+- No synthetic E29 or Alpha evidence; no threshold changes from outcomes.
+
+IMPLEMENTATION COMMIT
+- 8442732 e58_migrate_startup_session_discord
+
+RUNTIME ACCEPTANCE
+- Controlled stop exit 0; Docker Desktop/Genesis untouched.
+- Restart launched successfully. Fresh Python processes observed at 05:38:57 and 05:39:07 local time.
+
+DECISION
+- E58 GREEN. Bounded startup/session notification is typed. Manual diagnostics remain explicitly operator-triggered. Opportunity Tracker attachment migration remains gated behind a richer contract. Crypto Quality Dips now has a design-only safety/evidence contract but no active signal path.
+
+VISUAL STATUS AFTER E58
+[DONE] E48-E58 typed Discord foundation, observability/API, summaries, primary/stateful research migrations, Auto Ladder, startup session announcement.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[DESIGNED/GATED] Crypto Quality Dips research contract; implementation/evidence not yet active.
+[ACTIVE] Rich typed signal/attachment contract for Opportunity Tracker remains.
+[GATED] day_trade_assistant, paper_try_symbol, residual perp_micro_coach pending lifecycle contracts.
+[GATED] Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+
+NEXT - EXECUTION 59
+1. Implement a typed attachment-capable delivery contract in isolation, with bounded metadata and zero execution authority; do not migrate Opportunity Tracker until compatibility tests cover AnomalySignal + chart_bytes.
+2. Add tests proving attachment delivery failures are retryable/observable without storing raw binary bytes in observability.
+3. If compatible, migrate only Opportunity Tracker notification transport while preserving its existing decision/risk calculations and no-execution behavior.
+4. Begin code-level inactive schema/model scaffolding for Crypto Quality Dips only if it cannot affect current stock Quality Dips or emit signals; otherwise keep design-only.
+5. Continue genuine E29/Alpha evidence unchanged; no synthetic samples or outcome-driven threshold changes.
+6. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
