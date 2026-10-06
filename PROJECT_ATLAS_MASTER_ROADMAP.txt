@@ -7150,3 +7150,63 @@ NEXT - EXECUTION 49
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
 - After every GREEN execution, update the complete canonical roadmap append-only, refresh visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap with the complete canonical file, and report completed-vs-remaining progress.
 - Never advance GREEN on blocked validation and never manufacture evidence/readiness.
+
+
+================================================================================
+EXECUTION 49 - ALPHA + PREDICTION TYPED DISCORD MIGRATION - GREEN - 2026-10-06
+================================================================================
+
+IMPLEMENTATION
+- Alpha/Catalyst and Prediction eligible notification producers now pass through the E48 typed route/authority gate.
+- Added legacy_payload_event and deliver_legacy_payload compatibility adapters.
+- Alpha durable delivered_event_ids state remains authoritative across restart.
+- Prediction journal delivered-alert records remain authoritative across restart.
+- E48 in-memory acknowledgement is not claimed as durable.
+- Perp/System migration remains deferred to explicit lane-specific compatibility work.
+- No trading/PAPER strategy, sizing, membership, threshold, promotion, or capital authority was added.
+
+VALIDATION
+- Focused migration/compatibility gate: 22 passed, 0 failed.
+- Final full Atlas regression: 1,319 passed, 0 failed, 2 known dependency warnings in 133.94s.
+- git diff --check clean apart from normal Windows LF/CRLF notices.
+- Early validation caught and corrected test-path mistakes and remote read-metadata accidentally written into two source files; neither survived into the validated commit.
+
+IMPLEMENTATION COMMIT
+- ab75e38 e49_migrate_alpha_prediction_discord
+
+RUNTIME ACCEPTANCE
+- Controlled Atlas stop completed successfully and left Docker Desktop/Genesis untouched.
+- Atlas restart was launched from ATLAS.bat; process inventory confirms active Python runtime processes.
+- Direct localhost HTTP probing was blocked by the remote tool safety layer, so no HTTP response is claimed.
+- E29 was not modified and no synthetic evidence was created.
+
+DECISION
+- Execution 49 GREEN.
+- Durable restart suppression for migrated producers comes from established Alpha state and Prediction journal, not an unproven typed persistence claim.
+
+VISUAL PROJECT STATUS AFTER E49
+[DONE] Core runtime recovery / PAPER safety / evidence preservation.
+[DONE] Perps decomposition + prospective challenger infrastructure.
+[ACTIVE] E29 genuine forward evidence collection.
+[DONE] Alpha E31-E47 controlled intelligence through read-only operator UI.
+[DONE] E48 typed Discord event/routing/ack/retry foundation.
+[DONE] E49 Alpha/Catalyst + Prediction producer migration with durable producer-level restart dedupe.
+[ACTIVE] Perp/System Discord producer migration remains.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[GATED] Alpha strategy-selection use pending separate prospective evidence.
+[GATED] Unattended Prediction PAPER opening pending prospective validation.
+[TODO] Broader frontend/operator UI redesign.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+[GATED] Automated real-money execution and strategy promotion remain disabled.
+
+NEXT - EXECUTION 50
+1. Define explicit Perp and System lane compatibility contracts before migration.
+2. Migrate notification-only Perp/System producers incrementally through E48 without changing signal generation, PAPER lifecycle, risk, or execution behavior.
+3. Preserve existing cooldown/dedup semantics and prove typed routing cannot increase delivery frequency.
+4. Add lane-specific hostile-text, duplicate, failure/retry, and authority-isolation tests.
+5. Add read-only typed Discord delivery observability only if it adds no control surface.
+6. Continue genuine E29 and Alpha evidence unchanged; no synthetic samples and no threshold changes from observed outcomes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
+- After every GREEN execution, update the complete canonical roadmap append-only, refresh visual status, overwrite the OneDrive/Desktop master roadmap, and report completed-vs-remaining progress.
+- Never advance GREEN on blocked validation and never manufacture evidence/readiness.
