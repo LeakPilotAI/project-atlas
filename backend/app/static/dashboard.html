@@ -273,6 +273,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;ba
       <div class="n" style="font-size:16px;margin-top:8px">Not this session</div>
       <div class="sub">Research and edge use every PAPER close ever recorded. Session WR on Paper is the number to track now. Nothing here is a live-unlock.</div>
     </div>
+    <div class="card"><h3>Alpha / Catalyst</h3><div id="alphafeed" class="sub">Loading official context...</div></div>
     <div class="grid g2">
       <div class="card">
         <h3>Hyperliquid majors tape</h3>
@@ -526,6 +527,11 @@ async function load(){
       <div class="note" style="margin-top:10px">Gates stay locked. Session WR is the score to watch. All-time archive is on the Archive tab.</div>`;
     if(Date.now()-optionalUpdated < 60000) return;
     optionalUpdated=Date.now();
+    try {
+      const ar=await atlasFetch("/api/validation/e38-alpha-view"); const A=await ar.json();
+      const rows=(A.items||[]).slice(0,6);
+      document.getElementById("alphafeed").innerHTML=rows.length?rows.map(e=>`<div class="kv"><span><b>${esc(e.event_type||"OTHER")}</b> · ${esc(e.source_id||"")}</span><span>${esc(e.title||"")}</span></div>`).join("")+`<div class="note">Stored ${n(A.stored_event_count)} · official provenance retained · context only; no execution authority.</div>`:"No current governed Alpha events.";
+    } catch(e) { document.getElementById("alphafeed").textContent="Alpha context temporarily unavailable."; }
     try {
       const vr = await atlasFetch("/api/validation/summary");
       if (vr.ok) {
