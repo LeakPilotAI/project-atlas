@@ -7990,3 +7990,49 @@ NEXT - EXECUTION 63
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
+
+
+EXECUTION 63 - READ-ONLY CRYPTO QUALITY DIPS EVIDENCE API - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added GET /api/investments/crypto-quality-dips/evidence-readiness over the E62 prospective evidence store.
+- Response is bounded to evidence/readiness metadata: counts, valid fraction, distinct observation days, normalized failure reasons, fixed policy/gate checks, read_only=true, and zero-authority flags. It exposes no buy/dip score.
+- POST/PUT/PATCH/DELETE are not registered and return 405; tests prove mutation attempts do not create the evidence file.
+- Added a design-only manual/operator ingestion contract: endpoint inactive, autonomous collection false, external feeds disconnected, and zero PAPER/execution authority.
+- No ingestion endpoint, scheduler, external crypto feed, autonomous collector, score, signal, PAPER path, or execution path was added.
+
+VALIDATION
+- Focused E63/E62/E61/E60/Stock V3 compatibility: 18 passed, 0 failed, 2 known warnings, exit 0.
+- Full regression: 1,367 passed, 0 failed, 2 known warnings in 120.39s, exit 0.
+- git diff --check clean.
+- Broad staging fallback briefly staged pre-existing scratch/untracked diagnostics; caught before commit, index reset only, then exactly the three E63 files were staged. Nothing unrelated was committed or deleted.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- a3ed91c e63 research api
+
+RUNTIME ACCEPTANCE
+- E63 changes router registration. Controlled runtime restart remains blocked by the remote safety layer, so no fresh-runtime claim is made. TestClient exercised the registered FastAPI app successfully.
+
+DECISION
+- E63 GREEN. Crypto Quality Dips evidence/readiness is inspectable through a mutation-free API while collection/scoring/signals/trading remain inactive.
+
+VISUAL STATUS AFTER E63
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E63 Crypto Quality Dips research boundary, normalization, store, and GET-only readiness API.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips ingestion, autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] Trading-adjacent residual producers pending lifecycle contracts; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+NEXT - EXECUTION 64
+1. Implement a manual/operator-only Crypto Quality Dips prospective evidence ingestion service behind normalized-evidence and explicit universe-qualification validation; do not expose an HTTP mutation endpoint yet.
+2. Require caller-supplied observation time/provenance and fail closed on stale/missing evidence; persist only records passing E61 validation and explicit qualification.
+3. Prove duplicate submissions are idempotent, invalid/unqualified submissions cannot persist, and Stock Quality Dips V3 remains untouched.
+4. Add ingestion observability counters/results with zero execution authority and no outcome/performance inference.
+5. Re-inventory residual trading-adjacent Discord paths; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
