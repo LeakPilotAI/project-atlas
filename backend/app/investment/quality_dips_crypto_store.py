@@ -92,6 +92,12 @@ def integrity_diagnostic(integrity):
     if state=="LEGACY_UNVERIFIED": reasons.append("LEGACY_EVIDENCE_UNVERIFIED")
     return {"chain_state":state,"healthy":bool(integrity.get("ok")),"readiness_eligible":bool(integrity.get("ok")) and state!="COMPROMISED","reason_codes":reasons,"repair_available":False,"mutation_available":False}
 
+def lifecycle_status(records, integrity):
+    rows=list(records)
+    dates=sorted(str(x.get("observed_at",""))[:10] for x in rows if x.get("observed_at"))
+    compromised=integrity.get("chain_state")=="COMPROMISED"
+    return {"policy_version":"E70_APPEND_ONLY_V1","record_count":len(rows),"chain_verified_count":int(integrity.get("chain_verified_lines",0)),"legacy_unverified_count":int(integrity.get("legacy_unverified_lines",0)),"oldest_observation_date":dates[0] if dates else None,"newest_observation_date":dates[-1] if dates else None,"retention_mode":"APPEND_ONLY","automatic_repair":False,"recovery_status":"MANUAL_REVIEW_REQUIRED" if compromised else "NOT_REQUIRED"}
+
 def evidence_summary(records):
     rows=list(records); total=len(rows)
     valid=sum(bool(x.get("evidence_valid")) for x in rows)
