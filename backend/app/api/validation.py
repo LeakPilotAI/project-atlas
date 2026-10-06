@@ -98,6 +98,15 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/e27-preregistration")
+async def e27_preregistration_endpoint()->JSONResponse:
+    try:
+        from app.services.e27_preregistration import e27_preregistration
+        body=e27_preregistration()
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS E27 PERPS SETUP V2 PROSPECTIVE HYPOTHESIS GATE","error":f"{type(e).__name__}: {str(e)[:240]}","production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
 @router.get("/e26-attribution")
 async def e26_attribution_endpoint()->JSONResponse:
     try:
