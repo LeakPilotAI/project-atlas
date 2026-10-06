@@ -8091,3 +8091,50 @@ NEXT - EXECUTION 65
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
+
+
+EXECUTION 65 - OPERATOR INVOCATION + EVIDENCE LOG INTEGRITY - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added a local internal operator-only invocation boundary around E64; no HTTP mutation route.
+- Explicit operator intent is required before existing allowlist, liquidity, freshness and provenance validation.
+- Evidence-store reload now reports bounded integrity state for malformed and duplicate lines. It never repairs or rewrites evidence silently.
+- A malformed log blocks further append operations. The GET readiness surface reports integrity status and repair_performed=false.
+- No scheduler, autonomous feed, score, dip state, alert, PAPER entry, strategy or threshold mutation, promotion, or live-capital authority was added.
+
+VALIDATION
+- Focused: 12 passed, 0 failed, 2 known warnings, exit 0.
+- Full regression: 1,374 passed, 0 failed, 2 known warnings in 126.41s, exit 0.
+- git diff --check clean.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- a2af409 e65 operator integrity boundary
+
+RUNTIME ACCEPTANCE
+- Atlas launcher started successfully after implementation push.
+- Fresh Python processes observed at 2026-10-06 07:14:34 and 07:14:50 local time.
+
+DECISION
+- E65 GREEN. Manual prospective crypto evidence now has an explicit operator boundary and fail-closed append-log integrity reporting without public mutation or trading authority.
+
+VISUAL STATUS AFTER E65
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E64 Crypto Quality Dips research boundary, normalization, store, GET readiness, and validated manual ingestion.
+[DONE] E65 explicit operator invocation + fail-closed evidence-log integrity.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+NEXT - EXECUTION 66
+1. Add deterministic integrity verification that stored observation_id matches recomputed identity; mismatches must fail closed and remain unrepaired.
+2. Add bounded per-store integrity/readiness status suitable for operator UI, without exposing raw evidence or mutation controls.
+3. Define manual ingestion audit metadata for operator intent/result/rejection reason without storing secrets or outcome/performance data.
+4. Prove identity-tampered records cannot contribute to readiness or accept new appends, and Stock V3/PAPER/execution remain untouched.
+5. Keep residual Discord lifecycle paths gated; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
