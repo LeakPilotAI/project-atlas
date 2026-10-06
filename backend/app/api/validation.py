@@ -98,6 +98,15 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/e26-attribution")
+async def e26_attribution_endpoint()->JSONResponse:
+    try:
+        from app.services.e26_attribution import e26_attribution
+        body=await asyncio.to_thread(e26_attribution)
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS EXECUTION 26 STOP-TAIL + CURRENT LONG ATTRIBUTION","error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
 @router.get("/v2-setup-attribution")
 async def v2_setup_attribution_endpoint()->JSONResponse:
     try:
