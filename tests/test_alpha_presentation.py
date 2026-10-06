@@ -11,7 +11,7 @@ def test_alert():
 def test_dedup(tmp_path):
  p=tmp_path/"e";s=tmp_path/"s";put(p);sent=[]
  async def send(**kw):sent.append(kw);return True
- a=asyncio.run(alert_new_alpha_events(sender=send,state_path=s,event_path=p));b=asyncio.run(alert_new_alpha_events(sender=send,state_path=s,event_path=p));assert a["delivered"]==1 and b["attempted"]==0 and len(sent)==1
+ a=asyncio.run(alert_new_alpha_events(sender=send,state_path=s,event_path=p,telemetry_path=tmp_path/"t"));b=asyncio.run(alert_new_alpha_events(sender=send,state_path=s,event_path=p,telemetry_path=tmp_path/"t"));assert a["delivered"]==1 and b["attempted"]==0 and len(sent)==1
 def test_retry(tmp_path):
  p=tmp_path/"e";s=tmp_path/"s";put(p)
  async def send(**kw):return False
