@@ -8986,3 +8986,74 @@ NEXT - EXECUTION 81
 7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 81 - RESEARCH SURFACES NAVIGABLE VS GATED HIERARCHY - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Refined /research/surfaces into two explicit product layers: Current navigable surfaces and Gated roadmap capabilities.
+- Preserved the three established navigable surfaces and their existing E78/E79 contracts:
+  - Alpha / Forward Evidence.
+  - Crypto Quality Dips.
+  - Command Center Operations.
+- Added four roadmap-confirmed gated capability cards:
+  - Crypto Quality Dips autonomy.
+  - Alpha strategy selection.
+  - Residual trading Discord lifecycle.
+  - Automated real-money execution.
+- Gated capability cards reuse the canonical E78 GATED SurfaceStatusBadge.
+- Gated cards are deliberately non-clickable static presentation: no Link, href, button, disabled control, action affordance, or fetch.
+- Added explanatory copy that gated cards are roadmap context rather than destinations or disabled controls.
+- Preserved E80 authority legend and E79 per-surface capability metadata.
+- Added no new capability, readiness claim, synthetic evidence, scoring, PAPER, execution, strategy selection, threshold mutation, promotion, scheduler, repair, or live-capital authority.
+
+VALIDATION
+- Focused E81 + E80-E76 frontend contract stack: 26 passed, 0 failed in 0.98s.
+- Full Python regression: 1,439 passed, 0 failed, 2 known dependency warnings in 130.98s.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint for Research Surfaces and shared SurfaceStatusBadge: exit 0.
+- Next.js optimized production build: exit 0; /, /_not-found, /research, and /research/surfaces prerender successfully.
+- git diff --check clean.
+
+IMPLEMENTATION COMMIT
+- b98c1042 e81 separate gated research capabilities
+
+DECISION
+- E81 GREEN. Operators can now distinguish actual navigable read-only surfaces from roadmap-confirmed capabilities that remain unavailable, without presenting gates as disabled actions or implying readiness.
+
+VISUAL STATUS AFTER E81
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
+[DONE] E73 frontend-safe fail-closed Crypto Quality Dips consumer/view-model.
+[DONE] E74 visible read-only Crypto Quality Dips Command Center panel.
+[DONE] E75 freshness/transport/contract-failure operator UX hardening.
+[DONE] E76 read-only Research Surfaces overview / information architecture.
+[DONE] E77 global read-only navigation among Command Center, Research Surfaces, and Forward Evidence.
+[DONE] E78 shared read-only surface status vocabulary.
+[DONE] E79 bounded static purpose/data/authority metadata for Research Surfaces.
+[DONE] E80 compact shared authority legend for Research Surfaces.
+[DONE] E81 navigable-surface vs gated-roadmap-capability hierarchy.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] bounded product-facing hierarchy/polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Research Surfaces now cleanly distinguishes real navigable surfaces from gated roadmap capabilities; next reduce duplicated roadmap-state presentation so the page has one clear hierarchy rather than repeating the same gates in two sections.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Broader product-facing frontend polish remains: hierarchy, information density, and operator ergonomics while retaining explicit authority boundaries.
+6. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 82
+1. Consolidate the legacy Current roadmap state block with the E81 hierarchy so active evidence collection remains visible without duplicating gated capability information.
+2. Preserve E29 and Alpha/cadence/corroboration ACTIVE labels as static roadmap context.
+3. Remove only redundant gated-state repetition; retain the dedicated E81 Gated roadmap capabilities section as the canonical gated presentation.
+4. Keep all presentation static, read-only, non-clickable where gated, and free of new backend coupling.
+5. Add source-contract tests pinning the non-duplication and active-vs-gated hierarchy.
+6. Run frontend compile/lint/build, focused regression and full Python regression.
+7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
