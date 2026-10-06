@@ -17,6 +17,7 @@ from app.adapters.registry import registry
 from app.alerts.discord import is_discord_ready, start_discord_bot, stop_discord_bot
 from app.api.archive import router as archive_router
 from app.api.command_center import router as command_center_router
+from app.api.crypto_quality_dips_research import router as crypto_quality_dips_research_router
 from app.api.diagnostics import router as diagnostics_router
 from app.api.investment_board import router as investment_board_router
 from app.api.prospective_research import router as prospective_research_router
@@ -320,6 +321,7 @@ app.add_middleware(
 
 app.include_router(archive_router)
 app.include_router(command_center_router)
+app.include_router(crypto_quality_dips_research_router)
 app.include_router(diagnostics_router)
 app.include_router(performance_router)
 app.include_router(investment_board_router, prefix="/api")
