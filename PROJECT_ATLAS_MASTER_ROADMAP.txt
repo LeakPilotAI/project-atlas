@@ -7886,3 +7886,55 @@ NEXT - EXECUTION 61
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
+
+
+EXECUTION 61 - CRYPTO QUALITY DIPS EVIDENCE NORMALIZATION CONTRACT - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added quality_dips_crypto_evidence.py as an inactive research-only normalization layer beneath the E60 Crypto Quality Dips envelope.
+- Each of the seven E60 dimensions normalizes to a typed immutable evidence item containing dimension, value, source provenance, observed_at, valid, and fail-closed reasons.
+- Validation rejects missing dimensions, missing source/value, invalid timestamps, future timestamps, and observations older than the caller-supplied max-age window. E61 defines no trading/scoring threshold.
+- Added explicit research-universe qualification contract: non-empty symbol + caller-provided allowlisted=true + caller-provided liquidity_qualified=true. Input mode is EXPLICIT_RESEARCH_ONLY and autonomous_discovery=false.
+- Added prospective evidence record schema. It records normalized evidence completeness/validity while hard-coding prospective_only=true, scoring_defined=false, dip_state_defined=false, can_emit_signal=false, and all PAPER/execution/strategy/threshold/promotion/live-capital authority false.
+- No scheduler, data fetcher, Discord path, Stock V3 state-store integration, PAPER path, score, dip taxonomy, or broker action was added.
+
+VALIDATION
+- Focused E61/E60/Stock V3 compatibility gate: 13 passed, 0 failed.
+- Full suite first reached 100% but pytest itself exited 1 during Windows temp cleanup with PermissionError on pytest-current; this was infrastructure cleanup, not a test assertion failure, and was not accepted as GREEN.
+- Full suite rerun with repo-local basetemp completed cleanly: 1,362 passed, 0 failed, 2 known dependency warnings in 121.52s, exit code 0.
+- git diff --check clean at focused gate.
+- Remote safety filtering intermittently blocked larger test-file writes; the committed test was created through smaller bounded writes. No validation requirement was waived.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- 795e0c4 e61_research_evidence_contract
+
+RUNTIME ACCEPTANCE
+- E61 adds an inactive, unreferenced research module and tests only; it does not alter the running Atlas import/scheduler graph.
+- Controlled stop/restart command was attempted after commit but blocked by the remote safety layer. No fresh-runtime claim is made; full clean regression is the E61 acceptance evidence.
+
+DECISION
+- E61 GREEN. Crypto Quality Dips can now hold normalized prospective research evidence, but still cannot score a dip, create a state, schedule itself, notify, enter PAPER, or execute capital.
+
+VISUAL STATUS AFTER E61
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60 asset-class boundary + inert Crypto Quality Dips envelope.
+[DONE] E61 inactive crypto evidence normalization, explicit research-universe qualification, and prospective evidence schema.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips data acquisition, scoring/state taxonomy, alerts, scheduling, and prospective performance evidence.
+[GATED] day_trade_assistant, paper_try_symbol, residual perp_micro_coach pending lifecycle contracts.
+[GATED] Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+
+NEXT - EXECUTION 62
+1. Define an inactive append-safe prospective Crypto Quality Dips evidence store with immutable observation identity and duplicate handling; it may store research evidence only and must not infer outcomes or scores.
+2. Add read-only summary/reporting over evidence completeness, validity, freshness failures, and universe qualification; no signal labels or performance claims.
+3. Prove persistence/reload/deduplication cannot touch Stock Quality Dips V3 state and carries zero trading authority.
+4. Define the minimum prospective sample/readiness gates that would be required before a future scoring taxonomy may even be proposed; gates must be fixed before outcomes are observed and must not activate scoring.
+5. Re-inventory residual trading-adjacent Discord paths after this evidence-store boundary; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
