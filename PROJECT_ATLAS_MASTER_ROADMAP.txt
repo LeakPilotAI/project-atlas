@@ -6646,3 +6646,51 @@ NEXT CONTROLLED EXECUTION - EXECUTION 43
 
 SAFETY
 Research/context and operational observability only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, historical rewrite, or incompatible evidence pooling.
+
+
+================================================================================
+PERMANENT ATLAS CHECKPOINT RULE - ADDED 2026-10-06
+================================================================================
+After every GREEN execution: update the complete canonical roadmap without deleting prior history; record exact commits, tests, runtime evidence, safety state, current state and next execution; maintain a visual [DONE]/[ACTIVE]/[GATED]/[TODO] progress section; overwrite the user's OneDrive/Desktop master roadmap copy with the complete canonical roadmap; and give the refreshed full roadmap plus completed-versus-remaining summary to the user. Never advance a GREEN checkpoint for a blocked execution or manufacture evidence/readiness.
+
+================================================================================
+EXECUTION 43 - DURABLE ALPHA CADENCE EVIDENCE - GREEN
+Date: 2026-10-06 UTC
+================================================================================
+Implementation commit: 7f25ae7.
+Added restart-safe bounded cadence history and E42 governance consumption of durable history. Evidence contains operational alpha_ms/cycle_ms only and execution_authority=false. Invalid rows are excluded and flagged. Decision window max 240. Frozen E42 policy remains min 30 observations; decouple only after maturity if alpha p95 >50 ms or alpha/cycle p95 >20%.
+Validation: 5 cadence tests passed; 16 integrated tests passed; full Atlas regression 1,294 passed, 0 failed, 2 known dependency warnings; diff check passed.
+Runtime: first controlled restart reached 3/3 and accumulated 5 valid/0 invalid observations. Required second restart initially saw transient WinError 64 during DB startup, then recovered through existing retry logic and reached API healthy + 3/3. Durable history survived and increased to 9 valid/0 invalid. Acceptance p95 alpha=12.902 ms; alpha/cycle=9.2110%; evidence_ready=false because 9<30; decouple_recommended=false. Durable Alpha dedup remains 1. E29 remains NOT_READY at baseline=0/challenger=0; promotion_allowed=false.
+Status: E43 GREEN. No scheduler split, strategy change, promotion or live-capital authority.
+
+================================================================================
+VISUAL PROGRESS AFTER E43
+================================================================================
+[DONE] Core runtime recovery, PAPER safety and evidence-preserving lifecycle foundation.
+[DONE] Perps decomposition, prospective preregistration and frozen challenger infrastructure.
+[ACTIVE] E29 forward evidence: 0 baseline / 0 challenger closes; NOT_READY.
+[DONE] Alpha E31-E43: contract, governed ingestion, bounded official fetch, deterministic extraction, relevance/time/entity gates, real SEC persistence, operator presentation, typed Discord delivery, observability, corroboration provenance, cadence preregistration and durable cadence evidence.
+[ACTIVE] Alpha cadence maturity: 9/30 genuine observations at E43 acceptance.
+[TODO] Improve official-source telemetry timestamps and current HEALTHY/STALE resolution.
+[TODO] Deterministic cross-source equivalent-claim/corroboration research.
+[GATED] Alpha strategy-selection use pending separately preregistered prospective evidence.
+[DONE] Prediction no-liquidity lifecycle truth and executable entry+exit depth eligibility.
+[GATED] Unattended Prediction PAPER opening pending prospective validation; genuine closed sample count remains insufficient.
+[GATED] QUALITY_DIPS_PAPER_V1 pending genuine qualifying lifecycle evidence.
+[TODO] Broader frontend redesign: health hierarchy, Perps Prepare/manual workflow, strategy/version/evidence maturity, MAE/MFE/tail risk, Prediction liquidity warnings, Quality Dips maturity, venue-native units, provenance drill-down.
+[DONE] Alpha typed Discord context alerts + durable dedup.
+[TODO] Full Discord typed event pipeline across opportunity, execution quality, lifecycle risk, Prediction, Alpha, health and evidence maturity; routing/cooldown/ack schema.
+[GATED] Additional venues/Kalshi until Hyperliquid prospective PAPER evidence is trustworthy.
+[TODO] Independent future venue adapters/accounting/validation before any cross-venue router.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening and evidence-grounded product claims.
+[GATED] Automated real-money execution disabled; strategy promotion disabled until preregistered gates pass.
+
+NEXT - EXECUTION 44
+1. Timestamp new E43 cadence rows while reading the existing 9 rows backward-compatibly.
+2. Add observation-age diagnostics so stale timing history cannot masquerade as current scheduler evidence.
+3. Improve official-source telemetry timestamps for evidence-based HEALTHY/STALE status.
+4. Add exact source-health boundary, malformed timestamp and future timestamp tests.
+5. Continue genuine cadence collection only; never synthesize remaining observations.
+6. If >=30 genuine observations exist, evaluate frozen E42 thresholds exactly; otherwise remain NOT_READY.
+7. Preserve E32 provenance, E33 cooldown, E40/E41 delivery integrity and E29 forward collection.
+8. Alpha remains excluded from strategy selection; no strategy/promotion/live-capital changes.
