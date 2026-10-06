@@ -6889,3 +6889,99 @@ NEXT - EXECUTION 46
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
 - After every GREEN execution, update the complete canonical roadmap append-only, refresh the visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap with the complete canonical file, and report completed-vs-remaining progress.
 - Never advance GREEN on blocked validation and never manufacture evidence/readiness.
+
+
+================================================================================
+EXECUTION 46 - DETERMINISTIC CROSS-SOURCE CORROBORATION - GREEN - 2026-10-06
+================================================================================
+
+OBJECTIVE
+- Add deterministic, bounded equivalent-claim/corroboration research across governed Alpha sources.
+- Preserve exact provenance and require independent domains.
+- Keep contradictory or merely related claims distinct.
+- Preserve zero execution, PAPER-entry, strategy, membership, threshold, promotion, and live-capital authority.
+
+PREREGISTERED E46 POLICY
+- version = e46-equivalent-claim-v1
+- minimum lexical token Jaccard = 0.75
+- maximum publication gap = 72 hours
+- same event type required
+- exact structured subject identity required from symbols/entities
+- same deterministic polarity required
+- independent domain required
+- empty structured subjects fail closed
+- no LLM/semantic equivalence authority
+
+IMPLEMENTATION
+- Added backend/app/services/e46_corroboration.py.
+- Alpha annotate_context now uses the E46 deterministic equivalence gate rather than exact legacy content fingerprint alone.
+- Independent corroborators retain source_id, domain, trust_tier, and exact URL provenance.
+- One independent domain contributes at most one corroborator.
+- Contradictory polarity never counts as corroboration.
+- Same-domain restatements never count as independent corroboration.
+- Merely related claims, mismatched structured subjects, and claims outside the 72h bound remain distinct.
+- Existing Alpha safety/authority fields remain false.
+
+VALIDATION
+- Initial focused run exposed one test-contract mistake: reworded equivalent claims correctly had different legacy fingerprints. Production behavior was not changed for that failure.
+- Corrected focused E46 + Alpha intelligence/ingestion suite: 24 passed in 0.43s.
+- git diff --check clean except normal Windows LF/CRLF notice.
+- Full Atlas regression: 1,309 passed, 0 failed, 2 known dependency warnings in 124.01s.
+- Known warnings unchanged: discord audioop deprecation; Starlette/httpx TestClient deprecation.
+
+IMPLEMENTATION COMMIT
+- c78876e e46_deterministic_alpha_corroboration
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS-STOP.bat -> ATLAS.bat restart completed successfully.
+- Launcher PID 32032; API PID 28340.
+- Atlas containers recreated; API health passed; dashboard opened; launcher reported Atlas is running.
+- First live E46 result was inspected only after policy freeze, focused validation, full regression, commit, push, and restart.
+- Live Alpha feed: 1 stored/current item, official SEC REGULATORY event, corroboration_count=0.
+- Zero corroboration is accepted as evidence truth; no synthetic supporting claim was created.
+- Alpha delivery dedup_count=1; no duplicate delivery.
+- Source health: federal_reserve=HEALTHY, sec=COOLDOWN, hyperliquid_docs=HEALTHY.
+- Historical cadence observations=206; alpha p95=15.71 ms; alpha/cycle p95 share=8.011629%; decouple_recommended=false.
+- Current <=24h cadence observations=149; alpha p95=14.641 ms; alpha/cycle p95 share=7.855281%; threshold_breach=false; drift_flag=false; decouple_recommended=false.
+- E29 unchanged: membership_records=0, baseline closed_trades=0, challenger closed_trades=0, status=NOT_READY, promotion_allowed=false.
+
+DECISION
+- Execution 46 GREEN.
+- Deterministic cross-source corroboration research is active, bounded, provenance-preserving, and fail-closed.
+- Current live evidence contains no independent corroborator; Atlas reports 0 rather than manufacturing confidence.
+- Unified Alpha scheduler remains retained by frozen cadence evidence.
+- Alpha remains excluded from strategy selection/promotion.
+
+VISUAL PROJECT STATUS AFTER E46
+[DONE] Core runtime recovery / PAPER safety / evidence preservation.
+[DONE] Perps decomposition + prospective challenger infrastructure.
+[ACTIVE] E29 forward strategy evidence: 0 baseline / 0 challenger closes; NOT_READY.
+[DONE] Alpha E31-E46 controlled intelligence, ingestion, governed fetch/extraction, presentation, typed delivery, observability, provenance, cadence governance, age-aware cadence, and deterministic corroboration stack.
+[DONE] Historical cadence maturity: 206/30; unified scheduler retained.
+[DONE] Current <=24h cadence maturity: 149/30; no threshold breach or drift flag.
+[ACTIVE] Continue passive cadence monitoring for future regime/runtime drift.
+[ACTIVE] Accumulate genuine governed cross-source Alpha claims; current independent corroboration count is 0.
+[GATED] Alpha strategy-selection use pending separately preregistered prospective evidence.
+[DONE] Prediction no-liquidity lifecycle truth + executable entry/exit depth eligibility.
+[GATED] Unattended Prediction PAPER opening pending prospective validation.
+[GATED] QUALITY_DIPS_PAPER_V1 pending genuine qualifying lifecycle evidence.
+[TODO] Broader frontend/operator UI redesign.
+[DONE] Alpha typed Discord context alerts + durable dedup.
+[TODO] Full cross-lane Discord typed event pipeline/routing/cooldown/ack schema.
+[GATED] Additional venues/Kalshi until Hyperliquid prospective PAPER evidence is trustworthy.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+[GATED] Automated real-money execution and strategy promotion remain disabled.
+
+NEXT - EXECUTION 47
+1. Add a read-only Alpha operator/dashboard surface for historical/current cadence maturity, threshold/drift state, source observed/fetched timestamps, and corroboration provenance.
+2. Keep all dashboard Alpha/corroboration information explicitly context-only with no order/PAPER-entry controls.
+3. Add deterministic UI/API tests for zero corroboration, independent corroboration provenance, source freshness, and cadence maturity.
+4. Begin the bounded typed cross-lane Discord event schema/routing design only if it can remain isolated from strategy/execution authority.
+5. Continue genuine E29 forward evidence collection unchanged; no synthetic samples.
+6. Continue genuine Alpha/cadence/corroboration evidence collection without changing frozen E42/E45/E46 thresholds from observed outcomes.
+7. Keep Alpha excluded from strategy selection/promotion.
+8. No strategy, sizing, PAPER-entry, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
+- After every GREEN execution, update the complete canonical roadmap append-only, refresh the visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap with the complete canonical file, and report completed-vs-remaining progress.
+- Never advance GREEN on blocked validation and never manufacture evidence/readiness.
