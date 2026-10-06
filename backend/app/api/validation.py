@@ -98,6 +98,16 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/day-trading-cohorts")
+async def day_trading_cohorts_endpoint()->JSONResponse:
+    try:
+        from app.services.day_trading_cohort_diagnostics import day_trading_cohort_diagnostics
+        body=await asyncio.to_thread(day_trading_cohort_diagnostics)
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS DAY TRADING PAPER COHORT DIAGNOSTICS","error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
 @router.get("/attribution")
 async def paper_attribution_endpoint()->JSONResponse:
     try:
