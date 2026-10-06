@@ -113,3 +113,11 @@ def evidence_summary(records):
     result.update({"predeclared_readiness_policy":dict(READINESS_POLICY),"readiness_gates_met":all(gates.values()),"gate_checks":gates})
     result.update(ZERO_AUTHORITY)
     return result
+
+def operator_presentation(summary, diagnostic, lifecycle):
+    state = diagnostic["chain_state"]
+    mapping = {"COMPROMISED": ("CRITICAL", True, "INTEGRITY_REVIEW_REQUIRED"), "LEGACY_UNVERIFIED": ("WARNING", True, "LEGACY_REVIEW_REQUIRED"), "VERIFIED": ("INFO", False, "COLLECTING_EVIDENCE"), "NO_CHAIN_YET": ("INFO", False, "NO_EVIDENCE_YET")}
+    severity, attention, status = mapping[state]
+    if state == "VERIFIED" and summary.get("readiness_gates_met"):
+        status = "RESEARCH_GATES_MET"
+    return {"contract_version":"E71_OPERATOR_PRESENTATION_V1","status":status,"severity":severity,"operator_attention_required":attention,"chain_state":state,"readiness_gates_met":bool(summary.get("readiness_gates_met")) and diagnostic["readiness_eligible"],"recovery_status":lifecycle["recovery_status"],"read_only":True,"repair_action_available":False,"mutation_action_available":False}
