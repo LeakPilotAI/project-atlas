@@ -12,15 +12,20 @@ def observation_identity(record: dict[str, Any]) -> str:
     raw=json.dumps(material,sort_keys=True,separators=(",",":"),default=str).encode()
     return hashlib.sha256(raw).hexdigest()
 
+def chain_identity(sequence: int, previous_hash: str, observation_id: str) -> str:
+    raw=f"{sequence}:{previous_hash}:{observation_id}".encode()
+    return hashlib.sha256(raw).hexdigest()
+
 class CryptoProspectiveEvidenceStore:
     def __init__(self,path):
-        self.path=Path(path); self.records=[]; self._ids=set()
-        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0}
+        self.path=Path(path); self.head_path=Path(str(self.path)+".head"); self.records=[]; self._ids=set()
+        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0,"legacy_unverified_lines":0,"chain_verified_lines":0,"chain_mismatch_lines":0,"chain_anchor_mismatch":False}
         self.reload()
     def reload(self):
         self.records=[]; self._ids=set()
-        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0}
+        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0,"legacy_unverified_lines":0,"chain_verified_lines":0,"chain_mismatch_lines":0}
         if not self.path.exists(): return
+        expected_sequence=1; previous_hash="GENESIS"
         for line in self.path.read_text(encoding="utf-8").splitlines():
             if not line.strip(): continue
             try:
@@ -34,15 +39,34 @@ class CryptoProspectiveEvidenceStore:
             if oid in self._ids:
                 self.integrity["duplicate_lines"]+=1
                 continue
+            if "chain_hash" not in row:
+                self.integrity["legacy_unverified_lines"]+=1
+            else:
+                seq=row.get("chain_sequence"); prev=str(row.get("previous_chain_hash",""))
+                expected=chain_identity(expected_sequence,previous_hash,oid)
+                if seq != expected_sequence or prev != previous_hash or row.get("chain_hash") != expected:
+                    self.integrity["ok"]=False; self.integrity["chain_mismatch_lines"]+=1
+                    continue
+                self.integrity["chain_verified_lines"]+=1; previous_hash=expected; expected_sequence+=1
             self.records.append(row); self._ids.add(oid)
+        if self.head_path.exists():
+            anchor=json.loads(self.head_path.read_text(encoding="utf-8"))
+            if anchor.get("sequence") != expected_sequence-1 or anchor.get("chain_hash") != previous_hash:
+                self.integrity["ok"]=False; self.integrity["chain_anchor_mismatch"]=True
     def append(self,record: dict[str,Any]) -> bool:
         if not self.integrity["ok"]:
             raise ValueError("EVIDENCE_STORE_INTEGRITY_FAILED")
         row=dict(record); oid=observation_identity(row)
         if oid in self._ids: return False
-        row["observation_id"]=oid; self.path.parent.mkdir(parents=True,exist_ok=True)
+        row["observation_id"]=oid
+        chained=[x for x in self.records if x.get("chain_hash")]
+        sequence=len(chained)+1; previous_hash=chained[-1]["chain_hash"] if chained else "GENESIS"
+        row["chain_sequence"]=sequence; row["previous_chain_hash"]=previous_hash
+        row["chain_hash"]=chain_identity(sequence,previous_hash,oid)
+        self.path.parent.mkdir(parents=True,exist_ok=True)
         with self.path.open("a",encoding="utf-8") as fh:
             fh.write(json.dumps(row,sort_keys=True,separators=(",",":"),default=str)+"\n")
+        self.head_path.write_text(json.dumps({"sequence":sequence,"chain_hash":row["chain_hash"]},sort_keys=True),encoding="utf-8")
         self.records.append(row); self._ids.add(oid); return True
 
 def evidence_summary(records):
