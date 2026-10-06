@@ -6123,3 +6123,113 @@ NEXT CONTROLLED EXECUTION - EXECUTION 37
 
 SAFETY
 Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, guessed ticker/entity claims, publication-time guessing, stale-context promotion, historical rewrite, or incompatible evidence pooling.
+
+
+================================================================================
+EXECUTION 37 - GOVERNED MANUAL ALPHA RUN + FIRST REAL PERSISTED EVENT - GREEN
+Date: 2026-10-05 CT / 2026-10-06 UTC
+================================================================================
+PURPOSE
+- Add a bounded manual Alpha research endpoint over the existing E33-E36 governance stack.
+- Permit persistence only from frozen official source targets after deterministic extraction gates.
+- Prove callers cannot inject arbitrary URLs/bodies or trading/strategy authority fields.
+- Capture the first genuine official Alpha event without touching E29 trading evidence.
+
+IMPLEMENTATION
+- New backend/app/services/alpha_manual.py.
+- Updated backend/app/services/alpha_pipeline.py to return storage results/event IDs.
+- Updated backend/app/api/validation.py with POST /api/validation/e37-alpha-run.
+- New tests/test_alpha_manual.py.
+- New tests/test_e37_alpha_endpoint.py.
+- Implementation commit: 8dc37af.
+
+REQUEST CONTRACT
+- Request model accepts only source_id and persist.
+- Pydantic extra=forbid rejects every undeclared JSON field.
+- Manual source allowlist is exactly federal_reserve and sec.
+- Hyperliquid docs, Reuters, Coinbase and arbitrary/unknown source IDs cannot be manually run through E37.
+- No URL or body is accepted from the caller; frozen E33 targets remain authoritative.
+
+AUTHORITY BOUNDARIES
+- execution_authority=false.
+- paper_entry_authority=false.
+- strategy_mutation_authority=false.
+- threshold_mutation_authority=false.
+- membership_mutation_authority=false.
+- automatic_worker=false.
+- live_capital_allowed=false.
+
+COOLDOWN / NETWORK GOVERNANCE
+- E37 calls the existing E33 fetch_once path.
+- Existing five-minute successful-fetch cooldown remains authoritative.
+- Focused fixture proved a second immediate manual request returns COOLDOWN with zero candidates.
+- Live second SEC request also returned COOLDOWN with zero candidates.
+- E37 does not expose any bypass flag.
+
+VALIDATION
+- Focused Alpha/E37 suite: 48 passed, 1 dependency warning.
+- Full Atlas regression: 1,278 passed, 0 failed, 2 known dependency warnings in 138.28s.
+- Endpoint tests prove:
+  * unknown/non-allowlisted source rejected;
+  * arbitrary URL rejected;
+  * arbitrary external body rejected;
+  * execute/PAPER-entry style fields rejected;
+  * strategy/threshold/membership fields rejected.
+
+CONTROLLED RUNTIME
+- ATLAS.bat restart completed.
+- Launcher PID 27784.
+- API PID 7432.
+- API healthy on first launcher health attempt.
+- Startup stabilization reached 3/3.
+- Dashboard reopened normally.
+
+BOUNDED LIVE ACCEPTANCE
+- POST /api/validation/e37-alpha-run with source_id=sec, persist=true.
+- Official SEC target returned HTTP 200, text/html, 97,066 bytes, 501.74 ms.
+- Diagnostics: accepted=1, off_domain=7, unsupported_path=120, unsupported_event_type=9, irrelevant_topic=14, missing_publication_time=0, stale_or_future=1.
+- Exactly one event persisted.
+- Event ID: c70333c1929708c08e454543.
+- Source: U.S. SEC / PRIMARY_OFFICIAL.
+- URL: https://www.sec.gov/newsroom/press-releases/2026-100-sec-proposal-would-address-how-investment-advisers-funds-can-custody-crypto-assets-under-federal
+- Official publication time: 2026-10-01T12:16:07+00:00.
+- Title: SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws.
+- Event type: REGULATORY.
+- Entities: Crypto Assets.
+- Symbols: [].
+- stale=false, rumor_only=false, contradiction=false.
+- No ticker was guessed.
+- External title/summary remains untrusted data and has no execution authority.
+
+STORE AFTER LIVE ACCEPTANCE
+- E32 raw_records=1.
+- E32 normalized_records=1.
+- E32 feed_count=1.
+- First real persisted Alpha intelligence evidence now exists.
+
+TRADING EVIDENCE ISOLATION
+- E29/E30 remains NOT_READY.
+- Baseline closed trades=0.
+- Challenger closed trades=0.
+- promotion_allowed=false.
+- Alpha event did not modify challenger membership, thresholds, strategy, PAPER entries or live execution.
+
+STATUS
+- Execution 37 GREEN.
+- Atlas now has a controlled operator-triggered path from frozen official source -> governed fetch -> deterministic extraction -> freshness/provenance gates -> append-only E32 evidence.
+- This is still research/context intelligence only, not a trading signal or execution instruction.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 38
+1. Build the first dashboard Alpha/Catalyst diagnostics card from E32/E36/E37 read-only surfaces.
+2. Show source, trust tier, publication time, freshness, event type, entities, title, provenance link and explicit no-execution-authority state.
+3. Show manual-run source status/cooldown without exposing arbitrary URL/body inputs.
+4. Add typed Discord Alpha/Catalyst notification generation for newly persisted material events, with dedup/cooldown and zero execution authority.
+5. Ensure dashboard/Discord consume stored evidence only and cannot mutate Alpha events or trading state.
+6. Add UI/API/Discord regression tests including malicious external text rendering/escaping.
+7. Preserve source/event provenance and append-only history.
+8. Keep E29 prospective collection unchanged.
+9. Do not use Alpha context for strategy selection until separately preregistered prospective research exists.
+10. No strategy/promotion/live-capital changes.
+
+SAFETY
+Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, publication-time guessing, stale-context promotion, historical rewrite, or incompatible evidence pooling.
