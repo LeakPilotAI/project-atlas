@@ -115,6 +115,12 @@ async def e37_alpha_run_endpoint(request:E37AlphaRunRequest)->JSONResponse:
     except Exception as e:
         return _json_http({"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False},500)
 
+@router.get("/e40-alpha-delivery")
+async def e40_alpha_delivery_endpoint():
+    from app.services.alpha_presentation import delivery_status
+    from app.services.perp_alert_delivery import perp_alert_delivery_service
+    return _json_http({"ok":True,**delivery_status(),"runtime":perp_alert_delivery_service.reconciliation_status(),"cadence_decoupled":False,"live_capital_allowed":False})
+
 @router.get("/e38-alpha-view")
 async def e38_alpha_view_endpoint():
     from app.services.alpha_presentation import alpha_view

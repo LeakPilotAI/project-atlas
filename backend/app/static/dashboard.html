@@ -530,7 +530,7 @@ async function load(){
     try {
       const ar=await atlasFetch("/api/validation/e38-alpha-view"); const A=await ar.json();
       const rows=(A.items||[]).slice(0,6);
-      document.getElementById("alphafeed").innerHTML=rows.length?rows.map(e=>`<div class="kv"><span><b>${esc(e.event_type||"OTHER")}</b> · ${esc(e.source_id||"")}</span><span>${esc(e.title||"")}</span></div>`).join("")+`<div class="note">Stored ${n(A.stored_event_count)} · official provenance retained · context only; no execution authority.</div>`:"No current governed Alpha events.";
+      document.getElementById("alphafeed").innerHTML=rows.length?rows.map(e=>{const age=e.published_at?Math.max(0,Math.floor((Date.now()-Date.parse(e.published_at))/3600000)):null;const ents=(e.entities||[]).map(esc).join(", ")||"none";const link=e.url?`<a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">official provenance</a>`:"provenance unavailable";return `<div class="kv"><span><b>${esc(e.event_type||"OTHER")}</b> · ${esc(e.source_id||"")} · ${esc(e.trust_tier||"UNKNOWN")} · ${age===null?"age n/a":age+"h old"}</span><span>${esc(e.title||"")}</span></div><div class="note">Entities: ${ents} · ${link}</div>`}).join("")+`<div class="note">Stored ${n(A.stored_event_count)} · context only; no execution authority.</div>`:"No current governed Alpha events.";
     } catch(e) { document.getElementById("alphafeed").textContent="Alpha context temporarily unavailable."; }
     try {
       const vr = await atlasFetch("/api/validation/summary");

@@ -1,12 +1,14 @@
 """E38/E39 read-only Alpha/Catalyst presentation and typed Discord alerts."""
 from __future__ import annotations
 import json,os
+from datetime import datetime,timezone
 from pathlib import Path
 from app.alerts.discord import send_discord_alert
 from app.services.alpha_ingestion import EVENT_PATH,feed
 from app.services.alpha_operator import diagnostics
 
 STATE_PATH=Path(__file__).resolve().parents[2]/"data"/"e38_alpha_alert_state.json"
+TELEMETRY_PATH=Path(__file__).resolve().parents[2]/"data"/"e40_alpha_delivery_telemetry.jsonl"
 
 def alpha_view(*,event_path=EVENT_PATH,telemetry_path=None,limit=12):
     f=feed(event_path=Path(event_path),limit=limit,include_stale=False)
@@ -19,7 +21,7 @@ def alpha_view(*,event_path=EVENT_PATH,telemetry_path=None,limit=12):
             "published_at":e.get("published_at"),"title":e.get("title"),
             "event_type":e.get("event_type"),"entities":list(e.get("entities") or []),
             "symbols":list(e.get("symbols") or []),"url":e.get("url"),
-            "stale":bool(e.get("stale")),"execution_authority":False,
+            "stale":bool(e.get("stale")),"corroboration_count":int(e.get("corroboration_count") or 0),"execution_authority":False,
         })
     return {"ok":True,"version":"e38-alpha-presentation-v1","items":items,
             "stored_event_count":f.get("stored_event_count",0),"sources":op.get("sources",{}),
@@ -41,8 +43,9 @@ def build_alpha_alert(event):
           f"Entities: {entities}\nPublished: {published}\n"
           f"Provenance: {url}\n\n"
           "_Context intelligence only · external text is untrusted data · no order or PAPER-entry authority._")
+    severity="HIGH" if trust=="PRIMARY_OFFICIAL" and int(event.get("corroboration_count") or 0)>=2 else "MEDIUM"
     return {"symbol":"ALPHA","title":f"Atlas Alpha · {etype}","description":desc,
-            "price":0.0,"severity":"INFO","opportunity":0,"confidence":0,"risk":0}
+            "price":0.0,"severity":severity,"opportunity":0,"confidence":0,"risk":0}
 
 def _load(path):
     try:return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -57,16 +60,25 @@ def is_material(event):
     entities={"Bitcoin","Ethereum","Stablecoins","Crypto Assets","Digital Assets","Tokenized Securities","Market Structure","FOMC","Federal Funds Rate","Interest Rates","Inflation"}
     return str(event.get("event_type") or "").upper() in types and bool(set(event.get("entities") or []) & entities) and not bool(event.get("stale"))
 
-async def alert_new_alpha_events(*,sender=send_discord_alert,state_path=STATE_PATH,event_path=EVENT_PATH,predicate=is_material):
-    view=alpha_view(event_path=event_path); state=_load(state_path)
-    delivered=set(state.get("delivered_event_ids") or [])
+def delivery_status(state_path=STATE_PATH):
+    s=_load(state_path)
+    return {"dedup_count":len(s.get("delivered_event_ids") or []),"last_attempt_at":s.get("last_attempt_at"),"last_result":s.get("last_result"),"last_error":s.get("last_error"),"execution_authority":False,"paper_entry_authority":False}
+
+def _append_telemetry(path,row):
+    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
+    with path.open("a",encoding="utf-8") as f:f.write(json.dumps(row,sort_keys=True)+"\n");f.flush();os.fsync(f.fileno())
+
+async def alert_new_alpha_events(*,sender=send_discord_alert,state_path=STATE_PATH,event_path=EVENT_PATH,predicate=is_material,telemetry_path=TELEMETRY_PATH):
+    view=alpha_view(event_path=event_path); state=_load(state_path); delivered=set(state.get("delivered_event_ids") or [])
     pending=[e for e in view["items"] if e["event_id"] not in delivered and predicate(e)]
-    attempted=sent=0
+    attempted=sent=0; failed_ids=[]; delivered_now=[]
     for event in reversed(pending):
         attempted+=1
         try: ok=bool(await sender(**build_alpha_alert(event)))
         except Exception: ok=False
-        if ok: delivered.add(event["event_id"]); sent+=1
-    if sent:_save(state_path,{"delivered_event_ids":sorted(delivered)})
-    return {"attempted":attempted,"delivered":sent,"pending":len(pending)-sent,
-            "execution_authority":False,"paper_entry_authority":False}
+        if ok: delivered.add(event["event_id"]);delivered_now.append(event["event_id"]);sent+=1
+        else: failed_ids.append(event["event_id"])
+    now=datetime.now(timezone.utc).isoformat(); result={"attempted":attempted,"delivered":sent,"pending":len(pending)-sent}
+    state={"delivered_event_ids":sorted(delivered),"last_attempt_at":now,"last_result":result,"last_error":None if not failed_ids else "SEND_FAILED"};_save(state_path,state)
+    if attempted:_append_telemetry(telemetry_path,{"at":now,"attempted":attempted,"delivered":sent,"pending":result["pending"],"delivered_event_ids":delivered_now,"failed_event_ids":failed_ids,"raw_external_body_stored":False,"execution_authority":False})
+    return {**result,"execution_authority":False,"paper_entry_authority":False}
