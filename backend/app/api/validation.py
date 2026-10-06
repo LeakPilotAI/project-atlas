@@ -115,6 +115,16 @@ async def e37_alpha_run_endpoint(request:E37AlphaRunRequest)->JSONResponse:
     except Exception as e:
         return _json_http({"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False},500)
 
+@router.get("/e42-alpha-governance")
+async def e42_alpha_governance_endpoint():
+    from app.services.alpha_presentation import alpha_view,delivery_history,delivery_status
+    from app.services.e42_alpha_health import source_health
+    from app.services.e42_alpha_policy import decision
+    from app.services.perp_alert_delivery import perp_alert_delivery_service
+    view=alpha_view(); runtime=perp_alert_delivery_service.reconciliation_status()
+    obs=[{"alpha_ms":runtime.get("last_step_timings_ms",{}).get("alpha_context",0),"cycle_ms":runtime.get("last_cycle_elapsed_ms",0)}]
+    return _json_http({"ok":True,"delivery":delivery_status(),"history":delivery_history(limit=10),"source_health":{k:source_health(v) for k,v in view.get("sources",{}).items()},"cadence":decision(obs),"execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False})
+
 @router.get("/e41-alpha-delivery-history")
 async def e41_alpha_delivery_history_endpoint(limit: int = 25):
     from app.services.alpha_presentation import delivery_history, alpha_view, source_health
