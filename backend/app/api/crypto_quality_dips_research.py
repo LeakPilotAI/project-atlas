@@ -1,7 +1,7 @@
 """Read-only Crypto Quality Dips prospective evidence surface."""
 from pathlib import Path
 from fastapi import APIRouter
-from app.investment.quality_dips_crypto_store import CryptoProspectiveEvidenceStore, evidence_summary
+from app.investment.quality_dips_crypto_store import CryptoProspectiveEvidenceStore, evidence_summary, integrity_diagnostic
 
 router=APIRouter(prefix="/api/investments/crypto-quality-dips",tags=["crypto quality dips research"])
 EVIDENCE_PATH=Path("data/research/crypto_quality_dips_prospective.jsonl")
@@ -12,7 +12,14 @@ def evidence_readiness():
     result=evidence_summary(store.records)
     result["read_only"]=True
     result["record_count"]=len(store.records)
+    diagnostic=integrity_diagnostic(store.integrity)
     result["store_integrity"]={**store.integrity,"repair_performed":False}
+    result["integrity_diagnostic"]=diagnostic
+    if not diagnostic["readiness_eligible"]:
+        result["readiness_gates_met"]=False
+        result["gate_checks"]["integrity"]=False
+    else:
+        result["gate_checks"]["integrity"]=True
     result["ingestion"]={"mode":"MANUAL_OPERATOR_ONLY","http_mutation_endpoint":False,"autonomous_collection":False}
     return result
 

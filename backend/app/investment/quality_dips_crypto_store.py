@@ -82,6 +82,16 @@ class CryptoProspectiveEvidenceStore:
         self.integrity["chain_verified_lines"]+=1; self.integrity["chain_state"]="VERIFIED"
         return True
 
+def integrity_diagnostic(integrity):
+    reasons=[]
+    if integrity.get("malformed_lines"): reasons.append("MALFORMED_EVIDENCE_LOG")
+    if integrity.get("identity_mismatch_lines"): reasons.append("OBSERVATION_IDENTITY_MISMATCH")
+    if integrity.get("chain_mismatch_lines"): reasons.append("CHAIN_LINK_MISMATCH")
+    if integrity.get("chain_anchor_mismatch"): reasons.append("CHAIN_ANCHOR_INVALID")
+    state=integrity.get("chain_state","NO_CHAIN_YET")
+    if state=="LEGACY_UNVERIFIED": reasons.append("LEGACY_EVIDENCE_UNVERIFIED")
+    return {"chain_state":state,"healthy":bool(integrity.get("ok")),"readiness_eligible":bool(integrity.get("ok")) and state!="COMPROMISED","reason_codes":reasons,"repair_available":False,"mutation_available":False}
+
 def evidence_summary(records):
     rows=list(records); total=len(rows)
     valid=sum(bool(x.get("evidence_valid")) for x in rows)
