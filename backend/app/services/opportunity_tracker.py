@@ -35,6 +35,11 @@ class OpportunityTracker:
         self._running = False
         self._task: Optional[asyncio.Task] = None
 
+    @property
+    def running(self) -> bool:
+        """Expose the worker state used by read-only runtime health surfaces."""
+        return self._running
+
     async def start(self) -> None:
         if self._running:
             return

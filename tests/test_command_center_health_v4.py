@@ -5,6 +5,7 @@ import subprocess
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.opportunity_tracker import opportunity_tracker
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,3 +76,18 @@ def test_command_center_health_inline_javascript_compiles_with_node():
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "command-health-js-ok" in result.stdout
+
+
+def test_health_reports_actual_opportunity_tracker_running_state():
+    original = opportunity_tracker._running
+    try:
+        opportunity_tracker._running = True
+        response = TestClient(app).get("/health")
+        assert response.status_code == 200
+        assert response.json()["opportunity_tracker_running"] is True
+
+        opportunity_tracker._running = False
+        response = TestClient(app).get("/health")
+        assert response.json()["opportunity_tracker_running"] is False
+    finally:
+        opportunity_tracker._running = original
