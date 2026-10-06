@@ -6566,3 +6566,83 @@ NEXT CONTROLLED EXECUTION - EXECUTION 42
 
 SAFETY
 Research/context only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, stale-context promotion, historical rewrite, or incompatible evidence pooling.
+
+
+================================================================================
+EXECUTION 42 - ALPHA CADENCE PREREGISTRATION + DELIVERY HEALTH - GREEN
+Date: 2026-10-06 UTC
+================================================================================
+PURPOSE
+- Preregister measurable scheduler-decoupling criteria before changing cadence.
+- Add time-aware source health so old successful fetches cannot remain HEALTHY forever.
+- Add read-only delivery-health visibility to the Alpha dashboard.
+- Preserve all Alpha/trading authority boundaries.
+
+IMPLEMENTATION
+- New backend/app/services/e42_alpha_policy.py.
+- New backend/app/services/e42_alpha_health.py.
+- New tests/test_e42_alpha_policy.py.
+- Added GET /api/validation/e42-alpha-governance.
+- Updated backend/app/static/dashboard.html with read-only delivery health.
+- Implementation commit: 47ef303.
+
+CADENCE PREREGISTRATION
+- Policy version e42-alpha-cadence-policy-v1.
+- Minimum observations: 30.
+- Alpha p95 latency threshold: >50 ms.
+- Alpha/cycle p95 share threshold: >20%.
+- Scheduler decoupling cannot be recommended before minimum observations.
+- After evidence maturity, exceeding either preregistered threshold recommends decoupling.
+- This is an operational latency rule only; it has no strategy or market-prediction meaning.
+
+SOURCE HEALTH
+- FETCHED + HTTP 200 is HEALTHY only when a parseable successful observation is <=24h old.
+- Older successful observations become STALE.
+- COOLDOWN remains explicit.
+- Failed/non-200 observations are DEGRADED.
+- Missing/unparseable timestamp evidence is UNKNOWN rather than guessed healthy.
+
+DASHBOARD / OPERATOR
+- Alpha/Catalyst card now includes delivery attempted/delivered, durable dedup count, delivery telemetry integrity, cadence evidence count versus minimum, and source-health states.
+- No mutation controls were added.
+- Existing event provenance/corroboration display remains safely escaped.
+
+VALIDATION
+- Initial isolated E42 policy/health tests: 2 passed.
+- Focused E42 + Alpha presentation/intelligence suite: 21 passed, 0 failed, 1 known Discord dependency warning.
+- Full Atlas regression: 1,291 passed, 0 failed, 2 known dependency warnings in 132.31s.
+- git diff --check passed before full regression.
+
+CONTROLLED RUNTIME
+- ATLAS.bat controlled restart completed.
+- Launcher PID 10272.
+- API PID 6804.
+- API healthy and startup stabilization reached 3/3.
+- GET /api/validation/e42-alpha-governance returned ok=true.
+- Durable Alpha dedup_count=1; last pass attempted=0, delivered=0, pending=0.
+- Delivery telemetry integrity=true, record_count=0.
+- Live cadence evidence intentionally reports observations=1, alpha_p95_ms=8.89, alpha_cycle_share_p95=0.051377.
+- evidence_ready=false and decouple_recommended=false because 1 < preregistered minimum 30.
+- Live source health: federal_reserve=UNKNOWN, sec=COOLDOWN, hyperliquid_docs=UNKNOWN. UNKNOWN is preferred over falsely labeling historical fetches healthy when required timestamp evidence is absent.
+- E29/E30 remains NOT_READY: baseline=0, challenger=0, promotion_allowed=false.
+
+STATUS
+- Execution 42 GREEN.
+- Scheduler policy is now frozen before evidence collection.
+- No scheduler split occurred.
+- No trading/PAPER/live-capital authority changed.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 43
+1. Persist bounded rolling cadence observations append-only so E42 can accumulate the required 30 real runtime samples across restarts.
+2. Store only operational timings/timestamps; no external page bodies or trading payloads.
+3. Add integrity checks and bounded retention/compaction semantics without rewriting Alpha evidence.
+4. Make E42 governance consume the durable timing observations instead of a single current sample.
+5. Add tests for restart continuity, malformed timing rows, threshold crossing and non-crossing histories.
+6. Improve source telemetry timestamps so current official-source health can distinguish HEALTHY versus STALE without UNKNOWN where evidence exists.
+7. Preserve dashboard delivery-health visibility and safe provenance rendering.
+8. Keep E29 prospective collection unchanged.
+9. Keep Alpha excluded from strategy selection until separately preregistered prospective research exists.
+10. No strategy/promotion/live-capital changes.
+
+SAFETY
+Research/context and operational observability only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, historical rewrite, or incompatible evidence pooling.
