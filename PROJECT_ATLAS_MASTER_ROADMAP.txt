@@ -8561,3 +8561,60 @@ NEXT - EXECUTION 74
 7. Keep residual Discord lifecycle paths gated; no bulk migration.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 74 - READ-ONLY CRYPTO QUALITY DIPS COMMAND CENTER PANEL - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added frontend/src/app/components/CryptoQualityDipsStatusPanel.tsx and mounted it on the main Atlas Command Center.
+- Panel reads only GET /api/investments/crypto-quality-dips/status every 15 seconds and routes every successful payload through the E73 consumeCryptoQualityDipsStatus fail-closed validator.
+- Visible presentation includes severity/display state, total/valid observations, valid fraction, distinct evidence days, research-gate state, operator status, evidence-chain state, recovery status, operator-attention state, and explicit AUTHORITY LOCKED / READ ONLY messaging.
+- Network/HTTP failures, malformed payloads, unsupported schema versions, and authority-boundary violations render fail-closed UNAVAILABLE / CRITICAL state rather than optimistic readiness.
+- No repair, mutation, PAPER, execution, strategy-selection, threshold, promotion, feed, scheduler, or live-capital controls were added.
+- Existing Command Center behavior remains independent of the crypto panel.
+- During pre-push diff review, a PowerShell encoding rewrite was detected in page.tsx. It was never pushed: page.tsx was restored byte-clean from E73 and the intended import/mount edits were surgically reapplied. Final page diff contains only those intended additions.
+
+VALIDATION
+- Focused E74 + E73-E69 contract/integrity stack: 23 passed, 0 failed, 2 known dependency warnings in 3.32s.
+- Full Python regression: 1,409 passed, 0 failed, 2 known warnings in 128.51s.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint: exit 0.
+- Final Next.js optimized production build after encoding correction: exit 0; /, /_not-found and /research prerender successfully.
+- git diff --check clean.
+- Final page.tsx commit diff verified to contain only the CryptoQualityDipsStatusPanel import and mount.
+
+IMPLEMENTATION COMMIT
+- 7342c33 e74 add crypto quality dips status panel
+
+DECISION
+- E74 GREEN. Crypto Quality Dips is now visible on the Atlas Command Center through the frozen E72 public contract and E73 fail-closed consumer, while remaining explicitly research-only and non-authoritative.
+
+VISUAL STATUS AFTER E74
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
+[DONE] E73 frontend-safe fail-closed Crypto Quality Dips consumer/view-model.
+[DONE] E74 visible read-only Crypto Quality Dips Command Center panel.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Crypto panel operational UX hardening, broader frontend/operator UI, then product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Crypto Quality Dips frontend is now visible; next harden its operator UX around freshness/refresh state and deterministic fail-closed presentation without adding controls.
+2. E29 strategy evidence must continue accumulating genuinely over time.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Broader frontend/operator UI still needs product-facing organization and polish beyond this first crypto research panel.
+6. Product/deployment hardening remains: packaging, operator ergonomics, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 75
+1. Harden the Crypto Quality Dips panel's read-only operator UX with deterministic freshness/last-refresh presentation and explicit transport-vs-contract failure context.
+2. Preserve E72/E73 as the only data/validation boundary; do not expose store internals or bypass the consumer.
+3. Add accessibility/presentation regression checks for fail-closed, operator-attention, research-only and authority-locked states.
+4. Keep the panel action-free: no repair, mutation, PAPER, execution, strategy-selection, threshold, promotion, feed, scheduler, or live-capital controls.
+5. Run frontend compile/lint/build, focused contract tests and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. Keep residual Discord lifecycle paths gated; no bulk migration.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
