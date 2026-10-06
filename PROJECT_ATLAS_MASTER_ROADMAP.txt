@@ -5309,3 +5309,101 @@ NEXT CONTROLLED EXECUTION - EXECUTION 28
 
 SAFETY
 PAPER/research only. No broker orders, live capital, automatic real-money execution, in-place strategy mutation, retrospective threshold promotion, post-entry leakage, synthetic samples, historical rewrite, favorable backfill, or incompatible evidence pooling.
+
+================================================================================
+EXECUTION 28 - OUTCOME-BLIND PERPS LONG CHALLENGER FREEZE - GREEN
+Date: 2026-10-05 CT / freeze boundary 2026-10-06T03:28:53.4195759Z
+================================================================================
+PURPOSE
+- Implement the E27 challenger-definition workbench without optimizing historical PnL.
+- Derive a deterministic candidate rule only from pre-freeze current-model LONG PAPER open snapshots.
+- Freeze an auditable challenger version and forward boundary before prospective evidence collection.
+- Keep the current adaptive LONG baseline running unchanged and concurrently.
+
+IMPLEMENTATION
+- New backend/app/services/e28_challenger_workbench.py.
+- New GET /api/validation/e28-challenger-workbench.
+- New tests/test_e28_challenger_workbench.py.
+- Workbench version: perp-setup-v2-e28-workbench-v1.
+- Frozen challenger version: perp-setup-v2-long-selection-v1.
+- Parent registry: perp-setup-v2-e27-prereg-v1.
+- Forward freeze boundary: 2026-10-06T03:28:53.4195759Z.
+
+OUTCOME-BLIND DERIVATION
+- Eligible derivation population: current execution-model LONG PAPER open events strictly before the freeze boundary.
+- Derivation open count: 37.
+- Complete open snapshots: 37/37.
+- signal_score coverage: 37/37.
+- momentum_pct coverage: 37/37.
+- trend_pct coverage: 37/37.
+- volatility_pct coverage: 37/37.
+- Threshold method is deterministic central split of pre-freeze complete OPEN snapshots only.
+- Frozen momentum_pct minimum: 0.3543.
+- Frozen trend_pct minimum: 0.3979.
+- signal_score remains a required recorded covariate but is not thresholded in challenger v1.
+- volatility_pct remains a required recorded covariate but is not thresholded in challenger v1.
+- Exact challenger rule: a LONG open qualifies only when all four registered features are present AND momentum_pct >= 0.3543 AND trend_pct >= 0.3979.
+
+LEAKAGE / OPTIMIZATION CONTROLS
+- Threshold derivation reads open events only.
+- Close rows are not read for threshold derivation.
+- PnL optimization=false.
+- MFE/MAE optimization=false.
+- exit-reason optimization=false.
+- best-historical-bucket selection=false.
+- Historical rows before the freeze cannot count as prospective challenger evidence.
+- Forward membership is decidable from the PAPER open snapshot alone.
+- Missing any registered feature rejects the trade from the challenger arm rather than backfilling.
+- A focused test injects an artificial +999R close and proves threshold derivation is unchanged.
+
+E27 ACCEPTANCE GATE REMAINS UNCHANGED
+- minimum 60 genuine forward closed trades per arm;
+- minimum 8 distinct symbols per arm;
+- minimum 14 forward calendar days;
+- maximum 30% single-symbol share;
+- challenger after-cost expectancy must be positive and exceed concurrent baseline;
+- challenger max drawdown must not be worse than baseline;
+- worst trade must be >= -3R;
+- setup-stop/tail behavior must not materially worsen;
+- execution quality reported separately;
+- all conditions required.
+
+VALIDATION
+- Focused E28 + E27 + E26 + E25 + cohort suite: 17 passed in 0.65s.
+- git diff --check GREEN.
+- Full Atlas regression: 1,222 passed, 0 failed, 2 known dependency warnings in 124.53s.
+- Known warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+- E28 implementation commit: 2d5328b.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed.
+- Docker Desktop / Genesis remained outside Atlas stop ownership.
+- API reached healthy and startup stabilization 3/3.
+- Live health: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- Live challenger version: perp-setup-v2-long-selection-v1.
+- Live derivation population: 37 opens / 37 complete.
+- Live frozen thresholds: momentum_pct >= 0.3543; trend_pct >= 0.3979.
+- historical_rows_count_as_prospective=false.
+- pnl_optimization=false.
+- production_strategy_modified=false.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+
+STATUS
+- Execution 28 GREEN.
+- A candidate challenger now exists, but it has ZERO prospective performance evidence at the freeze boundary.
+- The rule is a research hypothesis, not a profitability claim or production promotion.
+- Baseline strategy behavior remains unchanged.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 29
+1. Implement append-only forward challenger membership for PAPER opens at/after the E28 freeze boundary.
+2. Record baseline eligibility and challenger qualification from the immutable open snapshot; never classify from close outcomes.
+3. Join later close/mark outcomes only after membership is frozen.
+4. Build concurrent baseline-vs-challenger forward scorecard using the unchanged E27 acceptance gate.
+5. Expose sample count, days, symbol diversity/concentration, expectancy after recorded costs, drawdown, worst trade, MFE/MAE, setup-stop rate, stop overshoot and execution quality.
+6. Report NOT_READY until every minimum evidence gate is satisfied; no early promotion from a lucky small sample.
+7. Preserve the frozen E28 thresholds and freeze timestamp; changing them requires a new challenger version and new forward boundary.
+8. Keep SHORT, Quality Dips, Prediction, older V6 research, Internet/Alpha, UI, Discord rebuild and future venue roadmap tracks unchanged.
+
+SAFETY
+PAPER/research only. No broker orders, live capital, automatic real-money execution, in-place baseline mutation, retrospective threshold tuning, post-entry leakage, synthetic samples, historical rewrite, favorable backfill, or incompatible evidence pooling.
