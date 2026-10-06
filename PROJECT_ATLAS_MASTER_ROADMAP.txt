@@ -8186,3 +8186,54 @@ NEXT - EXECUTION 67
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 67 - PROSPECTIVE EVIDENCE HASH CHAIN + TRUNCATION DETECTION - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- New prospective Crypto Quality Dips evidence records now receive deterministic chain_sequence, previous_chain_hash, and chain_hash metadata derived from sequence + previous hash + E66 observation identity.
+- New chained records persist a bounded sidecar chain-head anchor containing only sequence and chain hash. This makes tail truncation detectable rather than merely detecting interior removal/reordering.
+- Reload verifies sequence continuity, previous-hash linkage, chain hash, and the persisted chain-head anchor.
+- Reordered, interior-removed, tail-truncated, or chain-tampered prospective records set store integrity false and fail closed for future append.
+- Existing pre-chain records remain explicit legacy_unverified_lines and are never silently represented as chain-verified.
+- E66 content-bound observation identity remains independently verified before chain validation.
+- No historical evidence is rewritten or backfilled into the chain.
+- No strategy, scoring, PAPER, execution, threshold, promotion, scheduler, autonomous feed, or live-capital authority was added.
+
+VALIDATION
+- E67 chain tests: 5 passed, including valid chain reload, reorder detection, interior removal, legacy-unverified handling, and tail-truncation detection.
+- E66-E62 compatibility focused run: 15 passed, 0 failed, 2 known warnings.
+- Combined focused evidence: 20 passed, 0 failed.
+- Full regression: 1,382 passed, 0 failed, 2 known warnings in 123.97s, exit 0.
+- git diff --check clean; only quality_dips_crypto_store.py and test_e67_chain_integrity.py staged.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- c71ab2c e67 prospective evidence hash chain
+
+RUNTIME
+- E67 changes internal evidence-store persistence/integrity logic only and adds no route/runtime graph registration. No restart is required for execution correctness; no fresh-runtime claim is made.
+
+DECISION
+- E67 GREEN. New prospective crypto research evidence is sequence/hash chained with a persisted head anchor, while legacy evidence remains explicitly unverified and all trading authority stays disabled.
+
+VISUAL STATUS AFTER E67
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E66 Crypto Quality Dips research boundary through content-bound evidence integrity and bounded operator audit.
+[DONE] E67 prospective evidence hash chain + reorder/interior-removal/tail-truncation detection.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+NEXT - EXECUTION 68
+1. Harden chain-head persistence against malformed/missing anchors for stores containing chained rows; distinguish NO_CHAIN_YET, LEGACY_UNVERIFIED, VERIFIED, and COMPROMISED states explicitly.
+2. Make append of the JSONL row + chain-head update crash-aware so an interrupted head update is detected and never silently accepted as healthy.
+3. Expose only bounded chain-state/readiness metadata through the existing GET research surface; no raw hashes/evidence unless strictly required for operator diagnosis.
+4. Prove malformed/missing/stale chain anchors and interrupted-update simulations fail closed without modifying Stock V3/PAPER/execution state.
+5. Keep residual Discord lifecycle paths gated; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
