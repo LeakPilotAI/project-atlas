@@ -6482,3 +6482,87 @@ NEXT CONTROLLED EXECUTION - EXECUTION 41
 
 SAFETY
 Research/context only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, stale-context promotion, historical rewrite, or incompatible evidence pooling.
+
+
+================================================================================
+EXECUTION 41 - ALPHA DELIVERY HEALTH + CORROBORATION PROVENANCE - GREEN
+Date: 2026-10-06 UTC
+================================================================================
+PURPOSE
+- Add bounded Alpha delivery-history integrity diagnostics.
+- Share deterministic freshness and source-health semantics with operator surfaces.
+- Preserve exact independent corroboration provenance rather than only a count.
+- Improve dashboard/Discord evidence readability without adding trading authority.
+
+IMPLEMENTATION
+- Updated backend/app/services/alpha_intelligence.py.
+- Updated backend/app/services/alpha_ingestion.py.
+- Updated backend/app/services/alpha_presentation.py.
+- Added GET /api/validation/e41-alpha-delivery-history.
+- Updated backend/app/static/dashboard.html.
+- Expanded tests/test_alpha_presentation.py.
+- Implementation commit: e91bbc1.
+
+CORROBORATION PROVENANCE
+- IntelligenceEvent now carries corroborators in addition to corroboration_count.
+- Each corroborator contains governed source_id, independent domain, trust_tier and provenance URL.
+- annotate_context populates corroborators only for equivalent content fingerprints from a different domain.
+- E32 reader remains backward compatible: old stored rows without corroborators deserialize with empty tuple.
+- Discord presentation names independent supporting source/domain when present.
+- HIGH remains notification urgency only: PRIMARY_OFFICIAL plus >=2 independent corroborating domains.
+- No price direction, strategy confidence or execution authority is inferred.
+
+FRESHNESS / SOURCE HEALTH
+- Deterministic freshness buckets: FUTURE, FRESH <=24h, RECENT <=72h, AGING <=168h, STALE >168h, UNKNOWN if no parseable publication time.
+- Source health: HEALTHY for latest FETCHED HTTP 200, COOLDOWN for governed cooldown, UNKNOWN without telemetry, DEGRADED otherwise.
+- Dashboard now displays freshness and corroborating source IDs alongside existing source/trust/entity/provenance context.
+
+DELIVERY HISTORY
+- E41 endpoint exposes bounded recent delivery telemetry, capped at 100 records.
+- Malformed or nonconforming telemetry increments invalid_record_count and makes integrity_ok=false.
+- Valid records require timestamp, raw_external_body_stored=false and execution_authority=false.
+- Empty live E40 telemetry is represented truthfully as record_count=0, integrity_ok=true.
+- No mutation controls are exposed.
+
+VALIDATION
+- Focused intelligence/ingestion/presentation suite: 28 passed, 0 failed, 1 known Discord dependency warning.
+- Full Atlas regression: 1,289 passed, 0 failed, 2 known dependency warnings in 130.99s.
+- git diff --check passed; only Windows line-ending notices were emitted.
+
+CONTROLLED RUNTIME
+- ATLAS.bat controlled restart completed.
+- Launcher PID 32720.
+- API PID 31372.
+- API healthy and startup stabilization reached 3/3.
+- GET /api/validation/e41-alpha-delivery-history?limit=5:
+  * ok=true
+  * record_count=0
+  * invalid_record_count=0
+  * integrity_ok=true
+  * source_health federal_reserve=HEALTHY, sec=COOLDOWN, hyperliquid_docs=HEALTHY
+  * current real SEC event c70333c1929708c08e454543 freshness=AGING
+  * corroboration_count=0 and corroborators=[] truthfully; no support was invented.
+- E40 durable delivery state remained dedup_count=1 with attempted=0/delivered=0/pending=0 after restart.
+- Runtime Alpha context timing 11.660 ms; last cycle elapsed 173.487 ms.
+- cadence_decoupled remains false; still no measured basis for another scheduler.
+- E29/E30 remains NOT_READY with baseline=0, challenger=0 and promotion_allowed=false.
+
+STATUS
+- Execution 41 GREEN.
+- Alpha operator surfaces now expose bounded delivery health, deterministic freshness/source health and exact independent corroboration provenance.
+- Existing real SEC event remains context-only and correctly shows zero corroborators.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 42
+1. Add preregistered cadence-overhead thresholds and rolling Alpha timing observations before any scheduler split.
+2. Add bounded delivery-health card using E41 endpoint, including dedup status, integrity and latest delivery result.
+3. Add provenance drill-down for corroborators while preserving safe escaping and governed URLs.
+4. Add source-health age/staleness semantics so an old successful fetch cannot remain HEALTHY indefinitely.
+5. Add tests for corroborator domain independence, duplicate same-domain evidence, stale source telemetry and hostile provenance text.
+6. Research cross-source equivalent-claim normalization only with deterministic rules; no free-form semantic LLM authority.
+7. Preserve E32 append-only provenance and E33 fetch cooldown.
+8. Keep E29 prospective collection unchanged.
+9. Alpha remains excluded from strategy selection until separately preregistered prospective evidence exists.
+10. No strategy/promotion/live-capital changes.
+
+SAFETY
+Research/context only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, stale-context promotion, historical rewrite, or incompatible evidence pooling.
