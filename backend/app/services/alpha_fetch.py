@@ -41,7 +41,7 @@ def _validate_target(source_id:str,url:str):
     if (urlparse(url).hostname or "").lower()!=source.domain.lower():raise ValueError("fetch target domain mismatch")
 
 def fetch_once(source_id:str,*,telemetry_path:Path=FETCH_LOG,now:datetime|None=None,
-               transport:httpx.BaseTransport|None=None)->dict[str,Any]:
+               transport:httpx.BaseTransport|None=None,include_body:bool=False)->dict[str,Any]:
     now=(now or datetime.now(timezone.utc)).astimezone(timezone.utc); url=FETCH_TARGETS[source_id]
     _validate_target(source_id,url)
     last=_last_success(source_id,telemetry_path)
@@ -70,9 +70,13 @@ def fetch_once(source_id:str,*,telemetry_path:Path=FETCH_LOG,now:datetime|None=N
                         body=b"".join(chunks).decode(resp.encoding or "utf-8",errors="replace")
                         row["outcome"]="FETCHED"; row["parse_result"]="NO_SUPPORTED_CLAIM"
                         row["body_sha256"]=__import__("hashlib").sha256(body.encode()).hexdigest()
+                        if include_body: row["_body"]=body
     except Exception as e:
         row["rejection_reason"]=f"{type(e).__name__}:{str(e)[:160]}"
-    row["latency_ms"]=round((time.perf_counter()-started)*1000,2); _append(telemetry_path,row); return row
+    row["latency_ms"]=round((time.perf_counter()-started)*1000,2)
+    ephemeral=row.pop("_body",None); _append(telemetry_path,row)
+    if include_body and ephemeral is not None: row["_body"]=ephemeral
+    return row
 
 def live_acceptance()->dict[str,Any]:
     results=[]
