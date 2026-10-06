@@ -5597,3 +5597,100 @@ NEXT CONTROLLED EXECUTION - EXECUTION 31
 
 SAFETY
 PAPER/research/context only. No broker orders, live capital, automatic real-money execution, strategy mutation, threshold retuning, membership mutation, post-entry leakage, historical backfill, synthetic evidence, or incompatible evidence pooling.
+
+================================================================================
+EXECUTION 31 - CONTROLLED INTERNET/ALPHA INTELLIGENCE FOUNDATION - GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Establish the governed context-only foundation for future Internet/Alpha intelligence.
+- Define normalized external intelligence events with explicit provenance, trust, freshness, rumor, corroboration and contradiction state.
+- Treat all fetched/external text as untrusted data and provide no execution or strategy-mutation authority.
+- Keep E29 forward Perps collection unchanged.
+
+IMPLEMENTATION
+- New backend/app/services/alpha_intelligence.py.
+- New GET /api/validation/e31-alpha-contract.
+- New tests/test_alpha_intelligence.py.
+- No live fetchers or broad Internet ingestion were enabled in E31; this execution builds the contract that future ingestion must obey.
+
+SOURCE REGISTRY CONTRACT
+- SourceRecord requires source_id, name, source_class, trust_tier and hostname domain.
+- Source classes: OFFICIAL, NEWS, MACRO, MARKET_STRUCTURE, SOCIAL, OTHER.
+- Trust tiers: PRIMARY_OFFICIAL, REPUTABLE_REPORTING, MARKET_STRUCTURE, GOVERNED_SOCIAL, UNKNOWN.
+- Event URL hostname must exactly match the registered source domain or normalization rejects the event.
+- This prevents an event from claiming provenance from one source while pointing to another domain.
+
+NORMALIZED INTELLIGENCE EVENT
+- Schema version: alpha-intel-event-v1.
+- Preserves source ID/class/trust, URL/domain, retrieval timestamp, publication timestamp, title/summary, event type, symbols/entities and content fingerprint.
+- Event types include LISTING, DELISTING, PROTOCOL, REGULATORY, MACRO, SECURITY, FUNDING_OI, LIQUIDATION, PARTNERSHIP, TOKENOMICS and OTHER.
+- Every event carries explicit flags:
+  * untrusted_external_text=true
+  * execution_authority=false
+  * strategy_mutation_authority=false
+  * membership_mutation_authority=false
+  * threshold_mutation_authority=false
+
+FRESHNESS / RUMOR / CORROBORATION
+- Source-class-aware maximum ages are defined; stale state is explicit.
+- Publication timestamp is preferred for age; retrieval timestamp is used when publication time is unavailable.
+- GOVERNED_SOCIAL starts rumor_only=true unless already corroborated.
+- Cross-source corroboration requires a separate domain with the same normalized claim fingerprint.
+- Corroboration clears rumor-only state but does not grant execution authority.
+- Content fingerprint represents event/claim content rather than source domain, while provenance remains separate.
+- This design was specifically corrected after the first focused test exposed that domain-bearing fingerprints would block cross-source corroboration.
+
+CONTRADICTION / DEDUP
+- Related same-event-type/symbol claims with opposing simple polarity are flagged contradiction=true.
+- Contradictory claims are preserved rather than silently rewritten into one answer.
+- Deduplication uses normalized claim fingerprint and prefers higher-trust evidence while retaining the winning source's original provenance.
+- E31 contradiction detection is deliberately a foundation primitive, not a claim of semantic completeness.
+
+SAFETY CONTRACT
+- external_text_is_untrusted_data=true
+- execution_authority=false
+- live_capital_allowed=false
+- automatic_real_money_execution=false
+- strategy_mutation_authority=false
+- membership_mutation_authority=false
+- threshold_mutation_authority=false
+- paper_entry_authority=false
+- Alpha context cannot place orders, open PAPER trades, retune E28/E29, or alter challenger membership.
+
+VALIDATION
+- First focused run: 22 passed, 2 failed. Failures correctly exposed a claim-fingerprint design bug: including domain prevented identical claims from separate domains from corroborating/deduplicating.
+- Fixed before commit by separating claim fingerprint from source provenance.
+- Final focused E31/E30/E29/E28/E27 suite: 24 passed, 0 failed.
+- git diff --check GREEN.
+- Full Atlas regression: 1,238 passed, 0 failed, 2 known dependency warnings in 129.25s.
+- Known warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+- E31 implementation commit: 60e6726.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed and Atlas reported running.
+- API healthy.
+- Live health: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- Live E31 contract: schema=alpha-intel-event-v1, external text untrusted=true, execution=false, membership mutation=false, threshold mutation=false, paper entry=false, live capital=false, automatic real-money execution=false.
+- E29 prospective evidence remains unchanged: NOT_READY, baseline closes=0, challenger closes=0.
+
+STATUS
+- Execution 31 GREEN.
+- Atlas now has the governed intelligence contract required before any Internet/Alpha ingestion is allowed.
+- No external news/social feed is yet driving strategy selection or execution.
+- E29 forward PAPER collection remains independent and unchanged.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 32
+1. Build the first read-only Alpha ingestion/store pipeline against the E31 contract.
+2. Start with a small explicit source registry rather than open-ended crawling.
+3. Prefer primary/official sources and reputable reporting; keep governed social low-trust.
+4. Persist raw provenance metadata plus normalized events append-only enough to audit what Atlas saw and when.
+5. Add ingestion-level dedup, freshness, contradiction and corroboration processing.
+6. Add a read-only Alpha/Catalyst feed API for operator inspection; do not connect it to Perps membership or execution.
+7. Add tests for malicious/instruction-like external text proving it remains inert data.
+8. Add tests for malformed timestamps, source-domain mismatch, duplicates, stale events, rumor-only social and contradictory claims.
+9. Keep E29 forward challenger collection running unchanged.
+10. Keep Prediction, Quality Dips, V6 research, broader UI/Discord rebuild and future venue work preserved.
+
+SAFETY
+Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, post-entry leakage, historical rewrite, synthetic evidence, or incompatible evidence pooling.
