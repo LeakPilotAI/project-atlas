@@ -8350,3 +8350,51 @@ NEXT - EXECUTION 70
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 70 - EVIDENCE LIFECYCLE STATUS + MANUAL-REVIEW RECOVERY CONTRACT - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added bounded evidence lifecycle status for prospective Crypto Quality Dips research.
+- Lifecycle metadata includes policy version, record count, chain-verified count, legacy-unverified count, oldest/newest observation dates, append-only retention mode, automatic_repair=false, and recovery status.
+- COMPROMISED evidence reports recovery_status=MANUAL_REVIEW_REQUIRED; no repair action or mutation endpoint exists.
+- Lifecycle inspection is read-only and exposes no raw evidence, chain hashes, or filesystem paths.
+- Existing E69 readiness integrity interlock remains authoritative; compromised evidence remains readiness-false.
+- No automatic deletion, compaction, evidence rewrite, strategy/scoring/PAPER/execution/threshold/promotion/scheduler/feed/live-capital authority was added.
+
+VALIDATION
+- Focused E70-E63 + Stock V3 compatibility: 32 passed, 0 failed, 2 known warnings, exit 0.
+- Full regression: 1,393 passed, 0 failed, 2 known warnings in 133.55s, exit 0.
+- git diff --check clean; exactly three E70 files staged.
+- Tests prove lifecycle GET leaves evidence bytes unchanged, legacy count is explicit, compromised recovery is MANUAL_REVIEW_REQUIRED, readiness stays false, zero authority remains, and mutation verbs remain 405.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- 193780e e70 evidence lifecycle status
+
+RUNTIME
+- E70 extends the already-registered read-only research GET surface and internal lifecycle metadata only. API behavior is validated through TestClient; no fresh runtime-process claim is required for GREEN.
+
+DECISION
+- E70 GREEN. Prospective evidence lifecycle is operator-visible but append-only/read-only, and compromised recovery is explicitly manual review rather than automated repair.
+
+VISUAL STATUS AFTER E70
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E69 Crypto Quality Dips research boundary through read-only integrity diagnostics/readiness interlock.
+[DONE] E70 bounded evidence lifecycle status + manual-review-only compromised recovery.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+NEXT - EXECUTION 71
+1. Define a bounded operator presentation contract that combines readiness, integrity diagnostics, and lifecycle status into stable UI-safe severity/status fields without exposing evidence internals.
+2. Add explicit operator attention semantics for LEGACY_UNVERIFIED and COMPROMISED while preserving zero trading authority and no repair actions.
+3. Add contract tests proving presentation output is deterministic across NO_CHAIN_YET, LEGACY_UNVERIFIED, VERIFIED, COMPROMISED and cannot mutate evidence.
+4. Keep the existing research endpoint GET-only; no frontend mutation control yet.
+5. Keep residual Discord lifecycle paths gated; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
