@@ -7336,3 +7336,71 @@ NEXT - EXECUTION 52
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
 - After every GREEN execution, update the complete canonical roadmap append-only, refresh visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap, and report completed-vs-remaining progress.
 - Never advance GREEN on blocked validation and never manufacture evidence/readiness.
+
+
+================================================================================
+EXECUTION 52 - TYPED SYSTEM SCHEDULED SUMMARIES - GREEN - 2026-10-06
+================================================================================
+
+IMPLEMENTATION
+- Migrated Micro Heartbeat through E48 SYSTEM/SESSION typed routing.
+- Migrated Morning Command Center through E48 SYSTEM/SESSION typed routing.
+- Migrated Daily PAPER Recap through E48 SYSTEM/SESSION typed routing.
+- Existing scheduling semantics remain in their original services: heartbeat interval loop unchanged; Command Center weekday/date window and _last_date suppression unchanged; Daily PAPER Recap daily date window and _last_date suppression unchanged.
+- Typed event identities are scoped to each producer/window and are notification identity only; they add no scheduling or execution authority.
+- False Discord sends remain false and cannot be logged as successful typed acknowledgement.
+- E51 observability API exposure was intentionally deferred: the read-only core is proven, but a new HTTP surface requires a separately tested endpoint contract rather than being bundled into producer migration.
+- Robinhood, accumulation, quality-dip, BTC ladder, and auto-ladder producers remain separate pending domain-specific compatibility contracts.
+- No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital behavior changed.
+
+VALIDATION
+- Focused E52 + E51/E50/E48 compatibility gate: 17 passed, 0 failed.
+- Tests cover typed Heartbeat delivery, Command Center false-send behavior, Daily PAPER Recap false-send behavior, and unchanged schedule-state initialization.
+- git diff --check clean apart from normal Windows LF/CRLF notices.
+- Full Atlas regression: 1,332 passed, 0 failed, 2 known dependency warnings in 134.00s.
+- Known warnings unchanged: discord audioop deprecation; Starlette/httpx TestClient deprecation.
+
+IMPLEMENTATION COMMIT
+- 06fc93c e52_migrate_system_summaries
+
+RUNTIME ACCEPTANCE
+- Controlled Atlas stop completed with exit code 0 and explicitly left Docker Desktop/Genesis untouched.
+- Atlas restart launched from ATLAS.bat.
+- Post-restart process inspection completed without runtime-launch error; existing/fresh Atlas Python process inventory remained present.
+- No synthetic E29 or Alpha evidence was created.
+
+DECISION
+- Execution 52 GREEN.
+- Bounded scheduled SYSTEM summary producers now traverse typed routing without moving their scheduler/cooldown authority into Discord.
+- HTTP/API observability exposure remains intentionally unclaimed and deferred to a dedicated read-only endpoint execution.
+
+VISUAL PROJECT STATUS AFTER E52
+[DONE] Core runtime recovery / PAPER safety / evidence preservation.
+[DONE] Perps decomposition + prospective challenger infrastructure.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[DONE] Alpha E31-E47 controlled intelligence through read-only operator UI.
+[DONE] E48 typed Discord event/routing/ack/retry foundation.
+[DONE] E49 Alpha/Catalyst + Prediction eligible typed migration.
+[DONE] E50 primary Perp/System typed migration.
+[DONE] E51 bounded payload-free read-only typed delivery observability + producer inventory.
+[DONE] E52 Micro Heartbeat + Morning Command Center + Daily PAPER Recap typed SYSTEM summary migration.
+[ACTIVE] Read-only HTTP/API surface for typed delivery observability remains separately gated by endpoint contract/tests.
+[ACTIVE] Robinhood/accumulation/quality-dip auxiliary Discord compatibility remains domain-specific work.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[GATED] Alpha strategy-selection use pending separate prospective evidence.
+[GATED] Unattended Prediction PAPER opening pending prospective validation.
+[TODO] Broader frontend/operator UI redesign.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+[GATED] Automated real-money execution and strategy promotion remain disabled.
+
+NEXT - EXECUTION 53
+1. Add a dedicated read-only API endpoint for E51 typed Discord delivery observability using existing Atlas read-only API conventions; expose no mutation methods or raw external payload text.
+2. Add endpoint tests proving bounded output, authority flags false, no title/body/description leakage, and no write/control route.
+3. Inventory Robinhood Brief separately from accumulation/quality-dip producers and define explicit typed lane/event contracts before migration.
+4. Do not migrate accumulation/BTC/quality-dip/auto-ladder paths until Redis/durable state and side-effect ordering are covered by compatibility tests.
+5. Continue genuine E29 and Alpha evidence unchanged; no synthetic samples and no threshold changes from observed outcomes.
+6. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
+- After every GREEN execution, update the complete canonical roadmap append-only, refresh visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap, and report completed-vs-remaining progress.
+- Never advance GREEN on blocked validation and never manufacture evidence/readiness.
