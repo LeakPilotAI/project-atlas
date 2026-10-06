@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import CryptoQualityDipsStatusPanel from "@/app/components/CryptoQualityDipsStatusPanel";
 
 const API = "http://127.0.0.1:8000";
 
@@ -158,6 +159,8 @@ export default function Dashboard() {
             Last scan {ago(h.last_cycle_at)}
           </span>
         </section>
+
+        <CryptoQualityDipsStatusPanel />
 
         <section className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
           <p className="text-[11px] uppercase tracking-widest text-amber-400/80">Why no paper trade</p>
