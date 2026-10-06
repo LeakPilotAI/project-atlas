@@ -5962,3 +5962,83 @@ NEXT CONTROLLED EXECUTION - EXECUTION 35
 
 SAFETY
 Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, guessed ticker/entity claims, free-form claim invention, historical rewrite, or incompatible evidence pooling.
+
+
+================================================================================
+EXECUTION 35 - BOUNDED MANUAL ALPHA PIPELINE + RELEVANCE/TIME GATES - GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Add defensible publication-time and narrow relevance gates to E34.
+- Add explicit rejection diagnostics.
+- Wire E33 fetch -> E34 extraction -> E32 ingest as a manual bounded research pipeline.
+- Preserve zero trading authority and no autonomous startup worker.
+
+IMPLEMENTATION
+- Updated backend/app/services/alpha_extract.py.
+- Updated backend/app/services/alpha_fetch.py.
+- New backend/app/services/alpha_pipeline.py.
+- Updated tests/test_alpha_extract.py.
+- New tests/test_alpha_pipeline.py.
+- Implementation commit: 81f8093.
+
+PUBLICATION TIME
+- Federal Reserve dated individual-release URLs are parsed deterministically from YYYYMMDD embedded in the official path.
+- SEC numeric press-release IDs are NOT treated as publication timestamps.
+- Candidates without defensible publication time are not promoted.
+- No timestamp guessing or retrieval-time substitution is allowed.
+
+NARROW RELEVANCE
+- Explicit relevance vocabulary includes crypto, digital asset, bitcoin, ethereum, stablecoin, exchange, broker, market structure, securities market, monetary policy, FOMC, federal funds, interest rate and inflation.
+- Deterministic event type and relevance must both pass.
+- Symbols/entities remain empty rather than guessed.
+
+REJECTION DIAGNOSTICS
+- Counts include accepted, off_domain, unsupported_path, unsupported_event_type, irrelevant_topic and missing_publication_time.
+- External text remains untrusted and has no execution authority.
+
+MANUAL PIPELINE
+- alpha_pipeline.run_source performs bounded governed fetch, ephemeral extraction, diagnostics and optional E32 persistence.
+- There is no autonomous startup worker.
+- Fetch response body may be returned ephemerally to the pipeline but is removed before fetch telemetry is written.
+- Fetch telemetry stores bounded metadata/hash, not raw page body.
+- Only normalized accepted candidates can enter E32.
+
+BOUNDED LIVE ACCEPTANCE
+- Federal Reserve: HTTP 200, 85,267 bytes, accepted=0; off_domain=18, unsupported_path=227, unsupported_event_type=21.
+- SEC: HTTP 200, 97,066 bytes, accepted=0; off_domain=7, unsupported_path=120, unsupported_event_type=16, irrelevant_topic=9.
+- No live candidate satisfied all E35 gates, so no live event was persisted.
+- Zero accepted events is considered a valid precision result, not a failure.
+
+VALIDATION
+- Extractor boundary: 8 passed.
+- Final pipeline/fetch/extractor focused suite: 19 passed.
+- Full Atlas regression after final pipeline wiring: 1,266 passed, 0 failed, 2 known dependency warnings in 134.26s.
+- Known warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed normally.
+- API became healthy on launcher health attempt 11 and stabilization reached 3/3.
+- Live health: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- No strategy/execution authority was added.
+
+STATUS
+- Execution 35 GREEN.
+- Atlas now has a bounded manual end-to-end public Alpha research path with explicit time/relevance/rejection controls.
+- Precision is favored over activity; unsupported current pages produce zero accepted events.
+- E29 prospective Perps challenger collection remains unchanged.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 36
+1. Add trustworthy source-specific publication-time extraction from SEC listing structure instead of inferring from release IDs.
+2. Add explicit deterministic entity/topic linking for supported digital-asset and market-structure terms, still without ticker guessing.
+3. Add operator diagnostics/API for fetch/extract rejection counts, latest run time, source status and accepted-event count.
+4. Add bounded manual Alpha run endpoint with research-only authority and explicit no-execution contract.
+5. Add stale/current freshness gates after publication time is trustworthy.
+6. Add fixture coverage for SEC listing dates, malformed dates, stale items, ambiguous entity names and duplicate current announcements.
+7. Perform bounded live acceptance and persist only genuinely supported current relevant events.
+8. Keep feed read-only and disconnected from Perps selection/execution.
+9. Keep E29 prospective collection unchanged.
+10. No strategy/promotion changes.
+
+SAFETY
+Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, guessed ticker/entity claims, publication-time guessing, historical rewrite, or incompatible evidence pooling.
