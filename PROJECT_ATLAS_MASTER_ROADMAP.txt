@@ -6385,3 +6385,100 @@ NEXT CONTROLLED EXECUTION - EXECUTION 40
 
 SAFETY
 Research/context only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, stale-context promotion, historical rewrite, or incompatible evidence pooling.
+
+
+================================================================================
+EXECUTION 40 - ALPHA DELIVERY OBSERVABILITY + RESTART-PROOF DEDUP - GREEN
+Date: 2026-10-06 UTC
+================================================================================
+PURPOSE
+- Add explicit Alpha delivery diagnostics and append-only delivery telemetry.
+- Prove durable dedup survives restart/fresh invocation.
+- Upgrade dashboard Alpha context with trust, age, entities and official provenance.
+- Add deterministic notification severity without price prediction.
+- Decide cadence separation from measured runtime evidence.
+
+IMPLEMENTATION
+- Updated backend/app/services/alpha_presentation.py.
+- Added GET /api/validation/e40-alpha-delivery.
+- Upgraded backend/app/static/dashboard.html Alpha/Catalyst presentation.
+- Expanded tests/test_alpha_presentation.py.
+- Main implementation commit: 0db5f75.
+- Test telemetry-isolation correction commit: d90668c.
+
+DELIVERY OBSERVABILITY
+- Durable state now records delivered_event_ids, last_attempt_at, last_result and last_error.
+- E40 endpoint exposes dedup_count and delivery status plus existing runtime timings.
+- All diagnostics remain execution_authority=false, paper_entry_authority=false and live_capital_allowed=false.
+- Append-only delivery telemetry records timestamps, counts, delivered/failed event IDs and explicit raw_external_body_stored=false.
+- Telemetry does not store fetched page bodies.
+
+RESTART / DEDUP
+- Regression test delivers an event, creates a fresh invocation reading durable state, and proves the event is not sent again.
+- Live runtime after controlled restart retained dedup_count=1 for real SEC event c70333c1929708c08e454543.
+- Live post-restart pass reported attempted=0, delivered=0, pending=0; no duplicate Discord send occurred.
+
+SEVERITY POLICY
+- Severity is notification urgency only, not a trading or price prediction.
+- PRIMARY_OFFICIAL plus corroboration_count >=2 => HIGH.
+- Otherwise eligible material Alpha alert => MEDIUM.
+- opportunity/confidence/risk trading fields remain zero.
+
+DASHBOARD
+- Alpha card now shows deterministic event type, source, trust tier, publication age, entities and safe official provenance link.
+- External titles/entities continue through esc() rendering.
+- Provenance URL originates from governed stored evidence.
+- Context-only/no-execution statement remains visible.
+
+CADENCE DECISION
+- Pre-E40 live timing evidence: alpha_context=1.222 ms within last_cycle_elapsed_ms=143.969 ms.
+- Post-E40 runtime sample: alpha_context=14.4 ms within last_cycle_elapsed_ms=180.036 ms.
+- This overhead is not sufficient evidence to justify a second scheduler yet.
+- cadence_decoupled=false is explicit in E40 diagnostics.
+- Continue measuring; decouple only if future evidence shows meaningful burden.
+
+VALIDATION
+- Focused E40 Alpha suite: 30 passed, 2 known dependency warnings.
+- Full Atlas regression: 1,286 passed, 0 failed, 2 known dependency warnings in 139.38s.
+- After detecting test telemetry contamination risk, test_dedup was corrected to use temp telemetry.
+- Post-correction Alpha presentation suite: 8 passed, 0 failed, 1 known dependency warning.
+- Two synthetic evt1 telemetry rows created only by pre-correction focused tests were inspected and the new E40 telemetry file was cleared before live acceptance. No real E32/E39 evidence or acknowledgement was altered.
+
+CONTROLLED RUNTIME
+- ATLAS.bat restart completed.
+- Launcher PID 31600.
+- API PID 7248.
+- API healthy and startup stabilization reached 3/3.
+- GET /api/validation/e40-alpha-delivery returned ok=true.
+- dedup_count=1.
+- last_attempt_at=2026-10-06T05:23:27.368706+00:00.
+- last_result attempted=0, delivered=0, pending=0.
+- last_error=null.
+- cadence_decoupled=false.
+- E39 real SEC event remained durably acknowledged with no duplicate send.
+
+EVIDENCE INTEGRITY
+- Synthetic test telemetry was not allowed to remain mixed with live operational evidence.
+- E32 append-only Alpha evidence was untouched.
+- E39 delivered-event acknowledgement was untouched.
+- No raw fetched body is written to delivery telemetry.
+
+STATUS
+- Execution 40 GREEN.
+- Alpha delivery now has restart-proof dedup, explicit operator diagnostics, bounded append-only delivery telemetry, richer provenance UI and deterministic non-predictive severity.
+- Existing delivery cadence remains intentionally unchanged based on measured low overhead.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 41
+1. Add an explicit Alpha delivery telemetry reader/summary with bounded recent history and integrity diagnostics.
+2. Add dashboard delivery-health indicators using E40 status without exposing mutation controls.
+3. Add deterministic freshness buckets and source-health badges shared by API/dashboard/Discord.
+4. Add corroboration provenance detail so HIGH severity can show exactly which independent governed sources support an equivalent claim.
+5. Keep severity non-predictive and separate from strategy confidence.
+6. Continue timing observation and only decouple cadence if evidence crosses a preregistered overhead threshold.
+7. Preserve E32 append-only provenance and E33 fetch cooldown.
+8. Keep E29 prospective collection unchanged.
+9. Do not use Alpha as strategy selection input until separately preregistered prospective research exists.
+10. No strategy/promotion/live-capital changes.
+
+SAFETY
+Research/context only. No broker orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, arbitrary URL/body fetching, external-text instruction authority, guessed ticker claims, stale-context promotion, historical rewrite, or incompatible evidence pooling.
