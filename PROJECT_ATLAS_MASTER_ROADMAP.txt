@@ -8448,3 +8448,61 @@ NEXT - EXECUTION 72
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 72 - VERSIONED PUBLIC CRYPTO QUALITY DIPS API CONTRACT - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added stable read-only public endpoint GET /api/investments/crypto-quality-dips/status for future frontend/operator consumption.
+- Froze public schema as E72_CRYPTO_QUALITY_DIPS_PUBLIC_V1 with bounded top-level surface, read_only, operator, readiness, and authority projections.
+- Public operator projection exposes only status, severity, operator_attention_required, chain_state, and recovery_status.
+- Public readiness projection exposes only gate result, observation/validity/day counts, gate checks, and the predeclared readiness policy.
+- Public authority projection explicitly keeps scoring, PAPER entry, execution, live capital, repair actions, and mutation actions false.
+- Existing /evidence-readiness endpoint remains backward-compatible for internal/research consumers.
+- Public projection omits store_integrity, integrity_diagnostic, evidence_lifecycle internals, failure-reason internals, raw evidence, observation IDs, chain hashes, previous hashes, and filesystem paths.
+- No strategy, scoring, PAPER, execution, threshold, promotion, scheduler, feed, or live-capital authority was added.
+
+VALIDATION
+- Focused E72/E71/E70/E69/E68/E63 + Stock V3 compatibility: 28 passed, 0 failed, 2 known warnings, exit 0.
+- Full regression: 1,401 passed, 0 failed, 2 known warnings in 139.15s, exit 0.
+- git diff --check and staged diff check clean; exactly two E72 implementation files staged.
+- Tests freeze exact public key sets, prove internal fields cannot leak, prove COMPROMISED remains CRITICAL/readiness-false/non-authoritative, prove GET inspection leaves evidence unchanged, prove mutation verbs remain 405, and prove the legacy research endpoint remains available.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- feb2968 e72 freeze crypto quality dips public api
+
+RUNTIME
+- E72 adds one read-only route to the already-registered Crypto Quality Dips research router and refactors existing response construction without changing runtime authority. API behavior is covered through TestClient; no fresh runtime-process claim is required for GREEN.
+
+DECISION
+- E72 GREEN. The future frontend can now depend on a versioned, intentionally narrow Crypto Quality Dips public schema without coupling itself to append-store or integrity implementation details.
+
+VISUAL STATUS AFTER E72
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E71 Crypto Quality Dips research boundary through deterministic UI-safe operator presentation.
+[DONE] E72 versioned/frozen public Crypto Quality Dips API projection.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Crypto Quality Dips public/backend foundation: stable read-only public contract is now frozen. Next work can establish a frontend-safe consumer/view-model boundary before visual UI implementation; scoring/outcomes/PAPER/execution remain separately gated.
+2. E29 strategy evidence: genuine prospective samples must accumulate over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration: genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers: remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Frontend/operator UI: substantial product-facing work remains; E72 removes backend-schema coupling risk for the Crypto Quality Dips slice.
+6. Product/deployment hardening: packaging, operator ergonomics, deployment/recovery/security documentation and release-readiness remain a later major phase.
+
+NEXT - EXECUTION 73
+1. Add a frontend-safe Crypto Quality Dips consumer/view-model contract over E72_CRYPTO_QUALITY_DIPS_PUBLIC_V1 without changing the frozen backend schema.
+2. Define deterministic display-state mapping for status/severity/readiness and operator attention using only E72 public fields.
+3. Add compatibility tests that fail closed on unsupported schema versions or malformed/missing required public fields.
+4. Keep the consumer read-only: no repair, mutation, PAPER, execution, strategy-selection, threshold, promotion, feed, scheduler, or live-capital controls.
+5. Keep residual Discord lifecycle paths gated; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
