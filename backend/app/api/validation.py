@@ -98,6 +98,15 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/e36-alpha-operator")
+async def e36_alpha_operator_endpoint()->JSONResponse:
+    try:
+        from app.services.alpha_operator import diagnostics
+        body=await asyncio.to_thread(diagnostics)
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"paper_entry_authority":False,"automatic_worker":False,"live_capital_allowed":False}
+    return _json_http(body)
+
 @router.get("/e32-alpha-feed")
 async def e32_alpha_feed_endpoint(limit:int=100, include_stale:bool=True)->JSONResponse:
     try:
