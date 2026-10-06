@@ -8398,3 +8398,53 @@ NEXT - EXECUTION 71
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 71 - UI-SAFE OPERATOR PRESENTATION CONTRACT - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added deterministic E71_OPERATOR_PRESENTATION_V1 over existing readiness, integrity diagnostic, and lifecycle metadata.
+- Presentation fields are bounded/UI-safe: status, severity, operator_attention_required, chain_state, readiness_gates_met, recovery_status, read_only, repair_action_available=false, mutation_action_available=false.
+- NO_CHAIN_YET => INFO / NO_EVIDENCE_YET / no attention required.
+- LEGACY_UNVERIFIED => WARNING / LEGACY_REVIEW_REQUIRED / attention required.
+- VERIFIED below gates => INFO / COLLECTING_EVIDENCE; verified gates-met => RESEARCH_GATES_MET.
+- COMPROMISED => CRITICAL / INTEGRITY_REVIEW_REQUIRED / attention required / readiness false / manual-review recovery inherited from E70.
+- Presentation exposes no raw evidence, chain hashes, filesystem paths, or repair/mutation controls.
+- No strategy, scoring, PAPER, execution, threshold, promotion, scheduler, feed, or live-capital authority was added.
+
+VALIDATION
+- Focused E71-E63 + Stock V3 compatibility: 36 passed, 0 failed, 2 known warnings, exit 0.
+- Full regression: 1,397 passed, 0 failed, 2 known warnings in 138.58s, exit 0.
+- git diff --check clean; exactly three E71 files staged.
+- Tests prove deterministic presentation across all four chain states and evidence bytes unchanged by GET inspection.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- 8e88b90 e71 operator presentation contract
+
+RUNTIME
+- E71 extends the existing registered read-only research GET response only. API contract is validated through TestClient; no runtime graph or mutation route change and no fresh-process claim required.
+
+DECISION
+- E71 GREEN. Crypto Quality Dips now has a stable operator-presentation boundary suitable for later frontend consumption without exposing research internals or action authority.
+
+VISUAL STATUS AFTER E71
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E70 Crypto Quality Dips research boundary through lifecycle/manual-review recovery.
+[DONE] E71 deterministic UI-safe operator presentation contract.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+NEXT - EXECUTION 72
+1. Freeze/version the Crypto Quality Dips read-only research API schema so frontend work can depend on a stable contract without coupling to internal store fields.
+2. Add a bounded top-level schema/version and explicit public projection that omits internal store-integrity counters not required by the operator UI.
+3. Add backward/contract tests proving required public fields remain stable and raw/internal evidence fields cannot leak through the public projection.
+4. Preserve GET-only behavior and zero repair/trading authority.
+5. Keep residual Discord lifecycle paths gated; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
