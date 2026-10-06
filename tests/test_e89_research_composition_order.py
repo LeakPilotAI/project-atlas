@@ -29,7 +29,7 @@ def test_e89_safety_and_authority_precede_research_content():
 def test_e89_gated_capabilities_remain_separate_before_active_evidence():
     text=_page()
     assert '<section aria-labelledby="gated-capabilities-title">' in text
-    assert '<section className="rounded-2xl border border-white/8 bg-[#10131a] p-5" aria-labelledby="active-evidence-title">' in text
+    assert '<section className="rounded-2xl border border-white/8 bg-[#10131a] p-4 sm:p-5" aria-labelledby="active-evidence-title">' in text
     assert text.index('aria-labelledby="gated-capabilities-title"') < text.index('aria-labelledby="active-evidence-title"')
 
 def test_e89_navigation_remains_in_header_and_read_only_routes_unchanged():

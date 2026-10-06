@@ -31,7 +31,7 @@ def test_e86_gated_card_is_non_clickable_and_gated():
 
 def test_e86_card_components_preserve_css_contracts():
     text=CARDS.read_text(encoding="utf-8")
-    assert 'className="flex min-h-64 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-5"' in text
+    assert 'className="flex min-h-60 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-4 sm:p-5"' in text
     assert 'className="rounded-2xl border border-white/8 bg-[#0c0e13] p-4"' in text
     assert 'className="mt-auto pt-5 text-xs font-medium text-cyan-300"' in text
 

@@ -3,7 +3,7 @@ import { SurfaceStatusBadge } from "@/app/components/SurfaceStatusBadge";
 import type { GatedCapabilityDefinition, ResearchSurfaceDefinition } from "./catalog";
 
 export function ResearchSurfaceCard({surface}:{surface:ResearchSurfaceDefinition}){
- return <article className="flex min-h-64 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-5">
+ return <article className="flex min-h-60 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-4 sm:p-5">
   <SurfaceStatusBadge status={surface.status}/>
   <h2 className="mt-2 text-lg font-semibold text-white">{surface.title}</h2>
   <p className="mt-3 text-sm leading-6 text-zinc-400">{surface.detail}</p>
