@@ -5,6 +5,7 @@ no strategy, PAPER-entry, threshold, promotion, or live-capital authority.
 """
 from __future__ import annotations
 import hashlib
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable
@@ -18,6 +19,7 @@ ROUTES = {
     "SYSTEM": {"destination": "DISCORD_DM", "event_types": {"HEALTH", "SESSION"}, "cooldown_seconds": 300},
 }
 SEVERITIES = {"INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"}
+_OBSERVATIONS = deque(maxlen=200)
 
 @dataclass(frozen=True)
 class DiscordEvent:
@@ -85,7 +87,34 @@ class DiscordDeliveryState:
                 "deduped":False,"retryable":not ok,
                 "provenance":list(event.provenance),"external_text_inert":True}
 
-delivery_state=DiscordDeliveryState()
+
+
+def _observe(event: DiscordEvent, result: dict[str, Any]) -> None:
+    _OBSERVATIONS.append({
+        "observed_at": datetime.now(timezone.utc).isoformat(), "event_id": event.event_id,
+        "lane": event.lane, "event_type": event.event_type, "severity": event.severity,
+        "eligible": bool(result.get("eligible")), "attempted": bool(result.get("attempted")),
+        "acknowledged": bool(result.get("acknowledged")), "deduped": bool(result.get("deduped")),
+        "retryable": bool(result.get("retryable")), "destination": result.get("destination"),
+        "external_text_inert": True,
+    })
+
+
+def delivery_observability() -> dict[str, Any]:
+    rows = list(_OBSERVATIONS)
+    return {
+        "retention_limit": 200, "observations": rows,
+        "counts": {
+            "total": len(rows),
+            "attempted": sum(bool(x["attempted"]) for x in rows),
+            "acknowledged": sum(bool(x["acknowledged"]) for x in rows),
+            "retryable": sum(bool(x["retryable"]) for x in rows),
+        },
+        "read_only": True, "execution_authority": False, "paper_entry_authority": False,
+        "strategy_mutation_authority": False, "threshold_mutation_authority": False,
+        "promotion_authority": False, "live_capital_allowed": False,
+    }
+
 
 # E49 adapter: producers can use the typed contract while retaining their own
 # durable success journals as the authoritative restart dedupe.
@@ -100,11 +129,15 @@ async def deliver_legacy_payload(event: DiscordEvent, *, sender: Sender) -> dict
     """Typed route/authority gate with legacy Discord payload compatibility."""
     decision=route(event)
     if not decision["eligible"]:
-        return {**decision,"event_id":event.event_id,"attempted":False,"acknowledged":False,"retryable":False}
+        result={**decision,"event_id":event.event_id,"attempted":False,"acknowledged":False,"retryable":False}
+        _observe(event,result)
+        return result
     try:
         ok=bool(await sender(symbol=event.lane,title=event.title,description=event.body,
                              severity=event.severity,opportunity=0,confidence=0,risk=0))
     except Exception:
         ok=False
-    return {**decision,"event_id":event.event_id,"attempted":True,"acknowledged":ok,
+    result={**decision,"event_id":event.event_id,"attempted":True,"acknowledged":ok,
             "retryable":not ok,"external_text_inert":True,"provenance":list(event.provenance)}
+    _observe(event,result)
+    return result
