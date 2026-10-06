@@ -5510,3 +5510,90 @@ NEXT CONTROLLED EXECUTION - EXECUTION 30
 
 SAFETY
 PAPER/research only. No broker orders, live capital, automatic real-money execution, baseline mutation, threshold retuning, post-entry membership leakage, synthetic samples, historical backfill, historical rewrite, or incompatible evidence pooling.
+
+================================================================================
+EXECUTION 30 - PERPS EVIDENCE OPERATOR SURFACE + TYPED DISCORD MATURITY ALERTS - GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Surface E29 prospective evidence maturity to the operator without changing trading behavior.
+- Make baseline/challenger forward progress visible and truthful, including a genuine zero-sample state.
+- Add typed Discord evidence-maturity notifications only at meaningful milestones/state transitions.
+- Keep UI and alerts read-only consumers of the same E29 scorecard.
+
+IMPLEMENTATION
+- New backend/app/services/e30_evidence_maturity.py.
+- New GET /api/validation/e30-evidence-maturity.
+- New tests/test_e30_evidence_maturity.py.
+- Updated backend/app/static/dashboard_shell.html with Forward Challenger Evidence card.
+- Updated perp_alert_delivery loop with read-only evidence-maturity alert pass.
+- No changes to scanner thresholds, PAPER entry logic, membership classification, strategy sizing or execution.
+
+DASHBOARD EVIDENCE CARD
+- Served on /dashboard/perps, the Perps shell loaded by the dashboard hub.
+- Reads /api/validation/e30-evidence-maturity.
+- Displays:
+  * NOT_READY / READY_FOR_GATE_EVALUATION state;
+  * baseline closes / 60;
+  * challenger closes / 60;
+  * symbol diversity / 8 for both arms;
+  * forward days / 14 for both arms;
+  * after-recorded-cost expectancy;
+  * max drawdown;
+  * worst trade;
+  * setup-stop rate;
+  * average stop overshoot;
+  * average recorded slippage;
+  * immutable challenger version;
+  * E28 freeze boundary.
+- Explicitly labels PAPER research only and no automatic promotion.
+- Zero evidence remains displayed as zero; no historical substitute is used.
+
+TYPED DISCORD EVIDENCE MATURITY
+- Event identity: PERPS-EVIDENCE / Atlas Perps Evidence Maturity.
+- INFO severity; opportunity/confidence/risk fields are zero because this is evidence state, not a trade signal.
+- Alerts only on meaningful paired-close milestones 1, 10, 25, 50, 60 or readiness-state transition.
+- Durable state file: backend/data/e30_evidence_maturity_state.json.
+- Initial NOT_READY / 0-close state is persisted silently and does not send a restart/startup spam alert.
+- Failed sends do not advance durable delivered state, allowing a later retry.
+- Alert text explicitly says PAPER research, no strategy promotion and no live order authority.
+
+VALIDATION
+- Focused E30/E29/alert/E28/E27 suite: 21 passed, 0 failed.
+- git diff --check GREEN.
+- Full Atlas regression: 1,230 passed, 0 failed, 2 known dependency warnings in 146.51s.
+- Known warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+- E30 implementation commit: 93166b5.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed.
+- API healthy and startup stabilization reached 3/3.
+- Live health: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- Live E30 endpoint state: NOT_READY.
+- Live baseline closes: 0.
+- Live challenger closes: 0.
+- promotion_allowed=false.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+- Durable Discord state initialized to NOT_READY|paired-close-milestone:0 with no zero-sample alert.
+- /dashboard is the dashboard hub; actual Perps shell is /dashboard/perps.
+- Runtime /dashboard/perps verification: evidenceCard=true, E30 fetch=true, renderEvidence=true.
+
+STATUS
+- Execution 30 GREEN.
+- The prospective challenger now has a visible operator evidence surface and low-noise typed Discord maturity channel.
+- Trading behavior remains unchanged.
+- Forward evidence is still zero and honestly reported as NOT_READY.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 31
+1. Begin the controlled Internet/Alpha intelligence foundation as a separate context-only service, now that the current Perps causal/evidence checkpoint is operationally visible.
+2. Implement a governed source registry and normalized intelligence event schema with source class, URL/domain, retrieval/publication timestamps, symbols/entities, event type, provenance and trust tier.
+3. Treat fetched text as untrusted data, never instructions or execution authority.
+4. Implement deduplication/corroboration primitives and explicit stale/rumor-only/contradiction flags before broad ingestion.
+5. Add tests proving Alpha events cannot place orders, mutate E28/E29 thresholds/membership, or bypass risk/strategy locks.
+6. Do not yet use Internet/Alpha context to change Perps selection; first build provenance and evidence integrity.
+7. Keep E29 prospective collection running unchanged while E31 is built.
+8. Keep Prediction, Quality Dips, older V6 research, UI roadmap, Discord rebuild roadmap and future venue work preserved.
+
+SAFETY
+PAPER/research/context only. No broker orders, live capital, automatic real-money execution, strategy mutation, threshold retuning, membership mutation, post-entry leakage, historical backfill, synthetic evidence, or incompatible evidence pooling.
