@@ -9790,3 +9790,64 @@ NEXT - EXECUTION 92
 7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 92 - FORWARD EVIDENCE READ-ONLY SHELL COMPATIBILITY - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Inspected /research Forward Evidence before migration and confirmed structural compatibility with the E91 ReadOnlyPageShell.
+- Preserved Forward Evidence's established outer density exactly rather than forcing Research Surfaces spacing.
+- Extended ReadOnlyPageShell with a frozen static layout map: surfaces retains the E90 responsive density; evidence retains max-w-6xl mx-auto px-6 py-8 space-y-6.
+- Adopted ReadOnlyPageShell layout="evidence" on /research and removed only duplicated outer wrappers.
+- Preserved the existing client component, API endpoint, initial load, 15-second polling cadence, cleanup, fail-closed error message, evidence rendering, navigation, and safety copy.
+- Command Center was intentionally not migrated.
+- Updated E91 source-contract coverage for the static layout map and added E92 tests for shell adoption, legacy density, polling/API preservation, visible authority boundaries, shell purity, and Command Center non-migration.
+- No evidence generation or trading authority was added.
+
+VALIDATION
+- Initial focused E92-E86: 36 passed, 1 failed; sole failure was E91 expecting the surfaces class directly on main instead of through the frozen layout map.
+- Updated that source-shape assertion only; class value unchanged.
+- Final E92-E90 compatibility suite: 15 passed, 0 failed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint: exit 0.
+- Next.js optimized production build: exit 0; all four routes prerender successfully.
+- Full Python regression: 1,496 passed, 0 failed, 2 known dependency warnings in 132.86s.
+- git diff --check clean.
+
+IMPLEMENTATION COMMIT
+- ca5f6dc4 e92 adopt shell on forward evidence
+
+DECISION
+- E92 GREEN. Forward Evidence safely shares the pure shell while retaining its original density and runtime/data behavior.
+
+
+VISUAL STATUS AFTER E92
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
+[DONE] E73-E75 fail-closed Crypto Quality Dips frontend consumer/panel/operator UX.
+[DONE] E76-E90 Research Surfaces architecture, typed contracts, pure components, safety-first composition freeze, and bounded polish.
+[DONE] E91 pure read-only Atlas page shell proven on Research Surfaces.
+[DONE] E92 shared shell adopted on Forward Evidence with preserved legacy density/runtime behavior.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition and scoring remain unavailable.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Command Center compatibility inspection; broader product-facing polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. ReadOnlyPageShell is proven on static Research Surfaces and client-polled Forward Evidence; next inspect Command Center compatibility without forcing migration.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Broader product-facing frontend polish remains after shell compatibility work.
+6. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 93
+1. Inspect Command Center outer framing and client runtime architecture for ReadOnlyPageShell compatibility.
+2. If compatible, adopt a frozen command layout preserving exact existing outer classes and polling/runtime behavior; if incompatible, document the incompatibility rather than forcing migration.
+3. Preserve Command Center API polling, Crypto Quality Dips panel placement, operator state, existing semantics, and authority boundaries.
+4. Add E93 source-contract tests for the compatibility decision, runtime preservation, and shell purity.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
