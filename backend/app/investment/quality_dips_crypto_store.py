@@ -23,7 +23,7 @@ class CryptoProspectiveEvidenceStore:
         self.reload()
     def reload(self):
         self.records=[]; self._ids=set()
-        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0,"legacy_unverified_lines":0,"chain_verified_lines":0,"chain_mismatch_lines":0}
+        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0,"legacy_unverified_lines":0,"chain_verified_lines":0,"chain_mismatch_lines":0,"chain_anchor_mismatch":False,"chain_state":"NO_CHAIN_YET"}
         if not self.path.exists(): return
         expected_sequence=1; previous_hash="GENESIS"
         for line in self.path.read_text(encoding="utf-8").splitlines():
@@ -49,10 +49,19 @@ class CryptoProspectiveEvidenceStore:
                     continue
                 self.integrity["chain_verified_lines"]+=1; previous_hash=expected; expected_sequence+=1
             self.records.append(row); self._ids.add(oid)
-        if self.head_path.exists():
-            anchor=json.loads(self.head_path.read_text(encoding="utf-8"))
-            if anchor.get("sequence") != expected_sequence-1 or anchor.get("chain_hash") != previous_hash:
+        if self.integrity["chain_verified_lines"]:
+            if not self.head_path.exists():
                 self.integrity["ok"]=False; self.integrity["chain_anchor_mismatch"]=True
+            else:
+                try:
+                    anchor=json.loads(self.head_path.read_text(encoding="utf-8"))
+                    if anchor.get("sequence") != expected_sequence-1 or anchor.get("chain_hash") != previous_hash:
+                        self.integrity["ok"]=False; self.integrity["chain_anchor_mismatch"]=True
+                except (json.JSONDecodeError,TypeError,ValueError,OSError):
+                    self.integrity["ok"]=False; self.integrity["chain_anchor_mismatch"]=True
+        if not self.integrity["ok"]: self.integrity["chain_state"]="COMPROMISED"
+        elif self.integrity["chain_verified_lines"]: self.integrity["chain_state"]="VERIFIED"
+        elif self.integrity["legacy_unverified_lines"]: self.integrity["chain_state"]="LEGACY_UNVERIFIED"
     def append(self,record: dict[str,Any]) -> bool:
         if not self.integrity["ok"]:
             raise ValueError("EVIDENCE_STORE_INTEGRITY_FAILED")
@@ -66,8 +75,12 @@ class CryptoProspectiveEvidenceStore:
         self.path.parent.mkdir(parents=True,exist_ok=True)
         with self.path.open("a",encoding="utf-8") as fh:
             fh.write(json.dumps(row,sort_keys=True,separators=(",",":"),default=str)+"\n")
-        self.head_path.write_text(json.dumps({"sequence":sequence,"chain_hash":row["chain_hash"]},sort_keys=True),encoding="utf-8")
-        self.records.append(row); self._ids.add(oid); return True
+        head_tmp=Path(str(self.head_path)+".tmp")
+        head_tmp.write_text(json.dumps({"sequence":sequence,"chain_hash":row["chain_hash"]},sort_keys=True),encoding="utf-8")
+        head_tmp.replace(self.head_path)
+        self.records.append(row); self._ids.add(oid)
+        self.integrity["chain_verified_lines"]+=1; self.integrity["chain_state"]="VERIFIED"
+        return True
 
 def evidence_summary(records):
     rows=list(records); total=len(rows)
