@@ -7783,3 +7783,54 @@ NEXT - EXECUTION 59
 6. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
+
+
+EXECUTION 59 - TYPED DISCORD ATTACHMENTS + OPPORTUNITY TRACKER MIGRATION - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added deliver_attachment_payload to E48 typed Discord delivery for binary-backed notifications with the same route/authority gate as text events.
+- Raw attachment bytes are passed transiently to the sender but never retained in typed observability. Observability stores only bounded attachment_present, attachment_size_bytes, attachment_name, and attachment_bytes_retained=false.
+- False sender results and exceptions remain retryable and retain zero execution/PAPER-entry/strategy/membership/threshold/promotion/live-capital authority.
+- Discord DM transport now actually sends non-empty chart_bytes as a discord.File backed by an in-memory BytesIO. Legacy transport previously accepted chart_bytes through **kwargs but silently ignored them.
+- Migrated Opportunity Tracker notification transport to typed SYSTEM/SESSION attachment delivery. Existing AnomalySignal construction, decision engine, confidence/risk calculations, whale/event context, and position-size suggestion logic are unchanged; typed transport uses its title/message and generated chart bytes only.
+- Opportunity identity: opportunity-recommendation:<symbol>:<recommendation>:<opportunity id>; provenance opportunity-tracker + opportunity id.
+- No execution authority was added. Opportunity Tracker remains notification/research output only.
+- Crypto Quality Dips code scaffolding was intentionally not added in E59; keeping it design-only avoids introducing an inactive parallel model before the existing Quality Dips architecture is explicitly mapped for a safe asset-class extension.
+
+VALIDATION
+- Focused E59/E58/E51 gate: 9 passed, 0 failed, 1 known warning.
+- Tests prove successful binary pass-through, metadata-only observability, no raw byte retention, false-send retryability, exception retryability, and all authority flags false.
+- Full Atlas regression: 1,356 passed, 0 failed, 2 known dependency warnings in 130.08s.
+- git diff --check clean before full regression.
+- No synthetic E29 or Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- 6dfe330 e59_typed_discord_attachments
+
+RUNTIME ACCEPTANCE
+- Controlled stop exit 0; Docker Desktop/Genesis untouched.
+- Combined restart/sample shell command was safety-blocked, so restart and process sampling were split without weakening acceptance.
+- Fresh Python processes observed at 2026-10-06 05:45:07 local time after restart.
+
+DECISION
+- E59 GREEN. Atlas now has a bounded typed binary attachment path and Opportunity Tracker uses it; raw charts do not enter observability or authority state.
+
+VISUAL STATUS AFTER E59
+[DONE] E48-E59 typed Discord foundation including text + bounded attachment delivery, observability/API, summaries, stateful research migrations, startup session, and Opportunity Tracker.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[DESIGNED/GATED] Crypto Quality Dips research contract; implementation/evidence inactive.
+[GATED] day_trade_assistant, paper_try_symbol, residual perp_micro_coach pending dedicated lifecycle contracts.
+[GATED] Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+
+NEXT - EXECUTION 60
+1. Map the existing stock Quality Dips V3 schema/scoring/state/delivery boundaries and define an asset-class-neutral research envelope without changing stock behavior.
+2. Add inactive Crypto Quality Dips schema/model scaffolding only: explicit allowlisted/liquidity-qualified universe input, crypto-specific evidence dimensions, provenance/freshness, risk flags, and asset_class=CRYPTO. No scheduler, signal emission, Discord delivery, PAPER entry, or execution.
+3. Add deterministic tests proving crypto scaffolding cannot mutate or enter the existing stock Quality Dips state/delivery path and exposes zero execution/strategy/threshold/promotion authority.
+4. Re-inventory residual trading-adjacent Discord paths only after the Quality Dips boundary work; do not bulk-migrate them.
+5. Continue genuine E29/Alpha evidence unchanged; no synthetic samples or outcome-driven threshold changes.
+6. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
