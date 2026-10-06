@@ -211,7 +211,7 @@ class BtcAccumulationService:
             f"Level: **${level:,.0f}** (L{level_index} of {total})\n"
             f"Live price: **${price:,.2f}**\n"
             f"Guide size: **${amount:,.0f}**\n"
-            f"Keep reserve: **${get_settings().btc_emergency_reserve:,.0f}**"
+            f"Keep reserve: **${float(getattr(get_settings(), 'btc_emergency_reserve', 0.0) or 0.0):,.0f}**"
             f"{next_hint}\n\n"
             f"One alert per level. After this HIT, the bot watches the next lower level automatically.\n"
             f"You place every order. Atlas does not execute."
