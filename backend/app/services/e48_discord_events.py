@@ -141,3 +141,33 @@ async def deliver_legacy_payload(event: DiscordEvent, *, sender: Sender) -> dict
             "retryable":not ok,"external_text_inert":True,"provenance":list(event.provenance)}
     _observe(event,result)
     return result
+
+async def deliver_attachment_payload(event: DiscordEvent, *, sender: Sender,
+                                     attachment_bytes: bytes | None,
+                                     attachment_name: str = "chart.png") -> dict[str, Any]:
+    """Typed binary delivery; observability retains bounded metadata, never raw bytes."""
+    decision = route(event)
+    data = bytes(attachment_bytes or b"")
+    name = _clean(attachment_name, 128) or "attachment.bin"
+    if not decision["eligible"]:
+        result = {**decision, "event_id": event.event_id, "attempted": False,
+                  "acknowledged": False, "retryable": False}
+    else:
+        try:
+            ok = bool(await sender(
+                symbol=event.lane, title=event.title, description=event.body,
+                severity=event.severity, opportunity=0, confidence=0, risk=0,
+                chart_bytes=data or None, attachment_name=name,
+            ))
+        except Exception:
+            ok = False
+        result = {**decision, "event_id": event.event_id, "attempted": True,
+                  "acknowledged": ok, "retryable": not ok,
+                  "external_text_inert": True, "provenance": list(event.provenance)}
+    _observe(event, result)
+    if _OBSERVATIONS:
+        _OBSERVATIONS[-1]["attachment_present"] = bool(data)
+        _OBSERVATIONS[-1]["attachment_size_bytes"] = min(len(data), 10000000)
+        _OBSERVATIONS[-1]["attachment_name"] = name
+        _OBSERVATIONS[-1]["attachment_bytes_retained"] = False
+    return result

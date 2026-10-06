@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from io import BytesIO
 from typing import Any, List, Optional, Set
 
 import discord
@@ -95,6 +96,8 @@ async def send_discord_alert(
     opportunity = int(kwargs.get("opportunity", opportunity) or opportunity)
     confidence = int(kwargs.get("confidence", confidence) or confidence)
     risk = int(kwargs.get("risk", risk) or risk)
+    chart_bytes = kwargs.get("chart_bytes")
+    attachment_name = str(kwargs.get("attachment_name") or "chart.png")[:128]
 
     if not is_discord_ready():
         log.warning("Discord not ready — alert skipped", symbol=symbol, title=title)
@@ -131,7 +134,11 @@ async def send_discord_alert(
             user = await bot.fetch_user(int(uid))
             if user is None:
                 continue
-            await user.send(embed=embed)
+            if isinstance(chart_bytes, (bytes, bytearray)) and chart_bytes:
+                file = discord.File(BytesIO(bytes(chart_bytes)), filename=attachment_name)
+                await user.send(embed=embed, file=file)
+            else:
+                await user.send(embed=embed)
             delivered += 1
         except Exception as e:
             log.warning("DM failed", user_id=uid, error=str(e)[:200])
