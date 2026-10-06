@@ -98,6 +98,15 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/e29-forward-scorecard")
+async def e29_forward_scorecard_endpoint()->JSONResponse:
+    try:
+        from app.services.e29_forward_scorecard import e29_forward_scorecard
+        body=e29_forward_scorecard()
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS E29 FORWARD BASELINE VS CHALLENGER SCORECARD","error":f"{type(e).__name__}: {str(e)[:240]}","promotion_allowed":False,"production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
 @router.get("/e28-challenger-workbench")
 async def e28_challenger_workbench_endpoint()->JSONResponse:
     try:

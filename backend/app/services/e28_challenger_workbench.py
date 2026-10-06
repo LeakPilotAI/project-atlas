@@ -20,6 +20,8 @@ from app.services.paper_journal import JOURNAL_PATH, iter_jsonl
 WORKBENCH_VERSION = "perp-setup-v2-e28-workbench-v1"
 CHALLENGER_VERSION = "perp-setup-v2-long-selection-v1"
 FREEZE_START_UTC = "2026-10-06T03:28:53.4195759Z"
+FROZEN_MOMENTUM_PCT_MIN = 0.3543
+FROZEN_TREND_PCT_MIN = 0.3979
 ALLOWED_OPEN_FIELDS = ("signal_score", "momentum_pct", "trend_pct", "volatility_pct")
 FORBIDDEN_OUTCOME_FIELDS = (
     "pnl_r", "pnl_usd", "mfe_r", "mae_r", "exit_reason", "exit_price",
@@ -109,7 +111,7 @@ def e28_workbench(*, rows: Iterable[Dict[str, Any]] | None=None) -> Dict[str, An
         "parent_registry":REGISTRY_VERSION,
         "freeze_start_utc":FREEZE_START_UTC,
         "baseline":{"strategy":BASELINE_STRATEGY,"execution_model":BASELINE_EXECUTION_MODEL,"side":"LONG","frozen":True},
-        "challenger_definition":derivation,
+        "challenger_definition":{**derivation, "thresholds":{"momentum_pct_min":FROZEN_MOMENTUM_PCT_MIN,"trend_pct_min":FROZEN_TREND_PCT_MIN}, "frozen_thresholds_match_derivation": derivation.get("thresholds")=={"momentum_pct_min":FROZEN_MOMENTUM_PCT_MIN,"trend_pct_min":FROZEN_TREND_PCT_MIN}},
         "forward_membership":{
             "starts_at":FREEZE_START_UTC,
             "historical_rows_count_as_prospective":False,
