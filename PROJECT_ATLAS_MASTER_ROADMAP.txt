@@ -8286,3 +8286,67 @@ NEXT - EXECUTION 69
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 69 - READ-ONLY INTEGRITY DIAGNOSTICS + READINESS INTERLOCK - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added bounded integrity_diagnostic derived only from existing store integrity metadata.
+- Diagnostic exposes chain_state, healthy, readiness_eligible, bounded reason_codes, repair_available=false, mutation_available=false.
+- Reason codes cover malformed log, observation identity mismatch, chain-link mismatch, invalid chain anchor, and explicit legacy-unverified state.
+- Existing GET evidence-readiness now includes integrity_diagnostic and an integrity gate.
+- COMPROMISED state forcibly sets readiness_gates_met=false regardless of numerical observation/day/valid-fraction gates.
+- LEGACY_UNVERIFIED remains explicitly distinct from VERIFIED; it is never silently upgraded.
+- Diagnostic output contains no raw evidence, raw hashes, filesystem paths, repair controls, or mutation controls.
+- POST/PUT/PATCH/DELETE remain unavailable (405) on the readiness endpoint.
+- No strategy, scoring, PAPER, execution, threshold, promotion, scheduler, autonomous feed, or live-capital authority was added.
+
+VALIDATION
+- Focused E69-E63 + Stock V3 compatibility: 29 passed, 0 failed, 2 known warnings, exit 0.
+- Full regression: 1,390 passed, 0 failed, 2 known warnings in 138.31s, exit 0.
+- git diff --check clean; exactly three E69 files staged.
+- API tests cover NO_CHAIN_YET, LEGACY_UNVERIFIED, VERIFIED, COMPROMISED and zero-authority/GET-only behavior.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- e812cf0 e69 readonly integrity diagnostics
+
+RUNTIME
+- E69 extends an already-registered GET router and internal diagnostics only. Full API contract is exercised through TestClient; no fresh runtime-process claim is required for GREEN.
+
+DECISION
+- E69 GREEN. Operator-facing integrity is now actionable but strictly read-only, and compromised evidence can never present as readiness-ready.
+
+VISUAL STATUS AFTER E69
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E68 Crypto Quality Dips research boundary through crash-aware chain-head integrity.
+[DONE] E69 bounded read-only integrity diagnostics + readiness integrity interlock.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Crypto Quality Dips research/operator foundation: late-stage hardening. Remaining work is operator presentation, evidence lifecycle/retention/recovery policy, and only then separately-gated scoring/state/outcome design. Autonomous trading remains intentionally out of scope/gated.
+2. E29 strategy evidence: genuine prospective samples must accumulate over time; cannot be accelerated with synthetic evidence.
+3. Alpha/cadence/corroboration: genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers: a small identified set remains gated for dedicated lifecycle contracts rather than bulk migration.
+5. Frontend/operator UI: substantial product-facing work remains after backend contracts stabilize.
+6. Product/deployment hardening: packaging, operator ergonomics, deployment/recovery/security documentation and release-readiness remain a later major phase.
+
+PROGRESS ASSESSMENT
+- Backend contract/integrity foundation is now mature relative to the earlier rebuild phase: executions are closing narrower hardening gaps rather than rebuilding core architecture.
+- The project is not near final product completion because frontend/product/deployment work remains substantial and genuine evidence gates require elapsed real observations.
+- Current direction is strong: E48-E69 are DONE with full regression at 1,390 passing tests, while high-risk authority boundaries remain intentionally locked.
+
+NEXT - EXECUTION 70
+1. Define bounded evidence lifecycle/retention policy for prospective Crypto Quality Dips research without deleting, rewriting, or compacting evidence automatically.
+2. Add read-only lifecycle status: record/chain counts, oldest/newest observation dates, legacy-unverified count, and policy status without raw evidence/hashes/paths.
+3. Define explicit operator recovery contract for COMPROMISED evidence as MANUAL_REVIEW_REQUIRED only; no automatic repair action.
+4. Prove lifecycle metadata cannot mutate evidence and cannot unlock scoring/PAPER/execution authority.
+5. Keep residual Discord lifecycle paths gated; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
