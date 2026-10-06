@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { SurfaceStatusBadge, type SurfaceStatus } from "@/app/components/SurfaceStatusBadge";
 
-const surfaces=[
- {title:"Alpha / Forward Evidence",state:"ACTIVE EVIDENCE",href:"/research",detail:"Prospective challenger evidence, diversity, maturity, and confirmation diagnostics.",boundary:"Human review only · production promotion gated"},
- {title:"Crypto Quality Dips",state:"RESEARCH ONLY",href:"/",detail:"Public-contract evidence readiness, chain context, freshness, and operator attention.",boundary:"Authority locked · no scoring, PAPER, execution, or live capital"},
- {title:"Command Center Operations",state:"OPERATIONAL VIEW",href:"/",detail:"Atlas runtime and operator-facing system state, including the bounded Crypto Quality Dips panel.",boundary:"Observation and navigation do not grant trading authority"},
-] as const;
+const surfaces: ReadonlyArray<{title:string;status:SurfaceStatus;href:string;detail:string;boundary:string}>=[
+ {title:"Alpha / Forward Evidence",status:"ACTIVE_EVIDENCE",href:"/research",detail:"Prospective challenger evidence, diversity, maturity, and confirmation diagnostics.",boundary:"Human review only · production promotion gated"},
+ {title:"Crypto Quality Dips",status:"RESEARCH_ONLY",href:"/",detail:"Public-contract evidence readiness, chain context, freshness, and operator attention.",boundary:"Authority locked · no scoring, PAPER, execution, or live capital"},
+ {title:"Command Center Operations",status:"OPERATIONAL_VIEW",href:"/",detail:"Atlas runtime and operator-facing system state, including the bounded Crypto Quality Dips panel.",boundary:"Observation and navigation do not grant trading authority"},
+];
 
 export default function ResearchSurfacesPage(){
  return <div className="min-h-screen bg-[#07080b] text-zinc-200"><main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
@@ -18,7 +19,7 @@ export default function ResearchSurfacesPage(){
   </section>
   <section className="grid gap-4 lg:grid-cols-3" aria-label="Atlas research surfaces">
    {surfaces.map(surface=><article key={surface.title} className="flex min-h-64 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-5">
-    <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-400">{surface.state}</p>
+    <SurfaceStatusBadge status={surface.status}/>
     <h2 className="mt-2 text-lg font-semibold text-white">{surface.title}</h2>
     <p className="mt-3 text-sm leading-6 text-zinc-400">{surface.detail}</p>
     <div className="mt-4 rounded-lg border border-white/5 bg-black/20 p-3 text-xs text-zinc-500">{surface.boundary}</div>
