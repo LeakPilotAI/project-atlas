@@ -4,13 +4,15 @@ OVERVIEW=Path("frontend/src/app/research/surfaces/page.tsx")
 CARDS=Path("frontend/src/app/research/surfaces/SurfaceCards.tsx")
 PRESENTATION=Path("frontend/src/app/research/surfaces/presentation.ts")
 CATALOG=Path("frontend/src/app/research/surfaces/catalog.ts")
+SECTION_HEADING=Path("frontend/src/app/research/surfaces/SectionHeading.tsx")
 
 def test_e81_separates_navigable_surfaces_from_gated_capabilities():
     text=OVERVIEW.read_text(encoding="utf-8")+"\n"+CARDS.read_text(encoding="utf-8")+"\n"+PRESENTATION.read_text(encoding="utf-8")+"\n"+CATALOG.read_text(encoding="utf-8")
     assert 'id="navigable-surfaces-title"' in text
-    assert ">Current navigable surfaces</h2>" in text
+    assert 'title="Current navigable surfaces"' in text
     assert 'id="gated-capabilities-title"' in text
-    assert ">Gated roadmap capabilities</h2>" in text
+    assert 'title="Gated roadmap capabilities"' in text
+    assert '<h2 id={id} className="text-sm font-medium text-zinc-300">{title}</h2>' in SECTION_HEADING.read_text(encoding="utf-8")
     assert "These are not destinations or disabled controls." in text
 
 def test_e81_gated_items_are_roadmap_confirmed():

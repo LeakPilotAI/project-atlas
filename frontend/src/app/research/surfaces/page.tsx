@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GATED_CAPABILITIES, RESEARCH_SURFACES } from "./catalog";
 import { AUTHORITY_LEGEND, SECTION_POSTURE } from "./presentation";
 import { GatedCapabilityCard, ResearchSurfaceCard } from "./SurfaceCards";
+import { SectionHeading } from "./SectionHeading";
 
 export default function ResearchSurfacesPage(){
  return <div className="min-h-screen bg-[#07080b] text-zinc-200"><main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
@@ -20,13 +21,13 @@ export default function ResearchSurfacesPage(){
    </dl>
   </section>
   <section aria-labelledby="navigable-surfaces-title">
-   <div className="mb-3"><h2 id="navigable-surfaces-title" className="text-sm font-medium text-zinc-300">Current navigable surfaces</h2><p className="mt-1 text-xs text-zinc-600">{SECTION_POSTURE.navigable}</p></div>
+   <SectionHeading id="navigable-surfaces-title" title="Current navigable surfaces" posture={SECTION_POSTURE.navigable}/>
    <div className="grid gap-4 lg:grid-cols-3" aria-label="Atlas research surfaces">
    {RESEARCH_SURFACES.map(surface=><ResearchSurfaceCard key={surface.title} surface={surface}/>)}
    </div>
   </section>
   <section aria-labelledby="gated-capabilities-title">
-   <div className="mb-3"><h2 id="gated-capabilities-title" className="text-sm font-medium text-zinc-300">Gated roadmap capabilities</h2><p className="mt-1 text-xs text-zinc-600">{SECTION_POSTURE.gated}</p></div>
+   <SectionHeading id="gated-capabilities-title" title="Gated roadmap capabilities" posture={SECTION_POSTURE.gated}/>
    <div className="grid gap-3 md:grid-cols-2">
     {GATED_CAPABILITIES.map(capability=><GatedCapabilityCard key={capability.title} capability={capability}/>)}
    </div>
