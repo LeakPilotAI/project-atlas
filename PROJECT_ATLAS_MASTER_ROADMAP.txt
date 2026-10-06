@@ -4657,3 +4657,177 @@ Safety:
 Permanent workflow remains mandatory for any future controlled code execution:
 update this roadmap, preserve prior history, record exact commits and validation
 /runtime evidence, commit/push it, and provide a fresh downloadable TXT copy.
+
+
+================================================================================
+EXECUTION 23 — POST-SOAK INSPECTION + OPPORTUNITY TRACKER HEALTH TRUTH — GREEN
+Date: 2026-10-05 CT
+================================================================================
+
+PURPOSE
+- Harvest real post-market-session evidence before changing code.
+- Investigate the Command Center "Opportunity Tracker — STOPPED" finding.
+- Investigate Prediction PAPER "auto-flat blocked / deadline violation" evidence.
+- Preserve all forward PAPER evidence and all live-capital prohibitions.
+
+CONFIRMED FINDINGS
+1. Opportunity Tracker health false-negative:
+   - OpportunityTracker is started by app.main at runtime.
+   - Worker state is stored in OpportunityTracker._running.
+   - /health reads the public .running attribute.
+   - The class did not expose .running, so getattr(..., False) always rendered STOPPED.
+   - This was an observability defect, not evidence that the worker had actually stopped.
+
+2. Prediction PAPER terminal evidence:
+   - Historical PAPER trade: KXRAIN-26OCT03-PIT, YES, 10 contracts, entry $0.0200.
+   - Required pre-event exit ultimately had NO_EXECUTABLE_DEPTH.
+   - Atlas preserved the event as EXPIRED_UNCLOSED / EXIT_FAILED_NO_LIQUIDITY.
+   - It did NOT fabricate an exit, closed trade, PnL, ROI, or win/loss.
+   - Current Prediction eligibility already requires executable entry depth AND executable
+     exit depth at entry, rejecting NO_EXECUTABLE_EXIT_DEPTH_AT_ENTRY or
+     INSUFFICIENT_EXECUTABLE_EXIT_DEPTH_AT_ENTRY.
+   - Therefore no speculative Prediction threshold change was made from this one terminal
+     historical observation.
+   - Unattended Prediction PAPER opening remains blocked pending validation.
+
+3. Forward evidence observed:
+   - Day Trading closed PAPER sample reached 1,145.
+   - Aggregate native expectancy observed: -0.0956 R per closed trade.
+   - Aggregate win rate observed: 0.414.
+   - This is evidence, not an automatic strategy action. Future analysis must segment by
+     strategy/version/regime before any conclusion or threshold change.
+   - QUALITY_DIPS_PAPER_V1 remains 0 open / 0 closed; inactivity is not fabricated into
+     evidence.
+   - Prediction remains 0 valid closed sample, 0 open, 1 expired-unclosed terminal record.
+   - Checkpoint exclusion accounting reconciled 8 physical rows = 8 categorized rows:
+     5 usable, 3 replay/duplicate, all other exclusion buckets zero.
+   - Excluded checkpoint rows remain excluded from evidence.
+
+IMPLEMENTATION
+- backend/app/services/opportunity_tracker.py
+  Added read-only OpportunityTracker.running property returning the actual _running state.
+- tests/test_command_center_health_v4.py
+  Added regression proving /health reports actual TRUE/FALSE tracker state.
+
+VALIDATION
+- Focused Command Center health + Prediction automation: 19 passed, 2 known warnings.
+- First full run: 1,204 passed / 1 failed due to a pre-existing time-derived age_hours
+  equality test crossing a rounding boundary.
+- The isolated failing provenance test immediately passed: 1 passed.
+- Clean full retry: 1,205 passed, 0 failed, 2 known warnings.
+- git diff --check GREEN apart from normal Windows LF->CRLF notice.
+- Known warnings remain Starlette/httpx TestClient deprecation and Python audioop deprecation.
+
+IMPLEMENTATION COMMIT
+- e840f5f7edff6a1c79b1f4555c018012155d64a2
+- fix(health): report opportunity tracker state
+
+RUNTIME ACCEPTANCE
+- Supported Atlas-Stop.ps1 used; Docker Desktop / Genesis explicitly untouched.
+- Supported ATLAS.bat launcher used through persistent CMD session.
+- Launcher stabilization: 3/3 GREEN.
+- Live /health after restart:
+  opportunity_tracker_running=true
+  scanner_running=true
+  paper_trade_tracker_running=true
+  quality_dip_running=true
+  day_trade_running=true
+  perp_manual_running=true
+  prediction_paper_automation_running=true
+  discord_ready=true
+- Prediction after restart:
+  worker running=true
+  scan errors=0
+  scan timeouts=0
+  open=0
+  closed=0
+  expired_unclosed=1
+  auto-flat=TERMINAL_UNCLOSED
+  auto-flat blocked=true
+  deadline violation=true
+  unattended PAPER opening=false
+  live capital=false
+  automatic real-money execution=false
+
+STATUS
+- Execution 23 GREEN.
+- Atlas remains PAPER/research only.
+- No strategy threshold, sizing, entry, exit, promotion, or historical evidence was rewritten.
+- The Command Center health surface now truthfully reports Opportunity Tracker runtime state.
+
+================================================================================
+FUTURE EXPANSION — CONTROLLED INTERNET / ALPHA INTELLIGENCE LAYER
+================================================================================
+
+GOAL
+Give Atlas controlled access to public internet intelligence so it can discover and preserve
+potential alpha/catalyst context without allowing untrusted web content to directly execute
+trades or silently mutate frozen strategies.
+
+DESIGN REQUIREMENTS
+- Dedicated intelligence/ingestion layer separated from strategy execution.
+- Source classes should include official exchange/project announcements, reputable financial
+  and crypto news, macro/economic releases, market/sector information, and carefully governed
+  public/social intelligence where useful.
+- Every intelligence item should retain source identity/URL, retrieval time, publication time
+  when available, affected symbols/markets, freshness, confidence/reliability class, and the
+  reason Atlas considered it relevant.
+- Deduplicate repeated stories and distinguish primary/official sources from secondary reports,
+  commentary, rumors, and social claims.
+- Never treat internet text as trusted instructions to Atlas.
+- Never allow web content to override safety locks, frozen thresholds, position sizing, or
+  execution permissions.
+- Initial use is decision-support/context only.
+- Preserve what Atlas knew BEFORE an opportunity so later forward analysis can test whether the
+  intelligence actually improved outcomes without hindsight leakage.
+- Only evidence-proven intelligence features may later be considered for strategy integration,
+  through a separate reviewed execution.
+
+POSSIBLE FUTURE SURFACES
+- Alpha / Catalyst feed in the Atlas frontend.
+- Symbol-linked intelligence cards on Perps, Investment, and Prediction pages.
+- Breaking-event relevance and freshness scoring.
+- Official-source provenance and confidence badges.
+- Pre-trade "what changed / why this matters" context.
+- Forward outcome study comparing opportunities with/without specific intelligence features.
+
+================================================================================
+FUTURE EXPANSION — KALSHI PERPS VENUE
+================================================================================
+
+PREREQUISITE
+Do not integrate Kalshi perpetuals into production decision logic merely to increase trade
+frequency. First obtain successful, trustworthy forward PAPER evidence for the existing
+Hyperliquid perpetuals lane.
+
+PLANNED ORDER
+1. Validate Hyperliquid Perps with genuine forward PAPER evidence.
+2. Freeze/version the validated Hyperliquid strategy.
+3. Verify current Kalshi perpetual product/API mechanics at implementation time.
+4. Build Kalshi as a separate PAPER venue adapter/lane with native fees, leverage, funding,
+   liquidity, order, liquidation, and accounting semantics.
+5. Validate Kalshi independently.
+6. Only after both lanes have trustworthy evidence, consider a venue-comparison/opportunity
+   router. Never pool incompatible evidence or claim a universal expectancy/win rate.
+
+SAFETY
+- Kalshi Perps begins PAPER-only.
+- No automatic real-money execution.
+- No assumption that adding a venue increases profitability; it only expands the opportunity
+  set and must prove value prospectively.
+
+================================================================================
+NEXT PHASE AFTER EXECUTION 23
+================================================================================
+
+1. Continue forward PAPER observation without arbitrary tuning.
+2. Analyze Day Trading's 1,145-trade aggregate evidence by strategy version, regime, cohort,
+   and forward-valid boundaries before deciding whether the negative aggregate expectancy
+   reflects legacy evidence, current strategy behavior, or both.
+3. Continue QUALITY_DIPS_PAPER_V1 untouched until genuine qualifying lifecycle evidence exists.
+4. Continue Prediction scanning with unattended opening blocked while the terminal-unclosed
+   lifecycle remains a validation warning; do not erase or manufacture an exit.
+5. Design the Internet/Alpha Intelligence architecture as a separate evidence-producing layer.
+6. Keep Kalshi Perps as a gated future venue after Hyperliquid forward PAPER validation.
+7. Any new defect discovered in real operation must be captured first and repaired with the
+   smallest controlled execution.
