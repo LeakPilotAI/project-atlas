@@ -7471,3 +7471,76 @@ NEXT - EXECUTION 54
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
 - After every GREEN execution, update the complete canonical roadmap append-only, refresh visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap, and report completed-vs-remaining progress.
 - Never advance GREEN on blocked validation and never manufacture evidence/readiness.
+
+
+================================================================================
+EXECUTION 54 - ROBINHOOD BRIEF TYPED SYSTEM MIGRATION - GREEN - 2026-10-06
+================================================================================
+
+IMPLEMENTATION
+- Migrated Robinhood Brief notification delivery through E48 SYSTEM/SESSION typed routing.
+- Preserved the existing scheduler exactly: weekdays only, configured ET hour, five-minute delivery window, 30-second loop, and _last_date once-per-date suppression remain in RobinhoodBriefService unchanged.
+- Typed identity is robinhood-brief:<ET date> and is notification identity only; scheduler frequency remains producer-owned.
+- Research-only message semantics remain explicit: Robinhood is not a day-trade trigger, user places every order, Atlas does not execute.
+- False Discord sends remain unacknowledged/retryable in typed observability and cannot create execution authority.
+- Accumulation/BTC/quality-dip/auto-ladder producers were inspected/classified but not migrated.
+
+AUXILIARY CONTRACT CLASSIFICATION
+- Stock accumulation ladder: Redis keys atlas:accum:<symbol>:<level>:<kind>; successful Discord send precedes durable _mark; HIT additionally marks NEAR. Migration must preserve send-success -> mark ordering and one-alert-per-level semantics.
+- BTC accumulation ladder: Redis keys atlas:btc:lvl:<level>:<kind>; successful send precedes durable _mark; HIT additionally marks NEAR; special legacy 63,500 level is marked without notification. Migration must preserve this ordering and special suppression.
+- Quality Dips V3 delivery: durable event store delivery.delivered gates retries; mark_delivery(key, delivered=ok) and store.save() occur after sender result. Migration must preserve retry-safe durable event semantics exactly.
+- Auto ladder: Redis NX created key and ladder definition are persisted BEFORE the informational Discord notification; notification failure must never roll back or duplicate ladder creation. Migration must preserve creation-before-notify ordering and protected-core exclusions.
+- No contract above was changed by E54.
+
+VALIDATION
+- Focused E54/E53/E52/E51 compatibility gate: 14 passed, 0 failed.
+- Tests prove typed SYSTEM/SESSION routing, successful delivery observability, false-send retryability/non-acknowledgement, unchanged scheduler state contract, and zero trading/control authority.
+- git diff --check clean.
+- Full Atlas regression: 1,339 passed, 0 failed, 2 known dependency warnings in 132.35s.
+- Known warnings unchanged: discord audioop deprecation; Starlette/httpx TestClient deprecation.
+
+IMPLEMENTATION COMMIT
+- a10b75b e54_migrate_robinhood_brief
+
+RUNTIME ACCEPTANCE
+- Controlled Atlas stop completed with exit code 0 and explicitly left Docker Desktop/Genesis untouched.
+- Atlas restart launcher completed from ATLAS.bat and Python process inventory remained present afterward.
+- The first 10-second process sample did not expose a clearly newer Python StartTime, so no stronger fresh-process claim is made.
+- No synthetic E29 or Alpha evidence was created.
+
+DECISION
+- Execution 54 GREEN.
+- Robinhood Brief now uses typed notification routing while its original once-per-weekday/date frequency contract remains producer-owned and unchanged.
+- Stateful accumulation/quality-dip/auto-ladder producers remain intentionally unmigrated until ordering contracts above are locked by compatibility tests.
+
+VISUAL PROJECT STATUS AFTER E54
+[DONE] Core runtime recovery / PAPER safety / evidence preservation.
+[DONE] Perps decomposition + prospective challenger infrastructure.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[DONE] Alpha E31-E47 controlled intelligence through read-only operator UI.
+[DONE] E48 typed Discord event/routing/ack/retry foundation.
+[DONE] E49 Alpha/Catalyst + Prediction eligible typed migration.
+[DONE] E50 primary Perp/System typed migration.
+[DONE] E51 bounded payload-free typed delivery observability + producer inventory.
+[DONE] E52 scheduled SYSTEM summary typed migration.
+[DONE] E53 GET-only typed delivery observability API.
+[DONE] E54 Robinhood Brief typed SYSTEM/SESSION research-summary migration.
+[ACTIVE] Accumulation/BTC/quality-dip/auto-ladder typed compatibility remains gated by durable-state and side-effect-ordering tests.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[GATED] Alpha strategy-selection use pending separate prospective evidence.
+[GATED] Unattended Prediction PAPER opening pending prospective validation.
+[TODO] Broader frontend/operator UI redesign.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+[GATED] Automated real-money execution and strategy promotion remain disabled.
+
+NEXT - EXECUTION 55
+1. Add deterministic compatibility tests that lock stock accumulation and BTC accumulation send-success -> Redis mark ordering, HIT -> NEAR marking, retry behavior after failed send, and BTC 63,500 legacy suppression.
+2. Add deterministic compatibility tests for Quality Dips V3 durable delivery state and Auto Ladder creation-before-notify ordering, including notification failure after successful durable creation.
+3. Define typed lane/event identities for these stateful research notifications only after the tests prove current semantics.
+4. Do not migrate stateful producers in E55 unless all ordering contracts are first proven and the adapter cannot change side-effect frequency; otherwise document the gate and defer migration.
+5. Continue genuine E29 and Alpha evidence unchanged; no synthetic samples and no threshold changes from observed outcomes.
+6. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
+- After every GREEN execution, update the complete canonical roadmap append-only, refresh visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap, and report completed-vs-remaining progress.
+- Never advance GREEN on blocked validation and never manufacture evidence/readiness.
