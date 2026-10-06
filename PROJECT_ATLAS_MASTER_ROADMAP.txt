@@ -5115,3 +5115,90 @@ NEXT ACTION
 - In parallel, allow untouched forward PAPER evidence to accumulate.
 - Do not tune from E25 alone.
 - After E26, decide whether evidence justifies an E27 challenger or whether Atlas should continue observation unchanged.
+
+================================================================================
+EXECUTION 26 - STOP-TAIL + CURRENT ADAPTIVE LONG ATTRIBUTION - GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Continue E25 causal decomposition without changing the Perps strategy.
+- Quantify how much historical V2 negative R is concentrated in setup-stop overshoot tails.
+- Attribute setup stops by execution-model version, side, time cohort, symbol and recorded volatility.
+- Isolate current adaptive LONG using only preserved pre-entry score/momentum/trend/volatility plus recorded MFE/MAE and exit family.
+
+IMPLEMENTATION
+- New backend/app/services/e26_attribution.py.
+- New GET /api/validation/e26-attribution.
+- New tests/test_e26_attribution.py.
+- No production strategy file changed.
+- No counterfactual fill rewrite, UNKNOWN backfill, threshold change, sizing change, execution change or promotion authority.
+
+EVIDENCE - HISTORICAL V2 STOP TAIL
+- V2 setup cohort remains n=203, total -100.3485R, expectancy -0.4943R/trade.
+- All negative V2 R: -193.1928R.
+- SETUP_STOP: n=74, -175.7067R, -2.3744R/trade.
+- Overshoot <=0.25R: n=54, -60.4742R, 31.30% of all negative V2 R.
+- Overshoot 0.25-1.00R: n=7, -11.0789R, 5.73%.
+- Overshoot 1.00-2.00R: n=4, -9.0408R, 4.68%.
+- Overshoot 2.00-5.00R: n=4, -17.9341R, 9.28%.
+- Overshoot >5.00R: only n=5, -77.1787R, 39.95% of all negative V2 R.
+- Therefore rare historical overshoot tails are a major concentration of loss severity.
+- This does NOT prove the current execution model has the same tail defect: the worst historical damage remains strongly contaminated by legacy/UNKNOWN execution-model evidence.
+
+CURRENT ADAPTIVE LONG - n=37
+- Total -17.0506R; expectancy -0.4608R/trade; win rate 0.1892.
+- SETUP_STOP: n=15, -17.8520R, -1.1901R/trade.
+- ADAPTIVE_FADE_PROTECT_STOP: n=6, +1.2754R.
+- ADAPTIVE_PROTECT_STOP: n=6, +0.1068R.
+- ADAPTIVE_TIME_PROTECT_STOP: n=2, -0.5808R.
+- Atlas shutdown/non-performance closes: n=8, 0R.
+- MFE <0.25R: n=20, -16.6837R.
+- MFE 0.25-0.49R: n=10, -1.8317R.
+- MFE 0.50-0.99R: n=6, +0.8855R.
+- MFE 1.00-1.79R: n=1, +0.5793R.
+- MAE <0.50R: n=16, +0.2869R.
+- MAE 0.50-0.99R: n=6, +0.5145R.
+- MAE 1.00-1.49R: n=15, -17.8520R.
+Interpretation: current adaptive LONG underperformance is concentrated in trades that move adversely to the initial stop and/or never develop meaningful favorable excursion. The adaptive protective-exit families are not the main observed source of current LONG losses. This is hypothesis-generating evidence, not permission to tune.
+
+PRE-ENTRY EXPLORATORY SLICES
+- No score bucket is positive; tiny buckets are not promotion evidence.
+- Momentum 0.25-0.49 is weakest at n=9 / -0.7963R per trade, but sample remains exploratory.
+- Trend 0.00-0.49 is n=24 / -0.5006R; trend 0.50-0.99 is n=10 / -0.2656R.
+- Volatility slices remain negative and small; no volatility threshold change is justified.
+- These slices must be tested prospectively before becoming strategy features or filters.
+
+VALIDATION
+- Focused E26 + E25 + cohort suite: 9 passed in 0.34s.
+- git diff --check GREEN.
+- Full Atlas regression: 1,214 passed, 0 failed, 2 known dependency warnings in 133.16s.
+- Known warnings remain Starlette/httpx TestClient deprecation and discord audioop deprecation.
+- E26 implementation commit: f2ea26e.
+
+RUNTIME ACCEPTANCE
+- Runtime activated through ATLAS.bat; launcher performs its own Atlas-process cleanup while leaving Docker Desktop/Genesis outside Atlas ownership.
+- Live health after stabilization: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- Live E26 endpoint: 203 V2 records, 0 malformed.
+- Live current adaptive LONG: n=37, total=-17.0506R.
+- Live >5R historical overshoot bucket: -77.1787R.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+
+STATUS
+- Execution 26 GREEN.
+- Historical stop-tail concentration is confirmed as a material research issue.
+- Current adaptive LONG losses are concentrated in poor early path / stop outcomes rather than the adaptive protect/fade exit families.
+- No strategy change is authorized from E26 alone.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 27
+1. Do NOT automatically build a challenger merely because E26 found correlations.
+2. Add prospective hypothesis definitions for current adaptive LONG that can distinguish selection quality from unavoidable adverse movement and execution effects.
+3. Pre-register candidate hypotheses using only preserved pre-entry features; likely research candidates include combinations of momentum/trend/score/volatility, but no threshold is accepted from retrospective optimization.
+4. Define minimum sample, expectancy, drawdown/tail-risk and execution-quality acceptance criteria before challenger evidence collection.
+5. If a challenger is justified, version it separately from the frozen baseline and run baseline/challenger concurrently in PAPER.
+6. Keep SHORT unchanged; E25 already showed pooled legacy SHORT evidence cannot represent the current adaptive cohort.
+7. Continue Quality Dips and Prediction evidence untouched.
+8. Internet/Alpha Intelligence, UI/operator improvements, Discord typed-alert rebuild and future additional venue work remain preserved parallel roadmap tracks.
+
+SAFETY
+PAPER/research only. No broker orders, live capital, automatic real-money execution, in-place strategy mutation, retrospective threshold promotion, synthetic samples, historical rewrite, favorable backfill, or incompatible evidence pooling.
