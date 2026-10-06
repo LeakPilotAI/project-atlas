@@ -3,6 +3,7 @@ from pathlib import Path
 OVERVIEW=Path("frontend/src/app/research/surfaces/page.tsx")
 PRESENTATION=Path("frontend/src/app/research/surfaces/presentation.ts")
 BADGE=Path("frontend/src/app/components/SurfaceStatusBadge.tsx")
+CARDS=Path("frontend/src/app/research/surfaces/SurfaceCards.tsx")
 
 def test_e80_authority_legend_is_accessible_and_static():
     text=OVERVIEW.read_text(encoding="utf-8")+"\n"+PRESENTATION.read_text(encoding="utf-8")
@@ -26,7 +27,7 @@ def test_e80_legend_does_not_conflict_with_e78_vocabulary():
     badge=BADGE.read_text(encoding="utf-8")
     for label in ("ACTIVE EVIDENCE","RESEARCH ONLY","OPERATIONAL VIEW","GATED"):
         assert label in badge
-    assert "SurfaceStatusBadge" in overview
+    assert "SurfaceStatusBadge" in overview+CARDS.read_text(encoding="utf-8")
     assert "Authority legend" in overview
 
 def test_e80_legend_adds_no_live_or_action_authority():

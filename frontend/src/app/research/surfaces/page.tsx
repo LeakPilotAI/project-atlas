@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { SurfaceStatusBadge } from "@/app/components/SurfaceStatusBadge";
 import { GATED_CAPABILITIES, RESEARCH_SURFACES } from "./catalog";
 import { AUTHORITY_LEGEND, SECTION_POSTURE } from "./presentation";
+import { GatedCapabilityCard, ResearchSurfaceCard } from "./SurfaceCards";
 
 export default function ResearchSurfacesPage(){
  return <div className="min-h-screen bg-[#07080b] text-zinc-200"><main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
@@ -22,27 +22,13 @@ export default function ResearchSurfacesPage(){
   <section aria-labelledby="navigable-surfaces-title">
    <div className="mb-3"><h2 id="navigable-surfaces-title" className="text-sm font-medium text-zinc-300">Current navigable surfaces</h2><p className="mt-1 text-xs text-zinc-600">{SECTION_POSTURE.navigable}</p></div>
    <div className="grid gap-4 lg:grid-cols-3" aria-label="Atlas research surfaces">
-   {RESEARCH_SURFACES.map(surface=><article key={surface.title} className="flex min-h-64 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-5">
-    <SurfaceStatusBadge status={surface.status}/>
-    <h2 className="mt-2 text-lg font-semibold text-white">{surface.title}</h2>
-    <p className="mt-3 text-sm leading-6 text-zinc-400">{surface.detail}</p>
-    <dl className="mt-4 space-y-3 rounded-lg border border-white/5 bg-black/20 p-3 text-xs">
-     <Posture label="Purpose" value={surface.purpose}/>
-     <Posture label="Data posture" value={surface.dataPosture}/>
-     <Posture label="Authority posture" value={surface.authorityPosture}/>
-    </dl>
-    <Link href={surface.href} className="mt-auto pt-5 text-xs font-medium text-cyan-300">Open read-only surface →</Link>
-   </article>)}
+   {RESEARCH_SURFACES.map(surface=><ResearchSurfaceCard key={surface.title} surface={surface}/>)}
    </div>
   </section>
   <section aria-labelledby="gated-capabilities-title">
    <div className="mb-3"><h2 id="gated-capabilities-title" className="text-sm font-medium text-zinc-300">Gated roadmap capabilities</h2><p className="mt-1 text-xs text-zinc-600">{SECTION_POSTURE.gated}</p></div>
    <div className="grid gap-3 md:grid-cols-2">
-    {GATED_CAPABILITIES.map(capability=><article key={capability.title} className="rounded-2xl border border-white/8 bg-[#0c0e13] p-4">
-     <SurfaceStatusBadge status="GATED"/>
-     <h3 className="mt-2 text-sm font-medium text-zinc-300">{capability.title}</h3>
-     <p className="mt-2 text-xs leading-5 text-zinc-500">{capability.detail}</p>
-    </article>)}
+    {GATED_CAPABILITIES.map(capability=><GatedCapabilityCard key={capability.title} capability={capability}/>)}
    </div>
   </section>
   <section className="rounded-2xl border border-white/8 bg-[#10131a] p-5" aria-labelledby="active-evidence-title">
@@ -56,5 +42,4 @@ export default function ResearchSurfacesPage(){
  </main></div>
 }
 function Legend({term,meaning}:{term:string;meaning:string}){return <div className="rounded-lg border border-white/5 p-3"><dt className="font-medium text-zinc-300">{term}</dt><dd className="mt-1 leading-5 text-zinc-500">{meaning}</dd></div>}
-function Posture({label,value}:{label:string;value:string}){return <div><dt className="uppercase tracking-wider text-zinc-600">{label}</dt><dd className="mt-1 leading-5 text-zinc-400">{value}</dd></div>}
 function State({label,value}:{label:string;value:string}){return <div className="rounded-lg border border-white/5 px-3 py-3"><p className="text-zinc-500">{label}</p><p className="mt-1 text-zinc-300">{value}</p></div>}

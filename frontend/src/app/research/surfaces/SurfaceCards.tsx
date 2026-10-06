@@ -1,0 +1,27 @@
+import Link from "next/link";
+import { SurfaceStatusBadge } from "@/app/components/SurfaceStatusBadge";
+import type { GatedCapabilityDefinition, ResearchSurfaceDefinition } from "./catalog";
+
+export function ResearchSurfaceCard({surface}:{surface:ResearchSurfaceDefinition}){
+ return <article className="flex min-h-64 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-5">
+  <SurfaceStatusBadge status={surface.status}/>
+  <h2 className="mt-2 text-lg font-semibold text-white">{surface.title}</h2>
+  <p className="mt-3 text-sm leading-6 text-zinc-400">{surface.detail}</p>
+  <dl className="mt-4 space-y-3 rounded-lg border border-white/5 bg-black/20 p-3 text-xs">
+   <Posture label="Purpose" value={surface.purpose}/>
+   <Posture label="Data posture" value={surface.dataPosture}/>
+   <Posture label="Authority posture" value={surface.authorityPosture}/>
+  </dl>
+  <Link href={surface.href} className="mt-auto pt-5 text-xs font-medium text-cyan-300">Open read-only surface →</Link>
+ </article>
+}
+
+export function GatedCapabilityCard({capability}:{capability:GatedCapabilityDefinition}){
+ return <article className="rounded-2xl border border-white/8 bg-[#0c0e13] p-4">
+  <SurfaceStatusBadge status="GATED"/>
+  <h3 className="mt-2 text-sm font-medium text-zinc-300">{capability.title}</h3>
+  <p className="mt-2 text-xs leading-5 text-zinc-500">{capability.detail}</p>
+ </article>
+}
+
+function Posture({label,value}:{label:string;value:string}){return <div><dt className="uppercase tracking-wider text-zinc-600">{label}</dt><dd className="mt-1 leading-5 text-zinc-400">{value}</dd></div>}
