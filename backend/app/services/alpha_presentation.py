@@ -1,4 +1,4 @@
-"""E38 read-only Alpha/Catalyst presentation and typed Discord alerts."""
+"""E38/E39 read-only Alpha/Catalyst presentation and typed Discord alerts."""
 from __future__ import annotations
 import json,os
 from pathlib import Path
@@ -52,10 +52,15 @@ def _save(path,state):
     path=Path(path); path.parent.mkdir(parents=True,exist_ok=True)
     tmp=path.with_suffix(".tmp"); tmp.write_text(json.dumps(state,sort_keys=True),encoding="utf-8"); os.replace(tmp,path)
 
-async def alert_new_alpha_events(*,sender=send_discord_alert,state_path=STATE_PATH,event_path=EVENT_PATH):
+def is_material(event):
+    types={"REGULATORY","MACRO"}
+    entities={"Bitcoin","Ethereum","Stablecoins","Crypto Assets","Digital Assets","Tokenized Securities","Market Structure","FOMC","Federal Funds Rate","Interest Rates","Inflation"}
+    return str(event.get("event_type") or "").upper() in types and bool(set(event.get("entities") or []) & entities) and not bool(event.get("stale"))
+
+async def alert_new_alpha_events(*,sender=send_discord_alert,state_path=STATE_PATH,event_path=EVENT_PATH,predicate=is_material):
     view=alpha_view(event_path=event_path); state=_load(state_path)
     delivered=set(state.get("delivered_event_ids") or [])
-    pending=[e for e in view["items"] if e["event_id"] not in delivered]
+    pending=[e for e in view["items"] if e["event_id"] not in delivered and predicate(e)]
     attempted=sent=0
     for event in reversed(pending):
         attempted+=1
