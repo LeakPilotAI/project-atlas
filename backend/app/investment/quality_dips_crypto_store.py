@@ -14,16 +14,27 @@ def observation_identity(record: dict[str, Any]) -> str:
 
 class CryptoProspectiveEvidenceStore:
     def __init__(self,path):
-        self.path=Path(path); self.records=[]; self._ids=set(); self.reload()
+        self.path=Path(path); self.records=[]; self._ids=set()
+        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0}
+        self.reload()
     def reload(self):
         self.records=[]; self._ids=set()
+        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0}
         if not self.path.exists(): return
         for line in self.path.read_text(encoding="utf-8").splitlines():
             if not line.strip(): continue
-            row=json.loads(line); oid=str(row["observation_id"])
-            if oid not in self._ids:
-                self.records.append(row); self._ids.add(oid)
+            try:
+                row=json.loads(line); oid=str(row["observation_id"])
+            except (json.JSONDecodeError,KeyError,TypeError,ValueError):
+                self.integrity["ok"]=False; self.integrity["malformed_lines"]+=1
+                continue
+            if oid in self._ids:
+                self.integrity["duplicate_lines"]+=1
+                continue
+            self.records.append(row); self._ids.add(oid)
     def append(self,record: dict[str,Any]) -> bool:
+        if not self.integrity["ok"]:
+            raise ValueError("EVIDENCE_STORE_INTEGRITY_FAILED")
         row=dict(record); oid=observation_identity(row)
         if oid in self._ids: return False
         row["observation_id"]=oid; self.path.parent.mkdir(parents=True,exist_ok=True)

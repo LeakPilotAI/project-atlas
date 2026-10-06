@@ -48,3 +48,12 @@ class ManualCryptoEvidenceIngestion:
 
     def observability(self):
         return {**self.counters,"read_only":True,"outcomes_inferred":False,"performance_inferred":False,"execution_authority":False,"paper_entry_authority":False,"strategy_mutation_authority":False,"threshold_mutation_authority":False,"promotion_authority":False,"live_capital_allowed":False}
+
+
+def invoke_operator_ingestion(service: ManualCryptoEvidenceIngestion, *, operator_intent: bool, **submission):
+    """Local operator-only invocation boundary; not an HTTP route."""
+    if operator_intent is not True:
+        return IngestionResult(False,False,False,("EXPLICIT_OPERATOR_INTENT_REQUIRED",))
+    if not service.store.integrity["ok"]:
+        return IngestionResult(False,False,False,("EVIDENCE_STORE_INTEGRITY_FAILED",))
+    return service.ingest(**submission)

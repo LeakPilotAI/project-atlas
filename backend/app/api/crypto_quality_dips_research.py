@@ -12,6 +12,8 @@ def evidence_readiness():
     result=evidence_summary(store.records)
     result["read_only"]=True
     result["record_count"]=len(store.records)
+    result["store_integrity"]={**store.integrity,"repair_performed":False}
+    result["ingestion"]={"mode":"MANUAL_OPERATOR_ONLY","http_mutation_endpoint":False,"autonomous_collection":False}
     return result
 
 OPERATOR_INGESTION_CONTRACT={
