@@ -98,6 +98,15 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/e28-challenger-workbench")
+async def e28_challenger_workbench_endpoint()->JSONResponse:
+    try:
+        from app.services.e28_challenger_workbench import e28_workbench
+        body=e28_workbench()
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS E28 PERPS SETUP V2 OUTCOME-BLIND CHALLENGER WORKBENCH","error":f"{type(e).__name__}: {str(e)[:240]}","production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
 @router.get("/e27-preregistration")
 async def e27_preregistration_endpoint()->JSONResponse:
     try:
