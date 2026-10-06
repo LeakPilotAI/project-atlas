@@ -4886,3 +4886,100 @@ NEXT CONTROLLED EXECUTION — EXECUTION 25
 
 SAFETY
 PAPER/research only. No broker orders, live capital, automatic real-money execution, strategy mutation, synthetic samples, historical rewrite, favorable backfill, or pooled cross-strategy performance claims.
+
+
+================================================================================
+EXECUTION 25 — V2 SETUP CAUSAL ATTRIBUTION — GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Decompose the negative perp_setup_auto_v2_resting_limit PAPER cohort without changing strategy.
+- Preserve execution-model/version boundaries so legacy evidence cannot be mistaken for current behavior.
+- Attribute recorded score/side, MFE/MAE, exit family, and stop-overshoot geometry.
+- Do not infer missing metadata or claim correlation proves causality.
+
+IMPLEMENTATION
+- New backend/app/services/v2_setup_attribution.py.
+- New GET /api/validation/v2-setup-attribution.
+- New tests/test_v2_setup_attribution.py.
+- Diagnostic groups execution-model+side, score+side, MFE, MAE and exit family.
+- SETUP_STOP overshoot is calculated only from recorded actual exit, initial stop and risk_price.
+- Explicit flags preserve unresolved causality, no backfill, no strategy action, no threshold/sizing/execution change, no promotion, no historical rewrite and no live-capital authority.
+
+EVIDENCE — 203 V2 SETUP PAPER CLOSES
+- Overall: -100.3485R total, -0.4943R expectancy, 0.3350 win rate.
+- UNKNOWN execution model | LONG: n=65, +0.0537R/trade.
+- UNKNOWN execution model | SHORT: n=43, -1.8082R/trade.
+- paper-exec-v2-conservative-gap-target | LONG: n=9, -0.5202R/trade.
+- paper-exec-v2-conservative-gap-target | SHORT: n=10, 0.0000R/trade.
+- current paper-exec-v2-conservative-gap-target+adaptive-exit-v1 | LONG:
+  n=37, -0.4608R/trade.
+- current paper-exec-v2-conservative-gap-target+adaptive-exit-v1 | SHORT:
+  n=39, -0.1116R/trade.
+Conclusion: the pooled historical SHORT result does not describe the current adaptive cohort.
+Do not disable/tune SHORT from the pooled result.
+
+RECORDED EXCURSION / EXIT EVIDENCE
+- MFE <0.25R: n=77, -1.4132R/trade.
+- MFE 0.25-0.49R: n=43, -0.5919R/trade.
+- MFE 0.50-0.99R: n=39, -0.3053R/trade.
+- MFE 1.00-1.79R: n=17, -1.9530R/trade despite 0.7059 win rate.
+- MFE >=1.80R: n=27, +2.9269R/trade.
+- MAE >=1.50R: n=17, -6.5015R/trade.
+- SETUP_STOP: n=74, -2.3744R/trade.
+- SETUP_TP1: n=25, +3.0089R/trade.
+
+STOP OVERSHOOT — RECORDED HISTORICAL GEOMETRY
+- All setup stops: n=74, median +0.1166R beyond initial stop, P90 +2.1915R,
+  average +1.2924R, max +25.0925R.
+- LONG setup stops: n=44, median +0.1101R, P90 +0.9218R, max +7.8107R.
+- SHORT setup stops: n=30, median +0.1241R, P90 +5.3874R, max +25.0925R.
+- Initial entry-to-stop geometry observed during E25 harvest was 1.0R across the V2 sample.
+- Resting fills averaged about 0.33R better than signal price for both sides in the harvested sample.
+Interpretation: historical stop-exit tails are material, especially SHORT, but the current diagnostic
+must still isolate them by execution-model/time before attributing the tail to current behavior.
+
+VALIDATION
+- Focused E25 + cohort + cross-strategy + checkpoint suite: 35 passed in 11.04s.
+- git diff --check GREEN.
+- Full Atlas regression: 1,211 passed, 0 failed, 2 known dependency warnings in 131.70s.
+- Known warnings remain Starlette/httpx TestClient deprecation and discord audioop deprecation.
+- Implementation commit: 8e4530535df892c5caa764c9e49026f00680859f.
+
+RUNTIME ACCEPTANCE
+- Supported Atlas-Stop.ps1 used; Docker Desktop / Genesis explicitly untouched.
+- Supported persistent ATLAS.bat launcher reached 3/3 GREEN.
+- Live /api/validation/v2-setup-attribution reconstructed 203 V2 closes from 1,145 finite
+  Day-Trading closes with 0 malformed records.
+- selection_execution_exit_not_causally_resolved=true.
+- unknown_metadata_backfilled=false.
+- strategy_action=null; threshold_change=null; sizing_change=null; execution_change=null.
+- promotion_allowed=false; historical_evidence_rewritten=false.
+- live_capital_allowed=false; automatic_real_money_execution=false.
+
+STATUS
+- Execution 25 GREEN.
+- No production strategy file or strategy behavior changed.
+- The strongest E25 conclusion is a boundary correction: legacy/UNKNOWN SHORT evidence is
+  dramatically worse than current adaptive SHORT evidence, so pooled side statistics must not
+  drive tuning.
+- Historical stop-overshoot tails remain a serious research target, not yet a proven current-model defect.
+
+NEXT CONTROLLED EXECUTION — EXECUTION 26
+1. Continue forward PAPER behavior unchanged.
+2. Attribute SETUP_STOP overshoot by execution-model version, side, time cohort, symbol and
+   volatility using only recorded fields.
+3. Quantify how much of V2 negative R is attributable to rare overshoot tails versus ordinary
+   <=1R/near-stop losses, without counterfactually rewriting fills.
+4. Separately analyze current adaptive LONG underperformance using pre-entry preserved features
+   (score, momentum, trend, volatility) and excursion path.
+5. Keep exploratory slices sample-size visible; do not promote tiny positive buckets.
+6. Do not backfill UNKNOWN execution models/regimes or relabel old trades.
+7. Any strategy change remains a later, separately versioned challenger requiring prospective
+   PAPER validation.
+8. Continue Quality Dips V1 and Prediction PAPER evidence untouched.
+
+SAFETY
+PAPER/research only. No broker orders, live capital, automatic real-money execution, strategy
+mutation, threshold/sizing changes, synthetic samples, historical rewrite, favorable backfill,
+or incompatible evidence pooling.
