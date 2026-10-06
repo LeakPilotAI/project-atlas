@@ -4,14 +4,15 @@ OVERVIEW=Path("frontend/src/app/research/surfaces/page.tsx")
 PRESENTATION=Path("frontend/src/app/research/surfaces/presentation.ts")
 BADGE=Path("frontend/src/app/components/SurfaceStatusBadge.tsx")
 CARDS=Path("frontend/src/app/research/surfaces/SurfaceCards.tsx")
+PRIMITIVES=Path("frontend/src/app/research/surfaces/ResearchPrimitives.tsx")
 
 def test_e80_authority_legend_is_accessible_and_static():
-    text=OVERVIEW.read_text(encoding="utf-8")+"\n"+PRESENTATION.read_text(encoding="utf-8")
+    text=OVERVIEW.read_text(encoding="utf-8")+"\n"+PRESENTATION.read_text(encoding="utf-8")+"\n"+PRIMITIVES.read_text(encoding="utf-8")
     assert 'aria-labelledby="authority-legend-title"' in text
     assert 'id="authority-legend-title"' in text
     assert ">Authority legend</h2>" in text
     assert "<dl" in text and "<dt" in text and "<dd" in text
-    assert "function Legend(" in text
+    assert "AuthorityLegendItem" in text
 
 def test_e80_legend_explains_existing_authority_semantics():
     text=OVERVIEW.read_text(encoding="utf-8")+"\n"+PRESENTATION.read_text(encoding="utf-8")
