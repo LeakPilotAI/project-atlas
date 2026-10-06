@@ -6779,3 +6779,113 @@ NEXT - EXECUTION 45
 
 SAFETY
 Research/context and operational observability only. No live orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, fabricated timestamps, historical evidence rewrite, arbitrary URL/body fetching, external-text instruction authority, or incompatible evidence pooling.
+
+================================================================================
+EXECUTION 45 - AGE-AWARE CURRENT CADENCE EVIDENCE - GREEN - 2026-10-06
+================================================================================
+
+OBJECTIVE
+- Preregister an age-aware cadence evidence policy before excluding legacy observations from current scheduler decisions.
+- Preserve the full historical E42 result while adding a separate current timestamped window.
+- Detect current-vs-historical cadence drift informationally without granting execution or strategy authority.
+
+IMPLEMENTATION
+- Added backend/app/services/e45_cadence_window.py.
+- Frozen policy before live E45 outcome inspection:
+  * min_current_observations = 30
+  * max_observation_age_hours = 24.0
+  * alpha_p95_ms_threshold = 50.0
+  * alpha_cycle_share_p95_threshold = 0.20
+  * drift_ratio_threshold = 1.50
+- Current-window evidence accepts timestamped observations no older than 24h; legacy untimestamped rows remain immutable and are excluded only from the current window.
+- >5 minute future timestamps and >24h stale timestamped observations are excluded and counted.
+- Drift compares current p95 alpha latency and alpha/cycle share with the preserved historical E42 baseline.
+- Drift alone is informational and cannot recommend scheduler decoupling; the frozen absolute E42 thresholds remain authoritative.
+- /api/validation/e42-alpha-governance now returns both historical cadence and current_cadence.
+- No strategy, sizing, threshold, PAPER-entry, promotion, or live-capital authority was changed.
+
+VALIDATION
+- Preregistered E45 policy tests: 5 passed.
+- Focused E42/E43/E44/E45 cadence/health suite: 13 passed.
+- git diff --check: clean.
+- Full Atlas regression after integration: 1,302 passed, 0 failed, 2 known dependency warnings in 133.93s.
+- Known warnings unchanged: discord audioop deprecation; Starlette/httpx TestClient deprecation.
+
+RUNTIME ACCEPTANCE
+- First post-PC-reboot detached startup did not become healthy inside the external 80-second poll window; no E45 evidence was accepted from that attempt.
+- Controlled Atlas launcher was then observed directly: Atlas containers were recreated, Postgres became healthy, venv imports passed, API started, API health passed, startup stabilization reached 3/3, dashboard opened, and launcher reported "Atlas is running".
+- The initial timeout was therefore treated as reboot/startup timing, not hidden or counted as GREEN by itself.
+
+FIRST LIVE E45 OUTCOME - INSPECTED ONLY AFTER POLICY FREEZE + TESTS + RUNTIME ACCEPTANCE
+Historical E42 cadence:
+- observations = 144
+- alpha_p95_ms = 15.71
+- alpha_cycle_share_p95 = 0.0840245628478468 (~8.40%)
+- evidence_ready = true
+- decouple_recommended = false
+
+Current E45 timestamped <=24h window:
+- current_observations = 87 (minimum 30)
+- legacy_untimestamped = 57, preserved and not rewritten
+- stale_timestamped = 0
+- future_timestamped = 0
+- alpha_p95_ms = 14.641
+- alpha_cycle_share_p95 = 0.07855281455599314 (~7.86%)
+- evidence_ready = true
+- threshold_breach = false
+- drift_alpha_ratio = 0.9319541693189051
+- drift_share_ratio = 0.9348791816773625
+- drift_flag = false
+- decouple_recommended = false
+
+DECISION
+- Current evidence independently matured at 87/30 observations.
+- Current cadence is below both frozen absolute split thresholds and shows no >1.5x drift versus historical cadence.
+- Retain the unified scheduler. Do not split Alpha onto a separate scheduler from current evidence.
+- No post-outcome retuning was performed.
+
+E29 PROSPECTIVE STRATEGY EVIDENCE
+- status = NOT_READY
+- membership_records = 0
+- baseline closed_trades = 0
+- challenger closed_trades = 0
+- promotion_allowed = false
+- production_strategy_modified = false
+- live_capital_allowed = false
+
+IMPLEMENTATION COMMIT
+- ed9d5e6dfddaf23077395188bb8f19b2000a43cd e45_age_aware_cadence_evidence
+
+VISUAL PROJECT STATUS AFTER E45
+[DONE] Core runtime recovery / PAPER safety / evidence preservation.
+[DONE] Perps decomposition + prospective challenger infrastructure.
+[ACTIVE] E29 forward strategy evidence: 0 baseline / 0 challenger closes; NOT_READY.
+[DONE] Alpha E31-E45 controlled intelligence, ingestion, fetch, extraction, presentation, delivery, observability, provenance, historical cadence, and age-aware current cadence stack.
+[DONE] Historical cadence maturity: 144/30; unified scheduler retained.
+[DONE] Current <=24h cadence maturity: 87/30; no threshold breach, no drift flag, unified scheduler retained.
+[ACTIVE] Continue passive cadence monitoring for future regime/runtime drift; no scheduler split currently justified.
+[TODO] Deterministic cross-source equivalent-claim/corroboration research with exact provenance and no semantic/execution authority.
+[GATED] Alpha strategy-selection use pending separately preregistered prospective evidence.
+[DONE] Prediction no-liquidity lifecycle truth + executable entry/exit depth eligibility.
+[GATED] Unattended Prediction PAPER opening pending prospective validation.
+[GATED] QUALITY_DIPS_PAPER_V1 pending genuine qualifying lifecycle evidence.
+[TODO] Broader frontend/operator UI redesign, including clearer cadence/current-window presentation.
+[DONE] Alpha typed Discord context alerts + durable dedup.
+[TODO] Full cross-lane Discord typed event pipeline/routing/cooldown/ack schema.
+[GATED] Additional venues/Kalshi until Hyperliquid prospective PAPER evidence is trustworthy.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+[GATED] Automated real-money execution and strategy promotion remain disabled.
+
+NEXT - EXECUTION 46
+1. Add deterministic, bounded equivalent-claim/corroboration research across governed Alpha sources without LLM/semantic execution authority.
+2. Preserve exact source/domain/trust/url provenance and require independent domains for corroboration.
+3. Define equivalence rules and acceptance tests before inspecting any resulting corroboration counts.
+4. Keep contradictory or merely related claims distinct; do not inflate corroboration.
+5. Improve read-only dashboard presentation of historical/current cadence maturity and source observation/fetch timestamps where useful.
+6. Continue genuine E29 forward evidence collection unchanged; no synthetic samples.
+7. Keep Alpha excluded from strategy selection/promotion.
+8. No strategy, sizing, PAPER-entry, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
+- After every GREEN execution, update the complete canonical roadmap append-only, refresh the visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap with the complete canonical file, and report completed-vs-remaining progress.
+- Never advance GREEN on blocked validation and never manufacture evidence/readiness.
