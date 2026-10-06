@@ -5202,3 +5202,110 @@ NEXT CONTROLLED EXECUTION - EXECUTION 27
 
 SAFETY
 PAPER/research only. No broker orders, live capital, automatic real-money execution, in-place strategy mutation, retrospective threshold promotion, synthetic samples, historical rewrite, favorable backfill, or incompatible evidence pooling.
+
+================================================================================
+EXECUTION 27 - PERPS SETUP V2 PROSPECTIVE HYPOTHESIS GATE - GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Convert E26 findings into falsifiable prospective research questions before any challenger is built.
+- Preserve the current adaptive LONG baseline unchanged.
+- Prevent retrospective E26 buckets from silently becoming production thresholds.
+- Keep this Perps Setup V2 lane separate from the older V6 RSI/extension/quality challenger framework.
+
+IMPLEMENTATION
+- New backend/app/services/e27_preregistration.py.
+- New GET /api/validation/e27-preregistration.
+- New tests/test_e27_preregistration.py.
+- Registry version: perp-setup-v2-e27-prereg-v1.
+- Baseline strategy: perp_setup_auto_v2_resting_limit.
+- Baseline execution model: paper-exec-v2-conservative-gap-target+adaptive-exit-v1.
+- Baseline side under investigation: LONG.
+- SHORT explicitly remains unchanged.
+- No production strategy file changed.
+
+PRE-REGISTERED HYPOTHESES
+H1_selection_quality
+- Question: can pre-entry score/momentum/trend/volatility reduce weak LONG entries without using post-entry path information?
+- Candidate thresholds remain NULL.
+- Retrospective E26 cutoffs are not promoted.
+
+H2_early_adverse_path
+- Question: are current adaptive LONG losses primarily explained by entry selection leading to early adverse movement rather than adaptive protective exits?
+- Selection fields remain pre-entry only.
+- MFE, MAE, exit reason and stop overshoot are outcome diagnostics only and have no selection authority.
+- Candidate thresholds remain NULL.
+
+H3_execution_tail_independence
+- Question: does any future selection challenger remain beneficial after execution quality and stop-tail outcomes are measured separately?
+- Legacy/UNKNOWN execution evidence cannot be pooled as if it were the current model.
+- Candidate thresholds remain NULL.
+
+PRE-REGISTERED PROSPECTIVE ACCEPTANCE GATE
+Before any future challenger can be considered successful, all conditions are required:
+- minimum 60 genuine forward closed trades per arm;
+- minimum 8 distinct symbols per arm;
+- minimum 14 forward calendar days;
+- no single symbol may exceed 30% of an arm;
+- challenger expectancy after recorded costs must be positive;
+- challenger expectancy must exceed the concurrent frozen baseline;
+- challenger max drawdown must not be worse than baseline;
+- challenger worst trade must be >= -3.0R;
+- setup-stop rate and stop-tail behavior must not materially worsen;
+- execution quality must be reported separately;
+- symbol and time diversity are required.
+Metrics include net R, after-cost expectancy, win rate, max drawdown, worst trade, MFE, MAE, setup-stop rate, stop overshoot and execution slippage.
+
+CHALLENGER DEFINITION GATE
+- challenger_created=false.
+- candidate_thresholds_defined=false.
+- retrospective_optimization_allowed=false.
+- Any challenger requires a separate versioned execution.
+- Any challenger must run concurrently against the frozen baseline.
+- E27 intentionally does not choose cutoffs from E26 retrospective slices.
+
+EVIDENCE INTEGRITY
+- Forward-only evidence after challenger freeze.
+- Membership frozen at PAPER open.
+- Pre-entry fields only may control selection.
+- Post-entry fields cannot control selection.
+- UNKNOWN metadata is not backfilled.
+- Historical evidence is not rewritten.
+- Legacy execution models are not poolable with current-model evidence.
+- Tiny positive buckets are not promotable.
+
+VALIDATION
+- Focused E27 + E26 + E25 + cohort suite: 13 passed in 0.41s.
+- git diff --check GREEN.
+- Full Atlas regression: 1,218 passed, 0 failed, 2 known dependency warnings in 129.85s.
+- Known warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+- E27 implementation commit: 3deaccb.
+
+RUNTIME ACCEPTANCE
+- ATLAS.bat performed its controlled Atlas restart; Docker Desktop / Genesis remained outside Atlas stop ownership.
+- Direct launcher trace reached API healthy and startup stabilization 3/3.
+- Live health after stabilization: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- Live E27 registry: perp-setup-v2-e27-prereg-v1.
+- Live gate: minimum 60 closes/arm, 8 symbols/arm, 14 days.
+- candidate_thresholds_defined=false.
+- production_strategy_modified=false.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+
+STATUS
+- Execution 27 GREEN.
+- E26 evidence was strong enough to justify a formal prospective research program, but NOT strong enough to justify selecting a retrospective threshold or changing production behavior.
+- The next step is controlled challenger-definition research, not live tuning.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 28
+1. Build a research-only challenger-definition workbench for the E27 feature families.
+2. The workbench may measure feature distributions/interactions and data coverage, but must not choose a winner by maximizing historical PnL.
+3. Define a deterministic, auditable method for deriving candidate selection rules without post-entry leakage; any chosen rule must receive a new frozen version.
+4. Require explicit missing-data behavior and prove membership can be decided from the PAPER open snapshot alone.
+5. Before prospective collection begins, freeze the selected challenger definition and a start timestamp/marker.
+6. Run the frozen baseline and challenger concurrently in PAPER; do not replace the baseline.
+7. The E27 acceptance gate remains immutable for that prospective cohort: 60 closes/arm, 8 symbols/arm, 14 days plus all performance/tail/execution requirements.
+8. Keep SHORT, Quality Dips, Prediction, existing V6 challenger research, Internet/Alpha roadmap, UI roadmap, Discord rebuild roadmap and future venue work unchanged.
+
+SAFETY
+PAPER/research only. No broker orders, live capital, automatic real-money execution, in-place strategy mutation, retrospective threshold promotion, post-entry leakage, synthetic samples, historical rewrite, favorable backfill, or incompatible evidence pooling.
