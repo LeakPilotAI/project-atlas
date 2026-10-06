@@ -8036,3 +8036,58 @@ NEXT - EXECUTION 64
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
+
+
+EXECUTION 64 - MANUAL CRYPTO PROSPECTIVE EVIDENCE INGESTION - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added ManualCryptoEvidenceIngestion as an internal/operator-only service; no HTTP mutation endpoint or autonomous feed was added.
+- Explicit universe qualification is required before normalization/persistence: symbol, allowlisted=true, liquidity_qualified=true.
+- E61 normalization is enforced with caller-supplied observation time, provenance/source, and max-age. Missing/stale/future/invalid evidence fails closed before persistence.
+- Valid prospective records persist through the E62 append-safe store. Deterministic duplicates are accepted as idempotent duplicates but are not written twice.
+- Added bounded ingestion observability: attempted/accepted/persisted/duplicate/rejected plus read_only=true, outcomes_inferred=false, performance_inferred=false and all trading authority false.
+- No score, dip-state inference, outcome label, performance calculation, scheduler, Discord alert, PAPER entry, strategy mutation, threshold mutation, promotion or live-capital path was added.
+
+VALIDATION
+- Focused E64/E63/E62/E61/E60/Stock V3 compatibility: 21 passed, 0 failed, 2 known warnings, exit 0.
+- Full regression after safety filter recovered: 1,370 passed, 0 failed, 2 known warnings in 121.33s, exit 0.
+- git diff --check clean.
+- Tests prove valid manual ingestion persists once, duplicate submission is idempotent, and unqualified/stale evidence cannot persist.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- b42c451 e64 manual crypto evidence ingestion
+
+RUNTIME ACCEPTANCE
+- Atlas restart launched successfully after implementation push.
+- Fresh Python processes observed at 2026-10-06 07:04:21 and 07:04:22 local time (PIDs 10492 and 26856).
+
+RESIDUAL DISCORD INVENTORY
+- Re-inventory confirms direct trading-adjacent send paths remain in day_trade_assistant, paper_try_symbol, and residual perp_micro_coach and stay GATED for dedicated lifecycle contracts.
+- diagnostics remains operator/manual compatibility. Already-migrated modules may still import send_discord_alert only as the final typed-adapter transport.
+- No residual path was bulk-migrated in E64.
+
+DECISION
+- E64 GREEN. Genuine operator-supplied prospective crypto research evidence can now be validated and append-persisted manually, while autonomous collection, scoring, alerts and trading remain inactive.
+
+VISUAL STATUS AFTER E64
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E63 Crypto Quality Dips research boundary, normalization, store, and GET-only readiness API.
+[DONE] E64 internal manual/operator-only validated prospective evidence ingestion + zero-authority telemetry.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] day_trade_assistant, paper_try_symbol, residual perp_micro_coach pending lifecycle contracts.
+[GATED] Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+NEXT - EXECUTION 65
+1. Add a bounded operator-facing command/service boundary for invoking E64 manual ingestion without exposing a public HTTP mutation endpoint; require explicit operator intent and preserve fail-closed validation.
+2. Add read-only ingestion observability to the existing Crypto Quality Dips research API only if it exposes counters/status and zero-authority metadata without raw evidence or mutation controls.
+3. Prove operator invocation cannot bypass allowlist/liquidity/freshness/provenance validation and cannot touch Stock Quality Dips V3/PAPER/execution state.
+4. Define append-log integrity checks for malformed/corrupt prospective evidence lines; fail closed and report bounded integrity status without repairing evidence silently.
+5. Keep residual Discord lifecycle paths gated; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
