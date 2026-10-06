@@ -5795,3 +5795,92 @@ NEXT CONTROLLED EXECUTION - EXECUTION 33
 
 SAFETY
 Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, synthetic events, historical rewrite, or incompatible evidence pooling.
+
+================================================================================
+EXECUTION 33 - BOUNDED GOVERNED ALPHA FETCH ADAPTERS - GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Add the first bounded real public-source fetch adapters on top of E31/E32.
+- Keep fetch success separate from intelligence-event truth.
+- Enforce strict network/provenance/resource boundaries before broader Alpha ingestion.
+- Perform a bounded live acceptance without manufacturing events.
+
+IMPLEMENTATION
+- New backend/app/services/alpha_fetch.py.
+- New tests/test_alpha_fetch.py.
+- No autonomous fetch worker was added to Atlas startup.
+- No parser currently promotes fetched pages into normalized events.
+
+FROZEN FETCH TARGETS
+- Federal Reserve press releases: www.federalreserve.gov.
+- U.S. SEC press releases: www.sec.gov.
+- Hyperliquid official documentation: hyperliquid.gitbook.io.
+- Fetch URL must exactly equal the frozen target for its source ID.
+- Final redirect hostname must remain the governed source domain.
+- Open-ended crawling is not permitted.
+
+NETWORK BOUNDARIES
+- Request timeout: 8 seconds.
+- Maximum accepted response body: 512,000 bytes.
+- Redirects followed only if final hostname remains governed.
+- Allowed content types: text/html, application/xml, text/xml, application/rss+xml, application/atom+xml, application/json.
+- User agent identifies Project Atlas research.
+- Successful source cooldown: 300 seconds.
+- Fetch failures/rejections are telemetry, not intelligence truth.
+
+FETCH TELEMETRY
+- Append-only telemetry path: backend/data/alpha_fetch_telemetry.jsonl.
+- Records source ID, URL, finish time, outcome, HTTP status, bytes, content type, latency, parse result, rejection reason and execution_authority=false.
+- Successful body is represented by SHA-256 in telemetry rather than being treated as an instruction.
+- HTTP success currently records parse_result=NO_SUPPORTED_CLAIM.
+- No claim parser means no event is created merely because a page was fetched successfully.
+
+SECURITY / INERT CONTENT
+- Fixture tests include instruction-like text requesting live orders and threshold changes.
+- It remains fetched content only; no event or execution action is produced.
+- Cross-domain redirects are rejected.
+- Oversized responses and non-allowlisted content types are rejected.
+- Cooldown prevents repeated network calls inside the governed interval.
+
+VALIDATION
+- E33/E32/E31 focused suite: 25 passed, 0 failed.
+- Full Atlas regression: 1,255 passed, 0 failed, 2 known dependency warnings in 128.20s.
+- Known warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+- E33 implementation commit: e0618df.
+
+BOUNDED LIVE FETCH ACCEPTANCE
+- Federal Reserve governed target: HTTP 200, text/html, 85,267 bytes, ~502.94 ms, FETCHED, NO_SUPPORTED_CLAIM.
+- Hyperliquid governed target: HTTP 200, text/html, 385,729 bytes, ~533.41 ms, FETCHED, NO_SUPPORTED_CLAIM.
+- Both remained on governed domains and under the 512 KB cap.
+- events_created=0.
+- execution_authority=false.
+- Live acceptance therefore proves bounded retrieval, not catalyst truth.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed normally.
+- API healthy on first launcher health attempt and startup stabilization completed.
+- Live health: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- E32 event store remains raw_records=0, normalized_records=0 because E33 live fetches did not invent supported claims.
+- E29 remains NOT_READY with baseline closes=0 and challenger closes=0.
+
+STATUS
+- Execution 33 GREEN.
+- Atlas can now retrieve a small frozen set of governed public sources under strict network controls.
+- Fetch telemetry and intelligence truth remain explicitly separated.
+- No Alpha data affects Perps selection or execution.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 34
+1. Build source-specific deterministic claim extractors for a very small subset of governed sources, beginning with structured/semistructured official announcement listings.
+2. Parse only clearly attributable headline/link/publication-time records; do not use free-form LLM interpretation to invent event meaning.
+3. Add strict symbol/entity linking rules with UNKNOWN/empty allowed rather than guessing.
+4. Classify event type only from explicit deterministic patterns; unsupported items remain unpromoted fetch context.
+5. Route accepted candidates through E31 normalization and E32 append-only ingest.
+6. Preserve fetch telemetry separately from normalized events.
+7. Add fixture tests for malformed HTML, instruction injection, ambiguous symbols, duplicate announcements, stale announcements and source-domain mismatch.
+8. Perform bounded live acceptance; report exactly what was accepted/rejected and why.
+9. Keep feed read-only and disconnected from E28/E29 selection/execution.
+10. Keep E29 prospective collection running unchanged.
+
+SAFETY
+Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, synthetic events, free-form claim invention, historical rewrite, or incompatible evidence pooling.
