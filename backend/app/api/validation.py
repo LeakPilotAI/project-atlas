@@ -98,6 +98,25 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/e32-alpha-feed")
+async def e32_alpha_feed_endpoint(limit:int=100, include_stale:bool=True)->JSONResponse:
+    try:
+        from app.services.alpha_ingestion import feed
+        body=feed(limit=limit,include_stale=include_stale)
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+@router.get("/e32-alpha-store")
+async def e32_alpha_store_endpoint()->JSONResponse:
+    try:
+        from app.services.alpha_ingestion import store_status
+        body={"ok":True,**store_status()}
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
 @router.get("/e31-alpha-contract")
 async def e31_alpha_contract_endpoint()->JSONResponse:
     try:
