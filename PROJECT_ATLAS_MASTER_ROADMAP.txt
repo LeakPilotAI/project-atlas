@@ -7270,3 +7270,69 @@ NEXT - EXECUTION 51
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
 - After every GREEN execution, update the complete canonical roadmap append-only, refresh visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap, and report completed-vs-remaining progress.
 - Never advance GREEN on blocked validation and never manufacture evidence/readiness.
+
+
+================================================================================
+EXECUTION 51 - DISCORD INVENTORY + READ-ONLY DELIVERY OBSERVABILITY - GREEN - 2026-10-06
+================================================================================
+
+IMPLEMENTATION
+- Inventoried remaining direct Discord producers after E50.
+- Added bounded in-memory typed delivery observability to E48 adapter paths: route identity, lane, event type, severity, eligible/attempted/acknowledged/deduped/retryable/destination only.
+- Observability retains at most 200 records and intentionally stores no title, body, description, raw external text, trading payload, or control input.
+- Observability is explicitly read-only with execution, PAPER-entry, strategy mutation, threshold mutation, promotion, and live-capital authority false.
+- Remaining auxiliary producers were classified but not bulk-migrated: scheduled heartbeat/command-center/daily recap/Robinhood brief have independent date/session timing; accumulation/BTC/quality-dip/auto-ladder paths have Redis/durable state and creation-side semantics requiring lane-specific compatibility work.
+- No auxiliary producer behavior was changed in E51.
+
+VALIDATION
+- Focused typed observability + E48/E49/E50 producer compatibility gate: 34 passed, 0 failed.
+- Tests prove hostile text is forwarded only as inert display data and is absent from observability records.
+- Tests prove failed delivery is observable as retryable without gaining authority.
+- Tests prove retention is bounded to the latest 200 observations.
+- git diff --check clean apart from normal Windows LF/CRLF notice.
+- Full Atlas regression: 1,328 passed, 0 failed, 2 known dependency warnings in 143.56s.
+- Known warnings unchanged: discord audioop deprecation; Starlette/httpx TestClient deprecation.
+
+IMPLEMENTATION COMMIT
+- aa695b0 e51_discord_observability_inventory
+
+RUNTIME ACCEPTANCE
+- Controlled Atlas stop completed and explicitly left Docker Desktop/Genesis untouched.
+- Atlas restart launched from ATLAS.bat.
+- Post-restart process check confirmed fresh Python runtime processes beginning at approximately 03:04-03:05 local time.
+- No synthetic E29 or Alpha evidence was created.
+
+DECISION
+- Execution 51 GREEN.
+- Read-only typed delivery observability is proven for migrated adapter paths without adding a control surface or retaining untrusted message text.
+- Ambiguous auxiliary producers remain intentionally unmigrated until their lane-specific frequency/state contracts are explicit.
+
+VISUAL PROJECT STATUS AFTER E51
+[DONE] Core runtime recovery / PAPER safety / evidence preservation.
+[DONE] Perps decomposition + prospective challenger infrastructure.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[DONE] Alpha E31-E47 controlled intelligence through read-only operator UI.
+[DONE] E48 typed Discord event/routing/ack/retry foundation.
+[DONE] E49 Alpha/Catalyst + Prediction eligible typed migration.
+[DONE] E50 primary Perp/System typed migration.
+[DONE] E51 bounded payload-free read-only typed delivery observability + remaining-producer inventory.
+[ACTIVE] Scheduled summary/heartbeat Discord compatibility remains lane-specific work.
+[ACTIVE] Accumulation/quality-dip Discord compatibility remains gated by durable Redis/state semantics.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[GATED] Alpha strategy-selection use pending separate prospective evidence.
+[GATED] Unattended Prediction PAPER opening pending prospective validation.
+[TODO] Broader frontend/operator UI redesign.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+[GATED] Automated real-money execution and strategy promotion remain disabled.
+
+NEXT - EXECUTION 52
+1. Define a typed SYSTEM summary contract for scheduled heartbeat, Command Center, and daily PAPER recap notifications while preserving each service's existing once-per-window/date behavior exactly.
+2. Migrate only those bounded scheduled summary producers; keep Robinhood/accumulation/quality-dip lanes separate until their domain-specific contracts are explicit.
+3. Add deterministic tests proving typed migration cannot increase scheduled delivery frequency and failed sends do not create false success claims.
+4. Expose delivery observability through a read-only operator/API surface only if existing API architecture supports it without mutation endpoints.
+5. Continue genuine E29 and Alpha evidence unchanged; no synthetic samples and no threshold changes from observed outcomes.
+6. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
+- After every GREEN execution, update the complete canonical roadmap append-only, refresh visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap, and report completed-vs-remaining progress.
+- Never advance GREEN on blocked validation and never manufacture evidence/readiness.
