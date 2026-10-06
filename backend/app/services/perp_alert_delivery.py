@@ -243,6 +243,11 @@ class PerpAlertDeliveryService:
             finally:
                 self.last_step_timings_ms["alpha_context"] = round((time.perf_counter() - step_started) * 1000.0, 3)
             self.last_cycle_elapsed_ms = round((time.perf_counter() - cycle_started) * 1000.0, 3)
+            try:
+                from app.services.e43_cadence_store import append_observation
+                append_observation(self.last_step_timings_ms.get("alpha_context",0.0),self.last_cycle_elapsed_ms)
+            except Exception as exc:
+                log.warning("Alpha cadence observation append failed",error=f"{type(exc).__name__}: {str(exc)[:180]}")
             await asyncio.sleep(self.interval_seconds)
 
 

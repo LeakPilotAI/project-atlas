@@ -122,8 +122,9 @@ async def e42_alpha_governance_endpoint():
     from app.services.e42_alpha_policy import decision
     from app.services.perp_alert_delivery import perp_alert_delivery_service
     view=alpha_view(); runtime=perp_alert_delivery_service.reconciliation_status()
-    obs=[{"alpha_ms":runtime.get("last_step_timings_ms",{}).get("alpha_context",0),"cycle_ms":runtime.get("last_cycle_elapsed_ms",0)}]
-    return _json_http({"ok":True,"delivery":delivery_status(),"history":delivery_history(limit=10),"source_health":{k:source_health(v) for k,v in view.get("sources",{}).items()},"cadence":decision(obs),"execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False})
+    from app.services.e43_cadence_store import history as cadence_history
+    ch=cadence_history(limit=240)
+    return _json_http({"ok":True,"delivery":delivery_status(),"history":delivery_history(limit=10),"source_health":{k:source_health(v) for k,v in view.get("sources",{}).items()},"cadence":decision(ch["rows"]),"cadence_history":{"valid_count":ch["valid_count"],"invalid_count":ch["invalid_count"],"integrity_ok":ch["integrity_ok"],"retention_limit":ch["retention_limit"]},"execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False})
 
 @router.get("/e41-alpha-delivery-history")
 async def e41_alpha_delivery_history_endpoint(limit: int = 25):
