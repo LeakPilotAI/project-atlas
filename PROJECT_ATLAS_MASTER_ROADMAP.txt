@@ -5407,3 +5407,106 @@ NEXT CONTROLLED EXECUTION - EXECUTION 29
 
 SAFETY
 PAPER/research only. No broker orders, live capital, automatic real-money execution, in-place baseline mutation, retrospective threshold tuning, post-entry leakage, synthetic samples, historical rewrite, favorable backfill, or incompatible evidence pooling.
+
+================================================================================
+EXECUTION 29 - APPEND-ONLY FORWARD BASELINE VS CHALLENGER SCORECARD - GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Start trustworthy prospective evidence collection after the E28 freeze boundary.
+- Classify each genuine post-freeze current-model LONG PAPER open exactly once from its immutable open snapshot.
+- Keep baseline and challenger membership independent of later outcomes.
+- Prevent lucky small samples from triggering early promotion.
+
+IMPLEMENTATION
+- New backend/app/services/e29_forward_scorecard.py.
+- New GET /api/validation/e29-forward-scorecard.
+- New tests/test_e29_forward_scorecard.py.
+- Scorecard version: perp-setup-v2-e29-forward-scorecard-v1.
+- Challenger version remains perp-setup-v2-long-selection-v1.
+- E28 thresholds are now hard-frozen constants in code:
+  momentum_pct >= 0.3543
+  trend_pct >= 0.3979
+- E28 derivation still verifies frozen_thresholds_match_derivation=true.
+- Threshold changes now require an explicit new code/version boundary rather than silent historical re-derivation.
+
+APPEND-ONLY MEMBERSHIP
+- Durable membership ledger: backend/data/e29_perps_challenger_membership.jsonl.
+- Eligible membership requires a PAPER open at/after 2026-10-06T03:28:53.4195759Z.
+- Strategy must be perp_setup_auto_v2_resting_limit.
+- Side must be LONG.
+- Execution model must be paper-exec-v2-conservative-gap-target+adaptive-exit-v1.
+- Every eligible open is a baseline member.
+- Challenger membership is decided only from the frozen open snapshot and frozen E28 thresholds.
+- Existing trade_id membership is never rewritten.
+- Close/PnL/MFE/MAE/exit information cannot reclassify membership.
+- Pre-freeze history cannot enter the ledger as prospective evidence.
+- Test proves a later close with poisoned feature values cannot rewrite an already-frozen challenger membership.
+
+FORWARD SCORECARD
+Separate baseline and challenger metrics:
+- closed trade count;
+- net PnL R;
+- expectancy after recorded costs;
+- win rate;
+- max drawdown R;
+- worst trade R;
+- average MFE R;
+- average MAE R;
+- setup-stop rate;
+- average stop overshoot R;
+- average recorded execution slippage bps;
+- distinct symbols;
+- maximum single-symbol share;
+- forward calendar days.
+
+READINESS / PROMOTION SAFETY
+- Status is NOT_READY until every minimum evidence gate is satisfied.
+- Minimums remain 60 closed trades/arm, 8 symbols/arm, 14 days and <=30% single-symbol concentration.
+- Performance gates are not treated as passable before evidence readiness.
+- Test injects a +100R lucky challenger close and confirms status remains NOT_READY and promotion_allowed=false.
+- promotion_allowed remains false in E29; this execution measures evidence and does not promote strategy behavior.
+
+VALIDATION
+- Focused E29/E28/E27/E26/E25 suite: 18 passed after immutable-threshold hardening.
+- git diff --check GREEN.
+- Full Atlas regression: 1,226 passed, 0 failed, 2 known dependency warnings in 122.11s.
+- Known warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+- E29 implementation commit: 3131be8.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed.
+- API healthy and startup stabilization reached 3/3.
+- Live health: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- Live scorecard version: perp-setup-v2-e29-forward-scorecard-v1.
+- Live state: NOT_READY.
+- Live membership records: 0.
+- Live newly-added records: 0.
+- Live baseline closes: 0.
+- Live challenger closes: 0.
+- This zero state is expected because no qualifying post-freeze opens existed at acceptance time.
+- No historical records were backfilled to manufacture activity.
+- promotion_allowed=false.
+- historical_rows_count_as_prospective=false.
+- membership_classified_from_close=false.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+
+STATUS
+- Execution 29 GREEN.
+- Atlas now has a clean prospective evidence boundary and durable arm membership.
+- Challenger has zero prospective evidence at acceptance and must earn every sample forward.
+- Baseline behavior remains unchanged.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 30
+1. Integrate E29 forward evidence maturity into operator surfaces without changing trading behavior.
+2. Add a concise Perps challenger evidence card to the dashboard showing NOT_READY/READY state, baseline/challenger sample progress, days, symbol diversity, expectancy/drawdown/tail metrics and immutable challenger version/freeze boundary.
+3. Add typed Discord evidence-maturity alerts only for meaningful state transitions/milestones; do not spam per tick or imply profitability.
+4. Ensure UI/Discord read the same E29 source and cannot mutate membership, thresholds or strategy.
+5. Keep the E27 acceptance gate unchanged and continue prospective PAPER accumulation.
+6. If no genuine forward samples exist yet, truthfully display 0 rather than using historical substitutes.
+7. Keep SHORT, Quality Dips, Prediction, older V6 research, Internet/Alpha and future venue work unchanged.
+8. No challenger promotion until a later controlled execution evaluates a mature forward cohort against every pre-registered gate.
+
+SAFETY
+PAPER/research only. No broker orders, live capital, automatic real-money execution, baseline mutation, threshold retuning, post-entry membership leakage, synthetic samples, historical backfill, historical rewrite, or incompatible evidence pooling.
