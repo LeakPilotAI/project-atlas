@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { SurfaceStatusBadge, type SurfaceStatus } from "@/app/components/SurfaceStatusBadge";
 
-const surfaces: ReadonlyArray<{title:string;status:SurfaceStatus;href:string;detail:string;boundary:string}>=[
- {title:"Alpha / Forward Evidence",status:"ACTIVE_EVIDENCE",href:"/research",detail:"Prospective challenger evidence, diversity, maturity, and confirmation diagnostics.",boundary:"Human review only · production promotion gated"},
- {title:"Crypto Quality Dips",status:"RESEARCH_ONLY",href:"/",detail:"Public-contract evidence readiness, chain context, freshness, and operator attention.",boundary:"Authority locked · no scoring, PAPER, execution, or live capital"},
- {title:"Command Center Operations",status:"OPERATIONAL_VIEW",href:"/",detail:"Atlas runtime and operator-facing system state, including the bounded Crypto Quality Dips panel.",boundary:"Observation and navigation do not grant trading authority"},
+const surfaces: ReadonlyArray<{title:string;status:SurfaceStatus;href:string;detail:string;purpose:string;dataPosture:string;authorityPosture:string}>=[
+ {title:"Alpha / Forward Evidence",status:"ACTIVE_EVIDENCE",href:"/research",detail:"Prospective challenger evidence, diversity, maturity, and confirmation diagnostics.",purpose:"Evaluate genuine forward challenger evidence for human review.",dataPosture:"Prospective evidence · accumulated over time · no synthetic acceleration.",authorityPosture:"Human review only · production promotion gated · strategy selection remains gated."},
+ {title:"Crypto Quality Dips",status:"RESEARCH_ONLY",href:"/",detail:"Public-contract evidence readiness, chain context, freshness, and operator attention.",purpose:"Present bounded Crypto Quality Dips evidence readiness and integrity context.",dataPosture:"Frozen public read-only contract · fail-closed consumer · no store internals.",authorityPosture:"Authority locked · no scoring, PAPER, execution, or live capital · repair authority unavailable."},
+ {title:"Command Center Operations",status:"OPERATIONAL_VIEW",href:"/",detail:"Atlas runtime and operator-facing system state, including the bounded Crypto Quality Dips panel.",purpose:"Provide operator visibility into Atlas runtime and bounded research status.",dataPosture:"Operational observation · existing runtime feeds only · no authority inferred from display.",authorityPosture:"Watch-only visibility · navigation and observation do not grant trading authority."},
 ];
 
 export default function ResearchSurfacesPage(){
@@ -22,7 +22,11 @@ export default function ResearchSurfacesPage(){
     <SurfaceStatusBadge status={surface.status}/>
     <h2 className="mt-2 text-lg font-semibold text-white">{surface.title}</h2>
     <p className="mt-3 text-sm leading-6 text-zinc-400">{surface.detail}</p>
-    <div className="mt-4 rounded-lg border border-white/5 bg-black/20 p-3 text-xs text-zinc-500">{surface.boundary}</div>
+    <dl className="mt-4 space-y-3 rounded-lg border border-white/5 bg-black/20 p-3 text-xs">
+     <Posture label="Purpose" value={surface.purpose}/>
+     <Posture label="Data posture" value={surface.dataPosture}/>
+     <Posture label="Authority posture" value={surface.authorityPosture}/>
+    </dl>
     <Link href={surface.href} className="mt-auto pt-5 text-xs font-medium text-cyan-300">Open read-only surface →</Link>
    </article>)}
   </section>
@@ -37,4 +41,5 @@ export default function ResearchSurfacesPage(){
   </section>
  </main></div>
 }
+function Posture({label,value}:{label:string;value:string}){return <div><dt className="uppercase tracking-wider text-zinc-600">{label}</dt><dd className="mt-1 leading-5 text-zinc-400">{value}</dd></div>}
 function State({label,value}:{label:string;value:string}){return <div className="rounded-lg border border-white/5 px-3 py-3"><p className="text-zinc-500">{label}</p><p className="mt-1 text-zinc-300">{value}</p></div>}
