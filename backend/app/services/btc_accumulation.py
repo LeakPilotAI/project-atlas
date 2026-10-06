@@ -14,6 +14,7 @@ from typing import List, Optional, Tuple
 import structlog
 
 from app.core.config import get_settings
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
 log = structlog.get_logger(__name__)
 
@@ -217,16 +218,9 @@ class BtcAccumulationService:
             f"You place every order. Atlas does not execute."
         )
         try:
-            ok = await send_discord_alert(
-                symbol="BTC",
-                title=title,
-                description=desc,
-                price=price,
-                severity="HIGH" if kind == "HIT" else "MEDIUM",
-                opportunity=80 if kind == "HIT" else 60,
-                confidence=75,
-                risk=40,
-            )
+            payload = {"symbol": "BTC", "title": title, "description": desc, "severity": "HIGH" if kind == "HIT" else "MEDIUM"}
+            typed = legacy_payload_event(lane="SYSTEM", event_type="SESSION", identity=f"btc-accum:{int(round(level))}:{kind}", payload=payload, provenance=["btc-accumulation"], material=True)
+            ok = bool((await deliver_legacy_payload(typed, sender=send_discord_alert))["acknowledged"])
         except Exception as e:
             log.warning("BTC Discord failed", kind=kind, level=level, error=str(e))
             return False

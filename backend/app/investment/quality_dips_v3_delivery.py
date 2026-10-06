@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Awaitable, Callable
 
 from app.alerts.discord import send_discord_alert
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 from app.investment.quality_dips_v3_state import QualityDipsV3StateStore, quality_dips_v3_state_store
 
 Sender = Callable[..., Awaitable[bool]]
@@ -31,15 +32,14 @@ async def deliver_v3_events(
         symbol = str(event.get("symbol") or "").upper()
         message = str(event.get("message") or "")
         try:
-            ok = bool(await sender(
-                symbol=symbol,
-                title=f"Atlas Quality Dips V3 · {event.get('event_type')}",
-                description=message,
-                severity="HIGH" if event.get("event_type") == "ENTRY_LEVEL_REACHED" else "MEDIUM",
-                opportunity=80,
-                confidence=75,
-                risk=35,
-            ))
+            payload = {
+                "symbol": symbol,
+                "title": f"Atlas Quality Dips V3 · {event.get('event_type')}",
+                "description": message,
+                "severity": "HIGH" if event.get("event_type") == "ENTRY_LEVEL_REACHED" else "MEDIUM",
+            }
+            typed = legacy_payload_event(lane="SYSTEM", event_type="SESSION", identity=f"quality-dips-v3:{key}", payload=payload, provenance=[key], material=True)
+            ok = bool((await deliver_legacy_payload(typed, sender=sender))["acknowledged"])
         except Exception:
             ok = False
 
