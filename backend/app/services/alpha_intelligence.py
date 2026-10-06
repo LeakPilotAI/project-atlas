@@ -68,13 +68,14 @@ def normalize_event(raw:dict[str,Any],source:SourceRecord,*,now:datetime|None=No
     return IntelligenceEvent(eid,source.source_id,source.source_class,source.trust_tier,url,host,retrieved.isoformat(),published.isoformat() if published else None,title,summary,event_type,symbols,entities,fp,stale,rumor,False,0)
 
 def annotate_context(events:Iterable[IntelligenceEvent])->list[IntelligenceEvent]:
+    from app.services.e46_corroboration import corroborators_for
     rows=list(events); out=[]
     for e in rows:
-        corroborators=[x for x in rows if x.event_id!=e.event_id and x.content_fingerprint==e.content_fingerprint and x.domain!=e.domain]
+        corroborators=corroborators_for(e,rows)
         related=[x for x in rows if x.event_id!=e.event_id and x.event_type==e.event_type and set(x.symbols)&set(e.symbols)]
         contradiction=any(_is_contradiction(e,x) for x in related)
-        data=asdict(e); data["corroboration_count"]=len({x.domain for x in corroborators}); data["contradiction"]=contradiction
-        data["corroborators"]=tuple({"source_id":x.source_id,"domain":x.domain,"trust_tier":x.trust_tier,"url":x.url} for x in sorted(corroborators,key=lambda z:(z.source_id,z.url)))
+        data=asdict(e); data["corroboration_count"]=len(corroborators); data["contradiction"]=contradiction
+        data["corroborators"]=corroborators
         if data["corroboration_count"]>0:data["rumor_only"]=False
         out.append(IntelligenceEvent(**data))
     return out
