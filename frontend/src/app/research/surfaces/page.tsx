@@ -17,6 +17,14 @@ export default function ResearchSurfacesPage(){
    <p id="research-boundary-title" className="text-[11px] uppercase tracking-widest text-amber-400">Shared safety boundary</p>
    <p className="mt-2 text-sm text-zinc-300">Research surfaces remain descriptive and read-only. Trading authority stays gated unless a separate validated roadmap execution explicitly unlocks it.</p>
   </section>
+  <section className="rounded-2xl border border-white/8 bg-[#10131a] p-5" aria-labelledby="authority-legend-title">
+   <h2 id="authority-legend-title" className="text-sm font-medium text-zinc-300">Authority legend</h2>
+   <dl className="mt-3 grid gap-3 text-xs md:grid-cols-3">
+    <Legend term="Read-only presentation" meaning="Information can be viewed and navigated; viewing it grants no trading authority."/>
+    <Legend term="Human-review-only evidence" meaning="Evidence can inform human review; strategy selection and production promotion remain gated."/>
+    <Legend term="Gated capability" meaning="Capability remains unavailable pending a separate validated roadmap unlock."/>
+   </dl>
+  </section>
   <section className="grid gap-4 lg:grid-cols-3" aria-label="Atlas research surfaces">
    {surfaces.map(surface=><article key={surface.title} className="flex min-h-64 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-5">
     <SurfaceStatusBadge status={surface.status}/>
@@ -41,5 +49,6 @@ export default function ResearchSurfacesPage(){
   </section>
  </main></div>
 }
+function Legend({term,meaning}:{term:string;meaning:string}){return <div className="rounded-lg border border-white/5 p-3"><dt className="font-medium text-zinc-300">{term}</dt><dd className="mt-1 leading-5 text-zinc-500">{meaning}</dd></div>}
 function Posture({label,value}:{label:string;value:string}){return <div><dt className="uppercase tracking-wider text-zinc-600">{label}</dt><dd className="mt-1 leading-5 text-zinc-400">{value}</dd></div>}
 function State({label,value}:{label:string;value:string}){return <div className="rounded-lg border border-white/5 px-3 py-3"><p className="text-zinc-500">{label}</p><p className="mt-1 text-zinc-300">{value}</p></div>}
