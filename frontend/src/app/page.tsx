@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import CryptoQualityDipsStatusPanel from "@/app/components/CryptoQualityDipsStatusPanel";
 
@@ -129,10 +130,13 @@ export default function Dashboard() {
               Bot runs in the Atlas window. This page is watch-only. Discord is the alert feed.
             </p>
           </div>
-          <div className="text-right text-xs text-zinc-500">
-            <div>Refresh {tick === 0 ? "just now" : "every 8s"} · {ago(live?.updated_at)}</div>
-            <div className={error ? "text-rose-400" : "text-emerald-400"}>
-              {error ? "API down" : "API connected"}
+          <div className="flex items-end gap-4">
+            <Link href="/research/surfaces" className="rounded-lg border border-cyan-500/20 px-3 py-2 text-xs text-cyan-300">Research Surfaces</Link>
+            <div className="text-right text-xs text-zinc-500">
+              <div>Refresh {tick === 0 ? "just now" : "every 8s"} · {ago(live?.updated_at)}</div>
+              <div className={error ? "text-rose-400" : "text-emerald-400"}>
+                {error ? "API down" : "API connected"}
+              </div>
             </div>
           </div>
         </div>
