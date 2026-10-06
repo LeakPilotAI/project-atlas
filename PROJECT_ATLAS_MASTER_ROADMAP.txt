@@ -6694,3 +6694,88 @@ NEXT - EXECUTION 44
 6. If >=30 genuine observations exist, evaluate frozen E42 thresholds exactly; otherwise remain NOT_READY.
 7. Preserve E32 provenance, E33 cooldown, E40/E41 delivery integrity and E29 forward collection.
 8. Alpha remains excluded from strategy selection; no strategy/promotion/live-capital changes.
+
+================================================================================
+EXECUTION 44 - TIME-AWARE ALPHA EVIDENCE + CADENCE MATURITY - GREEN
+Date: 2026-10-06 UTC
+================================================================================
+PURPOSE
+- Timestamp new cadence evidence without rewriting legacy E43 rows.
+- Expose legacy versus timestamped cadence evidence explicitly.
+- Make official-source health resolve from real fetch timestamps.
+- Evaluate the frozen E42 cadence policy if genuine evidence matured.
+
+IMPLEMENTATION
+- New E43 cadence rows now include observed_at UTC.
+- Existing historical cadence rows remain unchanged and readable with observed_at=null.
+- Cadence history exposes timestamped_count and legacy_untimestamped_count.
+- Alpha operator exposes last_observed_at and last_fetched_at from actual fetch telemetry.
+- Source health now handles exact 24h boundary, stale, malformed/unknown and >5-minute future timestamps deterministically.
+- E42 governance exposes timestamp/legacy counts.
+- Added tests/test_e44_time_health.py.
+- Implementation commit: 7aa96f4.
+
+VALIDATION
+- Focused E44/E43/E42/Alpha presentation: 19 passed.
+- Full Atlas regression: 1,297 passed, 0 failed, 2 known dependency warnings in 149.13s.
+- git diff --check passed before full regression.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed and reached API healthy + 3/3 stabilization.
+- Launcher PID 31676; API PID reported by launcher 28456.
+- Genuine cadence history naturally matured to 61 valid observations, 0 invalid.
+- 4 newest observations are timestamped under E44; 57 prior genuine observations are explicitly legacy/untimestamped and were NOT rewritten.
+- Frozen E42 policy evaluation:
+  * minimum observations: 30 -> PASSED (61)
+  * alpha p95: 18.96 ms vs >50 ms split threshold -> BELOW
+  * alpha/cycle p95 share: 9.210977% vs >20% split threshold -> BELOW
+  * evidence_ready=true
+  * decouple_recommended=false
+- Decision: retain unified scheduler. No threshold was changed after seeing results.
+- Real source health:
+  * federal_reserve=HEALTHY
+  * sec=COOLDOWN
+  * hyperliquid_docs=HEALTHY
+- E29/E30 unchanged: baseline=0, challenger=0, status NOT_READY, promotion_allowed=false.
+- Alpha delivery dedup_count=1; no duplicate delivery.
+
+STATUS
+- Execution 44 GREEN.
+- E42 cadence question is now evidence-mature and answered: current measured Alpha overhead does NOT justify scheduler separation.
+- Continue monitoring rather than splitting architecture without evidence.
+
+================================================================================
+VISUAL PROGRESS AFTER E44
+================================================================================
+[DONE] Core runtime recovery/PAPER safety/evidence preservation.
+[DONE] Perps decomposition + prospective challenger infrastructure.
+[ACTIVE] E29 forward strategy evidence: 0 baseline / 0 challenger closes; NOT_READY.
+[DONE] Alpha E31-E44 controlled intelligence/ingestion/fetch/extraction/presentation/delivery/observability/provenance/cadence stack.
+[DONE] Alpha cadence maturity gate: 61/30 genuine observations; unified scheduler retained by frozen thresholds.
+[ACTIVE] Continue passive cadence monitoring for regime/runtime drift; no split currently justified.
+[TODO] Strengthen age-aware cadence decision so timestamped current observations can eventually supersede legacy timing evidence without rewriting history.
+[TODO] Deterministic cross-source equivalent-claim/corroboration research.
+[GATED] Alpha strategy-selection use pending separately preregistered prospective evidence.
+[DONE] Prediction no-liquidity lifecycle truth + executable entry/exit depth eligibility.
+[GATED] Unattended Prediction PAPER opening pending prospective validation.
+[GATED] QUALITY_DIPS_PAPER_V1 pending genuine qualifying lifecycle evidence.
+[TODO] Broader frontend/operator UI redesign.
+[DONE] Alpha typed Discord context alerts + durable dedup.
+[TODO] Full cross-lane Discord typed event pipeline/routing/cooldown/ack schema.
+[GATED] Additional venues/Kalshi until Hyperliquid prospective PAPER evidence is trustworthy.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+[GATED] Automated real-money execution and strategy promotion remain disabled.
+
+NEXT - EXECUTION 45
+1. Preregister an age-aware cadence evidence policy before excluding any legacy observations from scheduler decisions.
+2. Add current-window diagnostics using only timestamped observations while preserving the full historical E42 result.
+3. Define deterministic minimum current-window sample count and maximum observation age before inspecting its outcome.
+4. Add drift diagnostics comparing current timestamped window versus historical cadence baseline; informational only.
+5. Continue genuine cadence collection; no synthetic observations.
+6. Improve dashboard presentation of cadence maturity/current-window health and source timestamps.
+7. Continue deterministic corroboration research only if bounded and non-semantic-authority.
+8. Preserve E29 collection unchanged and Alpha excluded from strategy selection.
+9. No strategy/promotion/live-capital changes.
+
+SAFETY
+Research/context and operational observability only. No live orders, live capital, PAPER-entry authority, strategy mutation, threshold retuning, fabricated timestamps, historical evidence rewrite, arbitrary URL/body fetching, external-text instruction authority, or incompatible evidence pooling.
