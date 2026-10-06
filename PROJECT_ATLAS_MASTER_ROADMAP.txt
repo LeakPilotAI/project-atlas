@@ -7834,3 +7834,55 @@ NEXT - EXECUTION 60
 6. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
+
+
+EXECUTION 60 - QUALITY DIPS ASSET-CLASS BOUNDARY + INERT CRYPTO SCAFFOLD - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Mapped Stock Quality Dips V3 boundaries without changing them: quality_dips_v3.py owns stock fair-value normalization, quality/fundamental/valuation gates, patient states and manual-only entry ladder; quality_dips_v3_state.py owns durable stock snapshots/events/delivery attempts; alerts freezes stock entry evidence; delivery owns retry-safe typed research notification; validation owns frozen development/holdout PIT rules.
+- Added quality_dips_research_envelope.py as an asset-class-neutral research envelope with explicit STOCK/CRYPTO vocabulary, but only an inert crypto builder is exposed in E60.
+- Crypto evidence dimensions are liquidity_depth, market_structure, drawdown_regime, supply_unlocks, venue_custody_contract_risk, network_activity, manipulation_rug_risk.
+- Crypto universe eligibility requires non-empty symbol + explicit allowlist + liquidity qualification. Missing evidence fails closed into MISSING:<dimension> risk flags.
+- Crypto envelope is hard-coded inactive: active=false, can_emit_signal=false, can_schedule=false, paper_entry_authority=false, execution_authority=false, strategy_selection_authority=false, threshold_mutation_authority=false, promotion_authority=false, live_capital_allowed=false.
+- No scheduler, Discord delivery, Quality Dips V3 state-store reference, PAPER path, scoring thresholds, or execution path was added for crypto.
+- Existing stock Quality Dips V3 code was not modified.
+
+VALIDATION
+- Focused E60 + existing Stock V3 + V3 delivery compatibility gate: 13 passed, 0 failed, 1 known warning.
+- Tests prove crypto scaffold is inert/zero-authority, requires allowlist+liquidity, fails closed on missing evidence, leaves stock V3 state untouched, and leaves stock V3 manual-only policy unchanged.
+- Full Atlas regression: 1,360 passed, 0 failed, 2 known dependency warnings in 128.11s.
+- git diff --check clean before full regression.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- d24d240 e60_crypto_quality_dips_scaffold
+
+RUNTIME ACCEPTANCE
+- Controlled stop exit 0; Docker Desktop/Genesis untouched.
+- First direct restart shell form was safety-blocked; cmd start launcher completed.
+- Process sample after restart showed Python inventory present but did not expose a clearly fresh StartTime; no stronger fresh-process claim is made for E60.
+
+DECISION
+- E60 GREEN. Crypto Quality Dips now exists only as a structurally isolated research envelope. Stock Quality Dips V3 remains untouched and authoritative for its existing domain.
+
+VISUAL STATUS AFTER E60
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60 Stock Quality Dips boundary mapping + inert Crypto Quality Dips research scaffold.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips scoring, state, alerts, scheduling and prospective evidence pipeline.
+[GATED] day_trade_assistant, paper_try_symbol, residual perp_micro_coach pending lifecycle contracts.
+[GATED] Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+
+NEXT - EXECUTION 61
+1. Define an inactive Crypto Quality Dips evidence-normalization contract for the seven E60 dimensions, including typed provenance/freshness and fail-closed validation; do not assign trading thresholds or emit a dip state.
+2. Add an explicit allowlist/liquidity qualification input contract that accepts research inputs only and has no autonomous discovery/scheduler.
+3. Add deterministic serialization/validation tests proving malformed/stale/missing evidence cannot become eligible research evidence and cannot touch Stock V3 state.
+4. Define the prospective evidence record needed before any future crypto scoring/state taxonomy can be evaluated; no outcome-driven threshold tuning.
+5. Re-inventory residual trading-adjacent Discord paths after this boundary work; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: after every GREEN execution update canonical roadmap append-only, visual status, Desktop master copy, commits/push, exact SHA verification; never manufacture evidence/readiness.
