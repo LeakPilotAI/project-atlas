@@ -8506,3 +8506,58 @@ NEXT - EXECUTION 73
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 73 - FRONTEND-SAFE CRYPTO QUALITY DIPS CONSUMER / VIEW-MODEL - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added frontend/src/lib/cryptoQualityDipsStatus.ts as the first frontend-safe consumer boundary over frozen E72_CRYPTO_QUALITY_DIPS_PUBLIC_V1.
+- Consumer accepts unknown payloads and validates schema version, public surface/read-only boundary, required operator/readiness sections, numeric readiness fields, and the complete non-authority contract.
+- Unsupported schema versions, malformed/missing fields, invalid public boundaries, or any scoring/PAPER/execution/live-capital/repair/mutation authority flag becoming non-false fail closed to UNAVAILABLE / CRITICAL / operator attention required / readiness false.
+- Deterministic display states are presentation-only: NO_EVIDENCE, COLLECTING, RESEARCH_GATES_MET, REVIEW_REQUIRED, UNAVAILABLE.
+- No fetch loop, UI control, repair action, mutation action, PAPER action, broker action, strategy selection, threshold change, scheduler, feed, or live-capital control was added.
+- E72 backend schema remains unchanged.
+
+VALIDATION
+- Focused E73 + E72-E69 contract/integrity stack: 19 passed, 0 failed, 2 known dependency warnings in 3.16s.
+- Full Python regression: 1,405 passed, 0 failed, 2 known warnings in 128.44s.
+- Frontend strict TypeScript: npx tsc --noEmit exit 0.
+- Targeted ESLint with flat-config-compatible invocation: exit 0.
+- Next.js optimized production build: exit 0; compiled successfully and prerendered /, /_not-found, /research.
+- git diff --check clean.
+- Initial local staging exposed repository .gitignore rule lib/; source was explicitly force-added, local unpushed commit amended, and final implementation commit contains exactly the intended source + test. No partial commit was pushed.
+
+IMPLEMENTATION COMMIT
+- eef06af e73 add crypto quality dips frontend consumer
+
+DECISION
+- E73 GREEN. The frontend now has a typed, fail-closed presentation consumer for the frozen Crypto Quality Dips public contract without coupling UI code to evidence-store internals or granting any execution authority.
+
+VISUAL STATUS AFTER E73
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
+[DONE] E73 frontend-safe fail-closed Crypto Quality Dips consumer/view-model.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Crypto Quality Dips visual frontend surface, then broader frontend/operator UI redesign and product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Crypto Quality Dips frontend: backend public contract and typed consumer are stable; next add a small read-only visual status panel using only the E73 view-model.
+2. E29 strategy evidence: genuine prospective samples must accumulate over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration: genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers: remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Broader frontend/operator UI: substantial product-facing work remains after the bounded Crypto Quality Dips panel.
+6. Product/deployment hardening: packaging, operator ergonomics, deployment/recovery/security documentation and release-readiness remain later major work.
+
+NEXT - EXECUTION 74
+1. Add a bounded read-only Crypto Quality Dips frontend status panel that fetches only GET /api/investments/crypto-quality-dips/status and passes the response through the E73 consumer.
+2. Render deterministic severity/status, readiness counters/progress, chain/recovery context, and explicit RESEARCH ONLY / authority-locked messaging.
+3. Fail closed visually on network errors, malformed payloads, or unsupported schema versions; never bypass the E73 consumer.
+4. Add no repair, mutation, PAPER, execution, strategy-selection, threshold, promotion, feed, scheduler, or live-capital controls.
+5. Add frontend compile/lint/build checks plus focused contract tests and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. Keep residual Discord lifecycle paths gated; no bulk migration.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
