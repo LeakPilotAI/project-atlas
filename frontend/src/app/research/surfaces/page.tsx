@@ -8,7 +8,7 @@ const surfaces: ReadonlyArray<{title:string;status:SurfaceStatus;href:string;det
 ];
 
 const gatedCapabilities: ReadonlyArray<{title:string;detail:string}>=[
- {title:"Crypto Quality Dips autonomy",detail:"Autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER, and execution remain inactive and gated."},
+ {title:"Crypto Quality Dips autonomy",detail:"INACTIVE / GATED · autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER, and execution remain unavailable."},
  {title:"Alpha strategy selection",detail:"Forward evidence collection remains active; strategy-selection and production-promotion authority remain gated."},
  {title:"Residual trading Discord lifecycle",detail:"Remaining trading-adjacent lifecycle producers require dedicated lifecycle contracts rather than bulk migration."},
  {title:"Automated real-money execution",detail:"Live-capital execution remains gated and is not exposed as an operator action."},
@@ -58,13 +58,12 @@ export default function ResearchSurfacesPage(){
     </article>)}
    </div>
   </section>
-  <section className="rounded-2xl border border-white/8 bg-[#10131a] p-5">
-   <h2 className="text-sm font-medium text-zinc-300">Current roadmap state</h2>
+  <section className="rounded-2xl border border-white/8 bg-[#10131a] p-5" aria-labelledby="active-evidence-title">
+   <h2 id="active-evidence-title" className="text-sm font-medium text-zinc-300">Active evidence collection</h2>
+   <p className="mt-1 text-xs text-zinc-600">Genuine evidence accumulation currently in progress. Gated capabilities are listed separately above.</p>
    <div className="mt-3 grid gap-2 text-xs md:grid-cols-2">
     <State label="E29 forward strategy evidence" value="ACTIVE · genuine evidence only"/>
     <State label="Alpha / cadence / corroboration" value="ACTIVE · strategy selection gated"/>
-    <State label="Crypto Quality Dips autonomy" value="INACTIVE / GATED"/>
-    <State label="Residual trading Discord lifecycle" value="GATED"/>
    </div>
   </section>
  </main></div>
