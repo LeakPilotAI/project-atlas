@@ -7069,3 +7069,84 @@ NEXT - EXECUTION 48
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
 - After every GREEN execution, update the complete canonical roadmap append-only, refresh the visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap with the complete canonical file, and report completed-vs-remaining progress.
 - Never advance GREEN on blocked validation and never manufacture evidence/readiness.
+
+
+================================================================================
+EXECUTION 48 - BOUNDED TYPED CROSS-LANE DISCORD EVENT CONTRACT - GREEN - 2026-10-06
+================================================================================
+
+OBJECTIVE
+- Establish a typed cross-lane Discord event envelope and routing contract without granting Discord any strategy or execution authority.
+- Prove event identity, provenance sensitivity, explicit route eligibility, successful-send acknowledgement, retry-on-failure, dedup, and hostile external-text inertness.
+- Keep migration of existing producers bounded and incremental rather than claiming a completed all-lane cutover.
+
+IMPLEMENTATION
+- Added backend/app/services/e48_discord_events.py as a pure downstream notification-policy layer beside the existing Discord DM transport.
+- Frozen bounded route lanes: ALPHA_CATALYST, PREDICTION_ELIGIBLE, PERP_ALERT, SYSTEM.
+- Each lane has an explicit allowlist of event types, destination, and cooldown policy metadata.
+- Typed DiscordEvent contains deterministic event_id, lane, event_type, severity, title/body data, provenance, and materiality.
+- Event identity is SHA-256-derived from typed identity/provenance inputs and is deterministic.
+- Unknown lanes and unlisted event types fail closed.
+- Non-material events are not delivery eligible.
+- Delivery acknowledgement occurs only after sender success.
+- Failed sends remain retryable and are not dedup-acknowledged.
+- Successfully acknowledged events dedup and cannot flood the destination.
+- External title/body text is forwarded only as display data and is never parsed as command/authority.
+- Every routing/delivery decision explicitly carries false execution, PAPER-entry, strategy mutation, membership mutation, threshold mutation, promotion, and live-capital authority.
+- Added tests/test_e48_discord_events.py.
+- Existing legacy Discord producers were NOT silently rewired in E48; migration is intentionally deferred lane-by-lane to E49 under compatibility tests.
+
+VALIDATION
+- Focused E46-E48 + Prediction/perp Discord compatibility: 25 passed, 0 failed, 2 known dependency warnings in 2.73s.
+- Hostile-text test used an external payload attempting to override rules and request execution/threshold mutation/PAPER opening; payload remained inert display data and all authority flags remained false.
+- Duplicate flood test sent the same typed event ten times and confirmed one delivery plus nine dedups.
+- Failure/retry/ack test confirmed failed delivery remains retryable, successful retry becomes acknowledged, and later duplicate does not send.
+- git diff --check clean.
+- Full Atlas regression: 1,318 passed, 0 failed, 2 known dependency warnings in 138.00s.
+- Known warnings unchanged: discord audioop deprecation; Starlette/httpx TestClient deprecation.
+
+IMPLEMENTATION COMMIT
+- 430c294 e48_typed_discord_event_contract
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS-STOP.bat -> ATLAS.bat restart completed successfully.
+- Launcher PID 26000; API PID 29852.
+- /health status=ok; discord_ready=true; existing runtime services remained up.
+- E29 unchanged: membership_records=0, baseline closed_trades=0, challenger closed_trades=0, status=NOT_READY, promotion_allowed=false.
+
+DECISION
+- Execution 48 GREEN.
+- The typed cross-lane Discord foundation is proven, but full producer migration is not yet claimed.
+- Discord remains downstream/context-only and cannot mutate strategy, sizing, PAPER entry, membership, thresholds, promotion, or live capital.
+
+VISUAL PROJECT STATUS AFTER E48
+[DONE] Core runtime recovery / PAPER safety / evidence preservation.
+[DONE] Perps decomposition + prospective challenger infrastructure.
+[ACTIVE] E29 forward strategy evidence: 0 baseline / 0 challenger closes; NOT_READY.
+[DONE] Alpha E31-E47 controlled intelligence through read-only operator UI.
+[DONE] E48 bounded typed cross-lane Discord event/routing/ack/retry foundation.
+[ACTIVE] Migrate existing Discord producers to E48 contract lane-by-lane under compatibility tests.
+[DONE] Historical/current Alpha cadence evidence supports retaining unified scheduler.
+[ACTIVE] Continue passive cadence monitoring and genuine governed Alpha/corroboration collection.
+[GATED] Alpha strategy-selection use pending separately preregistered prospective evidence.
+[DONE] Prediction no-liquidity lifecycle truth + executable entry/exit depth eligibility.
+[GATED] Unattended Prediction PAPER opening pending prospective validation.
+[GATED] QUALITY_DIPS_PAPER_V1 pending genuine qualifying lifecycle evidence.
+[TODO] Broader frontend/operator UI redesign.
+[GATED] Additional venues/Kalshi until Hyperliquid prospective PAPER evidence is trustworthy.
+[TODO] Subscription tiers, entitlements, product UX/onboarding/docs, deployment/security/privacy/reliability hardening.
+[GATED] Automated real-money execution and strategy promotion remain disabled.
+
+NEXT - EXECUTION 49
+1. Migrate Alpha/Catalyst and Prediction eligible Discord producers onto the E48 typed event contract first, preserving their current durable evidence/dedup semantics.
+2. Add adapter helpers so legacy send_discord_alert payload shape remains compatible while typed identity/provenance is authoritative for routing.
+3. Prove no duplicate delivery when producer-level durable dedup and E48 acknowledgement coexist.
+4. Add deterministic restart/persistence design for typed acknowledgement; do not claim durable typed ack until implemented and tested.
+5. Leave Perp/System producers on legacy transport until their lane-specific compatibility contracts are explicit.
+6. Continue genuine E29 forward evidence collection unchanged; no synthetic samples.
+7. Continue genuine Alpha/cadence/corroboration evidence collection without changing frozen E42/E45/E46 thresholds from observed outcomes.
+8. No strategy, sizing, PAPER-entry, promotion, threshold, membership, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE
+- After every GREEN execution, update the complete canonical roadmap append-only, refresh visual DONE/ACTIVE/GATED/TODO status, overwrite the OneDrive/Desktop master roadmap with the complete canonical file, and report completed-vs-remaining progress.
+- Never advance GREEN on blocked validation and never manufacture evidence/readiness.
