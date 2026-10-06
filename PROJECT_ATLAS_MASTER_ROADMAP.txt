@@ -8237,3 +8237,52 @@ NEXT - EXECUTION 68
 7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 68 - CHAIN-HEAD LIFECYCLE + CRASH-AWARE INTEGRITY - GREEN - 2026-10-06
+
+IMPLEMENTATION
+- Added explicit bounded chain_state values: NO_CHAIN_YET, LEGACY_UNVERIFIED, VERIFIED, COMPROMISED.
+- Stores containing chained rows now require a valid chain-head anchor. Missing, malformed, or stale anchors set integrity false / COMPROMISED and block append.
+- Chain-head updates now write a temporary sidecar and atomically replace the canonical head after the JSONL append. If interruption occurs between row append and head replacement, reload detects the stale/missing anchor and fails closed.
+- Legacy pre-chain rows remain explicitly LEGACY_UNVERIFIED and are not treated as compromised solely because they lack an anchor.
+- Existing E66 observation identity and E67 sequence/hash-chain verification remain intact.
+- Existing GET evidence-readiness already exposes bounded store_integrity, so chain_state is available read-only without adding mutation controls or raw evidence/hash output.
+- No strategy, scoring, PAPER, execution, threshold, promotion, scheduler, autonomous feed, or live-capital authority was added.
+
+VALIDATION
+- Focused E68-E63 + Stock V3 compatibility: 25 passed, 0 failed, 2 known warnings, exit 0.
+- Full regression: 1,386 passed, 0 failed, 2 known warnings in 134.39s, exit 0.
+- git diff --check clean; only quality_dips_crypto_store.py and test_e68_chain_head_states.py staged.
+- Tests prove explicit chain states, missing anchor failure, malformed anchor failure, stale anchor failure, and interrupted-head-update failure.
+- No synthetic E29/Alpha evidence and no outcome-driven threshold changes.
+
+IMPLEMENTATION COMMIT
+- 436e49f e68 harden chain head integrity
+
+RUNTIME
+- E68 changes internal evidence-store persistence/integrity logic only and adds no route/runtime graph registration. No restart is required for execution correctness; no fresh-runtime claim is made.
+
+DECISION
+- E68 GREEN. Chain-head lifecycle is explicit and crash-aware; chained evidence cannot remain healthy with a missing, malformed, stale, or interrupted anchor.
+
+VISUAL STATUS AFTER E68
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E67 Crypto Quality Dips research boundary through prospective hash-chain/truncation integrity.
+[DONE] E68 explicit chain lifecycle states + fail-closed crash-aware chain-head persistence.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/state taxonomy, alerts, scheduling, outcome/performance evaluation, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] Broader frontend/operator UI redesign and product/deployment hardening.
+
+NEXT - EXECUTION 69
+1. Add a bounded operator integrity diagnostic contract that translates store/chain integrity into actionable read-only reason codes without exposing raw evidence, hashes, filesystem paths, or repair controls.
+2. Ensure readiness cannot be represented as healthy/ready while chain_state is COMPROMISED; preserve legacy-unverified semantics explicitly rather than silently equating legacy with verified.
+3. Add API contract tests for NO_CHAIN_YET, LEGACY_UNVERIFIED, VERIFIED, and COMPROMISED states plus zero-authority metadata.
+4. Prove diagnostics remain GET-only and cannot mutate/repair evidence, Stock V3, PAPER, or execution state.
+5. Keep residual Discord lifecycle paths gated; no bulk migration.
+6. Continue genuine E29/Alpha evidence unchanged; no synthetic samples.
+7. No strategy, sizing, PAPER-entry, membership, threshold, promotion, or live-capital changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
