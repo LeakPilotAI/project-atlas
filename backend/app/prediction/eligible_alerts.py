@@ -9,6 +9,7 @@ from typing import Any, Awaitable, Callable, Iterable
 
 from app.alerts.discord import send_discord_alert
 from app.prediction.paper_engine import PredictionPaperJournal, prediction_paper_journal
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
 Sender = Callable[..., Awaitable[bool]]
 ALERT_EVENT = "eligible_candidate_alert_delivered"
@@ -96,7 +97,8 @@ async def deliver_prediction_eligible_alerts(
 
         attempted += 1
         try:
-            ok = bool(await sender(**payload))
+            typed = legacy_payload_event(lane="PREDICTION_ELIGIBLE", event_type="ELIGIBLE_CANDIDATE", identity=key, payload=payload, provenance=[str(evaluation.get("ticker") or "")], material=True)
+            ok = bool((await deliver_legacy_payload(typed, sender=sender))["acknowledged"])
         except Exception as exc:
             ok = False
             last_error = type(exc).__name__

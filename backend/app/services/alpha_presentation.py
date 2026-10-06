@@ -6,6 +6,7 @@ from pathlib import Path
 from app.alerts.discord import send_discord_alert
 from app.services.alpha_ingestion import EVENT_PATH,feed
 from app.services.alpha_operator import diagnostics
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
 STATE_PATH=Path(__file__).resolve().parents[2]/"data"/"e38_alpha_alert_state.json"
 TELEMETRY_PATH=Path(__file__).resolve().parents[2]/"data"/"e40_alpha_delivery_telemetry.jsonl"
@@ -102,7 +103,10 @@ async def alert_new_alpha_events(*,sender=send_discord_alert,state_path=STATE_PA
     attempted=sent=0; failed_ids=[]; delivered_now=[]
     for event in reversed(pending):
         attempted+=1
-        try: ok=bool(await sender(**build_alpha_alert(event)))
+        try:
+            payload=build_alpha_alert(event)
+            typed=legacy_payload_event(lane="ALPHA_CATALYST",event_type=str(event.get("event_type") or ""),identity=str(event["event_id"]),payload=payload,provenance=[str(event.get("url") or "")],material=True)
+            ok=bool((await deliver_legacy_payload(typed,sender=sender))["acknowledged"])
         except Exception: ok=False
         if ok: delivered.add(event["event_id"]);delivered_now.append(event["event_id"]);sent+=1
         else: failed_ids.append(event["event_id"])

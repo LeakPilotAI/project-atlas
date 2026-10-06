@@ -86,3 +86,25 @@ class DiscordDeliveryState:
                 "provenance":list(event.provenance),"external_text_inert":True}
 
 delivery_state=DiscordDeliveryState()
+
+# E49 adapter: producers can use the typed contract while retaining their own
+# durable success journals as the authoritative restart dedupe.
+def legacy_payload_event(*, lane: str, event_type: str, identity: str,
+                         payload: dict[str, Any], provenance=(), material: bool=True) -> DiscordEvent:
+    return make_event(lane=lane,event_type=event_type,
+        severity=str(payload.get("severity") or "MEDIUM"),
+        title=str(payload.get("title") or ""),body=str(payload.get("description") or ""),
+        provenance=tuple(provenance),identity=identity,material=material)
+
+async def deliver_legacy_payload(event: DiscordEvent, *, sender: Sender) -> dict[str, Any]:
+    """Typed route/authority gate with legacy Discord payload compatibility."""
+    decision=route(event)
+    if not decision["eligible"]:
+        return {**decision,"event_id":event.event_id,"attempted":False,"acknowledged":False,"retryable":False}
+    try:
+        ok=bool(await sender(symbol=event.lane,title=event.title,description=event.body,
+                             severity=event.severity,opportunity=0,confidence=0,risk=0))
+    except Exception:
+        ok=False
+    return {**decision,"event_id":event.event_id,"attempted":True,"acknowledged":ok,
+            "retryable":not ok,"external_text_inert":True,"provenance":list(event.provenance)}
