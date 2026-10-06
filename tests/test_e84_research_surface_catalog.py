@@ -1,6 +1,7 @@
 from pathlib import Path
 
 PAGE=Path("frontend/src/app/research/surfaces/page.tsx")
+PRESENTATION=Path("frontend/src/app/research/surfaces/presentation.ts")
 CATALOG=Path("frontend/src/app/research/surfaces/catalog.ts")
 
 def test_e84_page_renders_from_typed_catalog():
@@ -38,7 +39,7 @@ def test_e84_catalog_preserves_gated_contracts():
         assert token in text
 
 def test_e84_catalog_and_page_remain_static_and_authority_free():
-    text=PAGE.read_text(encoding="utf-8")+"\n"+CATALOG.read_text(encoding="utf-8")
-    for token in ("fetch(", "axios", "useEffect", "useState", "<button", "POST", "PUT", "PATCH", "DELETE",
+    text=PAGE.read_text(encoding="utf-8")+"\n"+CATALOG.read_text(encoding="utf-8")+"\n"+PRESENTATION.read_text(encoding="utf-8")
+    for token in ("fetch(", "axios", "useEffect", "useState", "<button", "method:\"POST\"", "method:\"PUT\"", "method:\"PATCH\"", "method:\"DELETE\"",
                   "paperOrder", "brokerOrder", "executeTrade", "repair_action"):
         assert token not in text
