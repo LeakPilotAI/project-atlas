@@ -4,6 +4,7 @@ import json, os
 from pathlib import Path
 from app.alerts.discord import send_discord_alert
 from app.services.e29_forward_scorecard import e29_forward_scorecard
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 STATE_PATH=Path(__file__).resolve().parents[2]/"data"/"e30_evidence_maturity_state.json"
 MILESTONES=(1,10,25,50,60)
 
@@ -33,6 +34,8 @@ async def alert_evidence_transition_if_needed(*,sender=send_discord_alert,state_
     if key==old:return {"attempted":0,"delivered":0,"transition_key":key,"reason":"UNCHANGED"}
     if old is None and key=="NOT_READY|paired-close-milestone:0":
         _save_state(state_path,{"last_delivered_key":key}); return {"attempted":0,"delivered":0,"transition_key":key,"reason":"INITIAL_ZERO_STATE"}
-    ok=bool(await sender(**build_evidence_alert(view)))
+    payload=build_evidence_alert(view)
+    typed=legacy_payload_event(lane="SYSTEM",event_type="SESSION",identity=key,payload=payload,provenance=["e29-forward-scorecard"],material=True)
+    ok=bool((await deliver_legacy_payload(typed,sender=sender))["acknowledged"])
     if ok:_save_state(state_path,{"last_delivered_key":key})
     return {"attempted":1,"delivered":int(ok),"transition_key":key,"reason":"DELIVERED" if ok else "SEND_FAILED"}

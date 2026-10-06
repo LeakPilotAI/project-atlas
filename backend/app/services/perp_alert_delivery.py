@@ -6,6 +6,7 @@ from typing import Any, Awaitable, Callable, Dict, Iterable, Optional
 
 from app.alerts.discord import send_discord_alert
 from app.core.logging import get_logger
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
 log = get_logger("perp_alert_delivery")
 
@@ -78,7 +79,8 @@ async def deliver_alert_candidates(
         attempted += 1
         try:
             payload = build_perp_alert(setup)
-            ok = bool(await sender(**payload))
+            typed = legacy_payload_event(lane="PERP_ALERT", event_type="SETUP", identity=key, payload=payload, provenance=[key], material=True)
+            ok = bool((await deliver_legacy_payload(typed, sender=sender))["acknowledged"])
         except Exception as exc:
             log.warning("Manual perp Discord delivery failed", setup_key=key, error=str(exc)[:160])
             ok = False

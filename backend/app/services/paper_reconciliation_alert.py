@@ -8,6 +8,7 @@ from typing import Any, Awaitable, Callable
 
 from app.alerts.discord import send_discord_alert
 from app.services.perp_paper_observability import reconciliation_summary
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
 Sender = Callable[..., Awaitable[bool]]
 
@@ -58,15 +59,11 @@ async def alert_reconciliation_if_needed(
         f"Current auto-paper open trades: {rec.get('journal_currently_open', 0)}\n"
         "PAPER evidence requires operator review. No live order action was taken."
     )
-    ok = bool(await sender(
-        symbol="PAPER",
-        title="Atlas PAPER reconciliation warning",
-        description=description,
-        severity="HIGH",
-        opportunity=0,
-        confidence=100,
-        risk=100,
-    ))
+    payload = {"symbol":"PAPER","title":"Atlas PAPER reconciliation warning","description":description,
+               "severity":"HIGH","opportunity":0,"confidence":100,"risk":100}
+    typed = legacy_payload_event(lane="SYSTEM", event_type="HEALTH", identity=signature,
+                                 payload=payload, provenance=["paper-reconciliation"], material=True)
+    ok = bool((await deliver_legacy_payload(typed, sender=sender))["acknowledged"])
     if ok:
         _last_alert_signature = signature
         _last_alert_at = checked_at
