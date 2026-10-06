@@ -4866,7 +4866,7 @@ IMPLEMENTATION
 VALIDATION
 - Focused cohort + cross-strategy + checkpoint suite: 32 passed in 9.57s.
 - Full Atlas regression: 1,208 passed, 0 failed, 2 known dependency warnings in 125.67s.
-- Implementation commit: 986d22fc8158ee91cc1e1a69d7bc61ade044578a.
+- Canonical implementation commit after linear-history rebase: 0a018a543b6f35230507d5c324da7c30bd72c6e2.
 - Runtime restarted through supported launcher; Docker Desktop / Genesis untouched.
 - Launcher stabilization 3/3 GREEN.
 - Live cohort endpoint: 1,145 finite closes, 0 malformed.
