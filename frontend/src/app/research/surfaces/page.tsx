@@ -7,6 +7,13 @@ const surfaces: ReadonlyArray<{title:string;status:SurfaceStatus;href:string;det
  {title:"Command Center Operations",status:"OPERATIONAL_VIEW",href:"/",detail:"Atlas runtime and operator-facing system state, including the bounded Crypto Quality Dips panel.",purpose:"Provide operator visibility into Atlas runtime and bounded research status.",dataPosture:"Operational observation · existing runtime feeds only · no authority inferred from display.",authorityPosture:"Watch-only visibility · navigation and observation do not grant trading authority."},
 ];
 
+const gatedCapabilities: ReadonlyArray<{title:string;detail:string}>=[
+ {title:"Crypto Quality Dips autonomy",detail:"Autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER, and execution remain inactive and gated."},
+ {title:"Alpha strategy selection",detail:"Forward evidence collection remains active; strategy-selection and production-promotion authority remain gated."},
+ {title:"Residual trading Discord lifecycle",detail:"Remaining trading-adjacent lifecycle producers require dedicated lifecycle contracts rather than bulk migration."},
+ {title:"Automated real-money execution",detail:"Live-capital execution remains gated and is not exposed as an operator action."},
+];
+
 export default function ResearchSurfacesPage(){
  return <div className="min-h-screen bg-[#07080b] text-zinc-200"><main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
   <header className="flex flex-wrap items-start justify-between gap-4">
@@ -25,7 +32,9 @@ export default function ResearchSurfacesPage(){
     <Legend term="Gated capability" meaning="Capability remains unavailable pending a separate validated roadmap unlock."/>
    </dl>
   </section>
-  <section className="grid gap-4 lg:grid-cols-3" aria-label="Atlas research surfaces">
+  <section aria-labelledby="navigable-surfaces-title">
+   <div className="mb-3"><h2 id="navigable-surfaces-title" className="text-sm font-medium text-zinc-300">Current navigable surfaces</h2><p className="mt-1 text-xs text-zinc-600">Existing read-only destinations with established presentation contracts.</p></div>
+   <div className="grid gap-4 lg:grid-cols-3" aria-label="Atlas research surfaces">
    {surfaces.map(surface=><article key={surface.title} className="flex min-h-64 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-5">
     <SurfaceStatusBadge status={surface.status}/>
     <h2 className="mt-2 text-lg font-semibold text-white">{surface.title}</h2>
@@ -37,6 +46,17 @@ export default function ResearchSurfacesPage(){
     </dl>
     <Link href={surface.href} className="mt-auto pt-5 text-xs font-medium text-cyan-300">Open read-only surface →</Link>
    </article>)}
+   </div>
+  </section>
+  <section aria-labelledby="gated-capabilities-title">
+   <div className="mb-3"><h2 id="gated-capabilities-title" className="text-sm font-medium text-zinc-300">Gated roadmap capabilities</h2><p className="mt-1 text-xs text-zinc-600">Roadmap-confirmed boundaries shown for operator context. These are not destinations or disabled controls.</p></div>
+   <div className="grid gap-3 md:grid-cols-2">
+    {gatedCapabilities.map(capability=><article key={capability.title} className="rounded-2xl border border-white/8 bg-[#0c0e13] p-4">
+     <SurfaceStatusBadge status="GATED"/>
+     <h3 className="mt-2 text-sm font-medium text-zinc-300">{capability.title}</h3>
+     <p className="mt-2 text-xs leading-5 text-zinc-500">{capability.detail}</p>
+    </article>)}
+   </div>
   </section>
   <section className="rounded-2xl border border-white/8 bg-[#10131a] p-5">
    <h2 className="text-sm font-medium text-zinc-300">Current roadmap state</h2>
