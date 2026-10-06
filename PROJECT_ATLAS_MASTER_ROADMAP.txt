@@ -5884,3 +5884,81 @@ NEXT CONTROLLED EXECUTION - EXECUTION 34
 
 SAFETY
 Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, synthetic events, free-form claim invention, historical rewrite, or incompatible evidence pooling.
+
+================================================================================
+EXECUTION 34 - DETERMINISTIC OFFICIAL ANNOUNCEMENT EXTRACTION - GREEN
+Date: 2026-10-05 CT
+================================================================================
+PURPOSE
+- Add deterministic source-specific claim extraction on top of E31-E33.
+- Avoid free-form model interpretation and avoid guessed symbols/entities.
+- Promote only structurally eligible official announcement links with explicit phrase classification.
+- Keep Alpha disconnected from trading authority and keep E29 unchanged.
+
+IMPLEMENTATION
+- New backend/app/services/alpha_extract.py.
+- New tests/test_alpha_extract.py.
+- Supported extractors in E34: Federal Reserve and U.S. SEC only.
+- Uses Python HTMLParser for structural anchor extraction.
+- Unsupported source IDs return no candidates.
+
+DETERMINISTIC CLASSIFICATION
+- REGULATORY explicit phrases: enforcement, charges, settlement, rulemaking, regulation.
+- MACRO explicit phrases: federal funds, interest rate, monetary policy, FOMC, inflation.
+- Anything else is OTHER and is not promoted.
+- Symbols=[] and entities=[] unless a future explicit deterministic linker is separately added.
+- Instruction-like unsupported headlines are not promoted.
+
+PROVENANCE / STRUCTURE GATES
+- Base page hostname must match governed source domain.
+- Candidate link hostname must remain on governed source domain.
+- Fed candidates must be individual press-release paths.
+- SEC candidates must be press-release paths.
+- Duplicate candidate links collapse by deterministic event ID before E32 ingest.
+- Accepted candidates route through the existing E32 ingest normalizer/store.
+
+LIVE DRY-RUN FINDING AND PRECISION FIX
+- First bounded live dry run returned 7 Fed candidates and 9 SEC candidates.
+- Inspection showed all 7 Fed candidates were yearly FOMC archive/index links such as 2026 FOMC, not individual announcements.
+- No candidates were persisted.
+- Added explicit Fed archive-index rejection for *-press-fomc.htm.
+- Added regression test proving archive index is not an announcement.
+- Second live dry run: Fed HTTP 200 -> 0 candidates; SEC HTTP 200 -> 9 deterministic regulatory press-release candidates.
+- SEC candidates were not persisted during E34 acceptance because the purpose was extractor validation, not backfilling the live event store.
+- Live E32 store therefore remains raw=0, normalized=0.
+
+VALIDATION
+- Initial focused E34/E33/E32/E31 suite: 32 passed, 0 failed.
+- Precision regression after live finding: 8 passed, 0 failed.
+- Final focused suite: 33 passed, 0 failed.
+- Full Atlas regression: 1,262 passed, 0 failed, 2 known dependency warnings in 126.48s.
+- Known warnings remain Starlette/httpx TestClient deprecation and Discord audioop deprecation.
+- E34 implementation commit: 40274f0.
+
+RUNTIME ACCEPTANCE
+- Controlled ATLAS.bat restart completed normally.
+- API healthy on launcher attempt 1; stabilization reached 3/3.
+- Live health: status=ok, Opportunity Tracker=true, Day Trade=true, Prediction=true, Discord=true, liquid_count=80.
+- Alpha store remains raw_records=0 and normalized_records=0; no historical/live dry-run candidates were manufactured into evidence.
+- E29 remains NOT_READY with baseline closes=0 and challenger closes=0.
+
+STATUS
+- Execution 34 GREEN.
+- Atlas can deterministically identify a narrow class of official announcement records without free-form claim invention.
+- Live acceptance directly improved precision by catching and rejecting Fed archive pages.
+- No Alpha information affects Perps selection or execution.
+
+NEXT CONTROLLED EXECUTION - EXECUTION 35
+1. Add publication-time extraction for supported official listing structures and reject/flag candidates whose time cannot be established when freshness depends on it.
+2. Add deterministic relevance/entity linking for a tiny crypto/market vocabulary without ticker guessing.
+3. Separate broad SEC enforcement news from Atlas-relevant digital-asset/market-structure context so unrelated regulatory headlines do not flood the feed.
+4. Add explicit candidate rejection telemetry with reasons such as unsupported event type, archive/index link, off-domain link, missing required time, and irrelevant domain/topic.
+5. Integrate E33 fetch body -> E34 extractor -> E32 ingest as a bounded manual/research pipeline, still no autonomous startup worker.
+6. Run fixture and bounded live acceptance; persist only genuinely supported, current, relevant candidates.
+7. Expose accepted/rejected counts and reasons to operator diagnostics.
+8. Keep external text untrusted and Alpha read-only.
+9. Keep E29 prospective collection unchanged.
+10. No strategy/promotion changes.
+
+SAFETY
+Research/context only. No broker orders, live capital, automatic real-money execution, PAPER-entry authority, strategy mutation, threshold retuning, challenger-membership mutation, external-text instruction authority, guessed ticker/entity claims, free-form claim invention, historical rewrite, or incompatible evidence pooling.
