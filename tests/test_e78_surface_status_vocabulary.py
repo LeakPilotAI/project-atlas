@@ -2,6 +2,7 @@ from pathlib import Path
 
 BADGE=Path("frontend/src/app/components/SurfaceStatusBadge.tsx")
 OVERVIEW=Path("frontend/src/app/research/surfaces/page.tsx")
+CATALOG=Path("frontend/src/app/research/surfaces/catalog.ts")
 
 def test_e78_status_vocabulary_is_frozen_and_explicit():
     text=BADGE.read_text(encoding="utf-8")
@@ -25,7 +26,7 @@ def test_e78_primitive_is_presentation_only():
     assert "data-surface-status" in text
 
 def test_e78_overview_uses_shared_status_primitive():
-    text=OVERVIEW.read_text(encoding="utf-8")
+    text=OVERVIEW.read_text(encoding="utf-8")+"\n"+CATALOG.read_text(encoding="utf-8")
     assert "SurfaceStatusBadge" in text
     assert 'status:"ACTIVE_EVIDENCE"' in text
     assert 'status:"RESEARCH_ONLY"' in text
@@ -33,7 +34,7 @@ def test_e78_overview_uses_shared_status_primitive():
     assert "<SurfaceStatusBadge status={surface.status}/>" in text
 
 def test_e78_overview_keeps_read_only_authority_boundary():
-    text=OVERVIEW.read_text(encoding="utf-8")
+    text=OVERVIEW.read_text(encoding="utf-8")+"\n"+CATALOG.read_text(encoding="utf-8")
     assert "Read-only map" in text
     assert "Trading authority stays gated" in text
     assert "Authority locked" in text
