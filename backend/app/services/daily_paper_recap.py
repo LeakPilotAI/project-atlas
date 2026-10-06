@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 import structlog
 
 from app.core.config import get_settings
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
 log = structlog.get_logger(__name__)
 ET = ZoneInfo("America/New_York")
@@ -101,17 +102,15 @@ class DailyPaperRecapService:
             lines.append("_No closed paper trades in the last 24h — filters stayed strict._")
         lines.append("\n_Simulation only. Atlas does not execute live orders._")
 
-        await send_discord_alert(
-            symbol="PAPER",
-            title="Atlas · Daily Paper Recap",
-            description="\n".join(lines)[:3900],
-            price=0.0,
-            severity="MEDIUM",
-            opportunity=50,
-            confidence=60,
-            risk=40,
-        )
-        log.info("Daily paper recap delivered", closed_24h=stats["closed"])
+        payload={"symbol":"PAPER","title":"Atlas · Daily Paper Recap","description":"\n".join(lines)[:3900],
+                 "price":0.0,"severity":"MEDIUM","opportunity":50,"confidence":60,"risk":40}
+        typed=legacy_payload_event(lane="SYSTEM",event_type="SESSION",identity=f"daily-paper-recap:{datetime.now(ET).strftime('%Y-%m-%d')}",
+                                   payload=payload,provenance=["daily-paper-recap"],material=True)
+        result=await deliver_legacy_payload(typed,sender=send_discord_alert)
+        if result["acknowledged"]:
+            log.info("Daily paper recap delivered", closed_24h=stats["closed"])
+        else:
+            log.warning("Daily paper recap send returned false")
 
 
 daily_paper_recap = DailyPaperRecapService()

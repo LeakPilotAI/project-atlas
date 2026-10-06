@@ -12,6 +12,7 @@ import structlog
 from app.core.config import get_settings
 from app.services.command_center_summary import live_command_center_summary
 from app.services.perp_manual_service import perp_manual_service
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
 log = structlog.get_logger(__name__)
 ET = ZoneInfo("America/New_York")
@@ -126,16 +127,11 @@ class CommandCenterService:
         summary = live_command_center_summary(perp_manual_service.snapshot())
         body = self._body(summary)
         try:
-            ok = await send_discord_alert(
-                symbol="CMD",
-                title="Atlas · Morning Command Center",
-                description=body[:3900],
-                price=0.0,
-                severity="LOW",
-                opportunity=0,
-                confidence=0,
-                risk=0,
-            )
+            payload={"symbol":"CMD","title":"Atlas · Morning Command Center","description":body[:3900],
+                     "price":0.0,"severity":"LOW","opportunity":0,"confidence":0,"risk":0}
+            typed=legacy_payload_event(lane="SYSTEM",event_type="SESSION",identity=f"command-center:{datetime.now(ET).strftime('%Y-%m-%d')}",
+                                       payload=payload,provenance=["morning-command-center"],material=True)
+            ok=bool((await deliver_legacy_payload(typed,sender=send_discord_alert))["acknowledged"])
             if ok:
                 log.info("Command center delivered")
             else:

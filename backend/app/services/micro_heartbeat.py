@@ -9,6 +9,7 @@ from typing import Optional
 import structlog
 
 from app.core.config import get_settings
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
 log = structlog.get_logger(__name__)
 
@@ -142,16 +143,12 @@ class MicroHeartbeatService:
                 log.info("Heartbeat (log only) — Discord not ready")
                 return
 
-            ok = await send_discord_alert(
-                symbol="HB",
-                title="Atlas · Micro Heartbeat",
-                description=body[:3900],
-                price=0.0,
-                severity="LOW",
-                opportunity=40,
-                confidence=50,
-                risk=30,
-            )
+            payload={"symbol":"HB","title":"Atlas · Micro Heartbeat","description":body[:3900],
+                     "price":0.0,"severity":"LOW","opportunity":40,"confidence":50,"risk":30}
+            identity=f"heartbeat:{int(datetime.now(timezone.utc).timestamp() // max(3600.0, float(getattr(get_settings(), 'micro_heartbeat_hours', 6.0) or 6.0) * 3600.0))}"
+            typed=legacy_payload_event(lane="SYSTEM",event_type="SESSION",identity=identity,payload=payload,
+                                       provenance=["micro-heartbeat"],material=True)
+            ok=bool((await deliver_legacy_payload(typed,sender=send_discord_alert))["acknowledged"])
             if ok:
                 log.info("Heartbeat DM sent")
             else:
