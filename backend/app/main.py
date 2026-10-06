@@ -53,6 +53,7 @@ async def _announce_session(info: Dict[str, Any]) -> None:
     await asyncio.sleep(12)
     try:
         from app.alerts.discord import is_discord_ready, send_discord_alert
+        from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
         if not is_discord_ready():
             return
@@ -70,15 +71,21 @@ async def _announce_session(info: Dict[str, Any]) -> None:
             f"Dashboard: http://127.0.0.1:8000/dashboard\n"
             f"Not live capital."
         )
-        await send_discord_alert(
-            symbol="ATLAS",
-            title="Paper session reset — data kept",
-            description=desc,
-            severity="LOW",
-            opportunity=10,
-            confidence=10,
-            risk=10,
+        payload = {
+            "symbol": "ATLAS",
+            "title": "Paper session reset — data kept",
+            "description": desc,
+            "severity": "LOW",
+        }
+        typed = legacy_payload_event(
+            lane="SYSTEM",
+            event_type="SESSION",
+            identity=f"paper-session-reset:{info.get('session_id')}",
+            payload=payload,
+            provenance=["paper-session-bootstrap"],
+            material=True,
         )
+        await deliver_legacy_payload(typed, sender=send_discord_alert)
     except Exception:
         pass
 
