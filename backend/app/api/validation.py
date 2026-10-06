@@ -98,6 +98,16 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/e31-alpha-contract")
+async def e31_alpha_contract_endpoint()->JSONResponse:
+    try:
+        from app.services.alpha_intelligence import safety_contract
+        body={"ok":True, **safety_contract()}
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
 @router.get("/e30-evidence-maturity")
 async def e30_evidence_maturity_endpoint()->JSONResponse:
     try:
