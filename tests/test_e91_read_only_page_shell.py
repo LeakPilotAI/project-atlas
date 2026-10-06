@@ -6,7 +6,8 @@ SHELL=Path("frontend/src/app/components/ReadOnlyPageShell.tsx")
 def test_e91_shell_preserves_e90_outer_presentation_contract():
     text=SHELL.read_text(encoding="utf-8")
     assert 'className="min-h-screen bg-[#07080b] text-zinc-200"' in text
-    assert 'className="mx-auto max-w-6xl space-y-5 px-5 py-7 sm:px-6 sm:py-8"' in text
+    assert 'surfaces:"mx-auto max-w-6xl space-y-5 px-5 py-7 sm:px-6 sm:py-8"' in text
+    assert 'className={LAYOUT_CLASS[layout]}' in text
     assert "{children}" in text
 
 def test_e91_shell_is_pure_read_only_and_runtime_free():
