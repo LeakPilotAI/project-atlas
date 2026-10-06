@@ -98,6 +98,17 @@ async def cross_strategy_checkpoints_endpoint()->JSONResponse:
     return _json_http(body)
 
 
+@router.get("/e30-evidence-maturity")
+async def e30_evidence_maturity_endpoint()->JSONResponse:
+    try:
+        from app.services.e30_evidence_maturity import evidence_view
+        from app.services.e29_forward_scorecard import e29_forward_scorecard
+        body={"ok":True, **evidence_view(e29_forward_scorecard())}
+    except Exception as e:
+        body={"ok":False,"status":"UNAVAILABLE","error":f"{type(e).__name__}: {str(e)[:240]}","promotion_allowed":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
 @router.get("/e29-forward-scorecard")
 async def e29_forward_scorecard_endpoint()->JSONResponse:
     try:

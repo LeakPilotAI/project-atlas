@@ -108,6 +108,7 @@ class PerpAlertDeliveryService:
         self.last_result: Dict[str, int] = {"attempted": 0, "delivered": 0, "acknowledged": 0, "failed": 0}
         self.last_paper_result: Dict[str, int] = {"opened": 0, "closed": 0, "marked": 0, "skipped": 0}
         self.last_reconciliation_result: Dict[str, Any] = {"attempted": 0, "delivered": 0, "reconciliation_ok": True}
+        self.last_evidence_result: Dict[str, Any] = {"attempted": 0, "delivered": 0, "reason": "NOT_RUN"}
         self.last_error: Optional[str] = None
         self.last_step_timings_ms: Dict[str, float] = {}
         self.last_cycle_elapsed_ms: float = 0.0
@@ -224,6 +225,14 @@ class PerpAlertDeliveryService:
                 self._reconciliation_task = asyncio.create_task(
                     self._run_reconciliation(), name="paper_reconciliation"
                 )
+            step_started = time.perf_counter()
+            try:
+                from app.services.e30_evidence_maturity import alert_evidence_transition_if_needed
+                self.last_evidence_result = await alert_evidence_transition_if_needed()
+            except Exception as exc:
+                log.warning("Perps evidence maturity alert pass failed", error=f"{type(exc).__name__}: {str(exc)[:180]}")
+            finally:
+                self.last_step_timings_ms["evidence_maturity"] = round((time.perf_counter() - step_started) * 1000.0, 3)
             self.last_cycle_elapsed_ms = round((time.perf_counter() - cycle_started) * 1000.0, 3)
             await asyncio.sleep(self.interval_seconds)
 
