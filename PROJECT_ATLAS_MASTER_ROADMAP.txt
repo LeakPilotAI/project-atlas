@@ -4983,3 +4983,135 @@ SAFETY
 PAPER/research only. No broker orders, live capital, automatic real-money execution, strategy
 mutation, threshold/sizing changes, synthetic samples, historical rewrite, favorable backfill,
 or incompatible evidence pooling.
+
+================================================================================
+MASTER ROADMAP REFRESH - POST EXECUTION 25
+Date: 2026-10-05 CT
+================================================================================
+
+CURRENT CANONICAL STATE
+- Execution 25 is GREEN and canonical.
+- Atlas runtime is healthy through the supported persistent launcher.
+- Opportunity Tracker, Day Trading, Prediction worker and Discord surfaces are running/ready.
+- All trading remains PAPER/research only.
+- live_capital_allowed=false.
+- automatic_real_money_execution=false.
+- No E25 strategy threshold, score cutoff, stop, target, sizing, promotion or production behavior change.
+- Day-Trading causal work must remain strategy-version and execution-model aware; pooled legacy evidence is not authority for current-model tuning.
+
+IMMEDIATE RESEARCH SEQUENCE
+E26 - STOP OVERSHOOT + CURRENT ADAPTIVE LONG ATTRIBUTION
+1. Preserve forward PAPER behavior unchanged.
+2. Attribute SETUP_STOP overshoot by execution-model version, side, time cohort, symbol and recorded volatility.
+3. Quantify ordinary near-stop losses separately from rare overshoot tails and their contribution to total negative R.
+4. Analyze current adaptive LONG underperformance using only preserved pre-entry score/momentum/trend/volatility and recorded excursion path.
+5. Keep sample sizes visible and refuse promotion from tiny favorable slices.
+6. Do not rewrite historical fills, backfill UNKNOWN metadata or infer missing regimes.
+7. Any resulting strategy hypothesis becomes a separately versioned PAPER challenger, never an in-place mutation.
+
+E27 - CHALLENGER DESIGN GATE (ONLY IF E26 EARNS IT)
+- Translate only robust E26 findings into explicit falsifiable challenger hypotheses.
+- One change family per challenger where practical so attribution remains interpretable.
+- Freeze baseline and challenger versions independently.
+- Define prospective sample, drawdown, expectancy, calibration and execution-quality acceptance criteria before collection.
+- No live capital and no automatic real-money execution.
+
+E28+ - PROSPECTIVE PERPS VALIDATION
+- Run baseline and approved challenger(s) prospectively in PAPER.
+- Compare by version, side, regime, symbol, execution quality, MAE/MFE, stop/target behavior and tail risk.
+- Require enough forward evidence to distinguish improvement from variance.
+- Promote nothing merely because backtests or retrospective slices look better.
+
+PARALLEL EVIDENCE LANES
+QUALITY DIPS V1
+- Keep QUALITY_DIPS_PAPER_V1 untouched until genuine qualifying lifecycle evidence exists.
+- Do not manufacture samples or loosen criteria merely to increase activity.
+- When evidence exists, validate lifecycle integrity, fill realism, risk, expectancy and regime dependence before any revision.
+
+PREDICTION MARKETS
+- Continue scanning and evidence collection.
+- Preserve the expired-unclosed/no-liquidity historical event exactly as recorded.
+- Keep unattended PAPER opening blocked until lifecycle/exit-liquidity validation earns reopening.
+- Maintain executable entry AND exit depth requirements.
+- Expand calibration, liquidity, slippage, event timing, settlement and terminal-state diagnostics before promotion.
+- Keep Prediction accounting and evidence separate from Perps; never pool win rate/expectancy across incompatible products.
+
+INTERNET / ALPHA INTELLIGENCE - PLANNED CONTROLLED BUILD
+Goal: give Atlas internet-derived context without giving untrusted web content execution authority.
+Phase A - architecture:
+- Separate ingestion/intelligence service from strategies and execution.
+- Source registry with source class, URL/domain, retrieval timestamp, publication timestamp, symbols/entities, event type, provenance and trust tier.
+- Treat all fetched text as untrusted data, never as Atlas instructions.
+- Deduplicate repeated stories and link secondary reports to primary/official sources when possible.
+Phase B - sources:
+- Official exchange/project/company/regulator announcements.
+- Reputable financial/crypto news and macro/economic releases.
+- Market structure, funding/OI/liquidation and sector context from permitted data providers.
+- Carefully governed social/community signals as low-trust context, not trade commands.
+Phase C - intelligence:
+- Entity/symbol linking, freshness, novelty, corroboration, catalyst classification and confidence.
+- Preserve the evidence that produced every intelligence card.
+- Detect contradictory claims, stale stories and rumor-only narratives.
+Phase D - surfaces:
+- Alpha/Catalyst feed.
+- Symbol-linked intelligence cards on Perps, Investment and Prediction.
+- Pre-trade “what changed / why it matters” context.
+- Discord alerts for genuinely material corroborated events with dedup/cooldown.
+Phase E - research:
+- Measure whether intelligence features improve prospective PAPER selection/calibration.
+- Internet evidence may become a versioned model feature only after controlled validation.
+- It never bypasses risk locks, sizing limits, strategy freezes or execution permissions.
+
+KALSHI / ADDITIONAL PERPS VENUE
+- Keep gated until the Hyperliquid lane has trustworthy forward PAPER evidence.
+- Re-verify Kalshi's then-current perpetual product/API availability and mechanics before implementation; do not assume today's product surface will remain unchanged.
+- Build as a separate venue adapter/lane with native order types, fees, leverage/margin, funding, liquidity, liquidation and accounting semantics.
+- PAPER first; validate independently.
+- Only after both venues are trustworthy should Atlas compare venue-specific opportunities.
+- Never pool incompatible venue evidence into a fake universal expectancy.
+- A future router may choose the better validated venue for a setup, but only under explicit risk and execution-quality gates.
+
+FRONTEND / OPERATOR EXPERIENCE
+- Preserve current truthful health state; never show STOPPED/READY states that disagree with runtime truth.
+- Planned UI pass after the current causal research checkpoint:
+  * clearer Perps Prepare vs manual-execution workflow and order-readiness states;
+  * visible strategy/execution-model version and evidence maturity;
+  * MAE/MFE, stop-overshoot and tail-risk diagnostics;
+  * Prediction lifecycle/liquidity warnings that cannot be mistaken for valid closes;
+  * Quality Dips evidence maturity;
+  * Alpha/Catalyst feed and provenance badges when internet intelligence exists;
+  * venue identity and native units everywhere once multiple perp venues exist.
+- UI must remain an operator surface, not a hidden authority that mutates strategy.
+
+DISCORD / ALERT SYSTEM
+- Keep current Discord readiness intact while evidence collection continues.
+- Rebuild/expand alerts as a typed event pipeline rather than ad-hoc messages.
+- Separate opportunity, execution-quality, lifecycle-risk, prediction, alpha/catalyst, health and evidence-maturity alert classes.
+- Support DM + server-channel routing, severity, deduplication, cooldowns and acknowledgement metadata.
+- Every actionable alert should include symbol/market, lane, side where relevant, strategy/version, timestamp, reason/evidence and risk context.
+- Alerts never place orders and never imply guaranteed profit.
+
+LONGER-TERM ATLAS INTELLIGENCE
+- Maintain immutable/versioned evidence so Atlas can learn from forward outcomes without rewriting history.
+- Add cross-lane research only through normalized context features while preserving each lane's native PnL/accounting units.
+- Build regime and catalyst context, execution-quality models, calibration monitoring, anomaly detection and drift detection.
+- Add decision-support explanations that distinguish observed fact, model inference, uncertainty and missing evidence.
+- Continue to favor trustworthy evidence quality over trade frequency.
+
+LIVE-CAPITAL PROMOTION GATE - FUTURE ONLY
+No lane becomes eligible for live capital until it has:
+1. sufficient genuine forward PAPER sample size and duration;
+2. positive expectancy after realistic fees/slippage with acceptable tail risk;
+3. stable behavior across relevant regimes rather than one favorable slice;
+4. validated execution and lifecycle semantics;
+5. deterministic risk controls, kill switches and reconciliation;
+6. no unresolved evidence-integrity defects;
+7. explicit version freeze and rollback path;
+8. a separate deliberate promotion execution.
+Until then, Atlas remains research/PAPER and automatic real-money execution remains disabled.
+
+NEXT ACTION
+- Execute E26 as the next controlled code/research execution.
+- In parallel, allow untouched forward PAPER evidence to accumulate.
+- Do not tune from E25 alone.
+- After E26, decide whether evidence justifies an E27 challenger or whether Atlas should continue observation unchanged.
