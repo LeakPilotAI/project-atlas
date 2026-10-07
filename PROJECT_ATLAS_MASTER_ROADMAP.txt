@@ -10931,3 +10931,49 @@ NEXT - EXECUTION 115
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 115 - MACHINE-READABLE TIME SEMANTICS - GREEN - 2026-10-07
+- Audited established frontend refresh-age/timestamp presentation for human-readable relative time that lacked machine-readable datetime semantics.
+- Added a bounded RelativeTime renderer in Command Center that preserves the existing ago(...) display text and missing/invalid fallbacks while wrapping valid source timestamps in <time> with ISO dateTime values.
+- Applied RelativeTime to the Command Center API snapshot age, system-health last-scan age, open-paper age when the quote is not stale, all six Live activity timestamp rows, and the Quality Dips research scan age.
+- Updated the existing Dt helper value type from string to ReactNode solely so semantic time elements can occupy the same existing definition-value positions.
+- Added machine-readable <time dateTime=...> semantics to Crypto Quality Dips Last accepted response after a successful response while preserving the existing awaiting-first-response fallback and ageLabel output.
+- Preserved all visible relative-time copy, stale-quote behavior, calculations, CSS/layout, endpoints, polling/clock cadences, evidence behavior, and authority boundaries.
+- Added five E115 source-contract tests covering the shared relative-time renderer, primary Command Center ages, Live activity ages, Crypto accepted-response time semantics, and preserved refresh contracts.
+- Initial full regression exposed one E108 source-contract failure because the older table test required the literal ago(t.opened_at) expression.
+- Confirmed the E108 failure was test brittleness rather than a visible/runtime regression; updated E108 to require the new RelativeTime wrapper for the same opened_at value.
+- Repair-focused E108/E115 regression: 10/10 passed.
+- Focused E113-E115 regression before repair: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- git diff --check clean.
+- Initial full regression: 1,610 passed, 1 failed, 2 warnings; sole failure was brittle E108 literal-expression lookup.
+- Final full Python regression after the complete timestamp coverage: 1,611 passed, 0 failed, 2 known dependency warnings in 130.36s.
+- Implementation commit: 67fca2d6 e115 add machine readable time semantics
+- E115 GREEN.
+
+VISUAL STATUS AFTER E115
+[DONE] E48-E115 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated capabilities remain gated.
+[TODO] final bounded frontend semantic audit; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, document/platform accessibility, announcements, visual progress, definition relationships, named regions, accessible tables, collection semantics, contextual link purpose, article/heading ownership, compact technical-label semantics, explanatory-description ownership, status/metric group naming, and machine-readable time semantics are established.
+2. E29 evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; restricted capabilities stay gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 116
+1. Run a final bounded frontend semantic-contract audit across Command Center, Forward Evidence, Research Surfaces, and shared shell/components to identify any remaining concrete accessibility-semantic gap before closing this polish sequence.
+2. Change only a verified static semantic gap; if none exists, record the audit as a no-product-change GREEN checkpoint rather than inventing work.
+3. Preserve all visible copy/layout, calculations, endpoints, refresh behavior, evidence behavior, and established authority boundaries.
+4. Add or strengthen only the minimum source-contract coverage justified by the audit.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged; prepare the roadmap to transition into product/deployment hardening after this audit.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
