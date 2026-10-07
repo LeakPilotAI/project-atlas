@@ -10364,3 +10364,46 @@ NEXT - EXECUTION 102
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 102 - ROOT VIEWPORT AND COLOR-SCHEME SEMANTICS - GREEN - 2026-10-07
+- Inspected root browser viewport/theme handling and global document palette across all established Atlas routes.
+- Confirmed Atlas already uses a fixed dark document background (#07080b) but previously declared no explicit Next viewport export, browser color scheme, or theme color.
+- Added a typed static Next Viewport export at root with width=device-width and initialScale=1 for explicit responsive platform semantics.
+- Declared colorScheme=dark and themeColor=#07080b to align browser chrome/form-control color semantics with the existing Atlas document palette.
+- Explicitly preserved user zoom accessibility: no maximumScale and no userScalable restriction were introduced.
+- Preserved html lang=en, hydration handling, SkipNavigation, persistent Research Evidence navigation, all route content/layout composition, route destinations, polling/API behavior, evidence rendering, safety copy, and authority boundaries.
+- Introduced no client directive, hooks, event handlers, scoring, readiness, strategy-selection, PAPER/execution, promotion, scheduler, repair, or live-capital behavior.
+- Added five E102 source-contract tests covering typed responsive viewport metadata, dark palette/browser semantics, unrestricted user zoom, intact root document/navigation semantics, and unchanged runtime/authority boundaries.
+- Focused E100-E102 regression: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted root-layout ESLint: exit 0.
+- Next.js optimized production build: exit 0; /, /_not-found, /research, and /research/surfaces built successfully.
+- git diff --check clean.
+- Full Python regression: 1,546 passed, 0 failed, 2 known dependency warnings in 136.11s.
+- Implementation commit: 94e3e313 e102 harden root viewport semantics
+- E102 GREEN. Atlas now declares explicit responsive viewport and dark browser color semantics consistent with its existing document palette while preserving user zoom and all runtime/authority behavior.
+
+VISUAL STATUS AFTER E102
+[DONE] E48-E102 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated authority capabilities remain gated.
+[TODO] remaining bounded product-facing accessibility/semantic polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, landmarks, keyboard focus, skip navigation, route metadata, and root viewport/color semantics are established.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 103
+1. Inspect text-selection and reduced-motion platform behavior in the shared frontend shell for bounded accessibility consistency.
+2. Apply only global static CSS hardening if a genuine gap exists; preserve current visual identity, route composition, navigation, runtime hooks, polling/API behavior, evidence rendering, and authority boundaries.
+3. Respect user accessibility preferences rather than suppressing them; do not disable selection, zoom, or browser-native accessibility behavior.
+4. Add E103 source-contract tests for any shared platform accessibility contract and unchanged runtime/authority behavior.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
