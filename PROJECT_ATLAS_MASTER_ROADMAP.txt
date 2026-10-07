@@ -10626,3 +10626,46 @@ NEXT - EXECUTION 108
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 108 - FRONTEND TABLE SEMANTICS AND NARROW-VIEWPORT READABILITY - GREEN - 2026-10-07
+- Audited all established frontend table markup across Atlas surfaces.
+- Confirmed Command Center contains three data tables: Open paper trades, Quality dip research candidates, and Perp opportunities.
+- Added a screen-reader-only caption to each table describing its data purpose without duplicating visible UI.
+- Added scope="col" to all 17 column headers so header/data relationships are explicit.
+- Wrapped all three tables in bounded horizontal overflow containers and added conservative minimum widths so narrow/mobile viewports scroll tables rather than crushing columns.
+- Preserved every visible column label, row value/expression, ordering, calculations, colors, surrounding card copy, and empty-state behavior.
+- Preserved Command Center polling/API behavior, Crypto Quality Dips refresh behavior, Forward Evidence refresh behavior, safety copy, and established capability boundaries.
+- Added five E108 source-contract tests covering all established tables, responsive overflow, accessible captions, column scopes, preserved data expressions, and unchanged runtime/boundary contracts.
+- Focused E106-E108 regression: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- git diff --check clean.
+- Full Python regression: 1,576 passed, 0 failed, 2 known dependency warnings in 133.80s.
+- Implementation commit: 4c67af8b e108 harden table semantics
+- E108 GREEN.
+
+VISUAL STATUS AFTER E108
+[DONE] E48-E108 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated capabilities remain gated.
+[TODO] remaining bounded product-facing semantic polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, document/platform accessibility, announcements, visual progress, definition relationships, named regions, and accessible/responsive data tables are established.
+2. E29 evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; restricted capabilities stay gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 109
+1. Inspect frontend lists and repeated collections for bounded list semantics where visual groups represent true ordered/unordered collections.
+2. Apply only static semantic hardening where a genuine gap exists; preserve visible content, ordering, layout, refresh behavior, and established boundaries.
+3. Do not introduce new runtime state or event logic, and do not expand any gated capability.
+4. Add E109 source-contract tests for collection semantics and unchanged application contracts.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
