@@ -10580,3 +10580,49 @@ NEXT - EXECUTION 107
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 107 - FRONTEND REGION NAMING AND HEADING SEMANTICS - GREEN - 2026-10-07
+- Audited section/card heading ownership and repeated region structure across established frontend surfaces.
+- Confirmed grouping-only sections without titles remain structural groups rather than artificially named landmarks.
+- Added explicit heading ownership to the existing Command Center why-no-paper, 24-hour funnel, and active-gates regions using their existing visible titles.
+- Promoted the existing why-no-paper visual label from paragraph markup to an h2 without changing its text or classes.
+- Converted the reusable Command Center Card wrapper from a generic div to a named section using its existing visible title.
+- Named Forward Evidence reusable Section and Panel regions from their existing title prop.
+- Converted repeated Forward Evidence candidate Card wrappers to named articles using their existing candidate name.
+- Preserved visible copy, CSS classes, data ordering/calculations, polling, endpoints, evidence rendering, and established capability boundaries.
+- Added five E107 source-contract tests for Command Center titled-region ownership, reusable Card naming, Forward Evidence Section/Panel naming, repeated candidate article naming, and unchanged application contracts.
+- Focused E105-E107 regression: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- git diff --check clean.
+- First full Python regression encountered one unrelated time-sensitive evidence-history equality failure: test_invalid_timestamp_cannot_become_current_evidence_or_change_permissions. E107 does not touch that backend path.
+- The isolated evidence-history test immediately passed 1/1.
+- Fresh full Python regression: 1,571 passed, 0 failed, 2 known dependency warnings in 128.02s.
+- Implementation commit: b90d3ed7 e107 name frontend regions
+- E107 GREEN.
+
+VISUAL STATUS AFTER E107
+[DONE] E48-E107 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated capabilities remain gated.
+[TODO] remaining bounded product-facing semantic polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, document/platform accessibility, announcements, visual progress, definition relationships, and named frontend regions are established.
+2. E29 evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; restricted capabilities stay gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 108
+1. Inspect frontend data tables for captions, scope relationships, and bounded overflow/readability semantics across established surfaces.
+2. Apply only static/semantic hardening where a genuine gap exists; preserve visible data, ordering, calculations, responsive composition, refresh behavior, and established boundaries.
+3. Do not introduce new runtime state or event logic, and do not expand any gated capability.
+4. Add E108 source-contract tests for table semantics and unchanged application contracts.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
