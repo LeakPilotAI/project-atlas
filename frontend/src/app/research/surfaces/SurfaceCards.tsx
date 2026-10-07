@@ -12,7 +12,7 @@ export function ResearchSurfaceCard({surface}:{surface:ResearchSurfaceDefinition
    <Posture label="Data posture" value={surface.dataPosture}/>
    <Posture label="Authority posture" value={surface.authorityPosture}/>
   </dl>
-  <Link href={surface.href} className="mt-auto pt-5 text-xs font-medium text-cyan-300">Open read-only surface →</Link>
+  <Link href={surface.href} aria-label={`Open ${surface.title} read-only surface`} className="mt-auto pt-5 text-xs font-medium text-cyan-300">Open read-only surface →</Link>
  </article>
 }
 
