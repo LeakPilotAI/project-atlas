@@ -11409,3 +11409,54 @@ NEXT - EXECUTION 124
 6. Keep VPS/Ubuntu/systemd/hosted-server deployment out of scope.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 124 - WINDOWS-LOCAL DOCKER PACKAGING REPRODUCIBILITY - GREEN - 2026-10-07
+- Audited the remaining Windows-local Docker dependency packaging/startup contract without mutating running containers, persistent volumes, Docker Desktop settings, or real credentials.
+- Identified and removed a launcher hazard that force-removed atlas-postgres/atlas-redis and ran docker compose down before every startup, causing needless dependency recreation.
+- Atlas-Launch.ps1 now reconciles only the owned postgres/redis services with docker compose up -d --no-recreate postgres redis and does not tear down healthy dependency containers first.
+- Preserved the existing explicit Atlas shutdown path; E124 changes startup behavior only and does not redefine operator-requested stop ownership.
+- Pinned Timescale/Postgres and Redis dependency images to the exact locally established repository digests, removing floating latest/tag drift from the Windows-local packaging contract.
+- Updated the Postgres healthcheck to use the configured POSTGRES_USER and POSTGRES_DB container environment rather than hardcoding atlas identity.
+- Preserved atlas_pgdata and atlas_redis named persistent volumes and their existing mount targets.
+- Preserved localhost dependency ports 5432 and 6379, existing container names, credential externalization from E123, and E122 readiness ownership.
+- Docker Compose configuration validated successfully with a synthetic validation-only POSTGRES_PASSWORD; no real credential was read or printed.
+- No docker compose up/down, docker rm, prune, volume deletion, image pull, or running-container mutation was performed as part of E124 validation.
+- Added five E124 contract tests covering digest-pinned images, configured Postgres health identity, persistent named volumes, non-destructive launcher startup, and stable local ports.
+- Focused E120-E124 security/readiness/packaging regression: 28/28 passed.
+- git diff --check clean aside from standard LF-to-CRLF working-copy warnings.
+- Full Python regression: 1,659 passed, 0 failed, 2 known dependency warnings in 104.86s.
+- No frontend source/runtime behavior changed, so a redundant frontend compile/build cycle was not required for E124.
+- Implementation commit: a42ed7e2 e124 harden local docker reproducibility
+- E124 GREEN.
+
+VISUAL STATUS AFTER E124
+[DONE] E48-E116 frontend semantic/accessibility sequence GREEN and closed.
+[DONE] E117 Windows operator/recovery alignment GREEN.
+[DONE] E118 deterministic frontend fresh-install contract GREEN.
+[DONE] E119 production frontend dependency vulnerabilities remediated GREEN.
+[DONE] E120 fail-closed runtime placeholder/default credential validation GREEN.
+[DONE] E121 non-destructive Windows Git update/recovery safety GREEN.
+[DONE] E122 deterministic read-only operator readiness diagnostics GREEN.
+[DONE] E123 fail-closed Docker credential handoff GREEN.
+[DONE] E124 Windows-local Docker packaging reproducibility GREEN.
+[ACTIVE] Windows-local final release-readiness acceptance.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Residual Discord lifecycle producers remain gated.
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted-server deployment until explicitly re-enabled.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Final Windows-local clean-install/update/recovery acceptance and release-readiness checklist.
+2. Genuine E29 and Alpha/cadence/corroboration evidence continues naturally; no synthetic acceleration.
+3. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts.
+
+NEXT - EXECUTION 125
+1. Perform the final Windows-local release-readiness contract audit across fresh setup, safe update, launch, readiness diagnostics, shutdown/recovery, configuration handoff, and reproducible dependency ownership.
+2. Prefer deterministic source/contract acceptance and read-only diagnostics; do not destroy or recreate persistent data merely to prove clean-install behavior.
+3. Verify operator instructions are internally consistent and no stale main/VPS/destructive recovery guidance remains in the supported Windows-local path.
+4. Preserve all E120-E124 fail-closed safety boundaries, strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, and live-capital boundaries.
+5. Add final acceptance coverage and run applicable focused/full regression.
+6. Keep VPS/Ubuntu/systemd/hosted-server deployment explicitly out of scope.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
