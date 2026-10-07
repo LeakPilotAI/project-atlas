@@ -213,16 +213,18 @@ export default function Dashboard() {
             {opens.length === 0 ? (
               <Empty text="No open paper trades. Bot is scanning — Discord fires when one qualifies." />
             ) : (
-              <table className="w-full text-sm">
-                <thead className="text-zinc-500 text-left text-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[42rem] text-sm">
+                  <caption className="sr-only">Open paper trades with current entry, mark, stop, excursion, and age data.</caption>
+                  <thead className="text-zinc-500 text-left text-xs">
                   <tr>
-                    <th className="py-2">Symbol</th>
-                    <th>Side</th>
-                    <th>Entry</th>
-                    <th>Mark</th>
-                    <th>Stop</th>
-                    <th>MFE R</th>
-                    <th>Age</th>
+                    <th scope="col" className="py-2">Symbol</th>
+                    <th scope="col">Side</th>
+                    <th scope="col">Entry</th>
+                    <th scope="col">Mark</th>
+                    <th scope="col">Stop</th>
+                    <th scope="col">MFE R</th>
+                    <th scope="col">Age</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -246,7 +248,8 @@ export default function Dashboard() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
             )}
           </Card>
 
@@ -273,15 +276,17 @@ export default function Dashboard() {
             {prepare.length === 0 && dips.length === 0 ? (
               <Empty text="No dip snapshot yet — scanner runs about every 15 minutes while the engine is up." />
             ) : (
-              <table className="w-full text-sm">
-                <thead className="text-zinc-500 text-left text-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[40rem] text-sm">
+                  <caption className="sr-only">Quality dip research candidates with action, price-change context, and thesis.</caption>
+                  <thead className="text-zinc-500 text-left text-xs">
                   <tr>
-                    <th className="py-2">Action</th>
-                    <th>Symbol</th>
-                    <th>Off high</th>
-                    <th>1d</th>
-                    <th>5d</th>
-                    <th>Thesis</th>
+                    <th scope="col" className="py-2">Action</th>
+                    <th scope="col">Symbol</th>
+                    <th scope="col">Off high</th>
+                    <th scope="col">1d</th>
+                    <th scope="col">5d</th>
+                    <th scope="col">Thesis</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -296,7 +301,8 @@ export default function Dashboard() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
             )}
           </Card>
 
@@ -304,13 +310,15 @@ export default function Dashboard() {
             {opps.length === 0 ? (
               <Empty text="No stored perp setups yet. Strict gates on purpose — do not loosen them from this page." />
             ) : (
-              <table className="w-full text-sm">
-                <thead className="text-zinc-500 text-left text-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[30rem] text-sm">
+                  <caption className="sr-only">Stored perpetual opportunities with status, side, and entry price.</caption>
+                  <thead className="text-zinc-500 text-left text-xs">
                   <tr>
-                    <th className="py-2">Symbol</th>
-                    <th>Status</th>
-                    <th>Side</th>
-                    <th>Entry</th>
+                    <th scope="col" className="py-2">Symbol</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Side</th>
+                    <th scope="col">Entry</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -323,7 +331,8 @@ export default function Dashboard() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
             )}
           </Card>
         </section>
