@@ -21,7 +21,7 @@ def test_e118_fresh_setup_fails_closed_if_locked_install_fails():
 def test_e118_frontend_manifest_and_lock_are_tracked_contracts():
     package=PACKAGE.read_text(encoding="utf-8")
     lock=LOCK.read_text(encoding="utf-8")
-    assert '"next": "16.2.12"' in package
+    assert '"next": "16.4.0"' in package
     assert '"lockfileVersion"' in lock
 
 def test_e118_backend_setup_still_uses_tracked_pyproject():
