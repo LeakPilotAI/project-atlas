@@ -11022,3 +11022,51 @@ NEXT - EXECUTION 117
 6. Run applicable focused validation plus full regression; keep genuine E29/Alpha evidence accumulation unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 117 - WINDOWS RELEASE-READINESS OPERATIONS ALIGNMENT - GREEN - 2026-10-07
+- Began the product/deployment-hardening phase with a repository inventory of tracked startup, deployment, recovery, environment/configuration, and operator artifacts.
+- Inventory included README.md, deploy/README.md, docs/ATLAS_OPERATOR_GUIDE.md, docs/WINDOWS.md, .env.example, desktop batch entrypoints, and scripts/windows launcher/readiness/stop/setup/shortcut workflows.
+- Identified the highest-confidence release-readiness gap as tracked Windows documentation drift rather than a runtime-code defect.
+- docs/WINDOWS.md contradicted the current launcher/operator contract by describing one desktop shortcut, generic Python/Node termination during replacement, and force-quitting Docker Desktop, while the current tracked implementation installs separate Project Atlas and Stop Atlas shortcuts and scopes shutdown to Atlas-owned resources while preserving Docker Desktop/Genesis.
+- Rewrote docs/WINDOWS.md to match the current tracked implementation and operator guide: Project Atlas -> ATLAS.bat, Stop Atlas -> ATLAS-STOP.bat, Atlas-scoped graceful shutdown/recovery, Docker Desktop/Genesis preservation, readiness-gate enforcement, and current diagnostic paths.
+- Removed generic Get-Process python,node kill guidance from the Windows operator recovery document.
+- Hardened secret/data recovery instructions so root .env and backend/.env backups remain distinct rather than copying one backup blindly over both environment locations.
+- Added explicit instruction to review .env.example and never infer/invent missing credentials.
+- Clarified that tracked update workflows can be destructive and operators must inspect the target ref/effects rather than assuming an arbitrary development branch is a release branch.
+- Added an explicit operational safety boundary: packaging/recovery instructions do not alter strategy selection, evidence requirements, PAPER/execution authority, promotion gates, Discord lifecycle gating, schedulers, or live-capital permissions.
+- Added five E117 source-contract tests tying the Windows documentation to the actual shortcut installer, scoped stop behavior, environment backup separation, readiness chain, and authority boundary.
+- Initial focused run: 4 passed, 1 failed because the test incorrectly expected launcher-ready.json to be written directly by Atlas-Launch.ps1.
+- Audited the implementation chain and confirmed Atlas-Launch.ps1 invokes Atlas-Ready.ps1, while Atlas-Ready.ps1 owns launcher-ready.json. Corrected the test only; no runtime or documentation behavior changed from that correction.
+- Final focused E117 regression: 5/5 passed.
+- git diff --check clean.
+- Full Python regression: 1,621 passed, 0 failed, 2 known dependency warnings in 136.09s.
+- No frontend product code changed, so frontend compile/lint/build was not required for this documentation/source-contract-only execution.
+- Implementation commit: bae33d74 e117 align windows release operations
+- E117 GREEN.
+
+VISUAL STATUS AFTER E117
+[DONE] E48-E116 frontend semantic/accessibility sequence GREEN and closed.
+[DONE] E117 Windows release-readiness operations alignment GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated capabilities remain gated.
+[ACTIVE] Product/deployment hardening and release-readiness.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Frontend semantic/accessibility foundation is established and closed unless a new demonstrated need appears.
+2. Windows operator/recovery documentation now matches the current tracked scoped launcher/stop/readiness contract.
+3. E29 evidence must continue accumulating genuinely over time; no synthetic acceleration.
+4. Alpha/cadence/corroboration genuine evidence accumulation remains active; restricted capabilities stay gated.
+5. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+6. Product/deployment hardening remains: reconcile deployment artifacts, environment/configuration contracts, deterministic release/update procedures, security documentation, packaging, and release-readiness.
+
+NEXT - EXECUTION 118
+1. Audit deploy/README.md, deploy systemd units/timer, docker-compose.yml, backend packaging metadata, and .env.example against the current application/runtime entrypoints.
+2. Identify and correct the highest-confidence deployment-contract drift without inventing infrastructure, domains, credentials, or production authority.
+3. Prefer documentation/unit/config contract alignment; do not change runtime topology unless a proven defect requires it.
+4. Preserve Windows runtime behavior, localhost API contracts, strategy/evidence behavior, PAPER/execution authority, schedulers, Discord lifecycle gating, and live-capital boundaries.
+5. Add minimum source-contract coverage for the corrected deployment contract and run applicable focused/full regression.
+6. Continue genuine E29/Alpha evidence accumulation unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
