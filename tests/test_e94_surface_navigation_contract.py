@@ -9,8 +9,9 @@ NAV = Path("frontend/src/app/components/SurfaceNavLink.tsx")
 def test_e94_shared_nav_link_is_pure_static_presentation():
     text = NAV.read_text(encoding="utf-8")
     assert 'import Link from "next/link";' in text
-    assert 'primary: "rounded-lg border border-cyan-500/20 px-3 py-2 text-xs text-cyan-300"' in text
-    assert 'secondary: "rounded-lg border border-white/10 px-3 py-2 text-xs text-zinc-400"' in text
+    assert "primary: `rounded-lg border border-cyan-500/20 px-3 py-2 text-xs text-cyan-300 ${INTERACTION_CLASS}`" in text
+    assert "secondary: `rounded-lg border border-white/10 px-3 py-2 text-xs text-zinc-400 ${INTERACTION_CLASS}`" in text
+    assert "const INTERACTION_CLASS =" in text
     assert "VARIANT_CLASS[variant]" in text
     for token in ('"use client"', "fetch(", "useEffect", "useState", "<button", "API"):
         assert token not in text
