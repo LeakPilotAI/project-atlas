@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ReadOnlyPageShell } from "@/app/components/ReadOnlyPageShell";
+import { SurfaceNavLink } from "@/app/components/SurfaceNavLink";
 import { GATED_CAPABILITIES, RESEARCH_SURFACES } from "./catalog";
 import { AUTHORITY_LEGEND, SECTION_POSTURE } from "./presentation";
 import { GatedCapabilityCard, ResearchSurfaceCard } from "./SurfaceCards";
@@ -10,7 +10,7 @@ export default function ResearchSurfacesPage(){
  return <ReadOnlyPageShell>
   <header className="flex flex-wrap items-start justify-between gap-4">
    <div><p className="text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">Atlas research architecture</p><h1 className="mt-1 text-2xl font-semibold text-white">Research Surfaces</h1><p className="mt-1 max-w-2xl text-xs text-zinc-500">Read-only map of operator and research surfaces. Evidence presentation does not create strategy-selection, PAPER, execution, promotion, or live-capital authority.</p></div>
-   <nav className="flex gap-2" aria-label="Research navigation"><Link href="/research" className="rounded-lg border border-cyan-500/20 px-3 py-2 text-xs text-cyan-300">Forward Evidence</Link><Link href="/" className="rounded-lg border border-white/10 px-3 py-2 text-xs text-zinc-400">Command Center</Link></nav>
+   <nav className="flex gap-2" aria-label="Research navigation"><SurfaceNavLink href="/research" variant="primary">Forward Evidence</SurfaceNavLink><SurfaceNavLink href="/">Command Center</SurfaceNavLink></nav>
   </header>
   <section className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 sm:p-5" aria-labelledby="research-boundary-title">
    <p id="research-boundary-title" className="text-[11px] uppercase tracking-widest text-amber-400">Shared safety boundary</p>

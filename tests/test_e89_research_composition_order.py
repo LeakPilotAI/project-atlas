@@ -36,8 +36,8 @@ def test_e89_navigation_remains_in_header_and_read_only_routes_unchanged():
     text=_page()
     header=text.split("<header",1)[1].split("</header>",1)[0]
     assert 'aria-label="Research navigation"' in header
-    assert '<Link href="/research"' in header
-    assert '<Link href="/"' in header
+    assert '<SurfaceNavLink href="/research"' in header
+    assert '<SurfaceNavLink href="/"' in header
     assert "Forward Evidence" in header
     assert "Command Center" in header
 

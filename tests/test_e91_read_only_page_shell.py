@@ -36,7 +36,7 @@ def test_e91_e89_composition_order_survives_shell_adoption():
 
 def test_e91_routes_accessibility_and_gates_remain_present():
     text=PAGE.read_text(encoding="utf-8")
-    assert '<Link href="/research"' in text
-    assert '<Link href="/"' in text
+    assert '<SurfaceNavLink href="/research"' in text
+    assert '<SurfaceNavLink href="/"' in text
     for id_ in ("research-boundary-title","authority-legend-title","navigable-surfaces-title","gated-capabilities-title","active-evidence-title"):
         assert f'aria-labelledby="{id_}"' in text

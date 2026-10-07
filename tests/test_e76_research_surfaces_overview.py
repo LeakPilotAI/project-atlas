@@ -36,6 +36,6 @@ def test_e76_overview_contains_navigation_not_actions():
 def test_e76_existing_forward_evidence_links_to_overview_without_contract_change():
     text=RESEARCH.read_text(encoding="utf-8")
     assert 'href="/research/surfaces"' in text
-    assert ">Research Surfaces</Link>" in text
+    assert ">Research Surfaces</SurfaceNavLink>" in text
     assert "/api/validation/challengers/research-evidence" in text
     assert "Research progress is not production approval." in text
