@@ -7,8 +7,8 @@ CATALOG=Path("frontend/src/app/research/surfaces/catalog.ts")
 def test_e86_page_uses_pure_card_components():
     text=PAGE.read_text(encoding="utf-8")
     assert 'import { GatedCapabilityCard, ResearchSurfaceCard } from "./SurfaceCards";' in text
-    assert "RESEARCH_SURFACES.map(surface=><ResearchSurfaceCard" in text
-    assert "GATED_CAPABILITIES.map(capability=><GatedCapabilityCard" in text
+    assert "RESEARCH_SURFACES.map(surface=><li key={surface.title}><ResearchSurfaceCard surface={surface}/></li>)" in text
+    assert "GATED_CAPABILITIES.map(capability=><li key={capability.title}><GatedCapabilityCard capability={capability}/></li>)" in text
 
 def test_e86_navigable_card_preserves_link_and_postures():
     text=CARDS.read_text(encoding="utf-8")

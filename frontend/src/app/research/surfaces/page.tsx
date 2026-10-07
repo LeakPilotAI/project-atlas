@@ -25,23 +25,23 @@ export default function ResearchSurfacesPage(){
   </section>
   <section aria-labelledby="navigable-surfaces-title">
    <SectionHeading id="navigable-surfaces-title" title="Current navigable surfaces" posture={SECTION_POSTURE.navigable}/>
-   <div className="grid gap-4 lg:grid-cols-3" aria-label="Atlas research surfaces">
-   {RESEARCH_SURFACES.map(surface=><ResearchSurfaceCard key={surface.title} surface={surface}/>)}
-   </div>
+   <ul className="grid gap-4 lg:grid-cols-3" aria-label="Atlas research surfaces">
+   {RESEARCH_SURFACES.map(surface=><li key={surface.title}><ResearchSurfaceCard surface={surface}/></li>)}
+   </ul>
   </section>
   <section aria-labelledby="gated-capabilities-title">
    <SectionHeading id="gated-capabilities-title" title="Gated roadmap capabilities" posture={SECTION_POSTURE.gated}/>
-   <div className="grid gap-3 md:grid-cols-2">
-    {GATED_CAPABILITIES.map(capability=><GatedCapabilityCard key={capability.title} capability={capability}/>)}
-   </div>
+   <ul className="grid gap-3 md:grid-cols-2">
+    {GATED_CAPABILITIES.map(capability=><li key={capability.title}><GatedCapabilityCard capability={capability}/></li>)}
+   </ul>
   </section>
   <section className="rounded-2xl border border-white/8 bg-[#10131a] p-4 sm:p-5" aria-labelledby="active-evidence-title">
    <h2 id="active-evidence-title" className="text-sm font-medium text-zinc-300">Active evidence collection</h2>
    <p className="mt-1 text-xs text-zinc-600">{SECTION_POSTURE.active}</p>
-   <div className="mt-3 grid gap-2 text-xs md:grid-cols-2">
-    <ActiveEvidenceState label="E29 forward strategy evidence" value="ACTIVE · genuine evidence only"/>
-    <ActiveEvidenceState label="Alpha / cadence / corroboration" value="ACTIVE · strategy selection gated"/>
-   </div>
+   <ul className="mt-3 grid gap-2 text-xs md:grid-cols-2">
+    <li><ActiveEvidenceState label="E29 forward strategy evidence" value="ACTIVE · genuine evidence only"/></li>
+    <li><ActiveEvidenceState label="Alpha / cadence / corroboration" value="ACTIVE · strategy selection gated"/></li>
+   </ul>
   </section>
  </ReadOnlyPageShell>
 }
