@@ -10,7 +10,8 @@ def test_e97_command_center_exposes_navigation_and_live_status_semantics():
     text=COMMAND.read_text(encoding="utf-8")
     assert '<nav aria-label="Research navigation"><SurfaceNavLink href="/research/surfaces" variant="primary">Research Surfaces</SurfaceNavLink></nav>' in text
     assert 'role="status" aria-live="polite"' in text
-    assert 'role="alert" className="rounded-xl border border-rose-500/30' in text
+    assert 'role="alert"' in text
+    assert 'className="rounded-xl border border-rose-500/30' in text
     assert '<header className="border-b border-white/5 bg-[#0b0d12]/90 backdrop-blur sticky top-0 z-10">' in text
     assert '<main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-6 py-6 space-y-6">' in text
 

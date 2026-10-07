@@ -134,7 +134,7 @@ export default function Dashboard() {
             <nav aria-label="Research navigation"><SurfaceNavLink href="/research/surfaces" variant="primary">Research Surfaces</SurfaceNavLink></nav>
             <div className="text-right text-xs text-zinc-500">
               <div>Refresh {tick === 0 ? "just now" : "every 8s"} · {ago(live?.updated_at)}</div>
-              <div role="status" aria-live="polite" aria-atomic="true" className={error ? "text-rose-400" : "text-emerald-400"}>
+              <div role="status" aria-live="polite" aria-atomic="true" aria-label={error ? "Application programming interface down" : "Application programming interface connected"} className={error ? "text-rose-400" : "text-emerald-400"}>
                 {error ? "API down" : "API connected"}
               </div>
             </div>
@@ -144,7 +144,7 @@ export default function Dashboard() {
 
       <main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {error && (
-          <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+          <div role="alert" aria-label="Application programming interface error" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
             {error}
           </div>
         )}

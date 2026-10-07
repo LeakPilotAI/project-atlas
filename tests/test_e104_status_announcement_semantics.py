@@ -11,8 +11,10 @@ def test_e104_command_center_connecting_state_is_polite_atomic_status():
 
 def test_e104_command_center_connection_state_remains_polite_atomic_and_errors_alert():
     text=COMMAND.read_text(encoding="utf-8")
-    assert '<div role="status" aria-live="polite" aria-atomic="true" className={error ? "text-rose-400" : "text-emerald-400"}>' in text
-    assert '<div role="alert" className="rounded-xl border border-rose-500/30' in text
+    assert '<div role="status" aria-live="polite" aria-atomic="true"' in text
+    assert 'className={error ? "text-rose-400" : "text-emerald-400"}' in text
+    assert '<div role="alert"' in text
+    assert 'className="rounded-xl border border-rose-500/30' in text
 
 def test_e104_crypto_transport_is_polite_atomic_status_and_failure_is_alert():
     text=CRYPTO.read_text(encoding="utf-8")
