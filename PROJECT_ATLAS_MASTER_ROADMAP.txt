@@ -11362,3 +11362,50 @@ NEXT - EXECUTION 123
 6. Do not rotate, print, infer, or overwrite the operator's real credentials.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 123 - FAIL-CLOSED DOCKER CREDENTIAL HANDOFF - GREEN - 2026-10-07
+- Audited the Windows-local Docker/config credential handoff between .env, docker-compose.yml, and the E120 backend DATABASE_URL runtime validation boundary.
+- Removed the remaining real-looking POSTGRES_PASSWORD fallback from docker-compose.yml without reading, printing, inferring, changing, or rotating the operator's actual credential.
+- docker-compose.yml now requires POSTGRES_PASSWORD to be supplied externally and fails closed with an explicit configuration error when it is absent.
+- Kept .env.example placeholder-only; no real credential or replacement secret was added to tracked files.
+- Verified Docker Compose behavior independently with no real credential access: missing POSTGRES_PASSWORD exits nonzero, while a synthetic validation-only external password parses successfully.
+- Preserved the existing Postgres volume/data contract, Redis ownership, localhost topology, Windows runtime flow, strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, and live-capital boundaries.
+- Added E123 source-contract tests proving the old built-in database password is absent, no fallback operator remains on POSTGRES_PASSWORD, and required external interpolation is explicit.
+- Focused E120-E123 security/readiness regression: 23/23 passed.
+- git diff --check clean.
+- Full Python regression: 1,654 passed, 0 failed, 2 known dependency warnings in 112.62s.
+- No frontend source/runtime behavior changed, so a redundant frontend compile/build cycle was not required for E123.
+- Implementation commit: 58a1e075 e123 require external postgres credential
+- E123 GREEN.
+
+VISUAL STATUS AFTER E123
+[DONE] E48-E116 frontend semantic/accessibility sequence GREEN and closed.
+[DONE] E117 Windows operator/recovery alignment GREEN.
+[DONE] E118 deterministic frontend fresh-install contract GREEN.
+[DONE] E119 production frontend dependency vulnerabilities remediated GREEN.
+[DONE] E120 fail-closed runtime placeholder/default credential validation GREEN.
+[DONE] E121 non-destructive Windows Git update/recovery safety GREEN.
+[DONE] E122 deterministic read-only operator readiness diagnostics GREEN.
+[DONE] E123 fail-closed Docker credential handoff GREEN.
+[ACTIVE] Windows-local product/release hardening.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Residual Discord lifecycle producers remain gated.
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted-server deployment until explicitly re-enabled.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Backend/frontend/local-Docker packaging and dependency reproducibility.
+2. Final Windows-local clean-install/update/recovery acceptance and release-readiness checklist.
+3. Genuine E29 and Alpha/cadence/corroboration evidence continues naturally; no synthetic acceleration.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts.
+
+NEXT - EXECUTION 124
+1. Audit the remaining Windows-local Docker packaging contract for deterministic service ownership, image/build inputs, persistent-volume preservation, health dependencies, and localhost port/config consistency.
+2. Harden only verified reproducibility gaps; do not recreate, delete, prune, or mutate the operator's running containers or persistent data as part of the audit.
+3. Keep credential values external and never print, infer, rotate, or overwrite real secrets.
+4. Preserve strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, live-capital boundaries, and the E121-E123 fail-closed recovery/config contracts.
+5. Add source-contract validation and run applicable focused/full regression.
+6. Keep VPS/Ubuntu/systemd/hosted-server deployment out of scope.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
