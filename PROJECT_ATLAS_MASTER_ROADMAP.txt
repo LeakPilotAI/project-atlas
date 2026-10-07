@@ -10669,3 +10669,46 @@ NEXT - EXECUTION 109
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 109 - RESEARCH SURFACES COLLECTION SEMANTICS - GREEN - 2026-10-07
+- Resumed with pre-existing tracked/untracked E109 work preserved rather than overwritten: Research Surfaces list markup, its E86 compatibility contract update, and the E109 source-contract test were already present in the working tree.
+- Inspected those edits and confirmed they were bounded to the E109 roadmap objective.
+- Converted the Current navigable surfaces card grid from a generic div collection to ul/li semantics while preserving the existing grid classes, surface ordering, card component, destinations, and visible copy.
+- Converted Gated roadmap capabilities from a generic div collection to ul/li semantics while preserving grid classes, ordering, gated posture, card component, and visible copy.
+- Converted the two Active evidence collection states to list items while preserving labels, values, classes, and active/gated meaning.
+- Preserved the Authority legend as a native dl/dt/dd definition structure rather than incorrectly converting it to a generic list.
+- Updated the existing E86 source contract only where its prior direct-card map assertion became stale because list items now wrap the same cards.
+- Added five E109 source-contract tests covering navigable surfaces, gated capabilities, active evidence states, preserved authority-definition semantics, and unchanged runtime/boundary contracts.
+- Focused E107-E109 plus E86 compatibility regression: 21/21 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted Research Surfaces ESLint: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- git diff --check clean.
+- Full Python regression: 1,581 passed, 0 failed, 2 known dependency warnings in 137.61s.
+- Implementation commit: d5b1a516 e109 add collection semantics
+- E109 GREEN.
+
+VISUAL STATUS AFTER E109
+[DONE] E48-E109 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated capabilities remain gated.
+[TODO] remaining bounded product-facing semantic polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, document/platform accessibility, announcements, visual progress, definition relationships, named regions, accessible tables, and true collection semantics are established.
+2. E29 evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; restricted capabilities stay gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 110
+1. Inspect link purpose and navigation labels across established frontend surfaces for ambiguous repeated link text or missing contextual accessible names.
+2. Apply only bounded static semantic hardening where a genuine gap exists; preserve visible copy, destinations, layout, refresh behavior, and established boundaries.
+3. Do not introduce new runtime state or event logic, and do not expand any gated capability.
+4. Add E110 source-contract tests for link/navigation purpose semantics and unchanged application contracts.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
