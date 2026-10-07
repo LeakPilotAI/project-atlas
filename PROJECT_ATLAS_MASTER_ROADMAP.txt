@@ -9977,3 +9977,65 @@ NEXT - EXECUTION 95
 7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 95 - SHARED PAGE IDENTITY PRESENTATION CONTRACT - GREEN - 2026-10-07
+
+IMPLEMENTATION
+- Inspected top-level eyebrow/title/description hierarchy across Command Center, Forward Evidence, and Research Surfaces.
+- Confirmed a genuine shared semantic seam: all three surfaces present an eyebrow, H1 page identity, and descriptive context/safety copy while retaining distinct outer layout and navigation ownership.
+- Added frontend/src/app/components/PageIdentity.tsx as a pure static presentation primitive.
+- PageIdentity owns only identity typography: operational emerald or research cyan eyebrow, consistent H1 hierarchy, description typography, and an optional bounded description width.
+- Adopted PageIdentity on Command Center, Forward Evidence, and Research Surfaces while preserving all visible copy verbatim.
+- Command Center retains its sticky full-width operational header, max-w-7xl header/main containers, Research Surfaces navigation, refresh/API state, /api/live polling, 8-second cadence, Crypto Quality Dips panel placement, and watch-only semantics.
+- Forward Evidence retains ReadOnlyPageShell layout="evidence", Research navigation, research-evidence API endpoint, 15-second polling, cleanup, fail-closed behavior, evidence rendering, and authority boundaries.
+- Research Surfaces retains its static/no-fetch shell, Research navigation, composition order, safety boundary, authority legend, gated semantics, and routes.
+- The shared identity primitive explicitly does not own shell/layout, sticky behavior, navigation, fetches, backend state, controls, or trading authority.
+- Added five E95 source-contract tests pinning primitive purity, adoption on all three surfaces, runtime preservation, static boundaries, and continued layout/navigation/authority ownership outside the primitive.
+- No scoring, readiness policy, PAPER, execution, strategy selection, threshold mutation, promotion, scheduling, repair, synthetic evidence, or live-capital authority changed.
+
+VALIDATION
+- Focused E93-E95 compatibility: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint for changed frontend source: exit 0.
+- Next.js optimized production build: exit 0; /, /_not-found, /research, and /research/surfaces built successfully.
+- git diff --check clean; expected LF-to-CRLF warnings only.
+- Full Python regression: 1,511 passed, 0 failed, 2 known dependency warnings in 169.35s.
+
+IMPLEMENTATION COMMIT
+- ac3b5ffd e95 unify page identity presentation
+
+DECISION
+- E95 GREEN. Atlas now has a consistent product-facing page identity hierarchy across the three established surfaces without merging their distinct operational/research layouts or changing any runtime, evidence, or authority behavior.
+
+VISUAL STATUS AFTER E95
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
+[DONE] E73-E75 fail-closed Crypto Quality Dips frontend consumer/panel/operator UX.
+[DONE] E76-E90 Research Surfaces architecture, typed contracts, pure components, safety-first composition freeze, and bounded polish.
+[DONE] E91-E93 shared-shell compatibility program, including intentional Command Center non-migration boundary.
+[DONE] E94 cross-surface navigation presentation/accessibility consistency.
+[DONE] E95 shared page-identity hierarchy/presentation consistency.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] bounded responsive header/product-facing polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell, navigation-link, and page-identity presentation contracts are established; continue only bounded product-facing frontend polish that preserves surface-specific runtime/layout ownership.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 96
+1. Inspect top-level header responsiveness/action wrapping across Command Center, Forward Evidence, and Research Surfaces, especially narrow-width behavior after E94/E95 presentation consolidation.
+2. Apply only bounded responsive composition changes where needed; do not force a shared header container across operational and research architectures.
+3. Preserve exact page identity copy, navigation destinations, polling/API behavior, evidence rendering, safety copy, and authority boundaries.
+4. Do not change scoring, readiness policy, PAPER/execution authority, strategy selection, thresholds, promotion, schedulers, repair, or live-capital boundaries.
+5. Add E96 source-contract tests for responsive header decisions and unchanged runtime/authority behavior.
+6. Run frontend compile/lint/build, focused regression and full Python regression.
+7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
