@@ -1,5 +1,6 @@
 "use client";
 
+import { PageIdentity } from "@/app/components/PageIdentity";
 import { SurfaceNavLink } from "@/app/components/SurfaceNavLink";
 import { useEffect, useState, type ReactNode } from "react";
 import CryptoQualityDipsStatusPanel from "@/app/components/CryptoQualityDipsStatusPanel";
@@ -123,13 +124,12 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#07080b] text-zinc-200">
       <header className="border-b border-white/5 bg-[#0b0d12]/90 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-emerald-500/80">Live command center</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">Project Atlas</h1>
-            <p className="text-xs text-zinc-500 mt-1">
-              Bot runs in the Atlas window. This page is watch-only. Discord is the alert feed.
-            </p>
-          </div>
+          <PageIdentity
+            eyebrow="Live command center"
+            title="Project Atlas"
+            tone="operational"
+            description="Bot runs in the Atlas window. This page is watch-only. Discord is the alert feed."
+          />
           <div className="flex items-end gap-4">
             <SurfaceNavLink href="/research/surfaces" variant="primary">Research Surfaces</SurfaceNavLink>
             <div className="text-right text-xs text-zinc-500">
