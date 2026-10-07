@@ -19,7 +19,7 @@ def test_e96_command_center_action_cluster_wraps_without_changing_operational_fr
 
 def test_e96_forward_evidence_header_and_nav_wrap_at_narrow_widths():
     text = EVIDENCE.read_text(encoding="utf-8")
-    assert '<ReadOnlyPageShell layout="evidence"><div className="flex flex-wrap items-start justify-between gap-4">' in text
+    assert '<ReadOnlyPageShell layout="evidence"><header className="flex flex-wrap items-start justify-between gap-4">' in text
     assert '<nav className="flex flex-wrap gap-2" aria-label="Research navigation">' in text
     assert 'href="/research/surfaces"' in text
     assert 'href="/"' in text
