@@ -130,7 +130,7 @@ export default function Dashboard() {
             tone="operational"
             description="Bot runs in the Atlas window. This page is watch-only. Discord is the alert feed."
           />
-          <div className="flex items-end gap-4">
+          <div className="flex flex-wrap items-end gap-4">
             <SurfaceNavLink href="/research/surfaces" variant="primary">Research Surfaces</SurfaceNavLink>
             <div className="text-right text-xs text-zinc-500">
               <div>Refresh {tick === 0 ? "just now" : "every 8s"} · {ago(live?.updated_at)}</div>

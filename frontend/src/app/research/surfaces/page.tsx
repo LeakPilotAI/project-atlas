@@ -11,7 +11,7 @@ export default function ResearchSurfacesPage(){
  return <ReadOnlyPageShell>
   <header className="flex flex-wrap items-start justify-between gap-4">
    <PageIdentity eyebrow="Atlas research architecture" title="Research Surfaces" description="Read-only map of operator and research surfaces. Evidence presentation does not create strategy-selection, PAPER, execution, promotion, or live-capital authority." constrainDescription/>
-   <nav className="flex gap-2" aria-label="Research navigation"><SurfaceNavLink href="/research" variant="primary">Forward Evidence</SurfaceNavLink><SurfaceNavLink href="/">Command Center</SurfaceNavLink></nav>
+   <nav className="flex flex-wrap gap-2" aria-label="Research navigation"><SurfaceNavLink href="/research" variant="primary">Forward Evidence</SurfaceNavLink><SurfaceNavLink href="/">Command Center</SurfaceNavLink></nav>
   </header>
   <section className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 sm:p-5" aria-labelledby="research-boundary-title">
    <p id="research-boundary-title" className="text-[11px] uppercase tracking-widest text-amber-400">Shared safety boundary</p>
