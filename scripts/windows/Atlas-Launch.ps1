@@ -242,14 +242,21 @@ try {
         }
     }
 
-    Write-Step "Starting Postgres + Redis (docker compose)"
+    Write-Step "Starting Postgres + Redis"
     $env:COMPOSE_PROJECT_NAME = "atlas"
-    # Reconcile only Atlas dependencies; do not tear down healthy containers first.
-    docker compose up -d --no-recreate postgres redis
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "[ERROR] docker compose up failed." -ForegroundColor Red
-        cmd /c pause
-        exit 1
+    # Reuse existing Atlas dependencies across normal desktop stop/relaunch cycles.
+    $existingPostgres = docker ps -a --filter "name=^/atlas-postgres$" --format "{{.Names}}" 2>$null
+    $existingRedis = docker ps -a --filter "name=^/atlas-redis$" --format "{{.Names}}" 2>$null
+    if ($existingPostgres -eq "atlas-postgres" -and $existingRedis -eq "atlas-redis") {
+        docker start atlas-postgres atlas-redis 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Failed to start existing Atlas dependency containers" }
+        Write-Host "    reused existing atlas-postgres + atlas-redis"
+    } elseif (-not $existingPostgres -and -not $existingRedis) {
+        docker compose up -d --no-recreate postgres redis
+        if ($LASTEXITCODE -ne 0) { throw "docker compose up failed" }
+        Write-Host "    created Atlas dependency containers"
+    } else {
+        throw "Partial Atlas dependency state detected; refusing destructive repair"
     }
     if (-not (Wait-Postgres 90)) {
         throw "Atlas postgres did not become healthy"

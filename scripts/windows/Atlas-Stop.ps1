@@ -53,21 +53,21 @@ foreach ($process in $owned) {
     }
 }
 
-Write-Host "[stop] Atlas containers (Docker Desktop + Genesis stay up)..."
+Write-Host "[stop] Atlas dependency containers (Docker Desktop + Genesis stay up)..."
+# Stop only the two exact Atlas dependency containers. Never remove them: keeping
+# the containers preserves initialized database identity/configuration across
+# launches while still making Atlas fully stopped in Docker. Do not use compose
+# down, broad name filters, global Docker/WSL shutdown, or unrelated process kills.
 if (Get-Command docker -ErrorAction SilentlyContinue) {
-    $env:COMPOSE_PROJECT_NAME = "atlas"
-    docker compose stop 2>$null | Out-Null
-    docker compose down --remove-orphans 2>$null | Out-Null
-    docker stop atlas-postgres atlas-redis 2>$null | Out-Null
-    docker rm -f atlas-postgres atlas-redis 2>$null | Out-Null
-    $left = docker ps --filter "name=atlas" --format "{{.Names}}" 2>$null
-    if ($left) {
-        Write-Host "[stop] still running: $left" -ForegroundColor Yellow
-    } else {
-        Write-Host "[stop] no atlas containers running"
+    foreach ($container in @("atlas-postgres", "atlas-redis")) {
+        $exists = docker ps -a --filter "name=^/$container$" --format "{{.Names}}" 2>$null
+        if ($exists -eq $container) {
+            docker stop $container 2>$null | Out-Null
+        }
     }
+    Write-Host "[stop] Atlas Postgres + Redis stopped; containers preserved."
 } else {
-    Write-Host "[stop] docker CLI not in PATH - Python was still killed"
+    Write-Host "[stop] docker CLI not in PATH - Atlas application processes were still stopped."
 }
 
 $diagnostics = Join-Path $Root "logs\diagnostics"
