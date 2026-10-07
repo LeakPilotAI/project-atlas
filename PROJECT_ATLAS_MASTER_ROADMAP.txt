@@ -10101,3 +10101,69 @@ NEXT - EXECUTION 97
 7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 97 - SURFACE LANDMARK AND ACCESSIBILITY SEMANTICS - GREEN - 2026-10-07
+
+IMPLEMENTATION
+- Audited top-level landmarks, heading ownership, navigation semantics, and operator/research status messaging across Command Center, Forward Evidence, and Research Surfaces after E94-E96 consolidation.
+- Command Center now exposes its Research Surfaces cross-surface link inside a named Research navigation landmark while preserving the existing sticky operational header and action/status cluster.
+- Command Center API connection state now uses role=status with aria-live=polite so connection changes are exposed semantically without changing visible copy or polling behavior.
+- Command Center API error presentation now uses role=alert while preserving the exact fail-closed error copy and visual styling.
+- Forward Evidence identity/navigation row is now a semantic header landmark instead of a generic div, retaining the exact E96 responsive classes and existing named Research navigation landmark.
+- Forward Evidence fail-closed error presentation now uses role=alert with unchanged error copy and runtime behavior.
+- Research Surfaces already had a semantic header, named Research navigation, aria-labelledby section relationships, and shared PageIdentity H1 ownership; these established semantics remain unchanged.
+- PageIdentity remains the single shared H1 owner across all three surfaces; no competing page-level H1 was introduced.
+- Updated the E96 responsive source-contract assertion from generic div to semantic header because E97 intentionally strengthens that exact wrapper without changing its responsive contract.
+- Added five E97 source-contract tests pinning navigation/status/error/header semantics, H1 ownership, existing Research Surfaces heading relationships, and unchanged runtime/authority boundaries.
+- No visual redesign, API/polling changes, evidence behavior changes, scoring, readiness policy, PAPER, execution, strategy selection, threshold mutation, promotion, scheduling, repair, synthetic evidence, or live-capital authority changed.
+
+VALIDATION
+- Initial E93-E97 focused regression: 24 passed, 1 failed only because E96 intentionally pinned the pre-E97 generic Forward Evidence div wrapper.
+- Updated that E96 compatibility assertion to the stronger semantic header while retaining the exact E96 responsive classes.
+- Final focused E93-E97 compatibility: 25/25 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint for relevant frontend source: exit 0.
+- Next.js optimized production build: exit 0; /, /_not-found, /research, and /research/surfaces built successfully.
+- git diff --check clean; expected LF-to-CRLF warnings only.
+- Full Python regression: 1,521 passed, 0 failed, 2 known dependency warnings in 147.31s.
+
+IMPLEMENTATION COMMIT
+- cf1ead72 e97 harden surface accessibility semantics
+
+DECISION
+- E97 GREEN. Atlas now exposes clearer page/navigation/status/error semantics for assistive technology while retaining the established visual hierarchy, responsive composition, runtime behavior, evidence contracts, and authority boundaries.
+
+VISUAL STATUS AFTER E97
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
+[DONE] E73-E75 fail-closed Crypto Quality Dips frontend consumer/panel/operator UX.
+[DONE] E76-E90 Research Surfaces architecture, typed contracts, pure components, safety-first composition freeze, and bounded polish.
+[DONE] E91-E93 shared-shell compatibility program, including intentional Command Center non-migration boundary.
+[DONE] E94 cross-surface navigation presentation/accessibility consistency.
+[DONE] E95 shared page-identity hierarchy/presentation consistency.
+[DONE] E96 responsive surface header/action composition hardening.
+[DONE] E97 surface landmark/status/error accessibility semantics.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] bounded product-facing focus/interaction accessibility polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive header composition, and landmark semantics are established; continue only bounded focus/interaction accessibility polish that does not alter runtime or authority.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 98
+1. Inspect keyboard focus visibility and interactive-state semantics for shared cross-surface navigation links and other top-level operator-facing controls after E94-E97 consolidation.
+2. Apply only bounded focus/interaction accessibility improvements in shared presentation primitives where genuinely compatible; do not alter navigation destinations, click behavior, runtime state, or visual architecture.
+3. Preserve exact page identity copy, responsive composition, polling/API behavior, evidence rendering, safety copy, and authority boundaries.
+4. Do not change scoring, readiness policy, PAPER/execution authority, strategy selection, thresholds, promotion, schedulers, repair, or live-capital boundaries.
+5. Add E98 source-contract tests for focus/interaction accessibility and unchanged runtime/authority behavior.
+6. Run frontend compile/lint/build, focused regression and full Python regression.
+7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
