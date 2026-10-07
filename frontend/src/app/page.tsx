@@ -359,11 +359,11 @@ function Pill({ label, on }: { label: string; on: boolean }) {
 
 function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-[#10131a] p-4">
-      <p className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</p>
-      <p className="text-2xl font-semibold text-white mt-1 tabular-nums">{value}</p>
-      {hint && <p className="text-[11px] text-zinc-600 mt-1">{hint}</p>}
-    </div>
+    <dl className="rounded-2xl border border-white/8 bg-[#10131a] p-4">
+      <dt className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</dt>
+      <dd className="text-2xl font-semibold text-white mt-1 tabular-nums">{value}</dd>
+      {hint && <dd className="text-[11px] text-zinc-600 mt-1">{hint}</dd>}
+    </dl>
   );
 }
 

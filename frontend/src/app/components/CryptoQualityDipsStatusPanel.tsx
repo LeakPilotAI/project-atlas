@@ -25,5 +25,5 @@ export default function CryptoQualityDipsStatusPanel(){
   <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3 text-[11px]"><span className={vm.operatorAttentionRequired?"text-amber-300":"text-zinc-500"}>Operator attention: {vm.operatorAttentionRequired?"REQUIRED":"not required"}</span><span className="font-medium text-emerald-300">AUTHORITY LOCKED · READ ONLY</span></div>
  </section>
 }
-function Metric({label,value}:{label:string;value:string|number}){return <div className="rounded-xl border border-white/8 bg-black/20 p-3"><p className="text-[10px] uppercase tracking-wider text-zinc-600">{label}</p><p className="mt-1 text-base font-semibold text-zinc-100 tabular-nums">{value}</p></div>}
-function Context({label,value}:{label:string;value:string}){return <div className="rounded-lg border border-white/5 px-3 py-2"><span className="text-zinc-600">{label}: </span><span className="text-zinc-300">{value}</span></div>}
+function Metric({label,value}:{label:string;value:string|number}){return <dl className="rounded-xl border border-white/8 bg-black/20 p-3"><dt className="text-[10px] uppercase tracking-wider text-zinc-600">{label}</dt><dd className="mt-1 text-base font-semibold text-zinc-100 tabular-nums">{value}</dd></dl>}
+function Context({label,value}:{label:string;value:string}){return <dl className="rounded-lg border border-white/5 px-3 py-2"><dt className="inline text-zinc-600">{label}: </dt><dd className="inline text-zinc-300">{value}</dd></dl>}
