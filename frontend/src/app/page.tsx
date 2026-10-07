@@ -57,6 +57,13 @@ function ago(iso?: unknown): string {
   return new Date(t).toLocaleString();
 }
 
+function RelativeTime({ value }: { value?: unknown }) {
+  if (!value || typeof value !== "string") return <>{ago(value)}</>;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return <>{ago(value)}</>;
+  return <time dateTime={parsed.toISOString()}>{ago(value)}</time>;
+}
+
 function n(v: unknown, d = 0): number {
   const x = Number(v);
   return Number.isFinite(x) ? x : d;
@@ -133,7 +140,7 @@ export default function Dashboard() {
           <div className="flex flex-wrap items-end gap-4">
             <nav aria-label="Research navigation"><SurfaceNavLink href="/research/surfaces" variant="primary">Research Surfaces</SurfaceNavLink></nav>
             <div className="text-right text-xs text-zinc-500">
-              <div>Refresh {tick === 0 ? "just now" : "every 8s"} · {ago(live?.updated_at)}</div>
+              <div>Refresh {tick === 0 ? "just now" : "every 8s"} · <RelativeTime value={live?.updated_at} /></div>
               <div role="status" aria-live="polite" aria-atomic="true" aria-label={error ? "Application programming interface down" : "Application programming interface connected"} className={error ? "text-rose-400" : "text-emerald-400"}>
                 {error ? "API down" : "API connected"}
               </div>
@@ -160,7 +167,7 @@ export default function Dashboard() {
             Liquid names {n(h.liquid_count)}
           </span>
           <span className="px-2.5 py-1 rounded-full text-[11px] border border-white/10 text-zinc-400">
-            Last scan {ago(h.last_cycle_at)}
+            Last scan <RelativeTime value={h.last_cycle_at} />
           </span>
         </section>
 
@@ -242,7 +249,7 @@ export default function Dashboard() {
                         {t.stale_quote ? (
                           <span className="text-amber-400">stale quote</span>
                         ) : (
-                          ago(t.opened_at)
+                          <RelativeTime value={t.opened_at} />
                         )}
                       </td>
                     </tr>
@@ -255,12 +262,12 @@ export default function Dashboard() {
 
           <Card title="Live activity">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <Dt k="Last HL data" v={ago(live?.activity?.last_market_data)} />
-              <Dt k="Last candles" v={ago(live?.activity?.last_candles)} />
-              <Dt k="Last evaluation" v={ago(live?.activity?.last_evaluation)} />
-              <Dt k="Last qualified" v={ago(live?.activity?.last_qualified)} />
-              <Dt k="Last paper open" v={ago(live?.activity?.last_paper_open)} />
-              <Dt k="Last Discord" v={ago(live?.activity?.last_discord_alert)} />
+              <Dt k="Last HL data" v={<RelativeTime value={live?.activity?.last_market_data} />} />
+              <Dt k="Last candles" v={<RelativeTime value={live?.activity?.last_candles} />} />
+              <Dt k="Last evaluation" v={<RelativeTime value={live?.activity?.last_evaluation} />} />
+              <Dt k="Last qualified" v={<RelativeTime value={live?.activity?.last_qualified} />} />
+              <Dt k="Last paper open" v={<RelativeTime value={live?.activity?.last_paper_open} />} />
+              <Dt k="Last Discord" v={<RelativeTime value={live?.activity?.last_discord_alert} />} />
               <Dt k="Discord subs" v={String(live?.activity?.discord_subscribers ?? "—")} />
               <Dt k="Last error" v={h.last_error ? String(h.last_error) : "none"} />
             </dl>
@@ -270,7 +277,7 @@ export default function Dashboard() {
         <section className="grid lg:grid-cols-2 gap-4">
           <Card title="Quality dip — prepare to buy (research)">
             <p className="text-[11px] text-zinc-500 mb-3">
-              Strong names off highs. Discord DMs PREPARE / ACCUMULATE. Scan {ago(live?.quality_dips?.last_scan_at)}.
+              Strong names off highs. Discord DMs PREPARE / ACCUMULATE. Scan <RelativeTime value={live?.quality_dips?.last_scan_at} />.
               You place any buy. Atlas does not.
             </p>
             {prepare.length === 0 && dips.length === 0 ? (
@@ -389,7 +396,7 @@ function Empty({ text }: { text: string }) {
   return <p className="text-sm text-zinc-500 leading-relaxed">{text}</p>;
 }
 
-function Dt({ k, v }: { k: string; v: string }) {
+function Dt({ k, v }: { k: string; v: ReactNode }) {
   return (
     <>
       <dt className="text-zinc-500">{k}</dt>

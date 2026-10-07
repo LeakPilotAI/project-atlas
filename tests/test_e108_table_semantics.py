@@ -25,7 +25,7 @@ def test_e108_every_table_header_declares_column_scope():
 
 def test_e108_table_hardening_preserves_visible_data_expressions():
     text=COMMAND.read_text(encoding="utf-8")
-    for token in ("fmt(t.entry, 4)","fmt(t.mark, 4)","fmt(t.stop, 4)","fmt(t.mfe_r, 2)","ago(t.opened_at)","fmt(d.pct_from_high, 1)","fmt(d.chg_1d, 1)","fmt(d.chg_5d, 1)","String(d.thesis || \"\")","String(o.status)","String(o.recommendation || \"—\")","fmt(o.entry_price, 4)"):
+    for token in ("fmt(t.entry, 4)","fmt(t.mark, 4)","fmt(t.stop, 4)","fmt(t.mfe_r, 2)","<RelativeTime value={t.opened_at} />","fmt(d.pct_from_high, 1)","fmt(d.chg_1d, 1)","fmt(d.chg_5d, 1)","String(d.thesis || \"\")","String(o.status)","String(o.recommendation || \"—\")","fmt(o.entry_price, 4)"):
         assert token in text
 
 def test_e108_table_semantics_preserve_runtime_and_boundary_contracts():
