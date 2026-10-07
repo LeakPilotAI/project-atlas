@@ -10320,3 +10320,47 @@ NEXT - EXECUTION 101
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 101 - ROUTE METADATA IDENTITY - GREEN - 2026-10-07
+- Inspected browser/document metadata ownership across Command Center, Forward Evidence, and Research Surfaces.
+- Confirmed only the root layout previously supplied metadata, causing all established routes to inherit generic Project Atlas browser identity.
+- Confirmed /research is a client page, so route metadata must remain outside that page to preserve its client/runtime architecture.
+- Updated root metadata to identify Command Center explicitly: Command Center | Project Atlas, with an operator/runtime and bounded-research description.
+- Added pure static /research layout metadata: Forward Evidence | Project Atlas, with a read-only forward-evidence/human-review description.
+- Added pure static /research/surfaces layout metadata: Research Surfaces | Project Atlas, with a read-only surface-map/authority-boundary description.
+- Both nested metadata layouts are passthrough server layouts returning children unchanged; no client directive, hooks, fetches, intervals, event handlers, wrappers, or visual markup were introduced.
+- Preserved exact page identity copy, route destinations, root navigation, responsive composition, polling/API behavior, evidence rendering, safety copy, and existing authority boundaries.
+- Added five E101 source-contract tests covering Command Center metadata identity, client-safe Forward Evidence metadata ownership, distinct Research Surfaces identity, pure passthrough layout behavior, and unchanged runtime/authority boundaries.
+- Focused E99-E101 regression: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint for root and nested metadata layouts: exit 0.
+- Next.js optimized production build: exit 0; /, /_not-found, /research, and /research/surfaces built successfully.
+- git diff --check clean.
+- Full Python regression: 1,541 passed, 0 failed, 2 known dependency warnings in 132.38s.
+- Implementation commit: 6dced3b2 e101 add route metadata identity
+- E101 GREEN. Browser/document identity is now distinct and descriptive for all established Atlas routes without changing page runtime behavior or authority.
+
+VISUAL STATUS AFTER E101
+[DONE] E48-E101 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated authority capabilities remain gated.
+[TODO] remaining bounded product-facing accessibility/semantic polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, landmarks, keyboard focus, skip-to-main navigation, persistent navigation focus, and route metadata identity are established.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 102
+1. Inspect browser viewport/color-scheme metadata and root document semantics for bounded platform/accessibility consistency across desktop and mobile rendering.
+2. Apply only static metadata/root-document hardening if compatible; do not alter route content, layout composition, navigation destinations, runtime hooks, polling/API behavior, evidence rendering, or authority boundaries.
+3. Do not introduce client/event logic or alter scoring, readiness policy, PAPER/execution authority, strategy selection, thresholds, promotion, schedulers, repair, or live-capital boundaries.
+4. Add E102 source-contract tests for root document metadata semantics and unchanged runtime/authority behavior.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
