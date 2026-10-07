@@ -11070,3 +11070,35 @@ NEXT - EXECUTION 118
 6. Continue genuine E29/Alpha evidence accumulation unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+ROADMAP SCOPE UPDATE - VPS/LINUX DEPLOYMENT REMOVED FROM ACTIVE PLAN - 2026-10-07
+- Owner decision: Project Atlas will not use a VPS subscription for the foreseeable future.
+- VPS/Ubuntu/systemd production deployment is therefore OUT OF SCOPE for the active roadmap and must not consume future executions unless the owner explicitly re-enables it.
+- Existing historical VPS/systemd artifacts may remain tracked for provenance, but they are not release blockers and do not require hardening, testing, packaging, or operational support under the current roadmap.
+- Product/release hardening is now Windows-local-first only: deterministic local startup/shutdown, Docker dependency safety, environment/configuration validation, local backup/recovery, update procedure, security/secrets hygiene, operator diagnostics, packaging, and local release-readiness.
+- This scope change does not alter runtime behavior, evidence collection, strategy/readiness policy, PAPER/execution authority, Discord lifecycle gating, schedulers, or live-capital boundaries.
+
+UPDATED REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. [DONE] E48-E116 frontend semantic/accessibility foundation; sequence closed.
+2. [DONE] E117 Windows operator/recovery documentation aligned to the current scoped launcher/stop/readiness contract.
+3. [ACTIVE] E29 genuine strategy evidence accumulation over time; no synthetic acceleration.
+4. [ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+5. [GATED] Residual Discord lifecycle producers remain gated pending dedicated lifecycle contracts.
+6. [ACTIVE] Windows-local product/release hardening:
+   - environment/configuration contract validation and safe defaults/documentation;
+   - deterministic local update/recovery procedure and branch/ref safety;
+   - secrets/security hygiene and release-safe configuration guidance;
+   - packaging/dependency reproducibility for backend/frontend/local Docker dependencies;
+   - operator diagnostics/readiness/recovery verification;
+   - final local release-readiness checklist and clean-install/recovery acceptance.
+7. [OUT OF SCOPE] VPS, Ubuntu, systemd, hosted-server deployment, and VPS subscription work until explicitly re-enabled by the owner.
+
+NEXT - EXECUTION 118
+1. Audit Windows-local .env.example, docker-compose.yml, backend packaging metadata, frontend package metadata, and tracked setup/update scripts against the current local runtime.
+2. Identify the highest-confidence local configuration/packaging release gap.
+3. Do not audit or harden VPS/Ubuntu/systemd deployment artifacts as active work.
+4. Preserve localhost runtime topology, strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, and live-capital boundaries.
+5. Add minimum source-contract coverage and run applicable focused/full regression.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
