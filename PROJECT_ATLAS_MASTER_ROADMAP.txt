@@ -10278,3 +10278,45 @@ NEXT - EXECUTION 100
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 100 - ROOT RESEARCH NAVIGATION FOCUS ACCESSIBILITY - GREEN - 2026-10-07
+- Inspected the persistent root-layout Research Evidence navigation control against the established E98/E99 keyboard-focus and document-navigation contracts.
+- Confirmed the existing control already had the correct Atlas research navigation landmark, accessible label, /research destination, fixed bottom-right placement, and static server-layout ownership.
+- Identified one bounded accessibility gap: the persistent link exposed a mouse hover affordance but no explicit keyboard focus-visible treatment.
+- Added presentation-only focus styling: focus:outline-none, focus-visible border emphasis, two-pixel cyan ring, and ring offset matching the Atlas dark background.
+- Preserved the exact /research destination, fixed placement, Research Evidence copy, root layout architecture, SkipNavigation placement, all cross-surface destinations, polling/API behavior, evidence rendering, safety copy, and existing authority boundaries.
+- Introduced no client directive, event handler, state, effect, fetch, scoring, readiness, strategy-selection, PAPER/execution, promotion, scheduler, repair, or live-capital behavior.
+- Added five E100 source-contract tests covering persistent navigation semantics, keyboard focus visibility, static/event-free ownership, unchanged cross-surface destinations, and unchanged runtime/authority boundaries.
+- Focused E98-E100 regression: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted layout ESLint: exit 0.
+- Next.js optimized production build: exit 0; /, /_not-found, /research, and /research/surfaces built successfully.
+- git diff --check clean.
+- Full Python regression: 1,536 passed, 0 failed, 2 known dependency warnings in 133.68s.
+- Implementation commit: 760ece6c e100 harden root navigation focus
+- E100 GREEN. The persistent Research Evidence control now exposes explicit keyboard focus visibility consistent with the established Atlas navigation accessibility contract, without changing behavior or authority.
+
+VISUAL STATUS AFTER E100
+[DONE] E48-E100 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated authority capabilities remain gated.
+[TODO] remaining bounded product-facing accessibility polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, landmarks, keyboard focus, skip-to-main navigation, and persistent root-navigation focus are established; continue only bounded accessibility polish that does not alter runtime or authority.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 101
+1. Inspect document/page metadata and browser-title semantics across the established Atlas routes for clear route identity without changing page content or runtime behavior.
+2. Apply only bounded static metadata/accessibility polish if compatible; preserve current route destinations, visual composition, polling/API behavior, evidence rendering, and authority boundaries.
+3. Do not introduce client/event logic or alter scoring, readiness policy, PAPER/execution authority, strategy selection, thresholds, promotion, schedulers, repair, or live-capital boundaries.
+4. Add E101 source-contract tests for metadata identity and unchanged runtime/authority behavior.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
