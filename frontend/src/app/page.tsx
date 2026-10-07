@@ -166,16 +166,16 @@ export default function Dashboard() {
 
         <CryptoQualityDipsStatusPanel />
 
-        <section className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
-          <p className="text-[11px] uppercase tracking-widest text-amber-400/80">Why no paper trade</p>
+        <section aria-labelledby="why-no-paper-title" className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
+          <h2 id="why-no-paper-title" className="text-[11px] uppercase tracking-widest text-amber-400/80">Why no paper trade</h2>
           <p className="text-lg text-zinc-100 mt-1">{why.headline || live?.bottleneck || "Waiting on first scan cycle."}</p>
           {live?.bottleneck && (
             <p className="text-sm text-zinc-500 mt-1">{String(live.bottleneck)}</p>
           )}
         </section>
 
-        <section>
-          <h2 className="text-sm font-medium text-zinc-400 mb-3">Last 24 hours — perp funnel</h2>
+        <section aria-labelledby="perp-funnel-title">
+          <h2 id="perp-funnel-title" className="text-sm font-medium text-zinc-400 mb-3">Last 24 hours — perp funnel</h2>
           <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
             {FUNNEL.map((s) => {
               const val = n(funnel[s.key]);
@@ -328,8 +328,8 @@ export default function Dashboard() {
           </Card>
         </section>
 
-        <section className="rounded-2xl border border-white/8 bg-[#10131a] px-5 py-4">
-          <h2 className="text-sm font-medium text-zinc-300 mb-3">Active gates (not editable here)</h2>
+        <section aria-labelledby="active-gates-title" className="rounded-2xl border border-white/8 bg-[#10131a] px-5 py-4">
+          <h2 id="active-gates-title" className="text-sm font-medium text-zinc-300 mb-3">Active gates (not editable here)</h2>
           <div className="flex flex-wrap gap-2 text-xs">
             <Chip>RSI {fmt(gates.rsi_long, 0)} / {fmt(gates.rsi_short, 0)}</Chip>
             <Chip>Extension {fmt(gates.extension_pct, 1)}%</Chip>
@@ -369,10 +369,10 @@ function Stat({ label, value, hint }: { label: string; value: string | number; h
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-[#10131a] p-5">
+    <section aria-label={title} className="rounded-2xl border border-white/8 bg-[#10131a] p-5">
       <h2 className="text-sm font-medium text-zinc-300 mb-3">{title}</h2>
       {children}
-    </div>
+    </section>
   );
 }
 
