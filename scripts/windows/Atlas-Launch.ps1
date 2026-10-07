@@ -1,4 +1,4 @@
-﻿# Project Atlas - one window. Close it to stop the bot. Docker Desktop stays running.
+# Project Atlas - one window. Close it to stop the bot. Docker Desktop stays running.
 #Requires -Version 5.1
 $ErrorActionPreference = "Continue"
 Set-StrictMode -Version Latest
@@ -244,9 +244,8 @@ try {
 
     Write-Step "Starting Postgres + Redis (docker compose)"
     $env:COMPOSE_PROJECT_NAME = "atlas"
-    docker rm -f atlas-postgres atlas-redis 2>$null | Out-Null
-    docker compose down --remove-orphans 2>$null | Out-Null
-    docker compose up -d
+    # Reconcile only Atlas dependencies; do not tear down healthy containers first.
+    docker compose up -d --no-recreate postgres redis
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERROR] docker compose up failed." -ForegroundColor Red
         cmd /c pause
