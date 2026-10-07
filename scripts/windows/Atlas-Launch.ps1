@@ -316,7 +316,7 @@ try {
     Write-Step "Opening dashboard"
     $dash = Join-Path $Backend "app\static\dashboard.html"
     if (-not (Test-Path $dash)) {
-        Write-Host "[WARN] dashboard.html missing - git pull origin main" -ForegroundColor Yellow
+        Write-Host "[WARN] dashboard.html missing - run scripts\windows\Pull-And-Ready.ps1 after closing Atlas" -ForegroundColor Yellow
     }
     Start-Process "http://127.0.0.1:8000/dashboard?v=desk-v7"
     Write-Host "    Dashboard: http://127.0.0.1:8000/dashboard?v=desk-v7"
