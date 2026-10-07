@@ -1,0 +1,322 @@
+import asyncio
+
+import pytest
+
+import app.services.perp_setup_paper_mirror as mod
+
+
+@pytest.fixture(autouse=True)
+def _isolate_unit_tests_from_runtime_paper_risk(monkeypatch):
+    """Keep mirror unit tests deterministic and independent of the operator's real PAPER journal.
+
+    Production must continue to enforce the durable UTC-day loss window. These tests use a
+    FakeJournal, so letting utc_day_risk_snapshot() read backend/data/paper_journal.jsonl
+    makes their result depend on whatever PAPER PnL the local Atlas runtime accumulated today.
+    Dedicated paper-risk tests cover the real loss-stop and kill-switch behavior separately.
+    """
+    monkeypatch.setattr(mod.paper_risk_controls, "kill_switch", False)
+    monkeypatch.setattr(
+        mod,
+        "utc_day_risk_snapshot",
+        lambda: {
+            "net_r": 0.0,
+            "closed": 0,
+            "window": "UTC_DAY",
+            "window_date": "UNIT_TEST",
+            "source": "TEST_ISOLATED_PAPER_JOURNAL",
+        },
+    )
+
+
+class FakeJournal:
+    def __init__(self):
+        self.open_rows = []
+        self.open_calls = []
+        self.close_calls = []
+        self.mark_calls = []
+        self.adaptive_calls = []
+
+    def list_open(self):
+        return list(self.open_rows)
+
+    async def open_trade(self, **kwargs):
+        self.open_calls.append(dict(kwargs))
+        row = {
+            "trade_id": f"t{len(self.open_calls)}",
+            "trade_type": "PAPER",
+            "source": kwargs.get("source"),
+            "symbol": kwargs["symbol"],
+            "side": kwargs["side"],
+            "actual_entry_price": kwargs["entry"],
+            "stop_price": kwargs["stop"],
+            "working_stop": kwargs["stop"],
+            "tp1_price": kwargs["tp1"],
+            "tp2_price": kwargs["tp2"],
+            "working_target": kwargs["tp1"],
+            "mfe_r": 0.0,
+            "mae_r": 0.0,
+            "fees_bps": kwargs.get("fees_bps", 2.0),
+            "slippage_bps": kwargs.get("slippage_bps", 2.0),
+            "features": kwargs.get("features") or {},
+        }
+        self.open_rows.append(row)
+        return row["trade_id"]
+
+    def update_excursion(self, trade_id, mark):
+        self.mark_calls.append((trade_id, mark))
+        row = next((r for r in self.open_rows if r.get("trade_id") == trade_id), None)
+        if not row:
+            return
+        entry = float(row.get("actual_entry_price") or 0.0)
+        risk = abs(entry - float(row.get("stop_price") or 0.0)) or 1e-12
+        side = str(row.get("side") or "").upper()
+        fav = (mark - entry) / risk if side == "LONG" else (entry - mark) / risk
+        adv = (entry - mark) / risk if side == "LONG" else (mark - entry) / risk
+        row["mark"] = mark
+        row["mfe_r"] = max(float(row.get("mfe_r") or 0.0), fav)
+        row["mae_r"] = max(float(row.get("mae_r") or 0.0), adv)
+
+    def note_adaptive_exit(self, trade_id, **kwargs):
+        self.adaptive_calls.append((trade_id, dict(kwargs)))
+        row = next((r for r in self.open_rows if r.get("trade_id") == trade_id), None)
+        if row:
+            row["working_stop"] = kwargs["working_stop"]
+            row["working_target"] = kwargs["working_target"]
+            row["adaptive_stage"] = kwargs["stage"]
+        return True
+
+    async def close_trade(self, trade_id, **kwargs):
+        self.close_calls.append((trade_id, dict(kwargs)))
+        self.open_rows = [r for r in self.open_rows if r.get("trade_id") != trade_id]
+        return {"trade_id": trade_id}
+
+
+def setup(state="PREPARE", tier="QUALIFIED", side="LONG", price=100.0, epoch="2026-09-10T13:00:00+00:00"):
+    return {
+        "setup_key": f"BTC:{side}",
+        "first_seen_at": "2026-09-10T13:00:00+00:00",
+        "last_seen_at": "2026-09-10T13:01:00+00:00",
+        "paper_mirror_epoch_at": epoch,
+        "symbol": "BTC",
+        "side": side,
+        "tier": tier,
+        "state": state,
+        "trade_status": "NOT_ENTERED",
+        "discovery_stale": False,
+        "score": 80.0,
+        "price": price,
+        "levels_frozen": True,
+        "levels": {"l1": 99.0, "l2": 98.0, "l3": 97.0, "stop": 95.0, "tp1": 105.0, "tp2": 110.0, "target_rr": 1.8},
+    }
+
+
+def short_setup(price=100.0, epoch="2026-09-10T13:00:00+00:00"):
+    row = setup(side="SHORT", price=price, epoch=epoch)
+    row["levels"] = {"l1": 101.0, "l2": 102.0, "l3": 103.0, "stop": 105.0, "tp1": 95.0, "tp2": 90.0, "target_rr": 1.8}
+    return row
+
+
+def mirror_with(fake, tmp_path):
+    m = mod.PerpSetupPaperMirror(pending_path=tmp_path / "pending.jsonl")
+    m._seeded = True
+    mod.paper_journal = fake
+    return m
+
+
+def test_prepare_arms_resting_paper_limit_but_does_not_fake_fill(tmp_path):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    result = asyncio.run(m.sync([setup()], {"BTC": 100.0}))
+    assert result["armed"] == 1
+    assert result["pending"] == 1
+    assert result["opened"] == 0
+    assert fake.open_calls == []
+    pending = next(iter(m._pending.values()))
+    assert pending["limit_price"] == 99.0
+    assert pending["source"] == "perp_manual_auto"
+    assert pending["manual_trigger_mirror"] is True
+
+
+def test_pending_limit_fills_once_only_after_price_touches_l1(tmp_path):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    first = asyncio.run(m.sync([setup()], {"BTC": 100.0}))
+    second = asyncio.run(m.sync([setup()], {"BTC": 98.98}))
+    third = asyncio.run(m.sync([setup()], {"BTC": 98.5}))
+    assert first["opened"] == 0
+    assert second["opened"] == 1
+    assert third["opened"] == 0
+    call = fake.open_calls[0]
+    assert call["entry"] == 99.0
+    assert call["source"] == "perp_manual_auto"
+    assert call["strategy"] == "perp_setup_auto_v2_resting_limit"
+    assert call["counts_for_live"] is False
+    assert call["features"]["manual_trigger_mirror"] is True
+    assert call["features"]["paper_order_model"] == "RESTING_L1_LIMIT"
+    assert call["features"]["paper_fill_model"] == "LIMIT_TOUCH_PLUS_BUFFER"
+    assert call["features"]["adaptive_exit_policy_version"] == mod.ADAPTIVE_EXIT_POLICY_VERSION
+    assert call["features"]["paper_execution_model_version"] == mod.ADAPTIVE_EXECUTION_COHORT_VERSION
+    status = m.status()
+    assert status["open_count"] == 1
+    assert status["open_positions"][0]["symbol"] == "BTC"
+    assert status["open_positions"][0]["adaptive_exit_policy_version"] == mod.ADAPTIVE_EXIT_POLICY_VERSION
+
+
+def test_pending_limit_survives_restart_and_fills(tmp_path, monkeypatch):
+    fake = FakeJournal()
+    path = tmp_path / "pending.jsonl"
+    first = mod.PerpSetupPaperMirror(pending_path=path)
+    first._seeded = True
+    mod.paper_journal = fake
+    asyncio.run(first.sync([setup()], {"BTC": 100.0}))
+    assert first._pending
+
+    monkeypatch.setattr(mod, "JOURNAL_PATH", tmp_path / "empty-journal.jsonl")
+    second = mod.PerpSetupPaperMirror(pending_path=path)
+    mod.paper_journal = fake
+    result = asyncio.run(second.sync([setup()], {"BTC": 98.98}))
+    assert result["opened"] == 1
+    assert len(fake.open_calls) == 1
+
+
+def test_invalidated_gap_through_stop_cancels_pending_without_optimistic_fill(tmp_path):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    asyncio.run(m.sync([setup()], {"BTC": 100.0}))
+    result = asyncio.run(m.sync([setup(state="INVALIDATED", price=94.0)], {"BTC": 94.0}))
+    assert result["opened"] == 0
+    assert result["pending"] == 0
+    assert result["cancelled"] >= 1
+    assert fake.open_calls == []
+
+
+def test_stale_discovery_does_not_arm_a_new_paper_order(tmp_path):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    row = setup()
+    row["discovery_stale"] = True
+    result = asyncio.run(m.sync([row], {"BTC": 100.0}))
+    assert result["armed"] == 0
+    assert result["pending"] == 0
+    assert fake.open_calls == []
+
+
+def test_watch_manual_opportunity_arms_and_auto_fills_on_same_l1_touch(tmp_path):
+    """If the manual board says PLACE_RESTING_L1, paper must mirror it regardless of tier."""
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    watch = setup(tier="WATCH")
+
+    armed = asyncio.run(m.sync([watch], {"BTC": 100.0}))
+    filled = asyncio.run(m.sync([watch], {"BTC": 98.98}))
+
+    assert armed["armed"] == 1
+    assert armed["pending"] == 1
+    assert filled["opened"] == 1
+    assert filled["pending"] == 0
+    assert len(fake.open_calls) == 1
+    assert fake.open_calls[0]["tier"] == "watch"
+    assert fake.open_calls[0]["features"]["manual_trigger_mirror"] is True
+
+
+def test_new_manual_opportunity_epoch_can_arm_after_prior_cycle_was_mirrored(tmp_path):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    old = setup(epoch="2026-09-10T13:00:00+00:00")
+    new = setup(epoch="2026-09-10T14:00:00+00:00")
+    m._mirrored_instances.add(m._instance_id(old))
+
+    result = asyncio.run(m.sync([new], {"BTC": 100.0}))
+
+    assert result["armed"] == 1
+    assert result["pending"] == 1
+    assert m._instance_id(old) != m._instance_id(new)
+
+
+def test_opposite_side_open_paper_trade_does_not_block_manual_short_fill(tmp_path):
+    fake = FakeJournal()
+    fake.open_rows.append({
+        "trade_id": "old-long",
+        "trade_type": "PAPER",
+        "source": "perp_manual_auto",
+        "symbol": "BTC",
+        "side": "LONG",
+        "working_stop": 95.0,
+        "tp1_price": 105.0,
+    })
+    m = mirror_with(fake, tmp_path)
+
+    armed = asyncio.run(m.sync([short_setup()], {"BTC": 100.0}))
+    filled = asyncio.run(m.sync([short_setup()], {"BTC": 101.02}))
+
+    assert armed["armed"] == 1
+    assert filled["opened"] == 1
+    assert fake.open_calls[-1]["side"] == "SHORT"
+    assert fake.open_calls[-1]["entry"] == 101.0
+
+
+def test_crossed_resting_short_is_recovered_and_filled_at_l1(tmp_path, monkeypatch):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    crossed = short_setup(price=102.0, epoch="2026-09-10T14:00:00+00:00")
+    crossed["state"] = "L1_ACTIVE"
+    crossed["previous_state"] = "PREPARE"
+    crossed["previous_price"] = 100.0
+    crossed["previous_discovery_stale"] = False
+
+    monkeypatch.setattr(m, "_instruction", lambda _setup: {"action": "NO_NEW_ORDER"})
+    result = asyncio.run(m.sync([crossed], {"BTC": 102.0}))
+
+    assert result["recovered"] == 1
+    assert result["opened"] == 1
+    assert fake.open_calls[-1]["entry"] == 101.0
+    assert fake.open_calls[-1]["features"]["recovered_limit_cross"] is True
+
+
+def test_cross_recovery_refuses_stale_prior_snapshot(tmp_path, monkeypatch):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    crossed = short_setup(price=102.0, epoch="2026-09-10T14:00:00+00:00")
+    crossed["state"] = "L1_ACTIVE"
+    crossed["previous_state"] = "PREPARE"
+    crossed["previous_price"] = 100.0
+    crossed["previous_discovery_stale"] = True
+
+    monkeypatch.setattr(m, "_instruction", lambda _setup: {"action": "NO_NEW_ORDER"})
+    result = asyncio.run(m.sync([crossed], {"BTC": 102.0}))
+
+    assert result["recovered"] == 0
+    assert result["opened"] == 0
+    assert fake.open_calls == []
+
+
+def test_auto_paper_trade_closes_at_tp1_and_records_mark(tmp_path):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    asyncio.run(m.sync([setup()], {"BTC": 100.0}))
+    asyncio.run(m.sync([setup()], {"BTC": 98.98}))
+    result = asyncio.run(m.sync([setup()], {"BTC": 106.0}))
+    assert result["closed"] == 1
+    assert fake.mark_calls[-1] == ("t1", 106.0)
+    assert fake.close_calls[-1][1]["exit_reason"] == "SETUP_TP1"
+
+
+def test_auto_paper_trade_closes_at_stop(tmp_path):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    asyncio.run(m.sync([setup()], {"BTC": 100.0}))
+    asyncio.run(m.sync([setup()], {"BTC": 98.98}))
+    result = asyncio.run(m.sync([setup()], {"BTC": 94.0}))
+    assert result["closed"] == 1
+    assert fake.close_calls[-1][1]["exit_reason"] == "SETUP_STOP"
+
+
+def test_real_manual_trade_book_is_never_mutated_by_auto_paper_mirror(tmp_path):
+    fake = FakeJournal()
+    m = mirror_with(fake, tmp_path)
+    row = setup()
+    asyncio.run(m.sync([row], {"BTC": 100.0}))
+    asyncio.run(m.sync([row], {"BTC": 98.98}))
+    assert row["trade_status"] == "NOT_ENTERED"
+    assert "entry_price" not in row
+    assert all(call.get("trade_type") == "PAPER" for call in fake.open_calls)

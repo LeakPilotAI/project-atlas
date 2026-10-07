@@ -1,0 +1,123 @@
+"""Append-safe prospective crypto research evidence store. No trading authority."""
+from __future__ import annotations
+import hashlib, json
+from pathlib import Path
+from typing import Any
+
+READINESS_POLICY={"policy_version":"E62_PRE_OUTCOME_V1","minimum_total_observations":30,"minimum_distinct_observation_days":14,"minimum_valid_fraction":0.90}
+ZERO_AUTHORITY={"scoring_active":False,"dip_state_active":False,"can_emit_signal":False,"paper_entry_authority":False,"execution_authority":False,"strategy_selection_authority":False,"threshold_mutation_authority":False,"promotion_authority":False,"live_capital_allowed":False}
+
+def observation_identity(record: dict[str, Any]) -> str:
+    material={"asset_class":record.get("asset_class"),"symbol":record.get("symbol"),"observed_at":record.get("observed_at"),"evidence":record.get("evidence")}
+    raw=json.dumps(material,sort_keys=True,separators=(",",":"),default=str).encode()
+    return hashlib.sha256(raw).hexdigest()
+
+def chain_identity(sequence: int, previous_hash: str, observation_id: str) -> str:
+    raw=f"{sequence}:{previous_hash}:{observation_id}".encode()
+    return hashlib.sha256(raw).hexdigest()
+
+class CryptoProspectiveEvidenceStore:
+    def __init__(self,path):
+        self.path=Path(path); self.head_path=Path(str(self.path)+".head"); self.records=[]; self._ids=set()
+        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0,"legacy_unverified_lines":0,"chain_verified_lines":0,"chain_mismatch_lines":0,"chain_anchor_mismatch":False}
+        self.reload()
+    def reload(self):
+        self.records=[]; self._ids=set()
+        self.integrity={"ok":True,"malformed_lines":0,"duplicate_lines":0,"identity_mismatch_lines":0,"legacy_unverified_lines":0,"chain_verified_lines":0,"chain_mismatch_lines":0,"chain_anchor_mismatch":False,"chain_state":"NO_CHAIN_YET"}
+        if not self.path.exists(): return
+        expected_sequence=1; previous_hash="GENESIS"
+        for line in self.path.read_text(encoding="utf-8").splitlines():
+            if not line.strip(): continue
+            try:
+                row=json.loads(line); oid=str(row["observation_id"])
+            except (json.JSONDecodeError,KeyError,TypeError,ValueError):
+                self.integrity["ok"]=False; self.integrity["malformed_lines"]+=1
+                continue
+            if oid != observation_identity(row):
+                self.integrity["ok"]=False; self.integrity["identity_mismatch_lines"]+=1
+                continue
+            if oid in self._ids:
+                self.integrity["duplicate_lines"]+=1
+                continue
+            if "chain_hash" not in row:
+                self.integrity["legacy_unverified_lines"]+=1
+            else:
+                seq=row.get("chain_sequence"); prev=str(row.get("previous_chain_hash",""))
+                expected=chain_identity(expected_sequence,previous_hash,oid)
+                if seq != expected_sequence or prev != previous_hash or row.get("chain_hash") != expected:
+                    self.integrity["ok"]=False; self.integrity["chain_mismatch_lines"]+=1
+                    continue
+                self.integrity["chain_verified_lines"]+=1; previous_hash=expected; expected_sequence+=1
+            self.records.append(row); self._ids.add(oid)
+        if self.integrity["chain_verified_lines"]:
+            if not self.head_path.exists():
+                self.integrity["ok"]=False; self.integrity["chain_anchor_mismatch"]=True
+            else:
+                try:
+                    anchor=json.loads(self.head_path.read_text(encoding="utf-8"))
+                    if anchor.get("sequence") != expected_sequence-1 or anchor.get("chain_hash") != previous_hash:
+                        self.integrity["ok"]=False; self.integrity["chain_anchor_mismatch"]=True
+                except (json.JSONDecodeError,TypeError,ValueError,OSError):
+                    self.integrity["ok"]=False; self.integrity["chain_anchor_mismatch"]=True
+        if not self.integrity["ok"]: self.integrity["chain_state"]="COMPROMISED"
+        elif self.integrity["chain_verified_lines"]: self.integrity["chain_state"]="VERIFIED"
+        elif self.integrity["legacy_unverified_lines"]: self.integrity["chain_state"]="LEGACY_UNVERIFIED"
+    def append(self,record: dict[str,Any]) -> bool:
+        if not self.integrity["ok"]:
+            raise ValueError("EVIDENCE_STORE_INTEGRITY_FAILED")
+        row=dict(record); oid=observation_identity(row)
+        if oid in self._ids: return False
+        row["observation_id"]=oid
+        chained=[x for x in self.records if x.get("chain_hash")]
+        sequence=len(chained)+1; previous_hash=chained[-1]["chain_hash"] if chained else "GENESIS"
+        row["chain_sequence"]=sequence; row["previous_chain_hash"]=previous_hash
+        row["chain_hash"]=chain_identity(sequence,previous_hash,oid)
+        self.path.parent.mkdir(parents=True,exist_ok=True)
+        with self.path.open("a",encoding="utf-8") as fh:
+            fh.write(json.dumps(row,sort_keys=True,separators=(",",":"),default=str)+"\n")
+        head_tmp=Path(str(self.head_path)+".tmp")
+        head_tmp.write_text(json.dumps({"sequence":sequence,"chain_hash":row["chain_hash"]},sort_keys=True),encoding="utf-8")
+        head_tmp.replace(self.head_path)
+        self.records.append(row); self._ids.add(oid)
+        self.integrity["chain_verified_lines"]+=1; self.integrity["chain_state"]="VERIFIED"
+        return True
+
+def integrity_diagnostic(integrity):
+    reasons=[]
+    if integrity.get("malformed_lines"): reasons.append("MALFORMED_EVIDENCE_LOG")
+    if integrity.get("identity_mismatch_lines"): reasons.append("OBSERVATION_IDENTITY_MISMATCH")
+    if integrity.get("chain_mismatch_lines"): reasons.append("CHAIN_LINK_MISMATCH")
+    if integrity.get("chain_anchor_mismatch"): reasons.append("CHAIN_ANCHOR_INVALID")
+    state=integrity.get("chain_state","NO_CHAIN_YET")
+    if state=="LEGACY_UNVERIFIED": reasons.append("LEGACY_EVIDENCE_UNVERIFIED")
+    return {"chain_state":state,"healthy":bool(integrity.get("ok")),"readiness_eligible":bool(integrity.get("ok")) and state!="COMPROMISED","reason_codes":reasons,"repair_available":False,"mutation_available":False}
+
+def lifecycle_status(records, integrity):
+    rows=list(records)
+    dates=sorted(str(x.get("observed_at",""))[:10] for x in rows if x.get("observed_at"))
+    compromised=integrity.get("chain_state")=="COMPROMISED"
+    return {"policy_version":"E70_APPEND_ONLY_V1","record_count":len(rows),"chain_verified_count":int(integrity.get("chain_verified_lines",0)),"legacy_unverified_count":int(integrity.get("legacy_unverified_lines",0)),"oldest_observation_date":dates[0] if dates else None,"newest_observation_date":dates[-1] if dates else None,"retention_mode":"APPEND_ONLY","automatic_repair":False,"recovery_status":"MANUAL_REVIEW_REQUIRED" if compromised else "NOT_REQUIRED"}
+
+def evidence_summary(records):
+    rows=list(records); total=len(rows)
+    valid=sum(bool(x.get("evidence_valid")) for x in rows)
+    days={str(x.get("observed_at",""))[:10] for x in rows if x.get("observed_at")}
+    reasons={}
+    for row in rows:
+        for item in (row.get("evidence") or {}).values():
+            for reason in item.get("reasons",[]):
+                reasons[reason]=reasons.get(reason,0)+1
+    fraction=(valid/total) if total else 0.0
+    gates={"total_observations":total>=READINESS_POLICY["minimum_total_observations"],"distinct_days":len(days)>=READINESS_POLICY["minimum_distinct_observation_days"],"valid_fraction":fraction>=READINESS_POLICY["minimum_valid_fraction"]}
+    result={"total_observations":total,"valid_observations":valid,"valid_fraction":fraction,"distinct_observation_days":len(days),"failure_reasons":reasons}
+    result.update({"predeclared_readiness_policy":dict(READINESS_POLICY),"readiness_gates_met":all(gates.values()),"gate_checks":gates})
+    result.update(ZERO_AUTHORITY)
+    return result
+
+def operator_presentation(summary, diagnostic, lifecycle):
+    state = diagnostic["chain_state"]
+    mapping = {"COMPROMISED": ("CRITICAL", True, "INTEGRITY_REVIEW_REQUIRED"), "LEGACY_UNVERIFIED": ("WARNING", True, "LEGACY_REVIEW_REQUIRED"), "VERIFIED": ("INFO", False, "COLLECTING_EVIDENCE"), "NO_CHAIN_YET": ("INFO", False, "NO_EVIDENCE_YET")}
+    severity, attention, status = mapping[state]
+    if state == "VERIFIED" and summary.get("readiness_gates_met"):
+        status = "RESEARCH_GATES_MET"
+    return {"contract_version":"E71_OPERATOR_PRESENTATION_V1","status":status,"severity":severity,"operator_attention_required":attention,"chain_state":state,"readiness_gates_met":bool(summary.get("readiness_gates_met")) and diagnostic["readiness_eligible"],"recovery_status":lifecycle["recovery_status"],"read_only":True,"repair_action_available":False,"mutation_action_available":False}

@@ -1,0 +1,694 @@
+"""Automatic paper mirror for manual perp resting-limit instructions.
+
+Real Hyperliquid/Axiom execution remains manual-only. When Atlas tells the user to
+place a verified resting L1 limit, this module arms the same PAPER limit. A paper
+position is opened only after a later market mark actually touches that limit.
+Pending paper limits are durable across restarts; no PREPARE state is treated as a
+fill and no exchange order is ever submitted here.
+
+Parity rule: every fresh setup that Atlas exposes as a manual PLACE_RESTING_L1
+instruction is eligible for the same auto-paper mirror, regardless of display tier.
+This keeps manual opportunity logging and paper evidence aligned.
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from app.core.logging import get_logger
+from app.services.paper_journal import JOURNAL_PATH, iter_jsonl, paper_journal
+from app.services.paper_risk import check_paper_risk
+from app.services.paper_risk_controls import paper_risk_controls
+from app.services.paper_risk_window import utc_day_risk_snapshot
+from app.services.paper_execution_model import (
+    DEFAULT_FEE_BPS_PER_SIDE,
+    DEFAULT_SLIPPAGE_BPS_PER_SIDE,
+    touched_with_buffer,
+    conservative_stop_exit,
+    conservative_target_exit,
+)
+from app.services.paper_adaptive_exit import (
+    ADAPTIVE_EXECUTION_COHORT_VERSION,
+    ADAPTIVE_EXIT_POLICY_VERSION,
+    evaluate_adaptive_exit,
+)
+from app.trading_core.perp_board import build_perp_board
+
+log = get_logger("perp_setup_paper_mirror")
+
+SOURCE = "perp_manual_auto"
+STRATEGY = "perp_setup_auto_v2_resting_limit"
+PENDING_EVENT_PATH = Path(__file__).resolve().parents[2] / "data" / "perp_setup_paper_limits.jsonl"
+MAX_PENDING_AGE_SEC = 6 * 3600
+MAX_MARK_AGE_SEC = 30
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+class PerpSetupPaperMirror:
+    def __init__(self, *, pending_path: Path | None = None) -> None:
+        self._seeded = False
+        self._mirrored_instances: set[str] = set()
+        self._terminal_pending_instances: set[str] = set()
+        self._terminal_cache_hydrated = False
+        self._pending: dict[str, dict[str, Any]] = {}
+        self._pending_path = pending_path or PENDING_EVENT_PATH
+        self._source_open_ids: set[str] = set()
+        self._opened_total = 0
+        self._closed_total = 0
+        self._recent_terminal: list[dict[str, Any]] = []
+
+    def _instance_id(self, setup: dict[str, Any]) -> str:
+        key = str(setup.get("setup_key") or "")
+        first = str(setup.get("first_seen_at") or "")
+        epoch = str(setup.get("paper_mirror_epoch_at") or first)
+        return f"{key}|{first}|{epoch}"
+
+    def _append_pending_event(self, row: dict[str, Any]) -> None:
+        self._pending_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {"timestamp": _now(), **row}
+        with self._pending_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, default=str) + "\n")
+            handle.flush()
+            try:
+                os.fsync(handle.fileno())
+            except OSError:
+                pass
+
+    def _seed(self) -> None:
+        if self._seeded:
+            return
+        source_ids: set[str] = set()
+        source_open_ids: set[str] = set()
+        opened_ids: set[str] = set()
+        closed_ids: set[str] = set()
+        for row in iter_jsonl(JOURNAL_PATH):
+            features = row.get("features") if isinstance(row.get("features"), dict) else {}
+            instance = str(features.get("setup_instance_id") or "")
+            if instance:
+                self._mirrored_instances.add(instance)
+            tid = str(row.get("trade_id") or "")
+            if not tid:
+                continue
+            event = str(row.get("event") or "")
+            if event == "open" and str(row.get("source") or "") == SOURCE:
+                source_ids.add(tid)
+                source_open_ids.add(tid)
+                opened_ids.add(tid)
+            elif event == "close" and tid in source_ids:
+                closed_ids.add(tid)
+                source_open_ids.discard(tid)
+        self._source_open_ids = source_open_ids
+        self._opened_total = len(opened_ids)
+        self._closed_total = len(closed_ids)
+
+        pending: dict[str, dict[str, Any]] = {}
+        for row in iter_jsonl(self._pending_path):
+            if row.get("event") == "_malformed":
+                continue
+            instance = str(row.get("setup_instance_id") or "")
+            if not instance:
+                continue
+            event = str(row.get("event") or "").lower()
+            if event == "armed":
+                pending[instance] = dict(row)
+            elif event in {"filled", "cancelled"}:
+                pending.pop(instance, None)
+                self._terminal_pending_instances.add(instance)
+                reason = str(row.get("reason") or "")
+                self._recent_terminal.append({
+                    "timestamp": row.get("timestamp"),
+                    "setup_instance_id": instance,
+                    "setup_key": row.get("setup_key"),
+                    "symbol": row.get("symbol"),
+                    "side": row.get("side"),
+                    "state": "FILLED" if event == "filled" else ("BLOCKED" if reason == "PAPER_RISK_BLOCK" else "CANCELLED"),
+                    "reason": reason or None,
+                    "mark": row.get("mark") or row.get("touch_mark"),
+                })
+                if event == "filled":
+                    self._mirrored_instances.add(instance)
+        self._recent_terminal = self._recent_terminal[-20:]
+        self._pending = pending
+        self._terminal_cache_hydrated = True
+        self._seeded = True
+
+    @staticmethod
+    def _instruction(setup: dict[str, Any]) -> dict[str, Any]:
+        board = build_perp_board([setup], limit=1)
+        if not board:
+            return {}
+        instruction = board[0].get("manual_instruction")
+        return dict(instruction) if isinstance(instruction, dict) else {}
+
+    @staticmethod
+    def _limit_touched(*, side: str, mark: float, limit_price: float) -> bool:
+        return touched_with_buffer(side=side, mark=mark, limit_price=limit_price)
+
+    @staticmethod
+    def _invalidated_before_fill(*, side: str, mark: float, stop: float) -> bool:
+        return (side == "LONG" and mark <= stop) or (side == "SHORT" and mark >= stop)
+
+    @staticmethod
+    def _crossed_from_prior_resting(setup: dict[str, Any], *, mark: float) -> bool:
+        if bool(setup.get("previous_discovery_stale")):
+            return False
+        state = str(setup.get("state") or "").upper()
+        previous_state = str(setup.get("previous_state") or "").upper()
+        if state not in {"L1_ACTIVE", "L2_ACTIVE", "L3_ACTIVE"}:
+            return False
+        if previous_state not in {"PREPARE", "L1_ACTIVE", "L2_ACTIVE", "L3_ACTIVE"}:
+            return False
+        levels = setup.get("levels") if isinstance(setup.get("levels"), dict) else {}
+        try:
+            previous_price = float(setup.get("previous_price") or 0.0)
+            l1 = float(levels.get("l1") or 0.0)
+        except (TypeError, ValueError):
+            return False
+        if min(previous_price, l1, mark) <= 0:
+            return False
+        side = str(setup.get("side") or "").upper()
+        if side == "LONG":
+            return previous_price > l1 and mark <= l1
+        if side == "SHORT":
+            return previous_price < l1 and mark >= l1
+        return False
+
+    def _has_terminal_pending_event(self, instance: str) -> bool:
+        """Fast terminal lookup, with a compatibility fallback for pre-seeded tests/tools.
+
+        Normal runtime seeds the append-only file once and then stays O(1).  Some
+        callers intentionally construct a mirror with _seeded=True; in that case
+        the cache has never been hydrated, so perform the legacy one-time lookup
+        for the requested identity and cache the result.
+        """
+        self._seed()
+        if instance in self._terminal_pending_instances:
+            return True
+        if not self._terminal_cache_hydrated:
+            for row in iter_jsonl(self._pending_path):
+                if row.get("event") == "_malformed":
+                    continue
+                candidate = str(row.get("setup_instance_id") or "")
+                if candidate and str(row.get("event") or "").lower() in {"filled", "cancelled"}:
+                    self._terminal_pending_instances.add(candidate)
+            self._terminal_cache_hydrated = True
+        return instance in self._terminal_pending_instances
+
+    def _arm(self, setup: dict[str, Any], *, mark: float, instruction: dict[str, Any]) -> bool:
+        tier = str(setup.get("tier") or "").upper()
+        symbol = str(setup.get("symbol") or "").upper()
+        side = str(setup.get("side") or "").upper()
+        instance = self._instance_id(setup)
+        levels = setup.get("levels") if isinstance(setup.get("levels"), dict) else {}
+        try:
+            limit_price = float(instruction.get("limit_price") or levels.get("l1") or 0.0)
+            stop = float(levels.get("stop") or 0.0)
+            tp1 = float(levels.get("tp1") or 0.0)
+            tp2 = float(levels.get("tp2") or 0.0)
+        except (TypeError, ValueError):
+            return False
+        if (
+            not instance
+            or instance in self._mirrored_instances
+            or instance in self._pending
+            or self._has_terminal_pending_event(instance)
+            or symbol == ""
+            or side not in {"LONG", "SHORT"}
+            or str(instruction.get("action") or "") != "PLACE_RESTING_L1"
+            or min(limit_price, stop, tp1, tp2, mark) <= 0
+        ):
+            return False
+        row = {
+            "event": "armed",
+            "setup_instance_id": instance,
+            "paper_mirror_epoch_at": setup.get("paper_mirror_epoch_at"),
+            "setup_key": setup.get("setup_key"),
+            "symbol": symbol,
+            "side": side,
+            "tier": tier,
+            "limit_price": limit_price,
+            "stop": stop,
+            "tp1": tp1,
+            "tp2": tp2,
+            "signal_price": mark,
+            "signal_score": float(setup.get("score") or 0.0),
+            "target_rr": float(levels.get("target_rr") or 1.8),
+            "volatility_pct": setup.get("volatility_pct"),
+            "momentum_pct": setup.get("momentum_pct"),
+            "trend_pct": setup.get("trend_pct"),
+            "state_at_arm": str(setup.get("state") or "").upper(),
+            "manual_trigger_mirror": True,
+            "recovered_limit_cross": bool(instruction.get("recovered_limit_cross")),
+            "source": SOURCE,
+            "strategy": STRATEGY,
+        }
+        self._append_pending_event(row)
+        self._pending[instance] = {"timestamp": _now(), **row}
+        return True
+
+    def _cancel_pending(
+        self,
+        instance: str,
+        *,
+        reason: str,
+        mark: float | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        row = self._pending.pop(instance, None)
+        if not row:
+            return
+        event_row = {
+            "event": "cancelled",
+            "setup_instance_id": instance,
+            "setup_key": row.get("setup_key"),
+            "symbol": row.get("symbol"),
+            "side": row.get("side"),
+            "reason": reason,
+            "mark": mark,
+            "details": dict(details or {}),
+        }
+        self._append_pending_event(event_row)
+        self._recent_terminal.append({
+            "timestamp": _now(),
+            **{k: event_row.get(k) for k in ("setup_instance_id", "setup_key", "symbol", "side", "reason", "mark")},
+            "state": "BLOCKED" if reason == "PAPER_RISK_BLOCK" else "CANCELLED",
+        })
+        self._recent_terminal = self._recent_terminal[-20:]
+        self._terminal_pending_instances.add(instance)
+        log.info("Auto paper resting limit cancelled", symbol=row.get("symbol"), reason=reason)
+
+    async def _fill_pending(self, instance: str, *, mark: float, setup: dict[str, Any] | None = None) -> bool:
+        row = self._pending.get(instance)
+        if not row:
+            return False
+        if setup is not None and not self._fresh_mark_timestamp(setup):
+            self._cancel_pending(instance, reason="STALE_MARK_BEFORE_FILL", mark=mark)
+            return False
+        if self._has_terminal_pending_event(instance):
+            self._pending.pop(instance, None)
+            return False
+        symbol = str(row.get("symbol") or "").upper()
+        side = str(row.get("side") or "").upper()
+        limit_price = float(row.get("limit_price") or 0.0)
+        stop = float(row.get("stop") or 0.0)
+        tp1 = float(row.get("tp1") or 0.0)
+        tp2 = float(row.get("tp2") or 0.0)
+        if min(mark, limit_price, stop, tp1, tp2) <= 0:
+            return False
+        if self._invalidated_before_fill(side=side, mark=mark, stop=stop):
+            self._cancel_pending(instance, reason="INVALIDATED_BEFORE_FILL", mark=mark)
+            return False
+        if not self._limit_touched(side=side, mark=mark, limit_price=limit_price):
+            return False
+
+        open_positions = list(paper_journal.list_open())
+        open_pairs = {
+            (str(p.get("symbol") or "").upper(), str(p.get("side") or "").upper())
+            for p in open_positions
+            if str(p.get("trade_type") or "PAPER").upper() == "PAPER"
+        }
+        if (symbol, side) in open_pairs:
+            self._cancel_pending(instance, reason="PAPER_POSITION_ALREADY_OPEN", mark=mark)
+            return False
+        control = paper_risk_controls.snapshot()
+        try:
+            risk_window = await asyncio.to_thread(utc_day_risk_snapshot)
+            session_net_r = float(risk_window.get("net_r") or 0.0)
+        except Exception:
+            risk_window = {
+                "net_r": float(control.get("session_net_r") or 0.0),
+                "window": "DURABLE_CONTROL_FALLBACK",
+                "source": "PAPER_RISK_CONTROL_STORE",
+            }
+            session_net_r = float(risk_window["net_r"])
+        risk_decision = check_paper_risk(
+            open_positions=open_positions,
+            requested_risk_usd=1.0,
+            session_net_r=session_net_r,
+            kill_switch=bool(control.get("kill_switch")),
+        )
+        if not risk_decision["allowed"]:
+            self._cancel_pending(
+                instance,
+                reason="PAPER_RISK_BLOCK",
+                mark=mark,
+                details={
+                    "blockers": list(risk_decision.get("blockers") or []),
+                    "risk_window": risk_window,
+                    "requested_risk_usd": 1.0,
+                    "open_paper_positions": sum(
+                        1
+                        for p in open_positions
+                        if str(p.get("trade_type") or "PAPER").upper() == "PAPER"
+                    ),
+                },
+            )
+            return False
+
+        features = {
+            "setup_instance_id": instance,
+            "paper_mirror_epoch_at": row.get("paper_mirror_epoch_at"),
+            "setup_key": row.get("setup_key"),
+            "tier": row.get("tier"),
+            "state_at_arm": row.get("state_at_arm"),
+            "manual_trigger_mirror": True,
+            "recovered_limit_cross": bool(row.get("recovered_limit_cross")),
+            "paper_order_model": "RESTING_L1_LIMIT",
+            "paper_fill_model": "LIMIT_TOUCH_PLUS_BUFFER",
+            "paper_order_armed_at": row.get("timestamp"),
+            "paper_filled_at": _now(),
+            "setup_rr": float(row.get("target_rr") or 1.8),
+            "volatility_pct": row.get("volatility_pct"),
+            "momentum_pct": row.get("momentum_pct"),
+            "trend_pct": row.get("trend_pct"),
+            "adaptive_exit_policy_version": ADAPTIVE_EXIT_POLICY_VERSION,
+            "adaptive_exit_evidence_interval": "5m",
+            "paper_execution_model_version": ADAPTIVE_EXECUTION_COHORT_VERSION,
+        }
+        trade_id = await paper_journal.open_trade(
+            symbol=symbol,
+            side=side,
+            entry=limit_price,
+            stop=stop,
+            tp1=tp1,
+            tp2=tp2,
+            signal_price=float(row.get("signal_price") or mark),
+            signal_timestamp=str(row.get("timestamp") or _now()),
+            signal_score=float(row.get("signal_score") or 0.0),
+            source=SOURCE,
+            strategy=STRATEGY,
+            tier=str(row.get("tier") or "manual").lower(),
+            notes="Auto paper fill of Atlas manual resting L1 instruction; no live order placed.",
+            features=features,
+            counts_for_live=False,
+            fees_bps=DEFAULT_FEE_BPS_PER_SIDE,
+            slippage_bps=DEFAULT_SLIPPAGE_BPS_PER_SIDE,
+            trade_type="PAPER",
+        )
+        self._source_open_ids.add(str(trade_id))
+        self._opened_total += 1
+        fill_event = {
+            "event": "filled",
+            "setup_instance_id": instance,
+            "setup_key": row.get("setup_key"),
+            "symbol": symbol,
+            "side": side,
+            "limit_price": limit_price,
+            "touch_mark": mark,
+            "recovered_limit_cross": bool(row.get("recovered_limit_cross")),
+        }
+        self._append_pending_event(fill_event)
+        self._recent_terminal.append({
+            "timestamp": _now(),
+            "setup_instance_id": instance,
+            "setup_key": row.get("setup_key"),
+            "symbol": symbol,
+            "side": side,
+            "state": "FILLED",
+            "reason": None,
+            "mark": mark,
+        })
+        self._recent_terminal = self._recent_terminal[-20:]
+        self._pending.pop(instance, None)
+        self._mirrored_instances.add(instance)
+        self._terminal_pending_instances.add(instance)
+        return True
+
+    def cancel_all_pending(self, *, reason: str = "ATLAS_SHUTDOWN") -> int:
+        """Cancel pending limits only for an explicit non-restart shutdown reason.
+
+        A normal Atlas shutdown is not evidence that the user's already-published
+        manual resting limit ceased to exist. Preserve those pending PAPER mirrors
+        so restart seeding can resume them; lifecycle invalidation/expiry still
+        cancels them on a later sync. Explicit operator/test cancellation reasons
+        remain append-only terminal events.
+        """
+        self._seed()
+        if str(reason or "").upper() == "ATLAS_SHUTDOWN":
+            return 0
+        n = 0
+        for instance in list(self._pending):
+            if instance not in self._pending:
+                continue
+            self._cancel_pending(instance, reason=reason)
+            n += 1
+        return n
+
+    def status(self) -> dict[str, Any]:
+        """Expose PAPER mirror lifecycle from the seeded runtime index only."""
+        self._seed()
+        pending_orders = [
+            {
+                "setup_instance_id": instance,
+                "setup_key": row.get("setup_key"),
+                "symbol": row.get("symbol"),
+                "side": row.get("side"),
+                "limit_price": row.get("limit_price"),
+                "armed_at": row.get("timestamp"),
+                "state": "PENDING_LIMIT",
+            }
+            for instance, row in self._pending.items()
+        ]
+        open_positions = []
+        for trade in paper_journal.list_open():
+            if str(trade.get("source") or "") != SOURCE:
+                continue
+            open_positions.append({
+                "trade_id": trade.get("trade_id"),
+                "symbol": trade.get("symbol"),
+                "side": trade.get("side"),
+                "entry_price": trade.get("actual_entry_price"),
+                "mark": trade.get("mark"),
+                "initial_stop": trade.get("initial_stop") or trade.get("stop_price"),
+                "working_stop": trade.get("working_stop") or trade.get("stop_price"),
+                "working_target": trade.get("working_target") or trade.get("tp1_price"),
+                "tp1_price": trade.get("tp1_price"),
+                "tp2_price": trade.get("tp2_price"),
+                "mfe_r": trade.get("mfe_r"),
+                "mae_r": trade.get("mae_r"),
+                "adaptive_stage": trade.get("adaptive_stage") or "STATIC",
+                "adaptive_exit_policy_version": (
+                    trade.get("adaptive_exit_policy_version")
+                    or (
+                        (trade.get("features") or {}).get("adaptive_exit_policy_version")
+                        if isinstance(trade.get("features"), dict)
+                        else None
+                    )
+                ),
+                "opened_at": trade.get("entry_timestamp"),
+                "state": "OPEN_PAPER",
+            })
+        base = {
+            "pending_count": len(self._pending),
+            # Preserve the established hot-path contract: this count comes from
+            # the mirror's seeded runtime ownership index, not a secondary view.
+            # open_positions below is supplemental observability only.
+            "open_count": len(self._source_open_ids),
+            "opened_total": int(self._opened_total),
+            "closed_total": int(self._closed_total),
+        }
+        # Preserve the legacy compact shape for synthetic/pre-seeded callers that
+        # have no lifecycle cache. Normal runtime seeds this cache from disk once.
+        if not self._recent_terminal and all(
+            not any(row.get(k) for k in ("symbol", "side", "limit_price", "timestamp"))
+            for row in self._pending.values()
+        ):
+            return base
+        return {
+            **base,
+            "pending_orders": pending_orders,
+            "open_positions": open_positions,
+            "recent_terminal": list(self._recent_terminal),
+            "execution": "PAPER_ONLY",
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+
+    @staticmethod
+    def _fresh_mark_timestamp(setup: dict[str, Any]) -> bool:
+        raw = setup.get("mark_timestamp") or setup.get("price_timestamp") or setup.get("updated_at")
+        if not raw:
+            return True
+        try:
+            ts = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            return (datetime.now(timezone.utc) - ts.astimezone(timezone.utc)).total_seconds() <= MAX_MARK_AGE_SEC
+        except Exception:
+            return False
+
+    async def sync(self, setups: list[dict[str, Any]], price_map: dict[str, float]) -> dict[str, int]:
+        """Mirror every fresh manual resting-limit instruction into PAPER."""
+        self._seed()
+        opened = closed = marked = skipped = armed = filled = cancelled = recovered = expired = adaptive_updates = 0
+
+        current_by_symbol = {
+            str(s.get("symbol") or "").upper(): s
+            for s in setups
+            if str(s.get("symbol") or "").strip()
+        }
+
+        for trade in list(paper_journal.list_open()):
+            if str(trade.get("source") or "") != SOURCE:
+                continue
+            symbol = str(trade.get("symbol") or "").upper()
+            setup_for_symbol = current_by_symbol.get(symbol)
+            if setup_for_symbol is not None and not self._fresh_mark_timestamp(setup_for_symbol):
+                skipped += 1
+                continue
+            mark = price_map.get(symbol)
+            if mark is None or mark <= 0:
+                continue
+            tid = str(trade.get("trade_id") or "")
+            if not tid:
+                continue
+            paper_journal.update_excursion(tid, float(mark))
+            marked += 1
+            side = str(trade.get("side") or "").upper()
+            adaptive = evaluate_adaptive_exit(trade, setup_for_symbol)
+            stop = float(adaptive.get("working_stop") or trade.get("working_stop") or trade.get("stop_price") or 0.0)
+            target = float(adaptive.get("working_target") or trade.get("working_target") or trade.get("tp1_price") or 0.0)
+            if adaptive.get("eligible") and hasattr(paper_journal, "note_adaptive_exit"):
+                try:
+                    changed = paper_journal.note_adaptive_exit(
+                        tid,
+                        working_stop=stop,
+                        working_target=target,
+                        stage=str(adaptive.get("stage") or "WARMUP"),
+                        policy_version=str(adaptive.get("policy_version") or ADAPTIVE_EXIT_POLICY_VERSION),
+                        reason=str(adaptive.get("reason") or ""),
+                        evidence=dict(adaptive.get("evidence") or {}),
+                    )
+                    if changed:
+                        adaptive_updates += 1
+                except Exception as exc:
+                    log.warning("Adaptive PAPER exit journal note failed", trade_id=tid, error=str(exc)[:160])
+
+            hit_stop = (side == "LONG" and mark <= stop) or (side == "SHORT" and mark >= stop)
+            hit_target = (side == "LONG" and mark >= target) or (side == "SHORT" and mark <= target)
+            if hit_stop:
+                exit_price = conservative_stop_exit(side=side, mark=float(mark), stop_price=stop)
+                adaptive_stop = adaptive.get("eligible") and str(adaptive.get("stage") or "") not in {"", "WARMUP", "STATIC"}
+                reason = (
+                    f"ADAPTIVE_{str(adaptive.get('stage') or 'PROTECT')}_STOP"
+                    if adaptive_stop
+                    else "SETUP_STOP"
+                )
+                await paper_journal.close_trade(
+                    tid,
+                    exit_price=exit_price,
+                    result="ADAPTIVE_EXIT" if adaptive_stop else "LOSS",
+                    exit_reason=reason,
+                )
+                self._source_open_ids.discard(tid)
+                self._closed_total += 1
+                closed += 1
+            elif hit_target:
+                exit_price = conservative_target_exit(side=side, mark=float(mark), target_price=target)
+                tp1 = float(trade.get("tp1_price") or 0.0)
+                tp2 = float(trade.get("tp2_price") or 0.0)
+                extended = adaptive.get("eligible") and tp2 > 0 and abs(target - tp2) <= max(1e-12, abs(tp2) * 1e-9)
+                await paper_journal.close_trade(
+                    tid,
+                    exit_price=exit_price,
+                    result="WIN",
+                    exit_reason="ADAPTIVE_TP2" if extended else "SETUP_TP1",
+                )
+                self._source_open_ids.discard(tid)
+                self._closed_total += 1
+                closed += 1
+
+        # A discovery-stale retained setup remains present during the lifecycle grace
+        # window, so its already-published resting order stays intact. Once the setup
+        # disappears entirely after retention, the paper order is detached from any
+        # manual instruction and must be cancelled to prevent stale phantom fills.
+        current_by_instance = {self._instance_id(s): s for s in setups if self._instance_id(s)}
+        for instance in list(self._pending):
+            setup = current_by_instance.get(instance)
+            if setup is None:
+                self._cancel_pending(instance, reason="DETACHED_AFTER_RETENTION")
+                cancelled += 1
+                continue
+            if str(setup.get("state") or "").upper() in {"INVALIDATED", "TP1_HIT", "TP2_HIT"}:
+                self._cancel_pending(instance, reason=f"SETUP_{str(setup.get('state')).upper()}")
+                cancelled += 1
+
+        # Age expiry is a secondary safety net, not a replacement for lifecycle
+        # semantics. A retained discovery-stale setup intentionally keeps its
+        # already-published pending order during the retention grace window.
+        now = datetime.now(timezone.utc)
+        for instance, row in list(self._pending.items()):
+            setup = current_by_instance.get(instance)
+            if setup is not None and bool(setup.get("discovery_stale")):
+                continue
+            raw = row.get("timestamp")
+            try:
+                armed_at = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+                if armed_at.tzinfo is None:
+                    armed_at = armed_at.replace(tzinfo=timezone.utc)
+                age = (now - armed_at.astimezone(timezone.utc)).total_seconds()
+            except Exception:
+                age = MAX_PENDING_AGE_SEC + 1
+            if age > MAX_PENDING_AGE_SEC:
+                self._cancel_pending(instance, reason="EXPIRED_PENDING_LIMIT")
+                expired += 1
+                cancelled += 1
+
+        for setup in setups:
+            symbol = str(setup.get("symbol") or "").upper()
+            mark = float(price_map.get(symbol) or setup.get("price") or setup.get("mark") or 0.0)
+            if mark <= 0 or not self._fresh_mark_timestamp(setup):
+                skipped += 1
+                continue
+            instruction = self._instruction(setup)
+            if str(instruction.get("action") or "") != "PLACE_RESTING_L1" and self._crossed_from_prior_resting(setup, mark=mark):
+                levels = setup.get("levels") if isinstance(setup.get("levels"), dict) else {}
+                instruction = {
+                    "action": "PLACE_RESTING_L1",
+                    "limit_price": levels.get("l1"),
+                    "recovered_limit_cross": True,
+                }
+            if self._arm(setup, mark=mark, instruction=instruction):
+                armed += 1
+                if bool(instruction.get("recovered_limit_cross")):
+                    recovered += 1
+
+        for instance, row in list(self._pending.items()):
+            symbol = str(row.get("symbol") or "").upper()
+            mark = float(price_map.get(symbol) or 0.0)
+            if mark <= 0:
+                continue
+            before = instance in self._pending
+            try:
+                if await self._fill_pending(instance, mark=mark, setup=current_by_instance.get(instance)):
+                    filled += 1
+                    opened += 1
+                elif before and instance not in self._pending:
+                    cancelled += 1
+            except Exception as exc:
+                skipped += 1
+                log.warning("Auto paper resting-limit fill skipped", symbol=symbol, error=str(exc)[:160])
+
+        return {
+            "armed": armed,
+            "pending": len(self._pending),
+            "filled": filled,
+            "opened": opened,
+            "closed": closed,
+            "marked": marked,
+            "cancelled": cancelled,
+            "recovered": recovered,
+            "expired": expired,
+            "adaptive_updates": adaptive_updates,
+            "skipped": skipped,
+        }
+
+
+perp_setup_paper_mirror = PerpSetupPaperMirror()

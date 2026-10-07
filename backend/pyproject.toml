@@ -23,6 +23,7 @@ dependencies = [
     "mplfinance>=0.12.10b0",
     "matplotlib>=3.9.0",
     "pandas>=2.2.0",
+    "lz4>=4.4.5",
 ]
 
 [project.optional-dependencies]

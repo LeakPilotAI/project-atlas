@@ -602,11 +602,12 @@ class InvestmentScanner:
         if persist:
             append_scan_log(report)
             try:
-                save_last_cycle(cycle_summary(report))
+                summary = await asyncio.to_thread(cycle_summary, report)
+                await asyncio.to_thread(save_last_cycle, summary)
             except Exception as e:
                 log.warning("last cycle persist failed", error=str(e)[:160])
             try:
-                self._enrich_past(now=now, outcomes_path=out_path)
+                await asyncio.to_thread(self._enrich_past, now=now, outcomes_path=out_path)
             except Exception as e:
                 log.warning("outcome enrichment failed", error=str(e)[:200])
         return report
@@ -661,7 +662,7 @@ class InvestmentScanner:
         if plan.valuation:
             fetch_state.touch(entry.symbol, valuation=now)
 
-        raw_bars = load_bars(entry.symbol, root=self.history_root or getattr(ing, "history_root", None))
+        raw_bars = await asyncio.to_thread(load_bars, entry.symbol, root=self.history_root or getattr(ing, "history_root", None))
         bars = filter_bars_as_of(raw_bars, now)
         rec = self.research.score_snapshot(snap, bars, as_of=now)
         rec.timestamp = now
@@ -674,7 +675,7 @@ class InvestmentScanner:
             rec.explain.invalidation.extend(dnotes)
 
         headlines: List[dict] = []
-        intel = evaluate_equity_move(
+        intel = await asyncio.to_thread(evaluate_equity_move,
             entry,
             rec,
             universe=universe,
@@ -688,7 +689,7 @@ class InvestmentScanner:
                 from app.investment.cause import fetch_yahoo_headlines
 
                 headlines = await fetch_yahoo_headlines(entry.symbol)
-                intel = evaluate_equity_move(
+                intel = await asyncio.to_thread(evaluate_equity_move,
                     entry,
                     rec,
                     universe=universe,
@@ -866,6 +867,7 @@ class InvestmentScanner:
         obs_path = self.observations_path or OBSERVATIONS_PATH
         rows = load_observations(obs_path)
         already = {r.get("observation_id") for r in load_outcomes(outcomes_path)}
+        bars_by_symbol = {}
         for row in rows:
             oid = row.get("observation_id")
             if not oid or oid in already:
@@ -882,7 +884,9 @@ class InvestmentScanner:
             symbol = str(row.get("symbol") or "")
             if not symbol:
                 continue
-            bars = load_bars(symbol, root=self.history_root)
+            if symbol not in bars_by_symbol:
+                bars_by_symbol[symbol] = load_bars(symbol, root=self.history_root)
+            bars = bars_by_symbol[symbol]
             try:
                 written = enrich_observation(row, bars, now=now, outcomes_path=outcomes_path)
                 if written:

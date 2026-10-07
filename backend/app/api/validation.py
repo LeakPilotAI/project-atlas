@@ -1,99 +1,376 @@
-"""HTTP for Phase 6 paper validation. Read-only. Does not change gates."""
-
+"""HTTP for Phase 6 paper validation. Read-only production controls; research endpoints never place orders."""
 from __future__ import annotations
-
 import json
+import asyncio
+from app.services.runtime_snapshot import RuntimeSnapshot
 from typing import Any, Dict
-
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict
 
-router = APIRouter(prefix="/api/validation", tags=["validation"])
-
-
-def _json_http(body: Any, status_code: int = 200) -> JSONResponse:
-    """Never let FastAPI/Starlette jsonable_encoder 500 this route.
-
-    Starlette JSONResponse uses allow_nan=False. Pre-serialize with default=str
-    so NaN/Inf/exotic types cannot crash the API. Always JSON, never HTML 500.
-    """
-    try:
-        payload = json.loads(json.dumps(body, allow_nan=False, default=str))
-    except Exception as e:
-        payload = {
-            "ok": False,
-            "title": "ATLAS EDGE DIAGNOSTICS",
-            "error": f"serialize: {type(e).__name__}: {str(e)[:180]}",
-            "live_capital_allowed": False,
-            "disclaimer": "Diagnostics failed to serialize. Journal was not rewritten.",
-        }
-    return JSONResponse(content=payload, status_code=status_code)
-
-
+class E37AlphaRunRequest(BaseModel):
+    model_config=ConfigDict(extra="forbid")
+    source_id:str
+    persist:bool=True
+router=APIRouter(prefix="/api/validation",tags=["validation"])
+def _json_http(body:Any,status_code:int=200)->JSONResponse:
+    try:payload=json.loads(json.dumps(body,allow_nan=False,default=str))
+    except Exception as e:payload={"ok":False,"error":f"serialize: {type(e).__name__}: {str(e)[:180]}","live_capital_allowed":False}
+    return JSONResponse(content=payload,status_code=status_code)
+def _clean_policy_guard_errors(body:Any)->Any:
+    if not isinstance(body,dict):return body
+    raw=list(body.get("section_errors") or []);guards=[x for x in raw if str(x).lower().startswith("redacted phrase guard:")];body["section_errors"]=[x for x in raw if x not in guards];body["policy_guard_activations"]=len(guards);body["diagnostics_healthy"]=bool(body.get("ok",True)) and not body["section_errors"];return body
 @router.get("")
 @router.get("/report")
-async def validation_report() -> Dict[str, Any]:
+async def validation_report()->Dict[str,Any]:
     from app.services.paper_validation import full_report
-
     return full_report()
+def _validation_summary()->Dict[str,Any]:
+    from app.services.paper_validation import readiness_report,uncertainty,load_paper_closes
+    rows=load_paper_closes();rd=readiness_report(rows);return {"closed":rd["closed_trades"],"winrate":rd["observed_wr"],"expectancy":rd["observed_expectancy"],"total_r":rd["total_r"],"uncertainty":uncertainty(rows),"data_sufficiency":rd["data_sufficiency"],"statistical_stability":rd["statistical_stability"],"performance":rd["performance"],"risk":rd["risk"],"data_integrity":rd["data_integrity"],"conclusion":rd["conclusion"],"live_capital_allowed":False,"milestone":rd["milestone"]}
+@router.get("/text")
+async def validation_text_endpoint()->Dict[str,str]:
+    from app.services.paper_validation import validation_text
+    return {"text":validation_text()}
+def _edge_endpoint()->JSONResponse:
+    try:
+        from app.services.edge_diagnostics import edge_report
+        body=_clean_policy_guard_errors(edge_report())
+    except Exception as e:body={"ok":False,"title":"ATLAS EDGE DIAGNOSTICS","error":f"{type(e).__name__}: {str(e)[:240]}","live_capital_allowed":False}
+    return _json_http(body)
+_summary_snapshot = RuntimeSnapshot(ttl=60)
+_edge_snapshot = RuntimeSnapshot(ttl=60)
 
 
 @router.get("/summary")
-async def validation_summary() -> Dict[str, Any]:
-    from app.services.paper_validation import readiness_report, uncertainty, load_paper_closes
-
-    rows = load_paper_closes()
-    rd = readiness_report(rows)
-    return {
-        "closed": rd["closed_trades"],
-        "winrate": rd["observed_wr"],
-        "expectancy": rd["observed_expectancy"],
-        "total_r": rd["total_r"],
-        "uncertainty": uncertainty(rows),
-        "data_sufficiency": rd["data_sufficiency"],
-        "statistical_stability": rd["statistical_stability"],
-        "performance": rd["performance"],
-        "risk": rd["risk"],
-        "data_integrity": rd["data_integrity"],
-        "conclusion": rd["conclusion"],
-        "live_capital_allowed": False,
-        "milestone": rd["milestone"],
-    }
-
-
-@router.get("/text")
-async def validation_text_endpoint() -> Dict[str, str]:
-    from app.services.paper_validation import validation_text
-
-    return {"text": validation_text()}
+async def validation_summary():
+    async def build():
+        return await asyncio.to_thread(_validation_summary)
+    return await _summary_snapshot.get(build, {"conclusion": "Validation warming", "live_capital_allowed": False})
 
 
 @router.get("/edge")
-async def edge_endpoint() -> JSONResponse:
-    try:
-        from app.services.edge_diagnostics import edge_report
+async def edge_endpoint():
+    async def build():
+        response = await asyncio.to_thread(_edge_endpoint)
+        return json.loads(response.body)
+    return await _edge_snapshot.get(build, {"ok": False, "error": "Research warming", "live_capital_allowed": False})
 
-        body = edge_report()
+
+@router.get("/cross-strategy-scorecard")
+async def cross_strategy_scorecard_endpoint()->JSONResponse:
+    try:
+        from app.services.cross_strategy_scorecard import cross_strategy_scorecard
+        body=await asyncio.to_thread(cross_strategy_scorecard)
     except Exception as e:
-        body = {
-            "ok": False,
-            "title": "ATLAS EDGE DIAGNOSTICS",
-            "error": f"{type(e).__name__}: {str(e)[:240]}",
-            "live_capital_allowed": False,
-            "baseline": {"n": 0, "winrate": 0.0, "expectancy": 0.0, "total_r": 0.0},
-            "malformed_count": 0,
-            "section_errors": [str(e)[:240]],
-            "disclaimer": "Diagnostics failed to fully build. Journal was not rewritten.",
-        }
-    return _json_http(body, 200)
+        body={"ok":False,"title":"ATLAS CROSS-STRATEGY PAPER EVIDENCE HEALTH","error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
+@router.get("/cross-strategy-checkpoints")
+async def cross_strategy_checkpoints_endpoint()->JSONResponse:
+    try:
+        from app.services.cross_strategy_scorecard import cross_strategy_scorecard
+        from app.services.evidence_checkpoint_history import capture_status, diagnostic_alerts, history_view, journal_integrity, load_history, persist, previous_lanes, transition_summary
+        history=await asyncio.to_thread(load_history)
+        report=await asyncio.to_thread(lambda: cross_strategy_scorecard(previous_checkpoints=previous_lanes(history)))
+        write=await asyncio.to_thread(persist,report)
+        body=history_view()
+        body["transition_summary"]=transition_summary(body["checkpoints"])
+        body["capture_status"]=capture_status(body["checkpoints"])
+        body["diagnostic_alerts"]=diagnostic_alerts(body["transition_summary"])
+        body["checkpoint_journal_integrity"]=journal_integrity()
+        from app.services.evidence_checkpoint_history import schema_compatibility
+        body["checkpoint_schema_compatibility"]=schema_compatibility()
+        from app.services.evidence_checkpoint_history import replay_diagnostics
+        body["checkpoint_replay_diagnostics"]=replay_diagnostics()
+        from app.services.evidence_checkpoint_history import sequence_diagnostics
+        body["checkpoint_sequence_diagnostics"]=sequence_diagnostics()
+        from app.services.evidence_checkpoint_history import provenance_chain
+        body["checkpoint_provenance_chain"]=provenance_chain()
+        from app.services.evidence_checkpoint_history import provenance_anchor
+        body["checkpoint_provenance_anchor"]=provenance_anchor()
+        from app.services.evidence_checkpoint_history import window_completeness
+        body["checkpoint_window_completeness"]=window_completeness()
+        from app.services.evidence_checkpoint_history import exclusion_accounting
+        body["checkpoint_exclusion_accounting"]=exclusion_accounting()
+        body["latest_scorecard"]=report
+        body["persistence"]=write
+        body["execution"]="READ_ONLY_PAPER_RESEARCH"
+        body["live_capital_allowed"]=False
+        body["automatic_real_money_execution"]=False
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
+@router.post("/e37-alpha-run")
+async def e37_alpha_run_endpoint(request:E37AlphaRunRequest)->JSONResponse:
+    try:
+        from app.services.alpha_manual import manual_run
+        body=await asyncio.to_thread(manual_run,request.source_id,persist=request.persist)
+        return _json_http({"ok":True,**body})
+    except ValueError as e:
+        return _json_http({"ok":False,"error":str(e),"execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False},400)
+    except Exception as e:
+        return _json_http({"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"paper_entry_authority":False,"live_capital_allowed":False},500)
+
+@router.get("/e42-alpha-governance")
+async def e42_alpha_governance_endpoint():
+    from app.services.alpha_presentation import alpha_view,delivery_history,delivery_status
+    from app.services.e42_alpha_health import source_health
+    from app.services.e42_alpha_policy import decision
+    from app.services.perp_alert_delivery import perp_alert_delivery_service
+    view=alpha_view(); runtime=perp_alert_delivery_service.reconciliation_status()
+    from app.services.e43_cadence_store import history as cadence_history
+    from app.services.e45_cadence_window import current_window
+    ch=cadence_history(limit=240); historical=decision(ch["rows"])
+    current=current_window(ch["rows"],historical)
+    return _json_http({"ok":True,"delivery":delivery_status(),"history":delivery_history(limit=10),"source_health":{k:source_health(v) for k,v in view.get("sources",{}).items()},"source_observability":{k:{"health":source_health(v),"last_observed_at":v.get("last_observed_at"),"last_fetched_at":v.get("last_fetched_at"),"last_finished_at":v.get("last_finished_at"),"last_outcome":v.get("last_outcome"),"last_http_status":v.get("last_http_status"),"last_parse_result":v.get("last_parse_result")} for k,v in view.get("sources",{}).items()},"cadence":historical,"current_cadence":current,"cadence_history":{"valid_count":ch["valid_count"],"invalid_count":ch["invalid_count"],"integrity_ok":ch["integrity_ok"],"retention_limit":ch["retention_limit"],"timestamped_count":ch["timestamped_count"],"legacy_untimestamped_count":ch["legacy_untimestamped_count"]},"execution_authority":False,"paper_entry_authority":False,"strategy_mutation_authority":False,"membership_mutation_authority":False,"threshold_mutation_authority":False,"live_capital_allowed":False})
+
+@router.get("/e41-alpha-delivery-history")
+async def e41_alpha_delivery_history_endpoint(limit: int = 25):
+    from app.services.alpha_presentation import delivery_history, alpha_view, source_health
+    h=delivery_history(limit=limit); v=alpha_view()
+    h["source_health"]={k:source_health(x) for k,x in v.get("sources",{}).items()}
+    h["current_events"]=[{"event_id":x["event_id"],"freshness":x["freshness"],"corroboration_count":x["corroboration_count"],"corroborators":x["corroborators"]} for x in v.get("items",[])]
+    return _json_http(h)
+
+@router.get("/e40-alpha-delivery")
+async def e40_alpha_delivery_endpoint():
+    from app.services.alpha_presentation import delivery_status
+    from app.services.perp_alert_delivery import perp_alert_delivery_service
+    return _json_http({"ok":True,**delivery_status(),"runtime":perp_alert_delivery_service.reconciliation_status(),"cadence_decoupled":False,"live_capital_allowed":False})
+
+@router.get("/e38-alpha-view")
+async def e38_alpha_view_endpoint():
+    from app.services.alpha_presentation import alpha_view
+    return _json_http(alpha_view())
+
+@router.get("/e36-alpha-operator")
+async def e36_alpha_operator_endpoint()->JSONResponse:
+    try:
+        from app.services.alpha_operator import diagnostics
+        body=await asyncio.to_thread(diagnostics)
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"paper_entry_authority":False,"automatic_worker":False,"live_capital_allowed":False}
+    return _json_http(body)
+
+@router.get("/e32-alpha-feed")
+async def e32_alpha_feed_endpoint(limit:int=100, include_stale:bool=True)->JSONResponse:
+    try:
+        from app.services.alpha_ingestion import feed
+        body=feed(limit=limit,include_stale=include_stale)
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+@router.get("/e32-alpha-store")
+async def e32_alpha_store_endpoint()->JSONResponse:
+    try:
+        from app.services.alpha_ingestion import store_status
+        body={"ok":True,**store_status()}
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
+@router.get("/e31-alpha-contract")
+async def e31_alpha_contract_endpoint()->JSONResponse:
+    try:
+        from app.services.alpha_intelligence import safety_contract
+        body={"ok":True, **safety_contract()}
+    except Exception as e:
+        body={"ok":False,"error":f"{type(e).__name__}: {str(e)[:240]}","execution_authority":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
+@router.get("/e30-evidence-maturity")
+async def e30_evidence_maturity_endpoint()->JSONResponse:
+    try:
+        from app.services.e30_evidence_maturity import evidence_view
+        from app.services.e29_forward_scorecard import e29_forward_scorecard
+        body={"ok":True, **evidence_view(e29_forward_scorecard())}
+    except Exception as e:
+        body={"ok":False,"status":"UNAVAILABLE","error":f"{type(e).__name__}: {str(e)[:240]}","promotion_allowed":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
+@router.get("/e29-forward-scorecard")
+async def e29_forward_scorecard_endpoint()->JSONResponse:
+    try:
+        from app.services.e29_forward_scorecard import e29_forward_scorecard
+        body=e29_forward_scorecard()
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS E29 FORWARD BASELINE VS CHALLENGER SCORECARD","error":f"{type(e).__name__}: {str(e)[:240]}","promotion_allowed":False,"production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+@router.get("/e28-challenger-workbench")
+async def e28_challenger_workbench_endpoint()->JSONResponse:
+    try:
+        from app.services.e28_challenger_workbench import e28_workbench
+        body=e28_workbench()
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS E28 PERPS SETUP V2 OUTCOME-BLIND CHALLENGER WORKBENCH","error":f"{type(e).__name__}: {str(e)[:240]}","production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+@router.get("/e27-preregistration")
+async def e27_preregistration_endpoint()->JSONResponse:
+    try:
+        from app.services.e27_preregistration import e27_preregistration
+        body=e27_preregistration()
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS E27 PERPS SETUP V2 PROSPECTIVE HYPOTHESIS GATE","error":f"{type(e).__name__}: {str(e)[:240]}","production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+@router.get("/e26-attribution")
+async def e26_attribution_endpoint()->JSONResponse:
+    try:
+        from app.services.e26_attribution import e26_attribution
+        body=await asyncio.to_thread(e26_attribution)
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS EXECUTION 26 STOP-TAIL + CURRENT LONG ATTRIBUTION","error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+@router.get("/v2-setup-attribution")
+async def v2_setup_attribution_endpoint()->JSONResponse:
+    try:
+        from app.services.v2_setup_attribution import v2_setup_attribution
+        body=await asyncio.to_thread(v2_setup_attribution)
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS V2 SETUP PAPER CAUSAL ATTRIBUTION","error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
+@router.get("/day-trading-cohorts")
+async def day_trading_cohorts_endpoint()->JSONResponse:
+    try:
+        from app.services.day_trading_cohort_diagnostics import day_trading_cohort_diagnostics
+        body=await asyncio.to_thread(day_trading_cohort_diagnostics)
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS DAY TRADING PAPER COHORT DIAGNOSTICS","error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+
+
+@router.get("/attribution")
+async def paper_attribution_endpoint()->JSONResponse:
+    try:
+        from app.services.paper_attribution import attribution_report
+        body=await asyncio.to_thread(attribution_report)
+    except Exception as e:
+        body={"ok":False,"title":"ATLAS DAY TRADING PAPER ATTRIBUTION","error":f"{type(e).__name__}: {str(e)[:240]}","execution":"READ_ONLY_PAPER_RESEARCH","live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
 
 
 @router.get("/edge/text")
-async def edge_text_endpoint() -> JSONResponse:
+async def edge_text_endpoint()->JSONResponse:
     try:
         from app.services.edge_diagnostics import edge_text
-
-        body: Dict[str, Any] = {"text": edge_text()}
-    except Exception as e:
-        body = {"text": f"ATLAS EDGE DIAGNOSTICS failed: {type(e).__name__}: {str(e)[:180]}"}
-    return _json_http(body, 200)
+        body={"text":edge_text()}
+    except Exception as e:body={"text":f"ATLAS EDGE DIAGNOSTICS failed: {type(e).__name__}: {str(e)[:180]}"}
+    return _json_http(body)
+@router.get("/challengers")
+async def challenger_lab_endpoint()->JSONResponse:
+    try:
+        from app.services.challenger_lab import challenger_report
+        body=challenger_report()
+    except Exception as e:body={"ok":False,"error":str(e)[:240],"production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/prospective")
+async def challenger_prospective_endpoint()->JSONResponse:
+    try:
+        from app.services.challenger_prospective import prospective_report
+        body=prospective_report()
+    except Exception as e:body={"ok":False,"error":str(e)[:240],"production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/comparison")
+async def challenger_comparison_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_candidate_comparison import candidate_comparison
+        body=candidate_comparison()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 PROSPECTIVE CANDIDATE COMPARISON","error":str(e)[:240],"research_nominations":[],"trading_readiness":"NOT_READY","production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/evidence-trends")
+async def challenger_evidence_trends_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_evidence_trends import evidence_trends
+        body=evidence_trends()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 EVIDENCE TRENDS","error":str(e)[:240],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/stability")
+async def challenger_stability_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_stability import stability_report
+        body=stability_report()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 MULTI-SNAPSHOT PROSPECTIVE STABILITY","error":str(e)[:240],"human_review_eligible":[],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/diversity")
+async def challenger_diversity_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_window_diversity import diversity_report
+        body=diversity_report()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 FORWARD WINDOW DIVERSITY","error":str(e)[:240],"diversity_established":[],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/diversity-trends")
+async def challenger_diversity_trends_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_diversity_trends import diversity_trends
+        body=diversity_trends()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 FORWARD DIVERSITY TRENDS","error":str(e)[:240],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/fixed-window-diversity")
+async def challenger_fixed_window_diversity_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_fixed_window_diversity import fixed_window_diversity
+        body=fixed_window_diversity()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 FIXED-DURATION FORWARD DIVERSITY","error":str(e)[:240],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/multi-window-diversity")
+async def challenger_multi_window_diversity_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_fixed_window_diversity import multi_window_diversity
+        body=multi_window_diversity()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 PREDECLARED MULTI-WINDOW DIVERSITY","error":str(e)[:240],"best_window_selection":False,"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/research-evidence")
+async def challenger_research_evidence_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_research_evidence_ui import research_evidence_ui
+        body=research_evidence_ui()
+    except Exception as e:body={"ok":False,"title":"ATLAS V6 RESEARCH EVIDENCE","error":str(e)[:240],"heavy_research_recompute":False,"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/exit-replay")
+async def challenger_exit_replay_endpoint()->JSONResponse:
+    try:
+        from app.services.challenger_exit_replay import exit_replay_report
+        body=exit_replay_report()
+    except Exception as e:body={"ok":False,"error":str(e)[:240],"production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/shadow-paper")
+async def challenger_shadow_paper_endpoint()->JSONResponse:
+    try:
+        from app.services.shadow_paper_interactions import interaction_report
+        body=interaction_report()
+    except Exception as e:body={"ok":False,"error":str(e)[:240],"populations_pooled":False,"production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/readiness")
+async def challenger_readiness_endpoint()->JSONResponse:
+    try:
+        from app.services.v6_readiness_scorecard import readiness_scorecard
+        body=readiness_scorecard()
+    except Exception as e:body={"ok":False,"error":str(e)[:240],"research_evidence_ready":False,"trading_readiness":"NOT_READY","production_strategy_modified":False,"live_capital_allowed":False,"automatic_real_money_execution":False}
+    return _json_http(body)
+@router.get("/challengers/forward-monitor")
+async def challenger_forward_monitor_status()->JSONResponse:
+    try:
+        from app.services.v6_forward_monitor import monitor_status
+        body=monitor_status()
+    except Exception as e:body={"ok":False,"error":str(e)[:240],"trading_readiness":"NOT_READY","live_capital_allowed":False}
+    return _json_http(body)
+@router.post("/challengers/forward-monitor/refresh")
+async def challenger_forward_monitor_refresh()->JSONResponse:
+    try:
+        from app.services.v6_forward_monitor import refresh_forward_evidence
+        body=refresh_forward_evidence()
+    except Exception as e:body={"ok":False,"error":str(e)[:240],"trading_readiness":"NOT_READY","live_capital_allowed":False,"automatic_promotion":False,"automatic_real_money_execution":False}
+    return _json_http(body)

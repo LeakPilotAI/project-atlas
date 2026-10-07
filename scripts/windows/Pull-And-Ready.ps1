@@ -1,11 +1,12 @@
-# Overwrite tracked files from GitHub main, keep .env + data, recreate desktop shortcut.
+# Fast-forward the intended Atlas branch without overwriting local work; keep .env + data.
 # Close the Atlas window first.
 #Requires -Version 5.1
 $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+$ExpectedBranch = "chatgpt/atlas-rebuild-v1"
 Set-Location $Root
 
-Write-Host "Project Atlas overwrite in $Root"
+Write-Host "Project Atlas safe update in $Root"
 
 function Compact-DotEnv {
     param([string]$Path)
@@ -58,15 +59,25 @@ function Set-DotEnvKey {
     return $true
 }
 
-Write-Host "==> Stop leftover python/node (not Docker)"
-Get-Process python, node -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Start-Sleep -Seconds 1
+Write-Host "==> Verify Git branch and tracked worktree"
+$branch = (git branch --show-current).Trim()
+if ($LASTEXITCODE -ne 0 -or $branch -ne $ExpectedBranch) {
+    throw "Refusing update: expected branch '$ExpectedBranch', found '$branch'."
+}
+$trackedChanges = @(git status --porcelain --untracked-files=no)
+if ($LASTEXITCODE -ne 0) { throw "git status failed" }
+if ($trackedChanges.Count -gt 0) {
+    throw "Refusing update: tracked local modifications are present. Commit or intentionally resolve them first."
+}
 
-Write-Host "==> git fetch + reset --hard origin/main (overwrite tracked files)"
-git fetch origin
+Write-Host "==> Fetch + fast-forward $ExpectedBranch"
+git fetch origin $ExpectedBranch
 if ($LASTEXITCODE -ne 0) { throw "git fetch failed" }
-git reset --hard origin/main
-if ($LASTEXITCODE -ne 0) { throw "git reset --hard failed" }
+$remoteRef = "origin/$ExpectedBranch"
+git merge --ff-only $remoteRef
+if ($LASTEXITCODE -ne 0) {
+    throw "Fast-forward update failed. Local history diverged from $remoteRef; no reset or clean was performed."
+}
 
 Write-Host "==> Patch .env (does not delete secrets or paper data)"
 $keys = @{
@@ -110,4 +121,4 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot
 Write-Host ""
 Write-Host "Ready. Close any running Atlas window, then double-click 'Project Atlas' on the desktop."
 Write-Host "Dashboard: http://127.0.0.1:8000/dashboard"
-Write-Host ".env and backend\data were kept. Tracked files now match origin/main."
+Write-Host ".env, backend\data, and untracked diagnostics were left in place. Tracked files were fast-forwarded from origin/$ExpectedBranch."

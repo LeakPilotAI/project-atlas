@@ -164,10 +164,15 @@ class YFinanceClient:
         start: Optional[str] = None,
         end: Optional[str] = None,
         interval: str = "1d",
+        prepost: bool = False,
     ) -> Any:
         try:
             t = self._ticker(symbol)
-            kwargs: Dict[str, Any] = {"interval": interval, "auto_adjust": False}
+            kwargs: Dict[str, Any] = {
+                "interval": interval,
+                "auto_adjust": False,
+                "prepost": bool(prepost),
+            }
             if start or end:
                 kwargs["start"] = start
                 kwargs["end"] = end

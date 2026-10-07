@@ -1,4 +1,4 @@
-﻿# Project Atlas - one window. Close it to stop the bot. Docker Desktop stays running.
+# Project Atlas - one window. Close it to stop the bot. Docker Desktop stays running.
 #Requires -Version 5.1
 $ErrorActionPreference = "Continue"
 Set-StrictMode -Version Latest
@@ -49,6 +49,11 @@ function Rotate-Log([string]$Path, [int]$MaxBytes = 20971520) {
 function Stop-All {
     if ($script:Stopped) { return }
     $script:Stopped = $true
+    # An external Stop Atlas invocation owns cleanup for this run.
+    try {
+        $request = Get-Content (Join-Path $Root "logs\runtime\stop.json") -Raw -ErrorAction Stop | ConvertFrom-Json
+        if ($request.run_id -eq $env:ATLAS_DESKTOP_RUN_ID) { return }
+    } catch { }
     Write-Host ""
     Write-Host "Shutting down Atlas bot (Python). Docker Desktop stays up." -ForegroundColor Yellow
     $pids = @()
@@ -143,10 +148,12 @@ swap=0
 }
 
 function Get-DockerDesktop {
-    @(
-        (Join-Path $env:ProgramFiles "Docker\Docker\Docker Desktop.exe"),
-        (Join-Path ${env:ProgramFiles(x86)} "Docker\Docker\Docker Desktop.exe")
-    ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+    $roots = @($env:ProgramFiles, ${env:ProgramFiles(x86)}) | Where-Object {
+        -not [string]::IsNullOrWhiteSpace([string]$_)
+    }
+    @($roots | ForEach-Object {
+        Join-Path ([string]$_) "Docker\\Docker\\Docker Desktop.exe"
+    }) | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
 
 function Wait-Docker([int]$Seconds = 120) {
@@ -213,7 +220,7 @@ try {
     & $StopScript -Root $Root -KeepDockerDesktop
     Start-Sleep -Seconds 2
 
-    Ensure-WslMemoryCap
+    # Do not modify global WSL/Docker resource settings for an Atlas launch.
 
     $dd = Get-DockerDesktop
     if (-not $dd) {
@@ -227,7 +234,7 @@ try {
     docker info 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) { $engineUp = $true }
     if (-not $engineUp) {
-        Start-Process $dd | Out-Null
+        Start-Process $dd -WindowStyle Hidden | Out-Null
         if (-not (Wait-Docker 150)) {
             Write-Host "[ERROR] Docker engine did not start. Open Docker Desktop once, then retry." -ForegroundColor Red
             cmd /c pause
@@ -235,18 +242,24 @@ try {
         }
     }
 
-    Write-Step "Starting Postgres + Redis (docker compose)"
+    Write-Step "Starting Postgres + Redis"
     $env:COMPOSE_PROJECT_NAME = "atlas"
-    docker rm -f atlas-postgres atlas-redis 2>$null | Out-Null
-    docker compose down --remove-orphans 2>$null | Out-Null
-    docker compose up -d
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "[ERROR] docker compose up failed." -ForegroundColor Red
-        cmd /c pause
-        exit 1
+    # Reuse existing Atlas dependencies across normal desktop stop/relaunch cycles.
+    $existingPostgres = docker ps -a --filter "name=^/atlas-postgres$" --format "{{.Names}}" 2>$null
+    $existingRedis = docker ps -a --filter "name=^/atlas-redis$" --format "{{.Names}}" 2>$null
+    if ($existingPostgres -eq "atlas-postgres" -and $existingRedis -eq "atlas-redis") {
+        docker start atlas-postgres atlas-redis 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Failed to start existing Atlas dependency containers" }
+        Write-Host "    reused existing atlas-postgres + atlas-redis"
+    } elseif (-not $existingPostgres -and -not $existingRedis) {
+        docker compose up -d --no-recreate postgres redis
+        if ($LASTEXITCODE -ne 0) { throw "docker compose up failed" }
+        Write-Host "    created Atlas dependency containers"
+    } else {
+        throw "Partial Atlas dependency state detected; refusing destructive repair"
     }
     if (-not (Wait-Postgres 90)) {
-        Write-Host "[WARN] postgres not healthy yet - starting API anyway" -ForegroundColor Yellow
+        throw "Atlas postgres did not become healthy"
     }
 
     $logDir = Join-Path $Root "logs"
@@ -268,12 +281,18 @@ try {
     }
     Write-Host "    imports ok"
 
+    $env:ATLAS_DESKTOP_CONTROL_DIR = Join-Path $Root "logs\runtime"
+    $env:ATLAS_DESKTOP_RUN_ID = [guid]::NewGuid().ToString()
+    New-Item -ItemType Directory -Force $env:ATLAS_DESKTOP_CONTROL_DIR | Out-Null
+    $loggingConfig = Join-Path $Root "deploy\logging-desktop.json"
     Write-Step "Starting Atlas API (port 8000)"
     $api = Start-Process -FilePath $VenvPy -ArgumentList @(
         "-m", "uvicorn", "app.main:app",
         "--host", "127.0.0.1",
-        "--port", "8000"
-    ) -WorkingDirectory $Backend -PassThru -NoNewWindow -RedirectStandardOutput $apiOut -RedirectStandardError $apiErr
+        "--port", "8000",
+        "--log-config", ('"' + $loggingConfig + '"'),
+        "--timeout-graceful-shutdown", "20"
+    ) -WorkingDirectory $Backend -PassThru -NoNewWindow
     if (-not $api) {
         Write-Host "[ERROR] failed to start python/uvicorn" -ForegroundColor Red
         cmd /c pause
@@ -296,10 +315,14 @@ try {
         Write-Host "    API healthy"
     }
 
+    Write-Step "Stabilizing operator surfaces"
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "Atlas-Ready.ps1") -Root $Root
+    if ($LASTEXITCODE -ne 0) { throw "Atlas operator surfaces did not stabilize" }
+
     Write-Step "Opening dashboard"
     $dash = Join-Path $Backend "app\static\dashboard.html"
     if (-not (Test-Path $dash)) {
-        Write-Host "[WARN] dashboard.html missing - git pull origin main" -ForegroundColor Yellow
+        Write-Host "[WARN] dashboard.html missing - run scripts\windows\Pull-And-Ready.ps1 after closing Atlas" -ForegroundColor Yellow
     }
     Start-Process "http://127.0.0.1:8000/dashboard?v=desk-v7"
     Write-Host "    Dashboard: http://127.0.0.1:8000/dashboard?v=desk-v7"

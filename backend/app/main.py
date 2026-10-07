@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from contextlib import asynccontextmanager
-from typing import Any, Dict
-
 from pathlib import Path
+from typing import Any, Dict
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +15,17 @@ from fastapi.responses import FileResponse
 from app.adapters.hyperliquid import HyperliquidAdapter
 from app.adapters.registry import registry
 from app.alerts.discord import is_discord_ready, start_discord_bot, stop_discord_bot
+from app.api.archive import router as archive_router
+from app.api.command_center import router as command_center_router
+from app.api.crypto_quality_dips_research import router as crypto_quality_dips_research_router
+from app.api.diagnostics import router as diagnostics_router
+from app.api.investment_board import router as investment_board_router
+from app.api.prospective_research import router as prospective_research_router
+from app.api.live import router as live_router
+from app.api.perp_manual import router as perp_manual_router
+from app.api.prediction import router as prediction_router
+from app.api.validation import router as validation_router
+from app.api.validation_proof import router as validation_proof_router
 from app.core.config import get_settings
 from app.core.logging import get_logger, setup_logging
 from app.core.redis import close_redis, get_redis_client
@@ -22,27 +33,28 @@ from app.db.session import Base, engine
 
 import app.models  # noqa: F401
 
-from app.services.scanner import scanner
-from app.services.opportunity_tracker import opportunity_tracker
-from app.services.paper_trade_tracker import paper_trade_tracker
-from app.services.weekly_summary import weekly_summary_service
-from app.services.quality_dip_scanner import quality_dip_scanner
-from app.services.day_trade_assistant import day_trade_assistant
-from app.services.perp_micro_coach import perp_micro_coach
-from app.services.robinhood_brief import robinhood_brief_service
 from app.services.command_center import command_center
 from app.services.daily_paper_recap import daily_paper_recap
 from app.services.micro_heartbeat import micro_heartbeat
-from app.api.diagnostics import router as diagnostics_router
-from app.api.live import router as live_router
-from app.api.validation import router as validation_router
+from app.services.opportunity_tracker import opportunity_tracker
+from app.services.paper_trade_tracker import paper_trade_tracker
 from app.services.performance import router as performance_router
+from app.services.perp_alert_delivery import perp_alert_delivery_service
+from app.services.perp_manual_service import perp_manual_service
+from app.services.perp_micro_coach import perp_micro_coach
+from app.services.quality_dip_scanner import quality_dip_scanner
+from app.services.robinhood_brief import robinhood_brief_service
+from app.services.robinhood_universe_research import robinhood_universe_research_service
+from app.services.scanner import scanner
+from app.services.weekly_summary import weekly_summary_service
+from app.prediction.prediction_paper_automation import prediction_paper_automation
 
 
 async def _announce_session(info: Dict[str, Any]) -> None:
     await asyncio.sleep(12)
     try:
         from app.alerts.discord import is_discord_ready, send_discord_alert
+        from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
         if not is_discord_ready():
             return
@@ -57,20 +69,27 @@ async def _announce_session(info: Dict[str, Any]) -> None:
             f"Nothing was deleted.\n\n"
             f"Concurrent paper cap: unlimited (safety 80).\n"
             f"Entry gates unchanged: RSI 28/72 · ext 1.4% · R:R 1.8.\n"
-            f"Dashboard: http://127.0.0.1:8000/dashboard?v=desk-v7\n"
+            f"Dashboard: http://127.0.0.1:8000/dashboard\n"
             f"Not live capital."
         )
-        await send_discord_alert(
-            symbol="ATLAS",
-            title="Paper session reset — data kept",
-            description=desc,
-            severity="LOW",
-            opportunity=10,
-            confidence=10,
-            risk=10,
+        payload = {
+            "symbol": "ATLAS",
+            "title": "Paper session reset — data kept",
+            "description": desc,
+            "severity": "LOW",
+        }
+        typed = legacy_payload_event(
+            lane="SYSTEM",
+            event_type="SESSION",
+            identity=f"paper-session-reset:{info.get('session_id')}",
+            payload=payload,
+            provenance=["paper-session-bootstrap"],
+            material=True,
         )
+        await deliver_legacy_payload(typed, sender=send_discord_alert)
     except Exception:
         pass
+
 
 try:
     from app.services.accumulation_ladder import accumulation_ladder
@@ -89,6 +108,7 @@ log = get_logger("main")
 async def lifespan(app: FastAPI):
     setup_logging()
     settings = get_settings()
+    settings.validate_runtime_configuration()
     log.info("Project Atlas starting", env=settings.app_env)
     log.info("Database URL host check", database_url=settings.database_url_safe)
 
@@ -126,6 +146,13 @@ async def lifespan(app: FastAPI):
         raise last_err
 
     async def _boot_services() -> None:
+        # Hydrate before consumers can collide with Python's module import lock or
+        # trigger synchronous V4 replay on the event loop. HTTP is already serving.
+        def hydrate_runtime():
+            from app.services.funnel_research import funnel_research
+            from app.trading_core.shadow_coordinator import v4_shadow_coordinator
+            return v4_shadow_coordinator.runtime
+        await asyncio.to_thread(hydrate_runtime)
         try:
             hl = HyperliquidAdapter()
             registry.register(hl)
@@ -137,7 +164,7 @@ async def lifespan(app: FastAPI):
         try:
             from app.services.paper_journal import paper_journal
 
-            session_info = paper_journal.bootstrap_session()
+            session_info = await asyncio.to_thread(paper_journal.bootstrap_session)
             log.info(
                 "paper session bootstrap",
                 **{
@@ -157,12 +184,15 @@ async def lifespan(app: FastAPI):
             ("paper_trade_tracker", paper_trade_tracker.start),
             ("weekly_summary", weekly_summary_service.start),
             ("quality_dip", quality_dip_scanner.start),
-            ("day_trade", day_trade_assistant.start),
             ("robinhood_brief", robinhood_brief_service.start),
+            ("robinhood_universe_research", robinhood_universe_research_service.start),
             ("command_center", command_center.start),
             ("perp_micro_coach", perp_micro_coach.start),
+            ("perp_manual", perp_manual_service.start),
+            ("perp_alert_delivery", perp_alert_delivery_service.start),
             ("daily_paper_recap", daily_paper_recap.start),
             ("micro_heartbeat", micro_heartbeat.start),
+            ("prediction_paper_automation", prediction_paper_automation.start),
         ]:
             try:
                 await starter()
@@ -190,12 +220,31 @@ async def lifespan(app: FastAPI):
             log.warning("investment scanner start failed; trading continues", error=str(e)[:200])
         log.info("Background services booted")
 
+    from app.services.desktop_control import DesktopControl
+    desktop_control = DesktopControl(os.getenv("ATLAS_DESKTOP_CONTROL_DIR"), os.getenv("ATLAS_DESKTOP_RUN_ID"))
+    await desktop_control.start()
+    from app.services.runtime_watchdog import runtime_watchdog
+    await runtime_watchdog.start()
     boot_task = asyncio.create_task(_boot_services(), name="atlas_boot")
     log.info("API is serving /health; services starting in background")
 
     yield
 
+    await runtime_watchdog.stop()
     log.info("Project Atlas shutting down")
+    try:
+        from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
+        cancelled_pending = perp_setup_paper_mirror.cancel_all_pending(reason="ATLAS_SHUTDOWN")
+        log.info("paper pending-limit shutdown reconciliation", cancelled=cancelled_pending)
+    except Exception as e:
+        log.warning("paper pending-limit shutdown reconciliation failed", error=str(e)[:200])
+    try:
+        from app.services.paper_journal import paper_journal
+        persisted = paper_journal.persist_open_marks()
+        interrupted = paper_journal.interrupt_open_for_shutdown()
+        log.info("paper shutdown reconciliation", persisted_marks=persisted, interrupted=len(interrupted))
+    except Exception as e:
+        log.warning("paper shutdown reconciliation failed", error=str(e)[:200])
     if not boot_task.done():
         boot_task.cancel()
         try:
@@ -214,11 +263,14 @@ async def lifespan(app: FastAPI):
         pass
     for name, stopper in [
         ("micro_heartbeat", micro_heartbeat.stop),
+        ("prediction_paper_automation", prediction_paper_automation.stop),
         ("daily_paper_recap", daily_paper_recap.stop),
+        ("perp_alert_delivery", perp_alert_delivery_service.stop),
+        ("perp_manual", perp_manual_service.stop),
         ("perp_micro_coach", perp_micro_coach.stop),
         ("command_center", command_center.stop),
+        ("robinhood_universe_research", robinhood_universe_research_service.stop),
         ("robinhood_brief", robinhood_brief_service.stop),
-        ("day_trade", day_trade_assistant.stop),
         ("quality_dip", quality_dip_scanner.stop),
         ("weekly_summary", weekly_summary_service.stop),
         ("paper_trade_tracker", paper_trade_tracker.stop),
@@ -249,6 +301,7 @@ async def lifespan(app: FastAPI):
         await engine.dispose()
     except Exception:
         pass
+    await desktop_control.stop()
     log.info("Project Atlas shutdown complete")
 
 
@@ -267,24 +320,125 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(archive_router)
+app.include_router(command_center_router)
+app.include_router(crypto_quality_dips_research_router)
 app.include_router(diagnostics_router)
 app.include_router(performance_router)
+app.include_router(investment_board_router, prefix="/api")
+app.include_router(prospective_research_router)
 app.include_router(live_router)
+app.include_router(perp_manual_router)
+app.include_router(prediction_router)
 app.include_router(validation_router)
+app.include_router(validation_proof_router)
 
-DASHBOARD_HTML = Path(__file__).resolve().parent / "static" / "dashboard.html"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+DASHBOARD_HTML = STATIC_DIR / "dashboard_hub.html"
+PERP_DASHBOARD_HTML = STATIC_DIR / "dashboard_shell.html"
+INVESTMENT_DASHBOARD_HTML = STATIC_DIR / "investment.html"
+ARCHIVE_DASHBOARD_HTML = STATIC_DIR / "archive.html"
+ARCHIVE_EXPORT_HTML = STATIC_DIR / "archive_export.html"
+ARCHIVE_PAPER_TRADES_HTML = STATIC_DIR / "archive_paper_trades.html"
+ARCHIVE_RESEARCH_HTML = STATIC_DIR / "archive_research.html"
+ARCHIVE_SNAPSHOTS_HTML = STATIC_DIR / "archive_snapshots.html"
+COMMAND_CENTER_HTML = STATIC_DIR / "command_center.html"
+COMMAND_CENTER_HEALTH_HTML = STATIC_DIR / "command_center_health.html"
+COMMAND_CENTER_RISK_HTML = STATIC_DIR / "command_center_risk.html"
+FUTURE_OVERVIEW_HTML = STATIC_DIR / "future_overview.html"
+PREDICTION_PAPER_HTML = STATIC_DIR / "prediction_paper.html"
+LEGACY_DASHBOARD_HTML = STATIC_DIR / "dashboard.html"
 
 
-@app.get("/dashboard")
-async def dashboard_page() -> FileResponse:
+def _dashboard_response(path: Path) -> FileResponse:
     return FileResponse(
-        DASHBOARD_HTML,
+        path,
         media_type="text/html",
         headers={
             "Cache-Control": "no-store, no-cache, must-revalidate",
             "Pragma": "no-cache",
         },
     )
+
+
+@app.get("/static/runtime_poll.js", include_in_schema=False)
+async def runtime_poll_script() -> FileResponse:
+    return FileResponse(STATIC_DIR / "runtime_poll.js", media_type="application/javascript", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/dashboard")
+async def dashboard_page() -> FileResponse:
+    return _dashboard_response(DASHBOARD_HTML)
+
+
+@app.get("/static/atlas-perp-backdrop.png", include_in_schema=False)
+async def perp_backdrop() -> FileResponse:
+    return FileResponse(STATIC_DIR / "atlas-perp-backdrop.png", media_type="image/png")
+
+
+@app.get("/dashboard/perps")
+async def perp_dashboard_page() -> FileResponse:
+    return _dashboard_response(PERP_DASHBOARD_HTML)
+
+
+@app.get("/dashboard/investment")
+async def investment_dashboard_page() -> FileResponse:
+    return _dashboard_response(INVESTMENT_DASHBOARD_HTML)
+
+
+@app.get("/dashboard/archive")
+async def archive_dashboard_page() -> FileResponse:
+    return _dashboard_response(ARCHIVE_DASHBOARD_HTML)
+
+
+@app.get("/dashboard/archive/export")
+async def archive_export_dashboard_page() -> FileResponse:
+    return _dashboard_response(ARCHIVE_EXPORT_HTML)
+
+
+@app.get("/dashboard/archive/paper-trades")
+async def archive_paper_trades_dashboard_page() -> FileResponse:
+    return _dashboard_response(ARCHIVE_PAPER_TRADES_HTML)
+
+
+@app.get("/dashboard/archive/research")
+async def archive_research_dashboard_page() -> FileResponse:
+    return _dashboard_response(ARCHIVE_RESEARCH_HTML)
+
+
+@app.get("/dashboard/archive/snapshots")
+async def archive_snapshots_dashboard_page() -> FileResponse:
+    return _dashboard_response(ARCHIVE_SNAPSHOTS_HTML)
+
+
+@app.get("/dashboard/command-center")
+async def command_center_dashboard_page() -> FileResponse:
+    return _dashboard_response(COMMAND_CENTER_HTML)
+
+
+@app.get("/dashboard/command-center/health")
+async def command_center_health_dashboard_page() -> FileResponse:
+    return _dashboard_response(COMMAND_CENTER_HEALTH_HTML)
+
+
+@app.get("/dashboard/command-center/risk")
+async def command_center_risk_dashboard_page() -> FileResponse:
+    return _dashboard_response(COMMAND_CENTER_RISK_HTML)
+
+
+@app.get("/dashboard/future")
+async def future_overview_dashboard_page() -> FileResponse:
+    return _dashboard_response(FUTURE_OVERVIEW_HTML)
+
+
+@app.get("/dashboard/prediction-paper")
+async def prediction_paper_dashboard_page() -> FileResponse:
+    return _dashboard_response(PREDICTION_PAPER_HTML)
+
+
+@app.get("/dashboard/legacy")
+async def legacy_dashboard_page() -> FileResponse:
+    return _dashboard_response(LEGACY_DASHBOARD_HTML)
 
 
 @app.get("/api/research")
@@ -301,19 +455,21 @@ async def api_funnel() -> Dict[str, Any]:
     return await diagnostics_funnel()
 
 
+@app.get("/api/observability/discord-delivery")
+async def api_discord_delivery_observability() -> Dict[str, Any]:
+    from app.services.e48_discord_events import delivery_observability
+
+    return delivery_observability()
+
+
 @app.get("/health")
 async def health() -> Dict[str, Any]:
+    # Liveness must remain local and constant-time. A network round-trip to Redis
+    # made the desktop readiness probe inherit Redis/event-loop stalls, causing the
+    # UI to report "API reconnecting" even while Atlas continued scanning. Redis
+    # connectivity belongs in deeper diagnostics, not the liveness endpoint.
     settings = get_settings()
-    redis_ok = "unknown"
-    try:
-        r = await get_redis_client()
-        if r is not None:
-            await r.ping()
-            redis_ok = "ok"
-        else:
-            redis_ok = "missing"
-    except Exception:
-        redis_ok = "error"
+    redis_ok = "configured" if bool(getattr(settings, "redis_url", None)) else "missing"
 
     adapters: list[str] = []
     try:
@@ -337,12 +493,18 @@ async def health() -> Dict[str, Any]:
         "paper_trade_tracker_running": bool(getattr(paper_trade_tracker, "running", False)),
         "weekly_summary_running": bool(getattr(weekly_summary_service, "running", False)),
         "quality_dip_running": bool(getattr(quality_dip_scanner, "running", False)),
-        "day_trade_running": bool(getattr(day_trade_assistant, "running", False)),
+        "day_trade_running": bool(getattr(perp_manual_service, "running", False)),
+        "day_trade_domain": "HYPERLIQUID_PERPS",
+        "legacy_equity_day_trade_running": False,
         "robinhood_brief_running": bool(getattr(robinhood_brief_service, "running", False)),
+        "robinhood_universe_research_running": bool(getattr(robinhood_universe_research_service, "running", False)),
         "command_center_running": bool(getattr(command_center, "running", False)),
         "perp_micro_running": bool(getattr(perp_micro_coach, "running", False)),
+        "perp_manual_running": bool(getattr(perp_manual_service, "running", False)),
+        "perp_alert_delivery_running": bool(getattr(perp_alert_delivery_service, "running", False)),
         "daily_paper_recap_running": bool(getattr(daily_paper_recap, "running", False)),
         "micro_heartbeat_running": bool(getattr(micro_heartbeat, "running", False)),
+        "prediction_paper_automation_running": bool(getattr(prediction_paper_automation, "running", False)),
         "discord_ready": is_discord_ready(),
         "perp_allowlist_enabled": bool(settings.perp_allowlist_enabled),
         "liquid_count": int(getattr(perp_micro_coach, "liquid_count", 0) or 0),
@@ -356,7 +518,24 @@ async def root() -> Dict[str, str]:
         "docs": "/docs",
         "health": "/health",
         "dashboard": "/dashboard",
+        "dashboard_perps": "/dashboard/perps",
+        "dashboard_quality_dips": "/api/investments/quality-dips/view",
+        "dashboard_investment": "/dashboard/investment",
+        "dashboard_archive": "/dashboard/archive",
+        "dashboard_archive_export": "/dashboard/archive/export",
+        "dashboard_archive_paper_trades": "/dashboard/archive/paper-trades",
+        "dashboard_archive_research": "/dashboard/archive/research",
+        "dashboard_archive_snapshots": "/dashboard/archive/snapshots",
+        "dashboard_command_center": "/dashboard/command-center",
+        "dashboard_command_center_health": "/dashboard/command-center/health",
+        "dashboard_command_center_risk": "/dashboard/command-center/risk",
+        "dashboard_future": "/dashboard/future",
+        "dashboard_prediction_paper": "/dashboard/prediction-paper",
+        "dashboard_legacy": "/dashboard/legacy",
         "diagnostics": "/diagnostics/paper",
         "research": "/api/research",
         "funnel": "/api/funnel",
+        "manual_perps": "/api/perps/manual",
+        "prediction_status": "/api/prediction/status",
+        "prediction_markets": "/api/prediction/markets",
     }

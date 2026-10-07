@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import json
 import os
 import uuid
@@ -40,26 +42,9 @@ def _opened_in_session(row: Dict[str, Any], started: Optional[str]) -> bool:
     return opened >= str(started)
 
 
-def iter_jsonl(path: Path) -> List[Dict[str, Any]]:
-    """Parse jsonl line-by-line. A truncated/corrupt line does not abort the file."""
-    rows: List[Dict[str, Any]] = []
-    if not path.exists():
-        return rows
-    with path.open("r", encoding="utf-8") as f:
-        for i, line in enumerate(f, start=1):
-            raw = line.strip()
-            if not raw:
-                continue
-            try:
-                row = json.loads(raw)
-            except Exception:
-                rows.append({"event": "_malformed", "line": i, "raw": raw[:200]})
-                continue
-            if isinstance(row, dict):
-                rows.append(row)
-            else:
-                rows.append({"event": "_malformed", "line": i, "raw": raw[:200]})
-    return rows
+def iter_jsonl(path: Path):
+    from app.services.runtime_hardening import stream_jsonl
+    return stream_jsonl(path)
 
 
 class PaperJournal:
@@ -106,6 +91,12 @@ class PaperJournal:
                     opens[tid]["be_armed"] = True
                 if row.get("working_stop") is not None:
                     opens[tid]["working_stop"] = row.get("working_stop")
+                if row.get("working_target") is not None:
+                    opens[tid]["working_target"] = row.get("working_target")
+                if row.get("adaptive_stage"):
+                    opens[tid]["adaptive_stage"] = row.get("adaptive_stage")
+                if row.get("adaptive_exit_policy_version"):
+                    opens[tid]["adaptive_exit_policy_version"] = row.get("adaptive_exit_policy_version")
                 if row.get("exit_mode"):
                     opens[tid]["exit_mode"] = row.get("exit_mode")
             elif ev == "close":
@@ -210,6 +201,10 @@ class PaperJournal:
         sig_px = float(signal_price) if signal_price is not None else actual_entry
         risk = abs(actual_entry - float(stop)) or 1e-12
         ttype = str(trade_type or "PAPER").upper()
+        feature_payload = dict(features or {})
+        if ttype == "PAPER":
+            from app.services.paper_execution_model import PAPER_EXECUTION_MODEL_VERSION
+            feature_payload.setdefault("paper_execution_model_version", PAPER_EXECUTION_MODEL_VERSION)
         row = {
             "event": "open",
             "trade_id": tid,
@@ -227,10 +222,10 @@ class PaperJournal:
             "risk_price": risk,
             "position_size": float(risk_usd) / risk if risk > 0 else 0.0,
             "regime": regime,
-            "regime_normalized": str((features or {}).get("regime_normalized") or regime or "UNKNOWN"),
+            "regime_normalized": str(feature_payload.get("regime_normalized") or regime or "UNKNOWN"),
             "strategy": strategy,
             "signal_score": float(signal_score),
-            "features": features or {},
+            "features": feature_payload,
             "notes": notes,
             "source": source,
             "tier": tier,
@@ -243,16 +238,18 @@ class PaperJournal:
             "mae_price": actual_entry,
             "mark": actual_entry,
             "status": "open",
-            "exit_mode": str((features or {}).get("exit_mode") or "SCALP"),
-            "scalp_tp_r": float((features or {}).get("scalp_tp_r") or 1.0),
+            "exit_mode": str(feature_payload.get("exit_mode") or "SCALP"),
+            "scalp_tp_r": float(feature_payload.get("scalp_tp_r") or 1.0),
             "be_after_r": float(
-                (features or {}).get("be_after_r")
-                if (features or {}).get("be_after_r") is not None
+                feature_payload.get("be_after_r")
+                if feature_payload.get("be_after_r") is not None
                 else 0.5
             ),
-            "setup_rr": float((features or {}).get("setup_rr") or 1.8),
+            "setup_rr": float(feature_payload.get("setup_rr") or 1.8),
             "initial_stop": float(stop),
             "working_stop": float(stop),
+            "working_target": float(tp1),
+            "adaptive_stage": "STATIC",
             "be_armed": False,
         }
         self._open[tid] = row
@@ -332,6 +329,75 @@ class PaperJournal:
             },
         )
 
+    def note_adaptive_exit(
+        self,
+        trade_id: str,
+        *,
+        working_stop: float,
+        working_target: float,
+        stage: str,
+        policy_version: str,
+        reason: str,
+        evidence: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Persist an append-only PAPER working stop/target adjustment.
+
+        Returns True only when the effective stop, target, or stage changed. This
+        keeps the 10-second PAPER review loop from flooding the journal with
+        identical evidence rows.
+        """
+        p = self._open.get(trade_id)
+        if not p:
+            return False
+        try:
+            new_stop = float(working_stop)
+            new_target = float(working_target)
+        except (TypeError, ValueError):
+            return False
+        if min(new_stop, new_target) <= 0:
+            return False
+
+        old_stop = float(p.get("working_stop") or p.get("stop_price") or 0.0)
+        old_target = float(p.get("working_target") or p.get("tp1_price") or 0.0)
+        old_stage = str(p.get("adaptive_stage") or "STATIC")
+        eps_stop = max(1e-12, abs(old_stop) * 1e-9)
+        eps_target = max(1e-12, abs(old_target) * 1e-9)
+        changed = (
+            abs(new_stop - old_stop) > eps_stop
+            or abs(new_target - old_target) > eps_target
+            or str(stage) != old_stage
+        )
+        if not changed:
+            return False
+
+        p["working_stop"] = new_stop
+        p["working_target"] = new_target
+        p["adaptive_stage"] = str(stage)
+        p["adaptive_exit_policy_version"] = str(policy_version)
+        p["be_armed"] = bool(
+            (str(p.get("side") or "").upper() == "LONG" and new_stop >= float(p.get("actual_entry_price") or 0.0))
+            or (str(p.get("side") or "").upper() == "SHORT" and new_stop <= float(p.get("actual_entry_price") or 0.0))
+        )
+        payload = {
+            "event": "mark",
+            "trade_id": trade_id,
+            "timestamp": _iso(),
+            "mark": p.get("mark"),
+            "mfe_r": round(float(p.get("mfe_r") or 0), 4),
+            "mae_r": round(float(p.get("mae_r") or 0), 4),
+            "working_stop": new_stop,
+            "working_target": new_target,
+            "adaptive_stage": str(stage),
+            "adaptive_exit_policy_version": str(policy_version),
+            "adaptive_reason": str(reason or ""),
+            "adaptive_evidence": dict(evidence or {}),
+            "be_armed": bool(p.get("be_armed")),
+            "exit_mode": p.get("exit_mode") or "SCALP",
+            "trade_type": p.get("trade_type", "PAPER"),
+        }
+        self._append(JOURNAL_PATH, payload)
+        return True
+
     def persist_open_marks(self) -> int:
         """Force a mark event for every in-memory open. Used on graceful shutdown."""
         n = 0
@@ -345,6 +411,37 @@ class PaperJournal:
             except Exception:
                 pass
         return n
+
+    def interrupt_open_for_shutdown(self) -> List[str]:
+        """Close unfinished PAPER trades as non-performance INTERRUPTED records.
+
+        Graceful shutdown must not leave an in-flight simulated position able to
+        become a phantom fill/close after restart. Historical completed trades stay
+        untouched. Interrupted rows are excluded from performance tallies.
+        """
+        interrupted: List[str] = []
+        for tid, p in list(self._open.items()):
+            if str(p.get("trade_type") or "PAPER").upper() != "PAPER":
+                continue
+            mark = p.get("mark") or p.get("actual_entry_price") or p.get("entry") or 0.0
+            try:
+                mark_f = float(mark)
+            except (TypeError, ValueError):
+                mark_f = 0.0
+            row = {
+                **{k: v for k, v in p.items() if k != "event" and not str(k).startswith("_")},
+                "event": "close", "status": "interrupted", "timestamp": _iso(),
+                "exit_timestamp": _iso(), "actual_exit_price": mark_f,
+                "exit_reason": "atlas_shutdown", "result": "INTERRUPTED",
+                "interrupted": True, "scratch": True, "win": False,
+                "counts_for_live": False, "R_multiple": 0.0,
+                "gross_pnl_r": 0.0, "net_pnl_r": 0.0,
+                "notes": "Interrupted by graceful Atlas shutdown; excluded from strategy performance.",
+            }
+            self._append(JOURNAL_PATH, row)
+            self._open.pop(tid, None)
+            interrupted.append(str(tid))
+        return interrupted
 
     def reconcile_from_disk(self) -> Dict[str, Any]:
         """Journal file is source of truth.
@@ -388,6 +485,16 @@ class PaperJournal:
                         opens[tid]["mfe_price"] = row.get("mfe_price")
                     if row.get("mae_price") is not None:
                         opens[tid]["mae_price"] = row.get("mae_price")
+                    if row.get("working_stop") is not None:
+                        opens[tid]["working_stop"] = row.get("working_stop")
+                    if row.get("working_target") is not None:
+                        opens[tid]["working_target"] = row.get("working_target")
+                    if row.get("adaptive_stage"):
+                        opens[tid]["adaptive_stage"] = row.get("adaptive_stage")
+                    if row.get("adaptive_exit_policy_version"):
+                        opens[tid]["adaptive_exit_policy_version"] = row.get("adaptive_exit_policy_version")
+                    if row.get("be_armed"):
+                        opens[tid]["be_armed"] = True
                 elif ev == "close":
                     closed_ids.add(tid)
         self._malformed_lines = malformed
@@ -412,6 +519,9 @@ class PaperJournal:
                     pass
                 if mem.get("entry_timestamp") is None:
                     mem["entry_timestamp"] = row.get("entry_timestamp")
+                for key in ("mark", "mfe_price", "mae_price", "working_stop", "working_target", "adaptive_stage", "adaptive_exit_policy_version", "be_armed"):
+                    if row.get(key) is not None:
+                        mem[key] = row.get(key)
         duplicates = sum(1 for tid, n in open_counts.items() if n > 1 and tid not in closed_ids)
         self._last_reconcile = {
             "added": added,
@@ -422,6 +532,11 @@ class PaperJournal:
             "persisted_open": len(self.list_open()),
         }
         return self._last_reconcile
+
+    def trade_terminal(self, trade_id: str) -> bool:
+        """True if an append-only close already exists for this trade id."""
+        _, close_row = self._scan_trade(trade_id)
+        return bool(close_row)
 
     def _scan_trade(self, trade_id: str) -> tuple:
         open_row: Optional[Dict[str, Any]] = None
@@ -672,6 +787,9 @@ class PaperJournal:
         }
 
     async def stats(self) -> Dict[str, Any]:
+        return await asyncio.to_thread(self._stats_snapshot)
+
+    def _stats_snapshot(self) -> Dict[str, Any]:
         session = self.current_session()
         started = session.get("started_at")
         all_rows: List[Dict[str, Any]] = []
@@ -682,7 +800,7 @@ class PaperJournal:
                     continue
                 if str(row.get("trade_type") or "PAPER").upper() == "TEST":
                     continue
-                if _is_session_roll(row):
+                if _is_session_roll(row) or str(row.get("result") or "").upper() == "INTERRUPTED":
                     continue
                 all_rows.append(row)
                 if _opened_in_session(row, started):
