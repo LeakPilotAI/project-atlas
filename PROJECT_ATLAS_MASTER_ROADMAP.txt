@@ -10843,3 +10843,45 @@ NEXT - EXECUTION 113
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 113 - EXPLANATORY DESCRIPTION OWNERSHIP - GREEN - 2026-10-07
+- Audited established frontend surfaces for non-heading explanatory text that visually describes a compact region/card but lacked an explicit programmatic description relationship.
+- Identified genuine bounded gaps in Research Surfaces cards and the Crypto Quality Dips evidence-readiness section.
+- ResearchSurfaceCard now derives a unique detail ID from its existing unique heading ID, exposes aria-describedby on the article, and assigns that ID to the existing visible surface.detail paragraph.
+- GatedCapabilityCard now derives a unique detail ID from its existing unique heading ID, exposes aria-describedby on the article, and assigns that ID to the existing visible capability.detail paragraph.
+- Crypto Quality Dips now exposes aria-describedby from its existing named section to the existing read-only/no-authority boundary sentence via a stable crypto-quality-dips-boundary ID.
+- Preserved every visible title/detail/boundary string, CSS class, layout, link, data order, runtime state, endpoint, refresh cadence, evidence calculation, and authority boundary.
+- Added five E113 source-contract tests covering research-surface description ownership, gated-capability description ownership, Crypto Quality Dips boundary ownership, preserved visible card content, and unchanged runtime/authority contracts.
+- Focused E111-E113 regression: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- git diff --check clean.
+- Full Python regression: 1,601 passed, 0 failed, 2 known dependency warnings in 142.59s.
+- Implementation commit: 626e9d24 e113 connect explanatory descriptions
+- E113 GREEN.
+
+VISUAL STATUS AFTER E113
+[DONE] E48-E113 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated capabilities remain gated.
+[TODO] remaining bounded product-facing semantic polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, document/platform accessibility, announcements, visual progress, definition relationships, named regions, accessible tables, collection semantics, contextual link purpose, article/heading ownership, compact technical-label semantics, and explanatory-description ownership are established.
+2. E29 evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; restricted capabilities stay gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 114
+1. Inspect remaining frontend repeated status/metric groups for bounded group naming where related values are visually grouped but lack a concise programmatic group identity.
+2. Apply only static semantic hardening where a genuine gap exists; preserve visible copy, layout, calculations, runtime behavior, refresh behavior, and established boundaries.
+3. Do not introduce new runtime state or event logic, and do not expand any gated capability.
+4. Add E114 source-contract tests for group naming and unchanged application contracts.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
