@@ -11311,3 +11311,54 @@ NEXT - EXECUTION 122
 6. Add source-contract/runtime tests and run applicable focused/full regression.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 122 - WINDOWS OPERATOR READINESS DIAGNOSTICS - GREEN - 2026-10-07
+- Audited Atlas-Ready.ps1, Atlas-Desktop-Smoke.ps1, launcher health behavior, Docker health contracts, and established operator endpoints under the Windows-local-only release scope.
+- Identified the highest-confidence readiness gap in Atlas-Ready.ps1: it could report startup GREEN from HTTP responses alone without requiring the local atlas-postgres and atlas-redis containers to be running and healthy.
+- Hardened Atlas-Ready.ps1 as a read-only readiness verifier. It now inspects atlas-postgres and atlas-redis with docker inspect and requires both running=true and health=healthy.
+- Existing /health, /api/research, /api/command-center/summary, and /diagnostics/paper-reconciliation HTTP checks remain required.
+- GREEN still requires three consecutive fully healthy rounds; warm-up is not manufactured into steady-state readiness.
+- launcher-ready.json now records last endpoint/container checks plus detailed container health state, improving post-failure diagnosis without mutating runtime state.
+- Failure output now points to the diagnostic artifact and gives bounded recovery guidance: stop Atlas through ATLAS-STOP.bat, inspect logs and Docker Desktop, then relaunch.
+- The readiness checker itself does not start, stop, remove, restart, or recreate containers/processes.
+- Removed stale Atlas-Launch.ps1 advice to run git pull origin main when dashboard.html is missing. It now points operators to the E121-safe Pull-And-Ready.ps1 path after closing Atlas.
+- Preserved strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, live-capital boundaries, and all existing API/dashboard contracts.
+- Added six E122 source-contract tests for Postgres/Redis health ownership, read-only Docker probing, diagnostic artifact context, actionable non-mutating recovery guidance, removal of stale main-branch pull advice, and preservation of existing HTTP readiness surfaces.
+- Focused Windows/operator regression: 40/40 passed.
+- git diff --check clean aside from standard LF-to-CRLF working-copy warning.
+- Full Python regression: 1,652 passed, 0 failed, 2 known dependency warnings in 126.47s.
+- No frontend source/runtime behavior changed, so a redundant frontend compile/build cycle was not required for E122.
+- Implementation commit: 6327682f e122 readiness checks
+- E122 GREEN.
+
+VISUAL STATUS AFTER E122
+[DONE] E48-E116 frontend semantic/accessibility sequence GREEN and closed.
+[DONE] E117 Windows operator/recovery alignment GREEN.
+[DONE] E118 deterministic frontend fresh-install contract GREEN.
+[DONE] E119 production frontend dependency vulnerabilities remediated GREEN.
+[DONE] E120 fail-closed runtime placeholder/default credential validation GREEN.
+[DONE] E121 non-destructive Windows Git update/recovery safety GREEN.
+[DONE] E122 deterministic read-only operator readiness diagnostics GREEN.
+[ACTIVE] Windows-local product/release hardening.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Residual Discord lifecycle producers remain gated.
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted-server deployment until explicitly re-enabled.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Remaining secrets/security hygiene and documented handling; production frontend dependency audit is clean and dev-tool findings remain explicitly gated against unsafe forced downgrade.
+2. Backend/frontend/local-Docker packaging and dependency reproducibility.
+3. Final Windows-local clean-install/update/recovery acceptance and release-readiness checklist.
+4. Genuine E29 and Alpha/cadence/corroboration evidence continues naturally; no synthetic acceleration.
+5. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts.
+
+NEXT - EXECUTION 123
+1. Audit local Docker/config packaging for deterministic credential/config handoff between .env, docker-compose.yml, and backend DATABASE_URL.
+2. Remove any remaining unsafe built-in Docker credential fallback now that E120 rejects it at backend runtime.
+3. Keep .env.example placeholder-only and fail closed rather than silently selecting a real-looking default credential.
+4. Preserve volumes/data, Windows runtime topology, localhost ports, strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, and live-capital boundaries.
+5. Add contract coverage and run applicable focused/full regression.
+6. Do not rotate, print, infer, or overwrite the operator's real credentials.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
