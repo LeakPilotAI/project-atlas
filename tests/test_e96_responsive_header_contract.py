@@ -11,7 +11,7 @@ def test_e96_command_center_action_cluster_wraps_without_changing_operational_fr
     assert '<div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-end justify-between gap-4">' in text
     assert '<div className="flex flex-wrap items-end gap-4">' in text
     assert '<header className="border-b border-white/5 bg-[#0b0d12]/90 backdrop-blur sticky top-0 z-10">' in text
-    assert '<main className="max-w-7xl mx-auto px-6 py-6 space-y-6">' in text
+    assert '<main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-6 py-6 space-y-6">' in text
     assert "/api/live" in text
     assert "}, 8000);" in text
     assert "<CryptoQualityDipsStatusPanel />" in text

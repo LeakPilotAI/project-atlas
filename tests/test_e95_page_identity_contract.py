@@ -24,7 +24,7 @@ def test_e95_command_center_adopts_identity_without_frame_or_runtime_change():
     assert 'tone="operational"' in text
     assert 'description="Bot runs in the Atlas window. This page is watch-only. Discord is the alert feed."' in text
     assert '<header className="border-b border-white/5 bg-[#0b0d12]/90 backdrop-blur sticky top-0 z-10">' in text
-    assert '<main className="max-w-7xl mx-auto px-6 py-6 space-y-6">' in text
+    assert '<main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-6 py-6 space-y-6">' in text
     assert "/api/live" in text
     assert "}, 8000);" in text
     assert "clearInterval(id);" in text

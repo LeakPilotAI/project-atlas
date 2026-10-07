@@ -142,7 +142,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+      <main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {error && (
           <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
             {error}
