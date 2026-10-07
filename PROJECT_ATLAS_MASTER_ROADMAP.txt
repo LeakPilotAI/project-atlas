@@ -10712,3 +10712,45 @@ NEXT - EXECUTION 110
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 110 - LINK PURPOSE AND NAVIGATION LABEL SEMANTICS - GREEN - 2026-10-07
+- Audited established frontend links and navigation labels across the root shell, Command Center, Forward Evidence, Research Surfaces, skip navigation, and reusable Research Surface cards.
+- Confirmed primary navigation links already expose unique, purposeful visible labels in their navigation context: Research Evidence, Research Surfaces, Forward Evidence, Command Center, and Skip to main content.
+- Identified one genuine ambiguity: every Research Surface card repeated the visible link text Open read-only surface while pointing to a surface-specific destination.
+- Preserved that visible link copy and destination exactly, while adding a surface-specific accessible name derived from surface.title so assistive-technology link lists expose the destination purpose.
+- No destination, visual layout, card content, ordering, navigation structure, runtime behavior, polling cadence, evidence presentation, or established capability boundary changed.
+- Added five E110 source-contract tests covering contextual card-link naming, preserved visible copy/destination, purposeful Research Surfaces navigation, persistent root navigation, and unchanged runtime/boundary contracts.
+- Initial focused run exposed one test-only assumption: the established persistent root link is labeled Research Evidence rather than Forward Evidence. Corrected the test to the actual existing copy with no product-code change.
+- Final focused E108-E110 regression: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted Research Surface card ESLint: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- git diff --check clean.
+- Full Python regression: 1,586 passed, 0 failed, 2 known dependency warnings in 132.95s.
+- Implementation commit: db8b72e9 e110 clarify repeated link purpose
+- E110 GREEN.
+
+VISUAL STATUS AFTER E110
+[DONE] E48-E110 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated capabilities remain gated.
+[TODO] remaining bounded product-facing semantic polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, document/platform accessibility, announcements, visual progress, definition relationships, named regions, accessible tables, collection semantics, and contextual link purpose are established.
+2. E29 evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; restricted capabilities stay gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 111
+1. Inspect page/card heading hierarchy and repeated article labeling across established frontend surfaces for bounded structural relationships between cards/articles and their visible headings.
+2. Apply only static semantic hardening where a genuine gap exists; preserve visible copy, hierarchy intent, layout, refresh behavior, and established boundaries.
+3. Do not introduce new runtime state or event logic, and do not expand any gated capability.
+4. Add E111 source-contract tests for article/heading relationships and unchanged application contracts.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
