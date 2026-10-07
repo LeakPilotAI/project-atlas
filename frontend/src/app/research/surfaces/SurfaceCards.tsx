@@ -4,10 +4,11 @@ import type { GatedCapabilityDefinition, ResearchSurfaceDefinition } from "./cat
 
 export function ResearchSurfaceCard({surface}:{surface:ResearchSurfaceDefinition}){
  const headingId=`research-surface-${surface.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}`;
- return <article aria-labelledby={headingId} className="flex min-h-60 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-4 sm:p-5">
+ const detailId=`${headingId}-detail`;
+ return <article aria-labelledby={headingId} aria-describedby={detailId} className="flex min-h-60 flex-col rounded-2xl border border-white/8 bg-[#10131a] p-4 sm:p-5">
   <SurfaceStatusBadge status={surface.status}/>
   <h2 id={headingId} className="mt-2 text-lg font-semibold text-white">{surface.title}</h2>
-  <p className="mt-3 text-sm leading-6 text-zinc-400">{surface.detail}</p>
+  <p id={detailId} className="mt-3 text-sm leading-6 text-zinc-400">{surface.detail}</p>
   <dl className="mt-4 space-y-3 rounded-lg border border-white/5 bg-black/20 p-3 text-xs">
    <Posture label="Purpose" value={surface.purpose}/>
    <Posture label="Data posture" value={surface.dataPosture}/>
@@ -19,10 +20,11 @@ export function ResearchSurfaceCard({surface}:{surface:ResearchSurfaceDefinition
 
 export function GatedCapabilityCard({capability}:{capability:GatedCapabilityDefinition}){
  const headingId=`gated-capability-${capability.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}`;
- return <article aria-labelledby={headingId} className="rounded-2xl border border-white/8 bg-[#0c0e13] p-4">
+ const detailId=`${headingId}-detail`;
+ return <article aria-labelledby={headingId} aria-describedby={detailId} className="rounded-2xl border border-white/8 bg-[#0c0e13] p-4">
   <SurfaceStatusBadge status="GATED"/>
   <h3 id={headingId} className="mt-2 text-sm font-medium text-zinc-300">{capability.title}</h3>
-  <p className="mt-2 text-xs leading-5 text-zinc-500">{capability.detail}</p>
+  <p id={detailId} className="mt-2 text-xs leading-5 text-zinc-500">{capability.detail}</p>
  </article>
 }
 
