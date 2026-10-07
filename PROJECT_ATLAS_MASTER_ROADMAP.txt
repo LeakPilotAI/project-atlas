@@ -10167,3 +10167,69 @@ NEXT - EXECUTION 98
 7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 98 - SHARED NAVIGATION KEYBOARD FOCUS VISIBILITY - GREEN - 2026-10-07
+
+IMPLEMENTATION
+- Inspected keyboard-focus and interaction semantics for shared cross-surface navigation and top-level operator-facing controls after E94-E97 consolidation.
+- Confirmed SurfaceNavLink is the only shared top-level interactive primitive in E98 scope; no page-specific button/control abstraction was required.
+- Added one shared static INTERACTION_CLASS to SurfaceNavLink with explicit focus-visible outline replacement, two-pixel cyan focus ring, two-pixel offset, and Atlas background offset color.
+- Added transition-colors as bounded presentation polish; no hover-driven authority cue, animation logic, event handler, client state, or runtime behavior was introduced.
+- Both existing primary and secondary variants retain their exact base border/padding/type/color classes and now inherit the same keyboard-focus contract.
+- SurfaceNavLink remains a plain Next.js Link with unchanged href forwarding, no use-client boundary, no onClick/onKeyDown, no tabIndex manipulation, no hooks, no fetch, and no API coupling.
+- All established cross-surface destinations and named Research navigation landmarks remain unchanged across Command Center, Forward Evidence, and Research Surfaces.
+- Updated the E94 static-presentation source contract to pin its original base classes plus the new shared interaction suffix rather than the obsolete pre-E98 literal-only class strings.
+- Added five E98 source-contract tests for explicit focus visibility, both variants sharing the interaction contract, static Next.js-link purity, unchanged destinations/navigation landmarks, and unchanged runtime/authority boundaries.
+- No API/polling changes, evidence behavior changes, scoring, readiness policy, PAPER, execution, strategy selection, threshold mutation, promotion, scheduling, repair, synthetic evidence, or live-capital authority changed.
+
+VALIDATION
+- Initial E93-E98 focused regression: 29 passed, 1 failed only because E94 pinned the pre-E98 literal class strings.
+- Advanced E94 compatibility assertions to preserve its base-style contract while recognizing the E98 shared interaction suffix.
+- Final focused E93-E98 compatibility: 30/30 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint for relevant frontend source: exit 0.
+- Next.js optimized production build: exit 0; /, /_not-found, /research, and /research/surfaces built successfully.
+- git diff --check clean; expected LF-to-CRLF warnings only.
+- Full Python regression: 1,526 passed, 0 failed, 2 known dependency warnings in 134.14s.
+
+IMPLEMENTATION COMMIT
+- 290b2b02 e98 harden navigation focus visibility
+
+DECISION
+- E98 GREEN. Shared cross-surface navigation now has explicit, consistent keyboard focus visibility while remaining a pure static presentation primitive with unchanged destinations, interaction behavior, runtime contracts, and authority boundaries.
+
+VISUAL STATUS AFTER E98
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
+[DONE] E73-E75 fail-closed Crypto Quality Dips frontend consumer/panel/operator UX.
+[DONE] E76-E90 Research Surfaces architecture, typed contracts, pure components, safety-first composition freeze, and bounded polish.
+[DONE] E91-E93 shared-shell compatibility program, including intentional Command Center non-migration boundary.
+[DONE] E94 cross-surface navigation presentation/accessibility consistency.
+[DONE] E95 shared page-identity hierarchy/presentation consistency.
+[DONE] E96 responsive surface header/action composition hardening.
+[DONE] E97 surface landmark/status/error accessibility semantics.
+[DONE] E98 shared navigation keyboard focus visibility.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] bounded product-facing document/navigation accessibility polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, landmarks, and keyboard focus are established; continue only bounded document/navigation accessibility polish that does not alter runtime or authority.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 99
+1. Inspect document-level navigation ergonomics for keyboard/screen-reader users across the three established surfaces, especially whether a bounded skip-to-main mechanism can be introduced without changing page architecture.
+2. If genuinely compatible, add a shared pure/static skip-navigation primitive and stable main-content targets; otherwise document the incompatibility rather than forcing abstraction.
+3. Preserve exact page identity copy, cross-surface destinations, responsive composition, polling/API behavior, evidence rendering, safety copy, and authority boundaries.
+4. Do not change scoring, readiness policy, PAPER/execution authority, strategy selection, thresholds, promotion, schedulers, repair, or live-capital boundaries.
+5. Add E99 source-contract tests for document-navigation accessibility and unchanged runtime/authority behavior.
+6. Run frontend compile/lint/build, focused regression and full Python regression.
+7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
