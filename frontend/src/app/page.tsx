@@ -183,7 +183,7 @@ export default function Dashboard() {
               return (
                 <div key={s.key} className="rounded-xl border border-white/8 bg-[#10131a] p-3">
                   <div className="h-16 flex items-end mb-2">
-                    <div className="w-full rounded-sm bg-emerald-500/70" style={{ height: hgt }} />
+                    <div role="progressbar" aria-label={`${s.label}: ${val} of ${maxFunnel}`} aria-valuemin={0} aria-valuemax={maxFunnel} aria-valuenow={val} className="w-full rounded-sm bg-emerald-500/70" style={{ height: hgt }} />
                   </div>
                   <div className="text-lg font-semibold text-white tabular-nums">{val}</div>
                   <div className="text-[11px] text-zinc-500">{s.label}</div>
