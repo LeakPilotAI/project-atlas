@@ -10449,3 +10449,47 @@ NEXT - EXECUTION 104
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 104 - STATUS AND ERROR ANNOUNCEMENT SEMANTICS - GREEN - 2026-10-07
+- Audited user-visible connection, transport, and failure messaging across Command Center, Forward Evidence, and the Crypto Quality Dips read-only panel.
+- Confirmed Command Center steady API state already used a polite status region and Forward Evidence fetch failures already used alert semantics.
+- Identified bounded inconsistencies: the initial Connecting to Atlas message had no announcement semantics, the Crypto transport row had aria-live without an explicit status role, and the Crypto fail-closed failure message used status rather than alert.
+- Marked initial connection progress as polite atomic status.
+- Made the existing Command Center API status atomic while preserving its copy and visual state.
+- Made Crypto transport progress an explicit polite atomic status and changed only its actual failure message to alert semantics.
+- Preserved all user-visible copy, visual composition, state transitions, refresh cadences, endpoints, evidence presentation, safety messaging, and established capability boundaries.
+- Added five E104 source-contract tests for initial connection status, steady connection/error semantics, Crypto transport/failure semantics, preserved Forward Evidence alert behavior, and unchanged application contracts.
+- Initial focused run exposed one test-only literal mismatch for the existing Crypto refresh constant; corrected the assertion to the exact existing source form with no product-code change.
+- Final focused E102-E104 regression: 15/15 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- git diff --check clean.
+- Full Python regression: 1,556 passed, 0 failed, 2 known dependency warnings in 132.21s.
+- Implementation commit: a4d713fd e104 align status announcement semantics
+- E104 GREEN.
+
+VISUAL STATUS AFTER E104
+[DONE] E48-E104 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated capabilities remain gated.
+[TODO] remaining bounded product-facing semantic polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, landmarks, keyboard/document navigation, route/browser metadata, platform preferences, and status/error announcement semantics are established.
+2. E29 evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; restricted capabilities stay gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 105
+1. Inspect non-text visual status indicators and progress meters across established frontend surfaces for accessible names/value semantics.
+2. Apply only bounded semantic/static hardening where a genuine gap exists; preserve visible copy, visual composition, data calculations, refresh behavior, and established boundaries.
+3. Do not introduce new runtime state or event logic, and do not expand any gated capability.
+4. Add E105 source-contract tests for visual indicator/progress semantics and unchanged application contracts.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
