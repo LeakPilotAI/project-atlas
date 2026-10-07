@@ -9911,3 +9911,69 @@ NEXT - EXECUTION 94
 7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 94 - CROSS-SURFACE NAVIGATION PRESENTATION CONTRACT - GREEN - 2026-10-07
+
+IMPLEMENTATION
+- Inspected navigation labels, route topology, accessibility, and presentation across Command Center, Forward Evidence, and Research Surfaces.
+- Preserved the established information architecture instead of forcing identical navigation: Command Center retains its bounded Research Surfaces hub link; Forward Evidence and Research Surfaces retain their two peer destinations.
+- Added frontend/src/app/components/SurfaceNavLink.tsx as a pure static presentation primitive with the two already-established visual variants: primary cyan and secondary neutral.
+- Adopted SurfaceNavLink on all three surfaces without changing destination routes or introducing active-route inference, hooks, fetches, backend coupling, controls, or authority logic.
+- Forward Evidence navigation is now explicitly wrapped in a nav landmark with aria-label="Research navigation", matching the existing Research Surfaces accessibility contract.
+- Preserved Command Center /api/live polling, 8-second cadence, Crypto Quality Dips panel placement, watch-only semantics, and dedicated operational frame.
+- Preserved Forward Evidence API endpoint, 15-second polling cadence, cleanup, fail-closed error, evidence rendering, and authority boundaries.
+- Preserved Research Surfaces static/no-fetch behavior, composition order, safety boundary, gated semantics, and routes.
+- Updated only stale E76/E77/E89/E90/E91 source-shape assertions that pinned raw next/link markup rather than the unchanged route/accessibility contract.
+- Added E94 source-contract coverage for primitive purity, bounded Command Center navigation, research navigation accessibility/routes, runtime preservation, and authority preservation.
+- No scoring, PAPER, execution, strategy selection, threshold mutation, promotion, scheduler, repair, synthetic evidence, or live-capital authority added.
+
+VALIDATION
+- First focused command did not run because an outdated guessed E90 filename was supplied; no test failed and no code changed.
+- Corrected focused E90-E94 compatibility run initially: 23 passed, 2 failed; both failures were stale E90/E91 raw-Link source assertions.
+- Updated those test expectations only; focused E90-E94 then passed 25/25.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint for all changed frontend source: exit 0.
+- Next.js optimized production build: exit 0; /, /_not-found, /research, and /research/surfaces built successfully.
+- First full regression: 1,501 passed, 5 failed, 2 warnings; all five failures were stale E76/E77/E89 raw-Link/import source-shape assertions, with no runtime/behavioral failure.
+- Updated only those legacy test expectations to follow SurfaceNavLink; affected E76-E94 compatibility band passed 39/39.
+- Final full Python regression: 1,506 passed, 0 failed, 2 known dependency warnings in 153.02s.
+- git diff --check clean; expected LF-to-CRLF warnings only.
+
+IMPLEMENTATION COMMIT
+- ac4d1049 e94 unify surface navigation presentation
+
+DECISION
+- E94 GREEN. Atlas now has consistent pure navigation-link presentation across established surfaces while preserving each surface's existing route topology, runtime architecture, accessibility role, and authority boundary.
+
+VISUAL STATUS AFTER E94
+[DONE] E48-E59 typed Discord/observability/attachment migration program.
+[DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
+[DONE] E73-E75 fail-closed Crypto Quality Dips frontend consumer/panel/operator UX.
+[DONE] E76-E90 Research Surfaces architecture, typed contracts, pure components, safety-first composition freeze, and bounded polish.
+[DONE] E91-E93 shared-shell compatibility program, including intentional Command Center non-migration boundary.
+[DONE] E94 cross-surface navigation presentation/accessibility consistency.
+[ACTIVE] E29 genuine forward strategy evidence collection.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence collection.
+[INACTIVE/GATED] Crypto Quality Dips autonomous acquisition, scoring/outcomes, alerts/scheduling, PAPER and execution.
+[GATED] residual trading-adjacent Discord lifecycle producers; Alpha strategy-selection; unattended Prediction PAPER; automated real-money execution; strategy promotion.
+[TODO] bounded cross-surface header/title/product-facing polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shell and navigation presentation contracts are established; next inspect top-level page identity/header hierarchy for a bounded product-facing consistency pass without merging Command Center's operational frame into research framing.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Broader frontend polish remains limited to presentation/accessibility/consistency until explicitly expanded.
+6. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 95
+1. Inspect the top-level eyebrow/title/description hierarchy across Command Center, Forward Evidence, and Research Surfaces for bounded product-facing consistency.
+2. Extract only a pure static page-identity primitive where semantics and layout are genuinely compatible; preserve Command Center's operational sticky-header structure and distinct max-width.
+3. Preserve all visible safety copy, routes, navigation, polling/API behavior, evidence rendering, and authority boundaries.
+4. Do not change scoring, readiness policy, PAPER/execution authority, strategy selection, thresholds, promotion, schedulers, repair, or live-capital boundaries.
+5. Add E95 source-contract tests for the chosen page-identity decision and unchanged runtime/authority behavior.
+6. Run frontend compile/lint/build, focused regression and full Python regression.
+7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
