@@ -10885,3 +10885,49 @@ NEXT - EXECUTION 114
 6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 114 - STATUS AND METRIC GROUP NAMING - GREEN - 2026-10-07
+- Audited established repeated status/metric groups for visual groupings that lacked concise programmatic identity.
+- Added aria-label="System health" to the existing Command Center health/status strip containing Scanner, Perp micro, Paper, Discord, Quality dip, HL data, liquid-name count, and last-scan age.
+- Added aria-label="Session metrics" to the existing Command Center session-stat section.
+- Added role="group" with aria-label="Evidence metrics" to the existing Crypto Quality Dips readiness metric grid.
+- Added role="group" with aria-label="Operational context" to the existing Crypto Quality Dips operator/evidence-chain/recovery context grid.
+- Deliberately left the perp funnel without redundant nested group semantics because its parent section is already named by the visible Last 24 hours - perp funnel heading.
+- Preserved all visible copy, values, ordering, CSS classes, calculations, polling, endpoints, evidence behavior, and authority boundaries.
+- Added five E114 source-contract tests covering System health naming, Session metrics naming, Evidence metrics naming, Operational context naming, and unchanged runtime/authority contracts.
+- Initial full regression exposed one E93 source-contract failure because the older test located the health strip by an exact pre-aria-label opening tag.
+- Confirmed E93 failure was test brittleness rather than a product/runtime regression; updated it to locate the same preserved health section including its new accessible name.
+- Repair-focused E93/E114 regression: 10/10 passed; final E93/E112-E114 focused regression: 20/20 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- Final git diff --check clean after removing a repair-only trailing blank line.
+- Initial full regression: 1,605 passed, 1 failed, 2 warnings; sole failure was brittle E93 exact-tag lookup.
+- Final full Python regression: 1,606 passed, 0 failed, 2 known dependency warnings in 140.28s.
+- Implementation commit: cd131405 e114 name status and metric groups
+- E114 GREEN.
+
+VISUAL STATUS AFTER E114
+[DONE] E48-E114 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated capabilities remain gated.
+[TODO] remaining bounded product-facing semantic polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, document/platform accessibility, announcements, visual progress, definition relationships, named regions, accessible tables, collection semantics, contextual link purpose, article/heading ownership, compact technical-label semantics, explanatory-description ownership, and status/metric group naming are established.
+2. E29 evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; restricted capabilities stay gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 115
+1. Inspect remaining frontend timestamps/refresh-age text for bounded machine-readable time semantics where human-readable relative time is already shown.
+2. Apply only static semantic hardening where a genuine gap exists; preserve visible copy, calculations, layout, runtime behavior, refresh behavior, and established boundaries.
+3. Do not introduce new runtime state or event logic, and do not expand any gated capability.
+4. Add E115 source-contract tests for time semantics and unchanged application contracts.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
