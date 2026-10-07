@@ -11260,3 +11260,54 @@ NEXT - EXECUTION 121
 6. Run applicable focused/frontend/full regression.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 121 - NON-DESTRUCTIVE WINDOWS UPDATE/RECOVERY SAFETY - GREEN - 2026-10-07
+- Audited the tracked Windows-local update/recovery path and found a concrete legacy hazard in scripts/windows/Pull-And-Ready.ps1.
+- The legacy updater targeted origin/main instead of the established chatgpt/atlas-rebuild-v1 branch, used git reset --hard to overwrite tracked files, and force-stopped every Python/Node process on the machine.
+- Replaced that destructive update core with an explicit $ExpectedBranch = "chatgpt/atlas-rebuild-v1" contract.
+- The updater now verifies the current branch exactly and refuses to update from any other branch.
+- The updater checks git status --porcelain --untracked-files=no and fails closed when tracked local modifications are present instead of overwriting them.
+- Fetch is scoped to the intended branch and update uses git merge --ff-only origin/chatgpt/atlas-rebuild-v1.
+- Diverged local history now fails closed with an explicit message; no reset, clean, checkout-force, automatic stash, or history rewrite is performed.
+- Removed the updater's global Get-Process python,node | Stop-Process -Force behavior, preventing update/recovery from interfering with unrelated Node/Python runtimes such as Genesis.
+- Untracked diagnostics/temp artifacts are intentionally excluded from the tracked-dirty gate and are never cleaned or deleted.
+- Existing .env/data preservation and package/shortcut refresh behavior remains in place after a successful safe fast-forward.
+- Added six E121 source-contract tests for intended branch/ref ownership, tracked-work protection, fast-forward-only behavior, absence of destructive Git cleanup, absence of global process force-stops, and explicit untracked-diagnostic preservation.
+- Focused E117-E121 Windows release regression: 30/30 passed.
+- git diff --check clean aside from standard LF-to-CRLF working-copy warning.
+- Full Python regression: 1,646 passed, 0 failed, 2 known dependency warnings in 119.93s.
+- No frontend source/runtime behavior changed, so a redundant frontend compile/build cycle was not required for E121.
+- Implementation commit: 48c439f8 e121 make windows update non destructive
+- E121 GREEN.
+
+VISUAL STATUS AFTER E121
+[DONE] E48-E116 frontend semantic/accessibility sequence GREEN and closed.
+[DONE] E117 Windows operator/recovery alignment GREEN.
+[DONE] E118 deterministic frontend fresh-install contract GREEN.
+[DONE] E119 production frontend dependency vulnerabilities remediated GREEN.
+[DONE] E120 fail-closed runtime placeholder/default credential validation GREEN.
+[DONE] E121 non-destructive Windows Git update/recovery safety GREEN.
+[ACTIVE] Windows-local product/release hardening.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Residual Discord lifecycle producers remain gated.
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted-server deployment until explicitly re-enabled.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Remaining secrets/security hygiene and documented handling; production frontend dependency audit is clean and dev-tool findings remain explicitly gated against unsafe forced downgrade.
+2. Backend/frontend/local-Docker packaging and dependency reproducibility.
+3. Operator diagnostics/readiness/recovery verification.
+4. Final Windows-local release-readiness checklist and clean-install/recovery acceptance.
+5. Genuine E29 and Alpha/cadence/corroboration evidence continues naturally; no synthetic acceleration.
+6. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts.
+
+NEXT - EXECUTION 122
+1. Audit Windows-local operator diagnostics/readiness scripts against the now-hardened setup/update/start contracts.
+2. Identify the highest-confidence readiness gap: configuration safety, Docker/Postgres/Redis health, API readiness, frontend/dashboard availability, or actionable recovery output.
+3. Prefer a deterministic read-only readiness check over adding new runtime mutation.
+4. Do not kill shared processes, modify global Docker/WSL settings, delete diagnostics, or manufacture readiness.
+5. Preserve strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, and live-capital boundaries.
+6. Add source-contract/runtime tests and run applicable focused/full regression.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
