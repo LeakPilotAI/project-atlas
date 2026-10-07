@@ -24,7 +24,7 @@ def test_e93_command_center_loading_frame_and_panel_placement_are_preserved():
     text=PAGE.read_text(encoding="utf-8")
     assert '<div className="min-h-screen bg-[#07080b] text-zinc-200 flex items-center justify-center">' in text
     assert "Connecting to Atlas" in text
-    health=text.index('<section className="flex flex-wrap gap-2">')
+    health=text.index('<section aria-label="System health" className="flex flex-wrap gap-2">')
     panel=text.index("<CryptoQualityDipsStatusPanel />")
     why=text.index("Why no paper trade")
     assert health < panel < why

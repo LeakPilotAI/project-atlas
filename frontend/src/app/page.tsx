@@ -149,7 +149,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <section className="flex flex-wrap gap-2">
+        <section aria-label="System health" className="flex flex-wrap gap-2">
           <Pill label="Scanner" on={!!h.scanner} />
           <Pill label="Perp micro" on={!!h.perp_micro} />
           <Pill label="Paper" on={!!h.paper_tracker} />
@@ -197,7 +197,7 @@ export default function Dashboard() {
           </p>
         </section>
 
-        <section className="grid md:grid-cols-4 gap-3">
+        <section aria-label="Session metrics" className="grid md:grid-cols-4 gap-3">
           <Stat label="Session open" value={n(journal.open)} />
           <Stat label="Session closed" value={n(journal.closed)} hint={String(session.session_id || "all-time")} />
           <Stat
