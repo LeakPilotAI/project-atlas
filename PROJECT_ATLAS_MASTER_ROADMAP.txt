@@ -11153,3 +11153,58 @@ NEXT - EXECUTION 119
 6. Add minimum contract coverage and run frontend/focused/full regression for any dependency/config changes.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 119 - FRONTEND DEPENDENCY SECURITY REMEDIATION - GREEN - 2026-10-07
+- Performed the bounded Windows-local dependency/security audit triggered by E118; no VPS/Linux deployment work was performed.
+- npm audit initially reported 12 findings: 11 high and 1 critical. npm audit --omit=dev confirmed 5 findings in the production dependency graph, including critical Next.js advisories affecting the installed 16.2.12 line on Windows-hosted servers.
+- Confirmed npm's non-major patched Next target was 16.4.0 and aligned eslint-config-next to the same 16.4.0 release. React/react-dom remain unchanged at 19.2.4.
+- Updated the committed package lock through normal npm resolution; Next's patched graph updates affected PostCSS, Sharp/libvips, SWC and related transitive packages.
+- Ran non-force npm audit fix after the framework update. This safely patched production transitive nanoid/source-map-js and other resolvable packages.
+- Final npm audit --omit=dev: 0 production vulnerabilities, 0 high, 0 critical.
+- Final full npm audit retains 5 high findings confined to the eslint-config-next development-tool chain through @next/eslint-plugin-next -> fast-glob -> micromatch -> braces.
+- npm's offered remediation for those remaining dev-only findings is a breaking downgrade to eslint-config-next 14.2.35. That downgrade was intentionally rejected; npm audit fix --force was not used.
+- Inspected tracked placeholder-secret/config contracts without reading or exposing real local .env values. Confirmed a separate release-hardening gap: .env.example/default config contains placeholder credentials and current launcher checks .env presence but does not explicitly reject known placeholder values. Deferred that behavior change to E120 to keep E119 bounded.
+- Added five E119 source-contract tests covering patched Next, aligned eslint config, lockfile Next version, patched production transitives, and Next remaining a runtime dependency.
+- Updated the E118 exact-version assertion from 16.2.12 to the new validated 16.4.0 contract.
+- Initial focused run had 1 expected compatibility-test failure from the old E118 version assertion; corrected that test only.
+- Final focused E118-E119 regression: 10/10 passed.
+- Deterministic npm ci from the committed lock: GREEN.
+- Frontend strict TypeScript: GREEN.
+- Frontend ESLint: GREEN.
+- Next.js 16.4.0 optimized production build: GREEN; /, /_not-found, /research, /research/surfaces all built successfully.
+- git diff --check clean aside from standard LF-to-CRLF working-copy warning.
+- Full Python regression: 1,631 passed, 0 failed, 2 known dependency warnings in 141.02s.
+- Implementation commit: eac5958c e119 patch frontend dependency security
+- E119 GREEN.
+
+VISUAL STATUS AFTER E119
+[DONE] E48-E116 frontend semantic/accessibility sequence GREEN and closed.
+[DONE] E117 Windows operator/recovery alignment GREEN.
+[DONE] E118 deterministic frontend fresh-install contract GREEN.
+[DONE] E119 production frontend dependency vulnerabilities remediated GREEN.
+[ACTIVE] Windows-local product/release hardening.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Residual Discord lifecycle producers remain gated.
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted-server deployment until explicitly re-enabled.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Environment/configuration validation and safe local configuration guidance, including known-placeholder rejection.
+2. Deterministic local update/recovery procedure and branch/ref safety.
+3. Secrets/security hygiene; production frontend dependency audit is now clean, with 5 dev-tool findings documented/gated against unsafe forced downgrade.
+4. Backend/frontend/local-Docker packaging and dependency reproducibility.
+5. Operator diagnostics/readiness/recovery verification.
+6. Final Windows-local release-readiness checklist and clean-install/recovery acceptance.
+7. Genuine E29 and Alpha/cadence/corroboration evidence continues naturally; no synthetic acceleration.
+8. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts.
+
+NEXT - EXECUTION 120
+1. Harden Windows-local startup/config validation against known placeholder credentials from .env.example and unsafe built-in defaults.
+2. Define the minimum required local configuration for startup without exposing or inventing credentials.
+3. Fail closed on known placeholder database/secret values where required by the actual runtime, while preserving optional integrations such as Discord when intentionally unconfigured.
+4. Preserve localhost topology, Docker dependency ownership, strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, and live-capital boundaries.
+5. Add source-contract/runtime tests for placeholder rejection and valid local configuration acceptance.
+6. Run applicable focused/frontend/full regression.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
