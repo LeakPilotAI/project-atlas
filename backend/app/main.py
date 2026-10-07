@@ -108,6 +108,7 @@ log = get_logger("main")
 async def lifespan(app: FastAPI):
     setup_logging()
     settings = get_settings()
+    settings.validate_runtime_configuration()
     log.info("Project Atlas starting", env=settings.app_env)
     log.info("Database URL host check", database_url=settings.database_url_safe)
 
