@@ -11102,3 +11102,54 @@ NEXT - EXECUTION 118
 5. Add minimum source-contract coverage and run applicable focused/full regression.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 118 - WINDOWS LOCAL PACKAGE REPRODUCIBILITY - GREEN - 2026-10-07
+- Executed under the owner-approved Windows-local-only scope; VPS/Ubuntu/systemd work remained out of scope.
+- Audited .env.example, docker-compose.yml, backend pyproject metadata, frontend package/package-lock metadata, and tracked Windows setup/update scripts against the current local runtime.
+- Identified the highest-confidence local release gap in Fresh-Setup.ps1: frontend/package-lock.json is committed, but fresh setup used npm install, allowing lockfile mutation/dependency re-resolution instead of consuming the exact committed graph.
+- Changed Fresh-Setup.ps1 frontend installation to require frontend/package-lock.json and use npm ci.
+- Fresh setup now fails closed if the committed lockfile is missing or npm ci cannot install it; it does not silently fall back to a non-deterministic install.
+- Preserved the existing optional-Node behavior: the API-served dashboard/local desktop runtime still does not require Node when npm is absent.
+- Preserved backend editable installation from tracked backend/pyproject.toml, Python 3.12+ contract, Docker Compose Postgres/Redis-only topology, Windows launcher behavior, localhost API contracts, and all strategy/evidence/authority boundaries.
+- Added five E118 source-contract tests for lockfile consumption, fail-closed npm-ci behavior, manifest/lock presence, backend pyproject setup, and unchanged local Docker topology.
+- Focused E117-E118 regression: 10/10 passed.
+- Direct clean frontend dependency verification: npm ci --ignore-scripts installed the committed lock successfully.
+- Frontend strict TypeScript: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- A second overlapping build command correctly refused to run while the original build was active; the original validation process completed exit 0. No shared Node/runtime processes were killed or interfered with.
+- npm audit output during deterministic install reported 12 dependency findings (11 high, 1 critical). No automatic npm audit fix/force was applied because dependency remediation requires a bounded security audit and may introduce breaking changes.
+- git diff --check clean.
+- Full Python regression: 1,626 passed, 0 failed, 2 known dependency warnings in 142.57s.
+- Implementation commit: 95419c36 e118 make frontend setup reproducible
+- E118 GREEN.
+
+VISUAL STATUS AFTER E118
+[DONE] E48-E116 frontend semantic/accessibility sequence GREEN and closed.
+[DONE] E117 Windows operator/recovery alignment GREEN.
+[DONE] E118 deterministic frontend fresh-install contract GREEN.
+[ACTIVE] Windows-local product/release hardening.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Residual Discord lifecycle producers remain gated.
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted-server deployment until explicitly re-enabled.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Environment/configuration validation and safe local configuration guidance.
+2. Deterministic local update/recovery procedure and branch/ref safety.
+3. Secrets/security hygiene plus bounded dependency-vulnerability review.
+4. Backend/frontend/local-Docker packaging and dependency reproducibility.
+5. Operator diagnostics/readiness/recovery verification.
+6. Final Windows-local release-readiness checklist and clean-install/recovery acceptance.
+7. Genuine E29 and Alpha/cadence/corroboration evidence continues naturally; no synthetic acceleration.
+8. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts.
+
+NEXT - EXECUTION 119
+1. Perform a bounded local dependency/security audit centered on the 12 npm audit findings surfaced by E118 and the committed frontend dependency graph.
+2. Determine whether findings affect production dependencies, development-only tooling, or transitive packages before changing versions.
+3. Apply only non-breaking, evidence-backed remediation compatible with the current Next.js/React stack; do not run npm audit fix --force.
+4. Also inspect tracked secret/config placeholders for obvious release-safe fail-closed gaps, but do not expose or invent credentials.
+5. Preserve Windows runtime topology, frontend behavior, localhost API contracts, strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, and live-capital boundaries.
+6. Add minimum contract coverage and run frontend/focused/full regression for any dependency/config changes.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
