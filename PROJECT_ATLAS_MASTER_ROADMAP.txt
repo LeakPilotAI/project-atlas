@@ -10233,3 +10233,48 @@ NEXT - EXECUTION 99
 7. Continue genuine E29/Alpha evidence unchanged and residual Discord lifecycle gating unchanged.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 99 - DOCUMENT SKIP NAVIGATION ACCESSIBILITY - GREEN - 2026-10-07
+- Inspected document-level keyboard and screen-reader navigation across Command Center, Forward Evidence, and Research Surfaces.
+- Confirmed a shared pure/static skip-navigation primitive is compatible because all three surfaces already expose one primary main-content region.
+- Added shared SkipNavigation at the root layout with a direct #main-content destination, visually hidden off-canvas until keyboard focus, explicit focus visibility, and no client/event/runtime logic.
+- Added stable id="main-content" plus tabIndex={-1} targets to the Command Center main region and shared ReadOnlyPageShell main region; existing layout classes and page composition remain unchanged.
+- Preserved cross-surface destinations, page identity copy, responsive composition, polling/API behavior, evidence rendering, safety copy, and existing authority boundaries.
+- Advanced stale E93/E95/E96/E97 source-shape assertions only to recognize the E99 main target while continuing to pin the pre-existing layout/frame contracts.
+- Added five E99 source-contract tests for shared static skip navigation, focus-only visibility, stable main targets, unchanged destinations, and unchanged runtime/authority boundaries.
+- Initial E93-E99 focused regression: 30 passed, 5 failed only because older tests pinned the pre-E99 literal main tags.
+- Final E93-E99 focused compatibility: 35/35 passed.
+- Frontend strict TypeScript: exit 0.
+- Targeted ESLint for relevant frontend source: exit 0.
+- Next.js optimized production build: exit 0; all established routes built successfully.
+- git diff --check clean; expected LF-to-CRLF warnings only.
+- First full Python regression: 1,530 passed, 1 failed, 2 warnings. Sole failure was an unrelated time-derived freshness equality check.
+- Isolated freshness test immediately passed: 1/1.
+- Fresh full Python regression: 1,531 passed, 0 failed, 2 known dependency warnings in 135.06s.
+- Implementation commit: 63948d77 e99 add document skip navigation
+- E99 GREEN. Keyboard and screen-reader users can now bypass repeated document navigation directly to a stable main-content target across all established Atlas surfaces without changing runtime behavior or authority.
+
+VISUAL STATUS AFTER E99
+[DONE] E48-E99 completed and GREEN.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Previously gated authority capabilities remain gated.
+[TODO] remaining bounded product-facing navigation accessibility polish; product/deployment hardening.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Shared shell/navigation/identity, responsive composition, landmarks, keyboard focus, and skip-to-main document navigation are established; continue only bounded accessibility polish that does not alter runtime or authority.
+2. E29 strategy evidence must continue accumulating genuinely over time; no synthetic acceleration.
+3. Alpha/cadence/corroboration genuine evidence accumulation remains active; strategy-selection authority stays gated.
+4. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts rather than bulk migration.
+5. Product/deployment hardening remains: packaging, deployment/recovery/security documentation and release-readiness.
+
+NEXT - EXECUTION 100
+1. Inspect the root-layout persistent Research Evidence navigation control for keyboard focus visibility and semantic consistency with the established shared navigation contract.
+2. Apply only bounded static presentation/semantic hardening if compatible; do not change its destination, fixed placement, page architecture, or introduce client/event logic.
+3. Preserve page identity copy, cross-surface destinations, responsive composition, polling/API behavior, evidence rendering, safety copy, and existing authority boundaries.
+4. Add E100 source-contract tests for root navigation accessibility and unchanged runtime/authority behavior.
+5. Run frontend compile/lint/build, focused regression and full Python regression.
+6. Continue genuine E29/Alpha evidence unchanged and residual lifecycle gating unchanged.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
