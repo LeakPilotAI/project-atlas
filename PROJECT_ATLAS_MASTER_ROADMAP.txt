@@ -11208,3 +11208,55 @@ NEXT - EXECUTION 120
 6. Run applicable focused/frontend/full regression.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 120 - FAIL-CLOSED RUNTIME CONFIGURATION VALIDATION - GREEN - 2026-10-07
+- Hardened the Windows-local Atlas backend startup boundary against tracked example/default credentials without reading, logging, or exposing the operator's real .env values.
+- Added Settings.validate_runtime_configuration() as an explicit runtime-readiness contract rather than making Settings construction itself fail; research/backtest/test code can continue constructing Settings without gaining runtime authority.
+- Runtime validation rejects blank or known placeholder SECRET_KEY values: change-me and change-me-in-production.
+- Runtime validation rejects a missing DATABASE_URL, the tracked example change-me database credential, and the prior built-in atlas_secure_password_2026 database credential.
+- Validation error text identifies only the unsafe configuration field/condition and does not echo secret values.
+- Wired validation into the FastAPI lifespan immediately after settings load and before Redis, database initialization, adapters, scanners, PAPER services, Discord startup, or other runtime workers.
+- Kept Discord and Telegram credentials optional when intentionally unconfigured; E120 does not convert optional alert integrations into startup requirements.
+- Preserved localhost topology, Docker dependency ownership, strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, and live-capital boundaries.
+- Kept .env.example explicitly placeholder-only; no real credentials were added to tracked files.
+- Added E120 runtime-configuration tests covering valid local acceptance, placeholder-secret rejection, placeholder/default database rejection, optional alert integrations, lifespan validation ordering, and tracked example placeholder hygiene.
+- Focused E118-E120 regression: 19/19 passed.
+- Frontend strict TypeScript: GREEN.
+- Frontend ESLint: GREEN.
+- Next.js 16.4.0 optimized production build: GREEN; all established routes built successfully.
+- git diff --check clean.
+- Full Python regression: 1,640 passed, 0 failed, 2 known dependency warnings in 122.28s.
+- Implementation commit: 10ba84a5 e120 reject placeholder runtime credentials
+- E120 GREEN.
+
+VISUAL STATUS AFTER E120
+[DONE] E48-E116 frontend semantic/accessibility sequence GREEN and closed.
+[DONE] E117 Windows operator/recovery alignment GREEN.
+[DONE] E118 deterministic frontend fresh-install contract GREEN.
+[DONE] E119 production frontend dependency vulnerabilities remediated GREEN.
+[DONE] E120 fail-closed runtime placeholder/default credential validation GREEN.
+[ACTIVE] Windows-local product/release hardening.
+[ACTIVE] E29 genuine strategy evidence accumulation over time.
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence accumulation.
+[GATED] Residual Discord lifecycle producers remain gated.
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted-server deployment until explicitly re-enabled.
+
+REMAINING ROADMAP - MAJOR WORKSTREAM VIEW
+1. Deterministic local update/recovery procedure and branch/ref safety.
+2. Remaining secrets/security hygiene and documented handling; production frontend audit is clean and dev-tool findings remain explicitly gated against unsafe forced downgrade.
+3. Backend/frontend/local-Docker packaging and dependency reproducibility.
+4. Operator diagnostics/readiness/recovery verification.
+5. Final Windows-local release-readiness checklist and clean-install/recovery acceptance.
+6. Genuine E29 and Alpha/cadence/corroboration evidence continues naturally; no synthetic acceleration.
+7. Residual Discord lifecycle producers remain gated for dedicated lifecycle contracts.
+
+NEXT - EXECUTION 121
+1. Audit the Windows-local update/recovery path for deterministic Git branch/ref handling and accidental local-state overwrite risk.
+2. Harden only verified recovery/update gaps: require the intended Atlas branch/ref, fail closed on tracked local modifications where an update would overwrite work, and avoid destructive reset/clean behavior.
+3. Preserve pre-existing untracked diagnostics/temp artifacts and do not add automatic deletion.
+4. Preserve current launcher/runtime topology, dependency ownership, strategy/evidence behavior, PAPER/execution authority, Discord lifecycle gating, schedulers, and live-capital boundaries.
+5. Add source-contract tests for branch/ref safety and non-destructive update behavior.
+6. Run applicable focused/frontend/full regression.
+
+PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
