@@ -102,7 +102,7 @@ export default function Dashboard() {
   if (!live && !error) {
     return (
       <div className="min-h-screen bg-[#07080b] text-zinc-200 flex items-center justify-center">
-        <p className="text-sm tracking-wide text-zinc-500">Connecting to Atlas…</p>
+        <p role="status" aria-live="polite" aria-atomic="true" className="text-sm tracking-wide text-zinc-500">Connecting to Atlas…</p>
       </div>
     );
   }
@@ -134,7 +134,7 @@ export default function Dashboard() {
             <nav aria-label="Research navigation"><SurfaceNavLink href="/research/surfaces" variant="primary">Research Surfaces</SurfaceNavLink></nav>
             <div className="text-right text-xs text-zinc-500">
               <div>Refresh {tick === 0 ? "just now" : "every 8s"} · {ago(live?.updated_at)}</div>
-              <div role="status" aria-live="polite" className={error ? "text-rose-400" : "text-emerald-400"}>
+              <div role="status" aria-live="polite" aria-atomic="true" className={error ? "text-rose-400" : "text-emerald-400"}>
                 {error ? "API down" : "API connected"}
               </div>
             </div>
