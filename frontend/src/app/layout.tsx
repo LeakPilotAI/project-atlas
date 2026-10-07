@@ -6,8 +6,8 @@ import { SkipNavigation } from "@/app/components/SkipNavigation";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Project Atlas",
-  description: "Advanced Trading & Liquidity Analysis System",
+  title: "Command Center | Project Atlas",
+  description: "Project Atlas operator command center for runtime status and bounded research visibility.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
