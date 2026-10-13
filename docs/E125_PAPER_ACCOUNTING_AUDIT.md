@@ -120,3 +120,5 @@ Coverage maps A–E to parametrized ordinary/BE/SCRATCH cost tests; F–H to zer
 **Verdict: E125 implementation GREEN; runtime activation pending a future controlled Atlas-only restart. This is accounting correctness, not profitable-strategy readiness.**
 
 Next: E126 — audit and explicitly define cross-strategy paper risk boundaries and fail-closed behavior for unavailable/invalid accounting evidence, without tuning strategies or rewriting history. The existing UTC-day reader still excludes invalid rows rather than treating them as losses; policy for an incomplete risk window belongs in that execution.
+
+Implementation commit: `db622dc40a3965734aeddc927823c7361f27a25f`. The following documentation checkpoint records this SHA and synchronizes the complete Desktop roadmap.

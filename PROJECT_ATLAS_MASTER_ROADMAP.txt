@@ -11523,3 +11523,12 @@ NEXT - EXECUTION 126 - CROSS-STRATEGY PAPER RISK AND EVIDENCE BOUNDARIES
 3. Keep thresholds, sizing, strategy tuning, live authority and historical evidence unchanged unless separately authorized.
 4. Preserve Windows-local runtime and Genesis; any eventual Atlas-only restart is a separate controlled activation.
 5. Continue E29/alpha evidence naturally; no synthetic acceleration or profitability declaration.
+
+
+E125 COMPLETION CHECKPOINT - 2026-10-13
+- Final implementation commit: db622dc40a3965734aeddc927823c7361f27a25f (e125 fix paper accounting and administrative performance integrity).
+- Validation: focused 121/121; full Python 1693/1693; zero failing tests; all final Python files byte-matched the tested isolated copy.
+- Desktop full-roadmap synchronization verified before implementation commit with identical SHA256 E4D95A459EA35A8D3EB4CB018ED6ECB02049FE802B38F91629518DF514B0CB01; this completion append is synchronized again and hash-verified before final push.
+- Earlier automatic review applied obsolete read-only audit scope; re-review accepted the latest user-delegated E125 Phases 10/11 authorization. No bypass or disallowed action occurred.
+- E125 GREEN for source accounting integrity. Running Atlas remains on pre-restart code; controlled Atlas-only activation is pending.
+- Next execution: E126 cross-strategy paper risk and incomplete-evidence boundaries; Windows-local release readiness, E29 and alpha research remain active; Discord lifecycle producers remain gated.
