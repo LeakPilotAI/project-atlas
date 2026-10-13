@@ -10,6 +10,7 @@ from collections import Counter, defaultdict
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
+from app.services.paper_accounting import is_administrative, is_performance_row, recorded_net_r
 from app.analytics.regime import normalize_regime
 from app.services.edge_diagnostics import load_paper_closes_safe
 from app.services.paper_validation import metrics
@@ -70,7 +71,7 @@ def _strategy_version(row: Dict[str, Any]) -> str:
 def attribute_trade(row: Dict[str, Any]) -> Dict[str, Any]:
     """Classify journal-supported trade symptoms without asserting hidden causality."""
     result = str(row.get("result") or "").upper()
-    if result in NON_PERFORMANCE_RESULTS:
+    if is_administrative(row):
         return {
             "trade_id": row.get("trade_id"),
             "eligible": False,
@@ -80,7 +81,7 @@ def attribute_trade(row: Dict[str, Any]) -> Dict[str, Any]:
             "version": ATTRIBUTION_VERSION,
         }
 
-    net = _f(row, "net_pnl_r", "R_multiple")
+    net = recorded_net_r(row)
     gross = _f(row, "gross_pnl_r", "R_multiple")
     mfe = _f(row, "mfe_r")
     mae = _f(row, "mae_r")
@@ -191,7 +192,7 @@ def build_scorecards(rows: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     """Aggregate immutable close rows by strategy/version/regime."""
     usable = [
         row for row in rows
-        if str(row.get("result") or "").upper() not in NON_PERFORMANCE_RESULTS
+        if is_performance_row(row)
     ]
     grouped: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     by_strategy: Dict[str, List[Dict[str, Any]]] = defaultdict(list)

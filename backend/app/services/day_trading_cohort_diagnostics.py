@@ -8,11 +8,15 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Dict, Iterable
 
+from app.services.paper_accounting import is_performance_row, recorded_net_r
 from app.services.edge_diagnostics import load_paper_closes_safe
 
 
 def _r(row: Dict[str, Any]) -> float:
-    return float(row.get("net_pnl_r", row.get("R_multiple", 0.0)) or 0.0)
+    value = recorded_net_r(row)
+    if value is None:
+        raise ValueError("Missing or invalid paper result")
+    return value
 
 
 def _summary(rows: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
@@ -38,6 +42,7 @@ def _group(rows: list[Dict[str, Any]], key_fn) -> list[Dict[str, Any]]:
 
 
 def build_day_trading_cohort_diagnostics(rows: list[Dict[str, Any]]) -> Dict[str, Any]:
+    rows = [r for r in rows if is_performance_row(r)]
     return {
         "title": "ATLAS DAY TRADING PAPER COHORT DIAGNOSTICS",
         "overall": _summary(rows),

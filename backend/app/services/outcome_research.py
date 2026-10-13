@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+from app.services.paper_accounting import is_performance_row
 from app.analytics.regime import normalize_regime
 
 R_MILESTONES = (0.5, 1.0, 1.5, 1.8, 2.0)
@@ -127,6 +128,8 @@ def load_paper_closes(path: Optional[Path] = None, *, session_only: bool = False
             continue
         if str(row.get("trade_type") or "PAPER").upper() != "PAPER":
             continue
+        if not is_performance_row(row):
+            continue
         if started:
             ts = str(row.get("exit_timestamp") or row.get("timestamp") or "")
             if ts < str(started):
@@ -157,7 +160,8 @@ def load_shadow_resolved(path: Optional[Path] = None) -> List[Dict[str, Any]]:
 
 
 def paper_performance(closes: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
-    rows = closes if closes is not None else load_paper_closes()
+    rows = [r for r in (closes if closes is not None else load_paper_closes())
+            if is_performance_row(r)]
     base = _bucket_stats(rows)
     rs: List[float] = []
     equity: List[float] = []

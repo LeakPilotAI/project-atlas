@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 import math
 from statistics import median
 
+from app.services.paper_accounting import is_administrative
+
 
 def _version(row):
     features = row.get("features")
@@ -43,7 +45,7 @@ def execution_model_cohorts(rows):
         # Duplicate identical closes count once. Conflicting closes stay unresolved.
         unique_closes = {repr(sorted(row.items())): row for row in closes}
         close = next(iter(unique_closes.values())) if len(unique_closes) == 1 else None
-        interrupted = close and (close.get("session_roll") or str(close.get("result") or "").upper() in {"SESSION_ROLL", "INTERRUPTED"})
+        interrupted = close and is_administrative(close)
         r = None
         if close and not interrupted and len(versions) <= 1:
             raw = close.get("net_pnl_r")

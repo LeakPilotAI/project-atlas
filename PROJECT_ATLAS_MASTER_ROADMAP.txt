@@ -11460,3 +11460,66 @@ NEXT - EXECUTION 125
 6. Keep VPS/Ubuntu/systemd/hosted-server deployment explicitly out of scope.
 
 PERMANENT ROADMAP DISCIPLINE REMAINS IN FORCE: update canonical roadmap append-only, visual status, Desktop master, commits/push and exact SHA after every GREEN execution; never manufacture evidence/readiness.
+
+
+EXECUTION 125 - PAPER ACCOUNTING INTEGRITY - GREEN - 2026-10-13
+- Initial verified HEAD: f61a1f2282cbb63cb041839f82e712cb97d735d1; branch chatgpt/atlas-rebuild-v1. Tracked working tree initially clean; unrelated untracked artifacts preserved.
+- User supersedes prior E125 release-checklist plan with complete paper accounting audit/remediation; Windows-local release readiness remains active.
+- Root causes: BE/SCRATCH overrides erased modeled fees/slippage; falsy zero net fell through to gross; explicit-null research fallback differed; administrative closes leaked into research/E29 performance.
+- Genuine BE/SCRATCH retain calculated gross and cost-bearing net; SESSION_ROLL and graceful INTERRUPTED remain non-performance and non-live. No strategy thresholds, filters, sizing, risk allocation, or execution authority changed.
+- Shared strict reader preserves zero and uses legacy gross only for missing/null net. Invalid/nonfinite/missing-both results remain unknown. Journal exposes invalid_results; research/archive exclude invalid records. Scratch labels remain distinct from economic net.
+- Production files changed:
+  backend/app/api/archive.py
+  backend/app/services/day_trading_cohort_diagnostics.py
+  backend/app/services/e26_attribution.py
+  backend/app/services/e29_forward_scorecard.py
+  backend/app/services/edge_diagnostics.py
+  backend/app/services/outcome_research.py
+  backend/app/services/paper_attribution.py
+  backend/app/services/paper_execution_cohorts.py
+  backend/app/services/paper_journal.py
+  backend/app/services/paper_risk_window.py
+  backend/app/services/v2_setup_attribution.py
+  backend/app/services/paper_accounting.py
+- Test files changed:
+  tests/test_quality_dips_v2_operational_closure.py
+  tests/test_windows_desktop_integration_scripts.py
+  tests/test_e125_paper_accounting.py
+- Detailed report: docs/E125_PAPER_ACCOUNTING_AUDIT.md (cohorts, all strategy tables, windows, consumer inventory, test history and limitations).
+- Fixed read-only historical snapshot: 2026-10-13T11:50:22.923880Z / 06:50:22.923880 CDT; 11564 valid rows, zero malformed, 1286 unique opens, 1284 unique closes, zero duplicate events, two unmatched opens.
+- Four SESSION_ROLL + 49 INTERRUPTED excluded: 1231 genuine closes, recorded net -122.9494R, PF 0.828068, realized max DD 196.9301R. Original naive 1284 count retained only for comparison.
+- Since 2026-10-08T14:10:00Z: 100 recorded closes, 96 genuine closes; recorded net -3.9019R, PF 0.849608, realized max DD 5.2109R.
+- BE cost sensitivity: 92 all-time / 6 recent genuine BE, zero genuine SCRATCH labels; modeled understatement 12.3390R / 0.8840R. Research-only adjusted net -135.2884R / -4.7859R. No ledger values rewritten.
+- Recent strategy results after administrative exclusion: micro 18 closes +1.9083R recorded, +1.0243R cost sensitivity; setup mirror 78 closes -5.8102R. These are not profitability certification.
+- Final focused: 121 passed, zero failed. Final full Python: 1693 passed, zero failed, two dependency deprecation warnings, 43.60s.
+- Initial full run identified two pre-existing lifecycle source-test failures (1691 passed / 2 failed); reproduced against byte-equivalent f61a1f22. Updated stale teardown expectations to stricter exact-container/volume preservation assertions; no Windows production script altered.
+- Development failures (internal Windows test socket restriction, attribution variable, import placement) were resolved before final gates; no failures waived.
+- Ruff full checks passed on new helper/tests; critical E9/F63/F7/F82 checks passed across modified Python. git diff --check clean. Frontend unchanged; no redundant build required; existing frontend Node contracts included in full suite.
+- Tests ran in an isolated tracked-source copy without .env or production data. Audit hook blocked production evidence/credential reads and live service sockets except Python internal Windows socketpair. No synthetic records entered production evidence.
+- At 2026-10-13T12:04:50.762960Z health ok; same PID 35616 and run_id 63e6113d-5a6c-4e1f-baf7-4c45d5585388, no auto-reload. Historical prefix 6724297 bytes SHA256 e9aa09eca7b004ed407d06cfcf089accdd471c3a38719b9d1d29639c62612e7e unchanged; natural appends only. Both unmatched opens still have no close.
+- Atlas not restarted. Genesis, Docker Desktop, containers, volumes, Postgres/Redis data untouched. Only identified audit-owned stalled test runners were stopped.
+- Deployment limitation: source fix requires future controlled Atlas-only restart. Current running process has NOT adopted the new accounting code.
+- Implementation commit and Desktop hash synchronization are recorded in the following append-only completion entry after commit creation.
+
+VISUAL STATUS AFTER E125
+[DONE] E117 Windows operator/recovery alignment
+[DONE] E118 frontend fresh-install contract
+[DONE] E119 frontend dependency remediation
+[DONE] E120 runtime credential validation
+[DONE] E121 safe Git update/recovery
+[DONE] E122 operator readiness diagnostics
+[DONE] E123 Docker credential handoff
+[DONE] E124 local Docker reproducibility
+[DONE] E125 accounting integrity - verified GREEN (activation pending controlled restart)
+[ACTIVE] Windows-local release readiness
+[ACTIVE] E29 genuine evidence accumulation
+[ACTIVE] Alpha/cadence/corroboration research
+[GATED] Discord lifecycle producers
+[OUT OF SCOPE] VPS/hosted deployment
+
+NEXT - EXECUTION 126 - CROSS-STRATEGY PAPER RISK AND EVIDENCE BOUNDARIES
+1. Trace ownership and intended scope of the -3R UTC-day guard versus micro strategy entries; define explicit consistent operator-facing policy before changing enforcement.
+2. Audit fail-closed behavior when accounting inputs are missing/invalid and when durable risk fallback is used.
+3. Keep thresholds, sizing, strategy tuning, live authority and historical evidence unchanged unless separately authorized.
+4. Preserve Windows-local runtime and Genesis; any eventual Atlas-only restart is a separate controlled activation.
+5. Continue E29/alpha evidence naturally; no synthetic acceleration or profitability declaration.

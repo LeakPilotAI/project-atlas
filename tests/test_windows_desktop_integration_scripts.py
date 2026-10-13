@@ -20,8 +20,13 @@ def test_launcher_is_api_served_and_preserves_docker_desktop():
 
 def test_stop_script_scopes_shutdown_to_atlas():
     text = _text("scripts/windows/Atlas-Stop.ps1")
-    assert '$env:COMPOSE_PROJECT_NAME = "atlas"' in text
-    assert 'docker stop atlas-postgres atlas-redis' in text
+    assert 'foreach ($container in @("atlas-postgres", "atlas-redis"))' in text
+    assert 'docker ps -a --filter "name=^/$container$"' in text
+    assert 'if ($exists -eq $container)' in text
+    assert 'docker stop $container' in text
+    commands = "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("#"))
+    for destructive in ("docker compose down", "docker rm", "docker volume", "wsl --shutdown"):
+        assert destructive not in commands
     assert 'Docker Desktop / Genesis were not touched.' in text
     assert 'Stop-Process -Name "Docker Desktop"' not in text
 

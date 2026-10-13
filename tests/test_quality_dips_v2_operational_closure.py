@@ -34,7 +34,15 @@ def test_desktop_stop_contract_preserves_other_apps():
     assert "Test-AtlasProcess" in stop
     assert "$rootOwned -and $serverRole" in stop
     assert "Stop-ListenPort 3000" not in stop
-    assert "docker compose down --remove-orphans" in stop
+    # f61a1f22 preserves dependency identity across stop/relaunch cycles.
+    assert 'foreach ($container in @("atlas-postgres", "atlas-redis"))' in stop
+    assert 'docker ps -a --filter "name=^/$container$"' in stop
+    assert 'if ($exists -eq $container)' in stop
+    assert 'docker stop $container' in stop
+    commands = "\n".join(line for line in stop.splitlines() if not line.lstrip().startswith("#"))
+    assert "docker compose down" not in commands
+    assert "docker rm" not in commands
+    assert "docker volume" not in commands
     assert "Docker Desktop / Genesis were not touched" in stop
 
 

@@ -9,13 +9,17 @@ from collections import defaultdict
 from statistics import median
 from typing import Any, Callable, Dict
 
+from app.services.paper_accounting import is_performance_row, recorded_net_r
 from app.services.edge_diagnostics import load_paper_closes_safe
 
 STRATEGY = "perp_setup_auto_v2_resting_limit"
 
 
 def _r(row: Dict[str, Any]) -> float:
-    return float(row.get("net_pnl_r", row.get("R_multiple", 0.0)) or 0.0)
+    value = recorded_net_r(row)
+    if value is None:
+        raise ValueError("Missing or invalid paper result")
+    return value
 
 
 def _summary(rows: list[Dict[str, Any]]) -> Dict[str, Any]:
@@ -91,7 +95,7 @@ def _stop_overshoot(rows: list[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def build_v2_setup_attribution(all_rows: list[Dict[str, Any]]) -> Dict[str, Any]:
-    rows = [row for row in all_rows if row.get("strategy") == STRATEGY]
+    rows = [row for row in all_rows if row.get("strategy") == STRATEGY and is_performance_row(row)]
     return {
         "title": "ATLAS V2 SETUP PAPER CAUSAL ATTRIBUTION",
         "strategy": STRATEGY,

@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.services.paper_accounting import is_administrative, recorded_net_r
 from app.services.paper_journal import JOURNAL_PATH, iter_jsonl
 
 
@@ -28,8 +29,7 @@ def utc_day_risk_snapshot(path: Path = JOURNAL_PATH, *, now: datetime | None = N
                 continue
             if str(row.get("trade_type") or "PAPER").upper() == "TEST":
                 continue
-            result = str(row.get("result") or "").upper()
-            if bool(row.get("session_roll")) or result in {"SESSION_ROLL", "INTERRUPTED"}:
+            if is_administrative(row):
                 continue
             raw = row.get("exit_timestamp") or row.get("timestamp")
             if not raw:
@@ -44,7 +44,9 @@ def utc_day_risk_snapshot(path: Path = JOURNAL_PATH, *, now: datetime | None = N
             if ts.date() != day:
                 continue
             try:
-                value = float(row.get("net_pnl_r") if row.get("net_pnl_r") is not None else row.get("R_multiple") or 0.0)
+                value = recorded_net_r(row)
+                if value is None:
+                    continue
             except (TypeError, ValueError):
                 continue
             net_r += value

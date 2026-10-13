@@ -20,6 +20,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
 
+from app.services.paper_accounting import is_performance_row, recorded_net_r
 from app.investment.daily_research_plan import PLAN_PATH
 from app.investment.history import load_bars
 from app.investment.paper_book import PaperBook
@@ -227,13 +228,10 @@ def _paper_trade_setup(row: dict[str, Any]) -> str:
 
 
 def _paper_trade_r(row: dict[str, Any]) -> float:
-    raw = row.get("net_pnl_r")
-    if raw is None:
-        raw = row.get("R_multiple")
-    try:
-        return float(raw or 0.0)
-    except (TypeError, ValueError):
-        return 0.0
+    value = recorded_net_r(row)
+    if value is None:
+        raise ValueError("Missing or invalid paper result")
+    return value
 
 
 def _paper_close_time(row: dict[str, Any]) -> datetime | None:
@@ -254,13 +252,7 @@ def _paper_close_time(row: dict[str, Any]) -> datetime | None:
 def _eligible_paper_close(row: dict[str, Any]) -> bool:
     if str(row.get("event") or "").lower() != "close":
         return False
-    if str(row.get("trade_type") or "PAPER").upper() == "TEST":
-        return False
-    if bool(row.get("session_roll")):
-        return False
-    if str(row.get("result") or "").upper() in {"SESSION_ROLL", "INTERRUPTED"}:
-        return False
-    return True
+    return is_performance_row(row)
 
 
 def _paper_trade_row(row: dict[str, Any]) -> dict[str, Any]:

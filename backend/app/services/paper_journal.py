@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional
 
 import structlog
 
+from app.services.paper_accounting import is_administrative, recorded_net_r
+
 log = structlog.get_logger(__name__)
 
 JOURNAL_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_journal.jsonl"
@@ -587,7 +589,7 @@ class PaperJournal:
         cost_r = (fees + slip) * 2 * (entry / risk) if risk else 0.0
         net_r = float(pnl_r) - cost_r
         result_u = str(result or "").upper()
-        if result_u in ("BE", "SCRATCH", "SESSION_ROLL"):
+        if result_u == "SESSION_ROLL":
             net_r = 0.0
         opened = p.get("entry_timestamp")
         try:
@@ -753,7 +755,7 @@ class PaperJournal:
                     continue
                 if str(row.get("trade_type") or "PAPER").upper() == "TEST":
                     continue
-                if _is_session_roll(row):
+                if is_administrative(row):
                     continue
                 prior += 1
         started = self.start_session(
@@ -800,7 +802,7 @@ class PaperJournal:
                     continue
                 if str(row.get("trade_type") or "PAPER").upper() == "TEST":
                     continue
-                if _is_session_roll(row) or str(row.get("result") or "").upper() == "INTERRUPTED":
+                if is_administrative(row):
                     continue
                 all_rows.append(row)
                 if _opened_in_session(row, started):
@@ -814,6 +816,7 @@ class PaperJournal:
                 "candidates_path": str(CANDIDATE_PATH),
                 "session": session,
                 "all_time": {
+                    "invalid_results": all_time["invalid_results"],
                     "closed": all_time["closed"],
                     "wins": all_time["wins"],
                     "losses": all_time["losses"],
@@ -838,13 +841,19 @@ class PaperJournal:
         live_sum_r = 0.0
         scalp_n = scalp_wins = scalp_losses = scalp_scratch = 0
         scalp_sum_r = 0.0
+        invalid_results = 0
         for row in rows:
+            if is_administrative(row) or str(row.get("trade_type") or "PAPER").upper() == "TEST":
+                continue
+            r = recorded_net_r(row)
+            if r is None:
+                invalid_results += 1
+                continue
             n_closed += 1
-            r = float(row.get("net_pnl_r") or row.get("R_multiple") or 0)
             sum_r += r
             sum_mfe += float(row.get("mfe_r") or 0)
             sum_mae += float(row.get("mae_r") or 0)
-            is_scratch = bool(row.get("scratch")) or str(row.get("result") or "").upper() in (
+            is_scratch = r == 0.0 or bool(row.get("scratch")) or str(row.get("result") or "").upper() in (
                 "BE",
                 "SCRATCH",
             )
@@ -874,6 +883,7 @@ class PaperJournal:
         live_closed = live_wins + live_losses
         scalp_wr = (scalp_wins / scalp_n) if scalp_n else 0.0
         return {
+            "invalid_results": invalid_results,
             "closed": closed,
             "wins": wins,
             "losses": losses,

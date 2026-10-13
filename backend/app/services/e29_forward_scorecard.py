@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable
 
+from app.services.paper_accounting import is_performance_row, recorded_net_r
 from app.services.e27_preregistration import (
     MIN_CLOSED_PER_ARM, MIN_DISTINCT_SYMBOLS, MIN_FORWARD_DAYS,
     MAX_SINGLE_SYMBOL_SHARE, MAX_EXTREME_LOSS_R,
@@ -75,7 +76,11 @@ def sync_membership(rows: Iterable[Dict[str,Any]], path: Path=MEMBERSHIP_PATH):
     return existing,added
 
 
-def _r(row): return float(row.get("net_pnl_r",row.get("R_multiple",0)) or 0)
+def _r(row):
+    value = recorded_net_r(row)
+    if value is None:
+        raise ValueError("Missing or invalid paper result")
+    return value
 
 
 def _overshoot(row):
@@ -116,7 +121,7 @@ def _metrics(closes):
 
 
 def build_scorecard(rows, memberships):
-    closes={str(r.get("trade_id") or ""):r for r in rows if r.get("event")=="close"}
+    closes={str(r.get("trade_id") or ""):r for r in rows if r.get("event")=="close" and is_performance_row(r)}
     baseline=[closes[t] for t,m in memberships.items() if m.get("baseline_member") and t in closes]
     challenger=[closes[t] for t,m in memberships.items() if m.get("challenger_member") and t in closes]
     b,c=_metrics(baseline),_metrics(challenger)
