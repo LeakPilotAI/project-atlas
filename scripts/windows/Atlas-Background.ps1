@@ -84,6 +84,27 @@ function Test-IdentityRecord($Record, [string]$ExpectedExecutable, [string]$Requ
     )
 }
 
+function Test-StartCommandLine([string]$CommandLine) {
+    if ([string]::IsNullOrWhiteSpace($CommandLine)) { return $false }
+    $managerPattern = [regex]::Escape($ManagerPath)
+    $directPattern = '(?i)-File\s+["'']?' + $managerPattern +
+        '["'']?\s+-Action\s+["'']?Start["'']?(?:\s|$)'
+    if ($CommandLine -match $directPattern) { return $true }
+
+    $encoded = [regex]::Match($CommandLine, '(?i)-EncodedCommand\s+["'']?([A-Za-z0-9+/=]+)')
+    if (-not $encoded.Success) { return $false }
+    try {
+        $script = [Text.Encoding]::Unicode.GetString(
+            [Convert]::FromBase64String($encoded.Groups[1].Value)
+        )
+    } catch {
+        return $false
+    }
+    $wrapperPattern = '(?i)&\s+["'']?' + $managerPattern +
+        '["'']?\s+-Action\s+["'']?Start["'']?(?:\s|$)'
+    return ($script -match $wrapperPattern)
+}
+
 function Get-ApiListeners {
     try {
         $listeners = @(Get-NetTCPConnection -State Listen -ErrorAction Stop |
@@ -435,8 +456,7 @@ function Invoke-BackgroundWorker {
     $lock = Read-JsonFile $LockPath
     if (-not $lock -or [string]$lock.run_id -cne $RunId -or $lock.root -ine $Root -or
         $lock.phase -cne "launching" -or $lock.executable -ine $PowerShellPath -or
-        [string]$lock.command_line -notmatch '(?i)-Action\s+Start' -or
-        $lock.command_line.IndexOf($ManagerPath, [StringComparison]::OrdinalIgnoreCase) -lt 0) {
+        -not (Test-StartCommandLine ([string]$lock.command_line))) {
         throw "Background start lock does not match the requested unique run ID."
     }
     $workerIdentity = Get-ProcessIdentity $PID

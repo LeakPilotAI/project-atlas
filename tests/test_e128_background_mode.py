@@ -43,6 +43,53 @@ def test_e128_background_duplicate_or_stale_starts_fail_closed():
     assert "Port 8000 is occupied by an unowned process" in text
 
 
+def test_e128_worker_verifies_gui_encoded_start_command_line():
+    manager_path = str(MANAGER).replace("'", "''")
+    output = _run_ownership_powershell(rf"""
+$sourcePath = '{manager_path}'
+$ManagerPath = 'D:\Atlas\scripts\windows\Atlas-Background.ps1'
+$tokens = $null
+$parseErrors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile(
+    $sourcePath, [ref]$tokens, [ref]$parseErrors
+)
+if ($parseErrors.Count -gt 0) {{ throw 'Could not parse the production background manager.' }}
+$definition = $ast.Find({{
+    param($node)
+    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+        $node.Name -eq 'Test-StartCommandLine'
+}}, $true)
+if (-not $definition) {{ throw 'Test-StartCommandLine was not found.' }}
+Invoke-Expression $definition.Extent.Text
+$wrapper = "& '$ManagerPath' -Action 'Start' -Json"
+$encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($wrapper))
+$guiCommandLine = '"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -EncodedCommand ' + $encoded
+if (-not (Test-StartCommandLine $guiCommandLine)) {{
+    throw 'The encoded GUI manager invocation was not recognized as the verified Start action.'
+}}
+$directCommandLine = '"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -File "' +
+    $ManagerPath + '" -Action Start -Json'
+if (-not (Test-StartCommandLine $directCommandLine)) {{
+    throw 'The direct manager Start invocation was not recognized.'
+}}
+$wrongManager = "& 'D:\Other\Atlas-Background.ps1' -Action 'Start' -Json"
+$wrongEncoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($wrongManager))
+if (Test-StartCommandLine ('powershell.exe -EncodedCommand ' + $wrongEncoded)) {{
+    throw 'A different manager path was accepted.'
+}}
+$wrongAction = "& '$ManagerPath' -Action 'Status' -Json"
+$wrongActionEncoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($wrongAction))
+if (Test-StartCommandLine ('powershell.exe -EncodedCommand ' + $wrongActionEncoded)) {{
+    throw 'A non-Start action was accepted.'
+}}
+if (Test-StartCommandLine 'powershell.exe -EncodedCommand not-valid-base64') {{
+    throw 'A malformed encoded command was accepted.'
+}}
+Write-Output 'PASS'
+""")
+    assert "PASS" in output
+
+
 def test_e128_unverified_dead_start_lock_stays_ambiguous_and_is_preserved(tmp_path):
     runtime_dir = str(tmp_path).replace("'", "''")
     manager_path = str(MANAGER).replace("'", "''")
@@ -139,7 +186,11 @@ def test_e128_free_port_and_missing_owner_state_enables_manual_start():
     assert "if ($listeners.Count -gt 0)" in state
     assert "$listeners = @(Get-ApiListeners)" in state
     assert 'return @{ state="STOPPED"; message="No Atlas background run is recorded." }' in state
+    apply_status = controls.split("function Apply-AtlasStatus($Result) {", 1)[1].split("\n}\n", 1)[0]
+    assert 'Set-StatusMessage "$($Result.state): $($Result.message)" $color' in apply_status
     assert "$startButton.Enabled = ($Result.state -eq \"STOPPED\")" in controls
+    assert '$stopButton.Enabled = ($Result.state -eq "running")' in apply_status
+    assert "$statusButton.Enabled = $true" in apply_status
 
 
 def test_e128_unknown_or_duplicate_port_owners_remain_ambiguous():
