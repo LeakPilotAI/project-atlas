@@ -4,7 +4,8 @@ function Test-AtlasApiProcessOwnership(
     $ApiProcess,
     $OwnerProcess,
     [string]$ExpectedExecutable,
-    [string]$ExpectedRoot
+    [string]$ExpectedRoot,
+    [string]$ExpectedBaseExecutable = ""
 ) {
     if (-not $Owner -or -not $Runtime -or -not $ApiProcess) { return $false }
     if ([string]$Owner.root -ine $ExpectedRoot -or
@@ -15,7 +16,9 @@ function Test-AtlasApiProcessOwnership(
 
     $apiExecutable = [string]$ApiProcess.ExecutablePath
     $apiCommand = [string]$ApiProcess.CommandLine
-    if ($apiExecutable -ine $ExpectedExecutable -or
+    $usesBaseInterpreter = -not [string]::IsNullOrWhiteSpace($ExpectedBaseExecutable) -and
+        $apiExecutable -ieq $ExpectedBaseExecutable
+    if (($apiExecutable -ine $ExpectedExecutable -and -not $usesBaseInterpreter) -or
         $apiCommand -notmatch '(?i)uvicorn\s+app\.main:app' -or
         $apiCommand.IndexOf($ExpectedRoot + "\", [StringComparison]::OrdinalIgnoreCase) -lt 0) {
         return $false
@@ -44,10 +47,7 @@ function Test-AtlasApiProcessOwnership(
         if ($launcherPidProperty -and [int]$launcherPidProperty.Value -gt 4 -and
             [int]$launcherPidProperty.Value -ne [int]$Runtime.pid) {
             $launcherPid = [int]$launcherPidProperty.Value
-            if (-not $OwnerProcess -or
-                [int]$OwnerProcess.ProcessId -ne $launcherPid) {
-                return $true
-            }
+            if (-not $OwnerProcess -or [int]$OwnerProcess.ProcessId -ne $launcherPid) { return $false }
             try {
                 $launcherCreated = ([datetime]$OwnerProcess.CreationDate).ToUniversalTime()
             } catch {
@@ -55,13 +55,18 @@ function Test-AtlasApiProcessOwnership(
             }
             if ([string]$Owner.launcher_created_utc -cne $launcherCreated.ToString("o") -or
                 [string]$Owner.launcher_executable -ine [string]$OwnerProcess.ExecutablePath -or
-                [string]$Owner.launcher_command_line -cne [string]$OwnerProcess.CommandLine) {
+                [string]$Owner.launcher_executable -ine $ExpectedExecutable -or
+                [string]$Owner.launcher_command_line -cne [string]$OwnerProcess.CommandLine -or
+                [string]$Owner.launcher_command_line -notmatch '(?i)-m\s+uvicorn\s+app\.main:app' -or
+                [string]$Owner.launcher_command_line.IndexOf(
+                    $ExpectedRoot + "\", [StringComparison]::OrdinalIgnoreCase
+                ) -lt 0) {
                 return $false
             }
-            return ([int]$ApiProcess.ParentProcessId -eq $launcherPid -or
-                [int]$OwnerProcess.ParentProcessId -eq [int]$Runtime.pid)
+            return ([int]$ApiProcess.ParentProcessId -eq $launcherPid)
         }
-        return $true
+        return (-not $usesBaseInterpreter -and
+            (-not $launcherPidProperty -or [int]$launcherPidProperty.Value -le 4))
     }
 
     if ($OwnerProcess) {
@@ -71,14 +76,18 @@ function Test-AtlasApiProcessOwnership(
             return $false
         }
         if ([string]$Owner.created_utc -cne $ownerCreated.ToString("o") -or
-            [int]$OwnerProcess.ProcessId -ne [int]$Owner.pid) {
+            [int]$OwnerProcess.ProcessId -ne [int]$Owner.pid -or
+            [string]$OwnerProcess.ExecutablePath -ine $ExpectedExecutable -or
+            [string]$OwnerProcess.CommandLine -notmatch '(?i)-m\s+uvicorn\s+app\.main:app' -or
+            [string]$OwnerProcess.CommandLine.IndexOf(
+                $ExpectedRoot + "\", [StringComparison]::OrdinalIgnoreCase
+            ) -lt 0) {
             return $false
         }
-        return ([int]$ApiProcess.ParentProcessId -eq [int]$Owner.pid -or
-            [int]$OwnerProcess.ParentProcessId -eq [int]$Runtime.pid)
+        return ([int]$ApiProcess.ParentProcessId -eq [int]$Owner.pid)
     }
 
-    return $true
+    return (-not $usesBaseInterpreter)
 }
 
 function Test-AtlasDeadSession(

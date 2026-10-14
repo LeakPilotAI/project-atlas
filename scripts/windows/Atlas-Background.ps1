@@ -25,8 +25,32 @@ $ManagerPath = Join-Path $PSScriptRoot "Atlas-Background.ps1"
 $ReadyPath = Join-Path $PSScriptRoot "Atlas-Ready.ps1"
 $ComposePath = Join-Path $Root "docker-compose.yml"
 $PowerShellPath = Join-Path $PSHOME "powershell.exe"
+$VenvBasePy = ""
 Import-Module (Join-Path $PSScriptRoot "Atlas-ContainerOwnership.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-ProcessOwnership.psm1") -Force
+
+function Get-VenvBaseExecutable([string]$VenvExecutable) {
+    $configPath = Join-Path (Split-Path (Split-Path $VenvExecutable -Parent) -Parent) "pyvenv.cfg"
+    if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) { return "" }
+    $configText = Get-Content -LiteralPath $configPath -Raw -ErrorAction Stop
+    $homeMatch = [regex]::Match($configText, '(?m)^\s*home\s*=\s*(.+?)\s*$')
+    $executableMatch = [regex]::Match($configText, '(?m)^\s*executable\s*=\s*(.+?)\s*$')
+    if (-not $homeMatch.Success -or -not $executableMatch.Success) { return "" }
+    try {
+        $venvHome = [System.IO.Path]::GetFullPath($homeMatch.Groups[1].Value.Trim()).TrimEnd("\")
+        $executable = [System.IO.Path]::GetFullPath($executableMatch.Groups[1].Value.Trim())
+    } catch {
+        return ""
+    }
+    if ($executable.IndexOf($venvHome + "\", [StringComparison]::OrdinalIgnoreCase) -ne 0 -or
+        [System.IO.Path]::GetFileName($executable) -notin @("python.exe", "pythonw.exe") -or
+        -not (Test-Path -LiteralPath $executable -PathType Leaf)) {
+        return ""
+    }
+    return (Resolve-Path -LiteralPath $executable -ErrorAction Stop).Path
+}
+
+$VenvBasePy = Get-VenvBaseExecutable $VenvPy
 
 function Read-JsonFile([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
@@ -253,7 +277,7 @@ function Get-VerifiedState {
         })
         if ($unexpectedProcesses.Count -gt 0 -or
             -not (Test-AtlasApiProcessOwnership $owner $runtime $apiProcess[0] `
-                $ownerProcess $VenvPy $Root)) {
+                $ownerProcess $VenvPy $Root $VenvBasePy)) {
             return @{ state="AMBIGUOUS"; message="API process identity, creation time, parent relationship, or run ownership does not match; no process was touched." }
         }
 
@@ -282,13 +306,20 @@ function Get-VerifiedState {
         $owner.executable = [string]$apiProcess[0].ExecutablePath
         $owner.command_line = [string]$apiProcess[0].CommandLine
         $owner.created_utc = ([datetime]$apiProcess[0].CreationDate).ToUniversalTime().ToString("o")
+        $effectiveState = [string]$owner.state
+        $message = "Verified Atlas background run $($owner.run_id), PID $($runtime.pid)."
+        if ($owner.state -eq "stop_timeout" -and
+            -not (Test-Path -LiteralPath $StopLockPath -PathType Leaf) -and
+            [string]$owner.last_error -match '(?i)no process was signalled') {
+            $effectiveState = "running"
+            $message = "Verified Atlas background run $($owner.run_id), PID $($runtime.pid). A previous ownership-check failure did not signal the process."
+        } elseif ($owner.state -eq "stop_timeout") {
+            $message = "Graceful shutdown timed out; Atlas API PID $($owner.pid) remains. No forced termination was attempted. Operator intervention is required. $($owner.last_error)"
+        }
+        $owner.state = $effectiveState
         return @{
-            state = [string]$owner.state
-            message = if ($owner.state -eq "stop_timeout") {
-                "Graceful shutdown timed out; Atlas API PID $($owner.pid) remains. No forced termination was attempted. Operator intervention is required. $($owner.last_error)"
-            } else {
-                "Verified Atlas background run $($owner.run_id), PID $($owner.pid)."
-            }
+            state = $effectiveState
+            message = $message
             run_id = [string]$owner.run_id
             pid = [int]$runtime.pid
             owner = $owner
@@ -408,10 +439,33 @@ function Remove-OwnedFile([string]$Path, [string]$ExpectedRunId) {
     Remove-Item -LiteralPath $Path -Force
 }
 
+function Test-VerifiedApiIdentity($Owner) {
+    $runtime = Read-JsonFile $RuntimePath
+    if (-not $runtime -or [string]$runtime.run_id -cne [string]$Owner.run_id -or
+        [int]$runtime.pid -ne [int]$Owner.pid) { return $false }
+    $apiProcesses = @(Get-AtlasApiProcesses | Where-Object {
+        [int]$_.ProcessId -eq [int]$runtime.pid
+    })
+    if ($apiProcesses.Count -ne 1) { return $false }
+    $listeners = @(Get-ApiListeners)
+    if ($listeners.Count -ne 1 -or $listeners[0] -ne [int]$runtime.pid) { return $false }
+    $launcherPid = 0
+    if ($Owner.PSObject.Properties["launcher_pid"]) {
+        $launcherPid = [int]$Owner.launcher_pid
+    }
+    $launcher = if ($launcherPid -gt 4 -and $launcherPid -ne [int]$runtime.pid) {
+        Get-CimProcess $launcherPid
+    } else {
+        $null
+    }
+    return (Test-AtlasApiProcessOwnership $Owner $runtime $apiProcesses[0] `
+        $launcher $VenvPy $Root $VenvBasePy)
+}
+
 function Stop-OwnedApi($Owner, [int]$TimeoutSeconds = 30) {
     if (-not (Get-ProcessIdentity ([int]$Owner.pid))) { return $true }
-    if (-not (Test-IdentityRecord $Owner $VenvPy "uvicorn app.main:app")) {
-        throw "Atlas PID identity changed before shutdown; no process was signalled."
+    if (-not (Test-VerifiedApiIdentity $Owner)) {
+        throw "Atlas API process identity or run ownership changed before shutdown; no process was signalled."
     }
     $existingRequest = Read-JsonFile $StopPath
     if ($existingRequest -and [string]$existingRequest.run_id -cne [string]$Owner.run_id) {
@@ -430,8 +484,8 @@ function Stop-OwnedApi($Owner, [int]$TimeoutSeconds = 30) {
         Start-Sleep -Milliseconds 500
     } while ((Get-Date) -lt $deadline)
 
-    if (-not (Test-IdentityRecord $Owner $VenvPy "uvicorn app.main:app")) {
-        throw "Atlas PID identity changed during shutdown timeout; refusing fallback termination."
+    if (-not (Test-VerifiedApiIdentity $Owner)) {
+        throw "Atlas API process identity or run ownership changed during shutdown timeout; refusing fallback termination."
     }
     $Owner.state = "stop_timeout"
     $Owner.last_error = "Graceful shutdown exceeded $TimeoutSeconds seconds. The process and runtime ownership were retained; operator intervention is required. Inspect Atlas logs and reconcile PAPER state before taking manual action."
@@ -560,7 +614,7 @@ function Invoke-BackgroundWorker {
                         $owner.started_utc = [string]$runtime.started_utc
                     }
                     if (Test-AtlasApiProcessOwnership $owner $runtime $apiProcess `
-                        $ownerProcess $VenvPy $Root) {
+                        $ownerProcess $VenvPy $Root $VenvBasePy) {
                         break
                     }
                     throw "The API PID, process identity, creation time, or launcher relationship could not be verified."

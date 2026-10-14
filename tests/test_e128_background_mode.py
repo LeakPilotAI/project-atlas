@@ -147,11 +147,66 @@ Write-Output 'PASS'
     assert "PASS" in output
 
 
+def test_e128_verified_live_api_recovers_false_stop_timeout_state(tmp_path):
+    runtime_dir = str(tmp_path).replace("'", "''")
+    manager_path = str(MANAGER).replace("'", "''")
+    output = _run_ownership_powershell(rf"""
+$runtimeDir = '{runtime_dir}'
+$sourcePath = '{manager_path}'
+$Root = 'D:\Atlas'
+$OwnerPath = Join-Path $runtimeDir 'atlas-background-owner.json'
+$RuntimePath = Join-Path $runtimeDir 'runtime.json'
+$LockPath = Join-Path $runtimeDir 'atlas-background-start.lock'
+$StopLockPath = Join-Path $runtimeDir 'atlas-background-stop.lock'
+$RecoveryLockPath = Join-Path $runtimeDir 'atlas-background-recovery.lock'
+$VenvPy = 'D:\Atlas\backend\.venv\Scripts\python.exe'
+$ManagerPath = 'D:\Atlas\scripts\windows\Atlas-Background.ps1'
+$PowerShellPath = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+$run = '867a9b46-e377-4018-b42f-010a71332caa'
+$owner = [pscustomobject]@{{
+    schema_version=1; root=$Root; run_id=$run; pid=31552; state='stop_timeout'
+    created_utc='2026-10-14T07:41:51.2012980Z'
+    started_utc='2026-10-14T07:41:55.418405+00:00'
+    executable='C:\Python312\python.exe'
+    command_line='"C:\Python312\python.exe" -m uvicorn app.main:app'
+    launcher_pid=24880; launcher_created_utc='2026-10-14T07:41:51.1660240Z'
+    launcher_executable=$VenvPy
+    launcher_command_line='"D:\Atlas\backend\.venv\Scripts\python.exe" -m uvicorn app.main:app'
+    last_error='The API PID identity could not be verified; cleanup: Atlas PID identity changed before shutdown; no process was signalled.'
+}}
+$runtime = [pscustomobject]@{{
+    pid=31552; run_id=$run; started_utc='2026-10-14T07:41:55.418405+00:00'
+}}
+$owner | ConvertTo-Json | Set-Content -LiteralPath $OwnerPath
+$runtime | ConvertTo-Json | Set-Content -LiteralPath $RuntimePath
+function Read-JsonFile([string]$Path) {{ Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }}
+function Get-AtlasApiProcesses {{ return ,@([pscustomobject]@{{ProcessId=31552;ParentProcessId=24880;ExecutablePath='C:\Python312\python.exe';CommandLine='"C:\Python312\python.exe" -m uvicorn app.main:app';CreationDate=[datetime]::Parse('2026-10-14T07:41:51.2012980Z')}}) }}
+function Get-ApiListeners {{ return ,@(31552) }}
+function Get-CimProcess([int]$ProcessId) {{ return [pscustomobject]@{{ProcessId=24880;ParentProcessId=28384;ExecutablePath=$VenvPy;CommandLine=$owner.launcher_command_line;CreationDate=[datetime]::Parse('2026-10-14T07:41:51.1660240Z')}} }}
+function Test-AtlasApiProcessOwnership($OwnerRecord,$RuntimeRecord,$ApiProcess,$OwnerProcess,[string]$ExpectedExecutable,[string]$ExpectedRoot,[string]$ExpectedBaseExecutable) {{ return $true }}
+$tokens=$null; $parseErrors=$null
+$ast=[System.Management.Automation.Language.Parser]::ParseFile($sourcePath,[ref]$tokens,[ref]$parseErrors)
+if($parseErrors.Count -gt 0) {{ throw 'Production manager did not parse.' }}
+$definition=$ast.Find({{param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-VerifiedState'}},$true)
+if(-not $definition) {{ throw 'Get-VerifiedState was not found.' }}
+Invoke-Expression $definition.Extent.Text
+$state=Get-VerifiedState
+if($state.state -ne 'running' -or $state.owner.state -ne 'running') {{
+    throw "Verified API did not report RUNNING: $($state | ConvertTo-Json -Compress)"
+}}
+if((Read-JsonFile $OwnerPath).state -ne 'stop_timeout') {{
+    throw 'Status unexpectedly mutated persisted ownership metadata.'
+}}
+Write-Output 'PASS'
+""")
+    assert "PASS" in output
+
+
 def test_e128_background_stop_uses_graceful_run_id_handshake_without_forced_fallback():
     text = _text(MANAGER)
     assert "Write-JsonAtomic @{run_id=[string]$Owner.run_id} $StopPath" in text
     assert "Start-Sleep -Milliseconds 500" in text
-    assert "Test-IdentityRecord $Owner $VenvPy" in text
+    assert "Test-VerifiedApiIdentity $Owner" in text
     assert "Stop-Process" not in text
     assert "No forced termination was attempted" in text
     assert "docker stop" not in text
@@ -684,7 +739,7 @@ if (-not $files -or $files.state -ne 'ready') {{
     throw "Manager streams did not become available: $($files.reason)"
 }}
 $completion = ConvertFrom-AtlasManagerCompletion 'Status' $files.output $files.error_output $files.exit_code
-if (-not $completion.success -or $completion.result.state -notin @('STOPPED','AMBIGUOUS')) {{
+if (-not $completion.success -or $completion.result.state -notin @('STOPPED','RUNNING','AMBIGUOUS')) {{
     throw "Status child was not accepted: $($completion.error)"
 }}
 Write-Output "PASS; iteration=$iteration; state=$($completion.result.state); Process.ExitCodeNull=$($null -eq $process.ExitCode); Marker=$($files.exit_code.Trim())"
@@ -694,10 +749,14 @@ Remove-Item $stdout,$stderr,$exitFile -Force
 """
     completed = subprocess.run(
         [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
         timeout=30,
+    )
+    assert completed.returncode == 0, (
+        f"PowerShell status harness failed ({completed.returncode}).\n"
+        f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
     )
     assert completed.stdout.count("PASS; iteration=") == 3
     assert completed.stdout.count("Marker=0") == 3
@@ -775,6 +834,51 @@ $api.ParentProcessId = 31204
 $launcher.CreationDate = [datetime]::Parse('2026-10-15T06:29:37.3959580Z')
 if (Test-AtlasApiProcessOwnership $owner $runtime $api $launcher $exe $root) {
     throw 'Reused launcher PID with a changed creation time was accepted.'
+}
+Write-Output 'PASS'
+""")
+    assert "PASS" in output
+
+
+def test_e128_windows_venv_base_interpreter_child_requires_verified_launcher():
+    output = _run_ownership_powershell(r"""
+$root = 'D:\Work\Project Atlas'
+$venvExe = 'D:\Work\Project Atlas\backend\.venv\Scripts\python.exe'
+$baseExe = 'C:\Users\renal\AppData\Local\Programs\Python\Python312\python.exe'
+$run = '867a9b46-e377-4018-b42f-010a71332caa'
+$apiCreated = [datetime]::Parse('2026-10-14T07:41:51.2012980Z')
+$launcherCreated = [datetime]::Parse('2026-10-14T07:41:51.1660240Z')
+$launcherCommand = '"D:\Work\Project Atlas\backend\.venv\Scripts\python.exe" -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-config "D:\Work\Project Atlas\deploy\logging-desktop.json"'
+$apiCommand = '"C:\Users\renal\AppData\Local\Programs\Python\Python312\python.exe" -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-config "D:\Work\Project Atlas\deploy\logging-desktop.json"'
+$owner = [pscustomobject]@{
+    root=$root; run_id=$run; pid=31552; created_utc=$apiCreated.ToUniversalTime().ToString('o')
+    started_utc='2026-10-14T07:41:55.418405+00:00'; state='stop_timeout'
+    launcher_pid=24880; launcher_created_utc=$launcherCreated.ToUniversalTime().ToString('o')
+    launcher_executable=$venvExe; launcher_command_line=$launcherCommand
+}
+$runtime = [pscustomobject]@{pid=31552; run_id=$run; started_utc=$owner.started_utc}
+$api = [pscustomobject]@{
+    ProcessId=31552; ParentProcessId=24880; ExecutablePath=$baseExe
+    CommandLine=$apiCommand; CreationDate=$apiCreated
+}
+$launcher = [pscustomobject]@{
+    ProcessId=24880; ParentProcessId=28384; ExecutablePath=$venvExe
+    CommandLine=$launcherCommand; CreationDate=$launcherCreated
+}
+if (-not (Test-AtlasApiProcessOwnership $owner $runtime $api $launcher $venvExe $root $baseExe)) {
+    throw 'The actual Windows venv redirector child/parent identity was rejected.'
+}
+$api.ParentProcessId = 777
+if (Test-AtlasApiProcessOwnership $owner $runtime $api $launcher $venvExe $root $baseExe) {
+    throw 'Base interpreter with an unrelated parent was accepted.'
+}
+$api.ParentProcessId = 24880
+if (Test-AtlasApiProcessOwnership $owner $runtime $api $launcher $venvExe $root 'C:\Other\python.exe') {
+    throw 'Base interpreter outside pyvenv.cfg identity was accepted.'
+}
+$launcher.CommandLine = $launcherCommand + ' --foreign'
+if (Test-AtlasApiProcessOwnership $owner $runtime $api $launcher $venvExe $root $baseExe) {
+    throw 'A launcher command line different from the owner record was accepted.'
 }
 Write-Output 'PASS'
 """)
