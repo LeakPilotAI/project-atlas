@@ -1,5 +1,5 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
-Updated: 2026-10-05
+Updated: 2026-10-14
 Branch: chatgpt/atlas-rebuild-v1
 Current cycle: QUALITY DIPS V3 — OPEN / RESEARCH_AND_PAPER_VALIDATION
 Operational reliability hotfix: VERIFIED LOCAL GREEN
@@ -94,6 +94,33 @@ Preserve V2/V2.1 policy, validation evidence, and runtime-repair artifacts. Do n
 NORMAL DESKTOP WORKFLOW
 START: C:\Users\renal\OneDrive\Desktop\Project Atlas.lnk
 STOP: C:\Users\renal\OneDrive\Desktop\Stop Atlas.lnk
+
+E128 BACKGROUND MODE — LIVE OWNERSHIP VERIFICATION FIX
+Commit: 92acf822 atlas: verify Windows venv background ownership
+
+Verified root cause:
+- Windows CIM reports the owned Uvicorn child using the base Python executable listed by backend\.venv\pyvenv.cfg, not backend\.venv\Scripts\python.exe.
+- The strict ownership verifier was updated to accept that executable only when the recorded venv launcher, its exact identity/creation time/command line, the API child-parent relationship, project path, run ID, and runtime identity all match.
+- Base-interpreter resolution had a PowerShell case-insensitive variable collision: local `$home` aliased the read-only automatic `$HOME`; the caught failure returned an empty path and made valid ownership appear ambiguous. Renaming it to `$venvHome` restores resolution without relaxing verification.
+- The narrowly identified earlier ownership-check failure had not signalled the API. Effective status now reports RUNNING only when current full ownership verification succeeds.
+
+Live, read-only evidence on 2026-10-14:
+- CLI `Status -Json`: RUNNING, run ID `867a9b46-e377-4018-b42f-010a71332caa`, API PID 31552.
+- Port 8000 listener PID 31552 is the configured Python 3.12 base interpreter; parent PID 24880 is the recorded venv launcher at `backend\.venv\Scripts\python.exe`. Their creation times and command lines match the owner record; the API command identifies the Atlas project path.
+- The actual Windows Forms panel displayed RUNNING; Start was disabled, Atlas Status enabled, and Stop enabled. The panel was closed normally. No Start or Stop action was invoked.
+- `/health` returned `status=ok`. `/api/perps/manual` reported running=true, data_status=FRESH, 234 markets, no last error, refreshed at `2026-10-14T07:51:14.596145+00:00`.
+- `atlas-postgres` and `atlas-redis` were both healthy. No Genesis/Docker-wide action, API restart, process signal, PAPER mutation, or environment/shortcut change occurred.
+
+Validation:
+- `tests/test_e128_background_mode.py`: 42 passed.
+- Ruff on the focused E128 test file: passed.
+- Windows PowerShell 5.1 parser checks for Atlas-Background.ps1 and Atlas-ProcessOwnership.psm1: passed.
+- Repeated actual asynchronous CLI Status calls and actual GUI status/button verification: passed.
+- `git diff --check`: passed.
+
+Remaining E128 work:
+- Keep the currently verified API and its services untouched. A controlled graceful stop/start cycle remains an operator-authorized follow-up; do not use Start or Stop during this ownership repair.
+- Preserve manual-only startup and strict ownership validation. No Windows auto-start is configured.
 
 END OF MASTER ROADMAP
 
