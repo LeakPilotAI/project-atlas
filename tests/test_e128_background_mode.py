@@ -267,10 +267,14 @@ def test_e128_background_controls_run_manager_operations_off_the_ui_thread():
     assert "exit_code_path = $exitCodePath" in controls
     assert "ConvertFrom-AtlasManagerCompletion" in controls
     assert ".process.ExitCode" not in controls
-    assert "$script:activeManager.process.HasExited" in controls
+    assert "$active.process.HasExited" in controls
     assert "System.Windows.Forms.Timer" in controls
     assert "WaitForExit" not in controls
     assert ".Result" not in controls
+    assert "completion_deadline = $null" in controls
+    assert "AddSeconds(10)" in controls
+    assert 'if ($files.state -eq "pending")' in controls
+    assert "if ($files -and $files.state -eq \"ready\")" in controls
     assert "Start-BackgroundManager \"Status\"" in controls
 
 
@@ -371,7 +375,157 @@ Write-Output 'PASS'
     assert "PASS" in completed.stdout
 
 
-def test_e128_actual_manager_child_uses_exit_marker_not_null_process_exit_code(tmp_path):
+@pytest.mark.parametrize(
+    ("locked_name", "expected_reason"),
+    [("stdout", "stdout"), ("stderr", "stderr"), ("exit marker", "exit marker")],
+)
+def test_e128_locked_manager_completion_files_are_pending_until_writer_releases(
+    tmp_path, locked_name, expected_reason
+):
+    module_path = str(UI_MODULE).replace("'", "''")
+    temp_path = str(tmp_path).replace("'", "''")
+    script = f"""
+Import-Module '{module_path}' -Force
+$directory = '{temp_path}'
+$out = Join-Path $directory 'status.out'
+$err = Join-Path $directory 'status.err'
+$marker = Join-Path $directory 'status.exit'
+[System.IO.File]::WriteAllText($out, '{{"state":"STOPPED","message":"verified"}}')
+[System.IO.File]::WriteAllText($err, '')
+[System.IO.File]::WriteAllText($marker, '0')
+$lockedPath = switch ('{locked_name}') {{
+    'stdout' {{ $out }}
+    'stderr' {{ $err }}
+    default {{ $marker }}
+}}
+$writer = [System.IO.File]::Open(
+    $lockedPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write,
+    [System.IO.FileShare]::None
+)
+try {{
+    $pending = Read-AtlasManagerCompletionFiles $out $err $marker
+    if ($pending.state -ne 'pending' -or $pending.reason -notmatch '{expected_reason}') {{
+        throw "Locked file was not reported pending: $($pending | ConvertTo-Json -Compress)"
+    }}
+}} finally {{
+    $writer.Dispose()
+}}
+$ready = Read-AtlasManagerCompletionFiles $out $err $marker
+if ($ready.state -ne 'ready' -or $ready.exit_code.Trim() -ne '0') {{
+    throw "Completion files were not ready after writer release: $($ready | ConvertTo-Json -Compress)"
+}}
+Write-Output 'PASS'
+"""
+    completed = subprocess.run(
+        [shutil.which("powershell.exe") or "powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+         "-Command", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert "PASS" in completed.stdout
+
+
+def test_e128_delayed_writer_release_is_polled_without_blocking_the_ui(tmp_path):
+    module_path = str(UI_MODULE).replace("'", "''")
+    temp_path = str(tmp_path).replace("'", "''")
+    script = f"""
+Import-Module '{module_path}' -Force
+$directory = '{temp_path}'
+$out = Join-Path $directory 'status.out'
+$err = Join-Path $directory 'status.err'
+$marker = Join-Path $directory 'status.exit'
+[System.IO.File]::WriteAllText($out, '{{"state":"STOPPED","message":"verified"}}')
+[System.IO.File]::WriteAllText($err, '')
+[System.IO.File]::WriteAllText($marker, '0')
+$writer = [System.IO.File]::Open(
+    $out, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write,
+    [System.IO.FileShare]::None
+)
+$released = $false
+$polls = 0
+$deadline = (Get-Date).AddSeconds(4)
+try {{
+    while ((Get-Date) -lt $deadline) {{
+        $pollStarted = [datetime]::UtcNow
+        $state = Read-AtlasManagerCompletionFiles $out $err $marker
+        $elapsedMs = ([datetime]::UtcNow - $pollStarted).TotalMilliseconds
+        if ($elapsedMs -gt 200) {{ throw "A file-read retry blocked the polling thread for $elapsedMs ms." }}
+        $polls++
+        if ($state.state -eq 'ready') {{ $released = $true; break }}
+        if ($polls -ge 4) {{
+            $writer.Dispose()
+            $writer = $null
+        }}
+        Start-Sleep -Milliseconds 50
+    }}
+}} finally {{
+    if ($writer) {{ $writer.Dispose() }}
+}}
+if (-not $released -or $polls -lt 5) {{
+    throw "Delayed handle release was not observed through polling; polls=$polls."
+}}
+Write-Output "PASS; polls=$polls"
+"""
+    completed = subprocess.run(
+        [shutil.which("powershell.exe") or "powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+         "-Command", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert "PASS; polls=" in completed.stdout
+
+
+def test_e128_ui_defers_temp_cleanup_until_all_completion_handles_are_released():
+    controls = _text(CONTROLS)
+    poll = controls.split("function Poll-BackgroundManager {", 1)[1].split("\n}\n", 1)[0]
+    pending_check = poll.index('if ($files.state -eq "pending")')
+    pending_return = poll.index("return", pending_check)
+    cleanup_guard = poll.index('if ($files -and $files.state -eq "ready")')
+    cleanup_call = poll.index("Remove-ManagerOutput $active", cleanup_guard)
+    assert pending_return < cleanup_guard < cleanup_call
+    assert "Temporary files were retained for inspection." in poll
+
+
+def test_e128_missing_exit_marker_waits_and_cleanup_is_deferred_until_ready(tmp_path):
+    module_path = str(UI_MODULE).replace("'", "''")
+    temp_path = str(tmp_path).replace("'", "''")
+    script = f"""
+Import-Module '{module_path}' -Force
+$directory = '{temp_path}'
+$out = Join-Path $directory 'status.out'
+$err = Join-Path $directory 'status.err'
+$marker = Join-Path $directory 'status.exit'
+[System.IO.File]::WriteAllText($out, '{{"state":"STOPPED","message":"must not be accepted early"}}')
+[System.IO.File]::WriteAllText($err, '')
+$pending = Read-AtlasManagerCompletionFiles $out $err $marker
+if ($pending.state -ne 'pending' -or (Test-Path $out) -eq $false -or (Test-Path $err) -eq $false) {{
+    throw 'Missing marker was not treated as pending or output was prematurely cleaned.'
+}}
+[System.IO.File]::WriteAllText($marker, '0')
+$ready = Read-AtlasManagerCompletionFiles $out $err $marker
+if ($ready.state -ne 'ready') {{ throw 'Files did not become ready after marker creation.' }}
+$completion = ConvertFrom-AtlasManagerCompletion 'Status' $ready.output $ready.error_output $ready.exit_code
+if (-not $completion.success -or $completion.result.state -ne 'STOPPED') {{
+    throw 'Completed STOPPED JSON was not accepted after marker became available.'
+}}
+Write-Output 'PASS'
+"""
+    completed = subprocess.run(
+        [shutil.which("powershell.exe") or "powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+         "-Command", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert "PASS" in completed.stdout
+
+
+def test_e128_repeated_actual_manager_status_calls_wait_for_released_files(tmp_path):
     powershell = shutil.which("powershell.exe") or shutil.which("powershell")
     if not powershell:
         pytest.skip("Windows PowerShell is required to launch the actual manager.")
@@ -384,9 +538,10 @@ Add-Type -AssemblyName System.Drawing
 Import-Module '{module_path}' -Force
 $manager = '{manager_path}'
 $directory = '{temp_path}'
-$stdout = Join-Path $directory 'manager.out'
-$stderr = Join-Path $directory 'manager.err'
-$exitFile = Join-Path $directory 'manager.exit'
+for ($iteration = 1; $iteration -le 3; $iteration++) {{
+$stdout = Join-Path $directory "manager-$iteration.out"
+$stderr = Join-Path $directory "manager-$iteration.err"
+$exitFile = Join-Path $directory "manager-$iteration.exit"
 $managerScript = @"
 `$ErrorActionPreference = 'Stop'
 `$ProgressPreference = 'SilentlyContinue'
@@ -409,14 +564,25 @@ $process = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') `
 $deadline = (Get-Date).AddSeconds(20)
 while (-not $process.HasExited -and (Get-Date) -lt $deadline) {{ Start-Sleep -Milliseconds 50 }}
 if (-not $process.HasExited) {{ throw 'Status child did not complete asynchronously.' }}
-$completion = ConvertFrom-AtlasManagerCompletion 'Status' `
-    ([System.IO.File]::ReadAllText($stdout)) ([System.IO.File]::ReadAllText($stderr)) `
-    ([System.IO.File]::ReadAllText($exitFile))
-if (-not $completion.success -or $completion.result.state -ne 'STOPPED') {{
+$files = $null
+$deadline = (Get-Date).AddSeconds(10)
+do {{
+    $files = Read-AtlasManagerCompletionFiles $stdout $stderr $exitFile
+    if ($files.state -eq 'ready') {{ break }}
+    if ($files.state -eq 'failed') {{ throw "Completion file access failed: $($files.reason)" }}
+    Start-Sleep -Milliseconds 50
+}} while ((Get-Date) -lt $deadline)
+if (-not $files -or $files.state -ne 'ready') {{
+    throw "Manager streams did not become available: $($files.reason)"
+}}
+$completion = ConvertFrom-AtlasManagerCompletion 'Status' $files.output $files.error_output $files.exit_code
+if (-not $completion.success -or $completion.result.state -notin @('STOPPED','AMBIGUOUS')) {{
     throw "Status child was not accepted: $($completion.error)"
 }}
-Write-Output "PASS; Process.ExitCodeNull=$($null -eq $process.ExitCode); Marker=$([System.IO.File]::ReadAllText($exitFile))"
+Write-Output "PASS; iteration=$iteration; state=$($completion.result.state); Process.ExitCodeNull=$($null -eq $process.ExitCode); Marker=$($files.exit_code.Trim())"
 $process.Dispose()
+Remove-Item $stdout,$stderr,$exitFile -Force
+}}
 """
     completed = subprocess.run(
         [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
@@ -425,8 +591,8 @@ $process.Dispose()
         text=True,
         timeout=30,
     )
-    assert "PASS; " in completed.stdout
-    assert "Marker=0" in completed.stdout
+    assert completed.stdout.count("PASS; iteration=") == 3
+    assert completed.stdout.count("Marker=0") == 3
 
 
 def test_e128_gui_callback_exceptions_are_captured_and_reported():

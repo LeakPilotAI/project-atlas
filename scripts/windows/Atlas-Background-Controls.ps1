@@ -83,6 +83,7 @@ exit `$exitCode
             output_path = $outputPath
             error_path = $errorPath
             exit_code_path = $exitCodePath
+            completion_deadline = $null
         }
         $startButton.Enabled = $false
         $statusButton.Enabled = $false
@@ -123,23 +124,35 @@ function Poll-BackgroundManager {
         }
         return
     }
-    if (-not $script:activeManager.process.HasExited) { return }
-
     $active = $script:activeManager
-    $script:activeManager = $null
+    if (-not $active.process.HasExited) { return }
+
+    if (-not $active.completion_deadline) {
+        $active.completion_deadline = (Get-Date).AddSeconds(10)
+    }
+    $files = $null
     try {
-        $output = if (Test-Path -LiteralPath $active.output_path -PathType Leaf) {
-            [System.IO.File]::ReadAllText($active.output_path).Trim()
-        } else { "" }
-        $errorOutput = if (Test-Path -LiteralPath $active.error_path -PathType Leaf) {
-            [System.IO.File]::ReadAllText($active.error_path).Trim()
-        } else { "" }
-        $exitCodeData = if (Test-Path -LiteralPath $active.exit_code_path -PathType Leaf) {
-            [System.IO.File]::ReadAllText($active.exit_code_path).Trim()
-        } else {
-            ""
+        $files = Read-AtlasManagerCompletionFiles $active.output_path `
+            $active.error_path $active.exit_code_path
+        if ($files.state -eq "pending") {
+            if ((Get-Date) -lt $active.completion_deadline) { return }
+            $script:activeManager = $null
+            $color = Get-AtlasBackgroundStatusColor "error"
+            Set-StatusMessage "Atlas $($active.action) completion timed out waiting for file handles: $($files.reason) Temporary files were retained for inspection." $color
+            $startButton.Enabled = $false
+            $statusButton.Enabled = $true
+            $stopButton.Enabled = $false
+            try { $active.process.Dispose() } catch {
+                [System.Diagnostics.Trace]::WriteLine("Atlas background process cleanup failed: $($_.Exception.Message)")
+            }
+            return
         }
-        $completion = ConvertFrom-AtlasManagerCompletion $active.action $output $errorOutput $exitCodeData
+        $script:activeManager = $null
+        if ($files.state -eq "failed") {
+            throw $files.reason
+        }
+        $completion = ConvertFrom-AtlasManagerCompletion $active.action `
+            $files.output $files.error_output $files.exit_code
         if (-not $completion.success) {
             $color = Get-AtlasBackgroundStatusColor "error"
             Set-StatusMessage $completion.error $color
@@ -169,11 +182,15 @@ function Poll-BackgroundManager {
             [System.Diagnostics.Trace]::WriteLine("Atlas background UI callback failed: $($_.Exception.Message)")
         }
     } finally {
-        try { $active.process.Dispose() } catch {
-            [System.Diagnostics.Trace]::WriteLine("Atlas background process cleanup failed: $($_.Exception.Message)")
-        }
-        try { Remove-ManagerOutput $active } catch {
-            [System.Diagnostics.Trace]::WriteLine("Atlas background output cleanup failed: $($_.Exception.Message)")
+        if (-not $script:activeManager) {
+            try { $active.process.Dispose() } catch {
+                [System.Diagnostics.Trace]::WriteLine("Atlas background process cleanup failed: $($_.Exception.Message)")
+            }
+            if ($files -and $files.state -eq "ready") {
+                try { Remove-ManagerOutput $active } catch {
+                    [System.Diagnostics.Trace]::WriteLine("Atlas background output cleanup failed: $($_.Exception.Message)")
+                }
+            }
         }
     }
 }

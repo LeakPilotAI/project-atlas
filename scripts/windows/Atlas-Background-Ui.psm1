@@ -68,6 +68,81 @@ function ConvertFrom-AtlasManagerCompletion(
     return [pscustomobject]@{ success=$true; result=$result; error="" }
 }
 
+function Read-AtlasManagerCompletionFiles(
+    [string]$OutputPath,
+    [string]$ErrorPath,
+    [string]$ExitCodePath
+) {
+    $paths = @(
+        [pscustomobject]@{ name="stdout"; path=$OutputPath },
+        [pscustomobject]@{ name="stderr"; path=$ErrorPath },
+        [pscustomobject]@{ name="exit marker"; path=$ExitCodePath }
+    )
+    $streams = New-Object System.Collections.ArrayList
+    $opened = @{}
+    try {
+        foreach ($item in $paths) {
+            if (-not [System.IO.File]::Exists($item.path)) {
+                return [pscustomobject]@{
+                    state="pending"; reason="$($item.name) file '$($item.path)' is not available yet."
+                }
+            }
+            try {
+                $stream = [System.IO.File]::Open(
+                    $item.path,
+                    [System.IO.FileMode]::Open,
+                    [System.IO.FileAccess]::Read,
+                    [System.IO.FileShare]::None
+                )
+                [void]$streams.Add($stream)
+                $opened[$item.name] = $stream
+            } catch [System.IO.IOException] {
+                $win32Error = $_.Exception.HResult -band 0xffff
+                if ($win32Error -eq 32 -or $win32Error -eq 33) {
+                    return [pscustomobject]@{
+                        state="pending"; reason="$($item.name) file '$($item.path)' is still held by a writer."
+                    }
+                }
+                return [pscustomobject]@{
+                    state="failed"; reason="Cannot open $($item.name) file '$($item.path)': $($_.Exception.Message)"
+                }
+            } catch {
+                return [pscustomobject]@{
+                    state="failed"; reason="Cannot open $($item.name) file '$($item.path)': $($_.Exception.Message)"
+                }
+            }
+        }
+
+        $contents = @{}
+        foreach ($item in $paths) {
+            $stream = $opened[$item.name]
+            $stream.Position = 0
+            $reader = New-Object System.IO.StreamReader(
+                $stream, [System.Text.Encoding]::UTF8, $true, 1024, $true
+            )
+            try {
+                $contents[$item.name] = $reader.ReadToEnd()
+            } finally {
+                $reader.Dispose()
+            }
+        }
+        return [pscustomobject]@{
+            state="ready"
+            output=$contents["stdout"]
+            error_output=$contents["stderr"]
+            exit_code=$contents["exit marker"]
+        }
+    } catch {
+        return [pscustomobject]@{
+            state="failed"; reason="Cannot read complete manager output: $($_.Exception.Message)"
+        }
+    } finally {
+        foreach ($stream in $streams) {
+            $stream.Dispose()
+        }
+    }
+}
+
 function Invoke-AtlasBackgroundUiCallback(
     [scriptblock]$Callback,
     [scriptblock]$OnError
@@ -89,4 +164,5 @@ function Invoke-AtlasBackgroundUiCallback(
 }
 
 Export-ModuleMember -Function Get-AtlasBackgroundStatusColor, Set-AtlasBackgroundStatusRendering, `
-    ConvertFrom-AtlasManagerCompletion, Invoke-AtlasBackgroundUiCallback
+    ConvertFrom-AtlasManagerCompletion, Read-AtlasManagerCompletionFiles, `
+    Invoke-AtlasBackgroundUiCallback
