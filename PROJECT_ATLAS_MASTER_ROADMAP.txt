@@ -11577,3 +11577,42 @@ NEXT RECOMMENDED EXECUTION
 4. Complete remaining Windows-local release checklist and operator handoff using measured runtime evidence; Discord remains gated until its dedicated lifecycle contracts pass.
 
 PERMANENT ROADMAP DISCIPLINE: preserve history, synchronize full canonical/Desktop files, verify SHA256, commit/push verified changes only, never manufacture readiness.
+
+EXECUTION 127 - CONTROLLED RECOVERY CHECKPOINT - 2026-10-14
+- Scope: Windows-local Atlas recovery inspection, isolated E125/E126 regression verification, production evidence integrity, and E29 research refresh.
+- Starting Git checkpoint: d9f9fa5e on chatgpt/atlas-rebuild-v1, matching origin; tracked tree clean.
+- Atlas PostgreSQL and Redis existing projectatlas containers were started individually after ownership and port checks. Both subsequently reported healthy; PostgreSQL pg_isready succeeded and Redis PING returned PONG.
+- Genesis/Stinky containers were not started, stopped, modified or targeted. Docker Desktop and shared infrastructure were preserved.
+- Atlas API remained intentionally offline. No listener on ports 8000, 8001 or 8080. Identified Python processes belonged to VS Code Mypy, not Atlas API.
+- Normal Atlas startup was inspected and is not diagnostics-only: it can initialize database state, bootstrap PAPER sessions, start background services and Discord tasks. Normal shutdown can reconcile pending PAPER orders and journal state. No API startup or shutdown was performed.
+- E125/E126 focused isolated regression: 97 passed. Root tests: 1751 passed. Additional backend/tests: 3 passed. Combined isolated regression: 1754 passed, zero failures.
+- Isolated detached worktree: atlas-e127-isolated at d9f9fa5e. Production .env and PAPER evidence were absent from that worktree. Test guard denied direct access to protected production evidence paths and external sockets, with loopback allowed for Windows asyncio internals. This is not a complete OS sandbox.
+- E125 accounting, E126 mirror risk evidence and E29 scorecard source files passed AST syntax/fingerprint verification in the isolated worktree. This does not prove running-server activation.
+- E29 refreshed using verified copies of the journal and frozen membership file, not production paths. 52 membership records, zero added. Baseline: 51 closes, -2.9476R, 7 symbols, 6 days. Challenger: 10 closes, +2.3160R, 4 symbols, 5 days.
+- E29 remains NOT_READY: all eight minimum evidence gates false, promotion_allowed=false. Challenger results are preliminary, not profitability certification.
+- Production PAPER journal SHA256 unchanged: 55985866CB1C69E5E19A378FB40E44C5FD97636BFF9F3109024BC5333F09A3BF.
+- Production E29 membership SHA256 unchanged: 330A3A947DF79F91B2295CD04771969E7B60C9F990F026DCD67E3D4AEC723165.
+- E125/E126 source verification is GREEN. Live Atlas API activation and runtime evidence remain UNVERIFIED and are not claimed complete.
+- Portfolio-wide PAPER kill/loss-stop scope remains an explicit operator policy decision. Existing mirror-only enforcement was not broadened.
+- No synthetic production trades, journal rewriting, strategy tuning, real-money execution, Discord lifecycle producer activation, VPS or hosted deployment.
+
+VISUAL STATUS AFTER E127 RECOVERY CHECKPOINT
+[DONE] E125 accounting integrity - source GREEN
+[DONE] E126 incomplete-evidence / mirror risk admission - source GREEN
+[DONE] E127 isolated regression and infrastructure recovery verification
+[DONE] E29 safe evidence refresh - NOT_READY
+[UNVERIFIED] E125/E126 activation in a running Atlas API
+[ACTIVE] Windows-local runtime readiness and operator handoff
+[ACTIVE] Genuine E29 and alpha evidence accumulation
+[POLICY DECISION] Portfolio-wide PAPER kill/loss-stop scope
+[GATED] Discord lifecycle producers
+[OUT OF SCOPE] VPS, cloud and hosted deployment
+
+NEXT RECOMMENDED EXECUTION
+1. Plan and authorize a controlled Atlas-only API activation with explicit PAPER journal and Genesis isolation safeguards.
+2. Verify E125/E126 running-code identity, risk endpoint behavior, background collection continuity and journal integrity after activation.
+3. Continue genuine E29 evidence accumulation without changing frozen thresholds or promoting insufficient samples.
+4. Resolve portfolio-wide PAPER risk-policy scope before expanding enforcement.
+5. Complete Windows-local operator handoff and dedicated Discord lifecycle contracts before enabling gated producers.
+
+PERMANENT ROADMAP DISCIPLINE: preserve historical entries, synchronize full canonical/Desktop copies, verify SHA256 equality, commit/push verified changes only, and never manufacture runtime readiness.
