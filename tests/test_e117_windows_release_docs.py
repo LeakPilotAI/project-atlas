@@ -40,3 +40,14 @@ def test_e117_windows_docs_preserve_readiness_and_authority_boundaries():
     assert "live-capital permissions" in docs
     assert "Atlas-Ready.ps1" in launch
     assert "launcher-ready.json" in ready
+
+def test_background_operator_docs_keep_legacy_stop_and_update_out_of_live_mode():
+    docs=WINDOWS.read_text(encoding="utf-8")
+    assert "do not use **Stop Atlas**, `ATLAS-STOP.bat`" in docs
+    assert "forced process-tree fallback" in docs
+    assert "Stop Atlas Background" in docs
+    assert "If the background stop times out, leave the process and ownership metadata intact" in docs
+    assert "does not clear the persisted warning" in docs
+    assert "requires an operator-approved maintenance window" in docs
+    assert "`Pull-And-Ready.ps1` is not a read-only Git pull" in docs
+    assert "may rewrite selected keys in root/backend `.env` files" in docs

@@ -96,7 +96,7 @@ def test_e128_unverified_dead_start_lock_stays_ambiguous_and_is_preserved(tmp_pa
     output = _run_ownership_powershell(rf"""
 $runtimeDir = '{runtime_dir}'
 $sourcePath = '{manager_path}'
-$Root = 'D:\Atlas'
+$Root = 'D:\Work\Project Atlas'
 $RecoveryLockPath = Join-Path $runtimeDir 'atlas-background-recovery.lock'
 $OwnerPath = Join-Path $runtimeDir 'atlas-background-owner.json'
 $LockPath = Join-Path $runtimeDir 'atlas-background-start.lock'
@@ -159,31 +159,34 @@ $RuntimePath = Join-Path $runtimeDir 'runtime.json'
 $LockPath = Join-Path $runtimeDir 'atlas-background-start.lock'
 $StopLockPath = Join-Path $runtimeDir 'atlas-background-stop.lock'
 $RecoveryLockPath = Join-Path $runtimeDir 'atlas-background-recovery.lock'
-$VenvPy = 'D:\Atlas\backend\.venv\Scripts\python.exe'
-$ManagerPath = 'D:\Atlas\scripts\windows\Atlas-Background.ps1'
+$VenvPy = 'D:\Work\Project Atlas\backend\.venv\Scripts\python.exe'
+$ManagerPath = 'D:\Work\Project Atlas\scripts\windows\Atlas-Background.ps1'
 $PowerShellPath = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
 $run = '867a9b46-e377-4018-b42f-010a71332caa'
 $owner = [pscustomobject]@{{
     schema_version=1; root=$Root; run_id=$run; pid=31552; state='stop_timeout'
     created_utc='2026-10-14T07:41:51.2012980Z'
     started_utc='2026-10-14T07:41:55.418405+00:00'
-    executable='C:\Python312\python.exe'
-    command_line='"C:\Python312\python.exe" -m uvicorn app.main:app'
+    executable='C:\Users\renal\AppData\Local\Programs\Python\Python312\python.exe'
+    command_line='"C:\Users\renal\AppData\Local\Programs\Python\Python312\python.exe" -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-config "D:\Work\Project Atlas\deploy\logging-desktop.json" --timeout-graceful-shutdown 20 '
     launcher_pid=24880; launcher_created_utc='2026-10-14T07:41:51.1660240Z'
     launcher_executable=$VenvPy
-    launcher_command_line='"D:\Atlas\backend\.venv\Scripts\python.exe" -m uvicorn app.main:app'
-    last_error='The API PID identity could not be verified; cleanup: Atlas PID identity changed before shutdown; no process was signalled.'
+    launcher_command_line='"D:\Work\Project Atlas\backend\.venv\Scripts\python.exe" -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-config "D:\Work\Project Atlas\deploy\logging-desktop.json" --timeout-graceful-shutdown 20 '
+    last_error='The API PID, process identity, creation time, or launcher relationship could not be verified.; cleanup: Atlas PID identity changed before shutdown; no process was signalled.'
 }}
+$originalError = $owner.last_error
 $runtime = [pscustomobject]@{{
     pid=31552; run_id=$run; started_utc='2026-10-14T07:41:55.418405+00:00'
 }}
 $owner | ConvertTo-Json | Set-Content -LiteralPath $OwnerPath
 $runtime | ConvertTo-Json | Set-Content -LiteralPath $RuntimePath
 function Read-JsonFile([string]$Path) {{ Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }}
-function Get-AtlasApiProcesses {{ return ,@([pscustomobject]@{{ProcessId=31552;ParentProcessId=24880;ExecutablePath='C:\Python312\python.exe';CommandLine='"C:\Python312\python.exe" -m uvicorn app.main:app';CreationDate=[datetime]::Parse('2026-10-14T07:41:51.2012980Z')}}) }}
-function Get-ApiListeners {{ return ,@(31552) }}
+function Get-AtlasApiProcesses {{ return ,@([pscustomobject]@{{ProcessId=31552;ParentProcessId=24880;ExecutablePath='C:\Users\renal\AppData\Local\Programs\Python\Python312\python.exe';CommandLine=$owner.command_line;CreationDate=[datetime]::Parse('2026-10-14T07:41:51.2012980Z')}}) }}
+$script:listenerIds = @(31552)
+function Get-ApiListeners {{ return ,$script:listenerIds }}
 function Get-CimProcess([int]$ProcessId) {{ return [pscustomobject]@{{ProcessId=24880;ParentProcessId=28384;ExecutablePath=$VenvPy;CommandLine=$owner.launcher_command_line;CreationDate=[datetime]::Parse('2026-10-14T07:41:51.1660240Z')}} }}
-function Test-AtlasApiProcessOwnership($OwnerRecord,$RuntimeRecord,$ApiProcess,$OwnerProcess,[string]$ExpectedExecutable,[string]$ExpectedRoot,[string]$ExpectedBaseExecutable) {{ return $true }}
+$script:identityVerified = $true
+function Test-AtlasApiProcessOwnership($OwnerRecord,$RuntimeRecord,$ApiProcess,$OwnerProcess,[string]$ExpectedExecutable,[string]$ExpectedRoot,[string]$ExpectedBaseExecutable) {{ return $script:identityVerified }}
 $tokens=$null; $parseErrors=$null
 $ast=[System.Management.Automation.Language.Parser]::ParseFile($sourcePath,[ref]$tokens,[ref]$parseErrors)
 if($parseErrors.Count -gt 0) {{ throw 'Production manager did not parse.' }}
@@ -194,8 +197,37 @@ $state=Get-VerifiedState
 if($state.state -ne 'running' -or $state.owner.state -ne 'running') {{
     throw "Verified API did not report RUNNING: $($state | ConvertTo-Json -Compress)"
 }}
-if((Read-JsonFile $OwnerPath).state -ne 'stop_timeout') {{
-    throw 'Status unexpectedly mutated persisted ownership metadata.'
+if($state.message -notmatch 'previous ownership-check failure did not signal the process') {{
+    throw 'Status did not distinguish the retained no-signal cleanup warning.'
+}}
+$persisted = Read-JsonFile $OwnerPath
+if($persisted.state -ne 'stop_timeout' -or $persisted.last_error -cne $originalError) {{
+    throw 'Status erased or rewrote the historical ownership failure evidence.'
+}}
+$owner = $persisted
+$owner.last_error = 'Graceful shutdown exceeded 30 seconds. The process and runtime ownership were retained; operator intervention is required.'
+$owner | ConvertTo-Json | Set-Content -LiteralPath $OwnerPath
+$state = Get-VerifiedState
+if($state.state -ne 'stop_timeout' -or $state.message -notmatch 'operator intervention is required') {{
+    throw 'A genuine graceful-stop timeout was incorrectly reported as RUNNING.'
+}}
+$owner = Read-JsonFile $OwnerPath
+$owner.last_error = $originalError
+$owner | ConvertTo-Json | Set-Content -LiteralPath $OwnerPath
+$script:identityVerified = $false
+$state = Get-VerifiedState
+if($state.state -ne 'AMBIGUOUS' -or $state.message -notmatch 'no process was touched') {{
+    throw 'An unverified API process was not kept fail-closed.'
+}}
+$script:identityVerified = $true
+$script:listenerIds = @(31552, 99999)
+$state = Get-VerifiedState
+if($state.state -ne 'AMBIGUOUS' -or $state.message -notmatch 'unexpected or multiple listener') {{
+    throw 'Duplicate or foreign API listeners were accepted.'
+}}
+$persisted = Read-JsonFile $OwnerPath
+if($persisted.state -ne 'stop_timeout' -or $persisted.last_error -cne $originalError) {{
+    throw 'A status query mutated the retained owner failure evidence.'
 }}
 Write-Output 'PASS'
 """)
