@@ -232,35 +232,25 @@ async def lifespan(app: FastAPI):
 
     await runtime_watchdog.stop()
     log.info("Project Atlas shutting down")
-    try:
-        from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
-        cancelled_pending = perp_setup_paper_mirror.cancel_all_pending(reason="ATLAS_SHUTDOWN")
-        log.info("paper pending-limit shutdown reconciliation", cancelled=cancelled_pending)
-    except Exception as e:
-        log.warning("paper pending-limit shutdown reconciliation failed", error=str(e)[:200])
-    try:
-        from app.services.paper_journal import paper_journal
-        persisted = paper_journal.persist_open_marks()
-        interrupted = paper_journal.interrupt_open_for_shutdown()
-        log.info("paper shutdown reconciliation", persisted_marks=persisted, interrupted=len(interrupted))
-    except Exception as e:
-        log.warning("paper shutdown reconciliation failed", error=str(e)[:200])
     if not boot_task.done():
         boot_task.cancel()
         try:
             await boot_task
         except (asyncio.CancelledError, Exception):
             pass
+    shutdown_services_stopped = True
     try:
         from app.investment.scan import stop_investment_scanner
 
         await stop_investment_scanner()
-    except Exception:
-        pass
+    except Exception as e:  # noqa: BLE001
+        shutdown_services_stopped = False
+        log.warning("investment scanner stop failed", error=str(e))
     try:
         await stop_discord_bot()
-    except Exception:
-        pass
+    except Exception as e:  # noqa: BLE001
+        shutdown_services_stopped = False
+        log.warning("Discord stop failed", error=str(e))
     for name, stopper in [
         ("micro_heartbeat", micro_heartbeat.stop),
         ("prediction_paper_automation", prediction_paper_automation.stop),
@@ -279,19 +269,42 @@ async def lifespan(app: FastAPI):
     ]:
         try:
             await stopper()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            shutdown_services_stopped = False
             log.warning(f"{name} stop failed", error=str(e))
 
     if accumulation_ladder is not None:
         try:
             await accumulation_ladder.stop()
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            shutdown_services_stopped = False
+            log.warning("accumulation stop failed", error=str(e))
     if btc_accumulation is not None:
         try:
             await btc_accumulation.stop()
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            shutdown_services_stopped = False
+            log.warning("BTC accumulation stop failed", error=str(e))
+
+    if shutdown_services_stopped:
+        try:
+            from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
+            cancelled_pending = perp_setup_paper_mirror.cancel_all_pending(reason="ATLAS_SHUTDOWN")
+            log.info("paper pending-limit shutdown reconciliation", cancelled=cancelled_pending)
+        except Exception as e:  # noqa: BLE001
+            log.warning("paper pending-limit shutdown reconciliation failed", error=str(e)[:200])
+        try:
+            from app.services.paper_journal import paper_journal
+            persisted = paper_journal.persist_open_marks()
+            interrupted = paper_journal.interrupt_open_for_shutdown()
+            log.info("paper shutdown reconciliation", persisted_marks=persisted, interrupted=len(interrupted))
+        except Exception as e:  # noqa: BLE001
+            log.warning("paper shutdown reconciliation failed", error=str(e)[:200])
+    else:
+        log.error(
+            "PAPER shutdown reconciliation skipped because one or more services failed to stop; "
+            "open journal rows were retained for operator recovery"
+        )
 
     try:
         await close_redis()

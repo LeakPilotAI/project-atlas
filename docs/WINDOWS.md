@@ -124,6 +124,8 @@ When owner and runtime records have the same valid run ID but all recorded PIDs 
 
 The API's existing graceful-shutdown reconciliation has PAPER side effects: it cancels pending paper-mirror limits with the `ATLAS_SHUTDOWN` reason, persists marks for open PAPER positions, and appends non-performance `INTERRUPTED` close events for unfinished PAPER trades. Completed historical journal rows are left intact; these are append/reconciliation actions, not a rewrite of prior records. If the 30-second graceful shutdown times out, reconciliation completion is not guaranteed. Review the PAPER journal and shutdown diagnostics, and resolve the retained Atlas process only after operator inspection. An existing `stop.json` request only applies when its run ID exactly matches the live runtime run ID; an old run's request cannot signal a new run. A verified old GUID request is replaced only when an operator explicitly stops the currently verified run.
 
+During API shutdown, Atlas cancels its boot task and stops background services before performing final PAPER reconciliation. If any shutdown service fails, Atlas skips that final reconciliation and retains open journal rows for operator recovery rather than risk racing a still-running PAPER writer. Inspect service-stop logs and reconcile the retained rows during an approved maintenance window.
+
 Installing the control does not start the Atlas API. **Start Atlas Background** remains an explicit manual activation.
 
 ## Readiness and diagnostics
