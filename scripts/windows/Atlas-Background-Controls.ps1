@@ -50,17 +50,30 @@ function Set-StatusMessage([string]$Message, [System.Drawing.Color]$Color) {
 
 function Start-BackgroundManager([string]$SelectedAction) {
     if ($script:activeManager) { return }
-    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $startInfo.FileName = $PowerShell
-    $startInfo.Arguments = ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -Action {1} -Json' -f $Manager, $SelectedAction)
-    $startInfo.WorkingDirectory = $Root
-    $startInfo.UseShellExecute = $false
-    $startInfo.CreateNoWindow = $true
     try {
         $token = [guid]::NewGuid().ToString("N")
         $outputPath = Join-Path $env:TEMP "atlas-background-$token.out"
         $errorPath = Join-Path $env:TEMP "atlas-background-$token.err"
-        $process = Start-Process -FilePath $PowerShell -ArgumentList $startInfo.Arguments `
+        $exitCodePath = Join-Path $env:TEMP "atlas-background-$token.exit"
+        $managerLiteral = $Manager.Replace("'", "''")
+        $exitCodeLiteral = $exitCodePath.Replace("'", "''")
+        $childScript = @"
+`$ErrorActionPreference = 'Stop'
+`$ProgressPreference = 'SilentlyContinue'
+`$exitCode = 1
+try {
+    & '$managerLiteral' -Action '$SelectedAction' -Json
+    `$exitCode = 0
+} catch {
+    [Console]::Error.WriteLine(`$_.ToString())
+} finally {
+    [System.IO.File]::WriteAllText('$exitCodeLiteral', [string]`$exitCode)
+}
+exit `$exitCode
+"@
+        $encodedScript = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($childScript))
+        $arguments = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand {0}' -f $encodedScript
+        $process = Start-Process -FilePath $PowerShell -ArgumentList $arguments `
             -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $outputPath `
             -RedirectStandardError $errorPath -PassThru -ErrorAction Stop
         if (-not $process) { throw "Could not start the hidden Atlas background controller." }
@@ -69,6 +82,7 @@ function Start-BackgroundManager([string]$SelectedAction) {
             action = $SelectedAction
             output_path = $outputPath
             error_path = $errorPath
+            exit_code_path = $exitCodePath
         }
         $startButton.Enabled = $false
         $statusButton.Enabled = $false
@@ -94,7 +108,7 @@ function Apply-AtlasStatus($Result) {
 }
 
 function Remove-ManagerOutput($Active) {
-    foreach ($path in @($Active.output_path, $Active.error_path)) {
+    foreach ($path in @($Active.output_path, $Active.error_path, $Active.exit_code_path)) {
         if (Test-Path -LiteralPath $path -PathType Leaf) {
             try { Remove-Item -LiteralPath $path -Force -ErrorAction Stop } catch { }
         }
@@ -120,25 +134,28 @@ function Poll-BackgroundManager {
         $errorOutput = if (Test-Path -LiteralPath $active.error_path -PathType Leaf) {
             [System.IO.File]::ReadAllText($active.error_path).Trim()
         } else { "" }
-        if ($active.process.ExitCode -ne 0) {
-            $detail = if ($errorOutput) { $errorOutput } else { "exit code $($active.process.ExitCode)" }
+        $exitCodeData = if (Test-Path -LiteralPath $active.exit_code_path -PathType Leaf) {
+            [System.IO.File]::ReadAllText($active.exit_code_path).Trim()
+        } else {
+            ""
+        }
+        $completion = ConvertFrom-AtlasManagerCompletion $active.action $output $errorOutput $exitCodeData
+        if (-not $completion.success) {
             $color = Get-AtlasBackgroundStatusColor "error"
-            Set-StatusMessage "Atlas $($active.action) failed: $detail" $color
+            Set-StatusMessage $completion.error $color
             $startButton.Enabled = $false
             $statusButton.Enabled = $true
             $stopButton.Enabled = $false
-        } elseif (-not $output) {
-            throw "Atlas background $($active.action) returned no status."
+            return
+        }
+        $result = $completion.result
+        if ($active.action -eq "Status") {
+            Apply-AtlasStatus $result
+            $script:nextStatusCheck = (Get-Date).AddSeconds(2)
         } else {
-            $result = $output | ConvertFrom-Json -ErrorAction Stop
-            if ($active.action -eq "Status") {
-                Apply-AtlasStatus $result
-                $script:nextStatusCheck = (Get-Date).AddSeconds(2)
-            } else {
-                $color = Get-AtlasBackgroundStatusColor "idle"
-                Set-StatusMessage "$($result.state): $($result.message)" $color
-                $script:refreshStatus = $true
-            }
+            $color = Get-AtlasBackgroundStatusColor "idle"
+            Set-StatusMessage "$($result.state): $($result.message)" $color
+            $script:refreshStatus = $true
         }
     } catch {
         try {
@@ -152,20 +169,38 @@ function Poll-BackgroundManager {
             [System.Diagnostics.Trace]::WriteLine("Atlas background UI callback failed: $($_.Exception.Message)")
         }
     } finally {
-        try { $active.process.Dispose() } catch { }
-        try { Remove-ManagerOutput $active } catch { }
+        try { $active.process.Dispose() } catch {
+            [System.Diagnostics.Trace]::WriteLine("Atlas background process cleanup failed: $($_.Exception.Message)")
+        }
+        try { Remove-ManagerOutput $active } catch {
+            [System.Diagnostics.Trace]::WriteLine("Atlas background output cleanup failed: $($_.Exception.Message)")
+        }
     }
 }
 
 $startButton.Add_Click({
-    Start-BackgroundManager "Start"
+    Invoke-AtlasBackgroundUiCallback { Start-BackgroundManager "Start" } {
+        param($callbackError)
+        $color = Get-AtlasBackgroundStatusColor "error"
+        Set-StatusMessage "Atlas Start failed: $($callbackError.Exception.Message)" $color
+    } | Out-Null
 })
 $statusButton.Add_Click({
-    $script:nextStatusCheck = [datetime]::MaxValue
-    Start-BackgroundManager "Status"
+    Invoke-AtlasBackgroundUiCallback {
+        $script:nextStatusCheck = [datetime]::MaxValue
+        Start-BackgroundManager "Status"
+    } {
+        param($callbackError)
+        $color = Get-AtlasBackgroundStatusColor "error"
+        Set-StatusMessage "Atlas Status failed: $($callbackError.Exception.Message)" $color
+    } | Out-Null
 })
 $stopButton.Add_Click({
-    Start-BackgroundManager "Stop"
+    Invoke-AtlasBackgroundUiCallback { Start-BackgroundManager "Stop" } {
+        param($callbackError)
+        $color = Get-AtlasBackgroundStatusColor "error"
+        Set-StatusMessage "Atlas Stop failed: $($callbackError.Exception.Message)" $color
+    } | Out-Null
 })
 
 $script:activeManager = $null
@@ -174,18 +209,18 @@ $script:nextStatusCheck = [datetime]::MinValue
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 250
 $timer.Add_Tick({
-    try { Poll-BackgroundManager }
-    catch {
+    Invoke-AtlasBackgroundUiCallback { Poll-BackgroundManager } {
+        param($callbackError)
         try {
             $color = Get-AtlasBackgroundStatusColor "error"
-            Set-StatusMessage "STATUS CHECK FAILED: $($_.Exception.Message)" $color
+            Set-StatusMessage "STATUS CHECK FAILED: $($callbackError.Exception.Message)" $color
             $startButton.Enabled = $false
             $statusButton.Enabled = $true
             $stopButton.Enabled = $false
         } catch {
             [System.Diagnostics.Trace]::WriteLine("Atlas background timer callback failed: $($_.Exception.Message)")
         }
-    }
+    } | Out-Null
 })
 $timer.Start()
 $form.Add_Shown({ $script:refreshStatus = $true })

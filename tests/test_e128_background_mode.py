@@ -252,9 +252,10 @@ def test_e128_background_controls_never_open_a_browser_or_console_window():
     controls = _text(CONTROLS)
     installer = _text(INSTALLER)
     assert "System.Windows.Forms" in controls
-    assert "System.Diagnostics.ProcessStartInfo" in controls
-    assert "CreateNoWindow = $true" in controls
+    assert "Start-Process -FilePath $PowerShell" in controls
     assert "-WindowStyle Hidden" in controls
+    assert "-RedirectStandardOutput $outputPath" in controls
+    assert "-RedirectStandardError $errorPath" in controls
     assert "Start-Process \"http://" not in controls
     assert "-WindowStyle Hidden -STA" in installer
 
@@ -262,6 +263,10 @@ def test_e128_background_controls_never_open_a_browser_or_console_window():
 def test_e128_background_controls_run_manager_operations_off_the_ui_thread():
     controls = _text(CONTROLS)
     assert "Start-Process -FilePath $PowerShell" in controls
+    assert "-EncodedCommand {0}" in controls
+    assert "exit_code_path = $exitCodePath" in controls
+    assert "ConvertFrom-AtlasManagerCompletion" in controls
+    assert ".process.ExitCode" not in controls
     assert "$script:activeManager.process.HasExited" in controls
     assert "System.Windows.Forms.Timer" in controls
     assert "WaitForExit" not in controls
@@ -328,12 +333,125 @@ Write-Output 'PASS'
 def test_e128_background_async_callbacks_report_errors_without_escaping():
     controls = _text(CONTROLS)
     assert "$timer.Add_Tick({" in controls
-    assert "$timer.Add_Tick({\n    try { Poll-BackgroundManager }\n    catch {" in controls
+    assert "Invoke-AtlasBackgroundUiCallback { Poll-BackgroundManager }" in controls
     assert "STATUS CHECK FAILED:" in controls
     assert "Atlas background timer callback failed:" in controls
-    assert "try { $active.process.Dispose() } catch { }" in controls
-    assert "try { Remove-ManagerOutput $active } catch { }" in controls
+    assert "Invoke-AtlasBackgroundUiCallback { Start-BackgroundManager \"Start\" }" in controls
+    assert "try { $active.process.Dispose() } catch {" in controls
+    assert "try { Remove-ManagerOutput $active } catch {" in controls
     assert "WaitForExit" not in controls
+
+
+def test_e128_manager_completion_validates_exit_code_json_and_stderr():
+    module_path = str(UI_MODULE).replace("'", "''")
+    script = f"""
+Import-Module '{module_path}' -Force
+$stopped = ConvertFrom-AtlasManagerCompletion 'Status' '{{"state":"STOPPED","message":"No Atlas run."}}' '' '0'
+if (-not $stopped.success -or $stopped.result.state -ne 'STOPPED') {{ throw 'Exit-code-zero STOPPED JSON was rejected.' }}
+$running = ConvertFrom-AtlasManagerCompletion 'Status' '{{"state":"running","message":"Atlas is ready."}}' '' '0'
+if (-not $running.success -or $running.result.state -ne 'running') {{ throw 'RUNNING JSON was rejected.' }}
+$malformed = ConvertFrom-AtlasManagerCompletion 'Status' '{{malformed' '' '0'
+if ($malformed.success -or $malformed.error -notmatch 'malformed JSON') {{ throw 'Malformed JSON was accepted or not reported.' }}
+$nonzero = ConvertFrom-AtlasManagerCompletion 'Status' '' 'ownership query failed' '7'
+if ($nonzero.success -or $nonzero.error -notmatch 'exit code 7' -or $nonzero.error -notmatch 'ownership query failed') {{ throw 'Nonzero exit/stderr were not reported.' }}
+$missing = ConvertFrom-AtlasManagerCompletion 'Status' '{{"state":"STOPPED","message":"must not be trusted"}}' '' ''
+if ($missing.success -or $missing.error -notmatch 'exit status was reported') {{ throw 'Missing exit-code data was treated as success.' }}
+$badCode = ConvertFrom-AtlasManagerCompletion 'Status' '{{"state":"STOPPED","message":"must not be trusted"}}' '' 'unknown'
+if ($badCode.success -or $badCode.error -notmatch 'exit status was reported') {{ throw 'Unparseable exit-code data was treated as success.' }}
+Write-Output 'PASS'
+"""
+    completed = subprocess.run(
+        [shutil.which("powershell.exe") or "powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+         "-Command", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert "PASS" in completed.stdout
+
+
+def test_e128_actual_manager_child_uses_exit_marker_not_null_process_exit_code(tmp_path):
+    powershell = shutil.which("powershell.exe") or shutil.which("powershell")
+    if not powershell:
+        pytest.skip("Windows PowerShell is required to launch the actual manager.")
+    manager_path = str(MANAGER).replace("'", "''")
+    module_path = str(UI_MODULE).replace("'", "''")
+    temp_path = str(tmp_path).replace("'", "''")
+    script = f"""
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+Import-Module '{module_path}' -Force
+$manager = '{manager_path}'
+$directory = '{temp_path}'
+$stdout = Join-Path $directory 'manager.out'
+$stderr = Join-Path $directory 'manager.err'
+$exitFile = Join-Path $directory 'manager.exit'
+$managerScript = @"
+`$ErrorActionPreference = 'Stop'
+`$ProgressPreference = 'SilentlyContinue'
+`$exitCode = 1
+try {{
+    & '$manager' -Action Status -Json
+    `$exitCode = 0
+}} catch {{
+    [Console]::Error.WriteLine(`$_.ToString())
+}} finally {{
+    [System.IO.File]::WriteAllText('$exitFile', [string]`$exitCode)
+}}
+exit `$exitCode
+"@
+$encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($managerScript))
+$process = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') `
+    -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $encoded" `
+    -WorkingDirectory (Split-Path (Split-Path $manager -Parent) -Parent) `
+    -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+$deadline = (Get-Date).AddSeconds(20)
+while (-not $process.HasExited -and (Get-Date) -lt $deadline) {{ Start-Sleep -Milliseconds 50 }}
+if (-not $process.HasExited) {{ throw 'Status child did not complete asynchronously.' }}
+$completion = ConvertFrom-AtlasManagerCompletion 'Status' `
+    ([System.IO.File]::ReadAllText($stdout)) ([System.IO.File]::ReadAllText($stderr)) `
+    ([System.IO.File]::ReadAllText($exitFile))
+if (-not $completion.success -or $completion.result.state -ne 'STOPPED') {{
+    throw "Status child was not accepted: $($completion.error)"
+}}
+Write-Output "PASS; Process.ExitCodeNull=$($null -eq $process.ExitCode); Marker=$([System.IO.File]::ReadAllText($exitFile))"
+$process.Dispose()
+"""
+    completed = subprocess.run(
+        [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert "PASS; " in completed.stdout
+    assert "Marker=0" in completed.stdout
+
+
+def test_e128_gui_callback_exceptions_are_captured_and_reported():
+    module_path = str(UI_MODULE).replace("'", "''")
+    script = f"""
+Import-Module '{module_path}' -Force
+$errors = New-Object System.Collections.Generic.List[string]
+$completed = Invoke-AtlasBackgroundUiCallback {{ throw 'simulated timer callback failure' }} {{
+    param($errorRecord)
+    $errors.Add($errorRecord.Exception.Message)
+}}
+if ($completed -or $errors.Count -ne 1 -or $errors[0] -ne 'simulated timer callback failure') {{
+    throw 'GUI callback exception escaped or was not reported.'
+}}
+Write-Output 'PASS'
+"""
+    completed = subprocess.run(
+        [shutil.which("powershell.exe") or "powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
+         "-Command", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert "PASS" in completed.stdout
 
 
 def _run_ownership_powershell(script: str, timeout: int = 15) -> str:
