@@ -43,6 +43,63 @@ def test_e128_background_duplicate_or_stale_starts_fail_closed():
     assert "Port 8000 is occupied by an unowned process" in text
 
 
+def test_e128_unverified_dead_start_lock_stays_ambiguous_and_is_preserved(tmp_path):
+    runtime_dir = str(tmp_path).replace("'", "''")
+    manager_path = str(MANAGER).replace("'", "''")
+    output = _run_ownership_powershell(rf"""
+$runtimeDir = '{runtime_dir}'
+$sourcePath = '{manager_path}'
+$Root = 'D:\Atlas'
+$RecoveryLockPath = Join-Path $runtimeDir 'atlas-background-recovery.lock'
+$OwnerPath = Join-Path $runtimeDir 'atlas-background-owner.json'
+$LockPath = Join-Path $runtimeDir 'atlas-background-start.lock'
+$StopLockPath = Join-Path $runtimeDir 'atlas-background-stop.lock'
+$RuntimePath = Join-Path $runtimeDir 'runtime.json'
+$PowerShellPath = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+$ManagerPath = 'D:\Atlas\scripts\windows\Atlas-Background.ps1'
+$lock = [ordered]@{{
+    pid=34684
+    run_id='f201c0f7-1db5-4d89-968b-1a38217f4c9c'
+    root=$Root
+    phase='launching'
+    executable=$PowerShellPath
+    created_utc='2026-10-14T06:53:38.8267140Z'
+    command_line='"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -EncodedCommand fixture'
+}}
+$lock | ConvertTo-Json | Set-Content -LiteralPath $LockPath
+$before = (Get-FileHash -LiteralPath $LockPath -Algorithm SHA256).Hash
+function Read-JsonFile([string]$Path) {{
+    return (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json)
+}}
+function Test-IdentityRecord($Record, [string]$ExpectedExecutable, [string]$RequiredCommand) {{
+    return $false
+}}
+$tokens = $null
+$parseErrors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile(
+    $sourcePath, [ref]$tokens, [ref]$parseErrors
+)
+if ($parseErrors.Count -gt 0) {{ throw 'Could not parse the production background manager.' }}
+$definition = $ast.Find({{
+    param($node)
+    $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+        $node.Name -eq 'Get-VerifiedState'
+}}, $true)
+if (-not $definition) {{ throw 'Get-VerifiedState was not found in the production manager.' }}
+Invoke-Expression $definition.Extent.Text
+$state = Get-VerifiedState
+if ($state.state -ne 'AMBIGUOUS' -or $state.message -notmatch 'start lock is stale') {{
+    throw "Unverified stale lock was not reported as ambiguous: $($state | ConvertTo-Json -Compress)"
+}}
+if (-not (Test-Path -LiteralPath $LockPath -PathType Leaf) -or
+    (Get-FileHash -LiteralPath $LockPath -Algorithm SHA256).Hash -ne $before) {{
+    throw 'Status modified or removed the unverified stale start lock.'
+}}
+Write-Output 'PASS'
+""")
+    assert "PASS" in output
+
+
 def test_e128_background_stop_uses_graceful_run_id_handshake_without_forced_fallback():
     text = _text(MANAGER)
     assert "Write-JsonAtomic @{run_id=[string]$Owner.run_id} $StopPath" in text
