@@ -1,11 +1,17 @@
+import asyncio
+import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MANAGER = ROOT / "scripts" / "windows" / "Atlas-Background.ps1"
 CONTROLS = ROOT / "scripts" / "windows" / "Atlas-Background-Controls.ps1"
 INSTALLER = ROOT / "scripts" / "windows" / "Install-AtlasBackgroundShortcut.ps1"
+CONTAINER_MODULE = ROOT / "scripts" / "windows" / "Atlas-ContainerOwnership.psm1"
 
 
 def _text(path: Path) -> str:
@@ -108,6 +114,101 @@ def test_e128_background_stop_timeout_never_force_stops_api():
     assert "stop_timeout" in stop
     assert "operator intervention" in stop.lower()
     assert "ownership were retained" in stop
+
+
+def test_e128_docker_container_inspection_uses_json_not_nested_label_templates():
+    text = _text(MANAGER)
+    assert "docker inspect --format '{{json .}}' $Name" in text
+    assert "ConvertFrom-AtlasContainerInspection" in text
+    assert 'index .Config.Labels "com.docker.compose.project"' not in text
+
+
+@pytest.mark.parametrize(
+    ("project", "service", "name", "root", "compose_file", "should_pass"),
+    [
+        ("atlas", "postgres", "/atlas-postgres", "D:\\Atlas", "D:\\Atlas\\docker-compose.yml", True),
+        ("projectatlas", "redis", "/atlas-redis", "D:\\Work\\Project Atlas",
+         "D:\\Work\\Project Atlas\\docker-compose.yml", True),
+        ("atlas", "postgres", "/atlas-postgres", "D:\\Atlas", None, False),
+        ("genesis", "postgres", "/atlas-postgres", "D:\\Atlas",
+         "D:\\Atlas\\docker-compose.yml", False),
+        ("atlas", "redis", "/atlas-postgres", "D:\\Atlas",
+         "D:\\Atlas\\docker-compose.yml", False),
+    ],
+)
+def test_e128_docker_labels_validate_name_service_project_and_compose_root(
+    project, service, name, root, compose_file, should_pass
+):
+    labels = {
+        "com.docker.compose.project": project,
+        "com.docker.compose.service": service,
+        "com.docker.compose.project.working_dir": root,
+    }
+    if compose_file is not None:
+        labels["com.docker.compose.project.config_files"] = compose_file
+    payload = json.dumps(
+        {
+            "Name": name,
+            "Config": {"Labels": labels},
+            "State": {"Running": True, "Health": {"Status": "healthy"}},
+        }
+    )
+    _assert_container_parser_result(payload, root, service, should_pass)
+
+
+def test_e128_docker_label_parser_rejects_malformed_inspection_output():
+    _assert_container_parser_result("{malformed", "D:\\Atlas", "postgres", False)
+
+
+def test_e128_stop_request_for_old_run_is_ignored_by_new_run(tmp_path, monkeypatch):
+    import app.services.desktop_control as module
+
+    signals = []
+    monkeypatch.setattr(module.signal, "raise_signal", signals.append)
+    control = module.DesktopControl(tmp_path, "new-run-id")
+    (tmp_path / "stop.json").write_text(json.dumps({"run_id": "old-run-id"}))
+
+    async def run():
+        await control.start()
+        assert not control.requested()
+        await control.stop()
+
+    asyncio.run(run())
+    assert signals == []
+
+
+def _assert_container_parser_result(payload, root, service, should_pass):
+    powershell = shutil.which("powershell.exe") or shutil.which("powershell")
+    if not powershell:
+        pytest.skip("Windows PowerShell is required to exercise the container identity module.")
+    module_path = str(CONTAINER_MODULE).replace("'", "''")
+    payload_literal = payload.replace("'", "''")
+    root_literal = root.replace("'", "''")
+    service_literal = service.replace("'", "''")
+    expectation = "$true" if should_pass else "$false"
+    script = f"""
+Import-Module '{module_path}' -Force
+$expected = {expectation}
+try {{
+    $result = ConvertFrom-AtlasContainerInspection 'atlas-{service}' '{service_literal}' '{root_literal}' '{payload_literal}'
+    if (-not $expected) {{ throw 'Invalid inspection was accepted.' }}
+    if (-not $result.running -or $result.health -ne 'healthy') {{ throw 'Inspection result lost state.' }}
+    Write-Output 'PASS'
+}} catch {{
+    if ($expected) {{ Write-Error $_; exit 1 }}
+    if ($_.Exception.Message -notmatch 'malformed JSON|exact Atlas Compose identity|missing container identity') {{ Write-Error $_; exit 1 }}
+    Write-Output 'REJECTED'
+}}
+"""
+    completed = subprocess.run(
+        [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    expected_output = "PASS" if should_pass else "REJECTED"
+    assert expected_output in completed.stdout
 
 
 def test_e128_background_shortcut_preserves_existing_atlas_shortcuts():

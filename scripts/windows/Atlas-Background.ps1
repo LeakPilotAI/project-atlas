@@ -24,6 +24,7 @@ $ManagerPath = Join-Path $PSScriptRoot "Atlas-Background.ps1"
 $ReadyPath = Join-Path $PSScriptRoot "Atlas-Ready.ps1"
 $ComposePath = Join-Path $Root "docker-compose.yml"
 $PowerShellPath = Join-Path $PSHOME "powershell.exe"
+Import-Module (Join-Path $PSScriptRoot "Atlas-ContainerOwnership.psm1") -Force
 
 function Read-JsonFile([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
@@ -223,15 +224,9 @@ function Assert-CleanStart {
 }
 
 function Get-AtlasContainer([string]$Name, [string]$ExpectedService) {
-    $format = '{{.Name}}|{{.State.Running}}|{{.State.Health.Status}}|{{index .Config.Labels "com.docker.compose.project"}}|{{index .Config.Labels "com.docker.compose.service"}}'
-    $raw = & docker inspect --format $format $Name 2>$null
+    $raw = & docker inspect --format '{{json .}}' $Name 2>$null
     if ($LASTEXITCODE -ne 0) { return $null }
-    $parts = ([string]$raw).Trim().Split('|')
-    if ($parts.Count -ne 5 -or $parts[0] -cne "/$Name" -or $parts[3] -cne "atlas" -or
-        $parts[4] -cne $ExpectedService) {
-        throw "Container $Name does not have the exact Atlas Compose identity; refusing to affect it."
-    }
-    return @{ name=$Name; running=($parts[1] -eq "true"); health=$parts[2] }
+    return ConvertFrom-AtlasContainerInspection $Name $ExpectedService $Root ([string]$raw)
 }
 
 function Start-AtlasDependencies {
@@ -302,7 +297,10 @@ function Stop-OwnedApi($Owner, [int]$TimeoutSeconds = 30) {
     }
     $existingRequest = Read-JsonFile $StopPath
     if ($existingRequest -and [string]$existingRequest.run_id -cne [string]$Owner.run_id) {
-        throw "A stop request for a different run ID exists; refusing to overwrite it."
+        $staleRunId = [guid]::Empty
+        if (-not [guid]::TryParse([string]$existingRequest.run_id, [ref]$staleRunId)) {
+            throw "A stop request has an invalid run ID; refusing to overwrite it."
+        }
     }
     Write-JsonAtomic @{run_id=[string]$Owner.run_id} $StopPath
     $Owner.state = "stopping"
@@ -544,7 +542,10 @@ if ($Action -eq "Stop") {
     }
     $existingRequest = Read-JsonFile $StopPath
     if ($existingRequest -and [string]$existingRequest.run_id -cne [string]$state.run_id) {
-        throw "A stop request for a different run ID exists; refusing to overwrite it."
+        $staleRunId = [guid]::Empty
+        if (-not [guid]::TryParse([string]$existingRequest.run_id, [ref]$staleRunId)) {
+            throw "A stop request has an invalid run ID; refusing to overwrite it."
+        }
     }
     try {
         $stopIdentity = Get-ProcessIdentity $PID
