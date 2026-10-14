@@ -11532,3 +11532,48 @@ E125 COMPLETION CHECKPOINT - 2026-10-13
 - Earlier automatic review applied obsolete read-only audit scope; re-review accepted the latest user-delegated E125 Phases 10/11 authorization. No bypass or disallowed action occurred.
 - E125 GREEN for source accounting integrity. Running Atlas remains on pre-restart code; controlled Atlas-only activation is pending.
 - Next execution: E126 cross-strategy paper risk and incomplete-evidence boundaries; Windows-local release readiness, E29 and alpha research remain active; Discord lifecycle producers remain gated.
+
+
+EXECUTION 126 - CROSS-STRATEGY PAPER RISK AND INCOMPLETE EVIDENCE - GREEN (SOURCE) - 2026-10-14
+- Initial verified checkpoint: 06e640cba186c94163731ab4a0b3a89c51e08c98, branch chatgpt/atlas-rebuild-v1; tracked tree initially clean. Latest E126 prompt authorizes implementation, isolated validation, documentation, commit/push and full roadmap synchronization; runtime restart remains prohibited.
+- Verified implementation commit: 667ba4e3d14e0d8e0f7c0d2c49fa33d6e826e6ca (e126 fail closed on unreliable paper risk evidence).
+- Audit and exact changed-file inventory: docs/E126_PAPER_RISK_EVIDENCE.md.
+- Proven policy: the -3R UTC-day snapshot aggregates eligible PAPER closes across strategies, but its admission guard is wired to the Perp resting-limit mirror. Its three-position count includes all PAPER opens when assessing a new mirror fill. No global three-position cap was imposed on RSI/equity.
+- RSI retains effective_max_open (configured zero -> existing 80 safety ceiling), daily trigger limits and cooldown. paper_try_symbol is the automated instrumented micro hook, not a separately exposed manual endpoint. Equity mirror remains separate. Strategy sizing, thresholds and ceilings unchanged.
+- Broader historical kill-switch wording conflicts with mirror-only implementation. Portfolio-wide kill/loss-stop policy remains an explicit unresolved decision; E126 fixes proven fail-open defects without inventing policy.
+- Invalid, boolean, NaN and infinite risk/session inputs reject. Unknown accounting returns null and reliability reasons rather than fabricated zero. Stale control-store PnL never authorizes admission after snapshot failure.
+- Journal evidence contract distinguishes valid existing empty journals from missing/unreadable/malformed/unterminated evidence. Legacy UTC-naive timestamps, timestamp fallback, missing/null-net gross fallback and authoritative zero are preserved. TEST/admin closes excluded; equivalent trade-ID closes count once; conflicts and ambiguous id-less duplicates block.
+- Required control-file corruption blocks mirror admission; absent-control-file startup defaults preserved. No journal initialization or repair was performed.
+- Mirror fills serialized; pending identity, mark freshness, current opens and current operator state rechecked after worker return. File identity/size/mtime and UTC-date freshness checked before admission. No distributed/multi-writer safety claim.
+- Existing PAPER_RISK_BLOCK event path preserved. Tests verify rejection creates no journal open and recovered positions remain intact. Any in-flight append may conservatively cancel a mirror opportunity; observe after authorized activation before considering retry policy.
+- API exposes reliable/unavailable evidence consistently. Perp and Command Center risk displays no longer coerce unknown R to zero or invent available loss headroom.
+- Final focused validation: 131 passed, zero failures/skips, 4.84 seconds.
+- Final canonical suite: 1754 passed, zero failures/skips, 39.34 seconds; two existing dependency deprecation warnings. Existing Node script contracts and new executed rendering assertions passed. Full Ruff passed rewritten risk-window/new tests; critical E9/F63/F7/F82 passed all changed Python; git diff --check passed.
+- All changed Python/HTML byte-matched the final tested isolated copy. Tests excluded production .env/evidence and blocked live service sockets except Python internal Windows socketpair. No Next.js application source/dependencies changed; separate Next.js build/typecheck not applicable.
+- Observation start: 2026-10-14T04:59:19.391491Z / 2026-10-13 23:59:19.391491 CDT. Prior E125 PID 35616 absent; local API health unavailable, including read-only unrestricted retry. No service was started/stopped/restarted. Source activation and current runtime health cannot be certified.
+- Latest durable journal close: 2026-10-13T12:20:31.522780Z / 07:20:31.522780 CDT. Current collection after that timestamp is unverified.
+- Integrity at 2026-10-14T05:11:02.695791Z: entire 6734055-byte journal unchanged, SHA256 55985866cb1c69e5e19a378fb40e44c5fd97636bff9f3109024bc5333f09a3bf. No historical rows rewritten, normalized, truncated or deleted.
+- E29 read-only computation at 2026-10-14T05:10:09.122750Z: 52 existing frozen memberships; baseline 51 genuine closes / -2.9476R / 7 symbols / 6 forward days; challenger 10 closes / +2.3160R / 4 symbols / 5 days. NOT_READY, all minimum gates false, promotion false. Existing recorded costs retained; no synthetic acceleration or profitability certification.
+- Membership SHA256 unchanged: 330a3a947df79f91b2295cd04771969e7b60c9f990f026dcd67e3d4aec723165. Only pure build_scorecard called; no membership sync/API invoked.
+- Genesis, Docker Desktop, containers, Postgres, Redis and live execution authority untouched. Discord lifecycle producers remain gated. Windows-local only; VPS/hosted/cloud deployment out of scope.
+- Canonical and Desktop roadmaps matched before this append: SHA256 2CD658A09DC09823F022411370D4277E46075C3E55AE93AF3EC84ACA361E0843. Full updated copies synchronized and hash-verified before checkpoint commit; final checkpoint SHA and remote equality are verified in execution output.
+
+VISUAL STATUS AFTER E126
+[DONE] E117-E124 Windows/local release hardening source milestones
+[DONE] E125 accounting integrity - source GREEN, runtime activation unverified
+[DONE] E126 incomplete evidence / mirror risk admission - source GREEN
+[UNVERIFIED] Atlas runtime availability and E125/E126 activation; no restart authorized
+[ACTIVE] Windows-local release readiness
+[ACTIVE] E29 genuine evidence accumulation; NOT_READY, baseline 51 / challenger 10
+[ACTIVE] Alpha/cadence/corroboration research
+[POLICY DECISION] Portfolio-wide PAPER kill/loss-stop scope versus strategy-specific limits
+[GATED] Discord lifecycle producers
+[OUT OF SCOPE] VPS/hosted deployment
+
+NEXT RECOMMENDED EXECUTION
+1. Separately authorized Atlas-only runtime recovery/activation: diagnose current availability, preserve evidence/Genesis/shared dependencies, activate E125/E126 deliberately, then verify health, risk endpoint and collection continuity.
+2. Document operator-approved cross-strategy kill/loss-stop scope before broadening enforcement. Do not impose mirror three-position limits on micro research.
+3. Observe conservative snapshot-invalidated cancellations and genuine E29/alpha outcomes; keep evidence thresholds fixed and do not claim profitability from insufficient samples.
+4. Complete remaining Windows-local release checklist and operator handoff using measured runtime evidence; Discord remains gated until its dedicated lifecycle contracts pass.
+
+PERMANENT ROADMAP DISCIPLINE: preserve history, synchronize full canonical/Desktop files, verify SHA256, commit/push verified changes only, never manufacture readiness.
