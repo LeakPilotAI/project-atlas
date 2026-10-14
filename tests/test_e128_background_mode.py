@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -13,6 +14,7 @@ CONTROLS = ROOT / "scripts" / "windows" / "Atlas-Background-Controls.ps1"
 INSTALLER = ROOT / "scripts" / "windows" / "Install-AtlasBackgroundShortcut.ps1"
 CONTAINER_MODULE = ROOT / "scripts" / "windows" / "Atlas-ContainerOwnership.psm1"
 OWNERSHIP_MODULE = ROOT / "scripts" / "windows" / "Atlas-ProcessOwnership.psm1"
+UI_MODULE = ROOT / "scripts" / "windows" / "Atlas-Background-Ui.psm1"
 
 
 def _text(path: Path) -> str:
@@ -265,6 +267,73 @@ def test_e128_background_controls_run_manager_operations_off_the_ui_thread():
     assert "WaitForExit" not in controls
     assert ".Result" not in controls
     assert "Start-BackgroundManager \"Status\"" in controls
+
+
+def test_e128_background_controls_do_not_pass_quoted_color_expressions():
+    controls = _text(CONTROLS)
+    assert "Import-Module (Join-Path $PSScriptRoot \"Atlas-Background-Ui.psm1\") -Force" in controls
+    assert "Set-AtlasBackgroundStatusRendering $status $statusTip $Message $Color" in controls
+    assert not re.search(
+        r"Set-StatusMessage[^\r\n]*[\"'][^\"']*\[System\.Drawing\.Color\]::", controls
+    )
+    assert not re.search(
+        r"(?:ForeColor|BackColor)\s*=\s*[\"'][^\"']*(?:Color|Red|Green|Orange|SlateGray)",
+        controls,
+    )
+    assert "[System.Drawing.Color]" in controls
+
+
+def test_e128_background_status_rendering_uses_real_windows_forms_colors():
+    powershell = shutil.which("powershell.exe") or shutil.which("powershell")
+    if not powershell:
+        pytest.skip("Windows PowerShell is required to exercise Windows Forms rendering.")
+    module_path = str(UI_MODULE).replace("'", "''")
+    script = f"""
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+Import-Module '{module_path}' -Force
+$label = New-Object System.Windows.Forms.Label
+$tooltip = New-Object System.Windows.Forms.ToolTip
+$checks = @(
+    @{{ state='running'; expected=[System.Drawing.Color]::DarkGreen }},
+    @{{ state='STOPPED'; expected=[System.Drawing.Color]::DarkSlateGray }},
+    @{{ state='starting'; expected=[System.Drawing.Color]::DarkOrange }},
+    @{{ state='stopping'; expected=[System.Drawing.Color]::DarkOrange }},
+    @{{ state='AMBIGUOUS'; expected=[System.Drawing.Color]::DarkRed }}
+)
+foreach ($check in $checks) {{
+    $color = Get-AtlasBackgroundStatusColor $check.state
+    if ($color.GetType() -ne [System.Drawing.Color]) {{
+        throw "Status color is not a System.Drawing.Color object for $($check.state)."
+    }}
+    Set-AtlasBackgroundStatusRendering $label $tooltip $check.state $color
+    if ($label.ForeColor.ToArgb() -ne $check.expected.ToArgb() -or $label.Text -ne $check.state) {{
+        throw "Status label did not render expected color/text for $($check.state)."
+    }}
+}}
+$tooltip.Dispose()
+$label.Dispose()
+Write-Output 'PASS'
+"""
+    completed = subprocess.run(
+        [powershell, "-NoProfile", "-STA", "-ExecutionPolicy", "Bypass", "-Command", script],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert "PASS" in completed.stdout
+
+
+def test_e128_background_async_callbacks_report_errors_without_escaping():
+    controls = _text(CONTROLS)
+    assert "$timer.Add_Tick({" in controls
+    assert "$timer.Add_Tick({\n    try { Poll-BackgroundManager }\n    catch {" in controls
+    assert "STATUS CHECK FAILED:" in controls
+    assert "Atlas background timer callback failed:" in controls
+    assert "try { $active.process.Dispose() } catch { }" in controls
+    assert "try { Remove-ManagerOutput $active } catch { }" in controls
+    assert "WaitForExit" not in controls
 
 
 def _run_ownership_powershell(script: str, timeout: int = 15) -> str:

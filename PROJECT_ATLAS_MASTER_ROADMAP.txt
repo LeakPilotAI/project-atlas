@@ -11662,3 +11662,11 @@ E128 FOLLOW-UP - WINDOWS PYTHON PID OWNERSHIP, DEAD-SESSION RECOVERY, AND RESPON
 - Read-only current Status after recovery returned `STOPPED`; owner/runtime manifests were archived, both historical PIDs were confirmed absent, and the successful port query found zero listeners on 8000. No Atlas API was started. The old stop request hash stayed unchanged; no Docker, Genesis, `.env`, PAPER journal, database or original shortcut operation was performed.
 - Current clean ownership permits a future manually controlled startup attempt, but this repair did not activate the production Atlas API. Startup remains an explicit operator action after confirming Docker Desktop/Atlas dependencies and existing environment/venv prerequisites.
 - Verified implementation commit: `148283ad` (`atlas: fix E128 background process ownership`). The Desktop roadmap copy is synchronized from this canonical file after verification; only the canonical roadmap is tracked in Git.
+
+
+E128 FOLLOW-UP - WINDOWS FORMS STATUS COLOR CONVERSION
+- Fixed the Windows PowerShell 5.1 status-label color conversion failure. The controls now resolve state colors through a typed `System.Drawing.Color` helper and render through a Windows Forms helper, avoiding static enum expressions being passed as literal positional-argument strings.
+- Reviewed all E128 GUI ForeColor/BackColor/color assignments. Added regression coverage that rejects quoted color expressions and exercises actual `Label.ForeColor` and text rendering for running, stopped, starting, stopping, and ambiguous states.
+- Protected the Windows Forms timer/poll callback and manager process cleanup paths so rendering, polling, disposal, and output cleanup exceptions are caught and reported through the status panel or trace output instead of escaping as unhandled GUI callback exceptions.
+- Focused E128 and desktop tests: 33 passed. Ruff passed. Windows PowerShell 5.1 parsing passed for the controls and UI helper module; `git diff --check` passed. No Atlas API, Docker container, or Genesis service was started or stopped; runtime ownership, PAPER data and original shortcuts were not modified.
+- The canonical roadmap and Desktop copy are synchronized after validation. Only the verified E128 UI helper, controls, focused tests and canonical roadmap update are included in the changeset.

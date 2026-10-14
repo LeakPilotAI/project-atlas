@@ -3,6 +3,7 @@
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+Import-Module (Join-Path $PSScriptRoot "Atlas-Background-Ui.psm1") -Force
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $Manager = Join-Path $PSScriptRoot "Atlas-Background.ps1"
@@ -44,9 +45,7 @@ $stopButton.Size = New-Object System.Drawing.Size(445, 34)
 $form.Controls.Add($stopButton)
 
 function Set-StatusMessage([string]$Message, [System.Drawing.Color]$Color) {
-    $status.Text = $Message
-    $status.ForeColor = $Color
-    $statusTip.SetToolTip($status, $Message)
+    Set-AtlasBackgroundStatusRendering $status $statusTip $Message $Color
 }
 
 function Start-BackgroundManager([string]$SelectedAction) {
@@ -75,9 +74,11 @@ function Start-BackgroundManager([string]$SelectedAction) {
         $statusButton.Enabled = $false
         $stopButton.Enabled = $false
         $caption = if ($SelectedAction -eq "Status") { "Checking Atlas status..." } else { "$SelectedAction request is running..." }
-        Set-StatusMessage $caption [System.Drawing.Color]::DarkSlateGray
+        $color = Get-AtlasBackgroundStatusColor "idle"
+        Set-StatusMessage $caption $color
     } catch {
-        Set-StatusMessage "Atlas $SelectedAction failed: $($_.Exception.Message)" [System.Drawing.Color]::DarkRed
+        $color = Get-AtlasBackgroundStatusColor "error"
+        Set-StatusMessage "Atlas $SelectedAction failed: $($_.Exception.Message)" $color
         $startButton.Enabled = $false
         $statusButton.Enabled = $true
         $stopButton.Enabled = $false
@@ -85,15 +86,7 @@ function Start-BackgroundManager([string]$SelectedAction) {
 }
 
 function Apply-AtlasStatus($Result) {
-    $color = if ($Result.state -eq "running") {
-        [System.Drawing.Color]::DarkGreen
-    } elseif ($Result.state -eq "STOPPED") {
-        [System.Drawing.Color]::DarkSlateGray
-    } elseif ($Result.state -eq "starting" -or $Result.state -eq "stopping") {
-        [System.Drawing.Color]::DarkOrange
-    } else {
-        [System.Drawing.Color]::DarkRed
-    }
+    $color = Get-AtlasBackgroundStatusColor ([string]$Result.state)
     Set-StatusMessage "$($Result.state): $($Result.message)" $color
     $startButton.Enabled = ($Result.state -eq "STOPPED")
     $stopButton.Enabled = ($Result.state -eq "running")
@@ -103,7 +96,7 @@ function Apply-AtlasStatus($Result) {
 function Remove-ManagerOutput($Active) {
     foreach ($path in @($Active.output_path, $Active.error_path)) {
         if (Test-Path -LiteralPath $path -PathType Leaf) {
-            Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+            try { Remove-Item -LiteralPath $path -Force -ErrorAction Stop } catch { }
         }
     }
 }
@@ -129,7 +122,8 @@ function Poll-BackgroundManager {
         } else { "" }
         if ($active.process.ExitCode -ne 0) {
             $detail = if ($errorOutput) { $errorOutput } else { "exit code $($active.process.ExitCode)" }
-            Set-StatusMessage "Atlas $($active.action) failed: $detail" [System.Drawing.Color]::DarkRed
+            $color = Get-AtlasBackgroundStatusColor "error"
+            Set-StatusMessage "Atlas $($active.action) failed: $detail" $color
             $startButton.Enabled = $false
             $statusButton.Enabled = $true
             $stopButton.Enabled = $false
@@ -141,19 +135,25 @@ function Poll-BackgroundManager {
                 Apply-AtlasStatus $result
                 $script:nextStatusCheck = (Get-Date).AddSeconds(2)
             } else {
-                Set-StatusMessage "$($result.state): $($result.message)" [System.Drawing.Color]::DarkSlateGray
+                $color = Get-AtlasBackgroundStatusColor "idle"
+                Set-StatusMessage "$($result.state): $($result.message)" $color
                 $script:refreshStatus = $true
             }
         }
     } catch {
-        Set-StatusMessage "STATUS CHECK FAILED: $($_.Exception.Message)" [System.Drawing.Color]::DarkRed
-        $startButton.Enabled = $false
-        $statusButton.Enabled = $true
-        $stopButton.Enabled = $false
-        $script:nextStatusCheck = (Get-Date).AddSeconds(2)
+        try {
+            $color = Get-AtlasBackgroundStatusColor "error"
+            Set-StatusMessage "STATUS CHECK FAILED: $($_.Exception.Message)" $color
+            $startButton.Enabled = $false
+            $statusButton.Enabled = $true
+            $stopButton.Enabled = $false
+            $script:nextStatusCheck = (Get-Date).AddSeconds(2)
+        } catch {
+            [System.Diagnostics.Trace]::WriteLine("Atlas background UI callback failed: $($_.Exception.Message)")
+        }
     } finally {
-        $active.process.Dispose()
-        Remove-ManagerOutput $active
+        try { $active.process.Dispose() } catch { }
+        try { Remove-ManagerOutput $active } catch { }
     }
 }
 
@@ -173,11 +173,24 @@ $script:refreshStatus = $true
 $script:nextStatusCheck = [datetime]::MinValue
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 250
-$timer.Add_Tick({ Poll-BackgroundManager })
+$timer.Add_Tick({
+    try { Poll-BackgroundManager }
+    catch {
+        try {
+            $color = Get-AtlasBackgroundStatusColor "error"
+            Set-StatusMessage "STATUS CHECK FAILED: $($_.Exception.Message)" $color
+            $startButton.Enabled = $false
+            $statusButton.Enabled = $true
+            $stopButton.Enabled = $false
+        } catch {
+            [System.Diagnostics.Trace]::WriteLine("Atlas background timer callback failed: $($_.Exception.Message)")
+        }
+    }
+})
 $timer.Start()
 $form.Add_Shown({ $script:refreshStatus = $true })
 [void]$form.ShowDialog()
 $timer.Stop()
 if ($script:activeManager) {
-    $script:activeManager.process.Dispose()
+    try { $script:activeManager.process.Dispose() } catch { }
 }
