@@ -7,9 +7,10 @@ from io import BytesIO
 from typing import Any, List, Optional, Set
 
 import discord
-from discord import app_commands
 import structlog
+from discord import app_commands
 
+from app.alerts.subscriptions import DiscordSubscriptionStore, validate_discord_user_id
 from app.core.config import get_settings
 
 log = structlog.get_logger(__name__)
@@ -22,9 +23,13 @@ bot = discord.Client(intents=intents)
 tree = app_commands.CommandTree(bot)
 
 _ready = False
-_subscribers: Set[int] = set()
+_subscription_store = DiscordSubscriptionStore()
+_subscribers: Set[int] = set(_subscription_store.subscriber_ids)
 _start_lock = asyncio.Lock()
 _bot_task: Optional[asyncio.Task] = None
+
+if not _subscription_store.reliable:
+    log.error("Discord subscription state could not be loaded", error=_subscription_store.error)
 
 
 def is_discord_ready() -> bool:
@@ -33,6 +38,33 @@ def is_discord_ready() -> bool:
 
 def get_subscriber_ids() -> List[int]:
     return list(_subscribers)
+
+
+def subscription_store_reliable() -> bool:
+    return _subscription_store.reliable
+
+
+def _change_subscription(user_id: int, *, subscribed: bool) -> bool:
+    validate_discord_user_id(user_id)
+    if not _subscription_store.reliable:
+        log.error("Discord subscription update refused", error=_subscription_store.error)
+        return False
+
+    updated = set(_subscribers)
+    if subscribed:
+        updated.add(user_id)
+    else:
+        updated.discard(user_id)
+    try:
+        _subscription_store.save(updated)
+    except (OSError, ValueError) as exc:
+        _subscription_store.error = f"{type(exc).__name__}: {str(exc)[:180]}"
+        log.error("Discord subscription update failed", error=_subscription_store.error)
+        return False
+
+    _subscribers.clear()
+    _subscribers.update(updated)
+    return True
 
 
 def _owner_ids() -> Set[int]:
@@ -167,24 +199,38 @@ async def on_ready() -> None:
 
 @tree.command(name="subscribe", description="Subscribe to Atlas DMs")
 async def subscribe_cmd(interaction: discord.Interaction) -> None:
-    _subscribers.add(interaction.user.id)
-    await interaction.response.send_message(
-        "Subscribed. You will receive Atlas DMs.", ephemeral=True
-    )
-    log.info("Subscriber added", user_id=interaction.user.id)
+    user_id = interaction.user.id
+    if _change_subscription(user_id, subscribed=True):
+        await interaction.response.send_message("Subscribed. You will receive Atlas DMs.", ephemeral=True)
+        log.info("Subscriber added", user_id=user_id)
+    else:
+        await interaction.response.send_message(
+            "Subscription could not be saved; your existing subscription state was not changed. "
+            "Please contact the Atlas operator.",
+            ephemeral=True,
+        )
 
 
 @tree.command(name="unsubscribe", description="Stop Atlas DMs")
 async def unsubscribe_cmd(interaction: discord.Interaction) -> None:
-    _subscribers.discard(interaction.user.id)
-    await interaction.response.send_message("Unsubscribed.", ephemeral=True)
+    user_id = interaction.user.id
+    if _change_subscription(user_id, subscribed=False):
+        await interaction.response.send_message("Unsubscribed.", ephemeral=True)
+        log.info("Subscriber removed", user_id=user_id)
+    else:
+        await interaction.response.send_message(
+            "Unsubscribe could not be saved; your existing subscription state was not changed. "
+            "Please contact the Atlas operator.",
+            ephemeral=True,
+        )
 
 
 @tree.command(name="status", description="Atlas bot status")
 async def status_cmd(interaction: discord.Interaction) -> None:
     await interaction.response.send_message(
         f"**Atlas Discord** ready=`{is_discord_ready()}` · "
-        f"subscribers=`{len(_subscribers)}` · user=`{bot.user}`",
+        f"subscribers=`{len(_subscribers)}` · "
+        f"subscription_store_reliable=`{subscription_store_reliable()}` · user=`{bot.user}`",
         ephemeral=True,
     )
 

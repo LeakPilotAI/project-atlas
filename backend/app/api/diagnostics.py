@@ -205,7 +205,12 @@ async def diagnostics_paper_reconciliation() -> Dict[str, Any]:
 
 @router.get("/discord")
 async def diagnostics_discord() -> Dict[str, Any]:
-    from app.alerts.discord import bot, get_subscriber_ids, is_discord_ready
+    from app.alerts.discord import (
+        bot,
+        get_subscriber_ids,
+        is_discord_ready,
+        subscription_store_reliable,
+    )
     from app.core.config import get_settings
 
     s = get_settings()
@@ -216,6 +221,7 @@ async def diagnostics_discord() -> Dict[str, Any]:
         "discord_bot_connected": bool(getattr(bot, "is_ready", lambda: False)()),
         "discord_ready": ready,
         "subscriber_count": len(get_subscriber_ids()),
+        "subscription_store_reliable": subscription_store_reliable(),
         "owner_ids": s.discord_owner_id_list,
         "can_fetch_user": ready,
         "can_send_dm": ready and (len(get_subscriber_ids()) > 0 or bool(s.discord_owner_id_list)),

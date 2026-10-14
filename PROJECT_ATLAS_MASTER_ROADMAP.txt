@@ -11835,7 +11835,7 @@ VISUAL STATUS AFTER EXECUTION 131
 [DONE] Isolated shutdown idempotency, final-mark persistence, ownership and ordering regressions; focused tests and compile checks passed
 [DONE] Windows graceful-shutdown operator guidance updated
 [VERIFIED RUNNING] Atlas background process and API ownership; API health, scanner/Discord readiness, 234-market refresh and Atlas Docker dependency health
-[VERIFIED] PAPER reconciliation reliable with 3 active manual-auto positions, 4 pending mirror limits, zero duplicate fills, reliable -1.2253R current-day realized risk; live-capital false
+[VERIFIED] PAPER reconciliation reliable with one current open and zero duplicates; -3.5873R reliable current-day risk has reached the 3.0R session loss gate, which blocked standard mirror admission; live-capital false
 [ACTIVE] Windows-local clean-install/update/recovery/longevity acceptance; all lifecycle-changing steps require an operator-approved maintenance window
 [ACTIVE] E29 genuine prospective baseline/challenger evidence; NOT_READY until fixed minimum and performance gates pass
 [ACTIVE] Genuine Alpha/cadence/corroboration evidence; strategy selection remains non-authoritative
@@ -11860,3 +11860,53 @@ NEXT RECOMMENDED EXECUTION
 4. Continue genuine E29/Alpha observation and preserve all promotion, policy, prediction, Discord, and live-capital gates.
 
 PERMANENT ROADMAP DISCIPLINE: preserve full append-only history and protected data; synchronize and SHA256-verify canonical/Desktop copies; stage only reviewed E131 files; never manufacture evidence or readiness.
+
+
+EXECUTION 132 - DISCORD LIFECYCLE RELIABILITY - SUBSCRIPTIONS DURABLE; TRADING LIFECYCLE PRODUCERS REMAIN GATED - 2026-10-14
+- Scope: review the canonical roadmap and E131 checkpoint plus E48-E55 typed/stateful Discord contracts; inventory existing producers, subscriptions, routes, source ordering, dedup/retry behavior, and missing trading-lifecycle events; implement only a safe isolated reliability improvement; and recheck the live runtime without restart or production Discord delivery.
+- Existing contract inventory:
+  - E48 defines bounded ALPHA_CATALYST, PREDICTION_ELIGIBLE, PERP_ALERT, and SYSTEM lanes; event identity hashes lane/type/producer identity/provenance; unknown routes and non-material events fail closed; external text remains inert. Its generic `DiscordDeliveryState` is in-memory only, and `deliver_legacy_payload` is a route/authority adapter rather than a durable outbox or global dedup store.
+  - E49 routes Alpha/Catalyst and Prediction eligible-candidate notices through the typed adapter. Their producer-owned Alpha delivered-event state and Prediction journal records remain the restart dedup authority; E48 acknowledgement itself is not durable.
+  - E50 routes manual Perp SETUP notices and selected SYSTEM/HEALTH or SYSTEM/SESSION notices. Perp acknowledgement is persisted with its manual setup state only after confirmed send; reconciliation alert cooldown is process-local and signature-based; E29 transition state remains producer-owned and durable.
+  - E51/E53 expose bounded, payload-free, GET-only typed-delivery observations. E52/E54 preserve scheduled summary frequency and producer-owned delivery state. E55 locks the ordering for stock/BTC accumulation, Quality Dips V3 and Auto Ladder; these stateful producers intentionally remain on their legacy sender until migration separately proves those contracts.
+  - Current lifecycle gaps: `paper_try_symbol` and `perp_micro_coach` send PAPER trigger notices directly after journal opens, and Perp close notices directly after journal closes; those notifications do not carry a typed durable event identity/outbox and a failed direct send is not recovered after process restart. Journal mark events have no Discord producer. Shutdown `INTERRUPTED` rows have no lifecycle notice. Reconciliation SYSTEM/HEALTH warnings concern durable duplicate/open reconciliation, not a per-position risk-stop lifecycle contract. Individual risk-stop changes and other trading-adjacent direct senders likewise lack a proved uniform typed lifecycle contract.
+  - Delivery contract caveat: current boolean Discord transport acknowledgement means at least one recipient received the DM, not that every subscriber received it. A retry at event scope after partial recipient success could duplicate already-delivered DMs. A typed lifecycle cutover therefore needs recipient-scoped acknowledgement/idempotency and restart-safe retry policy, not merely reuse of the route adapter.
+- Confirmed subscription defect: `/subscribe` and `/unsubscribe` previously changed only the in-memory `_subscribers` set, so explicit user opt-ins were lost after process restart. Added a versioned JSON store at ignored local `backend/data/discord_subscribers.json`. It validates bounded schema and positive unique integer IDs, writes to a same-directory temporary file with flush/fsync then atomic replace, and cleans only its own temporary file. Invalid/unreadable existing state is retained, surfaced as unreliable, and not overwritten; failed writes leave the live set unchanged and make further subscription mutations fail closed until state is repaired/reloaded. Configured owner IDs continue to be seeded as before.
+- `/subscribe` and `/unsubscribe` now report persistence failure rather than claim success; `/status` and GET-only `/diagnostics/discord` expose whether subscription storage is reliable. No test contacted Discord or the production server, and no production subscription file was created or changed.
+- Lifecycle producers were not enabled or rewired. Signal creation, PAPER entry, mark, close, interruption, per-position risk stops and other trading-adjacent notices remain gated pending event-specific identity, ordering, dedup, retry, recipient acknowledgement and restart-recovery contracts with isolated compatibility tests.
+- E131 shutdown ordering fix remains committed but not activated in the live API. E132 subscription persistence and diagnostics changes are also code-only and require a future controlled restart to take effect; no restart was performed in E132.
+- Validation: focused E132 plus E48/E49/E50/E53, reconciliation-alert, E55 stateful-producer and Quality Dips V3 contracts: 45 passed, 0 failed. Ruff passed on the new store and test. Existing `discord.py` Ruff findings improved from 12 to 11 and `diagnostics.py` remained at its 20-finding E131 baseline; no new diagnostics remain in those files. Pylance diagnostics were empty for changed Python files; Python compile and `git diff --check` passed. Warnings from Discord `audioop` and Starlette/httpx TestClient remain dependency deprecations.
+- Final live acceptance at approximately 08:40Z was read-only: background Status exit 0 / RUNNING, run ID `867a9b46-e377-4018-b42f-010a71332caa`, API PID 31552; `/health` `ok`, scanner and Discord ready, 1 Discord subscriber. The live process predates this code, so its diagnostics correctly lacked the new `subscription_store_reliable` field. Manual feed contained 234 markets, refreshed at `2026-10-14T08:40:11Z`. PAPER reconciliation was reliable with 1 current open and zero duplicates. Current-day risk snapshot was reliable at -3.5873R against the configured 3.0R session loss limit; the existing standard auto-mirror admission was blocked with `paper session loss stop reached`, and no setting or position was changed. `atlas-postgres` and `atlas-redis` remained healthy; no Genesis-named container was present. Local subscription file remained absent. No Docker mutation, PAPER write, real Discord delivery, Genesis operation, API stop/start, or production subscription edit was performed.
+- No signal generation, PAPER accounting, live-capital permission, strategy/risk authority, E29 evidence, prediction auto-open gate, or existing E131 runtime behavior was changed.
+
+VISUAL STATUS AFTER EXECUTION 132
+[DONE] Durable explicit Discord DM subscription state with schema validation, atomic replacement, fail-closed update errors, and diagnostics
+[DONE] E48-E55 producer/typed-event contract inventory recorded with lifecycle gaps and delivery acknowledgement caveats
+[GATED] Signal/PAPER entry/mark/close/interruption/per-position risk-stop typed lifecycle producers remain unmigrated and disabled pending complete restart-safe recipient-scoped contracts
+[PENDING CONTROLLED RESTART] E131 shutdown-order fix and E132 subscription persistence/diagnostic code are not active in the running API
+[VERIFIED RUNNING] Existing Atlas background API and Discord connection remained operational; no production Discord test notification was sent
+[ACTIVE] Windows-local maintenance-window lifecycle acceptance, E131 orderly-shutdown activation, and E132 subscription restart acceptance
+[ACTIVE] E29 genuine prospective baseline/challenger evidence; NOT_READY until frozen minimum and performance gates pass
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence; strategy selection remains non-authoritative
+[GATED] Prediction unattended PAPER opening pending successful exactly-once pre-deadline auto-flat and required live validation
+[POLICY DECISION] Portfolio-wide PAPER kill/loss-stop scope remains unresolved; do not broaden strategy-specific limits
+[GATED] Residual Discord lifecycle producers pending dedicated compatibility contracts
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted deployment unless explicitly re-enabled
+
+REMAINING ROADMAP - FULL INVENTORY AFTER E132
+1. Windows-local release readiness: operator-approved clean-install/update/recovery/longevity and graceful lifecycle acceptance with protected `.env`, PAPER and persistent-data backups. A controlled maintenance window is required to activate and verify E131 shutdown ordering and E132 subscription persistence; do not restart in routine E132 work or use the legacy stop path for background mode.
+2. E29: continue genuine prospective baseline/challenger collection with frozen membership/thresholds; no synthetic evidence, profitability claim, or promotion before every minimum and performance gate passes.
+3. Alpha/cadence/corroboration: continue genuine evidence collection while preserving read-only/context-only strategy-selection authority.
+4. Prediction PAPER: keep unattended opening disabled until exactly-once pre-deadline auto-flat and required live validation succeed on genuine evidence.
+5. PAPER risk policy: obtain the operator decision on portfolio-wide versus strategy-specific kill/loss-stop scope before changing enforcement.
+6. Discord event contract specification: define versioned identities and source/ordering contracts for signal creation, PAPER entry, mark policy, close, `INTERRUPTED`, per-position risk stops, and other relevant producers. Preserve E55 stateful producer ordering and keep all such migrations gated until recipient-scoped acknowledgement, dedup, retry, partial-delivery, and restart recovery pass compatibility tests. Do not promise exactly-once delivery across Discord/network uncertainty.
+7. Discord delivery/restart acceptance: exercise durable subscription load, explicit subscribe/unsubscribe, malformed-store handling, diagnostic state, and per-recipient failure semantics after controlled restart, with no test DMs sent to production.
+8. Deployment: VPS/Ubuntu/systemd/hosted deployment remains out of scope unless the owner explicitly re-enables it.
+
+NEXT RECOMMENDED EXECUTION
+1. Keep the current Atlas runtime running; continue only non-disruptive status, feed freshness, Discord readiness, and PAPER reconciliation checks.
+2. During an explicitly approved maintenance window, verify E131 service quiescence and PAPER shutdown behavior, then verify E132 subscription persistence/diagnostics across a controlled restart. Preserve open positions and use no production test notification.
+3. Before any lifecycle producer migration, specify its event source, stable identity, ordering relative to journal/state writes, recipient-scoped delivery state, retry/recovery rules and non-authority flags; add isolated failure/restart/duplicate tests first.
+4. Continue genuine E29/Alpha observations and preserve all strategy, prediction, risk, Discord lifecycle, and live-capital gates.
+
+PERMANENT ROADMAP DISCIPLINE: preserve full append-only history and protected data; synchronize and SHA256-verify canonical/Desktop copies; stage only reviewed E132 changes; never manufacture evidence or readiness.
