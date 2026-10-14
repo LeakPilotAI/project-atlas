@@ -11630,3 +11630,13 @@ EXECUTION 128 - MANUAL BACKGROUND GAMING MODE - SOURCE IMPLEMENTED / RUNTIME NOT
 - Remaining activation is deliberate manual operator action after confirming Docker Desktop's engine, the API venv, required existing environment files, and clean/verified Atlas ownership. Production API activation was not performed in this execution.
 - Final rerun after the UI error-reporting and environment-guard changes: 33 focused tests passed; Ruff, Windows PowerShell syntax parsing, and `git diff --check` passed. Original shortcut fingerprints remained identical.
 - The full Desktop roadmap copy is synchronized after final validation. Commit/push is limited to the explicit E128 source, test and documentation files on the existing branch.
+
+
+E128 FOLLOW-UP - EMPTY PORT STATUS AND NON-FORCING GRACEFUL STOP
+- Fixed first-run status: TCP listener discovery now queries the listener set and filters local port 8000 in PowerShell. A successful query with zero matching listeners is a free port; a failed query remains an explicit ownership error.
+- Before reporting STOPPED, the launcher now confirms there is no Atlas API process, no runtime manifest, and no port-8000 listener. Unknown API processes, duplicate API process identities, unknown port owners, stale manifests, run-ID/PID mismatches, and process/TCP query errors remain fail-closed. STOPPED continues to enable Start Atlas Background.
+- Removed the background stop timeout force-termination fallback. After 30 seconds, the run is recorded as `stop_timeout`, ownership remains, no process is killed, and the UI reports that operator intervention is required. PAPER reconciliation is not claimed complete on timeout.
+- Added focused regression contracts for free-port startup availability, TCP query failure, unknown and duplicate port/API owners, stale and mismatched runtime identity, and no forced stop. Final focused pytest, Ruff, PowerShell parser and whitespace-check results are recorded in the implementation handoff.
+- Production Atlas API was not started. Genesis, Docker services, PAPER journals, existing Atlas shortcuts and unrelated untracked artifacts were not changed. The canonical roadmap and Desktop copy are synchronized and hash-verified; only explicit E128 files are committed and pushed.
+- Live read-only PowerShell Status verification after the empty-array fix returned `{"state":"STOPPED","message":"No Atlas background run is recorded."}` on the unoccupied local port; the Start control contract enables Start only for this state. No API process was started.
+- Final focused suite: 39 passed; Ruff passed; Windows PowerShell 5.1 parsing passed for both changed scripts; `git diff --check` passed. This follow-up supersedes E128's initial timeout-force-fallback description above.

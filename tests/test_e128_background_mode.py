@@ -32,22 +32,82 @@ def test_e128_background_duplicate_or_stale_starts_fail_closed():
     assert "Port 8000 is occupied by an unowned process" in text
 
 
-def test_e128_background_stop_uses_graceful_run_id_handshake_and_exact_pid_fallback():
+def test_e128_background_stop_uses_graceful_run_id_handshake_without_forced_fallback():
     text = _text(MANAGER)
     assert "Write-JsonAtomic @{run_id=[string]$Owner.run_id} $StopPath" in text
     assert "Start-Sleep -Milliseconds 500" in text
     assert "Test-IdentityRecord $Owner $VenvPy" in text
-    assert "Stop-Process -Id ([int]$Owner.pid) -Force" in text
+    assert "Stop-Process" not in text
+    assert "No forced termination was attempted" in text
     assert "docker stop" not in text
     assert "Atlas-Stop.ps1" not in text
 
 
-def test_e128_background_stop_timeout_retains_verified_ownership():
+def test_e128_background_stop_timeout_reports_intervention_and_retains_ownership():
     text = _text(MANAGER)
     assert '$TimeoutSeconds = 30' in text
     assert '$owner.state = "stop_timeout"' in text
-    assert "ownership was retained" in text
-    assert "background owner" in text
+    assert "operator intervention is required" in text.lower()
+    assert "process and runtime ownership were retained" in text
+    assert "Review the Atlas logs and PAPER reconciliation" in text
+
+
+def test_e128_empty_port_query_is_free_but_actual_query_failure_is_not():
+    text = _text(MANAGER)
+    query = text.split("function Get-ApiListeners {", 1)[1].split("\nfunction ", 1)[0]
+    assert "Get-NetTCPConnection -State Listen -ErrorAction Stop" in query
+    assert "Where-Object { [int]$_.LocalPort -eq 8000 }" in query
+    assert "return @($listeners | ForEach-Object { [int]$_.OwningProcess } | Sort-Object -Unique)" in query
+    assert "Cannot verify ownership of TCP port 8000" in query
+    assert "-LocalPort 8000" not in query
+
+
+def test_e128_free_port_and_missing_owner_state_enables_manual_start():
+    text = _text(MANAGER)
+    state = text.split("function Get-VerifiedState {", 1)[1].split("\nfunction ", 1)[0]
+    controls = _text(CONTROLS)
+    assert "if (Test-Path -LiteralPath $RuntimePath -PathType Leaf)" in state
+    assert "if ($apiProcesses.Count -gt 0)" in state
+    assert "if ($listeners.Count -gt 0)" in state
+    assert "$listeners = @(Get-ApiListeners)" in state
+    assert 'return @{ state="STOPPED"; message="No Atlas background run is recorded." }' in state
+    assert "$startButton.Enabled = ($current.state -eq \"STOPPED\")" in controls
+
+
+def test_e128_unknown_or_duplicate_port_owners_remain_ambiguous():
+    state = _text(MANAGER).split("function Get-VerifiedState {", 1)[1].split("\nfunction ", 1)[0]
+    assert "$listeners.Count -gt 1" in state
+    assert "$listeners[0] -ne [int]$owner.pid" in state
+    assert "Port 8000 is occupied by an unowned process" in state
+    assert "$apiProcesses.Count -ne 1" in state
+
+
+def test_e128_unknown_and_duplicate_api_processes_remain_ambiguous():
+    text = _text(MANAGER)
+    state = text.split("function Get-VerifiedState {", 1)[1].split("\nfunction ", 1)[0]
+    processes = text.split("function Get-AtlasApiProcesses {", 1)[1].split("\nfunction ", 1)[0]
+    assert "if ($apiProcesses.Count -gt 0)" in state
+    assert "Atlas API process exists without a background owner" in state
+    assert "$apiProcesses.Count -ne 1" in state
+    assert "Cannot verify Atlas API process ownership" in processes
+    assert "uvicorn\\s+app\\.main:app" in processes
+
+
+def test_e128_stale_manifest_and_mismatched_run_ids_remain_ambiguous():
+    state = _text(MANAGER).split("function Get-VerifiedState {", 1)[1].split("\nfunction ", 1)[0]
+    assert "Recorded Atlas PID or process identity is stale or changed" in state
+    assert "[string]$runtime.run_id -cne [string]$owner.run_id" in state
+    assert "[int]$runtime.pid -ne [int]$owner.pid" in state
+    assert "runtime manifest exists without a background owner" in state
+
+
+def test_e128_background_stop_timeout_never_force_stops_api():
+    text = _text(MANAGER)
+    stop = text.split("function Stop-OwnedApi", 1)[1].split("\nfunction ", 1)[0]
+    assert "Stop-Process" not in stop
+    assert "stop_timeout" in stop
+    assert "operator intervention" in stop.lower()
+    assert "ownership were retained" in stop
 
 
 def test_e128_background_shortcut_preserves_existing_atlas_shortcuts():

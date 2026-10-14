@@ -77,11 +77,29 @@ function Test-IdentityRecord($Record, [string]$ExpectedExecutable, [string]$Requ
 
 function Get-ApiListeners {
     try {
-        return @(Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction Stop |
-            ForEach-Object { [int]$_.OwningProcess } | Sort-Object -Unique)
+        $listeners = @(Get-NetTCPConnection -State Listen -ErrorAction Stop |
+            Where-Object { [int]$_.LocalPort -eq 8000 })
+        return @($listeners | ForEach-Object { [int]$_.OwningProcess } | Sort-Object -Unique)
     } catch {
         throw "Cannot verify ownership of TCP port 8000: $($_.Exception.Message)"
     }
+}
+
+function Get-AtlasApiProcesses {
+    try {
+        $processes = @(Get-CimInstance Win32_Process `
+            -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction Stop)
+    } catch {
+        throw "Cannot verify Atlas API process ownership: $($_.Exception.Message)"
+    }
+    $rootPrefix = $Root + "\"
+    return @($processes | Where-Object {
+        $commandLine = [string]$_.CommandLine
+        $executable = [string]$_.ExecutablePath
+        ($commandLine -match '(?i)uvicorn\s+app\.main:app') -and
+            ($executable -ieq $VenvPy -or
+                $commandLine.IndexOf($rootPrefix, [StringComparison]::OrdinalIgnoreCase) -ge 0)
+    })
 }
 
 function Get-VerifiedState {
@@ -101,6 +119,10 @@ function Get-VerifiedState {
         }
         if (-not (Test-IdentityRecord $owner $VenvPy "uvicorn app.main:app")) {
             return @{ state="AMBIGUOUS"; message="Recorded Atlas PID or process identity is stale or changed; no process was touched." }
+        }
+        $apiProcesses = @(Get-AtlasApiProcesses)
+        if ($apiProcesses.Count -ne 1 -or [int]$apiProcesses[0].ProcessId -ne [int]$owner.pid) {
+            return @{ state="AMBIGUOUS"; message="Atlas API process count or PID does not match the unique recorded owner." }
         }
 
         if ($owner.state -ne "stopping" -and $owner.state -ne "starting") {
@@ -133,7 +155,7 @@ function Get-VerifiedState {
             }
         }
 
-        $listeners = Get-ApiListeners
+        $listeners = @(Get-ApiListeners)
         if ($listeners.Count -gt 1 -or
             ($listeners.Count -eq 1 -and $listeners[0] -ne [int]$owner.pid)) {
             return @{ state="AMBIGUOUS"; message="Port 8000 has an unexpected or multiple listener; no process was touched." }
@@ -143,7 +165,11 @@ function Get-VerifiedState {
         }
         return @{
             state = [string]$owner.state
-            message = "Verified Atlas background run $($owner.run_id), PID $($owner.pid)."
+            message = if ($owner.state -eq "stop_timeout") {
+                "Graceful shutdown timed out; Atlas API PID $($owner.pid) remains. No forced termination was attempted. Operator intervention is required. $($owner.last_error)"
+            } else {
+                "Verified Atlas background run $($owner.run_id), PID $($owner.pid)."
+            }
             run_id = [string]$owner.run_id
             pid = [int]$owner.pid
             owner = $owner
@@ -170,7 +196,11 @@ function Get-VerifiedState {
     if (Test-Path -LiteralPath $RuntimePath -PathType Leaf) {
         return @{ state="AMBIGUOUS"; message="A runtime manifest exists without a background owner; refusing to infer ownership." }
     }
-    $listeners = Get-ApiListeners
+    $apiProcesses = @(Get-AtlasApiProcesses)
+    if ($apiProcesses.Count -gt 0) {
+        return @{ state="AMBIGUOUS"; message="An Atlas API process exists without a background owner; refusing to infer ownership." }
+    }
+    $listeners = @(Get-ApiListeners)
     if ($listeners.Count -gt 0) {
         return @{ state="AMBIGUOUS"; message="Port 8000 is occupied by an unowned process; no process was touched." }
     }
@@ -287,13 +317,9 @@ function Stop-OwnedApi($Owner, [int]$TimeoutSeconds = 30) {
     if (-not (Test-IdentityRecord $Owner $VenvPy "uvicorn app.main:app")) {
         throw "Atlas PID identity changed during shutdown timeout; refusing fallback termination."
     }
-    Write-Warning "Graceful shutdown timed out; terminating only the still-verified Atlas API PID $($Owner.pid)."
-    Stop-Process -Id ([int]$Owner.pid) -Force -ErrorAction Stop
-    $verifyDeadline = (Get-Date).AddSeconds(5)
-    do {
-        if (-not (Get-ProcessIdentity ([int]$Owner.pid))) { return $true }
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $verifyDeadline)
+    $Owner.state = "stop_timeout"
+    $Owner.last_error = "Graceful shutdown exceeded $TimeoutSeconds seconds. The process and runtime ownership were retained; operator intervention is required. Inspect Atlas logs and reconcile PAPER state before taking manual action."
+    Write-JsonAtomic $Owner $OwnerPath
     return $false
 }
 
@@ -458,9 +484,9 @@ function Invoke-StopWorker {
         $stopped = Stop-OwnedApi $owner
         if (-not $stopped) {
             $owner.state = "stop_timeout"
-            $owner.last_error = "Verified API PID remained after graceful request and exact-PID fallback."
+            $owner.last_error = "Graceful shutdown exceeded 30 seconds. No forced termination was attempted. Inspect Atlas logs and PAPER reconciliation, then resolve the verified PID manually."
             Write-JsonAtomic $owner $OwnerPath
-            throw $owner.last_error
+            throw "Atlas graceful shutdown timed out after 30 seconds. No forced termination was attempted; operator intervention is required. Review the Atlas logs and PAPER reconciliation before taking manual action."
         }
         Clear-OwnedRuntime $owner
     } finally {
