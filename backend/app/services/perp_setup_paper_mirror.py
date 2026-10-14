@@ -23,7 +23,9 @@ from app.core.logging import get_logger
 from app.services.paper_journal import JOURNAL_PATH, iter_jsonl, paper_journal
 from app.services.paper_risk import check_paper_risk
 from app.services.paper_risk_controls import paper_risk_controls
-from app.services.paper_risk_window import utc_day_risk_snapshot
+from app.services.paper_risk_window import (
+    risk_snapshot_is_current, unavailable_risk_snapshot, utc_day_risk_snapshot,
+)
 from app.services.paper_execution_model import (
     DEFAULT_FEE_BPS_PER_SIDE,
     DEFAULT_SLIPPAGE_BPS_PER_SIDE,
@@ -53,6 +55,7 @@ def _now() -> str:
 
 class PerpSetupPaperMirror:
     def __init__(self, *, pending_path: Path | None = None) -> None:
+        self._admission_lock = asyncio.Lock()
         self._seeded = False
         self._mirrored_instances: set[str] = set()
         self._terminal_pending_instances: set[str] = set()
@@ -285,6 +288,10 @@ class PerpSetupPaperMirror:
         log.info("Auto paper resting limit cancelled", symbol=row.get("symbol"), reason=reason)
 
     async def _fill_pending(self, instance: str, *, mark: float, setup: dict[str, Any] | None = None) -> bool:
+        async with self._admission_lock:
+            return await self._fill_pending_locked(instance, mark=mark, setup=setup)
+
+    async def _fill_pending_locked(self, instance: str, *, mark: float, setup: dict[str, Any] | None = None) -> bool:
         row = self._pending.get(instance)
         if not row:
             return False
@@ -308,6 +315,17 @@ class PerpSetupPaperMirror:
         if not self._limit_touched(side=side, mark=mark, limit_price=limit_price):
             return False
 
+        try:
+            risk_window = await asyncio.to_thread(utc_day_risk_snapshot)
+        except Exception:
+            risk_window = unavailable_risk_snapshot()
+        # Re-read mutable admission state after the worker yields. The real
+        # journal's open_trade has no suspension points between this check/open.
+        if self._pending.get(instance) is not row:
+            return False
+        if setup is not None and not self._fresh_mark_timestamp(setup):
+            self._cancel_pending(instance, reason="STALE_MARK_BEFORE_FILL", mark=mark)
+            return False
         open_positions = list(paper_journal.list_open())
         open_pairs = {
             (str(p.get("symbol") or "").upper(), str(p.get("side") or "").upper())
@@ -318,21 +336,14 @@ class PerpSetupPaperMirror:
             self._cancel_pending(instance, reason="PAPER_POSITION_ALREADY_OPEN", mark=mark)
             return False
         control = paper_risk_controls.snapshot()
-        try:
-            risk_window = await asyncio.to_thread(utc_day_risk_snapshot)
-            session_net_r = float(risk_window.get("net_r") or 0.0)
-        except Exception:
-            risk_window = {
-                "net_r": float(control.get("session_net_r") or 0.0),
-                "window": "DURABLE_CONTROL_FALLBACK",
-                "source": "PAPER_RISK_CONTROL_STORE",
-            }
-            session_net_r = float(risk_window["net_r"])
+        session_net_r = risk_window.get("net_r")
         risk_decision = check_paper_risk(
             open_positions=open_positions,
             requested_risk_usd=1.0,
             session_net_r=session_net_r,
+            accounting_reliable=risk_snapshot_is_current(risk_window),
             kill_switch=bool(control.get("kill_switch")),
+            controls_reliable=control.get("reliable") is True,
         )
         if not risk_decision["allowed"]:
             self._cancel_pending(

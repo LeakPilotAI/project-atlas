@@ -110,7 +110,7 @@ def test_administrative_rows_excluded_from_all_performance_consumers(journal, ad
     assert build_scorecard(rows, memberships)["baseline"]["closed_trades"] == 1
     assert execution_model_cohorts(rows)["cohorts"][0]["resolved_count"] == 1
     assert not _eligible_paper_close(excluded)
-    risk = utc_day_risk_snapshot(path, now=datetime(2026, 10, 13, tzinfo=timezone.utc))
+    risk = utc_day_risk_snapshot(path, now=datetime(2026, 10, 13, 12, tzinfo=timezone.utc))
     assert risk["closed"] == 1 and risk["net_r"] == 1
     assert path.read_bytes() == original
 

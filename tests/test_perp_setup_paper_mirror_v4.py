@@ -15,10 +15,12 @@ def _isolate_unit_tests_from_runtime_paper_risk(monkeypatch):
     Dedicated paper-risk tests cover the real loss-stop and kill-switch behavior separately.
     """
     monkeypatch.setattr(mod.paper_risk_controls, "kill_switch", False)
+    monkeypatch.setattr(mod, "risk_snapshot_is_current", lambda snapshot: snapshot.get("reliable") is True)
     monkeypatch.setattr(
         mod,
         "utc_day_risk_snapshot",
         lambda: {
+            "reliable": True,
             "net_r": 0.0,
             "closed": 0,
             "window": "UTC_DAY",

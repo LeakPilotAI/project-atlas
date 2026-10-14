@@ -4,6 +4,7 @@ This is simulation-only. It limits new PAPER exposure and never enables live tra
 """
 from __future__ import annotations
 
+import math
 from typing import Any
 
 MAX_CONCURRENT_PAPER = 3
@@ -17,15 +18,24 @@ def check_paper_risk(
     requested_risk_usd: float,
     session_net_r: float = 0.0,
     kill_switch: bool = False,
+    accounting_reliable: bool = True,
+    controls_reliable: bool = True,
 ) -> dict[str, Any]:
     blockers: list[str] = []
+    if controls_reliable is not True:
+        blockers.append("paper operator controls unavailable or unreliable")
     if kill_switch:
         blockers.append("operator kill switch enabled")
+    if accounting_reliable is not True:
+        blockers.append("paper accounting evidence unavailable or unreliable")
     try:
         session_r = float(session_net_r)
-    except (TypeError, ValueError):
-        session_r = 0.0
-    if session_r <= -MAX_SESSION_LOSS_R:
+        if isinstance(session_net_r, bool) or not math.isfinite(session_r):
+            raise ValueError("invalid session R")
+    except (TypeError, ValueError, OverflowError):
+        session_r = None
+        blockers.append("invalid paper session net R")
+    if session_r is not None and session_r <= -MAX_SESSION_LOSS_R:
         blockers.append("paper session loss stop reached")
     paper_open = [
         p for p in open_positions
@@ -35,7 +45,9 @@ def check_paper_risk(
         blockers.append("max concurrent paper positions reached")
     try:
         risk = float(requested_risk_usd)
-    except (TypeError, ValueError):
+        if isinstance(requested_risk_usd, bool) or not math.isfinite(risk):
+            raise ValueError("invalid risk")
+    except (TypeError, ValueError, OverflowError):
         risk = -1.0
     if risk <= 0:
         blockers.append("invalid requested paper risk")

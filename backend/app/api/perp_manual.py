@@ -18,7 +18,9 @@ from app.services.paper_risk import (
     MAX_SESSION_LOSS_R,
     check_paper_risk,
 )
-from app.services.paper_risk_window import utc_day_risk_snapshot
+from app.services.paper_risk_window import (
+    risk_snapshot_is_current, unavailable_risk_snapshot, utc_day_risk_snapshot,
+)
 from app.services.paper_journal import paper_journal
 from app.trading_core.perp_board import build_perp_board
 
@@ -29,14 +31,9 @@ router = APIRouter(prefix="/api/perps", tags=["manual-perps"])
 async def paper_risk_status() -> Dict[str, Any]:
     try:
         risk_window = await asyncio.to_thread(utc_day_risk_snapshot)
-        session_net_r = float(risk_window.get("net_r") or 0.0)
     except Exception:
-        risk_window = {
-            "net_r": float(paper_risk_controls.session_net_r or 0.0),
-            "window": "DURABLE_CONTROL_FALLBACK",
-            "source": "PAPER_RISK_CONTROL_STORE",
-        }
-        session_net_r = float(risk_window["net_r"])
+        risk_window = unavailable_risk_snapshot()
+    session_net_r = risk_window.get("net_r")
     open_positions = list(paper_journal.list_open())
     paper_open_count = sum(
         1
@@ -47,7 +44,9 @@ async def paper_risk_status() -> Dict[str, Any]:
         open_positions=open_positions,
         requested_risk_usd=1.0,
         session_net_r=session_net_r,
+        accounting_reliable=risk_snapshot_is_current(risk_window),
         kill_switch=bool(paper_risk_controls.kill_switch),
+        controls_reliable=paper_risk_controls.reliable,
     )
     return {
         **paper_risk_controls.snapshot(),

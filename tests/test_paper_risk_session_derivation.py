@@ -51,11 +51,13 @@ def test_fill_does_not_use_lifetime_journal_r_for_daily_loss_stop(tmp_path, monk
     journal = _Journal(-30.0)
     monkeypatch.setattr(mirror_mod, "paper_journal", journal)
     monkeypatch.setattr(mirror_mod.paper_risk_controls, "kill_switch", False)
+    monkeypatch.setattr(mirror_mod, "risk_snapshot_is_current", lambda snapshot: snapshot.get("reliable") is True)
     monkeypatch.setattr(mirror_mod.asyncio, "to_thread", _inline_to_thread)
     monkeypatch.setattr(
         mirror_mod,
         "utc_day_risk_snapshot",
         lambda: {
+            "reliable": True,
             "net_r": 0.0,
             "closed": 0,
             "window": "UTC_DAY",
@@ -73,11 +75,13 @@ def test_fill_uses_current_utc_day_r_for_loss_stop(tmp_path, monkeypatch):
     journal = _Journal(20.0)
     monkeypatch.setattr(mirror_mod, "paper_journal", journal)
     monkeypatch.setattr(mirror_mod.paper_risk_controls, "kill_switch", False)
+    monkeypatch.setattr(mirror_mod, "risk_snapshot_is_current", lambda snapshot: snapshot.get("reliable") is True)
     monkeypatch.setattr(mirror_mod.asyncio, "to_thread", _inline_to_thread)
     monkeypatch.setattr(
         mirror_mod,
         "utc_day_risk_snapshot",
         lambda: {
+            "reliable": True,
             "net_r": -3.0,
             "closed": 3,
             "window": "UTC_DAY",
