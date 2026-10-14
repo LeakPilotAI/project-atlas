@@ -11726,3 +11726,47 @@ E128 FOLLOW-UP - GUI ENCODED START OWNERSHIP VALIDATION
 - The failed PID-14276 lock was revalidated as stale: recorded PID absent; no Atlas API process or launcher; no listener on port 8000; and no owner/runtime, stop, or recovery lock. Its original JSON was archived with a metadata sidecar under `logs/runtime/stale-start-locks/` (SHA-256 `C8C7AAEDABF4F31DBF65665F3BF12C6B2B20F61BF566831605C0F144303CBC07`). No evidence was deleted.
 - After archival, CLI Status returned `{"state":"STOPPED","message":"No Atlas background run is recorded."}` with exit code 0. Launched the installed GUI target in Status-only mode and inspected its real Win32 controls: it displayed `STOPPED: No Atlas background run is recorded.`, Start and Status were enabled, and Stop was disabled. No production API was started.
 - No Docker, Genesis, PAPER, environment, or original-shortcut data was changed. The canonical roadmap and its Desktop copy are synchronized; only verified manager/test/roadmap source changes are staged, not runtime/archive evidence.
+
+
+EXECUTION 129 - LIVE E125/E126 ACTIVATION AND OPERATIONAL CHECKPOINT - VERIFIED - 2026-10-14
+- Scope: continue from the E128-owned live Atlas session; read-only verification of API ownership/health, market-data and scanner freshness, E125/E126 runtime behavior, PAPER reconciliation, prediction gates, alerts, research readiness, and dashboard/API integration. No API start, stop, or restart was performed.
+- Git began at `f8230dac` on `chatgpt/atlas-rebuild-v1`, equal to `origin`; tracked worktree was clean. Existing untracked pytest, diagnostic, and archive artifacts were preserved and not staged.
+- `Atlas-Background.ps1 -Action Status -Json` returned `RUNNING` with exit code 0 for run ID `867a9b46-e377-4018-b42f-010a71332caa`, API PID 31552, and launcher PID 24880. Exact process command lines, executables, creation times, owner/runtime run IDs, and the port-8000 listener agreed. The API was healthy at `/health`; `atlas-postgres` and `atlas-redis` were healthy. No Genesis service was queried or changed.
+- The owner JSON retains an older `stop_timeout` state and an ownership-check error whose recorded cleanup explicitly says no process was signalled. The current manager independently verified the live API and reported RUNNING with a warning about that previous failure. No live owner/runtime metadata was edited; do not treat this historical warning as authorization to signal or recover the process.
+- E125 accounting source was committed before API creation (E125 implementation `db622dc4`, 2026-10-13; E126 implementation `667ba4e3`, 2026-10-14 00:14 CDT). The verified API/launcher were created at 2026-10-14 02:41 CDT, after those commits and after the E126 source file timestamp. This supports the E125/E126 source being loaded without a restart; live risk/reconciliation responses below confirm current read behavior, not every possible risk-boundary branch.
+- Read-only manual Hyperliquid status was `FRESH`: 234 markets, refreshed 2026-10-14 07:58:59Z and 14.2 seconds old at observation. Health reported the scanner, opportunity/PAPER trackers, quality-dip, day-trade, perp micro/manual, alert-delivery, prediction automation, and Discord-ready services active. Diagnostics reported 234 valid prices, 78/80 candle successes (2 candle failures), no qualified signals, no PAPER open attempts, and a successful market fetch at 07:59:11Z. These two candle failures did not make the overall market feed stale or API unhealthy.
+- `/api/perps/paper-risk` returned a reliable current UTC-day PAPER-journal snapshot, net 0R over 0 closes, zero current PAPER opens, `PAPER_ONLY`, and no live-capital or real-money authority. Its standard mirror probe was admissible under the current observed state; this is not a test of a loss-limit breach. Read-only reconciliation reported 327 open events and 327 close events, zero current opens, zero duplicate fills, and `reconciliation_ok=true`.
+- Production PAPER journal SHA256 remained `55985866CB1C69E5E19A378FB40E44C5FD97636BFF9F3109024BC5333F09A3BF`; frozen E29 membership SHA256 remained `330A3A947DF79F91B2295CD04771969E7B60C9F990F026DCD67E3D4AEC723165`. No production records were written or rewritten.
+- E29 remains `NOT_READY`: baseline 51 genuine closes / -2.9476R / 7 symbols / 6 days; challenger 10 / +2.3160R / 4 symbols / 5 days; all eight minimum evidence gates and all four performance gates false; promotion disallowed. Preserve frozen thresholds and accumulate only genuine prospective evidence.
+- Prediction PAPER automation is running but unattended opening remains disabled and blocked by `AUTO_FLAT_SAFETY_BLOCKED` and `AUTO_FLAT_LIVE_VALIDATION_REQUIRED`. The latest terminal record remains `EXPIRED_UNCLOSED` after `NO_EXECUTABLE_DEPTH`; it is not a closed trade or an auto-flat success. No opening/closing operation was requested.
+- Crypto quality-dip evidence currently has zero observations and no active scoring/dip state, signal, strategy selection, paper-entry, promotion, or live authority. Alpha contract status is healthy/read-only; the E36 automatic worker remains disabled. These are gated/insufficient-evidence states, not proof of an operational crash. Discord delivery observations showed 2/2 attempted messages acknowledged, zero retryable; residual lifecycle producers remain gated.
+- The API-served Command Center dashboard route returned HTTP 200 (19,425 bytes). No separate frontend listener on ports 3000/3001 was present during the read-only listener check; do not claim an independent frontend development server is active.
+- Focused E125/E126 isolated tests: 97 passed, 0 failed; one existing `audioop` deprecation warning. Ruff passed for the E125/E126 source and test files. An expanded Ruff invocation that also included the unchanged E29 scorecard reported six pre-existing import/annotation/style findings in that file; it was not modified. `git diff --check` passed. No source code change was justified by the live evidence; this execution completes the outstanding non-disruptive E125/E126 activation/readiness verification.
+- No production Atlas API, Docker container, Genesis service, shortcut, `.env`, PAPER record, or existing untracked artifact was changed.
+
+VISUAL STATUS AFTER EXECUTION 129
+[DONE] E125 accounting-integrity source and current live read path verified; no restart required for this session
+[DONE] E126 incomplete-evidence/mirror-risk source and current live snapshot/reconciliation read paths verified; no loss-boundary breach manufactured
+[DONE] E128 manual background owner currently verifies RUNNING; historical owner warning retained for operator awareness
+[ACTIVE] Windows-local final release-readiness checklist and operator handoff
+[ACTIVE] E29 genuine prospective evidence accumulation; NOT_READY (baseline 51, challenger 10)
+[ACTIVE] Genuine Alpha/cadence/corroboration evidence; no automated strategy-selection authority
+[GATED] Prediction unattended PAPER opening pending a successful, exactly-once, pre-deadline auto-flat validation
+[POLICY DECISION] Portfolio-wide PAPER kill/loss-stop scope; do not broaden strategy-specific limits before operator decision
+[GATED] Residual Discord lifecycle producers pending dedicated lifecycle contracts
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted deployment until explicitly re-enabled
+
+REMAINING ROADMAP - ORDERED NEXT WORK
+1. Complete Windows-local release-readiness and operator handoff from measured evidence: clean-install/update/recovery acceptance without deleting/recreating persisted data; document prerequisites, safe recovery, current E128 ownership warning, and controlled lifecycle procedures. Any future stop/start remains an explicit operator action.
+2. Continue genuine E29 baseline/challenger evidence and Alpha/cadence/corroboration observations over time. Keep thresholds/frozen membership rules unchanged; no synthetic records, premature profitability claim, or promotion while gates are false.
+3. Keep prediction unattended opening disabled until the existing terminal-safety gate is satisfied by a genuine successful exactly-once pre-deadline auto-flat and required live validation.
+4. Obtain an explicit operator decision on whether PAPER kill/loss-stop limits are portfolio-wide or strategy-specific before changing enforcement.
+5. Complete dedicated Discord lifecycle-producer contracts before enabling any gated producer; preserve current delivery and execution-authority boundaries.
+6. Keep VPS/Ubuntu/systemd/hosted deployment out of scope unless the owner explicitly re-enables it.
+
+NEXT RECOMMENDED EXECUTION
+1. Continue the Windows-local operator handoff/release checklist without restarting this live API; investigate the retained E128 owner warning only with read-only identity evidence unless a lifecycle operation is explicitly authorized.
+2. Recheck live freshness, reconciliation, source/runtime identity, and protected journal hashes before any later controlled lifecycle action.
+3. Preserve all evidence and readiness gates while genuine E29/Alpha observations accrue; do not convert inactive/gated surfaces into synthetic progress.
+
+PERMANENT ROADMAP DISCIPLINE: retain the full append-only history, synchronize and SHA256-verify canonical and Desktop copies, stage only verified intended tracked files, and never manufacture evidence, authority, or runtime readiness.
