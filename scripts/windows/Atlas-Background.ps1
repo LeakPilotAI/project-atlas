@@ -18,6 +18,7 @@ $RuntimeDir = Join-Path $Root "logs\runtime"
 $OwnerPath = Join-Path $RuntimeDir "atlas-background-owner.json"
 $LockPath = Join-Path $RuntimeDir "atlas-background-start.lock"
 $StopLockPath = Join-Path $RuntimeDir "atlas-background-stop.lock"
+$RecoveryLockPath = Join-Path $RuntimeDir "atlas-background-recovery.lock"
 $RuntimePath = Join-Path $RuntimeDir "runtime.json"
 $StopPath = Join-Path $RuntimeDir "stop.json"
 $ManagerPath = Join-Path $PSScriptRoot "Atlas-Background.ps1"
@@ -25,6 +26,7 @@ $ReadyPath = Join-Path $PSScriptRoot "Atlas-Ready.ps1"
 $ComposePath = Join-Path $Root "docker-compose.yml"
 $PowerShellPath = Join-Path $PSHOME "powershell.exe"
 Import-Module (Join-Path $PSScriptRoot "Atlas-ContainerOwnership.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "Atlas-ProcessOwnership.psm1") -Force
 
 function Read-JsonFile([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
@@ -58,10 +60,16 @@ function Get-ProcessIdentity([int]$ProcessId) {
     if (-not $process) { return $null }
     return @{
         pid = [int]$process.ProcessId
+        parent_pid = [int]$process.ParentProcessId
         executable = [string]$process.ExecutablePath
         command_line = [string]$process.CommandLine
         created_utc = ([datetime]$process.CreationDate).ToUniversalTime().ToString("o")
     }
+}
+
+function Get-CimProcess([int]$ProcessId) {
+    if ($ProcessId -le 4) { throw "Refusing invalid process ID $ProcessId." }
+    return Get-CimInstance Win32_Process -Filter ("ProcessId={0}" -f $ProcessId) -ErrorAction Stop
 }
 
 function Test-IdentityRecord($Record, [string]$ExpectedExecutable, [string]$RequiredCommand) {
@@ -104,42 +112,128 @@ function Get-AtlasApiProcesses {
 }
 
 function Get-VerifiedState {
+    if (Test-Path -LiteralPath $RecoveryLockPath -PathType Leaf) {
+        return @{ state="AMBIGUOUS"; message="A background ownership recovery is in progress or left an unverified lock." }
+    }
     if (Test-Path -LiteralPath $OwnerPath -PathType Leaf) {
         try { $owner = Read-JsonFile $OwnerPath }
         catch { return @{ state="AMBIGUOUS"; message="Background ownership file is unreadable: $($_.Exception.Message)" } }
 
         if (-not $owner -or $owner.schema_version -ne 1 -or $owner.root -ine $Root -or
             [string]::IsNullOrWhiteSpace([string]$owner.run_id) -or
-            [int]$owner.pid -le 4 -or [string]::IsNullOrWhiteSpace([string]$owner.command_line) -or
-            [string]::IsNullOrWhiteSpace([string]$owner.created_utc)) {
+            [int]$owner.pid -le 4 -or [string]::IsNullOrWhiteSpace([string]$owner.created_utc) -or
+            ($owner.state -ne "starting" -and [string]::IsNullOrWhiteSpace([string]$owner.command_line))) {
             return @{ state="AMBIGUOUS"; message="Background ownership record is incomplete or belongs to another root." }
         }
         $ownerRunId = [guid]::Empty
         if (-not [guid]::TryParse([string]$owner.run_id, [ref]$ownerRunId)) {
             return @{ state="AMBIGUOUS"; message="Background owner does not contain a valid unique run ID." }
         }
-        if (-not (Test-IdentityRecord $owner $VenvPy "uvicorn app.main:app")) {
-            return @{ state="AMBIGUOUS"; message="Recorded Atlas PID or process identity is stale or changed; no process was touched." }
-        }
-        $apiProcesses = @(Get-AtlasApiProcesses)
-        if ($apiProcesses.Count -ne 1 -or [int]$apiProcesses[0].ProcessId -ne [int]$owner.pid) {
-            return @{ state="AMBIGUOUS"; message="Atlas API process count or PID does not match the unique recorded owner." }
+
+        if ($owner.state -eq "starting" -and (Test-Path -LiteralPath $LockPath -PathType Leaf)) {
+            try { $lock = Read-JsonFile $LockPath }
+            catch { return @{ state="AMBIGUOUS"; message="Background start lock is unreadable; manual inspection is required." } }
+            $requiredAction = if ($lock.phase -eq "starting") { "-Action Worker" } else { "-Action Start" }
+            if ($lock -and [string]$lock.run_id -ceq [string]$owner.run_id -and
+                (Test-IdentityRecord $lock $PowerShellPath $requiredAction) -and
+                $lock.command_line.IndexOf($ManagerPath, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                return @{ state="starting"; message="Verified background worker is starting run $($owner.run_id)."; run_id=[string]$owner.run_id; pid=[int]$owner.pid }
+            }
+            return @{ state="AMBIGUOUS"; message="A start lock is stale or has an unverified process identity; manual inspection is required." }
         }
 
-        if ($owner.state -ne "stopping" -and $owner.state -ne "starting") {
-            try { $runtime = Read-JsonFile $RuntimePath }
-            catch { return @{ state="AMBIGUOUS"; message="Atlas runtime manifest is unreadable: $($_.Exception.Message)" } }
-            if (-not $runtime -or [string]$runtime.run_id -cne [string]$owner.run_id -or
-                [int]$runtime.pid -ne [int]$owner.pid) {
-                return @{ state="AMBIGUOUS"; message="Runtime manifest does not confirm the recorded unique run ID and PID." }
+        try { $runtime = Read-JsonFile $RuntimePath }
+        catch { return @{ state="AMBIGUOUS"; message="Atlas runtime manifest is unreadable: $($_.Exception.Message)" } }
+        if (-not $runtime -or [string]$runtime.run_id -cne [string]$owner.run_id -or [int]$runtime.pid -le 4) {
+            return @{ state="AMBIGUOUS"; message="Runtime manifest does not confirm the recorded unique run ID and a valid API PID." }
+        }
+
+        $apiProcesses = @(Get-AtlasApiProcesses)
+        $listeners = @(Get-ApiListeners)
+        $recordedLauncherPid = 0
+        if ($owner.PSObject.Properties["launcher_pid"]) {
+            $recordedLauncherPid = [int]$owner.launcher_pid
+        }
+        $launcherPid = if ($recordedLauncherPid -gt 4) {
+            $recordedLauncherPid
+        } elseif ([int]$owner.pid -ne [int]$runtime.pid) {
+            [int]$owner.pid
+        } else {
+            0
+        }
+        if ($apiProcesses.Count -eq 0 -and $listeners.Count -eq 0) {
+            $recoveryIdentity = Get-ProcessIdentity $PID
+            $recoveryLock = @{
+                run_id = [string]$owner.run_id
+                pid = [int]$PID
+                executable = $recoveryIdentity.executable
+                command_line = $recoveryIdentity.command_line
+                created_utc = $recoveryIdentity.created_utc
             }
-        } elseif ($owner.state -eq "starting" -and (Test-Path -LiteralPath $RuntimePath -PathType Leaf)) {
-            try { $runtime = Read-JsonFile $RuntimePath }
-            catch { return @{ state="AMBIGUOUS"; message="Atlas runtime manifest is unreadable: $($_.Exception.Message)" } }
-            if (-not $runtime -or [string]$runtime.run_id -cne [string]$owner.run_id -or
-                [int]$runtime.pid -ne [int]$owner.pid) {
-                return @{ state="AMBIGUOUS"; message="Runtime manifest does not confirm the recorded unique run ID and PID." }
+            try { New-ExclusiveJsonFile $recoveryLock $RecoveryLockPath }
+            catch {
+                return @{ state="AMBIGUOUS"; message="Could not acquire the exclusive stale-session recovery lock; no metadata was moved." }
             }
+            try {
+                $latestOwner = Read-JsonFile $OwnerPath
+                $latestRuntime = Read-JsonFile $RuntimePath
+                if (-not $latestOwner -or -not $latestRuntime -or
+                    [string]$latestOwner.run_id -cne [string]$owner.run_id -or
+                    [string]$latestRuntime.run_id -cne [string]$runtime.run_id -or
+                    [int]$latestOwner.pid -ne [int]$owner.pid -or
+                    [int]$latestRuntime.pid -ne [int]$runtime.pid -or
+                    (Test-Path -LiteralPath $LockPath -PathType Leaf) -or
+                    (Test-Path -LiteralPath $StopLockPath -PathType Leaf)) {
+                    throw "Ownership metadata or a lifecycle lock changed during recovery."
+                }
+                $freshApiProcesses = @(Get-AtlasApiProcesses)
+                $freshListeners = @(Get-ApiListeners)
+                $existingPids = @()
+                foreach ($processId in @([int]$latestOwner.pid, [int]$latestRuntime.pid, $launcherPid) |
+                    Where-Object { $_ -gt 4 } | Sort-Object -Unique) {
+                    $process = Get-CimProcess ([int]$processId)
+                    if ($process) { $existingPids += [int]$process.ProcessId }
+                }
+                if (-not (Test-AtlasDeadSession $latestOwner $latestRuntime $Root `
+                    $existingPids @($freshApiProcesses | ForEach-Object { [int]$_.ProcessId }) `
+                    $freshListeners $false)) {
+                    throw "The session is still live or ambiguous after exclusive recovery revalidation."
+                }
+                $archivePath = Move-AtlasDeadSessionMetadata $OwnerPath $RuntimePath `
+                    (Join-Path $RuntimeDir "stale-sessions") $latestOwner $latestRuntime $Root `
+                    $existingPids @($freshApiProcesses | ForEach-Object { [int]$_.ProcessId }) `
+                    $freshListeners $false
+            } catch {
+                return @{ state="AMBIGUOUS"; message="Stale-session recovery revalidation failed; metadata was retained. $($_.Exception.Message)" }
+            } finally {
+                if (Test-Path -LiteralPath $RecoveryLockPath -PathType Leaf) {
+                    $currentRecoveryLock = Read-JsonFile $RecoveryLockPath
+                    if ($currentRecoveryLock -and
+                        [string]$currentRecoveryLock.run_id -ceq [string]$owner.run_id -and
+                        [int]$currentRecoveryLock.pid -eq [int]$PID) {
+                        Remove-Item -LiteralPath $RecoveryLockPath -Force
+                    }
+                }
+            }
+            return @{ state="STOPPED"; message="A confirmed dead run was archived for review at $archivePath. No process or service was stopped."; archive_path=$archivePath }
+        }
+
+        $apiProcess = @($apiProcesses | Where-Object { [int]$_.ProcessId -eq [int]$runtime.pid })
+        if ($apiProcess.Count -ne 1) {
+            return @{ state="AMBIGUOUS"; message="The runtime manifest PID does not identify exactly one Atlas API process." }
+        }
+        $ownerProcess = if ($launcherPid -gt 4 -and $launcherPid -ne [int]$runtime.pid) {
+            Get-CimProcess $launcherPid
+        } else {
+            $null
+        }
+        $unexpectedProcesses = @($apiProcesses | Where-Object {
+            [int]$_.ProcessId -ne [int]$runtime.pid -and [int]$_.ProcessId -ne $launcherPid
+        })
+        if ($unexpectedProcesses.Count -gt 0 -or
+            -not (Test-AtlasApiProcessOwnership $owner $runtime $apiProcess[0] `
+                $ownerProcess $VenvPy $Root)) {
+            return @{ state="AMBIGUOUS"; message="API process identity, creation time, parent relationship, or run ownership does not match; no process was touched." }
         }
 
         if ($owner.state -eq "stopping") {
@@ -156,14 +250,17 @@ function Get-VerifiedState {
             }
         }
 
-        $listeners = @(Get-ApiListeners)
         if ($listeners.Count -gt 1 -or
-            ($listeners.Count -eq 1 -and $listeners[0] -ne [int]$owner.pid)) {
+            ($listeners.Count -eq 1 -and $listeners[0] -ne [int]$runtime.pid)) {
             return @{ state="AMBIGUOUS"; message="Port 8000 has an unexpected or multiple listener; no process was touched." }
         }
         if ($owner.state -eq "running" -and $listeners.Count -ne 1) {
             return @{ state="AMBIGUOUS"; message="The recorded API is not the sole TCP 8000 listener." }
         }
+        $owner.pid = [int]$runtime.pid
+        $owner.executable = [string]$apiProcess[0].ExecutablePath
+        $owner.command_line = [string]$apiProcess[0].CommandLine
+        $owner.created_utc = ([datetime]$apiProcess[0].CreationDate).ToUniversalTime().ToString("o")
         return @{
             state = [string]$owner.state
             message = if ($owner.state -eq "stop_timeout") {
@@ -172,7 +269,7 @@ function Get-VerifiedState {
                 "Verified Atlas background run $($owner.run_id), PID $($owner.pid)."
             }
             run_id = [string]$owner.run_id
-            pid = [int]$owner.pid
+            pid = [int]$runtime.pid
             owner = $owner
         }
     }
@@ -375,6 +472,7 @@ function Invoke-BackgroundWorker {
         $env:ATLAS_DESKTOP_CONTROL_DIR = $RuntimeDir
         $env:ATLAS_DESKTOP_RUN_ID = $RunId
         $loggingConfig = Join-Path $Root "deploy\logging-desktop.json"
+        $launchStartedUtc = (Get-Date).ToUniversalTime().ToString("o")
         $api = Start-Process -FilePath $VenvPy -ArgumentList @(
             "-m", "uvicorn", "app.main:app",
             "--host", "127.0.0.1",
@@ -394,27 +492,66 @@ function Invoke-BackgroundWorker {
             executable = $VenvPy
             command_line = ""
             created_utc = ""
-            started_utc = (Get-Date).ToUniversalTime().ToString("o")
+            started_utc = $launchStartedUtc
+            launcher_pid = [int]$api.Id
+            launcher_executable = $VenvPy
+            launcher_command_line = ""
+            launcher_created_utc = ""
         }
-        try { $owner.created_utc = $api.StartTime.ToUniversalTime().ToString("o") } catch { }
+        $launcherIdentity = $null
+        try { $launcherIdentity = Get-ProcessIdentity ([int]$api.Id) } catch { }
+        if ($launcherIdentity) {
+            $owner.command_line = $launcherIdentity.command_line
+            $owner.created_utc = $launcherIdentity.created_utc
+            $owner.launcher_executable = $launcherIdentity.executable
+            $owner.launcher_command_line = $launcherIdentity.command_line
+            $owner.launcher_created_utc = $launcherIdentity.created_utc
+        } else {
+            try { $owner.created_utc = $api.StartTime.ToUniversalTime().ToString("o") } catch { }
+        }
         Write-JsonAtomic $owner $OwnerPath
 
-        $deadline = (Get-Date).AddSeconds(15)
-        $identity = $null
+        $deadline = (Get-Date).AddSeconds(30)
+        $runtime = $null
+        $apiProcess = $null
+        $ownerProcess = $null
         do {
-            $identity = Get-ProcessIdentity ([int]$api.Id)
-            if ($identity) { break }
+            try { $runtime = Read-JsonFile $RuntimePath } catch { $runtime = $null }
+            if ($runtime) {
+                if ([string]$runtime.run_id -cne $RunId -or [int]$runtime.pid -le 4) {
+                    throw "The API runtime manifest does not match this unique background run."
+                }
+                $matches = @(Get-AtlasApiProcesses | Where-Object {
+                    [int]$_.ProcessId -eq [int]$runtime.pid
+                })
+                if ($matches.Count -gt 1) {
+                    throw "Multiple Atlas API processes claim the runtime manifest PID."
+                }
+                if ($matches.Count -eq 1) {
+                    $apiProcess = $matches[0]
+                    if ($api.Id -ne $runtime.pid) {
+                        $ownerProcess = Get-CimProcess ([int]$api.Id)
+                    }
+                    $owner.pid = [int]$runtime.pid
+                    $owner.executable = [string]$apiProcess.ExecutablePath
+                    $owner.command_line = [string]$apiProcess.CommandLine
+                    $owner.created_utc = ([datetime]$apiProcess.CreationDate).ToUniversalTime().ToString("o")
+                    if (-not [string]::IsNullOrWhiteSpace([string]$runtime.started_utc)) {
+                        $owner.started_utc = [string]$runtime.started_utc
+                    }
+                    if (Test-AtlasApiProcessOwnership $owner $runtime $apiProcess `
+                        $ownerProcess $VenvPy $Root) {
+                        break
+                    }
+                    throw "The API PID, process identity, creation time, or launcher relationship could not be verified."
+                }
+            }
             Start-Sleep -Milliseconds 250
         } while ((Get-Date) -lt $deadline)
-        if (-not $identity -or $identity.executable -ine $VenvPy -or
-            $identity.command_line -notmatch '(?i)uvicorn\s+app\.main:app') {
-            throw "Started PID did not resolve to the expected Atlas venv Uvicorn process."
+        if (-not $runtime -or -not $apiProcess) {
+            throw "The Atlas runtime manifest and matching API process did not appear within 30 seconds."
         }
 
-        $owner.pid = [int]$identity.pid
-        $owner.executable = $identity.executable
-        $owner.command_line = $identity.command_line
-        $owner.created_utc = $identity.created_utc
         Write-JsonAtomic $owner $OwnerPath
         Wait-AtlasHttp "http://127.0.0.1:8000/health" 120
 

@@ -2,8 +2,9 @@
 import asyncio
 import json
 import os
-from pathlib import Path
 import signal
+from datetime import UTC, datetime
+from pathlib import Path
 
 
 class DesktopControl:
@@ -16,7 +17,11 @@ class DesktopControl:
         if self.directory is None or not self.run_id:
             return
         self.directory.mkdir(parents=True, exist_ok=True)
-        manifest = {"pid": os.getpid(), "run_id": self.run_id}
+        manifest = {
+            "pid": os.getpid(),
+            "run_id": self.run_id,
+            "started_utc": datetime.now(UTC).isoformat(),
+        }
         (self.directory / "runtime.json").write_text(json.dumps(manifest), encoding="utf-8")
         self.task = asyncio.create_task(self._watch(), name="atlas-desktop-stop")
 

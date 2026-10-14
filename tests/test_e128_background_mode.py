@@ -12,6 +12,7 @@ MANAGER = ROOT / "scripts" / "windows" / "Atlas-Background.ps1"
 CONTROLS = ROOT / "scripts" / "windows" / "Atlas-Background-Controls.ps1"
 INSTALLER = ROOT / "scripts" / "windows" / "Install-AtlasBackgroundShortcut.ps1"
 CONTAINER_MODULE = ROOT / "scripts" / "windows" / "Atlas-ContainerOwnership.psm1"
+OWNERSHIP_MODULE = ROOT / "scripts" / "windows" / "Atlas-ProcessOwnership.psm1"
 
 
 def _text(path: Path) -> str:
@@ -25,7 +26,9 @@ def test_e128_background_owner_requires_pid_process_identity_and_unique_run_id()
     assert "current.command_line -ceq [string]$Record.command_line" in text
     assert "current.created_utc -ceq [string]$Record.created_utc" in text
     assert "[string]$runtime.run_id -cne [string]$owner.run_id" in text
-    assert "[int]$runtime.pid -ne [int]$owner.pid" in text
+    assert "Test-AtlasApiProcessOwnership" in text
+    assert "launcher_pid" in text
+    assert "atlas-background-recovery.lock" in text
     assert "refusing to infer ownership" in text.lower()
 
 
@@ -77,15 +80,15 @@ def test_e128_free_port_and_missing_owner_state_enables_manual_start():
     assert "if ($listeners.Count -gt 0)" in state
     assert "$listeners = @(Get-ApiListeners)" in state
     assert 'return @{ state="STOPPED"; message="No Atlas background run is recorded." }' in state
-    assert "$startButton.Enabled = ($current.state -eq \"STOPPED\")" in controls
+    assert "$startButton.Enabled = ($Result.state -eq \"STOPPED\")" in controls
 
 
 def test_e128_unknown_or_duplicate_port_owners_remain_ambiguous():
     state = _text(MANAGER).split("function Get-VerifiedState {", 1)[1].split("\nfunction ", 1)[0]
     assert "$listeners.Count -gt 1" in state
-    assert "$listeners[0] -ne [int]$owner.pid" in state
+    assert "$listeners[0] -ne [int]$runtime.pid" in state
     assert "Port 8000 is occupied by an unowned process" in state
-    assert "$apiProcesses.Count -ne 1" in state
+    assert "$apiProcess.Count -ne 1" in state
 
 
 def test_e128_unknown_and_duplicate_api_processes_remain_ambiguous():
@@ -94,16 +97,16 @@ def test_e128_unknown_and_duplicate_api_processes_remain_ambiguous():
     processes = text.split("function Get-AtlasApiProcesses {", 1)[1].split("\nfunction ", 1)[0]
     assert "if ($apiProcesses.Count -gt 0)" in state
     assert "Atlas API process exists without a background owner" in state
-    assert "$apiProcesses.Count -ne 1" in state
+    assert "$unexpectedProcesses.Count -gt 0" in state
     assert "Cannot verify Atlas API process ownership" in processes
     assert "uvicorn\\s+app\\.main:app" in processes
 
 
 def test_e128_stale_manifest_and_mismatched_run_ids_remain_ambiguous():
     state = _text(MANAGER).split("function Get-VerifiedState {", 1)[1].split("\nfunction ", 1)[0]
-    assert "Recorded Atlas PID or process identity is stale or changed" in state
     assert "[string]$runtime.run_id -cne [string]$owner.run_id" in state
-    assert "[int]$runtime.pid -ne [int]$owner.pid" in state
+    assert "Test-AtlasDeadSession" in state
+    assert "Move-AtlasDeadSessionMetadata" in state
     assert "runtime manifest exists without a background owner" in state
 
 
@@ -252,6 +255,138 @@ def test_e128_background_controls_never_open_a_browser_or_console_window():
     assert "-WindowStyle Hidden" in controls
     assert "Start-Process \"http://" not in controls
     assert "-WindowStyle Hidden -STA" in installer
+
+
+def test_e128_background_controls_run_manager_operations_off_the_ui_thread():
+    controls = _text(CONTROLS)
+    assert "Start-Process -FilePath $PowerShell" in controls
+    assert "$script:activeManager.process.HasExited" in controls
+    assert "System.Windows.Forms.Timer" in controls
+    assert "WaitForExit" not in controls
+    assert ".Result" not in controls
+    assert "Start-BackgroundManager \"Status\"" in controls
+
+
+def _run_ownership_powershell(script: str, timeout: int = 15) -> str:
+    powershell = shutil.which("powershell.exe") or shutil.which("powershell")
+    if not powershell:
+        pytest.skip("Windows PowerShell is required to exercise process ownership.")
+    module_path = str(OWNERSHIP_MODULE).replace("'", "''")
+    completed = subprocess.run(
+        [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
+         f"Import-Module '{module_path}' -Force\n{script}"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    return completed.stdout
+
+
+def test_e128_parent_child_pid_mismatch_is_accepted_only_for_verified_run_identity():
+    output = _run_ownership_powershell(r"""
+$root = 'D:\Atlas'
+$exe = 'D:\Atlas\backend\.venv\Scripts\python.exe'
+$run = '898b6a15-6dde-4667-89bf-5aa54a027b68'
+$created = [datetime]::Parse('2026-10-14T06:29:37.3959580Z').ToUniversalTime()
+$owner = [pscustomobject]@{
+    root=$root; run_id=$run; pid=31204; created_utc=$created.ToString('o')
+    started_utc='2026-10-14T06:29:37.4018446Z'
+}
+$runtime = [pscustomobject]@{pid=19444; run_id=$run; started_utc='2026-10-14T06:29:37.4018446Z'}
+$api = [pscustomobject]@{
+    ProcessId=19444; ParentProcessId=31204; ExecutablePath=$exe
+    CommandLine='"D:\Atlas\backend\.venv\Scripts\python.exe" -m uvicorn app.main:app --log-config "D:\Atlas\deploy\logging.json"'
+    CreationDate=$created
+}
+$launcher = [pscustomobject]@{
+    ProcessId=31204; ParentProcessId=100; CreationDate=$created
+    ExecutablePath=$exe; CommandLine=$api.CommandLine
+}
+if (-not (Test-AtlasApiProcessOwnership $owner $runtime $api $launcher $exe $root)) {
+    throw 'Verified direct parent/child API PID pair was rejected.'
+}
+$api.ParentProcessId = 777
+if (Test-AtlasApiProcessOwnership $owner $runtime $api $launcher $exe $root) {
+    throw 'Mismatched parent/child process relationship was accepted.'
+}
+$api.ParentProcessId = 31204
+$launcher.CreationDate = [datetime]::Parse('2026-10-15T06:29:37.3959580Z')
+if (Test-AtlasApiProcessOwnership $owner $runtime $api $launcher $exe $root) {
+    throw 'Reused launcher PID with a changed creation time was accepted.'
+}
+Write-Output 'PASS'
+""")
+    assert "PASS" in output
+
+
+def test_e128_pid_reuse_and_mismatched_run_id_are_rejected():
+    output = _run_ownership_powershell(r"""
+$root = 'D:\Atlas'
+$exe = 'D:\Atlas\backend\.venv\Scripts\python.exe'
+$run = '898b6a15-6dde-4667-89bf-5aa54a027b68'
+$owner = [pscustomobject]@{root=$root; run_id=$run; pid=19444; created_utc='2026-10-14T06:29:37.3959580Z'; started_utc='2026-10-14T06:29:37.4018446Z'}
+$runtime = [pscustomobject]@{pid=19444; run_id=$run; started_utc='2026-10-14T06:29:37.4018446Z'}
+$api = [pscustomobject]@{
+    ProcessId=19444; ParentProcessId=31204; ExecutablePath=$exe
+    CommandLine='"D:\Atlas\backend\.venv\Scripts\python.exe" -m uvicorn app.main:app --log-config "D:\Atlas\deploy\logging.json"'
+    CreationDate=[datetime]::Parse('2026-10-15T06:29:37.3959580Z')
+}
+if (Test-AtlasApiProcessOwnership $owner $runtime $api $null $exe $root) {
+    throw 'Reused PID with a different process creation time was accepted.'
+}
+$api.CreationDate = [datetime]::Parse('2026-10-14T06:29:37.3959580Z')
+$runtime.run_id = '63e6113d-5a6c-4e1f-baf7-4c45d5585388'
+if (Test-AtlasApiProcessOwnership $owner $runtime $api $null $exe $root) {
+    throw 'Mismatched run IDs were accepted.'
+}
+Write-Output 'PASS'
+""")
+    assert "PASS" in output
+
+
+def test_e128_confirmed_dead_session_archives_metadata_and_rejects_ambiguity(tmp_path):
+    runtime_dir = str(tmp_path).replace("'", "''")
+    output = _run_ownership_powershell(rf"""
+$runtimeDir = '{runtime_dir}'
+$ownerPath = Join-Path $runtimeDir 'atlas-background-owner.json'
+$manifestPath = Join-Path $runtimeDir 'runtime.json'
+$archiveRoot = Join-Path $runtimeDir 'stale-sessions'
+$run = '898b6a15-6dde-4667-89bf-5aa54a027b68'
+$owner = [pscustomobject]@{{root='D:\Atlas'; run_id=$run; pid=31204}}
+$runtime = [pscustomobject]@{{pid=19444; run_id=$run}}
+$owner | ConvertTo-Json | Set-Content -LiteralPath $ownerPath
+$runtime | ConvertTo-Json | Set-Content -LiteralPath $manifestPath
+$archive = Move-AtlasDeadSessionMetadata $ownerPath $manifestPath $archiveRoot `
+    $owner $runtime 'D:\Atlas' @() @() @() $false
+if ((Test-Path $ownerPath) -or (Test-Path $manifestPath) -or
+    -not (Test-Path (Join-Path $archive 'atlas-background-owner.json')) -or
+    -not (Test-Path (Join-Path $archive 'runtime.json'))) {{
+    throw 'Dead-session evidence was not archived as expected.'
+}}
+$reuseRejected = $false
+try {{
+    Move-AtlasDeadSessionMetadata (Join-Path $archive 'atlas-background-owner.json') `
+        (Join-Path $archive 'runtime.json') $archiveRoot $owner $runtime 'D:\Atlas' `
+        @(19444) @() @() $false | Out-Null
+}} catch {{ $reuseRejected = $true }}
+if (-not $reuseRejected) {{ throw 'A live/reused PID was treated as a dead session.' }}
+$runtime.run_id = '63e6113d-5a6c-4e1f-baf7-4c45d5585388'
+if (Test-AtlasDeadSession $owner $runtime 'D:\Atlas' @() @() @() $false) {{
+    throw 'Mismatched run IDs were treated as a dead session.'
+}}
+if (Test-AtlasDeadSession $owner $runtime 'D:\Atlas' @() @() @() $true) {{
+    throw 'A session with a lifecycle lock was treated as dead.'
+}}
+if (Test-AtlasDeadSession $owner $runtime 'D:\Atlas' @() @(19444) @() $false) {{
+    throw 'A matching API process was treated as dead.'
+}}
+if (Test-AtlasDeadSession $owner $runtime 'D:\Atlas' @() @() @(19444) $false) {{
+    throw 'An active port listener was treated as dead.'
+}}
+Write-Output 'PASS'
+""")
+    assert "PASS" in output
 
 
 def test_e128_windows_python_graceful_signal_delivery_is_supported():

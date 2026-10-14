@@ -11,105 +11,173 @@ $PowerShell = Join-Path $PSHOME "powershell.exe"
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Atlas Background"
 $form.StartPosition = "CenterScreen"
-$form.Size = New-Object System.Drawing.Size(420, 245)
+$form.Size = New-Object System.Drawing.Size(500, 270)
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
 $form.MaximizeBox = $false
 $form.MinimizeBox = $true
 
 $status = New-Object System.Windows.Forms.Label
 $status.Location = New-Object System.Drawing.Point(20, 18)
-$status.Size = New-Object System.Drawing.Size(365, 42)
+$status.Size = New-Object System.Drawing.Size(445, 48)
+$status.AutoEllipsis = $true
 $status.Text = "Checking Atlas status..."
 $form.Controls.Add($status)
+$statusTip = New-Object System.Windows.Forms.ToolTip
+$statusTip.SetToolTip($status, $status.Text)
 
 $startButton = New-Object System.Windows.Forms.Button
 $startButton.Text = "Start Atlas Background"
 $startButton.Location = New-Object System.Drawing.Point(20, 72)
-$startButton.Size = New-Object System.Drawing.Size(365, 34)
+$startButton.Size = New-Object System.Drawing.Size(445, 34)
 $form.Controls.Add($startButton)
 
 $statusButton = New-Object System.Windows.Forms.Button
 $statusButton.Text = "Atlas Status"
 $statusButton.Location = New-Object System.Drawing.Point(20, 116)
-$statusButton.Size = New-Object System.Drawing.Size(365, 34)
+$statusButton.Size = New-Object System.Drawing.Size(445, 34)
 $form.Controls.Add($statusButton)
 
 $stopButton = New-Object System.Windows.Forms.Button
 $stopButton.Text = "Stop Atlas Background"
 $stopButton.Location = New-Object System.Drawing.Point(20, 160)
-$stopButton.Size = New-Object System.Drawing.Size(365, 34)
+$stopButton.Size = New-Object System.Drawing.Size(445, 34)
 $form.Controls.Add($stopButton)
 
-function Invoke-BackgroundManager([string]$SelectedAction) {
+function Set-StatusMessage([string]$Message, [System.Drawing.Color]$Color) {
+    $status.Text = $Message
+    $status.ForeColor = $Color
+    $statusTip.SetToolTip($status, $Message)
+}
+
+function Start-BackgroundManager([string]$SelectedAction) {
+    if ($script:activeManager) { return }
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
     $startInfo.FileName = $PowerShell
     $startInfo.Arguments = ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -Action {1} -Json' -f $Manager, $SelectedAction)
     $startInfo.WorkingDirectory = $Root
     $startInfo.UseShellExecute = $false
     $startInfo.CreateNoWindow = $true
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $process = New-Object System.Diagnostics.Process
-    $process.StartInfo = $startInfo
-    if (-not $process.Start()) { throw "Could not start the hidden Atlas background controller." }
-    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
-    $stderrTask = $process.StandardError.ReadToEndAsync()
-    $process.WaitForExit()
-    $output = $stdoutTask.Result.Trim()
-    $errorOutput = $stderrTask.Result.Trim()
-    if ($process.ExitCode -ne 0) {
-        if ($errorOutput) { throw $errorOutput }
-        throw "Atlas background $SelectedAction failed with exit code $($process.ExitCode)."
-    }
-    if (-not $output) { throw "Atlas background $SelectedAction returned no status." }
-    return ($output | ConvertFrom-Json -ErrorAction Stop)
-}
-
-function Get-AtlasStatus {
-    return (Invoke-BackgroundManager "Status")
-}
-
-function Update-Status {
     try {
-        $current = Get-AtlasStatus
-        $status.Text = "$($current.state): $($current.message)"
-        $status.ForeColor = if ($current.state -eq "running") {
-            [System.Drawing.Color]::DarkGreen
-        } elseif ($current.state -eq "STOPPED") {
-            [System.Drawing.Color]::DarkSlateGray
-        } else {
-            [System.Drawing.Color]::DarkOrange
+        $token = [guid]::NewGuid().ToString("N")
+        $outputPath = Join-Path $env:TEMP "atlas-background-$token.out"
+        $errorPath = Join-Path $env:TEMP "atlas-background-$token.err"
+        $process = Start-Process -FilePath $PowerShell -ArgumentList $startInfo.Arguments `
+            -WorkingDirectory $Root -WindowStyle Hidden -RedirectStandardOutput $outputPath `
+            -RedirectStandardError $errorPath -PassThru -ErrorAction Stop
+        if (-not $process) { throw "Could not start the hidden Atlas background controller." }
+        $script:activeManager = @{
+            process = $process
+            action = $SelectedAction
+            output_path = $outputPath
+            error_path = $errorPath
         }
-        $startButton.Enabled = ($current.state -eq "STOPPED")
-        $stopButton.Enabled = ($current.state -eq "running")
-    } catch {
-        $status.Text = "STATUS CHECK FAILED: $($_.Exception.Message)"
-        $status.ForeColor = [System.Drawing.Color]::DarkRed
         $startButton.Enabled = $false
+        $statusButton.Enabled = $false
+        $stopButton.Enabled = $false
+        $caption = if ($SelectedAction -eq "Status") { "Checking Atlas status..." } else { "$SelectedAction request is running..." }
+        Set-StatusMessage $caption [System.Drawing.Color]::DarkSlateGray
+    } catch {
+        Set-StatusMessage "Atlas $SelectedAction failed: $($_.Exception.Message)" [System.Drawing.Color]::DarkRed
+        $startButton.Enabled = $false
+        $statusButton.Enabled = $true
         $stopButton.Enabled = $false
     }
 }
 
-function Invoke-AtlasControl([string]$SelectedAction) {
-    $result = Invoke-BackgroundManager $SelectedAction
-    $status.Text = "$($result.state): $($result.message)"
-    Update-Status
+function Apply-AtlasStatus($Result) {
+    $color = if ($Result.state -eq "running") {
+        [System.Drawing.Color]::DarkGreen
+    } elseif ($Result.state -eq "STOPPED") {
+        [System.Drawing.Color]::DarkSlateGray
+    } elseif ($Result.state -eq "starting" -or $Result.state -eq "stopping") {
+        [System.Drawing.Color]::DarkOrange
+    } else {
+        [System.Drawing.Color]::DarkRed
+    }
+    Set-StatusMessage "$($Result.state): $($Result.message)" $color
+    $startButton.Enabled = ($Result.state -eq "STOPPED")
+    $stopButton.Enabled = ($Result.state -eq "running")
+    $statusButton.Enabled = $true
+}
+
+function Remove-ManagerOutput($Active) {
+    foreach ($path in @($Active.output_path, $Active.error_path)) {
+        if (Test-Path -LiteralPath $path -PathType Leaf) {
+            Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Poll-BackgroundManager {
+    if (-not $script:activeManager) {
+        if ($script:refreshStatus -or (Get-Date) -ge $script:nextStatusCheck) {
+            $script:refreshStatus = $false
+            Start-BackgroundManager "Status"
+        }
+        return
+    }
+    if (-not $script:activeManager.process.HasExited) { return }
+
+    $active = $script:activeManager
+    $script:activeManager = $null
+    try {
+        $output = if (Test-Path -LiteralPath $active.output_path -PathType Leaf) {
+            [System.IO.File]::ReadAllText($active.output_path).Trim()
+        } else { "" }
+        $errorOutput = if (Test-Path -LiteralPath $active.error_path -PathType Leaf) {
+            [System.IO.File]::ReadAllText($active.error_path).Trim()
+        } else { "" }
+        if ($active.process.ExitCode -ne 0) {
+            $detail = if ($errorOutput) { $errorOutput } else { "exit code $($active.process.ExitCode)" }
+            Set-StatusMessage "Atlas $($active.action) failed: $detail" [System.Drawing.Color]::DarkRed
+            $startButton.Enabled = $false
+            $statusButton.Enabled = $true
+            $stopButton.Enabled = $false
+        } elseif (-not $output) {
+            throw "Atlas background $($active.action) returned no status."
+        } else {
+            $result = $output | ConvertFrom-Json -ErrorAction Stop
+            if ($active.action -eq "Status") {
+                Apply-AtlasStatus $result
+                $script:nextStatusCheck = (Get-Date).AddSeconds(2)
+            } else {
+                Set-StatusMessage "$($result.state): $($result.message)" [System.Drawing.Color]::DarkSlateGray
+                $script:refreshStatus = $true
+            }
+        }
+    } catch {
+        Set-StatusMessage "STATUS CHECK FAILED: $($_.Exception.Message)" [System.Drawing.Color]::DarkRed
+        $startButton.Enabled = $false
+        $statusButton.Enabled = $true
+        $stopButton.Enabled = $false
+        $script:nextStatusCheck = (Get-Date).AddSeconds(2)
+    } finally {
+        $active.process.Dispose()
+        Remove-ManagerOutput $active
+    }
 }
 
 $startButton.Add_Click({
-    try { Invoke-AtlasControl "Start" }
-    catch { [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, "Atlas Background") | Out-Null }
+    Start-BackgroundManager "Start"
 })
-$statusButton.Add_Click({ Update-Status })
+$statusButton.Add_Click({
+    $script:nextStatusCheck = [datetime]::MaxValue
+    Start-BackgroundManager "Status"
+})
 $stopButton.Add_Click({
-    try { Invoke-AtlasControl "Stop" }
-    catch { [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, "Atlas Background") | Out-Null }
+    Start-BackgroundManager "Stop"
 })
 
+$script:activeManager = $null
+$script:refreshStatus = $true
+$script:nextStatusCheck = [datetime]::MinValue
 $timer = New-Object System.Windows.Forms.Timer
-$timer.Interval = 2000
-$timer.Add_Tick({ Update-Status })
+$timer.Interval = 250
+$timer.Add_Tick({ Poll-BackgroundManager })
 $timer.Start()
-$form.Add_Shown({ Update-Status })
+$form.Add_Shown({ $script:refreshStatus = $true })
 [void]$form.ShowDialog()
 $timer.Stop()
+if ($script:activeManager) {
+    $script:activeManager.process.Dispose()
+}

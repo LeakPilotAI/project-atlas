@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -15,6 +16,10 @@ def test_desktop_stop_requires_current_run_and_cleans_manifest(tmp_path, monkeyp
 
     async def run():
         await control.start()
+        manifest = json.loads((tmp_path / "runtime.json").read_text(encoding="utf-8"))
+        assert manifest["pid"] == os.getpid()
+        assert manifest["run_id"] == "current-run"
+        assert manifest["started_utc"]
         (tmp_path / "stop.json").write_text(json.dumps({"run_id": "old-run"}))
         assert not control.requested()
         (tmp_path / "stop.json").write_text(json.dumps({"run_id": "current-run"}))
