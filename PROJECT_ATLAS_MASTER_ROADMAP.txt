@@ -12012,3 +12012,61 @@ NEXT RECOMMENDED EXECUTION
 4. Continue genuine E29/Alpha observation; preserve strategy, prediction, risk, Discord-producer and live-capital gates.
 
 PERMANENT ROADMAP DISCIPLINE: preserve append-only history and protected data; synchronize and SHA256-verify canonical/Desktop copies; stage only reviewed E134 implementation, tests and roadmap files; never manufacture evidence or readiness. Do not modify live PAPER evidence, activate gated Discord producers, or use VPS/hosted deployment.
+
+
+EXECUTION 135 - DISCORD PRODUCER INTEGRATION READINESS - GREEN ISOLATED / PRODUCTION STILL GATED - 2026-10-14
+- Starting checkpoint: bbc98c19c6c23ccfcb785f8e75c49cc8340c4c05, chatgpt/atlas-rebuild-v1; tracked working tree initially clean. Complete canonical file scanned (12014 lines), permanent boundaries and E131-E134 checkpoints reviewed. Existing untracked work preserved.
+- Implementation commit: 531e0f3f522939434a1392c14e3f38e2c904a3e4 (e135 add isolated paper lifecycle producer readiness contract).
+- Exact implementation/test/report files: backend/app/services/paper_lifecycle_producer.py; tests/test_e135_paper_lifecycle_producer.py; docs/E135_DISCORD_PRODUCER_INTEGRATION.md.
+- Compatibility: E132 explicit subscription persistence has no consent epochs; E133 outbox requires original contiguous per-trade sequence beginning at 1 and recipient-scoped acknowledgements; E134 projects stable byte-offset identities and allowlisted payloads. Legacy send_discord_alert's at-least-one-recipient boolean is unsuitable as recipient confirmation and remains disconnected.
+- New IsolatedPaperLifecycleProducer accepts only dedicated atlas-e135-* OS-temp storage with synthetic filenames and resolved-path containment. No default production path, singleton, runtime import, scheduler hook, worker, production sender or activation command. No real PAPER source or subscription store is opened by this adapter during E135.
+- Explicit durable fixture activation records EOF watermark, approval reference/time, source file identity, consumed-prefix SHA256, excluded historical trades and outbox identity. Processing never auto-activates or resets the watermark. Missing/partial/malformed source fails closed.
+- No-backfill policy: all trades already represented at activation remain excluded, including subsequent marks/closes. Only new post-watermark PAPER_ENTRY-led streams are eligible. Original E134 identity/payload/sequence is preserved without rebasing; orphan post-activation events block.
+- One SQLite transaction freezes events, recipient snapshots and cursor. Restart replays staged events into E133 idempotently; it never reselects recipients or historical source rows after partial transfer. Empty snapshots stay empty. Replaced outbox receipts cannot be silently reconstructed/resubmitted.
+- Source inode/file identity, length and full consumed-prefix hash detect replacement, truncation and rewrite; partial tail blocks without repair. E134 remains the identity authority. Repeated rescans cannot duplicate an event; distinct source offsets remain distinct events.
+- Recipient policy: no implicit configured-owner fallback; snapshot explicit E132 subscriber set at durable staging/enqueue. Later subscribers are never added to old events. Current consent is checked before delivery, including a second check after the authorization worker yields immediately before transport entry. Any store change, including unsubscribe/resubscribe or unrelated additions, conservatively quarantines prior pending delivery rather than acknowledging it or retrying it automatically.
+- E132 lacks durable consent generations. Production requires a separately reviewed revocation/send-admission contract; in-flight external sends cannot be recalled and cross-process instantaneous revocation is not claimed. E135's fake-transport marker is a test interface, not a security sandbox for arbitrary Python callers.
+- Separate durable simulated delivery approval required; no approval or live production watermark set. Fake sender only. E133 bounded explicit-False retries, recipient partial-success state, strict stream ordering and uncertain quarantine retained. No exactly-once claim across Discord/network uncertainty.
+- Cancellation stops the adapter; claimed leases expire to uncertain, not automatic resend. stop() preserves durable work and prevents future sends; caller must await existing work for full quiescence. No Atlas shutdown behavior changed.
+- Validation: final focused/regression 219 passed, 0 failed/skipped, 7.80s; canonical full suite 1891 passed, 0 failed/skipped, 55.15s. Two existing dependency deprecation warnings. Ruff, isolated Python compilation, byte-match verification and diff checks passed; no failures waived.
+- Coverage includes E132-E135, E48/E49/E50/E55, reconciliation/shutdown, E125/E126; no-backfill, stable identities, ordering, duplicate prevention, staging crash recovery, empty snapshots, recipient changes, partial/uncertain sends, same-content journal replacement, truncation/partial tail, corrupt watermark state, outbox loss, concurrency, cancellation and mid-dispatch shutdown. Source-scan regression verifies zero runtime imports of the new adapter.
+- Tests ran in an isolated tracked-source copy without production .env/data. Guard blocks production files and external sockets except Python's internal Windows socketpair. Synthetic evidence/fake IDs exist only in temporary fixture storage; no production messages, subscriptions, historical enqueues or trading-authority changes.
+- Live verification 2026-10-14T10:25:20.485925Z / 05:25:20.485925 CDT: Atlas still RUNNING, API PID 31552, launcher 24880, run ID 867a9b46-e377-4018-b42f-010a71332caa unchanged from E134. Health ok; expected scanner/research/PAPER services running. Initial sandbox-network failure resolved with read-only unrestricted probe, not a restart.
+- Market feed FRESH: 234 markets, updated 2026-10-14T10:25:08.207281Z. Reconciliation reliable, 0 current opens, 0 duplicate fills. The earlier E134 open closed naturally; E135 performed no PAPER action.
+- Risk reliable -4.7001R, 5 current-day closes, unchanged 3.0R loss limit; standard mirror remains BLOCKED by paper session loss stop. Kill false, live execution/capital false, automatic real-money execution false. Strategy limits unchanged.
+- Discord ready/connected, 1 subscriber; diagnostics capability fields are predicates, not message tests. New E132 subscription-reliability field absent in live process as expected before controlled activation. Production subscription file remains absent and unchanged.
+- Atlas Postgres and Redis running healthy; no identifiable non-inspector Genesis process matched scoped path checks. No Genesis operation, process signal, Docker mutation, dependency restart, scanner restart or API restart occurred.
+- Historical evidence unchanged: journal 6771180 bytes, SHA256 78f87143d53b3f7e7e7f3620b50e82900c48e1bc0f36900f9c16c4fa246de70f; E29 membership 24376 bytes, SHA256 6699ba3ebeb87a6335516a8250f7b77b41098789d07898cf0dcf642dad3655b3. Baseline 10:13:27.256246Z and final 10:25:20.485925Z sizes/prefix hashes agree. No ledger reset, rewrite, replay or synthetic production event.
+- E135 GREEN means isolated engineering readiness only. Production lifecycle migration and delivery remain disabled; source deployment alone or routine restart cannot activate the unimported temp-only adapter.
+- Canonical/Desktop copies matched before append: 0597BA2B10A8550CE5F2D6B796FEE6BE0AA85EF113653FA1E95A92D9DB694230. Full updated roadmap synchronized and SHA256-verified before checkpoint commit; checkpoint/remote equality recorded in execution output.
+
+VISUAL STATUS AFTER E135
+[DONE] Isolated E134 -> durable staging -> E133 producer bridge with explicit no-backfill activation and immutable E132 recipient snapshots
+[DONE] Fail-closed source replacement/truncation detection, crash replay, consent-change quarantine, concurrency/cancellation/shutdown compatibility
+[DONE] 219 focused/regression and 1891 full tests; Ruff/compilation/diff checks
+[VERIFIED RUNNING] Same Atlas API/launcher/run identity, fresh 234-market feed, Discord connection, healthy Atlas Postgres/Redis
+[VERIFIED] PAPER reconciliation 0 open / 0 duplicates; reliable -4.7001R; existing loss stop blocks standard mirror; no live capital
+[GATED] All production lifecycle integration/activation/delivery; no live watermark, historical enqueue or production message
+[PENDING CONTROLLED MAINTENANCE] E131 orderly shutdown, E132 subscription persistence/diagnostics and E134 writer-lock activation/restart acceptance
+[ACTIVE] Windows-local release acceptance and genuine E29/Alpha evidence; no promotion inferred
+[GATED] Prediction unattended PAPER opening pending exactly-once pre-deadline auto-flat and genuine live validation
+[POLICY DECISION] Portfolio-wide versus strategy-specific PAPER kill/loss-stop scope
+[OUT OF SCOPE] VPS/Ubuntu/systemd/hosted/cloud migration
+
+REMAINING ROADMAP - COMPLETE INVENTORY AFTER E135
+1. Windows-local release readiness: approved clean-install/update/recovery/longevity and graceful-lifecycle acceptance with protected .env/PAPER/persistent-data backups, dependency/config/shortcut handoff. Controlled maintenance must verify E131 quiescence, E132 persistence/diagnostics and E134 writer lock. Use only the background manager; no legacy stop path for background mode.
+2. E29: continue genuine prospective baseline/challenger evidence with frozen membership and thresholds. NOT_READY until all fixed sample/breadth/time/concentration/performance gates pass; no synthetic acceleration, profitability declaration or promotion from runtime health alone.
+3. Alpha/cadence/corroboration: continue genuine evidence; strategy selection stays read-only/context-only and non-authoritative.
+4. Prediction PAPER: keep unattended opening gated until exactly-once pre-deadline auto-flat and required genuine live validation pass. Running automation is not opening authority.
+5. PAPER risk policy: operator decision on portfolio-wide versus strategy-specific kill/loss-stop boundaries; do not silently broaden or retune RSI/equity controls.
+6. Discord production contract: implement durable consent generations/revocation and coordinated send admission; approve explicit-subscriber/owner policy, recipient-specific transport, privacy-safe rendering, event classes, mark cadence/rate limits and volume. Signal/invalidation and independent risk-stop transitions still require their own durable source contracts and E48/E55 compatibility.
+7. Discord activation/acceptance: approve separate production implementation/storage ownership/backups/retention and new-trades-only no-backfill policy; explicitly create production watermark only after review. Separately approve delivery. Verify transport timeouts/leases, shutdown/restart and uncertain/dead-letter/manual recovery with isolated senders before any authorized production use. Never auto-retry uncertain outcomes or claim exactly-once over Discord/network uncertainty. E135 temp-only code is not a production switch.
+8. Deployment: Windows-local only; VPS/Ubuntu/systemd/hosted/cloud work remains out of scope unless explicitly reauthorized.
+
+NEXT RECOMMENDED EXECUTION
+- Keep Atlas running and continue non-disruptive health/freshness/reconciliation/risk/ownership checks.
+- Design and test durable consent generations plus recipient-specific transport using fake senders, preserving existing outbox uncertainty and source identities.
+- Schedule lifecycle-changing acceptance only during an explicitly operator-approved maintenance window with protected-data backups. E135 authorizes no restart or production Discord delivery.
+- Continue genuine E29/Alpha evidence and preserve prediction, risk-policy, Discord and live-capital gates.
+
+PERMANENT ROADMAP DISCIPLINE: preserve append-only history and protected data; synchronize the complete canonical/Desktop roadmap and verify SHA256; commit/push intended verified changes only. Never manufacture runtime, delivery, profitability or release readiness.
