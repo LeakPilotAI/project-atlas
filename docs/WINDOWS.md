@@ -96,6 +96,30 @@ Shutdown is scoped to Atlas-owned resources. Docker Desktop and other projects s
 
 The stop path first requests graceful API shutdown. If the process does not exit within the established timeout, it may force only verified Atlas process trees. It does not use generic Python/Node termination as part of normal operation.
 
+## Optional background mode
+
+Background mode is a separate, manual operator choice. It does not replace or modify **Project Atlas** (`ATLAS.bat`) or **Stop Atlas** (`ATLAS-STOP.bat`), and it does not install a Windows auto-start entry.
+
+Install only its additional desktop control:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\windows\Install-AtlasBackgroundShortcut.ps1
+```
+
+Open **Atlas Background** for these three controls:
+
+- **Start Atlas Background** starts the API hidden, waits for the same HTTP/operator readiness gate, and does not open a browser or terminal.
+- **Atlas Status** reports the verified background run or explicitly reports ambiguity.
+- **Stop Atlas Background** sends the API's run-ID shutdown request, waits up to 30 seconds for graceful exit, and only then may terminate the exact still-verified API PID. It does not stop Atlas's Postgres/Redis containers.
+
+The mode requires Docker Desktop's engine to already be available. Startup may start only the exact `atlas-postgres` and `atlas-redis` containers under Compose project `atlas`; it will refuse mismatched container identities, partial container state, an occupied API port, stale runtime manifests, or uncertain process ownership. It never starts/stops Docker Desktop, shuts down WSL, or targets Genesis or its containers. Do not run the interactive and background Atlas modes at the same time.
+
+This launcher does not create or edit `.env`, journal files, or existing shortcuts. The API needs an existing `backend\.env` or root `.env`; root `.env` is required if Docker Compose must create the Atlas dependency containers. Its run-ID manifest must match the API PID, executable, command line, and process creation time. If runtime ownership is stale or ambiguous, startup and shutdown refuse to guess; inspect the recorded files and processes instead of deleting locks or killing generic Python/Node processes.
+
+The API's existing graceful-shutdown reconciliation has PAPER side effects: it cancels pending paper-mirror limits with the `ATLAS_SHUTDOWN` reason, persists marks for open PAPER positions, and appends non-performance `INTERRUPTED` close events for unfinished PAPER trades. Completed historical journal rows are left intact; these are append/reconciliation actions, not a rewrite of prior records. A forced fallback after the 30-second timeout cannot guarantee that lifespan reconciliation completed. Review the PAPER journal and shutdown diagnostics after such a timeout.
+
+Installing the control does not start the Atlas API. **Start Atlas Background** remains an explicit manual activation.
+
 ## Readiness and diagnostics
 
 Startup requires the established readiness checks before the browser opens. A failed readiness gate is a failed startup, not permission to bypass the gate.

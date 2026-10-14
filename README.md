@@ -71,4 +71,6 @@ Then double-click **Project Atlas** on the desktop.
 
 Use **Project Atlas** to start and **Stop Atlas** to stop. Dashboard: http://127.0.0.1:8000/dashboard
 
+For optional manual operation without an open terminal or browser, install the separate **Atlas Background** desktop control with `scripts\windows\Install-AtlasBackgroundShortcut.ps1`. It offers **Start Atlas Background**, **Atlas Status**, and **Stop Atlas Background** and does not replace or alter the original shortcuts.
+
 See [the operator guide](docs/ATLAS_OPERATOR_GUIDE.md).
