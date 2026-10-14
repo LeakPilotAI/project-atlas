@@ -6,6 +6,7 @@ import asyncio
 
 import json
 import os
+import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +21,7 @@ log = structlog.get_logger(__name__)
 JOURNAL_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_journal.jsonl"
 CANDIDATE_PATH = Path(__file__).resolve().parents[2] / "data" / "paper_candidates.jsonl"
 SESSION_ID = "desk-v7"
+_APPEND_LOCK = threading.Lock()
 
 
 def _now() -> datetime:
@@ -118,7 +120,7 @@ class PaperJournal:
     def _append(self, path: Path, row: Dict[str, Any]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         line = json.dumps(row, default=str) + "\n"
-        with path.open("a", encoding="utf-8") as f:
+        with _APPEND_LOCK, path.open("a", encoding="utf-8") as f:
             f.write(line)
             f.flush()
             try:
