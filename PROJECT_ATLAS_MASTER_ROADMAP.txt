@@ -11915,6 +11915,7 @@ PERMANENT ROADMAP DISCIPLINE: preserve full append-only history and protected da
 EXECUTION 133 - DISCORD LIFECYCLE DELIVERY CONTRACT - DURABLE ISOLATED OUTBOX; PRODUCERS STILL GATED - 2026-10-14
 - Starting checkpoint: E132 implementation commit `37093f4f0f21e477f04951481323ad994987a2e0`; branch `chatgpt/atlas-rebuild-v1`.
 - E133 implementation commit: `8512e8f2` (`Add durable Discord lifecycle outbox contract`).
+- Initial canonical/Desktop E133 checkpoint synchronization commit: `faef4548`.
 - Audit findings confirmed: E48 `DiscordDeliveryState` acknowledgements are process-local; `send_discord_alert` returns success when at least one subscriber DM succeeds, so it cannot safely drive recipient-scoped retries; PAPER journal rows use varying timestamps and lack a uniform immutable event ID or lifecycle sequence. E132's subscription state is durable locally, but the current production process predates E132 and will need a controlled restart for that code to activate.
 - Added `backend/app/services/discord_lifecycle_outbox.py` as an explicitly isolated, not-production-wired contract. It defines `SIGNAL_CREATED`, `SIGNAL_INVALIDATED`, `PAPER_ENTRY`, `PAPER_MARK`, `PAPER_CLOSE`, `PAPER_INTERRUPTED`, and `PAPER_RISK_STOP`. Deterministic event identity is SHA-256 over event type, source, entity ID and immutable source-event ID; sequence, timestamp and canonical payload are persisted and conflicting content for a reused identity fails closed.
 - Producer identity conventions required at future integration:
