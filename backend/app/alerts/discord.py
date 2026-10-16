@@ -107,6 +107,8 @@ async def send_discord_alert(
     risk: int = 50,
     **kwargs: Any,
 ) -> bool:
+    # A23-D3: automated outbound Discord delivery denied
+    return False
     if args:
         if len(args) >= 1 and not symbol:
             symbol = str(args[0])
