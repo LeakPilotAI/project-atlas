@@ -4,6 +4,9 @@ param(
     [int[]]$ChildPids = @(),
     [switch]$KeepDockerDesktop
 )
+# A23-E3C2: legacy lifecycle disabled pending safety certification
+throw "ATLAS_LEGACY_LIFECYCLE_BLOCKED: Legacy shutdown is disabled pending safety certification."
+
 
 $ErrorActionPreference = "Continue"
 if (-not $Root) {

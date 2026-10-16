@@ -12192,3 +12192,88 @@ validation, exact Git state, remaining work and next step.
 Never infer profitability, trading authority or release readiness
 from passing tests alone.
 ======================================================================
+
+======================================================================
+EXECUTION A23-E5C - LEGACY LIFECYCLE CONTAINMENT CERTIFICATION
+Recorded UTC: 2026-10-16T04:19:02.4742950Z
+Branch: chatgpt/atlas-rebuild-v1
+Baseline HEAD: 756367a33e96a461989a849d7297b78326620ad1
+Status: LOCAL CERTIFICATION GREEN / NOT COMMITTED / NOT DEPLOYED
+
+PURPOSE
+Prevent legacy Windows launch and shutdown scripts from performing
+unapproved lifecycle operations while ownership and shutdown safety
+remain uncertified.
+
+IMPLEMENTATION
+- scripts/windows/Atlas-Launch.ps1:
+  immediate fail-closed startup guard, blocking message and exit 1.
+- scripts/windows/Atlas-Stop.ps1:
+  immediate fail-closed shutdown guard using throw.
+- backend/tests/test_a23_legacy_lifecycle_guards.py:
+  six permanent regression tests covering guard presence, ordering,
+  startup exit and shutdown throw.
+- Legacy batch entry points remain blocked through these scripts.
+- Background manager was not activated or certified by this work.
+
+VERIFIED BEHAVIOR
+- Separate PowerShell process tests confirmed both scripts exit 1.
+- Both emitted ATLAS_LEGACY_LIFECYCLE_BLOCKED.
+- Neither reported a Stop-All error.
+- No Atlas listener on port 8000 before or after behavioral checks.
+- PowerShell syntax checks passed.
+- No Atlas, Docker or Genesis lifecycle action was authorized.
+
+TEST CERTIFICATION
+- New permanent guard regressions: 6 passed.
+- Windows compatibility run 1: 89 passed, 30.63 seconds.
+- Windows compatibility run 2: 89 passed, 31.69 seconds.
+- Tracked Python tests plus new A23 regression:
+  1902 passed, 0 failed, 2 dependency warnings,
+  189.06 seconds, 348 selected test files.
+- Git diff --check passed.
+- Untracked E136 tests intentionally excluded from this certification.
+- This does not certify every untracked or production integration path.
+
+SAFETY BOUNDARIES
+- Atlas remains STOPPED; no runtime acceptance is claimed.
+- PAPER_ONLY and MANUAL_RESEARCH_ONLY remain mandatory.
+- Production Discord outbound remains blocked.
+- E136 consent coordination is unfinished and not production-authorized.
+- No live trading, real capital, automatic real-money execution,
+  strategy threshold retuning or production delivery.
+- Preserve all PAPER journals, databases, positions and .env files.
+- Preserve protected untracked E136 files and tests.
+- Preserve Genesis and Docker Desktop/services.
+- No VPS, Ubuntu, systemd or hosted deployment.
+- No git clean, blanket staging or indiscriminate file deletion.
+
+VISUAL STATUS AFTER A23-E5C
+[DONE] A23-E3D2 legacy launch/shutdown behavioral containment
+[DONE] A23-E3D3A six permanent regression tests
+[DONE] A23-E3D3B Windows compatibility: 89 passed twice
+[DONE] A23-E4 tracked Python suite: 1902 passed, 0 failed
+[DONE] A23-E5 canonical roadmap identification and checkpoint
+[ACTIVE] A23-E6 selective review, commit and GitHub push
+[GATED] A23-C controlled PAPER_ONLY runtime acceptance
+[GATED] E136 durable consent/send-admission certification
+[GATED] Production Discord delivery and live execution
+[TODO] Windows-local release/lifecycle acceptance
+[TODO] Genuine E29/Alpha evidence and prediction auto-flat validation
+[TODO] PAPER risk-stop scope operator decision
+[OUT OF SCOPE] VPS/hosted/cloud deployment
+
+NEXT EXECUTION
+- Verify the exact intended three source/test files plus this roadmap.
+- Stage only explicitly approved files.
+- Review staged diff and commit/push after validation.
+- Do not start Atlas or modify Genesis, Docker or E136.
+- Continue controlled PAPER_ONLY runtime work only after separate
+  operator authorization and safety preflight.
+
+PERMANENT ROADMAP DISCIPLINE
+Preserve the full append-only history. After each GREEN execution,
+record exact test evidence, Git state, completed-versus-remaining
+progress and the next execution. Do not claim runtime readiness,
+profitability or delivery authorization from passing tests alone.
+======================================================================

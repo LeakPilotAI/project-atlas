@@ -1,5 +1,9 @@
 # Project Atlas - one window. Close it to stop the bot. Docker Desktop stays running.
 #Requires -Version 5.1
+
+# A23-E3C2: legacy lifecycle disabled pending safety certification
+Write-Error "ATLAS_LEGACY_LIFECYCLE_BLOCKED: Legacy startup is disabled pending safety certification."
+exit 1
 $ErrorActionPreference = "Continue"
 Set-StrictMode -Version Latest
 
