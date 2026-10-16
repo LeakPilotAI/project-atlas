@@ -219,6 +219,7 @@ function Get-VerifiedState {
             catch {
                 return @{ state="AMBIGUOUS"; message="Could not acquire the exclusive stale-session recovery lock; no metadata was moved." }
             }
+            $preserveRecoveryLock = $false
             try {
                 $latestOwner = Read-JsonFile $OwnerPath
                 $latestRuntime = Read-JsonFile $RuntimePath
@@ -249,9 +250,14 @@ function Get-VerifiedState {
                     $existingPids @($freshApiProcesses | ForEach-Object { [int]$_.ProcessId }) `
                     $freshListeners $false
             } catch {
-                return @{ state="AMBIGUOUS"; message="Stale-session recovery revalidation failed; metadata was retained. $($_.Exception.Message)" }
+                $recoveryFailure = $_.Exception.Message
+                if ($recoveryFailure -match "STALE_SESSION_ROLLBACK_FAILED") {
+                    $preserveRecoveryLock = $true
+                }
+                return @{ state="AMBIGUOUS"; message="Stale-session recovery failed; metadata integrity must be verified before further lifecycle operations. $recoveryFailure" }
             } finally {
-                if (Test-Path -LiteralPath $RecoveryLockPath -PathType Leaf) {
+                if (-not $preserveRecoveryLock -and
+                    (Test-Path -LiteralPath $RecoveryLockPath -PathType Leaf)) {
                     $currentRecoveryLock = Read-JsonFile $RecoveryLockPath
                     if ($currentRecoveryLock -and
                         [string]$currentRecoveryLock.run_id -ceq [string]$owner.run_id -and

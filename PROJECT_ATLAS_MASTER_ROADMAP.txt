@@ -12277,3 +12277,86 @@ record exact test evidence, Git state, completed-versus-remaining
 progress and the next execution. Do not claim runtime readiness,
 profitability or delivery authorization from passing tests alone.
 ======================================================================
+
+================================================================================
+A23-F7C-2026-10-16 — WINDOWS BACKGROUND RECOVERY HARDENING CHECKPOINT
+================================================================================
+
+BRANCH:
+  chatgpt/atlas-rebuild-v1
+
+BASELINE HEAD:
+  a252eeb951f6876d8e1e46f9050148dc3bedd49d
+
+STATUS:
+  [DONE] A23-F6A-R1 — Reproduced partial archive after second move failure.
+  [DONE] A23-F6B-R1 — Added exception-safe archive rollback.
+  [DONE] A23-F6C — Verified original metadata restored after injected failure.
+  [DONE] A23-F6D3 — Hardened background manager recovery failure handling.
+  [DONE] A23-F6D4 — Verified rollback-failure lock retention.
+  [DONE] A23-F6D5 — Inspected hard-interruption crash window.
+  [DONE] A23-F6D6 — Verified fail-closed crash-window behavior.
+  [DONE] A23-F7A-R3 — Permanent recovery regression tests: 4 passed.
+  [DONE] E128 compatibility regression: 42 passed.
+  [DONE] A23-F7B — Full scoped regression: 1906 passed, 0 failed.
+
+FULL SCOPED REGRESSION:
+  348 tracked Python test files.
+  1 additional permanent A23 recovery test file.
+  349 selected files total.
+  1906 tests passed.
+  0 failures.
+  2 dependency deprecation warnings.
+  Runtime: 175.97 seconds.
+  git diff --check: PASS.
+
+PRODUCTION CHANGES:
+  scripts/windows/Atlas-ProcessOwnership.psm1
+    - Attempt owner metadata rollback if the runtime archive move fails.
+    - Emit STALE_SESSION_ARCHIVE_FAILED after recoverable failure.
+    - Emit STALE_SESSION_ROLLBACK_FAILED if rollback cannot complete.
+
+  scripts/windows/Atlas-Background.ps1
+    - Return AMBIGUOUS when stale-session recovery fails.
+    - Preserve recovery lock on STALE_SESSION_ROLLBACK_FAILED.
+    - Release owned recovery lock after ordinary archive failure.
+    - Require manual metadata integrity verification after failure.
+
+PERMANENT TEST COVERAGE:
+  tests/test_a23_background_recovery_hardening.py
+    - Archive rollback after injected second-move failure.
+    - Manager lock retention on rollback failure.
+    - Manager lock release on ordinary archive failure.
+    - Fail-closed incomplete archive crash-window behavior.
+
+SAFETY LIMITATIONS:
+  - Archive movement is not a fully atomic filesystem transaction.
+  - Hard termination between moves may leave split metadata.
+  - Split metadata and unverified recovery locks must fail closed.
+  - Manager Status can perform stale-session metadata recovery.
+  - No production lifecycle startup or shutdown was exercised.
+  - This checkpoint is not runtime certification.
+
+PROTECTED OPERATIONS:
+  - Atlas remains PAPER_ONLY / MANUAL_RESEARCH_ONLY.
+  - No authorization to start Atlas or Docker Desktop.
+  - No authorization to start or modify Genesis.
+  - No authorization to enable Discord automated delivery.
+  - Preserve protected untracked E136 consent files.
+  - Preserve .env, PAPER journals, databases and runtime evidence.
+  - Legacy Atlas-Launch.ps1 and Atlas-Stop.ps1 remain blocked.
+
+REMAINING ROADMAP:
+  [ACTIVE] A23-F7C — Append and verify this canonical checkpoint.
+  [GATED]  A23-F7D — Selectively stage and review exact intended files.
+  [GATED]  A23-F7E — Commit and push after operator approval.
+  [GATED]  A23 — Additional lifecycle/runtime safety certification.
+  [GATED]  E136 — Discord consent certification.
+  [TODO]   Reconcile external Desktop roadmap copy if location is verified.
+
+COMMIT/PUSH STATUS:
+  Not yet committed.
+  Not yet pushed.
+  Operator approval required before commit/push.
+
+================================================================================

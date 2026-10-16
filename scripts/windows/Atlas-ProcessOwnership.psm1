@@ -138,8 +138,28 @@ function Move-AtlasDeadSessionMetadata(
         [datetime]::UtcNow.ToString("yyyyMMddTHHmmssfffZ"), [guid]::NewGuid().ToString("N")
     $archivePath = Join-Path $ArchiveRoot $archiveName
     New-Item -ItemType Directory -Path $archivePath -ErrorAction Stop | Out-Null
-    Move-Item -LiteralPath $OwnerPath -Destination (Join-Path $archivePath "atlas-background-owner.json") -ErrorAction Stop
-    Move-Item -LiteralPath $RuntimePath -Destination (Join-Path $archivePath "runtime.json") -ErrorAction Stop
+    $archivedOwnerPath = Join-Path $archivePath "atlas-background-owner.json"
+    $archivedRuntimePath = Join-Path $archivePath "runtime.json"
+    $ownerMoved = $false
+    try {
+        Move-Item -LiteralPath $OwnerPath -Destination $archivedOwnerPath -ErrorAction Stop
+        $ownerMoved = $true
+        Move-Item -LiteralPath $RuntimePath -Destination $archivedRuntimePath -ErrorAction Stop
+    } catch {
+        $archiveFailure = $_.Exception.Message
+        if ($ownerMoved) {
+            try {
+                if ((Test-Path -LiteralPath $OwnerPath) -or
+                    -not (Test-Path -LiteralPath $archivedOwnerPath)) {
+                    throw "Owner rollback paths are ambiguous."
+                }
+                Move-Item -LiteralPath $archivedOwnerPath -Destination $OwnerPath -ErrorAction Stop
+            } catch {
+                throw "STALE_SESSION_ROLLBACK_FAILED: Archive failure: $archiveFailure; rollback failure: $($_.Exception.Message). Manual intervention required."
+            }
+        }
+        throw "STALE_SESSION_ARCHIVE_FAILED: $archiveFailure. Original metadata was restored or left in place."
+    }
     return $archivePath
 }
 
