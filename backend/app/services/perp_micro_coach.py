@@ -1,6 +1,7 @@
 """Perp micro coach v3.1 — quality paper + shadow research hooks. Thresholds unchanged."""
 
 from __future__ import annotations
+import math
 
 import asyncio
 from datetime import datetime, timezone
@@ -742,7 +743,7 @@ class PerpMicroCoach:
         tier = _tier(symbol, majors)
         atr = _atr_proxy(closes, 14)
         ema21 = _ema(closes, 21)
-        ema50 = _ema(closes, 50) if len(closes) >= 50 else ema21
+        ema50 = _ema(closes, 50) if len(closes) >= 50 else None
 
         score = 40.0
         reasons: List[str] = []
@@ -953,7 +954,7 @@ class PerpMicroCoach:
         if price <= 0:
             paper_pipeline.inc_reject("NO_PRICE")
             return False
-        closes = await self._fetch_closes(symbol, 48)
+        closes = await self._fetch_closes(symbol, 50)
         if len(closes) < 25:
             paper_pipeline.inc("candle_fail")
             return False
@@ -1139,7 +1140,7 @@ class PerpMicroCoach:
             paper_pipeline.inc_reject("ZERO_RISK")
             return False
         rr = abs(setup_tp - price) / risk
-        if rr < min_rr:
+        if rr < min_rr and not math.isclose(rr, min_rr, rel_tol=1e-12, abs_tol=0.0):
             paper_pipeline.inc("rejected_rr")
             paper_pipeline.inc_reject("RISK_REWARD")
             await paper_journal.log_candidate(

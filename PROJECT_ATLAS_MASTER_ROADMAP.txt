@@ -1,4 +1,51 @@
 PROJECT ATLAS — MASTER CONTINUITY ROADMAP
+
+CURRENT CHECKPOINT - READ FIRST
+Date: 2026-10-16 UTC
+Git branch: chatgpt/atlas-rebuild-v1
+Git HEAD before A22: c9aceb65
+Last completed local milestone: A21-B - scanner validation and roadmap evidence.
+Exact validation status: 1967 passed, 3 xfailed, 0 failed, 2 warnings; 152.82 seconds.
+Earlier evidence checkpoint failure: intermittent; root cause unresolved.
+Operational readiness: Atlas STOPPED after Windows restart.
+PAPER_ONLY / MANUAL_RESEARCH_ONLY. Live execution disabled.
+E136 consent engineering remains isolated and protected.
+No production Discord sends, VPS work or Genesis changes.
+Git status: scanner changes and roadmap uncommitted.
+Next executable milestone: A22 scoped staging and commit review.
+A23 requires separate operator approval for PAPER_ONLY runtime acceptance.
+Permanent operational restrictions: preserve all PAPER journals,
+positions, historical diagnostics, protected data, E136 work,
+and existing risk controls. Never stage unrelated files.
+
+OPERATIONAL READINESS AUDIT — 2026-10-14T07:57:08-05:00
+Scope: read-only, no service restarts, no risk changes, no production Discord activation, no Genesis changes.
+
+Audit evidence summary:
+- Atlas background process health: READY. `Get-CimInstance Win32_Process` shows a running `python.exe` with command line `-m uvicorn app.main:app --host 127.0.0.1 --port 8000` owned by user `renal`. `Invoke-WebRequest http://127.0.0.1:8000/health` returned JSON with `status: ok`, `scanner_running: true`, `paper_trade_tracker_running: true`, `quality_dip_running: true`, `prediction_paper_automation_running: true`, and `command_center_running: true`.
+- Market-data freshness and scanner functionality: READY. Health endpoint and capture state confirm scanning and paper automation remain active; `ATLAS-CAPTURE-CLEAN.txt` shows `scanner_running: true`, `paper_ledger: true`, `historical_pre_event_prices: true`, and `eligible_candidate_alert_delivered` events recorded for paper research only. The app also served `/api/prediction/status` successfully and reported `research: true` and `order_submission: false`.
+- Paper-trading engine state and current session eligibility: READY. `/api/prediction/status` returned `execution: PAPER_ONLY`, `live_capital_allowed: false`, `automatic_real_money_execution: false`, `paper_ledger: true`, `live_execution: false`, and a single open paper trade in `ATLAS-CAPTURE-CLEAN.txt` with `open_trade.status: open` and `summary.open_positions: 1`. This is valid paper-only operating state, not live-market activation.
+- Risk controls, session-loss stops, and kill-switch behavior: READY (for active paper policy). The same endpoints explicitly report `live_capital_allowed: false`, `automatic_real_money_execution: false`, `order_submission: false`, and `execution: PAPER_ONLY`. No live execution or broker order path was observed; the policy block remains enforced.
+- Position and trade reconciliation, including duplicate detection: READY / EVIDENCE LIMITED. The current paper ledger snapshot shows one open paper position and zero closed trades, with no evidence of duplicate execution in the active snapshot. The ledger is not a live brokerage ledger; it is an isolated paper ledger and remains consistent with paper-only operation.
+- Dashboard/API responsiveness: READY. `GET /dashboard/command-center/health` returned HTTP 200, and `GET /health` returned the full JSON health payload with all critical services true.
+- Resource usage and coexistence with Genesis: READY / UNKNOWN. No Genesis-named process or Genesis port was observed. Docker Desktop is present but not a Project Genesis service. Atlas is using one local uvicorn worker on port 8000 and no evidence indicates a Genesis resource conflict or a service dependency on Genesis. This is not evidence of live execution or external deployment.
+- PAPER_ONLY and live-execution-disabled guarantees: READY. The evidence consistently reports `PAPER_ONLY`, `live_capital_allowed: false`, `automatic_real_money_execution: false`, `live_execution: false`, and `order_submission: false` across the live health and paper status endpoints.
+- E136 Discord consent dependency: BLOCKED / ISOLATED. The app reports `discord_ready: true` for local bot readiness, but there is no production Discord send path enabled and the isolated E136 consent-bound adapter remains fail-closed and not wired to live production Discord sending. This does not block the paper market session, but it prevents production Discord delivery readiness.
+
+Conclusion: paper-market session readiness = READY.
+Conclusion: production Discord delivery readiness = BLOCKED.
+
+Reasoning for the split decision:
+- The live Atlas service is responding, scanning, and running paper-only automation with enforced policy blocks. There is no evidence of real trading or live execution.
+- Production Discord delivery is still blocked because the E136 consent-bound delivery contract remains isolated, unresolved for a trusted rollback-resistant authority, and explicitly not activated into a live production send path.
+
+Exact next actions:
+1. Keep the current Atlas service running without restart or configuration changes.
+2. Continue to treat E136 as an isolated security design and documentation track until a trusted external authority or transport fence is reviewed.
+3. Do not enable live Discord sending or production dispatch. Preserve no-commit/no-push constraints.
+4. If a future decision requires production activation, perform a separate review of the migration prerequisites, operator approval, and transport-admission fence before any activation step.
+
+PROJECT ATLAS — MASTER CONTINUITY ROADMAP
 Updated: 2026-10-14
 Branch: chatgpt/atlas-rebuild-v1
 Current cycle: QUALITY DIPS V3 — OPEN / RESEARCH_AND_PAPER_VALIDATION
@@ -9560,6 +9607,17 @@ IMPLEMENTATION COMMIT
 DECISION
 - E88 GREEN. Research Surfaces now has no page-local presentation helper functions; distinct read-only semantics are captured in pure components while all authority boundaries remain unchanged.
 
+E136 CONSENT-BOUND DELIVERY PROTOTYPE — VERIFIED SAFE GREEN
+- D4D-3A inventory reconciled with literal `Select-String -SimpleMatch` call-site audit; no runtime schema or send-path changes were made.
+- Milestone 1 complete: outbox/inventory reconciliation without touching runtime code.
+- Milestone 2 complete: isolated consent-bound delivery contract documented in docs/E136_CONSENT_BOUND_DELIVERY.md.
+- Milestone 3 complete: fail-closed prototype implemented at backend/app/services/discord_consent_delivery_adapter.py and validated by tests/test_e136_consent_delivery_adapter.py.
+- Milestone 6 compatibility engineering complete: adapter dispatch now enforces recipient identity, row-level dispatch claiming, and duplicate/concurrent worker rejection in isolated temporary SQLite state before a fake transport is invoked.
+- Milestones 4-5 remain fail-closed by design: no rollback-resistant external authority is assumed, and in-flight transport outcomes stay outside any local SQLite authorization fence.
+- Validation: Ruff passed on the adapter/test files; Python compile checks passed; focused adapter tests passed (10 passed); relevant E133/E135/E136 suite passed (131 passed, 3 xfailed, 2 warnings).
+- Remaining blocker: any production migration or live Discord activation remains explicitly blocked until a trusted rollback-resistant authority and a reviewed revocation/send fence are in place.
+- Next executable milestone: document the reviewed migration and activation prerequisites, then continue with isolated follow-on E136 hardening only if a trusted authority is available.
+
 VISUAL STATUS AFTER E88
 [DONE] E48-E59 typed Discord/observability/attachment migration program.
 [DONE] E60-E72 Crypto Quality Dips research boundary through frozen/versioned public API.
@@ -12070,3 +12128,67 @@ NEXT RECOMMENDED EXECUTION
 - Continue genuine E29/Alpha evidence and preserve prediction, risk-policy, Discord and live-capital gates.
 
 PERMANENT ROADMAP DISCIPLINE: preserve append-only history and protected data; synchronize the complete canonical/Desktop roadmap and verify SHA256; commit/push intended verified changes only. Never manufacture runtime, delivery, profitability or release readiness.
+
+
+======================================================================
+EXECUTION A21-B - PERP SCANNER CORRECTION VALIDATION
+Recorded UTC: 2026-10-16T03:26:09.880323+00:00
+Branch: chatgpt/atlas-rebuild-v1
+HEAD before commit: c9aceb65
+Status: LOCAL VALIDATION GREEN / NOT COMMITTED / NOT DEPLOYED
+
+SCOPE
+- backend/app/services/perp_micro_coach.py
+- backend/app/services/paper_try_symbol.py
+- tests/test_paper_pipeline.py
+
+VERIFIED CORRECTIONS
+- Request 50 candles for the instrumented and primary scanner paths.
+- Do not substitute EMA21 for unavailable EMA50 history.
+- Apply 1e-12 relative floating-point tolerance at the existing
+  risk/reward threshold without intentionally changing that threshold.
+- Add EMA-history, scoring and actual scanner-branch regression tests.
+- Mutation verification demonstrated that the original RR comparison
+  fails the new branch test and the corrected comparison passes.
+
+VALIDATION
+- A20-D1: target evidence checkpoint test passed independently.
+- A20-D2: complete evidence checkpoint test file 23 passed;
+  five additional independent target runs passed.
+- A20-D3: complete backend suite 1967 passed, 3 xfailed,
+  2 dependency warnings, 0 failed, exit code 0, 152.82 seconds.
+- Scoped git diff --check passed.
+- Earlier full-suite run had 1966 passed, 1 failed, 3 xfailed.
+  That evidence checkpoint failure did not recur in isolation,
+  file-level runs or the subsequent full suite.
+  Root cause remains UNKNOWN; do not claim it was repaired.
+
+SECURITY AND OPERATIONAL BOUNDARIES
+- Atlas remains stopped following the Windows update restart.
+- PAPER_ONLY and MANUAL_RESEARCH_ONLY restrictions remain.
+- No live trading, live capital, automatic real-money execution,
+  production Discord delivery, or strategy threshold retuning.
+- E136 consent files and historical diagnostics remain preserved.
+- Genesis, Docker services, PAPER journals, positions and databases
+  were not modified by this checkpoint.
+- No runtime acceptance, commit, push or deployment is claimed.
+
+REMAINING EXECUTIONS
+A22: Review exact staged file set, then scoped commit and push
+     only after explicit verification.
+A23: Operator-approved controlled PAPER_ONLY runtime validation;
+     first verify persistent data, ownership, safety gates,
+     feed freshness and existing PAPER risk-stop behavior.
+E136: Continue isolated consent architecture/security work
+      separately; production Discord sending remains disabled.
+Longer-term Atlas roadmap: E29 prospective evidence, Alpha
+corroboration, prediction auto-flat validation, PAPER risk-scope
+decision, Windows-local lifecycle acceptance.
+VPS/hosted deployment remains out of scope.
+
+PERMANENT CONTINUITY
+Preserve all prior roadmap history. After each execution, record
+validation, exact Git state, remaining work and next step.
+Never infer profitability, trading authority or release readiness
+from passing tests alone.
+======================================================================
