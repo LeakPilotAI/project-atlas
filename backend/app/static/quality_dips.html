@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quality Dips / Robinhood — Atlas</title>
+<style>
+:root{color-scheme:dark;--cyan:#36e5ef;--green:#00dfb0;--red:#ff304c;--amber:#efba65;--text:#dceaf1;--muted:#87a5b7;--line:#183f4e;--mono:Consolas,monospace;--sans:"Segoe UI",Arial,sans-serif}
+
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--text);font:14px/1.4 var(--sans)}
+button,input,select{font:inherit}
+button,a,input,select{outline-offset:4px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--cyan)}
+button{cursor:pointer}
+button,input,select{color:var(--text);border:1px solid var(--line);background:#031015;border-radius:5px;padding:7px 12px}
+button:hover,a:hover{border-color:var(--cyan);color:white}
+button.active{border-color:var(--red);background:linear-gradient(120deg,#380a13,#09090d);box-shadow:inset 0 0 16px #ff23451a,0 0 10px #ff234533;color:white}
+a{color:var(--cyan);text-decoration:none}
+h1,h2,h3,p{margin:0}
+h2{font-size:14px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan)}
+h3{font-size:13px;font-weight:500;color:var(--text)}
+small,.label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.muted,.sub,.meta,.reason{color:var(--muted)}
+.positive,.ACCUMULATE,.ACCUMULATION,.DEEP_VALUE,.GENERATIONAL,.eligible{color:var(--green)}
+.negative,.THESIS_BROKEN,.STAND_DOWN,.blocked{color:var(--red)}
+.PREPARE,.caution{color:var(--amber)}
+.WATCH{color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.pill,.state,.stance{display:inline-block;padding:2px 7px;border:1px solid currentColor;border-radius:4px;font-size:11px;letter-spacing:.02em}
+.workspace{padding:7px 24px 14px;max-width:2200px;margin:auto}
+.context{display:flex;gap:8px;align-items:center;min-height:44px;margin-bottom:8px}
+.context button{min-height:38px;flex:1;font-size:12px;text-transform:uppercase;white-space:nowrap}
+.context .contract{margin-left:auto;padding:0 10px;text-align:right;white-space:nowrap;font-size:11px;color:var(--muted)}
+.contract b{display:block;color:var(--red);font-size:13px;font-weight:500}
+.strip{display:flex;justify-content:space-between;gap:15px;font-size:11px;color:var(--muted);padding:3px 2px 9px}
+.strip strong{color:var(--amber);font-weight:500}
+.panel,.metric{position:relative;min-width:0;border:1px solid #66303b;border-radius:15px 4px 15px 4px;background:linear-gradient(145deg,rgba(4,16,22,.96),rgba(1,5,8,.98));box-shadow:inset 0 1px #45c6df16,0 0 9px #ff244213}
+.panel:before,.metric:before{content:"";position:absolute;pointer-events:none;inset:-1px;border-radius:inherit;border-top:1px solid #287384;border-bottom:1px solid #c0223d;mask-image:linear-gradient(115deg,#000,transparent 30%,transparent 68%,#000)}
+.panel{padding:13px}
+.panelHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.panelHead h2:before{content:"◇";margin-right:9px;color:var(--cyan)}
+.dashboard{display:grid;grid-template-columns:minmax(0,1fr) 295px;gap:10px}
+.mainColumn{min-width:0;display:flex;flex-direction:column;gap:10px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.metric{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:94px}
+.metricIcon{flex:none;width:49px;height:49px;border:1px solid #18606a;border-radius:50%;display:grid;place-items:center;color:var(--cyan);font-size:27px;box-shadow:inset 0 0 18px #00cacc13}
+.metricValue{font-size:24px;line-height:1.3;font-variant-numeric:tabular-nums;margin:3px 0}
+.metricValue.compact{font-size:19px}
+.metricNote{font-size:12px;color:var(--muted)}
+progress{display:block;width:100%;height:5px;margin-top:7px;accent-color:var(--cyan)}
+.researchGrid{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:10px}
+.radar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.radarTile{padding:8px;text-align:left;background:linear-gradient(125deg,#07212a,#02090d);min-width:0;min-height:110px;border-color:#21616c}
+.radarTile.selected{border-color:var(--cyan);box-shadow:inset 0 0 17px #00cdba12}
+.radarSymbol{display:flex;gap:9px;align-items:center;font-size:18px;line-height:1.2;margin-bottom:4px}
+.rank{font-size:13px;padding:2px 5px;color:var(--cyan);border:1px solid #285260;border-radius:4px}
+.radarPrice{font-size:21px;line-height:1.2;margin:3px 0}
+.radarDiscount{font-size:13px}
+.radarState{font-size:10px;margin-top:3px}
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.toolbar h2{margin-right:auto}
+.toolbar input{width:145px;font-size:12px;padding:5px 8px}
+.toolbar select{max-width:160px;font-size:12px;padding:5px 8px}
+.tableViewport{height:225px;overflow:auto;scrollbar-color:#1d5260 #03090d}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums;text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:#071117;z-index:1;font-size:10px;letter-spacing:.06em;font-weight:500;color:var(--muted);text-transform:uppercase}
+td,th{padding:6px 7px;border-bottom:1px solid #14303a}
+td button{border:0;background:none;padding:0;color:#ecf8ff;font-weight:600}
+tr.selected{background:#0d2834}
+tbody tr:hover{background:#0a2029}
+.scoreCell{color:#b6d9e7}
+.stack{display:flex;flex-direction:column;gap:10px;min-width:0}
+.distribution{display:flex;gap:14px;align-items:center;margin:10px 0}
+.donut{width:97px;height:97px;flex:none;border-radius:50%;display:grid;place-items:center;background:#173440}
+.donut:before{content:"V3";display:grid;place-items:center;width:72px;height:72px;background:#02090d;border-radius:50%;font-size:18px;color:var(--muted)}
+.legend{flex:1;font-size:11px}
+.legendRow{display:flex;justify-content:space-between;gap:8px;margin:6px 0}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+.note{font-size:12px;color:var(--muted);line-height:1.6}
+.rules{list-style:none;counter-reset:rule;padding:0;margin:12px 0 0}
+.rules li{display:flex;gap:10px;align-items:flex-start;margin:10px 0;font-size:12px;color:#aac6d3}
+.rules li:before{counter-increment:rule;content:counter(rule);border:1px solid var(--red);border-radius:50%;color:var(--red);width:22px;height:22px;display:grid;place-items:center;flex:none}
+.bottomGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.bottomGrid .panel{min-height:166px;padding:10px 13px}.bottomGrid .kv{padding:4px 0}
+.barRow{display:grid;grid-template-columns:100px 1fr 32px;gap:8px;align-items:center;font-size:11px;margin:10px 0}
+.bar{height:7px;background:#0b202a;border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#008b94,var(--cyan))}
+.quotePrice{font-size:30px;margin:6px 0}
+.quoteMeta{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.unavailable{display:grid;place-content:center;text-align:center;min-height:65px;margin:10px 0;border:1px dashed #234452;border-radius:5px;background:repeating-linear-gradient(0deg,transparent,transparent 24px,#1b586411 25px);color:var(--muted);font-size:12px;gap:5px}
+.unavailable strong{font-weight:500;font-size:13px;color:#b4c7d1}
+.kv{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #14313a;padding:5px 0;font-size:12px}
+.kv span{color:var(--muted)}
+.kv b{font-weight:500;text-align:right;overflow-wrap:anywhere;min-width:0}
+.levelsRail{display:grid;gap:6px;margin:12px 0}
+.levelRow{display:flex;align-items:center;gap:9px;border:1px solid #19515b;border-radius:5px;padding:5px 9px;font-size:13px}
+.levelRow b{color:var(--cyan)}
+.levelRow span{color:var(--muted);font-size:11px}
+.levelRow strong{margin-left:auto;font-weight:500}
+.wide{width:100%;color:var(--cyan);border-color:#217480}
+.empty{padding:25px;text-align:center;color:var(--muted);font-size:13px}
+.footer{padding:9px 2px 0;font-size:11px;color:var(--muted)}
+.detailPanel{margin-top:10px}
+.detailPanel[hidden]{display:none}
+.detailGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card .row{display:flex;justify-content:space-between;gap:10px}
+.sym{font-size:24px}
+.score{font-size:22px}
+.v2box,.priceBox,.runway{border:1px solid var(--line);padding:13px;margin-top:12px;border-radius:6px}
+.v2title{display:flex;justify-content:space-between;color:var(--cyan);font-size:13px}
+.v2grid,.levels,.components{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.cell,.lvl,.comp{padding:8px;background:#071820;border:1px solid var(--line)}
+.cell b,.lvl b,.comp b{display:block;font-size:10px;color:var(--muted);font-weight:500}
+.cell span,.lvl span,.comp span{font-size:14px}
+.priceNow{font-size:25px}
+.reason,.meta{margin-top:8px;font-size:12px}
+.detailPanel pre{white-space:pre-wrap;font-size:12px;color:var(--muted)}
+.diagGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+@media(min-width:1750px){.dashboard{grid-template-columns:minmax(0,1fr) 330px}
+.researchGrid{grid-template-columns:minmax(0,1fr) 290px}
+.tableViewport{height:225px}
+.radarTile{min-height:110px}
+.metric{min-height:94px}
+}
+
+@media(max-width:1350px){.workspace{padding:8px 12px}
+.dashboard{grid-template-columns:minmax(0,1fr) 270px}
+.researchGrid{grid-template-columns:minmax(0,1fr)}
+.researchGrid>.stack{display:grid;grid-template-columns:1fr 1fr}
+.metricIcon{display:none}
+.metricValue{font-size:20px}
+.context .contract{display:none}
+.radarSymbol{font-size:16px}
+.radarPrice{font-size:18px}
+}
+
+@media(max-width:950px){.dashboard{grid-template-columns:1fr}
+.dashboard>.stack{display:grid;grid-template-columns:1fr 1fr}
+.metrics{grid-template-columns:1fr 1fr}
+.context{flex-wrap:wrap}
+.context button{flex:1 1 30%}
+.radar{grid-template-columns:repeat(3,1fr)}
+.bottomGrid{grid-template-columns:1fr}
+.diagGrid{grid-template-columns:1fr}
+.strip{flex-wrap:wrap}
+.tableViewport{height:330px}
+}
+
+@media(max-width:550px){.radar{grid-template-columns:1fr 1fr}
+.dashboard>.stack,.researchGrid>.stack{display:flex}
+.toolbar{flex-wrap:wrap}
+.toolbar h2{width:100%}
+.v2grid,.levels,.components{grid-template-columns:1fr 1fr}
+}
+
+</style>
+</head>
+<body><main class="workspace">
+<h1 class="srOnly">Quality Dips / Robinhood Command Center</h1>
+<nav class="context" aria-label="Quality Dips research views">
+<button class="active" data-view="overview" aria-pressed="true">◈ &nbsp; Robinhood Command Center</button>
+<button data-view="research" aria-pressed="false">V3 Research</button>
+<button data-view="radar" aria-pressed="false">Accumulation Radar</button>
+<button data-view="qualified" aria-pressed="false">Qualified Research</button>
+<button data-view="watch" aria-pressed="false">Watch Universe</button>
+<button data-view="diagnostics" aria-pressed="false">Diagnostics / Evidence</button>
+<div class="contract"><b>MANUAL RESEARCH</b>NO BROKER ORDERS · NO LIVE CAPITAL</div>
+</nav>
+<div class="strip"><span>EQUITY INVESTMENT / QUALITY DIPS V3</span><strong id="status" role="status">Loading research…</strong><span>10s refresh · quote quality as reported at snapshot</span></div>
+<div class="dashboard">
+<div class="mainColumn">
+<section class="metrics" aria-label="Market and research summary">
+<div class="metric"><div class="metricIcon" aria-hidden="true">△</div><div><div class="label">V3 forward evidence</div><div class="metricValue compact" id="evidenceCount">—</div><div class="metricNote" id="evidenceNote">Waiting for evidence report</div><progress id="evidenceProgress" max="100" value="0" aria-label="Evaluation threshold progress" hidden></progress></div></div>
+<div class="metric"><div class="metricIcon" aria-hidden="true">⌁</div><div><div class="label">Supported quotes</div><div class="metricValue" id="quoteCount">—</div><div class="metricNote" id="quoteNote">Source health unavailable</div></div></div>
+<div class="metric"><div class="metricIcon" aria-hidden="true">⊕</div><div><div class="label">Research universe</div><div class="metricValue" id="candidateCount">—</div><div class="metricNote" id="candidateNote">Awaiting research rows</div></div></div>
+<div class="metric"><div class="metricIcon" aria-hidden="true">◎</div><div><div class="label">Research snapshot</div><div class="metricValue compact" id="refreshState">LOADING</div><div class="metricNote" id="refreshAge">Last update unavailable</div></div></div>
+</section>
+<div class="researchGrid">
+<section class="panel" id="opportunities">
+<div class="panelHead"><h2>Atlas Accumulation Radar <span class="muted">· Best → Last</span></h2><small>Research priority</small></div>
+<div class="radar" id="radar"><div class="empty">Loading research…</div></div>
+<div class="toolbar"><h2 id="boardTitle">Top Quality Dips (V3)</h2><label class="srOnly" for="search">Search research symbols</label><input id="search" placeholder="Search symbol…" type="search"><label class="srOnly" for="stateFilter">Research state</label><select id="stateFilter"><option value="all">All V3 states</option><option value="qualified">Qualified only</option><option value="WATCH">Watch</option><option value="THESIS_BROKEN">Thesis broken</option></select></div>
+<div class="tableViewport"><table aria-label="Quality Dips research board"><thead><tr><th>#</th><th>Symbol</th><th>Quote</th><th>Fair value</th><th>Discount</th><th>Thesis</th><th>Score</th><th>V3 state</th><th>Snapshot quote</th></tr></thead><tbody id="board"><tr><td colspan="9" class="empty">Waiting for the first research snapshot.</td></tr></tbody></table></div>
+<div class="footer" id="boardNote">Select a symbol to inspect its valuation and evidence.</div>
+</section>
+<div class="stack">
+<section class="panel"><h2>Research state mix</h2><div class="distribution"><div class="donut" id="stateDonut" aria-hidden="true"></div><div class="legend" id="stateLegend">Waiting for snapshot</div></div><p class="note">Current V3 research distribution.<br>Portfolio sector exposure: NOT PROVIDED.</p></section>
+<section class="panel"><h2>Accumulation discipline</h2><ol class="rules"><li>Require complete valuation and quality evidence.</li><li>Use the selected V3 L1-L4 research zones.</li><li>Respect thesis and evidence blockers.</li><li>A discount alone is not a qualified setup.</li><li>Manual review only. No broker execution.</li></ol></section>
+</div>
+</div>
+<div class="bottomGrid">
+<section class="panel"><div class="panelHead"><h2>Quote source health</h2></div><div id="sourceHealth" class="note">Source data unavailable.</div></section>
+<section class="panel"><div class="panelHead"><h2>Research pipeline</h2><small>Legacy stance</small></div><div id="pipeline" class="note">Awaiting research.</div></section>
+<section class="panel"><div class="panelHead"><h2>Forward evidence</h2></div><div id="forwardSummary" class="note">Diagnostics unavailable.</div></section>
+</div>
+</div>
+<aside class="stack" aria-label="Selected research">
+<section class="panel"><div class="panelHead"><h2 id="selectedTitle">Market snapshot</h2><span id="selectedState" class="pill">—</span></div><div class="label" id="priceLabel">Supported price</div><div id="selectedPrice" class="quotePrice mono">—</div><div class="quoteMeta" id="selectedSource">Select a research symbol</div><div class="unavailable"><strong>Market history unavailable</strong><span>Candles and depth are not provided<br>by this research feed.</span></div><div id="quoteDetails"></div></section>
+<section class="panel"><div class="panelHead"><h2>Fair value model</h2><small>V3</small></div><div class="quotePrice mono" id="fairValue">—</div><div id="discount" class="note">Discount unavailable</div><div class="levelsRail" id="levels"><div class="empty">INSUFFICIENT EVIDENCE</div></div><div id="eligibility" class="note">Awaiting evidence.</div><button id="inspect" class="wide" style="margin-top:12px">Inspect research &amp; blockers ↗</button></section>
+<section class="panel"><div class="panelHead"><h2>Research diagnostics</h2></div><div id="selectedDiagnostics" class="note">No symbol selected.</div></section>
+</aside>
+</div>
+<section class="panel detailPanel" id="researchPanel" hidden><div class="panelHead"><h2>Qualified research / selected evidence</h2><button data-close="researchPanel">Close details</button></div><div id="researchDetails"></div></section>
+<section class="panel detailPanel" id="diagnosticsPanel" hidden><div class="panelHead"><h2>Diagnostics / Evidence</h2><button data-close="diagnosticsPanel">Close diagnostics</button></div><div id="diagnostics" class="diagGrid"></div></section>
+<div class="footer">Research zones are not guaranteed bargains or returns. Atlas never places a Robinhood order. <span class="muted">MANUAL_ONLY</span></div>
+</main>
+<script src="/static/runtime_poll.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=value=>String(value??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const finite=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
+const num=(value,d=1)=>finite(value)?Number(value).toLocaleString(undefined,{maximumFractionDigits:d}):'—';
+const money=value=>finite(value)&&Number(value)>0?'$'+num(value,Number(value)>=100?2:4):'—';
+const pct=value=>finite(value)?Number(value).toFixed(1)+'%':'—';
+const v3=r=>r.quality_dips_v2?.quality_dips_v3||{};
+const quote=r=>r.quote_display_price??r.current_quote?.display_price??r.current_quote?.price??r.price;
+const quality=r=>String(r.quote_quality||r.current_quote?.quality||'MISSING').toUpperCase();
+const qualified=r=>['GENERATIONAL','DEEP_VALUE','ACCUMULATION'].includes(v3(r).patient_state);
+const tone=value=>['GENERATIONAL','DEEP_VALUE','ACCUMULATION','ACCUMULATE','LIVE','FRESH'].includes(value)?'positive':['THESIS_BROKEN','STAND_DOWN','MISSING'].includes(value)?'negative':'caution';
+const badge=value=>`<span class="pill ${tone(value)}">${esc(value||'UNAVAILABLE')}</span>`;
+const kv=(label,value)=>`<div class="kv"><span>${esc(label)}</span><b>${esc(value??'NOT PROVIDED')}</b></div>`;
+// Preserve the existing patient-capital ranking; display filters never change research.
+function rank(r){const order={GENERATIONAL:0,DEEP_VALUE:1,ACCUMULATION:2,WATCH:3,THESIS_BROKEN:4};return (order[r.quality_dips_v2?.patient_state]??5)*100-(Number(r.opportunity_score)||0)}
+let snapshot=null, rows=[], selectedSymbol=null, view='overview', failed=false;
+function visibleRows(){const query=$('search').value.trim().toUpperCase(),state=$('stateFilter').value;return rows.filter(r=>(!query||String(r.symbol).toUpperCase().includes(query))&&(state==='all'||(state==='qualified'?qualified(r):v3(r).patient_state===state)))}
+function renderBoard(){
+ const visible=visibleRows();
+ $('board').innerHTML=visible.length?visible.map(r=>`<tr class="${r.symbol===selectedSymbol?'selected':''}"><td class="muted">${rows.indexOf(r)+1}</td><td><button data-symbol="${esc(r.symbol)}" aria-label="Inspect ${esc(r.symbol)}">${esc(r.symbol)}</button></td><td>${money(quote(r))}</td><td>${money(v3(r).fair_value_anchor)}</td><td class="${finite(v3(r).discount_to_fair_value_pct)?Number(v3(r).discount_to_fair_value_pct)>=0?'positive':'negative':''}">${pct(v3(r).discount_to_fair_value_pct)}</td><td class="muted">${esc(r.thesis||'UNKNOWN')}</td><td class="scoreCell">${num(r.opportunity_score)}</td><td>${badge(v3(r).patient_state)}</td><td class="${tone(quality(r))}">${esc(quality(r))}</td></tr>`).join(''):`<tr><td colspan="9" class="empty">${rows.length?'No research matches these display filters.':snapshot?.runtime_refresh?.state==='WARMING'?'Research is warming. Waiting for the first snapshot.':'No investment research rows available.'}</td></tr>`;
+ $('boardNote').textContent=`${visible.length} of ${rows.length} research rows · Existing V2 priority / opportunity score order · Select a symbol for evidence`;
+ const radarRows=rows.filter(r=>['ACCUMULATE','PREPARE'].includes(r.stance)||qualified(r));
+ const top=(radarRows.length?radarRows:rows).slice(0,5);
+ $('radar').innerHTML=top.length?top.map(r=>`<button class="radarTile ${selectedSymbol===r.symbol?'selected':''}" data-symbol="${esc(r.symbol)}" aria-label="Select ${esc(r.symbol)}"><div class="radarSymbol"><span class="rank">#${rows.indexOf(r)+1}</span>${esc(r.symbol)}</div><small>Score ${num(r.opportunity_score)} · ${esc(quality(r))}</small><div class="radarPrice mono">${money(quote(r))}</div><div class="radarDiscount ${finite(v3(r).discount_to_fair_value_pct)&&Number(v3(r).discount_to_fair_value_pct)>=0?'positive':'muted'}">${pct(v3(r).discount_to_fair_value_pct)} discount</div><div class="radarState ${tone(v3(r).patient_state)}">V3 ${esc(v3(r).patient_state||'UNAVAILABLE')}</div></button>`).join(''):'<div class="empty">No research candidates available.</div>';
+}
+function renderSelection(){
+ const r=rows.find(r=>r.symbol===selectedSymbol);
+ if(!r){$('selectedTitle').textContent='Market snapshot';$('selectedState').textContent='UNAVAILABLE';$('selectedPrice').textContent='—';$('selectedSource').textContent='No research symbol available';$('quoteDetails').innerHTML='';$('fairValue').textContent='—';$('discount').textContent='Discount unavailable';$('levels').innerHTML='<div class="empty">INSUFFICIENT EVIDENCE</div>';$('eligibility').textContent='Awaiting evidence.';$('selectedDiagnostics').textContent='No symbol selected.';$('researchDetails').innerHTML='<div class="empty">No selected research.</div>';return}
+ const v=v3(r),q=r.current_quote||{},b=v.blockers||[],ladder=v.entry_ladder||{};
+ $('selectedTitle').textContent='Market snapshot: '+r.symbol;
+ $('selectedState').textContent=failed?'STALE':quality(r);$('selectedState').className='pill '+(failed?'caution':tone(quality(r)));
+ $('priceLabel').textContent=['LIVE','FRESH'].includes(quality(r))&&!failed&&snapshot?.runtime_refresh?.state==='FRESH'?'LIVE SUPPORTED PRICE':'LAST SUPPORTED PRICE';
+ $('selectedPrice').textContent=money(quote(r));$('selectedSource').textContent=r.quote_source||q.source||'Source NOT PROVIDED';
+ $('quoteDetails').innerHTML=kv('Session',r.quote_session||q.session)+kv('Age at snapshot',finite(q.age_sec)?num(q.age_sec,0)+'s':'NOT PROVIDED')+kv('Bid',money(q.bid))+kv('Ask',money(q.ask));
+ $('fairValue').textContent=money(v.fair_value_anchor);$('discount').textContent=pct(v.discount_to_fair_value_pct)+' discount to V3 fair value';
+ $('levels').innerHTML=ladder.levels?.length?ladder.levels.map(l=>`<div class="levelRow"><b>${esc(l.level)}</b><span>${pct(l.margin_of_safety_pct)} MOS</span><strong class="mono">${money(l.limit_price)}</strong></div>`).join(''):'<div class="empty">INSUFFICIENT EVIDENCE<br>Entry zones unavailable</div>';
+ $('eligibility').innerHTML=badge(v.patient_state)+`<p class="note" style="margin-top:8px">${esc(b.length?b.join(' · '):ladder.ready===true?'Evidence eligible. Manual research only.':'Evidence readiness not provided.')}</p>`;
+ $('selectedDiagnostics').innerHTML=kv('Evidence quality',r.evidence_quality)+kv('Legacy stance',r.stance)+kv('Thesis',r.thesis)+kv('V2 state',r.quality_dips_v2?.patient_state);
+ $('researchDetails').innerHTML=card(r,0)+`<div class="v2box"><h3>Legacy L1-L4 monitoring · research only</h3><p class="note">DIP LEVEL HIT · CHECK ROBINHOOD · NEXT DIP LEVEL · DISCORD DM PENDING are legacy monitor states, not broker orders.</p>${kv('Monitor state',r.accumulation_status?.state)}${kv('Research as of',r.research_timestamp||r.timestamp)}${kv('Next level',r.accumulation_status?.next_level?String(r.accumulation_status.next_level.level)+' · '+money(r.accumulation_status.next_level.price):'NOT PROVIDED')}${kv('Pending DM',num(r.accumulation_status?.pending_dm,0))}${(r.accumulation_ladder?.levels||[]).map(l=>kv(String(l.level)+' · '+(l.hit?'HIT':'WAIT'),money(l.price))).join('')}</div>`;
+}
+function bars(entries){const total=entries.reduce((sum,[,n])=>sum+(finite(n)?Math.max(0,Number(n)):0),0);return entries.map(([label,n])=>`<div class="barRow"><span>${esc(label)}</span><div class="bar"><i style="width:${total&&finite(n)?Math.max(0,Number(n))/total*100:0}%"></i></div><span>${num(n,0)}</span></div>`).join('')}
+function renderSummary(d){
+ const h=d.quote_health||{},fr=d.quality_dips_v3?.forward_readiness||{},ft=fr.thresholds||{},fd=d.quality_dips_v3?.forward_diagnostics||{},rt=d.runtime_refresh||{};
+ $('evidenceCount').textContent=num(fr.evaluations,0)+' / '+num(ft.min_evaluations,0);
+ $('evidenceNote').textContent=fr.ready===true?'Ready to evaluate':fr.ready===false?'Collecting · '+num(fr.unique_days,0)+' / '+num(ft.min_unique_days,0)+' days':'Readiness unavailable';
+ $('evidenceProgress').hidden=!(finite(fr.evaluations)&&finite(ft.min_evaluations)&&Number(ft.min_evaluations)>0);
+ $('evidenceProgress').value=$('evidenceProgress').hidden?0:Math.min(100,Number(fr.evaluations)/Number(ft.min_evaluations)*100);
+ $('quoteCount').textContent=finite(h.live)&&finite(h.fresh)?num(Number(h.live)+Number(h.fresh),0)+' supported':'UNAVAILABLE';
+ $('quoteNote').textContent=num(h.live,0)+' live · '+num(h.fresh,0)+' fresh · '+num(h.stale,0)+' stale';
+ $('candidateCount').textContent=num(rows.length,0);$('candidateNote').textContent=rows.filter(qualified).length+' V3 qualified · '+rows.filter(r=>v3(r).patient_state==='WATCH').length+' watch';
+ $('refreshState').textContent=rt.state||'UNAVAILABLE';$('refreshState').className='metricValue compact '+(rt.state==='FRESH'?'positive':'caution');
+ $('refreshAge').textContent=finite(rt.age_sec)?'Snapshot age '+num(rt.age_sec,0)+'s':'Snapshot age unavailable';
+ $('status').textContent=rt.state==='FRESH'?'Research snapshot refreshed':rt.state==='STALE'?'STALE · last research snapshot shown':rt.state==='WARMING'?'WARMING · waiting for research':'Snapshot freshness unavailable';
+ const colors=['#20dcdd','#eab55c','#00d5a5','#7dacf5','#ff3554'];
+ const states=['WATCH','ACCUMULATION','DEEP_VALUE','GENERATIONAL','THESIS_BROKEN'];
+ const counts=states.map(s=>rows.filter(r=>v3(r).patient_state===s).length);
+ const unknown=rows.length-counts.reduce((a,b)=>a+b,0);if(unknown){states.push('UNAVAILABLE');counts.push(unknown);colors.push('#385666')}
+ let offset=0;const gradient=counts.map((n,i)=>{const start=offset;offset+=rows.length?n/rows.length*100:0;return `${colors[i]} ${start}% ${offset}%`});
+ $('stateDonut').style.background=rows.length?`conic-gradient(${gradient.join(',')})`:'#173440';
+ $('stateLegend').innerHTML=states.map((s,i)=>`<div class="legendRow"><span><i class="dot" style="background:${colors[i]}"></i>${esc(s.replaceAll('_',' '))}</span><span>${counts[i]}</span></div>`).join('');
+ $('sourceHealth').innerHTML=kv('Provider symbols',num(h.requested,0))+kv('Live / fresh',num(h.live,0)+' / '+num(h.fresh,0))+kv('Reference / stale',num(h.reference,0)+' / '+num(h.stale,0))+kv('Missing',num(h.missing,0))+`<p class="quoteMeta" style="margin-top:8px">${esc(h.source||'Source NOT PROVIDED')}</p>`;
+ $('pipeline').innerHTML=bars(['ACCUMULATE','PREPARE','WATCH','STAND_DOWN'].map(s=>[s,d.counts?.[s]]));
+ $('forwardSummary').innerHTML=kv('Symbols',num(fr.symbols,0)+' / '+num(ft.min_symbols,0))+kv('Unique days',num(fr.unique_days,0)+' / '+num(ft.min_unique_days,0))+kv('Non-WATCH evaluations',num(fd.non_watch_evaluations,0))+kv('Non-WATCH rate',finite(fd.non_watch_rate)?pct(Number(fd.non_watch_rate)*100):'NOT PROVIDED');
+ const days=Object.entries(fd.evaluations_per_day||{}).sort(([a],[b])=>b.localeCompare(a)).slice(0,7);
+ $('diagnostics').innerHTML=`<div><h3>Forward evaluations by day</h3>${days.length?days.map(([day,n])=>kv(day,num(n,0))).join(''):'<p class="note">NOT PROVIDED</p>'}</div><div><h3>Forward state counts</h3>${kv('Legacy A+ research',rows.filter(r=>r.high_conviction).length)}${Object.keys(fd.state_counts||{}).length?Object.entries(fd.state_counts).map(([s,n])=>kv(s,num(n,0))).join(''):'<p class="note">NOT PROVIDED</p>'}</div><div><h3>Most evaluated symbols</h3>${Object.entries(fd.top_symbols||{}).slice(0,7).map(([s,n])=>kv(s,num(n,0))).join('')||'<p class="note">NOT PROVIDED</p>'}<p class="note">Quote cache ${num(h.cache_ttl_sec,0)}s · research snapshot age ${num(rt.age_sec,0)}s</p></div>`;
+}
+function acceptSnapshot(d){
+ if(!d||!Array.isArray(d.board))throw new Error('Invalid research snapshot');
+ snapshot=d;rows=[...d.board].sort((a,b)=>rank(a)-rank(b));failed=false;
+ if(!rows.some(r=>r.symbol===selectedSymbol))selectedSymbol=rows[0]?.symbol??null;
+ renderSummary(d);renderBoard();renderSelection();
+}
+async function load(){try{const res=await atlasFetch('/api/investments/quality-dips?limit=50');if(!res.ok)throw new Error('HTTP '+res.status);acceptSnapshot(await res.json())}catch(error){failed=true;$('status').textContent=snapshot?'STALE · connection unavailable; last good research preserved':'Research temporarily unavailable · retrying automatically';$('refreshState').textContent=snapshot?'STALE':'UNAVAILABLE';$('refreshState').className='metricValue compact caution';$('refreshAge').textContent='Refresh failed · last update unverified';if(!snapshot){$('radar').innerHTML='<div class="empty">Research temporarily unavailable.</div>';$('board').innerHTML='<tr><td colspan="9" class="empty">Research temporarily unavailable. Retrying automatically.</td></tr>'}renderSelection()}}
+function setView(next){view=next;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view);b.setAttribute('aria-pressed',String(b.dataset.view===view))});$('stateFilter').value=view==='qualified'?'qualified':view==='watch'?'WATCH':'all';$('researchPanel').hidden=view!=='research';$('diagnosticsPanel').hidden=view!=='diagnostics';renderBoard();if(view==='research'||view==='diagnostics')$(view==='research'?'researchPanel':'diagnosticsPanel').scrollIntoView({behavior:'smooth',block:'start'});else if(view==='radar')$('opportunities').scrollIntoView({behavior:'smooth',block:'start'});else if(view==='overview')document.querySelector('.context').scrollIntoView({behavior:'smooth',block:'start'})}
+document.addEventListener('click',event=>{const select=event.target.closest('[data-symbol]'),nav=event.target.closest('[data-view]'),close=event.target.closest('[data-close]');if(select){selectedSymbol=select.dataset.symbol;renderBoard();renderSelection()}else if(nav)setView(nav.dataset.view);else if(close){$(close.dataset.close).hidden=true;setView('overview')}});
+$('search').addEventListener('input',renderBoard);$('stateFilter').addEventListener('change',renderBoard);$('inspect').addEventListener('click',()=>setView('research'));
+function v3Html(r){const v=(r.quality_dips_v2||{}).quality_dips_v3||{},l=v.entry_ladder||{},levels=l.levels||[];return `<div class="v2box"><div class="v2title"><span>QUALITY DIPS V3 · MARGIN OF SAFETY</span><span class="state ${esc(v.patient_state||'UNAVAILABLE')}">${esc(v.patient_state||'UNAVAILABLE')}</span></div><div class="v2grid"><div class="cell"><b>ROBUST FAIR VALUE</b><span>${money(v.fair_value_anchor)}</span></div><div class="cell"><b>DISCOUNT TO FAIR</b><span>${pct(v.discount_to_fair_value_pct)}</span></div><div class="cell"><b>ENTRY MODEL</b><span>15/20/25/30%</span></div><div class="cell"><b>EXECUTION</b><span>MANUAL ONLY</span></div></div><div class="levels">${levels.length?levels.map(x=>`<div class="lvl"><b>${esc(x.level)} · ${num(x.margin_of_safety_pct,0)}% MOS</b><span>${money(x.limit_price)}</span></div>`).join(''):'<div class="cell"><b>ENTRY ZONES</b><span>WAIT — evidence incomplete</span></div>'}</div><div class="reason">${esc((v.blockers||[]).join(' · ')||(l.ready===true?'V3 evidence stack eligible. No guaranteed bargain or return.':'INSUFFICIENT EVIDENCE'))}</div></div>`}
+function v2Html(r){const v=r.quality_dips_v2||{},g=v.evidence_gate||{},nv=v.normalization_value||{},l=v.entry_ladder||{},levels=l.levels||[],trend=v.trend||{},blocked=g.status==='BLOCKED';return `<div class="v2box"><div class="v2title"><span>QUALITY DIPS V2 · PATIENT CAPITAL</span><span class="state ${esc(v.patient_state||'UNAVAILABLE')}">${esc(v.patient_state||'UNAVAILABLE')}</span></div><div class="v2grid"><div class="cell"><b>CONSERVATIVE VALUE</b><span>${money(nv.conservative)}</span></div><div class="cell"><b>BASE VALUE</b><span>${money(nv.base)}</span></div><div class="cell"><b>OPTIMISTIC VALUE</b><span>${money(nv.optimistic)}</span></div><div class="cell"><b>CONSERVATIVE UPSIDE</b><span>${pct(v.conservative_upside_pct)}</span></div></div><div class="meta ${blocked?'blocked':'eligible'}">evidence gate ${esc(g.status||'UNAVAILABLE')} · 29% minimum hurdle · 50% GENERATIONAL hurdle</div><div class="levels">${levels.length?levels.map(x=>`<div class="lvl"><b>${esc(x.level)} · ${num(x.required_upside_pct,0)}% HURDLE</b><span>${money(x.limit_price)}</span></div>`).join(''):'<div class="cell"><b>ENTRY ZONES</b><span>WAIT — valuation evidence incomplete</span></div>'}</div><div class="meta">trend: short ${esc(trend.short_term||'UNKNOWN')} · intermediate ${esc(trend.intermediate_term||'UNKNOWN')} · long ${esc(trend.long_term||'UNKNOWN')}</div><div class="reason">${esc([...(g.blockers||[]),...(v.state_reasons||[])].join(' · ')||(g.gate_passed===true?'V2 evidence eligible for patient-capital classification.':'Evidence status not provided.'))}</div></div>`}
+function card(r,i){const c=r.components||{},q=r.current_quote||{},price=r.quote_display_price??q.display_price??q.price??r.price,quality=String(r.quote_quality||q.quality||'MISSING').toUpperCase(),priceLabel=['LIVE','FRESH'].includes(quality)&&!failed&&snapshot?.runtime_refresh?.state==='FRESH'?'LIVE SUPPORTED PRICE':'LAST SUPPORTED PRICE',why=[...(r.blockers||[]),...(r.reasons||[])];return `<div class="card ${i<4?'priority':'compact'}"><div class="row"><div><span class="sym">${esc(r.symbol)}</span><div class="sub">${esc(r.name||r.asset_type||'')}</div></div><span class="stance ${esc(r.stance)}">${esc(r.stance)}</span></div><div class="row"><div class="sub">${esc(r.classification)} · thesis ${esc(r.thesis)} · evidence ${esc(r.evidence_quality)}</div><div class="score">${num(r.opportunity_score,0)}</div></div><div class="priceBox"><div class="label">${priceLabel}</div><div class="priceNow">${money(price)}</div><div class="meta">${esc(r.quote_session||q.session||'UNKNOWN')} · ${esc(r.quote_source||q.source||'unknown')}</div></div>${v3Html(r)}${v2Html(r)}<div class="runway">legacy recovery runway ${r.recovery_runway_pct==null?'—':num(r.recovery_runway_pct,1)+'%'}</div><div class="components"><div class="comp"><b>VALUATION</b><span>${num(c.valuation,0)}</span></div><div class="comp"><b>FUNDAMENTALS</b><span>${num(c.fundamentals,0)}</span></div><div class="comp"><b>DRAWDOWN</b><span>${num(c.drawdown,0)}</span></div><div class="comp"><b>THESIS</b><span>${num(c.thesis_integrity,0)}</span></div></div><div class="reason">${esc(why.join(' · ')||'No legacy blocker recorded.')}</div></div>`}
+
+atlasPoll(load,10000);
+</script>
+</body></html>

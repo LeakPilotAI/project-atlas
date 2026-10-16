@@ -9,10 +9,13 @@ PACKAGE_DIR = Path(__file__).resolve().parent
 DATA_DIR = _BACKEND / "data" / "investment"
 
 LEDGER_PATH = DATA_DIR / "paper_investment_ledger.jsonl"
+QUALITY_DIPS_PAPER_JOURNAL_PATH = DATA_DIR / "quality_dips_paper_journal.jsonl"
 HOLDINGS_PATH = DATA_DIR / "holdings.json"
 OPPORTUNITIES_PATH = DATA_DIR / "opportunities.jsonl"
 EVIDENCE_PATH = DATA_DIR / "evidence.jsonl"
 UNIVERSE_PATH = DATA_DIR / "universe.json"
+ROBINHOOD_UNIVERSE_PATH = DATA_DIR / "robinhood_universe.json"
+ROBINHOOD_UNIVERSE_EVENTS_PATH = DATA_DIR / "robinhood_universe_events.jsonl"
 UNIVERSE_EXAMPLE_PATH = DATA_DIR / "universe.example.json"
 PACKAGE_UNIVERSE_EXAMPLE = PACKAGE_DIR / "universe.example.json"
 HISTORY_DIR = DATA_DIR / "history"

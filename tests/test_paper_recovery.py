@@ -55,7 +55,6 @@ def test_restart_one_open_then_tp_close(tmp_path, monkeypatch):
     assert c1._rehydrate_open(reason="startup") == 1
     assert c1._open["t1"]["entry"] == 100.0
     assert c1._open["t1"]["opened_at"]
-    # simulated process death: new coach, same journal
     c2 = PerpMicroCoach()
     c2._rehydrate_open(reason="startup")
     assert "t1" in c2._open
@@ -136,7 +135,7 @@ def test_restart_while_exit_triggered_same_logic(tmp_path, monkeypatch):
     j.reload()
     c = PerpMicroCoach()
     c._rehydrate_open()
-    _run(c._manage_open({"AAA": 99.0}))  # stop
+    _run(c._manage_open({"AAA": 99.0}))
     assert "t1" not in c._open
     stats = _run(j.stats())
     assert stats["losses"] == 1
@@ -237,7 +236,6 @@ def test_crash_before_shutdown_persist_does_not_invent_exit(tmp_path, monkeypatc
     c1._rehydrate_open(reason="startup")
     c1._open["t1"]["mark"] = 100.3
     c1._open["t1"]["mfe_r"] = 0.3
-    # process dies without stop()
     c2 = PerpMicroCoach()
     c2._rehydrate_open(reason="startup")
     assert "t1" in c2._open
@@ -268,7 +266,7 @@ def test_reconcile_recovers_disk_only_orphan(tmp_path, monkeypatch):
     j, p = _bind(tmp_path, monkeypatch)
     j._append(p, _open_row("orphan"))
     j.reload()
-    j._open.pop("orphan", None)  # memory lost, disk still open
+    j._open.pop("orphan", None)
     assert j.list_open() == []
     rec = j.reconcile_from_disk()
     assert rec["added"] == 1
@@ -283,7 +281,6 @@ def test_close_after_append_is_idempotent(tmp_path, monkeypatch):
     j._append(p, _open_row("t1"))
     j.reload()
     first = _run(j.close_trade("t1", exit_price=102.0, result="TP1", pnl_r=2.0))
-    # crash window: memory still thinks open, disk already closed
     j._open["t1"] = _open_row("t1")
     second = _run(j.close_trade("t1", exit_price=99.0, result="STOP", pnl_r=-1.0))
     assert first["trade_id"] == "t1"
@@ -291,3 +288,62 @@ def test_close_after_append_is_idempotent(tmp_path, monkeypatch):
     stats = _run(j.stats())
     assert stats["closed"] == 1
     assert stats["wins"] == 1
+
+
+def test_manual_auto_paper_is_not_adopted_by_micro_coach(tmp_path, monkeypatch):
+    """Manual-trigger mirror has its own manager and must never be double-managed here."""
+    j, p = _bind(tmp_path, monkeypatch)
+    micro = _open_row("micro")
+    micro["source"] = "perp_micro"
+    micro["strategy"] = "rsi_extension_v1"
+    manual = _open_row("manual", symbol="ZEC", side="SHORT", entry=1151.82, stop=1161.16, tp1=1135.02)
+    manual["source"] = "perp_manual_auto"
+    manual["strategy"] = "perp_setup_auto_v2_resting_limit"
+    j._append(p, micro)
+    j._append(p, manual)
+    j.reload()
+
+    c = PerpMicroCoach()
+    assert c._rehydrate_open(reason="startup") == 1
+    assert set(c._open) == {"micro"}
+    assert c.last_recovery["persisted_open"] == 1
+    assert c.last_recovery["journal_open_total"] == 2
+    assert c.last_recovery["foreign_open"] == 1
+
+
+def test_cycle_discovery_is_not_mislabeled_as_restart_recovery(tmp_path, monkeypatch):
+    j, p = _bind(tmp_path, monkeypatch)
+    row = _open_row("late")
+    row["source"] = "perp_micro"
+    row["strategy"] = "rsi_extension_v1"
+    j._append(p, row)
+    j.reload()
+
+    c = PerpMicroCoach()
+    assert c._rehydrate_open(reason="cycle") == 1
+    assert "late" in c._open
+    assert "late" not in c._recovered_ids
+    visible = _run(c.list_open_papers())
+    assert visible[0]["recovered"] is False
+    assert visible[0]["was_recovered"] is False
+
+
+def test_startup_recovered_badge_clears_after_fresh_management(tmp_path, monkeypatch):
+    j, p = _bind(tmp_path, monkeypatch)
+    row = _open_row("restart")
+    row["source"] = "perp_micro"
+    row["strategy"] = "rsi_extension_v1"
+    j._append(p, row)
+    j.reload()
+
+    c = PerpMicroCoach()
+    c._rehydrate_open(reason="startup")
+    before = _run(c.list_open_papers())[0]
+    assert before["recovered"] is True
+    assert before["was_recovered"] is True
+
+    _run(c._manage_open({"AAA": 100.0}))
+    after = _run(c.list_open_papers())[0]
+    assert after["lifecycle"] == "MANAGED"
+    assert after["recovered"] is False
+    assert after["was_recovered"] is True

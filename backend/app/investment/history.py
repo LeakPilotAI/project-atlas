@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import threading
+from collections import OrderedDict
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set
@@ -96,7 +99,7 @@ def append_bars(
     }
 
 
-def load_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
+def _read_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
     p = _path(symbol, root)
     out: List[OhlcvBar] = []
     if not p.exists():
@@ -127,3 +130,27 @@ def load_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
                 )
             )
     return out
+
+
+_bar_cache = OrderedDict()
+_bar_lock = threading.RLock()
+
+
+def load_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
+    """Reuse unchanged daily data; bounded by 64 symbols, never rewrites evidence."""
+    path = _path(symbol, root)
+    with _bar_lock:
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            _bar_cache.pop(path, None)
+            return []
+        stamp = (stat.st_size, stat.st_mtime_ns, stat.st_ino)
+        cached = _bar_cache.get(path)
+        if cached is None or cached[0] != stamp:
+            cached = (stamp, _read_bars(symbol, root))
+            _bar_cache[path] = cached
+        _bar_cache.move_to_end(path)
+        while len(_bar_cache) > 64:
+            _bar_cache.popitem(last=False)
+        return [replace(bar, issues=list(bar.issues)) for bar in cached[1]]

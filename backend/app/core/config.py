@@ -187,6 +187,20 @@ class Settings(BaseSettings):
     investment_retry_base_seconds: float = 1.0
     investment_history_period: str = "5y"
 
+    def validate_runtime_configuration(self) -> None:
+        """Fail closed on tracked example/default credentials before runtime startup."""
+        secret = str(self.secret_key or "").strip().lower()
+        database = str(self.database_url or "").strip().lower()
+        errors: list[str] = []
+        if not secret or secret in {"change-me", "change-me-in-production"}:
+            errors.append("SECRET_KEY must be set to a non-placeholder local value")
+        if not database:
+            errors.append("DATABASE_URL must be configured")
+        elif "change-me" in database or "atlas_secure_password_2026" in database:
+            errors.append("DATABASE_URL must not use tracked example/default credentials")
+        if errors:
+            raise ValueError("Unsafe Atlas runtime configuration: " + "; ".join(errors))
+
     @property
     def database_url_safe(self) -> str:
         u = self.database_url

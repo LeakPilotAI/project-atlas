@@ -48,7 +48,15 @@ if (-not $npm) {
     Write-Host "    npm not found - skipping. Desktop shortcut does not need Node."
 } elseif (Test-Path (Join-Path $Frontend "package.json")) {
     Push-Location $Frontend
-    & npm.cmd install
+    if (-not (Test-Path (Join-Path $Frontend "package-lock.json"))) {
+        Write-Host "[ERROR] frontend\\package-lock.json missing; refusing non-deterministic frontend install." -ForegroundColor Red
+        exit 1
+    }
+    & npm.cmd ci
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] npm ci failed; committed frontend dependency lock is not installable." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
     Pop-Location
 }
 
