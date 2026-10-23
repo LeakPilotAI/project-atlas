@@ -1,29 +1,33 @@
 {
   "active_task": null,
-  "last_verified_task": "F4",
+  "last_verified_task": "J5",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
-    "C1": "Native command/all-writer acceptance unavailable",
+    "C1": "Native retained fixture command/account/lifetime validated, but actual Atlas ownership, full writer/resource roster and independent drain remain unaccepted.",
     "D1": "Protected authority/storage/clock/rollback unaccepted",
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "combined_passed": 233,
+    "combined_passed": 269,
     "failed": 0,
     "skipped": 0,
-    "duration_seconds": 43.52,
-    "log": "logs/diagnostics/paper-readiness-combined.txt",
-    "separate_nonoverlapping_sync_passed": 10,
-    "async_cases_blocked": 13
+    "duration_seconds": 37.47,
+    "environment": "permitted native Windows; synthetic/disposable resources only",
+    "log": "logs/diagnostics/readiness-native-combined.txt",
+    "javascript_passed": 763,
+    "javascript_failed": 0,
+    "javascript_skipped": 0,
+    "javascript_log": "logs/diagnostics/offline-readiness-checks/javascript-3xky42eg/output.txt"
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Read PAPER_OPERATIONAL_READINESS_DECISION_2026-10-23.md. Obtain independent B1/C1/D1 evidence and explicit PAPER lane/scope plus existing-path integration approval. Async provider validation separately blocked at Windows event-loop socketpair initialization; no workaround. No PAPER startup authorized.",
+  "exact_next_action": "Read docs/PAPER_FIRST_SESSION_DEPENDENCIES_2026-10-23.md. Obtain operator-selected PAPER lane/store/risk scope and B1 independent archive, C1 actual all-writer ownership/quiescence, D1 trusted storage/authority/clock acceptance before existing-path integration. No startup authorized. Next scoped engineering task is real-store handoff contract against disposable records once selected.",
   "latest_focused_tests": {
-    "passed": 23,
+    "passed": 6,
     "failed": 0,
     "skipped": 0,
-    "log": "logs/diagnostics/writer-corruption-after.txt"
+    "environment": "permitted native Windows; retained fixture children only",
+    "log": "logs/diagnostics/native-command-acceptance.txt"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -34,18 +38,23 @@
     "F1": "VERIFIED fixture-only: close rows cannot omit or contradict original symbol/side/type/sizing/cost basis; non-PAPER opens refused even when subsequently closed.39 focused pass; nine original failures retained.",
     "F2": "VERIFIED: two abrupt actual investment ledger/snapshot boundary scenarios plus existing audit/durability regressions,28passed. Partial publication mismatch detected; audit/registry never grant recovery; no blind retries.",
     "F3": "VERIFIED fixture-only: supplied timezone-aware legacy entry clocks preserved with original subsecond string and explicit whole-second UTC inventory value; missing evidence stays unavailable, naive/malformed clocks refuse.43focusedpass; migrated liquidation/cash/history report idempotent, no authority.",
-    "F4": "VERIFIED scoped readiness assessment:233combined+10disjointsync successful;13asynccases BLOCKED, original evidence retained. No readiness percentage/permission inferred."
+    "F4": "VERIFIED scoped readiness assessment:233combined+10disjointsync successful;13asynccases BLOCKED, original evidence retained. No readiness percentage/permission inferred.",
+    "J1": "VERIFIED: workspace-owned scratch fixes3rename failures; AppContainer still refuses5junction cases; permitted native comparison unchanged assertions763passed0failed0skipped. Existing missing decision report preserved byte-identically and included for Git publication.",
+    "J2": "VERIFIED diagnosis: stdlib-only socketpair stalls inside AppContainer before Atlas import; explicitly permitted native17provider cases allpass, including13async. No asyncio policy/socket monkeypatch, OS settings or lifecycle deadline changed.",
+    "J3": "VERIFIED fixture integration: original falseCOMPLETE reproduced; now explicit same-day report contract, independent local exit recomputation and persisted daily cash report required before synthetic stop.32focusedpassed. Missing/failed accounting/report prevents stop; exact retries no duplicates; result COMPLETE_FIXTURE_ONLY/no production or recovery authority.",
+    "J4": "VERIFIED native fixture-only: exact retained-child CIM command/image/parent/SID plus handle lifetime checks,6passed. Wrong command/account/parent/creation or unavailable CIM refuse. No operational ownership/quiescence/authority granted; C1 remains BLOCKED.",
+    "J5": "VERIFIED scoped final regression and dependency plan:269Python and763JS pass in permitted native environment; all governing decisions unchanged; missing local decision document restored for publication. No operational acceptance."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 8,
-  "continuation_report": "docs/PAPER_OPERATIONAL_PATH_CONTINUATION_2026-10-23.md",
-  "blocked_wait_reason": "All remaining queued requirements require unavailable independent evidence or explicit operational acceptance. No false ACTIVE task or automatic promotion.",
+  "progress_revision": 13,
+  "continuation_report": "docs/OFFLINE_READINESS_REPAIR_CONTINUATION_2026-10-23.md",
+  "blocked_wait_reason": "Native fixture/environment defects resolved in permitted test context; actual source completeness, all-runtime-writer authority, trusted startup and operational approval remain unavailable. Do not turn fixture observation into permission.",
   "publication_validation": {
-    "python_compile": 509,
-    "powershell_parse": 16,
-    "offline_js_passed": 755,
-    "offline_js_failed": 8,
-    "offline_js_skipped": 0,
-    "note": "EPERM fixture filesystem failures unresolved; GitHub sync authorized, no gate promotion"
+    "python_combined_passed": 269,
+    "offline_js_passed": 763,
+    "failed": 0,
+    "skipped": 0,
+    "environment": "permitted native Windows; sandbox EPERM/socketpair evidence retained",
+    "operational_acceptance": false
   }
 }

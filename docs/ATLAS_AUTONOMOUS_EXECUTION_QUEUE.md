@@ -9,7 +9,7 @@ Exactly one ACTIVE task while executable work is selected. If every remaining ta
 | A3 | Concurrent registry close,drain deadline and interrupted writer recovery | A1 | VERIFIED | paper_writer_fixture.py;Windows fixture bridge | Add bounded pending-writer tests under existing deadlines |
 | B1 | Independent gross/fee/cash component reconciliation and historical day-end position inventory | current exit audit/report | BLOCKED | paper_exit_audit.py;paper_bound_daily_report.py | Obtain independently authenticated complete historical archive and witness; do not repeat completed replay |
 | C1 | Native command,ownership and all-writer acceptance | permitted command evidence and independent drain/ownership | BLOCKED | native observation modules;CIM denial report | Await new permitted native evidence;no repeat audits |
-| D1 | Protected admission namespace,authority,clock and antirollback acceptance | trusted authority decision and authorized provisioning | BLOCKED | R7E47 security reports;Stage34DÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“F | Preserve refusal;no artificial local trust anchors |
+| D1 | Protected admission namespace,authority,clock and antirollback acceptance | trusted authority decision and authorized provisioning | BLOCKED | R7E47 security reports; Stage34D-F | Preserve refusal;no artificial local trust anchors |
 | E1 | Operational Daily PAPER lifecycle/backup/provider/runtime acceptance | A/B,C1,D1,provider rights,operator approval | BLOCKED | canonical21gate matrix | No protected service activation;continue independent offline work |
 | B2 | Populated actual investment/prediction writer compatibility; committed-but-unacknowledged retry refuses replay | A2,A3 | VERIFIED | tests/test_populated_writer_compatibility.py | Execute actual investment writer at disposable paths |
 | B3 | Abrupt process exit after actual investment store publication and restart; no duplicate committed financial effect | B2 | VERIFIED | tests/test_populated_writer_compatibility.py | Test before admission, after mutation and after acknowledgement at disposable paths |
@@ -28,3 +28,15 @@ Transition rule: record terminal outcome; select the first eligible TODO whose d
 | F4 | Combined PAPER path regression and source-backed operational blockers/authorization decision | F1,F2,F3 | VERIFIED | PAPER_OPERATIONAL_PATH_CONTINUATION_2026-10-23.md | Run combined evidence and final gap traceability; no gate promotion |
 
 Operational review update: F1–F4 scoped VERIFIED;233 combined and10 separate non-overlapping sync passes;13async cases BLOCKED on native socketpair setup. B1/C1/D1/E1 remain BLOCKED. No authorized PAPER startup path. See PAPER_OPERATIONAL_READINESS_DECISION_2026-10-23.md. No eligible implementation TODO is activated from unavailable authority.
+
+## Current execution: J1-J5 scoped VERIFIED; BLOCKED_WAIT
+
+| ID | Objective / acceptance | Dependencies | Status | Files/evidence | Exact next action |
+|---|---|---|---|---|---|
+| J1 | JS fixture scratch isolation and unchanged native assertion acceptance | offline only | VERIFIED | readiness repair continuation | 763 native JS passed; sandbox differences retained |
+| J2 | Stdlib socketpair/environment diagnosis and native provider acceptance | J1 | VERIFIED | native17/provider trace | Native17 passed; sandbox stdlib blocks before Atlas import |
+| J3 | Fixture shutdown requires same-day audit, cash report and truthful stop outcome | J2 | VERIFIED | test_isolated_shutdown_reporting.py | 32 focused passed; no production integration |
+| J4 | Native retained-child command/parent/account observation, zero authority | J2 | VERIFIED | test_native_fixture_command.py | 6 native passed; C1 operational acceptance remains blocked |
+| J5 | Final regression, first-session dependency plan and reviewed Git publication | J1,J2,J3,J4 | VERIFIED | readiness repair continuation | Complete combined run and preservation checks before commit/push |
+
+Latest exact continuation: docs/PAPER_FIRST_SESSION_DEPENDENCIES_2026-10-23.md.269combinedPython/763JS native pass. No eligible TODO remains without lane/scope decision or B1/C1/D1/E1 acceptance. Existing original gate decisions unchanged. Never replay B2-B5/F1-F4 as new implementation.

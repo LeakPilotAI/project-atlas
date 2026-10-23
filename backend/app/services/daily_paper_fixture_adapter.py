@@ -5,6 +5,7 @@ import sqlite3
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 
 def _entry_clock(row):
@@ -125,14 +126,33 @@ def migrate_fixture_rows(path, rows, *, currency, fault=lambda phase: None):
     return digest
 
 
-def isolated_shutdown(ledger, session, quotes, *, now, max_age, quiesce, drain, stop_owned):
+def isolated_shutdown(ledger, session, quotes, *, now, max_age, quiesce, drain, stop_owned,
+                      report_options=None):
     """Dependency-injected integration contract, not a Windows service hook."""
     from app.services.daily_paper_liquidation import liquidate
+    from app.services.paper_bound_daily_report import publish_bound_daily
+    from app.services.paper_exit_audit import audit_fixture_exits
 
+    refused = {"outcome": "INCOMPLETE", "services_stopped": False,
+               "production_authorized": False, "recovery_authorized": False}
     if quiesce() is not True or drain() is not True:
-        return {"outcome": "INCOMPLETE", "reason": "WRITERS_NOT_QUIESCENT", "services_stopped": False}
+        return {**refused, "reason": "WRITERS_NOT_QUIESCENT"}
+    if (type(report_options) is not dict or set(report_options) != {"day", "timezone", "currency"}
+            or any(type(value) is not str or not value for value in report_options.values())):
+        return {**refused, "reason": "EXPLICIT_DAILY_REPORT_CONTRACT_REQUIRED"}
+    if type(now) is not int or datetime.fromtimestamp(now, ZoneInfo(report_options["timezone"])).date().isoformat() != report_options["day"]:
+        return {**refused, "reason": "REPORT_SESSION_DAY_MISMATCH"}
     report = liquidate(ledger, session, quotes, now=now, max_age=max_age)
     if not report["complete"]:
-        return {"outcome": "INCOMPLETE", "report": report, "services_stopped": False}
+        return {**refused, "report": report}
+    audit = audit_fixture_exits(ledger)
+    if audit["reconciled"] is not True:
+        return {**refused, "reason": "EXIT_RECONCILIATION_INCOMPLETE", "audit": audit}
+    # Publication rechecks accounting in its own frozen snapshot. Storage errors
+    # propagate with their original context; the stop callback is never reached.
+    daily = publish_bound_daily(ledger, **report_options)
+    if daily["status"] != "CASH_RECONCILED_NOT_OPERATIONAL_ACCEPTANCE" or daily["unresolved"]:
+        return {**refused, "reason": "DAILY_REPORT_INCOMPLETE", "daily_report": daily}
     stopped = stop_owned() is True
-    return {"outcome": "COMPLETE" if stopped else "INCOMPLETE", "report": report, "services_stopped": stopped}
+    return {**refused, "outcome": "COMPLETE_FIXTURE_ONLY" if stopped else "INCOMPLETE",
+            "report": report, "audit": audit, "daily_report": daily, "services_stopped": stopped}
