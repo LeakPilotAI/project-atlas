@@ -24,6 +24,7 @@ def test_stale_pending_limit_expires_before_fill(tmp_path):
         }
     }
     setup = {
+        "mark_timestamp": datetime.now(timezone.utc).isoformat(),
         "setup_key": "BTC:LONG",
         "first_seen_at": "a",
         "paper_mirror_epoch_at": "a",
@@ -67,6 +68,7 @@ def test_retained_discovery_stale_setup_is_not_age_expired(tmp_path):
         }
     }
     setup = {
+        "mark_timestamp": datetime.now(timezone.utc).isoformat(),
         "setup_key": "BTC:LONG",
         "first_seen_at": "first",
         "paper_mirror_epoch_at": "epoch",

@@ -6,16 +6,29 @@ orderbook depth and persists append-only PAPER evidence.
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import math
 import os
 import threading
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal, InvalidOperation, ROUND_CEILING
+from datetime import UTC, datetime, timedelta, timezone
+from decimal import ROUND_CEILING, Decimal, DecimalException
+from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
+from app.core.durable_io import sync_parent, write_flushed
+from app.prediction.paper_accounting import VERSION as ACCOUNTING_VERSION
+from app.prediction.paper_accounting import (
+    AccountingEvidenceError,
+    audit_close,
+    calculate_close,
+    parse_decimal,
+    require_number,
+    validate_fill,
+)
 from app.prediction.policy import (
     MAX_CONCURRENT_PREDICTION_POSITIONS,
     MUST_EXIT_BEFORE_EVENT_START,
@@ -49,6 +62,10 @@ class PredictionPaperError(RuntimeError):
     pass
 
 
+class PredictionPaperPersistenceError(PredictionPaperError):
+    """Required evidence is unavailable, inconsistent or uncertain."""
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -57,13 +74,30 @@ def _iso(value: datetime | None = None) -> str:
     return (value or _now()).astimezone(timezone.utc).isoformat()
 
 
+
+def _entry_admission_time(evaluation: dict[str, Any], current: datetime) -> datetime:
+    """Recheck the supplied pre-event window at journal admission, not vendor freshness."""
+    if not isinstance(current, datetime) or current.tzinfo is None or current.utcoffset() is None:
+        raise PredictionPaperError("Aware entry admission clock is required")
+    clocks = {}
+    for field in ("occurrence_datetime", "flat_deadline"):
+        value = evaluation.get(field)
+        if type(value) is not str or not 1 <= len(value) <= 128:
+            raise PredictionPaperError("Explicit aware entry window evidence is required")
+        try:
+            parsed = datetime.fromisoformat(value)
+        except ValueError as error:
+            raise PredictionPaperError("Invalid entry window evidence") from error
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            raise PredictionPaperError("Aware entry window evidence is required")
+        clocks[field] = parsed
+    if not current < clocks["flat_deadline"] <= clocks["occurrence_datetime"]:
+        raise PredictionPaperError("PAPER entry must precede its flat deadline and event start")
+    return current
+
+
 def _d(value: Any) -> Decimal | None:
-    if value is None or value == "":
-        return None
-    try:
-        return Decimal(str(value))
-    except (InvalidOperation, ValueError, TypeError):
-        return None
+    return parse_decimal(value)
 
 
 def _fixed(value: Decimal | None) -> str | None:
@@ -90,10 +124,13 @@ def _ceil_cent(value: Decimal) -> Decimal:
 
 def kalshi_general_taker_fee(contracts: Decimal, price: Decimal) -> Decimal:
     """Conservative general taker fee estimate for one fill level."""
-    if contracts <= 0 or price < 0 or price > 1:
-        return Decimal("0.00")
-    raw = GENERAL_TAKER_FEE_RATE * contracts * price * (Decimal("1") - price)
-    return _ceil_cent(raw)
+    try:
+        contracts = require_number(contracts,"contracts",positive=True)
+        price = require_number(price,"price",minimum=0,maximum=1)
+        raw = GENERAL_TAKER_FEE_RATE * contracts * price * (Decimal("1") - price)
+        return _ceil_cent(raw)
+    except (AccountingEvidenceError, DecimalException) as error:
+        raise PredictionPaperError("Invalid or unsupported fee inputs") from error
 
 
 def walk_executable_depth(
@@ -115,8 +152,10 @@ def walk_executable_depth(
         raise PredictionPaperError("side must be YES or NO")
     if action_key not in {"BUY", "SELL"}:
         raise PredictionPaperError("action must be BUY or SELL")
-    if quantity <= 0:
-        raise PredictionPaperError("quantity must be positive")
+    try:
+        quantity = require_number(quantity,"quantity_contracts",positive=True)
+    except AccountingEvidenceError as error:
+        raise PredictionPaperError(str(error)) from error
 
     side_book = orderbook.get(side_key) if isinstance(orderbook, dict) else None
     if not isinstance(side_book, dict):
@@ -137,14 +176,23 @@ def walk_executable_depth(
     total_fee = Decimal("0")
     best_price: Decimal | None = None
     worst_price: Decimal | None = None
+    previous_price: Decimal | None = None
 
     for row in levels:
         if remaining <= 0:
             break
         price = _d(row.get("price_dollars") if isinstance(row, dict) else None)
         available = _d(row.get("quantity_contracts") if isinstance(row, dict) else None)
-        if price is None or available is None or available <= 0:
-            continue
+        if price is None or not Decimal(0)<=price<=Decimal(1) or available is None or available<=0:
+            return {"fillable":False,"requested_quantity":_fixed(quantity),"filled_quantity":_fixed(quantity-remaining),"levels":fills,"reason":"INVALID_EXECUTABLE_DEPTH"}
+        if previous_price is not None and (
+            (action_key == "BUY" and price < previous_price)
+            or (action_key == "SELL" and price > previous_price)
+        ):
+            return {"fillable": False, "requested_quantity": _fixed(quantity),
+                    "filled_quantity": _fixed(quantity-remaining), "levels": fills,
+                    "reason": "NON_MONOTONIC_EXECUTABLE_DEPTH"}
+        previous_price = price
         if best_price is None:
             best_price = price
         take = min(remaining, available)
@@ -175,9 +223,9 @@ def walk_executable_depth(
 
     vwap = notional / filled
     if action_key == "BUY":
-        slip = vwap - (best_price or vwap)
+        slip = vwap - (best_price if best_price is not None else vwap)
     else:
-        slip = (best_price or vwap) - vwap
+        slip = (best_price if best_price is not None else vwap) - vwap
 
     return {
         "fillable": True,
@@ -195,6 +243,42 @@ def walk_executable_depth(
     }
 
 
+
+def _history_timestamp_refusal(candles: list[dict[str, Any]], current: datetime) -> str | None:
+    """Validate supplied event-time order only, never infer publication/receipt time."""
+    if type(candles) is not list or len(candles) > 10000:
+        return "HISTORY_TIMESTAMP_INPUT_BUDGET"
+    cutoff = int(current.timestamp())
+    previous = None
+    for row in candles:
+        stamp = row.get("end_period_ts") if isinstance(row, dict) else None
+        if type(stamp) is not int or stamp <= 0:
+            return "MISSING_OR_INVALID_HISTORY_TIMESTAMP"
+        if stamp > cutoff:
+            return "FUTURE_HISTORY_TIMESTAMP"
+        if previous is not None and stamp <= previous:
+            return "NON_CHRONOLOGICAL_HISTORY_TIMESTAMP"
+        previous = stamp
+    return None
+
+
+
+def _history_window(candles, current, start, end):
+    window = {"window_status": "UNSPECIFIED", "requested_start_ts": None,
+              "requested_end_ts": None, "context_bars_excluded": 0}
+    if start is None and end is None:
+        return candles, window, None
+    window["window_status"] = "REFUSED"
+    if type(start) is not int or type(end) is not int or not 0 < start < end <= int(current.timestamp()):
+        return [], window, "MISSING_OR_INVALID_HISTORY_WINDOW"
+    window.update(requested_start_ts=start, requested_end_ts=end)
+    if any(row["end_period_ts"] > end for row in candles):
+        return [], window, "AFTER_REQUESTED_HISTORY_WINDOW"
+    selected = [row for row in candles if row["end_period_ts"] >= start]
+    window.update(window_status="APPLIED", context_bars_excluded=len(candles)-len(selected))
+    return selected, window, None
+
+
 def _side_quote_candles(candles: list[dict[str, Any]], side: str) -> list[dict[str, Decimal]]:
     """Return executable bid/ask close/high evidence for YES or NO."""
     result: list[dict[str, Decimal]] = []
@@ -204,6 +288,23 @@ def _side_quote_candles(candles: list[dict[str, Any]], side: str) -> list[dict[s
             continue
         yes_bid = row.get("yes_bid") if isinstance(row.get("yes_bid"), dict) else {}
         yes_ask = row.get("yes_ask") if isinstance(row.get("yes_ask"), dict) else {}
+        # Validate the original YES quote geometry before complementing NO.
+        original_bid = _d(yes_bid.get("close_dollars"))
+        original_ask = _d(yes_ask.get("close_dollars"))
+        if original_bid is None or original_ask is None or not Decimal(0) <= original_bid <= original_ask <= Decimal(1):
+            continue
+        invalid_extreme = False
+        for quote, close in ((yes_bid, original_bid), (yes_ask, original_ask)):
+            for field in ("low_dollars", "high_dollars"):
+                if field not in quote or quote[field] is None:
+                    continue
+                extreme = _d(quote[field])
+                if (extreme is None or not Decimal(0) <= extreme <= Decimal(1)
+                        or (field == "low_dollars" and extreme > close)
+                        or (field == "high_dollars" and extreme < close)):
+                    invalid_extreme = True
+        if invalid_extreme:
+            continue
         if side_u == "YES":
             bid_close = _d(yes_bid.get("close_dollars"))
             ask_close = _d(yes_ask.get("close_dollars"))
@@ -245,6 +346,22 @@ class RepricingConfig:
     min_entry_lead_minutes: int = DEFAULT_MIN_ENTRY_LEAD_MINUTES
 
 
+def _research_event_window(market: dict[str, Any], flat_buffer_minutes: int):
+    """Explicit aware research times only; legacy journal parsing is separate."""
+    timing = market.get("timing")
+    occurrence_value = timing.get("occurrence_datetime") if isinstance(timing, dict) else None
+    occurrence = None
+    if type(occurrence_value) is str and 1 <= len(occurrence_value) <= 128:
+        try:
+            parsed = datetime.fromisoformat(occurrence_value)
+            if parsed.tzinfo is not None and parsed.utcoffset() is not None:
+                occurrence = parsed.astimezone(UTC)
+                flat_deadline = occurrence - timedelta(minutes=flat_buffer_minutes)
+        except (ValueError, OverflowError):
+            occurrence = None
+    return (occurrence, flat_deadline) if occurrence is not None else (None, None)
+
+
 def evaluate_pre_event_repricing(
     *,
     market: dict[str, Any],
@@ -254,6 +371,8 @@ def evaluate_pre_event_repricing(
     quantity: Decimal,
     now: datetime | None = None,
     config: RepricingConfig | None = None,
+    history_start_ts: int | None = None,
+    history_end_ts: int | None = None,
 ) -> dict[str, Any]:
     """Evaluate one PAPER candidate using executable prices and recent quote history.
 
@@ -265,13 +384,15 @@ def evaluate_pre_event_repricing(
     side_u = str(side or "").upper()
     reasons: list[str] = []
     warnings: list[str] = []
-    current = now or _now()
+    current = _now() if now is None else now
+    if not isinstance(current, datetime) or current.tzinfo is None or current.utcoffset() is None:
+        raise PredictionPaperError("Explicit aware research clock is required")
 
     structure = market.get("market_structure") if isinstance(market.get("market_structure"), dict) else {}
     if structure.get("single_market") is not True or structure.get("multivariate") is True:
         reasons.append("NOT_SINGLE_MARKET")
 
-    occurrence = _parse_dt((market.get("timing") or {}).get("occurrence_datetime"))
+    occurrence, flat_deadline = _research_event_window(market, cfg.flat_buffer_minutes)
     if occurrence is None:
         reasons.append("MISSING_OCCURRENCE_DATETIME")
         minutes_to_start = None
@@ -279,7 +400,6 @@ def evaluate_pre_event_repricing(
         minutes_to_flat = None
     else:
         minutes_to_start = (occurrence - current).total_seconds() / 60.0
-        flat_deadline = occurrence - timedelta(minutes=cfg.flat_buffer_minutes)
         minutes_to_flat = (flat_deadline - current).total_seconds() / 60.0
         if minutes_to_start <= cfg.min_entry_lead_minutes:
             reasons.append("TOO_CLOSE_TO_EVENT_START")
@@ -311,8 +431,15 @@ def evaluate_pre_event_repricing(
     spread = _d(side_book.get("spread_dollars") if isinstance(side_book, dict) else None)
     if bid is None or ask is None or spread is None:
         reasons.append("MISSING_EXECUTABLE_QUOTE")
-    elif spread > cfg.max_spread_dollars:
-        reasons.append("SPREAD_TOO_WIDE")
+    else:
+        bids = side_book.get("bids")
+        asks = side_book.get("asks")
+        first_bid = _d(bids[0].get("price_dollars")) if isinstance(bids, list) and bids and isinstance(bids[0], dict) else None
+        first_ask = _d(asks[0].get("price_dollars")) if isinstance(asks, list) and asks and isinstance(asks[0], dict) else None
+        if not Decimal(0) <= bid <= ask <= Decimal(1) or spread != ask-bid or first_bid != bid or first_ask != ask:
+            reasons.append("INCONSISTENT_EXECUTABLE_QUOTE")
+        elif spread > cfg.max_spread_dollars:
+            reasons.append("SPREAD_TOO_WIDE")
 
     activity = market.get("activity") if isinstance(market.get("activity"), dict) else {}
     volume_24h = _d(activity.get("volume_24h_contracts"))
@@ -322,7 +449,18 @@ def evaluate_pre_event_repricing(
     if open_interest is None or open_interest < cfg.min_open_interest:
         reasons.append("INSUFFICIENT_OPEN_INTEREST")
 
-    history = _side_quote_candles(candles, side_u)
+    timestamp_refusal = _history_timestamp_refusal(candles, current)
+    if timestamp_refusal is not None:
+        reasons.append(timestamp_refusal)
+    if timestamp_refusal is None:
+        scoped, window, window_refusal = _history_window(candles, current, history_start_ts, history_end_ts)
+        if window_refusal is not None:
+            reasons.append(window_refusal)
+        history = _side_quote_candles(scoped, side_u)
+    else:
+        history = []
+        window = {"window_status": "REFUSED", "requested_start_ts": None,
+                  "requested_end_ts": None, "context_bars_excluded": 0}
     if len(history) < cfg.min_history_bars:
         reasons.append("INSUFFICIENT_PRE_EVENT_HISTORY")
 
@@ -335,14 +473,14 @@ def evaluate_pre_event_repricing(
         reasons.append("QUOTE_INSTABILITY")
 
     entry_vwap = _d(fill.get("vwap_dollars")) if fill.get("fillable") else None
-    entry_fee = _d(fill.get("estimated_taker_fee_dollars")) or Decimal("0")
+    entry_fee = _d(fill.get("estimated_taker_fee_dollars"))
     recent_reclaim_bid = max((bar["bid_high"] for bar in history), default=None)
 
-    projected_exit_fee = Decimal("0")
+    projected_exit_fee = None
     projected_gross = None
     projected_net = None
     net_edge_per_contract = None
-    if entry_vwap is not None and recent_reclaim_bid is not None:
+    if entry_vwap is not None and entry_fee is not None and recent_reclaim_bid is not None:
         projected_exit_fee = kalshi_general_taker_fee(quantity, recent_reclaim_bid)
         projected_gross = (recent_reclaim_bid - entry_vwap) * quantity
         projected_net = projected_gross - entry_fee - projected_exit_fee
@@ -395,6 +533,10 @@ def evaluate_pre_event_repricing(
             "spread_dollars": _fixed(spread),
         },
         "history": {
+            **window,
+            "timestamp_status": "REFUSED" if timestamp_refusal else "EVENT_TIME_ORDER_ONLY",
+            "supplied_bars": len(candles) if isinstance(candles, list) else None,
+            "availability_verified": False,
             "usable_bars": len(history),
             "recent_reclaim_bid_dollars": _fixed(recent_reclaim_bid),
             "max_quote_jump_dollars": _fixed(max_jump),
@@ -428,10 +570,22 @@ def evaluate_pre_event_repricing(
     }
 
 
+def _serialized_paper_operation(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        # Serializes Atlas callers in this process, not external Docker/filesystem writers.
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return wrapped
+
+
 class PredictionPaperJournal:
     """Append-only isolated prediction PAPER evidence store."""
 
     _lock = threading.RLock()
+    _blocked_paths: ClassVar[dict[Path, BaseException]] = {}
+    _max_line_bytes = 2_000_000
+    _max_tail_bytes = 8_000_000
 
     def __init__(
         self,
@@ -445,70 +599,222 @@ class PredictionPaperJournal:
         self.candidate_path.parent.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
-    def _append(path: Path, row: dict[str, Any]) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        line = json.dumps(row, default=str, separators=(",", ":")) + "\n"
-        with PredictionPaperJournal._lock:
-            with path.open("a", encoding="utf-8") as handle:
-                handle.write(line)
-                handle.flush()
-                try:
-                    os.fsync(handle.fileno())
-                except OSError:
-                    pass
+    def _intent_path(path: Path) -> Path:
+        return path.with_name(path.name + ".append-intent")
 
-    @staticmethod
-    def _rows(path: Path) -> list[dict[str, Any]]:
-        if not path.exists():
-            return []
-        rows: list[dict[str, Any]] = []
+    @classmethod
+    def _require_available(cls, path: Path) -> None:
+        blocked = cls._blocked_paths.get(path)
+        if blocked is not None:
+            raise blocked
         try:
-            with path.open("r", encoding="utf-8") as handle:
-                for raw in handle:
-                    raw = raw.strip()
-                    if not raw:
-                        continue
-                    try:
-                        row = json.loads(raw)
-                    except Exception:
-                        continue
-                    if isinstance(row, dict):
-                        rows.append(row)
-        except OSError:
-            return []
-        return rows
+            pending_intent = cls._intent_path(path).exists()
+        except OSError as error:
+            cls._blocked_paths[path] = error
+            raise
+        if pending_intent:
+            error = PredictionPaperPersistenceError("Unresolved prediction PAPER append intent; independent evidence review required")
+            cls._blocked_paths[path] = error
+            raise error
 
-    @staticmethod
-    def _tail_rows(path: Path, limit: int) -> list[dict[str, Any]]:
-        """Read only the newest JSONL rows without rescanning an ever-growing journal."""
-        wanted = max(1, min(int(limit), 1000))
-        try:
-            with path.open("rb") as handle:
-                handle.seek(0, 2)
-                position = handle.tell()
-                chunks: list[bytes] = []
-                newline_count = 0
-                block_size = 65536
-                while position > 0 and newline_count <= wanted:
-                    read_size = min(block_size, position)
-                    position -= read_size
-                    handle.seek(position)
-                    chunk = handle.read(read_size)
-                    chunks.append(chunk)
-                    newline_count += chunk.count(b"\n")
-        except OSError:
-            return []
-
-        raw = b"".join(reversed(chunks)).decode("utf-8", errors="replace")
-        parsed: list[dict[str, Any]] = []
-        for line in raw.splitlines()[-wanted:]:
+    @classmethod
+    def _append(cls, path: Path, row: dict[str, Any]) -> None:
+        path = Path(path).resolve()
+        with cls._lock:
+            cls._require_available(path)  # Do not mask an earlier failure with new serialization errors.
+        line = json.dumps(row, default=str, separators=(",", ":"), allow_nan=False) + "\n"
+        raw = line.encode("utf-8")
+        if len(raw) > cls._max_line_bytes:
+            raise PredictionPaperPersistenceError("Prediction PAPER record exceeds bounded size")
+        with cls._lock:
+            cls._require_available(path)
+            intent = cls._intent_path(path)
+            intent_created = False
             try:
-                row = json.loads(line)
-            except Exception:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                existed = path.exists()
+                if existed and path.stat().st_size:
+                    with path.open("rb") as source:
+                        source.seek(-1, os.SEEK_END)
+                        if source.read(1) != b"\n":
+                            raise PredictionPaperPersistenceError("Incomplete prediction PAPER tail; append refused")
+                commitment = json.dumps({"schema":"PREDICTION_PAPER_APPEND_INTENT_V1",
+                                         "operation_id":str(uuid.uuid4()),
+                                         "record_sha256":hashlib.sha256(raw).hexdigest(),
+                                         "record_bytes":len(raw)}, separators=(",", ":")) + "\n"
+                # Exclusive intent precedes every data write. Failed/partial intents are
+                # never removed automatically and contain hashes, not fill payloads.
+                with intent.open("x", encoding="utf-8", newline="\n") as fence:
+                    intent_created = True
+                    write_flushed(fence, commitment)
+                    identity = os.fstat(fence.fileno())
+                sync_parent(intent)
+                with path.open("a", encoding="utf-8", newline="\n") as handle:
+                    write_flushed(handle, line)
+                if not existed:
+                    sync_parent(path)
+                with intent.open("rb") as fence:
+                    current = os.fstat(fence.fileno())
+                    if ((identity.st_dev, identity.st_ino) != (current.st_dev, current.st_ino)
+                            or fence.read(4097) != commitment.encode("utf-8")):
+                        raise PredictionPaperPersistenceError("Prediction PAPER append intent identity changed")
+                # Only this successfully committed operation may remove its own intent.
+                intent.unlink()
+                sync_parent(intent)
+            except BaseException as error:
+                cls._blocked_paths[path] = error
+                # A failed namespace-sync after unlink must not silently lose the
+                # refusal fence. One bounded exclusive restoration attempt, never
+                # an overwrite or a recovery authorization; preserve the first error.
+                if intent_created:
+                    try:
+                        if not intent.exists():
+                            with intent.open("x", encoding="utf-8", newline="\n") as fence:
+                                write_flushed(fence, commitment)
+                            sync_parent(intent)
+                    except BaseException as restore_error:  # noqa: BLE001 - restoration cannot replace the primary failure
+                        error.add_note("Append refusal evidence restoration failed: " + type(restore_error).__name__)
+                raise
+
+    @classmethod
+    def _parse_line(cls, raw: bytes) -> dict[str, Any] | None:
+        if len(raw) > cls._max_line_bytes or not raw.endswith(b"\n"):
+            raise PredictionPaperPersistenceError("Oversized or incomplete prediction PAPER evidence")
+        if not raw.strip():
+            return None  # Preserve complete legacy blank lines.
+        def pairs(items):
+            result = {}
+            for key, value in items:
+                if key in result:
+                    raise ValueError("Duplicate evidence key")
+                result[key] = value
+            return result
+        def nonfinite(_value):
+            raise ValueError("Nonfinite evidence value")
+        def finite_float(value):
+            parsed = float(value)
+            if not math.isfinite(parsed):
+                raise ValueError("Nonfinite evidence value")
+            return parsed
+        try:
+            row = json.loads(raw.decode("utf-8"), object_pairs_hook=pairs, parse_constant=nonfinite, parse_float=finite_float)
+        except (ValueError, UnicodeError, RecursionError) as error:
+            raise PredictionPaperPersistenceError("Malformed prediction PAPER evidence; review required") from error
+        if not isinstance(row, dict):
+            raise PredictionPaperPersistenceError("Prediction PAPER evidence must be an object")
+        return row
+
+    @classmethod
+    def _rows(cls, path: Path) -> list[dict[str, Any]]:
+        path = Path(path).resolve()
+        with cls._lock:
+            cls._require_available(path)
+            rows = []
+            try:
+                with path.open("rb") as handle:
+                    while raw := handle.readline(cls._max_line_bytes + 1):
+                        row = cls._parse_line(raw)
+                        if row is not None:
+                            rows.append(row)
+            except FileNotFoundError:
+                rows = []
+            except BaseException as error:
+                cls._blocked_paths[path] = error
+                raise
+            cls._require_available(path)
+            try:
+                cls._validate_transitions(rows)
+            except PredictionPaperPersistenceError as error:
+                cls._blocked_paths[path] = error
+                raise
+            return rows
+
+    @staticmethod
+    def _validate_transitions(rows: list[dict[str, Any]]) -> None:
+        opened = {}; terminal = set(); active = set()
+        for row in rows:
+            event = row.get("event")
+            if event not in ("open", "close", "expired_unclosed"):
                 continue
-            if isinstance(row, dict):
-                parsed.append(row)
-        return parsed
+            trade_id = row.get("trade_id")
+            if type(trade_id) is not str or not 1 <= len(trade_id) <= 128:
+                raise PredictionPaperPersistenceError("Prediction PAPER lifecycle identity is missing or invalid")
+            if event == "open":
+                if trade_id in opened:
+                    raise PredictionPaperPersistenceError("Duplicate prediction PAPER open evidence; review required")
+                opened[trade_id] = row; active.add(trade_id)
+                if len(active) > 1:
+                    raise PredictionPaperPersistenceError("Conflicting prediction PAPER positions; review required")
+            else:
+                if trade_id not in opened or trade_id in terminal:
+                    raise PredictionPaperPersistenceError("Orphan or contradictory prediction PAPER terminal evidence")
+                source = opened[trade_id]
+                for field in ("ticker", "side"):
+                    if field in source and field in row and row[field] != source[field]:
+                        raise PredictionPaperPersistenceError("Contradictory prediction PAPER terminal position identity; review required")
+                if "quantity_contracts" in source and "quantity_contracts" in row:
+                    original_quantity = parse_decimal(source["quantity_contracts"])
+                    terminal_quantity = parse_decimal(row["quantity_contracts"])
+                    if original_quantity != terminal_quantity:
+                        raise PredictionPaperPersistenceError("Contradictory prediction PAPER terminal quantity; review required")
+                terminal.add(trade_id); active.discard(trade_id)
+
+    @classmethod
+    def _tail_rows(cls, path: Path, limit: int) -> list[dict[str, Any]]:
+        """Bounded strict selected-window read, not proof of whole-journal integrity."""
+        path = Path(path).resolve()
+        wanted = max(1, min(int(limit), 1000))
+        with cls._lock:
+            cls._require_available(path)
+            try:
+                with path.open("rb") as handle:
+                    handle.seek(0, 2)
+                    position = handle.tell()
+                    chunks = []; newline_count = 0; total = 0
+                    while position > 0 and newline_count <= wanted:
+                        read_size = min(65536, position, cls._max_tail_bytes-total)
+                        if read_size <= 0:
+                            raise PredictionPaperPersistenceError("Prediction PAPER tail read budget exhausted")
+                        position -= read_size; handle.seek(position)
+                        chunk = handle.read(read_size)
+                        if len(chunk) != read_size:
+                            raise PredictionPaperPersistenceError("Prediction PAPER changed during tail read")
+                        chunks.append(chunk); total += len(chunk)
+                        newline_count += chunk.count(b"\n")
+            except FileNotFoundError:
+                cls._require_available(path)
+                return []
+            except BaseException as error:
+                cls._blocked_paths[path] = error
+                raise
+            raw = b"".join(reversed(chunks))
+            parsed = []
+            try:
+                for line in raw.splitlines(keepends=True)[-wanted:]:
+                    row = cls._parse_line(line)
+                    if row is not None:
+                        parsed.append(row)
+            except PredictionPaperPersistenceError as error:
+                cls._blocked_paths[path] = error
+                raise
+            cls._require_available(path)
+            return parsed
+
+    @classmethod
+    def is_persistence_failure(cls, error: BaseException) -> bool:
+        with cls._lock:
+            return isinstance(error, PredictionPaperPersistenceError) or any(error is known for known in cls._blocked_paths.values())
+
+    def persistence_failure(self, *, include_candidates: bool = True) -> BaseException | None:
+        """Known refusal only, not a healthy-storage or complete-history proof."""
+        paths = (self.journal_path, self.candidate_path) if include_candidates else (self.journal_path,)
+        with self._lock:
+            for path in paths:
+                try:
+                    self._require_available(Path(path).resolve())
+                except BaseException as error:  # noqa: BLE001 - expose refusal, never authorize recovery
+                    return error
+        return None
 
     def candidate_snapshot(self, limit: int = 200) -> dict[str, Any]:
         rows = self._tail_rows(self.candidate_path, limit)
@@ -547,6 +853,7 @@ class PredictionPaperJournal:
         ]
         return rows[-1] if rows else None
 
+    @_serialized_paper_operation
     def expire_unclosed(
         self,
         *,
@@ -572,6 +879,11 @@ class PredictionPaperJournal:
         )
         if existing is not None:
             return existing
+        if any(row.get("event") == "close" and row.get("trade_id") == trade_id for row in rows):
+            raise PredictionPaperError("Prediction PAPER trade is already closed; expiry refused")
+        recorded = next((row for row in rows if row.get("event") == "open" and row.get("trade_id") == trade_id), None)
+        if recorded is None or recorded != opened:
+            raise PredictionPaperError("Expiry source differs from recorded prediction PAPER open")
 
         blockers = [
             row for row in rows
@@ -625,6 +937,8 @@ class PredictionPaperJournal:
     def log_event(self, event: dict[str, Any]) -> dict[str, Any]:
         """Append a non-fill Prediction PAPER safety/observability event."""
         row = dict(event)
+        if row.get("event") in ("open", "close", "expired_unclosed"):
+            raise PredictionPaperError("Lifecycle evidence requires the validated PAPER operation")
         row.setdefault("event", "paper_event")
         row.setdefault("timestamp", _iso())
         row.setdefault("trade_type", "PREDICTION_PAPER")
@@ -633,22 +947,28 @@ class PredictionPaperJournal:
         self._append(self.journal_path, row)
         return row
 
-    def open_from_evaluation(self, evaluation: dict[str, Any]) -> dict[str, Any]:
-        if not evaluation.get("eligible"):
+    @_serialized_paper_operation
+    def open_from_evaluation(self, evaluation: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
+        if evaluation.get("eligible") is not True:
             raise PredictionPaperError("candidate is not eligible for PAPER entry")
         if MAX_CONCURRENT_PREDICTION_POSITIONS != 1:
             raise PredictionPaperError("prediction max-position policy changed unexpectedly")
         if self.open_trade() is not None:
             raise PredictionPaperError("one prediction PAPER position is already open")
         fill = evaluation.get("entry_fill") if isinstance(evaluation.get("entry_fill"), dict) else {}
-        if not fill.get("fillable"):
-            raise PredictionPaperError("entry depth is not fillable")
+        try:
+            if str(evaluation.get("side") or "") not in ("YES","NO") or not str(evaluation.get("ticker") or "").strip():
+                raise AccountingEvidenceError("MISSING_POSITION_IDENTITY")
+            validate_fill(fill,evaluation.get("quantity_contracts"))
+        except AccountingEvidenceError as error:
+            raise PredictionPaperError(str(error)) from error
+        admitted_at = _entry_admission_time(evaluation, _now() if now is None else now)
         trade_id = str(uuid.uuid4())[:12]
         row = {
             "event": "open",
             "trade_id": trade_id,
             "trade_type": "PREDICTION_PAPER",
-            "entry_timestamp": _iso(),
+            "entry_timestamp": _iso(admitted_at),
             "ticker": evaluation.get("ticker"),
             "side": evaluation.get("side"),
             "quantity_contracts": evaluation.get("quantity_contracts"),
@@ -671,6 +991,7 @@ class PredictionPaperJournal:
         self._append(self.journal_path, row)
         return row
 
+    @_serialized_paper_operation
     def close_from_orderbook(
         self,
         *,
@@ -693,14 +1014,13 @@ class PredictionPaperJournal:
         if not fill.get("fillable"):
             raise PredictionPaperError(str(fill.get("reason") or "exit depth is not fillable"))
 
-        entry = _d(opened.get("actual_entry_price")) or Decimal("0")
-        exit_vwap = _d(fill.get("vwap_dollars")) or Decimal("0")
-        entry_fee = _d(opened.get("entry_fee_dollars")) or Decimal("0")
-        exit_fee = _d(fill.get("estimated_taker_fee_dollars")) or Decimal("0")
-        gross = (exit_vwap - entry) * quantity
-        net = gross - entry_fee - exit_fee
-        entry_cash = entry * quantity + entry_fee
-        roi = (net / entry_cash) if entry_cash > 0 else Decimal("0")
+        try:
+            receipt = validate_fill(fill,quantity)
+        except AccountingEvidenceError as error:
+            raise PredictionPaperError(str(error)) from error
+        exit_vwap,exit_fee = receipt["price"],receipt["fee"]
+        accounting = calculate_close(opened,exit_vwap,exit_fee)
+        gross,net,roi = accounting["gross"],accounting["net"],accounting["roi"]
 
         current = now or _now()
         occurrence = _parse_dt(opened.get("occurrence_datetime"))
@@ -723,8 +1043,8 @@ class PredictionPaperJournal:
             "gross_pnl_dollars": _fixed(gross),
             "net_pnl_dollars": _fixed(net),
             "net_roi": _fixed(roi),
-            "win": net > 0,
-            "scratch": net == 0,
+            "win": net > 0 if net is not None else None,
+            "scratch": net == 0 if net is not None else None,
             "minutes_to_start_at_exit": (
                 round((occurrence - current).total_seconds() / 60.0, 2)
                 if occurrence is not None
@@ -735,14 +1055,30 @@ class PredictionPaperJournal:
             "live_capital_allowed": False,
             "automatic_real_money_execution": False,
         }
+        row["accounting"] = {k:v for k,v in audit_close(opened,row).items() if k!="net"}
         self._append(self.journal_path, row)
         return row
 
+    @_serialized_paper_operation
     def snapshot(self, limit: int = 100) -> dict[str, Any]:
         rows = self._rows(self.journal_path)
         closes = [row for row in rows if row.get("event") == "close"]
-        wins = [row for row in closes if row.get("win") is True]
-        net_values = [_d(row.get("net_pnl_dollars")) or Decimal("0") for row in closes]
+        source_opens = {row["trade_id"]:row for row in rows if row.get("event")=="open"}
+        audits = {row["trade_id"]:audit_close(source_opens.get(row["trade_id"]),row) for row in closes}
+        valid = [a for a in audits.values() if a["status"]=="RECONCILED"]
+        incomplete = len(closes)-len(valid)
+        net_values = [a["net"] for a in valid]
+        wins = sum(value>0 for value in net_values)
+        expired = sum(row.get("event")=="expired_unclosed" for row in rows)
+        events = []
+        for row in rows[-max(1,min(int(limit),1000)):]:
+            projected = dict(row)
+            if row.get("event")=="close":
+                audit = audits[row["trade_id"]];projected["accounting"]={k:v for k,v in audit.items() if k!="net"}
+                if audit["status"]!="RECONCILED":
+                    for key in ("gross_pnl_dollars","net_pnl_dollars","net_roi","win","scratch"):
+                        projected["recorded_"+key]=row.get(key);projected[key]=None
+            events.append(projected)
         return {
             "domain": "PREDICTION_PAPER",
             "execution": "PAPER_ONLY",
@@ -759,12 +1095,19 @@ class PredictionPaperJournal:
                     [row for row in rows if row.get("event") == "expired_unclosed"]
                 ),
                 "closed_trades": len(closes),
-                "wins": len(wins),
-                "losses_or_scratches": len(closes) - len(wins),
-                "net_pnl_dollars": _fixed(sum(net_values, Decimal("0"))),
-                "win_rate": round(len(wins) / len(closes), 4) if closes else None,
+                "wins": wins if not incomplete else None,
+                "losses_or_scratches": len(closes)-wins if not incomplete else None,
+                "net_pnl_dollars": _fixed(sum(net_values,Decimal(0))) if not incomplete else None,
+                "verified_closed_net_pnl_dollars":_fixed(sum(net_values,Decimal(0))),
+                "verified_closed_trades":len(valid),"unscored_closed_trades":incomplete,
+                "win_rate":round(wins/len(closes),4) if closes and not incomplete else None,
+                "closed_accounting_status":"INSUFFICIENT_EVIDENCE" if incomplete else "RECONCILED" if closes else "NO_CLOSED_TRADES",
+                "accounting_status":"INSUFFICIENT_EVIDENCE" if incomplete or expired else "RECONCILED" if closes else "NO_CLOSED_TRADES",
+                "net_pnl_scope":"SUPPLIED_RECONCILED_CLOSED_TRADES_ONLY",
+                "accounting_contract_version":ACCOUNTING_VERSION,
+                "performance_established":False,
             },
-            "events": rows[-max(1, min(int(limit), 1000)):],
+            "events":events,
         }
 
 

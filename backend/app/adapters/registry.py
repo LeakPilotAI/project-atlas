@@ -46,12 +46,15 @@ class AdapterRegistry:
                 logger.error("Adapter connect failed", name=name, error=str(e))
 
     async def close_all(self) -> None:
-        for name, adapter in self._adapters.items():
+        failures = []
+        for adapter in self._adapters.values():
             try:
                 if hasattr(adapter, "close"):
                     await adapter.close()
-            except Exception as e:
-                logger.warning("Adapter close failed", name=name, error=str(e))
+            except Exception as e:  # noqa: BLE001 - continue independent adapters
+                failures.append(e)
+        if failures:
+            raise ExceptionGroup("Adapter shutdown failed", failures)
 
 
 registry = AdapterRegistry()

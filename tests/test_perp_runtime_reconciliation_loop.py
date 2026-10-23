@@ -25,11 +25,22 @@ def test_runtime_loop_tracks_reconciliation_result(monkeypatch):
     assert service.last_reconciliation_result["reconciliation_ok"] is False
 
 
-def test_runtime_reconciliation_alert_stays_on_main_event_loop():
-    from pathlib import Path
-    text = (Path(__file__).resolve().parents[1] / "backend/app/services/perp_alert_delivery.py").read_text(encoding="utf-8")
-    assert "self.last_reconciliation_result = await alert_reconciliation_if_needed()" in text
-    assert "asyncio.run(alert_reconciliation_if_needed())" not in text
+def test_runtime_reconciliation_alert_stays_on_main_event_loop(monkeypatch):
+    import threading
+    import app.services.paper_reconciliation_alert as alert_mod
+
+    service = delivery_mod.PerpAlertDeliveryService()
+    observations = []
+    async def run():
+        expected = (asyncio.get_running_loop(), threading.get_ident())
+        async def fake_reconcile():
+            await asyncio.sleep(0)
+            observations.append((asyncio.get_running_loop(), threading.get_ident()))
+            return {"reconciliation_ok": True}
+        monkeypatch.setattr(alert_mod, "alert_reconciliation_if_needed", fake_reconcile)
+        await service._run_reconciliation()
+        assert observations == [expected]
+    asyncio.run(run())
 
 
 def test_runtime_loop_records_step_timings():

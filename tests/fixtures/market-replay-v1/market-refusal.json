@@ -1,0 +1,1 @@
+{"schema":"ATLAS_MARKET_DATA_REFUSAL_V1","mode":"SYNTHETIC_REPLAY","status":"REFUSED","http_status":503,"reason":"DATA_UNAVAILABLE","rows":[],"quote_rows":[],"source_authenticated":false,"network_authorized":false,"startup_authorized":false,"recovery_authorized":false,"trading_authorized":false}

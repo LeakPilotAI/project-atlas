@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,6 +9,7 @@ from typing import Any, Dict, Optional
 
 from app.adapters.registry import registry
 from app.core.logging import get_logger
+from app.core.market_freshness import fresh_observation, observation_time, positive_price
 from app.trading_core.models import Side
 from app.trading_core.perp_discovery import analyze_candles, rank_setup, shortlist_markets
 from app.trading_core.perp_manual_planner import build_manual_perp_plan
@@ -33,6 +35,7 @@ class PerpManualService:
         self.last_error: Optional[str] = None
         self.last_refresh_at: Optional[str] = None
         self.recovery_error: Optional[str] = None
+        self.persistence_error: BaseException | None = None
         self.recovered_at: Optional[str] = None
         self._state_store = ManualPerpStateStore(state_path) if state_path is not None else None
         self._recovered_setup_history: list[Dict[str, Any]] = []
@@ -46,6 +49,8 @@ class PerpManualService:
         }
         self._task: Optional[asyncio.Task] = None
         self._recover_state()
+        self._confirmed_snapshot = deepcopy(self.last_snapshot)
+        self._confirmed_history = deepcopy(self._recovered_setup_history)
 
     def _recover_state(self) -> None:
         if self._state_store is None:
@@ -68,19 +73,32 @@ class PerpManualService:
         self.recovered_at = datetime.now(timezone.utc).isoformat()
         self.recovery_error = None
 
-    def _persist_state(self) -> None:
+    def _require_persistence(self) -> None:
+        if self.persistence_error is not None:
+            raise self.persistence_error
+        if self._state_store is not None and self.recovery_error:
+            raise ManualPerpStateError(self.recovery_error)
+
+    def _persist_state(self, *, strict: bool = True) -> None:
+        """Required state never becomes best-effort, including legacy strict=False calls."""
         if self._state_store is None:
             return
         try:
+            self._require_persistence()
             setup_history = list(self.last_snapshot.get("setups") or []) or list(self._recovered_setup_history)
             self._state_store.save(
                 plans=list(self.last_snapshot.get("plans") or []),
                 setup_history=setup_history,
             )
             self.recovery_error = None
-        except Exception as exc:
+            self._confirmed_snapshot = deepcopy(self.last_snapshot)
+            self._confirmed_history = deepcopy(self._recovered_setup_history)
+        except BaseException as exc:
+            self.last_snapshot = deepcopy(self._confirmed_snapshot)
+            self._recovered_setup_history = deepcopy(self._confirmed_history)
+            self.persistence_error = exc
             self.recovery_error = f"{type(exc).__name__}: {str(exc)[:180]}"
-            log.warning("Manual perp state persist failed", error=self.recovery_error)
+            raise
 
     async def start(self) -> None:
         if self.running:
@@ -91,7 +109,6 @@ class PerpManualService:
 
     async def stop(self) -> None:
         self.running = False
-        self._persist_state()
         if self._task:
             self._task.cancel()
             try:
@@ -99,6 +116,7 @@ class PerpManualService:
             except asyncio.CancelledError:
                 pass
             self._task = None
+        self._persist_state(strict=True)
         log.info("Manual Hyperliquid perp planner stopped")
 
     def _adapter(self):
@@ -196,6 +214,7 @@ class PerpManualService:
         return setups[:8]
 
     async def refresh(self) -> Dict[str, Any]:
+        self._require_persistence()
         adapter = self._adapter()
         if adapter is None:
             raise RuntimeError("Hyperliquid adapter unavailable")
@@ -213,7 +232,8 @@ class PerpManualService:
             vol = float(getattr(t, "volume_24h", 0.0) or 0.0)
             oi = float(getattr(t, "open_interest", 0.0) or 0.0)
             funding = getattr(t, "funding_rate", None)
-            if not symbol or price <= 0:
+            stamp = getattr(t, "timestamp", None)
+            if not symbol or not positive_price(price) or not fresh_observation(stamp):
                 continue
             price_map[symbol] = price
             rows.append({
@@ -222,7 +242,12 @@ class PerpManualService:
                 "volume_24h": vol,
                 "open_interest": oi,
                 "funding_rate": funding,
+                "timestamp": stamp,
+                "timestamp_basis": getattr(t, "timestamp_basis", "UNKNOWN"),
             })
+
+        if not rows:
+            raise RuntimeError("No fresh timestamped Hyperliquid prices available")
 
         rows.sort(key=lambda r: (float(r["volume_24h"]), float(r["open_interest"])), reverse=True)
         plans = list(self.last_snapshot.get("plans") or [])
@@ -283,6 +308,17 @@ class PerpManualService:
             if str(p.get("status") or "").upper() == "ENTERED"
         }
         for setup in setups:
+            symbol = str(setup.get("symbol") or "").upper()
+            quote = next((row for row in rows if row["symbol"] == symbol), {})
+            setup["mark_timestamp"] = quote.get("timestamp")
+            setup["price_timestamp"] = quote.get("timestamp")
+            if quote:
+                setup["price"] = quote["price"]
+                setup["mark"] = quote["price"]
+            if not fresh_observation(quote.get("timestamp")):
+                setup["state"] = "WAIT"
+                setup["alert_eligible"] = False
+                setup["alert_reason"] = "Fresh timestamped market price unavailable"
             active = active_by_key.get(str(setup.get("setup_key") or ""))
             setup["trade_status"] = "ENTERED" if active else "NOT_ENTERED"
             setup["entry_price"] = active.get("entry_price") if active else None
@@ -301,12 +337,13 @@ class PerpManualService:
             "plans": plans,
             "note": "Hyperliquid markets only. Ranked setups are research guidance; Atlas never places orders.",
         }
+        self._persist_state()
         self.last_refresh_at = now
         self.last_error = None
-        self._persist_state()
         return self.snapshot()
 
     def acknowledge_alert(self, setup_key: str) -> bool:
+        self._require_persistence()
         now = datetime.now(timezone.utc).isoformat()
         changed = False
         for setup in self.last_snapshot.get("setups") or []:
@@ -324,6 +361,7 @@ class PerpManualService:
         return changed
 
     def enter_discovered_setup(self, setup_key: str, *, fill_price: float | None = None) -> Dict[str, Any]:
+        self._require_persistence()
         key = str(setup_key or "")
         setups = list(self.last_snapshot.get("setups") or [])
         setup = next((s for s in setups if str(s.get("setup_key") or "") == key), None)
@@ -367,6 +405,7 @@ class PerpManualService:
         exit_price: float,
         reason: str = "MANUAL_EXIT",
     ) -> Dict[str, Any]:
+        self._require_persistence()
         key = str(setup_key or "")
         plans = list(self.last_snapshot.get("plans") or [])
         idx = next(
@@ -402,6 +441,7 @@ class PerpManualService:
         tp1_r: float = 1.5,
         tp2_r: float = 2.5,
     ) -> Dict[str, Any]:
+        self._require_persistence()
         if float(risk_pct) <= 0:
             raise ValueError("risk_pct must be positive")
         try:
@@ -463,8 +503,31 @@ class PerpManualService:
         return out
 
     def snapshot(self) -> Dict[str, Any]:
+        rows = self.last_snapshot.get("markets") or []
+        stamps = [observation_time(row.get("timestamp")) for row in rows]
+        valid = [stamp for stamp in stamps if fresh_observation(stamp, max_age=float("inf"))]
+        oldest = min(valid).isoformat() if valid and len(valid) == len(rows) else None
+        fresh = sum(fresh_observation(row.get("timestamp")) for row in rows)
+        state = ("HEALTHY" if rows and fresh == len(rows) else
+                 "STALE" if rows and len(valid) == len(rows) else "UNAVAILABLE")
+        if self.last_snapshot.get("data_status") == "STALE":
+            state = "STALE"
+        setups = []
+        for setup in self.last_snapshot.get("setups") or []:
+            row = dict(setup)
+            if state != "HEALTHY" or not fresh_observation(row.get("mark_timestamp")):
+                row.update(state="WAIT", alert_eligible=False,
+                           alert_reason="Fresh timestamped market price unavailable")
+            setups.append(row)
         return {
             **self.last_snapshot,
+            "data_status": "FRESH" if state == "HEALTHY" else state,
+            "setups": setups,
+            "alert_candidates": [row for row in setups if row.get("alert_eligible")],
+            "data_freshness": {"status": state, "observed_at": oldest,
+                               "max_age_seconds": 30, "fresh_markets": fresh,
+                               "market_count": len(rows), "basis": "REST_REQUEST_START",
+                               "exchange_timestamp_available": False},
             "running": self.running,
             "last_refresh_at": self.last_refresh_at,
             "last_error": self.last_error,

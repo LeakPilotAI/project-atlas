@@ -240,6 +240,7 @@ class PerpMicroCoach:
 
     async def stop(self) -> None:
         self._running = False
+        failures = []
         for t in (self._task, self._manage_task):
             if t:
                 t.cancel()
@@ -247,14 +248,18 @@ class PerpMicroCoach:
                     await t
                 except asyncio.CancelledError:
                     pass
-        self._task = None
-        self._manage_task = None
+                except Exception as error:  # noqa: BLE001 - continue the other owned task
+                    failures.append(error)
+        if not failures:
+            self._task = None
+            self._manage_task = None
         if self._http is not None:
             try:
                 await self._http.aclose()
-            except Exception:
-                pass
-            self._http = None
+            except Exception as error:  # noqa: BLE001 - retain failed HTTP client
+                failures.append(error)
+            else:
+                self._http = None
         try:
             from app.services.paper_journal import paper_journal
 
@@ -264,11 +269,13 @@ class PerpMicroCoach:
                     continue
                 try:
                     paper_journal.update_excursion(tid, float(mark), force=True)
-                except Exception:
-                    pass
+                except Exception as error:  # noqa: BLE001 - attempt remaining marks and flush
+                    failures.append(error)
             paper_journal.flush()
-        except Exception as e:
-            log.warning("shutdown paper persist failed", error=str(e)[:200])
+        except Exception as error:  # noqa: BLE001 - preserve journal failure
+            failures.append(error)
+        if failures:
+            raise ExceptionGroup("Perp coach shutdown failed", failures)
         log.info("Perp micro coach stopped")
 
     @staticmethod
@@ -576,7 +583,7 @@ class PerpMicroCoach:
                 log.warning("Perp micro cycle error", error=str(e), exc_info=True)
                 await asyncio.sleep(20)
             settings = get_settings()
-            await asyncio.sleep(float(settings.perp_micro_scan_seconds or 90))
+            await asyncio.sleep(float(settings.effective_perp_micro_scan_seconds or 90))
 
     async def _manage_loop(self) -> None:
         """Price-manage open paper on a short cadence. Does not re-evaluate entries."""

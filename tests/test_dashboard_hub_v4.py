@@ -102,7 +102,7 @@ def test_prediction_paper_workspace_is_read_only_evidence_surface():
         "Recent Candidate Evidence",
         "PAPER Position / Trade Events",
         "depth-aware",
-        "atlasPoll(refresh,10000)",
+        "atlasPoll(guardedRefresh,10000)",
     ):
         assert token in text
     assert "/paper/open/" not in text

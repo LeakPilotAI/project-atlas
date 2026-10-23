@@ -40,17 +40,18 @@ class DesktopControl:
                 return
             await asyncio.sleep(0.5)
 
-    async def stop(self):
+    async def stop(self, *, preserve_manifest=False):
         if self.task:
             self.task.cancel()
             try:
                 await self.task
             except asyncio.CancelledError:
                 pass
-        if self.directory:
+        if self.directory and not preserve_manifest:
             manifest = self.directory / "runtime.json"
             try:
-                if json.loads(manifest.read_text(encoding="utf-8")).get("run_id") == self.run_id:
-                    manifest.unlink()
-            except (OSError, ValueError):
+                if json.loads(manifest.read_text(encoding="utf-8")).get("run_id") != self.run_id:
+                    raise RuntimeError("Desktop shutdown ownership changed; manifest retained")
+                manifest.unlink()
+            except FileNotFoundError:
                 pass

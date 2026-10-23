@@ -538,10 +538,11 @@ def test_prediction_paper_repricing_rejects_wide_spread():
     }
     candles = [
         {
+            "end_period_ts": int((now-timedelta(minutes=6-i)).timestamp()),
             "yes_bid": {"close_dollars": "0.50", "high_dollars": "0.58", "low_dollars": "0.49"},
             "yes_ask": {"close_dollars": "0.53", "high_dollars": "0.55", "low_dollars": "0.52"},
         }
-        for _ in range(6)
+        for i in range(6)
     ]
     result = evaluate_pre_event_repricing(
         market=market,
@@ -586,7 +587,7 @@ def test_prediction_paper_journal_keeps_one_open_position(tmp_path):
             ],
         },
     }
-    first = journal.open_from_evaluation(evaluation)
+    first = journal.open_from_evaluation(evaluation, now=datetime(2026,10,2,12,tzinfo=timezone.utc))
     assert first["status"] == "open"
     assert journal.snapshot()["summary"]["open_positions"] == 1
 

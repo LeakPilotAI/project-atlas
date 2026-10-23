@@ -169,12 +169,12 @@ def test_serialized_concurrent_fills_cannot_exceed_cap(tmp_path, monkeypatch):
     mirror, journal, _, _ = admission(tmp_path, monkeypatch)
 
     async def run():
-        return await asyncio.gather(*(mirror._fill_pending(s, mark=98.98) for s in list(mirror._pending)))
+        return await asyncio.gather(*(mirror._fill_pending(s, mark=98.98, setup={"mark_timestamp": datetime.now(timezone.utc).isoformat()}) for s in list(mirror._pending)))
 
     results = asyncio.run(run())
     assert results.count(True) == 3
     assert len(journal.list_open()) == 3
-    assert not asyncio.run(mirror._fill_pending("BTC", mark=98.98))
+    assert not asyncio.run(mirror._fill_pending("BTC", mark=98.98, setup={"mark_timestamp": datetime.now(timezone.utc).isoformat()}))
 
 
 @pytest.mark.parametrize("failure", ["exception", "kill", "append", "missing", "cancel"])
@@ -199,7 +199,7 @@ def test_no_open_when_state_changes_during_worker(tmp_path, monkeypatch, failure
         return s
 
     monkeypatch.setattr(mirror_mod.asyncio, "to_thread", worker)
-    assert not asyncio.run(mirror._fill_pending("BTC", mark=98.98))
+    assert not asyncio.run(mirror._fill_pending("BTC", mark=98.98, setup={"mark_timestamp": datetime.now(timezone.utc).isoformat()}))
     assert not journal.list_open()
     assert not any(json.loads(line).get("event") == "open" for line in p.read_text().splitlines())
     if failure != "append":
@@ -249,20 +249,37 @@ def test_positions_rechecked_after_worker(tmp_path, monkeypatch):
         return s
 
     monkeypatch.setattr(mirror_mod.asyncio, "to_thread", worker)
-    assert not asyncio.run(mirror._fill_pending("BTC", mark=98.98))
+    assert not asyncio.run(mirror._fill_pending("BTC", mark=98.98, setup={"mark_timestamp": datetime.now(timezone.utc).isoformat()}))
     assert len(journal.list_open()) == 3 and p.read_bytes() == b""
 
 
-def test_new_control_store_default_and_explicit_operator_recovery(tmp_path):
+def test_new_control_store_default_and_corrupt_evidence_refusal(tmp_path):
     p = tmp_path / "controls.json"
-    assert PaperRiskControlStore(p).reliable
-    p.write_text("bad")
+
+    fresh = PaperRiskControlStore(p)
+    assert fresh.reliable
+
+    p.write_text("bad", encoding="utf-8")
+    original_bytes = p.read_bytes()
+
     store = PaperRiskControlStore(p)
     assert not store.reliable
+
     store.kill_switch = True
-    store.save()
+
+    try:
+        store.save()
+    except RuntimeError as exc:
+        assert "independent reconciliation" in str(exc)
+    else:
+        raise AssertionError(
+            "Corrupt PAPER control evidence must refuse persistence"
+        )
+
+    assert p.read_bytes() == original_bytes
+
     restored = PaperRiskControlStore(p)
-    assert restored.reliable and restored.kill_switch
+    assert not restored.reliable
 
 
 @pytest.mark.parametrize("row", [{"event": []}, {"event": "mystery"}, close(trade_type="unknown")])

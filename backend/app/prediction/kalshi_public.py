@@ -27,7 +27,8 @@ def _fixed(value: Any) -> str | None:
     if value is None or value == "":
         return None
     try:
-        return format(Decimal(str(value)), "f")
+        number = Decimal(str(value))
+        return format(number, "f") if number.is_finite() else None
     except (InvalidOperation, ValueError, TypeError):
         return None
 
@@ -38,7 +39,7 @@ def _midpoint(bid: Any, ask: Any) -> str | None:
         a = Decimal(str(ask))
     except (InvalidOperation, ValueError, TypeError):
         return None
-    if b < 0 or a < 0 or a < b:
+    if not b.is_finite() or not a.is_finite() or not Decimal(0) <= b <= a <= Decimal(1):
         return None
     return format((a + b) / Decimal("2"), "f")
 
@@ -49,7 +50,7 @@ def _spread(bid: Any, ask: Any) -> str | None:
         a = Decimal(str(ask))
     except (InvalidOperation, ValueError, TypeError):
         return None
-    if b < 0 or a < b:
+    if not b.is_finite() or not a.is_finite() or not Decimal(0) <= b <= a <= Decimal(1):
         return None
     return format(a - b, "f")
 
@@ -59,7 +60,7 @@ def _complement(price: Any) -> str | None:
         p = Decimal(str(price))
     except (InvalidOperation, ValueError, TypeError):
         return None
-    if p < 0 or p > 1:
+    if not p.is_finite() or p < 0 or p > 1:
         return None
     return format(Decimal("1") - p, "f")
 
@@ -80,7 +81,7 @@ def _normalize_bid_levels(levels: Any) -> list[dict[str, str]]:
             q = Decimal(quantity)
         except InvalidOperation:
             continue
-        if p < 0 or p > 1 or q < 0:
+        if p < 0 or p > 1 or q <= 0:
             continue
         cleaned.append({"price_dollars": price, "quantity_contracts": quantity})
     cleaned.sort(key=lambda row: Decimal(row["price_dollars"]), reverse=True)
@@ -149,6 +150,9 @@ def _normalize_price_bar(value: Any) -> dict[str, str | None]:
 
 
 def normalize_candlestick(row: dict[str, Any]) -> dict[str, Any]:
+    stamp = row.get("end_period_ts")
+    if type(stamp) is not int or stamp <= 0:
+        raise PredictionProviderError("Candlestick requires an explicit positive integer end_period_ts")
     price = row.get("price") if isinstance(row.get("price"), dict) else {}
     normalized_price = _normalize_price_bar(price)
     normalized_price.update(
@@ -160,7 +164,7 @@ def normalize_candlestick(row: dict[str, Any]) -> dict[str, Any]:
         }
     )
     return {
-        "end_period_ts": int(row.get("end_period_ts") or 0),
+        "end_period_ts": stamp,
         "yes_bid": _normalize_price_bar(row.get("yes_bid")),
         "yes_ask": _normalize_price_bar(row.get("yes_ask")),
         "price": normalized_price,

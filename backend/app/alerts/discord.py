@@ -393,16 +393,25 @@ async def start_discord_bot() -> None:
 async def stop_discord_bot() -> None:
     global _ready, _bot_task
     _ready = False
+    failures = []
     try:
         if bot.is_ready():
             await bot.close()
-    except Exception as e:
-        log.warning("Discord close error", error=str(e)[:200])
+    except Exception as e:  # noqa: BLE001 - still cancel the owned bot task
+        failures.append(e)
     if _bot_task and not _bot_task.done():
         _bot_task.cancel()
         try:
             await _bot_task
         except asyncio.CancelledError:
             pass
+        except Exception as error:  # noqa: BLE001 - preserve both cleanup errors
+            failures.append(error)
+    elif _bot_task and not _bot_task.cancelled():
+        error = _bot_task.exception()
+        if error is not None:
+            failures.append(error)
+    if failures:
+        raise ExceptionGroup("Discord shutdown failed", failures)
     _bot_task = None
     log.info("Discord bot stopped")

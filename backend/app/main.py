@@ -109,6 +109,13 @@ async def lifespan(app: FastAPI):
     setup_logging()
     settings = get_settings()
     settings.validate_runtime_configuration()
+    # Independent production startup lock: no unlock is provided.
+    from app.core.production_startup_lock import require_startup_authorization
+    require_startup_authorization()
+    # Fail closed before startup I/O or service initialization.
+    # This does not grant or install provider authorization.
+    from app.adapters.hyperliquid_gate_registry import require_gate
+    require_gate()
     log.info("Project Atlas starting", env=settings.app_env)
     log.info("Database URL host check", database_url=settings.database_url_safe)
 
@@ -153,6 +160,10 @@ async def lifespan(app: FastAPI):
             from app.trading_core.shadow_coordinator import v4_shadow_coordinator
             return v4_shadow_coordinator.runtime
         await asyncio.to_thread(hydrate_runtime)
+        # Provider admission must be established before adapter startup.
+        # No implicit live authorization is installed here.
+        from app.adapters.hyperliquid_gate_registry import require_gate
+        require_gate()
         try:
             hl = HyperliquidAdapter()
             registry.register(hl)
@@ -218,6 +229,12 @@ async def lifespan(app: FastAPI):
             await start_investment_scanner()
         except Exception as e:
             log.warning("investment scanner start failed; trading continues", error=str(e)[:200])
+        try:
+            from app.services.extended_hours_research import extended_hours_research_service
+
+            await extended_hours_research_service.start()
+        except Exception as e:
+            log.warning("extended-hours research start failed", error=str(e)[:200])
         log.info("Background services booted")
 
     from app.services.desktop_control import DesktopControl
@@ -228,94 +245,169 @@ async def lifespan(app: FastAPI):
     boot_task = asyncio.create_task(_boot_services(), name="atlas_boot")
     log.info("API is serving /health; services starting in background")
 
-    yield
-
-    await runtime_watchdog.stop()
-    log.info("Project Atlas shutting down")
-    if not boot_task.done():
-        boot_task.cancel()
-        try:
-            await boot_task
-        except (asyncio.CancelledError, Exception):
-            pass
-    shutdown_services_stopped = True
     try:
-        from app.investment.scan import stop_investment_scanner
+        yield
+    finally:
+        from app.core.shutdown import ShutdownReport
 
-        await stop_investment_scanner()
-    except Exception as e:  # noqa: BLE001
-        shutdown_services_stopped = False
-        log.warning("investment scanner stop failed", error=str(e))
-    try:
-        await stop_discord_bot()
-    except Exception as e:  # noqa: BLE001
-        shutdown_services_stopped = False
-        log.warning("Discord stop failed", error=str(e))
-    for name, stopper in [
-        ("micro_heartbeat", micro_heartbeat.stop),
-        ("prediction_paper_automation", prediction_paper_automation.stop),
-        ("daily_paper_recap", daily_paper_recap.stop),
-        ("perp_alert_delivery", perp_alert_delivery_service.stop),
-        ("perp_manual", perp_manual_service.stop),
-        ("perp_micro_coach", perp_micro_coach.stop),
-        ("command_center", command_center.stop),
-        ("robinhood_universe_research", robinhood_universe_research_service.stop),
-        ("robinhood_brief", robinhood_brief_service.stop),
-        ("quality_dip", quality_dip_scanner.stop),
-        ("weekly_summary", weekly_summary_service.stop),
-        ("paper_trade_tracker", paper_trade_tracker.stop),
-        ("opportunity_tracker", opportunity_tracker.stop),
-        ("scanner", scanner.stop),
-    ]:
+        shutdown_report = ShutdownReport(timeout=20.0)
+        app.state.shutdown_report = shutdown_report
         try:
-            await stopper()
-        except Exception as e:  # noqa: BLE001
+            await shutdown_report.run("watchdog", runtime_watchdog.stop)
+        except (Exception, asyncio.CancelledError) as error:
+            shutdown_report.record("watchdog", error)
+        shutdown_report.emit(log, "info", "Project Atlas shutting down")
+        async def stop_boot():
+            if not boot_task.done():
+                shutdown_report.unknown = True
+                shutdown_report.record("boot", RuntimeError("Interrupted boot may own off-loop work"))
+                boot_task.cancel()
+            try:
+                await boot_task
+            except asyncio.CancelledError:
+                if not boot_task.cancelled():
+                    raise
+
+        try:
+            await shutdown_report.run("boot", stop_boot)
+        except (Exception, asyncio.CancelledError) as error:
+            shutdown_report.record("boot", error)
+        shutdown_services_stopped = True
+        try:
+            from app.investment.scan import stop_investment_scanner
+
+            await shutdown_report.run("investment", stop_investment_scanner)
+        except (Exception, asyncio.CancelledError) as e:  # noqa: BLE001 - aggregate independent cleanup failures
+            shutdown_report.record("cleanup", e)
             shutdown_services_stopped = False
-            log.warning(f"{name} stop failed", error=str(e))
-
-    if accumulation_ladder is not None:
+            shutdown_report.emit(log, "warning", "investment scanner stop failed", error=str(e))
         try:
-            await accumulation_ladder.stop()
-        except Exception as e:  # noqa: BLE001
+            from app.services.extended_hours_research import extended_hours_research_service
+
+            await shutdown_report.run("research", lambda: extended_hours_research_service.stop(timeout=shutdown_report.remaining()))
+        except (Exception, asyncio.CancelledError) as e:  # noqa: BLE001 - aggregate independent cleanup failures
+            shutdown_report.record("cleanup", e)
             shutdown_services_stopped = False
-            log.warning("accumulation stop failed", error=str(e))
-    if btc_accumulation is not None:
+            shutdown_report.emit(log, "warning", "extended-hours research stop failed", error=str(e))
         try:
-            await btc_accumulation.stop()
-        except Exception as e:  # noqa: BLE001
+            await shutdown_report.run("discord", stop_discord_bot)
+        except (Exception, asyncio.CancelledError) as e:  # noqa: BLE001 - aggregate independent cleanup failures
+            shutdown_report.record("cleanup", e)
             shutdown_services_stopped = False
-            log.warning("BTC accumulation stop failed", error=str(e))
+            shutdown_report.emit(log, "warning", "Discord stop failed", error=str(e))
+        for name, stopper in [
+            ("micro_heartbeat", micro_heartbeat.stop),
+            ("prediction_paper_automation", prediction_paper_automation.stop),
+            ("daily_paper_recap", daily_paper_recap.stop),
+            ("perp_alert_delivery", perp_alert_delivery_service.stop),
+            ("perp_manual", perp_manual_service.stop),
+            ("perp_micro_coach", perp_micro_coach.stop),
+            ("command_center", command_center.stop),
+            ("robinhood_universe_research", robinhood_universe_research_service.stop),
+            ("robinhood_brief", robinhood_brief_service.stop),
+            ("quality_dip", quality_dip_scanner.stop),
+            ("weekly_summary", weekly_summary_service.stop),
+            ("paper_trade_tracker", paper_trade_tracker.stop),
+            ("opportunity_tracker", opportunity_tracker.stop),
+            ("scanner", scanner.stop),
+        ]:
+            try:
+                await shutdown_report.run(name, stopper)
+            except (Exception, asyncio.CancelledError) as e:  # noqa: BLE001 - aggregate independent cleanup failures
+                shutdown_report.record("cleanup", e)
+                shutdown_services_stopped = False
+                shutdown_report.emit(log, "warning", f"{name} stop failed", error=str(e))
 
-    if shutdown_services_stopped:
-        try:
-            from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
-            cancelled_pending = perp_setup_paper_mirror.cancel_all_pending(reason="ATLAS_SHUTDOWN")
-            log.info("paper pending-limit shutdown reconciliation", cancelled=cancelled_pending)
-        except Exception as e:  # noqa: BLE001
-            log.warning("paper pending-limit shutdown reconciliation failed", error=str(e)[:200])
-        try:
-            from app.services.paper_journal import paper_journal
-            persisted = paper_journal.persist_open_marks()
-            interrupted = paper_journal.interrupt_open_for_shutdown()
-            log.info("paper shutdown reconciliation", persisted_marks=persisted, interrupted=len(interrupted))
-        except Exception as e:  # noqa: BLE001
-            log.warning("paper shutdown reconciliation failed", error=str(e)[:200])
-    else:
-        log.error(
-            "PAPER shutdown reconciliation skipped because one or more services failed to stop; "
-            "open journal rows were retained for operator recovery"
-        )
+        if accumulation_ladder is not None:
+            try:
+                await shutdown_report.run("accumulation", accumulation_ladder.stop)
+            except (Exception, asyncio.CancelledError) as e:  # noqa: BLE001 - aggregate independent cleanup failures
+                shutdown_report.record("cleanup", e)
+                shutdown_services_stopped = False
+                shutdown_report.emit(log, "warning", "accumulation stop failed", error=str(e))
+        if btc_accumulation is not None:
+            try:
+                await shutdown_report.run("btc_accumulation", btc_accumulation.stop)
+            except (Exception, asyncio.CancelledError) as e:  # noqa: BLE001 - aggregate independent cleanup failures
+                shutdown_report.record("cleanup", e)
+                shutdown_services_stopped = False
+                shutdown_report.emit(log, "warning", "BTC accumulation stop failed", error=str(e))
 
-    try:
-        await close_redis()
-    except Exception:
-        pass
-    try:
-        await engine.dispose()
-    except Exception:
-        pass
-    await desktop_control.stop()
-    log.info("Project Atlas shutdown complete")
+        provider_drain_confirmed = False
+        try:
+            from app.investment.quality_dip_quotes import quality_dip_quote_service
+
+            await shutdown_report.run("providers", lambda: quality_dip_quote_service.shutdown(timeout=shutdown_report.remaining()))
+            provider_drain_confirmed = True
+        except (Exception, asyncio.CancelledError) as exc:  # noqa: BLE001 - aggregate independent cleanup failures
+            shutdown_report.record("cleanup", exc)
+            shutdown_services_stopped = False
+            shutdown_report.emit(log, "error", "quote provider drain incomplete", error=type(exc).__name__)
+
+        if (shutdown_services_stopped and "watchdog" in shutdown_report.completed
+                and "boot" in shutdown_report.completed):
+            try:
+                await shutdown_report.run("adapters", registry.close_all)
+            except (Exception, asyncio.CancelledError) as error:
+                shutdown_report.record("adapters", error)
+                shutdown_services_stopped = False
+        else:
+            shutdown_report.unknown = True
+            shutdown_report.record("adapters", RuntimeError("Producer exit unverified; adapters retained"))
+
+        # These startup tasks have no retained owner reference in the legacy boot path.
+        # Observe conservatively; never kill a task based on its name.
+        if any(task.get_name() in {"paper_session_announce", "discord_bot"}
+               and not task.done() for task in asyncio.all_tasks()):
+            shutdown_report.unknown = True
+            shutdown_report.record("untracked_boot_tasks", RuntimeError("Legacy boot task exit unverified"))
+
+        if provider_drain_confirmed and shutdown_services_stopped and not shutdown_report.errors:
+            try:
+                from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
+                cancelled_pending = perp_setup_paper_mirror.cancel_all_pending(reason="ATLAS_SHUTDOWN")
+                shutdown_report.emit(log, "info", "paper pending-limit shutdown reconciliation", cancelled=cancelled_pending)
+            except (Exception, asyncio.CancelledError) as e:  # noqa: BLE001 - aggregate independent cleanup failures
+                shutdown_report.record("cleanup", e)
+                shutdown_report.emit(log, "warning", "paper pending-limit shutdown reconciliation failed", error=str(e)[:200])
+            try:
+                from app.services.paper_journal import paper_journal
+                persisted = paper_journal.persist_open_marks()
+                if getattr(paper_journal, "first_fsync_error", None) is not None:
+                    raise paper_journal.first_fsync_error
+                interrupted = paper_journal.interrupt_open_for_shutdown()
+                if getattr(paper_journal, "first_fsync_error", None) is not None:
+                    raise paper_journal.first_fsync_error
+                shutdown_report.emit(log, "info", "paper shutdown reconciliation", persisted_marks=persisted, interrupted=len(interrupted))
+            except (Exception, asyncio.CancelledError) as e:  # noqa: BLE001 - aggregate independent cleanup failures
+                shutdown_report.record("cleanup", e)
+                shutdown_report.emit(log, "warning", "paper shutdown reconciliation failed", error=str(e)[:200])
+        else:
+            shutdown_report.emit(log, "error",
+                "PAPER shutdown reconciliation skipped because one or more services failed to stop; "
+                "open journal rows were retained for operator recovery"
+            )
+
+        if (not shutdown_services_stopped
+                or any(not task.done() for task in shutdown_report.tasks.values())):
+            shutdown_report.unknown = True
+            shutdown_report.record("dependencies", RuntimeError("Owned cleanup still active; dependencies retained"))
+        try:
+            if not shutdown_report.unknown:
+                await shutdown_report.run("redis", close_redis)
+        except (Exception, asyncio.CancelledError) as error:  # noqa: BLE001 - preserved in final failure group
+            shutdown_report.record("dependency", error)
+        try:
+            if not shutdown_report.unknown:
+                await shutdown_report.run("database", engine.dispose)
+        except (Exception, asyncio.CancelledError) as error:  # noqa: BLE001 - preserved in final failure group
+            shutdown_report.record("dependency", error)
+        try:
+            await shutdown_report.run("desktop_control", lambda: desktop_control.stop(
+                preserve_manifest=bool(shutdown_report.errors) or shutdown_report.unknown))
+        except (Exception, asyncio.CancelledError) as error:
+            shutdown_report.record("desktop_control", error)
+        shutdown_report.finish(log)
 
 
 app = FastAPI(title="Project Atlas", lifespan=lifespan)

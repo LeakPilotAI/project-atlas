@@ -1,0 +1,12 @@
+{
+  "schema": "ATLAS_SYNTHETIC_RETAINED_RESEARCH_FIXTURE_V1",
+  "api_response_sha256": "490799463b79a7b04c0c070b5fe3e25836f32c8c8044f2d6099526b0b3445617",
+  "history_input_sha256": "31fe912de8990e2dd78d36b950a8b2019c93c7dfd7fe78ddd041148e9a36c914",
+  "reference_input_sha256": "f4851c8cd8cf9279ff7c834b86b50032b676c846fa5d864dc084baaa15d29128",
+  "reviewed_adapter_sha256": "3fba7560a5d85cb125b3a78ce61d37610eb74cac6cccb67817198c85d7541c50",
+  "source": "Actual in-process research API; equality verified by test_api_is_reference_opt_in_and_reference_map_is_copied",
+  "data_mode": "SYNTHETIC_REPLAY",
+  "real_market_evidence": false,
+  "source_authenticated": false,
+  "production_approved": false
+}

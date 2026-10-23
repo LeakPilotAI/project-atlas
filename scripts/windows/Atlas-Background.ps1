@@ -5,11 +5,22 @@ param(
     [ValidateSet("Start", "Status", "Stop", "Worker", "StopWorker")]
     [string]$Action = "Status",
     [string]$RunId = "",
+    [string]$ExpectedRunId = "",
+    [switch]$EnableExtendedHoursResearch,
     [switch]$Json
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+
+Import-Module (Join-Path $PSScriptRoot 'Atlas-StartupAdmission.psm1') -Force
+if ($Action -eq 'Start') { Assert-AtlasStartupAdmission -Boundary 'parent' }
+if ($Action -eq 'Worker') { Assert-AtlasStartupAdmission -Boundary 'worker-entry' }
+
+if ($EnableExtendedHoursResearch -and $Action -ne "Start") {
+    throw "Extended-hours opt-in is valid only for an explicitly approved Start."
+}
+if ($ExpectedRunId -and $Action -ne "Stop") { throw "ExpectedRunId is valid only for Stop." }
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $Backend = Join-Path $Root "backend"
@@ -28,6 +39,7 @@ $PowerShellPath = Join-Path $PSHOME "powershell.exe"
 $VenvBasePy = ""
 Import-Module (Join-Path $PSScriptRoot "Atlas-ContainerOwnership.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-ProcessOwnership.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "Atlas-CompleteShutdown.psm1") -Force
 
 function Get-VenvBaseExecutable([string]$VenvExecutable) {
     $configPath = Join-Path (Split-Path (Split-Path $VenvExecutable -Parent) -Parent) "pyvenv.cfg"
@@ -64,6 +76,18 @@ function Write-JsonAtomic($Value, [string]$Path) {
     Move-Item -LiteralPath $temporary -Destination $Path -Force
 }
 
+function Set-OwnerLastError($Owner, [string]$Message) {
+    if ($null -eq $Owner) {
+        throw "Cannot record an error without an owner."
+    }
+    if ($Owner -is [System.Collections.IDictionary]) {
+        $Owner["last_error"] = $Message
+    } elseif ($Owner.PSObject.Properties["last_error"]) {
+        $Owner.last_error = $Message
+    } else {
+        $Owner | Add-Member -NotePropertyName "last_error" -NotePropertyValue $Message -ErrorAction Stop
+    }
+}
 function New-ExclusiveJsonFile($Value, [string]$Path) {
     $bytes = (New-Object System.Text.UTF8Encoding($false)).GetBytes(
         ($Value | ConvertTo-Json -Depth 8)
@@ -294,9 +318,16 @@ function Get-VerifiedState {
                 return @{ state="AMBIGUOUS"; message="Stopping run has no stop lock; manual inspection is required." }
             }
             $requiredStopAction = if ($stopLock.phase -eq "waiting") { "-Action StopWorker" } else { "-Action Stop" }
+            $requiredStopScript = $ManagerPath
+            $completeScript = Join-Path (Split-Path $ManagerPath -Parent) "Atlas-CompleteShutdown.ps1"
+            $completePattern = '(?i)(?:^|\s)-File\s+["'']?' + [regex]::Escape($completeScript) + '["'']?\s+-Complete(?:\s|$)'
+            if ($stopLock.phase -eq "requesting" -and $stopLock.command_line -match $completePattern) {
+                $requiredStopAction = $completeScript
+                $requiredStopScript = $completeScript
+            }
             if ([string]$stopLock.run_id -cne [string]$owner.run_id -or
                 -not (Test-IdentityRecord $stopLock $PowerShellPath $requiredStopAction) -or
-                $stopLock.command_line.IndexOf($ManagerPath, [StringComparison]::OrdinalIgnoreCase) -lt 0) {
+                $stopLock.command_line.IndexOf($requiredStopScript, [StringComparison]::OrdinalIgnoreCase) -lt 0) {
                 return @{ state="AMBIGUOUS"; message="Stopping run has no verified stop worker; manual inspection is required." }
             }
         }
@@ -319,6 +350,7 @@ function Get-VerifiedState {
             [string]$owner.last_error -match '(?i)no process was signalled') {
             $effectiveState = "running"
             $message = "Verified Atlas background run $($owner.run_id), PID $($runtime.pid). A previous ownership-check failure did not signal the process."
+
         } elseif ($owner.state -eq "stop_timeout") {
             $message = "Graceful shutdown timed out; Atlas API PID $($owner.pid) remains. No forced termination was attempted. Operator intervention is required. $($owner.last_error)"
         }
@@ -379,49 +411,89 @@ function Assert-CleanStart {
 }
 
 function Get-AtlasContainer([string]$Name, [string]$ExpectedService) {
-    $raw = & docker inspect --format '{{json .}}' $Name 2>$null
-    if ($LASTEXITCODE -ne 0) { return $null }
-    return ConvertFrom-AtlasContainerInspection $Name $ExpectedService $Root ([string]$raw)
+    $priorErrorPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $raw = & docker inspect --format '{{json .}}' $Name 2>&1
+        $inspectExit = $LASTEXITCODE
+    } finally { $ErrorActionPreference = $priorErrorPreference }
+    $text = (@($raw) | ForEach-Object { [string]$_ }) -join "`n"
+    if ($inspectExit -ne 0) {
+        if ($text.Trim() -ceq "Error: No such object: $Name" -or
+            $text.Trim() -ceq "Error response from daemon: No such container: $Name") { return $null }
+        throw "Atlas dependency inspection failed; absence is not established."
+    }
+    return ConvertFrom-AtlasContainerInspection $Name $ExpectedService $Root $text
 }
 
 function Start-AtlasDependencies {
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
         throw "Docker CLI is unavailable. Start Docker Desktop manually; this launcher will not manage Docker Desktop."
     }
-    & docker info 2>$null | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Docker engine is unavailable. Start Docker Desktop manually; this launcher will not start or stop it."
-    }
-    if (-not (Test-Path -LiteralPath $ComposePath -PathType Leaf)) {
-        throw "Atlas docker-compose.yml is missing."
-    }
-
-    $postgres = Get-AtlasContainer "atlas-postgres" "postgres"
-    $redis = Get-AtlasContainer "atlas-redis" "redis"
-    if ($postgres -and $redis) {
-        if (-not ($postgres.running -and $redis.running)) {
-            & docker start atlas-postgres atlas-redis | Out-Null
-            if ($LASTEXITCODE -ne 0) { throw "Could not start the verified Atlas dependency containers." }
+    $localEndpoint = Get-AtlasLocalDockerEndpoint
+    $priorDockerHost = [Environment]::GetEnvironmentVariable('DOCKER_HOST','Process')
+    $priorDockerContext = [Environment]::GetEnvironmentVariable('DOCKER_CONTEXT','Process')
+    try {
+        [Environment]::SetEnvironmentVariable('DOCKER_HOST',$localEndpoint,'Process')
+        [Environment]::SetEnvironmentVariable('DOCKER_CONTEXT',$null,'Process')
+        & docker info 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw "Docker engine is unavailable. Start Docker Desktop manually; this launcher will not start or stop it."
         }
-    } elseif (-not $postgres -and -not $redis) {
-        if (-not (Test-Path -LiteralPath (Join-Path $Root ".env") -PathType Leaf)) {
-            throw "Root .env is required by Docker Compose when Atlas containers must be created; it will not be generated or rewritten."
+        if (-not (Test-Path -LiteralPath $ComposePath -PathType Leaf)) {
+            throw "Atlas docker-compose.yml is missing."
         }
-        & docker compose --project-name atlas --file $ComposePath up -d --no-recreate postgres redis
-        if ($LASTEXITCODE -ne 0) { throw "Atlas dependency container creation failed." }
-    } else {
-        throw "Only one Atlas dependency container exists; refusing partial or destructive repair."
-    }
 
-    $deadline = (Get-Date).AddSeconds(120)
-    do {
         $postgres = Get-AtlasContainer "atlas-postgres" "postgres"
         $redis = Get-AtlasContainer "atlas-redis" "redis"
-        if ($postgres -and $redis -and $postgres.running -and $redis.running -and
-            $postgres.health -eq "healthy" -and $redis.health -eq "healthy") { return }
-        Start-Sleep -Seconds 3
-    } while ((Get-Date) -lt $deadline)
-    throw "Verified Atlas Postgres/Redis containers did not both become healthy."
+        $completeReceipt = Join-Path $RuntimeDir "atlas-complete-shutdown.json"
+        if (Test-Path -LiteralPath $completeReceipt) {
+            Assert-AtlasCompleteReceipt $Root
+            $receipt = Read-JsonFile $completeReceipt
+            foreach ($row in @($receipt.services)) {
+                $current = if ($row.name -ceq 'atlas-postgres') { $postgres } elseif ($row.name -ceq 'atlas-redis') { $redis } else { throw "Unknown dependency in restoration receipt." }
+                if ($row.id -and (-not $current -or $current.id -cne $row.id)) { throw "Dependency restoration identity changed; no recreation or data replacement is allowed." }
+            }
+        }
+        $expectedPostgresId = if ($postgres) { [string]$postgres.id } else { '' }
+        $expectedRedisId = if ($redis) { [string]$redis.id } else { '' }
+        if ($postgres -and $redis) {
+            if ($postgres.id -cnotmatch '^[0-9a-f]{64}$' -or $redis.id -cnotmatch '^[0-9a-f]{64}$' -or
+                $postgres.project -cne $redis.project) { throw "Atlas dependency IDs or Compose projects are ambiguous." }
+            if (-not ($postgres.running -and $redis.running)) {
+                & docker start $postgres.id $redis.id | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw "Could not start the verified Atlas dependency containers." }
+            }
+        } elseif (-not $postgres -and -not $redis) {
+            if (-not (Test-Path -LiteralPath (Join-Path $Root ".env") -PathType Leaf)) {
+                throw "Root .env is required by Docker Compose when Atlas containers must be created; it will not be generated or rewritten."
+            }
+            & docker compose --project-name atlas --file $ComposePath up -d --no-recreate postgres redis
+            if ($LASTEXITCODE -ne 0) { throw "Atlas dependency container creation failed." }
+        } else {
+            throw "Only one Atlas dependency container exists; refusing partial or destructive repair."
+        }
+
+        $deadline = (Get-Date).AddSeconds(120)
+        do {
+            $postgres = Get-AtlasContainer "atlas-postgres" "postgres"
+            $redis = Get-AtlasContainer "atlas-redis" "redis"
+            if ($postgres -and $redis) {
+                if ($postgres.id -cnotmatch '^[0-9a-f]{64}$' -or $redis.id -cnotmatch '^[0-9a-f]{64}$' -or
+                    ($expectedPostgresId -and $postgres.id -cne $expectedPostgresId) -or
+                    ($expectedRedisId -and $redis.id -cne $expectedRedisId) -or $postgres.project -cne $redis.project) {
+                    throw "Atlas dependency identity changed during readiness."
+                }
+                $expectedPostgresId = $postgres.id; $expectedRedisId = $redis.id
+                if ($postgres.running -and $redis.running -and $postgres.health -eq "healthy" -and $redis.health -eq "healthy") { return }
+            }
+            Start-Sleep -Seconds 3
+        } while ((Get-Date) -lt $deadline)
+        throw "Verified Atlas Postgres/Redis containers did not both become healthy."
+    } finally {
+        [Environment]::SetEnvironmentVariable('DOCKER_HOST',$priorDockerHost,'Process')
+        [Environment]::SetEnvironmentVariable('DOCKER_CONTEXT',$priorDockerContext,'Process')
+    }
 }
 
 function Wait-AtlasHttp([string]$Url, [int]$Seconds) {
@@ -446,6 +518,8 @@ function Remove-OwnedFile([string]$Path, [string]$ExpectedRunId) {
 }
 
 function Test-VerifiedApiIdentity($Owner) {
+    # The startup-error cleanup path receives the worker's in-memory dictionary.
+    if ($Owner -is [System.Collections.IDictionary]) { $Owner = [pscustomobject]$Owner }
     $runtime = Read-JsonFile $RuntimePath
     if (-not $runtime -or [string]$runtime.run_id -cne [string]$Owner.run_id -or
         [int]$runtime.pid -ne [int]$Owner.pid) { return $false }
@@ -494,7 +568,7 @@ function Stop-OwnedApi($Owner, [int]$TimeoutSeconds = 30) {
         throw "Atlas API process identity or run ownership changed during shutdown timeout; refusing fallback termination."
     }
     $Owner.state = "stop_timeout"
-    $Owner.last_error = "Graceful shutdown exceeded $TimeoutSeconds seconds. The process and runtime ownership were retained; operator intervention is required. Inspect Atlas logs and reconcile PAPER state before taking manual action."
+    Set-OwnerLastError $Owner "Graceful shutdown exceeded $TimeoutSeconds seconds. The process and runtime ownership were retained; operator intervention is required. Inspect Atlas logs and reconcile PAPER state before taking manual action."
     Write-JsonAtomic $Owner $OwnerPath
     return $false
 }
@@ -513,6 +587,7 @@ function Clear-OwnedRuntime($Owner) {
 }
 
 function Invoke-BackgroundWorker {
+    Assert-AtlasStartupAdmission -Boundary 'worker-function'
     $lock = Read-JsonFile $LockPath
     if (-not $lock -or [string]$lock.run_id -cne $RunId -or $lock.root -ine $Root -or
         $lock.phase -cne "launching" -or $lock.executable -ine $PowerShellPath -or
@@ -649,7 +724,7 @@ function Invoke-BackgroundWorker {
                     if ($stopped) { Clear-OwnedRuntime $owner }
                     else {
                         $owner.state = "stop_timeout"
-                        $owner.last_error = $failure
+                        Set-OwnerLastError $owner $failure
                         Write-JsonAtomic $owner $OwnerPath
                     }
                 } else {
@@ -657,7 +732,7 @@ function Invoke-BackgroundWorker {
                 }
             } catch {
                 $owner.state = "stop_timeout"
-                $owner.last_error = "$failure; cleanup: $($_.Exception.Message)"
+                Set-OwnerLastError $owner "$failure; cleanup: $($_.Exception.Message)"
                 Write-JsonAtomic $owner $OwnerPath
             }
         }
@@ -699,7 +774,7 @@ function Invoke-StopWorker {
         $stopped = Stop-OwnedApi $owner
         if (-not $stopped) {
             $owner.state = "stop_timeout"
-            $owner.last_error = "Graceful shutdown exceeded 30 seconds. No forced termination was attempted. Inspect Atlas logs and PAPER reconciliation, then resolve the verified PID manually."
+            Set-OwnerLastError $owner "Graceful shutdown exceeded 30 seconds. No forced termination was attempted. Inspect Atlas logs and PAPER reconciliation, then resolve the verified PID manually."
             Write-JsonAtomic $owner $OwnerPath
             throw "Atlas graceful shutdown timed out after 30 seconds. No forced termination was attempted; operator intervention is required. Review the Atlas logs and PAPER reconciliation before taking manual action."
         }
@@ -719,79 +794,108 @@ if ($Action -eq "Status") {
 }
 
 if ($Action -eq "Start") {
-    Assert-CleanStart
-    New-Item -ItemType Directory -Force $RuntimeDir | Out-Null
-    $runId = [guid]::NewGuid().ToString()
-    $parentIdentity = Get-ProcessIdentity $PID
-    $lock = @{
-        schema_version = 1
-        root = $Root
-        run_id = $runId
-        phase = "launching"
-        pid = [int]$PID
-        executable = $parentIdentity.executable
-        command_line = $parentIdentity.command_line
-        created_utc = $parentIdentity.created_utc
-    }
-    try { New-ExclusiveJsonFile $lock $LockPath }
-    catch { throw "Another start owns the lifecycle lock, or a stale lock exists; refusing duplicate startup." }
-
-    $workerArgs = ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -Action Worker -RunId "{1}"' -f $ManagerPath, $runId)
+    $atlasRequestGate = Enter-AtlasLifecycleGate $Root
     try {
-        $worker = Start-Process -FilePath $PowerShellPath -ArgumentList $workerArgs -WorkingDirectory $Root `
-            -WindowStyle Hidden -RedirectStandardOutput (Join-Path $RuntimeDir "background-start.out.log") `
-            -RedirectStandardError (Join-Path $RuntimeDir "background-start.err.log") -PassThru
-        if (-not $worker) { throw "Worker process was not created." }
-    } catch {
-        Remove-OwnedFile $LockPath $runId
-        throw "Could not start the hidden Atlas background worker: $($_.Exception.Message)"
-    }
-    return (Write-Status @{state="starting"; message="Atlas background startup was requested. Run ID $runId." ; run_id=$runId; pid=[int]$worker.Id})
+        Assert-AtlasCompleteReceipt $Root
+        Assert-CleanStart
+        New-Item -ItemType Directory -Force $RuntimeDir | Out-Null
+        $runId = [guid]::NewGuid().ToString()
+        $parentIdentity = Get-ProcessIdentity $PID
+        $lock = @{
+            schema_version = 1
+            root = $Root
+            run_id = $runId
+            phase = "launching"
+            pid = [int]$PID
+            executable = $parentIdentity.executable
+            command_line = $parentIdentity.command_line
+            created_utc = $parentIdentity.created_utc
+        }
+        try { New-ExclusiveJsonFile $lock $LockPath }
+        catch { throw "Another start owns the lifecycle lock, or a stale lock exists; refusing duplicate startup." }
+
+        $workerArgs = ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -Action Worker -RunId "{1}"' -f $ManagerPath, $runId)
+        $priorExtendedHours = [Environment]::GetEnvironmentVariable(
+            "ATLAS_EXTENDED_HOURS_RESEARCH_ENABLED", "Process"
+        )
+        try {
+            # Never inherit an accidental research opt-in from a desktop/controller.
+            # Only this explicit Start switch grants the new worker the feature flag.
+            [Environment]::SetEnvironmentVariable(
+                "ATLAS_EXTENDED_HOURS_RESEARCH_ENABLED",
+                $(if ($EnableExtendedHoursResearch) { "true" } else { "false" }),
+                "Process"
+            )
+            $worker = Start-Process -FilePath $PowerShellPath -ArgumentList $workerArgs -WorkingDirectory $Root `
+                -WindowStyle Hidden -RedirectStandardOutput (Join-Path $RuntimeDir "background-start.out.log") `
+                -RedirectStandardError (Join-Path $RuntimeDir "background-start.err.log") -PassThru
+            if (-not $worker) { throw "Worker process was not created." }
+        } catch {
+            Remove-OwnedFile $LockPath $runId
+            throw "Could not start the hidden Atlas background worker: $($_.Exception.Message)"
+        } finally {
+            [Environment]::SetEnvironmentVariable(
+                "ATLAS_EXTENDED_HOURS_RESEARCH_ENABLED", $priorExtendedHours, "Process"
+            )
+        }
+        return (Write-Status @{state="starting"; message="Atlas background startup was requested. Run ID $runId." ; run_id=$runId; pid=[int]$worker.Id})
+    } finally { Exit-AtlasLifecycleGate $atlasRequestGate }
 }
 
 if ($Action -eq "Stop") {
-    $state = Get-VerifiedState
-    if ($state.state -eq "stopping") {
-        return (Write-Status @{state="stopping"; message="The verified Atlas run is already stopping."; run_id=$state.run_id; pid=$state.pid})
-    }
-    if ($state.state -ne "running") {
-        throw "Refusing stop because there is no verified running background owner. $($state.message)"
-    }
-    $existingRequest = Read-JsonFile $StopPath
-    if ($existingRequest -and [string]$existingRequest.run_id -cne [string]$state.run_id) {
-        $staleRunId = [guid]::Empty
-        if (-not [guid]::TryParse([string]$existingRequest.run_id, [ref]$staleRunId)) {
-            throw "A stop request has an invalid run ID; refusing to overwrite it."
-        }
-    }
+    $atlasRequestGate = Enter-AtlasLifecycleGate $Root
     try {
-        $stopIdentity = Get-ProcessIdentity $PID
-        $stopLock = @{
-            schema_version = 1
-            run_id = $state.run_id
-            pid = [int]$PID
-            executable = $stopIdentity.executable
-            command_line = $stopIdentity.command_line
-            created_utc = $stopIdentity.created_utc
-            phase = "requesting"
+        $state = Get-VerifiedState
+        if ($ExpectedRunId -and [string]$state.run_id -cne $ExpectedRunId) {
+            throw "Verified backend run changed; no stop was requested."
         }
-        New-ExclusiveJsonFile $stopLock $StopLockPath
-    } catch {
-        throw "A stop request is already active or its lock is stale; refusing duplicate shutdown."
-    }
-    $owner = $state.owner
-    $owner.state = "stopping"
-    Write-JsonAtomic $owner $OwnerPath
-    $workerArgs = ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -Action StopWorker -RunId "{1}"' -f $ManagerPath, $owner.run_id)
-    try {
-        $worker = Start-Process -FilePath $PowerShellPath -ArgumentList $workerArgs -WorkingDirectory $Root `
-            -WindowStyle Hidden -RedirectStandardOutput (Join-Path $RuntimeDir "background-stop.out.log") `
-            -RedirectStandardError (Join-Path $RuntimeDir "background-stop.err.log") -PassThru
-        if (-not $worker) { throw "Stop worker process was not created." }
-    } catch {
-        throw "Graceful stop request was written but the wait worker could not start; ownership was retained. $($_.Exception.Message)"
-    }
-    return (Write-Status @{state="stopping"; message="Graceful shutdown requested for verified Atlas PID $($owner.pid)."; run_id=$owner.run_id; pid=$owner.pid})
+        if ($state.state -eq "stopping") {
+            return (Write-Status @{state="stopping"; message="The verified Atlas run is already stopping."; run_id=$state.run_id; pid=$state.pid})
+        }
+        if ($state.state -ne "running") {
+            throw "Refusing stop because there is no verified running background owner. $($state.message)"
+        }
+        $existingRequest = Read-JsonFile $StopPath
+        if ($existingRequest -and [string]$existingRequest.run_id -cne [string]$state.run_id) {
+            $staleRunId = [guid]::Empty
+            if (-not [guid]::TryParse([string]$existingRequest.run_id, [ref]$staleRunId)) {
+                throw "A stop request has an invalid run ID; refusing to overwrite it."
+            }
+        }
+        try {
+            $stopIdentity = Get-ProcessIdentity $PID
+            $stopLock = @{
+                schema_version = 1
+                run_id = $state.run_id
+                pid = [int]$PID
+                executable = $stopIdentity.executable
+                command_line = $stopIdentity.command_line
+                created_utc = $stopIdentity.created_utc
+                phase = "requesting"
+            }
+            New-ExclusiveJsonFile $stopLock $StopLockPath
+        } catch {
+            throw "A stop request is already active or its lock is stale; refusing duplicate shutdown."
+        }
+        $owner = $state.owner
+        $owner.state = "stopping"
+        Write-JsonAtomic $owner $OwnerPath
+        $workerArgs = ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -Action StopWorker -RunId "{1}"' -f $ManagerPath, $owner.run_id)
+        try {
+            $worker = Start-Process -FilePath $PowerShellPath -ArgumentList $workerArgs -WorkingDirectory $Root `
+                -WindowStyle Hidden -RedirectStandardOutput (Join-Path $RuntimeDir "background-stop.out.log") `
+                -RedirectStandardError (Join-Path $RuntimeDir "background-stop.err.log") -PassThru
+            if (-not $worker) { throw "Stop worker process was not created." }
+        } catch {
+            $launchFailure = $_.Exception.Message
+            # A23-G3E3D-R3D1: process creation may succeed even if confirmation fails.
+            # The worker may already own the stop lock, be shutting down, or have
+            # removed the owner record. Never rewrite owner state from this parent.
+            # Preserve the original stopping/lock evidence for independent review.
+            throw "STOP_WORKER_LAUNCH_UNCONFIRMED: Stop worker creation could not be confirmed. The worker may already be running or may have completed shutdown. No owner or stop-lock recovery was attempted; verify current process identity and lifecycle evidence before manual intervention. $launchFailure"
+        }
+        return (Write-Status @{state="stopping"; message="Graceful shutdown requested for verified Atlas PID $($owner.pid)."; run_id=$owner.run_id; pid=$owner.pid})
+    } finally { Exit-AtlasLifecycleGate $atlasRequestGate }
 }
 
 if ($Action -eq "Worker") {

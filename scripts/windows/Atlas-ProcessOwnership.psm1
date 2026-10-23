@@ -7,6 +7,10 @@ function Test-AtlasApiProcessOwnership(
     [string]$ExpectedRoot,
     [string]$ExpectedBaseExecutable = ""
 ) {
+    # Startup uses dictionaries; persisted JSON uses objects. Normalize only the
+    # representation so optional-property checks apply to the same supplied fields.
+    if ($Owner -is [System.Collections.IDictionary]) { $Owner = [pscustomobject]$Owner }
+    if ($Runtime -is [System.Collections.IDictionary]) { $Runtime = [pscustomobject]$Runtime }
     if (-not $Owner -or -not $Runtime -or -not $ApiProcess) { return $false }
     if ([string]$Owner.root -ine $ExpectedRoot -or
         [string]$Owner.run_id -cne [string]$Runtime.run_id -or

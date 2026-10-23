@@ -24,21 +24,28 @@ function ConvertFrom-AtlasContainerInspection(
     $containerName = [string]$container.Name
     if (-not $containerName.StartsWith("/")) { $containerName = "/$containerName" }
 
-    $projectMatches = @("atlas", "projectatlas") -contains $project
+    $projectMatches = $project -cin @("atlas", "projectatlas")
     $composeFileMatches = $false
-    foreach ($configFile in $configFiles.Split(",")) {
-        if ($configFile.Trim() -ieq $expectedComposeFile) { $composeFileMatches = $true }
-    }
+    if ($configFiles.Trim() -ieq $expectedComposeFile) { $composeFileMatches = $true }
     if ($containerName -cne "/$Name" -or -not $projectMatches -or
         $service -cne $ExpectedService -or
         $workingDirectory -ine $ExpectedRoot -or -not $composeFileMatches) {
         throw "Container $Name does not have the exact Atlas Compose identity; refusing to affect it."
+    }
+    if ([string]$container.Id -cnotmatch '^[0-9a-f]{64}$' -or
+        [string]$labels.'com.docker.compose.oneoff' -ine 'False' -or
+        $container.State.Running -isnot [bool] -or
+        [string]$container.State.Status -cnotin @('running','exited','created') -or
+        ([bool]$container.State.Running -ne ([string]$container.State.Status -ceq 'running'))) {
+        throw "Container $Name has ambiguous immutable ID, one-off ownership or process state; refusing restoration."
     }
 
     $health = ""
     if ($container.State.Health) { $health = [string]$container.State.Health.Status }
     return @{
         name = $Name
+        id = [string]$container.Id
+        project = $project
         running = ([bool]$container.State.Running)
         health = $health
     }

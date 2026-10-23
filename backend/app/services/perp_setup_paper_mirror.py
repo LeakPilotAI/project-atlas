@@ -14,13 +14,17 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import os
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.core.durable_io import sync_parent, write_flushed
 from app.core.logging import get_logger
-from app.services.paper_journal import JOURNAL_PATH, iter_jsonl, paper_journal
+from app.core.market_freshness import fresh_observation, positive_price
+from app.services.paper_journal import JOURNAL_PATH, paper_journal
 from app.services.paper_risk import check_paper_risk
 from app.services.paper_risk_controls import paper_risk_controls
 from app.services.paper_risk_window import (
@@ -53,9 +57,46 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def iter_jsonl(path: Path):
+    """Strict evidence replay: never skip a malformed or incomplete ledger row."""
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate pending/PAPER journal field")
+            result[key] = value
+        return result
+    def invalid_constant(_):
+        raise ValueError("Nonfinite pending/PAPER journal value")
+    def finite_float(value):
+        result = float(value)
+        if not math.isfinite(result):
+            raise ValueError("Nonfinite pending/PAPER journal value")
+        return result
+    try:
+        handle = path.open("r", encoding="utf-8")
+    except FileNotFoundError:
+        return
+    with handle:
+        while True:
+            line = handle.readline(1024 * 1024 + 1)
+            if not line:
+                return
+            if len(line) > 1024 * 1024 or not line.endswith("\n"):
+                raise OSError("Oversized or incomplete pending/PAPER journal record")
+            if not line.strip():
+                continue
+            row = json.loads(line, object_pairs_hook=unique, parse_constant=invalid_constant, parse_float=finite_float)
+            if not isinstance(row, dict) or row.get("event") == "_malformed":
+                raise ValueError("Malformed pending/PAPER journal record")
+            yield row
+
+
 class PerpSetupPaperMirror:
     def __init__(self, *, pending_path: Path | None = None) -> None:
         self._admission_lock = asyncio.Lock()
+        self._persistence_error: BaseException | None = None
+        self._active_fill_instance: str | None = None
         self._seeded = False
         self._mirrored_instances: set[str] = set()
         self._terminal_pending_instances: set[str] = set()
@@ -73,25 +114,97 @@ class PerpSetupPaperMirror:
         epoch = str(setup.get("paper_mirror_epoch_at") or first)
         return f"{key}|{first}|{epoch}"
 
-    def _append_pending_event(self, row: dict[str, Any]) -> None:
+    def _intent_path(self, kind: str) -> Path:
+        return self._pending_path.with_name(self._pending_path.name + "." + kind)
+
+    def _require_pending_persistence(self, *, allow_fill: bool = False) -> None:
+        if self._persistence_error is not None:
+            raise self._persistence_error
+        try:
+            for kind in ("append-intent", "fill-intent"):
+                if kind == "fill-intent" and allow_fill:
+                    continue
+                try:
+                    self._intent_path(kind).stat()
+                except FileNotFoundError:
+                    continue
+                raise OSError("Uncertain pending PAPER operation; evidence review required")
+        except BaseException as error:
+            self._persistence_error = error
+            raise
+
+    def _begin_intent(self, kind: str, row: dict[str, Any]) -> str:
         self._pending_path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {"timestamp": _now(), **row}
-        with self._pending_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(payload, default=str) + "\n")
-            handle.flush()
+        payload = json.dumps({"operation_id": str(uuid.uuid4()), "timestamp": _now(), **row}, allow_nan=False) + "\n"
+        path = self._intent_path(kind)
+        with path.open("x", encoding="utf-8") as handle:
+            write_flushed(handle, payload)
+        sync_parent(path)
+        return payload
+
+    def _finish_intent(self, kind: str, payload: str) -> None:
+        path = self._intent_path(kind)
+        if path.read_text(encoding="utf-8") != payload:
+            raise OSError("Pending PAPER intent identity changed")
+        path.unlink()
+        sync_parent(path)
+
+    def _rows(self, path: Path):
+        try:
+            yield from iter_jsonl(path)
+        except BaseException as error:
+            self._persistence_error = error
+            raise
+
+    def _pending_rows(self):
+        try:
+            terminal = set()
+            for row in self._rows(self._pending_path):
+                instance = row.get("setup_instance_id")
+                event = row.get("event")
+                if not isinstance(instance, str) or not instance.strip() or event not in {"armed", "filled", "cancelled"}:
+                    raise ValueError("Missing or ambiguous pending PAPER identity")
+                if event == "armed" and instance in terminal:
+                    raise ValueError("Pending PAPER identity rearmed after terminal evidence")
+                if event in {"filled", "cancelled"}:
+                    terminal.add(instance)
+                yield row
+        except BaseException as error:
+            self._persistence_error = error
+            raise
+
+    def _append_pending_event(self, row: dict[str, Any]) -> None:
+        allow_fill = row.get("event") == "filled" and row.get("setup_instance_id") == self._active_fill_instance and self._active_fill_instance is not None
+        self._require_pending_persistence(allow_fill=allow_fill)
+        try:
+            payload = json.dumps({"timestamp": _now(), **row}, default=str, allow_nan=False) + "\n"
             try:
-                os.fsync(handle.fileno())
-            except OSError:
-                pass
+                size = self._pending_path.stat().st_size
+            except FileNotFoundError:
+                size = 0
+            if size:
+                with self._pending_path.open("rb") as source:
+                    source.seek(-1, os.SEEK_END)
+                    if source.read(1) != b"\n":
+                        raise OSError("Incomplete pending PAPER journal tail")
+            intent = self._begin_intent("append-intent", {"event": row.get("event"), "setup_instance_id": row.get("setup_instance_id")})
+            with self._pending_path.open("a", encoding="utf-8") as handle:
+                write_flushed(handle, payload)
+            sync_parent(self._pending_path)
+            self._finish_intent("append-intent", intent)
+        except BaseException as error:
+            self._persistence_error = error
+            raise
 
     def _seed(self) -> None:
+        self._require_pending_persistence()
         if self._seeded:
             return
         source_ids: set[str] = set()
         source_open_ids: set[str] = set()
         opened_ids: set[str] = set()
         closed_ids: set[str] = set()
-        for row in iter_jsonl(JOURNAL_PATH):
+        for row in self._rows(JOURNAL_PATH):
             features = row.get("features") if isinstance(row.get("features"), dict) else {}
             instance = str(features.get("setup_instance_id") or "")
             if instance:
@@ -112,7 +225,7 @@ class PerpSetupPaperMirror:
         self._closed_total = len(closed_ids)
 
         pending: dict[str, dict[str, Any]] = {}
-        for row in iter_jsonl(self._pending_path):
+        for row in self._pending_rows():
             if row.get("event") == "_malformed":
                 continue
             instance = str(row.get("setup_instance_id") or "")
@@ -195,7 +308,7 @@ class PerpSetupPaperMirror:
         if instance in self._terminal_pending_instances:
             return True
         if not self._terminal_cache_hydrated:
-            for row in iter_jsonl(self._pending_path):
+            for row in self._pending_rows():
                 if row.get("event") == "_malformed":
                     continue
                 candidate = str(row.get("setup_instance_id") or "")
@@ -264,7 +377,8 @@ class PerpSetupPaperMirror:
         mark: float | None = None,
         details: dict[str, Any] | None = None,
     ) -> None:
-        row = self._pending.pop(instance, None)
+        self._require_pending_persistence()
+        row = self._pending.get(instance)
         if not row:
             return
         event_row = {
@@ -278,6 +392,8 @@ class PerpSetupPaperMirror:
             "details": dict(details or {}),
         }
         self._append_pending_event(event_row)
+        # Keep the in-memory order pending until cancellation evidence is acknowledged.
+        self._pending.pop(instance, None)
         self._recent_terminal.append({
             "timestamp": _now(),
             **{k: event_row.get(k) for k in ("setup_instance_id", "setup_key", "symbol", "side", "reason", "mark")},
@@ -292,14 +408,15 @@ class PerpSetupPaperMirror:
             return await self._fill_pending_locked(instance, mark=mark, setup=setup)
 
     async def _fill_pending_locked(self, instance: str, *, mark: float, setup: dict[str, Any] | None = None) -> bool:
+        self._require_pending_persistence()
         row = self._pending.get(instance)
         if not row:
             return False
-        if setup is not None and not self._fresh_mark_timestamp(setup):
-            self._cancel_pending(instance, reason="STALE_MARK_BEFORE_FILL", mark=mark)
-            return False
         if self._has_terminal_pending_event(instance):
             self._pending.pop(instance, None)
+            return False
+        if not self._fresh_mark_timestamp(setup or {}) or not positive_price(mark):
+            # Stale price evidence blocks a fill; lifecycle rules own cancellation.
             return False
         symbol = str(row.get("symbol") or "").upper()
         side = str(row.get("side") or "").upper()
@@ -323,8 +440,8 @@ class PerpSetupPaperMirror:
         # journal's open_trade has no suspension points between this check/open.
         if self._pending.get(instance) is not row:
             return False
-        if setup is not None and not self._fresh_mark_timestamp(setup):
-            self._cancel_pending(instance, reason="STALE_MARK_BEFORE_FILL", mark=mark)
+        if not self._fresh_mark_timestamp(setup or {}) or not positive_price(mark):
+            # Stale price evidence blocks a fill; lifecycle rules own cancellation.
             return False
         open_positions = list(paper_journal.list_open())
         open_pairs = {
@@ -383,54 +500,69 @@ class PerpSetupPaperMirror:
             "adaptive_exit_evidence_interval": "5m",
             "paper_execution_model_version": ADAPTIVE_EXECUTION_COHORT_VERSION,
         }
-        trade_id = await paper_journal.open_trade(
-            symbol=symbol,
-            side=side,
-            entry=limit_price,
-            stop=stop,
-            tp1=tp1,
-            tp2=tp2,
-            signal_price=float(row.get("signal_price") or mark),
-            signal_timestamp=str(row.get("timestamp") or _now()),
-            signal_score=float(row.get("signal_score") or 0.0),
-            source=SOURCE,
-            strategy=STRATEGY,
-            tier=str(row.get("tier") or "manual").lower(),
-            notes="Auto paper fill of Atlas manual resting L1 instruction; no live order placed.",
-            features=features,
-            counts_for_live=False,
-            fees_bps=DEFAULT_FEE_BPS_PER_SIDE,
-            slippage_bps=DEFAULT_SLIPPAGE_BPS_PER_SIDE,
-            trade_type="PAPER",
-        )
-        self._source_open_ids.add(str(trade_id))
-        self._opened_total += 1
-        fill_event = {
-            "event": "filled",
-            "setup_instance_id": instance,
-            "setup_key": row.get("setup_key"),
-            "symbol": symbol,
-            "side": side,
-            "limit_price": limit_price,
-            "touch_mark": mark,
-            "recovered_limit_cross": bool(row.get("recovered_limit_cross")),
-        }
-        self._append_pending_event(fill_event)
-        self._recent_terminal.append({
-            "timestamp": _now(),
-            "setup_instance_id": instance,
-            "setup_key": row.get("setup_key"),
-            "symbol": symbol,
-            "side": side,
-            "state": "FILLED",
-            "reason": None,
-            "mark": mark,
-        })
-        self._recent_terminal = self._recent_terminal[-20:]
-        self._pending.pop(instance, None)
-        self._mirrored_instances.add(instance)
-        self._terminal_pending_instances.add(instance)
-        return True
+        self._require_pending_persistence()
+        try:
+            intent = self._begin_intent("fill-intent", {"setup_instance_id": instance, "event": "fill_requested"})
+            self._active_fill_instance = instance
+            trade_id = await paper_journal.open_trade(
+                symbol=symbol,
+                side=side,
+                entry=limit_price,
+                stop=stop,
+                tp1=tp1,
+                tp2=tp2,
+                signal_price=float(row.get("signal_price") or mark),
+                signal_timestamp=str(row.get("timestamp") or _now()),
+                signal_score=float(row.get("signal_score") or 0.0),
+                source=SOURCE,
+                strategy=STRATEGY,
+                tier=str(row.get("tier") or "manual").lower(),
+                notes="Auto paper fill of Atlas manual resting L1 instruction; no live order placed.",
+                features=features,
+                counts_for_live=False,
+                fees_bps=DEFAULT_FEE_BPS_PER_SIDE,
+                slippage_bps=DEFAULT_SLIPPAGE_BPS_PER_SIDE,
+                trade_type="PAPER",
+            )
+            if not isinstance(trade_id, str) or not trade_id.strip():
+                raise OSError("Missing or invalid PAPER open acknowledgement")
+            self._source_open_ids.add(str(trade_id))
+            self._opened_total += 1
+            fill_event = {
+                "event": "filled",
+                "trade_id": str(trade_id),
+                "setup_instance_id": instance,
+                "setup_key": row.get("setup_key"),
+                "symbol": symbol,
+                "side": side,
+                "limit_price": limit_price,
+                "touch_mark": mark,
+                "recovered_limit_cross": bool(row.get("recovered_limit_cross")),
+            }
+            self._append_pending_event(fill_event)
+            self._recent_terminal.append({
+                "timestamp": _now(),
+                "setup_instance_id": instance,
+                "setup_key": row.get("setup_key"),
+                "symbol": symbol,
+                "side": side,
+                "state": "FILLED",
+                "reason": None,
+                "mark": mark,
+            })
+            self._recent_terminal = self._recent_terminal[-20:]
+            self._pending.pop(instance, None)
+            self._mirrored_instances.add(instance)
+            self._terminal_pending_instances.add(instance)
+            self._finish_intent("fill-intent", intent)
+            return True
+        except BaseException as error:
+            # An open may already be committed even when its acknowledgement fails.
+            # Retain durable intent; never infer cancellation or grant a retry.
+            self._persistence_error = error
+            raise
+        finally:
+            self._active_fill_instance = None
 
     def cancel_all_pending(self, *, reason: str = "ATLAS_SHUTDOWN") -> int:
         """Cancel pending limits only for an explicit non-restart shutdown reason.
@@ -524,20 +656,22 @@ class PerpSetupPaperMirror:
 
     @staticmethod
     def _fresh_mark_timestamp(setup: dict[str, Any]) -> bool:
-        raw = setup.get("mark_timestamp") or setup.get("price_timestamp") or setup.get("updated_at")
-        if not raw:
-            return True
-        try:
-            ts = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
-            if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=timezone.utc)
-            return (datetime.now(timezone.utc) - ts.astimezone(timezone.utc)).total_seconds() <= MAX_MARK_AGE_SEC
-        except Exception:
-            return False
+        from app.core.market_freshness import fresh_observation, observation_time
 
-    async def sync(self, setups: list[dict[str, Any]], price_map: dict[str, float]) -> dict[str, int]:
+        # Lifecycle/update timestamps cannot attest to the age of a market price.
+        stamps = [setup[key] for key in ("mark_timestamp", "price_timestamp") if key in setup]
+        return bool(stamps and all(fresh_observation(s, max_age=MAX_MARK_AGE_SEC) for s in stamps)
+                    and len({observation_time(s) for s in stamps}) == 1)
+
+    async def sync(self, setups: list[dict[str, Any]], price_map: dict[str, float], *,
+                   price_timestamps: dict[str, Any] | None = None) -> dict[str, int]:
         """Mirror every fresh manual resting-limit instruction into PAPER."""
         self._seed()
+        if price_timestamps is not None:
+            price_map = {symbol: price for symbol, price in price_map.items()
+                         if positive_price(price) and fresh_observation(price_timestamps.get(symbol))}
+            setups = [{**s, "mark_timestamp": price_timestamps.get(str(s.get("symbol") or "").upper())}
+                      for s in setups]
         opened = closed = marked = skipped = armed = filled = cancelled = recovered = expired = adaptive_updates = 0
 
         current_by_symbol = {
@@ -551,11 +685,14 @@ class PerpSetupPaperMirror:
                 continue
             symbol = str(trade.get("symbol") or "").upper()
             setup_for_symbol = current_by_symbol.get(symbol)
-            if setup_for_symbol is not None and not self._fresh_mark_timestamp(setup_for_symbol):
+            # Open positions outside discovery still have independent quote evidence.
+            evidence = ({"mark_timestamp": price_timestamps.get(symbol)}
+                        if price_timestamps is not None else setup_for_symbol or {})
+            if not self._fresh_mark_timestamp(evidence):
                 skipped += 1
                 continue
             mark = price_map.get(symbol)
-            if mark is None or mark <= 0:
+            if not positive_price(mark):
                 continue
             tid = str(trade.get("trade_id") or "")
             if not tid:
@@ -567,20 +704,19 @@ class PerpSetupPaperMirror:
             stop = float(adaptive.get("working_stop") or trade.get("working_stop") or trade.get("stop_price") or 0.0)
             target = float(adaptive.get("working_target") or trade.get("working_target") or trade.get("tp1_price") or 0.0)
             if adaptive.get("eligible") and hasattr(paper_journal, "note_adaptive_exit"):
-                try:
-                    changed = paper_journal.note_adaptive_exit(
-                        tid,
-                        working_stop=stop,
-                        working_target=target,
-                        stage=str(adaptive.get("stage") or "WARMUP"),
-                        policy_version=str(adaptive.get("policy_version") or ADAPTIVE_EXIT_POLICY_VERSION),
-                        reason=str(adaptive.get("reason") or ""),
-                        evidence=dict(adaptive.get("evidence") or {}),
-                    )
-                    if changed:
-                        adaptive_updates += 1
-                except Exception as exc:
-                    log.warning("Adaptive PAPER exit journal note failed", trade_id=tid, error=str(exc)[:160])
+                # Working stop/target evidence requires durable acknowledgement.
+                # Propagate failure before any exit or successful review summary.
+                changed = paper_journal.note_adaptive_exit(
+                    tid,
+                    working_stop=stop,
+                    working_target=target,
+                    stage=str(adaptive.get("stage") or "WARMUP"),
+                    policy_version=str(adaptive.get("policy_version") or ADAPTIVE_EXIT_POLICY_VERSION),
+                    reason=str(adaptive.get("reason") or ""),
+                    evidence=dict(adaptive.get("evidence") or {}),
+                )
+                if changed:
+                    adaptive_updates += 1
 
             hit_stop = (side == "LONG" and mark <= stop) or (side == "SHORT" and mark >= stop)
             hit_target = (side == "LONG" and mark >= target) or (side == "SHORT" and mark <= target)
@@ -654,8 +790,11 @@ class PerpSetupPaperMirror:
 
         for setup in setups:
             symbol = str(setup.get("symbol") or "").upper()
-            mark = float(price_map.get(symbol) or setup.get("price") or setup.get("mark") or 0.0)
-            if mark <= 0 or not self._fresh_mark_timestamp(setup):
+            if price_timestamps is not None:
+                mark = float(price_map.get(symbol) or 0.0)
+            else:
+                mark = float(price_map.get(symbol) or setup.get("price") or setup.get("mark") or 0.0)
+            if not positive_price(mark) or not self._fresh_mark_timestamp(setup):
                 skipped += 1
                 continue
             instruction = self._instruction(setup)
@@ -684,6 +823,8 @@ class PerpSetupPaperMirror:
                 elif before and instance not in self._pending:
                     cancelled += 1
             except Exception as exc:
+                if self._persistence_error is not None:
+                    raise
                 skipped += 1
                 log.warning("Auto paper resting-limit fill skipped", symbol=symbol, error=str(exc)[:160])
 

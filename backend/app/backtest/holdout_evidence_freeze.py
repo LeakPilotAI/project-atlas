@@ -4,14 +4,20 @@ Research-only. Copies the completed holdout summary into a compact immutable dec
 artifact. It does not modify thresholds, production state, PAPER/SHADOW, or live capital.
 """
 from __future__ import annotations
-import argparse,json
+
+import argparse
+import json
+import math
+import os
 from hashlib import sha256
 from pathlib import Path
+
+from app.core.durable_io import sync_parent, write_flushed
 
 
 def _load(path:Path)->dict:
     payload=json.loads(Path(path).read_text(encoding="utf-8"))
-    if not isinstance(payload,dict):raise ValueError("holdout summary must be a JSON object")
+    if not isinstance(payload,dict):raise ValueError("holdout summary must be a JSON object")  # noqa: TRY004 - preserve evidence-refusal compatibility
     return payload
 
 
@@ -24,7 +30,14 @@ def build(summary:dict)->dict:
     symbols=[x.get("symbol") for x in runs]
     if symbols!=["BTC","ETH","SOL"]:raise RuntimeError("expected exact BTC/ETH/SOL holdout runs")
     aggregate=summary.get("aggregate") or {}
-    expectancy=float(aggregate.get("expectancy_r",0.0));total=float(aggregate.get("total_r",0.0));trades=int(aggregate.get("trade_count",0))
+    trades=aggregate.get("trade_count")
+    expectancy=aggregate.get("expectancy_r");total=aggregate.get("total_r")
+    if type(trades) is not int or trades<0:raise ValueError("holdout trade count must be a nonnegative integer")
+    if any(type(value) not in (int,float) or not math.isfinite(value) for value in (expectancy,total)):
+        raise ValueError("holdout measured metrics must be finite numbers")
+    if trades==0 and (expectancy!=0 or total!=0):raise ValueError("empty holdout cannot have nonzero measured returns")
+    if summary.get("same_window_optimization_allowed") is True:raise RuntimeError("holdout optimization is not frozen")
+    expectancy=float(expectancy);total=float(total)
     result="POSITIVE" if trades>0 and expectancy>0 and total>0 else "FAILED_NEGATIVE"
     return {
         "mode":"HOLDOUT_EVIDENCE_FREEZE",
@@ -49,11 +62,28 @@ def build(summary:dict)->dict:
 
 
 def run(*,summary_path:Path,output:Path)->dict:
-    raw=Path(summary_path).read_bytes();payload=build(_load(summary_path));payload["holdout_summary_sha256"]=sha256(raw).hexdigest()
+    # Parse exactly the bytes whose digest is recorded, never reread a moving input.
+    raw=Path(summary_path).read_bytes()
+    summary=json.loads(raw)
+    if not isinstance(summary,dict):raise ValueError("holdout summary must be a JSON object")  # noqa: TRY004 - preserve evidence-refusal compatibility
+    payload=build(summary);payload["holdout_summary_sha256"]=sha256(raw).hexdigest()
     output=Path(output);output.parent.mkdir(parents=True,exist_ok=True)
-    text=json.dumps(payload,indent=2,sort_keys=True)+"\n"
-    if output.exists() and output.read_text(encoding="utf-8")!=text:raise RuntimeError("existing holdout evidence freeze differs")
-    output.write_text(text,encoding="utf-8");return payload
+    if output.is_symlink():raise RuntimeError("linked holdout output refused")
+    text=json.dumps(payload,indent=2,sort_keys=True,allow_nan=False)+"\n"
+    try:
+        # Exclusive publication: concurrent/new runs never truncate existing evidence.
+        with output.open("x",encoding="utf-8",newline="\n") as stream:
+            write_flushed(stream,text)
+    except FileExistsError:
+        # Re-establish the supported durability boundary without rewriting bytes.
+        with output.open("r+b") as stream:
+            existing=stream.read()
+            legacy=text.replace("\n","\r\n").encode("utf-8")
+            if existing not in (text.encode("utf-8"),legacy):
+                raise RuntimeError("existing holdout evidence freeze differs or is incomplete")
+            os.fsync(stream.fileno())
+    sync_parent(output)
+    return payload
 
 
 def main(argv=None)->int:

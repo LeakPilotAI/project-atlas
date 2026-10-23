@@ -88,6 +88,14 @@ class Settings(BaseSettings):
     # Don't fade a 5m runaway. Knives were the "terrible" book.
     perp_micro_max_extension_pct: float = 3.5
     perp_micro_scan_seconds: float = 60.0
+    atlas_gaming_mode: bool = False
+
+    @property
+    def effective_perp_micro_scan_seconds(self) -> float:
+        """Slow discovery in opt-in gaming mode; never slow paper management."""
+        if self.atlas_gaming_mode:
+            return max(float(self.perp_micro_scan_seconds), 180.0)
+        return float(self.perp_micro_scan_seconds)
     perp_micro_min_rr: float = 1.8
     # EXIT (paper management). Does not change entry RSI/ext/min R:R.
     # desk-v4 0.6R TP: n=65 WR 45% exp -0.18R — worse than 1.0R (desk-v3 -0.06R).

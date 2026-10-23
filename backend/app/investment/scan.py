@@ -28,7 +28,7 @@ from app.investment.history import load_bars
 from app.investment.ingest import FetchPlan, InvestmentIngest
 from app.investment.intelligence import evaluate_equity_move
 from app.investment.lookahead import as_of_date, filter_bars_as_of
-from app.investment.market_hours import session_status
+from app.investment.market_hours import next_scan_delay, session_bounds, session_status
 from app.investment.models import MeasuredValue, PortfolioInput
 from app.investment.move_store import append_move_event
 from app.investment.notify import deliver_investment_alert, format_equity_move_alert
@@ -243,7 +243,7 @@ def _age_ok(ts: Optional[datetime], ttl: float, now: datetime) -> bool:
         return False
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
-    return (now - ts).total_seconds() <= ttl
+    return 0 <= (now - ts).total_seconds() <= ttl
 
 
 def plan_fetches(
@@ -262,6 +262,10 @@ def plan_fetches(
     already have a prior snapshot. Fundamentals/valuation still refresh on their TTLs.
     """
     price_due = not _age_ok(state.last(symbol, "price"), settings.price_refresh_seconds, now)
+    bounds = session_bounds(now)
+    last_price = state.last(symbol, "price")
+    if session == "MARKET_OPEN" and bounds and (last_price is None or last_price < bounds[0]):
+        price_due = True  # A pre-open fetch cannot suppress the first regular-session quote.
     hist_due = not _age_ok(state.last(symbol, "history"), settings.history_refresh_seconds, now) or not has_history
     fund_due = not _age_ok(state.last(symbol, "fundamentals"), settings.fundamental_refresh_seconds, now)
     val_due = not _age_ok(state.last(symbol, "valuation"), settings.valuation_refresh_seconds, now)
@@ -485,7 +489,7 @@ class InvestmentScanner:
             self._task.cancel()
             try:
                 await self._task
-            except (asyncio.CancelledError, Exception):
+            except asyncio.CancelledError:
                 pass
             self._task = None
         log.info("investment scanner stopped")
@@ -499,9 +503,9 @@ class InvestmentScanner:
             except Exception as e:
                 log.warning("investment scan cycle failed; trading continues", error=str(e)[:200])
             cfg = self._cfg()
-            session = session_status(system_ok=self.system_ok)
-            delay = cfg.interval_open_seconds if session == "MARKET_OPEN" else cfg.interval_closed_seconds
-            delay = max(60.0, float(delay))
+            delay = next_scan_delay(_now(), open_seconds=cfg.interval_open_seconds,
+                                    closed_seconds=cfg.interval_closed_seconds,
+                                    system_ok=self.system_ok)
             try:
                 await asyncio.sleep(delay)
             except asyncio.CancelledError:
@@ -907,7 +911,4 @@ async def start_investment_scanner() -> None:
 
 
 async def stop_investment_scanner() -> None:
-    try:
-        await investment_scanner.stop()
-    except Exception:
-        pass
+    await investment_scanner.stop()

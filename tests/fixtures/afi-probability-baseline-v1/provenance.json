@@ -1,0 +1,7 @@
+{
+  "sha256": "c4775207fa2bc15cd58a55a59b710600664087e5b03cb48cfa5464cdcf0e3266",
+  "source": "logs\\diagnostics\\probability-baseline-20261020\\native-temp\\test_cli_outcome_corrections_a0\\probability-browser.json",
+  "synthetic_only": true,
+  "production_approved": false,
+  "calibration_established": false
+}

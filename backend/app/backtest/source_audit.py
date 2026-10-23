@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 from app.backtest.manifest import load_manifest
+from app.backtest.historical_availability_audit import audit_historical_availability
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,9 @@ class DatasetReadiness:
     ready:bool
     reasons:tuple[str,...]
     manifest_id:str|None=None
+    integrity_verified:bool=False
+    historical_availability_authenticated:bool=False
+    historical_availability_classification:str="INTEGRITY_REFUSED"
 
 
 def audit_dataset(symbol:str,dataset:Path,manifest:Path)->DatasetReadiness:
@@ -35,7 +39,18 @@ def audit_dataset(symbol:str,dataset:Path,manifest:Path)->DatasetReadiness:
         if payload.get("current_state_backfill_used") is not False:reasons.append("current-state backfill is forbidden")
         notes=str(payload.get("notes", ""))
         if "raw_sha256=" not in notes:reasons.append("raw source checksums missing from manifest notes")
-    return DatasetReadiness(symbol.upper(),str(dataset),str(manifest),not reasons,tuple(reasons),str(payload.get("manifest_id")) if payload else None)
+    availability = audit_historical_availability(dataset, manifest)
+    return DatasetReadiness(
+        symbol.upper(),
+        str(dataset),
+        str(manifest),
+        not reasons,
+        tuple(reasons),
+        str(payload.get("manifest_id")) if payload else None,
+        availability.integrity_verified,
+        availability.historical_availability_authenticated,
+        availability.classification,
+    )
 
 
 def audit_representative_bundle(root:Path,symbols:Iterable[str]=("BTC","ETH","SOL"),timeframe:str="5m")->dict:

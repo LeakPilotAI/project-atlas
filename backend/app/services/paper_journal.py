@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 import structlog
 
 from app.services.paper_accounting import is_administrative, recorded_net_r
+from app.core.durable_io import sync_parent, write_flushed
 
 log = structlog.get_logger(__name__)
 
@@ -114,19 +115,50 @@ class PaperJournal:
         self._load_open_from_disk()
 
     def flush(self) -> None:
-        """Append-only journal is already durable per write (flush+fsync)."""
-        return None
+        """Reconfirm file flushes; never clear a prior ambiguous append failure."""
+        self._require_persistence()
+        try:
+            with _APPEND_LOCK:
+                for path in (JOURNAL_PATH, CANDIDATE_PATH):
+                    if path.exists():
+                        if path.stat().st_size:
+                            with path.open("rb") as source:
+                                source.seek(-1, os.SEEK_END)
+                                if source.read(1) != b"\n":
+                                    raise OSError("Incomplete PAPER journal tail; flush refused")
+                        with path.open("a", encoding="utf-8") as handle:
+                            handle.flush()
+                            os.fsync(handle.fileno())
+        except BaseException as error:
+            self.first_fsync_error = error
+            raise
+
+    def _require_persistence(self) -> None:
+        if getattr(self, "first_fsync_error", None) is not None:
+            raise self.first_fsync_error
+        if self._malformed_lines:
+            raise OSError("Malformed PAPER journal requires evidence review before writing")
 
     def _append(self, path: Path, row: Dict[str, Any]) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
+        self._require_persistence()
         line = json.dumps(row, default=str) + "\n"
-        with _APPEND_LOCK, path.open("a", encoding="utf-8") as f:
-            f.write(line)
-            f.flush()
-            try:
-                os.fsync(f.fileno())
-            except OSError:
-                pass
+        try:
+            with _APPEND_LOCK:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                existed = path.exists()
+                if existed and path.stat().st_size:
+                    with path.open("rb") as source:
+                        source.seek(-1, os.SEEK_END)
+                        if source.read(1) != b"\n":
+                            raise OSError("Incomplete PAPER journal tail; append refused")
+                with path.open("a", encoding="utf-8") as handle:
+                    write_flushed(handle, line)
+                if not existed:
+                    sync_parent(path)
+        except BaseException as error:
+            # Name retained for Q compatibility; includes every ambiguous I/O failure.
+            self.first_fsync_error = error
+            raise
 
     async def log_candidate(
         self,
@@ -184,6 +216,7 @@ class PaperJournal:
         trade_type: str = "PAPER",
     ) -> str:
         """Entry is ALWAYS actual_entry_price (current mark)."""
+        self._require_persistence()
         ttype = str(trade_type or "PAPER").upper()
         if ttype == "PAPER":
             for existing_id, existing in self._open.items():
@@ -199,6 +232,7 @@ class PaperJournal:
                         symbol=symbol,
                         side=side,
                     )
+                    self.flush()
                     return existing_id
         tid = str(uuid.uuid4())[:12]
         actual_entry = float(entry)
@@ -256,8 +290,8 @@ class PaperJournal:
             "adaptive_stage": "STATIC",
             "be_armed": False,
         }
-        self._open[tid] = row
         self._append(JOURNAL_PATH, row)
+        self._open[tid] = row
         log.info(
             "paper open",
             trade_id=tid,
@@ -270,9 +304,11 @@ class PaperJournal:
         return tid
 
     def update_excursion(self, trade_id: str, mark: float, *, force: bool = False) -> None:
+        self._require_persistence()
         p = self._open.get(trade_id)
         if not p:
             return
+        p = dict(p)
         entry = float(p["actual_entry_price"])
         risk = float(p.get("risk_price") or abs(entry - float(p["stop_price"])) or 1e-12)
         side = p["side"]
@@ -309,12 +345,15 @@ class PaperJournal:
                     "trade_type": p.get("trade_type", "PAPER"),
                 },
             )
+        self._open[trade_id] = p
 
     def note_be_armed(self, trade_id: str, working_stop: float) -> None:
         """Append-only BE arm. Does not rewrite the open event."""
+        self._require_persistence()
         p = self._open.get(trade_id)
         if not p:
             return
+        p = dict(p)
         p["be_armed"] = True
         p["working_stop"] = float(working_stop)
         self._append(
@@ -332,6 +371,7 @@ class PaperJournal:
                 "trade_type": p.get("trade_type", "PAPER"),
             },
         )
+        self._open[trade_id] = p
 
     def note_adaptive_exit(
         self,
@@ -350,9 +390,11 @@ class PaperJournal:
         keeps the 10-second PAPER review loop from flooding the journal with
         identical evidence rows.
         """
+        self._require_persistence()
         p = self._open.get(trade_id)
         if not p:
             return False
+        p = dict(p)
         try:
             new_stop = float(working_stop)
             new_target = float(working_target)
@@ -400,11 +442,14 @@ class PaperJournal:
             "trade_type": p.get("trade_type", "PAPER"),
         }
         self._append(JOURNAL_PATH, payload)
+        self._open[trade_id] = p
         return True
 
     def persist_open_marks(self) -> int:
         """Force a mark event for every in-memory open. Used on graceful shutdown."""
+        self._require_persistence()
         n = 0
+        failures = []
         for tid, p in list(self._open.items()):
             mark = p.get("mark")
             if mark is None:
@@ -412,8 +457,10 @@ class PaperJournal:
             try:
                 self.update_excursion(tid, float(mark), force=True)
                 n += 1
-            except Exception:
-                pass
+            except Exception as error:  # noqa: BLE001 - attempt remaining marks
+                failures.append(error)
+        if failures:
+            raise ExceptionGroup("PAPER shutdown marks failed", failures)
         return n
 
     def interrupt_open_for_shutdown(self) -> List[str]:
@@ -423,6 +470,7 @@ class PaperJournal:
         become a phantom fill/close after restart. Historical completed trades stay
         untouched. Interrupted rows are excluded from performance tallies.
         """
+        self._require_persistence()
         interrupted: List[str] = []
         for tid, p in list(self._open.items()):
             if str(p.get("trade_type") or "PAPER").upper() != "PAPER":
@@ -568,8 +616,10 @@ class PaperJournal:
         pnl_r: Optional[float] = None,
         exit_reason: Optional[str] = None,
     ) -> Dict[str, Any]:
+        self._require_persistence()
         disk_open, existing_close = self._scan_trade(trade_id)
         if existing_close:
+            self.flush()
             self._open.pop(trade_id, None)
             return existing_close
         p = self._open.get(trade_id) or disk_open
@@ -682,6 +732,7 @@ class PaperJournal:
         prior_closed: int = 0,
     ) -> Dict[str, Any]:
         """Append a session marker. Never deletes or rewrites closes."""
+        self._require_persistence()
         row = {
             "event": "session_start",
             "session_id": session_id,
@@ -705,6 +756,7 @@ class PaperJournal:
         Writes SESSION_ROLL closes. Does not delete rows. Rolls are excluded
         from session and all-time performance tallies — they are not stop-outs.
         """
+        self._require_persistence()
         rolled: List[str] = []
         for tid, p in list(self._open.items()):
             if str(p.get("trade_type") or "PAPER").upper() == "TEST":
@@ -747,8 +799,10 @@ class PaperJournal:
         label: str = "Desktop testing window",
         note: str = "New testing window. Prior PAPER closes stay in the journal and all-time research.",
     ) -> Dict[str, Any]:
+        self._require_persistence()
         cur = self.current_session()
         if cur.get("session_id") == session_id and cur.get("started_at"):
+            self.flush()
             return {"created": False, "rolled_open": [], **cur}
         prior = 0
         if JOURNAL_PATH.exists():

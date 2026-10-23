@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from app.backtest.historical import HistoricalBar
+from app.backtest.historical import HistoricalBar, _validate_bars
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,9 @@ def _row_to_context(row:dict,source:str)->HistoricalContext:
     has_trend=row.get("htf_trend") not in (None,"")
     has_legacy=row.get("htf_regime_aligned") not in (None,"")
     if not has_trend and not has_legacy:raise ValueError(f"{source}: missing required HTF context: htf_trend")
+    numeric_fields=("open","high","low","close","volume","open_interest_usd","volume_24h_usd","funding_rate")
+    if any(isinstance(row.get(key),bool) for key in numeric_fields):
+        raise ValueError(f"{source}: boolean numeric evidence refused")
     try:
         bar=HistoricalBar(
             timestamp=str(row["timestamp"]),symbol=str(row["symbol"]).upper(),timeframe=str(row["timeframe"]),
@@ -53,7 +57,8 @@ def _row_to_context(row:dict,source:str)->HistoricalContext:
         trend=_trend(row["htf_trend"]) if has_trend else None
         aligned=_bool(row["htf_regime_aligned"]) if has_legacy else None
     except (TypeError,ValueError) as exc:raise ValueError(f"{source}: invalid field value: {exc}") from exc
-    if oi<0 or vol24<0:raise ValueError(f"{source}: OI/24h volume cannot be negative")
+    if not math.isfinite(oi) or not math.isfinite(vol24) or oi<0 or vol24<0:
+        raise ValueError(f"{source}: OI/24h volume must be finite and nonnegative")
     return HistoricalContext(bar,oi,vol24,aligned,trend)
 
 
@@ -75,8 +80,7 @@ def load_historical_contexts(path:Path)->list[HistoricalContext]:
     else:raise ValueError("historical dataset must be .csv, .jsonl, or .ndjson")
     if not rows:raise ValueError("historical dataset is empty")
     contexts=[_row_to_context(row,f"{path}:{idx}") for idx,row in enumerate(rows,2 if suffix==".csv" else 1)]
-    timestamps=[x.bar.timestamp for x in contexts]
-    if timestamps!=sorted(timestamps) or len(timestamps)!=len(set(timestamps)):raise ValueError("historical dataset timestamps must be unique and ascending")
+    _validate_bars([x.bar for x in contexts])
     identities={(x.bar.symbol,x.bar.timeframe) for x in contexts}
     if len(identities)!=1:raise ValueError("historical dataset must contain exactly one symbol/timeframe")
     return contexts

@@ -343,14 +343,16 @@ def test_e128_docker_labels_validate_name_service_project_and_compose_root(
         "com.docker.compose.project": project,
         "com.docker.compose.service": service,
         "com.docker.compose.project.working_dir": root,
+        "com.docker.compose.oneoff": "False",
     }
     if compose_file is not None:
         labels["com.docker.compose.project.config_files"] = compose_file
     payload = json.dumps(
         {
+            "Id": "a" * 64,
             "Name": name,
             "Config": {"Labels": labels},
-            "State": {"Running": True, "Health": {"Status": "healthy"}},
+            "State": {"Running": True, "Status": "running", "Health": {"Status": "healthy"}},
         }
     )
     _assert_container_parser_result(payload, root, service, should_pass)

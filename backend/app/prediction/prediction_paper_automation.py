@@ -11,6 +11,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from functools import wraps
 from typing import Any
 
 from app.alerts.discord import get_subscriber_ids, is_discord_ready
@@ -20,11 +21,13 @@ from app.prediction.paper_engine import (
     FEE_MODEL_VERSION,
     PAPER_ENGINE_VERSION,
     PredictionPaperError,
+    PredictionPaperJournal,
     RepricingConfig,
     _d,
     _fixed,
     _iso,
     _parse_dt,
+    _research_event_window,
     evaluate_pre_event_repricing,
     prediction_paper_journal,
 )
@@ -64,6 +67,26 @@ class PredictionAutomationConfig:
     quantity: Decimal = DEFAULT_QUANTITY
 
 
+def _persistence_guard(lane):
+    def decorate(method):
+        @wraps(method)
+        async def wrapped(self, *args, **kwargs):
+            self._require_persistence_lane(lane)
+            try:
+                result = await method(self, *args, **kwargs)
+                self._require_persistence_lane(lane)
+                return result
+            except Exception as error:
+                failure = error if PredictionPaperJournal.is_persistence_failure(error) else self._known_persistence_failure(lane)
+                if failure is not None:
+                    self._record_persistence_failure(lane, failure)
+                    if failure is not error:
+                        raise failure from error
+                raise
+        return wrapped
+    return decorate
+
+
 class PredictionPaperAutomation:
     """Own bounded candidate scanning and mandatory PAPER auto-flat."""
 
@@ -79,6 +102,7 @@ class PredictionPaperAutomation:
         self._last_successful_scan: dict[str, Any] | None = None
         self._last_flat = self._empty_flat_state()
         self._flat_blocked = False
+        self._persistence_failures: dict[str, BaseException] = {}
 
     @staticmethod
     def _empty_scan_state() -> dict[str, Any]:
@@ -113,6 +137,30 @@ class PredictionPaperAutomation:
             self._flat_lock = asyncio.Lock()
         return self._flat_lock
 
+    @staticmethod
+    def _known_persistence_failure(lane):
+        probe = getattr(prediction_paper_journal, "persistence_failure", None)
+        failure = probe(include_candidates=lane == "scanner") if callable(probe) else None
+        if failure is not None and not isinstance(failure, BaseException):
+            from app.prediction.paper_engine import PredictionPaperPersistenceError
+            return PredictionPaperPersistenceError("Invalid persistence-refusal evidence")
+        return failure
+
+    def _record_persistence_failure(self, lane, error):
+        with self._state_lock:
+            self._persistence_failures.setdefault(lane, error)
+            if lane == "scanner":
+                self._last_scan = {**self._last_scan, "persistence_state":"BLOCKED", "last_error":type(error).__name__}
+            else:
+                self._flat_blocked = True
+                self._last_flat = {**self._last_flat, "last_action":"PERSISTENCE_BLOCKED", "last_reason":"PERSISTENCE_FAILURE", "blocked":True, "last_error":type(error).__name__}
+
+    def _require_persistence_lane(self, lane):
+        failure = self._persistence_failures.get(lane) or self._known_persistence_failure(lane)
+        if failure is not None:
+            self._record_persistence_failure(lane, failure)
+            raise failure
+
     async def start(self) -> None:
         if self.running:
             return
@@ -129,11 +177,22 @@ class PredictionPaperAutomation:
         tasks = [t for t in (self._scanner_task, self._flat_task) if t is not None]
         for task in tasks:
             task.cancel()
+        failures = []
         for task in tasks:
             try:
                 await task
-            except (asyncio.CancelledError, Exception):
+            except asyncio.CancelledError:
                 pass
+            except Exception as error:  # noqa: BLE001 - preserve each task failure
+                failures.append(error)
+        with self._state_lock:
+            persistence = list(self._persistence_failures.values())
+        persistence.extend(self._known_persistence_failure(lane) for lane in ("scanner", "auto_flat"))
+        for error in persistence:
+            if error is not None and not any(error is known for known in failures):
+                failures.append(error)
+        if failures:
+            raise BaseExceptionGroup("Prediction task shutdown failed", failures)
         self._scanner_task = None
         self._flat_task = None
         self._scan_lock = None
@@ -148,7 +207,14 @@ class PredictionPaperAutomation:
             )
             flat = dict(self._last_flat)
             blocked = bool(self._flat_blocked)
+        failures = {lane:self._persistence_failures.get(lane) or self._known_persistence_failure(lane) for lane in ("scanner", "auto_flat")}
+        if failures["auto_flat"] is not None:
+            blocked = True
+            flat.update(blocked=True, last_action="PERSISTENCE_BLOCKED", last_error=type(failures["auto_flat"]).__name__)
         return {
+            "persistence": {"lanes":{lane:"BLOCKED" if error is not None else "NO_KNOWN_FAILURE" for lane,error in failures.items()},
+                            "error_types":{lane:type(error).__name__ for lane,error in failures.items() if error is not None},
+                            "durable_history_verified":False},
             "version": AUTOMATION_VERSION,
             "running": self.running,
             "scanner": scan,
@@ -192,6 +258,7 @@ class PredictionPaperAutomation:
             "policy": policy_snapshot(),
         }
 
+    @_persistence_guard("scanner")
     async def run_scan_once(self, *, now: datetime | None = None) -> dict[str, Any]:
         scan_lock = self._scan_guard()
         if scan_lock.locked():
@@ -329,10 +396,15 @@ class PredictionPaperAutomation:
                         # create an execution side effect. Failed delivery is retryable.
                         state["eligible_alerts_failed"] = len(eligible)
                         state["eligible_alert_last_error"] = type(exc).__name__
+                self._require_persistence_lane("scanner")
                 success = True
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
+                if PredictionPaperJournal.is_persistence_failure(exc):
+                    state.update(persistence_state="BLOCKED", last_error=type(exc).__name__, error_count=state["error_count"] + 1)
+                    self._record_persistence_failure("scanner", exc)
+                    raise
                 state["error_count"] += 1
                 if isinstance(exc, asyncio.TimeoutError):
                     state["timeout_count"] += 1
@@ -443,12 +515,11 @@ class PredictionPaperAutomation:
             reasons.append("MARKET_NOT_OPEN")
         if market.get("is_provisional") is True:
             reasons.append("PROVISIONAL_MARKET")
-        occurrence = _parse_dt((market.get("timing") or {}).get("occurrence_datetime"))
+        occurrence, flat_deadline = _research_event_window(market, cfg.flat_buffer_minutes)
         if occurrence is None:
             reasons.append("MISSING_OCCURRENCE_DATETIME")
         else:
             minutes_to_start = (occurrence - now).total_seconds() / 60.0
-            flat_deadline = occurrence - timedelta(minutes=cfg.flat_buffer_minutes)
             if minutes_to_start <= cfg.min_entry_lead_minutes:
                 reasons.append("TOO_CLOSE_TO_EVENT_START")
             if now >= flat_deadline:
@@ -472,12 +543,8 @@ class PredictionPaperAutomation:
         cycle_id: str,
         now: datetime,
     ) -> dict[str, Any]:
-        occurrence = _parse_dt((market.get("timing") or {}).get("occurrence_datetime"))
         cfg = RepricingConfig()
-        flat_deadline = (
-            occurrence - timedelta(minutes=cfg.flat_buffer_minutes)
-            if occurrence else None
-        )
+        occurrence, flat_deadline = _research_event_window(market, cfg.flat_buffer_minutes)
         return {
             "engine_version": PAPER_ENGINE_VERSION,
             "automation_version": AUTOMATION_VERSION,
@@ -565,6 +632,8 @@ class PredictionPaperAutomation:
                 side=side,
                 quantity=self.config.quantity,
                 now=now,
+                history_start_ts=start_ts,
+                history_end_ts=end_ts,
             )
             evaluation["automation_version"] = AUTOMATION_VERSION
             evaluation["evaluation_stage"] = "FULL"
@@ -572,6 +641,7 @@ class PredictionPaperAutomation:
             evaluations.append(evaluation)
         return evaluations
 
+    @_persistence_guard("auto_flat")
     async def run_auto_flat_once(
         self, *, now: datetime | None = None
     ) -> dict[str, Any]:
@@ -671,11 +741,15 @@ class PredictionPaperAutomation:
                     self._flat_blocked = False
                     self._last_flat = dict(state)
                 return state
-            except asyncio.TimeoutError:
+            except asyncio.TimeoutError as exc:
+                if PredictionPaperJournal.is_persistence_failure(exc):
+                    raise
                 return self._record_flat_block(
                     opened, state, "AUTO_FLAT_PROVIDER_TIMEOUT", current
                 )
             except PredictionPaperError as exc:
+                if PredictionPaperJournal.is_persistence_failure(exc):
+                    raise
                 raw = str(exc)
                 if raw == "INSUFFICIENT_EXECUTABLE_DEPTH":
                     reason = "AUTO_FLAT_BLOCKED_INSUFFICIENT_DEPTH"
@@ -695,6 +769,8 @@ class PredictionPaperAutomation:
                     error=str(exc),
                 )
             except Exception as exc:
+                if PredictionPaperJournal.is_persistence_failure(exc):
+                    raise
                 return self._record_flat_block(
                     opened,
                     state,
@@ -763,8 +839,9 @@ class PredictionPaperAutomation:
                 await self.run_scan_once()
             except asyncio.CancelledError:
                 raise
-            except Exception:
-                pass
+            except Exception as error:
+                if PredictionPaperJournal.is_persistence_failure(error) or any(error is known for known in self._persistence_failures.values()):
+                    raise
             await asyncio.sleep(
                 max(5.0, float(self.config.scan_interval_seconds))
             )
@@ -775,8 +852,9 @@ class PredictionPaperAutomation:
                 await self.run_auto_flat_once()
             except asyncio.CancelledError:
                 raise
-            except Exception:
-                pass
+            except Exception as error:
+                if PredictionPaperJournal.is_persistence_failure(error) or any(error is known for known in self._persistence_failures.values()):
+                    raise
             await asyncio.sleep(
                 max(1.0, float(self.config.flat_interval_seconds))
             )

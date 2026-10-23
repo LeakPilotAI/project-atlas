@@ -26,18 +26,19 @@ def _market(now, *, volume="500", oi="300"):
 
 def _book():
     return {
-        "yes": {"bids": [{"price_dollars": "0.50", "quantity_contracts": "100"}],
+        "yes": {"bids": [{"price_dollars": "0.40", "quantity_contracts": "100"}],
                 "asks": [{"price_dollars": "0.42", "quantity_contracts": "100"}],
-                "best_bid_dollars": "0.50", "best_ask_dollars": "0.42", "spread_dollars": "0.02"},
-        "no": {"bids": [{"price_dollars": "0.50", "quantity_contracts": "100"}],
+                "best_bid_dollars": "0.40", "best_ask_dollars": "0.42", "spread_dollars": "0.02"},
+        "no": {"bids": [{"price_dollars": "0.40", "quantity_contracts": "100"}],
                "asks": [{"price_dollars": "0.42", "quantity_contracts": "100"}],
-               "best_bid_dollars": "0.50", "best_ask_dollars": "0.42", "spread_dollars": "0.02"},
+               "best_bid_dollars": "0.40", "best_ask_dollars": "0.42", "spread_dollars": "0.02"},
     }
 
 
-def _candles():
-    return [{"yes_bid": {"close_dollars": "0.50", "high_dollars": "0.60"},
-             "yes_ask": {"close_dollars": "0.52", "low_dollars": "0.40"}} for _ in range(6)]
+def _candles(now):
+    return [{"end_period_ts": int((now-timedelta(minutes=6-i)).timestamp()),
+             "yes_bid": {"close_dollars": "0.50", "high_dollars": "0.60"},
+             "yes_ask": {"close_dollars": "0.52", "low_dollars": "0.40"}} for i in range(6)]
 
 
 def _journal(tmp_path):
@@ -59,7 +60,7 @@ def _open(journal, now, flat_minutes=0):
                        "notional_dollars": "4.20", "estimated_taker_fee_dollars": "0.17",
                        "depth_slippage_dollars_per_contract": "0",
                        "levels": [{"price_dollars": "0.42", "quantity_contracts": "10"}]},
-    })
+    }, now=now-timedelta(hours=2))
 
 
 def test_scanner_prefilters_before_expensive_reads_and_never_opens(monkeypatch, tmp_path):
@@ -75,7 +76,7 @@ def test_scanner_prefilters_before_expensive_reads_and_never_opens(monkeypatch, 
         return {"orderbook": _book()}
     async def candles(*args, **kwargs):
         calls["candles"] += 1
-        return {"candlesticks": _candles()}
+        return {"candlesticks": _candles(now)}
 
     monkeypatch.setattr(automation_module.kalshi_public, "get_markets", markets)
     monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
@@ -118,7 +119,7 @@ def test_scanner_paginates_metadata_pool_and_prioritizes_viable_market(monkeypat
 
     async def candles(*args, **kwargs):
         calls["candles"].append(kwargs["ticker"])
-        return {"candlesticks": _candles()}
+        return {"candlesticks": _candles(now)}
 
     monkeypatch.setattr(automation_module.kalshi_public, "get_markets", markets)
     monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
@@ -155,7 +156,7 @@ def test_scanner_accepts_provider_active_status_from_open_discovery(monkeypatch,
     async def book(*args, **kwargs):
         return {"orderbook": _book()}
     async def candles(*args, **kwargs):
-        return {"candlesticks": _candles()}
+        return {"candlesticks": _candles(now)}
 
     monkeypatch.setattr(automation_module.kalshi_public, "get_markets", markets)
     monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
@@ -182,7 +183,7 @@ def test_scanner_evaluates_yes_and_no_with_one_market_data_read(monkeypatch, tmp
         return {"orderbook": _book()}
     async def candles(*args, **kwargs):
         calls["candles"] += 1
-        return {"candlesticks": _candles()}
+        return {"candlesticks": _candles(now)}
 
     monkeypatch.setattr(automation_module.kalshi_public, "get_markets", markets)
     monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
@@ -208,7 +209,7 @@ def test_scanner_notifies_eligible_candidates_without_opening(monkeypatch, tmp_p
         return {"orderbook": _book()}
 
     async def candles(*args, **kwargs):
-        return {"candlesticks": _candles()}
+        return {"candlesticks": _candles(now)}
 
     def eligible_eval(*, market, side, quantity, **kwargs):
         return {
@@ -276,7 +277,7 @@ def test_candidate_requires_full_executable_exit_depth_at_entry():
     evaluation = evaluate_pre_event_repricing(
         market=market,
         orderbook=book_data,
-        candles=_candles(),
+        candles=_candles(now),
         side="YES",
         quantity=Decimal("10"),
         now=now,
@@ -373,7 +374,7 @@ def test_scanner_isolates_market_failure_and_persists_error_candidates(monkeypat
             raise RuntimeError("synthetic provider failure")
         return {"orderbook": _book()}
     async def candles(*args, **kwargs):
-        return {"candlesticks": _candles()}
+        return {"candlesticks": _candles(now)}
 
     monkeypatch.setattr(automation_module.kalshi_public, "get_markets", markets)
     monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
@@ -422,7 +423,7 @@ def test_auto_flat_event_start_violation_never_manufactures_settlement_fill(monk
                        "notional_dollars": "4.20", "estimated_taker_fee_dollars": "0.17",
                        "depth_slippage_dollars_per_contract": "0",
                        "levels": [{"price_dollars": "0.42", "quantity_contracts": "10"}]},
-    })
+    }, now=now-timedelta(hours=2))
     monkeypatch.setattr(automation_module, "prediction_paper_journal", journal)
 
     async def forbidden(*args, **kwargs):
@@ -468,7 +469,7 @@ def test_expired_unclosed_preserves_no_liquidity_failure_without_fake_pnl(monkey
                        "notional_dollars": "4.20", "estimated_taker_fee_dollars": "0.17",
                        "depth_slippage_dollars_per_contract": "0",
                        "levels": [{"price_dollars": "0.42", "quantity_contracts": "10"}]},
-    })
+    }, now=now-timedelta(hours=2))
     journal.log_event({
         "event": "auto_flat_blocked",
         "trade_id": opened["trade_id"],
@@ -511,7 +512,7 @@ def test_terminal_unclosed_is_not_counted_as_active_or_closed_trade(tmp_path):
                        "notional_dollars": "4.20", "estimated_taker_fee_dollars": "0.17",
                        "depth_slippage_dollars_per_contract": "0",
                        "levels": [{"price_dollars": "0.42", "quantity_contracts": "10"}]},
-    })
+    }, now=now-timedelta(hours=2))
     terminal = journal.expire_unclosed(opened=opened, now=now + timedelta(hours=2))
     snapshot = journal.snapshot()
     assert terminal["status"] == "EXPIRED_UNCLOSED"

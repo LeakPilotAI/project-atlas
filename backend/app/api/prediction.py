@@ -175,6 +175,8 @@ async def _build_prediction_paper_evaluation(
         side=clean_side,
         quantity=quantity,
         now=now,
+        history_start_ts=start_ts,
+        history_end_ts=end_ts,
     )
 
 

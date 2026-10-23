@@ -4,6 +4,28 @@
 let atlasRuntimeInstalled=false;
 let atlasRuntimeReady=false;
 let atlasRuntimeFailures=0;
+const atlasRuntimeResponses=new Map();
+
+function atlasDataFreshness(data, now=Date.now()){
+  const proof=data?.data_freshness;
+  if(!proof)return data?.data_status==='STALE'?'stale':'connected';
+  if(proof.status==='STALE')return 'stale';
+  if(proof.status!=='HEALTHY')return 'unavailable';
+  const raw=proof.observed_at, stamp=Date.parse(raw), limit=Number(proof.max_age_seconds);
+  if(typeof raw!=='string'||!/(Z|[+-]\d\d:\d\d)$/.test(raw)||!Number.isFinite(stamp)||
+     !Number.isFinite(limit)||limit<=0||limit>900||stamp>now)return 'unavailable';
+  if(proof.market_count!==undefined&&(!(proof.market_count>0)||proof.fresh_markets!==proof.market_count))return 'unavailable';
+  return now-stamp<=limit*1000?'ready':'stale';
+}
+
+function atlasRenderResponseState(){
+  const rows=[...atlasRuntimeResponses.values()];
+  const states=rows.map(row=>row.error?'error':atlasDataFreshness(row.data));
+  const state=['error','stale','unavailable','connected','ready'].find(s=>states.includes(s))||'connected';
+  const messages={error:'Data read failed · retrying',stale:'Market data stale',
+    unavailable:'Market data unavailable',connected:'Connected · feed freshness unverified',ready:'Market data fresh'};
+  atlasSetSurfaceState(state,messages[state]);
+}
 
 function atlasVisible(){
   return !document.hidden && (!window.frameElement || window.frameElement.closest('.pane')?.classList.contains('on') !== false);
@@ -27,6 +49,7 @@ function atlasInstallRuntimeState(){
     #atlas-runtime-state[data-state="degraded"]{color:#efb35a;border-color:#73552a;opacity:1}
     #atlas-runtime-state[data-state="error"]{color:#ff5268;border-color:#7f2d3d;opacity:1}
     #atlas-runtime-state[data-state="stale"]{color:#efb35a;border-color:#73552a;opacity:1}
+    #atlas-runtime-state[data-state="unavailable"]{color:#efb35a;border-color:#73552a;opacity:1}
     #atlas-runtime-state[data-state="ready"]{opacity:.48}
     :focus-visible{outline:2px solid rgba(53,229,238,.8)!important;outline-offset:2px!important}
     @media(max-width:900px){
@@ -66,10 +89,12 @@ async function atlasFetch(url, timeout=6500){
     const data=await response.json();
     atlasRuntimeReady=true;
     atlasRuntimeFailures=0;
-    atlasSetSurfaceState('ready','Live data ready');
+    atlasRuntimeResponses.set(url,{data});
+    atlasRenderResponseState();
     return {ok:true,json:async()=>data};
   } catch(error) {
     atlasRuntimeFailures+=1;
+    atlasRuntimeResponses.set(url,{error:true});
     const aborted=error && (error.name==='AbortError' || String(error).includes('AbortError'));
     atlasSetSurfaceState(
       atlasRuntimeReady?'degraded':'error',
@@ -89,7 +114,7 @@ function atlasPoll(refresh, interval){
     busy=true;
     try{
       await refresh();
-      if(atlasRuntimeReady && atlasRuntimeFailures===0)atlasSetSurfaceState('ready','Live data ready');
+      if(atlasRuntimeReady)atlasRenderResponseState();
     }catch(error){
       atlasSetSurfaceState(atlasRuntimeReady?'degraded':'error','Refresh failed · retrying');
     }finally{

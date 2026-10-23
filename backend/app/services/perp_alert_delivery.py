@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from datetime import UTC, datetime
 from typing import Any, Awaitable, Callable, Dict, Iterable, Optional
 
 from app.alerts.discord import send_discord_alert
@@ -40,19 +41,19 @@ def build_perp_alert(setup: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("invalid manual perp alert candidate")
 
     description = (
-        f"**{tier} · {state} · score {score:.1f}/100**\n"
+        f"**{tier} Â· {state} Â· score {score:.1f}/100**\n"
         f"Mark: `{_fmt_price(setup.get('price') or setup.get('mark'))}`\n"
-        f"L1 `{_fmt_price(levels.get('l1'))}` · L2 `{_fmt_price(levels.get('l2'))}` · "
+        f"L1 `{_fmt_price(levels.get('l1'))}` Â· L2 `{_fmt_price(levels.get('l2'))}` Â· "
         f"L3 `{_fmt_price(levels.get('l3'))}`\n"
         f"Stop `{_fmt_price(levels.get('stop'))}`\n"
-        f"TP1 `{_fmt_price(levels.get('tp1'))}` · TP2 `{_fmt_price(levels.get('tp2'))}`\n"
+        f"TP1 `{_fmt_price(levels.get('tp1'))}` Â· TP2 `{_fmt_price(levels.get('tp2'))}`\n"
         f"Action: {next_action}\n"
         f"Reason: {reason}\n\n"
-        "_Hyperliquid only · manual execution · no order was placed._"
+        "_Hyperliquid only Â· manual execution Â· no order was placed._"
     )
     return {
         "symbol": symbol,
-        "title": f"Atlas Perp · {tier} {symbol} {side}",
+        "title": f"Atlas Perp Â· {tier} {symbol} {side}",
         "description": description,
         "price": float(setup.get("price") or setup.get("mark") or 0.0),
         "severity": "HIGH" if tier == "PRIME" else "MEDIUM",
@@ -109,7 +110,17 @@ class PerpAlertDeliveryService:
         self.running = False
         self.last_result: Dict[str, int] = {"attempted": 0, "delivered": 0, "acknowledged": 0, "failed": 0}
         self.last_paper_result: Dict[str, int] = {"opened": 0, "closed": 0, "marked": 0, "skipped": 0}
-        self.last_reconciliation_result: Dict[str, Any] = {"attempted": 0, "delivered": 0, "reconciliation_ok": True}
+        self.last_successful_paper_result: dict[str, int] = {}
+        self.last_paper_state = "NOT_RUN"
+        self.last_paper_error: str | None = None
+        self.last_paper_finished_at: str | None = None
+        self.last_paper_successful_at: str | None = None
+        self.last_reconciliation_result: Dict[str, Any] = {}
+        self.last_successful_reconciliation_result: dict[str, Any] = {}
+        self.last_reconciliation_state = "NOT_RUN"
+        self.last_reconciliation_error: str | None = None
+        self.last_reconciliation_finished_at: str | None = None
+        self.last_reconciliation_successful_at: str | None = None
         self.last_evidence_result: Dict[str, Any] = {"attempted": 0, "delivered": 0, "reason": "NOT_RUN"}
         self.last_alpha_result: Dict[str, Any] = {"attempted": 0, "delivered": 0, "pending": 0}
         self.last_error: Optional[str] = None
@@ -153,25 +164,64 @@ class PerpAlertDeliveryService:
         return result
 
     async def paper_once(self) -> Dict[str, int]:
-        from app.services.perp_manual_service import perp_manual_service
-        from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
+        self.last_paper_state = "IN_PROGRESS"
+        self.last_paper_result = {}
+        self.last_paper_error = None
+        self.last_paper_finished_at = None
+        try:
+            from app.services.perp_manual_service import perp_manual_service
+            from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
 
-        snapshot = perp_manual_service.snapshot()
-        setups = list(snapshot.get("setups") or [])
-        price_map = {
-            str(row.get("symbol") or "").upper(): float(row.get("price") or 0.0)
-            for row in list(snapshot.get("markets") or [])
-            if row.get("symbol") and float(row.get("price") or 0.0) > 0
+            snapshot = perp_manual_service.snapshot()
+            setups = list(snapshot.get("setups") or [])
+            price_map = {
+                str(row.get("symbol") or "").upper(): float(row.get("price") or 0.0)
+                for row in list(snapshot.get("markets") or [])
+                if row.get("symbol") and float(row.get("price") or 0.0) > 0
+            }
+            timestamps = {str(row.get("symbol") or "").upper(): row.get("timestamp")
+                          for row in snapshot.get("markets") or []}
+            result = await perp_setup_paper_mirror.sync(setups, price_map, price_timestamps=timestamps)
+            if not isinstance(result, dict):
+                raise TypeError("Missing PAPER review result")
+        except BaseException as error:
+            self.last_paper_state = "FAILED" if isinstance(error, Exception) else "INTERRUPTED"
+            # Diagnostics expose the class only, never private paths or exception values.
+            self.last_paper_error = type(error).__name__[:64]
+            raise
+        else:
+            self.last_paper_result = dict(result)
+            self.last_successful_paper_result = dict(result)
+            self.last_paper_state = "COMPLETE"
+            self.last_paper_successful_at = datetime.now(UTC).isoformat()
+            return result
+        finally:
+            self.last_paper_finished_at = datetime.now(UTC).isoformat()
+
+    def paper_review_status(self) -> dict[str, Any]:
+        """Last review evidence only; neither current feed health nor rollback proof."""
+        return {
+            "state": self.last_paper_state,
+            "counts": dict(self.last_paper_result) if self.last_paper_state == "COMPLETE" else None,
+            "error_class": self.last_paper_error,
+            "finished_at": self.last_paper_finished_at,
+            "last_successful_counts": dict(self.last_successful_paper_result),
+            "last_successful_at": self.last_paper_successful_at,
         }
-        result = await perp_setup_paper_mirror.sync(setups, price_map)
-        self.last_paper_result = result
-        return result
 
     def reconciliation_status(self) -> Dict[str, Any]:
         return {
             "running": bool(self.running),
             "last_result": dict(self.last_reconciliation_result),
             "last_error": self.last_error,
+            "paper_review": self.paper_review_status(),
+            "reconciliation_review": {
+                "state": self.last_reconciliation_state,
+                "error_class": self.last_reconciliation_error,
+                "finished_at": self.last_reconciliation_finished_at,
+                "last_successful_result": dict(self.last_successful_reconciliation_result),
+                "last_successful_at": self.last_reconciliation_successful_at,
+            },
             "execution": "PAPER_ONLY",
             "live_capital_allowed": False,
             "automatic_real_money_execution": False,
@@ -181,12 +231,28 @@ class PerpAlertDeliveryService:
 
     async def _run_reconciliation(self) -> None:
         """Run the expensive durable reconciliation without serializing every alert cycle."""
+        self.last_reconciliation_state = "IN_PROGRESS"
+        self.last_reconciliation_result = {}
+        self.last_reconciliation_error = None
+        self.last_reconciliation_finished_at = None
         try:
             from app.services.paper_reconciliation_alert import alert_reconciliation_if_needed
-            self.last_reconciliation_result = await alert_reconciliation_if_needed()
-        except Exception as exc:
+            result = await alert_reconciliation_if_needed()
+            if not isinstance(result, dict) or not isinstance(result.get("reconciliation_ok"), bool):
+                raise TypeError("Missing or malformed reconciliation scan result")
+        except BaseException as exc:
+            self.last_reconciliation_state = "FAILED" if isinstance(exc, Exception) else "INTERRUPTED"
+            self.last_reconciliation_error = type(exc).__name__[:64]
+            if not isinstance(exc, Exception):
+                raise
             log.warning("PAPER reconciliation alert pass failed", error=f"{type(exc).__name__}: {str(exc)[:180]}")
+        else:
+            self.last_reconciliation_result = dict(result)
+            self.last_successful_reconciliation_result = dict(result)
+            self.last_reconciliation_state = "COMPLETE"
+            self.last_reconciliation_successful_at = datetime.now(UTC).isoformat()
         finally:
+            self.last_reconciliation_finished_at = datetime.now(UTC).isoformat()
             self.last_step_timings_ms["reconciliation"] = round(
                 (time.perf_counter() - getattr(self, "_reconciliation_started", time.perf_counter())) * 1000.0, 3
             )

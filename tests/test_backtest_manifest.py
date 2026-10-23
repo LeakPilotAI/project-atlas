@@ -45,3 +45,39 @@ def test_manifest_load_rejects_incomplete_json(tmp_path:Path):
     p=tmp_path/"bad.json";p.write_text(json.dumps({"pit_aligned":True}),encoding="utf-8")
     with pytest.raises(ValueError,match="missing fields"):
         load_manifest(p,FIXTURE)
+
+
+def test_manifest_rejects_modified_identity_and_invalid_types(tmp_path):
+    import json
+    from copy import deepcopy
+
+    from app.backtest.manifest import build_manifest, load_manifest, write_manifest
+
+    fixture = FIXTURE
+    manifest = build_manifest(
+        fixture,
+        candles_source="candles",
+        funding_source="funding",
+        oi_source="oi",
+        rolling_volume_source="volume",
+        htf_context_source="htf",
+        pit_aligned=True,
+    )
+    path = write_manifest(manifest, tmp_path / "manifest.json")
+    original = json.loads(path.read_text(encoding="utf-8"))
+
+    mutations = [
+        {"candles_source": "tampered"},
+        {"pit_aligned": 1},
+        {"current_state_backfill_used": "unknown"},
+        {"dataset_sha256": "invalid"},
+        {"funding_source": ""},
+        {"manifest_id": "0" * 20},
+    ]
+
+    for change in mutations:
+        candidate = deepcopy(original)
+        candidate.update(change)
+        path.write_text(json.dumps(candidate), encoding="utf-8")
+        with pytest.raises(ValueError):
+            load_manifest(path, fixture)

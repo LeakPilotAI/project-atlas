@@ -1,0 +1,9 @@
+# Evaluator/journal/API/dashboard handoff — 2026-10-21
+
+Implemented reusable isolated cross-language acceptance:actual evaluator output ->temporary durable candidatejournal ->actual /api/prediction/paper/candidates FastAPIroute(inmemory TestClient,no server/lifespan) ->existing dashboard refresh/rowclick inNodeVM. Cases:explicitwindow/context exclusion,future-eventtime refusal,requested-window refusal,legacy missinghistory. ExactselectedJSON survives serialization;allcases keep freshness/publicationavailability unestablished and autoopenlocked/liveoff. No PAPERpositions created.
+
+Files:new tests/test_prediction_history_handoff.py and tests/prediction_history_handoff.cjs. No productcode changes necessary. Initial4directsnapshot cases passed3.05s,1warning;strengthened4APIcases passed2.08s,2inheritedwarnings(overlap,notsum). Existing6dashboardNodetests passed103.5747ms,0fail/skip. TargetedRuff importorder corrected thenPASS;Nodeparse,Pythoncompile,diffPASS. No productfailure found;notnativebrowser/network/layout/CSPacceptance. Actualproviderdata or entitlement not established.
+
+21release decisions/startuplock unchanged;productionNO-GO;nativebrowserNOT_ESTABLISHED. No Atlas/Docker/providers/Genesis/protectedstate/trading/Discord/Git operations,freshruntimecensus orrealjournalaccess. Prior259Pythonregressions retainednotrerun for test-onlyaddition.
+
+Next prioritize AFI/market research functionality rather than further predictionmicroaudits:inspect existing accountability request/output and dashboard intervalcomparison contracts for missing integration of intervaldiagnostics with comparative forecast scoring. Reuse existing diagnostics and immutable forecasts;do notduplicate engines or claim syntheticcalibration as realperformance. If fullyimplemented,select next verifiedmissing offlinefunctional step fromcompletecontinuation. Allsevenphases,AFI1-10PENDING,21decisions andexternalgates retained.

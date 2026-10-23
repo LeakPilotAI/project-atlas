@@ -76,6 +76,9 @@ class RuntimeWatchdog:
                 await self._task
             except asyncio.CancelledError:
                 pass
+        while self._thread is not None and self._thread.is_alive():
+            # The lifespan's shared deadline bounds this wait; retain ownership on timeout.
+            await asyncio.sleep(0.01)
 
     def snapshot(self):
         return list(self.samples)

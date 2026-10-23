@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timezone
 
 import pytest
 
@@ -95,6 +96,7 @@ class FakeJournal:
 
 def setup(state="PREPARE", tier="QUALIFIED", side="LONG", price=100.0, epoch="2026-09-10T13:00:00+00:00"):
     return {
+        "mark_timestamp": datetime.now(timezone.utc).isoformat(),
         "setup_key": f"BTC:{side}",
         "first_seen_at": "2026-09-10T13:00:00+00:00",
         "last_seen_at": "2026-09-10T13:01:00+00:00",

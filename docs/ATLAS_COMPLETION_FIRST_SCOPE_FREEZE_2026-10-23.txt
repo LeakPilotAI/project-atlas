@@ -1,0 +1,62 @@
+﻿Milestone: Completion-first scope freeze - 2026-10-23
+Status: Planning decision only; AFI-1 through AFI-10 PENDING; Phase 2 HOLD; Phase 3 BLOCKED; Production NO-GO.
+Evidence: Original completion-first scope decision preserved below.
+Changes: Defer FIFTEEN_MINUTE_MARKETS_V1, associated new 15-minute metals/commodity research, and unnecessary feature expansion.
+Tests: Documentation-only scope change; no tests run.
+Safety: All 21 release decisions unchanged; no protected runtime or trading authorization.
+Blocked: Existing operational recovery, research collection, and formal acceptance requirements remain.
+Next action: Stage 32 - minimum viable research-operation readiness review.
+
+ORIGINAL SCOPE DECISION
+ATLAS COMPLETION-FIRST SCOPE FREEZE - 2026-10-23
+
+AUTHORITATIVE CURRENT PLANNING DECISION
+
+Prioritize finishing, stabilizing, and validating the existing
+local Windows Atlas system and preparing separately authorized
+research data collection.
+
+DEFERRED OPTIONAL WORK
+
+FIFTEEN_MINUTE_MARKETS_V1 and additional 15-minute crypto
+research are deferred until after core Atlas completion.
+
+Associated new 15-minute metals/commodity research is deferred.
+
+Historical roadmap references remain preserved. This decision
+supersedes their scheduling as active implementation work.
+
+NO FEATURE CREEP
+
+Only implement changes needed to repair, stabilize, validate,
+secure, or safely operate the existing system.
+
+Retain existing prediction infrastructure and historical evidence.
+No unnecessary new market families or unrelated enhancements.
+
+OPERATING GOAL
+
+Reliable collection, verifiable evidence, strategy evaluation,
+and risk-controlled operation come before feature expansion.
+
+Profitability and sustainable income must be demonstrated,
+not assumed or guaranteed.
+
+RELEASE STATUS
+
+AFI-1 through AFI-10 PENDING.
+Phase 2 HOLD.
+Phase 3 BLOCKED.
+Production NO-GO.
+Automated trading authority FALSE.
+All 21 formal release decisions unchanged.
+
+This checkpoint does not authorize protected Atlas or Genesis
+runtime changes, provider collection, PAPER/live trading,
+Discord automation, Docker changes, cleanup, commit, or push.
+
+NEXT
+
+Stage 32: Windows recovery readiness and minimum viable
+research-operation acceptance preparation.
+

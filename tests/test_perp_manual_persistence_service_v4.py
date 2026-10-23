@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 import pytest
@@ -16,6 +16,7 @@ class FakeTicker:
     volume_24h: float = 1_000_000.0
     open_interest: float = 500_000.0
     funding_rate: float = 0.0
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class FakeAdapter:

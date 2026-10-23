@@ -1,0 +1,11 @@
+# Offline candidate packaging continuation — October 20, 2026
+
+Confirmed defect: scripts/build_release_candidate.py inventories untracked backend/scripts/tests/docs but omitted frontend/offline. It also omitted .mjs, losing native viewer regressions. Minimal correction adds the exact offline frontend source root and .mjs source extension; no production app, startup, install or dependency policy change.
+
+Eight Python packaging acceptance tests pass. They verify complete hashed manifests, byte-reproducible archives, exclusive destinations, protected data/.env/cache refusal, clean synthetic extraction, a native Node positive control, the actual extracted viewer's 23 Node cases and HTML build, and exact Python V2 companion recomputation using only extracted local modules. Installed host Python/Node dependencies remain prerequisites; this is not a clean-machine installation or dependency-lock acceptance. Synthetic fixtures contain no credentials or live records. No complete working-tree archive was created/read to claim secret-free inventory; this bounded source selection remains subject to whole-release review.
+
+Targeted Ruff passes; Python compilation, updater PowerShell parsing and Git diff integrity pass. Original import-order/check-argument lint evidence preserved before correction. Existing AFI604 and JavaScript362 passing evidence was verified, not redundantly rerun; nested Node cases are not added again to that339+23 suite count. Three inherited frontend builder lint findings unchanged.
+
+All 21 decisions and startup-lock hashes remain unchanged; production NO-GO. No service, provider, Genesis, protected state, config, ACL, database or shortcut operation. No fresh runtime health claim. Source bytes for original evidence and pre-existing work preserved.
+
+Next: extend isolated clean-extraction acceptance to the actual equity/ETF chart ingestion → SQLite reopen → in-process ASGI response → offline dashboard, covering premarket, regular, after-hours and missing data. Use disposable fixture storage and in-process transport only, deny external sockets and production imports. Do not start any server/provider. Retain all seven phases and AFI1–10 PENDING. Continue active Goal, no duplicates/completion claim.

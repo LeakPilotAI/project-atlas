@@ -9,11 +9,16 @@ from __future__ import annotations
 
 import asyncio
 import time
-from datetime import datetime, time as dt_time, timezone
-from typing import Any, Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime, timezone
+from datetime import time as dt_time
+from typing import Any
 from zoneinfo import ZoneInfo
 
-from app.investment.robinhood_equity_quotes import RobinhoodEquityQuoteClient, robinhood_equity_quote_client
+from app.investment.provider_dispatch import ProviderDispatcher, ProviderRejected
+from app.investment.robinhood_equity_quotes import (
+    RobinhoodEquityQuoteClient,
+)
 from app.investment.yfinance_client import ProviderCallError, YFinanceClient
 
 CACHE_TTL_SEC = 15.0
@@ -29,10 +34,18 @@ class QualityDipQuoteService:
         client: YFinanceClient | None = None,
         robinhood_client: RobinhoodEquityQuoteClient | None = None,
     ) -> None:
-        self.client = client or YFinanceClient(min_interval_sec=0.05, timeout_sec=8.0)
-        self.robinhood_client = robinhood_client or robinhood_equity_quote_client
+        self._providers = [ProviderDispatcher("robinhood"), ProviderDispatcher("yahoo")]
+        self.client = client or YFinanceClient(min_interval_sec=0.05, timeout_sec=8.0,
+                                              dispatcher=self._providers[1])
+        self.robinhood_client = robinhood_client or RobinhoodEquityQuoteClient(
+            dispatcher=self._providers[0])
+        self._closed = False
+        self.max_pending_quotes = 64
         self._cache: dict[str, tuple[float, dict[str, Any]]] = {}
-        self._lock = asyncio.Lock()
+        self._fetch_slots = asyncio.Semaphore(6)
+        self._inflight: dict[str, asyncio.Task] = {}
+        self._waiters: dict[asyncio.Task, int] = {}
+        self._rejected_quotes = 0
 
     async def get_many(
         self,
@@ -41,23 +54,80 @@ class QualityDipQuoteService:
         max_cache_age_sec: float | None = None,
     ) -> dict[str, dict[str, Any]]:
         clean = sorted({str(s or "").upper().strip() for s in symbols if str(s or "").strip()})
-        sem = asyncio.Semaphore(6)
+        if self._closed:
+            self._rejected_quotes += 1
+            raise ProviderRejected("Quote service closed")
+        new_symbols = set(clean) - self._inflight.keys()
+        if len(clean) > self.max_pending_quotes or len(new_symbols) + len(self._inflight) > self.max_pending_quotes:
+            self._rejected_quotes += 1
+            raise ProviderRejected("Quote admission capacity exceeded")
         cache_age = CACHE_TTL_SEC if max_cache_age_sec is None else max(3.0, float(max_cache_age_sec))
 
+        async def fetch_once(symbol: str) -> dict[str, Any]:
+            try:
+                try:
+                    async with asyncio.timeout(30.0):
+                        async with self._fetch_slots:
+                            snap = await self._fetch(symbol)
+                except TimeoutError:
+                    snap = self._missing(symbol, datetime.now(UTC), "DEADLINE", "Quote deadline exceeded")
+                self._cache[symbol] = (time.monotonic(), dict(snap))
+                return snap
+            finally:
+                self._inflight.pop(symbol, None)
+
         async def one(symbol: str) -> tuple[str, dict[str, Any]]:
+            # No await between lookup and registration: atomic on this service's
+            # event loop. All callers share slots and the same symbol task.
             cached = self._cache.get(symbol)
             if cached and time.monotonic() - cached[0] <= cache_age:
                 return symbol, dict(cached[1])
-            async with sem:
-                snap = await self._fetch(symbol)
-            async with self._lock:
-                self._cache[symbol] = (time.monotonic(), dict(snap))
-            return symbol, snap
+            task = self._inflight.get(symbol)
+            if task is None:
+                task = asyncio.create_task(fetch_once(symbol))
+                self._inflight[symbol] = task
+                # A canceled waiter must not leave an unobserved task exception.
+                task.add_done_callback(lambda done: None if done.cancelled() else done.exception())
+            self._waiters[task] = self._waiters.get(task, 0) + 1
+            try:
+                snap = await asyncio.shield(task)
+                return symbol, dict(snap)
+            finally:
+                self._waiters[task] -= 1
+                if not self._waiters[task]:
+                    self._waiters.pop(task)
+                    if not task.done():
+                        task.cancel()
 
         return dict(await asyncio.gather(*(one(s) for s in clean)))
 
+    def provider_status(self) -> dict:
+        return {"closed": self._closed, "pending_quotes": len(self._inflight),
+                "rejected_quotes": self._rejected_quotes, "quote_deadline_seconds": 30.0,
+                "pending_quote_limit": self.max_pending_quotes,
+                "providers": [provider.status() for provider in self._providers]}
+
+    async def shutdown(self, timeout: float = 20.0) -> None:
+        self._closed = True
+        tasks = list(self._inflight.values())
+        for task in tasks:
+            task.cancel()
+        # Both providers drain concurrently, sharing the same wall-clock budget.
+        drains = [asyncio.create_task(provider.shutdown(timeout)) for provider in self._providers]
+        done, pending = await asyncio.wait([*tasks, *drains], timeout=max(0.0, timeout))
+        if pending:
+            from app.investment.provider_dispatch import ProviderDrainTimeout
+
+            # Do not cancel ownership supervisors while their threads are alive.
+            for task in drains:
+                task.add_done_callback(lambda item: None if item.cancelled() else item.exception())
+            raise ProviderDrainTimeout("Quote work remains owned; shutdown incomplete")
+        for task in done:
+            if not task.cancelled() and task in drains:
+                task.result()
+
     async def _fetch(self, symbol: str) -> dict[str, Any]:
-        retrieved = datetime.now(timezone.utc)
+        retrieved = datetime.now(UTC)
         candidates: list[dict[str, Any]] = []
         provider_errors: list[str] = []
         market_state = "UNKNOWN"
@@ -66,6 +136,9 @@ class QualityDipQuoteService:
         # Atlas uses the ask as trigger_price and the midpoint as the display price.
         try:
             rh = await self.robinhood_client.get_quote(symbol)
+            # Source time is compared with receipt, never request-start time.
+            # Retrieval latency must contribute to age, not make a new quote future.
+            retrieved = datetime.now(UTC)
             rh_ts = _iso_ts(rh.get("effective_timestamp"))
             rh_price = _float(rh.get("display_price") or rh.get("price"))
             if rh_ts is not None and rh_price is not None and rh_price > 0 and rh_ts <= retrieved:
@@ -130,6 +203,7 @@ class QualityDipQuoteService:
         # Independent Yahoo 1-minute fallback with pre/post-market enabled.
         try:
             history = await self.client.history(symbol, period="5d", interval="1m", prepost=True)
+            retrieved = datetime.now(UTC)
             intraday = _latest_intraday(history, retrieved)
             if intraday is not None:
                 ts, price = intraday
@@ -152,12 +226,16 @@ class QualityDipQuoteService:
         info: dict[str, Any] = {}
         try:
             info = await self.client.info(symbol)
+            retrieved = datetime.now(UTC)
             market_state = str(info.get("marketState") or "UNKNOWN").upper()
         except ProviderCallError as exc:
             provider_errors.append(f"info:{exc.failure.code}")
         except Exception as exc:
             provider_errors.append(f"info:{type(exc).__name__}")
 
+        retrieved = datetime.now(UTC)
+        # A backward local-clock change cannot make an earlier candidate actionable.
+        candidates = [row for row in candidates if row["timestamp"] <= retrieved]
         for price_key, time_key, label in (
             ("postMarketPrice", "postMarketTime", "POST_MARKET"),
             ("preMarketPrice", "preMarketTime", "PRE_MARKET"),
@@ -384,7 +462,10 @@ def _iso_ts(value: Any) -> datetime | None:
     if not value:
         return None
     try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).astimezone(timezone.utc)
+        stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if stamp.tzinfo is None or stamp.utcoffset() is None:
+            return None
+        return stamp.astimezone(timezone.utc)
     except Exception:
         return None
 

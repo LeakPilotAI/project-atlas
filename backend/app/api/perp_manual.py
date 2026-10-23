@@ -93,6 +93,7 @@ async def manual_perps() -> Dict[str, Any]:
     snapshot["auto_paper"] = {
         **(await asyncio.to_thread(perp_setup_paper_mirror.status)),
         "last_pass": dict(perp_alert_delivery_service.last_paper_result),
+        "review": perp_alert_delivery_service.paper_review_status(),
         "mode": "RESTING_L1_LIMIT_TOUCH",
         "live_execution": False,
         "observability": await asyncio.to_thread(build_paper_observability, snapshot.get("setups") or []),
@@ -109,6 +110,7 @@ async def manual_perp_board(limit: int = Query(8, ge=1, le=25)) -> Dict[str, Any
         "source": "hyperliquid",
         "mode": "MANUAL_ONLY",
         "updated_at": snapshot.get("updated_at"),
+        "data_freshness": snapshot.get("data_freshness"),
         "board": board,
         "count": len(board),
         "alert_count": sum(1 for row in board if bool(row.get("alert_eligible"))),

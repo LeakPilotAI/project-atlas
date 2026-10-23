@@ -9,7 +9,7 @@ class _Journal:
         return []
 
 
-def test_stale_mark_before_fill_cancels_pending(tmp_path, monkeypatch):
+def test_stale_mark_blocks_fill_without_cancelling_valid_pending(tmp_path, monkeypatch):
     monkeypatch.setattr(mirror_mod, "paper_journal", _Journal())
     path = tmp_path / "pending.jsonl"
     mirror = mirror_mod.PerpSetupPaperMirror(pending_path=path)
@@ -27,5 +27,5 @@ def test_stale_mark_before_fill_cancels_pending(tmp_path, monkeypatch):
         "mark_timestamp": (datetime.now(timezone.utc)-timedelta(seconds=60)).isoformat(),
     }
     assert asyncio.run(mirror._fill_pending(instance, mark=99.0, setup=setup)) is False
-    assert instance not in mirror._pending
-    assert "STALE_MARK_BEFORE_FILL" in path.read_text(encoding="utf-8")
+    assert instance in mirror._pending
+    assert not path.exists() or "STALE_MARK_BEFORE_FILL" not in path.read_text(encoding="utf-8")

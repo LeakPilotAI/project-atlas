@@ -54,8 +54,16 @@ def _get_json(url: str, timeout: float) -> dict[str, Any]:
 
 
 class RobinhoodEquityQuoteClient:
-    def __init__(self, *, timeout_sec: float = DEFAULT_TIMEOUT_SEC) -> None:
+    def __init__(self, *, timeout_sec: float = DEFAULT_TIMEOUT_SEC, dispatcher=None) -> None:
         self.timeout_sec = float(timeout_sec)
+        self.dispatcher = dispatcher
+
+    async def _request(self, url: str):
+        if self.dispatcher is not None:
+            return await self.dispatcher.run(_get_json, url, self.timeout_sec,
+                                             timeout=self.timeout_sec + 1.0)
+        return await asyncio.wait_for(asyncio.to_thread(_get_json, url, self.timeout_sec),
+                                      timeout=self.timeout_sec + 1.0)
 
     async def get_quote(self, symbol: str) -> dict[str, Any]:
         symbol = str(symbol or "").upper().strip()
@@ -64,10 +72,7 @@ class RobinhoodEquityQuoteClient:
 
         notes: list[str] = []
         try:
-            payload = await asyncio.wait_for(
-                asyncio.to_thread(_get_json, RHJ_PRICE_URL.format(symbol=symbol), self.timeout_sec),
-                timeout=self.timeout_sec + 1.0,
-            )
+            payload = await self._request(RHJ_PRICE_URL.format(symbol=symbol))
             parsed = self._parse_rhj(symbol, payload)
             if parsed is not None:
                 return parsed
@@ -78,10 +83,7 @@ class RobinhoodEquityQuoteClient:
             notes.append(f"rhj:{type(exc).__name__}")
 
         try:
-            payload = await asyncio.wait_for(
-                asyncio.to_thread(_get_json, CLASSIC_QUOTE_URL.format(symbol=symbol), self.timeout_sec),
-                timeout=self.timeout_sec + 1.0,
-            )
+            payload = await self._request(CLASSIC_QUOTE_URL.format(symbol=symbol))
             parsed = self._parse_classic(symbol, payload)
             if parsed is not None:
                 parsed["provider_notes"] = notes

@@ -92,7 +92,11 @@ function Read-AtlasManagerCompletionFiles(
                     $item.path,
                     [System.IO.FileMode]::Open,
                     [System.IO.FileAccess]::Read,
-                    [System.IO.FileShare]::None
+                    $(if ($item.name -eq "exit marker") {
+                        [System.IO.FileShare]::None
+                    } else {
+                        [System.IO.FileShare]::ReadWrite
+                    })
                 )
                 [void]$streams.Add($stream)
                 $opened[$item.name] = $stream

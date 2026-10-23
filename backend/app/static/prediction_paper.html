@@ -24,13 +24,14 @@
 <div class="metric"><div class="label">Errors / Timeouts</div><div class="value" id="errors">—</div></div>
 <div class="metric"><div class="label">Open Positions</div><div class="value" id="positions">—</div></div>
 <div class="metric"><div class="label">Closed Trades</div><div class="value" id="closed">—</div></div>
-<div class="metric"><div class="label">Net PAPER PnL</div><div class="value" id="pnl">—</div></div>
+<div class="metric"><div class="label">Realized closed P&amp;L</div><div class="value" id="pnl">—</div></div>
 </section>
+<div class="sub" id="accounting">Accounting evidence unavailable. Closed results exclude open and expired-unclosed exposure.</div>
 <section class="grid">
 <div class="panel"><h2>Recent Candidate Evidence</h2><div class="tableWrap"><table><thead><tr><th>Time</th><th>Ticker</th><th>Side</th><th>Stage</th><th>Score</th><th>VWAP</th><th>Spread</th><th>Edge/ct</th><th>Result</th><th>Reasons</th></tr></thead><tbody id="candidates"></tbody></table></div></div>
 <div class="stack">
 <div class="panel"><h2>Automation / Safety</h2><div class="kv" id="automation"></div><div class="safety"><div>PAPER ONLY</div><div>LIVE CAPITAL OFF</div><div>1 POSITION MAX</div><div>PRE-EVENT EXIT</div></div></div>
-<div class="panel"><h2>Selected Evidence</h2><div id="detail" class="detail">Select a candidate row to inspect persisted evidence.</div></div>
+<div class="panel"><h2>Selected Evidence</h2><p id="historyEvidence" class="sub" aria-live="polite">Select a candidate to inspect history coverage and timing limitations.</p><div id="detail" class="detail">Select a candidate row to inspect persisted evidence.</div></div>
 </div>
 </section>
 <section class="panel events"><h2>PAPER Position / Trade Events</h2><div class="tableWrap"><table><thead><tr><th>Event</th><th>Ticker</th><th>Side</th><th>Qty</th><th>Entry VWAP</th><th>Exit VWAP</th><th>Net PnL</th><th>Exit Reason</th><th>Flat Violation</th></tr></thead><tbody id="events"></tbody></table></div></section>
@@ -38,22 +39,34 @@
 <script>
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const num=v=>v===null||v===undefined||v===''?'—':String(v);
-const money=v=>v===null||v===undefined||v===''?'—':'$'+Number(v).toFixed(2);
-const price=v=>v===null||v===undefined||v===''?'—':Number(v).toFixed(4);
+const numeric=v=>{if(typeof v!=='number'&&typeof v!=='string')return null;const t=String(v).trim();if(t.length>128||!/^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i.test(t))return null;const n=Number(t);return Number.isFinite(n)?n:null};
+const num=v=>numeric(v)===null?'—':String(numeric(v));
+const money=v=>numeric(v)===null?'—':'$'+numeric(v).toFixed(2);
+const price=v=>numeric(v)===null?'—':numeric(v).toFixed(4);
 const when=v=>{if(!v)return'—';const d=new Date(v);return isNaN(d)?esc(v):d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})};
+function historyEvidenceText(c){
+ const h=c?.history||{}, count=v=>Number.isSafeInteger(v)&&v>=0?String(v):'Unknown';
+ const utc=v=>Number.isSafeInteger(v)&&v>0&&v<=8640000000000?new Date(v*1000).toISOString():'Unknown';
+ const order=h.timestamp_status==='EVENT_TIME_ORDER_ONLY'?'Event-time order checked (not freshness)':h.timestamp_status==='REFUSED'?'Event-time evidence refused':'Unknown event-time evidence';
+ const scope=h.window_status==='APPLIED'?'Requested window: '+utc(h.requested_start_ts)+' through '+utc(h.requested_end_ts):h.window_status==='REFUSED'?'Requested window refused':'Requested window unspecified';
+ return count(h.usable_bars)+' of '+count(h.supplied_bars)+' supplied bars usable; '+count(h.context_bars_excluded)+' context bars excluded. '+order+'. '+scope+'. Receipt/publication availability not established by this view.';
+}
+function selectCandidate(c){
+ $('detail').textContent=JSON.stringify(c,null,2);
+ $('historyEvidence').textContent=historyEvidenceText(c);
+}
 function candidateRow(c,i){
  const fill=c.entry_fill||{}, quote=c.current_quote||{}, projected=c.projected||{}, reasons=(c.rejection_reasons||[]).join(', ');
  const cls=c.eligible?'good':'bad', result=c.eligible?'ELIGIBLE':'REJECT';
  return '<tr data-i="'+i+'"><td>'+when(c.timestamp||c.observed_at)+'</td><td class="mono">'+esc(c.ticker)+'</td><td>'+esc(c.side)+'</td><td>'+esc(c.evaluation_stage||'FULL')+'</td><td>'+num(c.score)+'</td><td>'+price(fill.vwap_dollars)+'</td><td>'+price(quote.spread_dollars)+'</td><td>'+price(projected.net_edge_dollars_per_contract)+'</td><td><span class="pill '+cls+'">'+result+'</span></td><td class="reasons" title="'+esc(reasons)+'">'+esc(reasons||'—')+'</td></tr>';
 }
 function eventRow(e){
- return '<tr><td>'+esc(e.event)+'</td><td class="mono">'+esc(e.ticker||'—')+'</td><td>'+esc(e.side||'—')+'</td><td>'+num(e.quantity_contracts)+'</td><td>'+price(e.actual_entry_price)+'</td><td>'+price(e.actual_exit_price)+'</td><td>'+money(e.net_pnl_dollars)+'</td><td>'+esc(e.exit_reason||'—')+'</td><td>'+(e.violated_flat_deadline===true?'YES':'NO')+'</td></tr>';
+ return '<tr><td>'+esc(e.event)+'</td><td class="mono">'+esc(e.ticker||'—')+'</td><td>'+esc(e.side||'—')+'</td><td>'+num(e.quantity_contracts)+'</td><td>'+price(e.actual_entry_price)+'</td><td>'+price(e.actual_exit_price)+'</td><td>'+money(e.event==='close'&&e.accounting?.status!=='RECONCILED'?null:e.net_pnl_dollars)+'</td><td>'+esc(e.exit_reason||'—')+'</td><td>'+(e.violated_flat_deadline===true?'YES':e.violated_flat_deadline===false?'NO':'—')+'</td></tr>';
 }
 function automationView(a){
  const s=a.scanner||{}, f=a.auto_flat||{};
  const rows=[
-  ['Worker',a.running?'RUNNING':'STOPPED'],['Last cycle',s.cycle_id||'—'],['Pool viable',num(s.selection_viable_count)],['Activity qualified',num(s.selection_activity_qualified_count)],
+  ['Worker',a.running===true?'RUNNING':a.running===false?'STOPPED':'UNKNOWN'],['Last cycle',s.cycle_id||'—'],['Pool viable',num(s.selection_viable_count)],['Activity qualified',num(s.selection_activity_qualified_count)],
   ['YES / NO',num(s.yes_evaluations)+' / '+num(s.no_evaluations)],['Eligible DM alerts',num(s.eligible_alerts_delivered)+' delivered / '+num(s.eligible_alerts_attempted)+' attempted'],
   ['Alert dedupe / failed',num(s.eligible_alerts_deduped)+' / '+num(s.eligible_alerts_failed)],['Scanner errors',num(s.error_count)+' / '+num(s.timeout_count)+' timeouts'],['Auto-flat',f.last_action||'IDLE'],['Auto-flat blocked',String(!!f.blocked).toUpperCase()],
   ['Deadline violation',String(!!f.deadline_violation).toUpperCase()],['Notification mode',(a.eligible_notifications||{}).notification_only?'DM ONLY':'—'],['DM channel',(a.eligible_notifications||{}).delivery_ready?'READY':'NOT READY'],['DM recipients',num((a.eligible_notifications||{}).recipient_count)],['Auto-open',a.automatic_paper_position_opening?'ENABLED':'LOCKED']
@@ -62,15 +75,23 @@ function automationView(a){
 }
 async function refresh(){
  const [sr,cr]=await Promise.all([atlasFetch('/api/prediction/paper/status?limit=100'),atlasFetch('/api/prediction/paper/candidates?limit=200')]);
+ if(!sr.ok||!cr.ok)throw new Error('Evidence request failed');
  const status=await sr.json(), evidence=await cr.json(), a=status.automation||{}, s=a.scanner||{}, summary=status.summary||{};
  $('discovered').textContent=num(s.metadata_markets_seen)+' / '+num(s.markets_selected??s.markets_discovered);$('evaluated').textContent=num(s.markets_fully_evaluated);$('eligible').textContent=num(s.eligible_count);
  $('rejected').textContent=num(s.rejected_count);$('errors').textContent=num(s.error_count)+' / '+num(s.timeout_count);$('positions').textContent=num(summary.open_positions);
- $('closed').textContent=num(summary.closed_trades);$('pnl').textContent=money(summary.net_pnl_dollars);
- const locked=!a.automatic_paper_position_opening && !a.live_capital_allowed;$('lock').textContent=locked?'AUTO-OPEN LOCKED · LIVE OFF':'SAFETY STATE CHANGED';
+ $('closed').textContent=num(summary.closed_trades);$('pnl').textContent=money(['RECONCILED','NO_CLOSED_TRADES'].includes(summary.closed_accounting_status)?summary.net_pnl_dollars:null);
+ $('accounting').textContent='Closed accounting: '+(summary.closed_accounting_status||'UNKNOWN')+'. Closed results exclude open and expired-unclosed exposure; no performance claim.';
+ const locked=a.automatic_paper_position_opening===false && a.live_capital_allowed===false;$('lock').textContent=locked?'AUTO-OPEN LOCKED · LIVE OFF':'SAFETY STATE CHANGED';
  $('lock').className='lock'+(locked?'':' bad');automationView(a);
+ $('detail').textContent='Select a candidate row to inspect persisted evidence.';$('historyEvidence').textContent='Select a candidate to inspect history coverage and timing limitations.';
  const candidates=(evidence.candidates||[]).slice().reverse();$('candidates').innerHTML=candidates.length?candidates.map(candidateRow).join(''):'<tr><td colspan="10" class="empty">No candidate evidence yet.</td></tr>';
- [...$('candidates').querySelectorAll('tr[data-i]')].forEach(row=>row.addEventListener('click',()=>{[...$('candidates').children].forEach(x=>x.classList.remove('on'));row.classList.add('on');$('detail').textContent=JSON.stringify(candidates[Number(row.dataset.i)],null,2)}));
+ [...$('candidates').querySelectorAll('tr[data-i]')].forEach(row=>row.addEventListener('click',()=>{[...$('candidates').children].forEach(x=>x.classList.remove('on'));row.classList.add('on');selectCandidate(candidates[Number(row.dataset.i)])}));
  const events=(status.events||[]).slice().reverse();$('events').innerHTML=events.length?events.map(eventRow).join(''):'<tr><td colspan="9" class="empty">No Prediction PAPER position events yet.</td></tr>';
 }
-atlasPoll(refresh,10000);
+async function guardedRefresh(){try{await refresh()}catch(error){
+ for(const id of ['discovered','evaluated','eligible','rejected','errors','positions','closed','pnl'])$(id).textContent='—';
+ for(const id of ['candidates','events','automation'])$(id).innerHTML='';
+ $('historyEvidence').textContent='History evidence unavailable.';$('detail').textContent='Current evidence unavailable.';$('accounting').textContent='Evidence unavailable; previous results are not current.';$('lock').textContent='SAFETY STATE UNKNOWN';
+}}
+atlasPoll(guardedRefresh,10000);
 </script></body></html>

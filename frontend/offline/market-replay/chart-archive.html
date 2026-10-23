@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Atlas chart evidence</title>
+<style>body{font:16px system-ui;background:#091118;color:#d5e4ef;margin:2rem;max-width:75rem}h1{color:#3ddbc6}section{padding:1rem;border:1px solid #38505f;margin:1rem 0}label{display:block;margin:.7rem 0}input,button{font:inherit;padding:.4rem}input[type=text]{width:90%;max-width:44rem}table{border-collapse:collapse;width:100%}td,th{padding:.55rem;border-bottom:1px solid #38505f;text-align:left}.scroll{overflow:auto}button{cursor:pointer}#status{color:#ffce8c}</style>
+</head><body><h1>Chart evidence</h1><p>Synthetic offline archive. Production NO-GO. No live prices, provider permission or trading authority.</p>
+<section><h2>Open retained evidence</h2><p>Select the five files created by the Python archive exporter. Supply the receipt SHA-256 you retained separately. Files stay in this page; nothing is uploaded.</p>
+<label>Archive files <input id="archive-files" type="file" multiple accept=".json,.html"></label>
+<label>Expected receipt SHA-256 <input id="receipt-pin" type="text" maxlength="64" autocomplete="off" spellcheck="false"></label>
+<button id="verify" type="button">Verify supplied bytes</button> <button id="clear" type="button">Clear evidence</button></section>
+<section aria-live="polite"><h2>Evidence limits</h2><p id="status"></p><p id="summary"></p><p>Byte integrity is not source reproduction. Use the Python verifier to reproduce derived outputs. Exchange calendars, live freshness, adjustment basis and provider authenticity are not independently established here. The archived HTML is hashed but never executed.</p></section>
+<div class="scroll"><table><thead><tr><th>Event UTC</th><th>Session</th><th>Chart close</th><th>Reported adjusted close — unverified</th></tr></thead><tbody id="rows"></tbody></table></div>
+<script src="chart-archive.cjs"></script><script src="chart-archive-mount.js"></script></body></html>

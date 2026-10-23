@@ -161,6 +161,7 @@ def test_concurrent_append_writers_produce_unique_ordered_ids(tmp_path):
     path.write_bytes(_row("open"))
     marks = [_row("mark", mark=100 + index / 100) for index in range(40)]
     journal = paper_journal_mod.PaperJournal.__new__(paper_journal_mod.PaperJournal)
+    journal._malformed_lines = []
 
     def append(raw):
         journal._append(path, json.loads(raw))

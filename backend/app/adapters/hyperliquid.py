@@ -6,6 +6,7 @@ import asyncio
 import json
 import time
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any, Optional
 
 import httpx
@@ -15,7 +16,9 @@ try:
 except ImportError:  # pragma: no cover
     websockets = None  # type: ignore
 
+from app.adapters import hyperliquid_gate_registry
 from app.core.logging import get_logger
+from app.core.market_freshness import fresh_observation, positive_price
 
 logger = get_logger("hyperliquid")
 
@@ -34,6 +37,8 @@ class Ticker:
     open_interest: float = 0.0
     funding_rate: Optional[float] = None
     timestamp: str = ""
+    timestamp_basis: str = "REST_REQUEST_START"
+    price_source: str = "REST_MARK"
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -45,10 +50,18 @@ class HyperliquidAdapter:
         self._connected = False
         self._universe_names: list[str] = []
         self._mids: dict[str, float] = {}
+        self._mid_received_at: dict[str, datetime] = {}
+        self._last_rest_observed_at: datetime | None = None
+        self._last_rest_prices: dict[str, float] = {}
         self._ws_task: Optional[asyncio.Task] = None
         self._ws_running = False
 
+    def _consume_request(self, kind: str) -> None:
+        hyperliquid_gate_registry.consume_before_attempt(kind)
+
     async def connect(self) -> None:
+        # Refuse startup before allocating network clients or tasks.
+        hyperliquid_gate_registry.require_gate()
         if self._client is None:
             self._client = httpx.AsyncClient(
                 timeout=httpx.Timeout(30.0, connect=10.0),
@@ -61,6 +74,8 @@ class HyperliquidAdapter:
 
     async def close(self) -> None:
         self._ws_running = False
+        self._mids.clear()
+        self._mid_received_at.clear()
         if self._ws_task:
             self._ws_task.cancel()
             try:
@@ -77,6 +92,7 @@ class HyperliquidAdapter:
         if not self._client:
             await self.connect()
         assert self._client is not None
+        self._consume_request('HTTP')
         r = await self._client.post(INFO_URL, json=body)
         r.raise_for_status()
         return r.json()
@@ -150,7 +166,13 @@ class HyperliquidAdapter:
     # ── Tickers (metaAndAssetCtxs) ───────────────────────────────────
 
     async def get_all_tickers(self) -> list[Ticker]:
+        observed_at = datetime.now(UTC)
+        started = time.monotonic()
         data = await self._post({"type": "metaAndAssetCtxs"})
+        if not fresh_observation(observed_at) or time.monotonic() - started > 30:
+            raise ValueError("Hyperliquid REST observation expired during retrieval")
+        if self._last_rest_observed_at and observed_at < self._last_rest_observed_at:
+            raise ValueError("Out-of-order Hyperliquid REST observation")
         if not isinstance(data, list) or len(data) < 2:
             logger.warning("Unexpected metaAndAssetCtxs shape")
             return []
@@ -160,7 +182,7 @@ class HyperliquidAdapter:
         if not isinstance(universe, list) or not isinstance(ctxs, list):
             return []
 
-        now = time.strftime("%Y-%m-%dT%H:%M:%S")
+        now = observed_at.isoformat()
         out: list[Ticker] = []
         for i, asset in enumerate(universe):
             if i >= len(ctxs):
@@ -173,13 +195,14 @@ class HyperliquidAdapter:
             ctx = ctxs[i] if isinstance(ctxs[i], dict) else {}
 
             mark = ctx.get("markPx") or ctx.get("midPx") or "0"
-            mid = ctx.get("midPx")
-            # Prefer live WS mid when present
-            ws_mid = self._mids.get(name)
+            # allMids has no exchange timestamp: a receipt cannot establish that
+            # its price is newer than this REST snapshot. Never override REST.
             try:
-                price = float(ws_mid if ws_mid is not None else mark)
+                price = float(mark)
             except (TypeError, ValueError):
                 price = 0.0
+            if not positive_price(price):
+                continue
 
             try:
                 vol = float(ctx.get("dayNtlVlm") or 0)
@@ -207,6 +230,11 @@ class HyperliquidAdapter:
                     raw=dict(ctx),
                 )
             )
+        prices = {row.symbol: row.price for row in out}
+        if observed_at == self._last_rest_observed_at and prices != self._last_rest_prices:
+            raise ValueError("Conflicting Hyperliquid observations at the same timestamp")
+        self._last_rest_observed_at = observed_at
+        self._last_rest_prices = prices
         logger.info("Fetched tickers", count=len(out))
         return out
 
@@ -373,12 +401,15 @@ class HyperliquidAdapter:
         backoff = 2.0
         while self._ws_running:
             try:
+                self._consume_request('WEBSOCKET_CONNECT')
                 async with websockets.connect(
                     WS_URL,
                     ping_interval=20,
                     ping_timeout=20,
                     max_size=8_000_000,
                 ) as ws:
+                    self._mids.clear()
+                    self._mid_received_at.clear()
                     await ws.send(
                         json.dumps(
                             {
@@ -403,15 +434,29 @@ class HyperliquidAdapter:
                             if isinstance(mids, dict):
                                 for k, v in mids.items():
                                     try:
-                                        self._mids[str(k)] = float(v)
+                                        if positive_price(v):
+                                            self._mids[str(k)] = float(v)
+                                            self._mid_received_at[str(k)] = datetime.now(UTC)
                                     except (TypeError, ValueError):
                                         continue
             except asyncio.CancelledError:
                 break
+            except hyperliquid_gate_registry.RequestGateRefused:
+                self._ws_running = False
+                raise
             except Exception as e:
+                self._mids.clear()
+                self._mid_received_at.clear()
                 logger.warning("allMids WS error — reconnecting", error=str(e))
                 await asyncio.sleep(backoff)
                 backoff = min(60.0, backoff * 1.5)
+            finally:
+                self._mids.clear()
+                self._mid_received_at.clear()
 
     def get_mid(self, symbol: str) -> Optional[float]:
-        return self._mids.get(symbol)
+        # Short-lived receipt-based research hint, never an authoritative REST mark.
+        if not fresh_observation(self._mid_received_at.get(symbol), max_age=5):
+            return None
+        value = self._mids.get(symbol)
+        return value if positive_price(value) else None

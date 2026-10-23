@@ -1,0 +1,11 @@
+# Research response/viewer integration — 2026-10-21
+
+Addedactual provider-shapedfixture->normalization/temporarySQLite->inmemoryASGIresearchresponses->existingNodeDOMviewer handoff. Validresearch->503refusal->explicitvalidreload->Clear transitionsverified forValueError/TypeError calculationfaults. Actualresponsebytes passed unchanged;validandrecoveredbytesidentical;refusalreplacesoldanalysis,hasnousableprices/privatevalue,andClearremovescurrentmodel. No productprotocolchange orduplicateviewer.
+
+FoundverifiedUIdefectduringinspection:4mojibakepunctuation sequences inexistingmount labels. Newtest failedwith Checking local evidenceâ€¦;replaced3garbledemdashes withASCIIhyphens and1garbledellipsis withthreeperiods. Originalsource/failure retained. No oldgeneratedbundle rewritten;newsourcecommitmentchangesnormally.
+
+Files:frontend/offline/market-replay/mount.cjs;viewer.test.mjs;new tests/test_research_viewer_handoff.py;tests/research_viewer_handoff.cjs. Final694offlineJS passed1827.144ms and67Python passed2.28s,0fail/skip/warnings. Pythonincludes2newcrosslanguagehandoffcases;othercasesoverlappriorAPIcounts. RuffPASS aftermovingblockingNodeinvocationoutsideasyncfixture;targetedESLintPASSwithconfigurationPagesdirectorynotice(noerrors);Nodeparse/Pythoncompile/diffPASS. SyntheticDOM only;nativebrowserNOT_ESTABLISHED.
+
+21decisions/startuplock unchanged;productionNO-GO;AFI1-10PENDING;sevenphasesretained. No services/providers/Genesis/protectedstate/trading/Discord/Gitoperations,freshruntimecensus,actualfeedentitlement orrealperformanceclaim.
+
+Next inspect existing offline marketreplay export/quality report metadata for explicit providerdataquality limitations inall3supportedUSsessions,usingactualprovider-shapedadapterfixtures. Prefermeasurable integratedfunctionality (sourceprovenance/freshness/missinghistory) overanother genericaudit. Avoidduplicating existing archive/vintage/dailyAFI bridges. Preserveexternal rights/PITtruth/runtimebackup/resource/security/browsergates;continueotherfeasiblesevenphasework.

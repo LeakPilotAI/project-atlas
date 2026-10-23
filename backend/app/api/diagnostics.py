@@ -10,6 +10,53 @@ from fastapi import APIRouter
 
 router = APIRouter(prefix="/diagnostics", tags=["diagnostics"])
 
+
+@router.get("/extended-hours")
+async def diagnostics_extended_hours() -> dict[str, Any]:
+    """Observe only this API's loaded collector; no enable/collect/repair action."""
+    from app.services.extended_hours_research import extended_hours_research_service
+
+    return extended_hours_research_service.status()
+
+
+@router.get("/quote-dispatch")
+async def diagnostics_quote_dispatch() -> dict[str, Any]:
+    """Read bounded quote-dispatch counters without fetching or creating work."""
+    from app.investment.quality_dip_quotes import quality_dip_quote_service
+
+    return quality_dip_quote_service.provider_status()
+
+
+@router.get("/gaming-runtime")
+async def diagnostics_gaming_runtime() -> dict[str, Any]:
+    """Allowlisted observations from this API process; no configuration mutation."""
+    import os
+
+    from app.core.config import get_settings
+    from app.services.perp_micro_coach import perp_micro_coach
+
+    settings = get_settings()
+
+    def active(name: str) -> bool:
+        task = getattr(perp_micro_coach, name, None)
+        return task is not None and not task.done()
+
+    return {
+        "pid": os.getpid(),
+        "run_id": os.getenv("ATLAS_DESKTOP_RUN_ID"),
+        "gaming_environment": os.getenv("ATLAS_GAMING_MODE"),
+        "gaming_mode": settings.atlas_gaming_mode,
+        "configured_discovery_seconds": settings.perp_micro_scan_seconds,
+        "effective_discovery_seconds": settings.effective_perp_micro_scan_seconds,
+        "management_seconds": settings.perp_micro_manage_seconds,
+        "paper_management_enabled": settings.perp_micro_paper_enabled,
+        "coach_running": perp_micro_coach.running,
+        "discovery_task_active": active("_task"),
+        "management_task_active": active("_manage_task"),
+        "read_only": True,
+        "execution_authority": False,
+    }
+
 # Heavy research is read-only but may scan large durable JSONL histories. Keep the
 # desktop/API surface responsive while a single background refresh completes.
 _RESEARCH_RESPONSE_BUDGET_SECONDS = 2.5

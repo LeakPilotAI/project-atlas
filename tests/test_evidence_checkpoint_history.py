@@ -5,6 +5,24 @@ from app.services.evidence_checkpoint_history import MAX_HISTORY, history_view, 
 from app.services.cross_strategy_scorecard import build_cross_strategy_scorecard
 
 
+
+# Report equality must compare the same observation time. This freezes only the
+# test clock; production freshness continues to advance normally.
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def fixed_scorecard_clock(monkeypatch):
+    from app.services import cross_strategy_scorecard
+
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 10, 17, 9, tzinfo=timezone.utc)
+
+    monkeypatch.setattr(cross_strategy_scorecard, "datetime", Clock)
+
+
 def _report(sample=1):
     rows=[{"net_pnl_r": 0.5, "exit_timestamp": "2026-10-05T10:00:00+00:00"}] * sample
     return build_cross_strategy_scorecard(

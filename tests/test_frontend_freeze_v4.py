@@ -39,7 +39,7 @@ def test_shared_runtime_exposes_loading_ready_degraded_and_error_states():
     for token in (
         "atlasSetSurfaceState",
         "Loading workspace",
-        "Live data ready",
+        "Market data fresh",
         "Data read failed",
         "Refresh failed",
         'data-state="degraded"',

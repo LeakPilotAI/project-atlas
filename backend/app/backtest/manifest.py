@@ -94,14 +94,46 @@ def write_manifest(manifest:HistoricalDatasetManifest,path:Path)->Path:
     return path
 
 
-def load_manifest(path:Path,dataset_path:Path|None=None)->dict:
-    payload=json.loads(Path(path).read_text(encoding="utf-8"))
+def load_manifest_bytes(
+    manifest_bytes: bytes,
+    dataset_bytes: bytes | None = None,
+) -> dict:
+    """Validate a captured manifest against optional captured dataset bytes."""
+    if not isinstance(manifest_bytes, bytes):
+        raise TypeError("manifest bytes required")
+    if dataset_bytes is not None and not isinstance(dataset_bytes, bytes):
+        raise TypeError("dataset bytes required")
+    payload = json.loads(manifest_bytes.decode("utf-8"))
     if not isinstance(payload,dict):raise ValueError("manifest must be a JSON object")
     required={"symbol","timeframe","first_timestamp","last_timestamp","row_count","dataset_sha256","candles_source","funding_source","oi_source","rolling_volume_source","htf_context_source","pit_aligned","current_state_backfill_used","manifest_id"}
     missing=sorted(required-set(payload))
     if missing:raise ValueError(f"manifest missing fields: {', '.join(missing)}")
+    if type(payload["pit_aligned"]) is not bool:
+        raise ValueError("manifest PIT alignment must be boolean")
+    if type(payload["current_state_backfill_used"]) is not bool:
+        raise ValueError("manifest backfill status must be boolean")
+    if not isinstance(payload["dataset_sha256"], str) or len(payload["dataset_sha256"]) != 64 or any(c not in "0123456789abcdef" for c in payload["dataset_sha256"]):
+        raise ValueError("manifest dataset checksum is invalid")
+    for field in ("candles_source", "funding_source", "oi_source", "rolling_volume_source", "htf_context_source"):
+        if not isinstance(payload[field], str) or not payload[field].strip():
+            raise ValueError(f"manifest source identity invalid: {field}")
+    identity = {k: v for k, v in payload.items() if k != "manifest_id"}
+    expected_id = sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()[:20]
+    if not isinstance(payload["manifest_id"], str) or payload["manifest_id"] != expected_id:
+        raise ValueError("manifest integrity verification failed")
     if payload["pit_aligned"] is not True:raise ValueError("manifest is not PIT aligned")
     if payload["current_state_backfill_used"] is True:raise ValueError("manifest used forbidden current-state backfill")
-    if dataset_path is not None and _sha256_file(Path(dataset_path))!=payload["dataset_sha256"]:
+    if dataset_bytes is not None and sha256(dataset_bytes).hexdigest() != payload["dataset_sha256"]:
         raise ValueError("dataset checksum does not match manifest")
     return payload
+
+
+def load_manifest(path: Path, dataset_path: Path | None = None) -> dict:
+    """Existing path-based manifest validation interface."""
+    manifest_bytes = Path(path).read_bytes()
+    dataset_bytes = (
+        Path(dataset_path).read_bytes()
+        if dataset_path is not None
+        else None
+    )
+    return load_manifest_bytes(manifest_bytes, dataset_bytes)

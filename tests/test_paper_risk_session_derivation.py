@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timezone
 
 import app.services.perp_setup_paper_mirror as mirror_mod
 
@@ -67,7 +68,7 @@ def test_fill_does_not_use_lifetime_journal_r_for_daily_loss_stop(tmp_path, monk
     )
     mirror, instance = _armed_mirror(tmp_path)
 
-    assert asyncio.run(mirror._fill_pending(instance, mark=98.98)) is True
+    assert asyncio.run(mirror._fill_pending(instance, mark=98.98, setup={"mark_timestamp": datetime.now(timezone.utc).isoformat()})) is True
     assert len(journal.open_calls) == 1
 
 
@@ -91,7 +92,7 @@ def test_fill_uses_current_utc_day_r_for_loss_stop(tmp_path, monkeypatch):
     )
     mirror, instance = _armed_mirror(tmp_path)
 
-    assert asyncio.run(mirror._fill_pending(instance, mark=98.98)) is False
+    assert asyncio.run(mirror._fill_pending(instance, mark=98.98, setup={"mark_timestamp": datetime.now(timezone.utc).isoformat()})) is False
     assert not journal.open_calls
     pending_text = (tmp_path / "pending.jsonl").read_text(encoding="utf-8")
     assert "PAPER_RISK_BLOCK" in pending_text
