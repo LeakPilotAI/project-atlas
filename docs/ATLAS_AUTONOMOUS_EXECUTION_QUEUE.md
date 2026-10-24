@@ -69,3 +69,8 @@ Current execution:M1-M3 scoped VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks pending i
 | N1C | Combined validation,history preservation and publication | N1B | VERIFIED | continuation | Preserve all governance decisions |
 
 Current execution:N1A-N1C scoped VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. No further N2-N6 work authorized by N1-only instruction. B1/C1/D1/E1 remainBLOCKED;exact next approval/evidence action in N1 continuation/state.
+
+| P1 | Final controlled native integration proposal and acceptance checklist | current source/design authorization | VERIFIED | final proposal | No runtime changes or actual-record access |
+| P2 | Source verification,appropriate regressions,history checkpoint and publication | P1 | VERIFIED | proposal continuation | Independent gates remain blocked |
+
+Current execution:P1-P2 source-only proposal VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. No new implementation selected without excluded integration/data/provisioning/provider/startup approval. B1/C1/D1/E1 unchanged;resume from final controlled-runtime proposal and checklist.

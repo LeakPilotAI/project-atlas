@@ -13796,11 +13796,11 @@ Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Do
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
 === ATLAS MANAGED CURRENT CHECKPOINT V1 ===
-Milestone: Hyperliquid N1 disposable native facade hl-native-facade-N1C - 2026-10-23
+Milestone: Final controlled Hyperliquid runtime proposal hl-final-proposal-P2 - 2026-10-23
 Status: Scoped offline development only. Production NO-GO; PAPER startup NO. Phase2 HOLD;Phase3 BLOCKED;AFI-1 through AFI-10 PENDING,0accepted. B1/C1/D1/E1 BLOCKED.
-Evidence: docs/HYPERLIQUID_N1_NATIVE_FACADE_2026-10-23.md; docs/ATLAS_AUTONOMOUS_STATE.json; base 3bc30a29a655f289ac81dab261c7d9cb6b2159c7,branch chatgpt/atlas-rebuild-v1.
-Implementation: N1A-N1C disposable facade verified:durable shared association,separate revisions,actual native manual projection,V1 preservation,unknown-ack refusal and cooperative report admission. No production integration.
-Validation: 412passed0failed/skipped in136.88s final combined,27newcases included;focused27overlaps;Ruff2files,compile2files,PowerShell parser,diff pass;original failure logs retained. Prior overlapping runs not added. Failure logs preserved locally. Process-crash fixtures are not power-loss or operational acceptance.
+Evidence: docs/HYPERLIQUID_CONTROLLED_RUNTIME_PROPOSAL_2026-10-23.md; docs/ATLAS_AUTONOMOUS_STATE.json; base 464a3c56d44d4986f423986be1a72d049cc5b9c1,branch chatgpt/atlas-rebuild-v1.
+Implementation: P1-P2 source-only proposal verified:file-level single-authority integration specification,writer matrix,N2-N6acceptance checklist and earliest supervised session sequence. No source/test behavior change or new independently demonstrated fixture defect.
+Validation: 110existingcontracttests passed0failed/skipped in30.05s;117references/33literalpaths verified;Ruff/compile4modules,PowerShell parser,diff pass;prior412Python/763JSretainednotadded. Prior overlapping runs not added. Failure logs preserved locally. Process-crash fixtures are not power-loss or operational acceptance.
 Safety: No native journal/manual writer behavior or production startup integration changed. Separate V2 fixture sidecar only. No actual financial records,providers,protected services,Docker,Genesis,trading orDiscord activated. No backup/restore,protected authority/configuration/ACL/shortcut changes. Reviewed eligible Git commit/non-force push authorized; no destructive Git actions. Native baseline stays OPEN/ENTERED even if fixture ledger closes; no false native FLAT or automatic unknown-commit replay. Independent external-writer exclusion,source authority,antirollback and operational acceptance unproven.
 21 release decisions unchanged:
 - normal_admission: BLOCKED
@@ -13835,7 +13835,7 @@ Complete seven-phase roadmap:
 
 Cross-phase unfinished obligations: E136 independent rollback witness, dual-database rollback/consent resurrection and atomic recovery snapshot gates; recovery fencing, recipient-specific transport/render/storage, uncertainty/dead-letter handling. Discord requires explicit approval and durable no-backfill activation watermark; never automatically retry uncertain sends. Prediction PAPER requires exactly-once identities, pre-deadline protection and auto-flat. Portfolio-versus-strategy risk policy remains undecided. Preserve Prediction Market Intelligence V2 PM-V2.1 through PM-V2.6: discovery, probability/calibration, executable edge, pre-event PAPER, evidence/backtests and dashboard. One position per market; no combos/stacking/averaging/opposing YES+NO; settlement research does not override pre-event gates. Atlas/Genesis separation and PAPER_ONLY/MANUAL_ONLY are permanent. No production activation, live trading or automatic Discord is authorized.
 
-Next action: N1 is complete in disposable scope. No next N2-N6 engineering task is approved by N1 authorization. Obtain independent B1 source/archive/adoption evidence and explicit actual-record access;C1 all-writer ownership/drain,D1 trusted storage/clock/rollback and E1 operational evidence remain blocked. Review facade interface/pending projection policy before any separately approved native dispatch/migration integration.
+Next action: Review final controlled-runtime proposal and operational checklist. Next proposed engineering is explicitly scoped N5canonical-event/facade runtime routing with disposable acceptance first,only after integration approval and applicable N2archive/N3writer/N4trust evidence. Actual financial-record access,migration,provisioning,provider collection and startup each need separate permission. No further task is currently authorized.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

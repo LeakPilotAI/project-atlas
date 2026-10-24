@@ -41,3 +41,6 @@ Native V2 review supplement:docs/HYPERLIQUID_NATIVE_INTEGRATION_DESIGN_2026-10-2
 
 
 N1 facade supplement:docs/HYPERLIQUID_N1_NATIVE_FACADE_2026-10-23.md;412combinedpassed0failed/skipped,27newcases included. Shared native/V2associations,source/position/applied revisions,actual disposable manual projection and pending-ack/report refusal verified. Cooperative report-lock gap reproduced/fixed. Native production dispatch/writers unchanged;N2-N6 remain evidence/approval dependent. B1/C1/D1/E1 BLOCKED,21decisionsunchanged,PAPERstartupNO,productionNO-GO.
+
+
+Final controlled proposal supplement:docs/HYPERLIQUID_CONTROLLED_RUNTIME_PROPOSAL_2026-10-23.md and HYPERLIQUID_OPERATIONAL_ACCEPTANCE_CHECKLIST_2026-10-23.md specify file-level canonical authority/routing,writer disposition,deadline-preserving shutdown and N2-N6approval/evidence requirements.110existingcontracttests passed0failed/skipped,overlapnotadded;no source/testbehaviorchanged. B1/C1/D1/E1BLOCKED,21decisionsunchanged,PAPERstartupNO,productionNO-GO. No runtime integration,migration,provider or provisioning authorization.

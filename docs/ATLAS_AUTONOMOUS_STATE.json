@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "N1C",
+  "last_verified_task": "P2",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,22 +9,24 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "combined_passed": 412,
+    "selection_passed": 110,
     "failed": 0,
     "skipped": 0,
-    "duration_seconds": 136.88,
-    "log": "logs/diagnostics/hl-n1-final-combined.txt",
-    "environment": "permitted native Windows;disposable native stores and test-owned children only",
+    "duration_seconds": 30.05,
+    "log": "logs/diagnostics/hl-final-proposal-tests.txt",
+    "environment": "permitted native Windows;existing disposable/mocked contracts only",
+    "prior_full_combined_passed_not_rerun": 412,
     "javascript_prior_passed_not_rerun": 763
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "N1 is complete in disposable scope. No next N2-N6 engineering task is approved by N1 authorization. Obtain independent B1 source/archive/adoption evidence and explicit actual-record access;C1 all-writer ownership/drain,D1 trusted storage/clock/rollback and E1 operational evidence remain blocked. Review facade interface/pending projection policy before any separately approved native dispatch/migration integration.",
+  "exact_next_action": "Review final controlled-runtime proposal and operational checklist. Next proposed engineering is explicitly scoped N5canonical-event/facade runtime routing with disposable acceptance first,only after integration approval and applicable N2archive/N3writer/N4trust evidence. Actual financial-record access,migration,provisioning,provider collection and startup each need separate permission. No further task is currently authorized.",
   "latest_focused_tests": {
-    "passed": 27,
+    "passed": 110,
     "failed": 0,
     "skipped": 0,
-    "included_in_combined": true,
-    "log": "logs/diagnostics/hl-n1-final-focused.txt"
+    "new_tests": 0,
+    "overlaps_prior_suites": true,
+    "log": "logs/diagnostics/hl-final-proposal-tests.txt"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -54,16 +56,19 @@
     "M3": "VERIFIED scoped:385combinedpassed0failed/skipped;history-preserving checkpoint and reviewed source publication authorized. No gate promotion or native activation.",
     "N1A": "VERIFIED scoped native association and separate source/position/applied revisions;24intermediate cases passed before final two tests. No native runtime dispatch.",
     "N1B": "VERIFIED scoped27focusedN1cases:shared native association,separate revisions,partial/full manual projection,restart/concurrency,8abruptcrashes,initialization and snapshot-publication failures,source corruption and cooperative report-lock proof. Original race reproduced then fixed;final combined run pending.",
-    "N1C": "VERIFIED scoped412combinedpassed0failed/skipped,including27N1cases. History-preserving checkpoint and reviewed publication authorized. Native facade absent from production dispatch;all original writers/locks unchanged."
+    "N1C": "VERIFIED scoped412combinedpassed0failed/skipped,including27N1cases. History-preserving checkpoint and reviewed publication authorized. Native facade absent from production dispatch;all original writers/locks unchanged.",
+    "P1": "VERIFIED source-only final proposal:117retained references freshly match;33literal source paths verified;single canonical event authority,file-by-file changes,writer disposition,deadline-preserving phase sequence and N2-N6 approval checklist documented. No new independently demonstrated offline defect;no source changes.",
+    "P2": "VERIFIED proposal-only acceptance:110existingcontracttests pass0failed/skipped;117source references and33literal paths verified;Ruff/compile4modules,PowerShell parsing,diff and history checkpoint pass. No new defect or source/test behavior change;publication authorized."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 17,
-  "continuation_report": "docs/HYPERLIQUID_N1_NATIVE_FACADE_2026-10-23.md",
-  "blocked_wait_reason": "N1-only source/prototype/testing scope complete;N2-N6 require external evidence or separate actual-record/runtime/provisioning/activation authorization. Do not activate another task from fixture success.",
+  "progress_revision": 18,
+  "continuation_report": "docs/HYPERLIQUID_CONTROLLED_RUNTIME_PROPOSAL_2026-10-23.md",
+  "blocked_wait_reason": "All source-only proposal/checklist/validation tasks complete;remaining actual integration and acceptance require explicitly excluded authority or independent B1/C1/D1/E1 evidence. No synthetic extension or repeated N1 implementation.",
   "publication_validation": {
-    "python_combined_passed": 412,
+    "python_contract_selection_passed": 110,
     "failed": 0,
     "skipped": 0,
+    "source_behavior_changed": false,
     "operational_acceptance": false
   }
 }
