@@ -44,3 +44,6 @@ Hyperliquid selected-lane supplement: docs/HYPERLIQUID_PAPER_HANDOFF_CONTINUATIO
 
 
 Partial-position V2 supplement:docs/HYPERLIQUID_PARTIAL_LIFECYCLE_V2_2026-10-23.md;379combinedPythonpassed0failed/skipped,34newcases included. Stable shared local identity,versioned fills,cost/remaining/P&L and report envelope verified only in disposable adapters. Native V1 records unchanged; native partial writer integration remains unimplemented/unapproved. Unknown cross-store commits refuse replay and wrapper report. B1/C1/D1/E1 remainBLOCKED,21decisionsunchanged,startupNO,productionNO-GO.
+
+
+Native V2 review supplement:docs/HYPERLIQUID_NATIVE_INTEGRATION_DESIGN_2026-10-23.md;4replaysemanticdefects repaired,117staticreferences mapped,6newreview/bridgecases included in385combinedpasses. Actual writers/readers unchanged. Canonicalauthority/sharedidentity/version-awarelegacyreaders and all-writer drain require approved native implementation. B1/C1/D1/E1 stayBLOCKED,21decisionsunchanged,startupNO,productionNO-GO.

@@ -13796,11 +13796,11 @@ Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Do
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
 === ATLAS MANAGED CURRENT CHECKPOINT V1 ===
-Milestone: Hyperliquid PAPER partial-position V2 hl-partial-v2-L3 - 2026-10-23
+Milestone: Hyperliquid V2 review/native integration design hl-native-review-M3 - 2026-10-23
 Status: Scoped offline development only. Production NO-GO; PAPER startup NO. Phase2 HOLD;Phase3 BLOCKED;AFI-1 through AFI-10 PENDING,0accepted. B1/C1/D1/E1 BLOCKED.
-Evidence: docs/HYPERLIQUID_PARTIAL_LIFECYCLE_V2_2026-10-23.md; docs/ATLAS_AUTONOMOUS_STATE.json; base eac71e591aef3c427fe8f1c32d9105efe0357a06,branch chatgpt/atlas-rebuild-v1.
-Implementation: L1-L3 scoped VERIFIED. Disposable V2 sidecar and existing isolated ledger preserve original native V1 bytes; unknown intents stay blocked; full379case regression verifies exact final source.
-Validation: 379passed,0failed,0skipped in92.56s exact final combined run;34new cases included,overlaps not added;Ruff2files,compile2files,PowerShell parser and diff checks passed. Prior overlapping runs not added. Failure logs preserved locally. Process-crash fixtures are not power-loss or operational acceptance.
+Evidence: docs/HYPERLIQUID_NATIVE_INTEGRATION_DESIGN_2026-10-23.md; docs/ATLAS_AUTONOMOUS_STATE.json; base 927ab48f179cafd3feae00592369c8d6ee054f82,branch chatgpt/atlas-rebuild-v1.
+Implementation: M1-M3 source review/design complete;four fixture replay defects repaired,six new adversarial/bridge cases and117source references documented. Native writer behavior and original V1 evidence unchanged.
+Validation: 385passed,0failed,0skipped in88.36s final combined;6new cases included;4original failures retained;Ruff2files,compile2files,PowerShell parser,diff checks pass. Prior overlapping runs not added. Failure logs preserved locally. Process-crash fixtures are not power-loss or operational acceptance.
 Safety: No native journal/manual writer behavior or production startup integration changed. Separate V2 fixture sidecar only. No actual financial records,providers,protected services,Docker,Genesis,trading orDiscord activated. No backup/restore,protected authority/configuration/ACL/shortcut changes. Reviewed eligible Git commit/non-force push authorized; no destructive Git actions. Native baseline stays OPEN/ENTERED even if fixture ledger closes; no false native FLAT or automatic unknown-commit replay. Independent external-writer exclusion,source authority,antirollback and operational acceptance unproven.
 21 release decisions unchanged:
 - normal_admission: BLOCKED
@@ -13835,7 +13835,7 @@ Complete seven-phase roadmap:
 
 Cross-phase unfinished obligations: E136 independent rollback witness, dual-database rollback/consent resurrection and atomic recovery snapshot gates; recovery fencing, recipient-specific transport/render/storage, uncertainty/dead-letter handling. Discord requires explicit approval and durable no-backfill activation watermark; never automatically retry uncertain sends. Prediction PAPER requires exactly-once identities, pre-deadline protection and auto-flat. Portfolio-versus-strategy risk policy remains undecided. Preserve Prediction Market Intelligence V2 PM-V2.1 through PM-V2.6: discovery, probability/calibration, executable edge, pre-event PAPER, evidence/backtests and dashboard. One position per market; no combos/stacking/averaging/opposing YES+NO; settlement research does not override pre-event gates. Atlas/Genesis separation and PAPER_ONLY/MANUAL_ONLY are permanent. No production activation, live trading or automatic Discord is authorized.
 
-Next action: Read V2 continuation; obtain independent acceptance and separate controlled native integration authorization. B1/C1/D1/E1 remain BLOCKED; no eligible runtime activation.
+Next action: Review controlled integration design;next bounded work is disposable native facade contract. Runtime wiring,migration,provisioning and startup require separate approval and independent B1/C1/D1/E1 evidence.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

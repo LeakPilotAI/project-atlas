@@ -1,0 +1,685 @@
+{
+  "schema": "SOURCE_ONLY_NATIVE_CALLSITE_REVIEW_V1",
+  "base_commit": "927ab48f179cafd3feae00592369c8d6ee054f82",
+  "scope": "Static Python call/import/cache references; excludes dynamic dispatch,external utilities and actual runtime ownership proof",
+  "records": [
+    {
+      "file": "backend/app/alerts/discord.py",
+      "line": 245,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/alerts/discord.py",
+      "line": 249,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/api/archive.py",
+      "line": 34,
+      "import": [
+        "JOURNAL_PATH"
+      ]
+    },
+    {
+      "file": "backend/app/api/command_center.py",
+      "line": 77,
+      "call": "perp_manual_service.snapshot"
+    },
+    {
+      "file": "backend/app/api/diagnostics.py",
+      "line": 283,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/api/diagnostics.py",
+      "line": 308,
+      "call": "paper_journal.update_excursion"
+    },
+    {
+      "file": "backend/app/api/diagnostics.py",
+      "line": 309,
+      "call": "paper_journal.update_excursion"
+    },
+    {
+      "file": "backend/app/api/diagnostics.py",
+      "line": 290,
+      "call": "paper_journal.open_trade"
+    },
+    {
+      "file": "backend/app/api/diagnostics.py",
+      "line": 310,
+      "call": "paper_journal.close_trade"
+    },
+    {
+      "file": "backend/app/api/diagnostics.py",
+      "line": 313,
+      "call": "paper_journal.stats"
+    },
+    {
+      "file": "backend/app/api/live.py",
+      "line": 50,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/api/live.py",
+      "line": 68,
+      "call": "paper_journal.stats"
+    },
+    {
+      "file": "backend/app/api/live.py",
+      "line": 77,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/api/perp_manual.py",
+      "line": 24,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/api/perp_manual.py",
+      "line": 87,
+      "call": "perp_manual_service.snapshot"
+    },
+    {
+      "file": "backend/app/api/perp_manual.py",
+      "line": 106,
+      "call": "perp_manual_service.snapshot"
+    },
+    {
+      "file": "backend/app/api/perp_manual.py",
+      "line": 37,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/api/perp_manual.py",
+      "line": 183,
+      "call": "perp_manual_service.acknowledge_alert"
+    },
+    {
+      "file": "backend/app/api/perp_manual.py",
+      "line": 194,
+      "call": "perp_manual_service.enter_discovered_setup"
+    },
+    {
+      "file": "backend/app/api/perp_manual.py",
+      "line": 213,
+      "call": "perp_manual_service.close_entered_plan"
+    },
+    {
+      "file": "backend/app/api/perp_manual.py",
+      "line": 240,
+      "call": "perp_manual_service.create_plan"
+    },
+    {
+      "file": "backend/app/main.py",
+      "line": 176,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/main.py",
+      "line": 374,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/main.py",
+      "line": 375,
+      "call": "paper_journal.persist_open_marks"
+    },
+    {
+      "file": "backend/app/main.py",
+      "line": 378,
+      "call": "paper_journal.interrupt_open_for_shutdown"
+    },
+    {
+      "file": "backend/app/services/challenger_exit_replay.py",
+      "line": 12,
+      "import": [
+        "JOURNAL_PATH",
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/challenger_prospective.py",
+      "line": 16,
+      "import": [
+        "JOURNAL_PATH",
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/command_center.py",
+      "line": 127,
+      "call": "perp_manual_service.snapshot"
+    },
+    {
+      "file": "backend/app/services/cross_strategy_scorecard.py",
+      "line": 18,
+      "import": [
+        "JOURNAL_PATH"
+      ]
+    },
+    {
+      "file": "backend/app/services/daily_paper_recap.py",
+      "line": 76,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/daily_paper_recap.py",
+      "line": 83,
+      "call": "paper_journal.stats_since"
+    },
+    {
+      "file": "backend/app/services/daily_paper_recap.py",
+      "line": 84,
+      "call": "paper_journal.stats"
+    },
+    {
+      "file": "backend/app/services/e28_challenger_workbench.py",
+      "line": 18,
+      "import": [
+        "JOURNAL_PATH",
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/e29_forward_scorecard.py",
+      "line": 19,
+      "import": [
+        "JOURNAL_PATH",
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/edge_diagnostics.py",
+      "line": 131,
+      "import": [
+        "JOURNAL_PATH",
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/edge_diagnostics.py",
+      "line": 152,
+      "import": [
+        "JOURNAL_PATH",
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/equity_daytrade_paper_mirror.py",
+      "line": 25,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/equity_daytrade_paper_mirror.py",
+      "line": 159,
+      "call": "paper_journal.open_trade"
+    },
+    {
+      "file": "backend/app/services/equity_daytrade_paper_mirror.py",
+      "line": 218,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/services/equity_daytrade_paper_mirror.py",
+      "line": 229,
+      "call": "paper_journal.update_excursion"
+    },
+    {
+      "file": "backend/app/services/equity_daytrade_paper_mirror.py",
+      "line": 158,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/services/equity_daytrade_paper_mirror.py",
+      "line": 188,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/services/equity_daytrade_paper_mirror.py",
+      "line": 235,
+      "call": "paper_journal.close_trade"
+    },
+    {
+      "file": "backend/app/services/equity_daytrade_paper_mirror.py",
+      "line": 239,
+      "call": "paper_journal.close_trade"
+    },
+    {
+      "file": "backend/app/services/funnel_research.py",
+      "line": 304,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/micro_heartbeat.py",
+      "line": 90,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/micro_heartbeat.py",
+      "line": 92,
+      "call": "paper_journal.stats"
+    },
+    {
+      "file": "backend/app/services/outcome_research.py",
+      "line": 115,
+      "import": [
+        "JOURNAL_PATH",
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/outcome_research.py",
+      "line": 142,
+      "import": [
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/outcome_research.py",
+      "line": 274,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/outcome_research.py",
+      "line": 276,
+      "call": "paper_journal.current_session"
+    },
+    {
+      "file": "backend/app/services/paper_pipeline_hooks.py",
+      "line": 14,
+      "import": [
+        "JOURNAL_PATH",
+        "iter_jsonl",
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/paper_risk_window.py",
+      "line": 14,
+      "import": [
+        "JOURNAL_PATH"
+      ]
+    },
+    {
+      "file": "backend/app/services/paper_try_symbol.py",
+      "line": 22,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/paper_try_symbol.py",
+      "line": 410,
+      "call": "paper_journal.open_trade"
+    },
+    {
+      "file": "backend/app/services/paper_try_symbol.py",
+      "line": 448,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/paper_try_symbol.py",
+      "line": 274,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/paper_try_symbol.py",
+      "line": 333,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/paper_try_symbol.py",
+      "line": 366,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/paper_try_symbol.py",
+      "line": 219,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/perp_alert_delivery.py",
+      "line": 155,
+      "call": "perp_manual_service.snapshot"
+    },
+    {
+      "file": "backend/app/services/perp_alert_delivery.py",
+      "line": 175,
+      "call": "perp_manual_service.snapshot"
+    },
+    {
+      "file": "backend/app/services/perp_manual_service.py",
+      "line": 119,
+      "call": "self._persist_state"
+    },
+    {
+      "file": "backend/app/services/perp_manual_service.py",
+      "line": 340,
+      "call": "self._persist_state"
+    },
+    {
+      "file": "backend/app/services/perp_manual_service.py",
+      "line": 398,
+      "call": "self._persist_state"
+    },
+    {
+      "file": "backend/app/services/perp_manual_service.py",
+      "line": 430,
+      "call": "self._persist_state"
+    },
+    {
+      "file": "backend/app/services/perp_manual_service.py",
+      "line": 502,
+      "call": "self._persist_state"
+    },
+    {
+      "file": "backend/app/services/perp_manual_service.py",
+      "line": 59,
+      "call": "self._state_store.load"
+    },
+    {
+      "file": "backend/app/services/perp_manual_service.py",
+      "line": 89,
+      "call": "self._state_store.save"
+    },
+    {
+      "file": "backend/app/services/perp_manual_service.py",
+      "line": 360,
+      "call": "self._persist_state"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 354,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 534,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 542,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 956,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1375,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 207,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 264,
+      "import": [
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 413,
+      "call": "paper_journal.recovery_report"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 209,
+      "call": "paper_journal.reload"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 274,
+      "call": "paper_journal.flush"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 357,
+      "call": "paper_journal.reload"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 359,
+      "call": "paper_journal.reconcile_from_disk"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 360,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 536,
+      "call": "paper_journal.stats"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 544,
+      "call": "paper_journal.stats"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1207,
+      "call": "paper_journal.open_trade"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1244,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1089,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1153,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1189,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1395,
+      "call": "paper_journal.update_excursion"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1396,
+      "call": "paper_journal._open.get"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1454,
+      "call": "paper_journal._open.get"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 271,
+      "call": "paper_journal.update_excursion"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1046,
+      "call": "paper_journal.log_candidate"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1459,
+      "call": "paper_journal.close_trade"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1396,
+      "direct_cache_access": "Load"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1454,
+      "direct_cache_access": "Load"
+    },
+    {
+      "file": "backend/app/services/perp_micro_coach.py",
+      "line": 1420,
+      "call": "paper_journal.note_be_armed"
+    },
+    {
+      "file": "backend/app/services/perp_paper_observability.py",
+      "line": 18,
+      "import": [
+        "JOURNAL_PATH",
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/perp_setup_paper_mirror.py",
+      "line": 27,
+      "import": [
+        "JOURNAL_PATH",
+        "paper_journal"
+      ]
+    },
+    {
+      "file": "backend/app/services/perp_setup_paper_mirror.py",
+      "line": 603,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/services/perp_setup_paper_mirror.py",
+      "line": 446,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/services/perp_setup_paper_mirror.py",
+      "line": 683,
+      "call": "paper_journal.list_open"
+    },
+    {
+      "file": "backend/app/services/perp_setup_paper_mirror.py",
+      "line": 700,
+      "call": "paper_journal.update_excursion"
+    },
+    {
+      "file": "backend/app/services/perp_setup_paper_mirror.py",
+      "line": 507,
+      "call": "paper_journal.open_trade"
+    },
+    {
+      "file": "backend/app/services/perp_setup_paper_mirror.py",
+      "line": 709,
+      "call": "paper_journal.note_adaptive_exit"
+    },
+    {
+      "file": "backend/app/services/perp_setup_paper_mirror.py",
+      "line": 731,
+      "call": "paper_journal.close_trade"
+    },
+    {
+      "file": "backend/app/services/perp_setup_paper_mirror.py",
+      "line": 745,
+      "call": "paper_journal.close_trade"
+    },
+    {
+      "file": "backend/app/services/v6_diversity_trends.py",
+      "line": 10,
+      "import": [
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/v6_evidence_trends.py",
+      "line": 5,
+      "import": [
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/v6_fixed_window_diversity.py",
+      "line": 10,
+      "import": [
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/v6_forward_monitor.py",
+      "line": 11,
+      "import": [
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/v6_multi_window_history.py",
+      "line": 11,
+      "import": [
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/v6_research_status.py",
+      "line": 11,
+      "import": [
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/v6_stability.py",
+      "line": 6,
+      "import": [
+        "iter_jsonl"
+      ]
+    },
+    {
+      "file": "backend/app/services/v6_window_diversity.py",
+      "line": 7,
+      "import": [
+        "iter_jsonl"
+      ]
+    }
+  ]
+}

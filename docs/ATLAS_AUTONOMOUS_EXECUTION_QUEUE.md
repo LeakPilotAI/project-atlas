@@ -57,3 +57,9 @@ Current execution: K1-K5 scoped VERIFIED; BLOCKED_WAIT. No ACTIVE task while no 
 | L3 | Combined validation,preservation and reviewed publication | L2 | VERIFIED | continuation | Keep all independent gates blocked |
 
 Current execution: L1-L3 scoped VERIFIED; BLOCKED_WAIT,zero ACTIVE tasks while no eligible approved TODO remains. Native integration/migration and startup are excluded; B1/C1/D1/E1 unchanged. Exact next action in state/V2 continuation.
+
+| M1 | Fresh source review and confirmed V2 replay repair | offline source authorization | VERIFIED | test_hyperliquid_v2_review.py | Four failures retained and fixed |
+| M2 | Native writer/reader integration design and disposable admission/ack/drain bridge | M1 | VERIFIED | native integration design | Map changes and separate approvals |
+| M3 | Combined validation,checkpoint and reviewed publication | M2 | VERIFIED | review continuation | No gate promotion |
+
+Current execution:M1-M3 scoped VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks pending independent design/evidence review and separately scoped native integration. No B1/C1/D1/E1 promotion. Exact continuation in native integration design/state.

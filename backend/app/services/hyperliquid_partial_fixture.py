@@ -12,7 +12,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from app.services.daily_paper_liquidation import append_partial_fixture
-from app.services.hyperliquid_paper_handoff import fixture_scope
+from app.services.hyperliquid_paper_handoff import _constant, _pairs, fixture_scope
 from app.services.paper_bound_daily_report import publish_bound_daily
 from app.services.paper_exit_audit import audit_fixture_exits
 from app.services.paper_partial_accounting import replay_partial_fills
@@ -24,6 +24,24 @@ def _body(value):
 
 def _digest(value):
     return hashlib.sha256(_body(value).encode()).hexdigest()
+
+
+def _load(raw):
+    return json.loads(raw, object_pairs_hook=_pairs, parse_constant=_constant)
+
+
+def _request_body(request):
+    keys = {"schema", "position_id", "fill_id", "quantity", "quote", "timestamp", "session_id", "expected_revision"}
+    if (type(request) is not dict or set(request) != keys or request["schema"] != "HYPERLIQUID_PARTIAL_REQUEST_V2"
+            or any(type(request[k]) is not str or not request[k] or len(request[k]) > 200
+                   for k in ("position_id", "fill_id", "session_id", "quantity"))
+            or type(request["expected_revision"]) is not int or request["expected_revision"] < 0
+            or type(request["timestamp"]) is not int):
+        raise ValueError("Strict V2 fill request required")
+    body = _body(request)
+    if len(body) > 4096:
+        raise ValueError("Bounded request required")
+    return body
 
 
 @contextmanager
@@ -78,7 +96,7 @@ def _baseline(db, pin):
     rows = db.execute("SELECT body,digest FROM baseline").fetchall()
     if len(rows) != 1:
         raise ValueError("Missing or duplicate baseline")
-    baseline = json.loads(rows[0][0])
+    baseline = _load(rows[0][0])
     if _digest(baseline) != pin or rows[0][1] != pin:
         raise ValueError("Changed or corrupt baseline")
     return baseline
@@ -105,10 +123,14 @@ def _verify(db, ledger, pin):
     rows = db.execute("SELECT id,body,event FROM operations ORDER BY rowid").fetchall()
     previous, fills, events = pin, {}, []
     for number, (ident, body, raw) in enumerate(rows, 1):
-        request = json.loads(body)
+        request = _load(body)
+        _request_body(request)
         if raw is None:
             raise ValueError("Unacknowledged cross-store operation; preserve evidence, no replay")
-        event = json.loads(raw)
+        event = _load(raw)
+        if (type(event) is not dict or set(event) != {"schema", "revision", "previous", "request", "fill", "accounting", "digest"}
+                or type(event.get("revision")) is not int):
+            raise ValueError("Strict V2 event required")
         unsigned = {k: v for k, v in event.items() if k != "digest"}
         if (event.get("schema") != "HYPERLIQUID_PARTIAL_EVENT_V2" or event.get("revision") != number
                 or event.get("previous") != previous or event.get("digest") != _digest(unsigned)
@@ -116,6 +138,8 @@ def _verify(db, ledger, pin):
                 or request.get("position_id") not in baseline["positions"]):
             raise ValueError("Corrupt event/intent lineage")
         p = baseline["positions"][request["position_id"]]
+        # Historical freshness is relative to execution, not the reader's clock.
+        _price_evidence(p, request["quote"], request["timestamp"])
         fill = event["fill"]
         expected = {"schema": "PAPER_PARTIAL_FILL_V1", "fill_id": ident, "trade_id": p["trade_id"],
                     "quantity": request["quantity"], "price": request["quote"]["price"],
@@ -130,13 +154,13 @@ def _verify(db, ledger, pin):
     with _connect(ledger) as source:
         actual = source.execute("SELECT id,body FROM positions").fetchall()
         expected = {p["trade_id"]: p for p in baseline["positions"].values()}
-        if len(actual) != len(expected) or {i: json.loads(b) for i, b in actual} != expected:
+        if len(actual) != len(expected) or {i: _load(b) for i, b in actual} != expected:
             raise ValueError("Ledger/native baseline inventory mismatch")
         actual_fills = source.execute("SELECT id,trade,body FROM partial_fills ORDER BY rowid").fetchall()
         expected_fills = {f["fill_id"]: f for group in fills.values() for f in group}
         if (len(actual_fills) != len(expected_fills)
-                or {i: json.loads(b) for i, _, b in actual_fills} != expected_fills
-                or any(t != json.loads(b)["trade_id"] for _, t, b in actual_fills)):
+                or {i: _load(b) for i, _, b in actual_fills} != expected_fills
+                or any(t != _load(b)["trade_id"] for _, t, b in actual_fills)):
             raise ValueError("Untracked,missing or conflicting ledger fill")
     audit = audit_fixture_exits(ledger)
     unresolved = sorted(p["trade_id"] for p in baseline["positions"].values()
@@ -193,16 +217,9 @@ def append_partial_exit_fixture(path, ledger, request, *, expected_baseline, now
     fault hooks are for disposable crash tests. This method cannot update native
     sources, grant startup, or recover a pending operation.
     """
-    keys = {"schema", "position_id", "fill_id", "quantity", "quote", "timestamp", "session_id", "expected_revision"}
-    if (type(request) is not dict or set(request) != keys or request["schema"] != "HYPERLIQUID_PARTIAL_REQUEST_V2"
-            or any(type(request[k]) is not str or not request[k] or len(request[k]) > 200
-                   for k in ("position_id", "fill_id", "session_id", "quantity"))
-            or type(request["expected_revision"]) is not int or request["expected_revision"] < 0
-            or type(now) is not int or type(request["timestamp"]) is not int):
-        raise ValueError("Strict V2 fill request required")
-    body = _body(request)
-    if len(body) > 4096:
-        raise ValueError("Bounded request required")
+    body = _request_body(request)
+    if type(now) is not int:
+        raise ValueError("Explicit execution clock required")
     with _connect(path) as db:
         db.execute("BEGIN IMMEDIATE")
         baseline, events, fills, previous = _verify(db, ledger, expected_baseline)
@@ -210,7 +227,7 @@ def append_partial_exit_fixture(path, ledger, request, *, expected_baseline, now
         if prior:
             if prior[0] != body:
                 raise ValueError("Conflicting duplicate callback")
-            return json.loads(prior[1])
+            return _load(prior[1])
         if request["expected_revision"] != len(events) or request["timestamp"] != now:
             raise ValueError("Stale revision or execution clock")
         p = baseline["positions"].get(request["position_id"])
