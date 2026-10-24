@@ -49,3 +49,23 @@ def test_invalid_checkpoint_cannot_modify_history(tmp_path, content):
     result = update(roadmap, checkpoint)
     assert result.returncode != 0
     assert roadmap.read_bytes() == original
+
+
+@pytest.mark.parametrize("size,accepted", [(31000, True), (60001, False)])
+def test_bounded_checkpoint_history_capacity(tmp_path, size, accepted):
+    roadmap = tmp_path / "roadmap.txt"
+    prefix_bytes = f"{STRATEGY}\n{RECOVERY}\nretain historical bytes\n".encode()
+    original = (prefix_bytes + b"=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===\nold\n"
+                b"=== END ATLAS MANAGED CURRENT CHECKPOINT V1 ===\nretained suffix\n")
+    roadmap.write_bytes(original)
+    checkpoint = tmp_path / "checkpoint.txt"
+    prefix = "Milestone: recovery\nStatus: offline\nEvidence: fixtures\nNext action: independent review\n"
+    checkpoint.write_text(prefix + "x" * (size - len(prefix)), encoding="utf-8")
+    result = update(roadmap, checkpoint)
+    assert (result.returncode == 0) == accepted, result.stdout + result.stderr
+    if accepted:
+        assert roadmap.read_bytes().startswith(prefix_bytes)
+        assert roadmap.read_bytes().endswith(b"\nretained suffix\n")
+        assert next(tmp_path.glob("roadmap.txt.checkpoint-*.bak")).read_bytes() == original
+    else:
+        assert roadmap.read_bytes() == original

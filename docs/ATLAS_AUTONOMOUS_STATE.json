@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "QD_GATE_RESOLUTION_V1",
+  "last_verified_task": "QD_NATIVE_RECOVERY_V1",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,18 +9,18 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 222,
+    "passed": 147,
     "failed": 0,
-    "skipped": 0,
-    "new_cases": 16,
-    "initial_reproducer_failed": 12,
-    "initial_reproducer_passed": 1,
-    "network_provider_calls": 0,
-    "selection": "targeted quote/parser/provider mocks/read-security/selected financial/production-lock",
-    "operational_acceptance": false
+    "skipped": 1,
+    "not_executed": 1,
+    "new_recovery_cases": 21,
+    "new_checkpoint_capacity_cases": 2,
+    "duration_seconds": 25.46,
+    "operational_acceptance": false,
+    "selection": "confined native recovery/read + selected integration + pure read + production-lock + checkpoint"
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "BLOCKED_WAIT: obtain independent B1 custodian/exclusion/capital/rule acceptance;named C1 actual writer/process/resource roster and scoped native observation permission;D1 independent pin/clock/issuer/recovery custody and accepted restore identity method;E1 feed rights/executable-price/calendar/corporate actions/backup+restore/supervised release. Then separately authorize accepted operational read-only composition;no fixture authority or startup bypass.",
+  "exact_next_action": "Independent original-cut/current-highwater and restored-mapping custody acceptance; named actual process/resource C1 observation scope; then separately authorized genuine-custody recovery acceptance. No operational restored-store writer admission or startup.",
   "latest_focused_tests": {
     "passed": 13,
     "failed": 0,
@@ -80,12 +80,13 @@
     "FS123_INDEPENDENT_ACCEPTANCE_HANDOFF": "VERIFIED offline handoff only:17-property evidence matrix,V2 unaccepted B1 scope,actual writer/resource/UI/shortcut map and conditional walkthrough;24AST/compile,5PowerShell parses,7route assertions,3unchangedshortcutmetadatachecks.0newtestcases;no independent operational acceptance.",
     "QD_NATIVE_READ_CAPABILITY_V1": "VERIFIED confined source/native fixture reader only;312distinctPythonpassed,0finalfailures,1NOTEXECUTED;25separateJSpassed. No operational authority,HTTP/browser,provider,writer or startup activation.",
     "QD_HTTP_BROWSER_V1_DISPOSABLE": "VERIFIED scoped realHTTP/native-child/browser:337distinctPythonpasses1NOTEXECUTED,25JSpasses,11recordedbrowserchecks;51served synthetic file hashes unchanged;allhosts gracefullyclosed. No operational approval.",
-    "QD_GATE_RESOLUTION_V1": "VERIFIED offline parser/clock repairs:222passed0failed0skipped,16new;initial12failures retained. B1/C1/D1/E1 remainBLOCKED;actual writer exclusion and ordinary-copy native restore not established;no gate promotion."
+    "QD_GATE_RESOLUTION_V1": "VERIFIED offline parser/clock repairs:222passed0failed0skipped,16new;initial12failures retained. B1/C1/D1/E1 remainBLOCKED;actual writer exclusion and ordinary-copy native restore not established;no gate promotion.",
+    "QD_NATIVE_RECOVERY_V1": "VERIFIED disposable archival-only recovery;147passed0failed1NOTEXECUTED;21newrecovery+2capacitycases. Originalbytes preserved,external authority injected,UNKNOWN refuses replay,no writer/startup authority.18source identities observed,actual ownership unaccepted."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 43,
-  "continuation_report": "docs/FS123_OPERATIONAL_ACCEPTANCE_HANDOFF_2026-10-24.md",
-  "blocked_wait_reason": "Authorized offline handoff complete. Independent decisions, accepted selected-account policy, actual writer/UI routing, trusted enrollment and E1 operational evidence absent. Monday target remains NO-GO.",
+  "progress_revision": 44,
+  "continuation_report": "docs/QUALITY_DIPS_NATIVE_RECOVERY_CONTINUATION_2026-10-24.md",
+  "blocked_wait_reason": "Disposable archival implementation verified; independent issuer/current-pin/clock/exclusion/recovery custody and operational permissions unavailable.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
@@ -192,7 +193,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/QUALITY_DIPS_GATE_RESOLUTION_CONTINUATION_2026-10-24.md",
+  "recovery_checkpoint": "docs/QUALITY_DIPS_NATIVE_RECOVERY_CONTINUATION_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -230,7 +231,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/QUALITY_DIPS_GATE_RESOLUTION_CONTINUATION_2026-10-24.md",
+  "recovery_document": "docs/QUALITY_DIPS_NATIVE_RECOVERY_CONTINUATION_2026-10-24.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -281,5 +282,16 @@
     "recorded_real_browser_checks": 11,
     "operational_acceptance": false
   },
-  "gate_resolution_report": "docs/QUALITY_DIPS_GATE_RESOLUTION_2026-10-24.md"
+  "gate_resolution_report": "docs/QUALITY_DIPS_GATE_RESOLUTION_2026-10-24.md",
+  "retained_gate_resolution_validation": {
+    "passed": 222,
+    "failed": 0,
+    "skipped": 0,
+    "new_cases": 16,
+    "initial_reproducer_failed": 12,
+    "initial_reproducer_passed": 1,
+    "network_provider_calls": 0,
+    "selection": "targeted quote/parser/provider mocks/read-security/selected financial/production-lock",
+    "operational_acceptance": false
+  }
 }

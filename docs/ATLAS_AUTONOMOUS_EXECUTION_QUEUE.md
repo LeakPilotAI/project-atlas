@@ -205,3 +205,8 @@ QD_HTTP_BROWSER_V1_DISPOSABLE VERIFIED disposable only. Real loopback HTTP/nativ
 ## Quality Dips gate resolution — 2026-10-24
 
 QD_GATE_RESOLUTION_V1 VERIFIED offline engineering only.222passed0failed0skipped,16newcases;initial12failed1passed retained. Parser identity/nonfinite/timezone and read trusted-clock/post-authority expiry defects repaired. Source-grounded B1/C1/D1/E1 conditions,complete writer/resource roles and explicit copied-native-identity restore blocker in QUALITY_DIPS_GATE_RESOLUTION_2026-10-24.md. No operational provider/process/financial access or fresh native/browser demonstration. Ruff10→7inherited/0new. ZeroACTIVE;BLOCKED_WAIT for independent account/exclusions,actual resource/writer roster,custody/clock/recovery and provider/backup/supervised release evidence. All21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.
+
+
+## Native recovery and resource evidence — 2026-10-24
+
+QD_NATIVE_RECOVERY_V1 VERIFIED disposable archival-only;147passed0failed1NOTEXECUTED,21newrecovery+2capacitycases. See QUALITY_DIPS_NATIVE_RECOVERY_CONTINUATION_2026-10-24.md. Source18file native identity observations do not accept runtime ownership. ExactlyzeroACTIVE;BLOCKED_WAIT for independent current-cut/restored-mapping/exclusion/clock/rollback custody and named actualC1resource/processscope. No writable-store adoption;UNKNOWN retained. B1/C1/D1/E1BLOCKED;all21decisions/7phases preserved;startupNO;productionNO-GO.

@@ -1,0 +1,98 @@
+{
+  "schema": "QD_C1_SOURCE_ROSTER_V1",
+  "scope": "SOURCE_FILE_OBSERVATION_ONLY_NO_RUNTIME_OWNERSHIP",
+  "files": [
+    {
+      "path": "backend/app/main.py",
+      "size": 30137,
+      "sha256": "3b7d09a025a9ff884bd513291b01e782a9932981108598f8c7373ffc42543666"
+    },
+    {
+      "path": "backend/app/core/production_startup_lock.py",
+      "size": 445,
+      "sha256": "a551c25f6aaf0afa882e218a33cbedbb23fe60713accc0ee035a8ee980ae520b"
+    },
+    {
+      "path": "backend/app/api/investment_board.py",
+      "size": 13137,
+      "sha256": "aa13650db1f562658b06ccad2d4cc0c25d6c96858a4398cd891701552d63589f"
+    },
+    {
+      "path": "backend/app/api/quality_dips_selected_paper.py",
+      "size": 6115,
+      "sha256": "e946966c5c831a68927deef83ececbbca2beac9e9566ca9afa8a4d3c10f27776"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_selected_account.py",
+      "size": 11243,
+      "sha256": "61e77f9382be8caa2b99d2384c04b3a606deca090801ddae0bb78dbd00019bda"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_paper.py",
+      "size": 19304,
+      "sha256": "1a6daacb3f39b08dcdb72503ad9f10838462f6d69c7c6b1be58d53b7b64b58b2"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_paper_marking.py",
+      "size": 1790,
+      "sha256": "2f434a4a175e36cf02402bcca745347f2f27d2b3ca7e63efe4f54cdf6b87519f"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_paper_terminal.py",
+      "size": 2882,
+      "sha256": "67ea4ba940d8c790bcc6315246037cd546832a6ebc8a38a17b70e5fec4c1584f"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_v3_state.py",
+      "size": 4504,
+      "sha256": "cc90dd5a996083ffad25d5e2d137e6903aa8e53b9e79d6e4cac3f34956da9c30"
+    },
+    {
+      "path": "backend/app/investment/prospective_evidence.py",
+      "size": 5175,
+      "sha256": "e26d98f37d0bd2fec0a01cfbde9e07192c2c6dd9365264798d8aa08e257358bb"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_v3_forward_store.py",
+      "size": 1509,
+      "sha256": "4df98ece112ff179686b3f1f2fcddf84e5b73573cd2c097d78ef50d0b07eadf9"
+    },
+    {
+      "path": "scripts/windows/Atlas-Background.ps1",
+      "size": 47380,
+      "sha256": "806470928cbe5239741b070e9535c67ac979d71f131d6cc07335258776f1ba9b"
+    },
+    {
+      "path": "scripts/windows/Atlas-Background-Controls.ps1",
+      "size": 16890,
+      "sha256": "5417d6c7b019b22f5b344dce3a8c3cc9f0dfbb078a9bd995864ca02b22cce01b"
+    },
+    {
+      "path": "scripts/windows/Atlas-Background-Gaming.ps1",
+      "size": 1942,
+      "sha256": "bd2dcc35207324e39e7e9900436a35ca726ee7dad075ca03f2daa47af7422bfd"
+    },
+    {
+      "path": "scripts/windows/Atlas-StartupAdmission.psm1",
+      "size": 453,
+      "sha256": "e73a7a59d8fc4c4652990172b43aae409b03820028bfb6bcc1a61ae33d986fd4"
+    },
+    {
+      "path": "scripts/volume_inspector/financial_record_store.py",
+      "size": 12881,
+      "sha256": "f8761d23012d57482d30fce986ae83197c1612c3d7989fc5ae28eab877d2a15f"
+    },
+    {
+      "path": "scripts/volume_inspector/financial_reporting.py",
+      "size": 10641,
+      "sha256": "e10bf75d7bc93e51687821b6abcb168859900cb91f2a2ae3cee4518467fdf303"
+    },
+    {
+      "path": "scripts/volume_inspector/financial_read_port.py",
+      "size": 2986,
+      "sha256": "8ddbffd0dee264964895414a51842e5296bec4fdfc9d7cdd6831d0455e49fa6b"
+    }
+  ],
+  "operational_resource_enrollment": false,
+  "operational_process_identity": null
+}

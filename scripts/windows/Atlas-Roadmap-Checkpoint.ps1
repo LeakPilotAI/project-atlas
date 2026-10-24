@@ -24,7 +24,9 @@ if ([string]::IsNullOrWhiteSpace($newCheckpoint)) {
     throw "Checkpoint is empty."
 }
 
-if ($newCheckpoint.Length -gt 30000) {
+# Retained nested checkpoints reached 29,969 characters. Keep a finite bound
+# while preserving their bytes instead of deleting history to fit the old cap.
+if ($newCheckpoint.Length -gt 60000) {
     throw "Checkpoint exceeds maximum allowed length."
 }
 
