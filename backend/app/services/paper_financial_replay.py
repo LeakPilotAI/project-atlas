@@ -7,7 +7,7 @@ No database, filesystem, provider, startup or financial service imports.
 import copy
 import hashlib
 import json
-from decimal import ROUND_HALF_EVEN, Context, Decimal, localcontext
+from decimal import ROUND_HALF_EVEN, Context, Decimal, Inexact, localcontext
 from zoneinfo import ZoneInfo
 
 
@@ -149,7 +149,7 @@ def _transition_in_place(manifest, state, command):
 def apply_event(manifest, state, command):
     """Return an independent next-state/receipt; failure never mutates input."""
     validate_manifest(manifest)
-    with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)):
+    with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)) as context:
         candidate = copy.deepcopy(state)
         original = command
         selected = manifest["schema"] == "PAPER_EPOCH_SELECTED_QD_V2"
@@ -160,7 +160,13 @@ def apply_event(manifest, state, command):
             command = dict(command)
             command.pop("eligibility")
             command["schema"] = "PAPER_COMMAND_FIXTURE_V1"
-        receipt = _transition_in_place(manifest, candidate, command)
+        # Selected accounts must not acknowledge a fill rounded away from its
+        # remaining quantity or cash. Retained V1 arithmetic stays unchanged.
+        context.traps[Inexact] = selected
+        try:
+            receipt = _transition_in_place(manifest, candidate, command)
+        except Inexact as exc:
+            raise ValueError("ARITHMETIC_PRECISION_UNSUPPORTED") from exc
         if selected:
             receipt.update(schema="PAPER_RECEIPT_SELECTED_QD_V2", payload_digest=digest(original),
                            policy_digest=digest(manifest["account_policy"]), eligibility_reasons=reasons)

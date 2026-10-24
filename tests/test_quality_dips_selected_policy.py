@@ -172,3 +172,76 @@ def test_native_store_computes_canonical_transition_before_intent_without_runnin
     execute = next(node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == "execute")
     source = ast.get_source_segment(path.read_text(encoding="utf-8"), execute)
     assert source.index("apply_event(") < source.index('"intent"')
+
+
+def test_precision_losing_partial_exit_refuses_before_acknowledgement(tmp_path):
+    m, c = setup_case()
+    store = create_epoch_fixture(tmp_path / "precision.sqlite", m)
+    store.execute(c)
+    before = store.snapshot()
+    command = exit_command(m, c, before, "0.00000000000000000000000000001")
+    with pytest.raises(ValueError, match="ARITHMETIC_PRECISION_UNSUPPORTED") as failure:
+        store.execute(command)
+    from decimal import Inexact
+
+    assert isinstance(failure.value.__cause__, Inexact)
+    assert store.snapshot() == before
+
+
+def test_selected_unknown_projection_blocks_retries_and_exits(tmp_path):
+    m, c = setup_case()
+    store = create_epoch_fixture(tmp_path / "unknown.sqlite", m)
+    store.execute(c, projection_required=True)
+    with pytest.raises(ValueError, match="UNKNOWN"):
+        store.execute(c, projection_required=True)
+    with pytest.raises(ValueError, match="UNKNOWN"):
+        store.execute(exit_command(m, c, store.snapshot(), "1"))
+    assert store.snapshot()["revision"] == 1
+
+
+def test_selected_partial_position_pure_fs3_report_preserves_cash_and_overnight(tmp_path):
+    from datetime import datetime, time, timedelta
+    from zoneinfo import ZoneInfo
+
+    from app.services.paper_daily_report import audit_daily_report, build_daily_report
+
+    m, c = setup_case("SPY", "ETF")
+    m["timezone"] = "America/New_York"
+    store = create_epoch_fixture(tmp_path / "fs3.sqlite", m)
+    store.execute(c)
+    store.execute(exit_command(m, c, store.snapshot(), "1"))
+    with store.connect(readonly=True) as db:
+        rows = [finance.event_stream_record(*row) for row in db.execute("SELECT * FROM events ORDER BY revision")]
+    # Explicit synthetic provenance placeholders: no native storage or authority.
+    pin = {"epoch": m["epoch"], "root": "SYNTHETIC", "inception": "SYNTHETIC", "entries": ["SYNTHETIC"] * 2}
+    scope = {"schema": "FS3_REPORT_SCOPE_V1", "account_id": "synthetic-selected", "epoch": m["epoch"],
+             "policy_digest": finance.digest(m), "timezone": m["timezone"]}
+    zone = ZoneInfo(m["timezone"])
+    day = datetime.fromtimestamp(c["timestamp"], zone).date()
+    cutoff = int(datetime.combine(day + timedelta(days=1), time(), zone).timestamp())
+    report = build_daily_report(scope, m, pin, rows, day.isoformat(), cutoff)
+    audit_daily_report(report, scope, m, pin, rows, store.snapshot())
+    assert report["cash"]["closing"] == "943.968"
+    assert report["realized"]["net"] == "3.968"
+    assert next(iter(report["open_positions"].values()))["remaining"] == "1.5"
+    assert report["valuation"] is None and report["lifecycle_status"] == "NOT_EVALUATED"
+
+
+def test_selected_concurrent_different_entries_admit_only_one(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    m, c = setup_case()
+    store = create_epoch_fixture(tmp_path / "concurrent.sqlite", m)
+    other = copy.deepcopy(c)
+    other["operation_id"] = "competitor"
+
+    def attempt(command):
+        try:
+            return store.execute(command)["operation_id"]
+        except ValueError:
+            return "REFUSED"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(attempt, [c, other]))
+    assert outcomes.count("REFUSED") == 1
+    assert store.snapshot()["revision"] == 1

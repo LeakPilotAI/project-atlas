@@ -1,0 +1,161 @@
+{
+  "schema": "QUALITY_DIPS_B1_ACCEPTANCE_PROPOSAL_V3",
+  "proposal_id": "qd-b1-acceptance-review-20261024-v3",
+  "status": "PROPOSED_NOT_ACCEPTED",
+  "reviewer_designated_by_operator": "ChatGPT, separate review after eligible Codex engineering",
+  "acceptance_reference": null,
+  "account_id": "quality-dips-supervised-review-v1",
+  "epoch_id": "quality-dips-new-epoch-review-v1",
+  "strategy": "QUALITY_DIPS",
+  "strategy_policy": "QUALITY_DIPS_V3",
+  "currency": "USD",
+  "hypothetical_opening_cash": "1000",
+  "capital_provenance": "NEW_DECLARED_SIMULATED_CAPITAL_NOT_RECOVERED_CASH",
+  "instrument_scope_proposed": {
+    "universe": "ELIGIBLE_EXISTING_QUALITY_DIPS_RANKED_STOCKS_AND_ETFS",
+    "not_symbol_allowlist": true,
+    "candidate_requirements": [
+      "immutable observation identity and original source",
+      "exact current ranking revision and cohort",
+      "verified listing/instrument identity and USD share units",
+      "explicit supported long/fractional execution rules",
+      "fresh authenticated price and ranking evidence",
+      "accepted account/risk policy",
+      "separate manual command approval"
+    ],
+    "sector_etf": "May normalize to ETF only from verified metadata; no automatic type inference",
+    "missing_evidence": "REFUSE_WITH_REASON_NOT_FABRICATE"
+  },
+  "units": "LONG_ONLY_FRACTIONAL_SHARES",
+  "entry_mode": "MANUAL_ONLY",
+  "max_entry_notional_usd_proposed": "100",
+  "max_remaining_positions_proposed": 1,
+  "borrowing_or_shorting": false,
+  "initial_epoch_realized_gross_proposed": "0",
+  "initial_epoch_realized_net_proposed": "0",
+  "initial_epoch_pending_operations_proposed": 0,
+  "initial_legacy_exposure": "UNRESOLVED_NOT_ADOPTED_NOT_DECLARED_ZERO",
+  "cost_policy_candidate": "FIXTURE_ENTRY_NOTIONAL_ROUNDTRIP_V1",
+  "fees_bps_per_side_proposed": "2",
+  "slippage_bps_per_side_proposed": "2",
+  "cost_policy_status": "SYNTHETIC_ASSUMPTION_REQUIRES_REVIEW_NOT_MARKET_FILL_EVIDENCE",
+  "reporting_timezone": "America/New_York",
+  "inception_timestamp": null,
+  "inception_release": null,
+  "resource_bindings": {
+    "canonical_events_and_receipts": {
+      "logical_id": "qd-review-canonical-v1",
+      "accepted_root_identity": null
+    },
+    "native_projection": {
+      "logical_id": "qd-review-projection-v1",
+      "accepted_root_identity": null
+    },
+    "daily_reports": {
+      "logical_id": "qd-review-reports-v1",
+      "accepted_root_identity": null
+    },
+    "admission_control": {
+      "logical_id": "qd-review-admission-v1",
+      "accepted_root_identity": null
+    }
+  },
+  "holding_policy": "PATIENT_CAPITAL_NO_FORCED_INTRADAY_LIQUIDATION",
+  "exit_policy": "MANUAL_PARTIAL_FULL_ONLY_FOR_INITIAL_SCOPE;TERMINAL_SIGNAL_INFORMATIONAL_UNLESS_SEPARATELY_APPROVED",
+  "missing_price_or_commit_policy": "PRESERVE_POSITION_AND_UNKNOWN_REFUSE_REPLAY_OR_CLEAN_REPORT",
+  "historical_accounts_excluded": [
+    "LEGACY_QUALITY_DIPS",
+    "INVESTMENT_BOOK",
+    "HYPERLIQUID_NATIVE",
+    "PREDICTION",
+    "SHADOW"
+  ],
+  "provider_authorization": null,
+  "storage_authorization": null,
+  "runtime_integration_authorization": null,
+  "startup_authorized": false,
+  "migration_authorized": false,
+  "legacy_recovery_authorized": false,
+  "operationally_accepted": false,
+  "supersedes_for_review_only": "docs/QUALITY_DIPS_B1_ACCEPTANCE_PROPOSAL_V2_2026-10-24.json",
+  "original_proposal_sha256": "1bb70beaaa518a20c217eeef235d4e7c76ea8aa04ce6bc6ddbd35c793ccf20ac",
+  "engineering_basis_commit": "8dd74e5e0c180f12d2a57045467bf7ce361c4bd8",
+  "operator_confirmation": {
+    "scope": "OFFLINE_TESTING_PARAMETERS_CONFIRMED",
+    "source": "2026-10-24 operator correction and acceptance-review instruction",
+    "capital_usd": "1000",
+    "maximum_entry_usd": "100",
+    "positions": 1,
+    "manual_entry_partial_full_exits": true,
+    "long_only": true,
+    "fractional_where_supported": true,
+    "no_scale_in": true,
+    "overnight_permitted": true,
+    "synthetic_fees_bps_per_side": "2",
+    "synthetic_slippage_bps_per_side": "2",
+    "operational_authorization": false
+  },
+  "independent_scope_acceptance": null,
+  "decimal_contract_proposed": {
+    "encoding": "FINITE_DECIMAL_STRINGS_NO_JSON_FLOATS",
+    "precision": 28,
+    "rounding": "ROUND_HALF_EVEN",
+    "cent_quantization": false,
+    "quantity_units": "SHARES_OF_EXPLICIT_VERIFIED_INSTRUMENT",
+    "status": "OFFLINE_IMPLEMENTED_REQUIRES_INDEPENDENT_ACCEPTANCE",
+    "selected_account_precision": "28 significant digits; refuse inexact financial transition, do not acknowledge rounded-away quantities/cash"
+  },
+  "cost_allocation_candidate": "FS3_FEE_FIRST_REMAINDER_SLIPPAGE_V1",
+  "entry_policy_proposed": {
+    "side": "LONG",
+    "manual_confirmation_required": true,
+    "max_new_entry_notional_usd": "100",
+    "max_concurrently_remaining_positions": 1,
+    "scale_in_existing_position": false,
+    "borrowing": false,
+    "margin": false,
+    "automatic_signal_mirror": false,
+    "enforcement_location": "SERIALIZED_CANONICAL_TRANSITION_BEFORE_INTENT_NOT_UI_ONLY",
+    "implemented_in_current_general_FS1_policy": false,
+    "instrument_scope": "ELIGIBLE_RANKED_STOCK_ETF",
+    "implemented_in_selected_disposable_version": true
+  },
+  "overnight_and_reporting_proposed": {
+    "force_liquidation_at_shutdown": false,
+    "preserve_open_positions": true,
+    "cash_is_not_total_equity": true,
+    "unsupported_valuation": null,
+    "timezone": "America/New_York",
+    "day_cutoff": "NEXT_LOCAL_MIDNIGHT_EXCLUSIVE",
+    "intraday_status": "INCOMPLETE_CUTOFF_NOT_REACHED",
+    "source_accounting_complete_is_not_clean_shutdown": true,
+    "lifecycle_acceptance_separate": true,
+    "report_schema": "FS3_DAILY_REPORT_V1",
+    "source_evidence_acceptance": "CURRENT_PIN_CUSTODY_AND_COMPLETE_WRITER_SCOPE_STILL_REQUIRED"
+  },
+  "legacy_exclusion_acceptance_required": {
+    "originals_retained": true,
+    "legacy_positions_assumed_closed": false,
+    "legacy_cash_assumed_zero": false,
+    "legacy_obligations_waived": false,
+    "source_custodian_statement": null,
+    "independent_reviewer_disposition": null,
+    "new_resources_must_be_physically_disjoint": true
+  },
+  "required_signoffs": [
+    "OPERATOR_PROPOSED_PARAMETERS_CONFIRMATION",
+    "INDEPENDENT_B1_SCOPE_EXCLUSION_CAPITAL_POLICY",
+    "INDEPENDENT_C1_WRITER_RESOURCE_OWNERSHIP_DRAIN",
+    "INDEPENDENT_D1_STORAGE_ISSUER_CLOCK_CURRENT_PIN_RECOVERY",
+    "E1_RIGHTS_BACKUP_RESTORE_LIFECYCLE_SUPERVISED_RELEASE"
+  ],
+  "proposal_version": 3,
+  "review_capability_limit": "Advisory ChatGPT review is not archive authentication, native Windows security certification or startup authority.",
+  "ranking_and_execution_separate": true,
+  "freshness_proposed": {
+    "quote_max_age_seconds": 30,
+    "ranking_max_age_seconds_cap": 600,
+    "status": "OFFLINE_BOUND_NOT_INDEPENDENTLY_ACCEPTED_RUNTIME_FEED_POLICY",
+    "reference_or_stale_quotes": "RESEARCH_ONLY_NEVER_FILL_EVIDENCE"
+  }
+}
