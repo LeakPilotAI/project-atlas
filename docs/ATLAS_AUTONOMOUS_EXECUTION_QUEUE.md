@@ -82,3 +82,8 @@ Current execution:N2R local scope completed;BLOCKED_WAIT,zero ACTIVE tasks. Next
 | Q1 | Isolated new-epoch feasibility, disposable separation acceptance and explicit governance dependencies | Current source/design/test authorization | VERIFIED | Isolated epoch proposal | No gate bypass or runtime routing |
 
 Current execution:Q1 scoped design/disposable acceptance VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. Independent epoch scope adjudication and separately scoped canonical implementation approval are next;B1/C1/D1/E1 unchanged.
+
+| Q2 | Actual-source strategy/signal/PAPER coverage inventory | Current offline inventory authorization | VERIFIED | Multi-strategy coverage matrix | No operational gate promotion |
+| Q3 | Disposable Quality Dips native-source handoff with explicit incomplete financial state | Q2;current disposable development authorization | VERIFIED | quality_dips_fixture_handoff.py | Validate source integrity without account inception or runtime routing |
+
+Current execution:Q2/Q3 scoped VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. Q4 canonical inception remains unapproved pending independent epoch/B1 adjudication. Q5/Q6 proposed strategy adapters depend on accepted inception/cost/receipt contracts. B1/C1/D1/E1 unchanged.

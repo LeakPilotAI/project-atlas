@@ -50,3 +50,6 @@ N2read-only redacted supplement:docs/N2_READONLY_EVIDENCE_REVIEW_REDACTED_2026-1
 
 
 Q1 isolated-epoch supplement:docs/HYPERLIQUID_ISOLATED_EPOCH_PROPOSAL_2026-10-23.md;67combinedpassed0failed0skipped including6newdisposable separation cases. Conditional design feasibility only;new hypothetical inception is not historical migration or B1waiver. No canonical gate decision changed. B1/C1/D1/E1BLOCKED;PAPERstartupNO;productionNO-GO. Independent scope adjudication and separate canonical implementation approval required.
+
+
+Q2/Q3 multi-strategy supplement:docs/MULTI_STRATEGY_PAPER_COVERAGE_2026-10-23.md. Actual-source strategy/signal/store inventory and pure disposable Quality Dips handoff audit implemented;85combinedpassed0failed0skipped including14newcases. Gross returns do not prove net/cash/clean shutdown;all authority flags false. No canonical inception approval inferred. B1/C1/D1/E1BLOCKED,all21decisionsunchanged,PAPERstartupNO,productionNO-GO.
