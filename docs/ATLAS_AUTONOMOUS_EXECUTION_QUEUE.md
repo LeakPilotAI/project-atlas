@@ -225,3 +225,8 @@ WINDOWS_LOCAL_ARCHITECTURE_V1 VERIFIED deploymentdecision/sourceaudit only. ATLA
 ## Windows-local network hardening — 2026-10-24
 
 WINDOWS_LOCAL_NETWORK_HARDENING_V1 VERIFIED source/config-only;postgres127.0.0.1:5432:5432,redis127.0.0.1:6379:6379.15passed0failed0skipped,7newcases;realComposeconfig withsyntheticenv;allnonportsettingsunchanged. Noengine/container/Genesis access or runtimeapplication. See WINDOWS_LOCAL_NETWORK_CONTINUATION_2026-10-24.md. ExactlyzeroACTIVE;BLOCKED_WAIT for independentB1/C1/D1/E1evidence and scopedreadintegration;futuredependencybindingapplication needs separatelyauthorized lifecycle/identity/exposure/collisionacceptance. All21decisions/7phases/startuplocks/alienfrontend preserved;PAPERstartupNO;productionNO-GO.
+
+
+## Quality Dips operational read-only source integration — 2026-10-24
+
+QD_OPERATIONAL_READ_INTEGRATION_V1 VERIFIEDSOURCEONLY;152passed0failed0skipped,26new. ExplicitDI operationalreadcomposition/nativeidentity/custody/clock preflight;loopbackGET-only andexistingUIbytes;ControlCenterselectedOpen/Closehook(defaultbridgeabsentrefuses). RealHTTPnativefixtures/PSbridge verified,notrealGUI/browseroroperationalenrollment. See QUALITY_DIPS_OPERATIONAL_READ_CONTINUATION_2026-10-24.md. ExactlyzeroACTIVE;BLOCKED_WAIT for independentB1/C1/D1 andacceptedactualWindowscomposition/bridge/enrollment/supervisedreadonlylaunch;E1feed/PAPERrelease separate. All21decisions/7phases/alienfrontend/protectedstartuplocks preserved;PAPERstartupNO;productionNO-GO.

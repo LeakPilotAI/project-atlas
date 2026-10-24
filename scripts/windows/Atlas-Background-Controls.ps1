@@ -1,11 +1,13 @@
 # Manual Windows Forms controls for normal and opt-in gaming background mode.
 #Requires -Version 5.1
+param([object]$AcceptedSelectedReadBridge = $null)
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Import-Module (Join-Path $PSScriptRoot "Atlas-Background-Ui.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-ReadOnly-Dashboard.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-Control-Center.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "Atlas-SelectedPaper-ReadOnly.psm1") -Force
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $Manager = Join-Path $PSScriptRoot "Atlas-Background.ps1"
@@ -14,7 +16,7 @@ $PowerShell = Join-Path $PSHOME "powershell.exe"
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Atlas Control Center"
 $form.StartPosition = "CenterScreen"
-$form.Size = New-Object System.Drawing.Size(500, 655)
+$form.Size = New-Object System.Drawing.Size(500, 735)
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
 $form.MaximizeBox = $false
 $form.MinimizeBox = $true
@@ -85,7 +87,7 @@ $dashboardStop.Add_Click({
 $form.Controls.Add($dashboardStop)
 $form.Add_FormClosing({
     param($sender, $eventArgs)
-    try { Close-AtlasReadOnlyDashboard } catch {
+    try { Close-AtlasSelectedPaperDashboard; Close-AtlasReadOnlyDashboard } catch {
         $eventArgs.Cancel = $true
         Set-StatusMessage $_.Exception.Message ([System.Drawing.Color]::DarkRed)
     }
@@ -324,6 +326,29 @@ $diagnostics.Location = New-Object System.Drawing.Point(20, 482)
 $diagnostics.Size = New-Object System.Drawing.Size(445, 105)
 $diagnostics.Text = 'No startup attempt in this GUI. Process identity/readiness not verified. Use explicit Atlas Status only when recovery-capable manager inspection is intended.'
 $form.Controls.Add($diagnostics)
+$selectedPaper = New-Object System.Windows.Forms.Button
+$selectedPaper.Text = 'Open Selected PAPER Account (read-only)'
+$selectedPaper.Location = New-Object System.Drawing.Point(20, 596)
+$selectedPaper.Size = New-Object System.Drawing.Size(445, 32)
+$selectedPaper.Add_Click({
+    try {
+        Open-AtlasSelectedPaperDashboard -Root $Root -AcceptedBridge $AcceptedSelectedReadBridge
+        Set-StatusMessage 'Selected PAPER Account read-only session verified.' ([System.Drawing.Color]::DarkGreen)
+    } catch {
+        Set-StatusMessage $_.Exception.Message ([System.Drawing.Color]::DarkRed)
+    }
+})
+$form.Controls.Add($selectedPaper)
+$selectedPaperClose = New-Object System.Windows.Forms.Button
+$selectedPaperClose.Text = 'Close Selected Account Read-Only Host'
+$selectedPaperClose.Location = New-Object System.Drawing.Point(20, 636)
+$selectedPaperClose.Size = New-Object System.Drawing.Size(445, 32)
+$selectedPaperClose.Add_Click({
+    try { Close-AtlasSelectedPaperDashboard } catch {
+        Set-StatusMessage $_.Exception.Message ([System.Drawing.Color]::DarkRed)
+    }
+})
+$form.Controls.Add($selectedPaperClose)
 $tray = New-Object System.Windows.Forms.NotifyIcon
 $tray.Icon = [System.Drawing.SystemIcons]::Application
 $tray.Text = 'Atlas Control Center'

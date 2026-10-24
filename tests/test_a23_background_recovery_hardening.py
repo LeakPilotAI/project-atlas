@@ -1,6 +1,7 @@
 """A23: isolated Windows background recovery hardening regressions."""
 
 from pathlib import Path
+import os
 import subprocess
 import textwrap
 
@@ -16,6 +17,11 @@ def run_powershell(script: str, tmp_path: Path):
     fixture = tmp_path / "fixture.ps1"
     fixture.write_text(script, encoding="utf-8")
 
+    # Python does not perform PowerShell 7's special Windows PowerShell path
+    # cleanup. Restrict this built-in-only fixture to Windows PS 5.1 modules;
+    # otherwise inherited PS7 module paths can hide Get-FileHash. No OS change.
+    env = dict(os.environ)
+    env["PSMODULEPATH"] = str(Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/Modules")
     result = subprocess.run(
         [
             "powershell.exe",
@@ -27,6 +33,7 @@ def run_powershell(script: str, tmp_path: Path):
             str(fixture),
         ],
         capture_output=True,
+        env=env,
         text=True,
         timeout=30,
         check=False,
