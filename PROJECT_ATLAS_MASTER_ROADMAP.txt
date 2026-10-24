@@ -13796,6 +13796,14 @@ Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Do
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
 === ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: WINDOWS_LOCAL_ARCHITECTURE_V1 — PERMANENT OPERATOR DEPLOYMENT DECISION — 2026-10-24
+Status: Single-user Windows-local frontend/backend/financialstorage/execution. NO VPS;NO cloudhosting;NO remote production server;NO mandatory paid hosting. Authorized outbound marketdata allowed only with rights/connectionapproval. Existing alienfrontend preserved;Genesis excluded. B1/C1/D1/E1BLOCKED;all21decisionsUNCHANGED;PAPERstartupNO;productionNO-GO.
+Evidence:docs/ATLAS_DEPLOYMENT_POLICY.json,state mirror and WINDOWS_LOCAL_OPERATIONAL_ARCHITECTURE_2026-10-24.md;source loopback/refusal audit and policy/staticchecks PASS.0newapplicationtests;prior173passes1NOTEXECUTED retained,notrerun. Historical hostedproposals retained butsuperseded bythis permanentdeploymentdecision.
+Next action: Independent selectedaccount/localcustody/actualownership decisions;bounded source-only operationalreadonlycomposition permission;then separate enrollment/nativeacceptance,authorizedfeed,manualPAPERwriter/session and overnight/StartStopacceptance. No securitywaiver or newauthority.
+All7phases:1coreincomplete;2EvidenceEngine/AFIHOLD0/10accepted;3BLOCKED;4CrossMarketpending;5historicalSaaSdeferred/constrainedlocalonly;6institutionalpending;7commercialpending.
+
+Prior managed history retained verbatim:
+
 Milestone: QD_OFFLINE_BACKUP_RECOVERY_V1 — 2026-10-24
 Status: VERIFIED DISPOSABLE READONLY;B1/C1/D1/E1BLOCKED;all21decisionsUNCHANGED;PAPERstartupNO;productionNO-GO.
 Evidence:173passed0failed1NOTEXECUTED,32newcases;authenticated manifest/cut injection,V2physical/logical mapping,original-free restore,independent replay/audit,UNKNOWN/shortwrite/retry refusal. ExistingV1compatibility preserved. Report:docs/QUALITY_DIPS_OFFLINE_BACKUP_RECOVERY_2026-10-24.md.

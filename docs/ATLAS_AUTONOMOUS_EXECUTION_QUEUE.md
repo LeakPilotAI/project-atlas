@@ -215,3 +215,8 @@ QD_NATIVE_RECOVERY_V1 VERIFIED disposable archival-only;147passed0failed1NOTEXEC
 ## Offline-backup recovery — 2026-10-24
 
 QD_OFFLINE_BACKUP_RECOVERY_V1 VERIFIED disposable only;173passed0failed1NOTEXECUTED,32newcases. Originaldirectories no longer required for ingestion;newV2mapping remainsreadonly/nonexecutable. See QUALITY_DIPS_OFFLINE_BACKUP_CONTINUATION_2026-10-24.md. ExactlyzeroACTIVE;BLOCKED_WAIT for independent authenticated backup/cut/currenthighwater,issuer/clock/rollback/exclusion/durable recovery custody and separately authorized genuine-custody acceptance. Writable continuity and operational routing notimplemented/unauthorized. B1/C1/D1/E1BLOCKED;all21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.
+
+
+## Permanent Windows-local architecture — 2026-10-24
+
+WINDOWS_LOCAL_ARCHITECTURE_V1 VERIFIED deploymentdecision/sourceaudit only. ATLAS_DEPLOYMENT_POLICY.json:singleuserWindowslocal;noVPS/cloudhosting/remoteproduction/mandatorypaidhosting;authorizedoutboundfeeds permitted,noconnectionactivation.0newapplicationtests;prior173passes1NOTEXECUTED retained,notrerun. See WINDOWS_LOCAL_CONTINUATION_2026-10-24.md. ExactlyzeroACTIVE;BLOCKED_WAIT for independentB1scope,localD1custody/C1roster,E1rights and bounded source-only operationalreadonlycomposition approval. All21decisions/7phases/history/startuplocks/alienfrontend preserved;PAPERstartupNO;productionNO-GO.

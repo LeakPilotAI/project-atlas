@@ -1,0 +1,31 @@
+{
+  "schema": "ATLAS_PERMANENT_DEPLOYMENT_POLICY_V1",
+  "decision_date": "2026-10-24",
+  "authority": "EXPLICIT_OPERATOR_DEPLOYMENT_DECISION_NOT_RELEASE_APPROVAL",
+  "deployment": "SINGLE_USER_WINDOWS_LOCAL",
+  "frontend": "LOCAL_EXISTING_ALIEN_THEME",
+  "backend": "LOCAL_LOOPBACK_ONLY",
+  "financial_storage": "LOCAL_WINDOWS_ACCEPTED_RESOURCES_ONLY",
+  "execution": "LOCAL_WINDOWS_ONLY",
+  "vps_allowed": false,
+  "cloud_hosting_allowed": false,
+  "remote_production_server_allowed": false,
+  "mandatory_paid_hosting_allowed": false,
+  "authorized_outbound_market_data": {
+    "architecturally_permitted": true,
+    "requires_provider_specific_rights_and_connection_authorization": true,
+    "this_decision_activates_connections": false
+  },
+  "independent_custody_requires_cloud": false,
+  "local_dependency_network_acceptance": "REQUIRES_EXPLICIT_LOOPBACK_BINDING_REVIEW_BEFORE_ACTIVATION",
+  "historical_hosted_proposals": "RETAINED_AS_HISTORY_NOT_CURRENT_DEPLOYMENT_AUTHORITY",
+  "frontend_redesign_authorized": false,
+  "genesis_access_authorized": false,
+  "storage_provisioning_authorized": false,
+  "startup_lock_change_authorized": false,
+  "paper_startup_authorized": false,
+  "live_money_authorized": false,
+  "production": "NO_GO",
+  "governance_decisions_changed": 0,
+  "required_blocked_gates": ["B1", "C1", "D1", "E1"]
+}
