@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "P2",
+  "last_verified_task": "N2R",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -19,7 +19,7 @@
     "javascript_prior_passed_not_rerun": 763
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Review final controlled-runtime proposal and operational checklist. Next proposed engineering is explicitly scoped N5canonical-event/facade runtime routing with disposable acceptance first,only after integration approval and applicable N2archive/N3writer/N4trust evidence. Actual financial-record access,migration,provisioning,provider collection and startup each need separate permission. No further task is currently authorized.",
+  "exact_next_action": "Obtain custodian-authenticated complete archives,independent opening cash/exposure/cashflow proof,historical cost/override policies and lifecycle/ack evidence resolving the private N2discrepancy report. Keep originals read-only. No migration,repair,provisioning,provider access or startup authorized;B1/C1/D1/E1remainBLOCKED.",
   "latest_focused_tests": {
     "passed": 110,
     "failed": 0,
@@ -58,17 +58,26 @@
     "N1B": "VERIFIED scoped27focusedN1cases:shared native association,separate revisions,partial/full manual projection,restart/concurrency,8abruptcrashes,initialization and snapshot-publication failures,source corruption and cooperative report-lock proof. Original race reproduced then fixed;final combined run pending.",
     "N1C": "VERIFIED scoped412combinedpassed0failed/skipped,including27N1cases. History-preserving checkpoint and reviewed publication authorized. Native facade absent from production dispatch;all original writers/locks unchanged.",
     "P1": "VERIFIED source-only final proposal:117retained references freshly match;33literal source paths verified;single canonical event authority,file-by-file changes,writer disposition,deadline-preserving phase sequence and N2-N6 approval checklist documented. No new independently demonstrated offline defect;no source changes.",
-    "P2": "VERIFIED proposal-only acceptance:110existingcontracttests pass0failed/skipped;117source references and33literal paths verified;Ruff/compile4modules,PowerShell parsing,diff and history checkpoint pass. No new defect or source/test behavior change;publication authorized."
+    "P2": "VERIFIED proposal-only acceptance:110existingcontracttests pass0failed/skipped;117source references and33literal paths verified;Ruff/compile4modules,PowerShell parsing,diff and history checkpoint pass. No new defect or source/test behavior change;publication authorized.",
+    "N2R": "VERIFIED scoped read-only local source inventory and independent consistency parsing;private financial detail excluded from publication. Independent archive/opening/lifecycle/cost evidence unavailable;N2/B1acceptance NOT granted. No originals changed,no application code executed."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 18,
-  "continuation_report": "docs/HYPERLIQUID_CONTROLLED_RUNTIME_PROPOSAL_2026-10-23.md",
-  "blocked_wait_reason": "All source-only proposal/checklist/validation tasks complete;remaining actual integration and acceptance require explicitly excluded authority or independent B1/C1/D1/E1 evidence. No synthetic extension or repeated N1 implementation.",
+  "progress_revision": 19,
+  "continuation_report": "docs/N2_READONLY_EVIDENCE_REVIEW_REDACTED_2026-10-23.md",
+  "blocked_wait_reason": "Read-only local scope completed. Independent completeness and discrepancy evidence is missing;local arithmetic/hashes do not grant B1or operational authority.",
   "publication_validation": {
-    "python_contract_selection_passed": 110,
-    "failed": 0,
-    "skipped": 0,
-    "source_behavior_changed": false,
+    "documentation_only": true,
+    "read_only_evidence_checks": true,
+    "tests_rerun_this_stage": false,
+    "private_artifacts_excluded": true,
     "operational_acceptance": false
+  },
+  "latest_readonly_validation": {
+    "source_bytes_identity_size_mtime_unchanged_in_observed_reads": true,
+    "private_financial_details_published": false,
+    "application_imports_or_store_initializers": false,
+    "pytest_or_fixture_execution": false,
+    "independent_archive_completeness_proven": false,
+    "startup_authorized": false
   }
 }

@@ -53,3 +53,6 @@ N1 facade supplement:docs/HYPERLIQUID_N1_NATIVE_FACADE_2026-10-23.md;412combined
 
 
 Final controlled proposal supplement:docs/HYPERLIQUID_CONTROLLED_RUNTIME_PROPOSAL_2026-10-23.md and HYPERLIQUID_OPERATIONAL_ACCEPTANCE_CHECKLIST_2026-10-23.md specify file-level canonical authority/routing,writer disposition,deadline-preserving shutdown and N2-N6approval/evidence requirements.110existingcontracttests passed0failed/skipped,overlapnotadded;no source/testbehaviorchanged. B1/C1/D1/E1BLOCKED,21decisionsunchanged,PAPERstartupNO,productionNO-GO. No runtime integration,migration,provider or provisioning authorization.
+
+
+N2read-only redacted supplement:docs/N2_READONLY_EVIDENCE_REVIEW_REDACTED_2026-10-23.md. Authorized local source inspection/reconciliation completed without original mutations or application/store execution. Exact private figures,source hashes and discrepancy details excluded from Git. Independent source completeness,opening/cashflow,lifecycle and historical cost/override evidence remain unresolved;B1/C1/D1/E1stayBLOCKED,21decisionsunchanged,PAPERstartupNO,productionNO-GO. No tests/fixtures or services run in this stage.

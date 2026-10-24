@@ -74,3 +74,7 @@ Current execution:N1A-N1C scoped VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. No fur
 | P2 | Source verification,appropriate regressions,history checkpoint and publication | P1 | VERIFIED | proposal continuation | Independent gates remain blocked |
 
 Current execution:P1-P2 source-only proposal VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. No new implementation selected without excluded integration/data/provisioning/provider/startup approval. B1/C1/D1/E1 unchanged;resume from final controlled-runtime proposal and checklist.
+
+| N2R | Authorized read-only financial source inventory and redacted discrepancy review | explicit read-only source permission | VERIFIED | redacted N2continuation;private evidence excluded | Scoped local inspection only;N2/B1independent acceptance remainsBLOCKED |
+
+Current execution:N2R local scope completed;BLOCKED_WAIT,zero ACTIVE tasks. Next is independent custodian/reviewer evidence for B1discrepancies,not financial record repair,migration or startup. Original21decisions unchanged.
