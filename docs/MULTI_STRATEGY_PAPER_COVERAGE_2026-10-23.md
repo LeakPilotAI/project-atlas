@@ -66,3 +66,6 @@ Q7coverage/acceptance supplement:see Q7_PAPER_WORKFLOW_ACCEPTANCE_2026-10-23.md 
 
 
 Q8runtime-readiness supplement:Q8_RUNTIME_INTEGRATION_READINESS_2026-10-23.md traces exact selected-lane runtime and complete reviewed writer/resource roles,shutdown gaps and independent acceptance owners. Store-free summary contract and inert read/refusal-only adapter/presentation implemented;182combinedpassed0failed0skipped including16newcases. Actual runtime/API/dashboard connectionNO,operationalacceptanceNO. BTC/stock accumulation services are manual-buy alert/dedupe writers,not funded PAPER engines;investment board ladder is distinct. Existing multi-strategy statuses preserved;all21decisionsunchanged,B1/C1/D1/E1BLOCKED,PAPERstartupNO,productionNO-GO.
+
+
+Q9 supplement (2026-10-24): see Q9_DISPOSABLE_APPLICATION_ACCEPTANCE_2026-10-24.md for the complete strategy reuse matrix and acceptance limits. Disposable in-process two-account dashboard, independently re-audited read bridge and permanently refusing selected-lane write expectations verified;224 passed,0 failed,0 skipped including35 new cases. No actual runtime/API/frontend integration or operational acceptance. Existing 21 decisions and strategy statuses unchanged;B1/C1/D1/E1 BLOCKED,PAPER startup NO,production NO-GO.

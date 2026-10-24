@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "Q8",
+  "last_verified_task": "Q9",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,24 +9,24 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "selection_passed": 182,
+    "selection_passed": 224,
     "failed": 0,
     "skipped": 0,
-    "new_cases_included": 16,
-    "duration_seconds": 24.52,
-    "log": "logs/diagnostics/q8-final.txt",
-    "environment": "permitted native Windows;injected disposable summaries/stores only",
+    "new_cases_included": 35,
+    "duration_seconds": 29.09,
+    "log": "logs/diagnostics/q9/combined.txt",
+    "environment": "permitted native Windows;in-process WSGI and disposable stores only",
     "prior_full_combined_passed_not_rerun": 412,
     "javascript_prior_passed_not_rerun": 763
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Independent roles supply/adjudicate the B1/C1/D1 selected-lane artifacts;validate permitted packages offline. Then separately authorize accepted storage/receipt/all-writer interfaces and narrow native caller wiring,followed by read-only route/dashboard and lifecycle acceptance. No fixture-store promotion or startup.",
+  "exact_next_action": "Obtain independent B1/C1/D1 selected-lane evidence and acceptance. Separately approve accepted canonical storage/receipt/all-writer interfaces and narrow native caller integration, followed by disposable route/UI/shutdown acceptance. E1 rights/lifecycle/operator authorization required before any session.",
   "latest_focused_tests": {
-    "passed": 32,
+    "passed": 35,
     "failed": 0,
     "skipped": 0,
     "overlaps_final_combined": true,
-    "log": "logs/diagnostics/q8-focused.txt"
+    "log": "logs/diagnostics/q9/focused3.txt"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -67,12 +67,13 @@
     "Q5": "VERIFIED fixture-only Quality Dips entry/partial/terminal/cash/cost/day reporting adapter;explicit synthetic cost contract,retained V1 semantics,DST/cutoff and immutable report lineage.",
     "Q6": "VERIFIED fixture-only Hyperliquid manual canonical entry plus actual disposable native journal/manual projections;pending intent reserved with financial commit,UNKNOWN blocks callback replay/report;no protected runtime wiring.",
     "Q7": "VERIFIED scoped actualQualityDipsV3-to-canonical-cash/report workflow,three-asset native Hyperliquid fixture workflow,independent arithmetic and strict read-only portfolio/presentation. Native interference admission defect reproduced/fixed.29newcases in166combinedpasses;no operational acceptance.",
-    "Q8": "VERIFIED scoped actual runtime/writer/shutdown trace,store-free summary contract extraction and inert read/refusal-only runtime-facing adapter.16newcases in182combinedpasses;Q7V1rendererAST/goldenbytes preserved. Actual APIs/dashboard/dispatch unchanged;no operational authority."
+    "Q8": "VERIFIED scoped actual runtime/writer/shutdown trace,store-free summary contract extraction and inert read/refusal-only runtime-facing adapter.16newcases in182combinedpasses;Q7V1rendererAST/goldenbytes preserved. Actual APIs/dashboard/dispatch unchanged;no operational authority.",
+    "Q9": "VERIFIED scoped disposable WSGI dashboard plus independent read-verification seam and inert selected-lane request expectations.35 new cases in224combinedpasses. UNKNOWN/pending and missing/competing writer barriers retained;actual APIs/native dispatch/startup unchanged. No operational authority."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 29,
-  "continuation_report": "docs/Q8_RUNTIME_INTEGRATION_CONTINUATION_2026-10-23.md",
-  "blocked_wait_reason": "All authorized Q8source trace,inert adapter,presentation and acceptance preparation complete. Independent B1/C1/D1/E1 artifacts and protected runtime integration/provisioning/provider/startup authorization remain absent.",
+  "progress_revision": 31,
+  "continuation_report": "docs/Q9_DISPOSABLE_APPLICATION_CONTINUATION_2026-10-24.md",
+  "blocked_wait_reason": "Authorized Q9 in-process dashboard/read bridge,inert write contracts and disposable writer/report tests complete. Protected native routing,provisioning,provider access and startup remain unauthorized;independent B1/C1/D1/E1 evidence missing.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
