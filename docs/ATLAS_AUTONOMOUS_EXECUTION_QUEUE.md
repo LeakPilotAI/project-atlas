@@ -131,3 +131,12 @@ Current execution: Q13 scoped native evidence VERIFIED;BLOCKED_WAIT,zero ACTIVE 
 | Q14_FINANCIAL_STORAGE_DECISION | Minimum trusted financial persistence architecture and bounded implementation plan | Current design-only task | VERIFIED | QUALITY_DIPS_FINANCIAL_STORAGE_DECISION_2026-10-24.md | A recommended,not accepted or implemented;FS1purework already routine-authorized,FS2/FS3native prototype needs scoped permission |
 
 Current execution: Q14 requested decision scoped VERIFIED;zero ACTIVE tasks. Native work awaits P-D1-FINANCIAL-RECORDS-PROTOTYPE;no protected store/routing/startup accepted. Do not treat local hashes or fixture receipts as authority.
+
+
+| FS1_CORE_SCOPE_CONSOLIDATION | Pure financial transition/replay and independent audit;operator core/Monday scope | Explicit eligible FS1 offline authorization | VERIFIED | CORE_SCOPE_FS1_MONDAY_READINESS_2026-10-24.md | 95combinedpasses,32newcases;no native/operational promotion |
+| FS2_FINANCIAL_RECORDS_NATIVE | Disposable native write_bound and immutable financial record protocol | P-D1-FINANCIAL-RECORDS-PROTOTYPE not supplied | BLOCKED | Selected design A | No unauthorized native execution/provisioning |
+| FS3_FINANCIAL_RECORD_ACCEPTANCE | New-store replay/accounting/restart/overnight/native-failure acceptance | Approved FS2 implementation and appropriate scope | BLOCKED | Pure compatibility partly covered by FS1 | Existing SQLite fixtures are not native financial acceptance |
+
+Standing priority: existing core QualityDips,Hyperliquid,equityday,NLPD,financialdashboard,Windowsoperations. Freeze optional15minutecrypto/experimental/monetization/UI/VPS expansion;preserve history. Gaming remainscore but its incomplete optimization is not an automatic first-session prerequisite waiver or startup grant. Monday2026-10-26 08:30America/Chicago targetonly. Reference permanent_core_scope_document in every next checkpoint. Zero ACTIVE tasks;next boundary is explicitFS2scope.
+
+Final FS1 verification supersedes intermediate95-count evidence above:100passed0failed0skipped in3.98s including37newcases. Five added typed-revision cases follow a retained failing reproducer of Python bool/integer receipt equality;canonical receipt comparison and independent exact-integer checks corrected that defect. All valid pre-refactor synthetic goldens unchanged. Earlier32/95runs overlap,not added. No FS2native or operational acceptance.

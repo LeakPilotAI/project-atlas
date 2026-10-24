@@ -4,9 +4,9 @@ Independent arithmetic checks local declared fixture sources,not authenticated
 archives or protected storage. No account consolidation or unrealized valuation.
 """
 import sqlite3
-from decimal import Decimal
 
-from app.services.paper_epoch_fixture import digest, number, strict
+from app.services.paper_financial_audit import audit_financial_events
+from app.services.paper_financial_replay import digest, event_stream_record, number
 from app.services.paper_strategy_fixture import NativeProjectionFixture
 from app.services.paper_summary_contract import (
     portfolio_payload_fixture,
@@ -19,46 +19,15 @@ METRICS = ("reconciled_cash", "realized_gross", "trading_costs", "realized_net")
 
 
 def _audit(store, snapshot):
-    """Independent financial recomputation,not EpochFixture._apply reuse."""
-    positions, gross, costs = {}, Decimal(0), Decimal(0)
-    cash = number(store.manifest["opening_cash"])
-    spot = store.manifest["strategy"] == "QUALITY_DIPS"
+    """SQL compatibility boundary; arithmetic itself is storage-neutral."""
     with store.connect(readonly=True) as db:
         db.execute("BEGIN")
-        verified, head, operations = store._load(db)  # Structural/receipt integrity is still required.
+        verified, head, _ = store._load(db)
         if digest(verified) != digest({k: snapshot[k] for k in verified}):
             raise ValueError("Source changed during summary read")
-        for raw, ack in db.execute("SELECT body,receipt FROM events ORDER BY revision"):
-            c, receipt = strict(raw), strict(ack)
-            if c["kind"] == "ENTRY":
-                ident = receipt["position_id"]
-                if ident in positions:
-                    raise ValueError("Duplicate independent original inventory")
-                qty, price = number(c["quantity"]), number(c["quote"]["price"])
-                positions[ident] = {"quantity": qty, "remaining": qty, "entry": price, "side": c["side"], "net": Decimal(0)}
-                if spot:
-                    cash -= qty * price
-            else:
-                p = positions[c["position_id"]]
-                qty, price = number(c["quantity"]), number(c["quote"]["price"])
-                p["remaining"] -= qty
-                if p["remaining"] < 0:
-                    raise ValueError("Independent over-close")
-                gain = (price - p["entry"]) * qty * (1 if p["side"] == "LONG" else -1)
-                cost = p["entry"] * qty * (number(store.manifest["fees_bps"]) + number(store.manifest["slippage_bps"])) / 5000
-                gross += gain
-                costs += cost
-                p["net"] += gain - cost
-                cash += price * qty - cost if spot else gain - cost
-    if (set(positions) != set(snapshot["positions"]) or cash != number(snapshot["cash"])
-            or gross != number(snapshot["gross"]) or costs != number(snapshot["costs"])
-            or gross - costs != number(snapshot["net"])):
-        raise ValueError("Independent cash/inventory reconciliation mismatch")
-    for ident, p in positions.items():
-        s = snapshot["positions"][ident]
-        if any(p[k] != number(s[k]) for k in ("quantity", "remaining", "entry")) or p["net"] != number(s["realized_net"]):
-            raise ValueError("Independent position reconciliation mismatch")
-    return head, any(receipt["projection_required"] for _, receipt in operations.values())
+        records = [event_stream_record(*row) for row in db.execute("SELECT * FROM events ORDER BY revision")]
+        result = audit_financial_events(store.manifest, records, snapshot)
+    return head, result["projection_required"]
 
 
 def account_summary_fixture(store, *, now, max_age, reader=None):

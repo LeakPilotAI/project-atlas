@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "Q14_FINANCIAL_STORAGE_DECISION",
+  "last_verified_task": "FS1_CORE_SCOPE_CONSOLIDATION",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,26 +9,28 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "selection_passed": 45,
+    "selection_passed": 100,
     "failed": 0,
-    "blocked_cases": 0,
-    "skipped": 1,
-    "not_executed": 1,
-    "skipped_and_not_executed_same_case": true,
-    "duration_seconds": 2.01,
-    "selection": "tests/test_qd_d1_native_acceptance.py",
-    "evidence": "private confined D1 run/complete/evidence.json;not published",
-    "environment": "native Windows,explicit P-D1-DISPOSABLE-NATIVE;no privilege grants",
-    "prior_q9_passes_not_rerun": 224
+    "skipped": 0,
+    "new_cases_included": 37,
+    "duration_seconds": 3.98,
+    "selection": [
+      "test_fs1_financial_replay.py",
+      "test_paper_epoch_fixture.py",
+      "test_paper_strategy_fixture.py",
+      "test_q7_paper_portfolio.py"
+    ],
+    "log": "logs/diagnostics/fs1-roadmap-20261024/final.txt",
+    "environment": "offline disposable accounting compatibility;no FS2 Win32 security or operational services"
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Review recommendation A immutable per-operation native financial records. FS1 pure replay/independent-audit extraction remains within routine offline scope;request P-D1-FINANCIAL-RECORDS-PROTOTYPE for FS2/FS3 confined native implementation/tests after plan review. No protected provisioning,native routing or startup permission.",
+  "exact_next_action": "Obtain explicit P-D1-FINANCIAL-RECORDS-PROTOTYPE and reviewed confined native plan for FS2 write_bound/immutable financial records. FS1 is verified;do not repeat. Complete FS3/new-store acceptance then independent B1/C1/D1,accepted routing/dashboard,E1 and exact supervised-session permission. Monday target does not authorize startup.",
   "latest_focused_tests": {
-    "passed": 35,
+    "passed": 32,
     "failed": 0,
     "skipped": 0,
     "overlaps_final_combined": true,
-    "log": "logs/diagnostics/q9/focused3.txt"
+    "log": "logs/diagnostics/fs1-roadmap-20261024/focused.txt"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -75,12 +77,13 @@
     "Q11_B1_REVIEW_SUBMISSION": "VERIFIED review-submission engineering only:explicit versioned hypothetical QualityDips scope/resource roles/cost/risk/legacy exclusions and ChatGPT decision checklist. JSON/authority/cost/existing pure-manifest checks pass;no new tests/application source/runtime configuration changed. B1 not accepted.",
     "Q12_ADVISORY_C1_D1_PACKAGE": "VERIFIED exact six-finding attributed advisory artifact and independently reviewable C1/D1 packages/permissions. Existing unaccepted QualityDips instrument/notional/count limits and V1 partial/overnight distinctions made explicit;no code/test repair warranted. No native tests/provisioning performed.",
     "Q13_D1_DISPOSABLE_NATIVE": "VERIFIED scoped native evidence only:45passed0failed0blocked1notexecuted,2.01s;identity-before-read,DACL/restricted-token/native-sharing/substitution/interruption/restart cases. Reusable SnapshotStore publication-failure latch defect reproduced/repaired. Path-based SQLite remains untrusted. No operational acceptance.",
-    "Q14_FINANCIAL_STORAGE_DECISION": "VERIFIED source-based recommendation A with same-record event/receipt,exact-creation-handle identity,intent/commit/current-head ack and UNKNOWN refusal. B rejected for this increment due unproven VFS/sidecars;C control snapshots do not directly supply financial history. Pure AST/interface/Decimal checks pass;no implementation or native tests."
+    "Q14_FINANCIAL_STORAGE_DECISION": "VERIFIED source-based recommendation A with same-record event/receipt,exact-creation-handle identity,intent/commit/current-head ack and UNKNOWN refusal. B rejected for this increment due unproven VFS/sidecars;C control snapshots do not directly supply financial history. Pure AST/interface/Decimal checks pass;no implementation or native tests.",
+    "FS1_CORE_SCOPE_CONSOLIDATION": "VERIFIED storage-neutral transitions/structural receipt replay and independent arithmetic audit;SQL fixtures delegate with exact synthetic pre-refactor event/receipt/head/snapshot/report goldens.100combinedpassed0failed0skipped,including37newcases;fixed28digitHALF_EVEN computation/input nonmutation. Current core/deferred/NLPD scope and conditional Mondaytarget recorded. No FS2/native or operational acceptance. Original bool-versus-integer receipt acceptance reproduced and corrected;valid golden bytes unchanged."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 36,
-  "continuation_report": "docs/QUALITY_DIPS_FINANCIAL_STORAGE_DECISION_2026-10-24.md",
-  "blocked_wait_reason": "Requested financial-storage decision complete,recommendation only. Native record protocol/write-bound extension needs scoped prototype authorization and independent security review;operational epoch/storage/issuer/clock/ownership gates remain unaccepted. FS1 pure source work is not operationally blocked but was not implemented in this design-only task.",
+  "progress_revision": 37,
+  "continuation_report": "docs/CORE_SCOPE_FS1_MONDAY_READINESS_2026-10-24.md",
+  "blocked_wait_reason": "FS1 pure extraction and requested full-roadmap/core-scope consolidation complete. FS2 native financial protocol/tests remain separately unauthorized;B1/C1/D1/E1 operational evidence/acceptance missing. No protected integration or target-date bypass.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
@@ -95,14 +98,10 @@
     "startup_authorized": false
   },
   "latest_review": {
-    "milestone": "Q14_FINANCIAL_STORAGE_DECISION",
-    "new_tests_run": false,
-    "new_passed": 0,
-    "new_failed": 0,
-    "new_skipped": 0,
-    "retained_test_milestone": "Q13_D1_DISPOSABLE_NATIVE",
-    "pure_ast_contract_decimal_checks_passed": true,
-    "operational_acceptance": false
+    "milestone": "FS1_CORE_SCOPE_CONSOLIDATION",
+    "new_tests_run": true,
+    "operational_acceptance": false,
+    "historical_compatibility": "two explicit synthetic base-commit golden cases plus neighboring fixtures;no original financial records read"
   },
   "pending_independent_review": {
     "reviewer_designated_by_operator": "ChatGPT after eligible Codex engineering",
@@ -112,5 +111,38 @@
     "proposal_sha256": "1bb70beaaa518a20c217eeef235d4e7c76ea8aa04ce6bc6ddbd35c793ccf20ac",
     "review_artifact": "docs/QUALITY_DIPS_ADVISORY_REVIEW_V1_2026-10-24.json",
     "operational_acceptance": false
-  }
+  },
+  "permanent_core_scope_document": "docs/CORE_SCOPE_FS1_MONDAY_READINESS_2026-10-24.md",
+  "latest_native_security_selection_retained": {
+    "passed": 45,
+    "failed": 0,
+    "not_executed": 1,
+    "operational_acceptance": false,
+    "rerun_in_fs1": false
+  },
+  "operator_market_target": {
+    "local": "2026-10-26T08:30:00",
+    "timezone": "America/Chicago",
+    "utc": "2026-10-26T13:30:00Z",
+    "is_target_only": true,
+    "startup_authorized": false,
+    "gate_override": false
+  },
+  "readiness_tracks": {
+    "offline_engineering": "FS1_COMPLETE_OVERALL_INCOMPLETE",
+    "disposable_native_financial": "FS2_FS3_NOT_EXECUTED_UNAUTHORIZED",
+    "operational_integration": "INCOMPLETE",
+    "independent_governance": "INCOMPLETE",
+    "first_supervised_session": "NOT_AUTHORIZED"
+  },
+  "prediction_core_concept": "ATLAS NEW-LISTING PRICE DISCOVERY AND REPRICING (NLPD);category-agnostic only supported/permitted categories;existing pre-event/single-position policy unchanged",
+  "deferred_optional_work": [
+    "15-minute crypto prediction markets",
+    "experimental market families",
+    "speculative new trading engines",
+    "new AI monetization",
+    "unnecessary UI redesign",
+    "VPS/cloud deployment",
+    "non-core expansion"
+  ]
 }

@@ -80,3 +80,8 @@ D1 disposable native supplement (2026-10-24): QUALITY_DIPS_D1_NATIVE_EVIDENCE_20
 
 
 Financial-storage decision (2026-10-24): QUALITY_DIPS_FINANCIAL_STORAGE_DECISION_2026-10-24.md recommends A,native immutable per-operation event+receipt records with accepted identity/intent/commit/ack custody. Not implemented/independently accepted. Current path-basedSQLite stays untrusted;full control snapshots do not directly supply financial history. Existing SQL-coupled replay/audit requires a pure stream interface before reuse. No new native/tests/store/dispatch changes;all21decisions,strategy coverage and B1/C1/D1/E1 BLOCKED preserved.
+
+
+FS1/core consolidation (2026-10-24): CORE_SCOPE_FS1_MONDAY_READINESS_2026-10-24.md records95passed0failed0skipped including32newcases,pure replay/audit and exact synthetic V1goldens. Native storage/routing/operational acceptance NO;all21canonicaldecisionrows unchanged. Five readiness tracks separately INCOMPLETE except scopedFS1complete. MondayOct26 08:30America/Chicago targetonly;no override,automation or calendar/feed-rights assumption. CoreNLPD productname/category scope does not change existing predictionpolicy. Gaming optional applicability before firstsession requires review,no gatewaiver. B1/C1/D1/E1 BLOCKED,PAPERstartupNO,productionNO-GO.
+
+Final FS1 verification supersedes intermediate95-count evidence above:100passed0failed0skipped in3.98s including37newcases. Five added typed-revision cases follow a retained failing reproducer of Python bool/integer receipt equality;canonical receipt comparison and independent exact-integer checks corrected that defect. All valid pre-refactor synthetic goldens unchanged. Earlier32/95runs overlap,not added. No FS2native or operational acceptance.
