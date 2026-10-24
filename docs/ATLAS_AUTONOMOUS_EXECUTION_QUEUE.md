@@ -116,3 +116,8 @@ Current execution: Q10 scoped review VERIFIED; BLOCKED_WAIT, zero ACTIVE tasks. 
 | Q11_B1_REVIEW_SUBMISSION | Explicit Quality Dips new-account review package under master directive | Operator-designated separate ChatGPT review pending | VERIFIED | QUALITY_DIPS_B1_REVIEW_HANDOFF_2026-10-24.md and proposed JSON | Package verified only;B1 acceptance and protected integration not granted |
 
 Current execution: Q11 review submission scoped VERIFIED; BLOCKED_WAIT, zero ACTIVE tasks. Continue with designated reviewer decision,then accepted prerequisite/file-level permissions;no fixture or local proposal constitutes authority.
+
+
+| Q12_ADVISORY_C1_D1_PACKAGE | Record supplied advisory review and reconcile source/acceptance boundaries | Current review-reconciliation authorization | VERIFIED | QUALITY_DIPS_C1_D1_ACCEPTANCE_PACKAGE_2026-10-24.md | Advisory suitability only;native observations/provisioning/dispatch separately conditional |
+
+Current execution: Q12 scoped package VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. Exact P-C1/P-D1 permission scopes and source gaps recorded;B1/C1/D1/E1 unchanged.
