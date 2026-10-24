@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "WINDOWS_LOCAL_ARCHITECTURE_V1",
+  "last_verified_task": "WINDOWS_LOCAL_NETWORK_HARDENING_V1",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,17 +9,17 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 173,
+    "passed": 15,
     "failed": 0,
-    "skipped": 1,
-    "not_executed": 1,
-    "new_offline_recovery_cases": 32,
-    "duration_seconds": 34.68,
-    "operational_acceptance": false,
-    "selection": "offline backup/native archive/read compatibility,selected integration,production lock"
+    "skipped": 0,
+    "new_compose_configuration_cases": 7,
+    "duration_seconds": 2.89,
+    "selection": "source/resolved Compose network,packaging,production-lock",
+    "container_lifecycle_operations": 0,
+    "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Independent B1 selected-account acceptance and minimum local D1 custody/C1 roster decisions;explicit narrowly scoped source-only operational read composition permission. No cloud/VPS/remote production prerequisite;no provisioning/provider/startup authority.",
+  "exact_next_action": "Independent B1/C1/D1 scope/ownership/custody acceptance and bounded operational read-only composition permission;before any future dependency activation,separate exact Atlas-owned lifecycle/exposure/collision acceptance. No automatic application/recreation.",
   "latest_focused_tests": {
     "passed": 13,
     "failed": 0,
@@ -82,12 +82,13 @@
     "QD_GATE_RESOLUTION_V1": "VERIFIED offline parser/clock repairs:222passed0failed0skipped,16new;initial12failures retained. B1/C1/D1/E1 remainBLOCKED;actual writer exclusion and ordinary-copy native restore not established;no gate promotion.",
     "QD_NATIVE_RECOVERY_V1": "VERIFIED disposable archival-only recovery;147passed0failed1NOTEXECUTED;21newrecovery+2capacitycases. Originalbytes preserved,external authority injected,UNKNOWN refuses replay,no writer/startup authority.18source identities observed,actual ownership unaccepted.",
     "QD_OFFLINE_BACKUP_RECOVERY_V1": "VERIFIED disposable offline ingestion without original directories;173passed0failed1NOTEXECUTED,32newcases. Exact source-cut authority required,new physical/original logical mapping,original lineage replay/audit,no financial/startupauthority. B1/C1/D1/E1BLOCKED.",
-    "WINDOWS_LOCAL_ARCHITECTURE_V1": "VERIFIED operator deployment decision and source-grounded local gate/path reconciliation only;machine-readable policy/static checks pass;0newapplicationtests. Prior173passes1NOTEXECUTED notrerun. All21decisions unchanged;no runtime/source/authority activation."
+    "WINDOWS_LOCAL_ARCHITECTURE_V1": "VERIFIED operator deployment decision and source-grounded local gate/path reconciliation only;machine-readable policy/static checks pass;0newapplicationtests. Prior173passes1NOTEXECUTED notrerun. All21decisions unchanged;no runtime/source/authority activation.",
+    "WINDOWS_LOCAL_NETWORK_HARDENING_V1": "VERIFIED source/config-only:explicit127.0.0.1postgres5432/redis6379;15passed0failed0skipped,7newcases;realComposeconfigusingonlysyntheticenvironment,nonportsource/resolvedconfigunchanged. No engine/container/Genesis interaction or runtime application."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 46,
-  "continuation_report": "docs/WINDOWS_LOCAL_CONTINUATION_2026-10-24.md",
-  "blocked_wait_reason": "Local-only architecture permanent;independent account/custody/ownership/data-rights evidence and operational permissions remain absent.",
+  "progress_revision": 47,
+  "continuation_report": "docs/WINDOWS_LOCAL_NETWORK_CONTINUATION_2026-10-24.md",
+  "blocked_wait_reason": "Source loopback bindings verified;existing runtime listener configuration unobserved and unchanged;independent financial/data/ownership/custody gates and operational permissions absent.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
@@ -194,7 +195,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/WINDOWS_LOCAL_CONTINUATION_2026-10-24.md",
+  "recovery_checkpoint": "docs/WINDOWS_LOCAL_NETWORK_CONTINUATION_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -232,7 +233,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/WINDOWS_LOCAL_CONTINUATION_2026-10-24.md",
+  "recovery_document": "docs/WINDOWS_LOCAL_NETWORK_CONTINUATION_2026-10-24.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -325,7 +326,7 @@
       "this_decision_activates_connections": false
     },
     "independent_custody_requires_cloud": false,
-    "local_dependency_network_acceptance": "REQUIRES_EXPLICIT_LOOPBACK_BINDING_REVIEW_BEFORE_ACTIVATION",
+    "local_dependency_network_acceptance": "SOURCE_LOOPBACK_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
     "historical_hosted_proposals": "RETAINED_AS_HISTORY_NOT_CURRENT_DEPLOYMENT_AUTHORITY",
     "frontend_redesign_authorized": false,
     "genesis_access_authorized": false,
@@ -343,28 +344,53 @@
     ]
   },
   "deployment_policy_document": "docs/ATLAS_DEPLOYMENT_POLICY.json",
-  "deployment_policy_sha256": "4f1445bdf96db9d5444159fff1d44ebf0556b67c366187417611ef00d9ca7165",
+  "deployment_policy_sha256": "45f568ec8ecd59d5ed596625cfe0778bfa0264ba36a4a7fc36ae7ec4a9ef10bf",
   "current_milestone_validation": {
-    "policy_json_and_boundaries": true,
-    "loopback_bindings": {
-      "scripts/observation_runtime/readonly_dashboard.py": [
-        86
+    "pytest_passed": 15,
+    "pytest_failed": 0,
+    "pytest_skipped": 0,
+    "real_compose_config_executed": true,
+    "engine_queried": false,
+    "configuration_applied": false,
+    "genesis_runtime_conflicts_tested": false,
+    "existing_runtime_exposure": "UNKNOWN_NOT_INSPECTED"
+  },
+  "latest_test_run_milestone": "WINDOWS_LOCAL_NETWORK_HARDENING_V1",
+  "retained_offline_recovery_validation": {
+    "passed": 173,
+    "failed": 0,
+    "skipped": 1,
+    "not_executed": 1,
+    "new_offline_recovery_cases": 32,
+    "duration_seconds": 34.68,
+    "operational_acceptance": false,
+    "selection": "offline backup/native archive/read compatibility,selected integration,production lock"
+  },
+  "local_network_configuration": {
+    "schema": "ATLAS_LOOPBACK_CONFIG_EVIDENCE_V1",
+    "configuration_only": true,
+    "engine_or_containers_queried": false,
+    "synthetic_environment": true,
+    "ports": {
+      "postgres": [
+        {
+          "mode": "ingress",
+          "host_ip": "127.0.0.1",
+          "target": 5432,
+          "published": "5432",
+          "protocol": "tcp"
+        }
       ],
-      "scripts/observation_runtime/selected_account_readonly_host.py": [
-        179
+      "redis": [
+        {
+          "mode": "ingress",
+          "host_ip": "127.0.0.1",
+          "target": 6379,
+          "published": "6379",
+          "protocol": "tcp"
+        }
       ]
     },
-    "manager_loopback_literal": true,
-    "startup_refusal_unchanged": true,
-    "new_application_tests_executed": false,
-    "prior_validation_rerun": false,
-    "provider_connections": 0,
-    "services_started": 0,
-    "compose_unqualified_ports_observed": [
-      "5432:5432",
-      "6379:6379"
-    ],
-    "compose_changed": false
-  },
-  "latest_test_run_milestone": "QD_OFFLINE_BACKUP_RECOVERY_V1"
+    "non_port_configuration_unchanged": true
+  }
 }

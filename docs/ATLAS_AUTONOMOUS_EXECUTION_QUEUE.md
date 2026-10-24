@@ -220,3 +220,8 @@ QD_OFFLINE_BACKUP_RECOVERY_V1 VERIFIED disposable only;173passed0failed1NOTEXECU
 ## Permanent Windows-local architecture — 2026-10-24
 
 WINDOWS_LOCAL_ARCHITECTURE_V1 VERIFIED deploymentdecision/sourceaudit only. ATLAS_DEPLOYMENT_POLICY.json:singleuserWindowslocal;noVPS/cloudhosting/remoteproduction/mandatorypaidhosting;authorizedoutboundfeeds permitted,noconnectionactivation.0newapplicationtests;prior173passes1NOTEXECUTED retained,notrerun. See WINDOWS_LOCAL_CONTINUATION_2026-10-24.md. ExactlyzeroACTIVE;BLOCKED_WAIT for independentB1scope,localD1custody/C1roster,E1rights and bounded source-only operationalreadonlycomposition approval. All21decisions/7phases/history/startuplocks/alienfrontend preserved;PAPERstartupNO;productionNO-GO.
+
+
+## Windows-local network hardening — 2026-10-24
+
+WINDOWS_LOCAL_NETWORK_HARDENING_V1 VERIFIED source/config-only;postgres127.0.0.1:5432:5432,redis127.0.0.1:6379:6379.15passed0failed0skipped,7newcases;realComposeconfig withsyntheticenv;allnonportsettingsunchanged. Noengine/container/Genesis access or runtimeapplication. See WINDOWS_LOCAL_NETWORK_CONTINUATION_2026-10-24.md. ExactlyzeroACTIVE;BLOCKED_WAIT for independentB1/C1/D1/E1evidence and scopedreadintegration;futuredependencybindingapplication needs separatelyauthorized lifecycle/identity/exposure/collisionacceptance. All21decisions/7phases/startuplocks/alienfrontend preserved;PAPERstartupNO;productionNO-GO.

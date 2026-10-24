@@ -17,7 +17,7 @@
     "this_decision_activates_connections": false
   },
   "independent_custody_requires_cloud": false,
-  "local_dependency_network_acceptance": "REQUIRES_EXPLICIT_LOOPBACK_BINDING_REVIEW_BEFORE_ACTIVATION",
+  "local_dependency_network_acceptance": "SOURCE_LOOPBACK_VERIFIED_RUNTIME_ACCEPTANCE_PENDING",
   "historical_hosted_proposals": "RETAINED_AS_HISTORY_NOT_CURRENT_DEPLOYMENT_AUTHORITY",
   "frontend_redesign_authorized": false,
   "genesis_access_authorized": false,

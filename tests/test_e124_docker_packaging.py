@@ -42,5 +42,5 @@ def test_e124_launcher_does_not_destroy_dependencies_before_start():
 
 def test_e124_localhost_runtime_ports_remain_stable():
     text = _compose()
-    assert '"5432:5432"' in text
-    assert '"6379:6379"' in text
+    assert '"127.0.0.1:5432:5432"' in text
+    assert '"127.0.0.1:6379:6379"' in text
