@@ -93,3 +93,7 @@ Current execution:Q2/Q3 scoped VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. Q4 canon
 | Q6 | Hyperliquid canonical entry and native fixture projection | Q4 | VERIFIED | fixture projection bridge | Pending projections block replay/report |
 
 Current execution:Q4/Q5/Q6 scoped disposable engineering VERIFIED under explicit operator follow-up;BLOCKED_WAIT,zero ACTIVE tasks. This engineering approval supplies no independent B1/C1/D1/E1 evidence or runtime/startup authority. Next acceptance/action in current state and THREE_DISPOSABLE_PAPER_CONTINUATION_2026-10-23.md.
+
+| Q7 | Actual-policy disposable workflows,read-only strategy summary and end-to-end acceptance | Explicit Q7offline integration authorization | VERIFIED | Q7fixture integration | No protected API/provider/startup activation |
+
+Current execution:Q7scoped offline integration VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. All independently eligible Q7tasks complete. Exact independent evidence and separately approved runtime change boundary in Q7_PAPER_WORKFLOW_ACCEPTANCE_2026-10-23.md;B1/C1/D1/E1unchanged.

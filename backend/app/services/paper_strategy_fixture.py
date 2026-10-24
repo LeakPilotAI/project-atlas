@@ -61,8 +61,9 @@ class NativeProjectionFixture:
     ownership, protected file identity or operational authority. Snapshot/report
     reads must use this bridge to verify currently retained native bytes.
     """
-    def __init__(self, store, *, publish, observe):
+    def __init__(self, store, *, publish, observe, initial_observation_digest=None):
         self.store, self.publish, self.observe = store, publish, observe
+        self.initial_observation_digest = initial_observation_digest
 
     def _observed_digest(self):
         observation = self.observe()
@@ -71,9 +72,13 @@ class NativeProjectionFixture:
         return digest(observation)
 
     def snapshot(self):
-        with self.store.connect() as db:
+        with self.store.connect(readonly=True) as db:
             db.execute("BEGIN")
             _, _, operations = self.store._load(db)
+            if any(not receipt["projection_required"] for _, receipt in operations.values()):
+                raise ValueError("Unprojected canonical operation;native state unverified")
+            if not operations and self.initial_observation_digest is not None and self._observed_digest() != self.initial_observation_digest:
+                raise ValueError("Changed native initial fixture observation")
             latest = None
             for ident, raw in db.execute("SELECT id,receipt FROM projections"):
                 if raw is None:
@@ -102,6 +107,7 @@ class NativeProjectionFixture:
                     raise ValueError("Corrupt projection acknowledgement")
                 self.snapshot()
                 return ack
+        self.snapshot()  # Native interference must refuse before another financial commit.
         receipt = self.store.execute(command, projection_required=True, fault=fault)
         with self.store.connect() as db:
             completed = db.execute("SELECT receipt FROM projections WHERE id=?", (command["operation_id"],)).fetchone()

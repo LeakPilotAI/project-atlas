@@ -90,12 +90,13 @@ class EpochFixture:
         self.identity = (stat.st_dev, stat.st_ino)
         self.pin = digest(self.manifest)
 
-    def connect(self):
+    def connect(self, *, readonly=False):
         stat = self.path.stat()
         if (stat.st_dev, stat.st_ino) != self.identity or self.path.is_symlink():
             raise ValueError("Changed fixture resource")
-        db = sqlite3.connect(self.path.as_uri() + "?mode=rw", uri=True, timeout=2)
-        db.execute("PRAGMA synchronous=FULL")
+        db = sqlite3.connect(self.path.as_uri() + ("?mode=ro" if readonly else "?mode=rw"), uri=True, timeout=2)
+        if not readonly:
+            db.execute("PRAGMA synchronous=FULL")
         return db
 
     def _initial(self):
@@ -228,7 +229,7 @@ class EpochFixture:
             return receipt
 
     def snapshot(self):
-        with self.connect() as db:
+        with self.connect(readonly=True) as db:
             db.execute("BEGIN")
             state, _, _ = self._load(db)
             pending = db.execute("SELECT COUNT(*) FROM projections WHERE receipt IS NULL").fetchone()[0]

@@ -190,7 +190,11 @@ def test_no_operational_module_imports_the_new_prototypes():
 
     root = Path(__file__).resolve().parents[1] / "backend/app"
     for path in root.rglob("*.py"):
-        if path.name in ("paper_epoch_fixture.py", "paper_strategy_fixture.py"):
+        # Explicitly reviewed disposable consumers,not an operational-directory exemption.
+        if path.relative_to(root).as_posix() in (
+            "services/paper_epoch_fixture.py", "services/paper_strategy_fixture.py",
+            "services/paper_workflow_fixture.py", "services/paper_portfolio_fixture.py",
+        ):
             continue
         text = path.read_text(encoding="utf-8-sig")
         assert "import paper_epoch_fixture" not in text and "services.paper_epoch_fixture" not in text
