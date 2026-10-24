@@ -15,6 +15,10 @@ from http.client import HTTPConnection
 from pathlib import Path
 
 from app.api.quality_dips_selected_paper import create_router
+from app.investment.quality_dips_operational_contract import (
+    ENROLLMENT,
+    OperationalReadCapability,
+)
 from app.investment.quality_dips_read_capability import SelectedReadCapability
 from app.services.paper_financial_replay import body, digest, strict
 from fastapi import FastAPI, Request
@@ -61,7 +65,11 @@ class ReadComposition:
         self.account, self.epoch = account_id, epoch
         self.clock, self.acceptance, self.observer = clock, acceptance, observer
         self.enrollment = strict(body(enrollment))
-        if enrollment.get("account_id") != account_id or enrollment.get("epoch") != epoch:
+        self.operational = self.enrollment.get("schema") == ENROLLMENT
+        if self.enrollment.get("schema") not in (ENROLLMENT, "QD_READ_ENROLLMENT_V1"):
+            raise ValueError("READ_ENROLLMENT_VERSION_UNSUPPORTED")
+        account = self.enrollment.get("account", {}) if self.operational else self.enrollment
+        if account.get("account_id") != account_id or account.get("epoch") != epoch:
             raise ValueError("READ_ACCOUNT_SCOPE_MISMATCH")
         self.host_id = uuid.uuid4().hex
         self.host_claim_lock, self.host_claimed = threading.Lock(), False
@@ -71,12 +79,20 @@ class ReadComposition:
                 or type(self.identity["creation_filetime"]) is not int or self.identity["creation_filetime"] <= 0
                 or type(self.identity["image"]) is not str or not self.identity["image"]):
             raise ValueError("READ_PROCESS_IDENTITY_UNVERIFIED")
-        self.capability = SelectedReadCapability(enrollment=self.enrollment, authority=custody, clock=clock, port=resources)
+        arguments = {"enrollment": self.enrollment, "authority": custody, "clock": clock, "port": resources}
+        if self.operational:
+            self.capability = OperationalReadCapability(**arguments,
+                process_identity={"schema": "QD_OP_PROCESS_ID_V1", **self.identity}, host_id=self.host_id)
+        else:
+            self.capability = SelectedReadCapability(**arguments)
 
     def admitted(self, operation):
         context = {"schema": "QD_READ_SERVICE_CONTEXT_V1", "mode": MODE, "host_id": self.host_id,
                    "account_id": self.account, "epoch": self.epoch,
                    "enrollment_digest": digest(self.enrollment), "process": self.identity}
+        if self.operational:
+            context["schema"] = "QD_OP_READ_SERVICE_CONTEXT_V1"
+            context["process"] = {"schema": "QD_OP_PROCESS_ID_V1", **self.identity}
         now = self.clock()
         if type(now) is not int or now <= 0 or body(self.observer()) != body(self.identity):
             raise ValueError("READ_PROCESS_OR_CLOCK_CHANGED")

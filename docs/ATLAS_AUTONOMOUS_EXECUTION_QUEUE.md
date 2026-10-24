@@ -230,3 +230,8 @@ WINDOWS_LOCAL_NETWORK_HARDENING_V1 VERIFIED source/config-only;postgres127.0.0.1
 ## Quality Dips operational read-only source integration — 2026-10-24
 
 QD_OPERATIONAL_READ_INTEGRATION_V1 VERIFIEDSOURCEONLY;152passed0failed0skipped,26new. ExplicitDI operationalreadcomposition/nativeidentity/custody/clock preflight;loopbackGET-only andexistingUIbytes;ControlCenterselectedOpen/Closehook(defaultbridgeabsentrefuses). RealHTTPnativefixtures/PSbridge verified,notrealGUI/browseroroperationalenrollment. See QUALITY_DIPS_OPERATIONAL_READ_CONTINUATION_2026-10-24.md. ExactlyzeroACTIVE;BLOCKED_WAIT for independentB1/C1/D1 andacceptedactualWindowscomposition/bridge/enrollment/supervisedreadonlylaunch;E1feed/PAPERrelease separate. All21decisions/7phases/alienfrontend/protectedstartuplocks preserved;PAPERstartupNO;productionNO-GO.
+
+
+## Operational Contract V1 — 2026-10-24
+
+QD_OPERATIONAL_CONTRACT_V1 VERIFIEDSOURCEONLY;260passed0failed0skipped54new;54overlappingfocusedpass. QD_OP_*_V1 separate account/enrollment/current/source/projection/report/clock/authority/session/resource/process schemas; independent custody/native verifier required before consumption, no test-pin translation. Existing disposable cases and protected financial/startup/UI bytes preserved. See QUALITY_DIPS_OPERATIONAL_CONTRACT_CONTINUATION_2026-10-24.md. ExactlyzeroACTIVE;BLOCKED_WAIT for source-only native operational read decoder/auditor and trusted Windows bridge permission plus independent B1/C1/D1 evidence; no enrollment/provisioning/install/startup granted. E1/PAPERblocked;all21decisions/7phases preserved;productionNO-GO.
