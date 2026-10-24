@@ -126,3 +126,8 @@ Current execution: Q12 scoped package VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. E
 | Q13_D1_DISPOSABLE_NATIVE | Explicit confined Windows identity/ACL/storage/interruption evidence | Operator P-D1-DISPOSABLE-NATIVE | VERIFIED | QUALITY_DIPS_D1_NATIVE_EVIDENCE_2026-10-24.md | Scoped45passes/1notexecuted;financial storage/operational D1 not accepted |
 
 Current execution: Q13 scoped native evidence VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. Review minimum financial storage contract and native evidence before separate permissions;no fixtureSQLite promotion or startup.
+
+
+| Q14_FINANCIAL_STORAGE_DECISION | Minimum trusted financial persistence architecture and bounded implementation plan | Current design-only task | VERIFIED | QUALITY_DIPS_FINANCIAL_STORAGE_DECISION_2026-10-24.md | A recommended,not accepted or implemented;FS1purework already routine-authorized,FS2/FS3native prototype needs scoped permission |
+
+Current execution: Q14 requested decision scoped VERIFIED;zero ACTIVE tasks. Native work awaits P-D1-FINANCIAL-RECORDS-PROTOTYPE;no protected store/routing/startup accepted. Do not treat local hashes or fixture receipts as authority.

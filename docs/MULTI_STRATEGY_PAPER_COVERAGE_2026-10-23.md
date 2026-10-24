@@ -78,3 +78,6 @@ Advisory reconciliation (2026-10-24): QUALITY_DIPS_ADVISORY_REVIEW_V1_2026-10-24
 
 
 D1 disposable native supplement (2026-10-24): QUALITY_DIPS_D1_NATIVE_EVIDENCE_2026-10-24.md records45passed0failed0blocked1notexecuted(same pytestskip),2.01s. Native read/ACL/sharing and confined interruption evidence only;path-basedSQLite main/parent substitutions reproduced and tested SQLite-created sidecar ACLs fail exactpolicy. Snapshot publication-failure latch repaired with restart regression. No native financial/runtime integration or operational acceptance. All21decisions and strategy statuses preserved;B1/C1/D1/E1 BLOCKED,PAPER startup NO,production NO-GO.
+
+
+Financial-storage decision (2026-10-24): QUALITY_DIPS_FINANCIAL_STORAGE_DECISION_2026-10-24.md recommends A,native immutable per-operation event+receipt records with accepted identity/intent/commit/ack custody. Not implemented/independently accepted. Current path-basedSQLite stays untrusted;full control snapshots do not directly supply financial history. Existing SQL-coupled replay/audit requires a pure stream interface before reuse. No new native/tests/store/dispatch changes;all21decisions,strategy coverage and B1/C1/D1/E1 BLOCKED preserved.
