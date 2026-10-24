@@ -101,3 +101,8 @@ FS3 supplement (2026-10-24): FS3_FINANCIAL_REPORT_PROJECTION_ACCEPTANCE_2026-10-
 
 
 FS123 handoff supplement (2026-10-24): FS123_OPERATIONAL_ACCEPTANCE_HANDOFF_2026-10-24.md records evidence limits,proposed V2 QualityDips account,actual writer/read/UI map and conditional first launch. No code,test behavior,strategy funding or runtime status changed. QualityDips MSFT/USD100/one-position enforcement and operational FS3 screen are pending;Hyperliquid/equity/NLPD remain separate core scopes,not activated.0newtestcases;B1/C1/D1/E1BLOCKED,21decisions unchanged,PAPERstartupNO,productionNO-GO. Source-only packet VERIFIED,not operational acceptance.
+
+
+## Corrected Quality Dips selected policy — 2026-10-24
+
+Operator correction supersedes MSFT-only scope; eligible ranked stocks and ETFs require verified instrument/execution identity and fresh evidence. QD_SELECTED_POLICY_V1_OFFLINE VERIFIED:133passed/0failed/0skipped (33new+100compatibility), not operational acceptance. See QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md and operator scope correction JSON. Exactly zero ACTIVE tasks;BLOCKED_WAIT for independent B1/C1/D1/E1 scope/evidence acceptance and separately authorized current-evidence/native-writer integration. All21decisions unchanged;startupNO;productionNO-GO. Original histories/proposals retained.

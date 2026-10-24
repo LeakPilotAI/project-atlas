@@ -91,3 +91,8 @@ FS3_FINANCIAL_REPORT_PROJECTION_ACCEPTANCE_2026-10-24.md now records authorized 
 ## FS1-FS3 handoff and Monday decision - 2026-10-24
 
 FS123_OPERATIONAL_ACCEPTANCE_HANDOFF_2026-10-24.md and QUALITY_DIPS_B1_ACCEPTANCE_PROPOSAL_V2_2026-10-24.json are the current unaccepted reviewer packet/conditional walkthrough. Source-only handoff complete,0newtestcases;native FS3 evidence remains scoped. Actual ProjectAtlas/AtlasBackground shortcuts target ControlCenter;StopAtlas targets blocked legacy batch. Generalengine lacks proposed selected-account policy and no operational FS3 account screen/routing exists. B1/C1/D1/E1 and applicable21gate operational evidence/authorization absent:Monday08:30Central target currentlyNO-GO,not a promise/waiver. Core/deferred priorities,patient holdings,all7phases andall21decisions unchanged. ZeroACTIVE,BLOCKED_WAIT pending independent decisions/exact integration permission.
+
+
+## Corrected Quality Dips selected policy — 2026-10-24
+
+Operator correction supersedes MSFT-only scope; eligible ranked stocks and ETFs require verified instrument/execution identity and fresh evidence. QD_SELECTED_POLICY_V1_OFFLINE VERIFIED:133passed/0failed/0skipped (33new+100compatibility), not operational acceptance. See QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md and operator scope correction JSON. Exactly zero ACTIVE tasks;BLOCKED_WAIT for independent B1/C1/D1/E1 scope/evidence acceptance and separately authorized current-evidence/native-writer integration. All21decisions unchanged;startupNO;productionNO-GO. Original histories/proposals retained.

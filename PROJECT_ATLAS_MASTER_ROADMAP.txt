@@ -13796,6 +13796,12 @@ Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Do
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
 === ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: QD_SELECTED_POLICY_V1_OFFLINE — corrected multi-instrument scope (2026-10-24)
+Status: VERIFIED OFFLINE ONLY; supersedes historical MSFT-only selected-account restriction. All eligible ranked stocks/ETFs require explicitly pinned instrument/execution and fresh ranking/price evidence; manual-only long/fractional where supported,1000hypothetical cash,100maximum entry,one position,no scale-in,overnight permitted. B1/C1/D1/E1 BLOCKED;all21decisions unchanged;PAPER startupNO;productionNO-GO;Phase2HOLD;Phase3BLOCKED.
+Evidence: docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md;operator correction JSON;final combined133passed0failed0skipped(33new+100compatibility),4.91s. Historical V1 goldens unchanged;no native/protected/provider/runtime tests or records. Explicit selected manifest/command/receipt versions;canonical enforcement before intent,explanatory reason codes,independent arithmetic,restart/idempotency and overnight exits.
+Next action: independent review of corrected scope and source/freshness custody,then separately approved current-evidence and native writer integration. No operational activation. Remaining seven phases and21decisions below retained as historical checkpoint; any MSFT-only proposal there is superseded,not silently carried forward.
+
+Prior verified checkpoint retained for continuity:
 Milestone: FS1-FS3 independent acceptance handoff and operational integration readiness - 2026-10-24
 Status: Offline source/evidence handoff VERIFIED,NOT independent operational acceptance. B1/C1/D1/E1BLOCKED;all21decisions unchanged;PAPERstartupNO;productionNO-GO;Phase2HOLD;Phase3BLOCKED;AFI1-10PENDING. ZeroACTIVE,BLOCKED_WAIT.
 Evidence: docs/FS123_OPERATIONAL_ACCEPTANCE_HANDOFF_2026-10-24.md;docs/FS123_ACCEPTANCE_TRACEABILITY_2026-10-24.json;docs/QUALITY_DIPS_B1_ACCEPTANCE_PROPOSAL_V2_2026-10-24.json.17-property evidence/limitation matrix;FS3testedsourcehashesverified;no newacceptanceclaims. HistoricalFS3 120pass1notexecuted plus100neighborpassesretained,NOT RERUN/ADDED.

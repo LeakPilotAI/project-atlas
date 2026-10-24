@@ -170,3 +170,8 @@ Exactly zero ACTIVE tasks;BLOCKED_WAIT. Next: independent FS1-FS3 source/native 
 | FS123_INDEPENDENT_ACCEPTANCE_HANDOFF | VERIFIED offline handoff only | FS123_OPERATIONAL_ACCEPTANCE_HANDOFF_2026-10-24.md;17-property traceability;B1 V2 proposal | Independent B1/C1/D1 decisions,exact separately approved integration,E1/native first-session evidence |
 
 Zero ACTIVE tasks;BLOCKED_WAIT. No new pytest/JS/native cases run;prior FS3 results retained/not added. Actual3shortcuts metadata inspected unchanged;current full startup/frontend refused and legacy Stop disabled. Selected MSFT/USD100/one-position policy and operational FS3 UI are not implemented. Intraday INCOMPLETE accounting is not forced liquidation/clean lifecycle. Next: operator scope confirmation and independent acceptance decisions,then narrow file-level permission;no duplicate demos or new authority. Monday targetNO-GO;all21decisions and7phases preserved,startupNO,productionNO-GO.
+
+
+## Corrected Quality Dips selected policy — 2026-10-24
+
+Operator correction supersedes MSFT-only scope; eligible ranked stocks and ETFs require verified instrument/execution identity and fresh evidence. QD_SELECTED_POLICY_V1_OFFLINE VERIFIED:133passed/0failed/0skipped (33new+100compatibility), not operational acceptance. See QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md and operator scope correction JSON. Exactly zero ACTIVE tasks;BLOCKED_WAIT for independent B1/C1/D1/E1 scope/evidence acceptance and separately authorized current-evidence/native-writer integration. All21decisions unchanged;startupNO;productionNO-GO. Original histories/proposals retained.

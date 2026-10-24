@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "FS123_INDEPENDENT_ACCEPTANCE_HANDOFF",
+  "last_verified_task": "QD_SELECTED_POLICY_V1_OFFLINE",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -24,7 +24,7 @@
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Operator confirms/rejects V2 proposed parameters; independent B1 scope/capital/exclusion and C1/D1 trust/resource reviewers record decisions, then separately authorize exact selected-policy/manual-writer/read-only-screen/service-allowlist integration. No provisioning or startup from handoff.",
+  "exact_next_action": "Independent review of corrected all-eligible-stock/ETF selected account scope, freshness and evidence custody; separately authorize current-evidence adapter and protected native writer integration. No MSFT-only restriction; no startup or provisioning.",
   "latest_focused_tests": {
     "original_root_identity_reproducer_failed": 1,
     "resolved_in_final_native_selection": true,
@@ -155,15 +155,35 @@
     "historical_golden_bytes": "UNCHANGED"
   },
   "latest_execution_checks": {
-    "tests_executed": 0,
-    "retained_suite_results_not_rerun": true,
-    "python_ast_compile_files": 24,
-    "powershell_parse_files": 5,
-    "evidence_properties": 17,
-    "backend_route_assertions": 7,
-    "shortcuts_read_hash_unchanged": 3,
-    "new_operational_acceptance": false,
-    "source_behavior_changed": false
+    "source_behavior_changed": true,
+    "operational_dispatch_changed": false,
+    "operational_acceptance": false,
+    "selection_passed": 133,
+    "failed": 0,
+    "skipped": 0,
+    "new_policy_cases": 33,
+    "duration_seconds": 4.91,
+    "historical_goldens": "UNCHANGED",
+    "native_tests_executed": 0,
+    "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
-  "b1_current_review_proposal": "docs/QUALITY_DIPS_B1_ACCEPTANCE_PROPOSAL_V2_2026-10-24.json"
+  "b1_current_review_proposal": "docs/QUALITY_DIPS_B1_ACCEPTANCE_PROPOSAL_V2_2026-10-24.json",
+  "quality_dips_current_scope": {
+    "schema": "QD_OPERATOR_SCOPE_CORRECTION_V1",
+    "date": "2026-10-24",
+    "status": "OFFLINE_IMPLEMENTED_NOT_OPERATIONALLY_ACCEPTED",
+    "supersedes_restriction": "MSFT_ONLY",
+    "instrument_scope": "All eligible ranked stocks and ETFs with independently verified identity, execution support, fresh ranking and price evidence",
+    "opening_cash_usd": "1000",
+    "maximum_entry_usd": "100",
+    "maximum_open_positions": 1,
+    "long_only": true,
+    "fractional_only_where_supported": true,
+    "scale_in": false,
+    "entries_and_exits": "MANUAL_CONFIRMATION",
+    "overnight_holding": true,
+    "startup_authorized": false,
+    "operational_acceptance": false,
+    "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
+  }
 }

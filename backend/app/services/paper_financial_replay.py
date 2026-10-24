@@ -46,6 +46,15 @@ def strict(raw):
 
 
 def validate_manifest(m):
+    if m.get("schema") == "PAPER_EPOCH_SELECTED_QD_V2":
+        from app.services.quality_dips_account_policy import validate_policy
+
+        legacy = dict(m)
+        legacy.pop("account_policy", None)
+        legacy["schema"] = "PAPER_EPOCH_FIXTURE_V1"
+        validate_manifest(legacy)
+        validate_policy(m)
+        return
     if (set(m) != {"schema", "epoch", "strategy", "currency", "opening_cash", "opened_at", "timezone",
                    "release", "provenance", "cost_policy", "fees_bps", "slippage_bps", "initial_net_r"}
             or m["schema"] != "PAPER_EPOCH_FIXTURE_V1"
@@ -142,7 +151,19 @@ def apply_event(manifest, state, command):
     validate_manifest(manifest)
     with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)):
         candidate = copy.deepcopy(state)
+        original = command
+        selected = manifest["schema"] == "PAPER_EPOCH_SELECTED_QD_V2"
+        if selected:
+            from app.services.quality_dips_account_policy import validate_command
+
+            reasons = validate_command(manifest, state, command)
+            command = dict(command)
+            command.pop("eligibility")
+            command["schema"] = "PAPER_COMMAND_FIXTURE_V1"
         receipt = _transition_in_place(manifest, candidate, command)
+        if selected:
+            receipt.update(schema="PAPER_RECEIPT_SELECTED_QD_V2", payload_digest=digest(original),
+                           policy_digest=digest(manifest["account_policy"]), eligibility_reasons=reasons)
         return candidate, receipt
 
 
