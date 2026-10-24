@@ -9,10 +9,10 @@ import sys
 from pathlib import Path
 
 
-def confined_root(value, financial=False):
+def confined_root(value, financial=False, reports=False):
     root = Path(value)
     parent = Path(__file__).resolve().parents[2] / "logs" / "diagnostics"
-    if not root.is_absolute() or root.parent != parent or not root.name.startswith("qd-d1-financial-records-" if financial else "qd-d1-native-acceptance-"):
+    if not root.is_absolute() or root.parent != parent or not root.name.startswith("qd-fs3-report-projection-" if reports else "qd-d1-financial-records-" if financial else "qd-d1-native-acceptance-"):
         raise ValueError("Exact authorized disposable run root required")
     if any(part in (".", "..") for part in root.parts):
         raise ValueError("No traversal")
@@ -30,8 +30,11 @@ def main():
     parser.add_argument("--run-root", required=True)
     parser.add_argument("--attempt", required=True)
     parser.add_argument("--financial", action="store_true")
+    parser.add_argument("--reports", action="store_true")
     args = parser.parse_args()
-    root = confined_root(args.run_root, args.financial)
+    if args.financial and args.reports:
+        raise ValueError("Exactly one native plan required")
+    root = confined_root(args.run_root, args.financial, args.reports)
     if not args.attempt.isalnum():
         raise ValueError("Opaque attempt identity required")
     identity = [root.stat().st_dev, root.stat().st_ino]
@@ -72,24 +75,32 @@ def main():
                repo / "backend/app/services/paper_writer_fixture.py"]
     source_hashes = {str(p.relative_to(repo)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
     (attempt / "source-hashes.json").write_text(json.dumps(source_hashes, indent=2), encoding="utf-8")
-    test_file = "tests/test_quality_dips_financial_records_native.py" if args.financial else "tests/test_qd_d1_native_acceptance.py"
-    if args.financial:
+    test_file = "tests/test_quality_dips_financial_records_native.py" if args.financial or args.reports else "tests/test_qd_d1_native_acceptance.py"
+    if args.financial or args.reports:
         for relative in (test_file, "scripts/volume_inspector/financial_record_store.py",
                          "backend/app/services/paper_financial_replay.py", "backend/app/services/paper_financial_audit.py"):
             source_hashes[relative] = hashlib.sha256((repo / relative).read_bytes()).hexdigest()
         (attempt / "source-hashes.json").write_text(json.dumps(source_hashes, indent=2), encoding="utf-8")
-    result = pytest.main([str(repo / test_file), "-q", "-p", "no:cacheprovider",
+    selection = [str(repo / test_file)]
+    if args.reports:
+        selection = [str(repo / "tests/test_quality_dips_financial_records_native.py"),
+                     str(repo / "tests/test_fs3_financial_reporting_native.py")]
+        for relative in ("tests/test_fs3_financial_reporting_native.py", "scripts/volume_inspector/financial_reporting.py",
+                         "backend/app/services/paper_daily_report.py"):
+            source_hashes[relative] = hashlib.sha256((repo / relative).read_bytes()).hexdigest()
+        (attempt / "source-hashes.json").write_text(json.dumps(source_hashes, indent=2), encoding="utf-8")
+    result = pytest.main([*selection, "-q", "-p", "no:cacheprovider",
                           "--basetemp=" + str(attempt / "cases")], plugins=[evidence])
     observations = attempt / "observations.jsonl"
     helpers = [x for x in (json.loads(line) for line in observations.read_text(encoding="utf-8").splitlines()) if x["case"] == "helper"] if observations.exists() else []
-    summary = {"plan_version": "FS2_NATIVE_V1" if args.financial else "QD_D1_NATIVE_V1", "platform": platform.platform(), "python": sys.version,
+    summary = {"plan_version": "FS3_NATIVE_V1" if args.reports else "FS2_NATIVE_V1" if args.financial else "QD_D1_NATIVE_V1", "platform": platform.platform(), "python": sys.version,
                "root_identity": identity, "source_hashes": source_hashes,
                "cases": evidence.cases, "details": evidence.details, "pytest_exit": int(result),
                "counts": {s: list(evidence.cases.values()).count(s) for s in ("PASS", "FAIL", "BLOCKED", "NOT_EXECUTED")},
                "helpers": helpers, "cleanup": "Test artifacts retained; no deletion or forced process termination; helper outcomes individually recorded",
                "operational_acceptance": False}
     (attempt / "evidence.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    if confined_root(str(root), args.financial).stat().st_ino != identity[1]:
+    if confined_root(str(root), args.financial, args.reports).stat().st_ino != identity[1]:
         raise ValueError("Run identity changed")
     return result
 

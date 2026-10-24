@@ -52,13 +52,15 @@ class FinancialRecordStore:
             return {"schema": "FS2_TEST_PIN_V1", "root": native.file_identity(output.root_handle),
                     "inception": binding, "epoch": manifest["epoch"], "entries": []}
 
-    def __init__(self, root, trust):
+    def __init__(self, root, trust, *, projection=None):
         if trust is None:
             raise Refused("Injected current-pin authority required")
         self.trust, self.poisoned, self.mutex = trust, False, None
+        self.projection = projection
         self.output = w.WindowsOutput(root)
         try:
             pin = trust.current()
+            require_identity(pin["root"])
             if native.file_identity(self.output.root_handle) != pin["root"]:
                 raise Refused("Pinned root mismatch")
             self.coordinator = native.Registry.__new__(native.Registry)
@@ -112,11 +114,12 @@ class FinancialRecordStore:
                 or len(pin["entries"]) > MAX_OPERATIONS
                 or native.file_identity(self.output.root_handle) != pin["root"]):
             raise Refused("Malformed or substituted pin")
+        require_identity(pin["root"])
         manifest = self._read("inception.json", pin["inception"])
         validate_manifest(manifest)
         if manifest["epoch"] != pin["epoch"]:
             raise Refused("Wrong inception")
-        rows = []
+        rows, projections = [], []
         previous = {"revision": 0, "record": pin["inception"], "event_digest": digest(manifest)}
         expected = {"inception.json"}
         for revision, entry in enumerate(pin["entries"], 1):
@@ -139,6 +142,16 @@ class FinancialRecordStore:
                            "intent": entry["intent"], "record": entry["record"]},
                 "ack": {"schema": "FS2_ACK_V1", "revision": revision, "commit": entry["commit"]},
             }
+            receipt = strict(row["receipt"])
+            if receipt.get("projection_required") is True:
+                ack = values["ack"]
+                if self.projection is None or set(ack) != {"schema", "revision", "commit", "projection"}:
+                    raise Refused("Required projection verifier/acknowledgement unavailable")
+                context = projection_context(receipt, entry["record"], entry["commit"])
+                self.projection.verify(context, ack["projection"])
+                projections.append(ack["projection"])
+                expected_values["ack"] = {"schema": "FS3_ACK_V1", "revision": revision,
+                                          "commit": entry["commit"], "projection": ack["projection"]}
             if any(body(values[k]) != body(v) for k, v in expected_values.items()):
                 raise Refused("Contradictory publication lineage")
             rows.append(row)
@@ -148,6 +161,8 @@ class FinancialRecordStore:
         actual = {p.name for p in islice(Path(self.output.root).iterdir(), MAX_OPERATIONS * 4 + 3)}
         if actual != expected:
             raise Refused("Incomplete, newer or unexpected namespace evidence")
+        if self.projection is not None:
+            self.projection.verify_inventory(projections)
         state, head, operations = replay_verified_events(manifest, rows)
         audit = audit_financial_events(manifest, rows, state)
         return pin, manifest, rows, state, head, operations, audit
@@ -179,7 +194,7 @@ class FinancialRecordStore:
                 return copy.deepcopy(receipt)
             if len(rows) >= MAX_OPERATIONS:
                 raise Refused("Capacity exhausted; no rotation or overwrite")
-            _, receipt = apply_event(manifest, state, command)
+            next_state, receipt = apply_event(manifest, state, command)
             receipt["projection_required"] = projection_required
             row = event_stream_record(receipt["source_revision"], ident, body(command), head,
                                       digest([head, command, receipt]), body(receipt))
@@ -200,12 +215,19 @@ class FinancialRecordStore:
                 publish("record", record)
                 publish("commit", {"schema": "FS2_COMMIT_V1", "revision": revision,
                                    "previous": previous, "intent": bindings["intent"], "record": bindings["record"]})
-                if projection_required:
+                if projection_required and self.projection is None:
                     self.poisoned = True
                     return {"schema": "FS2_UNACKNOWLEDGED_V1", "status": "UNKNOWN",
                             "committed_receipt": receipt, "fully_acknowledged": False,
                             "startup_authorized": False}
-                publish("ack", {"schema": "FS2_ACK_V1", "revision": revision, "commit": bindings["commit"]})
+                ack = {"schema": "FS2_ACK_V1", "revision": revision, "commit": bindings["commit"]}
+                if projection_required:
+                    context = projection_context(receipt, bindings["record"], bindings["commit"])
+                    proof = self.projection.publish(context, next_state)
+                    self.projection.verify(context, proof)
+                    ack = {"schema": "FS3_ACK_V1", "revision": revision,
+                           "commit": bindings["commit"], "projection": proof}
+                publish("ack", ack)
                 next_pin = copy.deepcopy(pin)
                 next_pin["entries"].append(bindings)
                 self.trust.advance(pin, next_pin)
@@ -215,3 +237,16 @@ class FinancialRecordStore:
                 self.poisoned = True
                 self._latch()
                 raise
+
+
+
+def projection_context(receipt, record, commit):
+    return {"schema": "FS3_PROJECTION_CONTEXT_V1", "epoch": receipt["epoch"],
+            "operation_id": receipt["operation_id"], "source_revision": receipt["source_revision"],
+            "state_digest": receipt["state_digest"], "record": record, "commit": commit}
+
+
+
+def require_identity(value):
+    if type(value) is not list or len(value) != 3 or any(type(i) is not int or i < 0 for i in value):
+        raise Refused("Exact integer native identity required before coordinator selection")

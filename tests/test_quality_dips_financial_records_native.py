@@ -39,7 +39,7 @@ class TestPins:
 @pytest.fixture(autouse=True)
 def confined(tmp_path):
     root = Path(os.environ["ATLAS_D1_RUN_ROOT"])
-    assert root.parent == REPO / "logs/diagnostics" and root.name.startswith("qd-d1-financial-records-")
+    assert root.parent == REPO / "logs/diagnostics" and root.name.startswith(("qd-d1-financial-records-", "qd-fs3-report-projection-"))
     assert tmp_path.is_relative_to(root)
     assert all(not p.is_symlink() and not p.is_junction() for p in [tmp_path, *tmp_path.parents])
 
