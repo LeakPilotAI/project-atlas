@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "M3",
+  "last_verified_task": "N1C",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,23 +9,22 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "combined_passed": 385,
+    "combined_passed": 412,
     "failed": 0,
     "skipped": 0,
-    "duration_seconds": 88.36,
-    "log": "logs/diagnostics/hl-native-design-final.txt",
-    "environment": "permitted native Windows;disposable fixtures only",
+    "duration_seconds": 136.88,
+    "log": "logs/diagnostics/hl-n1-final-combined.txt",
+    "environment": "permitted native Windows;disposable native stores and test-owned children only",
     "javascript_prior_passed_not_rerun": 763
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Review/accept canonical selected-lane event authority and version-aware reader/adoption design. Next implementation is a bounded disposable native-writer facade prototype with explicit shared IDs,per-position revisions and applied-projection revisions; protected dispatch,migration and startup need separate approval. B1 archive,C1 writer ownership/drain,D1 trust/storage/clock/rollback,E1 operational approval remain blocked.",
+  "exact_next_action": "N1 is complete in disposable scope. No next N2-N6 engineering task is approved by N1 authorization. Obtain independent B1 source/archive/adoption evidence and explicit actual-record access;C1 all-writer ownership/drain,D1 trusted storage/clock/rollback and E1 operational evidence remain blocked. Review facade interface/pending projection policy before any separately approved native dispatch/migration integration.",
   "latest_focused_tests": {
-    "passed": 40,
+    "passed": 27,
     "failed": 0,
     "skipped": 0,
     "included_in_combined": true,
-    "new_cases": 6,
-    "log": "logs/diagnostics/hl-review-bridge.txt"
+    "log": "logs/diagnostics/hl-n1-final-focused.txt"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -52,14 +51,17 @@
     "L3": "VERIFIED scoped final regression379passed0failed0skipped; raw checkpoint backup/readback/history verified; reviewed source publication authorized. No runtime integration/activation.",
     "M1": "VERIFIED scoped4original replay failures reproduced and repaired:strict persisted request/event semantics,execution-time quote freshness,duplicate-key/nonfinite JSON refusal. No native store changes.",
     "M2": "VERIFIED scoped design:117static source call/import/cache references,actual manual/journal/reader conflicts and approval plan documented;2disposable all-writer/V2-ack/drain bridge cases pass. No real ownership/integration accepted.",
-    "M3": "VERIFIED scoped:385combinedpassed0failed/skipped;history-preserving checkpoint and reviewed source publication authorized. No gate promotion or native activation."
+    "M3": "VERIFIED scoped:385combinedpassed0failed/skipped;history-preserving checkpoint and reviewed source publication authorized. No gate promotion or native activation.",
+    "N1A": "VERIFIED scoped native association and separate source/position/applied revisions;24intermediate cases passed before final two tests. No native runtime dispatch.",
+    "N1B": "VERIFIED scoped27focusedN1cases:shared native association,separate revisions,partial/full manual projection,restart/concurrency,8abruptcrashes,initialization and snapshot-publication failures,source corruption and cooperative report-lock proof. Original race reproduced then fixed;final combined run pending.",
+    "N1C": "VERIFIED scoped412combinedpassed0failed/skipped,including27N1cases. History-preserving checkpoint and reviewed publication authorized. Native facade absent from production dispatch;all original writers/locks unchanged."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 16,
-  "continuation_report": "docs/HYPERLIQUID_NATIVE_INTEGRATION_DESIGN_2026-10-23.md",
-  "blocked_wait_reason": "Requested source review/design and independently eligible fixture repair/bridge acceptance complete. Protected native writer integration,migration and startup excluded;no independent B1/C1/D1/E1 evidence supplied.",
+  "progress_revision": 17,
+  "continuation_report": "docs/HYPERLIQUID_N1_NATIVE_FACADE_2026-10-23.md",
+  "blocked_wait_reason": "N1-only source/prototype/testing scope complete;N2-N6 require external evidence or separate actual-record/runtime/provisioning/activation authorization. Do not activate another task from fixture success.",
   "publication_validation": {
-    "python_combined_passed": 385,
+    "python_combined_passed": 412,
     "failed": 0,
     "skipped": 0,
     "operational_acceptance": false

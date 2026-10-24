@@ -38,3 +38,6 @@ Partial-position V2 supplement:docs/HYPERLIQUID_PARTIAL_LIFECYCLE_V2_2026-10-23.
 
 
 Native V2 review supplement:docs/HYPERLIQUID_NATIVE_INTEGRATION_DESIGN_2026-10-23.md;4replaysemanticdefects repaired,117staticreferences mapped,6newreview/bridgecases included in385combinedpasses. Actual writers/readers unchanged. Canonicalauthority/sharedidentity/version-awarelegacyreaders and all-writer drain require approved native implementation. B1/C1/D1/E1 stayBLOCKED,21decisionsunchanged,startupNO,productionNO-GO.
+
+
+N1 facade supplement:docs/HYPERLIQUID_N1_NATIVE_FACADE_2026-10-23.md;412combinedpassed0failed/skipped,27newcases included. Shared native/V2associations,source/position/applied revisions,actual disposable manual projection and pending-ack/report refusal verified. Cooperative report-lock gap reproduced/fixed. Native production dispatch/writers unchanged;N2-N6 remain evidence/approval dependent. B1/C1/D1/E1 BLOCKED,21decisionsunchanged,PAPERstartupNO,productionNO-GO.

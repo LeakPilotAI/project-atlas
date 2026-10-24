@@ -63,3 +63,9 @@ Current execution: L1-L3 scoped VERIFIED; BLOCKED_WAIT,zero ACTIVE tasks while n
 | M3 | Combined validation,checkpoint and reviewed publication | M2 | VERIFIED | review continuation | No gate promotion |
 
 Current execution:M1-M3 scoped VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks pending independent design/evidence review and separately scoped native integration. No B1/C1/D1/E1 promotion. Exact continuation in native integration design/state.
+
+| N1A | Disposable native facade association and revision foundation | explicit N1 authorization | VERIFIED | native facade prototype | No production import/dispatch |
+| N1B | Projection acknowledgement,concurrency and crash/restart acceptance | N1A | VERIFIED | disposable tests | Pending blocks financial replay/report |
+| N1C | Combined validation,history preservation and publication | N1B | VERIFIED | continuation | Preserve all governance decisions |
+
+Current execution:N1A-N1C scoped VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. No further N2-N6 work authorized by N1-only instruction. B1/C1/D1/E1 remainBLOCKED;exact next approval/evidence action in N1 continuation/state.
