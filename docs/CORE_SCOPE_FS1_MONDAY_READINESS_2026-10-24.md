@@ -96,3 +96,8 @@ FS123_OPERATIONAL_ACCEPTANCE_HANDOFF_2026-10-24.md and QUALITY_DIPS_B1_ACCEPTANC
 ## Corrected Quality Dips selected policy — 2026-10-24
 
 Operator correction supersedes MSFT-only scope; eligible ranked stocks and ETFs require verified instrument/execution identity and fresh evidence. QD_SELECTED_POLICY_V1_OFFLINE VERIFIED:133passed/0failed/0skipped (33new+100compatibility), not operational acceptance. See QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md and operator scope correction JSON. Exactly zero ACTIVE tasks;BLOCKED_WAIT for independent B1/C1/D1/E1 scope/evidence acceptance and separately authorized current-evidence/native-writer integration. All21decisions unchanged;startupNO;productionNO-GO. Original histories/proposals retained.
+
+
+## Quality Dips integration V1 source-only acceptance — 2026-10-24
+
+P-QD-INTEGRATION-V1-OFFLINE completed:3integrationmodules plus additive selectedV3 canonical binding;265passed/0failed/0skipped(74newintegration). ExistingFS2/FS3 protocol code exercised with ordinary-file primitives,not native enrollment/security acceptance. Current generations no longer require inception edits;manual/owner/execution/source/quote bindings,UNKNOWN andread-only GET verified. See QUALITY_DIPS_INTEGRATION_V1_ACCEPTANCE_2026-10-24.md. Source integration IMPLEMENTED,DISPOSABLE VERIFIED;RUNTIME REGISTERED NO;OPERATIONALLY ACCEPTED NO. ZeroACTIVE;BLOCKED_WAIT for exact existing-page read-side integration permission and independent B1/C1/D1/E1 acceptance. No protected registration or providers;all21decisions and7phases preserved,startupNO,productionNO-GO.

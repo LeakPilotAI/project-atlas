@@ -46,7 +46,7 @@ def strict(raw):
 
 
 def validate_manifest(m):
-    if m.get("schema") == "PAPER_EPOCH_SELECTED_QD_V2":
+    if m.get("schema") in ("PAPER_EPOCH_SELECTED_QD_V2", "PAPER_EPOCH_SELECTED_QD_V3"):
         from app.services.quality_dips_account_policy import validate_policy
 
         legacy = dict(m)
@@ -152,13 +152,15 @@ def apply_event(manifest, state, command):
     with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)) as context:
         candidate = copy.deepcopy(state)
         original = command
-        selected = manifest["schema"] == "PAPER_EPOCH_SELECTED_QD_V2"
+        selected = manifest["schema"] in ("PAPER_EPOCH_SELECTED_QD_V2", "PAPER_EPOCH_SELECTED_QD_V3")
         if selected:
             from app.services.quality_dips_account_policy import validate_command
 
             reasons = validate_command(manifest, state, command)
             command = dict(command)
             command.pop("eligibility")
+            if manifest["schema"] == "PAPER_EPOCH_SELECTED_QD_V3":
+                command.pop("authority_evidence")
             command["schema"] = "PAPER_COMMAND_FIXTURE_V1"
         # Selected accounts must not acknowledge a fill rounded away from its
         # remaining quantity or cash. Retained V1 arithmetic stays unchanged.
@@ -168,7 +170,8 @@ def apply_event(manifest, state, command):
         except Inexact as exc:
             raise ValueError("ARITHMETIC_PRECISION_UNSUPPORTED") from exc
         if selected:
-            receipt.update(schema="PAPER_RECEIPT_SELECTED_QD_V2", payload_digest=digest(original),
+            version = "V3" if manifest["schema"] == "PAPER_EPOCH_SELECTED_QD_V3" else "V2"
+            receipt.update(schema="PAPER_RECEIPT_SELECTED_QD_" + version, payload_digest=digest(original),
                            policy_digest=digest(manifest["account_policy"]), eligibility_reasons=reasons)
         return candidate, receipt
 

@@ -180,3 +180,8 @@ Operator correction supersedes MSFT-only scope; eligible ranked stocks and ETFs 
 ## Quality Dips acceptance review and bounded integration contract — 2026-10-24
 
 QD_ACCEPTANCE_REVIEW_INTEGRATION_CONTRACT_V1 VERIFIED offline only.137passed/0failed/0skipped;4newcases;selected-only precision-loss refusal repaired,V1unchanged. B1V3 corrects MSFT-only assumption and records operator testing confirmation,not independent acceptance. See QUALITY_DIPS_ACCEPTANCE_REVIEW_CONTINUATION_2026-10-24.md and QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md for source-grounded files/current-ranking authority/read-only GET/shutdown contract. ZeroACTIVE;BLOCKED_WAIT for exact source-only integration permission and independent B1/C1/D1/E1 evidence. All21decisions,7phases preserved;startupNO;productionNO-GO. No actual selected-runtime integration yet.
+
+
+## Quality Dips integration V1 source-only acceptance — 2026-10-24
+
+P-QD-INTEGRATION-V1-OFFLINE completed:3integrationmodules plus additive selectedV3 canonical binding;265passed/0failed/0skipped(74newintegration). ExistingFS2/FS3 protocol code exercised with ordinary-file primitives,not native enrollment/security acceptance. Current generations no longer require inception edits;manual/owner/execution/source/quote bindings,UNKNOWN andread-only GET verified. See QUALITY_DIPS_INTEGRATION_V1_ACCEPTANCE_2026-10-24.md. Source integration IMPLEMENTED,DISPOSABLE VERIFIED;RUNTIME REGISTERED NO;OPERATIONALLY ACCEPTED NO. ZeroACTIVE;BLOCKED_WAIT for exact existing-page read-side integration permission and independent B1/C1/D1/E1 acceptance. No protected registration or providers;all21decisions and7phases preserved,startupNO,productionNO-GO.
