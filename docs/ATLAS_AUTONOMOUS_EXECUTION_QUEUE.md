@@ -40,3 +40,14 @@ Operational review update: F1–F4 scoped VERIFIED;233 combined and10 separate n
 | J5 | Final regression, first-session dependency plan and reviewed Git publication | J1,J2,J3,J4 | VERIFIED | readiness repair continuation | Complete combined run and preservation checks before commit/push |
 
 Latest exact continuation: docs/PAPER_FIRST_SESSION_DEPENDENCIES_2026-10-23.md.269combinedPython/763JS native pass. No eligible TODO remains without lane/scope decision or B1/C1/D1/E1 acceptance. Existing original gate decisions unchanged. Never replay B2-B5/F1-F4 as new implementation.
+
+
+| K1 | Selected Hyperliquid fixture scope and strict journal-source handoff | operator-proposed fixture scope only | VERIFIED | hyperliquid_paper_handoff.py | Preserve stricter1USD risk, manual confirmation,3positions, source revision and costs |
+| K2 | Actual journal/manual stores to disposable liquidation/cash/report compatibility | K1 | VERIFIED | handoff acceptance tests | No native partial-close projection or production mutation |
+| K3 | Crash, corrupt, unacknowledged and restart handoff failures | K2 | VERIFIED | disposable store fault tests | Preserve pending evidence and refuse duplicate replay |
+
+| K4 | Actual manual snapshot/journal lifecycle consistency and final acceptance | K3 | VERIFIED | hyperliquid_paper_handoff.py | Reject source omissions/conflicts and partial/native flat mismatch; validate then publish |
+
+| K5 | Combined real-interface fixture regression and publication | K4 | VERIFIED | Hyperliquid handoff continuation | 345 passed,0failed/skipped; no operational authority |
+
+Current execution: K1-K5 scoped VERIFIED; BLOCKED_WAIT. No ACTIVE task while no eligible approved TODO remains. B1/C1/D1/E1 unchanged. Exact recovery action is in ATLAS_AUTONOMOUS_STATE.json; prior dated execution summaries are historical.

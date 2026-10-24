@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "J5",
+  "last_verified_task": "K5",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,25 +9,22 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "combined_passed": 269,
+    "combined_passed": 345,
     "failed": 0,
     "skipped": 0,
-    "duration_seconds": 37.47,
-    "environment": "permitted native Windows; synthetic/disposable resources only",
-    "log": "logs/diagnostics/readiness-native-combined.txt",
-    "javascript_passed": 763,
-    "javascript_failed": 0,
-    "javascript_skipped": 0,
-    "javascript_log": "logs/diagnostics/offline-readiness-checks/javascript-3xky42eg/output.txt"
+    "duration_seconds": 83.65,
+    "environment": "permitted native Windows; disposable fixtures only",
+    "log": "logs\\diagnostics\\hl-handoff-final-v2.txt",
+    "javascript_prior_passed_not_rerun": 763
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Read docs/PAPER_FIRST_SESSION_DEPENDENCIES_2026-10-23.md. Obtain operator-selected PAPER lane/store/risk scope and B1 independent archive, C1 actual all-writer ownership/quiescence, D1 trusted storage/authority/clock acceptance before existing-path integration. No startup authorized. Next scoped engineering task is real-store handoff contract against disposable records once selected.",
+  "exact_next_action": "Obtain independently complete B1 source/opening cash archive, C1 actual writer/owner/drain acceptance, D1 trusted startup acceptance and explicit controlled-integration authorization. Native partial-fill journal linkage remains unsupported; do not project partial exits as a full native close. No eligible authorized operational integration task.",
   "latest_focused_tests": {
-    "passed": 6,
+    "passed": 40,
     "failed": 0,
     "skipped": 0,
-    "environment": "permitted native Windows; retained fixture children only",
-    "log": "logs/diagnostics/native-command-acceptance.txt"
+    "log": "logs/diagnostics/hl-handoff-k4.txt",
+    "overlaps_combined": true
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -43,18 +40,21 @@
     "J2": "VERIFIED diagnosis: stdlib-only socketpair stalls inside AppContainer before Atlas import; explicitly permitted native17provider cases allpass, including13async. No asyncio policy/socket monkeypatch, OS settings or lifecycle deadline changed.",
     "J3": "VERIFIED fixture integration: original falseCOMPLETE reproduced; now explicit same-day report contract, independent local exit recomputation and persisted daily cash report required before synthetic stop.32focusedpassed. Missing/failed accounting/report prevents stop; exact retries no duplicates; result COMPLETE_FIXTURE_ONLY/no production or recovery authority.",
     "J4": "VERIFIED native fixture-only: exact retained-child CIM command/image/parent/SID plus handle lifetime checks,6passed. Wrong command/account/parent/creation or unavailable CIM refuse. No operational ownership/quiescence/authority granted; C1 remains BLOCKED.",
-    "J5": "VERIFIED scoped final regression and dependency plan:269Python and763JS pass in permitted native environment; all governing decisions unchanged; missing local decision document restored for publication. No operational acceptance."
+    "J5": "VERIFIED scoped final regression and dependency plan:269Python and763JS pass in permitted native environment; all governing decisions unchanged; missing local decision document restored for publication. No operational acceptance.",
+    "K1": "VERIFIED fixture scope and strict actual-journal handoff20passed. Effective risk1USD preserves existing sizing; proposed25USD is ceiling not activation. Manual-only BTC/ETH/SOL,3positions,3Rstop,conservative2bpsfee/2bpsslip. No runtime configuration touched.",
+    "K2": "VERIFIED scoped actual journal/manual snapshot to disposable three-position ledger:22focusedpassed, mixed long/short/fractional partial/final quantities,1000USD opening cash,daily cash5.88 full or5.13 partial, retries/restarts. Native partial-close projection refused; original journal/manual remain open for partial scenario.",
+    "K3": "VERIFIED scoped32combined new-handoff cases passed: actual ENOSPC before/after durable append, manual pending/replace failure, abrupt child beforeadmission/aftermutation/afterack/duringappend, concurrent stableop retry, staleprices and corrupt risk controls. Evidence retained, uncertain callbacks never replayed.",
+    "K4": "VERIFIED scoped:40 selected handoff tests passed; actual manual/journal source revision and lifecycle matching refuses omissions/conflicts; no completeness or operational authority.",
+    "K5": "VERIFIED scoped combined regression:345passed,0failed,0skipped; Ruff/compile/PowerShell parser/diff checks passed. Reviewed publication authorized; no operational activation."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 13,
-  "continuation_report": "docs/OFFLINE_READINESS_REPAIR_CONTINUATION_2026-10-23.md",
+  "progress_revision": 14,
+  "continuation_report": "docs/HYPERLIQUID_PAPER_HANDOFF_CONTINUATION_2026-10-23.md",
   "blocked_wait_reason": "Native fixture/environment defects resolved in permitted test context; actual source completeness, all-runtime-writer authority, trusted startup and operational approval remain unavailable. Do not turn fixture observation into permission.",
   "publication_validation": {
-    "python_combined_passed": 269,
-    "offline_js_passed": 763,
+    "python_combined_passed": 345,
     "failed": 0,
     "skipped": 0,
-    "environment": "permitted native Windows; sandbox EPERM/socketpair evidence retained",
     "operational_acceptance": false
   }
 }

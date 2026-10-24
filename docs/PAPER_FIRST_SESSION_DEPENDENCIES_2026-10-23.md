@@ -38,3 +38,6 @@ Live-money broker authority/order reconciliation/emergency flattening, SaaS/inst
 
 ## Next execution
 Next development item: fixture-only real-store handoff acceptance for the operator-selected PAPER lane, including exact record/revision/risk contract and actual shutdown/report API boundary. Selecting/approving the lane and production integration scope is a genuine external dependency; do not invent account identity, authority or source completeness. Existing queue independent work J1-J5 is complete; B1/C1/D1/E1 remainBLOCKED. Secure source publication is authorized separately and does not authorize startup.
+
+
+Hyperliquid selected-lane supplement: docs/HYPERLIQUID_PAPER_HANDOFF_CONTINUATION_2026-10-23.md; 345combinedPythonpassed,0failed/skipped. Actual journal/manual interface fixtures and isolated partial/cash/report handoff verified; native partial-close linkage unsupported,source authenticity/actual-writer authority unaccepted. Proposed scope development only; effective1USD risk preserves stricter existing limit. B1/C1/D1/E1 remain BLOCKED,21decisions unchanged,PAPER startup NO,productionNO-GO. Prior next-lane-selection task superseded by K1-K5 scoped acceptance; next task requires independent evidence and controlled-integration authorization.
