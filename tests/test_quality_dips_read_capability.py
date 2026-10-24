@@ -148,3 +148,23 @@ def test_trusted_observation_time_survives_slow_read_without_freshening_it(tmp_p
     x.s.now[0] += 29
     with pytest.raises(ValueError):
         x.cap.read_committed(x.s.service.account, x.s.service.epoch)
+
+
+def test_fresh_authority_observation_does_not_change_financial_identity(tmp_path):
+    x = setup_read(tmp_path)
+    old = x.cap.read_committed(x.s.service.account, x.s.service.epoch)
+    x.s.now[0] += 2
+    x.authority.pin.update(observed_at=x.s.now[0], expires_at=x.s.now[0] + 30)
+    renewed = x.cap.read_committed(x.s.service.account, x.s.service.epoch)
+    assert old["source_identity"] == renewed["source_identity"]
+    assert old["observed_at"] != renewed["observed_at"]
+    assert x.cap.verify(old, account_id=x.s.service.account, epoch=x.s.service.epoch,
+                        now=x.s.now[0])["verified"] is True
+
+
+def test_router_preserves_current_pin_unknown_without_financial_values(tmp_path):
+    x = setup_read(tmp_path)
+    x.authority.pin["status"] = "UNKNOWN"
+    view = financial_view(reader=x.cap, verifier=x.cap, clock=lambda: x.s.now[0],
+                          account_id=x.s.service.account, epoch=x.s.service.epoch)
+    assert view["status"] == "UNKNOWN" and view["cash"] is None and view["positions"] is None

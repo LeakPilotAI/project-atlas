@@ -10,6 +10,10 @@ from app.services.paper_financial_audit import audit_financial_events
 from app.services.paper_financial_replay import body, digest, replay_verified_events, strict
 
 
+class CurrentReadEvidenceUnverified(ValueError):
+    """Known current-pin uncertainty; carries no financial data or authority."""
+
+
 class SelectedReadCapability:
     """Reader/verifier for the unregistered router, without write dependencies.
 
@@ -50,7 +54,7 @@ class SelectedReadCapability:
                     or pin["source"]["epoch"] != epoch
                     or len(pin["source"]["entries"]) != pin["high_water"]
                     or pin["reports"]["root"] != e["report_root"]):
-                raise ValueError("CURRENT_PIN_UNVERIFIED")
+                raise CurrentReadEvidenceUnverified("CURRENT_PIN_UNVERIFIED")
             evidence = self.port.read_verified(e, pin)
             manifest, rows = evidence["manifest"], evidence["rows"]
             if (manifest["schema"] != "PAPER_EPOCH_SELECTED_QD_V3"
@@ -88,7 +92,9 @@ class SelectedReadCapability:
             return {"schema": "QD_COMMITTED_PROJECTION_V1", "account_id": account_id, "epoch": epoch,
                     "status": "ACKNOWLEDGED", "state": state, "observed_at": pin["observed_at"],
                     "source_revision": state["revision"], "projection_revision": state["revision"],
-                    "source_identity": {"root": e["source_root"], "pin_digest": digest(pin),
+                    "source_identity": {"root": e["source_root"], "pin_digest": digest({
+                                        "source": pin["source"], "reports": pin["reports"],
+                                        "projection_root": e["projection_root"]}),
                                         "generation": pin["generation"]},
                     "policy_digest": e["policy_digest"], "report_status": report["status"],
                     "report": report, "selection": None,
@@ -100,6 +106,11 @@ class SelectedReadCapability:
     def verify(self, payload, *, account_id, epoch, now):
         # Re-read/revalidate instead of caching an authority-granting digest.
         expected = self.read_committed(account_id, epoch)
+        observed = payload.get("observed_at")
+        # Freshness renewal does not change immutable financial identity. The
+        # current state is independently revalidated above; only the bounded
+        # earlier observation time may differ between the two reads.
+        expected["observed_at"] = observed
         same = body(expected) == body(payload)
-        return {"verified": same and type(now) is int and 0 <= now - expected["observed_at"] <= 30,
-                "binding": digest(expected)}
+        return {"verified": same and type(now) is int and type(observed) is int
+                and 0 <= now - observed <= 30, "binding": digest(expected)}

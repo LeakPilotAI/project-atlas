@@ -22,7 +22,7 @@ def native(tmp_path):
     if not authorized:
         pytest.skip("NOT EXECUTED: explicit confined native test root required")
     root = Path(authorized)
-    assert root.parent == REPO / "logs/diagnostics" and root.name.startswith("qd-read-capability-")
+    assert root.parent == REPO / "logs/diagnostics" and root.name.startswith(("qd-read-capability-", "qd-http-browser-"))
     assert tmp_path.is_relative_to(root)
     assert all(not p.is_symlink() and not p.is_junction() for p in [tmp_path, *tmp_path.parents])
     spec = importlib.util.spec_from_file_location("native_read_port_test", REPO / "scripts/volume_inspector/financial_read_port.py")

@@ -9,6 +9,7 @@ from decimal import DecimalException
 
 from fastapi import APIRouter, HTTPException
 
+from app.investment.quality_dips_read_capability import CurrentReadEvidenceUnverified
 from app.services.paper_financial_replay import body, digest, number, strict
 
 
@@ -63,6 +64,8 @@ def financial_view(*, reader, verifier, clock, account_id, epoch):
                 "report": payload.get("report"), "selection": payload.get("selection"),
                 "unavailable_metrics": ["TOTAL_EQUITY", "UNREALIZED_PNL", "FEES_BREAKDOWN", "SLIPPAGE_BREAKDOWN"],
                 "lifecycle_status": "NOT_EVALUATED", "startup_authorized": False}
+    except CurrentReadEvidenceUnverified:
+        return {**unavailable, "status": "UNKNOWN", "reasons": ["CURRENT_PIN_UNVERIFIED"]}
     except (OSError, ValueError, KeyError, TypeError, RuntimeError, AttributeError, DecimalException):
         return unavailable
 
