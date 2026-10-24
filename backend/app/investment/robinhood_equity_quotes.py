@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 from datetime import datetime, timezone
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -22,19 +23,24 @@ DEFAULT_TIMEOUT_SEC = 5.0
 
 
 def _float(v: Any) -> float | None:
+    if isinstance(v, bool):
+        return None
     try:
         x = float(v)
-        return x if x == x and x > 0 else None
-    except (TypeError, ValueError):
+        return x if math.isfinite(x) and x > 0 else None
+    except (TypeError, ValueError, OverflowError):
         return None
 
 
 def _parse_ts(v: Any) -> datetime | None:
-    if not v:
+    if not isinstance(v, str) or not v:
         return None
     try:
-        return datetime.fromisoformat(str(v).replace("Z", "+00:00")).astimezone(timezone.utc)
-    except Exception:
+        parsed = datetime.fromisoformat(v.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            return None
+        return parsed.astimezone(timezone.utc)
+    except (TypeError, ValueError, OverflowError):
         return None
 
 
@@ -101,17 +107,16 @@ class RobinhoodEquityQuoteClient:
         rows = payload.get("quotes")
         if not isinstance(rows, list) or not rows:
             return None
-        row = next((x for x in rows if isinstance(x, dict) and str(x.get("tokenSymbol") or "").upper() == symbol), None)
-        if row is None:
-            row = next((x for x in rows if isinstance(x, dict)), None)
-        if not isinstance(row, dict):
+        matches = [x for x in rows if isinstance(x, dict) and str(x.get("tokenSymbol") or "").upper() == symbol]
+        if len(matches) != 1:
             return None
+        row = matches[0]
         bid = _float(row.get("bid"))
         ask = _float(row.get("ask"))
         ts = _parse_ts(row.get("generatedAt"))
         if bid is None and ask is None:
             return None
-        midpoint = (bid + ask) / 2.0 if bid is not None and ask is not None else (ask or bid)
+        midpoint = bid / 2.0 + ask / 2.0 if bid is not None and ask is not None else (ask or bid)
         buy_price = ask or midpoint
         return {
             "symbol": symbol,
@@ -131,6 +136,8 @@ class RobinhoodEquityQuoteClient:
 
     @staticmethod
     def _parse_classic(symbol: str, payload: dict[str, Any]) -> dict[str, Any] | None:
+        if payload.get("symbol") is not None and str(payload["symbol"]).upper() != symbol:
+            return None
         regular = _float(payload.get("last_trade_price"))
         extended = _float(payload.get("last_extended_hours_trade_price"))
         price = extended or regular

@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "QD_HTTP_BROWSER_V1_DISPOSABLE",
+  "last_verified_task": "QD_GATE_RESOLUTION_V1",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,25 +9,24 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "combined_passed": 336,
-    "combined_failed": 0,
-    "combined_skipped_not_executed": 1,
-    "targeted_http_owner_passed": 23,
-    "targeted_overlap_combined": 22,
-    "distinct_python_passed": 337,
-    "javascript_passed": 25,
-    "recorded_real_browser_checks": 11,
+    "passed": 222,
+    "failed": 0,
+    "skipped": 0,
+    "new_cases": 16,
+    "initial_reproducer_failed": 12,
+    "initial_reproducer_passed": 1,
+    "network_provider_calls": 0,
+    "selection": "targeted quote/parser/provider mocks/read-security/selected financial/production-lock",
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "BLOCKED_WAIT: disposable HTTP/browser scope complete. Independent B1 account/legacy exclusions,C1 actual writer/ownership/drain,D1 protected enrollment/current-pin issuer/clock/rollback/recovery,E1 provider/backup/restoration/native release evidence required;then separately authorize accepted operational read-only composition/Control Center. No fixture-to-production promotion or startup permission.",
+  "exact_next_action": "BLOCKED_WAIT: obtain independent B1 custodian/exclusion/capital/rule acceptance;named C1 actual writer/process/resource roster and scoped native observation permission;D1 independent pin/clock/issuer/recovery custody and accepted restore identity method;E1 feed rights/executable-price/calendar/corporate actions/backup+restore/supervised release. Then separately authorize accepted operational read-only composition;no fixture authority or startup bypass.",
   "latest_focused_tests": {
-    "passed": 23,
+    "passed": 13,
     "failed": 0,
     "skipped": 0,
-    "selection": "test_quality_dips_disposable_http.py",
-    "overlap_combined": 22,
-    "existing_unique_foreign_root_case_also_passed": true
+    "overlap_combined": true,
+    "selection": "initial13defectcases after repair;3positivecases added in combined"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -80,10 +79,11 @@
     "FS3_FINANCIAL_RECORD_ACCEPTANCE": "VERIFIED disposable reports/projection:120native-planpassed0failed1notexecuted(includes59priorFS2passes+61newFS3);100separatecompatibilitypassed. Strict-root type defect reproduced/fixed. Not operational storage/routing or D1 acceptance.",
     "FS123_INDEPENDENT_ACCEPTANCE_HANDOFF": "VERIFIED offline handoff only:17-property evidence matrix,V2 unaccepted B1 scope,actual writer/resource/UI/shortcut map and conditional walkthrough;24AST/compile,5PowerShell parses,7route assertions,3unchangedshortcutmetadatachecks.0newtestcases;no independent operational acceptance.",
     "QD_NATIVE_READ_CAPABILITY_V1": "VERIFIED confined source/native fixture reader only;312distinctPythonpassed,0finalfailures,1NOTEXECUTED;25separateJSpassed. No operational authority,HTTP/browser,provider,writer or startup activation.",
-    "QD_HTTP_BROWSER_V1_DISPOSABLE": "VERIFIED scoped realHTTP/native-child/browser:337distinctPythonpasses1NOTEXECUTED,25JSpasses,11recordedbrowserchecks;51served synthetic file hashes unchanged;allhosts gracefullyclosed. No operational approval."
+    "QD_HTTP_BROWSER_V1_DISPOSABLE": "VERIFIED scoped realHTTP/native-child/browser:337distinctPythonpasses1NOTEXECUTED,25JSpasses,11recordedbrowserchecks;51served synthetic file hashes unchanged;allhosts gracefullyclosed. No operational approval.",
+    "QD_GATE_RESOLUTION_V1": "VERIFIED offline parser/clock repairs:222passed0failed0skipped,16new;initial12failures retained. B1/C1/D1/E1 remainBLOCKED;actual writer exclusion and ordinary-copy native restore not established;no gate promotion."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 42,
+  "progress_revision": 43,
   "continuation_report": "docs/FS123_OPERATIONAL_ACCEPTANCE_HANDOFF_2026-10-24.md",
   "blocked_wait_reason": "Authorized offline handoff complete. Independent decisions, accepted selected-account policy, actual writer/UI routing, trusted enrollment and E1 operational evidence absent. Monday target remains NO-GO.",
   "publication_validation": {
@@ -192,7 +192,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/QUALITY_DIPS_HTTP_BROWSER_CONTINUATION_2026-10-24.md",
+  "recovery_checkpoint": "docs/QUALITY_DIPS_GATE_RESOLUTION_CONTINUATION_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -230,7 +230,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/QUALITY_DIPS_HTTP_BROWSER_CONTINUATION_2026-10-24.md",
+  "recovery_document": "docs/QUALITY_DIPS_GATE_RESOLUTION_CONTINUATION_2026-10-24.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -269,5 +269,17 @@
     "host_shutdown": "COMPLETE_DISPOSABLE_ONLY",
     "protected_static_host_unchanged": true,
     "startup_authorized": false
-  }
+  },
+  "retained_http_browser_validation": {
+    "combined_passed": 336,
+    "combined_failed": 0,
+    "combined_skipped_not_executed": 1,
+    "targeted_http_owner_passed": 23,
+    "targeted_overlap_combined": 22,
+    "distinct_python_passed": 337,
+    "javascript_passed": 25,
+    "recorded_real_browser_checks": 11,
+    "operational_acceptance": false
+  },
+  "gate_resolution_report": "docs/QUALITY_DIPS_GATE_RESOLUTION_2026-10-24.md"
 }

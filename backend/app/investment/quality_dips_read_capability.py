@@ -89,6 +89,9 @@ class SelectedReadCapability:
                 raise ValueError("CLOCK_DISCONTINUITY")
             if lease.check(pin, end) is not True:
                 raise ValueError("READ_CONTINUITY_UNVERIFIED")
+            checked = self.clock()
+            if type(checked) is not int or not end <= checked <= pin["expires_at"]:
+                raise ValueError("CLOCK_CHANGED_DURING_AUTHORITY_CHECK")
             return {"schema": "QD_COMMITTED_PROJECTION_V1", "account_id": account_id, "epoch": epoch,
                     "status": "ACKNOWLEDGED", "state": state, "observed_at": pin["observed_at"],
                     "source_revision": state["revision"], "projection_revision": state["revision"],
@@ -107,10 +110,13 @@ class SelectedReadCapability:
         # Re-read/revalidate instead of caching an authority-granting digest.
         expected = self.read_committed(account_id, epoch)
         observed = payload.get("observed_at")
+        trusted_now = self.clock()
         # Freshness renewal does not change immutable financial identity. The
         # current state is independently revalidated above; only the bounded
         # earlier observation time may differ between the two reads.
         expected["observed_at"] = observed
         same = body(expected) == body(payload)
         return {"verified": same and type(now) is int and type(observed) is int
-                and 0 <= now - observed <= 30, "binding": digest(expected)}
+                and type(trusted_now) is int and 0 <= trusted_now - now <= 30
+                and 0 <= trusted_now - observed <= 30 and observed <= now,
+                "binding": digest(expected)}
