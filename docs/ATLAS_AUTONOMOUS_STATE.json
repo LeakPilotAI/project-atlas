@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "QD_FRONTEND_V1_OFFLINE",
+  "last_verified_task": "QD_NATIVE_READ_CAPABILITY_V1",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,26 +9,24 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "selection_passed": 120,
+    "passed": 311,
     "failed": 0,
     "skipped": 1,
     "not_executed": 1,
-    "blocked_harness_cases": 0,
-    "new_fs3_cases": 61,
-    "duration_seconds": 42.01,
-    "selection": [
-      "test_quality_dips_financial_records_native.py",
-      "test_fs3_financial_reporting_native.py"
-    ],
-    "plan": "FS3_NATIVE_V1",
+    "selection": "QD read capability + prior271compatibility cases; pre-final-disjoint-test combined selection",
+    "additional_disjoint_passed": 1,
+    "distinct_python_passed": 312,
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Independent B1/C1/D1/E1 evidence and separately scoped permission to bind accepted read-only FS3/inception/report readers and register the existing selected GET in an accepted bootstrap, then real supervised browser/HTTP acceptance. No startup, providers, provisioning or command activation from frontend completion.",
+  "exact_next_action": "BLOCKED_WAIT: separately authorize dedicated disposable loopback HTTP/browser host acceptance with synthetic custody and commands=None. Operational binding/Control Center registration additionally requires independent B1/C1/D1/E1 enrollment,authority,current-pin/clock/rollback,writer/ownership and release evidence. Do not start main.py or production.",
   "latest_focused_tests": {
-    "original_root_identity_reproducer_failed": 1,
-    "resolved_in_final_native_selection": true,
-    "overlaps_final_native": true
+    "passed": 41,
+    "failed": 0,
+    "skipped": 1,
+    "not_executed": 1,
+    "selection": "test_quality_dips_read_capability.py + test_quality_dips_read_capability_native.py",
+    "overlaps_combined": true
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -79,10 +77,11 @@
     "FS1_CORE_SCOPE_CONSOLIDATION": "VERIFIED storage-neutral transitions/structural receipt replay and independent arithmetic audit;SQL fixtures delegate with exact synthetic pre-refactor event/receipt/head/snapshot/report goldens.100combinedpassed0failed0skipped,including37newcases;fixed28digitHALF_EVEN computation/input nonmutation. Current core/deferred/NLPD scope and conditional Mondaytarget recorded. No FS2/native or operational acceptance. Original bool-versus-integer receipt acceptance reproduced and corrected;valid golden bytes unchanged.",
     "FS2_FINANCIAL_RECORDS_NATIVE": "VERIFIED confined disposable protocol:59passed0failed1notexecuted;separate100compatibilitypassed. No operational D1 acceptance.",
     "FS3_FINANCIAL_RECORD_ACCEPTANCE": "VERIFIED disposable reports/projection:120native-planpassed0failed1notexecuted(includes59priorFS2passes+61newFS3);100separatecompatibilitypassed. Strict-root type defect reproduced/fixed. Not operational storage/routing or D1 acceptance.",
-    "FS123_INDEPENDENT_ACCEPTANCE_HANDOFF": "VERIFIED offline handoff only:17-property evidence matrix,V2 unaccepted B1 scope,actual writer/resource/UI/shortcut map and conditional walkthrough;24AST/compile,5PowerShell parses,7route assertions,3unchangedshortcutmetadatachecks.0newtestcases;no independent operational acceptance."
+    "FS123_INDEPENDENT_ACCEPTANCE_HANDOFF": "VERIFIED offline handoff only:17-property evidence matrix,V2 unaccepted B1 scope,actual writer/resource/UI/shortcut map and conditional walkthrough;24AST/compile,5PowerShell parses,7route assertions,3unchangedshortcutmetadatachecks.0newtestcases;no independent operational acceptance.",
+    "QD_NATIVE_READ_CAPABILITY_V1": "VERIFIED confined source/native fixture reader only;312distinctPythonpassed,0finalfailures,1NOTEXECUTED;25separateJSpassed. No operational authority,HTTP/browser,provider,writer or startup activation."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 40,
+  "progress_revision": 41,
   "continuation_report": "docs/FS123_OPERATIONAL_ACCEPTANCE_HANDOFF_2026-10-24.md",
   "blocked_wait_reason": "Authorized offline handoff complete. Independent decisions, accepted selected-account policy, actual writer/UI routing, trusted enrollment and E1 operational evidence absent. Monday target remains NO-GO.",
   "publication_validation": {
@@ -191,7 +190,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/QUALITY_DIPS_FRONTEND_V1_ACCEPTANCE_2026-10-24.md",
+  "recovery_checkpoint": "docs/QUALITY_DIPS_NATIVE_READ_CAPABILITY_CONTINUATION_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -208,5 +207,46 @@
     "selected_query": "mode=selected-paper",
     "legacy_research_fallback": false,
     "startup_authorized": false
+  },
+  "read_capability_validation": {
+    "final_focused": {
+      "passed": 41,
+      "failed": 0,
+      "skipped": 1,
+      "not_executed": 1
+    },
+    "combined": {
+      "passed": 311,
+      "failed": 0,
+      "skipped": 1,
+      "not_executed": 1
+    },
+    "additional_disjoint_concurrency": 1,
+    "distinct_python_passed": 312,
+    "javascript_passed": 25,
+    "browser_http_executed": false,
+    "native_symlink": "NOT EXECUTED: privilege1314",
+    "operational_acceptance": false
+  },
+  "recovery_document": "docs/QUALITY_DIPS_NATIVE_READ_CAPABILITY_CONTINUATION_2026-10-24.md",
+  "retained_fs3_native_validation": {
+    "selection_passed": 120,
+    "failed": 0,
+    "skipped": 1,
+    "not_executed": 1,
+    "blocked_harness_cases": 0,
+    "new_fs3_cases": 61,
+    "duration_seconds": 42.01,
+    "selection": [
+      "test_quality_dips_financial_records_native.py",
+      "test_fs3_financial_reporting_native.py"
+    ],
+    "plan": "FS3_NATIVE_V1",
+    "operational_acceptance": false
+  },
+  "retained_fs3_focused_validation": {
+    "original_root_identity_reproducer_failed": 1,
+    "resolved_in_final_native_selection": true,
+    "overlaps_final_native": true
   }
 }
