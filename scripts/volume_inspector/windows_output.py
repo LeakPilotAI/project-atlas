@@ -288,18 +288,33 @@ class WindowsOutput:
         validate_acl(self.root_handle, self.sid)
 
     def _write(self, directory, name, data):
+        self._write_bound(directory, name, data)
+
+    def write_bound(self, name, data):
+        """Return identity from the exclusive creation handle, never a reopen."""
+        self._verify()
+        return self._write_bound(self.root_handle, name, data)
+
+    def _write_bound(self, directory, name, data):
         if len(data) > 65536:
             raise ValueError("Output bound")
         h = relative_open(directory, name, self.sid, False, create=True, access=READ | WRITE | READ_CONTROL)
         try:
             validate_acl(h, self.sid)
-            if info(h).links != 1:
+            before = info(h)
+            identity = [before.volume, before.index_hi, before.index_lo]
+            if before.links != 1:
                 raise PermissionError("Linked file refused")
             count = W.DWORD()
             check(write_file(h, data, len(data), C.byref(count), None))
             if count.value != len(data):
                 raise OSError("Partial output retained")
             check(flush(h))
+            after = info(h)
+            if ([after.volume, after.index_hi, after.index_lo] != identity or after.links != 1
+                    or (after.size_hi << 32) | after.size_lo != len(data)):
+                raise OSError("Creation handle changed during publication")
+            return {"id": identity, "sha256": hashlib.sha256(data).hexdigest()}
         finally:
             close_handle(h)
 
