@@ -1,0 +1,117 @@
+{
+  "schema": "ATLAS_PAPER_RELEASE_POLICY_V1",
+  "decision_date": "2026-10-24",
+  "release_program": "PAPER_FIRST_NO_LIVE_MONEY_IMPLEMENTATION",
+  "authority": "EXPLICIT_OPERATOR_SCOPE_NOT_ACCEPTANCE",
+  "deployment": "SINGLE_USER_WINDOWS_LOCAL",
+  "account": {
+    "strategy": "QUALITY_DIPS",
+    "currency": "USD",
+    "hypothetical_opening_cash": "1000",
+    "max_entry_usd": "100",
+    "max_open_positions": 1,
+    "universe": "ELIGIBLE_QD_RANKED_STOCKS_ETFS",
+    "long_only": true,
+    "manual_entries": true,
+    "manual_exits": true,
+    "scale_in": false,
+    "fractional_if_supported": true,
+    "overnight_allowed": true,
+    "legacy_adoption": false,
+    "fees_bps_per_side": "2",
+    "slippage_bps_per_side": "2",
+    "cost_evidence": "SYNTHETIC_ASSUMPTIONS_NOT_MARKET_COSTS"
+  },
+  "account_acceptance": "OPERATOR_INTENT_NOT_INDEPENDENT_ACCEPTANCE",
+  "required_blocked_gates": [
+    "B1",
+    "C1",
+    "D1",
+    "E1"
+  ],
+  "canonical_governance_decisions_changed": 0,
+  "live_money_implementation_allowed": false,
+  "real_order_routing_allowed": false,
+  "real_capital_enrollment_allowed": false,
+  "paper_to_live_promotion_allowed": false,
+  "live_toggle_or_dormant_path_allowed": false,
+  "operational_startup_authorized": false,
+  "financial_provisioning_authorized": false,
+  "paper_release_gates": {
+    "P1_DATA": {
+      "status": "BLOCKED",
+      "required_evidence": [
+        "named provider and licensed equity/ETF feeds",
+        "authenticated source/session/quote timestamps and corporate action handling",
+        "budget,missing/stale/outage refusal evidence"
+      ],
+      "acceptance": "INDEPENDENT_REVIEW_AND_EXPLICIT_OPERATOR_PERMISSION_REQUIRED"
+    },
+    "P2_MANUAL_ROUTING": {
+      "status": "BLOCKED",
+      "required_evidence": [
+        "independent B1/C1/D1 acceptance",
+        "separately approved source routing and enrolled PAPER writer",
+        "manual ENTRY/EXIT receipts,100USD/one-position/ranked-universe/cash enforcement"
+      ],
+      "acceptance": "INDEPENDENT_REVIEW_AND_EXPLICIT_OPERATOR_PERMISSION_REQUIRED"
+    },
+    "P3_RECONCILIATION": {
+      "status": "BLOCKED",
+      "required_evidence": [
+        "all accepted operations/quantities/cash/costs exactly reconciled",
+        "zero unexplained differences and zero unacknowledged/UNKNOWN operations for clean result",
+        "independent daily report evidence and unavailable valuation explicit"
+      ],
+      "acceptance": "INDEPENDENT_REVIEW_AND_EXPLICIT_OPERATOR_PERMISSION_REQUIRED"
+    },
+    "P4_OVERNIGHT": {
+      "status": "BLOCKED",
+      "required_evidence": [
+        "carry open quantity/cost basis across authorized restart/day boundary",
+        "no shutdown liquidation for patient positions",
+        "day-end and next-day cash/source/report continuity"
+      ],
+      "acceptance": "INDEPENDENT_REVIEW_AND_EXPLICIT_OPERATOR_PERMISSION_REQUIRED"
+    },
+    "P5_OWNED_LIFECYCLE": {
+      "status": "BLOCKED",
+      "required_evidence": [
+        "exact enrolled parent/child/resource ownership",
+        "all-writer entry-close/drain/readonly lifecycle acceptance",
+        "graceful Start/Stop of only Atlas-owned resources with existing deadlines"
+      ],
+      "acceptance": "INDEPENDENT_REVIEW_AND_EXPLICIT_OPERATOR_PERMISSION_REQUIRED"
+    },
+    "P6_RECOVERY": {
+      "status": "BLOCKED",
+      "required_evidence": [
+        "actual enrolled-format backup plus separately accepted isolated restoration",
+        "interruption/UNKNOWN/stale pin/clock/substitution refusal",
+        "no invented fills,reset,financial replay or clean shutdown"
+      ],
+      "acceptance": "INDEPENDENT_REVIEW_AND_EXPLICIT_OPERATOR_PERMISSION_REQUIRED"
+    },
+    "P7_SEVEN_DAY_TRIAL": {
+      "status": "NOT_STARTED",
+      "required_evidence": [
+        "seven designated authorized US-exchange session days; counting rule accepted before launch",
+        "retain every attempted/completed/incomplete session,0sessions currently",
+        "daily independent ledger/cash/report review; no trade quota; all incidents retained"
+      ],
+      "acceptance": "INDEPENDENT_REVIEW_AND_EXPLICIT_OPERATOR_PERMISSION_REQUIRED"
+    },
+    "P8_EXTENDED_TRIAL": {
+      "status": "NOT_STARTED",
+      "required_evidence": [
+        "30-60 designated authorized PAPER sessions after initial trial review",
+        "retain denominator of all attempts and failures; no evidence deletion/reset",
+        "independent review of continuity,recovery,provider budgets,manual limits and incidents; no live promotion"
+      ],
+      "acceptance": "INDEPENDENT_REVIEW_AND_EXPLICIT_OPERATOR_PERMISSION_REQUIRED"
+    }
+  },
+  "retained_legacy_safety_guards": {
+    "backend/app/prediction/policy.py": "5ed08a67bb2eb8787cf5e5c91fe82ada294875cd8df7304cfa96bd9b16331e6d"
+  }
+}

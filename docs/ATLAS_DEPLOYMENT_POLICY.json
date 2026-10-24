@@ -27,5 +27,18 @@
   "live_money_authorized": false,
   "production": "NO_GO",
   "governance_decisions_changed": 0,
-  "required_blocked_gates": ["B1", "C1", "D1", "E1"]
+  "required_blocked_gates": [
+    "B1",
+    "C1",
+    "D1",
+    "E1"
+  ],
+  "release_program": "PAPER_FIRST_NO_LIVE_MONEY_IMPLEMENTATION",
+  "live_money_implementation_allowed": false,
+  "real_order_routing_allowed": false,
+  "real_capital_enrollment_allowed": false,
+  "paper_to_live_promotion_allowed": false,
+  "live_toggle_or_dormant_path_allowed": false,
+  "legacy_live_code_disposition": "RETAIN_UNACTIVATED_NO_SILENT_REWRITE",
+  "future_live_phase": "NEW_EXPLICIT_OPERATOR_DECISION_AND_SEPARATE_IMPLEMENTATION_AUTHORIZATION_REQUIRED"
 }
