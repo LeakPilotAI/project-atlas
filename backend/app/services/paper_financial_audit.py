@@ -14,13 +14,13 @@ def audit_financial_events(manifest, records, snapshot):
         return _audit(manifest, records, snapshot)
 
 
-def _audit(manifest, records, snapshot):
+def _audit(manifest, records, snapshot, *, record_schema="PAPER_EVENT_STREAM_RECORD_V1"):
     positions, origins, operations = {}, set(), set()
     gross, costs, revision = Decimal(0), Decimal(0), 0
     net_r, cash = number(manifest["initial_net_r"]), number(manifest["opening_cash"])
     spot, projection_required = manifest["strategy"] == "QUALITY_DIPS", False
     for row in records:
-        if type(row) is not dict or row.get("schema") != "PAPER_EVENT_STREAM_RECORD_V1":
+        if type(row) is not dict or row.get("schema") != record_schema:
             raise ValueError("Versioned verified source stream required")
         c, receipt = strict(row["command"]), strict(row["receipt"])
         revision += 1

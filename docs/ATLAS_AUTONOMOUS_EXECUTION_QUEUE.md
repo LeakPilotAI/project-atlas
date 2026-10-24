@@ -235,3 +235,10 @@ QD_OPERATIONAL_READ_INTEGRATION_V1 VERIFIEDSOURCEONLY;152passed0failed0skipped,2
 ## Operational Contract V1 — 2026-10-24
 
 QD_OPERATIONAL_CONTRACT_V1 VERIFIEDSOURCEONLY;260passed0failed0skipped54new;54overlappingfocusedpass. QD_OP_*_V1 separate account/enrollment/current/source/projection/report/clock/authority/session/resource/process schemas; independent custody/native verifier required before consumption, no test-pin translation. Existing disposable cases and protected financial/startup/UI bytes preserved. See QUALITY_DIPS_OPERATIONAL_CONTRACT_CONTINUATION_2026-10-24.md. ExactlyzeroACTIVE;BLOCKED_WAIT for source-only native operational read decoder/auditor and trusted Windows bridge permission plus independent B1/C1/D1 evidence; no enrollment/provisioning/install/startup granted. E1/PAPERblocked;all21decisions/7phases preserved;productionNO-GO.
+
+
+## Native operational reader and Windows bridge — 2026-10-24
+
+QD_NATIVE_OPERATIONAL_READ_BRIDGE_V1 VERIFIEDSOURCE/DISPOSABLE;311Pythonpass0fail1NOTEXECUTED(symlink1314),25JS pass;10overlappingbridgepass. Nativehandle/custody/replay/audit,V2historical/UIview and actualControlCenterOpenClosefunction path verified;browserstub,noGUIacceptance. See QUALITY_DIPS_NATIVE_READ_BRIDGE_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT for actualB1/C1/D1scope/resource/ownership/exclusion/custody/issuer/clock/rollback and separatelyauthorized enrollment/bootstrap/install/read-onlylaunch. No operational provisioner/writer/authority;E1/PAPERblocked;all21decisions/7phases preserved;productionNO-GO.
+
+Final strict-type predecessor coercion reproduced in isolated replay and corrected;final311Pythonpass1NOTEXECUTED,52new(51pass1skip);earlier310run superseded,not additive.

@@ -77,11 +77,12 @@ def initial_state(manifest):
             "net": "0", "net_r": manifest["initial_net_r"], "revision": 0, "last_clock": manifest["opened_at"]}
 
 
-def _transition_in_place(manifest, state, command):
+def _transition_in_place(manifest, state, command, *, command_schema="PAPER_COMMAND_FIXTURE_V1",
+                         receipt_schema="PAPER_RECEIPT_FIXTURE_V1"):
     m = manifest
     common = {"schema", "epoch", "operation_id", "kind", "expected_source_revision", "timestamp", "manual", "quote"}
     extra = {"symbol", "side", "quantity", "risk_price", "origin_ref"} if command.get("kind") == "ENTRY" else {"position_id", "quantity", "expected_position_revision"}
-    if (set(command) != common | extra or command["schema"] != "PAPER_COMMAND_FIXTURE_V1"
+    if (set(command) != common | extra or command["schema"] != command_schema
             or command["epoch"] != m["epoch"] or command["kind"] not in ("ENTRY", "EXIT")
             or command["manual"] is not True or type(command["expected_source_revision"]) is not int
             or command["expected_source_revision"] != state["revision"]
@@ -140,7 +141,7 @@ def _transition_in_place(manifest, state, command):
         if p["risk_price"] is not None:
             state["net_r"] = str(number(state["net_r"]) + net / (number(p["risk_price"]) * number(p["quantity"])))
     state.update(revision=state["revision"] + 1, last_clock=command["timestamp"])
-    return {"schema": "PAPER_RECEIPT_FIXTURE_V1", "epoch": m["epoch"], "operation_id": command["operation_id"],
+    return {"schema": receipt_schema, "epoch": m["epoch"], "operation_id": command["operation_id"],
             "payload_digest": digest(command), "source_revision": state["revision"], "position_id": ident,
             "position_revision": state["positions"][ident]["revision"], "state_digest": digest(state),
             "production_authorized": False, "startup_authorized": False}

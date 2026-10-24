@@ -130,8 +130,9 @@ def validate_bundle(e, bundle, now, observed_process, host_id):
         pin, resource = current[role], e["resources"][role]
         native_id(pin["native_root"])
         if role != "source":
-            exact(pin, "QD_OP_" + role.upper() + "_PIN_V1", {"resource_id", "native_root", "revision", "source_pin_digest", "record"})
-            binding(pin["record"], "QD_OP_" + role.upper() + "_DOCUMENT_V1")
+            version = "V2" if role == "report" and pin.get("schema") == "QD_OP_REPORT_PIN_V2" else "V1"
+            exact(pin, "QD_OP_" + role.upper() + "_PIN_" + version, {"resource_id", "native_root", "revision", "source_pin_digest", "record"})
+            binding(pin["record"], "QD_OP_" + role.upper() + "_DOCUMENT_" + version)
             if pin["source_pin_digest"] != digest(source):
                 raise ValueError("OPERATIONAL_SOURCE_PIN_MISMATCH")
         if (pin["resource_id"] != resource["resource_id"] or pin["native_root"] != resource["native_root"]
@@ -161,6 +162,24 @@ def validate_bundle(e, bundle, now, observed_process, host_id):
             or authority["capabilities"] != ["READ_ONLY"]):
         raise ValueError("OPERATIONAL_AUTHORITY_SCOPE_MISMATCH")
     fresh(authority, now)
+
+
+def report_view(enrollment, report):
+    """Existing UI shape only, never an FS3 source record or source authority.
+
+    V1 carried no daily evidence. V2 has already passed the native replay/audit;
+    expose its latest day with explicit operational origin and unavailable costs.
+    No original immutable bytes or financial schemas are relabeled on disk.
+    """
+    if report["schema"] != "QD_OP_REPORT_DOCUMENT_V2":
+        return None
+    row = report["history"][-1]
+    return {"schema": "FS3_DAILY_REPORT_V1", "view_only": True,
+            "operational_source_schema": report["schema"], "operational_source_digest": digest(report),
+            "account_id": enrollment["account"]["account_id"], "epoch": enrollment["account"]["epoch"],
+            "status": report["status"], "date": row["date"], "timezone": report["timezone"],
+            "period": {k: row[k] for k in ("start", "end_exclusive", "effective_end_exclusive")},
+            "realized": {**row["realized"], "fees": None, "slippage": None}, "history": report["history"]}
 
 
 class OperationalReadCapability:
@@ -202,7 +221,10 @@ class OperationalReadCapability:
             for role in ("projection", "report"):
                 doc = documents[role]
                 fields = {"enrollment_digest", "source_pin_digest", "revision", "state" if role == "projection" else "status"}
-                exact(doc, "QD_OP_" + role.upper() + "_DOCUMENT_V1", fields)
+                version = "V2" if role == "report" and current[role]["schema"] == "QD_OP_REPORT_PIN_V2" else "V1"
+                if version == "V2":
+                    fields |= {"timezone", "cutoff", "history"}
+                exact(doc, "QD_OP_" + role.upper() + "_DOCUMENT_" + version, fields)
                 if (digest(doc) != current[role]["record"]["sha256"] or doc["enrollment_digest"] != digest(e)
                         or doc["source_pin_digest"] != digest(current["source"])
                         or type(doc["revision"]) is not int or doc["revision"] != current["revision"]):
@@ -229,7 +251,7 @@ class OperationalReadCapability:
                     "source_revision": current["revision"], "projection_revision": current["revision"],
                     "source_identity": {"root": current["source"]["native_root"], "pin_digest": digest(current),
                                         "generation": current["generation"]}, "policy_digest": digest(e["policy"]),
-                    "report_status": report["status"], "report": report, "selection": None,
+                    "report_status": report["status"], "report": report_view(e, report), "selection": None,
                     "inception": {"schema": "QD_SELECTED_INCEPTION_VIEW_V1", "account_id": account_id, "epoch": epoch,
                                   "policy_digest": digest(e["policy"]), "currency": "USD",
                                   "policy_schema": e["policy"]["schema"],

@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "QD_OPERATIONAL_CONTRACT_V1",
+  "last_verified_task": "QD_NATIVE_OPERATIONAL_READ_BRIDGE_V1",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,22 +9,24 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 260,
+    "passed": 311,
     "failed": 0,
-    "skipped": 0,
-    "new_contract_cases": 54,
-    "duration_seconds": 25.05,
-    "selection": "operational schema/pure read/selected integration/policy/FS1/startup/disposable HTTP composition",
+    "skipped": 1,
+    "not_executed": 1,
+    "new_native_bridge_cases": 52,
+    "new_passed": 51,
+    "duration_seconds": 51.5,
+    "selection": "native operational reader/bridge,operational contract,pure read,selected policy/integration,FS1,startup,existing HTTP",
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Obtain bounded source-only approval for native operational immutable read decoder/auditor and trusted Windows composition/bridge binding; independently accept B1/C1/D1 actual custody/issuer/clock/ownership before separately authorized provisioning/install/read-only launch. E1/PAPER remain blocked.",
+  "exact_next_action": "Independent B1/C1/D1 actual scope/resources/retained real-child ownership/exclusion,issuer/current-pin/trustedclock/rollback acceptance;separately authorize operational enrollment/bootstrap/provisioning/bridge installation then supervised read-only launch. No fixture promotion;E1/PAPER blocked.",
   "latest_focused_tests": {
-    "passed": 54,
+    "passed": 10,
     "failed": 0,
     "skipped": 0,
     "overlap_combined": true,
-    "selection": "new schema cases after added existing UI presentation assertion"
+    "selection": "10overlapping PowerShell/directchild actualControlCenterClose strengthened cases; final combined rerun follows canonical predecessor repair"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -84,12 +86,13 @@
     "WINDOWS_LOCAL_ARCHITECTURE_V1": "VERIFIED operator deployment decision and source-grounded local gate/path reconciliation only;machine-readable policy/static checks pass;0newapplicationtests. Prior173passes1NOTEXECUTED notrerun. All21decisions unchanged;no runtime/source/authority activation.",
     "WINDOWS_LOCAL_NETWORK_HARDENING_V1": "VERIFIED source/config-only:explicit127.0.0.1postgres5432/redis6379;15passed0failed0skipped,7newcases;realComposeconfigusingonlysyntheticenvironment,nonportsource/resolvedconfigunchanged. No engine/container/Genesis interaction or runtime application.",
     "QD_OPERATIONAL_READ_INTEGRATION_V1": "VERIFIED sourceonly,152passed0failed0skipped26new;explicitread-service/custody/nativeidentity preflight,loopbackGET-only,originalUIbytes,ownedclose/restartrefusal,ControlCenterinjectionhook. No actualoperationalbridge/enrollment/startup;B1/C1/D1/E1BLOCKED.",
-    "QD_OPERATIONAL_CONTRACT_V1": "VERIFIED source-only separate operational schema/read boundary;260combinedpassed0failed0skipped54new. Disposable contracts unchanged; no operational native adapter/issuer/enrollment/bridge. Independent B1/C1/D1/E1 still BLOCKED."
+    "QD_OPERATIONAL_CONTRACT_V1": "VERIFIED source-only separate operational schema/read boundary;260combinedpassed0failed0skipped54new. Disposable contracts unchanged; no operational native adapter/issuer/enrollment/bridge. Independent B1/C1/D1/E1 still BLOCKED.",
+    "QD_NATIVE_OPERATIONAL_READ_BRIDGE_V1": "VERIFIED source/disposable native reader+stdioWindowsbridge;311Pythonpass1NOTEXECUTED(true-symlink1314),25JS pass;52newcases. V2historical reconciliation/UIview and actualControlCenterOpenClosefunctions;no operational installation/enrollment/writer/authority. Final strict-type predecessor correction verified; original failing direct replay retained."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 49,
-  "continuation_report": "docs/QUALITY_DIPS_OPERATIONAL_CONTRACT_CONTINUATION_2026-10-24.md",
-  "blocked_wait_reason": "Operational schemas verified; independently accepted enrollment/current custody/issuer/clock/native operational decoder and actual Windows bridge remain unavailable and unprovisioned.",
+  "progress_revision": 50,
+  "continuation_report": "docs/QUALITY_DIPS_NATIVE_READ_BRIDGE_CONTINUATION_2026-10-24.md",
+  "blocked_wait_reason": "Disposable native reader/bridge complete;actual source enrollment/publication,issuer/clock/currentcustody,writer exclusion,ownership and install acceptance unavailable/unauthorized.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
@@ -196,7 +199,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/QUALITY_DIPS_OPERATIONAL_CONTRACT_CONTINUATION_2026-10-24.md",
+  "recovery_checkpoint": "docs/QUALITY_DIPS_NATIVE_READ_BRIDGE_CONTINUATION_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -234,7 +237,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/QUALITY_DIPS_OPERATIONAL_CONTRACT_CONTINUATION_2026-10-24.md",
+  "recovery_document": "docs/QUALITY_DIPS_NATIVE_READ_BRIDGE_CONTINUATION_2026-10-24.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -347,16 +350,21 @@
   "deployment_policy_document": "docs/ATLAS_DEPLOYMENT_POLICY.json",
   "deployment_policy_sha256": "45f568ec8ecd59d5ed596625cfe0778bfa0264ba36a4a7fc36ae7ec4a9ef10bf",
   "current_milestone_validation": {
-    "operational_schemas_source_verified": true,
-    "disposable_http_compatibility_executed": true,
-    "native_operational_adapter_implemented": false,
+    "native_operational_schema_fixtures_executed": true,
+    "native_operational_reader_source_implemented": true,
+    "actual_powershell_child_bridge_executed": true,
+    "real_http_disposable_executed": true,
+    "actual_original_frontend_validator_executed": true,
+    "real_browser_executed": false,
+    "native_gui_executed": false,
+    "symlink_probe": "NOT EXECUTED privilege1314",
     "operational_enrollment_created": false,
-    "issuer_credentials_created": false,
-    "protected_startup_unchanged": true,
-    "trading_started": false,
-    "real_browser_executed": false
+    "trusted_authorities_created": false,
+    "bridge_installed": false,
+    "financial_writer_created": false,
+    "protected_startup_unchanged": true
   },
-  "latest_test_run_milestone": "QD_OPERATIONAL_CONTRACT_V1",
+  "latest_test_run_milestone": "QD_NATIVE_OPERATIONAL_READ_BRIDGE_V1",
   "retained_offline_recovery_validation": {
     "passed": 173,
     "failed": 0,
@@ -410,7 +418,7 @@
     "runtime_registered": false,
     "accepted_windows_bridge_installed": false,
     "commands_enabled": false,
-    "financial_schema_acceptance": "QD_OP_*_V1 source-only contracts implemented; operational financial decoder/audit/record protocol/enrollment/custody independently unaccepted. No relabeling of DISPOSABLE_ONLY/FS2_TEST_PIN_V1."
+    "financial_schema_acceptance": "Operational native reader/V2report source implemented/disposable verified;actual resources/issuer/custody/clock/exclusion/enrollment unaccepted.No test-pin conversion."
   },
   "retained_operational_read_integration_validation": {
     "passed": 152,
@@ -434,9 +442,55 @@
   "quality_dips_operational_contract": {
     "schema": "QD_OP_CONTRACT_STATUS_V1",
     "report": "docs/QUALITY_DIPS_OPERATIONAL_CONTRACT_V1_2026-10-24.md",
-    "native_operational_reader_available": false,
+    "native_operational_reader_available": true,
     "authority_accepted": false,
     "enrollment_provisioned": false,
+    "startup_authorized": false,
+    "source_status": "DISPOSABLE_NATIVE_VERIFIED_NOT_OPERATIONALLY_ACCEPTED"
+  },
+  "retained_operational_contract_validation": {
+    "passed": 260,
+    "failed": 0,
+    "skipped": 0,
+    "new_contract_cases": 54,
+    "duration_seconds": 25.05,
+    "selection": "operational schema/pure read/selected integration/policy/FS1/startup/disposable HTTP composition",
+    "operational_acceptance": false
+  },
+  "latest_javascript_tests": {
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0,
+    "selection": "unchanged selected frontend"
+  },
+  "retained_operational_contract_source_validation": {
+    "operational_schemas_source_verified": true,
+    "disposable_http_compatibility_executed": true,
+    "native_operational_adapter_implemented": false,
+    "operational_enrollment_created": false,
+    "issuer_credentials_created": false,
+    "protected_startup_unchanged": true,
+    "trading_started": false,
+    "real_browser_executed": false
+  },
+  "quality_dips_native_read_bridge": {
+    "report": "docs/QUALITY_DIPS_NATIVE_READ_BRIDGE_V1_2026-10-24.md",
+    "reader_source_implemented": true,
+    "bridge_source_implemented": true,
+    "installed": false,
+    "authorities_accepted": false,
+    "financial_source_provisioner_available": false,
     "startup_authorized": false
+  },
+  "retained_native_bridge_intermediate_validation": {
+    "passed": 310,
+    "failed": 0,
+    "skipped": 1,
+    "not_executed": 1,
+    "new_native_bridge_cases": 51,
+    "new_passed": 50,
+    "duration_seconds": 46.24,
+    "selection": "native operational reader/bridge,operational contract,pure read,selected policy/integration,FS1,startup,existing HTTP",
+    "operational_acceptance": false
   }
 }
