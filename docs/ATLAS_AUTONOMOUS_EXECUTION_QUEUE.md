@@ -97,3 +97,7 @@ Current execution:Q4/Q5/Q6 scoped disposable engineering VERIFIED under explicit
 | Q7 | Actual-policy disposable workflows,read-only strategy summary and end-to-end acceptance | Explicit Q7offline integration authorization | VERIFIED | Q7fixture integration | No protected API/provider/startup activation |
 
 Current execution:Q7scoped offline integration VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. All independently eligible Q7tasks complete. Exact independent evidence and separately approved runtime change boundary in Q7_PAPER_WORKFLOW_ACCEPTANCE_2026-10-23.md;B1/C1/D1/E1unchanged.
+
+| Q8 | Actual runtime/writer/shutdown trace and inert read/refusal-only integration boundary | Explicit Q8offline interface authorization | VERIFIED | Runtime-facing interfaces and neutral summary contract | No protected dispatch or trusted-store promotion |
+
+Current execution:Q8scoped VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. Read-only/refusal-only adapter unregistered;all mutations denied. Actual writers,APIs,Windows startup/shutdown unchanged. Exact acceptance checklist and next conditional actions in Q8_RUNTIME_INTEGRATION_READINESS_2026-10-23.md.
