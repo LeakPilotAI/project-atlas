@@ -78,3 +78,7 @@ Current execution:P1-P2 source-only proposal VERIFIED;BLOCKED_WAIT,zero ACTIVE t
 | N2R | Authorized read-only financial source inventory and redacted discrepancy review | explicit read-only source permission | VERIFIED | redacted N2continuation;private evidence excluded | Scoped local inspection only;N2/B1independent acceptance remainsBLOCKED |
 
 Current execution:N2R local scope completed;BLOCKED_WAIT,zero ACTIVE tasks. Next is independent custodian/reviewer evidence for B1discrepancies,not financial record repair,migration or startup. Original21decisions unchanged.
+
+| Q1 | Isolated new-epoch feasibility, disposable separation acceptance and explicit governance dependencies | Current source/design/test authorization | VERIFIED | Isolated epoch proposal | No gate bypass or runtime routing |
+
+Current execution:Q1 scoped design/disposable acceptance VERIFIED;BLOCKED_WAIT,zero ACTIVE tasks. Independent epoch scope adjudication and separately scoped canonical implementation approval are next;B1/C1/D1/E1 unchanged.

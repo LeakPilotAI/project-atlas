@@ -47,3 +47,6 @@ Final controlled proposal supplement:docs/HYPERLIQUID_CONTROLLED_RUNTIME_PROPOSA
 
 
 N2read-only redacted supplement:docs/N2_READONLY_EVIDENCE_REVIEW_REDACTED_2026-10-23.md. Authorized local source inspection/reconciliation completed without original mutations or application/store execution. Exact private figures,source hashes and discrepancy details excluded from Git. Independent source completeness,opening/cashflow,lifecycle and historical cost/override evidence remain unresolved;B1/C1/D1/E1stayBLOCKED,21decisionsunchanged,PAPERstartupNO,productionNO-GO. No tests/fixtures or services run in this stage.
+
+
+Q1 isolated-epoch supplement:docs/HYPERLIQUID_ISOLATED_EPOCH_PROPOSAL_2026-10-23.md;67combinedpassed0failed0skipped including6newdisposable separation cases. Conditional design feasibility only;new hypothetical inception is not historical migration or B1waiver. No canonical gate decision changed. B1/C1/D1/E1BLOCKED;PAPERstartupNO;productionNO-GO. Independent scope adjudication and separate canonical implementation approval required.
