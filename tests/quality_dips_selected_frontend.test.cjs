@@ -1,0 +1,173 @@
+// Actual shipped scripts in a deterministic DOM/fetch harness. No browser or HTTP listener.
+const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const ui = require('../backend/app/static/quality_dips_selected_paper.js');
+const html = fs.readFileSync('backend/app/static/quality_dips.html', 'utf8');
+const external = fs.readFileSync('backend/app/static/quality_dips_selected_paper.js', 'utf8');
+const inline = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+const STAMP = 1792843200;
+const clone = value => JSON.parse(JSON.stringify(value));
+const deferred = () => { let resolve, reject; const promise = new Promise((a,b) => {resolve=a;reject=b;}); return {promise,resolve,reject}; };
+
+function payload(symbol='MSFT') {
+  return {schema:'QD_SELECTED_FINANCIAL_VIEW_V1',status:'ACKNOWLEDGED',account_id:'fixture-account',epoch:'fixture-epoch',
+    policy_digest:'a'.repeat(64),source_revision:2,projection_revision:2,source_identity:{fixture:'source'},observed_at:STAMP,
+    inception:{schema:'QD_SELECTED_INCEPTION_VIEW_V1',account_id:'fixture-account',epoch:'fixture-epoch',policy_digest:'a'.repeat(64),
+      currency:'USD',opening_cash:'1000',policy_schema:'QD_SELECTED_ACCOUNT_POLICY_V2'},cash:'943.968',
+    realized:{gross:'4',net:'3.968',costs:'0.032',fees:null,slippage:null},
+    positions:{'fixture-epoch:position':{symbol,quantity:'2.5',remaining:'1.500000000000000000000000001'}},
+    valuation:null,report_status:'INCOMPLETE',lifecycle_status:'NOT_EVALUATED',
+    selection:{schema:'QD_SELECTION_PRESENTATION_V1',candidates:[
+      {symbol:'MSFT',asset_class:'STOCK',rank:1,status:'SELECTED',reasons:['Manual approval and evidence bound']},
+      {symbol:'SPY',asset_class:'ETF',rank:2,status:'REJECTED',reasons:['ONE_POSITION_NO_SCALE_IN']},
+      {symbol:'AAPL',asset_class:'STOCK',rank:3,status:'RESEARCH_ONLY',reasons:['Not manually approved']},
+      {symbol:'QQQ',asset_class:'ETF',rank:4,status:'REJECTED',reasons:['EXECUTION_EVIDENCE_INVALID']} ]}};
+}
+function dom() {
+  const elements={};
+  const document={getElementById(id){return elements[id]??={innerHTML:'',textContent:'',hidden:false,value:id==='stateFilter'?'all':'',
+    attrs:{},listeners:{},style:{},classList:{toggle(){},remove(){}},setAttribute(k,v){this.attrs[k]=v;},
+    addEventListener(k,v){this.listeners[k]=v;},scrollIntoView(){}};},addEventListener(){},querySelectorAll(){return [];},
+    querySelector(){return {scrollIntoView(){}};},body:{classList:{toggle(){}}}};
+  return {document,elements};
+}
+function harness(data=payload()) {
+  const d=dom(), requests=[], timers=new Map(); let tick=0, now=STAMP*1000, current=data;
+  const controller=ui.createController({document:d.document,clock:()=>now,Abort:AbortController,
+    schedule(fn){timers.set(++tick,fn);return tick;},cancel(id){timers.delete(id);},
+    fetch:async(url, options)=>{requests.push({url,options});if(current instanceof Error)throw current;
+      return {ok:true,json:async()=>clone(current)};}});
+  controller.setActive(true);
+  return {...d,controller,requests,timers,setData(value){current=value;},setNow(value){now=value;}};
+}
+
+test('acknowledged exact cash, position, inception and unavailable valuation',async()=>{
+  const h=harness();await h.controller.load();const content=h.elements.paperContent.innerHTML;
+  assert.match(content,/\$1000/);assert.match(content,/\$943\.968/);
+  assert.match(content,/1\.500000000000000000000000001/);assert.match(content,/\$3\.968/);
+  assert.match(content,/Total equity \/ unrealized valuation<\/dt><dd>UNAVAILABLE/);
+  assert.match(h.elements.paperStatus.textContent,/ACKNOWLEDGED.*INCOMPLETE/);
+  assert.equal(h.requests[0].url,ui.ENDPOINT);assert.equal(h.requests[0].options.method,'GET');
+});
+test('stock and ETF reasons retain supplied order, status and no automatic action',async()=>{
+  const h=harness();await h.controller.load();const s=h.elements.paperContent.innerHTML;
+  for(const symbol of ['MSFT','SPY','AAPL','QQQ'])assert.match(s,new RegExp(symbol));
+  assert.match(s,/STOCK/);assert.match(s,/ETF/);assert.match(s,/ONE_POSITION_NO_SCALE_IN/);assert.match(s,/RESEARCH_ONLY/);
+  assert.equal(h.requests.length,1);assert.doesNotMatch(s,/<button|<form/);
+});
+test('missing inception does not invent hypothetical capital',async()=>{
+  const data=payload();delete data.inception;const h=harness(data);await h.controller.load();
+  assert.match(h.elements.paperContent.innerHTML,/Hypothetical starting cash<\/dt><dd>UNAVAILABLE/);
+  assert.doesNotMatch(h.elements.paperContent.innerHTML,/\$1000/);
+});
+test('verified zero amounts display zero, never fabricate missing costs',async()=>{
+  const data=payload();data.realized={gross:'0',costs:'0',net:'0',fees:null,slippage:null};
+  const h=harness(data);await h.controller.load();const s=h.elements.paperContent.innerHTML;
+  assert.match(s,/Realized gross P&amp;L<\/dt><dd>\$0/);assert.match(s,/Aggregate fees<\/dt><dd>UNAVAILABLE/);
+});
+test('verified scoped daily report shows cutoff and costs separately',async()=>{
+  const data=payload();data.report={schema:'FS3_DAILY_REPORT_V1',account_id:data.account_id,epoch:data.epoch,status:'INCOMPLETE',
+    date:'2026-10-24',timezone:'America/New_York',period:{end_exclusive:STAMP+3600,effective_end_exclusive:STAMP},realized:{fees:'0.016',slippage:'0.016'}};
+  const h=harness(data);await h.controller.load();const s=h.elements.paperContent.innerHTML;
+  assert.match(s,/Reporting cutoff \(exclusive\)/);assert.match(s,/America\/New_York/);assert.match(s,/Report realized fees<\/dt><dd>\$0\.016/);
+  assert.match(h.elements.paperStatus.textContent,/INCOMPLETE/);assert.match(s,/NOT_EVALUATED/);
+});
+for(const state of ['UNKNOWN','INCOMPLETE','UNAVAILABLE'])test(`${state} clears prior financial amounts`,async()=>{
+  const h=harness();await h.controller.load();h.setData({schema:'QD_SELECTED_FINANCIAL_VIEW_V1',status:state,reasons:['EVIDENCE_MISSING']});await h.controller.load();
+  assert.equal(h.elements.paperStatus.textContent,state);assert.doesNotMatch(h.elements.paperContent.innerHTML,/943\.968|MSFT/);
+});
+test('stale and future source snapshots never display current balances',async()=>{
+  for(const delta of [-31,1]){const data=payload();data.observed_at+=delta;const h=harness(data);await h.controller.load();
+    assert.equal(h.elements.paperStatus.textContent,'STALE');assert.doesNotMatch(h.elements.paperContent.innerHTML,/943\.968/);}
+});
+test('network failure retains only explicitly stale last acknowledged evidence',async()=>{
+  const h=harness();await h.controller.load();h.setData(Error('offline'));await h.controller.load();
+  assert.match(h.elements.paperStatus.textContent,/STALE/);assert.match(h.elements.paperFreshness.textContent,/not current/);
+  assert.match(h.elements.paperContent.innerHTML,/943\.968/);h.controller.setActive(false);h.controller.setActive(true);
+  assert.match(h.elements.paperStatus.textContent,/STALE/);
+});
+test('refused initial HTTP read has no fallback',async()=>{
+  const d=dom(), urls=[];const c=ui.createController({document:d.document,Abort:AbortController,clock:()=>STAMP*1000,
+    fetch:async url=>{urls.push(url);return {ok:false};},schedule:()=>1,cancel(){}});c.setActive(true);await c.load();
+  assert.equal(d.elements.paperStatus.textContent,'UNAVAILABLE');assert.deepEqual(urls,[ui.ENDPOINT]);
+});
+test('untrusted HTML remains escaped throughout the selected view',async()=>{
+  const data=payload('<img onerror="bad">');data.selection.candidates[0].reasons=['<script>alert(1)</script>'];
+  const h=harness(data);await h.controller.load();const s=h.elements.paperContent.innerHTML;
+  assert.doesNotMatch(s,/<img|<script/);assert.match(s,/&lt;img/);assert.match(s,/&lt;script/);
+});
+for(const kind of ['scope','rollback','same-revision-conflict','malformed'])test(`${kind} cannot replace acknowledged state`,async()=>{
+  const h=harness();await h.controller.load();const next=payload();
+  if(kind==='scope'){next.account_id='other-account';next.inception.account_id='other-account';}
+  if(kind==='rollback')next.source_revision=next.projection_revision=1;
+  if(kind==='same-revision-conflict')next.cash='999';if(kind==='malformed')next.positions=null;
+  h.setData(next);await h.controller.load();assert.equal(h.elements.paperStatus.textContent,'UNKNOWN');
+  assert.doesNotMatch(h.elements.paperContent.innerHTML,/943\.968|\$999/);
+  if(kind==='scope')assert.match(h.elements.paperFreshness.textContent,/ACCOUNT_OR_POLICY_REPLACED/);
+  if(kind==='rollback')assert.match(h.elements.paperFreshness.textContent,/SOURCE_REVISION_ROLLBACK_OR_CONFLICT/);
+});
+test('partial and overnight positions remain positions until committed full close',async()=>{
+  const h=harness();await h.controller.load();h.setNow((STAMP+86400)*1000);h.controller.refreshAge();
+  assert.equal(h.elements.paperStatus.textContent,'STALE');assert.match(h.elements.paperContent.innerHTML,/1\.500000000000000000000000001/);
+  const next=payload();next.observed_at+=86400;next.source_revision=next.projection_revision=3;next.positions={};h.setData(next);await h.controller.load();
+  assert.match(h.elements.paperContent.innerHTML,/No open positions in this acknowledged projection/);
+});
+test('duplicate loads and repeated activation use one in-flight request',async()=>{
+  const d=dom(), wait=deferred();let calls=0;
+  const c=ui.createController({document:d.document,Abort:AbortController,clock:()=>STAMP*1000,schedule:()=>1,cancel(){},
+    fetch:async()=>{calls++;return wait.promise;}});c.setActive(true);const first=c.load();c.setActive(true);await c.load();assert.equal(calls,1);
+  wait.resolve({ok:true,json:async()=>payload()});await first;assert.match(d.elements.paperStatus.textContent,/ACKNOWLEDGED/);
+});
+test('mode replacement aborts and ignores an old response',async()=>{
+  const d=dom(), wait=deferred();let signal;
+  const c=ui.createController({document:d.document,Abort:AbortController,clock:()=>STAMP*1000,schedule:()=>1,cancel(){},
+    fetch:async(url,options)=>{signal=options.signal;return wait.promise;}});c.setActive(true);const pending=c.load();c.setActive(false);c.setActive(true);
+  assert.equal(signal.aborted,true);wait.resolve({ok:true,json:async()=>payload()});await pending;
+  assert.doesNotMatch(d.elements.paperContent.innerHTML,/943\.968/);
+});
+test('timed-out response cannot become acknowledged even if a test transport ignores abort',async()=>{
+  const d=dom(), wait=deferred();let timeout;
+  const c=ui.createController({document:d.document,Abort:AbortController,clock:()=>STAMP*1000,schedule:fn=>{timeout=fn;return 1;},cancel(){},
+    fetch:async()=>wait.promise});c.setActive(true);const pending=c.load();timeout();wait.resolve({ok:true,json:async()=>payload()});await pending;
+  assert.equal(d.elements.paperStatus.textContent,'UNAVAILABLE');
+});
+
+function page(search='?mode=selected-paper',withModule=true) {
+  const d=dom(), calls=[], loops=[];let data=payload();
+  class Clock extends Date {static now(){return STAMP*1000;}}
+  const context=vm.createContext({document:d.document,Date:Clock,AbortController,URLSearchParams,location:{search},
+    setTimeout:()=>1,clearTimeout(){},fetch:async(url,options)=>{calls.push([url,options.method]);return {ok:true,json:async()=>clone(data)};},
+    atlasPoll(fn,ms){loops.push({fn,ms});},atlasFetch:async url=>{calls.push([url,'GET']);return {ok:true,json:async()=>({board:[],runtime_refresh:{state:'FRESH'}})};}});
+  if(withModule)vm.runInContext(external,context);vm.runInContext(inline,context);
+  return {...d,calls,loops,context,setData(value){data=value;}};
+}
+test('actual HTML selected bootstrap and repeated polls never call legacy research GET',async()=>{
+  const h=page();await h.context.load();await h.loops[0].fn();assert.equal(h.loops.length,1);assert.equal(h.loops[0].ms,10000);
+  assert.equal(h.elements.researchWorkspace.hidden,true);assert.equal(h.elements.selectedPaper.hidden,false);
+  assert.ok(h.calls.length>0);assert.ok(h.calls.every(([url,method])=>url===ui.ENDPOINT&&method==='GET'));
+});
+test('selected mode remains fail-closed if its external script fails to load',async()=>{
+  const h=page('?mode=selected-paper',false);await h.context.load();assert.equal(h.calls.length,0);assert.equal(h.elements.paperStatus.textContent,'UNAVAILABLE');
+});
+test('research stays accessible only after explicit mode change',async()=>{
+  const h=page();await h.context.load();vm.runInContext("setView('overview')",h.context);await h.context.load();
+  assert.equal(h.elements.researchWorkspace.hidden,false);assert.ok(h.calls.some(([url])=>url==='/api/investments/quality-dips?limit=50'));
+  vm.runInContext('setFinancialMode(true)',h.context);const old=h.calls.length;await h.context.load();assert.ok(h.calls.slice(old).every(([url])=>url===ui.ENDPOINT));
+});
+test('late research response cannot overwrite selected mode or initiate another legacy read',async()=>{
+  const h=page(''),wait=deferred();let requestedInSelectedMode;
+  h.context.atlasFetch=async url=>{requestedInSelectedMode=vm.runInContext('selectedFinancialMode',h.context);h.calls.push([url,'GET']);return wait.promise;};
+  const old=h.context.load();vm.runInContext('setFinancialMode(true)',h.context);await h.context.load();
+  wait.resolve({ok:true,json:async()=>({board:[],runtime_refresh:{state:'FRESH'}})});await old;
+  assert.equal(requestedInSelectedMode,false);assert.equal(vm.runInContext('snapshot',h.context),null);
+  assert.match(h.elements.paperContent.innerHTML,/943\.968/);
+  assert.equal(h.calls.filter(([url])=>url==='/api/investments/quality-dips?limit=50').length,1);
+});
+test('responsive and accessible structural contract, without claiming layout/browser execution',()=>{
+  for(const value of ['aria-live="polite"','aria-atomic="true"','aria-controls="selectedPaper"','scope="col"','@media(max-width:550px)','grid-template-columns:1fr'])assert.ok((html+external).includes(value),value);
+  assert.match(html,/#selectedPaper\[hidden\],#researchWorkspace\[hidden\]/);
+  assert.match(html,/overflow-wrap:anywhere/);assert.match(html,/\.paperTable\{overflow:auto/);
+  assert.doesNotMatch(external,/method:\s*['"]POST['"]|\/commands/);
+});

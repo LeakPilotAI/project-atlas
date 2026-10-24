@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "QD_INTEGRATION_V1_OFFLINE",
+  "last_verified_task": "QD_FRONTEND_V1_OFFLINE",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -24,7 +24,7 @@
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Authorize bounded existing Quality Dips frontend selected-account panel integration against the unregistered read-only contract with disposable app tests; no old research refresh in financial read mode. Actual router registration/capability enrollment/startup still requires separate permission and B1/C1/D1/E1 acceptance.",
+  "exact_next_action": "Independent B1/C1/D1/E1 evidence and separately scoped permission to bind accepted read-only FS3/inception/report readers and register the existing selected GET in an accepted bootstrap, then real supervised browser/HTTP acceptance. No startup, providers, provisioning or command activation from frontend completion.",
   "latest_focused_tests": {
     "original_root_identity_reproducer_failed": 1,
     "resolved_in_final_native_selection": true,
@@ -155,17 +155,21 @@
     "historical_golden_bytes": "UNCHANGED"
   },
   "latest_execution_checks": {
-    "selection_passed": 265,
-    "failed": 0,
-    "skipped": 0,
-    "new_integration_cases": 74,
-    "duration_seconds": 17.01,
+    "python_passed": 271,
+    "python_failed": 0,
+    "python_skipped": 0,
+    "python_duration_seconds": 17.98,
+    "new_python_frontend_cases": 5,
+    "javascript_unit_passed": 25,
+    "javascript_failed": 0,
+    "javascript_skipped": 0,
+    "node_bridge_counted_within_python": true,
     "native_tests_executed": 0,
+    "real_browser_or_server_executed": false,
     "operational_acceptance": false,
-    "source_integration_implemented": true,
     "operational_dispatch_registered": false,
-    "python_compile_files": 8,
-    "historical_goldens": "UNCHANGED"
+    "python_compile_files": 2,
+    "eslint_surfaces": 4
   },
   "b1_current_review_proposal": "docs/QUALITY_DIPS_B1_ACCEPTANCE_PROPOSAL_V3_2026-10-24.json",
   "quality_dips_current_scope": {
@@ -187,7 +191,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/QUALITY_DIPS_INTEGRATION_V1_ACCEPTANCE_2026-10-24.md",
+  "recovery_checkpoint": "docs/QUALITY_DIPS_FRONTEND_V1_ACCEPTANCE_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -196,5 +200,13 @@
     "startup_authorized": false,
     "native_security_acceptance": false,
     "get_native_browser_acceptance": false
+  },
+  "quality_dips_frontend_v1": {
+    "authorization": "P-QD-FRONTEND-V1-OFFLINE",
+    "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED",
+    "report": "docs/QUALITY_DIPS_FRONTEND_V1_ACCEPTANCE_2026-10-24.md",
+    "selected_query": "mode=selected-paper",
+    "legacy_research_fallback": false,
+    "startup_authorized": false
   }
 }

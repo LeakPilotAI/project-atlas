@@ -30,6 +30,19 @@ def financial_view(*, reader, verifier, clock, account_id, epoch):
                 or not payload.get("source_identity") or not payload.get("policy_digest")):
             return {**unavailable, "status": "UNKNOWN", "reasons": ["PROJECTION_UNVERIFIED_OR_STALE"]}
         state = payload["state"]
+        inception = payload.get("inception")
+        projection_revision = payload.get("projection_revision")
+        if inception is not None and (type(inception) is not dict
+                or inception.get("schema") != "QD_SELECTED_INCEPTION_VIEW_V1"
+                or inception.get("account_id") != account_id or inception.get("epoch") != epoch
+                or inception.get("policy_digest") != payload["policy_digest"] or inception.get("currency") != "USD"
+                or type(inception.get("policy_schema")) is not str or not inception["policy_schema"]
+                or type(inception.get("opening_cash")) is not str
+                or number(inception.get("opening_cash")) <= 0):
+            return {**unavailable, "status": "UNKNOWN", "reasons": ["INCEPTION_SCOPE_UNVERIFIED"]}
+        if projection_revision is not None and (type(projection_revision) is not int
+                or projection_revision != payload["source_revision"]):
+            return {**unavailable, "status": "UNKNOWN", "reasons": ["PROJECTION_REVISION_MISMATCH"]}
         if (type(state["revision"]) is not int or state["revision"] != payload["source_revision"]
                 or number(state["cash"]) < 0 or number(state["costs"]) < 0
                 or number(state["gross"]) - number(state["costs"]) != number(state["net"])
@@ -45,6 +58,7 @@ def financial_view(*, reader, verifier, clock, account_id, epoch):
                 "positions": {key: value for key, value in state["positions"].items() if number(value["remaining"]) > 0},
                 "source_revision": state["revision"], "source_identity": payload["source_identity"],
                 "policy_digest": payload["policy_digest"], "observed_at": payload["observed_at"],
+                "inception": inception, "projection_revision": projection_revision,
                 "valuation": None, "report_status": payload.get("report_status", "UNAVAILABLE"),
                 "report": payload.get("report"), "selection": payload.get("selection"),
                 "unavailable_metrics": ["TOTAL_EQUITY", "UNREALIZED_PNL", "FEES_BREAKDOWN", "SLIPPAGE_BREAKDOWN"],

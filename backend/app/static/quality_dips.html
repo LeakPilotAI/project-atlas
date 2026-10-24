@@ -155,6 +155,20 @@ tbody tr:hover{background:#0a2029}
 .v2grid,.levels,.components{grid-template-columns:1fr 1fr}
 }
 
+
+#selectedPaper[hidden],#researchWorkspace[hidden]{display:none}
+.selectedPaperActive #atlas-runtime-state{display:none!important}
+.paperModeBar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px}
+.paperFacts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.paperFacts>div{min-width:0;padding:10px;border:1px solid var(--line);background:#071820}
+.paperFacts dt{color:var(--muted);font-size:12px}
+.paperFacts dd{margin:4px 0 0;font-family:var(--mono);overflow-wrap:anywhere}
+.paperTable{overflow:auto;max-width:100%;margin:12px 0}
+.paperCandidates{padding-left:20px;overflow-wrap:anywhere}
+.paperCandidates li{margin:9px 0}
+#paperFreshness{overflow-wrap:anywhere}
+@media(max-width:950px){.paperFacts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){.paperFacts{grid-template-columns:1fr}.paperModeBar{align-items:flex-start}}
 </style>
 </head>
 <body><main class="workspace">
@@ -166,8 +180,16 @@ tbody tr:hover{background:#0a2029}
 <button data-view="qualified" aria-pressed="false">Qualified Research</button>
 <button data-view="watch" aria-pressed="false">Watch Universe</button>
 <button data-view="diagnostics" aria-pressed="false">Diagnostics / Evidence</button>
-<div class="contract"><b>MANUAL RESEARCH</b>NO BROKER ORDERS · NO LIVE CAPITAL</div>
+<button id="selectedPaperMode" aria-controls="selectedPaper" aria-pressed="false">Selected PAPER Account</button>
+<div class="contract"><b id="qualityModeLabel">MANUAL RESEARCH</b>NO BROKER ORDERS · NO LIVE CAPITAL</div>
 </nav>
+<section class="panel" id="selectedPaper" aria-labelledby="paperTitle" hidden>
+<div class="paperModeBar"><h2 id="paperTitle">Selected PAPER Account · read-only</h2><button id="paperRefresh" type="button">Refresh read-only</button><strong id="paperStatus" role="status" aria-live="polite" aria-atomic="true">UNAVAILABLE</strong></div>
+<p class="note">Separate from research and legacy accounts. No entry or exit controls. PAPER startup is not authorized.</p>
+<p id="paperFreshness" class="note">Awaiting verified financial evidence.</p>
+<div id="paperContent"><p class="empty">Financial amounts and positions are UNAVAILABLE.</p></div>
+</section>
+<div id="researchWorkspace">
 <div class="strip"><span>EQUITY INVESTMENT / QUALITY DIPS V3</span><strong id="status" role="status">Loading research…</strong><span>10s refresh · quote quality as reported at snapshot</span></div>
 <div class="dashboard">
 <div class="mainColumn">
@@ -205,8 +227,10 @@ tbody tr:hover{background:#0a2029}
 <section class="panel detailPanel" id="researchPanel" hidden><div class="panelHead"><h2>Qualified research / selected evidence</h2><button data-close="researchPanel">Close details</button></div><div id="researchDetails"></div></section>
 <section class="panel detailPanel" id="diagnosticsPanel" hidden><div class="panelHead"><h2>Diagnostics / Evidence</h2><button data-close="diagnosticsPanel">Close diagnostics</button></div><div id="diagnostics" class="diagGrid"></div></section>
 <div class="footer">Research zones are not guaranteed bargains or returns. Atlas never places a Robinhood order. <span class="muted">MANUAL_ONLY</span></div>
+</div>
 </main>
 <script src="/static/runtime_poll.js"></script>
+<script src="/static/quality_dips_selected_paper.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -225,6 +249,8 @@ const kv=(label,value)=>`<div class="kv"><span>${esc(label)}</span><b>${esc(valu
 // Preserve the existing patient-capital ranking; display filters never change research.
 function rank(r){const order={GENERATIONAL:0,DEEP_VALUE:1,ACCUMULATION:2,WATCH:3,THESIS_BROKEN:4};return (order[r.quality_dips_v2?.patient_state]??5)*100-(Number(r.opportunity_score)||0)}
 let snapshot=null, rows=[], selectedSymbol=null, view='overview', failed=false;
+let selectedFinancialMode=false, researchGeneration=0, researchBusy=false;
+const paperController=typeof AtlasSelectedPaper==='object'?AtlasSelectedPaper.createController({document}):null;
 function visibleRows(){const query=$('search').value.trim().toUpperCase(),state=$('stateFilter').value;return rows.filter(r=>(!query||String(r.symbol).toUpperCase().includes(query))&&(state==='all'||(state==='qualified'?qualified(r):v3(r).patient_state===state)))}
 function renderBoard(){
  const visible=visibleRows();
@@ -281,14 +307,33 @@ function acceptSnapshot(d){
  if(!rows.some(r=>r.symbol===selectedSymbol))selectedSymbol=rows[0]?.symbol??null;
  renderSummary(d);renderBoard();renderSelection();
 }
-async function load(){try{const res=await atlasFetch('/api/investments/quality-dips?limit=50');if(!res.ok)throw new Error('HTTP '+res.status);acceptSnapshot(await res.json())}catch(error){failed=true;$('status').textContent=snapshot?'STALE · connection unavailable; last good research preserved':'Research temporarily unavailable · retrying automatically';$('refreshState').textContent=snapshot?'STALE':'UNAVAILABLE';$('refreshState').className='metricValue compact caution';$('refreshAge').textContent='Refresh failed · last update unverified';if(!snapshot){$('radar').innerHTML='<div class="empty">Research temporarily unavailable.</div>';$('board').innerHTML='<tr><td colspan="9" class="empty">Research temporarily unavailable. Retrying automatically.</td></tr>'}renderSelection()}}
-function setView(next){view=next;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view);b.setAttribute('aria-pressed',String(b.dataset.view===view))});$('stateFilter').value=view==='qualified'?'qualified':view==='watch'?'WATCH':'all';$('researchPanel').hidden=view!=='research';$('diagnosticsPanel').hidden=view!=='diagnostics';renderBoard();if(view==='research'||view==='diagnostics')$(view==='research'?'researchPanel':'diagnosticsPanel').scrollIntoView({behavior:'smooth',block:'start'});else if(view==='radar')$('opportunities').scrollIntoView({behavior:'smooth',block:'start'});else if(view==='overview')document.querySelector('.context').scrollIntoView({behavior:'smooth',block:'start'})}
+async function load(){
+ if(selectedFinancialMode){if(paperController)return paperController.load();$('paperStatus').textContent='UNAVAILABLE';$('paperFreshness').textContent='Selected-account script unavailable. No research fallback.';return}
+ if(researchBusy)return;
+ researchBusy=true;const ticket=researchGeneration;
+ try{const res=await atlasFetch('/api/investments/quality-dips?limit=50');if(!res.ok)throw new Error('HTTP '+res.status);const data=await res.json();if(selectedFinancialMode||ticket!==researchGeneration)return;acceptSnapshot(data)}catch{if(selectedFinancialMode||ticket!==researchGeneration)return;failed=true;$('status').textContent=snapshot?'STALE · connection unavailable; last good research preserved':'Research temporarily unavailable · retrying automatically';$('refreshState').textContent=snapshot?'STALE':'UNAVAILABLE';$('refreshState').className='metricValue compact caution';$('refreshAge').textContent='Refresh failed · last update unverified';if(!snapshot){$('radar').innerHTML='<div class="empty">Research temporarily unavailable.</div>';$('board').innerHTML='<tr><td colspan="9" class="empty">Research temporarily unavailable. Retrying automatically.</td></tr>'}renderSelection()}finally{researchBusy=false}
+}
+function setFinancialMode(active){
+ const next=active===true;if(selectedFinancialMode===next)return;
+ selectedFinancialMode=next;researchGeneration+=1;
+ $('selectedPaper').hidden=!next;$('researchWorkspace').hidden=next;
+ $('selectedPaperMode').setAttribute?.('aria-pressed',String(next));$('selectedPaperMode').classList?.toggle('active',next);
+ $('qualityModeLabel').textContent=next?'SELECTED PAPER · READ ONLY':'MANUAL RESEARCH';
+ document.body?.classList?.toggle('selectedPaperActive',next);
+ if(next)document.querySelectorAll('[data-view]').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-pressed','false')});
+ paperController?.setActive(next);
+}
+function setView(next){const changed=selectedFinancialMode;setFinancialMode(false);if(changed)void load();view=next;document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===view);b.setAttribute('aria-pressed',String(b.dataset.view===view))});$('stateFilter').value=view==='qualified'?'qualified':view==='watch'?'WATCH':'all';$('researchPanel').hidden=view!=='research';$('diagnosticsPanel').hidden=view!=='diagnostics';renderBoard();if(view==='research'||view==='diagnostics')$(view==='research'?'researchPanel':'diagnosticsPanel').scrollIntoView({behavior:'smooth',block:'start'});else if(view==='radar')$('opportunities').scrollIntoView({behavior:'smooth',block:'start'});else if(view==='overview')document.querySelector('.context').scrollIntoView({behavior:'smooth',block:'start'})}
 document.addEventListener('click',event=>{const select=event.target.closest('[data-symbol]'),nav=event.target.closest('[data-view]'),close=event.target.closest('[data-close]');if(select){selectedSymbol=select.dataset.symbol;renderBoard();renderSelection()}else if(nav)setView(nav.dataset.view);else if(close){$(close.dataset.close).hidden=true;setView('overview')}});
 $('search').addEventListener('input',renderBoard);$('stateFilter').addEventListener('change',renderBoard);$('inspect').addEventListener('click',()=>setView('research'));
 function v3Html(r){const v=(r.quality_dips_v2||{}).quality_dips_v3||{},l=v.entry_ladder||{},levels=l.levels||[];return `<div class="v2box"><div class="v2title"><span>QUALITY DIPS V3 · MARGIN OF SAFETY</span><span class="state ${esc(v.patient_state||'UNAVAILABLE')}">${esc(v.patient_state||'UNAVAILABLE')}</span></div><div class="v2grid"><div class="cell"><b>ROBUST FAIR VALUE</b><span>${money(v.fair_value_anchor)}</span></div><div class="cell"><b>DISCOUNT TO FAIR</b><span>${pct(v.discount_to_fair_value_pct)}</span></div><div class="cell"><b>ENTRY MODEL</b><span>15/20/25/30%</span></div><div class="cell"><b>EXECUTION</b><span>MANUAL ONLY</span></div></div><div class="levels">${levels.length?levels.map(x=>`<div class="lvl"><b>${esc(x.level)} · ${num(x.margin_of_safety_pct,0)}% MOS</b><span>${money(x.limit_price)}</span></div>`).join(''):'<div class="cell"><b>ENTRY ZONES</b><span>WAIT — evidence incomplete</span></div>'}</div><div class="reason">${esc((v.blockers||[]).join(' · ')||(l.ready===true?'V3 evidence stack eligible. No guaranteed bargain or return.':'INSUFFICIENT EVIDENCE'))}</div></div>`}
 function v2Html(r){const v=r.quality_dips_v2||{},g=v.evidence_gate||{},nv=v.normalization_value||{},l=v.entry_ladder||{},levels=l.levels||[],trend=v.trend||{},blocked=g.status==='BLOCKED';return `<div class="v2box"><div class="v2title"><span>QUALITY DIPS V2 · PATIENT CAPITAL</span><span class="state ${esc(v.patient_state||'UNAVAILABLE')}">${esc(v.patient_state||'UNAVAILABLE')}</span></div><div class="v2grid"><div class="cell"><b>CONSERVATIVE VALUE</b><span>${money(nv.conservative)}</span></div><div class="cell"><b>BASE VALUE</b><span>${money(nv.base)}</span></div><div class="cell"><b>OPTIMISTIC VALUE</b><span>${money(nv.optimistic)}</span></div><div class="cell"><b>CONSERVATIVE UPSIDE</b><span>${pct(v.conservative_upside_pct)}</span></div></div><div class="meta ${blocked?'blocked':'eligible'}">evidence gate ${esc(g.status||'UNAVAILABLE')} · 29% minimum hurdle · 50% GENERATIONAL hurdle</div><div class="levels">${levels.length?levels.map(x=>`<div class="lvl"><b>${esc(x.level)} · ${num(x.required_upside_pct,0)}% HURDLE</b><span>${money(x.limit_price)}</span></div>`).join(''):'<div class="cell"><b>ENTRY ZONES</b><span>WAIT — valuation evidence incomplete</span></div>'}</div><div class="meta">trend: short ${esc(trend.short_term||'UNKNOWN')} · intermediate ${esc(trend.intermediate_term||'UNKNOWN')} · long ${esc(trend.long_term||'UNKNOWN')}</div><div class="reason">${esc([...(g.blockers||[]),...(v.state_reasons||[])].join(' · ')||(g.gate_passed===true?'V2 evidence eligible for patient-capital classification.':'Evidence status not provided.'))}</div></div>`}
 function card(r,i){const c=r.components||{},q=r.current_quote||{},price=r.quote_display_price??q.display_price??q.price??r.price,quality=String(r.quote_quality||q.quality||'MISSING').toUpperCase(),priceLabel=['LIVE','FRESH'].includes(quality)&&!failed&&snapshot?.runtime_refresh?.state==='FRESH'?'LIVE SUPPORTED PRICE':'LAST SUPPORTED PRICE',why=[...(r.blockers||[]),...(r.reasons||[])];return `<div class="card ${i<4?'priority':'compact'}"><div class="row"><div><span class="sym">${esc(r.symbol)}</span><div class="sub">${esc(r.name||r.asset_type||'')}</div></div><span class="stance ${esc(r.stance)}">${esc(r.stance)}</span></div><div class="row"><div class="sub">${esc(r.classification)} · thesis ${esc(r.thesis)} · evidence ${esc(r.evidence_quality)}</div><div class="score">${num(r.opportunity_score,0)}</div></div><div class="priceBox"><div class="label">${priceLabel}</div><div class="priceNow">${money(price)}</div><div class="meta">${esc(r.quote_session||q.session||'UNKNOWN')} · ${esc(r.quote_source||q.source||'unknown')}</div></div>${v3Html(r)}${v2Html(r)}<div class="runway">legacy recovery runway ${r.recovery_runway_pct==null?'—':num(r.recovery_runway_pct,1)+'%'}</div><div class="components"><div class="comp"><b>VALUATION</b><span>${num(c.valuation,0)}</span></div><div class="comp"><b>FUNDAMENTALS</b><span>${num(c.fundamentals,0)}</span></div><div class="comp"><b>DRAWDOWN</b><span>${num(c.drawdown,0)}</span></div><div class="comp"><b>THESIS</b><span>${num(c.thesis_integrity,0)}</span></div></div><div class="reason">${esc(why.join(' · ')||'No legacy blocker recorded.')}</div></div>`}
 
+$('selectedPaperMode').addEventListener('click',()=>{setFinancialMode(true);void load()});
+$('paperRefresh').addEventListener('click',()=>{if(selectedFinancialMode)void load()});
+document.addEventListener('visibilitychange',()=>{if(selectedFinancialMode)paperController?.refreshAge()});
+if(typeof location!=='undefined'&&new URLSearchParams(location.search).get('mode')==='selected-paper')setFinancialMode(true);
 atlasPoll(load,10000);
 </script>
 </body></html>

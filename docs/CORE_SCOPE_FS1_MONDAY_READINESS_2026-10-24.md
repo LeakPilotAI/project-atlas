@@ -101,3 +101,8 @@ Operator correction supersedes MSFT-only scope; eligible ranked stocks and ETFs 
 ## Quality Dips integration V1 source-only acceptance — 2026-10-24
 
 P-QD-INTEGRATION-V1-OFFLINE completed:3integrationmodules plus additive selectedV3 canonical binding;265passed/0failed/0skipped(74newintegration). ExistingFS2/FS3 protocol code exercised with ordinary-file primitives,not native enrollment/security acceptance. Current generations no longer require inception edits;manual/owner/execution/source/quote bindings,UNKNOWN andread-only GET verified. See QUALITY_DIPS_INTEGRATION_V1_ACCEPTANCE_2026-10-24.md. Source integration IMPLEMENTED,DISPOSABLE VERIFIED;RUNTIME REGISTERED NO;OPERATIONALLY ACCEPTED NO. ZeroACTIVE;BLOCKED_WAIT for exact existing-page read-side integration permission and independent B1/C1/D1/E1 acceptance. No protected registration or providers;all21decisions and7phases preserved,startupNO,productionNO-GO.
+
+
+## Quality Dips frontend V1 offline acceptance — 2026-10-24
+
+P-QD-FRONTEND-V1-OFFLINE completed. Existing screen selected-account mode reads only the unregistered selectedGET;no trade controls,legacy fallback,provider or startup calls. Exact decimal cash/positions,optional verified inception,reason/status/cutoff displays.271Pythonpassed/0failed/0skipped(includes5newapplicationcases+1retainedUIwrapper);25separateJSunitpassed. DOM/fetch fixtures only;no realbrowser/server/native acceptance. See QUALITY_DIPS_FRONTEND_V1_ACCEPTANCE_2026-10-24.md. ZeroACTIVE;BLOCKED_WAIT for independentB1/C1/D1/E1 and separately approved accepted read-capability binding/router registration/supervised acceptance. All21decisions and7phases preserved;PAPERstartupNO;productionNO-GO. No more standalone dashboard is required.
