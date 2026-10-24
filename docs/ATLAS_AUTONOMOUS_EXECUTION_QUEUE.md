@@ -51,3 +51,9 @@ Latest exact continuation: docs/PAPER_FIRST_SESSION_DEPENDENCIES_2026-10-23.md.2
 | K5 | Combined real-interface fixture regression and publication | K4 | VERIFIED | Hyperliquid handoff continuation | 345 passed,0failed/skipped; no operational authority |
 
 Current execution: K1-K5 scoped VERIFIED; BLOCKED_WAIT. No ACTIVE task while no eligible approved TODO remains. B1/C1/D1/E1 unchanged. Exact recovery action is in ATLAS_AUTONOMOUS_STATE.json; prior dated execution summaries are historical.
+
+| L1 | Versioned Hyperliquid partial-position fixture contract | explicit offline source authorization | VERIFIED | V2 sidecar | Stable native identity,partial quantities,legacy compatibility,no runtime writes |
+| L2 | Actual-interface disposable integration and crash/restart acceptance | L1 | VERIFIED | V2 tests | Refuse unacknowledged cross-store state |
+| L3 | Combined validation,preservation and reviewed publication | L2 | VERIFIED | continuation | Keep all independent gates blocked |
+
+Current execution: L1-L3 scoped VERIFIED; BLOCKED_WAIT,zero ACTIVE tasks while no eligible approved TODO remains. Native integration/migration and startup are excluded; B1/C1/D1/E1 unchanged. Exact next action in state/V2 continuation.

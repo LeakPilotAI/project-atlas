@@ -32,3 +32,6 @@ Readiness repair supplement: docs/PAPER_FIRST_SESSION_DEPENDENCIES_2026-10-23.md
 
 
 Hyperliquid selected-lane supplement: docs/HYPERLIQUID_PAPER_HANDOFF_CONTINUATION_2026-10-23.md; 345combinedPythonpassed,0failed/skipped. Actual journal/manual interface fixtures and isolated partial/cash/report handoff verified; native partial-close linkage unsupported,source authenticity/actual-writer authority unaccepted. Proposed scope development only; effective1USD risk preserves stricter existing limit. B1/C1/D1/E1 remain BLOCKED,21decisions unchanged,PAPER startup NO,productionNO-GO. Prior next-lane-selection task superseded by K1-K5 scoped acceptance; next task requires independent evidence and controlled-integration authorization.
+
+
+Partial-position V2 supplement:docs/HYPERLIQUID_PARTIAL_LIFECYCLE_V2_2026-10-23.md;379combinedPythonpassed0failed/skipped,34newcases included. Stable shared local identity,versioned fills,cost/remaining/P&L and report envelope verified only in disposable adapters. Native V1 records unchanged; native partial writer integration remains unimplemented/unapproved. Unknown cross-store commits refuse replay and wrapper report. B1/C1/D1/E1 remainBLOCKED,21decisionsunchanged,startupNO,productionNO-GO.

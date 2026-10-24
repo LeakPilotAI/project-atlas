@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "K5",
+  "last_verified_task": "L3",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,22 +9,22 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "combined_passed": 345,
+    "combined_passed": 379,
     "failed": 0,
     "skipped": 0,
-    "duration_seconds": 83.65,
-    "environment": "permitted native Windows; disposable fixtures only",
-    "log": "logs\\diagnostics\\hl-handoff-final-v2.txt",
+    "duration_seconds": 92.56,
+    "log": "logs/diagnostics/hl-partial-v2-final.txt",
+    "environment": "permitted native Windows;disposable fixtures/test-owned children only",
     "javascript_prior_passed_not_rerun": 763
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Obtain independently complete B1 source/opening cash archive, C1 actual writer/owner/drain acceptance, D1 trusted startup acceptance and explicit controlled-integration authorization. Native partial-fill journal linkage remains unsupported; do not project partial exits as a full native close. No eligible authorized operational integration task.",
+  "exact_next_action": "Independent review of the V2 contract and separately authorized controlled integration design for actual selected native journal/manual writers,shared IDs,revisions and all-writer drain. Supply B1 archive,C1 actual ownership/quiescence,D1 trusted startup and E1 operational evidence. No runtime integration or startup authorized by this milestone.",
   "latest_focused_tests": {
-    "passed": 40,
+    "passed": 34,
     "failed": 0,
     "skipped": 0,
-    "log": "logs/diagnostics/hl-handoff-k4.txt",
-    "overlaps_combined": true
+    "included_in_combined": true,
+    "log": "logs/diagnostics/hl-partial-v2-final.txt"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -45,14 +45,17 @@
     "K2": "VERIFIED scoped actual journal/manual snapshot to disposable three-position ledger:22focusedpassed, mixed long/short/fractional partial/final quantities,1000USD opening cash,daily cash5.88 full or5.13 partial, retries/restarts. Native partial-close projection refused; original journal/manual remain open for partial scenario.",
     "K3": "VERIFIED scoped32combined new-handoff cases passed: actual ENOSPC before/after durable append, manual pending/replace failure, abrupt child beforeadmission/aftermutation/afterack/duringappend, concurrent stableop retry, staleprices and corrupt risk controls. Evidence retained, uncertain callbacks never replayed.",
     "K4": "VERIFIED scoped:40 selected handoff tests passed; actual manual/journal source revision and lifecycle matching refuses omissions/conflicts; no completeness or operational authority.",
-    "K5": "VERIFIED scoped combined regression:345passed,0failed,0skipped; Ruff/compile/PowerShell parser/diff checks passed. Reviewed publication authorized; no operational activation."
+    "K5": "VERIFIED scoped combined regression:345passed,0failed,0skipped; Ruff/compile/PowerShell parser/diff checks passed. Reviewed publication authorized; no operational activation.",
+    "L1": "VERIFIED fixture-only shared immutable position identity,versioned partial events,pinned baseline and truthful native-status overlay. Actual V1 source/writer behavior unchanged.",
+    "L2": "VERIFIED scoped34new cases included in379combined:actual-interface BTC/ETH/SOL partial/final lifecycle,3position cash/report,retry,concurrency,8abrupt subprocess crash boundaries,3write-interruption cases,corruption and V1 compatibility. Unknown cross-store callbacks refuse replay/report.",
+    "L3": "VERIFIED scoped final regression379passed0failed0skipped; raw checkpoint backup/readback/history verified; reviewed source publication authorized. No runtime integration/activation."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 14,
-  "continuation_report": "docs/HYPERLIQUID_PAPER_HANDOFF_CONTINUATION_2026-10-23.md",
-  "blocked_wait_reason": "Native fixture/environment defects resolved in permitted test context; actual source completeness, all-runtime-writer authority, trusted startup and operational approval remain unavailable. Do not turn fixture observation into permission.",
+  "progress_revision": 15,
+  "continuation_report": "docs/HYPERLIQUID_PARTIAL_LIFECYCLE_V2_2026-10-23.md",
+  "blocked_wait_reason": "All authorized selected V2 fixture tasks complete. Actual runtime integration,migration,provider access and startup expressly excluded; B1/C1/D1/E1 evidence unavailable.",
   "publication_validation": {
-    "python_combined_passed": 345,
+    "python_combined_passed": 379,
     "failed": 0,
     "skipped": 0,
     "operational_acceptance": false
