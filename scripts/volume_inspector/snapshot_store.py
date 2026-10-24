@@ -277,16 +277,28 @@ class SnapshotStore:
             raw = encoded(state)
             if len(raw) > 65536:
                 raise Refused('Bounded control snapshot')
-            self.witness._write(self.witness.root_handle, f'intent-{revision:08d}.json', encoded({'previous': self.pin, 'next_sha256': sha(raw)}))
-            self.output._write(self.output.root_handle, f'snapshot-{revision:08d}.json', raw)
-            confirmed, binding = read_bound(self.output, f'snapshot-{revision:08d}.json')
-            if confirmed != raw:
-                raise Refused('Publication substitution')
-            head = {'instance': state['instance'], 'revision': revision, 'snapshot': binding}
-            self.witness._write(self.witness.root_handle, f'commit-{revision:08d}.json', encoded(head))
-            _, commitment = read_bound(self.witness, f'commit-{revision:08d}.json')
-            self.pin = {**self.pin, **head, 'commit': commitment}
-            return self._state()
+            try:
+                self.witness._write(self.witness.root_handle, f'intent-{revision:08d}.json', encoded({'previous': self.pin, 'next_sha256': sha(raw)}))
+                self.output._write(self.output.root_handle, f'snapshot-{revision:08d}.json', raw)
+                confirmed, binding = read_bound(self.output, f'snapshot-{revision:08d}.json')
+                if confirmed != raw:
+                    raise Refused('Publication substitution')
+                head = {'instance': state['instance'], 'revision': revision, 'snapshot': binding}
+                self.witness._write(self.witness.root_handle, f'commit-{revision:08d}.json', encoded(head))
+                _, commitment = read_bound(self.witness, f'commit-{revision:08d}.json')
+                self.pin = {**self.pin, **head, 'commit': commitment}
+                return self._state()
+            except BaseException:
+                # A failed publication is never silently reusable, even when
+                # intent creation itself failed. Preserve the original error.
+                self.poisoned = True
+                try:
+                    self.witness._write(self.witness.root_handle, 'recovery-required.json', b'{"reason":"PUBLICATION_FAILED"}')
+                except (OSError, ValueError):
+                    # Unavailable storage cannot promise a durable marker;
+                    # the caller must retain failure evidence and refusal.
+                    pass
+                raise
 
     def reserve_start(self, op, parent):
         native.operation(op)

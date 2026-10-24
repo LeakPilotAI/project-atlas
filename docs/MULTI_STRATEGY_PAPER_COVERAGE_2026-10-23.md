@@ -75,3 +75,6 @@ Master-directive review submission (2026-10-24): QUALITY_DIPS_B1_REVIEW_HANDOFF_
 
 
 Advisory reconciliation (2026-10-24): QUALITY_DIPS_ADVISORY_REVIEW_V1_2026-10-24.json records exact six supplied findings,SUITABLE FOR FURTHER IMPLEMENTATION DESIGN WITH CONDITIONS only. QUALITY_DIPS_C1_D1_ACCEPTANCE_PACKAGE_2026-10-24.md defines writer/resource and trusted-storage/native-permission packages. Proposed MSFT/USD100/one-position limits are not enforced by general Q4fixture engine;V1 native partials unsupported;overnight financial INCOMPLETE remains distinct from future independently accepted lifecycle completion. No source/tests or strategy/runtime acceptance changed;all21decisions and B1/C1/D1/E1 BLOCKED preserved. No new tests run;Q9 224passes retained.
+
+
+D1 disposable native supplement (2026-10-24): QUALITY_DIPS_D1_NATIVE_EVIDENCE_2026-10-24.md records45passed0failed0blocked1notexecuted(same pytestskip),2.01s. Native read/ACL/sharing and confined interruption evidence only;path-basedSQLite main/parent substitutions reproduced and tested SQLite-created sidecar ACLs fail exactpolicy. Snapshot publication-failure latch repaired with restart regression. No native financial/runtime integration or operational acceptance. All21decisions and strategy statuses preserved;B1/C1/D1/E1 BLOCKED,PAPER startup NO,production NO-GO.
