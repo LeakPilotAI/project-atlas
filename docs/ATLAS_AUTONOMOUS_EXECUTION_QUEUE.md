@@ -257,3 +257,8 @@ QD_ENROLLMENT_BOOTSTRAP_V1 VERIFIEDSOURCEONLY;193combinedpass0fail0skip46new. Pu
 ## External drive readiness - 2026-10-24
 
 EXTERNAL_DRIVE_READINESS_V1 VERIFIEDREADONLY;NTFS/coarseHealthy,745GiBfree,broad inheritedACLs,proposedrootsabsent. Operator external versusWindowsNVMe topology unresolved;healthdetail/fsutilDENIED. No storage acceptance/provisioning/services/financialaccess. See EXTERNAL_DRIVE_READINESS_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT for location/connection decision,namedindependentcustodians and separatelyauthorizedassessment/provisioning;all21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.
+
+
+## Local financial storage selection - 2026-10-24
+
+LOCAL_FINANCIAL_STORAGE_SELECTION_V1 VERIFIEDREADONLY;C:disk0/D:disk1distinctNTFSdevices. RecommendC:newfinancial/runtime roots conditionally;proposedparentsabsent,healthdetailDENIED. No provisioning/authority/startupacceptance. See LOCAL_FINANCIAL_STORAGE_SELECTION_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT for location/principaldecision,namedreviewers/custodians and separatelyauthorizedpublisher/provisioning/nativeacceptance/install/launch. All21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.
