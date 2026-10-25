@@ -39,6 +39,8 @@ def create_epoch_fixture(path, manifest):
         db.execute("CREATE TABLE projections(id TEXT PRIMARY KEY,body TEXT,receipt TEXT)")
         db.execute("CREATE TABLE daily(day TEXT,revision INTEGER,body TEXT,parent TEXT,digest TEXT,PRIMARY KEY(day,revision))")
         db.execute("INSERT INTO inception VALUES(?)", (body(manifest),))
+        if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1":
+            db.execute("CREATE TABLE autonomous_control(revision INTEGER PRIMARY KEY,body TEXT,parent TEXT,digest TEXT)")
     return EpochFixture(path, expected_manifest=manifest)
 
 
@@ -94,6 +96,12 @@ class EpochFixture:
             state, parent, operations = self._load(db)
             if db.execute("SELECT COUNT(*) FROM projections WHERE receipt IS NULL").fetchone()[0]:
                 raise ValueError("UNKNOWN projection;no financial replay")
+            if callable(command):
+                if self.manifest["schema"] != "PAPER_EPOCH_AUTONOMOUS_QD_V1":
+                    raise ValueError("Autonomous callback requires explicit contract")
+                command = command(db, state, operations)
+            elif self.manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1":
+                raise ValueError("Autonomous admission callback required")
             previous = operations.get(command.get("operation_id"))
             if previous:
                 if previous[0] != command:

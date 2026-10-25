@@ -46,6 +46,10 @@ def strict(raw):
 
 
 def validate_manifest(m):
+    if m.get("schema") == "PAPER_EPOCH_AUTONOMOUS_QD_V1":
+        from app.services.quality_dips_autonomous_paper import validate_autonomous_manifest
+        validate_autonomous_manifest(m)
+        return
     if m.get("schema") in ("PAPER_EPOCH_SELECTED_QD_V2", "PAPER_EPOCH_SELECTED_QD_V3"):
         from app.services.quality_dips_account_policy import validate_policy
 
@@ -73,18 +77,24 @@ def validate_manifest(m):
 
 
 def initial_state(manifest):
-    return {"positions": {}, "cash": manifest["opening_cash"], "gross": "0", "costs": "0",
+    state = {"positions": {}, "cash": manifest["opening_cash"], "gross": "0", "costs": "0",
             "net": "0", "net_r": manifest["initial_net_r"], "revision": 0, "last_clock": manifest["opened_at"]}
+    if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1":
+        state["l1_consumption"] = {}
+    return state
 
 
 def _transition_in_place(manifest, state, command, *, command_schema="PAPER_COMMAND_FIXTURE_V1",
                          receipt_schema="PAPER_RECEIPT_FIXTURE_V1"):
     m = manifest
+    autonomous = m.get("schema") == "PAPER_EPOCH_AUTONOMOUS_QD_V1"
     common = {"schema", "epoch", "operation_id", "kind", "expected_source_revision", "timestamp", "manual", "quote"}
+    if autonomous:
+        common |= {"session_id", "evidence"}
     extra = {"symbol", "side", "quantity", "risk_price", "origin_ref"} if command.get("kind") == "ENTRY" else {"position_id", "quantity", "expected_position_revision"}
     if (set(command) != common | extra or command["schema"] != command_schema
             or command["epoch"] != m["epoch"] or command["kind"] not in ("ENTRY", "EXIT")
-            or command["manual"] is not True or type(command["expected_source_revision"]) is not int
+            or command["manual"] is not (not autonomous) or type(command["expected_source_revision"]) is not int
             or command["expected_source_revision"] != state["revision"]
             or type(command["timestamp"]) is not int or command["timestamp"] < state["last_clock"]):
         raise ValueError("Unknown,stale or mismatched command")
@@ -115,13 +125,20 @@ def _transition_in_place(manifest, state, command, *, command_schema="PAPER_COMM
             raise ValueError("Quality Dips is long-only,not a fabricated stop model")
         ident = m["epoch"] + ":" + digest([m["epoch"], command["operation_id"]])
         notional = price * qty
+        entry_cost = notional * (number(m["fees_bps"]) + number(m["slippage_bps"])) / 10000 if autonomous else 0
+        if autonomous and (notional > 100 or any(number(p["remaining"]) > 0 for p in state["positions"].values())):
+            raise ValueError("Autonomous single-position/notional restriction")
         if m["strategy"] == "QUALITY_DIPS":
-            if notional > number(state["cash"]):
+            if notional + entry_cost > number(state["cash"]):
                 raise ValueError("Insufficient simulated cash")
-            state["cash"] = str(number(state["cash"]) - notional)
+            state["cash"] = str(number(state["cash"]) - notional - entry_cost)
         state["positions"][ident] = {"symbol": command["symbol"], "side": command["side"], "entry": str(price),
             "quantity": str(qty), "remaining": str(qty), "risk_price": command["risk_price"],
             "revision": 1, "origin_ref": command["origin_ref"], "realized_net": "0"}
+        if autonomous:
+            state["positions"][ident].update(entry_costs=str(entry_cost), remaining_entry_costs=str(entry_cost),
+                entry_snapshot=copy.deepcopy(command["evidence"]["entry_snapshot"]),
+                instrument=copy.deepcopy(command["evidence"]["instrument"]))
     else:
         ident = command["position_id"]
         p = state["positions"].get(ident)
@@ -132,14 +149,24 @@ def _transition_in_place(manifest, state, command, *, command_schema="PAPER_COMM
         entry = number(p["entry"])
         gross = (price - entry) * qty * (1 if p["side"] == "LONG" else -1)
         costs = 2 * entry * qty * (number(m["fees_bps"]) + number(m["slippage_bps"])) / 10000
+        if autonomous:
+            allocated = number(p["remaining_entry_costs"]) if qty == number(p["remaining"]) else number(p["entry_costs"]) * qty / number(p["quantity"])
+            exit_cost = price * qty * (number(m["fees_bps"]) + number(m["slippage_bps"])) / 10000
+            costs = allocated + exit_cost
+            p["remaining_entry_costs"] = str(number(p["remaining_entry_costs"]) - allocated)
         net = gross - costs
         p.update(remaining=str(number(p["remaining"]) - qty), revision=p["revision"] + 1,
                  realized_net=str(number(p["realized_net"]) + net))
         state.update(gross=str(number(state["gross"]) + gross), costs=str(number(state["costs"]) + costs),
                      net=str(number(state["net"]) + net),
-                     cash=str(number(state["cash"]) + (price * qty - costs if m["strategy"] == "QUALITY_DIPS" else net)))
+                     cash=str(number(state["cash"]) + (price * qty - (exit_cost if autonomous else costs) if m["strategy"] == "QUALITY_DIPS" else net)))
         if p["risk_price"] is not None:
             state["net_r"] = str(number(state["net_r"]) + net / (number(p["risk_price"]) * number(p["quantity"])))
+    if autonomous:
+        from app.services.quality_dips_autonomous_paper import liquidity_key
+        packet = command["evidence"]["l1"]; key = liquidity_key(packet, command["kind"])
+        used = state["l1_consumption"].get(key, {"quantity": "0"})
+        state["l1_consumption"][key] = {"packet_digest": digest(packet), "quantity": str(number(used["quantity"]) + qty)}
     state.update(revision=state["revision"] + 1, last_clock=command["timestamp"])
     return {"schema": receipt_schema, "epoch": m["epoch"], "operation_id": command["operation_id"],
             "payload_digest": digest(command), "source_revision": state["revision"], "position_id": ident,
@@ -153,6 +180,10 @@ def apply_event(manifest, state, command):
     with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)) as context:
         candidate = copy.deepcopy(state)
         original = command
+        autonomous = manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1"
+        if autonomous:
+            from app.services.quality_dips_autonomous_paper import validate_autonomous_command
+            validate_autonomous_command(manifest, state, command)
         selected = manifest["schema"] in ("PAPER_EPOCH_SELECTED_QD_V2", "PAPER_EPOCH_SELECTED_QD_V3")
         if selected:
             from app.services.quality_dips_account_policy import validate_command
@@ -165,11 +196,15 @@ def apply_event(manifest, state, command):
             command["schema"] = "PAPER_COMMAND_FIXTURE_V1"
         # Selected accounts must not acknowledge a fill rounded away from its
         # remaining quantity or cash. Retained V1 arithmetic stays unchanged.
-        context.traps[Inexact] = selected
+        context.traps[Inexact] = selected or autonomous
         try:
-            receipt = _transition_in_place(manifest, candidate, command)
+            receipt = _transition_in_place(manifest, candidate, command,
+                command_schema="QD_AUTO_COMMAND_V1" if autonomous else "PAPER_COMMAND_FIXTURE_V1",
+                receipt_schema="QD_AUTO_RECEIPT_V1" if autonomous else "PAPER_RECEIPT_FIXTURE_V1")
         except Inexact as exc:
             raise ValueError("ARITHMETIC_PRECISION_UNSUPPORTED") from exc
+        if autonomous:
+            receipt.update(execution="SIMULATED", session_id=command["session_id"], cost_model=manifest["cost_policy"])
         if selected:
             version = "V3" if manifest["schema"] == "PAPER_EPOCH_SELECTED_QD_V3" else "V2"
             receipt.update(schema="PAPER_RECEIPT_SELECTED_QD_" + version, payload_digest=digest(original),

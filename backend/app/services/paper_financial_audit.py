@@ -15,6 +15,8 @@ def audit_financial_events(manifest, records, snapshot):
 
 
 def _audit(manifest, records, snapshot, *, record_schema="PAPER_EVENT_STREAM_RECORD_V1"):
+    autonomous = manifest.get("schema") == "PAPER_EPOCH_AUTONOMOUS_QD_V1"
+    consumed = {}
     positions, origins, operations = {}, set(), set()
     gross, costs, revision = Decimal(0), Decimal(0), 0
     net_r, cash = number(manifest["initial_net_r"]), number(manifest["opening_cash"])
@@ -45,6 +47,10 @@ def _audit(manifest, records, snapshot, *, record_schema="PAPER_EVENT_STREAM_REC
             positions[ident] = {"quantity": qty, "remaining": qty, "entry": price, "side": c["side"],
                                 "symbol": c["symbol"], "revision": 1, "net": Decimal(0), "risk_price": c["risk_price"]}
             if spot: cash -= qty * price
+            if autonomous:
+                entry_cost = qty * price * (number(manifest["fees_bps"]) + number(manifest["slippage_bps"])) / 10000
+                cash -= entry_cost
+                positions[ident].update(entry_costs=entry_cost, remaining_entry_costs=entry_cost)
         elif c["kind"] == "EXIT":
             p = positions.get(ident)
             if (p is None or c["position_id"] != ident or c["expected_position_revision"] != p["revision"]
@@ -54,13 +60,28 @@ def _audit(manifest, records, snapshot, *, record_schema="PAPER_EVENT_STREAM_REC
             p["revision"] += 1
             gain = (price - p["entry"]) * qty * (1 if p["side"] == "LONG" else -1)
             cost = p["entry"] * qty * (number(manifest["fees_bps"]) + number(manifest["slippage_bps"])) / 5000
+            if autonomous:
+                allocated = p["remaining_entry_costs"] if p["remaining"] == 0 else p["entry_costs"] * qty / p["quantity"]
+                exit_cost = price * qty * (number(manifest["fees_bps"]) + number(manifest["slippage_bps"])) / 10000
+                cost = allocated + exit_cost
+                p["remaining_entry_costs"] -= allocated
             gross, costs = gross + gain, costs + cost
             p["net"] += gain - cost
-            cash += price * qty - cost if spot else gain - cost
+            cash += price * qty - (exit_cost if autonomous else cost) if spot else gain - cost
             if p["risk_price"] is not None:
                 net_r += (gain - cost) / (number(p["risk_price"]) * p["quantity"])
         else:
             raise ValueError("Unknown financial event")
+        if autonomous:
+            packet = c["evidence"]["l1"]; key = digest([packet["provider_id"], packet["feed_id"], packet["instrument_id"], packet["sequence"], c["kind"]])
+            prior = consumed.get(key, {"quantity": "0", "packet_digest": digest(packet)})
+            if prior["packet_digest"] != digest(packet):
+                raise ValueError("Independent quote sequence conflict")
+            total = number(prior["quantity"]) + qty
+            size = number(packet["ask_size" if c["kind"] == "ENTRY" else "bid_size"])
+            if total > size * number(manifest["autonomous_policy"]["participation"]):
+                raise ValueError("Independent reused liquidity")
+            consumed[key] = {"quantity": str(total), "packet_digest": digest(packet)}
         if receipt["position_revision"] != positions[ident]["revision"]:
             raise ValueError("Independent receipt position revision mismatch")
     if (type(snapshot["revision"]) is not int or set(positions) != set(snapshot["positions"]) or revision != snapshot["revision"]
@@ -68,8 +89,12 @@ def _audit(manifest, records, snapshot, *, record_schema="PAPER_EVENT_STREAM_REC
             or costs != number(snapshot["costs"]) or gross - costs != number(snapshot["net"])
             or net_r != number(snapshot["net_r"])):
         raise ValueError("Independent cash/inventory/revision reconciliation mismatch")
+    if autonomous and snapshot["l1_consumption"] != consumed:
+        raise ValueError("Independent liquidity inventory mismatch")
     for ident, p in positions.items():
         s = snapshot["positions"][ident]
+        if autonomous and any(p[k] != number(s[k]) for k in ("entry_costs", "remaining_entry_costs")):
+            raise ValueError("Independent deferred entry cost mismatch")
         if (any(p[k] != number(s[k]) for k in ("quantity", "remaining", "entry"))
                 or type(s["revision"]) is not int or p["net"] != number(s["realized_net"]) or p["revision"] != s["revision"]
                 or p["symbol"] != s["symbol"] or p["side"] != s["side"]):
