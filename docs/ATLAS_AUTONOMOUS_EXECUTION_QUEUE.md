@@ -252,3 +252,8 @@ PAPER_FIRST_RELEASE_PROGRAM_V1 VERIFIEDSOURCE/POLICY;no-live-money implementatio
 ## Enrollment bootstrap V1 - 2026-10-24
 
 QD_ENROLLMENT_BOOTSTRAP_V1 VERIFIEDSOURCEONLY;193combinedpass0fail0skip46new. Pure intent/authenticated publication/genesis readback plus injected retained-child launcher;defaultdesktoprefuses. No operationalpublisher/authority/provisioning/install/startup. See QUALITY_DIPS_ENROLLMENT_BOOTSTRAP_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT for named reviewers/custodians and separately authorized concretepublisher/custody integration,provisioning,observations,install,supervisedreadonlylaunch. B1/C1/D1/E1BLOCKED;all21decisions/7phases/startuplocks/frontend preserved;PAPERstartupNO;productionNO-GO.
+
+
+## External drive readiness - 2026-10-24
+
+EXTERNAL_DRIVE_READINESS_V1 VERIFIEDREADONLY;NTFS/coarseHealthy,745GiBfree,broad inheritedACLs,proposedrootsabsent. Operator external versusWindowsNVMe topology unresolved;healthdetail/fsutilDENIED. No storage acceptance/provisioning/services/financialaccess. See EXTERNAL_DRIVE_READINESS_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT for location/connection decision,namedindependentcustodians and separatelyauthorizedassessment/provisioning;all21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.
