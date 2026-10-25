@@ -154,6 +154,33 @@ class OperationalAutonomousStore(fs2.FinancialRecordStore):
             value = super().snapshot()
             return {**value, "schema": self.view_schema}
 
+    def _inspection(self):
+        # Explicit operational read admission; never inherit the test-domain
+        # inspection path or acquire a writer mutex from a preview/read.
+        with self._admitted(None):
+            return self._inspect_existing()
+
+    def verified_cut(self):
+        pin, manifest, _, state, head, operations, audit = self._inspection()
+        return strict(body({"manifest": manifest, "root": pin['root'], "state": state, "head": head,
+                            "audit": audit, "pin_schema": pin['schema'],
+                            "acknowledged_operations": {key: digest(value[0]) for key, value in operations.items()}}))
+
+    def preview(self, command):
+        self._validate_command(command, True)
+        pin, manifest, _, state, head, operations, _ = self._inspection()
+        if command.get('operation_id') in operations:
+            raise ValueError('OP_AUTO_EXISTING_OPERATION_PREVIEW_REFUSED')
+        after, receipt = fs2.apply_event(manifest, state, command)
+        return strict(body({'manifest': manifest, 'root': pin['root'], 'head': head,
+                            'before': state, 'after': after, 'receipt': receipt}))
+
+    def operation_receipt(self, operation_id, payload_digest):
+        original = self._inspection()[5].get(operation_id)
+        if original is None or digest(original[0]) != payload_digest:
+            raise ValueError('OP_AUTO_MISSING_OR_CONFLICTING_ACK')
+        return strict(body(original[1]))
+
     def _validate_command(self, command, projection_required):
         if (
             command.get("schema") != "QD_AUTO_COMMAND_V1"

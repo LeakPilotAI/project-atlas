@@ -99,7 +99,8 @@ def test_factory_constructs_existing_native_components_without_starting(composed
     assert r.financial.cut()["execution_domain"] == "OPERATIONAL_ACCEPTED"
 
 
-def test_factory_continuous_native_entry_and_graceful_shutdown(composed):
+@pytest.mark.parametrize('guarded', [False, True])
+def test_factory_continuous_native_entry_and_graceful_shutdown(composed, guarded):
     from test_quality_dips_autonomous_paper import candidate, quote
 
     x = composed
@@ -138,7 +139,13 @@ def test_factory_continuous_native_entry_and_graceful_shutdown(composed):
         "connected": True,
         "request": {"bundles": [b], "quotes": [q], "observation": None},
     }
-    assert r.accept(frame)["filled"]
+    expected = {}
+    if guarded:
+        before = {p: p.read_bytes() for p in x.s.tmp_path.rglob('*') if p.is_file()}
+        preview = r.preview(frame)
+        assert before == {p: p.read_bytes() for p in x.s.tmp_path.rglob('*') if p.is_file()}
+        expected = {'expected_command_digest': preview['decision']['command_digest']}
+    assert r.accept(frame, **expected)["filled"]
     x.s.n.now[0] += 1
 
     def observe(position, timeout):

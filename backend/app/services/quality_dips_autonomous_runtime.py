@@ -165,33 +165,40 @@ class AutonomousRuntime:
             pass  # A bad clock cannot be used to rewrite continuity evidence.
         self.engine.grant = None
 
-    def accept(self, observation):
+    def _checked_frame(self, observation, now):
+        frame = strict(body(observation))
+        if (set(frame) != {"schema", "session_id", "sequence", "observed_at", "connected", "request"}
+                or frame["schema"] != "QD_AUTO_OBSERVATION_V3"
+                or frame["session_id"] != self.grant["engine_grant"]["session_id"]
+                or type(frame["sequence"]) is not int or frame["sequence"] < 1
+                or type(frame["observed_at"]) is not int or not 0 <= now - frame["observed_at"] <= 5
+                or frame["connected"] is not True):
+            raise ValueError("RUNTIME_FEED_UNVERIFIED_OR_DISCONNECTED")
+        if type(frame['request']) is not dict or set(frame['request']) != {"bundles", "quotes", "observation"}:
+            raise ValueError("RUNTIME_OBSERVATION_SCHEMA")
+        return frame
+
+    def accept(self, observation, *, expected_command_digest=None):
         with self.gate:
             if self.halted or self.grant is None or self.stopped.is_set():
                 raise ValueError("RUNTIME_NOT_RUNNING")
-            frame = strict(body(observation))
             try:
                 now = self._now()
-                if (set(frame) != {"schema", "session_id", "sequence", "observed_at", "connected", "request"}
-                        or frame["schema"] != "QD_AUTO_OBSERVATION_V3"
-                        or frame["session_id"] != self.grant["engine_grant"]["session_id"]
-                        or type(frame["sequence"]) is not int or frame["sequence"] < 1
-                        or type(frame["observed_at"]) is not int or not 0 <= now - frame["observed_at"] <= 5
-                        or frame["connected"] is not True):
-                    raise ValueError("RUNTIME_FEED_UNVERIFIED_OR_DISCONNECTED")
+                frame = self._checked_frame(observation, now)
                 request = frame["request"]
-                if set(request) != {"bundles", "quotes", "observation"}:
-                    raise ValueError("RUNTIME_OBSERVATION_SCHEMA")
                 with self._admission(now):
                     self._proof("OBSERVATION", frame, now)
                     prior = self.seen.get(frame["sequence"])
                     if prior:
                         if prior[0] != digest(frame):
                             raise ValueError("RUNTIME_SEQUENCE_CONFLICT")
+                        if expected_command_digest is not None and prior[1].get('receipt', {}).get('payload_digest') != expected_command_digest:
+                            raise ValueError('RUNTIME_EXPECTED_COMMAND_MISMATCH')
                         return strict(body(prior[1]))
                     if frame["sequence"] != self.sequence + 1 or frame["sequence"] > self.grant["max_observations"]:
                         raise ValueError("RUNTIME_SEQUENCE_GAP_OR_CAPACITY")
-                    result = self.engine.step("runtime:" + digest([frame["session_id"], frame["sequence"]]), **request)
+                    guarded = {} if expected_command_digest is None else {'expected_command_digest': expected_command_digest}
+                    result = self.engine.step("runtime:" + digest([frame["session_id"], frame["sequence"]]), **request, **guarded)
                     if result.get("reason") == "UNKNOWN_OR_CORRUPT":
                         raise ValueError("RUNTIME_FINANCIAL_UNKNOWN")
                     if result.get("filled"):

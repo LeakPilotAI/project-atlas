@@ -14,6 +14,7 @@ from app.investment.quality_dips_paper_exit_policy import evaluate_exit
 from app.investment.quality_dips_v2_position_monitor import PositionMonitorInput, evaluate_position
 from app.services.paper_financial_audit import audit_financial_events
 from app.services.paper_financial_replay import (
+    apply_event,
     body,
     digest,
     event_stream_record,
@@ -462,18 +463,20 @@ class AutonomousPaper:
                 self.publication.verify(records, state)
             return audit
 
-    def step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None, shutdown_mode=None):
+    def step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None, shutdown_mode=None,
+             expected_command_digest=None):
         # Serialize the same live coordinator through native ACK. This grants no
         # cross-process recovery authority; an orphaned pending ACK still refuses.
         if not self._decision_lock.acquire(timeout=2):
             return {"execution": "SIMULATED", "filled": False, "reason": "DECISION_IN_PROGRESS"}
         try:
-            return self._step(decision_id, bundles=bundles, quotes=quotes, observation=observation, fault=fault, shutdown_mode=shutdown_mode)
+            return self._step(decision_id, bundles=bundles, quotes=quotes, observation=observation, fault=fault,
+                              shutdown_mode=shutdown_mode, expected_command_digest=expected_command_digest)
         finally:
             self._decision_lock.release()
 
-    def _step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None, shutdown_mode=None):
-        text(decision_id)
+    @staticmethod
+    def _decision_request(bundles, quotes, observation, shutdown_mode):
         request = strict(body({"bundles": bundles, "quotes": quotes, "observation": observation}))
         if shutdown_mode is not None:
             if shutdown_mode != "SHUTDOWN_FLATTEN" or bundles:
@@ -487,39 +490,76 @@ class AutonomousPaper:
             or len(body(request).encode()) > 131072
         ):
             raise NoFill("REQUEST_CAPACITY_OR_SCHEMA")
-        binding = digest(request)
+        return request
+
+    def _prepare_decision(self, db, state, operations, decision_id, request):
+        if self.publication is not None and not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='autonomous_activity'").fetchone():
+            raise NoFill("NATIVE_COORDINATION_VERSION_REQUIRED")
+        if self.dispatch_closed:
+            raise NoFill("DISPATCH_CLOSED")
+        now = self.clock()
+        proof = self._grant(now)
+        control, _, _ = self._control(db)
+        if (control["mode"] not in ("RUNNING", "PAUSED") or control["session"] != digest(self.grant)
+                or now < max(state["last_clock"], control["clock"])):
+            raise NoFill("SESSION_STOPPED_OR_CHANGED")
+        operation = self.ledger.manifest["epoch"] + ":decision:" + digest(decision_id)
+        prior = operations.get(operation)
+        if prior:
+            if prior[0]["evidence"]["request_digest"] != digest(request):
+                raise NoFill("CONFLICTING_DECISION")
+            return prior[0]
+        source = verified(self.source_authority.verify(request, now=now), digest(request), "QD_AUTO_SOURCE_PROOF_V1")
+        try:
+            with localcontext() as context:
+                context.prec = 28
+                return self._decide(state, decision_id, request, proof, source, control["mode"], now)
+        except (ValueError, KeyError, TypeError, DecimalException) as error:
+            raise NoFill(str(error)) from error
+
+    def preview(self, decision_id, *, bundles, quotes, observation=None, shutdown_mode=None):
+        """Read-only existing decision logic; grants no reservation or authority."""
+        text(decision_id)
+        request = self._decision_request(bundles, quotes, observation, shutdown_mode)
+        if not self._decision_lock.acquire(timeout=2):
+            raise NoFill('DECISION_IN_PROGRESS')
+        try:
+            with self.ledger.connect(readonly=True) as db:
+                db.execute('BEGIN')
+                state, head, operations = self.ledger._load(db)
+                if db.execute('SELECT 1 FROM projections WHERE receipt IS NULL').fetchone():
+                    raise NoFill('AUTO_UNKNOWN_ACK')
+                if self.publication is not None:
+                    cut = self.publication.store.verified_cut()
+                    if (body(cut['manifest']) != body(self.ledger.manifest) or cut['head'] != head
+                            or body(cut['state']) != body(state)
+                            or cut['acknowledged_operations'] != {k: digest(v[0]) for k, v in operations.items()}):
+                        raise NoFill('AUTO_PREVIEW_NATIVE_SOURCE_MISMATCH')
+                command = self._prepare_decision(db, state, operations, decision_id, request)
+                if command['operation_id'] in operations:
+                    raise NoFill('AUTO_PREVIEW_ALREADY_ACKNOWLEDGED')
+                after, receipt = apply_event(self.ledger.manifest, state, command)
+                receipt['projection_required'] = True
+                return {'schema': 'QD_AUTO_PREVIEW_V1', 'decision_id': decision_id, 'request_digest': digest(request),
+                        'source_head': head, 'before': state, 'after': after, 'command': command,
+                        'command_digest': digest(command), 'receipt': receipt, 'authority_granted': False}
+        finally:
+            self._decision_lock.release()
+
+    def _step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None, shutdown_mode=None,
+              expected_command_digest=None):
+        text(decision_id)
+        if expected_command_digest is not None:
+            from app.investment.quality_dips_operational_contract import hashed
+            hashed(expected_command_digest)
+        request = self._decision_request(bundles, quotes, observation, shutdown_mode)
         operation = self.ledger.manifest["epoch"] + ":decision:" + digest(decision_id)
 
         def prepare(db, state, operations):
-            if self.publication is not None and not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='autonomous_activity'").fetchone():
-                raise NoFill("NATIVE_COORDINATION_VERSION_REQUIRED")
-            if self.dispatch_closed:
-                raise NoFill("DISPATCH_CLOSED")
-            now = self.clock()
-            proof = self._grant(now)
-            control, _, _ = self._control(db)
-            if (
-                control["mode"] not in ("RUNNING", "PAUSED")
-                or control["session"] != digest(self.grant)
-                or now < max(state["last_clock"], control["clock"])
-            ):
-                raise NoFill("SESSION_STOPPED_OR_CHANGED")
-            prior = operations.get(operation)
-            if prior:
-                if prior[0]["evidence"]["request_digest"] != binding:
-                    raise NoFill("CONFLICTING_DECISION")
-                return prior[0]
-            source = verified(
-                self.source_authority.verify(request, now=now), binding, "QD_AUTO_SOURCE_PROOF_V1"
-            )
-            try:
-                with localcontext() as context:
-                    context.prec = 28
-                    return self._decide(
-                        state, decision_id, request, proof, source, control["mode"], now
-                    )
-            except (ValueError, KeyError, TypeError, DecimalException) as error:
-                raise NoFill(str(error)) from error
+            command = self._prepare_decision(db, state, operations, decision_id, request)
+            if expected_command_digest is not None and digest(command) != expected_command_digest:
+                raise NoFill('PREVIEW_COMMAND_CHANGED')
+            return command
 
         try:
             receipt = self.ledger.execute(prepare, projection_required=True, fault=fault)

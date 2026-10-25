@@ -259,11 +259,28 @@ class EnrolledAutonomousRuntime:
         with self._action():
             return self.runtime.start(g["runtime_grant"])
 
-    def accept(self, observation):
+    def preview(self, observation):
+        r = self.runtime
+        if r.stopped.is_set() or r.halted or r.grant is None:
+            raise ValueError('V5_NEW_CANDIDATES_CLOSED')
+        with self._action(readonly=True):
+            now = r._now()
+            frame = r._checked_frame(observation, now)
+            if frame['sequence'] != r.sequence + 1 or frame['sequence'] > r.grant['max_observations']:
+                raise ValueError('V5_PREVIEW_SEQUENCE_NOT_NEW')
+            r._proof('SESSION', {'enrollment': r.enrollment, 'grant': r.grant}, now)
+            r._proof('OBSERVATION', frame, now)
+            decision = r.engine.preview('runtime:' + digest([frame['session_id'], frame['sequence']]), **frame['request'])
+            return {'schema': 'QD_AUTO_RUNTIME_PREVIEW_V5', 'runtime_digest': digest(self.enrollment),
+                    'observation_digest': digest(frame), 'decision': decision, 'authority_granted': False}
+
+    def accept(self, observation, *, expected_command_digest=None):
         if self.runtime.stopped.is_set():
             raise ValueError("V5_NEW_CANDIDATES_CLOSED")
         with self._action():
-            return self.runtime.accept(observation)
+            if expected_command_digest is None:
+                return self.runtime.accept(observation)
+            return self.runtime.accept(observation, expected_command_digest=expected_command_digest)
 
     def pause(self):
         self.runtime.engine.entry_admission_closed = True

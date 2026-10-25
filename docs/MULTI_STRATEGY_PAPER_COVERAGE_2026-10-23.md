@@ -169,3 +169,8 @@ Final read-only safety run supersedes549:552passed/0failed/1true-symlink NOT EXE
 Shutdown-only dispatch verified:559combinedpasses/0failures/1privilege NOT EXECUTED +14disjoint=573distinct;83new. EXIT in STOPPING requires closed admission and separate custody proof;ordinary dispatch unchanged. Actual coordinator/report/operational assembly unfinished;task ACTIVE,all gates unchanged.
 
 Perp operational/session/Stop increment:582combinedpass/0fail/1true-symlink NOT EXECUTED;disjoint14+30+1=627distinctpass;53new;40frontend/3PSparses. Distinct source/report admission, inclusive independently audited session cuts and actual native long/short/remaining-quantity Stop verified with synthetic authority only. Actual QD V5/perp planner portfolio assembly/owned Windows lifecycle unfinished. Task ACTIVE;all21decisions/B1C1D1E1 unchanged. See PERP_OPERATIONAL_SESSION_STOP_CONTINUATION_2026-10-25.md. PAPER NO/production NO-GO.
+
+
+## QD V5 source-bound preview increment — 2026-10-25
+
+UNIFIED_PERP_FINANCIAL_COMPLETENESS remains the sole ACTIVE task. Actual shared-decision preview and pre-effect expected-command guard verified with735passed/0failed/1true-symlink NOT EXECUTED across four disjoint selections;17newcases. Genuine QD disposable HTTP executed, not full two-lane/WinForms acceptance. Next: bind actual V5 preview/guarded accept to unified custody, then actual perp planners and global shutdown/roster. Do not parallel-dispatch the QD native writer or repeat completed preview. See QD_V5_SOURCE_PREVIEW_CONTINUATION_2026-10-25.md. All21decisions/seven phases/B1C1D1E1BLOCKED unchanged;PAPERNO;productionNO-GO.
