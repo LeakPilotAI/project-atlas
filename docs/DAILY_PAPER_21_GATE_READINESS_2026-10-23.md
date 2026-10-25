@@ -99,3 +99,5 @@ UNIFIED_PERP_FINANCIAL_COMPLETENESS remains ACTIVE, not fully VERIFIED. 548 comb
 Final native report-cut verification supersedes the intermediate548 count:549 combinedpassed/0failed/1privilege NOT EXECUTED, plus14disjoint codecpasses=563distinctpasses;73newcases. Historical-report/current-head false-clean defect reproduced and repaired; exact source cutoff/current cash required. All decisions unchanged;task remains ACTIVE/source integration INCOMPLETE.
 
 Final read-only safety run supersedes549:552passed/0failed/1true-symlink NOT EXECUTED plus14disjoint codecpasses=566distinctpasses;76newcases. Source inspection avoids writer mutex/latch side effects and refuses changing pins. Task ACTIVE;actual integration remains incomplete;all gates unchanged.
+
+Shutdown-only dispatch verified:559combinedpasses/0failures/1privilege NOT EXECUTED +14disjoint=573distinct;83new. EXIT in STOPPING requires closed admission and separate custody proof;ordinary dispatch unchanged. Actual coordinator/report/operational assembly unfinished;task ACTIVE,all gates unchanged.

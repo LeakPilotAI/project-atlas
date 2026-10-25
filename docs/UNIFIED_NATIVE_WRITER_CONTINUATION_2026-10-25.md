@@ -1,4 +1,4 @@
-# Exact unified native writer continuation â€” 2026-10-25
+# Exact unified native writer continuation — 2026-10-25
 
 Branch chatgpt/atlas-rebuild-v1; use Git for this increment's successor SHA to base
 16e9d05cbe80419d3d9ba07e65b9d92d6ad3ccc0. Read
@@ -10,8 +10,8 @@ session or background execution is running.
 
 Do not repeat completed IOC/maker/book-liquidation/tier/recovery arithmetic,
 posted-cash versus accrual reporting, native writer preview/ACK binding or accounting
-admission work. Final combined 552 passed/0 failed/1 privilege NOT EXECUTED, plus
-14 disjoint operational-codec passes;76 new cases. Old schemas/goldens preserved.
+admission work. Final combined 559 passed/0 failed/1 privilege NOT EXECUTED, plus
+14 disjoint operational-codec passes;83 new cases. Old schemas/goldens preserved.
 
 Exact next source action:
 1. The new NativeFinancialWriter intentionally refuses LOCAL_ENROLLED and the new
@@ -42,3 +42,22 @@ Genesis isolation and startup locks remain unchanged. PAPER startup NO;productio
 NO-GO. Persist the exact next action on interruption; no background claim.
 
 Final read-only correction: verified-cut, preview and ACK receipt inspection never acquire the writer mutex or publish a latch. Three tests prove no abandoned-lock observation or financial file writes. Stable accepted pins are checked before/after immutable native reads; existing writer abandonment refusal remains intact. Final552 supersedes final549; no counts are added between overlapping runs.
+
+## Subsequent shutdown dispatch repair
+
+Ordinary dispatch correctly refuses STOPPING, but this prevented a future native
+shutdown coordinator from using the same durable financial boundary. The new
+dispatch_shutdown_exit port admits EXIT only during STOPPING after entry closure,
+requires a separate custody verify_shutdown_exit check, and retains installation,
+fresh observation, canonical reducing-risk, durable reservation, native ACK and
+UNKNOWN checks. No regular strategy ENTRY/FUNDING/MARK is admitted by this port.
+It does not install a coordinator, grant a session, publish a clean report or stop
+processes. Actual native long/short exits after closure passed; missing/rejected
+authority, stale price and lost custody ACK remain INCOMPLETE. No-report shutdown
+remains INCOMPLETE even after a fully acknowledged exit; repeated Stop adds no fill.
+
+Final combined559/0failed/1privilege NOT EXECUTED supersedes552;14 disjoint existing
+operational-codec cases remain passed (573 distinct;83 new). Focused65 overlaps.
+Two fixture-setup failures (missing manifest and under-reserved legacy SHORT)
+were retained, then corrected using the explicit tier-margin model without
+weakening risk assertions. Source work still remains exactly as listed above.

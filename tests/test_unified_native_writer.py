@@ -219,6 +219,77 @@ def test_source_inspection_never_consumes_abandonment_or_publishes_latch(method,
     assert {p.name: p.read_bytes() for p in root.iterdir()} == before
 
 
+@pytest.mark.parametrize("side", ["LONG", "SHORT"])
+def test_shutdown_exit_uses_native_custody_without_reopening_entries(side, bundle, monkeypatch):
+    from test_perp_margin_tiers import tier_policy
+    r, store, _, _, writer, custody = bundle
+    c = entry(side=side)
+    c["schema"] = "PAPER_PERP_MARGIN_ENTRY_V1"
+    c["evidence"]["margin_policy"] = tier_policy()
+    writer.authority.verify_margin_policy = lambda *args: True  # Confined test policy only.
+    submit(bundle, c)
+    class View:
+        manifest = globals()["manifest"]()
+        def snapshot(self): return store.verified_cut()["state"]
+    command = exit_command(View(), timestamp=3602)
+    proposal = {"operation_id": command["operation_id"], "kind": "EXIT", "command": command,
+                "source_head": store.verified_cut()["head"], "strategy_ref": "SYNTHETIC_EXISTING_PLANNER_INPUT"}
+    def verify(request):
+        with sqlite3.connect(custody.path) as db:
+            return (request["mode"] == "SHUTDOWN_REDUCING_EXIT_V1"
+                    and db.execute("SELECT stopped FROM control").fetchall() == [(1,)])
+    custody.verify_shutdown_exit = verify
+    def stop(**kwargs):
+        with pytest.raises(ValueError, match="ADMISSION_CLOSED"):
+            r.dispatch("HYPERLIQUID", proposal)
+        r.dispatch_shutdown_exit("HYPERLIQUID", proposal)
+        return {"state": "ACKNOWLEDGED_FLAT_AND_DRAINED"}
+    monkeypatch.setattr(r.lanes["HYPERLIQUID"].shutdown, "stop", stop)
+    # No report has been published: even a durable full exit is not a clean Stop.
+    assert r.stop()["state"] == "STOP_INCOMPLETE"
+    assert all(Decimal(p["remaining"]) == 0 for p in store.verified_cut()["state"]["positions"].values())
+    assert store.verified_cut()["state"]["revision"] == 2 and custody.verify_drain(r.grant)
+    assert r.stop()["state"] == "STOP_INCOMPLETE"
+    assert store.verified_cut()["state"]["revision"] == 2
+
+
+@pytest.mark.parametrize("failure", ["no-authority", "rejected-authority", "stale-price", "unknown-ack"])
+def test_shutdown_exit_failure_never_certifies_clean(failure, bundle, monkeypatch):
+    r, store, _, _, _, custody = bundle
+    submit(bundle, entry())
+    class View:
+        manifest = globals()["manifest"]()
+        def snapshot(self): return store.verified_cut()["state"]
+    command = exit_command(View(), timestamp=3602)
+    if failure == "stale-price": command["evidence"]["observed_at"] = 3500
+    proposal = {"operation_id": command["operation_id"], "kind": "EXIT", "command": command,
+                "source_head": store.verified_cut()["head"], "strategy_ref": "SYNTHETIC_EXISTING_PLANNER_INPUT"}
+    if failure != "no-authority": custody.verify_shutdown_exit = lambda request: failure != "rejected-authority"
+    if failure == "unknown-ack": custody.fail_ack = True
+    def stop(**kwargs):
+        r.dispatch_shutdown_exit("HYPERLIQUID", proposal)
+        return {"state": "ACKNOWLEDGED_FLAT_AND_DRAINED"}
+    monkeypatch.setattr(r.lanes["HYPERLIQUID"].shutdown, "stop", stop)
+    assert r.stop()["state"] == "STOP_INCOMPLETE"
+    cut = store.verified_cut()
+    assert cut["state"]["revision"] == (2 if failure == "unknown-ack" else 1)
+    if failure != "unknown-ack":
+        assert next(iter(cut["state"]["positions"].values()))["remaining"] == "0.5"
+    else:
+        assert r.uncertain and not custody.verify_drain(r.grant)
+
+
+def test_shutdown_port_cannot_grant_session_or_entry_authority(bundle):
+    r, store, _, _, _, _ = bundle
+    c = entry()
+    p = {"operation_id": c["operation_id"], "kind": "ENTRY", "command": c,
+         "source_head": store.verified_cut()["head"], "strategy_ref": "SYNTHETIC_EXISTING_PLANNER_INPUT"}
+    with pytest.raises(ValueError, match="EXIT_ONLY"): r.dispatch_shutdown_exit("HYPERLIQUID", p)
+    p.update(kind="EXIT", command={**c, "kind": "EXIT"})
+    with pytest.raises(ValueError, match="ADMISSION_CLOSED"): r.dispatch_shutdown_exit("HYPERLIQUID", p)
+    assert store.verified_cut()["state"]["revision"] == 0
+
+
 def test_unified_native_entry_partial_funding_exit(bundle):
     r, store, _, _, _, _ = bundle
     class View:

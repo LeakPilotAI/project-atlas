@@ -183,6 +183,18 @@ class UnifiedPaperRuntime:
         return self.read_snapshot()
 
     def dispatch(self, lane, proposal):
+        return self._dispatch(lane, proposal, shutdown=False)
+
+    def dispatch_shutdown_exit(self, lane, proposal):
+        """Exit-only Stop port; current installation/custody must approve it.
+
+        No caller flag grants authority. The global admission must already be
+        closed and custody independently checks this exact reducing transition.
+        Ordinary strategy dispatch remains forbidden during STOPPING.
+        """
+        return self._dispatch(lane, proposal, shutdown=True)
+
+    def _dispatch(self, lane, proposal, *, shutdown):
         """Serialize source-bound admission and delegate to the existing engine.
 
         The custody lease MUST durably reserve before dispatch, authenticate the
@@ -196,9 +208,12 @@ class UnifiedPaperRuntime:
         accounting = proposal.get("kind") in ("FUNDING", "MARK")
         if proposal.get("kind") not in ("ENTRY", "EXIT", "FUNDING", "MARK") or accounting and lane != "HYPERLIQUID":
             raise ValueError("UNIFIED_EXPLICIT_OPERATION_REQUIRED")
+        if shutdown and proposal["kind"] != "EXIT":
+            raise ValueError("UNIFIED_SHUTDOWN_REDUCING_EXIT_ONLY")
         with self.gate, self._lease() as installation:
             self._verify(installation)
-            if (self.uncertain or self.state not in ("RUNNING", "PAUSED")
+            admitted_state = (self.state == "STOPPING" and self.entry_closed.is_set()) if shutdown else self.state in ("RUNNING", "PAUSED")
+            if (self.uncertain or not admitted_state
                     or (self.state == "PAUSED" or self.entry_closed.is_set()) and proposal["kind"] == "ENTRY"):
                 raise ValueError("UNIFIED_ADMISSION_CLOSED_OR_UNKNOWN")
             observation = self.observations[lane]
@@ -209,10 +224,16 @@ class UnifiedPaperRuntime:
             if self.lanes[lane].verify_proposal(proposal, observation) is not True:
                 raise ValueError("UNIFIED_STRATEGY_DECISION_UNVERIFIED")
             request = {"lane": lane, "grant": self.grant, "proposal": proposal}
+            if shutdown:
+                request["mode"] = "SHUTDOWN_REDUCING_EXIT_V1"
             with self.portfolio.lease(request) as custody:
                 # This lease must exclude every competing financial writer.
                 if custody.verify(request) is not True:
                     raise ValueError("UNIFIED_PORTFOLIO_CUSTODY_UNVERIFIED")
+                if shutdown:
+                    verifier = getattr(custody, "verify_shutdown_exit", None)
+                    if verifier is None or verifier(request) is not True:
+                        raise ValueError("UNIFIED_SHUTDOWN_CLOSURE_OR_EXIT_UNVERIFIED")
                 # Optional read-only lookup is authenticated by this same held
                 # custody lease. Already acknowledged effects are not re-admitted
                 # as new trades or blocked by subsequently changed market limits.
