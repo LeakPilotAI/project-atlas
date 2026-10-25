@@ -46,6 +46,10 @@ def strict(raw):
 
 
 def validate_manifest(m):
+    if m.get("schema") == "PAPER_EPOCH_PERP_FIXTURE_V2":
+        from app.services.paper_perp_transition import validate_manifest as validate_perp
+        validate_perp(m)
+        return
     if m.get("schema") == "PAPER_EPOCH_AUTONOMOUS_QD_V1":
         from app.services.quality_dips_autonomous_paper import validate_autonomous_manifest
         validate_autonomous_manifest(m)
@@ -79,6 +83,11 @@ def validate_manifest(m):
 def initial_state(manifest):
     state = {"positions": {}, "cash": manifest["opening_cash"], "gross": "0", "costs": "0",
             "net": "0", "net_r": manifest["initial_net_r"], "revision": 0, "last_clock": manifest["opened_at"]}
+    if manifest["schema"] == "PAPER_EPOCH_PERP_FIXTURE_V2":
+        from app.services.paper_perp_transition import refresh
+        state.update(funding="0", fees="0", slippage="0", liquidity_consumption={},
+                     net_r_fraction={"numerator": "0", "denominator": "1"}, net_r_display_only=True)
+        refresh(manifest, state)
     if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1":
         state["l1_consumption"] = {}
     return state
@@ -179,6 +188,13 @@ def apply_event(manifest, state, command):
     validate_manifest(manifest)
     with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)) as context:
         candidate = copy.deepcopy(state)
+        if manifest["schema"] == "PAPER_EPOCH_PERP_FIXTURE_V2":
+            from app.services.paper_perp_transition import transition
+            context.traps[Inexact] = True
+            try:
+                return candidate, transition(manifest, candidate, command)
+            except Inexact as exc:
+                raise ValueError("ARITHMETIC_PRECISION_UNSUPPORTED") from exc
         original = command
         autonomous = manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1"
         if autonomous:

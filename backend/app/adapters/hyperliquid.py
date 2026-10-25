@@ -26,6 +26,99 @@ INFO_URL = "https://api.hyperliquid.xyz/info"
 WS_URL = "wss://api.hyperliquid.xyz/ws"
 
 
+def _paper_funding_observation(symbol, rows, start, end, started, observed):
+    from decimal import Decimal
+
+    if (symbol not in ("BTC", "ETH", "SOL") or any(type(v) is not int for v in (start, end, started, observed))
+            or start <= 0 or start % 3600000 or end % 3600000 or not 0 < end - start <= 86400000
+            or not 0 <= observed - started <= 10000 or end - 3600000 > observed
+            or type(rows) is not list or len(rows) != (end - start) // 3600000):
+        raise ValueError("Complete bounded hourly funding history required")
+    output = []
+    for index, row in enumerate(rows):
+        if (type(row) is not dict or set(row) != {"coin", "fundingRate", "premium", "time"}
+                or row["coin"] != symbol or type(row["time"]) is not int or row["time"] != start + index * 3600000
+                or type(row["fundingRate"]) is not str or type(row["premium"]) is not str):
+            raise ValueError("Missing, conflicting or unordered funding interval")
+        rate, premium = Decimal(row["fundingRate"]), Decimal(row["premium"])
+        if not rate.is_finite() or not premium.is_finite() or abs(rate) > Decimal("0.04"):
+            raise ValueError("Finite bounded hourly funding rate required")
+        output.append({"settlement_at_ms": row["time"], "hourly_rate": row["fundingRate"],
+                       "premium": row["premium"], "settlement_oracle": None})
+    return {"schema": "ATLAS_HYPERLIQUID_FUNDING_HISTORY_V1", "symbol": symbol, "provider": INFO_URL,
+            "start_inclusive_ms": start, "end_exclusive_ms": end, "observed_at_ms": observed,
+            "interval_seconds": 3600, "records": output, "rate_history_complete": True,
+            "settlement_evidence_complete": False, "financial_execution_authorized": False,
+            "startup_authorized": False}
+
+
+def _paper_execution_observation(symbol, metadata, book, started, observed):
+    """Strict Decimal-preserving public evidence parser, not a fill decision."""
+    from decimal import Decimal
+
+    def decimal(value, *, positive=False):
+        if type(value) is not str:
+            raise ValueError("Provider decimal string required")
+        parsed = Decimal(value)
+        if not parsed.is_finite() or (positive and parsed <= 0):
+            raise ValueError("Finite provider quantity required")
+        return parsed
+
+    if (symbol not in ("BTC", "ETH", "SOL") or type(started) is not int or type(observed) is not int
+            or not 0 <= observed - started <= 10000 or type(metadata) is not list or len(metadata) != 2
+            or type(metadata[0]) is not dict or type(metadata[1]) is not list
+            or type(book) is not dict or set(book) != {"coin", "time", "levels"}
+            or book["coin"] != symbol or type(book["time"]) is not int
+            or not 0 <= observed - book["time"] <= 5000):
+        raise ValueError("Fresh exact Hyperliquid book/metadata evidence required")
+    universe, contexts = metadata[0].get("universe"), metadata[1]
+    if (type(universe) is not list or len(universe) != len(contexts)
+            or any(type(x) is not dict or type(x.get("name")) is not str for x in universe)
+            or len({x["name"] for x in universe}) != len(universe)):
+        raise ValueError("Unambiguous instrument/context mapping required")
+    indices = [i for i, item in enumerate(universe) if item["name"] == symbol]
+    if len(indices) != 1:
+        raise ValueError("Selected instrument absent")
+    instrument, context = universe[indices[0]], contexts[indices[0]]
+    if (instrument.get("isDelisted", False) is not False or type(instrument.get("maxLeverage")) is not int
+            or instrument["maxLeverage"] < 1 or type(instrument.get("szDecimals")) is not int
+            or not 0 <= instrument["szDecimals"] <= 18 or type(context) is not dict):
+        raise ValueError("Verified provider instrument definition required")
+    for key in ("markPx", "oraclePx"): decimal(context.get(key), positive=True)
+    decimal(context.get("funding"))
+    levels = book["levels"]
+    if type(levels) is not list or len(levels) != 2 or any(type(side) is not list or not 1 <= len(side) <= 20 for side in levels):
+        raise ValueError("Both executable book sides required")
+    for index, side in enumerate(levels):
+        previous = None
+        for row in side:
+            if (type(row) is not dict or set(row) != {"px", "sz", "n"}
+                    or type(row["n"]) is not int or row["n"] < 1):
+                raise ValueError("Malformed book level")
+            px = decimal(row["px"], positive=True)
+            decimal(row["sz"], positive=True)
+            if previous is not None and not (px < previous if index == 0 else px > previous):
+                raise ValueError("Unsorted or duplicate book level")
+            previous = px
+    if decimal(levels[0][0]["px"]) >= decimal(levels[1][0]["px"]):
+        raise ValueError("Crossed/locked public book")
+    # These are native provider facts, not a converted financial command. In
+    # particular current funding is not settled history or historical oracle.
+    return {"schema": "ATLAS_HYPERLIQUID_PUBLIC_BOOK_V1", "symbol": symbol,
+            "provider": INFO_URL, "observed_at_ms": observed, "request_started_ms": started,
+            "book_timestamp_ms": book["time"], "timestamp_basis": "PROVIDER_BOOK_MS",
+            "bid": levels[0][0]["px"], "ask": levels[1][0]["px"],
+            "bid_size": levels[0][0]["sz"], "ask_size": levels[1][0]["sz"],
+            "mark": context["markPx"], "oracle": context["oraclePx"],
+            "indicative_funding_rate": context["funding"], "funding_settlement": None,
+            "historical_settlement_oracle": None, "fee_schedule": None,
+            "size_decimals": instrument["szDecimals"], "provider_max_leverage": instrument["maxLeverage"],
+            "margin_table_id": instrument.get("marginTableId"),
+            "margin_tables": metadata[0].get("marginTables"),
+            "market_book_validated": True, "financial_execution_authorized": False,
+            "startup_authorized": False}
+
+
 @dataclass
 class Ticker:
     symbol: str
@@ -116,6 +209,36 @@ class HyperliquidAdapter:
                 "marks": dict(self._last_rest_prices) if usable else {},
                 "bid_ask": None, "funding_history": None, "execution_eligible": False,
                 "startup_authorized": False}
+
+    async def paper_execution_observation(self, symbol: str, *, clock_ms) -> dict[str, Any]:
+        """Two bounded info reads through the existing durable request gate.
+
+        No wallet/account, fee-tier assumption, funding backfill or order route.
+        TLS transport and parsed provider facts are not accepted trading authority.
+        Caller supplies its independently accepted clock; this adapter creates none.
+        """
+        if symbol not in ("BTC", "ETH", "SOL") or not callable(clock_ms) or self._client is None:
+            raise ValueError("Existing read client, explicit clock and selected instrument required")
+        hyperliquid_gate_registry.require_gate()
+        started = clock_ms()
+        metadata = await self._post({"type": "metaAndAssetCtxs"})
+        book = await self._post({"type": "l2Book", "coin": symbol})
+        return _paper_execution_observation(symbol, metadata, book, started, clock_ms())
+
+    async def paper_funding_observation(self, symbol: str, start_ms: int, end_ms: int, *, clock_ms) -> dict[str, Any]:
+        """At most 24 explicit hourly history rows; missing hours never become zero.
+
+        Public rate history lacks settlement-time oracle evidence. This response
+        therefore cannot itself authorize or calculate a financial settlement.
+        """
+        if (symbol not in ("BTC", "ETH", "SOL") or not callable(clock_ms) or self._client is None
+                or type(start_ms) is not int or type(end_ms) is not int or start_ms <= 0
+                or start_ms % 3600000 or end_ms % 3600000 or not 0 < end_ms - start_ms <= 86400000):
+            raise ValueError("Bounded hourly funding interval and existing read client required")
+        hyperliquid_gate_registry.require_gate()
+        started = clock_ms()
+        data = await self._post({"type": "fundingHistory", "coin": symbol, "startTime": start_ms, "endTime": end_ms - 1})
+        return _paper_funding_observation(symbol, data, start_ms, end_ms, started, clock_ms())
 
     async def refresh_universe(self) -> list[str]:
         data = await self._post({"type": "meta"})

@@ -4,7 +4,7 @@ The report auditor independently derives daily arithmetic without invoking the
 financial transition/replay or the report builder. No stores/services/providers.
 """
 from datetime import date, datetime, time, timedelta
-from decimal import ROUND_HALF_EVEN, Context, Decimal, localcontext
+from decimal import ROUND_HALF_EVEN, Context, Decimal, Inexact, localcontext
 from zoneinfo import ZoneInfo
 
 from app.services.paper_financial_audit import audit_financial_events
@@ -70,6 +70,13 @@ def build_daily_report(scope, manifest, pin, rows, day, observed):
         full, head, _ = replay_verified_events(manifest, rows)
         audit_financial_events(manifest, rows, full)
         report = frame(scope, manifest, pin, rows, head, day, observed)
+        if manifest["schema"] == "PAPER_EPOCH_PERP_FIXTURE_V2":
+            with localcontext() as context:
+                context.traps[Inexact] = True
+                try:
+                    return _build_perp_report(report, scope, manifest, pin, rows, full)
+                except Inexact as exc:
+                    raise ValueError("Perpetual reporting precision refusal") from exc
         start, end = report["period"]["start"], report["period"]["effective_end_exclusive"]
         before_rows = [r for r in rows if strict(r["command"])["timestamp"] < start]
         through_rows = [r for r in rows if strict(r["command"])["timestamp"] < end]
@@ -111,6 +118,13 @@ def audit_daily_report(report, scope, manifest, pin, rows, snapshot):
     """Independent financial/event and day arithmetic. Never calls replay/build."""
     with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)):
         audit_financial_events(manifest, rows, snapshot)
+        if manifest["schema"] == "PAPER_EPOCH_PERP_FIXTURE_V2":
+            with localcontext() as context:
+                context.traps[Inexact] = True
+                try:
+                    return _audit_perp_report(report, scope, manifest, pin, rows)
+                except Inexact as exc:
+                    raise ValueError("Independent perpetual report precision refusal") from exc
         parent = digest(manifest)
         for row in rows:
             command, receipt = strict(row["command"]), strict(row["receipt"])
@@ -187,3 +201,74 @@ def audit_daily_report(report, scope, manifest, pin, rows, snapshot):
             raise ValueError("Independent daily position/count/schema mismatch")
         return {"schema": "FS3_DAILY_AUDIT_V1", "source_revision": len(rows), "financially_consistent": True,
                 "operational_acceptance": False}
+
+
+def _perp_inventory(positions):
+    return {key: {"symbol": p["symbol"], "side": p["side"],
+                  "quantity": str(p["quantity"]), "remaining": str(p["remaining"]),
+                  "entry": str(p["entry"]), "margin": str(p["margin"]),
+                  "remaining_funding": str(p["remaining_funding"]),
+                  "next_funding": p["next_funding"]}
+            for key, p in positions.items() if number(str(p["remaining"])) > 0}
+
+
+def _perp_metadata(report, positions):
+    report.update(report_version=3, cost_allocation="PERP_SIDE_CASH_COST_V2",
+                  collateral_model="INITIAL_RESERVE_CASH_SETTLED_FUNDING_V2")
+    if any(p["next_funding"] < report["period"]["effective_end_exclusive"] for p in positions.values()):
+        report["status"] = "INCOMPLETE"
+        report["reasons"] = [*report["reasons"], "FUNDING_HISTORY_INCOMPLETE"]
+    return report
+
+
+def _build_perp_report(report, scope, m, pin, rows, full):
+    start, end = report["period"]["start"], report["period"]["effective_end_exclusive"]
+    before_rows = [r for r in rows if strict(r["command"])["timestamp"] < start]
+    through_rows = [r for r in rows if strict(r["command"])["timestamp"] < end]
+    before = replay_verified_events(m, before_rows)[0]
+    after = replay_verified_events(m, through_rows)[0]
+    inventory = _perp_inventory(after["positions"])
+    report = _perp_metadata(report, inventory)
+    commands = [strict(r["command"]) for r in through_rows if strict(r["command"])["timestamp"] >= start]
+    report.update(cash={"opening": before["cash"], "closing": after["cash"]},
+                  realized={k: str(number(after[k]) - number(before[k])) for k in ("gross", "fees", "slippage", "costs", "funding", "net")},
+                  counts={k: sum(c["kind"] == kind for c in commands) for k, kind in
+                          (("entries", "ENTRY"), ("exits", "EXIT"), ("funding", "FUNDING"), ("marks", "MARK"))},
+                  open_positions=inventory,
+                  collateral={"opening_reserved": before["reserved_margin"], "closing_reserved": after["reserved_margin"],
+                              "opening_available": before["available_cash"], "closing_available": after["available_cash"]})
+    audit_daily_report(report, scope, m, pin, rows, full)
+    return report
+
+
+def _audit_perp_report(report, scope, m, pin, rows):
+    from app.services.paper_financial_audit import _audit_perp
+
+    parent = digest(m)
+    for row in rows:
+        c, r = strict(row["command"]), strict(row["receipt"])
+        if row["parent"] != parent or row["digest"] != digest([parent, c, r]):
+            raise ValueError("Independent perpetual report source mismatch")
+        parent = row["digest"]
+    metadata = frame(scope, m, pin, rows, parent, report["date"], report["observed_at"])
+    start, end = metadata["period"]["start"], metadata["period"]["effective_end_exclusive"]
+    before = _audit_perp(m, [r for r in rows if strict(r["command"])["timestamp"] < start], None)
+    through = [r for r in rows if strict(r["command"])["timestamp"] < end]
+    after = _audit_perp(m, through, None)
+    inventory = _perp_inventory(after["positions"])
+    metadata = _perp_metadata(metadata, inventory)
+    commands = [strict(r["command"]) for r in through if strict(r["command"])["timestamp"] >= start]
+    expected = {"cash": {"opening": before["totals"]["cash"], "closing": after["totals"]["cash"]},
+                "realized": {k: after["totals"][k] - before["totals"][k] for k in ("gross", "fees", "slippage", "costs", "funding", "net")},
+                "collateral": {"opening_reserved": before["totals"]["reserved_margin"], "closing_reserved": after["totals"]["reserved_margin"],
+                               "opening_available": before["totals"]["available_cash"], "closing_available": after["totals"]["available_cash"]}}
+    counts = {k: sum(c["kind"] == kind for c in commands) for k, kind in
+              (("entries", "ENTRY"), ("exits", "EXIT"), ("funding", "FUNDING"), ("marks", "MARK"))}
+    if (any(body(report.get(k)) != body(v) for k, v in metadata.items())
+            or set(report) != set(metadata) | set(expected) | {"counts", "open_positions"}
+            or body(report["counts"]) != body(counts) or body(report["open_positions"]) != body(inventory)):
+        raise ValueError("Independent perpetual report inventory/schema mismatch")
+    for group, values in expected.items():
+        if set(report[group]) != set(values) or any(number(report[group][k]) != value for k, value in values.items()):
+            raise ValueError("Independent perpetual daily conservation mismatch")
+    return {"schema": "FS3_PERP_DAILY_AUDIT_V2", "financially_consistent": True, "operational_acceptance": False}

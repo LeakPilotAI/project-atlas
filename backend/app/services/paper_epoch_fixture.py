@@ -145,12 +145,14 @@ class EpochFixture:
                 raise ValueError("UNKNOWN projection;no complete report")
             # Replay to each local date boundary; cash is not an equity valuation.
             opening, closing, gross, costs = number(self.manifest["opening_cash"]), number(self.manifest["opening_cash"]), Decimal(0), Decimal(0)
+            funding = Decimal(0)
             replay = self._initial()
             closing_positions, closing_revision = {}, 0
             for raw, in db.execute("SELECT body FROM events ORDER BY revision"):
                 c = strict(raw)
                 local = datetime.fromtimestamp(c["timestamp"], UTC).astimezone(ZoneInfo(self.manifest["timezone"])).date().isoformat()
                 before_gross, before_costs = number(replay["gross"]), number(replay["costs"])
+                before_funding = number(replay.get("funding", "0"))
                 self._apply(replay, c)
                 if local < day:
                     opening = number(replay["cash"])
@@ -161,6 +163,7 @@ class EpochFixture:
                 if local == day:
                     gross += number(replay["gross"]) - before_gross
                     costs += number(replay["costs"]) - before_costs
+                    funding += number(replay.get("funding", "0")) - before_funding
             report = {"schema": "PAPER_DAILY_FIXTURE_V1", "epoch": self.manifest["epoch"], "day": day,
                       "timezone": self.manifest["timezone"], "source_revision": state["revision"], "source_head": head,
                       "closing_source_revision": closing_revision,
@@ -168,6 +171,10 @@ class EpochFixture:
                       "costs": str(costs), "realized_net": str(gross - costs), "equity": None,
                       "state": "INCOMPLETE" if any(number(p["remaining"]) > 0 for p in closing_positions.values()) else "RECONCILED_FIXTURE_ONLY",
                       "startup_authorized": False, "shutdown_authorized": False}
+            if self.manifest["schema"] == "PAPER_EPOCH_PERP_FIXTURE_V2":
+                report.update(schema="PAPER_PERP_DAILY_FIXTURE_V2", currency="USDC", funding=str(funding),
+                              realized_net=str(gross + funding - costs), valuation="UNAVAILABLE",
+                              closing_positions=closing_positions)
             parent, prior = self.pin, None
             revision = 0
             for n, raw, previous, checksum in db.execute("SELECT revision,body,parent,digest FROM daily WHERE day=? ORDER BY revision", (day,)):
