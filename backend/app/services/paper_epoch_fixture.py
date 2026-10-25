@@ -29,6 +29,8 @@ __all__ = ["EpochFixture", "body", "create_epoch_fixture", "digest", "number", "
 
 def create_epoch_fixture(path, manifest):
     validate_manifest(manifest)
+    if manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1':
+        raise ValueError('Operational perpetual inception cannot use fixture SQLite')
     path = Path(path)
     with path.open("xb"):
         pass
@@ -48,6 +50,8 @@ def create_epoch_fixture(path, manifest):
 class EpochFixture:
     def __init__(self, path, *, expected_manifest):
         validate_manifest(expected_manifest)
+        if expected_manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1':
+            raise ValueError('Operational perpetual records cannot be adopted by fixture SQLite')
         self.path = Path(path).resolve()
         self.manifest = strict(body(expected_manifest))
         stat = self.path.stat()

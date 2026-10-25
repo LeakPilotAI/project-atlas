@@ -88,6 +88,8 @@ class ReportArchive:
     _read = f.FinancialRecordStore._read
     _latch = f.FinancialRecordStore._latch
     close = f.FinancialRecordStore.close
+    pin_schema = "FS3_REPORT_PIN_V1"
+    document_schema = "FS3_REPORT_DOCUMENT_V1"
 
     @staticmethod
     def provision_disposable(root, scope, manifest):
@@ -117,7 +119,7 @@ class ReportArchive:
     def _load(self):
         pin = copy.deepcopy(self.trust.current())
         if (type(pin) is not dict or set(pin) != {"schema", "root", "scope", "reports"}
-                or pin["schema"] != "FS3_REPORT_PIN_V1" or type(pin["reports"]) is not list
+                or pin["schema"] != getattr(self, 'pin_schema', 'FS3_REPORT_PIN_V1') or type(pin["reports"]) is not list
                 or len(pin["reports"]) > MAX_REPORTS
                 or f.native.file_identity(self.output.root_handle) != pin["root"]):
             raise f.Refused("Malformed current report pin")
@@ -130,7 +132,7 @@ class ReportArchive:
             expected.add(leaf)
             document = self._read(leaf, binding)
             if (set(document) != {"schema", "revision", "previous", "report_id", "report"}
-                    or document["schema"] != "FS3_REPORT_DOCUMENT_V1" or type(document["revision"]) is not int
+                    or document["schema"] != getattr(self, 'document_schema', 'FS3_REPORT_DOCUMENT_V1') or type(document["revision"]) is not int
                     or document["revision"] != revision or f.body(document["previous"]) != f.body(previous)
                     or document["report_id"] != f.digest(document["report"])):
                 raise f.Refused("Report revision lineage mismatch")
@@ -149,7 +151,7 @@ class ReportArchive:
         if len(documents) >= MAX_REPORTS:
             raise f.Refused("Report capacity exhausted")
         revision = len(documents) + 1
-        document = {"schema": "FS3_REPORT_DOCUMENT_V1", "revision": revision,
+        document = {"schema": self.document_schema, "revision": revision,
                     "previous": pin["reports"][-1] if documents else pin["scope"],
                     "report_id": f.digest(report), "report": report}
         try:
@@ -182,7 +184,11 @@ class ReportService:
             subpin = {**pin, "entries": pin["entries"][:n]}
             subrows = rows[:n]
             state, _, _ = f.replay_verified_events(manifest, subrows)
-            audit_daily_report(report, scope, manifest, subpin, subrows, state)
+            if report['schema'] == 'FS3_PERP_SESSION_REPORT_V1':
+                from app.services.paper_perp_session_report import audit_session_report
+                audit_session_report(report, scope, manifest, subpin, subrows, state)
+            else:
+                audit_daily_report(report, scope, manifest, subpin, subrows, state)
 
     def publish(self, day, observed_at):
         # Fixed lock order: source then reports. No provider/process waits.
@@ -201,6 +207,18 @@ class ReportService:
             _, scope, documents = self.archive._load()
             self._history(source, scope, documents)
             return copy.deepcopy(documents)
+
+    def publish_session(self, *, session_id, started_at, cutoff_at, observed_at):
+        from app.services.paper_perp_session_report import build_session_report
+        with self.store.guard(), self.archive.guard():
+            source = self.store._load()
+            pin, scope, documents = self.archive._load()
+            self._history(source, scope, documents)
+            self.store.trust.check_clock(observed_at)
+            source_pin, manifest, rows, _, _, _, _ = source
+            report = build_session_report(scope, manifest, source_pin, rows, session_id=session_id,
+                                         started_at=started_at, cutoff_at=cutoff_at, observed_at=observed_at)
+            return self.archive._publish(pin, documents, report)
 
     def try_publish(self, day, observed_at):
         try:

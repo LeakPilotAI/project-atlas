@@ -20,11 +20,15 @@ from app.services.paper_financial_replay import (
 
 def validate_scope(scope, manifest):
     validate_manifest(manifest)
-    restatement = type(scope) is dict and scope.get("schema") == "FS3_PERP_REPORT_SCOPE_V2"
+    restatement = type(scope) is dict and scope.get("schema") in ("FS3_PERP_REPORT_SCOPE_V2", "FS3_PERP_REPORT_SCOPE_V3")
+    session = type(scope) is dict and scope.get("schema") == "FS3_PERP_REPORT_SCOPE_V3"
     extra = {"funding_reporting_policy"} if restatement else set()
+    if session:
+        extra.add("session_reporting_policy")
     if (type(scope) is not dict or set(scope) != {"schema", "account_id", "epoch", "policy_digest", "timezone"} | extra
-            or scope["schema"] not in ("FS3_REPORT_SCOPE_V1", "FS3_PERP_REPORT_SCOPE_V2")
-            or restatement and (manifest["schema"] != "PAPER_EPOCH_PERP_FIXTURE_V2"
+            or scope["schema"] not in ("FS3_REPORT_SCOPE_V1", "FS3_PERP_REPORT_SCOPE_V2", "FS3_PERP_REPORT_SCOPE_V3")
+            or session and scope["session_reporting_policy"] != "ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1"
+            or restatement and (manifest["schema"] not in ("PAPER_EPOCH_PERP_FIXTURE_V2", "PAPER_EPOCH_PERP_OPERATIONAL_V1")
                                 or scope["funding_reporting_policy"] != "POSTED_CASH_AND_SETTLEMENT_ACCRUAL_V1")
             or type(scope["account_id"]) is not str
             or not 1 <= len(scope["account_id"]) <= 96 or scope["epoch"] != manifest["epoch"]
@@ -52,7 +56,8 @@ def frame(scope, manifest, pin, rows, head, day, observed):
         raise ValueError("Source count/epoch or future-information mismatch")
     required = sum(strict(r["receipt"])["projection_required"] for r in rows)
     return {**({"funding_reporting_policy": scope["funding_reporting_policy"], "scope_digest": digest(scope)}
-               if scope["schema"] == "FS3_PERP_REPORT_SCOPE_V2" else {}),
+               if scope["schema"] in ("FS3_PERP_REPORT_SCOPE_V2", "FS3_PERP_REPORT_SCOPE_V3") else {}),
+            **({"session_reporting_policy": scope["session_reporting_policy"]} if scope["schema"] == "FS3_PERP_REPORT_SCOPE_V3" else {}),
             "schema": "FS3_DAILY_REPORT_V1", "report_version": 2 if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1" else 1,
             "account_id": scope["account_id"], "epoch": scope["epoch"], "policy_digest": scope["policy_digest"],
             "strategy": manifest["strategy"], "currency": manifest["currency"],
@@ -77,7 +82,7 @@ def build_daily_report(scope, manifest, pin, rows, day, observed):
         full, head, _ = replay_verified_events(manifest, rows)
         audit_financial_events(manifest, rows, full)
         report = frame(scope, manifest, pin, rows, head, day, observed)
-        if manifest["schema"] == "PAPER_EPOCH_PERP_FIXTURE_V2":
+        if manifest["schema"] in ("PAPER_EPOCH_PERP_FIXTURE_V2", "PAPER_EPOCH_PERP_OPERATIONAL_V1"):
             with localcontext() as context:
                 context.traps[Inexact] = True
                 try:
@@ -125,7 +130,7 @@ def audit_daily_report(report, scope, manifest, pin, rows, snapshot):
     """Independent financial/event and day arithmetic. Never calls replay/build."""
     with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)):
         audit_financial_events(manifest, rows, snapshot)
-        if manifest["schema"] == "PAPER_EPOCH_PERP_FIXTURE_V2":
+        if manifest["schema"] in ("PAPER_EPOCH_PERP_FIXTURE_V2", "PAPER_EPOCH_PERP_OPERATIONAL_V1"):
             with localcontext() as context:
                 context.traps[Inexact] = True
                 try:

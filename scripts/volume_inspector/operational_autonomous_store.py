@@ -22,6 +22,11 @@ _spec.loader.exec_module(fs2)
 
 
 class OperationalAutonomousStore(fs2.FinancialRecordStore):
+    enrollment_validator = staticmethod(validate_enrollment)
+    admission_request_schema = "QD_AUTO_OP_ADMISSION_REQUEST_V1"
+    admission_schema = "QD_AUTO_OP_ADMISSION_V1"
+    reservation_ack_schema = "QD_AUTO_OP_RESERVATION_ACK_V1"
+    view_schema = "QD_AUTO_OP_ACKNOWLEDGED_VIEW_V1"
     record_versions: ClassVar[dict] = {
         "pin": "QD_AUTO_OP_PIN_V1",
         "record": "QD_AUTO_OP_RECORD_V1",
@@ -48,7 +53,7 @@ class OperationalAutonomousStore(fs2.FinancialRecordStore):
     ):
         if any(v is None for v in (enrollment, trust, authority, clock, projection)):
             raise ValueError("OP_AUTO_ACCEPTED_DEPENDENCIES_REQUIRED")
-        self.enrollment = validate_enrollment(enrollment)
+        self.enrollment = self.enrollment_validator(enrollment)
         self.authority, self.clock, self._custody = authority, clock, trust
         if trust.current().get("schema") != self.record_versions["pin"]:
             raise ValueError("OP_AUTO_NO_TEST_OR_MANUAL_PIN_ADOPTION")
@@ -85,7 +90,7 @@ class OperationalAutonomousStore(fs2.FinancialRecordStore):
         if type(now) is not int or now <= 0:
             raise ValueError("OP_AUTO_TRUSTED_CLOCK_REQUIRED")
         request = {
-            "schema": "QD_AUTO_OP_ADMISSION_REQUEST_V1",
+            "schema": self.admission_request_schema,
             "enrollment": self.enrollment,
             "current": self._custody.current(),
             "command": command,
@@ -94,7 +99,7 @@ class OperationalAutonomousStore(fs2.FinancialRecordStore):
             witness = strict(body(lease.snapshot))
             exact(
                 witness,
-                "QD_AUTO_OP_ADMISSION_V1",
+                self.admission_schema,
                 {"request_digest", "status", "reservation_id", "expires_at", "revoked"},
             )
             if (
@@ -147,15 +152,18 @@ class OperationalAutonomousStore(fs2.FinancialRecordStore):
     def snapshot(self):
         with self._admitted(None):
             value = super().snapshot()
-            return {**value, "schema": "QD_AUTO_OP_ACKNOWLEDGED_VIEW_V1"}
+            return {**value, "schema": self.view_schema}
 
-    def execute(self, command, *, projection_required=True):
+    def _validate_command(self, command, projection_required):
         if (
             command.get("schema") != "QD_AUTO_COMMAND_V1"
             or command.get("manual") is not False
             or projection_required is not True
         ):
             raise ValueError("OP_AUTO_AUTONOMOUS_PROJECTED_COMMAND_REQUIRED")
+
+    def execute(self, command, *, projection_required=True):
+        self._validate_command(command, projection_required)
         lease, request = None, None
         try:
             with self._admitted(command) as (lease, request):
@@ -163,7 +171,7 @@ class OperationalAutonomousStore(fs2.FinancialRecordStore):
                 ack = lease.acknowledge(request, receipt, self._custody.current())
                 exact(
                     ack,
-                    "QD_AUTO_OP_RESERVATION_ACK_V1",
+                    self.reservation_ack_schema,
                     {"request_digest", "receipt_digest", "status"},
                 )
                 if (

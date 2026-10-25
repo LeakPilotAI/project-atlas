@@ -55,6 +55,8 @@ class FinancialRecordStore:
     @staticmethod
     def provision_disposable(root, manifest):
         validate_manifest(manifest)
+        if manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1':
+            raise Refused('Operational perpetual inception requires separate publication authority')
         with w.WindowsOutput.create_root(root) as output:
             binding = output.write_bound("inception.json", encoded(manifest))
             s.read_bound(output, "inception.json", binding)
@@ -126,6 +128,8 @@ class FinancialRecordStore:
         require_identity(pin["root"])
         manifest = self._read("inception.json", pin["inception"])
         validate_manifest(manifest)
+        if record_version(self, 'pin') == 'FS2_TEST_PIN_V1' and manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1':
+            raise Refused('Operational perpetual parameters cannot use test pins')
         if manifest["epoch"] != pin["epoch"]:
             raise Refused("Wrong inception")
         rows, projections = [], []

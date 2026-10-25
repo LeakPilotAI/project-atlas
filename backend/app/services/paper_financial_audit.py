@@ -30,7 +30,7 @@ def _audit_maintenance(m, p):
 def audit_financial_events(manifest, records, snapshot):
     validate_manifest(manifest)
     with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)) as context:
-        if manifest.get("schema") == "PAPER_EPOCH_PERP_FIXTURE_V2":
+        if manifest.get("schema") in ("PAPER_EPOCH_PERP_FIXTURE_V2", "PAPER_EPOCH_PERP_OPERATIONAL_V1"):
             context.traps[Inexact] = True
             try:
                 return _audit_perp(manifest, records, snapshot)

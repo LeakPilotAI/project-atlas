@@ -14,11 +14,15 @@ from app.services.paper_financial_replay import (
 
 
 class NativeFinancialWriter:
+    execution_domain = "DISPOSABLE_TEST"
+    pin_schema = "FS2_TEST_PIN_V1"
     def __init__(self, *, store=None, authority=None, manifest=None, execution_domain=None):
         if store is None or authority is None or manifest is None:
             raise ValueError("NATIVE_WRITER_ACCEPTED_COMPONENTS_REQUIRED")
         validate_manifest(manifest)
-        if execution_domain != "DISPOSABLE_TEST":
+        if manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1' and self.execution_domain != 'LOCAL_ENROLLED':
+            raise ValueError('NATIVE_WRITER_OPERATIONAL_PARAMETERS_CANNOT_USE_TEST_DOMAIN')
+        if execution_domain != self.execution_domain:
             raise ValueError("NATIVE_WRITER_OPERATIONAL_CODEC_NOT_ACCEPTED")
         self.store, self.authority = store, authority
         self.manifest = strict(body(manifest))
@@ -29,7 +33,7 @@ class NativeFinancialWriter:
         if self.authority.verify_components(self.binding) is not True:
             raise ValueError("NATIVE_WRITER_COMPONENT_AUTHORITY_REQUIRED")
         cut = self.store.verified_cut()
-        if cut["pin_schema"] != "FS2_TEST_PIN_V1" or body(cut["manifest"]) != body(self.manifest):
+        if cut["pin_schema"] != self.pin_schema or body(cut["manifest"]) != body(self.manifest):
             raise ValueError("NATIVE_WRITER_DOMAIN_OR_ACCOUNT_SUBSTITUTION")
         if self.authority.verify_cut(self.binding, cut) is not True:
             raise ValueError("NATIVE_WRITER_SOURCE_CUT_UNVERIFIED")
@@ -114,6 +118,111 @@ class NativeFinancialWriter:
         return receipt
 
 
+class OperationalPerpFinancialWriter(NativeFinancialWriter):
+    """Explicit operational codec port; no default authority or installation.
+
+    Both the native store's admission lease and the unified portfolio/component
+    authority must authenticate every action. A valid schema grants neither.
+    """
+    execution_domain = "LOCAL_ENROLLED"
+    pin_schema = "PERP_AUTO_OP_PIN_V1"
+
+    def __init__(self, **kwargs):
+        manifest = kwargs.get("manifest")
+        if type(manifest) is not dict or manifest.get("schema") != "PAPER_EPOCH_PERP_OPERATIONAL_V1":
+            raise ValueError("OPERATIONAL_PERP_PARAMETERS_REQUIRED")
+        super().__init__(**kwargs)
+
+
+class PerpShutdownCoordinator:
+    """Native remaining-quantity exits and FS3 session cut, never process killing.
+
+    The quote port is an accepted bounded cache read, not an implicit provider
+    connection. Unified custody must independently verify each shutdown exit.
+    Ownership/drain remains external accepted evidence, never inferred from PID.
+    """
+    def __init__(self, *, writer, books, reports, clock, session_id, started_at):
+        if (type(writer) not in (NativeFinancialWriter, OperationalPerpFinancialWriter)
+                or reports.store is not writer.store or books is None or clock is None
+                or type(started_at) is not int or started_at <= 0):
+            raise ValueError('PERP_SHUTDOWN_EXACT_COMPONENTS_REQUIRED')
+        text(session_id)
+        self.writer, self.books, self.reports, self.clock = writer, books, reports, clock
+        self.session_id, self.started_at, self.runtime, self.completed = session_id, started_at, None, None
+
+    def bind(self, runtime):
+        from app.services.unified_paper_runtime import UnifiedPaperRuntime
+        if self.runtime is not None or type(runtime) is not UnifiedPaperRuntime:
+            raise ValueError('PERP_SHUTDOWN_SINGLE_RUNTIME_BINDING_REQUIRED')
+        self.runtime = runtime
+        self._verify()
+
+    def _verify(self):
+        if self.runtime is None:
+            raise ValueError('PERP_SHUTDOWN_RUNTIME_REQUIRED')
+        lane = self.runtime.lanes['HYPERLIQUID']
+        binding = {"writer": self.writer, "books": self.books, "reports": self.reports, "clock": self.clock,
+                       "runtime": self.runtime, "session_id": self.session_id, "started_at": self.started_at}
+        verifier = getattr(self.writer.authority, 'verify_shutdown_components', None)
+        if (lane.writer is not self.writer or lane.shutdown is not self or lane.reports is not self.reports
+                or self.runtime.clock is not self.clock or verifier is None or verifier(self.writer.binding, binding) is not True):
+            raise ValueError('PERP_SHUTDOWN_OWNERSHIP_OR_COMPONENTS_UNVERIFIED')
+
+    def stop(self, *, emergency):
+        self._verify()
+        if self.runtime.state != 'STOPPING' or not self.runtime.entry_closed.is_set():
+            raise ValueError('PERP_SHUTDOWN_ADMISSION_NOT_CLOSED')
+        if emergency:
+            return {"state": 'INCOMPLETE', "reason": 'EMERGENCY_POSITIONS_PRESERVED'}
+        try:
+            cut = self.writer._cut()
+            if self.completed is not None:
+                if cut['head'] != self.completed['source_head']:
+                    raise ValueError('PERP_SOURCE_CHANGED_AFTER_SHUTDOWN')
+                return strict(body(self.completed))
+            initial = [key for key, p in cut['state']['positions'].items() if number(p['remaining']) > 0]
+            if len(initial) > 3:
+                raise ValueError('PERP_SHUTDOWN_POSITION_BOUND_EXCEEDED')
+            for key in sorted(initial):
+                cut = self.writer._cut()
+                p = cut['state']['positions'][key]
+                if number(p['remaining']) <= 0:
+                    raise ValueError('PERP_SHUTDOWN_POSITION_CHANGED')
+                at = self.clock()
+                if type(at) is not int or at < self.started_at:
+                    raise ValueError('PERP_SHUTDOWN_CLOCK_UNVERIFIED')
+                evidence = self.books.shutdown_evidence(strict(body(p)), cut, at)
+                operation_id = 'perp-stop:' + digest([self.session_id, cut['manifest']['epoch'], key, p['revision']])
+                command = {"schema": 'PAPER_PERP_COMMAND_V2', "epoch": cut['manifest']['epoch'], "operation_id": operation_id,
+                    "kind": 'EXIT', "expected_source_revision": cut['state']['revision'], "timestamp": at,
+                    "position_id": key, "expected_position_revision": p['revision'], "quantity": p['remaining'],
+                    "liquidity": 'TAKER', "evidence": evidence}
+                proposal = {"operation_id": operation_id, "kind": 'EXIT', "command": command,
+                                "source_head": cut['head'], "strategy_ref": 'SHUTDOWN_FLATTEN:' + self.session_id}
+                self.runtime.dispatch_shutdown_exit('HYPERLIQUID', proposal)
+            cut = self.writer._cut()
+            if self.runtime.uncertain or any(number(p['remaining']) > 0 for p in cut['state']['positions'].values()):
+                raise ValueError('PERP_SHUTDOWN_FINANCIAL_CUT_UNRESOLVED')
+            cutoff = self.clock()
+            document = self.reports.publish_session(session_id=self.session_id, started_at=self.started_at,
+                                                     cutoff_at=cutoff, observed_at=cutoff)
+            final = self.writer._cut()
+            report = document['report']
+            outcome = {"state": 'ACKNOWLEDGED_FLAT_AND_DRAINED', "session_id": self.session_id, "cutoff_at": cutoff,
+                           "source_head": final['head'], "report_id": document['report_id'], "cash": final['state']['cash']}
+            verifier = getattr(self.writer.authority, 'verify_drain', None)
+            if (final['head'] != cut['head'] or report['status'] != 'COMPLETE'
+                    or report['source']['head'] != final['head'] or report['source']['root'] != final['root']
+                    or report['source']['cutoff_revision'] != final['state']['revision']
+                    or report['open_positions'] or number(report['cash']['closing']) != number(final['state']['cash'])
+                    or verifier is None or verifier(self.writer.binding, final, {'shutdown': outcome, 'report': report}) is not True):
+                raise ValueError('PERP_SHUTDOWN_REPORT_OR_WRITER_DRAIN_UNVERIFIED')
+            self.completed = outcome
+            return strict(body(outcome))
+        except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+            return {"state": 'INCOMPLETE', "reason": 'PERP_POSITION_PRICE_PUBLICATION_REPORT_OR_DRAIN_UNRESOLVED'}
+
+
 class CanonicalWriterLane:
     """Connect existing read observer/planner/shutdown ports to the native writer.
 
@@ -121,7 +230,7 @@ class CanonicalWriterLane:
     proposals and the authority must authenticate its exact identity and evidence.
     """
     def __init__(self, *, writer, observer, planner, shutdown, reports=None):
-        if type(writer) is not NativeFinancialWriter or any(x is None for x in (observer, planner, shutdown, reports)):
+        if type(writer) not in (NativeFinancialWriter, OperationalPerpFinancialWriter) or any(x is None for x in (observer, planner, shutdown, reports)):
             raise ValueError("CANONICAL_EXISTING_LANE_COMPONENTS_REQUIRED")
         self.writer, self.observer, self.planner, self.shutdown = writer, observer, planner, shutdown
         self.reports = reports
@@ -169,7 +278,11 @@ class CanonicalWriterLane:
             history = self.reports.history()
             report = history[-1]["report"] if history else None
             verifier = getattr(self.writer.authority, "verify_drain", None)
+            session_mismatch = (report is not None and report.get('schema') == 'FS3_PERP_SESSION_REPORT_V1'
+                                and (report['session_id'] != result.get('session_id')
+                                     or report['period']['cutoff_inclusive'] != result.get('cutoff_at')))
             if (emergency or any(number(p["remaining"]) > 0 for p in cut["state"]["positions"].values())
+                    or session_mismatch
                     or report is None or report["status"] != "COMPLETE"
                     or report["source"]["root"] != cut["root"] or report["source"]["head"] != cut["head"]
                     or report["source"]["revision"] != cut["state"]["revision"]

@@ -66,10 +66,15 @@ def integer(value):
 
 def validate_manifest(m):
     exact(m, "schema epoch strategy currency opening_cash opened_at timezone release provenance initial_net_r cost_policy perp_policy")
-    if (m["schema"] != SCHEMA or m["strategy"] != "HYPERLIQUID_PAPER" or m["currency"] != "USDC"
+    if (m["schema"] not in (SCHEMA, "PAPER_EPOCH_PERP_OPERATIONAL_V1") or m["strategy"] != "HYPERLIQUID_PAPER" or m["currency"] != "USDC"
             or m["cost_policy"] != "PERP_QUOTE_PLUS_CASH_COST_V2" or number(m["opening_cash"]) <= 0
             or integer(m["opened_at"]) == 0 or number(m["initial_net_r"]) != 0):
         raise ValueError("Explicit isolated USDC fixture inception required")
+    if m["schema"] == "PAPER_EPOCH_PERP_OPERATIONAL_V1":
+        from app.investment.quality_dips_operational_contract import hashed
+        hashed(m["release"])
+        if m["provenance"] != "ACCEPTED_PERP_PAPER_PARAMETERS_V1" or number(m["opening_cash"]) != 1000:
+            raise ValueError("Distinct accepted perpetual parameters required")
     for k in ("epoch", "release", "provenance"): text(m[k])
     ZoneInfo(m["timezone"])
     p = m["perp_policy"]

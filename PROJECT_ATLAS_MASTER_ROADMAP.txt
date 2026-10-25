@@ -13796,6 +13796,11 @@ Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Do
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
 === ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone:Perp codec/session/Stop
+Status:ACTIVE;PAPER NO
+Evidence:582/0/1+14+30+1=627;JS40;PS3
+Next action:actual QD V5 pre-effect preview/custody;see new continuation
+
 Milestone: Shutdown exit dispatch
 Status: ACTIVE/INCOMPLETE;startup NO
 Evidence:559pass/0fail/1NOTEXECUTED+14disjoint;83new;custody-bound exit-only
