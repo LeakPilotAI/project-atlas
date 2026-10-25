@@ -272,3 +272,8 @@ D_ONLY_SINGLE_ACCOUNT_DEPLOYMENT_V1 VERIFIEDSOURCEPOLICY/RUNBOOK;117pass0fail0sk
 ## D: actual directory provisioning attempt - 2026-10-24
 
 D_DIRECTORY_PROVISIONING_V1 BLOCKED_PREFLIGHT;Get-Aclmoduleloadfailed beforeepoch/firstcreate.0dirs/ACLchanges/financialrecords;rootsconfirmedabsent;nooperationalretry.117isolatedregressionpass0fail0skip NOTprovisioningacceptance. See D_DIRECTORY_PROVISIONING_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT for correcteddiagnostichost/read-onlypreflight/operatorresume;all21decisions/7phases/productionrefusalpreserved.
+
+
+## D: real provisioning recovery - 2026-10-24
+
+D_DIRECTORY_PROVISIONING_RECOVERY_V1 PARTIAL_UNACCEPTED;13dirscreated/nativeverified;modulepathrepaired. FinalpostflightassertionFAILED;stopped/norepair.13read-onlyreopens/currentpostflightpassbutoriginalsnapshotunretained;no completionmanifest/financialpublication.117regressionspass0fail0skip NOTcompleteacceptance. See D_DIRECTORY_PROVISIONING_RECOVERY_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT foroperatorresumeVERIFY-ONLYexistingidentities/postflight,notcreationretry. All21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.

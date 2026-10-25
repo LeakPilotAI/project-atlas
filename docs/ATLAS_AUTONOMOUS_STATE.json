@@ -12,11 +12,13 @@
     "passed": 117,
     "failed": 0,
     "skipped": 0,
-    "selection": "68policy+46bootstrap+3productionlock fresh regression;nativeprovisioningpreflightFAILEDseparately",
+    "selection": "68policy+46bootstrap+3lock fresh regression",
+    "actual_provisioning_postflight_failures_separate": 1,
+    "actual_directory_native_read_checks": 13,
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Correct diagnostic PowerShell host/module-resolution setup;repeat read-only SID/volume/process/path/ACL preflight and await operator resume before actual directory creation. No blind retries/adoption/repair. Provisioning attempt stopped before first create;all3top-levelrootsconfirmedabsent.",
+  "exact_next_action": "Operator resume for VERIFY-ONLY postflight reconciliation of existing13directories/privateauditedidentities;retain everycheckvalue and explicitlyresolve originalunretainedtransientmismatch. Neverreruncreation/adopt/repair/delete. Financialpublication/issuer/custody/startup remain separatelygated.",
   "latest_focused_tests": {
     "passed": 117,
     "failed": 0,
@@ -88,11 +90,12 @@
     "EXTERNAL_DRIVE_READINESS_V1": "VERIFIED read-only metadata/source assessment:NTFS healthy coarse status,745GiBfree,broad inheritedACLs/proposedrootsabsent;external-vsNVMe topology unresolved;reliability/fsutil denied. No operational storage acceptance or behavior tests.",
     "LOCAL_FINANCIAL_STORAGE_SELECTION_V1": "VERIFIED read-only:distinct C:disk0/D:disk1 NTFSdevices;recommend C: newprotectedfinancialroots conditionally;proposedparentsabsent/reliabilitydetaildenied. No provisioning/acceptance/behavior tests.",
     "D_ONLY_SINGLE_ACCOUNT_DEPLOYMENT_V1": "VERIFIED sourcepolicy/runbook:117combinedpass0fail0skip15new;D:only/existingaccount,noroot/projectACLchanges;C:proposalretainedashistory. Sameaccount/shareddevicecustodyrisksUNRESOLVED;no provisioning/acceptance/startup.",
-    "D_DIRECTORY_PROVISIONING_V1": "BLOCKED_PREFLIGHT:WindowsPowerShell Get-Acl moduleloadfailed beforeepochallocation/firstcreate.0directories/ACLchanges/financialrecords;followuprootsabsent;no operationalretry.117source regressionspass0fail0skip,notnativeprovisioningacceptance."
+    "D_DIRECTORY_PROVISIONING_V1": "BLOCKED_PREFLIGHT:WindowsPowerShell Get-Acl moduleloadfailed beforeepochallocation/firstcreate.0directories/ACLchanges/financialrecords;followuprootsabsent;no operationalretry.117source regressionspass0fail0skip,notnativeprovisioningacceptance.",
+    "D_DIRECTORY_PROVISIONING_RECOVERY_V1": "PARTIAL_UNACCEPTED:module-resolution repaired,13actualdirectoriescreated/nativeverified;finalpostflightFAILEDandstopped.13read-onlyreopens/currentpostflightpassbutoriginalmismatchunresolved;noauditcompletion/financialpublication.117regressionspass0fail0skip;allgatesunchanged."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 56,
-  "continuation_report": "docs/D_DIRECTORY_PROVISIONING_CONTINUATION_2026-10-24.md",
+  "progress_revision": 57,
+  "continuation_report": "docs/D_DIRECTORY_PROVISIONING_RECOVERY_CONTINUATION_2026-10-24.md",
   "blocked_wait_reason": "Independent reviewers/custody mechanisms and actual B1/C1/D1/E1 acceptance unavailable;no provisioning/startup permission;all eligible source-only policy work complete.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
@@ -200,7 +203,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/D_DIRECTORY_PROVISIONING_CONTINUATION_2026-10-24.md",
+  "recovery_checkpoint": "docs/D_DIRECTORY_PROVISIONING_RECOVERY_CONTINUATION_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -238,7 +241,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/D_DIRECTORY_PROVISIONING_CONTINUATION_2026-10-24.md",
+  "recovery_document": "docs/D_DIRECTORY_PROVISIONING_RECOVERY_CONTINUATION_2026-10-24.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -644,15 +647,20 @@
     "selection": "enrollment bootstrap,policy,operational contract,selected policy,production lock",
     "operational_acceptance": false
   },
-  "last_attempted_task": "D_DIRECTORY_PROVISIONING_V1",
+  "last_attempted_task": "D_DIRECTORY_PROVISIONING_RECOVERY_V1",
   "directory_provisioning": {
-    "status": "BLOCKED_PREFLIGHT",
-    "report": "docs/D_DIRECTORY_PROVISIONING_PREFLIGHT_2026-10-24.md",
-    "release_identifier": "4fbe4fa3cb2ff00244d31ba4cc46ff8b27460269",
-    "epoch_allocated": false,
-    "directories_created": 0,
-    "acl_verification_new_resources": "NOT_EXECUTED",
-    "native_identity_verification_new_resources": "NOT_EXECUTED",
+    "status": "INCOMPLETE_POSTFLIGHT_UNACCEPTED",
+    "report": "docs/D_DIRECTORY_PROVISIONING_RECOVERY_2026-10-24.md",
+    "release_identifier": "1cbf5d4d94f6f60f17b7b4b25dd6d434ddf67e43",
+    "epoch_allocated": true,
+    "epoch_identity": "PRIVATE_LOCAL_AUDIT_ONLY",
+    "directories_created": 13,
+    "creation_acl_identity_checks_passed": 13,
+    "read_only_reopen_checks_passed": 13,
+    "actual_postflight_failures": 1,
+    "original_failed_post_snapshot_available": false,
+    "financial_role_directories_empty": true,
+    "completion_manifest_published": false,
     "financial_publication": false,
     "startup_authorized": false
   }
