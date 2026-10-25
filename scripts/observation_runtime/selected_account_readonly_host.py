@@ -79,7 +79,7 @@ class FixtureAuthority:
         yield SimpleNamespace(snapshot=pin, check=lambda p, t: p == pin)
 
 
-def build_app(root, fixture, port_number, host_id, request_log):
+def build_app(root, fixture, port_number, host_id, request_log, *, reader_factory=None):
     spec = importlib.util.spec_from_file_location("disposable_native_read", REPO / "scripts/volume_inspector/financial_read_port.py")
     native = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(native)
@@ -93,6 +93,8 @@ def build_app(root, fixture, port_number, host_id, request_log):
             control = request_state.get()
             if control is None:
                 raise ValueError("HTTP_READ_CONTEXT_REQUIRED")
+            if reader_factory is not None:
+                return reader_factory(control["read_now"])
             phase, mode = control["phase"], control["mode"]
             descriptor = fixture["phases"][phase]
             enrollment = descriptor["enrollment"]

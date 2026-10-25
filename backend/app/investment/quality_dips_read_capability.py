@@ -29,7 +29,7 @@ class SelectedReadCapability:
                 and digest(manifest["account_policy"]) == enrollment["policy_digest"]
                 and manifest["account_policy"]["account_id"] == account_id)
 
-    def _source_identity_extensions(self, manifest, rows):
+    def _source_identity_extensions(self, manifest, rows, pin=None):
         return {}  # Retained strict read payload is byte-shape compatible.
 
     def __init__(self, *, enrollment, authority, clock, port):
@@ -107,7 +107,7 @@ class SelectedReadCapability:
                                         "source": pin["source"], "reports": pin["reports"],
                                         "projection_root": e["projection_root"]}),
                                         "generation": pin["generation"],
-                                        **self._source_identity_extensions(manifest, rows)},
+                                        **self._source_identity_extensions(manifest, rows, pin)},
                     "policy_digest": e["policy_digest"], "report_status": report["status"],
                     "report": report, "selection": None,
                     "inception": {"schema": "QD_SELECTED_INCEPTION_VIEW_V1", "account_id": account_id,

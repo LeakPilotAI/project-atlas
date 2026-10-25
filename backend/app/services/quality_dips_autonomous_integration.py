@@ -139,8 +139,12 @@ The authority lease must exclude all participating writers throughout both reads
             raise ValueError("AUTO_COORDINATION_READ_REQUIRED")
         self.coordination = coordination
 
-    def _source_identity_extensions(self, manifest, rows):
-        return {"head": rows[-1]["digest"] if rows else digest(manifest)}
+    def _source_identity_extensions(self, manifest, rows, pin=None):
+        # Report publication can advance without a new financial effect. Keep
+        # financial identity stable; the complete report pin is still verified.
+        return {"head": rows[-1]["digest"] if rows else digest(manifest),
+                "pin_digest": digest({"source": pin["source"], "projection_root": self.enrollment["projection_root"]}),
+                "generation": len(rows)}
 
     def _manifest_scope(self, manifest, enrollment, account_id):
         validate_autonomous_manifest(manifest)

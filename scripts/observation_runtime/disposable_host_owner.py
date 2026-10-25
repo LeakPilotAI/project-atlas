@@ -45,13 +45,18 @@ def observe_pid(pid):
 
 class OwnedHost:
     """Only retained Popen ownership permits stdin EOF; never kill/terminate."""
-    def __init__(self, root, manifest_digest):
+    def __init__(self, root, manifest_digest, *, runtime_fixture=False):
         if os.name != "nt":
             raise RuntimeError("WINDOWS_NATIVE_ACCEPTANCE_ONLY")
         root = Path(root).absolute()
         if (root.parent != REPO / "logs/diagnostics" or not root.name.startswith("qd-http-browser-")
                 or not root.is_dir() or any(p.is_symlink() or p.is_junction() for p in [root, *root.parents])):
             raise ValueError("EXPLICIT_DISPOSABLE_ROOT_REQUIRED_BEFORE_PROCESS_OR_LOG")
+        script = REPO / "scripts/observation_runtime/selected_account_readonly_host.py"
+        if runtime_fixture:
+            if not root.name.startswith("qd-http-browser-runtime-"):
+                raise ValueError("EXPLICIT_RUNTIME_FIXTURE_ROOT_REQUIRED")
+            script = REPO / "tests/qd_autonomous_runtime_host.py"
         self.lines, self.closed, self.shutdown_requested = queue.Queue(), False, False
         # Windows venv redirectors may spawn a second PID. Directly retain the
         # actual interpreter; use only the already installed venv libraries.
@@ -59,7 +64,7 @@ class OwnedHost:
         env = dict(os.environ)
         env["PYTHONPATH"] = os.pathsep.join([str(Path(sys.prefix) / "Lib/site-packages"), str(REPO / "backend")])
         with (Path(root) / "host-errors.log").open("a", encoding="utf-8") as errors:
-            self.process = subprocess.Popen([str(executable), "-B", str(REPO / "scripts/observation_runtime/selected_account_readonly_host.py"),
+            self.process = subprocess.Popen([str(executable), "-B", str(script),
                 "--fixture-root", str(root), "--fixture-sha256", manifest_digest],
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=errors,
                 text=True, env=env, creationflags=subprocess.CREATE_NO_WINDOW)
@@ -114,6 +119,17 @@ class OwnedHost:
             raise ValueError("CONTROL_ACK_MISMATCH")
         return reply
 
+    def runtime_control(self, action):
+        self.verify(self.identity)
+        if not self.ready.get("runtime_fixture") or action not in ("start", "pause", "stop", "status", "disconnect"):
+            raise ValueError("RUNTIME_FIXTURE_CONTROL_ONLY")
+        self.process.stdin.write(json.dumps({"action": action}) + "\n")
+        self.process.stdin.flush()
+        reply = self.lines.get(timeout=12)
+        if reply.get("host_id") != self.ready["host_id"] or "runtime" not in reply:
+            raise ValueError("RUNTIME_CONTROL_ACK_MISMATCH")
+        return reply
+
     def close(self, expected):
         if expected != self.identity:
             raise ValueError("FOREIGN_OR_MISMATCHED_PROCESS")
@@ -135,15 +151,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--fixture-root", required=True)
     parser.add_argument("--fixture-sha256", required=True)
+    parser.add_argument("--runtime-fixture", action="store_true")
     args = parser.parse_args()
-    owner = OwnedHost(Path(args.fixture_root), args.fixture_sha256)
+    owner = OwnedHost(Path(args.fixture_root), args.fixture_sha256, runtime_fixture=args.runtime_fixture)
     print(json.dumps({**owner.ready, "owned_identity": owner.identity}), flush=True)
     try:
         for line in sys.stdin:
             value = json.loads(line)
             if value == {"shutdown": True}:
                 break
-            print(json.dumps(owner.control(**value)), flush=True)
+            reply = owner.runtime_control(value["action"]) if args.runtime_fixture else owner.control(**value)
+            print(json.dumps(reply), flush=True)
     finally:
         owner.close(owner.identity)
         print(json.dumps({"owned_shutdown": "COMPLETE", "host_id": owner.ready["host_id"]}), flush=True)
