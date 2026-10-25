@@ -138,3 +138,48 @@ def test_d_only_layout_is_a_proposal_not_resource_or_authority():
     p['deployment_policy_reference']='untrusted-local-policy.json'
     with pytest.raises(ValueError,match='D_ONLY_SINGLE_ACCOUNT_LAYOUT_REQUIRED'):
         m.check_policy(p,d)
+
+
+def local_proposal():
+    return json.loads((ROOT/'docs/LOCAL_SUPERVISED_PAPER_PROFILE_PROPOSAL_V1.json').read_text())
+
+
+def test_local_profile_is_a_proposal_and_strict_contract_rejects_it():
+    from app.investment.quality_dips_operational_contract import validate_enrollment
+    p=local_proposal();m.check_local_paper_proposal(p)
+    with pytest.raises(ValueError):validate_enrollment(p)
+    release,deployment=policies();m.check_policy(release,deployment)
+    assert release['required_blocked_gates']==['B1','C1','D1','E1']
+
+
+@pytest.mark.parametrize('field,value',[
+    ('status','ACCEPTED'),('runtime_consumable',True),('startup_authorized',True),
+    ('financial_publication_authorized',True),('strict_profile_unchanged',False),
+    ('canonical_gate_changes',1),('canonical_gate_changes',False),('profile_id','STRICT_OPERATIONAL'),
+    ('architecture_reference','C:/Atlas'),('backup_policy','INDEPENDENT_ROLLBACK_PROTECTION'),
+])
+def test_local_profile_cannot_self_accept_or_change_strict_authority(field,value):
+    p=local_proposal();p[field]=value
+    with pytest.raises(ValueError):m.check_local_paper_proposal(p)
+
+
+@pytest.mark.parametrize('field',['essential_controls','reduced_assurances','refuse_on','acceptance_required'])
+@pytest.mark.parametrize('damage',['missing','duplicate','malformed'])
+def test_local_profile_controls_and_reductions_cannot_disappear(field,damage):
+    p=local_proposal()
+    if damage=='missing':p[field].pop()
+    if damage=='duplicate':p[field][-1]=p[field][0]
+    if damage=='malformed':p[field][0]={}
+    with pytest.raises(ValueError):m.check_local_paper_proposal(p)
+
+
+def test_local_profile_is_not_an_operational_policy_replacement():
+    _p,d=policies()
+    with pytest.raises(ValueError):m.check_policy(local_proposal(),d)
+    proposal=local_proposal();proposal['trial_progress']['authorized_days']=1
+    with pytest.raises(ValueError):m.check_local_paper_proposal(proposal)
+
+
+def test_local_profile_trial_counters_do_not_coerce_booleans():
+    proposal=local_proposal();proposal['trial_progress']['authorized_days']=False
+    with pytest.raises(ValueError):m.check_local_paper_proposal(proposal)

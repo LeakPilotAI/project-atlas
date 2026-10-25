@@ -42,6 +42,51 @@ LOCAL_LAYOUT = {
 }
 
 
+def check_local_paper_proposal(value):
+    """Proposal lint only. Never called by startup or financial authority code."""
+    fields = {'schema', 'profile_id', 'status', 'runtime_consumable', 'strict_profile_unchanged',
+              'canonical_gate_changes', 'startup_authorized', 'financial_publication_authorized',
+              'architecture_reference', 'account_policy_reference', 'essential_controls',
+              'reduced_assurances', 'proposed_local_authority', 'refuse_on', 'acceptance_required',
+              'backup_policy', 'trial_progress'}
+    if (type(value) is not dict or set(value) != fields
+            or value['schema'] != 'ATLAS_PAPER_SECURITY_PROFILE_PROPOSAL_V1'
+            or value['profile_id'] != 'LOCAL_SUPERVISED_PAPER_V1'
+            or value['status'] != 'PROPOSED_NOT_ACCEPTED'
+            or value['strict_profile_unchanged'] is not True
+            or type(value['canonical_gate_changes']) is not int or value['canonical_gate_changes'] != 0
+            or any(value[k] is not False for k in ('runtime_consumable', 'startup_authorized', 'financial_publication_authorized'))):
+        raise ValueError('LOCAL_PAPER_PROPOSAL_NOT_AUTHORITY')
+    expected = {
+        'essential_controls': {'NATIVE_IDENTITY_EXACT_ACL', 'APPEND_ONLY_DURABLE_EVIDENCE', 'SINGLE_INCEPTION_NO_REPLAY',
+            'UNKNOWN_BLOCKS_EFFECTS', 'MANUAL_ENTRY_EXIT', 'EXACT_ACCOUNTING', 'STARTUP_RECOVERY_INTEGRITY',
+            'OWNED_SHUTDOWN_RESTART', 'FRESH_DATA_OR_REFUSAL', 'NO_REAL_ORDER_EXECUTION'},
+        'reduced_assurances': {'EXISTING_ACCOUNT_TRUSTED_NOT_ADVERSARIAL_ISOLATION', 'LOCAL_KEY_NOT_INDEPENDENT_ISSUER',
+            'LOCAL_HIGH_WATER_NOT_INDEPENDENT_ROLLBACK_PROOF', 'OS_UTC_NOT_CRYPTOGRAPHIC_TIME_AUTHORITY',
+            'D_BACKUP_NOT_DEVICE_LOSS_PROTECTION'},
+        'refuse_on': {'MISSING_OR_CONFLICTING_RECORD', 'CORRUPTION_OR_INVALID_SIGNATURE', 'WRONG_RESOURCE_IDENTITY_OR_ACL',
+            'OBSERVED_REVISION_ROLLBACK', 'UNKNOWN_FINANCIAL_EFFECT', 'STALE_OR_UNVERIFIED_MARKET_DATA',
+            'CLOCK_UNCERTAINTY', 'UNKNOWN_OR_UNDRAINED_WRITER', 'UNAPPROVED_PROFILE_OR_PROCESS'},
+        'acceptance_required': {'FORMAL_PROFILE_SCOPED_GOVERNANCE_DISPOSITION', 'EXPLICIT_OPERATOR_RISK_ACKNOWLEDGEMENT',
+            'REVIEWED_LOCAL_ADAPTERS_AND_NATIVE_ACCEPTANCE', 'SEPARATE_REAL_PUBLICATION_AND_STARTUP_PERMISSION'},
+    }
+    for field, entries in expected.items():
+        items = value[field]
+        if type(items) is not list or any(type(item) is not str for item in items) or len(items) != len(entries) or set(items) != entries:
+            raise ValueError('LOCAL_PAPER_PROPOSED_CONTROL_OR_LIMITATION_MISSING')
+    if (value['architecture_reference'] != 'ATLAS_DEPLOYMENT_POLICY.json#local_layout'
+            or value['account_policy_reference'] != 'ATLAS_PAPER_RELEASE_POLICY.json#account'
+            or value['backup_policy'] != 'D_ONLY_VERSIONED_BACKUPS_LIMITED_TO_LOGICAL_RECOVERY_NO_INDEPENDENT_OFFLINE_GUARANTEE'
+            or type(value['trial_progress']) is not dict
+            or json.dumps(value['trial_progress'], sort_keys=True) != json.dumps(
+                {'authorized_days': 0, 'seven_day_target': 7, 'extended_sessions': 0,
+                 'extended_target_min': 30, 'extended_target_max': 60}, sort_keys=True)
+            or type(value['proposed_local_authority']) is not dict
+            or set(value['proposed_local_authority']) != {'authorization', 'signing', 'coordination', 'clock', 'ownership', 'recovery'}
+            or any(type(s) is not str or not 1 <= len(s) <= 256 for s in value['proposed_local_authority'].values())):
+        raise ValueError('LOCAL_PAPER_PROPOSAL_SCOPE_MISMATCH')
+
+
 def normalized(value):
     return re.sub('[^a-z0-9]', '', value.lower())
 
@@ -183,6 +228,7 @@ def audit(root=ROOT):
 if __name__ == '__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.parse_args()
+    check_local_paper_proposal(json.loads((ROOT/'docs/LOCAL_SUPERVISED_PAPER_PROFILE_PROPOSAL_V1.json').read_text()))
     result=audit()
     print(json.dumps(result,indent=2))
     raise SystemExit(bool(result['issues']))
