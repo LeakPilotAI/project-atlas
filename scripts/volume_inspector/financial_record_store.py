@@ -182,6 +182,49 @@ class FinancialRecordStore:
             return {"schema": "FS2_ACKNOWLEDGED_VIEW_V1", "state": state, "head": head, "audit": audit,
                     "status": "ACKNOWLEDGED", "valuation": None, "startup_authorized": False}
 
+    def verified_cut(self):
+        """Existing-only native read, including the pinned manifest and root."""
+        if record_version(self, "pin") != "FS2_TEST_PIN_V1":
+            raise Refused("OPERATIONAL_SOURCE_INSPECTION_NOT_ENROLLED")
+        pin, manifest, _, state, head, operations, audit = self._inspect_existing()
+        return copy.deepcopy({"manifest": manifest, "root": pin["root"], "state": state,
+                              "head": head, "audit": audit, "pin_schema": pin["schema"],
+                              "acknowledged_operations": {key: digest(value[0]) for key, value in operations.items()}})
+
+    def _inspect_existing(self):
+        # Never acquire the writer mutex here: observing an abandoned mutex can
+        # consume its evidence, and writer.guard() may publish a failure latch.
+        # Immutable handle reads plus a stable accepted pin give a snapshot;
+        # exclusive financial admission still belongs to the external custody.
+        if self.poisoned or not self.mutex:
+            raise Refused("Uncertain or closed source inspection")
+        pinned = body(self.trust.current())
+        result = self._load()
+        if body(result[0]) != pinned or body(self.trust.current()) != pinned:
+            raise Refused("Source custody changed during inspection")
+        return result
+
+    def preview(self, command):
+        """Pure FS1 proposal over an acknowledged cut; never publishes/repairs."""
+        if record_version(self, "pin") != "FS2_TEST_PIN_V1":
+            raise Refused("OPERATIONAL_SOURCE_INSPECTION_NOT_ENROLLED")
+        pin, manifest, _, state, head, operations, _ = self._inspect_existing()
+        if command.get("operation_id") in operations:
+            raise Refused("Preview cannot adopt or replay an existing operation")
+        candidate, receipt = apply_event(manifest, state, command)
+        return copy.deepcopy({"manifest": manifest, "root": pin["root"], "head": head,
+                              "before": state, "after": candidate, "receipt": receipt})
+
+    def operation_receipt(self, operation_id, payload_digest):
+        """Read an already acknowledged receipt without invoking a writer."""
+        if record_version(self, "pin") != "FS2_TEST_PIN_V1":
+            raise Refused("OPERATIONAL_SOURCE_INSPECTION_NOT_ENROLLED")
+        operations = self._inspect_existing()[5]
+        original = operations.get(operation_id)
+        if original is None or digest(original[0]) != payload_digest:
+            raise Refused("Missing or conflicting acknowledged operation")
+        return copy.deepcopy(original[1])
+
     def _latch(self):
         try:
             self.output.write_bound("recovery-required.json", encoded({"reason": "PUBLICATION_FAILED"}))

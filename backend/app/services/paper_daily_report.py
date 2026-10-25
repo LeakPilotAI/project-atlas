@@ -20,8 +20,13 @@ from app.services.paper_financial_replay import (
 
 def validate_scope(scope, manifest):
     validate_manifest(manifest)
-    if (type(scope) is not dict or set(scope) != {"schema", "account_id", "epoch", "policy_digest", "timezone"}
-            or scope["schema"] != "FS3_REPORT_SCOPE_V1" or type(scope["account_id"]) is not str
+    restatement = type(scope) is dict and scope.get("schema") == "FS3_PERP_REPORT_SCOPE_V2"
+    extra = {"funding_reporting_policy"} if restatement else set()
+    if (type(scope) is not dict or set(scope) != {"schema", "account_id", "epoch", "policy_digest", "timezone"} | extra
+            or scope["schema"] not in ("FS3_REPORT_SCOPE_V1", "FS3_PERP_REPORT_SCOPE_V2")
+            or restatement and (manifest["schema"] != "PAPER_EPOCH_PERP_FIXTURE_V2"
+                                or scope["funding_reporting_policy"] != "POSTED_CASH_AND_SETTLEMENT_ACCRUAL_V1")
+            or type(scope["account_id"]) is not str
             or not 1 <= len(scope["account_id"]) <= 96 or scope["epoch"] != manifest["epoch"]
             or scope["policy_digest"] != digest(manifest) or scope["timezone"] != manifest["timezone"]
             or (manifest["strategy"] == "QUALITY_DIPS" and scope["timezone"] != "America/New_York")):
@@ -46,7 +51,9 @@ def frame(scope, manifest, pin, rows, head, day, observed):
             or any(strict(r["command"])["timestamp"] > observed for r in rows)):
         raise ValueError("Source count/epoch or future-information mismatch")
     required = sum(strict(r["receipt"])["projection_required"] for r in rows)
-    return {"schema": "FS3_DAILY_REPORT_V1", "report_version": 2 if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1" else 1,
+    return {**({"funding_reporting_policy": scope["funding_reporting_policy"], "scope_digest": digest(scope)}
+               if scope["schema"] == "FS3_PERP_REPORT_SCOPE_V2" else {}),
+            "schema": "FS3_DAILY_REPORT_V1", "report_version": 2 if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1" else 1,
             "account_id": scope["account_id"], "epoch": scope["epoch"], "policy_digest": scope["policy_digest"],
             "strategy": manifest["strategy"], "currency": manifest["currency"],
             "cost_policy": manifest["cost_policy"], "cost_allocation": "QD_AUTO_SIDE_COST_ALLOCATION_V1" if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1" else "FS3_FEE_FIRST_REMAINDER_SLIPPAGE_V1", "timezone": scope["timezone"], "date": day,
@@ -221,6 +228,60 @@ def _perp_metadata(report, positions):
     return report
 
 
+def _perp_recovery_reporting(report, rows, *, facts=None, manifest=None):
+    postings = []
+    zone = ZoneInfo(report["timezone"])
+    restatement = False
+    for row in rows:
+        c = strict(row["command"])
+        if c["schema"] != "PAPER_PERP_FUNDING_RECOVERY_V1":
+            continue
+        e = c["evidence"]
+        settled = datetime.fromtimestamp(e["settlement_at"], zone).date().isoformat()
+        posted = datetime.fromtimestamp(c["timestamp"], zone).date().isoformat()
+        if report["date"] not in (settled, posted):
+            continue
+        postings.append({"operation_id": c["operation_id"], "settlement_at": e["settlement_at"],
+                         "posted_at": c["timestamp"], "quantity": c["recovery"]["quantity"],
+                         "oracle": e["oracle"], "rate": e["rate"], "source_id": e["source_id"],
+                         "authority_ref": c["recovery"]["authority_ref"]})
+        restatement |= settled != posted
+    if postings:
+        report.update(funding_postings=postings, funding_reporting_basis="POSTED_CASH_NOT_RESTATED_SETTLEMENT")
+    if report.get("funding_reporting_policy") == "POSTED_CASH_AND_SETTLEMENT_ACCRUAL_V1":
+        if facts is None:
+            from app.services.paper_financial_replay import apply_event, initial_state
+            state, facts = initial_state(manifest), []
+            for row in rows:
+                c = strict(row["command"])
+                before = number(state["funding"])
+                state, receipt = apply_event(manifest, state, c)
+                if c["kind"] == "FUNDING":
+                    facts.append({"position_id": receipt["position_id"], "settlement_at": c["evidence"]["settlement_at"],
+                                  "posted_at": c["timestamp"], "cash": str(number(state["funding"]) - before)})
+        report["report_version"] = 4
+        start, end = report["period"]["start"], report["period"]["effective_end_exclusive"]
+        settled = sum((number(f["cash"]) for f in facts if start <= f["settlement_at"] < end), Decimal(0))
+        unpaid = {}
+        for f in facts:
+            if f["settlement_at"] < end <= f["posted_at"]:
+                unpaid[f["position_id"]] = str(number(unpaid.get(f["position_id"], "0")) + number(f["cash"]))
+        report["funding_accrual"] = {"settled_in_period": str(settled), "unposted_at_cutoff": unpaid,
+                                     "basis": "SETTLEMENT_TIME_SEPARATE_FROM_POSTED_CASH"}
+        covered = {(f["position_id"], f["settlement_at"]) for f in facts}
+        complete = all(all((ident, at) in covered for at in range(p["next_funding"], end, 3600))
+                       for ident, p in report["open_positions"].items())
+        if complete:
+            report["reasons"] = [r for r in report["reasons"] if r != "FUNDING_HISTORY_INCOMPLETE"]
+            report["status"] = "INCOMPLETE" if report["reasons"] else "COMPLETE"
+    elif restatement:
+        report["status"] = "INCOMPLETE"
+        report["reasons"] = [*report["reasons"], "RECOVERY_RESTATEMENT_REQUIRED"]
+    if any(strict(row["command"])["schema"] == "PAPER_PERP_LIQUIDATION_V1" for row in rows):
+        report["report_version"] = 5
+    return report
+
+
 def _build_perp_report(report, scope, m, pin, rows, full):
     start, end = report["period"]["start"], report["period"]["effective_end_exclusive"]
     before_rows = [r for r in rows if strict(r["command"])["timestamp"] < start]
@@ -237,6 +298,9 @@ def _build_perp_report(report, scope, m, pin, rows, full):
                   open_positions=inventory,
                   collateral={"opening_reserved": before["reserved_margin"], "closing_reserved": after["reserved_margin"],
                               "opening_available": before["available_cash"], "closing_available": after["available_cash"]})
+    if any(strict(row["command"])["schema"] == "PAPER_PERP_LIQUIDATION_V1" for row in rows):
+        report["realized"]["liquidation_fees"] = str(number(after.get("liquidation_fees", "0")) - number(before.get("liquidation_fees", "0")))
+    report = _perp_recovery_reporting(report, rows, manifest=m)
     audit_daily_report(report, scope, m, pin, rows, full)
     return report
 
@@ -262,6 +326,12 @@ def _audit_perp_report(report, scope, m, pin, rows):
                 "realized": {k: after["totals"][k] - before["totals"][k] for k in ("gross", "fees", "slippage", "costs", "funding", "net")},
                 "collateral": {"opening_reserved": before["totals"]["reserved_margin"], "closing_reserved": after["totals"]["reserved_margin"],
                                "opening_available": before["totals"]["available_cash"], "closing_available": after["totals"]["available_cash"]}}
+    if any(strict(row["command"])["schema"] == "PAPER_PERP_LIQUIDATION_V1" for row in rows):
+        expected["realized"]["liquidation_fees"] = after["totals"].get("liquidation_fees", Decimal(0)) - before["totals"].get("liquidation_fees", Decimal(0))
+    metadata["open_positions"] = inventory
+    full_facts = _audit_perp(m, rows, None)["funding_events"]
+    metadata = _perp_recovery_reporting(metadata, rows, facts=full_facts)
+    metadata.pop("open_positions")
     counts = {k: sum(c["kind"] == kind for c in commands) for k, kind in
               (("entries", "ENTRY"), ("exits", "EXIT"), ("funding", "FUNDING"), ("marks", "MARK"))}
     if (any(body(report.get(k)) != body(v) for k, v in metadata.items())

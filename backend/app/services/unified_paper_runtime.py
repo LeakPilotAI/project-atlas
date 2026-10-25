@@ -11,6 +11,7 @@ from threading import Event, Lock
 from app.services.paper_financial_replay import body, digest, strict, text
 from app.services.paper_portfolio_risk import (
     LANES,
+    check_portfolio_accounting_update,
     check_portfolio_cut,
     check_portfolio_reducing_exit,
 )
@@ -192,15 +193,16 @@ class UnifiedPaperRuntime:
             raise ValueError("UNIFIED_EXPLICIT_LANE_REQUIRED")
         proposal = strict(body(proposal))
         text(proposal.get("operation_id"))
-        if proposal.get("kind") not in ("ENTRY", "EXIT"):
+        accounting = proposal.get("kind") in ("FUNDING", "MARK")
+        if proposal.get("kind") not in ("ENTRY", "EXIT", "FUNDING", "MARK") or accounting and lane != "HYPERLIQUID":
             raise ValueError("UNIFIED_EXPLICIT_OPERATION_REQUIRED")
         with self.gate, self._lease() as installation:
             self._verify(installation)
             if (self.uncertain or self.state not in ("RUNNING", "PAUSED")
-                    or (self.state == "PAUSED" or self.entry_closed.is_set()) and proposal["kind"] != "EXIT"):
+                    or (self.state == "PAUSED" or self.entry_closed.is_set()) and proposal["kind"] == "ENTRY"):
                 raise ValueError("UNIFIED_ADMISSION_CLOSED_OR_UNKNOWN")
             observation = self.observations[lane]
-            if (observation is None or observation["connection"] != "CONNECTED"
+            if not accounting and (observation is None or observation["connection"] != "CONNECTED"
                     or observation["session"] != "OPEN"
                     or not 0 <= self.clock() - observation["at"] <= 5):
                 raise ValueError("UNIFIED_CURRENT_LANE_EVIDENCE_REQUIRED")
@@ -211,7 +213,28 @@ class UnifiedPaperRuntime:
                 # This lease must exclude every competing financial writer.
                 if custody.verify(request) is not True:
                     raise ValueError("UNIFIED_PORTFOLIO_CUSTODY_UNVERIFIED")
-                if proposal["kind"] == "EXIT":
+                # Optional read-only lookup is authenticated by this same held
+                # custody lease. Already acknowledged effects are not re-admitted
+                # as new trades or blocked by subsequently changed market limits.
+                lookup = getattr(custody, "acknowledged", None)
+                if lookup is not None:
+                    previous = lookup(request)
+                    if previous is not None:
+                        if (previous.get("state") != "ACKNOWLEDGED" or previous.get("binding") != digest(request)):
+                            raise ValueError("UNIFIED_REPLAY_BINDING_UNVERIFIED")
+                        receipt = custody.replay(request, previous)
+                        if custody.verify_receipt(request, receipt) is not True:
+                            raise ValueError("UNIFIED_REPLAY_RECEIPT_UNVERIFIED")
+                        return receipt
+                if accounting:
+                    # This must authenticate the actual canonical before/after
+                    # transition and source evidence, not caller-supplied cuts.
+                    verifier = getattr(custody, "verify_accounting", None)
+                    if verifier is None or verifier(request) is not True:
+                        raise ValueError("UNIFIED_CANONICAL_ACCOUNTING_UNVERIFIED")
+                    check_portfolio_accounting_update(custody.policy, custody.before, custody.projected,
+                                                     kind=proposal["kind"], now=self.clock())
+                elif proposal["kind"] == "EXIT":
                     check_portfolio_reducing_exit(custody.policy, custody.before, custody.projected, now=self.clock())
                 else:
                     check_portfolio_cut(custody.policy, custody.before, now=self.clock())
@@ -259,14 +282,32 @@ class UnifiedPaperRuntime:
             self.state = "STOPPING"
         with self._lease() as lease:
             self._verify(lease)
+        native = any(getattr(lane, "requires_portfolio_drain", False) for lane in self.lanes.values())
+        if native:
+            close = getattr(self.portfolio, "close_entry_admission", None)
+            try:
+                closed = close is not None and close(self.grant) is True
+            except (ValueError, OSError, TimeoutError):
+                closed = False
+            if not closed:
+                self.uncertain = True
+                self.state = "STOP_INCOMPLETE"
+                return {"state": self.state, "lanes": {lane: {"state": "ADMISSION_UNVERIFIED"} for lane in LANES}, "auto_resume": False}
         outcomes = {}
         for lane in LANES:
             try:
                 outcomes[lane] = self.lanes[lane].stop(emergency=emergency)
-            except (ValueError, OSError, TimeoutError):
+            except (ValueError, OSError, TimeoutError, KeyError, TypeError):
                 outcomes[lane] = {"state": "INCOMPLETE"}
+        drain = getattr(self.portfolio, "verify_drain", None)
+        try:
+            drained = not native or drain is not None and drain(self.grant) is True
+            with self._lease() as lease:
+                self._verify(lease)
+        except (ValueError, OSError, TimeoutError):
+            self.uncertain, drained = True, False
         with self.gate:
-            complete = (not self.uncertain and not emergency
+            complete = (not self.uncertain and not emergency and drained
                         and all(v.get("state") == "ACKNOWLEDGED_FLAT_AND_DRAINED" for v in outcomes.values()))
             self.state = "STOPPED" if complete else "STOP_INCOMPLETE"
         return {"state": self.state, "lanes": outcomes, "auto_resume": False}

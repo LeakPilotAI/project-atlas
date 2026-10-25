@@ -11,21 +11,24 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 476,
+    "passed": 552,
     "failed": 0,
     "skipped": 1,
-    "new_cases": 63,
-    "selection": "perp V2, public book/funding, FS1/FS2/FS3, epoch, autonomous engine, unified runtime, handoff, domain, PAPER policy, startup lock and funding history",
+    "new_cases": 76,
+    "selection": "21-file native writer/perp execution/recovery/report/unified/FS1-FS3/policy/startup regression",
     "not_executed": "True-symlink privilege unavailable (1314)",
+    "separate_disjoint_operational_codec_passed": 14,
+    "distinct_passed_across_selections": 566,
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Extend existing perp V2 replay/audit with source-bound tier/collateral, maker/liquidation and partial-entry/recovery contracts; missing historical funding requires authenticated rate plus settlement-time oracle. Then serialize actual FUNDING/MARK and existing strategy writers through unified durable portfolio custody; preserve ENTRY risk refusal. See PERP_CANONICAL_FINANCIAL_CONTINUATION_2026-10-25.md. No real roots/inception/provider-gate installation/startup.",
+  "exact_next_action": "Implement the separate operational perpetual codec/enrollment on existing FS2/FS3 admission, then bind actual QD V5 and perpetual planner to unified custody. Implement actual perpetual graceful Stop and explicitly reviewed session-cut reports before real-interface two-lane continuous/cross-process/HTTP acceptance. Read UNIFIED_NATIVE_WRITER_CONTINUATION_2026-10-25.md; do not repeat verified execution arithmetic or initialize protected accounts.",
   "latest_focused_tests": {
-    "passed": 31,
+    "passed": 23,
     "failed": 0,
     "skipped": 0,
-    "overlap_combined": true
+    "overlap_combined": true,
+    "selection": "native writer subset included in final combined run; not added separately"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -109,9 +112,9 @@
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "ACTIVE: source audit confirms existing selected perp handoff funding_modeled=false and missing durable leveraged collateral/funding financial lifecycle. Extend existing canonical engine/audit/native contracts;do not repeat completed universe/UI/authentication work."
   },
   "execution_status": "CONTINUATION_REQUIRED",
-  "progress_revision": 73,
-  "continuation_report": "docs/AUTONOMOUS_PAPER_RUNTIME_V3_CONTINUATION_2026-10-24.md",
-  "blocked_wait_reason": "All authorized continuous disposable V3 work completed. Accepted autonomous native operational contract and real authority/ownership/custody/clock/provider dependencies remain unavailable/unapproved.",
+  "progress_revision": 74,
+  "continuation_report": "docs/UNIFIED_NATIVE_WRITER_CONTINUATION_2026-10-25.md",
+  "blocked_wait_reason": null,
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
@@ -218,7 +221,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/PERP_CANONICAL_FINANCIAL_CONTINUATION_2026-10-25.md",
+  "recovery_checkpoint": "docs/UNIFIED_NATIVE_WRITER_CONTINUATION_2026-10-25.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -256,7 +259,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/PERP_CANONICAL_FINANCIAL_CONTINUATION_2026-10-25.md",
+  "recovery_document": "docs/UNIFIED_NATIVE_WRITER_CONTINUATION_2026-10-25.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -925,7 +928,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/PERP_CANONICAL_FINANCIAL_CONTINUATION_2026-10-25.md",
+  "continuation_checkpoint": "docs/UNIFIED_NATIVE_WRITER_CONTINUATION_2026-10-25.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1034,7 +1037,7 @@
     "operational_acceptance": false
   },
   "unified_market_integration": {
-    "status": "SOURCE_DISPOSABLE_PERP_INCREMENT_VERIFIED_FULL_INTEGRATION_INCOMPLETE",
+    "status": "SOURCE_DISPOSABLE_NATIVE_WRITER_INCREMENT_VERIFIED_FULL_INTEGRATION_INCOMPLETE",
     "report": "docs/UNIFIED_MARKET_INTEGRATION_2026-10-25.md",
     "target": "docs/UNIFIED_PAPER_ACCOUNT_TARGET_V1.json",
     "quality_dips_capital": {
@@ -1077,5 +1080,36 @@
     "unified_durable_writers_complete": false,
     "operational_acceptance": false,
     "startup_authorized": false
+  },
+  "retained_before_native_writer_latest_tests": {
+    "passed": 476,
+    "failed": 0,
+    "skipped": 1,
+    "new_cases": 63,
+    "selection": "perp V2, public book/funding, FS1/FS2/FS3, epoch, autonomous engine, unified runtime, handoff, domain, PAPER policy, startup lock and funding history",
+    "not_executed": "True-symlink privilege unavailable (1314)",
+    "operational_acceptance": false
+  },
+  "perp_native_writer_increment": {
+    "status": "VERIFIED_SOURCE_DISPOSABLE_SUBSET_FULL_TASK_INCOMPLETE",
+    "report": "docs/UNIFIED_NATIVE_WRITER_INTEGRATION_2026-10-25.md",
+    "new_cases": 76,
+    "native_financial_interfaces_exercised": true,
+    "actual_two_strategy_assembly_complete": false,
+    "operational_perp_codec_complete": false,
+    "actual_perp_stop_coordinator_complete": false,
+    "operational_acceptance": false,
+    "startup_authorized": false
+  },
+  "retained_intermediate_native_writer_tests": {
+    "passed": 549,
+    "failed": 0,
+    "skipped": 1,
+    "new_cases": 73,
+    "selection": "21-file native writer/perp execution/recovery/report/unified/FS1-FS3/policy/startup regression",
+    "not_executed": "True-symlink privilege unavailable (1314)",
+    "separate_disjoint_operational_codec_passed": 14,
+    "distinct_passed_across_selections": 563,
+    "operational_acceptance": false
   }
 }

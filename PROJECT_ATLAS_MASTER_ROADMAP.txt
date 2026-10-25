@@ -13796,6 +13796,21 @@ Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Do
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
 === ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: Native writer read-only safety final
+Status: ACTIVE;full source integration INCOMPLETE;PAPER NO/production NO-GO
+Evidence: 552pass/0fail/1NOTEXECUTED +14disjoint=566;76new;no writer-lock/latch reads
+Next action: separate operational perp codec and actual QD/perp custody/Stop assembly;see exact continuation
+
+Milestone: Final native report-cut correction,2026-10-25
+Status:ACTIVE fulltaskINCOMPLETE;no authority.
+Evidence:549passed/0failed/1privilegeNOTEXECUTED+14disjointcodecpasses;73newcases;stale-cutoff/current-head falseclean repaired.
+Next action:docs/UNIFIED_NATIVE_WRITER_CONTINUATION_2026-10-25.md;actual two-lane/operational codec/custody/Stop source remains.All21 decisions/B1C1D1E1blocked/sevenphases unchanged;PAPERstartupNO;productionNO-GO.
+
+Milestone: Unified native writer/perp execution source increment, 2026-10-25
+Status: ACTIVE task still INCOMPLETE;no operational authority.
+Evidence:548passed/0failed/1 privilege NOT EXECUTED;14disjoint codec passes;72newcases. Existing FS1-FS3 IOC/maker/liquidation/tier/recovery/accrual and native writer/report/drain.
+Next action: Actual QD/perp assembly, operational perp codec/custody and Stop/session-report integration from docs/UNIFIED_NATIVE_WRITER_CONTINUATION_2026-10-25.md. All21 decisions/seven phases/B1C1D1E1 blocked unchanged;PAPERstartupNO;productionNO-GO.
+
 Milestone: Perpetual canonical V2 disposable increment, 2026-10-25
 Status: ACTIVE task INCOMPLETE; no operational authority.
 Evidence: 476 passed/0 failed/1 privilege NOT EXECUTED; 63 new cases; existing FS1 FS2 FS3 USDC cash/margin/funding/replay/audit/report and native crash tests. See docs/PERP_CANONICAL_FINANCIAL_INCREMENT_2026-10-25.md.

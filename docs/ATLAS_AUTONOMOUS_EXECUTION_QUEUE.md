@@ -364,3 +364,12 @@ Exactly one current ACTIVE task is preserved for source continuation; unfinished
 ## Perpetual canonical financial increment — 2026-10-25
 
 UNIFIED_PERP_FINANCIAL_COMPLETENESS remains ACTIVE, not VERIFIED. Existing FS1/FS2/FS3 USDC V2 disposable subset verified: 476 passed/0 failed/1 true-symlink NOT EXECUTED, 63 new cases. See PERP_CANONICAL_FINANCIAL_INCREMENT_2026-10-25.md. Maker/liquidation/tier/recovery authority and actual unified funding/mark/strategy writer custody remain incomplete. Exactly one ACTIVE; no false BLOCKED_WAIT. Next action: Extend existing perp V2 replay/audit with source-bound tier/collateral, maker/liquidation and partial-entry/recovery contracts; missing historical funding requires authenticated rate plus settlement-time oracle. Then serialize actual FUNDING/MARK and existing strategy writers through unified durable portfolio custody; preserve ENTRY risk refusal. See PERP_CANONICAL_FINANCIAL_CONTINUATION_2026-10-25.md. No real roots/inception/provider-gate installation/startup. All 21 decisions/seven phases unchanged; B1/C1/D1/E1 BLOCKED; PAPER startup NO; production NO-GO.
+
+
+## Unified native writer/perp execution increment — 2026-10-25
+
+UNIFIED_PERP_FINANCIAL_COMPLETENESS remains ACTIVE, not fully VERIFIED. 548 combined passes/0 failures/1 true-symlink NOT EXECUTED plus14 disjoint operational-codec passes;72 new cases. Existing-engine IOC/maker/book-liquidation/tier/recovery/accrual and native publication/ACK/report/drain tests verified. New native writer is DISPOSABLE_TEST only; real QD/perp planner assembly, operational perp codec, global custody and actual Stop remain unfinished. See UNIFIED_NATIVE_WRITER_INTEGRATION_2026-10-25.md and exact continuation. All21 decisions/seven phases/B1C1D1E1 BLOCKED unchanged; no real roots/inception/credentials/providers/startup. PAPER startup NO;production NO-GO.
+
+Final native report-cut verification supersedes the intermediate548 count:549 combinedpassed/0failed/1privilege NOT EXECUTED, plus14disjoint codecpasses=563distinctpasses;73newcases. Historical-report/current-head false-clean defect reproduced and repaired; exact source cutoff/current cash required. All decisions unchanged;task remains ACTIVE/source integration INCOMPLETE.
+
+Final read-only safety run supersedes549:552passed/0failed/1true-symlink NOT EXECUTED plus14disjoint codecpasses=566distinctpasses;76newcases. Source inspection avoids writer mutex/latch side effects and refuses changing pins. Task ACTIVE;actual integration remains incomplete;all gates unchanged.

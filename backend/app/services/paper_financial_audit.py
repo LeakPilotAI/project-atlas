@@ -9,6 +9,24 @@ from fractions import Fraction
 from app.services.paper_financial_replay import digest, number, strict, validate_manifest
 
 
+def _audit_maintenance(m, p):
+    value = p["mark"] * p["remaining"]
+    if "margin_policy" not in p:
+        return value * number(m["perp_policy"]["maintenance_rate"])
+    policy = p["margin_policy"]
+    rate, deduction, last = Fraction(0), Fraction(0), None
+    chosen = Fraction(0)
+    for tier in policy["tiers"]:
+        lower = number(tier["lower_bound"])
+        next_rate = Fraction(1, 2 * tier["max_leverage"])
+        if last is not None: deduction += Fraction(lower) * (next_rate - rate)
+        rate, last = next_rate, lower
+        if value >= lower: chosen = Fraction(value) * rate - deduction
+    q = number(policy["maintenance_quantum"])
+    units = chosen / Fraction(q)
+    return q * ((units.numerator + units.denominator - 1) // units.denominator)
+
+
 def audit_financial_events(manifest, records, snapshot):
     validate_manifest(manifest)
     with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)) as context:
@@ -23,9 +41,9 @@ def audit_financial_events(manifest, records, snapshot):
 
 def _audit_perp(m, records, snapshot):
     """Separate cash-flow derivation; never calls the financial transition."""
-    positions, operations, liquidity = {}, set(), {}
+    positions, operations, liquidity, funding_events, maker_orders = {}, set(), {}, [], {}
     cash = number(m["opening_cash"])
-    gross = fees = slip = funding = Decimal(0)
+    gross = fees = slip = funding = liquidation_fees = Decimal(0)
     risk_ratio = Fraction(0)
     parent, revision, clock = digest(m), 0, m["opened_at"]
     required = False
@@ -36,7 +54,9 @@ def _audit_perp(m, records, snapshot):
         c, r = strict(row["command"]), strict(row["receipt"])
         revision += 1
         ident = r["position_id"]
-        if (c["schema"] != "PAPER_PERP_COMMAND_V2" or r["schema"] != "PAPER_PERP_RECEIPT_V2"
+        recovery = c["schema"] == "PAPER_PERP_FUNDING_RECOVERY_V1"
+        maker = c["schema"] == "PAPER_PERP_MAKER_FILL_V1"
+        if (c["schema"] not in ("PAPER_PERP_COMMAND_V2", "PAPER_PERP_FUNDING_RECOVERY_V1", "PAPER_PERP_MARGIN_ENTRY_V1", "PAPER_PERP_MARGIN_MARK_V1", "PAPER_PERP_IOC_ENTRY_V1", "PAPER_PERP_IOC_MARGIN_ENTRY_V1", "PAPER_PERP_LIQUIDATION_V1", "PAPER_PERP_MAKER_FILL_V1") or r["schema"] != "PAPER_PERP_RECEIPT_V2"
                 or any(type(v) is not int for v in (row["revision"], c["expected_source_revision"], r["source_revision"], r["position_revision"], c["timestamp"]))
                 or row["revision"] != revision or c["expected_source_revision"] != revision - 1
                 or r["source_revision"] != revision or c["timestamp"] < clock
@@ -56,12 +76,28 @@ def _audit_perp(m, records, snapshot):
                     or any(p["origin"] == c["origin_ref"] for p in positions.values())):
                 raise ValueError("Independent original position mismatch")
             price = number(e["ask" if c["side"] == "LONG" else "bid"])
+            if maker: price = number(e["maker_execution"]["limit_price"])
             qty, lev = number(c["quantity"]), number(c["leverage"])
             positions[ident] = {"quantity": qty, "remaining": qty, "entry": price, "leverage": lev,
                                    "side": c["side"], "symbol": c["symbol"], "revision": 0, "margin": qty * price / lev,
                                    "risk": number(c["risk_price"]), "net": Decimal(0), "funding": Decimal(0), "remaining_funding": Decimal(0),
                                    "fees": Decimal(0), "slippage": Decimal(0), "next_funding": (clock // 3600 + 1) * 3600,
                                    "mark": number(e["mark"]), "mark_at": clock, "origin": c["origin_ref"]}
+            if c["schema"] in ("PAPER_PERP_MARGIN_ENTRY_V1", "PAPER_PERP_IOC_MARGIN_ENTRY_V1"):
+                positions[ident]["margin_policy"] = e["margin_policy"]
+            if maker or "margin_policy" in positions[ident]:
+                positions[ident]["margin_basis_price"] = max(price, number(e["mark"]))
+                positions[ident]["margin"] = qty * positions[ident]["margin_basis_price"] / lev
+            if c["schema"] in ("PAPER_PERP_IOC_ENTRY_V1", "PAPER_PERP_IOC_MARGIN_ENTRY_V1"):
+                proof = e["ioc"]
+                field = "ask" if c["side"] == "LONG" else "bid"
+                requested, step = number(proof["requested_quantity"]), number(proof["quantity_step"])
+                capacity = min(requested, number(e[field + "_size"]) * number(m["perp_policy"]["participation"]))
+                units = Fraction(capacity) / Fraction(step)
+                if (qty != step * (units.numerator // units.denominator) or number(proof["filled_quantity"]) != qty
+                        or number(proof["cancelled_quantity"]) != requested - qty):
+                    raise ValueError("Independent IOC fill/cancel mismatch")
+                positions[ident]["ioc"] = proof
         if ident not in positions:
             raise ValueError("Independent orphan position")
         p = positions[ident]
@@ -74,21 +110,41 @@ def _audit_perp(m, records, snapshot):
             buy = (p["side"] == "LONG") == (kind == "ENTRY")
             field = "ask" if buy else "bid"
             price = number(e[field])
+            if maker: price = number(e["maker_execution"]["limit_price"])
             if (not 0 < qty <= p["remaining"] or clock % 3600 == 0
                     or (kind == "EXIT" and p["next_funding"] <= clock)):
                 raise ValueError("Independent quantity/funding ordering mismatch")
             key = digest([p["symbol"], e["sequence"], field])
+            capacity = number(e[field + "_size"]) * number(m["perp_policy"]["participation"])
+            if maker:
+                proof = e["maker_execution"]
+                key = digest([p["symbol"], "MAKER_TRADE", proof["source_ref"]])
+                capacity = (number(proof["traded_quantity"]) - number(proof["queue_ahead"])) * number(m["perp_policy"]["participation"])
+                if proof["order_id"] in maker_orders or qty != number(proof["filled_quantity"]) or number(proof["requested_quantity"]) != qty + number(proof["cancelled_quantity"]):
+                    raise ValueError("Independent maker order/fill mismatch")
+                maker_orders[proof["order_id"]] = digest(c)
             used = liquidity.get(key, {"digest": digest(e), "quantity": "0"})
             total = number(used["quantity"]) + qty
-            if used["digest"] != digest(e) or total > number(e[field + "_size"]) * number(m["perp_policy"]["participation"]):
+            if used["digest"] != digest(e) or total > capacity:
                 raise ValueError("Independent reused liquidity")
             liquidity[key] = {"digest": digest(e), "quantity": str(total)}
-            f = qty * price * number(m["perp_policy"]["taker_bps"]) / 10000
+            f = qty * price * number(m["perp_policy"]["maker_bps"] if maker else m["perp_policy"]["taker_bps"]) / 10000
+            if c["schema"] == "PAPER_PERP_LIQUIDATION_V1":
+                proof = e["liquidation"]
+                trigger = number(proof["trigger_mark"])
+                observed_equity = p["margin"] + p["remaining_funding"] + (trigger - p["entry"]) * p["remaining"] * (1 if p["side"] == "LONG" else -1)
+                required = _audit_maintenance(m, {**p, "mark": trigger})
+                if number(proof["maintenance"]) != required or number(proof["equity"]) != observed_equity or observed_equity > required:
+                    raise ValueError("Independent liquidation trigger mismatch")
+                penalty = qty * price * number(proof["fee_bps"]) / 10000
+                f += penalty
+                liquidation_fees += penalty
+                p["liquidation_fees"] = p.get("liquidation_fees", Decimal(0)) + penalty
             sl = qty * price * number(m["perp_policy"]["slippage_bps"]) / 10000
             gain = Decimal(0)
             if kind == "EXIT":
                 gain = (price - p["entry"]) * qty * (1 if p["side"] == "LONG" else -1)
-                p["margin"] -= p["margin"] if qty == p["remaining"] else qty * p["entry"] / p["leverage"]
+                p["margin"] -= p["margin"] if qty == p["remaining"] else qty * p.get("margin_basis_price", p["entry"]) / p["leverage"]
                 p["remaining_funding"] = Decimal(0) if qty == p["remaining"] else p["remaining_funding"] * (p["remaining"] - qty) / p["remaining"]
                 p["remaining"] -= qty
             change = gain - f - sl
@@ -100,15 +156,22 @@ def _audit_perp(m, records, snapshot):
             p.update(mark=number(e["mark"]), mark_at=clock)
         elif kind == "FUNDING":
             if (e["settlement_at"] != p["next_funding"] or e["interval_seconds"] != 3600
-                    or not e["settlement_at"] <= clock <= e["settlement_at"] + 30):
+                    or not e["settlement_at"] <= clock or not recovery and clock > e["settlement_at"] + 30):
                 raise ValueError("Independent funding cut mismatch")
+            if recovery and (number(c["recovery"]["quantity"]) != p["remaining"]
+                             or c["recovery"]["evidence_digest"] != digest(e)
+                             or c["recovery"]["accepted_at"] != clock):
+                raise ValueError("Independent recovery quantity/evidence mismatch")
             change = p["remaining"] * number(e["oracle"]) * number(e["rate"]) * (-1 if p["side"] == "LONG" else 1)
+            funding_events.append({"position_id": ident, "settlement_at": e["settlement_at"],
+                                   "posted_at": clock, "cash": str(change)})
             funding += change
             p["funding"] += change
             p["remaining_funding"] += change
             p["next_funding"] += 3600
         elif kind == "MARK":
             p.update(mark=number(e["mark"]), mark_at=clock)
+            if c["schema"] == "PAPER_PERP_MARGIN_MARK_V1": p["margin_policy"] = e["margin_policy"]
         else:
             raise ValueError("Independent unknown perpetual event")
         p["revision"] += 1
@@ -124,10 +187,13 @@ def _audit_perp(m, records, snapshot):
     expected = {"cash": cash, "gross": gross, "fees": fees, "slippage": slip, "costs": fees + slip,
                     "funding": funding, "net": gross + funding - fees - slip, "net_r": net_r,
                     "reserved_margin": margin, "available_cash": cash - margin}
+    if any("liquidation_fees" in p for p in positions.values()): expected["liquidation_fees"] = liquidation_fees
     if snapshot is None:
         # Reporting auditor consumes independently derived facts, never the
         # transition state or a report's asserted balances.
-        return {"totals": expected, "positions": positions}
+        return {"totals": expected, "positions": positions, "funding_events": funding_events}
+    if snapshot.get("maker_orders", {}) != maker_orders:
+        raise ValueError("Independent maker order inventory mismatch")
     if (snapshot["net_r_fraction"] != {"numerator": str(risk_ratio.numerator), "denominator": str(risk_ratio.denominator)}
             or snapshot["net_r_display_only"] is not True):
         raise ValueError("Independent exact risk fraction mismatch")
@@ -138,17 +204,25 @@ def _audit_perp(m, records, snapshot):
     live = [p for p in positions.values() if p["remaining"] > 0]
     current = all(p["mark_at"] == clock for p in live)
     unrealized = sum(((p["mark"] - p["entry"]) * p["remaining"] * (1 if p["side"] == "LONG" else -1) for p in live), Decimal(0))
-    maintenance = sum((p["remaining"] * p["mark"] * number(m["perp_policy"]["maintenance_rate"]) for p in live), Decimal(0))
+    maintenance = sum((_audit_maintenance(m, p) for p in live), Decimal(0))
     values = {"unrealized": unrealized, "maintenance_margin": maintenance, "margin_equity": cash + unrealized}
     if any((snapshot[k] is not None if not current else number(snapshot[k]) != v) for k, v in values.items()):
         raise ValueError("Independent perpetual valuation mismatch")
     warning = any(p["margin"] + p["remaining_funding"] + (p["mark"] - p["entry"]) * p["remaining"] * (1 if p["side"] == "LONG" else -1)
-                  <= p["mark"] * p["remaining"] * number(m["perp_policy"]["maintenance_rate"]) for p in live)
+                  <= _audit_maintenance(m, p) for p in live)
     if (snapshot["margin_warning"] is not (warning if current else None)
             or snapshot["valuation_state"] != ("CURRENT_SYNTHETIC_MARK" if current else "UNAVAILABLE")):
         raise ValueError("Independent margin warning mismatch")
     for ident, p in positions.items():
         actual = snapshot["positions"][ident]
+        if actual.get("margin_policy") != p.get("margin_policy"):
+            raise ValueError("Independent margin policy substitution")
+        if actual.get("ioc") != p.get("ioc"):
+            raise ValueError("Independent IOC remainder substitution")
+        if ("margin_basis_price" in p) != ("margin_basis_price" in actual) or "margin_basis_price" in p and number(actual["margin_basis_price"]) != p["margin_basis_price"]:
+            raise ValueError("Independent initial margin basis mismatch")
+        if ("liquidation_fees" in p) != ("liquidation_fees" in actual) or "liquidation_fees" in p and number(actual["liquidation_fees"]) != p["liquidation_fees"]:
+            raise ValueError("Independent liquidation fee mismatch")
         fields = {"quantity": p["quantity"], "remaining": p["remaining"], "entry": p["entry"], "margin": p["margin"],
                       "leverage": p["leverage"], "entry_notional": p["quantity"] * p["entry"], "risk_price": p["risk"],
                       "realized_net": p["net"], "funding": p["funding"], "remaining_funding": p["remaining_funding"], "fees": p["fees"], "slippage": p["slippage"], "mark": p["mark"]}
@@ -162,7 +236,7 @@ def _audit_perp(m, records, snapshot):
         gain = (p["mark"] - p["entry"]) * p["remaining"] * (1 if p["side"] == "LONG" else -1)
         values = {"marked_notional": p["mark"] * p["remaining"],
                   "margin_equity": p["margin"] + p["remaining_funding"] + gain,
-                  "maintenance_margin": p["mark"] * p["remaining"] * number(m["perp_policy"]["maintenance_rate"])}
+                  "maintenance_margin": _audit_maintenance(m, p)}
         if any((actual[k] is not None if not fresh else number(actual[k]) != v) for k, v in values.items()):
             raise ValueError("Independent position mark/risk mismatch")
     return {"schema": "PAPER_PERP_ARITHMETIC_AUDIT_V2", "source_revision": revision, "position_count": len(positions),
