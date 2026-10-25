@@ -13796,6 +13796,12 @@ Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Do
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
 === ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: D_DIRECTORY_VERIFY_ONLY_RECONCILIATION_V1
+Status: VERIFIED_CURRENT_STATE;notindependentacceptance;all21decisionsunchanged;PAPERstartupNO;productionNO-GO.
+Evidence:10namedWindows/13nativeexistingdirectorychecks pass;71regressionpass0fail0skip;558sourceaudit0issues;historicalfailurepreserved;no completionmanifest. See docs/D_DIRECTORY_VERIFY_ONLY_RECONCILIATION_2026-10-24.md
+Next action: Do not rerun directory creation. Separately authorize source-only minimal one-time operational publisher using existing financial replay and explicitly accepted issuer/current/clock interfaces. Real genesis publication needs independent B1/C1/D1 evidence and distinct explicitpermission;bridgeinstall/read-onlylaunch/E1provider/PAPER remain gated.
+Retained prior checkpoint (verbatim):
+
 Milestone: D_DIRECTORY_PROVISIONING_RECOVERY_V1
 Status: PARTIAL_UNACCEPTED;13dirscreated;finalpostflightFAILED;B1/C1/D1/E1BLOCKED;PAPERstartupNO;productionNO-GO.
 Evidence:13nativecreation/reopenchecks;117regressionspass0fail0skip;originalfailedsnapshotunretained,stop/no repair. See docs/D_DIRECTORY_PROVISIONING_RECOVERY_2026-10-24.md

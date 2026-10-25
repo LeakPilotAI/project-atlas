@@ -277,3 +277,8 @@ D_DIRECTORY_PROVISIONING_V1 BLOCKED_PREFLIGHT;Get-Aclmoduleloadfailed beforeepoc
 ## D: real provisioning recovery - 2026-10-24
 
 D_DIRECTORY_PROVISIONING_RECOVERY_V1 PARTIAL_UNACCEPTED;13dirscreated/nativeverified;modulepathrepaired. FinalpostflightassertionFAILED;stopped/norepair.13read-onlyreopens/currentpostflightpassbutoriginalsnapshotunretained;no completionmanifest/financialpublication.117regressionspass0fail0skip NOTcompleteacceptance. See D_DIRECTORY_PROVISIONING_RECOVERY_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT foroperatorresumeVERIFY-ONLYexistingidentities/postflight,notcreationretry. All21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.
+
+
+## Verify-only existing D: directory reconciliation - 2026-10-24
+
+D_DIRECTORY_VERIFY_ONLY_RECONCILIATION_V1 VERIFIED_CURRENT_STATE;10namedWindows/13nativeexistingdirectorychecks pass;exactoriginalidentities/ACL/namespace;financialrolesEMPTY. Historicalpostflightfailurepreserved,notreconstructed.71regressionpass0fail0skip;558sourceaudit0issues;no completionmanifest/creation/publication/startup. See D_DIRECTORY_VERIFY_ONLY_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT for separatepublisherimplementationpermission/independentB1C1D1 evidence;all21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.

@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "D_ONLY_SINGLE_ACCOUNT_DEPLOYMENT_V1",
+  "last_verified_task": "D_DIRECTORY_VERIFY_ONLY_RECONCILIATION_V1",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,18 +9,18 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 117,
+    "passed": 71,
     "failed": 0,
     "skipped": 0,
-    "selection": "68policy+46bootstrap+3lock fresh regression",
-    "actual_provisioning_postflight_failures_separate": 1,
-    "actual_directory_native_read_checks": 13,
+    "selection": "68policy+3productionlock",
+    "real_windows_named_checks_passed_separate": 10,
+    "native_existing_directory_checks_passed_separate": 13,
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Operator resume for VERIFY-ONLY postflight reconciliation of existing13directories/privateauditedidentities;retain everycheckvalue and explicitlyresolve originalunretainedtransientmismatch. Neverreruncreation/adopt/repair/delete. Financialpublication/issuer/custody/startup remain separatelygated.",
+  "exact_next_action": "Do not rerun directory creation. Separately authorize source-only minimal one-time operational publisher using existing financial replay and explicitly accepted issuer/current/clock interfaces. Real genesis publication needs independent B1/C1/D1 evidence and distinct explicitpermission;bridgeinstall/read-onlylaunch/E1provider/PAPER remain gated.",
   "latest_focused_tests": {
-    "passed": 117,
+    "passed": 71,
     "failed": 0,
     "skipped": 0,
     "overlap_combined": true
@@ -91,11 +91,12 @@
     "LOCAL_FINANCIAL_STORAGE_SELECTION_V1": "VERIFIED read-only:distinct C:disk0/D:disk1 NTFSdevices;recommend C: newprotectedfinancialroots conditionally;proposedparentsabsent/reliabilitydetaildenied. No provisioning/acceptance/behavior tests.",
     "D_ONLY_SINGLE_ACCOUNT_DEPLOYMENT_V1": "VERIFIED sourcepolicy/runbook:117combinedpass0fail0skip15new;D:only/existingaccount,noroot/projectACLchanges;C:proposalretainedashistory. Sameaccount/shareddevicecustodyrisksUNRESOLVED;no provisioning/acceptance/startup.",
     "D_DIRECTORY_PROVISIONING_V1": "BLOCKED_PREFLIGHT:WindowsPowerShell Get-Acl moduleloadfailed beforeepochallocation/firstcreate.0directories/ACLchanges/financialrecords;followuprootsabsent;no operationalretry.117source regressionspass0fail0skip,notnativeprovisioningacceptance.",
-    "D_DIRECTORY_PROVISIONING_RECOVERY_V1": "PARTIAL_UNACCEPTED:module-resolution repaired,13actualdirectoriescreated/nativeverified;finalpostflightFAILEDandstopped.13read-onlyreopens/currentpostflightpassbutoriginalmismatchunresolved;noauditcompletion/financialpublication.117regressionspass0fail0skip;allgatesunchanged."
+    "D_DIRECTORY_PROVISIONING_RECOVERY_V1": "PARTIAL_UNACCEPTED:module-resolution repaired,13actualdirectoriescreated/nativeverified;finalpostflightFAILEDandstopped.13read-onlyreopens/currentpostflightpassbutoriginalmismatchunresolved;noauditcompletion/financialpublication.117regressionspass0fail0skip;allgatesunchanged.",
+    "D_DIRECTORY_VERIFY_ONLY_RECONCILIATION_V1": "VERIFIED_CURRENT_STATE:10namedrealWindowsassertions/13nativeexisting-onlydirectorychecks pass,exactcreationidentities/ACL/namespace,financialrolesempty. Historicalfailureunchanged;no completionmanifest/publication/startup.71regressionspass0fail0skip;558sourceaudit0issues."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 57,
-  "continuation_report": "docs/D_DIRECTORY_PROVISIONING_RECOVERY_CONTINUATION_2026-10-24.md",
+  "progress_revision": 58,
+  "continuation_report": "docs/D_DIRECTORY_VERIFY_ONLY_CONTINUATION_2026-10-24.md",
   "blocked_wait_reason": "Independent reviewers/custody mechanisms and actual B1/C1/D1/E1 acceptance unavailable;no provisioning/startup permission;all eligible source-only policy work complete.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
@@ -203,7 +204,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/D_DIRECTORY_PROVISIONING_RECOVERY_CONTINUATION_2026-10-24.md",
+  "recovery_checkpoint": "docs/D_DIRECTORY_VERIFY_ONLY_CONTINUATION_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -241,7 +242,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/D_DIRECTORY_PROVISIONING_RECOVERY_CONTINUATION_2026-10-24.md",
+  "recovery_document": "docs/D_DIRECTORY_VERIFY_ONLY_CONTINUATION_2026-10-24.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -649,6 +650,26 @@
   },
   "last_attempted_task": "D_DIRECTORY_PROVISIONING_RECOVERY_V1",
   "directory_provisioning": {
+    "status": "VERIFIED_CURRENT_STATE",
+    "report": "docs/D_DIRECTORY_VERIFY_ONLY_RECONCILIATION_2026-10-24.md",
+    "release_identifier": "1cbf5d4d94f6f60f17b7b4b25dd6d434ddf67e43",
+    "epoch_allocated": true,
+    "epoch_identity": "PRIVATE_LOCAL_AUDIT_ONLY",
+    "directories_created": 13,
+    "creation_acl_identity_checks_passed": 13,
+    "read_only_reopen_checks_passed": 13,
+    "actual_postflight_failures": 1,
+    "original_failed_post_snapshot_available": false,
+    "financial_role_directories_empty": true,
+    "completion_manifest_published": false,
+    "financial_publication": false,
+    "startup_authorized": false,
+    "current_named_assertions_passed": 10,
+    "current_native_directory_checks_passed": 13,
+    "historical_postflight_failure_preserved": true,
+    "independent_acceptance": false
+  },
+  "retained_directory_provisioning_attempt": {
     "status": "INCOMPLETE_POSTFLIGHT_UNACCEPTED",
     "report": "docs/D_DIRECTORY_PROVISIONING_RECOVERY_2026-10-24.md",
     "release_identifier": "1cbf5d4d94f6f60f17b7b4b25dd6d434ddf67e43",
