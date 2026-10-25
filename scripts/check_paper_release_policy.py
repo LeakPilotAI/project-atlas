@@ -87,6 +87,87 @@ def check_local_paper_proposal(value):
         raise ValueError('LOCAL_PAPER_PROPOSAL_SCOPE_MISMATCH')
 
 
+def check_autonomous_paper_proposal(value):
+    """Design-proposal checks only; not an execution policy or authority issuer."""
+    fields = {'schema', 'profile_id', 'status', 'supersedes', 'target_authority', 'runtime_consumable',
+              'startup_authorized', 'financial_publication_authorized', 'provider_connection_authorized',
+              'canonical_gate_changes', 'strict_profile_unchanged', 'architecture_reference',
+              'security_reduction_reference', 'account', 'automation', 'essential_controls', 'l1_contract',
+              'simulation', 'pipeline', 'acceptance_required', 'trial_progress'}
+    if (type(value) is not dict or set(value) != fields
+            or value['schema'] != 'ATLAS_AUTONOMOUS_PAPER_PROPOSAL_V1'
+            or value['profile_id'] != 'AUTONOMOUS_PAPER_ONLY_V1'
+            or value['status'] != 'PROPOSED_NOT_ACCEPTED' or value['supersedes'] != 'LOCAL_SUPERVISED_PAPER_V1'
+            or value['target_authority'] != 'EXPLICIT_OPERATOR_DESIGN_REQUIREMENT_NOT_OPERATIONAL_ACCEPTANCE'
+            or value['strict_profile_unchanged'] is not True
+            or type(value['canonical_gate_changes']) is not int or value['canonical_gate_changes'] != 0
+            or any(value[k] is not False for k in ('runtime_consumable', 'startup_authorized',
+                                                  'financial_publication_authorized', 'provider_connection_authorized'))):
+        raise ValueError('AUTONOMOUS_PROPOSAL_NOT_RUNTIME_AUTHORITY')
+    account = {k: ACCOUNT[k] for k in ('strategy', 'currency', 'hypothetical_opening_cash', 'max_open_positions',
+               'universe', 'long_only', 'scale_in', 'fractional_if_supported', 'overnight_allowed',
+               'legacy_adoption', 'fees_bps_per_side', 'slippage_bps_per_side')}
+    account.update(max_entry_notional_usd='100', force_end_of_day_liquidation=False, borrowing=False, leverage=False)
+    automation = {'session_authorization': 'EXPLICIT_OPERATOR_SCOPED_BOUNDED_SESSION', 'per_trade_confirmation': False,
+        **dict.fromkeys(('automatic_discovery', 'automatic_ranking', 'automatic_entries', 'automatic_position_management',
+                        'automatic_partial_full_exits', 'automatic_risk_enforcement', 'automatic_financial_recording',
+                        'automatic_reconciliation'), True),
+        'global_pause': 'CLOSE_NEW_ENTRY_ADMISSION_KEEP_VALID_RISK_MANAGEMENT',
+        'global_stop': 'CLOSE_ENTRY_ADMISSION_HALT_NEW_DISPATCH_DRAIN_RECONCILE_PRESERVE_POSITIONS',
+        'resume': 'NEW_EXPLICIT_SESSION_AUTHORIZATION', 'end_of_day': 'PRESERVE_OPEN_POSITIONS_NO_FORCED_LIQUIDATION'}
+    for field, expected in (('account', account), ('automation', automation)):
+        if json.dumps(value[field], sort_keys=True) != json.dumps(expected, sort_keys=True):
+            raise ValueError('AUTONOMOUS_TARGET_OR_RISK_LIMIT_CHANGED')
+    lists = {
+        'essential_controls': {'NATIVE_IDENTITY_EXACT_ACL', 'APPEND_ONLY_DURABLE_EVIDENCE', 'SINGLE_INCEPTION_NO_REPLAY',
+            'UNKNOWN_BLOCKS_EFFECTS', 'EXACT_ACCOUNTING', 'STARTUP_RECOVERY_INTEGRITY', 'OWNED_SHUTDOWN_RESTART',
+            'FRESH_DATA_OR_REFUSAL', 'NO_REAL_ORDER_EXECUTION', 'SESSION_AUTHORITY_NO_PER_TRADE_PROMPTS',
+            'ENTITLEMENT_BOUND_L1', 'GLOBAL_STOP_PAUSE'},
+        'acceptance_required': {'FORMAL_AUTONOMOUS_PROFILE_SCOPED_GOVERNANCE_DISPOSITION',
+            'OPERATOR_SESSION_AND_LOCAL_SECURITY_RISK_ACKNOWLEDGEMENT', 'REVIEWED_AUTONOMOUS_ROUTING_AND_RISK_ACCEPTANCE',
+            'EXPLICIT_FINANCIAL_PUBLICATION_PERMISSION', 'PROVIDER_RIGHTS_AND_CONNECTION_PERMISSION',
+            'EXPLICIT_SUPERVISED_AUTONOMOUS_PAPER_START_PERMISSION'},
+    }
+    for field, entries in lists.items():
+        items = value[field]
+        if type(items) is not list or any(type(v) is not str for v in items) or len(items) != len(entries) or set(items) != entries:
+            raise ValueError('AUTONOMOUS_CONTROL_OR_ACCEPTANCE_MISSING')
+    l1 = value['l1_contract']; simulation = value['simulation']
+    if (type(l1) is not dict or l1.get('proposal_schema') != 'QD_L1_EVIDENCE_PROPOSAL_V1'
+            or set(l1) != {'proposal_schema', 'required_fields', 'missing_optional_source_fields', 'no_size_evidence',
+                           'freshness_spread_and_size_limits', 'display'}
+            or l1.get('required_fields') != ['provider_id', 'feed_id', 'entitlement_id', 'feed_scope', 'delay_status', 'instrument_id', 'asset_class',
+                'currency', 'bid', 'ask', 'source_timestamp', 'received_timestamp', 'sequence_or_dedup_identity',
+                'session', 'exchange_calendar_identity', 'market_status', 'connection_status', 'size_units', 'bid_size', 'ask_size']
+            or l1.get('missing_optional_source_fields') != 'UNAVAILABLE_NOT_FABRICATED'
+            or l1.get('no_size_evidence') != 'DISPLAY_IF_AUTHORIZED_NO_SIMULATED_FILL'
+            or l1.get('freshness_spread_and_size_limits') != 'ACCEPTED_PARAMETERS_REQUIRED_NO_SILENT_DEFAULT'
+            or l1.get('display') != 'OBSERVED_L1_SEPARATE_FROM_HYPOTHETICAL_FILLS'
+            or type(simulation) is not dict or simulation.get('entry_reference') != 'ASK' or simulation.get('exit_reference') != 'BID'
+            or set(simulation) != {'model', 'entry_reference', 'exit_reference', 'fees', 'slippage', 'double_count_costs',
+                                  'liquidity', 'initial_execution_session', 'no_fill_on', 'unknown_effect'}
+            or simulation.get('model') != 'PROPOSED_VERSIONED_TOP_OF_BOOK_NO_REAL_EXECUTION'
+            or simulation.get('double_count_costs') is not False
+            or simulation.get('fees') != '2_BPS_EACH_SIDE_REFERENCE_NOTIONAL'
+            or simulation.get('slippage') != '2_BPS_EACH_SIDE_REFERENCE_NOTIONAL_SEPARATE_COST'
+            or simulation.get('liquidity') != 'VERIFIED_SIZE_UNITS_AND_ACCEPTED_PARTICIPATION_CAP_REQUIRED'
+            or simulation.get('unknown_effect') != 'BLOCK_REPLAY_AND_NEW_EFFECTS_RECONCILE_ONLY'
+            or simulation.get('initial_execution_session') != 'REGULAR_ONLY_EXTENDED_DISPLAY_IF_LICENSED'
+            or simulation.get('no_fill_on') != ['STALE_OR_MISSING_QUOTE', 'MISSING_OR_AMBIGUOUS_SIZE', 'DISCONNECTED_FEED',
+                'CROSSED_OR_INVALID_QUOTE', 'MARKET_CLOSED', 'HALTED_OR_UNKNOWN_STATUS', 'CLOCK_UNCERTAINTY',
+                'UNACCEPTED_INSTRUMENT', 'RISK_OR_CASH_REFUSAL', 'UNKNOWN_PRIOR_EFFECT']):
+        raise ValueError('L1_SIMULATION_EVIDENCE_OR_REFUSAL_REQUIRED')
+    if (value['architecture_reference'] != 'ATLAS_DEPLOYMENT_POLICY.json#local_layout'
+            or value['security_reduction_reference'] != 'LOCAL_SUPERVISED_PAPER_PROFILE_PROPOSAL_V1.json#reduced_assurances'
+            or value['pipeline'] != ['MARKET_DATA', 'CANDIDATE_RANKING', 'SIGNAL_VALIDATION', 'RISK_ADMISSION',
+                'SIMULATED_EXECUTION', 'IMMUTABLE_LEDGER', 'POSITION_MANAGEMENT', 'AUTOMATED_EXITS',
+                'RECONCILIATION', 'ORIGINAL_DASHBOARD']
+            or json.dumps(value['trial_progress'], sort_keys=True) != json.dumps(
+                {'authorized_days': 0, 'seven_day_target': 7, 'extended_sessions': 0,
+                 'extended_target_min': 30, 'extended_target_max': 60}, sort_keys=True)):
+        raise ValueError('AUTONOMOUS_PROPOSAL_SCOPE_OR_TRIAL_CHANGED')
+
+
 def normalized(value):
     return re.sub('[^a-z0-9]', '', value.lower())
 
@@ -229,6 +310,7 @@ if __name__ == '__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.parse_args()
     check_local_paper_proposal(json.loads((ROOT/'docs/LOCAL_SUPERVISED_PAPER_PROFILE_PROPOSAL_V1.json').read_text()))
+    check_autonomous_paper_proposal(json.loads((ROOT/'docs/AUTONOMOUS_PAPER_ONLY_PROFILE_PROPOSAL_V1.json').read_text()))
     result=audit()
     print(json.dumps(result,indent=2))
     raise SystemExit(bool(result['issues']))

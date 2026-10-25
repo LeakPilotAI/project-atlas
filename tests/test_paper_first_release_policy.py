@@ -183,3 +183,48 @@ def test_local_profile_is_not_an_operational_policy_replacement():
 def test_local_profile_trial_counters_do_not_coerce_booleans():
     proposal=local_proposal();proposal['trial_progress']['authorized_days']=False
     with pytest.raises(ValueError):m.check_local_paper_proposal(proposal)
+
+
+def autonomous_proposal():
+    return json.loads((ROOT/'docs/AUTONOMOUS_PAPER_ONLY_PROFILE_PROPOSAL_V1.json').read_text())
+
+
+def test_autonomous_target_proposed_strict_contract_unchanged():
+    from app.investment.quality_dips_operational_contract import validate_enrollment
+    proposal=autonomous_proposal();m.check_autonomous_paper_proposal(proposal)
+    assert proposal['automation']['per_trade_confirmation'] is False
+    assert proposal['automation']['automatic_partial_full_exits'] is True
+    with pytest.raises(ValueError):validate_enrollment(proposal)
+    _p,d=policies()
+    with pytest.raises(ValueError):m.check_policy(proposal,d)
+    m.check_local_paper_proposal(local_proposal())
+
+
+@pytest.mark.parametrize('field,value',[
+    ('startup_authorized',True),('financial_publication_authorized',True),('provider_connection_authorized',True),
+    ('runtime_consumable',True),('status','ACCEPTED'),('canonical_gate_changes',1),('strict_profile_unchanged',False),
+])
+def test_autonomous_proposal_cannot_authorize_itself(field,value):
+    p=autonomous_proposal();p[field]=value
+    with pytest.raises(ValueError):m.check_autonomous_paper_proposal(p)
+
+
+@pytest.mark.parametrize('section,field,value',[
+    ('account','max_entry_notional_usd','101'),('account','max_open_positions',2),('account','borrowing',True),
+    ('account','leverage',True),('account','scale_in',True),('account','force_end_of_day_liquidation',True),
+    ('automation','per_trade_confirmation',True),('automation','automatic_entries',False),
+    ('automation','automatic_partial_full_exits',False),('automation','global_stop','LIQUIDATE_AND_RESET'),
+    ('automation','session_authorization','NONE'),('simulation','double_count_costs',True),
+    ('simulation','unknown_effect','REPLAY'),('simulation','entry_reference','LAST_PRICE'),
+    ('l1_contract','no_size_evidence','INVENT_LIQUIDITY'),('l1_contract','required_fields',[]),
+    ('trial_progress','authorized_days',1),('trial_progress','authorized_days',False),
+])
+def test_autonomous_target_safety_and_evidence_cannot_silently_change(section,field,value):
+    p=autonomous_proposal();p[section][field]=value
+    with pytest.raises(ValueError):m.check_autonomous_paper_proposal(p)
+
+
+@pytest.mark.parametrize('field',['essential_controls','acceptance_required'])
+def test_autonomous_required_controls_cannot_be_omitted(field):
+    p=autonomous_proposal();p[field].pop()
+    with pytest.raises(ValueError):m.check_autonomous_paper_proposal(p)
