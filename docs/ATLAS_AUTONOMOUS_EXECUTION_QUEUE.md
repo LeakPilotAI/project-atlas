@@ -267,3 +267,8 @@ LOCAL_FINANCIAL_STORAGE_SELECTION_V1 VERIFIEDREADONLY;C:disk0/D:disk1distinctNTF
 ## Final D:-only existing-account deployment - 2026-10-24
 
 D_ONLY_SINGLE_ACCOUNT_DEPLOYMENT_V1 VERIFIEDSOURCEPOLICY/RUNBOOK;117pass0fail0skip15new,558runtimefiles0issues. D:only/existingaccount;priorC:recommendationhistorical. Noprovisioning/root-projectACLchanges. See D_ONLY_SINGLE_ACCOUNT_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT forindependentthreatmodel/issuer/custody/clock/recovery andB1C1D1E1evidence;all21decisions/7phasespreserved;PAPERstartupNO;productionNO-GO.
+
+
+## D: actual directory provisioning attempt - 2026-10-24
+
+D_DIRECTORY_PROVISIONING_V1 BLOCKED_PREFLIGHT;Get-Aclmoduleloadfailed beforeepoch/firstcreate.0dirs/ACLchanges/financialrecords;rootsconfirmedabsent;nooperationalretry.117isolatedregressionpass0fail0skip NOTprovisioningacceptance. See D_DIRECTORY_PROVISIONING_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT for correcteddiagnostichost/read-onlypreflight/operatorresume;all21decisions/7phases/productionrefusalpreserved.
