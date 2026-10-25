@@ -262,3 +262,8 @@ EXTERNAL_DRIVE_READINESS_V1 VERIFIEDREADONLY;NTFS/coarseHealthy,745GiBfree,broad
 ## Local financial storage selection - 2026-10-24
 
 LOCAL_FINANCIAL_STORAGE_SELECTION_V1 VERIFIEDREADONLY;C:disk0/D:disk1distinctNTFSdevices. RecommendC:newfinancial/runtime roots conditionally;proposedparentsabsent,healthdetailDENIED. No provisioning/authority/startupacceptance. See LOCAL_FINANCIAL_STORAGE_SELECTION_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT for location/principaldecision,namedreviewers/custodians and separatelyauthorizedpublisher/provisioning/nativeacceptance/install/launch. All21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.
+
+
+## Final D:-only existing-account deployment - 2026-10-24
+
+D_ONLY_SINGLE_ACCOUNT_DEPLOYMENT_V1 VERIFIEDSOURCEPOLICY/RUNBOOK;117pass0fail0skip15new,558runtimefiles0issues. D:only/existingaccount;priorC:recommendationhistorical. Noprovisioning/root-projectACLchanges. See D_ONLY_SINGLE_ACCOUNT_CONTINUATION_2026-10-24.md. ZeroACTIVE/BLOCKED_WAIT forindependentthreatmodel/issuer/custody/clock/recovery andB1C1D1E1evidence;all21decisions/7phasespreserved;PAPERstartupNO;productionNO-GO.

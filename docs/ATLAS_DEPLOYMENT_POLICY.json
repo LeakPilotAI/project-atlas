@@ -5,7 +5,7 @@
   "deployment": "SINGLE_USER_WINDOWS_LOCAL",
   "frontend": "LOCAL_EXISTING_ALIEN_THEME",
   "backend": "LOCAL_LOOPBACK_ONLY",
-  "financial_storage": "LOCAL_WINDOWS_ACCEPTED_RESOURCES_ONLY",
+  "financial_storage": "D_ONLY_ACCEPTED_CHILD_RESOURCES_CURRENT_WINDOWS_ACCOUNT",
   "execution": "LOCAL_WINDOWS_ONLY",
   "vps_allowed": false,
   "cloud_hosting_allowed": false,
@@ -40,5 +40,23 @@
   "paper_to_live_promotion_allowed": false,
   "live_toggle_or_dormant_path_allowed": false,
   "legacy_live_code_disposition": "RETAIN_UNACTIVATED_NO_SILENT_REWRITE",
-  "future_live_phase": "NEW_EXPLICIT_OPERATOR_DECISION_AND_SEPARATE_IMPLEMENTATION_AUTHORIZATION_REQUIRED"
+  "future_live_phase": "NEW_EXPLICIT_OPERATOR_DECISION_AND_SEPARATE_IMPLEMENTATION_AUTHORIZATION_REQUIRED",
+  "local_layout": {
+    "schema": "ATLAS_D_ONLY_SINGLE_ACCOUNT_V1",
+    "deployment_drive": "D:",
+    "windows_identity": "EXISTING_CURRENT_ACCOUNT",
+    "additional_windows_accounts_allowed": false,
+    "c_deployment_allowed": false,
+    "development_root": "D:/Work/Project Atlas",
+    "runtime_root": "D:/AtlasRuntime/releases/<accepted-release-sha>",
+    "financial_root": "D:/AtlasPaper/QualityDips/<accepted-epoch>",
+    "control_root": "D:/AtlasPaper/QualityDips/<accepted-epoch>/control",
+    "custody_root": "D:/AtlasCustody/QualityDips/<accepted-epoch>",
+    "custody_independence_established": false,
+    "backup_independence_established": false,
+    "drive_root_acl_change_allowed": false,
+    "project_acl_change_allowed": false,
+    "provisioning_authorized": false
+  },
+  "historical_storage_recommendations": "C_RECOMMENDATION_SUPERSEDED_BY_EXPLICIT_D_ONLY_OPERATOR_DECISION_HISTORY_RETAINED"
 }

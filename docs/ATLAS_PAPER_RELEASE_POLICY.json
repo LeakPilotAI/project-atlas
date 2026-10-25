@@ -113,5 +113,6 @@
   },
   "retained_legacy_safety_guards": {
     "backend/app/prediction/policy.py": "5ed08a67bb2eb8787cf5e5c91fe82ada294875cd8df7304cfa96bd9b16331e6d"
-  }
+  },
+  "deployment_policy_reference": "ATLAS_DEPLOYMENT_POLICY.json#local_layout"
 }

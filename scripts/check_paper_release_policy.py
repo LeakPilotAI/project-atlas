@@ -28,6 +28,18 @@ ACCOUNT = {'strategy': 'QUALITY_DIPS', 'currency': 'USD', 'hypothetical_opening_
            'fees_bps_per_side': '2', 'slippage_bps_per_side': '2', 'cost_evidence': 'SYNTHETIC_ASSUMPTIONS_NOT_MARKET_COSTS'}
 GATES = ('P1_DATA', 'P2_MANUAL_ROUTING', 'P3_RECONCILIATION', 'P4_OVERNIGHT',
          'P5_OWNED_LIFECYCLE', 'P6_RECOVERY', 'P7_SEVEN_DAY_TRIAL', 'P8_EXTENDED_TRIAL')
+LOCAL_LAYOUT = {
+    'schema': 'ATLAS_D_ONLY_SINGLE_ACCOUNT_V1', 'deployment_drive': 'D:',
+    'windows_identity': 'EXISTING_CURRENT_ACCOUNT', 'additional_windows_accounts_allowed': False,
+    'c_deployment_allowed': False, 'development_root': 'D:/Work/Project Atlas',
+    'runtime_root': 'D:/AtlasRuntime/releases/<accepted-release-sha>',
+    'financial_root': 'D:/AtlasPaper/QualityDips/<accepted-epoch>',
+    'control_root': 'D:/AtlasPaper/QualityDips/<accepted-epoch>/control',
+    'custody_root': 'D:/AtlasCustody/QualityDips/<accepted-epoch>',
+    'custody_independence_established': False, 'backup_independence_established': False,
+    'drive_root_acl_change_allowed': False, 'project_acl_change_allowed': False,
+    'provisioning_authorized': False,
+}
 
 
 def normalized(value):
@@ -41,7 +53,7 @@ def check_policy(policy, deployment):
                  'financial_provisioning_authorized')
     fields = {'schema', 'decision_date', 'release_program', 'authority', 'deployment', 'account', 'account_acceptance',
               'required_blocked_gates', 'canonical_governance_decisions_changed', 'paper_release_gates',
-              'retained_legacy_safety_guards', *forbidden}
+              'retained_legacy_safety_guards', 'deployment_policy_reference', *forbidden}
     if (type(policy) is not dict or set(policy) != fields or policy.get('schema') != 'ATLAS_PAPER_RELEASE_POLICY_V1'
             or policy['release_program'] != 'PAPER_FIRST_NO_LIVE_MONEY_IMPLEMENTATION'
             or policy['authority'] != 'EXPLICIT_OPERATOR_SCOPE_NOT_ACCEPTANCE'
@@ -70,6 +82,11 @@ def check_policy(policy, deployment):
             or deployment.get('release_program') != 'PAPER_FIRST_NO_LIVE_MONEY_IMPLEMENTATION'
             or deployment.get('production') != 'NO_GO'):
         raise ValueError('LOCAL_PAPER_DEPLOYMENT_MISMATCH')
+    if (policy.get('deployment_policy_reference') != 'ATLAS_DEPLOYMENT_POLICY.json#local_layout'
+            or type(deployment.get('local_layout')) is not dict
+            or json.dumps(deployment['local_layout'], sort_keys=True) != json.dumps(LOCAL_LAYOUT, sort_keys=True)
+            or deployment.get('financial_storage') != 'D_ONLY_ACCEPTED_CHILD_RESOURCES_CURRENT_WINDOWS_ACCOUNT'):
+        raise ValueError('D_ONLY_SINGLE_ACCOUNT_LAYOUT_REQUIRED')
 
 
 def source_findings(name, source, *, retained_false=False):

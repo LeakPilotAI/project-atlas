@@ -114,3 +114,27 @@ def test_retained_legacy_change_or_deletion_requires_review(tmp_path,damage):
         target.write_text(target.read_text().replace('LIVE_EXECUTION = False','LIVE_EXECUTION = True'))
         issues=m.audit(tmp_path)['issues']
         assert any('LEGACY_SAFETY_GUARD_CHANGED' in issue['findings'] for issue in issues)
+
+@pytest.mark.parametrize('field,value',[
+    ('deployment_drive','C:'),('windows_identity','NEW_SERVICE_ACCOUNT'),
+    ('additional_windows_accounts_allowed',True),('c_deployment_allowed',True),
+    ('runtime_root','C:/AtlasRuntime'),('financial_root','D:/Work/Project Atlas/data'),
+    ('custody_root','C:/AtlasCustody'),('custody_independence_established',True),
+    ('backup_independence_established',True),('drive_root_acl_change_allowed',True),
+    ('project_acl_change_allowed',True),('provisioning_authorized',True),
+    ('additional_windows_accounts_allowed',0),('schema','ATLAS_UNREVIEWED_LAYOUT'),
+])
+def test_d_only_single_existing_account_boundary(field,value):
+    p,d=policies();d['local_layout'][field]=value
+    with pytest.raises(ValueError,match='D_ONLY_SINGLE_ACCOUNT_LAYOUT_REQUIRED'):
+        m.check_policy(p,d)
+
+
+def test_d_only_layout_is_a_proposal_not_resource_or_authority():
+    p,d=policies()
+    assert d['local_layout']==m.LOCAL_LAYOUT
+    assert d['storage_provisioning_authorized'] is False
+    assert d['paper_startup_authorized'] is False
+    p['deployment_policy_reference']='untrusted-local-policy.json'
+    with pytest.raises(ValueError,match='D_ONLY_SINGLE_ACCOUNT_LAYOUT_REQUIRED'):
+        m.check_policy(p,d)
