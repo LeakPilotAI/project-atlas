@@ -13795,7 +13795,8 @@ At session boundaries provide an actionable handoff: last verified milestone, ex
 Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Docker services, provider connections, Discord, PAPER or live trading. No unauthorized network, production state/ACL/shortcut/volume changes, backups/restoration or recovery uncertainty clearing. No Git stage/commit/push/reset/clean/stash without explicit approval. PAPER_ONLY/MANUAL_ONLY, provider rights/budgets, permanent Gaming objective, Atlas/Genesis separation and Prediction Market Intelligence V2 safeguards remain binding. Isolated acceptance never grants real-world licensing, commercial, regulatory, security, calibration or operational acceptance.
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone:Perp codec/session/Stop
 Status:ACTIVE;PAPER NO
 Evidence:582/0/1+14+30+1=627;JS40;PS3
@@ -14144,6 +14145,13 @@ Complete seven-phase historical roadmap (all obligations retained;current option
 Cross-phase unfinished obligations: E136 independent rollback witness, dual-database rollback/consent resurrection and atomic recovery snapshot gates; recovery fencing, recipient-specific transport/render/storage, uncertainty/dead-letter handling. Discord requires explicit approval and durable no-backfill activation watermark; never automatically retry uncertain sends. Prediction PAPER requires exactly-once identities, pre-deadline protection and auto-flat. Portfolio-versus-strategy risk policy remains undecided. Preserve Prediction Market Intelligence V2 PM-V2.1 through PM-V2.6: discovery, probability/calibration, executable edge, pre-event PAPER, evidence/backtests and dashboard. One position per market; no combos/stacking/averaging/opposing YES+NO; settlement research does not override pre-event gates. Atlas/Genesis separation and PAPER_ONLY/MANUAL_ONLY are permanent. No production activation, live trading or automatic Discord is authorized.
 
 Next action: Obtain explicit P-D1-FINANCIAL-RECORDS-PROTOTYPE and reviewed confined native plan for FS2 write_bound/immutable financial records. FS1 is verified;do not repeat. Complete FS3/new-store acceptance then independent B1/C1/D1,accepted routing/dashboard,E1 and exact supervised-session permission. Monday target does not authorize startup.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone:Perpetual operational codec/session/Stop plus bounded roadmap history
+Status:Source/disposable increments VERIFIED;full UNIFIED_PERP_FINANCIAL_COMPLETENESS ACTIVE. PAPER startup NO;production NO-GO;B1/C1/D1/E1 BLOCKED;all21 decisions/seven phases unchanged.
+Evidence:582combined passes/0failed/1true-symlink NOT EXECUTED;disjoint14+30+1=627financial/runtime passes;4updater tests=631distinct Python passes;40frontend;4PowerShell parses. Exact prior checkpoint body retained verbatim in this same master via tested archival option;backup equality/readback verified. No protected13directories,actual inception,issuer,service,provider,Genesis or UI change.
+Next action:Extract pure source-bound QD V5/AutonomousPaper decision preview and expected-command-before-effect guard,then actual QD/perpetual planner unified-custody assembly. Do not double-dispatch beside V5 SQL/native ACK. Follow docs/PERP_OPERATIONAL_SESSION_STOP_CONTINUATION_2026-10-25.md. Future updates use Atlas-Roadmap-Checkpoint.ps1 -ArchivePriorCheckpoint with a short bounded current body;never erase historical sections or backups. No background session is running.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

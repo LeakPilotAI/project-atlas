@@ -83,3 +83,5 @@ and refuse. Original UI, legacy financial evidence, protected 13 directories,
 strict/manual contracts, seven phases and all21 historical decisions are preserved.
 B1/C1/D1/E1 BLOCKED. Neither hypothetical inception was published.
 PAPER startup NO; production NO-GO.
+
+Roadmap continuity repair: the current managed body reached59,935/60,000 characters. The approved updater now supports explicit -ArchivePriorCheckpoint: retain the exact prior body in a historical section of this SAME master, keep one current marker pair, preserve the60,000-character bound and original backup/readback checks. Four real PowerShell fixture tests pass, including exact backup/history bytes, default compatibility, capacity refusal and successive nonduplicating archival. Financial627 passes are not rerun or added again;total631distinct Python passes/0failed/1NOTEXECUTED,40JS,4PSparses. Future checkpoints must use the tested flag and a short new current body instead of nesting the entire old body. No financial implementation/gate is promoted. Actual QD V5 pre-effect preview/custody assembly remains the first unfinished source action.

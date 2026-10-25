@@ -2,7 +2,9 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$CheckpointFile,
 
-    [string]$RoadmapPath = "PROJECT_ATLAS_MASTER_ROADMAP.txt"
+    [string]$RoadmapPath = "PROJECT_ATLAS_MASTER_ROADMAP.txt",
+
+    [switch]$ArchivePriorCheckpoint
 )
 
 $ErrorActionPreference = "Stop"
@@ -88,7 +90,24 @@ if ($startIndex -ge 0 -and $endIndex -ge $startIndex) {
         throw "Duplicate checkpoint end marker."
     }
 
+    $retainedHistory = ""
+    if ($ArchivePriorCheckpoint) {
+        # Keep the complete prior body verbatim in this same master file.
+        # Only its control markers are replaced; historical text is not trimmed,
+        # normalized, summarized, externalized or copied into the next body.
+        $priorBody = $current.Substring(
+            $startIndex + $start.Length,
+            $endIndex - $startIndex - $start.Length
+        )
+        $retainedHistory = "=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===" +
+            [Environment]::NewLine + $priorBody +
+            [Environment]::NewLine +
+            "=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===" +
+            [Environment]::NewLine
+    }
+
     $updated = $current.Substring(0, $startIndex) +
+        $retainedHistory +
         $managed +
         $current.Substring($endIndex + $end.Length)
 }
