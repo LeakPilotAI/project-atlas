@@ -26,6 +26,15 @@ s = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(s)
 w, native, Refused = s.w, s.native, s.Refused
 MAX_OPERATIONS = 128
+DEFAULT_RECORD_VERSIONS = {"pin": "FS2_TEST_PIN_V1", "record": "FS2_RECORD_V1",
+    "intent": "FS2_INTENT_V1", "commit": "FS2_COMMIT_V1", "ack": "FS2_ACK_V1",
+    "projection_ack": "FS3_ACK_V1"}
+
+
+def record_version(store, phase):
+    # Constructor-free existing readers retain the original codec by default.
+    return getattr(store, "record_versions", DEFAULT_RECORD_VERSIONS)[phase]
+
 
 
 def encoded(value):
@@ -110,7 +119,7 @@ class FinancialRecordStore:
     def _load(self):
         pin = copy.deepcopy(self.trust.current())
         if (type(pin) is not dict or set(pin) != {"schema", "root", "inception", "epoch", "entries"}
-                or pin["schema"] != "FS2_TEST_PIN_V1" or type(pin["entries"]) is not list
+                or pin["schema"] != record_version(self, "pin") or type(pin["entries"]) is not list
                 or len(pin["entries"]) > MAX_OPERATIONS
                 or native.file_identity(self.output.root_handle) != pin["root"]):
             raise Refused("Malformed or substituted pin")
@@ -135,12 +144,12 @@ class FinancialRecordStore:
                 raise Refused("Contradictory typed publication revision")
             row = record.get("event")
             expected_values = {
-                "record": {"schema": "FS2_RECORD_V1", "revision": revision, "previous": previous, "event": row},
-                "intent": {"schema": "FS2_INTENT_V1", "revision": revision, "previous": previous,
+                "record": {"schema": record_version(self, "record"), "revision": revision, "previous": previous, "event": row},
+                "intent": {"schema": record_version(self, "intent"), "revision": revision, "previous": previous,
                            "record_digest": digest(record)},
-                "commit": {"schema": "FS2_COMMIT_V1", "revision": revision, "previous": previous,
+                "commit": {"schema": record_version(self, "commit"), "revision": revision, "previous": previous,
                            "intent": entry["intent"], "record": entry["record"]},
-                "ack": {"schema": "FS2_ACK_V1", "revision": revision, "commit": entry["commit"]},
+                "ack": {"schema": record_version(self, "ack"), "revision": revision, "commit": entry["commit"]},
             }
             receipt = strict(row["receipt"])
             if receipt.get("projection_required") is True:
@@ -150,7 +159,7 @@ class FinancialRecordStore:
                 context = projection_context(receipt, entry["record"], entry["commit"])
                 self.projection.verify(context, ack["projection"])
                 projections.append(ack["projection"])
-                expected_values["ack"] = {"schema": "FS3_ACK_V1", "revision": revision,
+                expected_values["ack"] = {"schema": record_version(self, "projection_ack"), "revision": revision,
                                           "commit": entry["commit"], "projection": ack["projection"]}
             if any(body(values[k]) != body(v) for k, v in expected_values.items()):
                 raise Refused("Contradictory publication lineage")
@@ -202,8 +211,8 @@ class FinancialRecordStore:
             previous = {"revision": len(rows),
                         "record": pin["entries"][-1]["record"] if rows else pin["inception"],
                         "event_digest": head}
-            record = {"schema": "FS2_RECORD_V1", "revision": revision, "previous": previous, "event": row}
-            intent = {"schema": "FS2_INTENT_V1", "revision": revision, "previous": previous,
+            record = {"schema": record_version(self, "record"), "revision": revision, "previous": previous, "event": row}
+            intent = {"schema": record_version(self, "intent"), "revision": revision, "previous": previous,
                       "record_digest": digest(record)}
             bindings = {}
             def publish(phase, value):
@@ -213,19 +222,19 @@ class FinancialRecordStore:
             try:
                 publish("intent", intent)
                 publish("record", record)
-                publish("commit", {"schema": "FS2_COMMIT_V1", "revision": revision,
+                publish("commit", {"schema": record_version(self, "commit"), "revision": revision,
                                    "previous": previous, "intent": bindings["intent"], "record": bindings["record"]})
                 if projection_required and self.projection is None:
                     self.poisoned = True
                     return {"schema": "FS2_UNACKNOWLEDGED_V1", "status": "UNKNOWN",
                             "committed_receipt": receipt, "fully_acknowledged": False,
                             "startup_authorized": False}
-                ack = {"schema": "FS2_ACK_V1", "revision": revision, "commit": bindings["commit"]}
+                ack = {"schema": record_version(self, "ack"), "revision": revision, "commit": bindings["commit"]}
                 if projection_required:
                     context = projection_context(receipt, bindings["record"], bindings["commit"])
                     proof = self.projection.publish(context, next_state)
                     self.projection.verify(context, proof)
-                    ack = {"schema": "FS3_ACK_V1", "revision": revision,
+                    ack = {"schema": record_version(self, "projection_ack"), "revision": revision,
                            "commit": bindings["commit"], "projection": proof}
                 publish("ack", ack)
                 next_pin = copy.deepcopy(pin)
