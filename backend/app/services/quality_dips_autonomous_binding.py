@@ -257,6 +257,8 @@ class EnrolledAutonomousRuntime:
             return self.runtime.start(g["runtime_grant"])
 
     def accept(self, observation):
+        if self.runtime.stopped.is_set():
+            raise ValueError("V5_NEW_CANDIDATES_CLOSED")
         with self._action():
             return self.runtime.accept(observation)
 
@@ -265,7 +267,12 @@ class EnrolledAutonomousRuntime:
         with self._action():
             return self.runtime.pause()
 
-    def stop(self):
+    def stop(self, *, mode="EMERGENCY", evidence=None, owned_close=None):
+        if mode == "SHUTDOWN_FLATTEN":
+            from app.services.quality_dips_shutdown import flatten_and_stop
+            return flatten_and_stop(self, evidence, owned_close)
+        if mode != "EMERGENCY":
+            raise ValueError("V5_EXPLICIT_SHUTDOWN_MODE_REQUIRED")
         self.runtime.engine.entry_admission_closed = self.runtime.engine.dispatch_closed = True
         self.runtime.stopped.set()
         if self.failed:

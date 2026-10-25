@@ -253,3 +253,116 @@ def test_revocation_after_native_ack_stays_unknown(system):
     with pytest.raises(ValueError, match="CONTINUITY_LOST"):
         s.store.execute(command)
     assert s.store.poisoned and s.flags["unknown"] and len(s.pin["entries"]) == 1
+
+
+def test_operational_existing_only_reader_no_mutation(system):
+    s = system
+    before = {p: p.read_bytes() for p in s.tmp_path.rglob("*.json")}
+    reader = s.module.OperationalAutonomousReader(**s.dependencies)
+    assert reader.read_committed()["state"]["cash"] == "1000"
+    assert before == {p: p.read_bytes() for p in s.tmp_path.rglob("*.json")}
+
+
+def test_operational_reader_refuses_test_pin(system):
+    s = system
+    s.pin["schema"] = "FS2_TEST_PIN_V1"
+    reader = s.module.OperationalAutonomousReader(**s.dependencies)
+    with pytest.raises(ValueError):
+        reader.read_committed()
+
+
+def test_operational_codec_engine_report_selected_read_wiring(system):
+    from app.services.paper_epoch_fixture import create_epoch_fixture
+    from app.services.quality_dips_autonomous_integration import (
+        AutonomousCoordinationRead,
+        AutonomousNativePublication,
+    )
+    from app.services.quality_dips_autonomous_paper import AutonomousPaper
+    from app.services.quality_dips_operational_presentation import (
+        OperationalAutonomousSelectedRead,
+    )
+    from qd_autonomous_native_fixture import Pins
+
+    s = system
+    clock = lambda: s.n.now[0]
+    ledger = create_epoch_fixture(s.tmp_path / "op-coordination.sqlite", s.parameters)
+    engine = AutonomousPaper(
+        ledger=ledger,
+        candidates=s.n.engine.candidates,
+        session_authority=s.n.engine.session_authority,
+        source_authority=s.n.engine.source_authority,
+        clock=clock,
+        publication=AutonomousNativePublication(store=s.store, manifest=s.parameters),
+    )
+    assert (
+        engine.start({**s.n.grant, "schema": "QD_AUTO_ENGINE_SESSION_V5"}) == "RUNNING"
+    )
+    s.n.engine = engine
+    assert entry(s.n)["filled"]
+    scope = {
+        "schema": "FS3_REPORT_SCOPE_V1",
+        "account_id": s.e["account_id"],
+        "epoch": s.e["epoch"],
+        "policy_digest": digest(s.parameters),
+        "timezone": s.parameters["timezone"],
+    }
+    with s.w.WindowsOutput(str(s.tmp_path / "report")) as out:
+        bound = out.write_bound("scope.json", body(scope).encode())
+    pins = Pins(
+        {
+            "schema": "FS3_REPORT_PIN_V1",
+            "root": s.e["resources"]["report"]["native_id"],
+            "scope": bound,
+            "reports": [],
+        },
+        clock,
+    )
+    archive = s.reports.ReportArchive(str(s.tmp_path / "report"), pins)
+    try:
+        s.n.now[0] += 1  # Advance the explicit synthetic clock past inception/fill.
+        s.reports.ReportService(s.store, archive).publish("2026-10-26", clock())
+        enrollment = {
+            "schema": "QD_AUTO_OP_READ_ENROLLMENT_V1",
+            "account_id": s.e["account_id"],
+            "epoch": s.e["epoch"],
+            "manifest_digest": digest(s.parameters),
+            "policy_digest": s.e["policy_digest"],
+            "source_root": s.pin["root"],
+            "projection_root": s.e["resources"]["projection"]["native_id"],
+            "report_root": pins.current()["root"],
+            "inception": s.pin["inception"],
+        }
+
+        class ReadAuthority:
+            @contextmanager
+            def lease(self, e, now):
+                current = {
+                    "schema": "QD_READ_CURRENT_V1",
+                    "enrollment_digest": digest(enrollment),
+                    "observed_at": now,
+                    "expires_at": now + 30,
+                    "generation": 1,
+                    "source": copy.deepcopy(s.pin),
+                    "reports": pins.current(),
+                    "high_water": len(s.pin["entries"]),
+                    "acknowledged_revision": len(s.pin["entries"]),
+                    "status": "ACKNOWLEDGED",
+                }
+                yield SimpleNamespace(snapshot=current, check=lambda p, t: True)
+
+        cap = OperationalAutonomousSelectedRead(
+            enrollment=enrollment,
+            authority=ReadAuthority(),
+            clock=clock,
+            port=s.module.OperationalAutonomousReader(**s.dependencies),
+            coordination=AutonomousCoordinationRead(engine),
+        )
+        before = {p: p.read_bytes() for p in s.tmp_path.rglob("*.json")}
+        view = cap.read_committed(s.e["account_id"], s.e["epoch"])
+        assert view["state"]["cash"] == "899.96"
+        assert cap.verify(
+            view, account_id=s.e["account_id"], epoch=s.e["epoch"], now=clock()
+        )["verified"]
+        assert before == {p: p.read_bytes() for p in s.tmp_path.rglob("*.json")}
+    finally:
+        archive.close()

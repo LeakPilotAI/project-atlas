@@ -78,6 +78,14 @@ class AutonomousCoordinationRead:
             entry = next((strict(row["command"]) for row in reversed(records)
                           if strict(row["command"])["kind"] == "ENTRY"), None)
             packet = command["evidence"]["l1"] if command else None
+            shutdown = None
+            if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='autonomous_shutdown'").fetchone():
+                for raw, checksum in db.execute("SELECT body,digest FROM autonomous_shutdown ORDER BY rowid"):
+                    shutdown = strict(raw)
+                    if (checksum != digest(shutdown) or shutdown.get("schema") != "QD_AUTO_SHUTDOWN_V1"
+                            or shutdown.get("status") not in ("FLATTENED", "SHUTDOWN_INCOMPLETE")
+                            or shutdown.get("position_state") not in ("FLAT", "POSITION_OPEN", "UNKNOWN")):
+                        raise ValueError("AUTO_SHUTDOWN_OUTCOME_CORRUPT")
             age = now - packet["source_timestamp"] if packet else None
             fresh = packet is not None and 0 <= age <= engine.ledger.manifest["autonomous_policy"]["quote_age_seconds"]
             return {"source_revision": state["revision"], "state_digest": digest(state), "head": head,
@@ -89,6 +97,7 @@ class AutonomousCoordinationRead:
                                      "timestamp": command["timestamp"]} if command else None,
                         "l1": packet, "l1_state": "FRESH" if fresh else "STALE" if packet else "UNAVAILABLE",
                         "pending_exits": None, "latest_refusal": latest if latest and latest["status"] != "ACKNOWLEDGED" else None,
+                        **({"shutdown_outcome": shutdown} if shutdown is not None else {}),
                         "limitations": ["LAST_COMMITTED_MARKET_EVIDENCE_ONLY",
                                         "PENDING_EXIT_INTENT_UNAVAILABLE", "NO_OPERATIONAL_AUTHORITY"]}}
 

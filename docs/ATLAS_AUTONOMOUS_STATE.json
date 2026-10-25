@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "OPERATIONAL_PAPER_READINESS_AND_RECORD_CODEC",
+  "last_verified_task": "PERSONAL_PAPER_SHUTDOWN_FLATTEN",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -109,7 +109,7 @@
     "OPERATIONAL_PAPER_READINESS_AND_RECORD_CODEC": "VERIFIED_SOURCE_CODEC_AND_ACCEPTANCE_CHECKLIST:distinctoperationalrecords/pins on existingFS2math/projection;105+120+2=227pass1privilege-skip. Sandboxmutexfailure retained;nativepermittedrerun passed. No real13dirs/keys/services/marketdata/startup. Independent B1C1D1E1 stillblocked."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 68,
+  "progress_revision": 69,
   "continuation_report": "docs/AUTONOMOUS_PAPER_RUNTIME_V3_CONTINUATION_2026-10-24.md",
   "blocked_wait_reason": "All authorized continuous disposable V3 work completed. Accepted autonomous native operational contract and real authority/ownership/custody/clock/provider dependencies remain unavailable/unapproved.",
   "publication_validation": {
@@ -218,7 +218,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/AUTONOMOUS_PAPER_RUNTIME_V3_CONTINUATION_2026-10-24.md",
+  "recovery_checkpoint": "docs/PERSONAL_PAPER_FLATTEN_CONTINUATION_2026-10-25.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -256,7 +256,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/AUTONOMOUS_PAPER_RUNTIME_V3_CONTINUATION_2026-10-24.md",
+  "recovery_document": "docs/PERSONAL_PAPER_FLATTEN_CONTINUATION_2026-10-25.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -924,5 +924,29 @@
     "real_publication": false,
     "startup_authorized": false,
     "accepted_authority_supplied": false
+  },
+  "continuation_checkpoint": "docs/PERSONAL_PAPER_FLATTEN_CONTINUATION_2026-10-25.md",
+  "personal_paper_shutdown": {
+    "status": "SOURCE_DISPOSABLE_VERIFIED",
+    "normal_mode": "SHUTDOWN_FLATTEN",
+    "emergency_mode": "PRESERVE_POSITIONS",
+    "report": "docs/PERSONAL_PAPER_FLATTEN_AND_DEPENDENCIES_2026-10-25.md",
+    "operator_ack": "docs/PERSONAL_PAPER_OPERATOR_ACK_2026-10-25.json",
+    "installed": false,
+    "startup_authorized": false,
+    "remaining_engineering": "Accepted operational V4/V5 runtime and Control Center dependency factory; real ownership and provider bindings remain uninstalled."
+  },
+  "retained_personal_shutdown_validation": {
+    "passed": 220,
+    "failed": 0,
+    "skipped": 0,
+    "disjoint_selections": [
+      112,
+      108
+    ],
+    "new_python_cases": 25,
+    "javascript_passed": 32,
+    "browser_http_executed": false,
+    "operational_acceptance": false
   }
 }

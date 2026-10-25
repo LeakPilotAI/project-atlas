@@ -182,3 +182,90 @@ class OperationalAutonomousStore(fs2.FinancialRecordStore):
                 except (OSError, ValueError):
                     pass  # Failed authority cannot promise a durable UNKNOWN receipt.
             raise
+
+
+class OperationalAutonomousReader:
+    """Existing-only operational source/FS3 projection read. No guard or latch.
+
+    Full daily-report/API composition still requires accepted report custody;
+    this port does not silently substitute a fixture selected-account reader.
+    """
+
+    def __init__(self, *, enrollment, trust, authority, clock, projection):
+        self.dependencies = enrollment, trust, authority, clock, projection
+
+    def read_committed(self):
+        enrollment, trust, authority, clock, projection = self.dependencies
+        if any(v is None for v in self.dependencies):
+            raise ValueError("OP_AUTO_ACCEPTED_READER_DEPENDENCIES_REQUIRED")
+        e = validate_enrollment(enrollment)
+        pin = trust.current()
+        if (
+            pin.get("schema") != "QD_AUTO_OP_PIN_V1"
+            or pin.get("root") != e["resources"]["source"]["native_id"]
+            or projection.expected_root != e["resources"]["projection"]["native_id"]
+            or Path(projection.output.root)
+            != Path(e["resources"]["projection"]["path"])
+        ):
+            raise ValueError("OP_AUTO_READER_RESOURCE_OR_PIN_MISMATCH")
+        reader = OperationalAutonomousStore.__new__(OperationalAutonomousStore)
+        reader.enrollment, reader._custody, reader.authority, reader.clock = (
+            e,
+            trust,
+            authority,
+            clock,
+        )
+        reader.trust, reader.projection = trust, projection
+        with (
+            reader._admitted(None),
+            fs2.w.WindowsOutput(e["resources"]["source"]["path"]) as out,
+        ):
+            reader.output = out
+            _, manifest, rows, state, head, _, audit = reader._load()
+            if trust.current() != pin:
+                raise ValueError("OP_AUTO_READER_CURRENT_CHANGED")
+            return {
+                "schema": "QD_AUTO_OP_READ_V1",
+                "manifest": manifest,
+                "rows": rows,
+                "state": state,
+                "head": head,
+                "audit": audit,
+                "source_pin": pin,
+            }
+
+    def read_verified(self, enrollment, current):
+        """Port for the existing selected-account replay/report capability."""
+        e, trust, _, _, _ = self.dependencies
+        if (
+            enrollment.get("schema") != "QD_AUTO_OP_READ_ENROLLMENT_V1"
+            or enrollment["account_id"] != e["account_id"]
+            or enrollment["epoch"] != e["epoch"]
+            or enrollment["source_root"] != e["resources"]["source"]["native_id"]
+            or enrollment["projection_root"]
+            != e["resources"]["projection"]["native_id"]
+            or enrollment["report_root"] != e["resources"]["report"]["native_id"]
+            or current["source"] != trust.current()
+        ):
+            raise ValueError("OP_AUTO_READ_CAPABILITY_BINDING_REQUIRED")
+        source = self.read_committed()
+        spec = importlib.util.spec_from_file_location(
+            "op_auto_reports", Path(__file__).with_name("financial_read_port.py")
+        )
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        with fs2.w.WindowsOutput(e["resources"]["report"]["path"]) as out:
+            if (
+                fs2.native.file_identity(out.root_handle)
+                != e["resources"]["report"]["native_id"]
+            ):
+                raise ValueError("OP_AUTO_REPORT_ROOT_MISMATCH")
+            archive = m.BoundReader(out, current["reports"])
+            _, scope, documents = m.m.ReportArchive._load(archive)
+        if trust.current() != source["source_pin"]:
+            raise ValueError("OP_AUTO_READ_SOURCE_CHANGED")
+        return {
+            **{k: source[k] for k in ("manifest", "rows", "state")},
+            "scope": scope,
+            "documents": documents,
+        }

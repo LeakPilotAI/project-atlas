@@ -181,6 +181,15 @@ function automatic() {
     pending_exits:null,latest_refusal:{reason:'L1_STALE'}};
   return d;
 }
+
+test('explicit graceful shutdown outcome preserves incomplete position evidence',async()=>{
+  const d=automatic();d.autonomous.shutdown_outcome={schema:'QD_AUTO_SHUTDOWN_V1',mode:'SHUTDOWN_FLATTEN',status:'SHUTDOWN_INCOMPLETE',position_state:'POSITION_OPEN'};
+  const h=harness(d);await h.controller.load();
+  assert.match(h.elements.paperContent.innerHTML,/Latest shutdown outcome<\/dt><dd>SHUTDOWN_INCOMPLETE/);
+  assert.match(h.elements.paperContent.innerHTML,/Shutdown position state<\/dt><dd>POSITION_OPEN/);
+  d.autonomous.shutdown_outcome.status='FAKE_CLEAN';h.setData(d);await h.controller.load();
+  assert.equal(h.elements.paperStatus.textContent,'UNKNOWN');
+});
 test('autonomous evidence displays session L1 simulated decision and disabled-control explanation',async()=>{
   const h=harness(automatic());await h.controller.load();const s=h.elements.paperContent.innerHTML;
   for(const value of ['SIMULATED','PAUSED','109.9','110','SYNTHETIC','NOT_REAL','partial-fixture','EXIT_REVIEW_PARTIAL','L1_STALE'])assert.ok(s.includes(value));

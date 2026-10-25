@@ -274,6 +274,14 @@ def validate_autonomous_command(m, state, c):
         if instrument != position["instrument"]:
             raise ValueError("AUTO_EXIT_INSTRUMENT")
         observation = e["request"]["observation"]
+        if e["exit_reason"] == "SHUTDOWN_FLATTEN":
+            if (e["request"].get("shutdown_mode") != "SHUTDOWN_FLATTEN"
+                    or e["request"]["bundles"] != [] or qty != number(position["remaining"])
+                    or observation.get("symbol") != position["symbol"]
+                    or type(observation.get("observed_at")) is not int
+                    or not 0 <= c["timestamp"] - observation["observed_at"] <= 30):
+                raise ValueError("AUTO_SHUTDOWN_FULL_EXIT_REQUIRED")
+            return
         monitor = evaluate_position(
             PositionMonitorInput(
                 position["symbol"],
@@ -454,19 +462,23 @@ class AutonomousPaper:
                 self.publication.verify(records, state)
             return audit
 
-    def step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None):
+    def step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None, shutdown_mode=None):
         # Serialize the same live coordinator through native ACK. This grants no
         # cross-process recovery authority; an orphaned pending ACK still refuses.
         if not self._decision_lock.acquire(timeout=2):
             return {"execution": "SIMULATED", "filled": False, "reason": "DECISION_IN_PROGRESS"}
         try:
-            return self._step(decision_id, bundles=bundles, quotes=quotes, observation=observation, fault=fault)
+            return self._step(decision_id, bundles=bundles, quotes=quotes, observation=observation, fault=fault, shutdown_mode=shutdown_mode)
         finally:
             self._decision_lock.release()
 
-    def _step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None):
+    def _step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None, shutdown_mode=None):
         text(decision_id)
         request = strict(body({"bundles": bundles, "quotes": quotes, "observation": observation}))
+        if shutdown_mode is not None:
+            if shutdown_mode != "SHUTDOWN_FLATTEN" or bundles:
+                raise NoFill("SHUTDOWN_CANDIDATES_REFUSED")
+            request["shutdown_mode"] = shutdown_mode
         if (
             type(request["bundles"]) is not list
             or type(request["quotes"]) is not list
@@ -601,7 +613,10 @@ class AutonomousPaper:
             terminal = evaluate_exit(
                 {"classification": monitor["state"], "prediction": observation["current"]}
             )
-            if terminal["terminal"]:
+            if request.get("shutdown_mode") == "SHUTDOWN_FLATTEN":
+                quantity = number(position["remaining"])
+                exit_reason = "SHUTDOWN_FLATTEN"
+            elif terminal["terminal"]:
                 quantity = number(position["remaining"])
                 exit_reason = "THESIS_TERMINAL"
             elif monitor["state"] == "EXIT_REVIEW":
@@ -659,6 +674,8 @@ class AutonomousPaper:
         ).to_integral_value(rounding=ROUND_FLOOR) * step
         if quantity <= 0:
             raise NoFill("NO_SUPPORTED_FILL_QUANTITY")
+        if request.get("shutdown_mode") == "SHUTDOWN_FLATTEN" and quantity != number(position["remaining"]):
+            raise NoFill("SHUTDOWN_INSUFFICIENT_LIQUIDITY")
         evidence = {
             "decision_id": decision_id,
             "request_digest": digest(request),
