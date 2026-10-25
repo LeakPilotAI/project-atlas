@@ -89,7 +89,7 @@ def decode(raw):
 
 
 class IEXFeed:
-    def __init__(self, symbols, *, clock=time.time, max_age=5):
+    def __init__(self, symbols, *, clock=time.time, max_age=5, position_symbols=None):
         if (
             not symbols
             or len(symbols) > 30
@@ -104,6 +104,39 @@ class IEXFeed:
         self.quotes, self.rejected = {}, 0
         self.connection, self.authenticated, self.subscribed = "DISCONNECTED", False, False
         self.error, self.generation, self.observations = None, 0, 0
+        self.roster_revision = 0
+        self.position_symbols = position_symbols
+        self.last_rotation = None
+
+    def request_roster(self, roster):
+        """Rotate on a closed/reopened socket, never overlapping connections.
+
+        The research selector must pin all open-position symbols. A change first
+        invalidates executable cache state; only a new exact subscription ACK can
+        restore it. This is data subscription management, not trade authority.
+        """
+        symbols = roster.get("symbols")
+        required = roster.get("required_symbols")
+        pinned = self.position_symbols() if self.position_symbols is not None else None
+        if (roster.get("schema") != "QD_IEX_ROSTER_V1" or type(symbols) is not list
+                or not symbols or type(required) is not list
+                or type(pinned) is not list or not set(pinned) <= set(required)
+                or type(roster.get("capacity")) is not int
+                or not len(symbols) <= roster["capacity"] <= 30
+                or len(set(symbols)) != len(symbols)
+                or any(type(s) is not str or not SYMBOL.fullmatch(s) for s in symbols)
+                or not set(required) <= set(symbols)):
+            raise IEXRefused("IEX_PINNED_ROSTER_REQUIRED")
+        with self.lock:
+            if tuple(symbols) != self.symbols:
+                now = self.clock()
+                if self.run_lock.locked() and self.last_rotation is not None and not now - self.last_rotation >= 30:
+                    raise IEXRefused("IEX_ROTATION_RATE_LIMIT")
+                self.symbols = tuple(symbols)
+                self.last_rotation = now
+                self.roster_revision += 1
+                self.quotes.clear()
+                self.disconnect("IEX_ROSTER_CHANGING")
 
     def disconnect(self, code="IEX_DISCONNECTED"):
         with self.lock:
@@ -264,6 +297,7 @@ class IEXFeed:
             try:
                 while time.monotonic() < deadline and not (stop and stop.is_set()):
                     try:
+                        roster_revision = self.roster_revision
                         self.generation += 1
                         self.disconnect("IEX_RECONNECTING")
                         async with connect(
@@ -311,7 +345,8 @@ class IEXFeed:
                                 )
                             subscribed = True
                             self.error = None
-                            while time.monotonic() < deadline and not (stop and stop.is_set()):
+                            while (time.monotonic() < deadline and not (stop and stop.is_set())
+                                   and self.roster_revision == roster_revision):
                                 try:
                                     raw = await asyncio.wait_for(
                                         ws.recv(), min(1, max(0.01, deadline - time.monotonic()))
@@ -319,9 +354,13 @@ class IEXFeed:
                                     self.receive(raw)
                                 except TimeoutError:
                                     pass  # RFC6455 transport pings continue independently.
+                            if self.roster_revision != roster_revision:
+                                continue  # Original socket closes before the next connection.
                             break
                     except IEXRefused as error:
                         self.disconnect(str(error))
+                        if self.roster_revision != roster_revision:
+                            continue  # Roster changed during auth/ACK; no stale subscription adoption.
                         break  # No credential/entitlement/limit retry storm.
                     except asyncio.CancelledError:
                         raise

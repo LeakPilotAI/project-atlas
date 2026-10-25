@@ -15,6 +15,24 @@
   const fact = (label, value) => `<div><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
   const label = value => text(value) ? esc(value) : 'UNAVAILABLE';
 
+  function renderUnified(data, now) {
+    if (!object(data) || data.schema !== 'ATLAS_UNIFIED_PAPER_VIEW_V1' ||
+        data.startup_authorized !== false || data.total_cash !== null || data.total_equity !== null ||
+        !object(data.lanes) || !['RUNNING','PAUSED','STOPPING','STOPPED','STOP_INCOMPLETE'].includes(data.state))
+      return '<p>Multi-market supervision: UNAVAILABLE. No financial or startup authority.</p>';
+    const rows = ['QUALITY_DIPS','HYPERLIQUID'].map(lane => {
+      const row = data.lanes[lane];
+      if (!object(row) || row.lane !== lane || !Number.isSafeInteger(row.at))
+        return `<tr><td>${lane}</td><td colspan="4">UNAVAILABLE</td></tr>`;
+      const age = now / 1000 - row.at;
+      const connection = age < 0 || age > 5 ? 'STALE' :
+        ['CONNECTED','DISCONNECTED','UNAVAILABLE','STALE'].includes(row.connection) ? row.connection : 'UNAVAILABLE';
+      const signal = connection !== 'CONNECTED' ? 'UNAVAILABLE' : row.signal === null ? 'No validated signal — monitoring continues' : label(row.signal);
+      return `<tr><td>${lane}</td><td>${connection}</td><td>${['OPEN','CLOSED','UNKNOWN'].includes(row.session) ? row.session : 'UNKNOWN'}</td><td>${signal}</td><td>${date(row.at)}</td></tr>`;
+    }).join('');
+    return `<h3>Unified PAPER supervision</h3><p>${esc(data.state)} · ${label(data.financial_state)}</p><div class="paperTable"><table><tr><th>Market</th><th>Connection</th><th>Session</th><th>Signal</th><th>Observation</th></tr>${rows}</table></div><p>Stocks respect exchange sessions; Hyperliquid monitoring is continuous when its feed is healthy. Perpetual collateral, funding and leverage require separate accounting. Combined cash/equity: UNAVAILABLE. No implied trading authorization.</p>`;
+  }
+
   function renderMarket(data, now) {
     if (!object(data) || data.schema !== 'ATLAS_ALPACA_IEX_VIEW_V1' ||
         data.feed !== 'IEX' || data.scope !== 'SINGLE_EXCHANGE_NOT_NBBO' ||
@@ -114,12 +132,15 @@
     const content = document.getElementById('paperContent');
     const freshness = document.getElementById('paperFreshness');
     const market = document.getElementById('paperMarket');
+    const multi = document.getElementById('paperMultiMarket');
+    let multiLast = null;
     let marketLast = null;
     let active = false, busy = false, generation = 0, abort = null, last = null, pinned = null, high = -1, fingerprint = null, readFailed = false;
     const announce = (state, reason) => { if (status.textContent !== state) status.textContent = state; freshness.textContent = reason; };
     const clear = (state, reason) => { last = null; content.innerHTML = '<p class="empty">Financial amounts and positions are UNAVAILABLE.</p>'; announce(state, reason); };
     const age = () => {
       if (market && marketLast) { try { market.innerHTML = renderMarket(marketLast, clock()); } catch { market.innerHTML = '<p>Live L1: UNAVAILABLE</p>'; } }
+      if (multi && multiLast) multi.innerHTML = renderUnified(multiLast, clock());
       if (!last) return;
       const elapsed = Math.floor(clock() / 1000) - last.observed_at;
       announce(readFailed || elapsed < 0 || elapsed > 30 ? 'STALE' : 'ACKNOWLEDGED · report ' + last.report_status,
@@ -140,6 +161,7 @@
         if (!active || ticket !== generation) return;
         if (controller.signal.aborted) throw Error('FINANCIAL_READ_TIMEOUT');
         if (market) { marketLast = data.market_data || null; market.innerHTML = renderMarket(marketLast, clock()); }
+        if (multi) { multiLast = data.multi_market || null; multi.innerHTML = renderUnified(multiLast, clock()); }
         if (data.status !== 'ACKNOWLEDGED') { clear(data.status, Array.isArray(data.reasons) ? data.reasons.join(' · ') : 'Verified financial evidence unavailable.'); return; }
         const identity = stable([data.account_id, data.epoch, data.policy_digest]);
         if (pinned !== null && pinned !== identity) throw Error('ACCOUNT_OR_POLICY_REPLACED');
@@ -154,6 +176,7 @@
       } catch (error) {
         if (!active || ticket !== generation) return;
         if (market) { marketLast = null; market.innerHTML = '<p>Live L1: UNAVAILABLE — network or evidence refusal.</p>'; }
+        if (multi) { multiLast = null; multi.innerHTML = '<p>Multi-market supervision: UNAVAILABLE — read refused.</p>'; }
         readFailed = true;
         const unsafe = ['ACCOUNT_OR_POLICY_REPLACED','SOURCE_REVISION_ROLLBACK_OR_CONFLICT','INCEPTION_SCOPE_MISMATCH','REPORT_SCOPE_MISMATCH','INCOMPLETE_FINANCIAL_EVIDENCE','INVALID_FINANCIAL_RESPONSE','INVALID_POSITION_EVIDENCE','INVALID_REALIZED_EVIDENCE','INVALID_COST_EVIDENCE','PROJECTION_REVISION_MISMATCH'].includes(error.message);
         if (unsafe) clear('UNKNOWN', error.message);
@@ -171,7 +194,7 @@
       destroy() { active = false; generation += 1; if (abort) abort.abort(); }
     };
   }
-  const api = {ENDPOINT, createController, validate, renderMarket};
+  const api = {ENDPOINT, createController, validate, renderMarket, renderUnified};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.AtlasSelectedPaper = api;
 })(globalThis);

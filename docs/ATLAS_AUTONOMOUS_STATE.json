@@ -1,7 +1,9 @@
 {
-  "active_task": null,
-  "last_verified_task": "ALPACA_IEX_DATA_INTEGRATION",
-  "next_eligible_tasks": [],
+  "active_task": "UNIFIED_PERP_FINANCIAL_COMPLETENESS",
+  "last_verified_task": "UNIFIED_MARKET_SOURCE_FOUNDATION",
+  "next_eligible_tasks": [
+    "UNIFIED_PERP_FINANCIAL_COMPLETENESS"
+  ],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
     "C1": "Native retained fixture command/account/lifetime validated, but actual Atlas ownership, full writer/resource roster and independent drain remain unaccepted.",
@@ -9,20 +11,15 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 227,
+    "passed": 180,
     "failed": 0,
-    "skipped": 1,
-    "separate_disjoint_selections": [
-      105,
-      120,
-      2
-    ],
-    "new_operational_codec_cases": 11,
-    "not_executed": "True-symlink privilege unavailable",
+    "skipped": 0,
+    "new_cases": 63,
+    "selection": "unified runtime/risk/roster/observers/native HTTP;Alpaca;autonomous engine;domain isolation;native read service;passive Windows GUI;production lock",
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Obtain scoped local PAPER profile/account/custody/provider decisions and named acceptance roles;authorize narrow operational codec reader/runtime handoff and selected real issuer/custody/clock/L1 adapters. Actual resource observations,dependency installation,inception,bridge/feed/session startup require separate permission. No test-pin adoption or gate waiver.",
+  "exact_next_action": "Implement versioned Hyperliquid collateral/funding/partial-fill accounting in existing paper_financial_replay.py and independent paper_financial_audit.py, preserving V1/manual/QD goldens; demonstrate missing evidence refusal with disposable records first. Then bind actual writers and durable portfolio custody. No operational root access/inception/provider-gate install/startup.",
   "latest_focused_tests": {
     "passed": 11,
     "failed": 0,
@@ -106,10 +103,12 @@
     "AUTONOMOUS_PAPER_RUNTIME_V3": "VERIFIED continuous disposable runtime/source/native/report/read/browser:451Pythonpass1privilege-skip in29/230/192disjoint selections;31JSpass. Automaticentry/protectivepartial-full whilePAUSED/STOP/drain/disconnect/restartrefusal;Boolean drain defect reproduced/fixed. LOCAL_ENROLLED refuses;no operational acceptance.",
     "AUTONOMOUS_NATIVE_ENROLLMENT_V4": "VERIFIED_SOURCE_INTERFACES_DISPOSABLE:65new/9nativebindingcases;194+33=227passes. Actual issuer/custody/clock/financial native operational port uninstalled/unaccepted;V3 LOCAL_ENROLLED fixture backend still refused. No real13dirs accessed.",
     "AUTONOMOUS_NATIVE_FINANCIAL_BINDING_V5": "VERIFIED_CONFINED_LOCAL_ENROLLED_CONTRACT_PATH:V4-before/V3nativefinancialaction/V4-after underwriterlease;actualFS2FS3 replay/report;184+111+33=328passes,29new. Sourcefailure falselycleanStop reproduced/fixed;originalfailure retained. No accepted operational authority or real13dirs access.",
-    "OPERATIONAL_PAPER_READINESS_AND_RECORD_CODEC": "VERIFIED_SOURCE_CODEC_AND_ACCEPTANCE_CHECKLIST:distinctoperationalrecords/pins on existingFS2math/projection;105+120+2=227pass1privilege-skip. Sandboxmutexfailure retained;nativepermittedrerun passed. No real13dirs/keys/services/marketdata/startup. Independent B1C1D1E1 stillblocked."
+    "OPERATIONAL_PAPER_READINESS_AND_RECORD_CODEC": "VERIFIED_SOURCE_CODEC_AND_ACCEPTANCE_CHECKLIST:distinctoperationalrecords/pins on existingFS2math/projection;105+120+2=227pass1privilege-skip. Sandboxmutexfailure retained;nativepermittedrerun passed. No real13dirs/keys/services/marketdata/startup. Independent B1C1D1E1 stillblocked.",
+    "UNIFIED_MARKET_SOURCE_FOUNDATION": "VERIFIED scoped source/disposable only:180Python/40JS/5PSassertions/2parses;63new;12766reference symbols;IEXauth+2subscriptions/0Sundayquotes;native readHTTP/browser and control transport contracts;no full unified financial runtime or operational acceptance.",
+    "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "ACTIVE: source audit confirms existing selected perp handoff funding_modeled=false and missing durable leveraged collateral/funding financial lifecycle. Extend existing canonical engine/audit/native contracts;do not repeat completed universe/UI/authentication work."
   },
-  "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 71,
+  "execution_status": "CONTINUATION_REQUIRED",
+  "progress_revision": 72,
   "continuation_report": "docs/AUTONOMOUS_PAPER_RUNTIME_V3_CONTINUATION_2026-10-24.md",
   "blocked_wait_reason": "All authorized continuous disposable V3 work completed. Accepted autonomous native operational contract and real authority/ownership/custody/clock/provider dependencies remain unavailable/unapproved.",
   "publication_validation": {
@@ -218,7 +217,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/ALPACA_IEX_CONTINUATION_2026-10-25.md",
+  "recovery_checkpoint": "docs/UNIFIED_MARKET_CONTINUATION_2026-10-25.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -256,7 +255,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/ALPACA_IEX_CONTINUATION_2026-10-25.md",
+  "recovery_document": "docs/UNIFIED_MARKET_CONTINUATION_2026-10-25.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -925,7 +924,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/ALPACA_IEX_CONTINUATION_2026-10-25.md",
+  "continuation_checkpoint": "docs/UNIFIED_MARKET_CONTINUATION_2026-10-25.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1019,5 +1018,45 @@
     "whole_file_lint_baseline": 39,
     "whole_file_lint_current": 39,
     "new_changed_line_findings": 0
+  },
+  "retained_before_unified_latest_tests": {
+    "passed": 227,
+    "failed": 0,
+    "skipped": 1,
+    "separate_disjoint_selections": [
+      105,
+      120,
+      2
+    ],
+    "new_operational_codec_cases": 11,
+    "not_executed": "True-symlink privilege unavailable",
+    "operational_acceptance": false
+  },
+  "unified_market_integration": {
+    "status": "SOURCE_DISPOSABLE_FOUNDATION_VERIFIED_FULL_INTEGRATION_INCOMPLETE",
+    "report": "docs/UNIFIED_MARKET_INTEGRATION_2026-10-25.md",
+    "target": "docs/UNIFIED_PAPER_ACCOUNT_TARGET_V1.json",
+    "quality_dips_capital": {
+      "amount": "1000",
+      "currency": "USD",
+      "inception_published": false
+    },
+    "hyperliquid_capital": {
+      "amount": "1000",
+      "currency": "USDC",
+      "inception_published": false
+    },
+    "cash_consolidation_authorized": false,
+    "reference_symbols_observed": 12766,
+    "verified_execution_universe_count": null,
+    "confirmed_iex_subscription_count": 2,
+    "iex_client_ceiling_not_entitlement": 30,
+    "iex_quote_messages_latest_probe": 0,
+    "live_hyperliquid_probe_executed": false,
+    "genuine_browser_disposable_observed": true,
+    "financial_dispatch_ports": "SYNTHETIC_TESTS_NOT_INSTALLED",
+    "perp_funding_margin_financial_path_complete": false,
+    "current_task": "UNIFIED_PERP_FINANCIAL_COMPLETENESS",
+    "startup_authorized": false
   }
 }

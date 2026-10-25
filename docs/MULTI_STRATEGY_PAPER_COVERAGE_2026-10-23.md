@@ -136,3 +136,18 @@ QD_HTTP_BROWSER_V1_DISPOSABLE VERIFIED disposable only. Real loopback HTTP/nativ
 ## Quality Dips gate resolution — 2026-10-24
 
 QD_GATE_RESOLUTION_V1 VERIFIED offline engineering only.222passed0failed0skipped,16newcases;initial12failed1passed retained. Parser identity/nonfinite/timezone and read trusted-clock/post-authority expiry defects repaired. Source-grounded B1/C1/D1/E1 conditions,complete writer/resource roles and explicit copied-native-identity restore blocker in QUALITY_DIPS_GATE_RESOLUTION_2026-10-24.md. No operational provider/process/financial access or fresh native/browser demonstration. Ruff10→7inherited/0new. ZeroACTIVE;BLOCKED_WAIT for independent account/exclusions,actual resource/writer roster,custody/clock/recovery and provider/backup/supervised release evidence. All21decisions/7phases preserved;PAPERstartupNO;productionNO-GO.
+
+
+## Unified multi-market source integration — 2026-10-25
+
+This current increment supplements rather than rewrites the complete strategy inventory above.
+
+| Lane/component | Implemented | Disposable verified | Operationally integrated/accepted | Exact missing work |
+|---|---|---|---|---|
+| Quality Dips stock/ETF reference/research routing and IEX slots | YES,existing universe interfaces/cache | YES | NO | Accepted metadata/ranking/halts/calendar/rights,full safe scanner/writer binding and real authorities |
+| Hyperliquid existing scanner/cache observation | YES,read-only actual cache adapter | YES | NO | Executable book/mark/funding/fees provenance and accepted request budget |
+| Hyperliquid leveraged cash/funding/margin native accounting | INCOMPLETE | Risk-evidence refusal only | NO | ACTIVE existing-canonical-engine extension;legacy funding_modeled=false must not count as complete |
+| Unified portfolio admission/continuous supervisor/read and Control Center Stop contracts | YES,explicit injected ports | YES | NO | Durable accepted cross-process portfolio custody and actual lane financial adapters;no default authority |
+| Other discovered stock/crypto/prediction/research strategies | Existing source inventory preserved | No new acceptance claimed | NO promotion | Preserve strategy-specific semantics and separate accounts;no automatic activation |
+
+180selectedPythonpassed0failed0skipped;40frontend;5PowerShell behavior assertions/2parses. Real native readHTTP/browser synthetic observations are not operational trading. 12766directoryreferences are not verified execution eligibility. Accounts proposed separately1000USD/1000USDC;no assumed FX parity or combined cash. See UNIFIED_MARKET_INTEGRATION_2026-10-25.md. B1/C1/D1/E1 and21decisions/sevenphases unchanged;PAPERstartupNO;productionNO-GO.

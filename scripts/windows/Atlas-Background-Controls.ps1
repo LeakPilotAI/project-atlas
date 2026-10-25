@@ -1,6 +1,6 @@
 # Manual Windows Forms controls for normal and opt-in gaming background mode.
 #Requires -Version 5.1
-param([object]$AcceptedSelectedReadBridge = $null, [object]$AcceptedPaperSession = $null, [object]$IEXCacheReader = $null)
+param([object]$AcceptedSelectedReadBridge = $null, [object]$AcceptedPaperSession = $null, [object]$IEXCacheReader = $null, [object]$UnifiedReadCapability = $null)
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -165,9 +165,14 @@ exit `$exitCode
 }
 
 function Apply-AtlasStatus($Result) {
+    $runtimeSummary.Text = "Backend / full frontend: NOT VERIFIED`r`nStartup gate: BLOCKED; production NO-GO"
     if ($null -ne $IEXCacheReader) {
         try { $runtimeSummary.Text = Format-AtlasIEXDataStatus ($IEXCacheReader.snapshot()) }
         catch { $runtimeSummary.Text = Format-AtlasIEXDataStatus }
+    }
+    if ($null -ne $UnifiedReadCapability) {
+        try { $runtimeSummary.Text += "`r`n" + (Format-AtlasUnifiedPaperStatus ($UnifiedReadCapability.read())) }
+        catch { $runtimeSummary.Text += "`r`n" + (Format-AtlasUnifiedPaperStatus) }
     }
     $color = Get-AtlasBackgroundStatusColor ([string]$Result.state)
     Set-StatusMessage "$($Result.state): $($Result.message)" $color

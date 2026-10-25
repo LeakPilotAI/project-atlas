@@ -1,0 +1,39 @@
+{
+  "schema": "ATLAS_UNIFIED_PAPER_ACCOUNT_TARGET_V1",
+  "status": "OPERATOR_INTENT_NOT_OPERATIONAL_ACCEPTANCE",
+  "deployment": "WINDOWS_D_ONLY_EXISTING_ACCOUNT",
+  "autonomous_paper_target": true,
+  "per_trade_confirmation": false,
+  "accounts": [
+    {
+      "strategy": "QUALITY_DIPS",
+      "hypothetical_opening_cash": "1000",
+      "currency": "USD",
+      "max_entry_notional": "100",
+      "max_positions": 1,
+      "long_only": true,
+      "scale_in": false,
+      "fractional_only_if_verified": true,
+      "instrument_scope": "VERIFIED_ELIGIBLE_QD_RANKED_US_STOCKS_ETFS"
+    },
+    {
+      "strategy": "HYPERLIQUID",
+      "hypothetical_opening_cash": "1000",
+      "currency": "USDC",
+      "max_loss_per_trade_usdc": "1",
+      "max_positions": 3,
+      "session_loss_stop_r": "3",
+      "leverage_policy_accepted": false,
+      "funding_margin_financial_contract_accepted": false
+    }
+  ],
+  "cash_consolidation": "NOT_AUTHORIZED",
+  "usd_usdc_conversion": "NO_ASSUMED_PARITY",
+  "portfolio_risk_policy_accepted": false,
+  "normal_stop": "ATTEMPT_ACKNOWLEDGED_FLATTEN_ELSE_PRESERVE_EXPLICIT_INCOMPLETE",
+  "emergency_stop": "CLOSE_ADMISSION_PRESERVE_EVIDENCE",
+  "independent_gate_acceptance": false,
+  "financial_inception_authorized": false,
+  "startup_authorized": false,
+  "real_money_implementation_allowed": false
+}

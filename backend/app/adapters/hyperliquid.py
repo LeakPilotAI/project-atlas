@@ -99,6 +99,24 @@ class HyperliquidAdapter:
 
     # ── Universe / allowlist validation ──────────────────────────────
 
+    def monitor_snapshot(self) -> dict[str, Any]:
+        """Read existing adapter cache only: no connect, refresh or fallback.
+
+        Mark observations are research evidence, never executable bid/ask or
+        funding settlement history. A connected empty/expired cache is not ready.
+        """
+        stamp = self._last_rest_observed_at
+        usable = (self._connected and stamp is not None and fresh_observation(stamp)
+                  and bool(self._last_rest_prices)
+                  and all(positive_price(p) for p in self._last_rest_prices.values()))
+        return {"schema": "ATLAS_HYPERLIQUID_MONITOR_V1",
+                "connection": "CONNECTED" if usable else "UNAVAILABLE",
+                "observed_at": stamp.isoformat() if stamp is not None else None,
+                "timestamp_basis": "REST_REQUEST_START", "session": "CONTINUOUS_24_7",
+                "marks": dict(self._last_rest_prices) if usable else {},
+                "bid_ask": None, "funding_history": None, "execution_eligible": False,
+                "startup_authorized": False}
+
     async def refresh_universe(self) -> list[str]:
         data = await self._post({"type": "meta"})
         universe = data.get("universe") if isinstance(data, dict) else None

@@ -349,3 +349,13 @@ OPERATIONAL_RUNTIME_CONTROL_CENTER_WIRING VERIFIEDSOURCE/DISPOSABLE:114+43+9=166
 ## Alpaca IEX data integration - 2026-10-25
 
 ALPACA_IEX_DATA_INTEGRATION VERIFIEDSOURCE/data-only:two bounded realIEXprobes20s/8s authenticated and MSFT/SPYquotesubscribed;0quotemessages/Sundayclosed,prices/timestamp/latencyUNAVAILABLE.84+107=191Pythonpasses0fail0skip;39new;37frontendpasses5new. Cache-only scanner/selected-read UI/host and existing V3V5 input/shutdown seams implemented;no new engine or operational registration.39legacy lint findings before/after,0newchangedline findings. BLOCKED_WAIT zeroACTIVE;next regular-session quote acceptance and real rights/instrument/lot/calendar/halts/clock/issuer/custody/writer install,inception/launch permission. Keys ignored/untracked,never published;no orders/real13roots/Genesis/services touched. All21decisions/sevenphases unchanged;B1C1D1E1BLOCKED;PAPERstartupNO;productionNO-GO. See ALPACA_IEX_CONTINUATION_2026-10-25.md.
+
+
+## Current unified multi-market continuation — 2026-10-25
+
+| ID | Objective / acceptance | Dependencies | Status | Files/evidence | Exact next action |
+|---|---|---|---|---|---|
+| UNIFIED_MARKET_SOURCE_FOUNDATION | Reference discovery/IEX rotation, separate-currency risk, independent monitoring and read/Stop interfaces | authorized offline integration | VERIFIED scoped source/disposable | UNIFIED_MARKET_INTEGRATION_2026-10-25.md;180Python/40JS;12766reference symbols | Do not mistake these ports for a complete financial runtime |
+| UNIFIED_PERP_FINANCIAL_COMPLETENESS | Existing-engine collateral/funding/partial-fill/margin and receipt completeness | source scope approved;actual policies/authorities remain unaccepted | ACTIVE | existing paper_financial_replay.py,paper_financial_audit.py,native contracts;handoff funding_modeled=false | Demonstrate and repair missing canonical funding/collateral lifecycle using disposable records;preserve all historical schemas |
+
+Exactly one current ACTIVE task is preserved for source continuation; unfinished engineering is not mislabeled BLOCKED_WAIT. Operational B1/C1/D1/E1 remain BLOCKED and startup NO. Separate operator target1000USD QD/1000hypotheticalUSDC Hyperliquid is not inception, assumed FX parity or gate acceptance. Read UNIFIED_MARKET_CONTINUATION_2026-10-25.md before resuming.

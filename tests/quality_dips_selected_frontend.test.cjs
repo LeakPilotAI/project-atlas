@@ -8,6 +8,26 @@ const html = fs.readFileSync('backend/app/static/quality_dips.html', 'utf8');
 const external = fs.readFileSync('backend/app/static/quality_dips_selected_paper.js', 'utf8');
 const inline = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 const STAMP = 1792843200;
+function unifiedView(){return {schema:'ATLAS_UNIFIED_PAPER_VIEW_V1',state:'RUNNING',financial_state:'READ_SEPARATE_ACCOUNTS',
+  startup_authorized:false,total_cash:null,total_equity:null,lanes:Object.fromEntries(['QUALITY_DIPS','HYPERLIQUID'].map(lane=>
+    [lane,{lane,at:STAMP,connection:'CONNECTED',session:lane==='QUALITY_DIPS'?'CLOSED':'OPEN',signal:null}]))};}
+
+test('both markets show session and no-signal monitoring without fabricated consolidated balances',async()=>{
+  const d=payload();d.multi_market=unifiedView();const h=harness(d);await h.controller.load();
+  const s=h.elements.paperMultiMarket.innerHTML;
+  for(const v of ['QUALITY_DIPS','HYPERLIQUID','CLOSED','OPEN','No validated signal','Combined cash/equity: UNAVAILABLE'])assert.ok(s.includes(v));
+  assert.equal(h.requests.length,1);assert.equal(h.requests[0].options.method,'GET');
+});
+test('multi-market stale and network failures clear apparent health',async()=>{
+  const d=payload();d.multi_market=unifiedView();const h=harness(d);await h.controller.load();
+  h.setNow((STAMP+6)*1000);h.controller.refreshAge();assert.match(h.elements.paperMultiMarket.innerHTML,/STALE/);
+  h.setData(new Error('offline'));await h.controller.load();assert.match(h.elements.paperMultiMarket.innerHTML,/UNAVAILABLE/);
+});
+test('unified view rejects invented totals and escapes signal labels',()=>{
+  const d=unifiedView();d.lanes.HYPERLIQUID.signal='<script>bad()</script>';
+  assert.match(ui.renderUnified(d,STAMP*1000),/&lt;script&gt;/);
+  d.total_equity='1000';assert.match(ui.renderUnified(d,STAMP*1000),/UNAVAILABLE/);
+});
 function iexView(){return {schema:'ATLAS_ALPACA_IEX_VIEW_V1',feed:'IEX',scope:'SINGLE_EXCHANGE_NOT_NBBO',
   size_units:'ROUND_LOTS',connection:'CONNECTED',authenticated:true,subscribed:true,paper_startup_authorized:false,
   observed_at:STAMP,quotes:[{symbol:'MSFT',bid:'100',ask:'100.1',bid_lots:1,ask_lots:2,

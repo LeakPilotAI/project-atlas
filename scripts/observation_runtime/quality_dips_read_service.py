@@ -122,12 +122,13 @@ class ReadComposition:
         return self.read_committed(self.account, self.epoch)
 
 
-def build_app(composition, port, *, market_reader=None):
+def build_app(composition, port, *, market_reader=None, unified_reader=None):
     composition.preflight()  # Refuse before even publishing an application.
     origin = f"http://127.0.0.1:{port}"
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.include_router(create_router(reader=composition, verifier=composition, clock=composition.clock,
-                                    account_id=composition.account, epoch=composition.epoch, market_reader=market_reader))
+                                    account_id=composition.account, epoch=composition.epoch,
+                                    market_reader=market_reader, unified_reader=unified_reader))
     assets = {route: (STATIC / leaf).read_bytes() for route, leaf in ASSETS.items()}
 
     @app.middleware("http")
@@ -171,9 +172,10 @@ def build_app(composition, port, *, market_reader=None):
 
 class OwnedReadHost:
     """Owns only its listener/server thread. No process termination API."""
-    def __init__(self, composition, *, market_reader=None):
+    def __init__(self, composition, *, market_reader=None, unified_reader=None):
         self.composition = composition
         self.market_reader = market_reader
+        self.unified_reader = unified_reader
         self.listener = self.server = self.thread = self.ready = None
 
     def open_read_only_session(self):
@@ -215,8 +217,9 @@ class OwnedReadHost:
             self.listener.bind(("127.0.0.1", 0))
             self.listener.listen(16)
             port = self.listener.getsockname()[1]
-            app = (build_app(self.composition, port) if self.market_reader is None else
-                   build_app(self.composition, port, market_reader=self.market_reader))
+            app = (build_app(self.composition, port)
+                   if self.market_reader is None and self.unified_reader is None else
+                   build_app(self.composition, port, market_reader=self.market_reader, unified_reader=self.unified_reader))
             self.ready = {"host_id": self.composition.host_id, "mode": MODE,
                           "process": self.composition.identity,
                           "url": f"http://127.0.0.1:{port}/quality_dips.html?mode=selected-paper"}

@@ -88,7 +88,7 @@ def financial_view(*, reader, verifier, clock, account_id, epoch):
         return unavailable
 
 
-def create_router(*, reader, verifier, clock, account_id, epoch, commands=None, market_reader=None):
+def create_router(*, reader, verifier, clock, account_id, epoch, commands=None, market_reader=None, unified_reader=None):
     router = APIRouter(prefix="/api/investments/quality-dips/selected-paper", tags=["selected-paper-unregistered"])
 
     @router.get("")
@@ -99,6 +99,14 @@ def create_router(*, reader, verifier, clock, account_id, epoch, commands=None, 
             if type(market_reader) is not IEXFeed:
                 raise HTTPException(status_code=503, detail='IEX_CACHE_READER_REQUIRED')
             result['market_data'] = market_reader.snapshot()
+        if unified_reader is not None:
+            from app.services.unified_paper_runtime import UnifiedMarketReadCapability
+            if type(unified_reader) is not UnifiedMarketReadCapability:
+                raise HTTPException(status_code=503, detail='UNIFIED_READ_CAPABILITY_REQUIRED')
+            try:
+                result['multi_market'] = unified_reader.read()
+            except (ValueError, OSError):
+                result['multi_market'] = None  # Never substitute unverified balances or startup status.
         return result
 
     @router.post("/commands")

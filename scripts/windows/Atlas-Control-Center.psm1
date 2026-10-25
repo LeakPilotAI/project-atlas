@@ -37,4 +37,18 @@ function Format-AtlasIEXDataStatus([object]$Snapshot = $null) {
     $fresh = @($Snapshot.quotes | Where-Object { $_.state -ceq 'FRESH' }).Count
     return "IEX data: $($Snapshot.connection), fresh quotes $fresh (single exchange, NOT NBBO); PAPER authorization: NO"
 }
-Export-ModuleMember -Function Get-AtlasFullStartupGate, Get-AtlasFullFrontendDecision, Invoke-AtlasPaperStop, Format-AtlasIEXDataStatus
+function Format-AtlasUnifiedPaperStatus([object]$Snapshot = $null) {
+    if ($null -eq $Snapshot -or $Snapshot.schema -cne 'ATLAS_UNIFIED_PAPER_VIEW_V1' -or
+        $Snapshot.startup_authorized -ne $false -or $null -ne $Snapshot.total_cash -or
+        $null -ne $Snapshot.total_equity) { return 'Multi-market PAPER: UNAVAILABLE; startup authorization: NO' }
+    $rows = @()
+    foreach ($name in @('QUALITY_DIPS', 'HYPERLIQUID')) {
+        $row = $Snapshot.lanes.$name
+        if ($null -eq $row -or $row.lane -cne $name) { $rows += "${name}: UNAVAILABLE"; continue }
+        $age = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - $row.at
+        $connection = if ($age -lt 0 -or $age -gt 5) { 'STALE' } else { $row.connection }
+        $rows += "${name}: $connection / $($row.session)"
+    }
+    return ($rows -join '; ') + '; separate accounts; startup authorization: NO'
+}
+Export-ModuleMember -Function Get-AtlasFullStartupGate, Get-AtlasFullFrontendDecision, Invoke-AtlasPaperStop, Format-AtlasIEXDataStatus, Format-AtlasUnifiedPaperStatus
