@@ -47,11 +47,12 @@ def load_fixture(root, expected):
     if hashlib.sha256(raw).hexdigest() != expected:
         raise ValueError("FIXTURE_MANIFEST_CHANGED")
     fixture = strict(raw.decode())
-    if (fixture.get("schema") != "QD_HTTP_SYNTHETIC_ONLY_V1"
+    if (fixture.get("schema") not in ("QD_HTTP_SYNTHETIC_ONLY_V1", "QD_HTTP_AUTO_SYNTHETIC_ONLY_V2")
             or set(fixture["phases"]) != {"entry", "partial", "final"}):
         raise ValueError("SYNTHETIC_FIXTURE_REQUIRED")
     for phase, data in fixture["phases"].items():
-        if data["enrollment"]["account_id"] != "synthetic-selected":
+        expected = "synthetic-auto" if fixture["schema"] == "QD_HTTP_AUTO_SYNTHETIC_ONLY_V2" else "synthetic-selected"
+        if data["enrollment"]["account_id"] != expected:
             raise ValueError("NO_OPERATIONAL_ACCOUNT")
         for part in (phase, "source", "projection", "reports"):
             if not part.isidentifier():
@@ -99,9 +100,26 @@ def build_app(root, fixture, port_number, host_id, request_log):
             source = base / ("absent" if mode == "unavailable" else "source")
             port = native.NativeFinancialReadPort(source_root=str(source), projection_root=str(base / "projection"),
                                                    report_root=str(base / "reports"))
-            return SelectedReadCapability(enrollment=enrollment,
+            capability = SelectedReadCapability
+            extra = {}
+            if fixture["schema"] == "QD_HTTP_AUTO_SYNTHETIC_ONLY_V2":
+                from app.services.quality_dips_autonomous_integration import (
+                    AutonomousSelectedRead,
+                )
+                capability = AutonomousSelectedRead
+                class FrozenCoordination:
+                    # Pinned synthetic checkpoint only; this host cannot run an engine.
+                    def read_status(self):
+                        value = copy.deepcopy(descriptor["coordination"])
+                        value["activity"]["observed_at"] = control["read_now"]
+                        packet = value["activity"]["l1"]
+                        value["activity"]["l1_state"] = "STALE" if packet else "UNAVAILABLE"
+                        value["activity"]["candidate"] = None  # No current ranking in historical fixtures.
+                        return value
+                extra["coordination"] = FrozenCoordination()
+            return capability(**extra, enrollment=enrollment,
                 authority=FixtureAuthority(enrollment, descriptor["current"], mode),
-                clock=lambda: int(time.time()), port=port)
+                clock=lambda: control["read_now"], port=port)
 
         def read_committed(self, account, epoch):
             return self.capability().read_committed(account, epoch)
@@ -112,7 +130,7 @@ def build_app(root, fixture, port_number, host_id, request_log):
     reader = Reader()
     first = fixture["phases"]["entry"]["enrollment"]
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    app.include_router(create_router(reader=reader, verifier=reader, clock=lambda: int(time.time()),
+    app.include_router(create_router(reader=reader, verifier=reader, clock=lambda: request_state.get()["read_now"],
                                     account_id=first["account_id"], epoch=first["epoch"]))
     assets = {path: (REPO / "backend/app/static" / leaf).read_bytes() for path, leaf in ASSETS.items()}
 
@@ -122,7 +140,7 @@ def build_app(root, fixture, port_number, host_id, request_log):
         path = request.url.path
         # Snapshot control before delay: retired responses remain old responses.
         with lock:
-            control = dict(state)
+            control = {**state, "read_now": int(time.time())}
         allowed = set(ASSETS) | {"/health", SELECTED, SELECTED + "/commands"}
         valid_query = not request.url.query or (path == "/quality_dips.html" and request.url.query == "mode=selected-paper")
         if (request.headers.get("host") != origin.removeprefix("http://")

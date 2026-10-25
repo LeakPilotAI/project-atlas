@@ -6,6 +6,7 @@ Research MANUAL_ONLY labels are research provenance, never forged trade approval
 
 from datetime import datetime
 from decimal import ROUND_FLOOR, Decimal, DecimalException, localcontext
+from threading import Lock
 from zoneinfo import ZoneInfo
 
 from app.investment.quality_dips_candidate_evidence import verified
@@ -302,7 +303,7 @@ def validate_autonomous_command(m, state, c):
 class AutonomousPaper:
     """Injected disposable ledger, research adapter and authorities. Never starts itself."""
 
-    def __init__(self, *, ledger, candidates, session_authority, source_authority, clock):
+    def __init__(self, *, ledger, candidates, session_authority, source_authority, clock, publication=None):
         if any(x is None for x in (ledger, candidates, session_authority, source_authority, clock)):
             raise ValueError("AUTO_DEPENDENCIES_REQUIRED")
         validate_autonomous_manifest(ledger.manifest)
@@ -313,6 +314,8 @@ class AutonomousPaper:
             source_authority,
             clock,
         )
+        self._decision_lock = Lock()
+        self.publication = publication  # Explicit disposable native bridge, never a default authority.
         self.grant = None  # Reconstructed instances never resume automatically.
         self.entry_admission_closed = True
         self.dispatch_closed = True
@@ -446,9 +449,22 @@ class AutonomousPaper:
                 event_stream_record(*row)
                 for row in db.execute("SELECT * FROM events ORDER BY revision")
             ]
-            return audit_financial_events(self.ledger.manifest, records, state)
+            audit = audit_financial_events(self.ledger.manifest, records, state)
+            if self.publication is not None:
+                self.publication.verify(records, state)
+            return audit
 
     def step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None):
+        # Serialize the same live coordinator through native ACK. This grants no
+        # cross-process recovery authority; an orphaned pending ACK still refuses.
+        if not self._decision_lock.acquire(timeout=2):
+            return {"execution": "SIMULATED", "filled": False, "reason": "DECISION_IN_PROGRESS"}
+        try:
+            return self._step(decision_id, bundles=bundles, quotes=quotes, observation=observation, fault=fault)
+        finally:
+            self._decision_lock.release()
+
+    def _step(self, decision_id, *, bundles, quotes, observation=None, fault=lambda phase: None):
         text(decision_id)
         request = strict(body({"bundles": bundles, "quotes": quotes, "observation": observation}))
         if (
@@ -463,6 +479,8 @@ class AutonomousPaper:
         operation = self.ledger.manifest["epoch"] + ":decision:" + digest(decision_id)
 
         def prepare(db, state, operations):
+            if self.publication is not None and not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='autonomous_activity'").fetchone():
+                raise NoFill("NATIVE_COORDINATION_VERSION_REQUIRED")
             if self.dispatch_closed:
                 raise NoFill("DISPATCH_CLOSED")
             now = self.clock()
@@ -496,8 +514,13 @@ class AutonomousPaper:
             fault("before_ack")
             with self.ledger.connect() as db:
                 db.execute("BEGIN IMMEDIATE")
-                self.ledger._load(db)
+                state, _, operations = self.ledger._load(db)
                 evidence = {"canonical_receipt": receipt, "execution": "SIMULATED"}
+                if self.publication is not None:
+                    # Reserve locally first. Native failure leaves the durable local ACK NULL.
+                    # No distributed atomicity or blind cross-store repair is claimed.
+                    evidence["native"] = self.publication.publish(operations[operation][0], receipt, state)
+                    fault("after_native_ack")
                 ack = body({"ack_digest": digest(evidence), "evidence": evidence})
                 db.execute(
                     "UPDATE projections SET receipt=? WHERE id=? AND receipt IS NULL",
@@ -505,20 +528,40 @@ class AutonomousPaper:
                 )
             fault("after_ack")
             audit = self.reconcile()
+            self._record_activity(decision_id, "ACKNOWLEDGED", None)
             return {"execution": "SIMULATED", "filled": True, "receipt": receipt, "audit": audit}
         except NoFill as error:
+            self._record_activity(decision_id, "REFUSED", str(error))
             return {"execution": "SIMULATED", "filled": False, "reason": str(error)}
         except (ValueError, OSError, KeyError, TypeError, DecimalException) as error:
             # Acknowledgement loss is never an invitation to replay a callback.
             with self.ledger.connect() as db:
                 self._append(db, "STOP_INCOMPLETE", self.grant)
             self.grant = None
+            self._record_activity(decision_id, "UNKNOWN", "UNKNOWN_OR_CORRUPT")
             return {
                 "execution": "SIMULATED",
                 "filled": False,
                 "reason": "UNKNOWN_OR_CORRUPT",
                 "detail": type(error).__name__,
             }
+
+    def _record_activity(self, decision_id, status, reason):
+        # Diagnostic decision evidence only; it never clears a pending financial ACK.
+        with self.ledger.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='autonomous_activity'").fetchone():
+                return  # Retained V1 coordinator: no implicit migration or new authority.
+            parent, n = digest(self.ledger.manifest), 0
+            for n, raw, prior, checksum in db.execute("SELECT * FROM autonomous_activity ORDER BY revision"):
+                if prior != parent or checksum != digest([parent, strict(raw)]):
+                    raise ValueError("AUTO_ACTIVITY_CORRUPT")
+                parent = checksum
+            if n >= 256:
+                raise ValueError("AUTO_ACTIVITY_CAPACITY")
+            value = {"decision_id": decision_id, "status": status, "reason": reason, "observed_at": self.clock(),
+                     "source_revision": db.execute("SELECT COUNT(*) FROM events").fetchone()[0]}
+            db.execute("INSERT INTO autonomous_activity VALUES(?,?,?,?)", (n + 1, body(value), parent, digest([parent, value])))
 
     def _decide(self, state, decision_id, request, session_proof, source_proof, mode, now):
         if len({(q["instrument_id"], q["feed_id"]) for q in request["quotes"]}) != len(

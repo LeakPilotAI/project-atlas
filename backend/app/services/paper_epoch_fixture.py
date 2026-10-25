@@ -41,6 +41,7 @@ def create_epoch_fixture(path, manifest):
         db.execute("INSERT INTO inception VALUES(?)", (body(manifest),))
         if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1":
             db.execute("CREATE TABLE autonomous_control(revision INTEGER PRIMARY KEY,body TEXT,parent TEXT,digest TEXT)")
+            db.execute("CREATE TABLE autonomous_activity(revision INTEGER PRIMARY KEY,body TEXT,parent TEXT,digest TEXT)")
     return EpochFixture(path, expected_manifest=manifest)
 
 

@@ -22,6 +22,16 @@ class SelectedReadCapability:
     current high-water custody/exclusion, not caller-created assertions. Native
     port verifies bound identities before reading and never creates resources.
     """
+    enrollment_schema = "QD_READ_ENROLLMENT_V1"
+
+    def _manifest_scope(self, manifest, enrollment, account_id):
+        return (manifest["schema"] == "PAPER_EPOCH_SELECTED_QD_V3"
+                and digest(manifest["account_policy"]) == enrollment["policy_digest"]
+                and manifest["account_policy"]["account_id"] == account_id)
+
+    def _source_identity_extensions(self, manifest, rows):
+        return {}  # Retained strict read payload is byte-shape compatible.
+
     def __init__(self, *, enrollment, authority, clock, port):
         if authority is None or clock is None or port is None:
             raise ValueError("READ_AUTHORITY_REQUIRED")
@@ -32,7 +42,7 @@ class SelectedReadCapability:
         e = strict(body(self.enrollment))
         required = {"schema", "account_id", "epoch", "manifest_digest", "policy_digest",
                     "source_root", "projection_root", "report_root", "inception"}
-        if (set(e) != required or e["schema"] != "QD_READ_ENROLLMENT_V1"
+        if (set(e) != required or e["schema"] != self.enrollment_schema
                 or e["account_id"] != account_id or e["epoch"] != epoch):
             raise ValueError("READ_ENROLLMENT_MISMATCH")
         now = self.clock()
@@ -57,10 +67,8 @@ class SelectedReadCapability:
                 raise CurrentReadEvidenceUnverified("CURRENT_PIN_UNVERIFIED")
             evidence = self.port.read_verified(e, pin)
             manifest, rows = evidence["manifest"], evidence["rows"]
-            if (manifest["schema"] != "PAPER_EPOCH_SELECTED_QD_V3"
+            if (not self._manifest_scope(manifest, e, account_id)
                     or digest(manifest) != e["manifest_digest"]
-                    or digest(manifest["account_policy"]) != e["policy_digest"]
-                    or manifest["account_policy"]["account_id"] != account_id
                     or manifest["epoch"] != epoch or len(rows) != pin["high_water"]
                     or any(strict(row["receipt"])["projection_required"] is not True for row in rows)
                     or any(strict(row["command"])["timestamp"] > now for row in rows)):
@@ -98,12 +106,13 @@ class SelectedReadCapability:
                     "source_identity": {"root": e["source_root"], "pin_digest": digest({
                                         "source": pin["source"], "reports": pin["reports"],
                                         "projection_root": e["projection_root"]}),
-                                        "generation": pin["generation"]},
+                                        "generation": pin["generation"],
+                                        **self._source_identity_extensions(manifest, rows)},
                     "policy_digest": e["policy_digest"], "report_status": report["status"],
                     "report": report, "selection": None,
                     "inception": {"schema": "QD_SELECTED_INCEPTION_VIEW_V1", "account_id": account_id,
                                   "epoch": epoch, "policy_digest": e["policy_digest"], "currency": "USD",
-                                  "policy_schema": manifest["account_policy"]["schema"],
+                                  "policy_schema": manifest.get("account_policy", manifest.get("autonomous_policy", {}))["schema"],
                                   "opening_cash": manifest["opening_cash"]}}
 
     def verify(self, payload, *, account_id, epoch, now):

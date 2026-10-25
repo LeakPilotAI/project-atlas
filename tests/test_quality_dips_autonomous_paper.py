@@ -21,13 +21,13 @@ from test_quality_dips_integration_v1 import bundle_for
 STAMP = int(datetime(2026, 10, 26, 14, tzinfo=UTC).timestamp())
 
 
-def setup(tmp_path, reopen=False):
-    now = [STAMP]
+def setup(tmp_path, reopen=False, stamp=STAMP):
+    now = [stamp]
     revoked = [False]
     m = manifest("synthetic-auto", "QUALITY_DIPS")
     m.update(
         schema="PAPER_EPOCH_AUTONOMOUS_QD_V1",
-        opened_at=STAMP,
+        opened_at=stamp,
         cost_policy="SIDE_NOTIONAL_FEE_SLIPPAGE_V1",
         autonomous_policy={
             "schema": "QD_AUTO_RISK_PARTIAL_THESIS_V1",
@@ -88,8 +88,8 @@ def setup(tmp_path, reopen=False):
             "schema": "QD_AUTO_SESSION_FIXTURE_V1",
             "session_id": "synthetic-session",
             "epoch": m["epoch"],
-            "issued_at": STAMP,
-            "expires_at": STAMP + 3600,
+            "issued_at": stamp,
+            "expires_at": stamp + 3600,
             "capabilities": ["AUTO_ENTRY", "AUTO_EXIT"],
             "feed_id": "synthetic-L1",
             "calendar_id": "synthetic-NYSE-2026",

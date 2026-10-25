@@ -52,10 +52,28 @@ def financial_view(*, reader, verifier, clock, account_id, epoch):
                 or any(type(position) is not dict or not 0 <= number(position["remaining"]) <= number(position["quantity"])
                        for position in state["positions"].values())):
             return {**unavailable, "status": "UNKNOWN", "reasons": ["PROJECTION_ACCOUNTING_INVALID"]}
+        autonomous = payload.get("autonomous")
+        breakdown = payload.get("cost_breakdown")
+        if autonomous is not None:
+            from app.services.quality_dips_autonomous_integration import validate_activity
+            validate_activity(autonomous, now=now)
+            if (type(breakdown) is not dict or set(breakdown) != {"fees", "slippage", "basis"}
+                    or breakdown["basis"] != "REALIZED_COSTS_EQUAL_2BPS_PER_SIDE"
+                    or number(breakdown["fees"]) < 0 or number(breakdown["slippage"]) < 0
+                    or number(breakdown["fees"]) + number(breakdown["slippage"]) != number(state["costs"])):
+                raise ValueError("AUTO_COST_BREAKDOWN_INVALID")
+        cash_costs = payload.get("cash_cost_evidence")
+        if autonomous is not None and (type(cash_costs) is not dict
+                or set(cash_costs) != {"schema", "fees", "slippage", "unallocated_entry_costs"}
+                or cash_costs["schema"] != "QD_AUTO_CASH_COSTS_V1"
+                or any(number(cash_costs[k]) < 0 for k in ("fees", "slippage", "unallocated_entry_costs"))
+                or number(cash_costs["fees"]) + number(cash_costs["slippage"]) != number(state["costs"]) + number(cash_costs["unallocated_entry_costs"])):
+            raise ValueError("AUTO_CASH_COSTS_INVALID")
         return {"schema": "QD_SELECTED_FINANCIAL_VIEW_V1", "account_id": account_id, "epoch": epoch,
+                **({"autonomous": autonomous, "available_cash": state["cash"], "cash_cost_evidence": cash_costs} if autonomous is not None else {}),
                 "status": "ACKNOWLEDGED", "cash": state["cash"],
                 "realized": {**{key: state[key] for key in ("gross", "costs", "net")},
-                             "fees": None, "slippage": None},
+                             "fees": breakdown["fees"] if breakdown else None, "slippage": breakdown["slippage"] if breakdown else None},
                 "positions": {key: value for key, value in state["positions"].items() if number(value["remaining"]) > 0},
                 "source_revision": state["revision"], "source_identity": payload["source_identity"],
                 "policy_digest": payload["policy_digest"], "observed_at": payload["observed_at"],

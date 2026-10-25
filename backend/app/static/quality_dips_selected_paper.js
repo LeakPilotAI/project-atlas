@@ -38,6 +38,17 @@
     if (data.report != null && (!object(data.report) || data.report.schema !== 'FS3_DAILY_REPORT_V1' ||
         data.report.account_id !== data.account_id || data.report.epoch !== data.epoch ||
         data.report.status !== data.report_status || !object(data.report.period))) throw Error('REPORT_SCOPE_MISMATCH');
+    if (data.autonomous != null) {
+      const a = data.autonomous;
+      if (!object(a) || a.schema !== 'QD_AUTO_ACTIVITY_V1' || a.execution !== 'SIMULATED' ||
+          !['RUNNING','PAUSED','STOPPING','STOPPED','STOP_INCOMPLETE'].includes(a.session_state) ||
+          a.controls !== 'DISABLED_NOT_OPERATIONALLY_ACCEPTED' || !revision(a.observed_at) ||
+          !['FRESH','STALE','UNAVAILABLE'].includes(a.l1_state) ||
+          (a.l1 != null && (!object(a.l1) || a.l1.schema !== 'QD_AUTO_L1_V1' || !decimal(a.l1.bid) || !decimal(a.l1.ask)))) throw Error('INVALID_FINANCIAL_RESPONSE');
+    }
+    if (data.cash_cost_evidence != null && (!object(data.cash_cost_evidence) ||
+        data.cash_cost_evidence.schema !== 'QD_AUTO_CASH_COSTS_V1' ||
+        ['fees','slippage','unallocated_entry_costs'].some(k => !decimal(data.cash_cost_evidence[k]) || Number(data.cash_cost_evidence[k]) < 0))) throw Error('INVALID_COST_EVIDENCE');
     return data;
   }
 
@@ -58,12 +69,14 @@
     const reportFacts = object(report) ? fact('Report date', label(report.date)) + fact('Report timezone', label(report.timezone)) +
       fact('Reporting cutoff (exclusive)', date(report.period.end_exclusive)) + fact('Effective cutoff (exclusive)', date(report.period.effective_end_exclusive)) +
       fact('Report realized fees', amount(report.realized?.fees)) + fact('Report realized slippage', amount(report.realized?.slippage)) : fact('Reporting cutoff', 'UNAVAILABLE');
-    return `<dl class="paperFacts">${fact('Account', label(data.account_id))}${fact('Epoch', label(data.epoch))}
+    const a = data.autonomous;
+    const activity = object(a) ? `<h3>Autonomous PAPER activity - SIMULATED</h3><p class="note">Informational only. Financial Start/Stop controls are disabled pending operational acceptance. Quotes are last committed evidence, not a connected live feed.</p><dl class="paperFacts">${fact('Session state', label(a.session_state))}${fact('Modeled fees debited from cash', amount(data.cash_cost_evidence?.fees))}${fact('Modeled slippage debited from cash', amount(data.cash_cost_evidence?.slippage))}${fact('Unallocated entry costs', amount(data.cash_cost_evidence?.unallocated_entry_costs))}${fact('Available reconciled cash', amount(data.available_cash))}${fact('Latest acknowledged decision', label(a.decision?.kind))}${fact('Decision identity', label(a.decision?.id))}${fact('Simulated quantity', label(a.decision?.quantity))}${fact('Exit reason', label(a.decision?.reason))}${fact('Last verified ranked candidate', label(a.candidate?.symbol))}${fact('L1 evidence state', label(a.l1_state))}${fact('Observed bid', amount(a.l1?.bid))}${fact('Observed ask', amount(a.l1?.ask))}${fact('Quote timestamp (UTC)', date(a.l1?.source_timestamp))}${fact('Quote provenance', label(a.l1?.provider_id))}${fact('Feed / entitlement', label(a.l1?.feed_id) + ' / ' + label(a.l1?.entitlement_id))}${fact('Latest refusal / uncertainty', label(a.latest_refusal?.reason))}${fact('Pending exit evidence', a.pending_exits == null ? 'UNAVAILABLE' : label(a.pending_exits))}</dl>` : '';
+    return `${activity}<dl class="paperFacts">${fact('Account', label(data.account_id))}${fact('Epoch', label(data.epoch))}
       ${fact('Selected policy', label(data.inception?.policy_schema))}${fact('Policy identity', label(data.policy_digest))}
       ${fact('Hypothetical starting cash', amount(data.inception?.opening_cash))}${fact('Verified cash at snapshot', amount(data.cash))}
       ${fact('Source revision', String(data.source_revision))}${fact('Projection revision', revision(data.projection_revision) ? String(data.projection_revision) : 'UNAVAILABLE')}
       ${fact('Realized gross P&L', amount(data.realized.gross))}${fact('Realized net P&L', amount(data.realized.net))}
-      ${fact('Realized trading costs', amount(data.realized.costs))}${fact('Aggregate fees', amount(data.realized.fees))}${fact('Aggregate slippage', amount(data.realized.slippage))}
+      ${fact('Realized trading costs', amount(data.realized.costs))}${fact(object(a) ? 'Realized fees' : 'Aggregate fees', amount(data.realized.fees))}${fact(object(a) ? 'Realized slippage' : 'Aggregate slippage', amount(data.realized.slippage))}
       ${fact('Total equity / unrealized valuation', 'UNAVAILABLE')}${fact('Source observed (UTC)', date(data.observed_at))}
       ${fact('Report completeness', label(data.report_status))}${fact('Lifecycle acceptance', label(data.lifecycle_status))}${reportFacts}</dl>
       <h3>Open positions in this selected account</h3><p class="note">Patient overnight holdings are permitted. This read does not close positions.</p>

@@ -171,3 +171,46 @@ test('responsive and accessible structural contract, without claiming layout/bro
   assert.match(html,/overflow-wrap:anywhere/);assert.match(html,/\.paperTable\{overflow:auto/);
   assert.doesNotMatch(external,/method:\s*['"]POST['"]|\/commands/);
 });
+function automatic() {
+  const d=payload();
+  d.available_cash=d.cash;
+  d.autonomous={schema:'QD_AUTO_ACTIVITY_V1',execution:'SIMULATED',session_state:'PAUSED',observed_at:STAMP,
+    controls:'DISABLED_NOT_OPERATIONALLY_ACCEPTED',candidate:{symbol:'SPY'},l1_state:'FRESH',
+    l1:{schema:'QD_AUTO_L1_V1',bid:'109.9',ask:'110',source_timestamp:STAMP,provider_id:'SYNTHETIC',feed_id:'FIXTURE',entitlement_id:'NOT_REAL'},
+    decision:{id:'partial-fixture',kind:'EXIT',quantity:'0.4',reason:'EXIT_REVIEW_PARTIAL'},
+    pending_exits:null,latest_refusal:{reason:'L1_STALE'}};
+  return d;
+}
+test('autonomous evidence displays session L1 simulated decision and disabled-control explanation',async()=>{
+  const h=harness(automatic());await h.controller.load();const s=h.elements.paperContent.innerHTML;
+  for(const value of ['SIMULATED','PAUSED','109.9','110','SYNTHETIC','NOT_REAL','partial-fixture','EXIT_REVIEW_PARTIAL','L1_STALE'])assert.ok(s.includes(value));
+  assert.match(s,/Financial Start\/Stop controls are disabled/);assert.doesNotMatch(s,/<button|<form/);
+  assert.equal(h.requests.length,1);assert.equal(h.requests[0].options.method,'GET');
+});
+test('autonomous missing quote and pending exit evidence are unavailable',async()=>{
+  const d=automatic();d.autonomous.l1=null;d.autonomous.l1_state='UNAVAILABLE';d.autonomous.candidate=null;
+  const h=harness(d);await h.controller.load();const s=h.elements.paperContent.innerHTML;
+  assert.match(s,/Observed bid<\/dt><dd>UNAVAILABLE/);assert.match(s,/Pending exit evidence<\/dt><dd>UNAVAILABLE/);
+  assert.match(s,/Last verified ranked candidate<\/dt><dd>UNAVAILABLE/);
+});
+test('autonomous stale quote is explicit and never presented as connected live feed',async()=>{
+  const d=automatic();d.autonomous.l1_state='STALE';const h=harness(d);await h.controller.load();
+  assert.match(h.elements.paperContent.innerHTML,/L1 evidence state<\/dt><dd>STALE/);
+  assert.match(h.elements.paperContent.innerHTML,/not a connected live feed/);
+});
+test('autonomous malformed activity clears prior balances',async()=>{
+  const d=automatic();d.autonomous.execution='REAL';const h=harness();await h.controller.load();h.setData(d);await h.controller.load();
+  assert.equal(h.elements.paperStatus.textContent,'UNKNOWN');assert.doesNotMatch(h.elements.paperContent.innerHTML,/943\.968/);
+});
+test('autonomous quote provenance and refusal explanations escape untrusted text',async()=>{
+  const d=automatic();d.autonomous.l1.provider_id='<img src=x onerror=alert(1)>';d.autonomous.latest_refusal.reason='<script>bad()</script>';
+  const h=harness(d);await h.controller.load();const s=h.elements.paperContent.innerHTML;
+  assert.ok(s.includes('&lt;img'));assert.ok(s.includes('&lt;script&gt;'));assert.doesNotMatch(s,/<img|<script/);
+});
+test('autonomous cash-debited costs remain separate from realized allocations',async()=>{
+  const d=automatic();d.cash_cost_evidence={schema:'QD_AUTO_CASH_COSTS_V1',fees:'0.02',slippage:'0.02',unallocated_entry_costs:'0.04'};
+  const h=harness(d);await h.controller.load();const s=h.elements.paperContent.innerHTML;
+  assert.match(s,/Modeled fees debited from cash<\/dt><dd>\$0\.02/);assert.match(s,/Unallocated entry costs<\/dt><dd>\$0\.04/);
+  assert.match(s,/Realized fees/);assert.doesNotMatch(s,/Aggregate fees/);
+  d.cash_cost_evidence.fees='-1';h.setData(d);await h.controller.load();assert.equal(h.elements.paperStatus.textContent,'UNKNOWN');
+});

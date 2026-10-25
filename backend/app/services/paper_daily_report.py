@@ -46,10 +46,10 @@ def frame(scope, manifest, pin, rows, head, day, observed):
             or any(strict(r["command"])["timestamp"] > observed for r in rows)):
         raise ValueError("Source count/epoch or future-information mismatch")
     required = sum(strict(r["receipt"])["projection_required"] for r in rows)
-    return {"schema": "FS3_DAILY_REPORT_V1", "report_version": 1,
+    return {"schema": "FS3_DAILY_REPORT_V1", "report_version": 2 if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1" else 1,
             "account_id": scope["account_id"], "epoch": scope["epoch"], "policy_digest": scope["policy_digest"],
             "strategy": manifest["strategy"], "currency": manifest["currency"],
-            "cost_policy": manifest["cost_policy"], "cost_allocation": "FS3_FEE_FIRST_REMAINDER_SLIPPAGE_V1", "timezone": scope["timezone"], "date": day,
+            "cost_policy": manifest["cost_policy"], "cost_allocation": "QD_AUTO_SIDE_COST_ALLOCATION_V1" if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1" else "FS3_FEE_FIRST_REMAINDER_SLIPPAGE_V1", "timezone": scope["timezone"], "date": day,
             "observed_at": observed, "period": {"start": start, "end_exclusive": end,
             "effective_end_exclusive": effective, "inception": manifest["opened_at"],
             "coverage_start": max(start, manifest["opened_at"]), "cash_opening_at": max(start, manifest["opened_at"])},
@@ -91,6 +91,13 @@ def build_daily_report(scope, manifest, pin, rows, day, observed):
                 qty = number(command["quantity"])
                 allocated_fee = 2 * entry * qty * number(manifest["fees_bps"]) / 10000
                 allocated_cost = 2 * entry * qty * (number(manifest["fees_bps"]) + number(manifest["slippage_bps"])) / 10000
+                if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1":
+                    # Receipt-bound replay determines deferred entry allocation exactly.
+                    prefix = through_rows[:through_rows.index(row)]
+                    prior, _, _ = replay_verified_events(manifest, prefix)
+                    current, _, _ = replay_verified_events(manifest, [*prefix, row])
+                    allocated_cost = number(current["costs"]) - number(prior["costs"])
+                    allocated_fee = allocated_cost * number(manifest["fees_bps"]) / (number(manifest["fees_bps"]) + number(manifest["slippage_bps"]))
                 fee += allocated_fee
                 slip += allocated_cost - allocated_fee
         report.update(cash={"opening": before["cash"], "closing": after["cash"]},
@@ -116,6 +123,7 @@ def audit_daily_report(report, scope, manifest, pin, rows, snapshot):
             raise ValueError("Report metadata/source/cutoff mismatch")
         start, end = metadata["period"]["start"], metadata["period"]["effective_end_exclusive"]
         cash, opening = number(manifest["opening_cash"]), number(manifest["opening_cash"])
+        autonomous = manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1"
         positions, seen = {}, set()
         gross = fees = slippage = costs = net = Decimal(0)
         counts = {"entries": 0, "exits": 0}
@@ -134,6 +142,11 @@ def audit_daily_report(report, scope, manifest, pin, rows, snapshot):
                     "revision": 1, "origin_ref": c["origin_ref"], "realized_net": "0"}
                 if manifest["strategy"] == "QUALITY_DIPS":
                     cash -= price * qty
+                if autonomous:
+                    entry_cost = price * qty * (number(manifest["fees_bps"]) + number(manifest["slippage_bps"])) / 10000
+                    cash -= entry_cost
+                    positions[ident].update(entry_costs=str(entry_cost), remaining_entry_costs=str(entry_cost),
+                        entry_snapshot=c["evidence"]["entry_snapshot"], instrument=c["evidence"]["instrument"])
                 if within: counts["entries"] += 1
             else:
                 p = positions[ident]
@@ -141,11 +154,17 @@ def audit_daily_report(report, scope, manifest, pin, rows, snapshot):
                 gain = (price - entry) * qty * (1 if p["side"] == "LONG" else -1)
                 fee = 2 * entry * qty * number(manifest["fees_bps"]) / 10000
                 cost = 2 * entry * qty * (number(manifest["fees_bps"]) + number(manifest["slippage_bps"])) / 10000
+                if autonomous:
+                    allocation = number(p["remaining_entry_costs"]) if qty == number(p["remaining"]) else number(p["entry_costs"]) * qty / number(p["quantity"])
+                    exit_cost = price * qty * (number(manifest["fees_bps"]) + number(manifest["slippage_bps"])) / 10000
+                    cost = allocation + exit_cost
+                    fee = cost * number(manifest["fees_bps"]) / (number(manifest["fees_bps"]) + number(manifest["slippage_bps"]))
+                    p["remaining_entry_costs"] = str(number(p["remaining_entry_costs"]) - allocation)
                 slip = cost - fee
                 realized = gain - cost
                 p.update(remaining=str(number(p["remaining"]) - qty), revision=p["revision"] + 1,
                          realized_net=str(number(p["realized_net"]) + realized))
-                cash += price * qty - cost if manifest["strategy"] == "QUALITY_DIPS" else realized
+                cash += price * qty - (exit_cost if autonomous else cost) if manifest["strategy"] == "QUALITY_DIPS" else realized
                 if within:
                     counts["exits"] += 1
                     gross += gain
