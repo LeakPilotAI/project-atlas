@@ -194,6 +194,17 @@ class OperationalAutonomousReader:
     def __init__(self, *, enrollment, trust, authority, clock, projection):
         self.dependencies = enrollment, trust, authority, clock, projection
 
+    @property
+    def enrollment(self):
+        return validate_enrollment(self.dependencies[0])
+
+    def verify_resources(self):
+        for resource in self.enrollment['resources'].values():
+            with fs2.w.WindowsOutput(resource['path']) as out:
+                if fs2.native.file_identity(out.root_handle) != resource['native_id']:
+                    raise ValueError('OP_AUTO_NATIVE_RESOURCE_MISMATCH')
+        return True
+
     def read_committed(self):
         enrollment, trust, authority, clock, projection = self.dependencies
         if any(v is None for v in self.dependencies):

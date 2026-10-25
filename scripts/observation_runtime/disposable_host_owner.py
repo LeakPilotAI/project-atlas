@@ -45,7 +45,7 @@ def observe_pid(pid):
 
 class OwnedHost:
     """Only retained Popen ownership permits stdin EOF; never kill/terminate."""
-    def __init__(self, root, manifest_digest, *, runtime_fixture=False):
+    def __init__(self, root, manifest_digest, *, runtime_fixture=False, control_fixture=False):
         if os.name != "nt":
             raise RuntimeError("WINDOWS_NATIVE_ACCEPTANCE_ONLY")
         root = Path(root).absolute()
@@ -53,10 +53,12 @@ class OwnedHost:
                 or not root.is_dir() or any(p.is_symlink() or p.is_junction() for p in [root, *root.parents])):
             raise ValueError("EXPLICIT_DISPOSABLE_ROOT_REQUIRED_BEFORE_PROCESS_OR_LOG")
         script = REPO / "scripts/observation_runtime/selected_account_readonly_host.py"
-        if runtime_fixture:
+        if runtime_fixture or control_fixture:
             if not root.name.startswith("qd-http-browser-runtime-"):
                 raise ValueError("EXPLICIT_RUNTIME_FIXTURE_ROOT_REQUIRED")
             script = REPO / "tests/qd_autonomous_runtime_host.py"
+            if control_fixture:
+                script = REPO / "tests/qd_control_stop_host.py"
         self.lines, self.closed, self.shutdown_requested = queue.Queue(), False, False
         # Windows venv redirectors may spawn a second PID. Directly retain the
         # actual interpreter; use only the already installed venv libraries.

@@ -17,4 +17,17 @@ function Get-AtlasFullStartupGate([string]$Root) {
 function Get-AtlasFullFrontendDecision([string]$Root) {
     return (Get-AtlasFullStartupGate $Root) + ' Full frontend ownership/readiness is not established; read-only dashboard remains separate.'
 }
-Export-ModuleMember -Function Get-AtlasFullStartupGate, Get-AtlasFullFrontendDecision
+function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emergency) {
+    if ($null -eq $AcceptedSession -or $AcceptedSession.verify_session() -isnot [bool] -or
+        -not $AcceptedSession.verify_session()) {
+        throw 'PAPER_STOP_NOT_ENROLLED: no accepted owned session; no legacy stop fallback.'
+    }
+    $mode = if ($Emergency) { 'EMERGENCY' } else { 'SHUTDOWN_FLATTEN' }
+    $result = $AcceptedSession.request_stop($mode)
+    if ($result.schema -cne 'QD_CONTROL_STOP_V1' -or
+        $result.phase -cnotin @('FINISHED', 'IN_PROGRESS')) {
+        throw 'PAPER_STOP_OUTCOME_UNVERIFIED'
+    }
+    return $result
+}
+Export-ModuleMember -Function Get-AtlasFullStartupGate, Get-AtlasFullFrontendDecision, Invoke-AtlasPaperStop

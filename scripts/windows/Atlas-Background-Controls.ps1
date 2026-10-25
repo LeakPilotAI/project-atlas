@@ -1,6 +1,6 @@
 # Manual Windows Forms controls for normal and opt-in gaming background mode.
 #Requires -Version 5.1
-param([object]$AcceptedSelectedReadBridge = $null)
+param([object]$AcceptedSelectedReadBridge = $null, [object]$AcceptedPaperSession = $null)
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -52,7 +52,7 @@ $statusButton.Enabled = $true
 $form.Controls.Add($statusButton)
 
 $stopButton = New-Object System.Windows.Forms.Button
-$stopButton.Text = "Stop Atlas (verified backend only)"
+$stopButton.Text = "Stop Atlas (graceful PAPER close)"
 $stopButton.Location = New-Object System.Drawing.Point(20, 204)
 $stopButton.Size = New-Object System.Drawing.Size(445, 34)
 $stopButton.Enabled = $false
@@ -168,7 +168,7 @@ function Apply-AtlasStatus($Result) {
     $color = Get-AtlasBackgroundStatusColor ([string]$Result.state)
     Set-StatusMessage "$($Result.state): $($Result.message)" $color
     $startButton.Enabled = ($Result.state -eq "STOPPED")
-    $stopButton.Enabled = ($Result.state -eq "running")
+    $stopButton.Enabled = ($null -ne $AcceptedPaperSession)
     $statusButton.Enabled = $true
     $gamingButton.Enabled = ($Result.state -eq "STOPPED")
 }
@@ -298,7 +298,13 @@ $statusButton.Add_Click({
     } | Out-Null
 })
 $stopButton.Add_Click({
-    Invoke-AtlasBackgroundUiCallback { Start-BackgroundManager "Stop" } {
+    Invoke-AtlasBackgroundUiCallback {
+        Set-StatusMessage 'Closing entry admission; validating PAPER exit and drain...' ([System.Drawing.Color]::DarkSlateGray)
+        $status.Refresh()
+        $result = Invoke-AtlasPaperStop $AcceptedPaperSession
+        $diagnostics.Text = ($result | ConvertTo-Json -Depth 12)
+        Set-StatusMessage "$($result.phase): $($result.outcome.status) / $($result.outcome.position_state) $($result.outcome.reason)" ([System.Drawing.Color]::DarkSlateGray)
+    } {
         param($callbackError)
         $color = Get-AtlasBackgroundStatusColor "error"
         Set-StatusMessage "Atlas Stop failed: $($callbackError.Exception.Message)" $color
@@ -355,6 +361,15 @@ $tray.Text = 'Atlas Control Center'
 $trayMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $showItem = $trayMenu.Items.Add('Show Control Center')
 $showItem.Add_Click({ $form.Show(); $form.WindowState = 'Normal'; $form.Activate() })
+$emergencyItem = $trayMenu.Items.Add('Emergency Stop PAPER (preserve positions)')
+$emergencyItem.Add_Click({
+    try {
+        $status.Refresh()
+        $result = Invoke-AtlasPaperStop $AcceptedPaperSession -Emergency
+        $diagnostics.Text = ($result | ConvertTo-Json -Depth 12)
+        Set-StatusMessage 'Emergency dispatch stopped; positions preserved, no flatten claimed.' ([System.Drawing.Color]::DarkRed)
+    } catch { Set-StatusMessage $_.Exception.Message ([System.Drawing.Color]::DarkRed) }
+})
 $exitItem = $trayMenu.Items.Add('Exit GUI (close read-only host only)')
 $exitItem.Add_Click({ $form.Close() })
 $tray.ContextMenuStrip = $trayMenu
@@ -378,6 +393,10 @@ $closeGui.Add_Click({ $form.Close() })
 $form.Controls.Add($closeGui)
 # A request can always display the gate refusal without a recovery-capable Status call.
 $startButton.Enabled = $true
+if ($null -ne $AcceptedPaperSession) {
+    try { $stopButton.Enabled = ($AcceptedPaperSession.verify_session() -eq $true) }
+    catch { $stopButton.Enabled = $false }
+}
 
 $script:activeManager = $null
 $timer = New-Object System.Windows.Forms.Timer

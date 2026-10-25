@@ -13796,6 +13796,11 @@ Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Do
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
 === ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: OPERATIONAL_RUNTIME_CONTROL_CENTER_WIRING 2026-10-25
+Status: SOURCE/DISPOSABLE VERIFIED; BLOCKED_WAIT zero ACTIVE; PAPER startup NO;Production NO-GO.
+Evidence:114+43+9=166Pythonpasses0fail0skip;32frontendpasses;26new cases;2genuinebrowser scenarios,9nativeHTTP/PowerShell/ownership cases. Operational factory binds accepted components/native resources;normal Control Center Stop uses SHUTDOWN_FLATTEN,no legacy fallback,Emergency separate. Earlier sandbox timeout retained;current exact-root query0matches,no forced cleanup. Historical21decisions/seven phases unchanged.
+Next action:real scoped B1C1D1E1 acceptance and separately authorized actual issuer/session/clock/custody/writer/provider installation,inception and launch. No real13roots/services/providers/Genesis touched. See docs/OPERATIONAL_RUNTIME_CONTROL_CENTER_CONTINUATION_2026-10-25.md.
+
 Milestone: PERSONAL_PAPER_SHUTDOWN_FLATTEN 2026-10-25
 Status: SOURCE/DISPOSABLE VERIFIED; BLOCKED_WAIT zero ACTIVE; PAPER startup NO; Production NO-GO.
 Evidence: 112+108=220 distinct Python passes,0 failed/skipped;32 frontend passes;25 new Python cases. Graceful flatten, incomplete/UNKNOWN preservation, operational reader/report wiring and local dependency ports; no real resources/services/providers touched. Operator risk acknowledgement is not independent acceptance. Seven phases/all21 decisions preserved.

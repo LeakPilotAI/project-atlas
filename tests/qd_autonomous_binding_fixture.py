@@ -19,7 +19,7 @@ from test_quality_dips_autonomous_enrollment import fixture
 from test_quality_dips_autonomous_paper import STAMP
 
 
-def build(root, confinement):
+def build(root, confinement, *, stamp=STAMP):
     spec = importlib.util.spec_from_file_location(
         "v5_fixture_native",
         confinement.parents[2] / "scripts/volume_inspector/snapshot_store.py",
@@ -29,7 +29,7 @@ def build(root, confinement):
     for name in ("coordination", "control", "custody"):
         with native.w.WindowsOutput.create_root(str(root / name)):
             pass
-    x = compose(root, confinement, stamp=STAMP, coordination_root=root / "coordination")
+    x = compose(root, confinement, stamp=stamp, coordination_root=root / "coordination")
     f = fixture()
     e = f.e
     e.update(
@@ -58,7 +58,7 @@ def build(root, confinement):
         sample=lambda: {
             "schema": "QD_AUTO_NATIVE_CLOCK_V4",
             "utc": x.n.now[0],
-            "monotonic_ns": (x.n.now[0] - STAMP) * 10**9,
+            "monotonic_ns": (x.n.now[0] - stamp) * 10**9,
             "uncertainty_ms": 0,
             "source": e["clock_source"],
         },
@@ -125,7 +125,10 @@ def build(root, confinement):
         sessions=f.sessions,
     )
     # Publish an initial *disposable* report; no operational inception writer used.
-    x.x.service.publish("2026-10-26", x.n.now[0])
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    day = datetime.fromtimestamp(x.n.now[0], ZoneInfo(x.n.m["timezone"])).date().isoformat()
+    x.x.service.publish(day, x.n.now[0])
     runtime = EnrolledAutonomousRuntime(
         runtime=x.runtime, admission=admission, financial=financial
     )

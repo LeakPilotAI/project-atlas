@@ -79,7 +79,8 @@ class FixtureAuthority:
         yield SimpleNamespace(snapshot=pin, check=lambda p, t: p == pin)
 
 
-def build_app(root, fixture, port_number, host_id, request_log, *, reader_factory=None):
+def build_app(root, fixture, port_number, host_id, request_log, *, reader_factory=None,
+              control_bridge=None, control_token=None):
     spec = importlib.util.spec_from_file_location("disposable_native_read", REPO / "scripts/volume_inspector/financial_read_port.py")
     native = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(native)
@@ -132,6 +133,9 @@ def build_app(root, fixture, port_number, host_id, request_log, *, reader_factor
     reader = Reader()
     first = fixture["phases"]["entry"]["enrollment"]
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+    if control_bridge is not None:
+        from app.services.quality_dips_stop_bridge import register_stop_routes
+        register_stop_routes(app, bridge=control_bridge, origin=origin, token=control_token)
     app.include_router(create_router(reader=reader, verifier=reader, clock=lambda: request_state.get()["read_now"],
                                     account_id=first["account_id"], epoch=first["epoch"]))
     assets = {path: (REPO / "backend/app/static" / leaf).read_bytes() for path, leaf in ASSETS.items()}
@@ -144,6 +148,8 @@ def build_app(root, fixture, port_number, host_id, request_log, *, reader_factor
         with lock:
             control = {**state, "read_now": int(time.time())}
         allowed = set(ASSETS) | {"/health", SELECTED, SELECTED + "/commands"}
+        if control_bridge is not None:
+            allowed.add('/_atlas/control/stop')
         valid_query = not request.url.query or (path == "/quality_dips.html" and request.url.query == "mode=selected-paper")
         if (request.headers.get("host") != origin.removeprefix("http://")
                 or request.headers.get("origin") not in (None, origin)
@@ -151,7 +157,8 @@ def build_app(root, fixture, port_number, host_id, request_log, *, reader_factor
             response = Response(status_code=403)
         elif path not in allowed or not valid_query:
             response = Response(status_code=404)
-        elif request.method not in ("GET", "POST") or (request.method == "POST" and path != SELECTED + "/commands"):
+        elif request.method not in ("GET", "POST") or (request.method == "POST" and path != SELECTED + "/commands"
+                and not (control_bridge is not None and path == '/_atlas/control/stop')):
             response = Response(status_code=405)
         elif path == SELECTED and control["mode"] == "network_failure":
             response = Response(status_code=503)

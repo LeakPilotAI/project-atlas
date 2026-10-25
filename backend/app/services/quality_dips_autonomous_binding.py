@@ -31,7 +31,7 @@ class NativeFinancialBinding:
         repo = Path(__file__).resolve().parents[3]
         if (
             self.root.parent != repo / "logs/diagnostics"
-            or not self.root.name.startswith("qd-auto-runtime-")
+            or not self.root.name.startswith(("qd-auto-runtime-", "qd-http-browser-runtime-"))
             or self.root.drive.upper() != "D:"
             or runtime.enrollment["scope"] != "DISPOSABLE"
             or any(p.is_symlink() or p.is_junction() for p in (self.root, *self.root.parents))
@@ -171,11 +171,14 @@ class EnrolledAutonomousRuntime:
     The inner V3/FS2 test schemas remain explicit and unchanged.
     """
 
+    financial_types = (NativeFinancialBinding,)
+    execution_domain = "DISPOSABLE_TEST"
+
     def __init__(self, *, runtime=None, admission=None, financial=None):
         if any(v is None for v in (runtime, admission, financial)):
             raise ValueError("V5_ENROLLED_DEPENDENCIES_REQUIRED")
         if (
-            type(financial) is not NativeFinancialBinding
+            type(financial) not in self.financial_types
             or financial.runtime is not runtime
             or admission.native is not financial
             or admission.scope != "LOCAL_ENROLLED"
@@ -188,7 +191,7 @@ class EnrolledAutonomousRuntime:
             {
                 "schema": "QD_AUTO_NATIVE_RUNTIME_V5",
                 "scope": "LOCAL_ENROLLED",
-                "execution_domain": "DISPOSABLE_TEST",
+                "execution_domain": self.execution_domain,
                 "native_enrollment": admission.enrollment,
                 "runtime_digest": digest(runtime.enrollment),
             }

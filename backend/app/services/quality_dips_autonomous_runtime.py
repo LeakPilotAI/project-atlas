@@ -32,18 +32,7 @@ class AutonomousRuntime:
                 or type(e["process_identity"]["image"]) is not str or not e["process_identity"]["image"]
                 or e["writer_roster"] != ["decision", "source", "projection", "report", "coordination"]):
             raise ValueError("RUNTIME_SCOPE_REQUIRED")
-        # Do not relabel FS2_TEST_PIN_V1 or financial fixture grants operational.
-        if e["scope"] != "DISPOSABLE":
-            raise ValueError("ENROLLED_AUTONOMOUS_NATIVE_CONTRACT_NOT_ACCEPTED")
-        root = Path(e["disposable_root"]).absolute()
-        diagnostics = Path(__file__).resolve().parents[3] / "logs/diagnostics"
-        paths = [engine.ledger.path, engine.publication.store.output.root if engine.publication else root,
-                 reports.archive.output.root, *reader.port.paths]
-        if (root.parent != diagnostics or root.drive.upper() != "D:"
-                or not root.name.startswith(("qd-auto-runtime-", "qd-http-browser-runtime-"))
-                or any(p.is_symlink() or p.is_junction() for p in [root, *root.parents])
-                or any(not Path(p).absolute().is_relative_to(root) for p in paths)):
-            raise ValueError("RUNTIME_DISPOSABLE_CONFINEMENT_REQUIRED")
+        self._validate_resources(e, engine, reader, reports)
         self.engine, self.reader, self.reports = engine, reader, reports
         self.authority, self.ownership, self.clock, self.custody = authority, ownership, clock, custody
         if (engine.publication is None or reports.store is not engine.publication.store
@@ -56,6 +45,20 @@ class AutonomousRuntime:
         self.run_done.set()
         self.grant, self.last_clock, self.sequence, self.seen = None, None, 0, {}
         self.halted = True  # Never resume on construction/restart.
+
+    def _validate_resources(self, e, engine, reader, reports):
+        # Do not relabel FS2_TEST_PIN_V1 or financial fixture grants operational.
+        if e["scope"] != "DISPOSABLE":
+            raise ValueError("ENROLLED_AUTONOMOUS_NATIVE_CONTRACT_NOT_ACCEPTED")
+        root = Path(e["disposable_root"]).absolute()
+        diagnostics = Path(__file__).resolve().parents[3] / "logs/diagnostics"
+        paths = [engine.ledger.path, engine.publication.store.output.root if engine.publication else root,
+                 reports.archive.output.root, *reader.port.paths]
+        if (root.parent != diagnostics or root.drive.upper() != "D:"
+                or not root.name.startswith(("qd-auto-runtime-", "qd-http-browser-runtime-"))
+                or any(p.is_symlink() or p.is_junction() for p in [root, *root.parents])
+                or any(not Path(p).absolute().is_relative_to(root) for p in paths)):
+            raise ValueError("RUNTIME_DISPOSABLE_CONFINEMENT_REQUIRED")
 
     def _now(self):
         sample = strict(body(self.clock.sample()))

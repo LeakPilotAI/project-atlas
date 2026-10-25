@@ -48,7 +48,14 @@ def flatten_and_stop(owner, evidence=None, owned_close=None):
         "source_revision": None,
         "process_shutdown_allowed": False,
         "reason": None,
+        "phase": "CLOSING_ENTRY_ADMISSION",
     }
+    try:
+        save_outcome(engine, result)
+    except (OSError, ValueError):
+        engine.dispatch_closed = True
+        result['reason'] = 'SHUTDOWN_PROGRESS_PERSISTENCE_FAILED'
+        return result
     if not r.run_done.wait(2) or not r.gate.acquire(timeout=2):
         engine.dispatch_closed = True
         result["reason"] = "SHUTDOWN_DRAIN_TIMEOUT"
@@ -151,6 +158,7 @@ def flatten_and_stop(owner, evidence=None, owned_close=None):
             result["status"] = "SHUTDOWN_INCOMPLETE"
             result["reason"] = "SHUTDOWN_OWNERSHIP_OR_DRAIN_UNVERIFIED"
         try:
+            result['phase'] = 'FINISHED'
             save_outcome(engine, result)
         except (OSError, ValueError):
             result.update(

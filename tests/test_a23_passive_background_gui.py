@@ -3,8 +3,8 @@
 These tests inspect source only. They never launch Atlas or its manager.
 """
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 CONTROLS = (
     Path(__file__).resolve().parents[1]
@@ -69,7 +69,6 @@ def test_lifecycle_actions_remain_explicit():
 
     for button, action in (
         ("startButton", "Start"),
-        ("stopButton", "Stop"),
     ):
         assert text.count(f'Start-BackgroundManager "{action}"') == 1
 
@@ -80,6 +79,11 @@ def test_lifecycle_actions_remain_explicit():
         )
 
         assert re.search(pattern, text), action
+
+    stop = text.split('$stopButton.Add_Click({', 1)[1].split('$runtimeSummary', 1)[0]
+    assert 'Invoke-AtlasPaperStop $AcceptedPaperSession' in stop
+    assert 'Start-BackgroundManager' not in stop
+    assert 'Invoke-AtlasPaperStop $AcceptedPaperSession -Emergency' in text
 
 
 def test_idle_timer_does_not_launch_status():

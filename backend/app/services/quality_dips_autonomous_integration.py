@@ -177,6 +177,11 @@ The authority lease must exclude all participating writers throughout both reads
             raise ValueError("AUTO_COORDINATION_CHANGED_OR_UNKNOWN")
         after["activity"]["observed_at"] = payload["observed_at"]
         payload["autonomous"] = after["activity"]
+        # A remembered decision quote is not a fresh quote at HTTP read time.
+        packet = payload['autonomous'].get('l1')
+        if packet is not None and (type(packet.get('source_timestamp')) is not int
+                or not 0 <= payload['observed_at'] - packet['source_timestamp'] <= 5):
+            payload['autonomous']['l1_state'] = 'STALE'
         report = payload["report"]
         # A historical day's breakdown is not a cumulative account breakdown.
         # Derive cumulative fee/slip only when all committed entry/exit evidence
