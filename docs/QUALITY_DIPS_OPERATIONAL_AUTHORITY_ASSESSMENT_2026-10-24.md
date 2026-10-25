@@ -1,0 +1,77 @@
+# Quality Dips operational authority decision packet - 2026-10-24
+
+## Decision now
+
+NOT READY for financial inception. Publisher and native reader exist; no genuine accepted issuer, reservation/high-water custodian or trusted-clock adapter is installed. Directory permissions and passing tests do not supply those authorities. This assessment adds no implementation framework, approval, credential or startup path. D:-only, existing Windows account, original UI, no VPS/cloud/live-money implementation and Genesis isolation remain fixed.
+
+## Real local facts
+
+Expected branch and HEAD8062ee5ae6f9719d03eeb3d4a756ea3f86612aa5 matched. Existing exact private epoch and release1cbf5d4d94f6f60f17b7b4b25dd6d434ddf67e43 were reconciled against the original private creation audit. All10named Windows checks and13existing-directory native checks passed again: exact volume/device, unchanged D:/D:/Work/project ACLs,0Atlas process matches,0unreadable candidates,current SID,exact roster,file/parent IDs,protected owner/SYSTEM ACLs and expected namespace. Financial-role/control/runtime/custody leaves remain empty. No provisioning or completion manifest. Historical failed postflight remains recorded; its missing original values cannot be recovered.
+
+Local w32tm /query /status AND /query /configuration returned service-not-started0x80070426. PC PartOfDomain=False. No resync,start,configuration change or time-server request occurred. Current wall time can be read but is not authenticated UTC. No TPM/key/certificate/credential inventory or provisioning was attempted. Full raw directory observations remain private; no machine identifiers published.
+
+The historical C1 source roster has18files:17hashes still match;Atlas-Background-Controls.ps1 differs from that earlier roster. Current working file matches reviewed repository state;the old roster predates later approved selected-view integration and is not current runtime attestation. Retain it as history,not full actual ownership proof. Source inspection additionally covered current publisher/bootstrap/native reader/read service/bridge and selected router. No unexplained source change inferred from the stale roster alone.
+
+## Concrete mechanism choices and their limits
+
+| Requirement | Smallest concrete candidate | Missing evidence/decision |
+|---|---|---|
+| Enrollment issuer | Independently reviewed, digitally signed enrollment envelope binding exact epoch/account/policy/resources/release,writer/read scope,expiry and revocation. Existing Windows account verifies with an independently accepted public-key fingerprint in the reviewed D:release. Private signing key stays under the named reviewer's separate custody,for example a physically controlled offline signing device. | Name signer and independence basis;authenticate public-key fingerprint out of band;approve signing/verification mechanism and custody/revocation procedure. No key or envelope exists. A typed approval or locally generated signature is not acceptance. |
+| Local durable coordination | Existing D:/AtlasCustody namespace may host a reviewed native immutable reservation/commit/ack ledger plus exclusive cooperating-writer admission. reserve must flush authenticated PENDING before financial files and refuse reused operation IDs/conflicting intent. | A real adapter implementing publisher reserve/check/commit/acknowledge/mark_unknown is absent. Filesystem ACLs/local hashes provide coordination evidence,not independent rollback authority. No second financial engine is needed. |
+| Independent current/high-water | Named custodian keeps an authenticated serialized operation/current register outside the rollbackable D:state and its sole operator's rewrite control. Before effects,record PENDING(operation,intent,writer,previous high-water);then independently acknowledge exact commit/current digest. | Name actual custodian,physical mechanism and monotonic/CAS persistence guarantees. A disconnected copy examined only later cannot authorize current live leases. The custodian must participate during reservation/commit/ACK and meet existing30s lease bounds;otherwise publication refuses. No suitable accepted mechanism is presently evidenced. |
+| Trusted clock | An independently authenticated UTC sample with bounded uncertainty/sequence,anchored locally to QPC/Stopwatch for elapsed-time expiry;fresh samples come from an accepted authenticated time client or the accepted custodian's clock service. Application/client runs on D:under existing account. | Approve actual source,authentication,uncertainty/drift budget and client adapter,plus separate outbound time-query permission if needed. WindowsTime is stopped and workgroup wall-clock status is not accepted evidence. No clock adapter installed. |
+
+This is a concrete dependency selection for review,not an assertion that external signing hardware/custody is already available. External custody/backup evidence is not moving the running Atlas application to another drive/cloud/account. If the D:-only decision is interpreted to prohibit even externally controlled evidence or separate physical backup media,independent rollback/recovery requirements remain unsatisfied:do NOT relabel a D:folder as independent or quietly weaken a gate.
+
+A same-account CNG/TPM-backed key can protect key material but does not automatically authenticate a reviewer,prove freshest revision or stop arbitrary authorized same-user signing calls. TPM provisioning/key policy is separate and not inspected here. Microsoft documents TPM/CNG protection,but that is not this workstation's acceptance evidence: [Windows TPM use](https://learn.microsoft.com/en-us/windows/security/hardware-security/tpm/how-windows-uses-the-tpm). Hardware signing alone is not a durable high-water counter.
+
+## Clock decision that can operate on this PC
+
+Use QPC-backed elapsed time ONLY after a verified UTC anchor and accepted clock sequence;QPC is not UTC authentication. Microsoft explicitly distinguishes these: [Windows timestamp guidance](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps). Existing issuer/session/ownership/publication checks remain bounded to30seconds. The accepted client must revalidate source authenticity and freshness before issuing/renewing a lease;signatures/source identity are not supplied by the local wall clock.
+
+Proposed fail-closed policy:reject backward UTC/sequence movement,unexpected boot identity/counter reset,expired anchor,wall/elapsed divergence beyond an independently accepted numeric error budget,or inability to prove elapsed validity after suspend/reconnect. Invalidate leases on those events;close write admission and retain PENDING/UNKNOWN,no automatic retry or wall-clock reset. Reboot requires fresh authenticated UTC and high-water,not reuse of a saved QPC anchor. Error budget and maximum anchor age are reviewer decisions still unset,not invented accepted thresholds.
+
+NIST documents authenticated NTP as a real time-source category: [NIST Internet Time Service](https://www.nist.gov/pml/time-and-frequency-division/time-distribution/internet-time-service-its). A compatible authenticated client/credential and connection rights would still be required;none was contacted,enrolled or assumed. Plain public NTP,an HTTP Date header,a screenshot or starting W32Time alone does not satisfy authentication. Windows domain-based authenticated-time behavior cannot be assumed on this non-domain PC: [Windows Time design](https://learn.microsoft.com/en-us/windows-server/networking/windows-time-service/how-the-windows-time-service-works).
+
+## Process/writer roster and admission decision
+
+| Component | Financial effect and required disposition |
+|---|---|
+| OneTimePublisher + NativeGenesisFiles | Sole proposed genesis writer for exact source/projection/report roots. Authenticate actual interpreter image,command,PID,creation handle,release digest,epoch and writer lease;one durable operation reservation. No route/default launcher exists. |
+| Custody adapter | Separate logical writer to reservation/current/acknowledgement evidence. Must serialize its own state and independently corroborate high-water;not included implicitly in financial-file drain. |
+| EnrollmentBootstrap | Pure intent/acknowledged read verification;not a provisioner or authority issuer. |
+| NativeOperationalReadPort/ReadComposition | Read-only native verification and selected GET;must never initialize missing files,repair,refresh or clear UNKNOWN. |
+| Retained-child Windows bridge/Control Center | Accept exact child Process handle and independently accepted enrollment/session context;verify readiness before browser. No default bridge installed;release directory remains empty,so actual packaged interpreter/dependency/release roster not yet evidenced. |
+| Legacy investment_board Quality Dips GET | _build_quality_dips_board schedules target refresh,saves v3 state/forward evidence,calls mark_open_quality_dips_paper and close_terminal_quality_dips_paper. Must remain absent from selected read-only composition and forbidden from selected roots. A research-looking GET is not necessarily read-only. |
+| quality_dips_paper.py/marking/terminal and v3 forward/state/cache/delivery writers | Legacy financial/research mutation paths;not admitted to selected resource account. No legacy root redirection/adoption. Provider/scanner/delivery paths stay disabled. |
+| Other manual/perp,prediction,investment,journal and lifecycle stores | Distinct strategy roots and authority. Must be explicitly excluded,not silently included in account balances. No actual financial records inspected here. |
+| Development/tests/maintenance or unknown same-user process | Never admitted operationally. ACL cannot exclude all arbitrary same-account code. Complete actual roster/exclusion acceptance and independently held currentness remain necessary. |
+
+Observed operational Atlas process count is0,not proof that no future unobserved writer can run. Matching executable/PID/creation identity is not ownership by itself. Existing Python production lock still refuses unconditionally;no unlock or general backend startup is needed for separate accepted read-only host.
+
+Proposed exclusive sequence:authenticate issuer/clock/resource/process roster;take custody reservation and short-lived writer lease;verify empty accepted roots;publish immutable genesis;verify all sources/projection/report;persist independent commit/ACK/current;close genesis admission;drain custody and financial writer work;only then admit read-only service. Any uncertainty blocks success/clean shutdown;do not terminate unrelated processes or auto-clear unknown. Later manual PAPER routing needs separate entry-close/financial-drain/exit/final-drain/report sequence under existing deadlines;overnight Quality Dips positions remain open. No live runtime writer coordination is operationally accepted today.
+
+## Offline backup and recovery choice
+
+Use a separately identified removable physical backup device,disconnected outside approved backup windows,and an independently retained authenticated manifest/source-cut/current receipt. Atlas itself continues running on D:. No backup copy/export/device access is authorized by this assessment. Operator must name device,custodian,permitted record scope,retention and recovery witness;none has been inspected or accepted.
+
+A second directory/partition on D:or a second connected same-user disk alone is not an offline or independently controlled copy. An offline backup by itself proves a past cut,not that it is the latest;independent high-water still required. Before first inception,review recovery authority and schedule a separately authorized isolated restoration test. Future restore must preserve original bytes,bind new physical identities through accepted mapping,refuse stale/missing/UNKNOWN/conflicting sources and remain non-executable until separately admitted. Existing archival-recovery code is read-only/non-executable and is not a writable admission shortcut.
+
+## B1/C1/D1 decision packet
+
+| Decision | Locally evidenced now | Genuinely missing action |
+|---|---|---|
+| B1 account/policy/exclusion | Source enforces1000USD,100entry,one position,eligible ranked stocks/ETFs,long/manual/no-scale,fractional where supported,overnight;fresh roots empty;legacy unchanged | Named independent scope/accounting reviewer accepts exact epoch,synthetic fees/slippage and complete historical exclusions/unresolved obligations. Operator intent and advisory ChatGPT review are not archive authentication. |
+| C1 ownership and exclusion |13current native identities/ACL/namespaces;0matching Atlas processes;read-only paths and legacy mutation call sites identified | Review actual D:runtime package/interpreter/dependencies and command/parent/child/resources;witness exclusive admission/drain/restart and nonparticipating-writer limits. No new account proposed. |
+| D1 issuer/custody/clock/recovery | Exact owner/SYSTEM roots;publisher fail-closed interfaces;localclock service stopped;source protocols and local observations | Name signer/public-key acceptance,custodian and actual CAS/high-water medium,authenticated UTC policy/client,recovery/backup custodian. Independently accept mechanisms and same-account/sharedD:residual risks,without waiving any gate. |
+| E1 later release | No provider/trading activation;selected command dispatch remains unregistered/disabled | Provider-specific rights and connection permission,executable quote/ranking/session/corporate-action evidence,manual routing approval and supervised operational trial acceptance. |
+
+Minimum operator decisions:identify the real people/devices performing B1 review,C1 ownership review,and D1 signing/currentness/clock/recovery custody;approve off-D:physical media solely for independently controlled evidence/backup while all application deployment staysD:;select authenticated time mechanism and authorize its later scoped validation;approve exact risk/independence model for those reviewers. Names/signatures remain unassigned. No acceptance box is prefilled.
+
+Only after independently accepted mechanisms/evidence:authorize their narrow source adapters/installation and ONE inception publication against existing private epoch,with exact process/resource/issuer/custody scope and stop/recovery conditions. Then separately authorize accepted bridge installation and supervised read-only launch. Market-data connection/manual PAPER routing follow later permissions. No further framework or disposable demo can substitute for missing people/custody/time evidence.
+
+## Checks and preserved state
+
+This documentation-only assessment ran71policy/startup-lock tests:71passed0failed0skipped;559runtime-source policy checks0issues. Separately10namedrealWindowsassertions/13nativeexistingdirectorychecks passed. No publisher/native financial write tests rerun;previous241passes retained,not recounted. Public documentation research used Microsoft/NIST primary sources only,no time/marketprovider connection. w32tm query failures reported,not successes;no service started.
+
+Complete roadmap backup/read-back/prior managed bytes/outside bytes verified;all21decisions/sevenphases,originalUI,startup locks,source/policies and existing directory state unchanged. Private raw observations and identifiers excluded fromGit. B1/C1/D1/E1BLOCKED;PAPERstartupNO;productionNO-GO. Seven-day0of7;extended0of30-60sessions. StateBLOCKED_WAIT at genuine external evidence/decision boundary.
