@@ -11,22 +11,25 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 735,
+    "passed": 744,
     "failed": 0,
     "skipped": 1,
-    "new_cases": 17,
-    "disjoint_selections": [
+    "new_cases_this_increment": 9,
+    "new_cases_across_two_increments": 26,
+    "final_selections_passed": [
       595,
-      78,
+      134,
       32,
       30
     ],
+    "overlapping_cases_between_selections": 47,
+    "single_combined_run": false,
     "not_executed": "True-symlink privilege unavailable (1314)",
     "operational_acceptance": false,
-    "selection": "financial/unified25files;actualV3V5StopHTTP5files;operationalQD2files;operationalPerp1file"
+    "selection": "financial25files;actualV3V5unifiedStopHTTP8files;operationalQD2files;operationalPerp1file"
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Bind actual QD V5 source-bound preview and guarded accept to unified durable portfolio custody; verify native and coordination ACK before global ACK. Do not double-dispatch native store.execute. Then bind actual perp planners and both Stop paths to global custody and accepted actual writer roster, and execute genuine two-lane crash/Windows/ControlCenter acceptance. Read QD_V5_SOURCE_PREVIEW_CONTINUATION_2026-10-25.md.",
+  "exact_next_action": "Connect actual source-derived QD frame/market-observer planner to EnrolledQualityDipsWriter.propose and accepted unified custody, then actual perp discovery/planner/exit routing. QD writer port/preview/guard are complete: do not repeat. Route QD flatten through global shutdown-exit reservation and connect existing PerpShutdownCoordinator/book-cache to actual roster/final drain/owned-close. Execute complete two-lane abrupt recovery and Windows/ControlCenter acceptance. Read QD_UNIFIED_CUSTODY_PORT_CONTINUATION_2026-10-25.md.",
   "latest_focused_tests": {
     "passed": 4,
     "failed": 0,
@@ -116,7 +119,7 @@
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "ACTIVE: source audit confirms existing selected perp handoff funding_modeled=false and missing durable leveraged collateral/funding financial lifecycle. Extend existing canonical engine/audit/native contracts;do not repeat completed universe/UI/authentication work."
   },
   "execution_status": "CONTINUATION_REQUIRED",
-  "progress_revision": 78,
+  "progress_revision": 79,
   "continuation_report": "docs/PERP_OPERATIONAL_SESSION_STOP_CONTINUATION_2026-10-25.md",
   "blocked_wait_reason": null,
   "publication_validation": {
@@ -932,7 +935,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/QD_V5_SOURCE_PREVIEW_CONTINUATION_2026-10-25.md",
+  "continuation_checkpoint": "docs/QD_UNIFIED_CUSTODY_PORT_CONTINUATION_2026-10-25.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1182,6 +1185,32 @@
     "native_and_coordination_bound": true,
     "pre_effect_expected_command_guard": true,
     "actual_two_strategy_assembly_complete": false,
+    "operational_acceptance": false,
+    "startup_authorized": false
+  },
+  "retained_before_qd_custody_port_latest_tests": {
+    "passed": 735,
+    "failed": 0,
+    "skipped": 1,
+    "new_cases": 17,
+    "disjoint_selections": [
+      595,
+      78,
+      32,
+      30
+    ],
+    "not_executed": "True-symlink privilege unavailable (1314)",
+    "operational_acceptance": false,
+    "selection": "financial/unified25files;actualV3V5StopHTTP5files;operationalQD2files;operationalPerp1file"
+  },
+  "qd_unified_custody_port": {
+    "status": "SOURCE_DISPOSABLE_VERIFIED_FULL_TASK_ACTIVE",
+    "report": "docs/QD_UNIFIED_CUSTODY_PORT_2026-10-25.md",
+    "actual_v5_dispatch_not_parallel_native": true,
+    "actual_unified_durable_reservation_tested": true,
+    "global_ack_loss_restart_refuses": true,
+    "actual_two_strategy_assembly_complete": false,
+    "actual_process_shutdown_accepted": false,
     "operational_acceptance": false,
     "startup_authorized": false
   }

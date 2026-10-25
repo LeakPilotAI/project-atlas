@@ -384,3 +384,8 @@ Roadmap continuity repair: the current managed body reached59,935/60,000 charact
 ## QD V5 source-bound preview increment — 2026-10-25
 
 UNIFIED_PERP_FINANCIAL_COMPLETENESS remains the sole ACTIVE task. Actual shared-decision preview and pre-effect expected-command guard verified with735passed/0failed/1true-symlink NOT EXECUTED across four disjoint selections;17newcases. Genuine QD disposable HTTP executed, not full two-lane/WinForms acceptance. Next: bind actual V5 preview/guarded accept to unified custody, then actual perp planners and global shutdown/roster. Do not parallel-dispatch the QD native writer or repeat completed preview. See QD_V5_SOURCE_PREVIEW_CONTINUATION_2026-10-25.md. All21decisions/seven phases/B1C1D1E1BLOCKED unchanged;PAPERNO;productionNO-GO.
+
+
+## Actual QD unified custody port — 2026-10-25
+
+Sole task UNIFIED_PERP_FINANCIAL_COMPLETENESS remains ACTIVE. Actual V5 writer port and unified durable reservation/ACK/concurrent replay/UNKNOWN restart-refusal verified. Final595+134+32+30pass selections overlap47cases=744distinctpassed/0failed/1true-symlink NOT EXECUTED;26new across preview+port. Not a single combined run or complete two-lane/Windows acceptance. Next source-derived QD observer/frame binding,actual perp planners,global QD Stop reservation and actual writer/owned-close assembly. Read QD_UNIFIED_CUSTODY_PORT_CONTINUATION_2026-10-25.md. All21decisions/seven phases/B1C1D1E1BLOCKED unchanged;PAPERNO;productionNO-GO.

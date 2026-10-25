@@ -14155,11 +14155,19 @@ Evidence:582combined passes/0failed/1true-symlink NOT EXECUTED;disjoint14+30+1=6
 Next action:Extract pure source-bound QD V5/AutonomousPaper decision preview and expected-command-before-effect guard,then actual QD/perpetual planner unified-custody assembly. Do not double-dispatch beside V5 SQL/native ACK. Follow docs/PERP_OPERATIONAL_SESSION_STOP_CONTINUATION_2026-10-25.md. Future updates use Atlas-Roadmap-Checkpoint.ps1 -ArchivePriorCheckpoint with a short bounded current body;never erase historical sections or backups. No background session is running.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: Actual QD V5 source-bound pre-effect preview
 Status: SOURCE/DISPOSABLE VERIFIED; UNIFIED_PERP_FINANCIAL_COMPLETENESS sole ACTIVE, full assembly INCOMPLETE. B1/C1/D1/E1 BLOCKED; all21 decisions/seven phases unchanged; PAPER NO; production NO-GO.
 Evidence: 735passed/0failed/1true-symlink NOT EXECUTED in four disjoint selections;17newcases. Actual V3/V5 native and genuine disposable HTTP verified. No new browser/WinForms/full two-lane acceptance. See QD_V5_SOURCE_PREVIEW_2026-10-25.md.
 Next action: Bind real V5 preview/guarded accept to unified durable custody, preserving SQL/native ACK; then actual perp planners, global Stop/actual roster and genuine two-lane recovery/Windows acceptance. Do not repeat completed preview or double-dispatch native financial effects. No protected roots,providers,Genesis,startup or gate changes.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: Actual QD V5 unified custody port
+Status: SOURCE/DISPOSABLE VERIFIED; full UNIFIED_PERP_FINANCIAL_COMPLETENESS sole ACTIVE/INCOMPLETE. B1C1D1E1BLOCKED,all21decisions/seven phases unchanged;PAPERNO;productionNO-GO.
+Evidence: Final595+134+32+30passes with47overlap=744distinct/0failed/1true-symlink NOT EXECUTED;26new across two increments. Actual unified reservation -> V5/native+SQL ACK and concurrency/globalACKloss restart refusal verified;counterpart lane/authority synthetic. See QD_UNIFIED_CUSTODY_PORT_2026-10-25.md.
+Next action: Actual source-derived QD observer/frame/planner binding and perp planner routing;global QD shutdown-exit reservation,existing PerpShutdownCoordinator actual roster/drain/ownedclose and complete two-lane abrupt recovery/Windows/ControlCenter acceptance. No protected roots,providers,Genesis,startup or independent gate changes. Do not repeat completed QD preview/writer port.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

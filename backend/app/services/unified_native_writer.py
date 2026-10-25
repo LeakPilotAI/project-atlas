@@ -11,6 +11,7 @@ from app.services.paper_financial_replay import (
     text,
     validate_manifest,
 )
+from app.services.quality_dips_unified_writer import EnrolledQualityDipsWriter
 
 
 class NativeFinancialWriter:
@@ -230,7 +231,7 @@ class CanonicalWriterLane:
     proposals and the authority must authenticate its exact identity and evidence.
     """
     def __init__(self, *, writer, observer, planner, shutdown, reports=None):
-        if type(writer) not in (NativeFinancialWriter, OperationalPerpFinancialWriter) or any(x is None for x in (observer, planner, shutdown, reports)):
+        if type(writer) not in (NativeFinancialWriter, OperationalPerpFinancialWriter, EnrolledQualityDipsWriter) or any(x is None for x in (observer, planner, shutdown, reports)):
             raise ValueError("CANONICAL_EXISTING_LANE_COMPONENTS_REQUIRED")
         self.writer, self.observer, self.planner, self.shutdown = writer, observer, planner, shutdown
         self.reports = reports
