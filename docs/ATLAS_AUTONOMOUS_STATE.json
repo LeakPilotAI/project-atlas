@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "D_DIRECTORY_VERIFY_ONLY_RECONCILIATION_V1",
+  "last_verified_task": "QD_ONE_TIME_PUBLISHER_V1",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,21 +9,21 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 71,
+    "passed": 241,
     "failed": 0,
     "skipped": 0,
-    "selection": "68policy+3productionlock",
-    "real_windows_named_checks_passed_separate": 10,
-    "native_existing_directory_checks_passed_separate": 13,
+    "new_publisher_cases": 33,
+    "selection": "33publisher+46bootstrap+54operational+37selected+68policy+3lock",
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Do not rerun directory creation. Separately authorize source-only minimal one-time operational publisher using existing financial replay and explicitly accepted issuer/current/clock interfaces. Real genesis publication needs independent B1/C1/D1 evidence and distinct explicitpermission;bridgeinstall/read-onlylaunch/E1provider/PAPER remain gated.",
+  "exact_next_action": "Obtain independent B1scope/C1actualwriter-resource/D1realissuer,reservation,current-high-water,clock,recovery acceptance under sameaccount/D:constraints;separatelyauthorize accepteddependencyinstallation and ONE actualgenesispublication into existingepoch. No testauthority/creationretry/UNKNOWNreplay;bridgeinstall/read-onlylaunch andE1data/manualrouting separatelygated.",
   "latest_focused_tests": {
-    "passed": 71,
+    "passed": 33,
     "failed": 0,
     "skipped": 0,
-    "overlap_combined": true
+    "overlap_combined": true,
+    "selection": "33publishercasesincludedinfinal241"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -92,11 +92,12 @@
     "D_ONLY_SINGLE_ACCOUNT_DEPLOYMENT_V1": "VERIFIED sourcepolicy/runbook:117combinedpass0fail0skip15new;D:only/existingaccount,noroot/projectACLchanges;C:proposalretainedashistory. Sameaccount/shareddevicecustodyrisksUNRESOLVED;no provisioning/acceptance/startup.",
     "D_DIRECTORY_PROVISIONING_V1": "BLOCKED_PREFLIGHT:WindowsPowerShell Get-Acl moduleloadfailed beforeepochallocation/firstcreate.0directories/ACLchanges/financialrecords;followuprootsabsent;no operationalretry.117source regressionspass0fail0skip,notnativeprovisioningacceptance.",
     "D_DIRECTORY_PROVISIONING_RECOVERY_V1": "PARTIAL_UNACCEPTED:module-resolution repaired,13actualdirectoriescreated/nativeverified;finalpostflightFAILEDandstopped.13read-onlyreopens/currentpostflightpassbutoriginalmismatchunresolved;noauditcompletion/financialpublication.117regressionspass0fail0skip;allgatesunchanged.",
-    "D_DIRECTORY_VERIFY_ONLY_RECONCILIATION_V1": "VERIFIED_CURRENT_STATE:10namedrealWindowsassertions/13nativeexisting-onlydirectorychecks pass,exactcreationidentities/ACL/namespace,financialrolesempty. Historicalfailureunchanged;no completionmanifest/publication/startup.71regressionspass0fail0skip;558sourceaudit0issues."
+    "D_DIRECTORY_VERIFY_ONLY_RECONCILIATION_V1": "VERIFIED_CURRENT_STATE:10namedrealWindowsassertions/13nativeexisting-onlydirectorychecks pass,exactcreationidentities/ACL/namespace,financialrolesempty. Historicalfailureunchanged;no completionmanifest/publication/startup.71regressionspass0fail0skip;558sourceaudit0issues.",
+    "QD_ONE_TIME_PUBLISHER_V1": "VERIFIED SOURCE/DISPOSABLE:241combinedpass0fail0skip33new,nativegenesis/receipt/bootstrapreadback,3abruptcrashes,concurrencyandUNKNOWNrefusal. Actual13dirsuntouched;nooperationalauthority/publication/startup;allgatesunchanged."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 58,
-  "continuation_report": "docs/D_DIRECTORY_VERIFY_ONLY_CONTINUATION_2026-10-24.md",
+  "progress_revision": 59,
+  "continuation_report": "docs/QUALITY_DIPS_ONE_TIME_PUBLISHER_CONTINUATION_2026-10-24.md",
   "blocked_wait_reason": "Independent reviewers/custody mechanisms and actual B1/C1/D1/E1 acceptance unavailable;no provisioning/startup permission;all eligible source-only policy work complete.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
@@ -204,7 +205,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/D_DIRECTORY_VERIFY_ONLY_CONTINUATION_2026-10-24.md",
+  "recovery_checkpoint": "docs/QUALITY_DIPS_ONE_TIME_PUBLISHER_CONTINUATION_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -242,7 +243,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/D_DIRECTORY_VERIFY_ONLY_CONTINUATION_2026-10-24.md",
+  "recovery_document": "docs/QUALITY_DIPS_ONE_TIME_PUBLISHER_CONTINUATION_2026-10-24.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -684,5 +685,24 @@
     "completion_manifest_published": false,
     "financial_publication": false,
     "startup_authorized": false
+  },
+  "retained_verify_only_tests": {
+    "passed": 71,
+    "failed": 0,
+    "skipped": 0,
+    "selection": "68policy+3productionlock",
+    "real_windows_named_checks_passed_separate": 10,
+    "native_existing_directory_checks_passed_separate": 13,
+    "operational_acceptance": false
+  },
+  "one_time_publisher": {
+    "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED",
+    "report": "docs/QUALITY_DIPS_ONE_TIME_PUBLISHER_V1_2026-10-24.md",
+    "operational_issuer_installed": false,
+    "operational_custody_installed": false,
+    "real_financial_publication": false,
+    "real_directories_accessed_or_changed": false,
+    "startup_authorized": false,
+    "default_invocation": "REFUSES"
   }
 }
