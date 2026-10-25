@@ -33,7 +33,9 @@ class QualityDipQuoteService:
         self,
         client: YFinanceClient | None = None,
         robinhood_client: RobinhoodEquityQuoteClient | None = None,
+        alpaca_feed=None,
     ) -> None:
+        self.alpaca_feed = alpaca_feed
         self._providers = [ProviderDispatcher("robinhood"), ProviderDispatcher("yahoo")]
         self.client = client or YFinanceClient(min_interval_sec=0.05, timeout_sec=8.0,
                                               dispatcher=self._providers[1])
@@ -54,6 +56,11 @@ class QualityDipQuoteService:
         max_cache_age_sec: float | None = None,
     ) -> dict[str, dict[str, Any]]:
         clean = sorted({str(s or "").upper().strip() for s in symbols if str(s or "").strip()})
+        if self.alpaca_feed is not None:
+            if self._closed or len(clean) > self.max_pending_quotes:
+                raise ProviderRejected('Alpaca quote admission closed or capacity exceeded')
+            # Cache-only: GET/scanner reads never connect or fall back to another feed.
+            return {s: self.alpaca_feed.research_snapshot(s) for s in clean}
         if self._closed:
             self._rejected_quotes += 1
             raise ProviderRejected("Quote service closed")

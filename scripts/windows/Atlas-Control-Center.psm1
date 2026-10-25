@@ -30,4 +30,11 @@ function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emerge
     }
     return $result
 }
-Export-ModuleMember -Function Get-AtlasFullStartupGate, Get-AtlasFullFrontendDecision, Invoke-AtlasPaperStop
+function Format-AtlasIEXDataStatus([object]$Snapshot = $null) {
+    if ($null -eq $Snapshot -or $Snapshot.schema -cne 'ATLAS_ALPACA_IEX_VIEW_V1' -or
+        $Snapshot.feed -cne 'IEX' -or $Snapshot.scope -cne 'SINGLE_EXCHANGE_NOT_NBBO' -or
+        $Snapshot.paper_startup_authorized -ne $false) { return 'IEX data: UNAVAILABLE; PAPER authorization: NO' }
+    $fresh = @($Snapshot.quotes | Where-Object { $_.state -ceq 'FRESH' }).Count
+    return "IEX data: $($Snapshot.connection), fresh quotes $fresh (single exchange, NOT NBBO); PAPER authorization: NO"
+}
+Export-ModuleMember -Function Get-AtlasFullStartupGate, Get-AtlasFullFrontendDecision, Invoke-AtlasPaperStop, Format-AtlasIEXDataStatus

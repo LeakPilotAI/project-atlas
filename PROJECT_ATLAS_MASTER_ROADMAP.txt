@@ -13796,6 +13796,11 @@ Preserve production NO-GO and startup locks. No activation of Atlas, Genesis, Do
 === END AUTONOMOUS DEVELOPMENT AND CONTINUATION PROTOCOL ===
 
 === ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: ALPACA_IEX_DATA_INTEGRATION 2026-10-25
+Status: SOURCE/data-only VERIFIED;BLOCKED_WAIT zeroACTIVE;PAPERstartupNO;ProductionNO-GO.
+Evidence:two real bounded IEXprobes20s/8s authenticated/subscribedMSFT/SPY;0quotes Sundayclosed,prices/timestamps/latencyUNAVAILABLE.84+107=191Pythonpasses0fail0skip,39new;37frontendpasses5new;39legacy lint findings unchanged,0newchangedline issues. Existing scanner/read UI/runtime/shutdown interfaces reused;no orders or operational services/accounts.
+Next action:regular-session fresh quote acceptance and accepted use rights/instrument/lot/calendar/halts/clock/issuer/custody/writer dependencies;separate real install,inception/launch permission. No real13roots/Genesis touched;all21decisions/sevenphases unchanged;B1C1D1E1BLOCKED. See docs/ALPACA_IEX_CONTINUATION_2026-10-25.md.
+
 Milestone: OPERATIONAL_RUNTIME_CONTROL_CENTER_WIRING 2026-10-25
 Status: SOURCE/DISPOSABLE VERIFIED; BLOCKED_WAIT zero ACTIVE; PAPER startup NO;Production NO-GO.
 Evidence:114+43+9=166Pythonpasses0fail0skip;32frontendpasses;26new cases;2genuinebrowser scenarios,9nativeHTTP/PowerShell/ownership cases. Operational factory binds accepted components/native resources;normal Control Center Stop uses SHUTDOWN_FLATTEN,no legacy fallback,Emergency separate. Earlier sandbox timeout retained;current exact-root query0matches,no forced cleanup. Historical21decisions/seven phases unchanged.

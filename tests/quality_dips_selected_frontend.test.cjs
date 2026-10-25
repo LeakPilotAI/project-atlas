@@ -8,6 +8,34 @@ const html = fs.readFileSync('backend/app/static/quality_dips.html', 'utf8');
 const external = fs.readFileSync('backend/app/static/quality_dips_selected_paper.js', 'utf8');
 const inline = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 const STAMP = 1792843200;
+function iexView(){return {schema:'ATLAS_ALPACA_IEX_VIEW_V1',feed:'IEX',scope:'SINGLE_EXCHANGE_NOT_NBBO',
+  size_units:'ROUND_LOTS',connection:'CONNECTED',authenticated:true,subscribed:true,paper_startup_authorized:false,
+  observed_at:STAMP,quotes:[{symbol:'MSFT',bid:'100',ask:'100.1',bid_lots:1,ask_lots:2,
+    timestamp:new Date(STAMP*1000).toISOString(),state:'FRESH'}]};}
+
+test('IEX displays quote evidence without financial enrollment or extra requests',async()=>{
+  const h=harness({schema:'QD_SELECTED_FINANCIAL_VIEW_V1',status:'UNAVAILABLE',market_data:iexView()});
+  await h.controller.load();assert.match(h.elements.paperMarket.innerHTML,/NOT consolidated NBBO/);
+  assert.match(h.elements.paperMarket.innerHTML,/\$100\.1/);assert.match(h.elements.paperStatus.textContent,/UNAVAILABLE/);
+  assert.equal(h.requests.length,1);assert.equal(h.requests[0].url,ui.ENDPOINT);
+});
+test('IEX stale and disconnected quotes cannot remain FRESH',()=>{
+  const v=iexView();assert.doesNotMatch(ui.renderMarket(v,(STAMP+6)*1000),/>FRESH</);
+  v.connection='DISCONNECTED';assert.match(ui.renderMarket(v,STAMP*1000),/>STALE</);
+});
+test('IEX missing data never becomes a zero valuation',()=>{
+  const v=iexView();v.quotes=[{symbol:'MSFT',bid:null,ask:null,timestamp:null,state:'UNAVAILABLE'}];
+  const s=ui.renderMarket(v,STAMP*1000);assert.match(s,/UNAVAILABLE/);assert.doesNotMatch(s,/\$0/);
+});
+test('IEX labels are escaped and unsupported feed is refused',()=>{
+  const v=iexView();v.quotes[0].symbol='<img src=x>';assert.match(ui.renderMarket(v,STAMP*1000),/&lt;img/);
+  v.scope='NBBO';assert.match(ui.renderMarket(v,STAMP*1000),/refused/);
+});
+test('IEX network failure clears its quote display without legacy fallback',async()=>{
+  const d=payload();d.market_data=iexView();const h=harness(d);await h.controller.load();
+  h.setData(new Error('offline'));await h.controller.load();assert.match(h.elements.paperMarket.innerHTML,/UNAVAILABLE/);
+  assert.ok(h.requests.every(r=>r.url===ui.ENDPOINT && r.options.method==='GET'));
+});
 const clone = value => JSON.parse(JSON.stringify(value));
 const deferred = () => { let resolve, reject; const promise = new Promise((a,b) => {resolve=a;reject=b;}); return {promise,resolve,reject}; };
 

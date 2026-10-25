@@ -1,6 +1,6 @@
 # Manual Windows Forms controls for normal and opt-in gaming background mode.
 #Requires -Version 5.1
-param([object]$AcceptedSelectedReadBridge = $null, [object]$AcceptedPaperSession = $null)
+param([object]$AcceptedSelectedReadBridge = $null, [object]$AcceptedPaperSession = $null, [object]$IEXCacheReader = $null)
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -165,6 +165,10 @@ exit `$exitCode
 }
 
 function Apply-AtlasStatus($Result) {
+    if ($null -ne $IEXCacheReader) {
+        try { $runtimeSummary.Text = Format-AtlasIEXDataStatus ($IEXCacheReader.snapshot()) }
+        catch { $runtimeSummary.Text = Format-AtlasIEXDataStatus }
+    }
     $color = Get-AtlasBackgroundStatusColor ([string]$Result.state)
     Set-StatusMessage "$($Result.state): $($Result.message)" $color
     $startButton.Enabled = ($Result.state -eq "STOPPED")
@@ -314,7 +318,7 @@ $stopButton.Add_Click({
 $runtimeSummary = New-Object System.Windows.Forms.Label
 $runtimeSummary.Location = New-Object System.Drawing.Point(20, 338)
 $runtimeSummary.Size = New-Object System.Drawing.Size(445, 58)
-$runtimeSummary.Text = "Backend / full frontend / Docker: NOT VERIFIED`r`nRead-only host: independent; verify with Open action`r`nStartup gate: BLOCKED; production NO-GO"
+$runtimeSummary.Text = "Backend / full frontend: NOT VERIFIED`r`nIEX data: UNAVAILABLE; PAPER authorization: NO`r`nStartup gate: BLOCKED; production NO-GO"
 $form.Controls.Add($runtimeSummary)
 $fullFrontend = New-Object System.Windows.Forms.Button
 $fullFrontend.Text = 'Open Full Frontend (requires verified runtime)'

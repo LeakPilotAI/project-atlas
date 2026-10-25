@@ -88,12 +88,18 @@ def financial_view(*, reader, verifier, clock, account_id, epoch):
         return unavailable
 
 
-def create_router(*, reader, verifier, clock, account_id, epoch, commands=None):
+def create_router(*, reader, verifier, clock, account_id, epoch, commands=None, market_reader=None):
     router = APIRouter(prefix="/api/investments/quality-dips/selected-paper", tags=["selected-paper-unregistered"])
 
     @router.get("")
     def get_selected_paper():
-        return financial_view(reader=reader, verifier=verifier, clock=clock, account_id=account_id, epoch=epoch)
+        result = financial_view(reader=reader, verifier=verifier, clock=clock, account_id=account_id, epoch=epoch)
+        if market_reader is not None:
+            from app.investment.alpaca_iex import IEXFeed
+            if type(market_reader) is not IEXFeed:
+                raise HTTPException(status_code=503, detail='IEX_CACHE_READER_REQUIRED')
+            result['market_data'] = market_reader.snapshot()
+        return result
 
     @router.post("/commands")
     def command_selected_paper(request: dict):

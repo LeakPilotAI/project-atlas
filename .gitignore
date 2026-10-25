@@ -142,3 +142,6 @@ artifacts/
 backend/tmp/
 backend/charts/
 *.png.tmp
+
+# Private Alpaca API credentials
+/config/alpaca.env

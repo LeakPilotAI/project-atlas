@@ -15,6 +15,28 @@
   const fact = (label, value) => `<div><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
   const label = value => text(value) ? esc(value) : 'UNAVAILABLE';
 
+  function renderMarket(data, now) {
+    if (!object(data) || data.schema !== 'ATLAS_ALPACA_IEX_VIEW_V1' ||
+        data.feed !== 'IEX' || data.scope !== 'SINGLE_EXCHANGE_NOT_NBBO' ||
+        data.size_units !== 'ROUND_LOTS' || data.paper_startup_authorized !== false ||
+        !['CONNECTED','DISCONNECTED'].includes(data.connection) ||
+        typeof data.authenticated !== 'boolean' || typeof data.subscribed !== 'boolean' ||
+        !Number.isFinite(data.observed_at) || !Array.isArray(data.quotes) || data.quotes.length > 30)
+      return '<p class="empty">Live L1 data: UNAVAILABLE or refused. No PAPER authority.</p>';
+    const rows = data.quotes.map(q => {
+      if (!object(q) || !text(q.symbol) || !['FRESH','STALE','UNAVAILABLE'].includes(q.state) ||
+          (q.state === 'FRESH' && (!decimal(q.bid) || !decimal(q.ask))) ||
+          (q.bid != null && (!decimal(q.bid) || Number(q.bid) <= 0)) ||
+          (q.ask != null && (!decimal(q.ask) || Number(q.ask) < Number(q.bid)))) throw Error('INVALID_IEX_VIEW');
+      let state = q.state;
+      const stamp = typeof q.timestamp === 'string' ? Date.parse(q.timestamp) : NaN;
+      if (state === 'FRESH' && (data.connection !== 'CONNECTED' || !data.authenticated || !data.subscribed ||
+          !Number.isFinite(stamp) || now-stamp < 0 || now-stamp > 5000 || now-data.observed_at*1000 < 0 || now-data.observed_at*1000 > 5000)) state='STALE';
+      return `<tr><td>${esc(q.symbol)}</td><td>${amount(q.bid)}</td><td>${amount(q.ask)}</td><td>${Number.isSafeInteger(q.bid_lots) && q.bid_lots > 0 ? q.bid_lots : 'UNAVAILABLE'}</td><td>${Number.isSafeInteger(q.ask_lots) && q.ask_lots > 0 ? q.ask_lots : 'UNAVAILABLE'}</td><td>${esc(q.timestamp || 'UNAVAILABLE')}</td><td>${esc(state)}</td></tr>`;
+    }).join('');
+    return `<h3>Live L1 — Alpaca IEX</h3><p>Single exchange — NOT consolidated NBBO. Sizes are round lots, not assumed shares. Data readiness does not authorize PAPER trading.</p><p>${esc(data.connection)} · ${data.authenticated ? 'AUTHENTICATED' : 'NOT AUTHENTICATED'} · ${data.subscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}</p><table><tr><th>Symbol</th><th>Bid</th><th>Ask</th><th>Bid lots</th><th>Ask lots</th><th>Exchange timestamp</th><th>State</th></tr>${rows}</table>`;
+  }
+
   function validate(data) {
     if (!object(data) || data.schema !== 'QD_SELECTED_FINANCIAL_VIEW_V1' ||
         !['ACKNOWLEDGED','UNKNOWN','UNAVAILABLE','INCOMPLETE'].includes(data.status)) throw Error('INVALID_FINANCIAL_RESPONSE');
@@ -91,10 +113,13 @@
     const status = document.getElementById('paperStatus');
     const content = document.getElementById('paperContent');
     const freshness = document.getElementById('paperFreshness');
+    const market = document.getElementById('paperMarket');
+    let marketLast = null;
     let active = false, busy = false, generation = 0, abort = null, last = null, pinned = null, high = -1, fingerprint = null, readFailed = false;
     const announce = (state, reason) => { if (status.textContent !== state) status.textContent = state; freshness.textContent = reason; };
     const clear = (state, reason) => { last = null; content.innerHTML = '<p class="empty">Financial amounts and positions are UNAVAILABLE.</p>'; announce(state, reason); };
     const age = () => {
+      if (market && marketLast) { try { market.innerHTML = renderMarket(marketLast, clock()); } catch { market.innerHTML = '<p>Live L1: UNAVAILABLE</p>'; } }
       if (!last) return;
       const elapsed = Math.floor(clock() / 1000) - last.observed_at;
       announce(readFailed || elapsed < 0 || elapsed > 30 ? 'STALE' : 'ACKNOWLEDGED · report ' + last.report_status,
@@ -114,6 +139,7 @@
         const data = validate(await response.json());
         if (!active || ticket !== generation) return;
         if (controller.signal.aborted) throw Error('FINANCIAL_READ_TIMEOUT');
+        if (market) { marketLast = data.market_data || null; market.innerHTML = renderMarket(marketLast, clock()); }
         if (data.status !== 'ACKNOWLEDGED') { clear(data.status, Array.isArray(data.reasons) ? data.reasons.join(' · ') : 'Verified financial evidence unavailable.'); return; }
         const identity = stable([data.account_id, data.epoch, data.policy_digest]);
         if (pinned !== null && pinned !== identity) throw Error('ACCOUNT_OR_POLICY_REPLACED');
@@ -127,6 +153,7 @@
         age();
       } catch (error) {
         if (!active || ticket !== generation) return;
+        if (market) { marketLast = null; market.innerHTML = '<p>Live L1: UNAVAILABLE — network or evidence refusal.</p>'; }
         readFailed = true;
         const unsafe = ['ACCOUNT_OR_POLICY_REPLACED','SOURCE_REVISION_ROLLBACK_OR_CONFLICT','INCEPTION_SCOPE_MISMATCH','REPORT_SCOPE_MISMATCH','INCOMPLETE_FINANCIAL_EVIDENCE','INVALID_FINANCIAL_RESPONSE','INVALID_POSITION_EVIDENCE','INVALID_REALIZED_EVIDENCE','INVALID_COST_EVIDENCE','PROJECTION_REVISION_MISMATCH'].includes(error.message);
         if (unsafe) clear('UNKNOWN', error.message);
@@ -144,7 +171,7 @@
       destroy() { active = false; generation += 1; if (abort) abort.abort(); }
     };
   }
-  const api = {ENDPOINT, createController, validate};
+  const api = {ENDPOINT, createController, validate, renderMarket};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.AtlasSelectedPaper = api;
 })(globalThis);

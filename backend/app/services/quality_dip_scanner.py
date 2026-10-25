@@ -46,7 +46,8 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 class QualityDipScanner:
-    def __init__(self) -> None:
+    def __init__(self, *, quote_service=None) -> None:
+        self._quote_service = quote_service
         self._task: Optional[asyncio.Task] = None
         self._ladder_task: Optional[asyncio.Task] = None
         self._running = False
@@ -177,7 +178,7 @@ class QualityDipScanner:
         symbols = [r.get("symbol") for r in base if str(r.get("stance") or "").upper() == "ACCUMULATE"]
         if not symbols:
             return base
-        quotes = await quality_dip_quote_service.get_many(symbols, max_cache_age_sec=20.0)
+        quotes = await (self._quote_service or quality_dip_quote_service).get_many(symbols, max_cache_age_sec=20.0)
         return build_quality_dips_board(apply_quote_overlay(research, quotes), plans, limit=100)
 
     async def _emit_ladder_hit(self, hit: Any) -> bool:
