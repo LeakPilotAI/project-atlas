@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "AUTONOMOUS_NATIVE_ENROLLMENT_V4",
+  "last_verified_task": "AUTONOMOUS_NATIVE_FINANCIAL_BINDING_V5",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,22 +9,24 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 227,
+    "passed": 328,
     "failed": 0,
     "skipped": 0,
     "separate_disjoint_selections": [
-      194,
+      184,
+      111,
       33
     ],
-    "new_v4_cases": 65,
-    "native_binding_cases": 9,
-    "operational_acceptance": false,
-    "http_browser_executed_this_milestone": false
+    "new_v5_cases": 29,
+    "javascript_existing_passed": 31,
+    "original_page_harness_native_snapshots": 3,
+    "genuine_http_browser_executed_this_milestone": false,
+    "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Separately authorize autonomous native financial record/publication/replay/report port and exact runtime component bindings. V3 LOCAL_ENROLLED retains refusal of fixture backend. Real issuer/custody/clock/writer/provider acceptance and actual installation/publication/startup remain absent; no test authority adoption.",
+  "exact_next_action": "Review and separately authorize actual operational resource/record/pin binding and local authority dependency installation using the verified V5 port. Do not remove disposable confinement or relabel FS2 test evidence. B1/C1/D1/E1 independent acceptance and real inception/bridge/provider/session permissions remain required.",
   "latest_focused_tests": {
-    "passed": 65,
+    "passed": 29,
     "failed": 0,
     "skipped": 0,
     "overlap_combined": true
@@ -104,10 +106,11 @@
     "AUTONOMOUS_PAPER_ENGINE_V1": "VERIFIED source/disposable:35new+367neighboring=402passed0failed0skipped; automatic ASK entry/BID partial/full exit, exact cost/cash/audit, bounded sessions, Stop preserves positions, crash/UNKNOWN refusal. Strict operational contracts unchanged; no startup authority.",
     "AUTONOMOUS_PAPER_INTEGRATION_V2": "VERIFIED disposable:actual automatic decisions publish FS2/FS3, independent daily side-cost audit and selected native read/UI.542Pythonpass/2privilege-skips across3disjoint selections;31JSpass;genuineHTTP/browser54filesunchanged. UNKNOWNno replay,all21decisions/B1C1D1E1 unchanged;no operational acceptance.",
     "AUTONOMOUS_PAPER_RUNTIME_V3": "VERIFIED continuous disposable runtime/source/native/report/read/browser:451Pythonpass1privilege-skip in29/230/192disjoint selections;31JSpass. Automaticentry/protectivepartial-full whilePAUSED/STOP/drain/disconnect/restartrefusal;Boolean drain defect reproduced/fixed. LOCAL_ENROLLED refuses;no operational acceptance.",
-    "AUTONOMOUS_NATIVE_ENROLLMENT_V4": "VERIFIED_SOURCE_INTERFACES_DISPOSABLE:65new/9nativebindingcases;194+33=227passes. Actual issuer/custody/clock/financial native operational port uninstalled/unaccepted;V3 LOCAL_ENROLLED fixture backend still refused. No real13dirs accessed."
+    "AUTONOMOUS_NATIVE_ENROLLMENT_V4": "VERIFIED_SOURCE_INTERFACES_DISPOSABLE:65new/9nativebindingcases;194+33=227passes. Actual issuer/custody/clock/financial native operational port uninstalled/unaccepted;V3 LOCAL_ENROLLED fixture backend still refused. No real13dirs accessed.",
+    "AUTONOMOUS_NATIVE_FINANCIAL_BINDING_V5": "VERIFIED_CONFINED_LOCAL_ENROLLED_CONTRACT_PATH:V4-before/V3nativefinancialaction/V4-after underwriterlease;actualFS2FS3 replay/report;184+111+33=328passes,29new. Sourcefailure falselycleanStop reproduced/fixed;originalfailure retained. No accepted operational authority or real13dirs access."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 66,
+  "progress_revision": 67,
   "continuation_report": "docs/AUTONOMOUS_PAPER_RUNTIME_V3_CONTINUATION_2026-10-24.md",
   "blocked_wait_reason": "All authorized continuous disposable V3 work completed. Accepted autonomous native operational contract and real authority/ownership/custody/clock/provider dependencies remain unavailable/unapproved.",
   "publication_validation": {
@@ -873,5 +876,30 @@
     "real_financial_publication": false,
     "startup_authorized": false,
     "strict_manual_contracts_unchanged": true
+  },
+  "retained_v4_validation": {
+    "passed": 227,
+    "failed": 0,
+    "skipped": 0,
+    "separate_disjoint_selections": [
+      194,
+      33
+    ],
+    "new_v4_cases": 65,
+    "native_binding_cases": 9,
+    "operational_acceptance": false,
+    "http_browser_executed_this_milestone": false
+  },
+  "autonomous_native_financial_binding_v5": {
+    "status": "DISPOSABLE_LOCAL_ENROLLED_CONTRACT_VERIFIED",
+    "report": "docs/AUTONOMOUS_NATIVE_FINANCIAL_BINDING_V5_2026-10-25.md",
+    "continuation": "docs/AUTONOMOUS_NATIVE_FINANCIAL_BINDING_V5_CONTINUATION_2026-10-25.md",
+    "contract_scope": "LOCAL_ENROLLED",
+    "mandatory_execution_domain": "DISPOSABLE_TEST",
+    "operational_backend_enabled": false,
+    "authority_installed": false,
+    "financial_inception_published": false,
+    "startup_authorized": false,
+    "strict_manual_unchanged": true
   }
 }

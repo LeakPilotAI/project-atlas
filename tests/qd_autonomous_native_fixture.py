@@ -37,8 +37,8 @@ class Pins:
             raise ValueError("TEST_CLOCK_MISMATCH")
 
 
-def build(root, stamp=STAMP):
-    n = setup(root, stamp=stamp)
+def build(root, stamp=STAMP, *, coordination_root=None):
+    n = setup(coordination_root if coordination_root is not None else root, stamp=stamp)
     spec = importlib.util.spec_from_file_location("auto_native_read", REPO / "scripts/volume_inspector/financial_read_port.py")
     port_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(port_module)

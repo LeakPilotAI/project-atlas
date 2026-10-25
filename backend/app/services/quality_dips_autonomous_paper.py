@@ -89,7 +89,7 @@ def validate_grant(m, grant, now):
             "feed_id",
             "calendar_id",
         }
-        or grant["schema"] != "QD_AUTO_SESSION_FIXTURE_V1"
+        or grant["schema"] not in ("QD_AUTO_SESSION_FIXTURE_V1", "QD_AUTO_ENGINE_SESSION_V5")
         or grant["epoch"] != m["epoch"]
         or any(type(grant[k]) is not int for k in ("issued_at", "expires_at"))
         or type(now) is not int

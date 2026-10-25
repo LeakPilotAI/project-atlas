@@ -10,13 +10,13 @@ from qd_autonomous_native_fixture import REPO, build
 from test_quality_dips_autonomous_paper import candidate, quote
 
 
-def compose(root, confinement, *, stamp, identity_observer=None):
+def compose(root, confinement, *, stamp, identity_observer=None, coordination_root=None):
     if identity_observer is None:
         spec = importlib.util.spec_from_file_location("runtime_self_identity", REPO / "scripts/observation_runtime/disposable_host_owner.py")
         identity = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(identity)
         identity_observer = lambda: identity.observe_pid(os.getpid())
-    x = build(root, stamp=stamp)
+    x = build(root, stamp=stamp, coordination_root=coordination_root)
     n = x.n
     assert n.engine.stop() == "STOPPED"
     n.now[0] += 1
