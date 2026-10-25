@@ -277,9 +277,12 @@ class CanonicalWriterLane:
         cut = self.writer._cut()
         if result.get("state") == "ACKNOWLEDGED_FLAT_AND_DRAINED":
             history = self.reports.history()
+            if type(self.writer) is EnrolledQualityDipsWriter:
+                history = [doc for doc in history if doc['report']['schema'] == 'FS3_QD_SESSION_REPORT_V1'
+                           and doc['report']['session_id'] == result.get('session_id')]
             report = history[-1]["report"] if history else None
             verifier = getattr(self.writer.authority, "verify_drain", None)
-            session_mismatch = (report is not None and report.get('schema') == 'FS3_PERP_SESSION_REPORT_V1'
+            session_mismatch = (report is not None and report.get('schema') in ('FS3_PERP_SESSION_REPORT_V1', 'FS3_QD_SESSION_REPORT_V1')
                                 and (report['session_id'] != result.get('session_id')
                                      or report['period']['cutoff_inclusive'] != result.get('cutoff_at')))
             if (emergency or any(number(p["remaining"]) > 0 for p in cut["state"]["positions"].values())

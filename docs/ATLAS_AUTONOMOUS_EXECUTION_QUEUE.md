@@ -389,3 +389,8 @@ UNIFIED_PERP_FINANCIAL_COMPLETENESS remains the sole ACTIVE task. Actual shared-
 ## Actual QD unified custody port — 2026-10-25
 
 Sole task UNIFIED_PERP_FINANCIAL_COMPLETENESS remains ACTIVE. Actual V5 writer port and unified durable reservation/ACK/concurrent replay/UNKNOWN restart-refusal verified. Final595+134+32+30pass selections overlap47cases=744distinctpassed/0failed/1true-symlink NOT EXECUTED;26new across preview+port. Not a single combined run or complete two-lane/Windows acceptance. Next source-derived QD observer/frame binding,actual perp planners,global QD Stop reservation and actual writer/owned-close assembly. Read QD_UNIFIED_CUSTODY_PORT_CONTINUATION_2026-10-25.md. All21decisions/seven phases/B1C1D1E1BLOCKED unchanged;PAPERNO;productionNO-GO.
+
+
+## QD source/global shutdown and inclusive session evidence — 2026-10-25
+
+UNIFIED_PERP_FINANCIAL_COMPLETENESS sole ACTIVE,full integration INCOMPLETE. Actual IEX/QD V5 planner,globally reserved native QD shutdown,explicit new QD inclusive session report scope verified;legacy calendar scopes unchanged. Real calendar-exclusive-cut gap repaired;actual perp nonfinite planning defect refused. Final622+155+32+30passes overlap47=792distinct/0failed/1true-symlink NOT EXECUTED;33new. Genuine QDHTTP ran;no full two-lane/WinForms/native roster acceptance. Next actual perp pending-order/execution custody,funding/mark/QD source bindings,both coordinators with actual roster/global drain/owned-close and genuine two-lane recovery/Windows acceptance. See QD_SOURCE_GLOBAL_SHUTDOWN_CONTINUATION_2026-10-25.md. All21decisions/seven phases/B1C1D1E1BLOCKED preserved;PAPERNO;productionNO-GO.

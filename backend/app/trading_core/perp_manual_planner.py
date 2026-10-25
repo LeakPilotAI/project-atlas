@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 from typing import Iterable, Tuple
 
 from .domains import require_hyperliquid_market
@@ -25,7 +26,7 @@ class ManualPerpPlan:
 
 def _positive(name: str, value: float) -> float:
     value = float(value)
-    if value <= 0:
+    if not isfinite(value) or value <= 0:
         raise ValueError(f"{name} must be positive")
     return value
 

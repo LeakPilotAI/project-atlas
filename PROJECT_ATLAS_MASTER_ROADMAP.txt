@@ -14163,11 +14163,19 @@ Evidence: 735passed/0failed/1true-symlink NOT EXECUTED in four disjoint selectio
 Next action: Bind real V5 preview/guarded accept to unified durable custody, preserving SQL/native ACK; then actual perp planners, global Stop/actual roster and genuine two-lane recovery/Windows acceptance. Do not repeat completed preview or double-dispatch native financial effects. No protected roots,providers,Genesis,startup or gate changes.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: Actual QD V5 unified custody port
 Status: SOURCE/DISPOSABLE VERIFIED; full UNIFIED_PERP_FINANCIAL_COMPLETENESS sole ACTIVE/INCOMPLETE. B1C1D1E1BLOCKED,all21decisions/seven phases unchanged;PAPERNO;productionNO-GO.
 Evidence: Final595+134+32+30passes with47overlap=744distinct/0failed/1true-symlink NOT EXECUTED;26new across two increments. Actual unified reservation -> V5/native+SQL ACK and concurrency/globalACKloss restart refusal verified;counterpart lane/authority synthetic. See QD_UNIFIED_CUSTODY_PORT_2026-10-25.md.
 Next action: Actual source-derived QD observer/frame/planner binding and perp planner routing;global QD shutdown-exit reservation,existing PerpShutdownCoordinator actual roster/drain/ownedclose and complete two-lane abrupt recovery/Windows/ControlCenter acceptance. No protected roots,providers,Genesis,startup or independent gate changes. Do not repeat completed QD preview/writer port.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: Actual QD source planner/global shutdown and inclusive FS3 session evidence
+Status: SOURCE/DISPOSABLE VERIFIED; UNIFIED_PERP_FINANCIAL_COMPLETENESS sole ACTIVE/full assembly INCOMPLETE. B1C1D1E1BLOCKED;all21decisions/seven phases unchanged;PAPERNO;productionNO-GO.
+Evidence:622+155+32+30passes overlap47=792distinct/0failed/1true-symlink NOT EXECUTED;33new. Actual IEX/V5/native global QD exits and new explicit QD session report scope verified;calendar-cut gap repaired without scope conversion. Genuine QDHTTP not complete two-lane/WinForms acceptance. See QD_SOURCE_GLOBAL_SHUTDOWN_2026-10-25.md.
+Next action: Actual perp discovery/resting-order/executable receipt custody and funding/mark routing,accepted QD scanner source bindings,complete real writer roster/global drain/owned-close,both coordinators and genuine two-lane abrupt recovery/Windows/ControlCenter acceptance. No protected roots,provider/credential/startup/Genesis/gate changes.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

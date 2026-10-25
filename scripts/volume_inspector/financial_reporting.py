@@ -216,8 +216,15 @@ class ReportService:
             self._history(source, scope, documents)
             self.store.trust.check_clock(observed_at)
             source_pin, manifest, rows, _, _, _, _ = source
-            report = build_session_report(scope, manifest, source_pin, rows, session_id=session_id,
-                                         started_at=started_at, cutoff_at=cutoff_at, observed_at=observed_at)
+            if scope['schema'] == 'FS3_QD_REPORT_SCOPE_V2':
+                from datetime import datetime
+                from zoneinfo import ZoneInfo
+                day = datetime.fromtimestamp(cutoff_at, ZoneInfo(scope['timezone'])).date().isoformat()
+                report = build_daily_report(scope, manifest, source_pin, rows, day, observed_at,
+                    session={'session_id': session_id, 'started_at': started_at, 'cutoff_at': cutoff_at})
+            else:
+                report = build_session_report(scope, manifest, source_pin, rows, session_id=session_id,
+                                             started_at=started_at, cutoff_at=cutoff_at, observed_at=observed_at)
             return self.archive._publish(pin, documents, report)
 
     def try_publish(self, day, observed_at):

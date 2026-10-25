@@ -19,7 +19,7 @@ from test_quality_dips_autonomous_enrollment import fixture
 from test_quality_dips_autonomous_paper import STAMP
 
 
-def build(root, confinement, *, stamp=STAMP):
+def build(root, confinement, *, stamp=STAMP, session_reports=False):
     spec = importlib.util.spec_from_file_location(
         "v5_fixture_native",
         confinement.parents[2] / "scripts/volume_inspector/snapshot_store.py",
@@ -29,7 +29,7 @@ def build(root, confinement, *, stamp=STAMP):
     for name in ("coordination", "control", "custody"):
         with native.w.WindowsOutput.create_root(str(root / name)):
             pass
-    x = compose(root, confinement, stamp=stamp, coordination_root=root / "coordination")
+    x = compose(root, confinement, stamp=stamp, coordination_root=root / "coordination", session_reports=session_reports)
     f = fixture()
     e = f.e
     e.update(

@@ -22,12 +22,14 @@ def validate_scope(scope, manifest):
     validate_manifest(manifest)
     restatement = type(scope) is dict and scope.get("schema") in ("FS3_PERP_REPORT_SCOPE_V2", "FS3_PERP_REPORT_SCOPE_V3")
     session = type(scope) is dict and scope.get("schema") == "FS3_PERP_REPORT_SCOPE_V3"
+    qd_session = type(scope) is dict and scope.get('schema') == 'FS3_QD_REPORT_SCOPE_V2'
     extra = {"funding_reporting_policy"} if restatement else set()
-    if session:
+    if session or qd_session:
         extra.add("session_reporting_policy")
     if (type(scope) is not dict or set(scope) != {"schema", "account_id", "epoch", "policy_digest", "timezone"} | extra
-            or scope["schema"] not in ("FS3_REPORT_SCOPE_V1", "FS3_PERP_REPORT_SCOPE_V2", "FS3_PERP_REPORT_SCOPE_V3")
-            or session and scope["session_reporting_policy"] != "ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1"
+            or scope["schema"] not in ("FS3_REPORT_SCOPE_V1", "FS3_PERP_REPORT_SCOPE_V2", "FS3_PERP_REPORT_SCOPE_V3", 'FS3_QD_REPORT_SCOPE_V2')
+            or (session or qd_session) and scope["session_reporting_policy"] != "ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1"
+            or qd_session and manifest['schema'] != 'PAPER_EPOCH_AUTONOMOUS_QD_V1'
             or restatement and (manifest["schema"] not in ("PAPER_EPOCH_PERP_FIXTURE_V2", "PAPER_EPOCH_PERP_OPERATIONAL_V1")
                                 or scope["funding_reporting_policy"] != "POSTED_CASH_AND_SETTLEMENT_ACCRUAL_V1")
             or type(scope["account_id"]) is not str
@@ -38,7 +40,7 @@ def validate_scope(scope, manifest):
     ZoneInfo(scope["timezone"])
 
 
-def frame(scope, manifest, pin, rows, head, day, observed):
+def frame(scope, manifest, pin, rows, head, day, observed, *, session=None):
     validate_scope(scope, manifest)
     if type(observed) is not int or observed <= 0 or type(day) is not str:
         raise ValueError("Exact report observation clock/date required")
@@ -55,7 +57,7 @@ def frame(scope, manifest, pin, rows, head, day, observed):
             or any(strict(r["command"])["timestamp"] > observed for r in rows)):
         raise ValueError("Source count/epoch or future-information mismatch")
     required = sum(strict(r["receipt"])["projection_required"] for r in rows)
-    return {**({"funding_reporting_policy": scope["funding_reporting_policy"], "scope_digest": digest(scope)}
+    result = {**({"funding_reporting_policy": scope["funding_reporting_policy"], "scope_digest": digest(scope)}
                if scope["schema"] in ("FS3_PERP_REPORT_SCOPE_V2", "FS3_PERP_REPORT_SCOPE_V3") else {}),
             **({"session_reporting_policy": scope["session_reporting_policy"]} if scope["schema"] == "FS3_PERP_REPORT_SCOPE_V3" else {}),
             "schema": "FS3_DAILY_REPORT_V1", "report_version": 2 if manifest["schema"] == "PAPER_EPOCH_AUTONOMOUS_QD_V1" else 1,
@@ -75,13 +77,34 @@ def frame(scope, manifest, pin, rows, head, day, observed):
             "operation_status": "FULLY_ACKNOWLEDGED", "valuation": None,
             "valuation_status": "UNAVAILABLE", "lifecycle_status": "NOT_EVALUATED",
             "startup_authorized": False, "production_authorized": False}
+    if session is not None:
+        if (scope['schema'] != 'FS3_QD_REPORT_SCOPE_V2' or type(session) is not dict
+                or set(session) != {'session_id', 'started_at', 'cutoff_at'}
+                or type(session['session_id']) is not str or not session['session_id']
+                or any(type(session[k]) is not int for k in ('started_at', 'cutoff_at'))
+                or not manifest['opened_at'] <= session['started_at'] <= session['cutoff_at'] <= observed <= session['cutoff_at'] + 5):
+            raise ValueError('QD_ACCEPTED_CURRENT_SESSION_SCOPE_REQUIRED')
+        cutoff = session['cutoff_at']
+        if day != datetime.fromtimestamp(cutoff, zone).date().isoformat():
+            raise ValueError('QD_SESSION_CALENDAR_IDENTITY_MISMATCH')
+        result.update(schema='FS3_QD_SESSION_REPORT_V1', report_version=1, session=strict(body(session)), session_id=session['session_id'],
+                      scope_digest=digest(scope), session_reporting_policy=scope['session_reporting_policy'],
+                      period={'kind': 'SESSION_CUT', 'start': session['started_at'], 'cutoff_inclusive': cutoff,
+                              'end_exclusive': cutoff + 1, 'effective_end_exclusive': cutoff + 1},
+                      status='COMPLETE' if all(strict(r['command'])['timestamp'] <= cutoff for r in rows) else 'INCOMPLETE',
+                      reasons=[] if all(strict(r['command'])['timestamp'] <= cutoff for r in rows) else ['SOURCE_ADVANCED_BEYOND_CUTOFF'])
+        result['source']['cutoff_revision'] = sum(strict(r['command'])['timestamp'] <= cutoff for r in rows)
+        if any(strict(r['receipt']).get('projection_required') is not True for r in rows):
+            result['status'] = 'INCOMPLETE'
+            result['reasons'].append('PROJECTION_ACK_REQUIRED')
+    return result
 
 
-def build_daily_report(scope, manifest, pin, rows, day, observed):
+def build_daily_report(scope, manifest, pin, rows, day, observed, *, session=None):
     with localcontext(Context(prec=28, rounding=ROUND_HALF_EVEN)):
         full, head, _ = replay_verified_events(manifest, rows)
         audit_financial_events(manifest, rows, full)
-        report = frame(scope, manifest, pin, rows, head, day, observed)
+        report = frame(scope, manifest, pin, rows, head, day, observed, session=session)
         if manifest["schema"] in ("PAPER_EPOCH_PERP_FIXTURE_V2", "PAPER_EPOCH_PERP_OPERATIONAL_V1"):
             with localcontext() as context:
                 context.traps[Inexact] = True
@@ -143,7 +166,8 @@ def audit_daily_report(report, scope, manifest, pin, rows, snapshot):
             if row["parent"] != parent or row["digest"] != digest([parent, command, receipt]):
                 raise ValueError("Independent source chain mismatch")
             parent = row["digest"]
-        metadata = frame(scope, manifest, pin, rows, parent, report["date"], report["observed_at"])
+        metadata = frame(scope, manifest, pin, rows, parent, report["date"], report["observed_at"],
+                         session=report.get('session') if report.get('schema') == 'FS3_QD_SESSION_REPORT_V1' else None)
         if (type(report.get("report_version")) is not int or type(report["source"]["revision"]) is not int
                 or any(body(report.get(k)) != body(v) for k, v in metadata.items())):
             raise ValueError("Report metadata/source/cutoff mismatch")

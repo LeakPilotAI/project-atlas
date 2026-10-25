@@ -11,31 +11,31 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 744,
+    "passed": 792,
     "failed": 0,
     "skipped": 1,
-    "new_cases_this_increment": 9,
-    "new_cases_across_two_increments": 26,
+    "new_cases": 33,
+    "additional_existing_cases": 15,
     "final_selections_passed": [
-      595,
-      134,
+      622,
+      155,
       32,
       30
     ],
     "overlapping_cases_between_selections": 47,
     "single_combined_run": false,
-    "not_executed": "True-symlink privilege unavailable (1314)",
+    "not_executed": "True-symlink privilege unavailable (1314); no new real-browser/WinForms/full two-lane acceptance",
     "operational_acceptance": false,
-    "selection": "financial25files;actualV3V5unifiedStopHTTP8files;operationalQD2files;operationalPerp1file"
+    "selection": "financial/perp/discovery/report/startup/archive28files;actualQDsource/globalStop/native/runtime/HTTP10files;operationalQD2files;operationalPerp1file"
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Connect actual source-derived QD frame/market-observer planner to EnrolledQualityDipsWriter.propose and accepted unified custody, then actual perp discovery/planner/exit routing. QD writer port/preview/guard are complete: do not repeat. Route QD flatten through global shutdown-exit reservation and connect existing PerpShutdownCoordinator/book-cache to actual roster/final drain/owned-close. Execute complete two-lane abrupt recovery and Windows/ControlCenter acceptance. Read QD_UNIFIED_CUSTODY_PORT_CONTINUATION_2026-10-25.md.",
+  "exact_next_action": "Finish actual perp discovery/planner and durable resting-order admission plus authenticated maker queue/trade evidence routing to existing canonical writer; do not convert legacy mark-touch/manual planning to fills. Bind actual funding/mark producers and QD scanner publication reader to accepted unified custody. QD IEX planner/global shutdown port and explicit inclusive session reports now source verified; do not repeat. Assemble both coordinators with actual complete roster/global drain/exact owned-close and execute genuine two-real-strategy cross-process/crash/Windows/ControlCenter acceptance. Read QD_SOURCE_GLOBAL_SHUTDOWN_CONTINUATION_2026-10-25.md.",
   "latest_focused_tests": {
-    "passed": 4,
+    "passed": 155,
     "failed": 0,
     "skipped": 0,
-    "overlap_combined": false,
-    "selection": "confined real PowerShell roadmap archival updater; disjoint from627 financial/runtime cases"
+    "overlap_combined": true,
+    "selection": "actual QD source/global Stop/native/runtime and genuine disposable HTTP; included in latest792 distinct count"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -119,7 +119,7 @@
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "ACTIVE: source audit confirms existing selected perp handoff funding_modeled=false and missing durable leveraged collateral/funding financial lifecycle. Extend existing canonical engine/audit/native contracts;do not repeat completed universe/UI/authentication work."
   },
   "execution_status": "CONTINUATION_REQUIRED",
-  "progress_revision": 79,
+  "progress_revision": 80,
   "continuation_report": "docs/PERP_OPERATIONAL_SESSION_STOP_CONTINUATION_2026-10-25.md",
   "blocked_wait_reason": null,
   "publication_validation": {
@@ -935,7 +935,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/QD_UNIFIED_CUSTODY_PORT_CONTINUATION_2026-10-25.md",
+  "continuation_checkpoint": "docs/QD_SOURCE_GLOBAL_SHUTDOWN_CONTINUATION_2026-10-25.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1213,5 +1213,43 @@
     "actual_process_shutdown_accepted": false,
     "operational_acceptance": false,
     "startup_authorized": false
+  },
+  "retained_before_qd_source_global_shutdown_latest_tests": {
+    "passed": 744,
+    "failed": 0,
+    "skipped": 1,
+    "new_cases_this_increment": 9,
+    "new_cases_across_two_increments": 26,
+    "final_selections_passed": [
+      595,
+      134,
+      32,
+      30
+    ],
+    "overlapping_cases_between_selections": 47,
+    "single_combined_run": false,
+    "not_executed": "True-symlink privilege unavailable (1314)",
+    "operational_acceptance": false,
+    "selection": "financial25files;actualV3V5unifiedStopHTTP8files;operationalQD2files;operationalPerp1file"
+  },
+  "qd_source_global_shutdown": {
+    "status": "SOURCE_DISPOSABLE_VERIFIED_FULL_TASK_ACTIVE",
+    "report": "docs/QD_SOURCE_GLOBAL_SHUTDOWN_2026-10-25.md",
+    "actual_iex_candidate_v5_native_path_tested": true,
+    "globally_reserved_qd_shutdown_source_tested": true,
+    "inclusive_qd_session_report_scope": "FS3_QD_REPORT_SCOPE_V2",
+    "legacy_daily_scope_cannot_grant_session_acceptance": true,
+    "actual_scanner_current_authority_installed": false,
+    "actual_two_strategy_assembly_complete": false,
+    "actual_process_shutdown_accepted": false,
+    "operational_acceptance": false,
+    "startup_authorized": false
+  },
+  "retained_before_source_stop_focused_tests": {
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "overlap_combined": false,
+    "selection": "confined real PowerShell roadmap archival updater; disjoint from627 financial/runtime cases"
   }
 }

@@ -37,7 +37,7 @@ class Pins:
             raise ValueError("TEST_CLOCK_MISMATCH")
 
 
-def build(root, stamp=STAMP, *, coordination_root=None):
+def build(root, stamp=STAMP, *, coordination_root=None, session_reports=False):
     n = setup(coordination_root if coordination_root is not None else root, stamp=stamp)
     spec = importlib.util.spec_from_file_location("auto_native_read", REPO / "scripts/volume_inspector/financial_read_port.py")
     port_module = importlib.util.module_from_spec(spec)
@@ -50,6 +50,8 @@ def build(root, stamp=STAMP, *, coordination_root=None):
     store = f.FinancialRecordStore(str(root / "source"), pins, projection=target)
     scope = {"schema": "FS3_REPORT_SCOPE_V1", "account_id": n.m["epoch"], "epoch": n.m["epoch"],
              "policy_digest": digest(n.m), "timezone": n.m["timezone"]}
+    if session_reports:
+        scope.update(schema='FS3_QD_REPORT_SCOPE_V2', session_reporting_policy='ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1')
     report_pins = Pins(m.ReportArchive.provision_disposable(str(root / "reports"), scope, n.m), clock)
     archive = m.ReportArchive(str(root / "reports"), report_pins)
     publication = AutonomousNativePublication(store=store, manifest=n.m)
