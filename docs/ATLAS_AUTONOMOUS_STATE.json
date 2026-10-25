@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "PAPER_FIRST_RELEASE_PROGRAM_V1",
+  "last_verified_task": "QD_ENROLLMENT_BOOTSTRAP_V1",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -9,21 +9,20 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 147,
+    "passed": 193,
     "failed": 0,
     "skipped": 0,
-    "new_paper_policy_cases": 53,
-    "selection": "paper-first policy/CI/source scan,operational contract,selected policy,production lock",
+    "new_enrollment_cases": 46,
+    "selection": "enrollment bootstrap,policy,operational contract,selected policy,production lock",
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Assign independent B1scope/legacy reviewer,C1actual process/resource/exclusion reviewer,D1issuer/current-pin/clock/recovery custodians;accept evidence scope then separately authorize source-only enrolled bootstrap/publication/launcher implementation. Provisioning/install/observations/launch/providers/PAPER remain separately gated;live-money implementation out of scope.",
+  "exact_next_action": "Name independent B1/C1 reviewers and D1 issuer/current/clock/recovery custodians;accept actual mechanisms and scope,then separately authorize concrete one-time publisher/custody source integration. Actual provisioning/observations/bridge install/supervised read-only launch remain separately gated;no uncertain publication replay.",
   "latest_focused_tests": {
-    "passed": 53,
+    "passed": 46,
     "failed": 0,
     "skipped": 0,
-    "overlap_combined": true,
-    "selection": "new policy cases included in147combined,not a separate additional run"
+    "overlap_combined": true
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -85,11 +84,12 @@
     "QD_OPERATIONAL_READ_INTEGRATION_V1": "VERIFIED sourceonly,152passed0failed0skipped26new;explicitread-service/custody/nativeidentity preflight,loopbackGET-only,originalUIbytes,ownedclose/restartrefusal,ControlCenterinjectionhook. No actualoperationalbridge/enrollment/startup;B1/C1/D1/E1BLOCKED.",
     "QD_OPERATIONAL_CONTRACT_V1": "VERIFIED source-only separate operational schema/read boundary;260combinedpassed0failed0skipped54new. Disposable contracts unchanged; no operational native adapter/issuer/enrollment/bridge. Independent B1/C1/D1/E1 still BLOCKED.",
     "QD_NATIVE_OPERATIONAL_READ_BRIDGE_V1": "VERIFIED source/disposable native reader+stdioWindowsbridge;311Pythonpass1NOTEXECUTED(true-symlink1314),25JS pass;52newcases. V2historical reconciliation/UIview and actualControlCenterOpenClosefunctions;no operational installation/enrollment/writer/authority. Final strict-type predecessor correction verified; original failing direct replay retained.",
-    "PAPER_FIRST_RELEASE_PROGRAM_V1": "VERIFIED permanentoperatorPAPERfirst/no-live-implementation scope;147passed0failed0skipped53new,556runtimefiles0issues,CIguard. Existingfinancial/runtimebehaviorunchanged;B1/C1/D1/E1BLOCKED;0trialdays/sessions."
+    "PAPER_FIRST_RELEASE_PROGRAM_V1": "VERIFIED permanentoperatorPAPERfirst/no-live-implementation scope;147passed0failed0skipped53new,556runtimefiles0issues,CIguard. Existingfinancial/runtimebehaviorunchanged;B1/C1/D1/E1BLOCKED;0trialdays/sessions.",
+    "QD_ENROLLMENT_BOOTSTRAP_V1": "VERIFIED SOURCE ONLY:193combinedpassed0failed0skipped,46new;pure one-time intent/authenticated publication witness/genesis readback and injected retained-child launcher. No operational publisher/authority/provisioning/install/startup;B1/C1/D1/E1blocked."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 51,
-  "continuation_report": "docs/PAPER_FIRST_RELEASE_CONTINUATION_2026-10-24.md",
+  "progress_revision": 52,
+  "continuation_report": "docs/QUALITY_DIPS_ENROLLMENT_BOOTSTRAP_CONTINUATION_2026-10-24.md",
   "blocked_wait_reason": "Independent reviewers/custody mechanisms and actual B1/C1/D1/E1 acceptance unavailable;no provisioning/startup permission;all eligible source-only policy work complete.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
@@ -197,7 +197,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/PAPER_FIRST_RELEASE_CONTINUATION_2026-10-24.md",
+  "recovery_checkpoint": "docs/QUALITY_DIPS_ENROLLMENT_BOOTSTRAP_CONTINUATION_2026-10-24.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -235,7 +235,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/PAPER_FIRST_RELEASE_CONTINUATION_2026-10-24.md",
+  "recovery_document": "docs/QUALITY_DIPS_ENROLLMENT_BOOTSTRAP_CONTINUATION_2026-10-24.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -562,5 +562,22 @@
     "bridge_installed": false,
     "financial_writer_created": false,
     "protected_startup_unchanged": true
+  },
+  "retained_paper_first_tests": {
+    "passed": 147,
+    "failed": 0,
+    "skipped": 0,
+    "new_paper_policy_cases": 53,
+    "selection": "paper-first policy/CI/source scan,operational contract,selected policy,production lock",
+    "operational_acceptance": false
+  },
+  "enrollment_bootstrap": {
+    "source_implemented": true,
+    "operational_publisher_implemented": false,
+    "operational_enrollment_created": false,
+    "authorities_created": false,
+    "bridge_installed": false,
+    "startup_authorized": false,
+    "report": "docs/QUALITY_DIPS_ENROLLMENT_BOOTSTRAP_V1_2026-10-24.md"
   }
 }
