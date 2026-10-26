@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "SOURCE_COMPLETION_FRESHNESS_AND_READINESS_AUDIT",
+  "last_verified_task": "CONSOLIDATED_OPERATOR_DECISION_AND_CAPACITY_DESIGN",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -31,7 +31,7 @@
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "BLOCKED_WAIT: obtain profile-scoped B1/C1/D1/E1 dispositions,actual source/roster/issuer/clock/custody/provider evidence and explicit enrollment/inception/session permission. Accept cumulative capacity envelope or separately review/authorize immutable continuation engineering. Read AUTONOMOUS_PAPER_CONSOLIDATED_READINESS_2026-10-26.md. No historical host rerun or financial activation.",
+  "exact_next_action": "BLOCKED_WAIT: review docs/ATLAS_FINAL_OPERATOR_DECISION_PACKAGE_2026-10-26.md and provide one scoped decision response (policy/risk/workload,reviewers,read-only preflight scope,capacity choice,evidence owners). No operational enrollment/provider/inception/startup or retained-history host authorized. Native continuation prototype requires separate explicit scope after design review.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -1668,5 +1668,23 @@
     "actual_accounts_initialized": false,
     "trial_sessions": 0,
     "remaining_conditional_engineering": "Immutable continuation only if accepted bounded workload cannot fit128;separate review/authorization required. Operational dependency installation/writable recovery require separate permission."
+  },
+  "operator_decision_package": {
+    "status": "PREPARED_NOT_ACCEPTED",
+    "report": "docs/ATLAS_FINAL_OPERATOR_DECISION_PACKAGE_2026-10-26.md",
+    "gate_changes": 0,
+    "new_tests": {
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0,
+      "type": "OFFLINE_DESIGN_EXAMPLES_NOT_NATIVE_PROTOCOL"
+    },
+    "operational_capacity_changed": false,
+    "native_continuation_implemented": false,
+    "actual_usage_inspected": false,
+    "host_started": false,
+    "financial_writer_started": false,
+    "provider_activated": false,
+    "remaining_work": "Operator/reviewer scope and acceptance;explicit actual read-only preflight;accepted dependencies/rights/capacity;separate installation,inception,session grants. Conditional native continuation source prototype after separate review/authorization."
   }
 }

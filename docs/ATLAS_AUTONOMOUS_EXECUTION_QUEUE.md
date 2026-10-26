@@ -466,3 +466,7 @@ BOUNDED_HTTP_BROWSER_DISPOSABLE_COMPLETION: VERIFIED source/disposable only.41Py
 ## Consolidated financial readiness/source completion - 2026-10-26
 
 SOURCE_COMPLETION_FRESHNESS_AND_READINESS_AUDIT: VERIFIED offline increment;17new race/clock regressions,101source/roster/unified +10native two-lane/capacity +189accounting/policy passes in separate selections. No ACTIVE task. BLOCKED_WAIT on profile-scoped B1/C1/D1/E1 decisions,real source/roster/custody/clock/provider evidence and explicit installation/inception/session permissions. Conditional immutable continuation requires separate review/authorization if128capacity cannot fit accepted workload. Historical partial ten-scope and completed browser acceptance preserved;no rerun. See AUTONOMOUS_PAPER_CONSOLIDATED_READINESS_2026-10-26.md.
+
+## Consolidated operator decisions and capacity design - 2026-10-26
+
+CONSOLIDATED_OPERATOR_DECISION_AND_CAPACITY_DESIGN: VERIFIED package/offline design only;20new design checks pass,0fail/skip. Existing101/10/189 and browser evidence preserved,not rerun. One package covers B1/C1/D1/E1/capacity,eight decision fields,A/B/Cwork categories,immutable continuation proposal and permission-checked local SOP. No ACTIVE task;BLOCKED_WAIT for one scoped operator/reviewer response.128limits unchanged;no native continuation,host,provider,financial writer,enrollment,inception or startup. See ATLAS_FINAL_OPERATOR_DECISION_PACKAGE_2026-10-26.md.
