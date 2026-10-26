@@ -90,3 +90,12 @@ def test_hourly_funding_history_never_supplies_missing_oracle_or_zero(damage):
         assert result["rate_history_complete"] and not result["settlement_evidence_complete"]
         assert all(r["settlement_oracle"] is None for r in result["records"])
         assert not result["financial_execution_authorized"]
+
+
+def test_inclusive_provider_window_preserves_raw_and_returns_latest_requested():
+ from app.adapters.hyperliquid import candle_window
+ raw=[{'t':i,'o':'10','h':'11','l':'9','c':'10.5','v':'20','n':3} for i in range(97)]
+ before=copy.deepcopy(raw)
+ result=candle_window(raw,96)
+ assert len(result)==96 and result[0]['time']==1 and result[-1]['time']==96
+ assert raw==before

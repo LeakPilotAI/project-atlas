@@ -14213,11 +14213,19 @@ Evidence:291distinctPython/48JS pass0finalfailed/skip across43+41+206+14 selecti
 Next action: Review the cumulative128capacity envelope/immutable segmented continuation proposal in docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md; obtain accepted actual source custody/issuer/clock/session and writer-roster dependencies plus B1/C1/D1/E1 acceptance before separately authorized installation/inception/read-only launch and intermittent PAPER trial. Never reset/adopt/replay unresolved history. Read docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: Desktop-session persistence and durable shutdown reason, including safe incomplete-owned-close
 Status: Source/disposable VERIFIED;operational BLOCKED_WAIT. Intermittent desktop use supersedes24/7;allsevenphases/21decisions preserved;PAPERNO;productionNO-GO.
 Evidence:295distinctPython/48JS pass0finalfailed/skip;43+41+206+14+9 selections overlap18;2/11followups overlap. Exact native Stop/entry-cost/funding/history,three same-account sessions,owned WinForms Close/HTTP,real browser read/filter/hash preservation. Separately accepted quiescent open-position process exit remainsINCOMPLETE/noFINAL;UNKNOWN/pending refuse. See docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md.
 Next action: Review cumulative128capacity/immutable segmented continuation in docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md and accept actual issuer/clock/session/current-source custody, complete writer roster and separate incomplete-owned-close authority. B1/C1/D1/E1 acceptance and separate installation/inception/read-only release precede intermittent autonomous PAPER trial. Never reset/adopt/replay unresolved history. Read docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: Original desktop observation launch and bounded real data-only collection,2026-10-26
+Status: Source/observation VERIFIED;financial B1/C1/D1/E1 BLOCKED_WAIT. PAPER NO;production NO-GO.
+Evidence: docs/DESKTOP_OBSERVATION_LAUNCH_2026-10-26.md.109Python/49JS final disjoint pass,0failures/skips. Original UI/Control Center genuine browser/native owned host. IEX auth/subscription0quotes;HL retained actual research0plans.97raw/96selected bars preserved. Both feeds closed; original18attemptbudget1remaining. Financial capacity UNAVAILABLE,no protected accounts accessed.21decisions/sevenphases/startup locks preserved.
+Next action: Inspect original running observation UI; obtain accepted nonmutating QD research inputs and separately authorized market-hours data scope. No financial inception/activation before accepted scope,complete writer ownership,custody/clock/session,current pins,cumulative capacity and release authority. Read docs/DESKTOP_OBSERVATION_LAUNCH_CONTINUATION_2026-10-26.md.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

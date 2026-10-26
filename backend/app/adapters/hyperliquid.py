@@ -121,6 +121,35 @@ def _paper_execution_observation(symbol, metadata, book, started, observed):
             "startup_authorized": False}
 
 
+def candle_window(data, lookback):
+    """Decode original provider bars and select the requested newest window.
+
+    Raw inclusive API responses may contain N+1 bars; callers retain raw evidence.
+    This parser grants no freshness, ranking or financial execution authority.
+    """
+    if type(lookback) is not int or lookback<1 or type(data) is not list:
+        raise ValueError('Explicit candle response/window required')
+    candles: list[dict[str, Any]] = []
+    for c in data:
+        if not isinstance(c, dict):
+            continue
+        try:
+            candles.append(
+                {
+                    "time": int(c.get("t") or 0),
+                    "open": float(c.get("o") or 0),
+                    "high": float(c.get("h") or 0),
+                    "low": float(c.get("l") or 0),
+                    "close": float(c.get("c") or 0),
+                    "volume": float(c.get("v") or 0),
+                    "n": int(c.get("n") or 0),
+                }
+            )
+        except (TypeError, ValueError):
+            continue
+    return candles[-lookback:]
+
+
 @dataclass
 class Ticker:
     symbol: str
@@ -457,24 +486,7 @@ class HyperliquidAdapter:
         if not isinstance(data, list):
             return []
 
-        candles: list[dict[str, Any]] = []
-        for c in data:
-            if not isinstance(c, dict):
-                continue
-            try:
-                candles.append(
-                    {
-                        "time": int(c.get("t") or 0),
-                        "open": float(c.get("o") or 0),
-                        "high": float(c.get("h") or 0),
-                        "low": float(c.get("l") or 0),
-                        "close": float(c.get("c") or 0),
-                        "volume": float(c.get("v") or 0),
-                        "n": int(c.get("n") or 0),
-                    }
-                )
-            except (TypeError, ValueError):
-                continue
+        candles = candle_window(data, lookback)
         if symbol in ('BTC', 'ETH', 'SOL') and interval == '5m' and lookback <= 96:
             self._cache_paper('candles', symbol, {'interval': interval, 'observed_at_ms': end_ms, 'rows': candles})
         return candles

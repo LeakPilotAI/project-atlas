@@ -1,11 +1,12 @@
 # Manual Windows Forms controls for normal and opt-in gaming background mode.
 #Requires -Version 5.1
-param([object]$AcceptedSelectedReadBridge = $null, [object]$AcceptedPaperSession = $null, [object]$IEXCacheReader = $null, [object]$UnifiedReadCapability = $null)
+param([object]$AcceptedSelectedReadBridge = $null, [object]$AcceptedPaperSession = $null, [object]$IEXCacheReader = $null, [object]$UnifiedReadCapability = $null, [switch]$ObservationOnly, [switch]$BoundedDataOnlyObservation, [string]$ObservationBudget = '')
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Import-Module (Join-Path $PSScriptRoot "Atlas-Background-Ui.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-ReadOnly-Dashboard.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot "Atlas-Observation-Dashboard.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-Control-Center.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-SelectedPaper-ReadOnly.psm1") -Force
 
@@ -59,14 +60,14 @@ $stopButton.Enabled = $false
 $form.Controls.Add($stopButton)
 
 $dashboardButton = New-Object System.Windows.Forms.Button
-$dashboardButton.Text = 'Open Read-Only Dashboard'
+$dashboardButton.Text = 'Open Atlas Observation (trading disabled)'
 $dashboardButton.Location = New-Object System.Drawing.Point(20, 248)
 $dashboardButton.Size = New-Object System.Drawing.Size(445, 34)
 $dashboardButton.Add_Click({
     $dashboardButton.Enabled = $false
     try {
-        Open-AtlasReadOnlyDashboard $Root
-        Set-StatusMessage 'Read-only dashboard ready; protected backend unavailable.' ([System.Drawing.Color]::DarkGreen)
+        Open-AtlasObservationDashboard $Root | Out-Null
+        Set-StatusMessage 'Original UI observation ready; protected trading remains disabled.' ([System.Drawing.Color]::DarkGreen)
     } catch {
         Set-StatusMessage "Read-only dashboard failed: $($_.Exception.Message)" ([System.Drawing.Color]::DarkRed)
     } finally { $dashboardButton.Enabled = $true }
@@ -78,7 +79,7 @@ $dashboardStop.Location = New-Object System.Drawing.Point(20, 292)
 $dashboardStop.Size = New-Object System.Drawing.Size(445, 34)
 $dashboardStop.Add_Click({
     try {
-        Close-AtlasReadOnlyDashboard
+        Close-AtlasObservationDashboard; Close-AtlasReadOnlyDashboard
         Set-StatusMessage 'Read-only host closed; browser tabs may remain open.' ([System.Drawing.Color]::DarkSlateGray)
     } catch {
         Set-StatusMessage $_.Exception.Message ([System.Drawing.Color]::DarkRed)
@@ -93,7 +94,7 @@ $form.Add_FormClosing({
             $result = Invoke-AtlasPaperStop $AcceptedPaperSession
             Set-StatusMessage "$($result.phase): $($result.outcome.status) / $($result.outcome.position_state)" ([System.Drawing.Color]::DarkSlateGray)
         }
-        Close-AtlasSelectedPaperDashboard; Close-AtlasReadOnlyDashboard
+        Close-AtlasSelectedPaperDashboard; Close-AtlasObservationDashboard; Close-AtlasReadOnlyDashboard
     } catch {
         $eventArgs.Cancel = $true
         Set-StatusMessage $_.Exception.Message ([System.Drawing.Color]::DarkRed)
@@ -434,6 +435,13 @@ $timer.Add_Tick({
 })
 $timer.Start()
 
+if ($ObservationOnly) {
+    $form.Add_Shown({
+        try { Open-AtlasObservationDashboard $Root -BoundedDataOnly:$BoundedDataOnlyObservation -ExistingDataBudget $ObservationBudget | Out-Null
+              Set-StatusMessage 'Observation only: financial startup remains blocked.' ([System.Drawing.Color]::DarkGreen) }
+        catch { Set-StatusMessage $_.Exception.Message ([System.Drawing.Color]::DarkRed) }
+    })
+}
 [void]$form.ShowDialog()
 $timer.Stop()
 $tray.Visible = $false

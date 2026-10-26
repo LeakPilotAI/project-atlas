@@ -422,3 +422,11 @@ Current execution BLOCKED_WAIT/no ACTIVE task. This supersedes historical 24/7 t
 
 
 Final desktop owned-close increment:295distinctPython/48JS pass,0finalfail/skip. 43+41+206+14+9 selections overlap18cases;2/11followups overlap and are not added. Known quiescent open positions may close exact owned test processes only with separate accepted incomplete-close authority;UNKNOWN or pending writers refuse;financial status remains INCOMPLETE/no FINAL. Desktop source milestone VERIFIED;current BLOCKED_WAIT/no ACTIVE. All historical gates unchanged.
+
+## Desktop observation launch — 2026-10-26
+
+| ID | Objective | Status | Evidence | Next action |
+|---|---|---|---|---|
+| DESKTOP_OBSERVATION_LAUNCH | Original UI/Control Center, bounded authorized IEX/HL observations, durable research/history and no financial dispatch | VERIFIED scoped observation, not PAPER acceptance | DESKTOP_OBSERVATION_LAUNCH_2026-10-26.md;109Python/49JS pass | Obtain accepted nonmutating QD research inputs and separately authorized fresh observation scope; keep financial gates blocked |
+
+No ACTIVE engineering task remains in this bounded execution. Financial BLOCKED_WAIT unchanged. Both feeds closed; HL original18-attempt budget1remaining, no silent reset/reconnect. Original observation UI remains running; no initialized financial account or operational writer.

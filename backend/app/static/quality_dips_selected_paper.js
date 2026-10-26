@@ -34,11 +34,11 @@
   }
 
   function renderTradeHistory(data, filter = 'ALL') {
-    const groups = {ALL:null, STRATEGY:['STRATEGY_EXIT','TAKE_PROFIT'], USER:['USER_SHUTDOWN'], RISK:['STOP_LOSS','RISK_SHUTDOWN'], UNRESOLVED:['UNKNOWN']};
+    const groups = {ALL:null, STRATEGY:['STRATEGY_EXIT','TAKE_PROFIT'], USER:['USER_SHUTDOWN'], RISK:['STOP_LOSS','RISK_SHUTDOWN'], STOP_LOSS:['STOP_LOSS'], TAKE_PROFIT:['TAKE_PROFIT'], RISK_SHUTDOWN:['RISK_SHUTDOWN'], UNRESOLVED:['UNKNOWN']};
     if (!Object.hasOwn(groups, filter)) filter = 'ALL';
     if (!object(data) || data.schema !== 'ATLAS_EXIT_HISTORY_V1' || data.status !== 'ACKNOWLEDGED' ||
         data.startup_authorized !== false || data.total_cash !== null || data.total_net !== null || (!Array.isArray(data.rows) || data.rows.length > 256))
-      return '<h3>PAPER trade history</h3><label>Exit reason <select data-paper-exit-filter aria-label="PAPER exit reason"><option value="ALL">All trades</option><option value="STRATEGY">Strategy exits</option><option value="USER">User shutdown exits</option><option value="RISK">Risk exits</option><option value="UNRESOLVED">Unresolved exits</option></select></label><p role="status">INCOMPLETE / unresolved exits — no verified closed-trade claim.</p>' +
+      return '<h3>PAPER trade history</h3><label>Exit reason <select data-paper-exit-filter aria-label="PAPER exit reason"><option value="ALL">All trades</option><option value="STRATEGY">Strategy exits</option><option value="USER">User shutdown exits</option><option value="RISK">Risk exits</option><option value="STOP_LOSS">Stop losses</option><option value="TAKE_PROFIT">Take profits</option><option value="RISK_SHUTDOWN">Risk shutdown exits</option><option value="UNRESOLVED">Unresolved exits</option></select></label><p role="status">INCOMPLETE / unresolved exits — no verified closed-trade claim.</p>' +
         (object(data) && Array.isArray(data.unresolved) ? data.unresolved.slice(0,256).map(r => object(r) ? `<p>UNKNOWN acknowledgement: ${label(r.lane)} / ${label(r.session_id)} / ${label(r.operation_id)}</p>` : '').join('') : '');
     const reasons = ['STRATEGY_EXIT','STOP_LOSS','TAKE_PROFIT','USER_SHUTDOWN','RISK_SHUTDOWN','UNKNOWN'];
     if (data.rows.some(r => !object(r) || !reasons.includes(r.reason) || !['QUALITY_DIPS','HYPERLIQUID'].includes(r.lane) ||
@@ -46,7 +46,7 @@
         !decimal(r.quantity) || !decimal(r.remaining) || !decimal(r.gross) || !decimal(r.costs) || !decimal(r.net) ||
         r.execution !== 'SIMULATED' || (r.reason === 'USER_SHUTDOWN' && !text(r.stop_command_id))))
       return '<p role="status">Trade history UNKNOWN — inconsistent evidence.</p>';
-    const options = [['ALL','All trades'],['STRATEGY','Strategy exits'],['USER','User shutdown exits'],['RISK','Risk exits'],['UNRESOLVED','Unresolved exits']]
+    const options = [['ALL','All trades'],['STRATEGY','Strategy exits'],['USER','User shutdown exits'],['RISK','Risk exits'],['STOP_LOSS','Stop losses'],['TAKE_PROFIT','Take profits'],['RISK_SHUTDOWN','Risk shutdown exits'],['UNRESOLVED','Unresolved exits']]
       .map(([v,n]) => `<option value="${v}"${filter === v ? ' selected' : ''}>${n}</option>`).join('');
     const rows = data.rows.filter(r => groups[filter] === null || groups[filter].includes(r.reason)).map(r =>
       `<tr><td>${esc(r.lane)} / ${esc(r.currency)}</td><td>${esc(r.session_id)}</td><td>${esc(r.reason)}</td><td>${esc(r.quantity)}</td><td>${esc(r.remaining)}</td><td>${esc(r.gross)}</td><td>${esc(r.costs)}</td><td>${esc(r.net)}</td></tr>`).join('');

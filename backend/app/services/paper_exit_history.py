@@ -116,7 +116,8 @@ def reconcile_history(control,cuts,writers):
         accounts[lane]={'currency':m['currency'],'cash':state['cash'],'net':state['net'],
             'source_revision':state['revision'],'source_head':cut['head']}
     groups={'ALL':REASONS,'STRATEGY':('STRATEGY_EXIT','TAKE_PROFIT'),'USER':('USER_SHUTDOWN',),
-        'RISK':('STOP_LOSS','RISK_SHUTDOWN'),'UNRESOLVED':('UNKNOWN',)}
+        'RISK':('STOP_LOSS','RISK_SHUTDOWN'),'STOP_LOSS':('STOP_LOSS',),'TAKE_PROFIT':('TAKE_PROFIT',),
+        'RISK_SHUTDOWN':('RISK_SHUTDOWN',),'UNRESOLVED':('UNKNOWN',)}
     analysis={}
     try:
         with localcontext() as context:

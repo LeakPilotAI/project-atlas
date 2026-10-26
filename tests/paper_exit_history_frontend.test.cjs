@@ -24,3 +24,10 @@ test('malformed reason currency or unbound user exit refuses',()=>{
  for(const change of [{reason:'OTHER'},{currency:'USD'}, {stop_command_id:null}]){const v=view();Object.assign(v.rows[1],change);assert.match(ui.renderTradeHistory(v),/UNKNOWN/);}
 });
 test('untrusted session labels are escaped',()=>{const v=view();v.rows[0].session_id='<img src=x>';assert.ok(!ui.renderTradeHistory(v).includes('<img'));assert.ok(ui.renderTradeHistory(v).includes('&lt;img'));});
+
+test('individual stop-loss take-profit and risk-shutdown filters do not merge categories',()=>{
+ const v=view();
+ for(const [filter,reason] of [['STOP_LOSS','STOP_LOSS'],['TAKE_PROFIT','TAKE_PROFIT'],['RISK_SHUTDOWN','RISK_SHUTDOWN']]){
+  const s=ui.renderTradeHistory(v,filter);assert.ok(s.includes('<td>'+reason+'</td>'));assert.ok(!s.includes('<td>USER_SHUTDOWN</td>'));
+ }
+});

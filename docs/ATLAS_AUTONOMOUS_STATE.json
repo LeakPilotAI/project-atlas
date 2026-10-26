@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "DESKTOP_SESSION_PERSISTENCE_EXIT_CLASSIFICATION",
+  "last_verified_task": "DESKTOP_OBSERVATION_LAUNCH",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -10,34 +10,21 @@
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim."
   },
   "latest_tests": {
-    "passed": 295,
+    "passed": 109,
     "failed": 0,
     "skipped": 0,
-    "new_cases": 27,
     "single_combined_run": false,
-    "final_selections_passed": [
-      43,
-      41,
-      206,
-      14,
-      9
+    "disjoint_final_selections": [
+      47,
+      51,
+      11
     ],
-    "overlapping_cases_between_selections": 18,
-    "javascript_passed": 48,
-    "javascript_new_cases": 6,
+    "javascript_passed": 49,
     "operational_acceptance": false,
-    "additional_overlapping_final_followup": {
-      "passed": [
-        2,
-        11
-      ],
-      "failed": 0,
-      "skipped": 0
-    },
-    "not_executed": "No new true-symlink or physical power-loss testing; genuine owned WinForms Close and browser filter/read ran with disposable accounts."
+    "not_executed": "No new symlink privilege/power-loss/operational financial trial; genuine original browser and native owned observation host did run."
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Review cumulative128capacity/immutable segmented continuation in docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md and accept actual issuer/clock/session/current-source custody, complete writer roster and separate incomplete-owned-close authority. B1/C1/D1/E1 acceptance and separate installation/inception/read-only release precede intermittent autonomous PAPER trial. Never reset/adopt/replay unresolved history. Read docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md.",
+  "exact_next_action": "Read docs/DESKTOP_OBSERVATION_LAUNCH_CONTINUATION_2026-10-26.md. Inspect running original observation UI; providers are closed, no financial writer. Obtain accepted nonmutating QD research inputs and separate market-hours data scope. B1/C1/D1/E1 and cumulative capacity acceptance precede financial publication/startup; never reset/replay/adopt uncertain history.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -126,10 +113,11 @@
     "UNIFIED_MARKET_SOURCE_FOUNDATION": "VERIFIED scoped source/disposable only:180Python/40JS/5PSassertions/2parses;63new;12766reference symbols;IEXauth+2subscriptions/0Sundayquotes;native readHTTP/browser and control transport contracts;no full unified financial runtime or operational acceptance.",
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "BLOCKED: source/fixture implementation advanced;real accepted source custody/roster/capacity/release evidence unavailable. No operational activation.",
     "UNIFIED_SOURCE_PRODUCER_ROSTER_CAPACITY": "VERIFIED bounded source/disposable increment;54new cases in89combinedpasses;user-assisted actual ControlCenter Stop/Close and genuine browser native-hash preservation;not operational acceptance or indefinite capacity.",
-    "DESKTOP_SESSION_PERSISTENCE_EXIT_CLASSIFICATION": "VERIFIED source/disposable:durable Stop/exit reason, exact receipt/history/entry-cost/funding analytics,normal owned window-close,three same-account native sessions and separately accepted quiescent incomplete-owned-close;295distinctPython/48JS across stated selections. No operational authority or financial continuation/reset."
+    "DESKTOP_SESSION_PERSISTENCE_EXIT_CLASSIFICATION": "VERIFIED source/disposable:durable Stop/exit reason, exact receipt/history/entry-cost/funding analytics,normal owned window-close,three same-account native sessions and separately accepted quiescent incomplete-owned-close;295distinctPython/48JS across stated selections. No operational authority or financial continuation/reset.",
+    "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 86,
+  "progress_revision": 87,
   "continuation_report": "docs/UNIFIED_ACTUAL_STRATEGY_NATIVE_CUSTODY_CONTINUATION_2026-10-25.md",
   "blocked_wait_reason": null,
   "publication_validation": {
@@ -238,7 +226,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/UNIFIED_ACTUAL_STRATEGY_NATIVE_CUSTODY_CONTINUATION_2026-10-25.md",
+  "recovery_checkpoint": "docs/DESKTOP_OBSERVATION_LAUNCH_CONTINUATION_2026-10-26.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -276,7 +264,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md",
+  "recovery_document": "docs/DESKTOP_OBSERVATION_LAUNCH_CONTINUATION_2026-10-26.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -1421,5 +1409,45 @@
       "skipped": 0
     },
     "not_executed": "No new true-symlink or physical power-loss testing; genuine owned WinForms Close and browser filter/read ran with disposable accounts."
+  },
+  "retained_before_desktop_observation_tests": {
+    "passed": 295,
+    "failed": 0,
+    "skipped": 0,
+    "new_cases": 27,
+    "single_combined_run": false,
+    "final_selections_passed": [
+      43,
+      41,
+      206,
+      14,
+      9
+    ],
+    "overlapping_cases_between_selections": 18,
+    "javascript_passed": 48,
+    "javascript_new_cases": 6,
+    "operational_acceptance": false,
+    "additional_overlapping_final_followup": {
+      "passed": [
+        2,
+        11
+      ],
+      "failed": 0,
+      "skipped": 0
+    },
+    "not_executed": "No new true-symlink or physical power-loss testing; genuine owned WinForms Close and browser filter/read ran with disposable accounts."
+  },
+  "desktop_observation": {
+    "mode": "OBSERVATION_ONLY",
+    "financial_writers": false,
+    "providers": "BOUNDED_CAPTURE_COMPLETE_CLOSED",
+    "iex_authenticated": true,
+    "iex_subscribed": true,
+    "iex_quote_count": 0,
+    "hyperliquid_research_plans": 0,
+    "hyperliquid_budget_remaining": 1,
+    "financial_capacity_remaining": null,
+    "report": "docs/DESKTOP_OBSERVATION_LAUNCH_2026-10-26.md",
+    "current_process_identity": "PRIVATE_LOCAL_REVERIFY_BEFORE_ACTION"
   }
 }
