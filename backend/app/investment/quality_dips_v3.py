@@ -12,6 +12,7 @@ Research only. No brokerage orders are created or submitted.
 """
 from __future__ import annotations
 
+from math import isfinite
 from statistics import median
 from typing import Any, Dict, Optional
 
@@ -21,8 +22,8 @@ LEVEL_MARGINS = {"L1": 0.15, "L2": 0.20, "L3": 0.25, "L4": 0.30}
 def _f(v: Any) -> Optional[float]:
     try:
         x = float(v)
-        return x if x > 0 and x == x else None
-    except (TypeError, ValueError):
+        return x if x > 0 and isfinite(x) else None
+    except (TypeError, ValueError, OverflowError):
         return None
 
 

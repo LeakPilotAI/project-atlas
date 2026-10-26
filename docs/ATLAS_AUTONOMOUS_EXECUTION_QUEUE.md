@@ -430,3 +430,9 @@ Final desktop owned-close increment:295distinctPython/48JS pass,0finalfail/skip.
 | DESKTOP_OBSERVATION_LAUNCH | Original UI/Control Center, bounded authorized IEX/HL observations, durable research/history and no financial dispatch | VERIFIED scoped observation, not PAPER acceptance | DESKTOP_OBSERVATION_LAUNCH_2026-10-26.md;109Python/49JS pass | Obtain accepted nonmutating QD research inputs and separately authorized fresh observation scope; keep financial gates blocked |
 
 No ACTIVE engineering task remains in this bounded execution. Financial BLOCKED_WAIT unchanged. Both feeds closed; HL original18-attempt budget1remaining, no silent reset/reconnect. Original observation UI remains running; no initialized financial account or operational writer.
+
+## Operational stabilization - 2026-10-26
+
+| ID | Objective | Status | Evidence | Next action |
+|---|---|---|---|---|
+| DESKTOP_OPERATIONAL_STABILIZATION | Correct research input/read defects, observation diagnostics and disposable desktop/financial regressions | VERIFIED scoped source repairs; operational/UI acceptance BLOCKED_WAIT | DESKTOP_STABILIZATION_FRONTEND_2026-10-26.md | Resolve browser/resize acceptance and obtain accepted current read sources; no legacy startup |

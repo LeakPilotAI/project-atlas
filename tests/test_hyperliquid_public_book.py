@@ -99,3 +99,18 @@ def test_inclusive_provider_window_preserves_raw_and_returns_latest_requested():
  result=candle_window(raw,96)
  assert len(result)==96 and result[0]['time']==1 and result[-1]['time']==96
  assert raw==before
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('raw,expected',[
+    ({'time':1000},[]),
+    ({'time':1000,'fundingRate':'Infinity'},[]),
+    ({'time':1000,'fundingRate':0,'funding_rate':'0.01'},[]),
+    ({'time':1000,'fundingRate':0},[0.0]),
+])
+async def test_research_funding_requires_explicit_finite_unambiguous_rate(monkeypatch,raw,expected):
+    adapter=HyperliquidAdapter()
+    async def reply(_request):return [copy.deepcopy(raw)]
+    monkeypatch.setattr(adapter,'_post',reply)
+    result=await adapter.get_funding_history('BTC')
+    assert [row['funding_rate'] for row in result]==expected

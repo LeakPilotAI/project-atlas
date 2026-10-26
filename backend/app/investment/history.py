@@ -26,16 +26,18 @@ def _parse_dt(raw: object) -> Optional[datetime]:
         return None
 
 
-def _path(symbol: str, root: Path | None = None) -> Path:
-    ensure_dirs()
+def _path(symbol: str, root: Path | None = None, *, create: bool = True) -> Path:
+    if create:
+        ensure_dirs()
     base = root or HISTORY_DIR
-    base.mkdir(parents=True, exist_ok=True)
+    if create:
+        base.mkdir(parents=True, exist_ok=True)
     safe = "".join(ch for ch in symbol.upper() if ch.isalnum() or ch in ".-^")
     return base / f"{safe}.jsonl"
 
 
 def load_dates(symbol: str, root: Path | None = None) -> Set[str]:
-    p = _path(symbol, root)
+    p = _path(symbol, root, create=False)
     dates: Set[str] = set()
     if not p.exists():
         return dates
@@ -100,7 +102,7 @@ def append_bars(
 
 
 def _read_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
-    p = _path(symbol, root)
+    p = _path(symbol, root, create=False)
     out: List[OhlcvBar] = []
     if not p.exists():
         return out
@@ -138,7 +140,7 @@ _bar_lock = threading.RLock()
 
 def load_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
     """Reuse unchanged daily data; bounded by 64 symbols, never rewrites evidence."""
-    path = _path(symbol, root)
+    path = _path(symbol, root, create=False)
     with _bar_lock:
         try:
             stat = path.stat()

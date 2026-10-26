@@ -137,6 +137,12 @@ function renderProspective(){
 }
 function renderAll(){renderPlan();renderLive();renderProspective()}
 
+function renderUnavailable(){
+ const note='<div class="unavailable"><strong>RESEARCH UNAVAILABLE</strong><span>No current verified research response. No candidates, prices or financial results are inferred.</span></div>';
+ for(const id of ['sectorBars','sectorAnalysis','topCandidates','pipelineFacts','entryModels','alertRows'])if($(id))$(id).innerHTML=note;
+ for(const id of ['planRows','watchRows','tapeRows'])if($(id))$(id).innerHTML='<tr><td colspan="10">'+note+'</td></tr>';
+ $('planStatus').textContent='UNAVAILABLE · source freshness unverified';
+}
 async function load(){
   const results=await Promise.allSettled([
     atlasFetch('/api/live',8000).then(r=>r.ok?r.json():Promise.reject(Error('live '+r.status))),
@@ -144,11 +150,11 @@ async function load(){
     atlasFetch('/api/investments/prospective/report',8000).then(r=>r.ok?r.json():Promise.reject(Error('prospective '+r.status)))
   ]);
   if(results[0].status==='fulfilled')LIVE=results[0].value;if(results[1].status==='fulfilled')QD=results[1].value;if(results[2].status==='fulfilled')PRO=results[2].value;
-  if(LIVE||QD||PRO){lastGood={LIVE,QD,PRO};renderAll()}else if(lastGood){({LIVE,QD,PRO}=lastGood);renderAll()}
+  if(LIVE||QD||PRO){lastGood={LIVE,QD,PRO};renderAll()}else{renderUnavailable()}
 }
 document.querySelectorAll('.context button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.context button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.modeView').forEach(v=>v.hidden=true);$('view-'+b.dataset.view).hidden=false}));
 document.querySelectorAll('.toolbar button[data-state]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.toolbar button[data-state]').forEach(x=>x.classList.remove('on'));b.classList.add('on');stateFilter=b.dataset.state;renderPlan()}));
 $('sectorFilter').addEventListener('change',renderPlan);$('sortFilter').addEventListener('change',renderPlan);$('search').addEventListener('input',renderPlan);
-atlasPoll(load,10000);load();
+atlasPoll(load,10000);
 </script>
 </body></html>

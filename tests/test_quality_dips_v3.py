@@ -55,3 +55,17 @@ def test_v3_policy_is_not_a_guarantee():
     assert out["policy"]["guaranteed_undervaluation"] is False
     assert out["policy"]["guaranteed_return"] is False
     assert LEVEL_MARGINS == {"L1": .15, "L2": .20, "L3": .25, "L4": .30}
+
+
+def test_nonfinite_normalization_cannot_publish_fair_value():
+    assert robust_fair_value({'conservative':100,'base':float('inf'),'optimistic':float('inf')}) is None
+
+
+def test_nonfinite_quality_evidence_cannot_qualify():
+    out=base(current_price=90,quality_score=float('inf'),fundamentals_score=92,valuation_score=90,drawdown_percentile=96)
+    assert out['patient_state']=='WATCH' and out['entry_ladder']['ready'] is False
+
+
+def test_oversized_numeric_evidence_fails_closed_without_crashing():
+    out=base(quality_score=10**1000)
+    assert out['patient_state']=='WATCH' and out['entry_ladder']['ready'] is False

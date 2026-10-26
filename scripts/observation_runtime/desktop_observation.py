@@ -20,7 +20,7 @@ from urllib.parse import urlsplit
 REPO=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(REPO/'backend'))
 STATIC=REPO/'backend/app/static'
-PAGES={'/':'dashboard_hub.html','/dashboard':'dashboard_hub.html','/dashboard/perps':'dashboard_shell.html',
+PAGES={'/dashboard/future':'future_overview.html','/api/investments/prospective/view':'prospective_research.html','/':'dashboard_hub.html','/dashboard':'dashboard_hub.html','/dashboard/perps':'dashboard_shell.html',
  '/dashboard/legacy':'dashboard.html','/api/investments/quality-dips/view':'quality_dips.html',
  '/quality_dips.html':'quality_dips.html','/dashboard/investment':'investment.html','/dashboard/archive':'archive.html',
  '/dashboard/command-center':'command_center.html','/dashboard/command-center/health':'command_center_health.html',
@@ -95,7 +95,12 @@ class Session:
    'note':'Original raw responses preserved; existing strategy filters unchanged; no orders or financial admission'}
  def history(self):
   output=[]
-  directories=[self.root] if self.test else [p for p in sorted(self.root.parent.glob('session-*')) if not p.name.startswith('session-test-')][-20:]
+  directories=[self.root] if self.test else [p for p in self.root.parent.glob('session-*') if not p.name.startswith('session-test-')]
+  if len(directories)>256 or any(p.is_symlink() or p.is_junction() for p in directories):
+   raise ValueError('OBSERVATION_ARCHIVE_ROSTER_UNVERIFIED_OR_UNBOUNDED')
+  archive_count=len(directories)
+  # UUID lexical order is unrelated to session time. Never hide window truncation.
+  directories=sorted(directories,key=lambda p:(p.stat().st_ctime_ns,p.name))[-20:]
   for directory in directories:
    file=directory/'observations.jsonl'
    if directory.is_symlink() or directory.is_junction() or not file.is_file() or file.is_symlink() or file.stat().st_nlink!=1 or file.stat().st_size>8388608:
@@ -111,14 +116,46 @@ class Session:
      raise ValueError('OBSERVATION_ARCHIVE_CORRUPT')
     parent=checksum;rows.append({**row,'digest':checksum})
    output.append({'session':directory.name,'records':rows,'status':'CLOSED' if rows and rows[-1]['kind']=='SESSION_STOP' else 'ACTIVE_OR_INTERRUPTED'})
-  return {'schema':'ATLAS_LOCAL_OBSERVATION_HISTORY_V1','authority':'LOCAL_RETAINED_RESEARCH_NOT_FINANCIAL_CUSTODY','sessions':output}
+  return {'schema':'ATLAS_LOCAL_OBSERVATION_HISTORY_V1','authority':'LOCAL_RETAINED_RESEARCH_NOT_FINANCIAL_CUSTODY','sessions':output,
+   'archive_count':archive_count,'omitted_sessions':max(0,archive_count-20),
+   'status':'PARTIAL_ARCHIVE_WINDOW' if archive_count>20 else 'COMPLETE_LOCAL_WINDOW'}
+ def diagnostics(self):
+  history=self.history();now=int(time.time());counts={};books=[];iex=None;budget=None;refusals=[]
+  for session in history['sessions']:
+   for row in session['records']:
+    value=row['value'];kind=row['kind']
+    if kind=='HYPERLIQUID_PUBLIC_RESPONSE':
+     request=value['request'];name=request['type'];counts[name]=counts.get(name,0)+1
+     if name=='l2Book':
+      source=value['response'].get('time');received=value['received_at']
+      books.append({'symbol':request['coin'],'source_time_ms':source,'received_at':received,
+       'received_age_seconds':now-received,'source_age_seconds':(now*1000-source)/1000 if type(source) is int else None,
+       'freshness':'STALE_NOT_EXECUTABLE','financial_execution_authorized':False})
+    elif kind=='ALPACA_IEX_SESSION_RESULT':iex=value
+    elif kind=='DATA_COLLECTION_STOP':budget=value.get('remaining_logical_attempts')
+    elif kind.endswith('REFUSED'):refusals.append({'session':session['session'],'at':row['at'],'kind':kind,'reason':value.get('reason')})
+  current=next((s for s in history['sessions'] if s['session']==self.root.name),None)
+  records=current['records'] if current else []
+  ended=records[-1]['at'] if current and current['status']=='CLOSED' else now
+  return {'schema':'ATLAS_OBSERVATION_DIAGNOSTICS_V1','served_at':now,'source':'VERIFIED_LOCAL_RESEARCH_WINDOW_NOT_FINANCIAL_AUTHORITY',
+   'archive_count':history['archive_count'],'omitted_sessions':history['omitted_sessions'],'archive_status':history['status'],
+   'public_response_counts':counts,'books':books,'iex_last_completed_session':iex,'historical_budget_remaining':budget,
+   'budget_status':'LAST_RETAINED_RECEIPT_NOT_CURRENT_CUSTODY','refusals':refusals,
+   'current_session':{'state':current['status'] if current else 'UNAVAILABLE','records':len(records),
+    'records_remaining':128-len(records),'started_at':records[0]['at'] if records else None,
+    'last_record_at':records[-1]['at'] if records else None,'duration_seconds':ended-records[0]['at'] if records else None},
+   'quality_dips_research':'WAITING_FOR_VERIFIED_FUNDAMENTALS_HISTORY_VALUATION_AND_RANKING',
+   'financial_reconciliation':'UNAVAILABLE_NO_ACCEPTED_FINANCIAL_RUNTIME','financial_capacity_remaining':None,
+   'financial_startup_authorized':False}
 
 
 def assets():
  result={}
  for route,name in {**PAGES,**ASSETS}.items():
   data=(STATIC/name).read_bytes()
-  if name.endswith('.html'):data=data.replace(b'</body>',b'<script src="/static/observation_status.js"></script></body>')
+  if name.endswith('.html'):
+   ending=b'</body>' if b'</body>' in data else b'</html>'
+   data=data.replace(ending,b'<script src="/static/observation_status.js"></script>'+ending)
   result[route]=(data,'text/html; charset=utf-8' if name.endswith('.html') else 'image/png' if name.endswith('.png') else 'text/javascript; charset=utf-8' if name.endswith('.js') else 'text/css; charset=utf-8')
  result['/static/observation_status.js']=((Path(__file__).with_name('observation_status.js')).read_bytes(),'text/javascript; charset=utf-8')
  return result
@@ -138,6 +175,9 @@ def make_host(session,port=0):
    if route=='/health':return self.response(200,{'status':'ok','host_id':identity,'mode':'OBSERVATION_ONLY','pid':os.getpid(),
     'scanner_running':False,'paper_trade_tracker_running':False,'production':'NO-GO','financial_writers':False})
    if route=='/api/observation/state':return self.response(200,session.snapshot())
+   if route=='/api/observation/diagnostics':
+    try:return self.response(200,session.diagnostics())
+    except (OSError,ValueError,KeyError,TypeError):return self.response(503,{'status':'INCOMPLETE','reason':'OBSERVATION_DIAGNOSTICS_UNVERIFIED'})
    if route=='/api/observation/research':
     try:return self.response(200,session.research())
     except (OSError,ValueError,KeyError,TypeError):return self.response(503,{'status':'UNAVAILABLE','reason':'RETAINED_RESEARCH_UNVERIFIED'})
@@ -168,9 +208,10 @@ def make_host(session,port=0):
 
 
 def main():
- p=argparse.ArgumentParser();p.add_argument('--data-only-seconds',type=int,default=0);p.add_argument('--operator-data-only-approved',action='store_true');p.add_argument('--existing-data-budget',type=Path);a=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--data-only-seconds',type=int,default=0);p.add_argument('--operator-data-only-approved',action='store_true');p.add_argument('--existing-data-budget',type=Path);p.add_argument('--disposable-test',action='store_true');a=p.parse_args()
+ if a.disposable_test and a.data_only_seconds:raise ValueError('DISPOSABLE_HOST_NETWORK_COLLECTION_FORBIDDEN')
  if a.data_only_seconds and (not a.operator_data_only_approved or not 1<=a.data_only_seconds<=30):raise ValueError('EXPLICIT_BOUNDED_DATA_ONLY_APPROVAL_REQUIRED')
- session=Session(REPO/'logs/observation-only'/('session-'+uuid.uuid4().hex))
+ session=Session(REPO/'logs/observation-only'/(('session-test-' if a.disposable_test else 'session-')+uuid.uuid4().hex),test=a.disposable_test)
  if a.existing_data_budget:
   path=a.existing_data_budget.absolute()
   if (not a.data_only_seconds or path.name!='provider-budget.sqlite' or path.parent.parent!=REPO/'logs/observation-only'

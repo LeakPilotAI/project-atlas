@@ -8,6 +8,7 @@ import time
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from math import isfinite
 from threading import RLock
 from typing import Any, Optional
 
@@ -524,19 +525,21 @@ class HyperliquidAdapter:
             if not isinstance(item, dict):
                 continue
             try:
+                supplied = [item[key] for key in ("fundingRate", "funding_rate", "funding")
+                            if key in item and item[key] is not None]
+                if not supplied or any(isinstance(value, bool) for value in supplied):
+                    continue
+                rates = [float(value) for value in supplied]
+                if any(not isfinite(rate) for rate in rates) or any(rate != rates[0] for rate in rates):
+                    continue
                 rows.append(
                     {
                         "time": int(item.get("time") or 0),
-                        "funding_rate": float(
-                            item.get("fundingRate")
-                            or item.get("funding_rate")
-                            or item.get("funding")
-                            or 0
-                        ),
+                        "funding_rate": rates[0],
                         "raw": item,
                     }
                 )
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 continue
         return rows
 

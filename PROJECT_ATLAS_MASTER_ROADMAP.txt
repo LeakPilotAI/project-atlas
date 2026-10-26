@@ -14221,11 +14221,19 @@ Evidence:295distinctPython/48JS pass0finalfailed/skip;43+41+206+14+9 selections 
 Next action: Review cumulative128capacity/immutable segmented continuation in docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md and accept actual issuer/clock/session/current-source custody, complete writer roster and separate incomplete-owned-close authority. B1/C1/D1/E1 acceptance and separate installation/inception/read-only release precede intermittent autonomous PAPER trial. Never reset/adopt/replay unresolved history. Read docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: Original desktop observation launch and bounded real data-only collection,2026-10-26
 Status: Source/observation VERIFIED;financial B1/C1/D1/E1 BLOCKED_WAIT. PAPER NO;production NO-GO.
 Evidence: docs/DESKTOP_OBSERVATION_LAUNCH_2026-10-26.md.109Python/49JS final disjoint pass,0failures/skips. Original UI/Control Center genuine browser/native owned host. IEX auth/subscription0quotes;HL retained actual research0plans.97raw/96selected bars preserved. Both feeds closed; original18attemptbudget1remaining. Financial capacity UNAVAILABLE,no protected accounts accessed.21decisions/sevenphases/startup locks preserved.
 Next action: Inspect original running observation UI; obtain accepted nonmutating QD research inputs and separately authorized market-hours data scope. No financial inception/activation before accepted scope,complete writer ownership,custody/clock/session,current pins,cumulative capacity and release authority. Read docs/DESKTOP_OBSERVATION_LAUNCH_CONTINUATION_2026-10-26.md.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: Desktop stabilization and original frontend investigation
+Status: Source repairs verified; connected UI and operational acceptance BLOCKED_WAIT. PAPER NO;production NO-GO.21 decisions/seven phases unchanged.
+Evidence: docs/DESKTOP_STABILIZATION_FRONTEND_2026-10-26.md;471 Python across disjoint runs,54 JS;real original six-tab browser audit; retained failures and unexecuted resize/error attribution recorded.
+Next action: Resolve browser error/resize acceptance and obtain accepted current nonmutating research/enrollment sources; preserve original frontend,Genesis,protected accounts and gates. Do not start legacy port8000 backend.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===
