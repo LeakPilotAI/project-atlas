@@ -273,6 +273,10 @@ class CanonicalWriterLane:
 
     async def next_proposal(self, observation):
         self._verify()
+        from app.services.paper_financial_replay import ControlCapacityReached
+        needed=4 if type(self.writer) is EnrolledQualityDipsWriter else 2
+        if self.reports.archive.remaining_reports()<needed:
+            raise ControlCapacityReached('REPORT_CAPACITY_RESERVED_FOR_FINAL_DRAIN')
         try:
             cut = self.writer._cut()
         except (OSError, ValueError) as error:

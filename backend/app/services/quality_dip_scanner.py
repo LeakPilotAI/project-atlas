@@ -46,8 +46,9 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 class QualityDipScanner:
-    def __init__(self, *, quote_service=None) -> None:
+    def __init__(self, *, quote_service=None, paper_publication=None) -> None:
         self._quote_service = quote_service
+        self._paper_publication = paper_publication
         self._task: Optional[asyncio.Task] = None
         self._ladder_task: Optional[asyncio.Task] = None
         self._running = False
@@ -326,6 +327,8 @@ class QualityDipScanner:
         rows = as_quality_dip_rows()
         self.last_snapshot = rows
         self.last_scan_at = _now().isoformat()
+        if self._paper_publication is not None:
+            self._paper_publication.publish_scanner(rows, self.last_scan_at)
         settings = get_settings()
         if not bool(getattr(settings, "quality_dip_discord_enabled", False)):
             return

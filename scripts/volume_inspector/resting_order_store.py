@@ -122,6 +122,10 @@ class RestingOrderStore:
         operations = self._load()[4]
         return type(receipt) is dict and operations.get(receipt.get('event_digest')) == receipt
 
+    def remaining_slots(self):
+        """Existing immutable bounded journal; never reset or adopt a tail."""
+        return 128-len(self._load()[0]['entries'])
+
     def apply(self, event, reservation, *, fault=lambda phase: None):
         with self.guard():
             pin, scope, state, head, operations = self._load()

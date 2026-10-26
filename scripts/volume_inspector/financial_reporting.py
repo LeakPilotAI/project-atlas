@@ -167,6 +167,10 @@ class ReportArchive:
             self._latch()
             raise
 
+    def remaining_reports(self):
+        """Immutable pin/inventory verification only; never publishes a latch."""
+        return MAX_REPORTS-len(self._load()[2])
+
 
 class ReportService:
     """Store-bound read/report-only interface; never executes a financial event."""

@@ -7,7 +7,14 @@ must be installed independently; a local hash or test lease grants no authority.
 import copy
 from contextlib import contextmanager
 
-from app.services.paper_financial_replay import body, digest, number, strict, text
+from app.services.paper_financial_replay import (
+    ControlCapacityReached,
+    body,
+    digest,
+    number,
+    strict,
+    text,
+)
 from app.services.paper_portfolio_risk import LANES
 
 
@@ -98,10 +105,12 @@ class UnifiedPortfolioCustody:
                     or state['session'] is not None and state['finalized'] is None
                     or any(row['state'] == 'RESERVED' for row in state['operations'].values())):
                 return False
+            if self.journal.remaining_slots()<3:return False
             # A new grant is not recovery authority for surviving positions or
             # outstanding resting exposure. Verify native sources before SESSION.
             for writer in self.writers.values():
                 cut = writer._cut()
+                if writer.store.remaining_operations()<3:return False
                 if any(number(position['remaining']) > 0 for position in cut['state']['positions'].values()):
                     return False
                 if hasattr(writer, 'verify_order_drain') and writer.verify_order_drain() is not True:
@@ -225,6 +234,29 @@ class PortfolioLease:
     def reserve(self, request):
         if body(request) != body(self.request) or self.owner.check() is not True:
             raise ValueError('UNIFIED_CUSTODY_LEASE_CHANGED')
+        # Reserve the operation's RESERVE/ACK plus CLOSE/FINAL and one reducing
+        # operation per projected position/resting order. Ordinary observations
+        # cannot consume the capacity needed to stop safely. No rollover/reset.
+        if self.projected is None:
+            raise ValueError('UNIFIED_PRE_EFFECT_CAPACITY_PROJECTION_REQUIRED')
+        future=sum(len(row['positions'])*(2 if row['lane']=='HYPERLIQUID' else 1) for row in self.projected)
+        closed=self._state()['entry_closed']
+        required=2+(1 if closed else 2)+2*future
+        if self.custody.journal.remaining_slots()<required:
+            raise ControlCapacityReached('UNIFIED_CAPACITY_RESERVED_FOR_SHUTDOWN')
+        for lane,writer in self.custody.writers.items():
+            target=lane==request['lane'];kind=request['proposal']['kind']
+            financial=kind not in ('RESTING_ORDER','CANCEL_RESTING_ORDER')
+            state=self.preview['after'] if target and financial else writer._cut()['state']
+            positions=sum(number(p['remaining'])>0 for p in state['positions'].values())
+            pending=0
+            if hasattr(writer,'orders'):
+                pending=sum(r['state']=='RESERVED' for r in writer.orders.snapshot()['state']['orders'].values())
+                if target and kind=='RESTING_ORDER':pending+=1
+                elif target and (kind=='CANCEL_RESTING_ORDER' or financial and request['proposal']['command']['schema']=='PAPER_PERP_MAKER_FILL_V1'):pending-=1
+            budget=(1 if target and financial else 0)+positions*(2 if lane=='HYPERLIQUID' else 1)+pending*3
+            if writer.store.remaining_operations()<budget:
+                raise ControlCapacityReached('FINANCIAL_CAPACITY_RESERVED_FOR_SETTLEMENT_AND_EXIT')
         self.custody._event('RESERVE', request['proposal']['operation_id'], request)
         return {'state': 'RESERVED', 'binding': digest(request)}
 

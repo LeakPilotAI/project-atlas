@@ -100,7 +100,7 @@ class ActualSourceRisk:
         return self.last[2:]
 
 
-def build(root, confinement, qd_confinement):
+def build(root, confinement, qd_confinement, *, publication_factory=None):
     root = Path(root)
     qd_root = Path(qd_confinement) / ('account-' + uuid.uuid4().hex)
     qd_root.mkdir()
@@ -112,8 +112,14 @@ def build(root, confinement, qd_confinement):
     q_packet = {'schema': 'QD_SCANNER_PUBLICATION_V1', 'source_id': 'SYNTHETIC_ORIGINAL_SCANNER', 'revision': 1,
         'observed_at': clock(), 'bundles': [q.b], 'monitors': {}}
     q_source = SimpleNamespace(read_publication=lambda timeout: copy.deepcopy(q_packet))
+    if publication_factory is not None:
+        q_source,p_source=publication_factory(q,p,q_packet,clock)
+        from app.services.perp_source_planner import PerpSourcePlanner
+        p.source=p_source
+        p.planner=PerpSourcePlanner(writer=p.writer,source=p_source,clock=clock,session_id='synthetic-session')
     q.a.verify_publication_components = lambda binding, actual: actual['writer'] is q.writer and actual['source'] is q_source
-    q.a.verify_scanner_publication = lambda binding, packet, cut, now: packet == q_packet and q.a.valid
+    q.a.verify_scanner_publication = lambda binding, packet, cut, now: q.a.valid and packet == (
+        q_packet if publication_factory is None else q_source.read_publication(timeout=.2))
     reader = QualityDipsPublicationReader(writer=q.writer, source=q_source)
     q.a.verify_planner_components = lambda binding, actual: actual == {'writer': q.writer, 'observer': q.observer, 'quotes': q.quotes, 'reader': reader}
     q.a.verify_decision_source = lambda binding, request, observation, cut: q.a.valid and q.observer.verify_observation(observation)
@@ -176,6 +182,9 @@ def build(root, confinement, qd_confinement):
         return copy.deepcopy(p_observer.last)
     p_observer.observe = p_observe
     p_observer.verify_observation = lambda value: value == p_observer.last
+    if publication_factory is not None:
+        from app.services.paper_market_observers import HyperliquidMarketObserver
+        p_observer=HyperliquidMarketObserver(p_source.adapter,clock=clock,source=p_source)
     q.a.verify_lane = lambda b, c: c['writer'] is q.writer and c['planner'] is qp and c['shutdown'] is qstop
     p.a.verify_lane = lambda b, c: c['writer'] is p.writer and c['planner'] is p.planner and c['shutdown'] is pstop
     qlane = CanonicalWriterLane(writer=q.writer, observer=q.observer, planner=qp, shutdown=qstop, reports=qstop.reports)

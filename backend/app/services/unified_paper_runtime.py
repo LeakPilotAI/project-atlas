@@ -8,7 +8,14 @@ thread lock. No default custodian, portfolio allocation or trading grant exists.
 import asyncio
 from threading import Event, Lock
 
-from app.services.paper_financial_replay import FinancialSourceUncertain, body, digest, strict, text
+from app.services.paper_financial_replay import (
+    ControlCapacityReached,
+    FinancialSourceUncertain,
+    body,
+    digest,
+    strict,
+    text,
+)
 from app.services.paper_portfolio_risk import (
     LANES,
     check_portfolio_accounting_update,
@@ -212,6 +219,9 @@ class UnifiedPaperRuntime:
                             continue
                         try:
                             proposal = await asyncio.wait_for(planner(row), 2)
+                        except ControlCapacityReached:
+                            self.stop()  # Existing bounded flatten/drain; no reset or automatic restart.
+                            break
                         except FinancialSourceUncertain:
                             self.entry_closed.set()
                             self.uncertain, self.state = True, 'STOP_INCOMPLETE'
@@ -227,6 +237,9 @@ class UnifiedPaperRuntime:
                                     self.cancel_resting(proposal)
                                 else:
                                     self.dispatch(lane, proposal)
+                            except ControlCapacityReached:
+                                self.stop()
+                                break
                             except ValueError:
                                 if self.uncertain:
                                     break

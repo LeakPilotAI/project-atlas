@@ -195,6 +195,10 @@ class FinancialRecordStore:
                               "head": head, "audit": audit, "pin_schema": pin["schema"],
                               "acknowledged_operations": {key: digest(value[0]) for key, value in operations.items()}})
 
+    def remaining_operations(self):
+        """Authenticated existing-only capacity read; no reset or writer mutex."""
+        return MAX_OPERATIONS-self.verified_cut()['state']['revision']
+
     def _inspect_existing(self):
         # Never acquire the writer mutex here: observing an abandoned mutex can
         # consume its evidence, and writer.guard() may publish a failure latch.

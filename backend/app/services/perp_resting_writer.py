@@ -3,7 +3,13 @@
 No exchange order submission, accounting replacement, trust default or recovery.
 Financial publication remains exactly one call through NativeFinancialWriter.
 """
-from app.services.paper_financial_replay import FinancialSourceUncertain, body, digest, strict
+from app.services.paper_financial_replay import (
+    ControlCapacityReached,
+    FinancialSourceUncertain,
+    body,
+    digest,
+    strict,
+)
 from app.services.perp_resting_order import validate_fill, validate_order
 from app.services.unified_native_writer import NativeFinancialWriter, OperationalPerpFinancialWriter
 
@@ -47,6 +53,10 @@ class RestingPerpWriter:
         verifier = getattr(self.authority, 'verify_resting_order', None)
         if verifier is None or verifier(self.binding, proposal, observation, cut, control) is not True:
             raise ValueError('RESTING_STRATEGY_OR_PORTFOLIO_AUTHORITY_REQUIRED')
+        if prior is None and proposal['kind']=='RESTING_ORDER':
+            active=sum(row['state']=='RESERVED' for row in control['state']['orders'].values())
+            if self.orders.remaining_slots()<1+2*(active+1):
+                raise ControlCapacityReached('RESTING_CAPACITY_RESERVED_FOR_PENDING_RESOLUTION')
         return True
 
     def dispatch_resting(self, proposal, reservation):
@@ -74,6 +84,9 @@ class RestingPerpWriter:
             if row is None or row['state'] != 'RESERVED':
                 raise ValueError('RESTING_FILL_NOT_ADMITTED_OR_UNKNOWN')
             validate_fill(row['order'], proposal['command'])
+            active=sum(row['state']=='RESERVED' for row in self._control()['state']['orders'].values())
+            if self.orders.remaining_slots()<2*active:
+                raise ControlCapacityReached('RESTING_ACK_CAPACITY_UNAVAILABLE')
         return value
 
     def verify_proposal(self, proposal, observation):

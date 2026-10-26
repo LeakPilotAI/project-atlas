@@ -38,14 +38,24 @@ class IEXMarketObserver:
 
 
 class HyperliquidMarketObserver:
-    def __init__(self, adapter, *, clock):
+    def __init__(self, adapter, *, clock, source=None):
         from app.adapters.hyperliquid import HyperliquidAdapter
 
         if type(adapter) is not HyperliquidAdapter:
             raise ValueError("MARKET_EXISTING_HYPERLIQUID_ADAPTER_REQUIRED")
         self.adapter, self.clock, self.last = adapter, clock, None
+        if source is not None:
+            from app.services.paper_source_publication import PerpSourcePublication
+            if type(source) is not PerpSourcePublication or source.adapter is not adapter:
+                raise ValueError('MARKET_AUTHENTICATED_ORIGINAL_SOURCE_REQUIRED')
+        self.source=source
 
     async def observe(self):
+        if self.source is not None:
+            packet=self.source.read_cut()
+            self.last={'lane':'HYPERLIQUID','at':packet['observed_at'],'connection':'CONNECTED','session':'OPEN',
+                'signal':None,'source':{'feed':'HYPERLIQUID_AUTHENTICATED_SOURCE','cut':digest(packet)}}
+            return strict(body(self.last))
         view = self.adapter.monitor_snapshot()
         # Receipt-based research marks are not exchange bid/ask timestamps.
         at = int(datetime.fromisoformat(view["observed_at"]).timestamp()) if view["observed_at"] else self.clock()
@@ -56,4 +66,7 @@ class HyperliquidMarketObserver:
         return strict(body(self.last))
 
     def verify_observation(self, value):
+        if self.source is not None:
+            return (value==self.last and self.source.adapter is self.adapter
+                    and value['source']['cut']==digest(self.source.read_cut()))
         return value == self.last and value["source"]["cut"] == digest(self.adapter.monitor_snapshot())

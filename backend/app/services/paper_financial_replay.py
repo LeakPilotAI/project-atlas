@@ -15,6 +15,10 @@ class FinancialSourceUncertain(ValueError):
     """Current durable financial/control evidence cannot establish a safe cut."""
 
 
+class ControlCapacityReached(ValueError):
+    """Close admission and use reserved shutdown headroom; never reset evidence."""
+
+
 def body(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
 

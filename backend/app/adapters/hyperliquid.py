@@ -5,8 +5,10 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from threading import RLock
 from typing import Any, Optional
 
 import httpx
@@ -138,7 +140,7 @@ class Ticker:
 class HyperliquidAdapter:
     name = "hyperliquid"
 
-    def __init__(self) -> None:
+    def __init__(self, *, paper_transport=None) -> None:
         self._client: Optional[httpx.AsyncClient] = None
         self._connected = False
         self._universe_names: list[str] = []
@@ -148,6 +150,32 @@ class HyperliquidAdapter:
         self._last_rest_prices: dict[str, float] = {}
         self._ws_task: Optional[asyncio.Task] = None
         self._ws_running = False
+        self._paper_cache_lock = RLock()
+        self._paper_cache_revision = 0
+        self._paper_cache: dict[str, Any] = {k: {} for k in ('books', 'funding', 'candles', 'trades')}
+        self._paper_cache['markets'] = []
+        self._paper_transport = self._paper_transport_bound = paper_transport
+
+    def _cache_paper(self, role, key, value):
+        """Parsed source facts only; not source authentication or a financial ACK."""
+        with self._paper_cache_lock:
+            if key is None:
+                self._paper_cache[role] = deepcopy(value)
+            else:
+                self._paper_cache[role][key] = deepcopy(value)
+            self._paper_cache_revision += 1
+
+    def paper_source_snapshot(self):
+        """Existing cache only. Never connects, refreshes, backfills or trades."""
+        with self._paper_cache_lock:
+            return {'schema': 'HL_SOURCE_CACHE_V1', 'revision': self._paper_cache_revision,
+                    'connected': self._connected, 'facts': deepcopy(self._paper_cache)}
+
+    def ingest_paper_trades(self, frame, *, received_ms, continuity_receipt):
+        from app.services.paper_source_publication import parse_public_trades
+        value = parse_public_trades(frame, received_ms=received_ms)
+        value['continuity_receipt'] = deepcopy(continuity_receipt)
+        self._cache_paper('trades', value['symbol'], value)
 
     def _consume_request(self, kind: str) -> None:
         hyperliquid_gate_registry.consume_before_attempt(kind)
@@ -166,6 +194,10 @@ class HyperliquidAdapter:
         await self.start_mids_ws()
 
     async def close(self) -> None:
+        with self._paper_cache_lock:
+            self._paper_cache={k:{} for k in ('books','funding','candles','trades')}
+            self._paper_cache['markets']=[]
+            self._paper_cache_revision+=1
         self._ws_running = False
         self._mids.clear()
         self._mid_received_at.clear()
@@ -223,7 +255,9 @@ class HyperliquidAdapter:
         started = clock_ms()
         metadata = await self._post({"type": "metaAndAssetCtxs"})
         book = await self._post({"type": "l2Book", "coin": symbol})
-        return _paper_execution_observation(symbol, metadata, book, started, clock_ms())
+        value = _paper_execution_observation(symbol, metadata, book, started, clock_ms())
+        self._cache_paper('books', symbol, {'parsed': value, 'metadata': metadata, 'book': book})
+        return value
 
     async def paper_funding_observation(self, symbol: str, start_ms: int, end_ms: int, *, clock_ms) -> dict[str, Any]:
         """At most 24 explicit hourly history rows; missing hours never become zero.
@@ -238,7 +272,9 @@ class HyperliquidAdapter:
         hyperliquid_gate_registry.require_gate()
         started = clock_ms()
         data = await self._post({"type": "fundingHistory", "coin": symbol, "startTime": start_ms, "endTime": end_ms - 1})
-        return _paper_funding_observation(symbol, data, start_ms, end_ms, started, clock_ms())
+        value = _paper_funding_observation(symbol, data, start_ms, end_ms, started, clock_ms())
+        self._cache_paper('funding', symbol, {'parsed': value, 'rows': data, 'started_ms': started})
+        return value
 
     async def refresh_universe(self) -> list[str]:
         data = await self._post({"type": "meta"})
@@ -377,6 +413,9 @@ class HyperliquidAdapter:
         self._last_rest_observed_at = observed_at
         self._last_rest_prices = prices
         logger.info("Fetched tickers", count=len(out))
+        self._cache_paper('markets', None, [{'symbol':r.symbol, 'price':r.price, 'volume_24h':r.volume_24h,
+            'open_interest':r.open_interest, 'funding_rate':r.funding_rate, 'timestamp':r.timestamp}
+            for r in out if r.symbol in ('BTC', 'ETH', 'SOL')])
         return out
 
     # ── Candles ──────────────────────────────────────────────────────
@@ -436,6 +475,8 @@ class HyperliquidAdapter:
                 )
             except (TypeError, ValueError):
                 continue
+        if symbol in ('BTC', 'ETH', 'SOL') and interval == '5m' and lookback <= 96:
+            self._cache_paper('candles', symbol, {'interval': interval, 'observed_at_ms': end_ms, 'rows': candles})
         return candles
 
     # ── Funding history ──────────────────────────────────────────────
@@ -541,7 +582,12 @@ class HyperliquidAdapter:
     async def _mids_loop(self) -> None:
         backoff = 2.0
         while self._ws_running:
+            transport=self._paper_transport
+            stream=None
             try:
+                if transport is not None and (transport is not self._paper_transport_bound
+                        or transport.verify_subscription(self,('BTC','ETH','SOL')) is not True):
+                    raise hyperliquid_gate_registry.RequestGateRefused('Accepted PAPER trade subscription required')
                 self._consume_request('WEBSOCKET_CONNECT')
                 async with websockets.connect(
                     WS_URL,
@@ -560,6 +606,12 @@ class HyperliquidAdapter:
                         )
                     )
                     logger.info("Subscribed to allMids")
+                    if transport is not None:
+                        if transport is not self._paper_transport_bound or transport.verify_subscription(self,('BTC','ETH','SOL')) is not True:
+                            raise hyperliquid_gate_registry.RequestGateRefused('Accepted PAPER trade subscription required')
+                        stream=transport.open_stream(self)
+                        for symbol in ('BTC','ETH','SOL'):
+                            await ws.send(json.dumps({'method':'subscribe','subscription':{'type':'trades','coin':symbol}}))
                     backoff = 2.0
                     async for raw in ws:
                         if not self._ws_running:
@@ -570,6 +622,11 @@ class HyperliquidAdapter:
                             continue
                         channel = msg.get("channel")
                         data = msg.get("data")
+                        if transport is not None:
+                            receipt=transport.observe_message(stream,msg,int(time.time()*1000))
+                            if channel=='trades':
+                                if receipt is None:raise ValueError('Authenticated trade continuity receipt required')
+                                self.ingest_paper_trades(msg,received_ms=int(time.time()*1000),continuity_receipt=receipt)
                         if channel == "allMids" and isinstance(data, dict):
                             mids = data.get("mids") if "mids" in data else data
                             if isinstance(mids, dict):
@@ -594,6 +651,11 @@ class HyperliquidAdapter:
             finally:
                 self._mids.clear()
                 self._mid_received_at.clear()
+                with self._paper_cache_lock:
+                    self._paper_cache['trades']={}
+                    self._paper_cache_revision+=1
+                if transport is not None and stream is not None:
+                    transport.invalidate_stream(stream)
 
     def get_mid(self, symbol: str) -> Optional[float]:
         # Short-lived receipt-based research hint, never an authoritative REST mark.
