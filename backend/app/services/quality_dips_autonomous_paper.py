@@ -692,6 +692,8 @@ class AutonomousPaper:
                     c["ranking"]["instrument_id"],
                 ),
             )
+            if any(p['origin_ref'] == candidate['ranking']['observation_id'] for p in state['positions'].values()):
+                raise NoFill('CANDIDATE_ORIGIN_ALREADY_USED')
             instrument = candidate["execution"]["instrument"]
             quote = next(
                 (q for q in request["quotes"] if q["instrument_id"] == instrument["instrument_id"]),

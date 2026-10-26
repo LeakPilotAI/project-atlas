@@ -15,7 +15,7 @@
   const fact = (label, value) => `<div><dt>${esc(label)}</dt><dd>${value}</dd></div>`;
   const label = value => text(value) ? esc(value) : 'UNAVAILABLE';
 
-  function renderUnified(data, now) {
+  function renderUnified(data, now, historyFilter = "ALL") {
     if (!object(data) || data.schema !== 'ATLAS_UNIFIED_PAPER_VIEW_V1' ||
         data.startup_authorized !== false || data.total_cash !== null || data.total_equity !== null ||
         !object(data.lanes) || !['RUNNING','PAUSED','STOPPING','STOPPED','STOP_INCOMPLETE'].includes(data.state))
@@ -30,7 +30,33 @@
       const signal = connection !== 'CONNECTED' ? 'UNAVAILABLE' : row.signal === null ? 'No validated signal — monitoring continues' : label(row.signal);
       return `<tr><td>${lane}</td><td>${connection}</td><td>${['OPEN','CLOSED','UNKNOWN'].includes(row.session) ? row.session : 'UNKNOWN'}</td><td>${signal}</td><td>${date(row.at)}</td></tr>`;
     }).join('');
-    return `<h3>Unified PAPER supervision</h3><p>${esc(data.state)} · ${label(data.financial_state)}</p><div class="paperTable"><table><tr><th>Market</th><th>Connection</th><th>Session</th><th>Signal</th><th>Observation</th></tr>${rows}</table></div>${renderAccounts(data.accounts, now)}<p>Stocks respect exchange sessions; Hyperliquid monitoring is continuous when its feed is healthy. Perpetual collateral, funding and leverage require separate accounting. Combined cash/equity: UNAVAILABLE. No implied trading authorization.</p>`;
+    return `<h3>Unified PAPER supervision</h3><p>${esc(data.state)} · ${label(data.financial_state)}</p><div class="paperTable"><table><tr><th>Market</th><th>Connection</th><th>Session</th><th>Signal</th><th>Observation</th></tr>${rows}</table></div>${renderAccounts(data.accounts, now)}${renderTradeHistory(data.trade_history, historyFilter)}<p>Stocks respect exchange sessions; Hyperliquid monitoring runs during explicitly started desktop sessions when its feed is healthy. Perpetual collateral, funding and leverage require separate accounting. Combined cash/equity: UNAVAILABLE. No implied trading authorization.</p>`;
+  }
+
+  function renderTradeHistory(data, filter = 'ALL') {
+    const groups = {ALL:null, STRATEGY:['STRATEGY_EXIT','TAKE_PROFIT'], USER:['USER_SHUTDOWN'], RISK:['STOP_LOSS','RISK_SHUTDOWN'], UNRESOLVED:['UNKNOWN']};
+    if (!Object.hasOwn(groups, filter)) filter = 'ALL';
+    if (!object(data) || data.schema !== 'ATLAS_EXIT_HISTORY_V1' || data.status !== 'ACKNOWLEDGED' ||
+        data.startup_authorized !== false || data.total_cash !== null || data.total_net !== null || (!Array.isArray(data.rows) || data.rows.length > 256))
+      return '<h3>PAPER trade history</h3><label>Exit reason <select data-paper-exit-filter aria-label="PAPER exit reason"><option value="ALL">All trades</option><option value="STRATEGY">Strategy exits</option><option value="USER">User shutdown exits</option><option value="RISK">Risk exits</option><option value="UNRESOLVED">Unresolved exits</option></select></label><p role="status">INCOMPLETE / unresolved exits — no verified closed-trade claim.</p>' +
+        (object(data) && Array.isArray(data.unresolved) ? data.unresolved.slice(0,256).map(r => object(r) ? `<p>UNKNOWN acknowledgement: ${label(r.lane)} / ${label(r.session_id)} / ${label(r.operation_id)}</p>` : '').join('') : '');
+    const reasons = ['STRATEGY_EXIT','STOP_LOSS','TAKE_PROFIT','USER_SHUTDOWN','RISK_SHUTDOWN','UNKNOWN'];
+    if (data.rows.some(r => !object(r) || !reasons.includes(r.reason) || !['QUALITY_DIPS','HYPERLIQUID'].includes(r.lane) ||
+        r.currency !== (r.lane === 'QUALITY_DIPS' ? 'USD' : 'USDC') || !text(r.operation_id) || !text(r.session_id) ||
+        !decimal(r.quantity) || !decimal(r.remaining) || !decimal(r.gross) || !decimal(r.costs) || !decimal(r.net) ||
+        r.execution !== 'SIMULATED' || (r.reason === 'USER_SHUTDOWN' && !text(r.stop_command_id))))
+      return '<p role="status">Trade history UNKNOWN — inconsistent evidence.</p>';
+    const options = [['ALL','All trades'],['STRATEGY','Strategy exits'],['USER','User shutdown exits'],['RISK','Risk exits'],['UNRESOLVED','Unresolved exits']]
+      .map(([v,n]) => `<option value="${v}"${filter === v ? ' selected' : ''}>${n}</option>`).join('');
+    const rows = data.rows.filter(r => groups[filter] === null || groups[filter].includes(r.reason)).map(r =>
+      `<tr><td>${esc(r.lane)} / ${esc(r.currency)}</td><td>${esc(r.session_id)}</td><td>${esc(r.reason)}</td><td>${esc(r.quantity)}</td><td>${esc(r.remaining)}</td><td>${esc(r.gross)}</td><td>${esc(r.costs)}</td><td>${esc(r.net)}</td></tr>`).join('');
+    const unresolved = ['ALL','UNRESOLVED'].includes(filter) && Array.isArray(data.unresolved) ? data.unresolved.slice(0,256).map(r => object(r) ? `<p role="status">Unresolved: ${label(r.lane)} / ${label(r.position_id)} · ${label(r.state)} · remaining ${decimal(r.quantity) ? esc(r.quantity) : 'UNAVAILABLE'}. This is not a completed exit.</p>` : '').join('') : '';
+    const analysis = object(data.analysis) ? ['QUALITY_DIPS','HYPERLIQUID'].map(lane => {
+      const a = object(data.analysis[lane]) ? data.analysis[lane][filter] : null;
+      if (!object(a) || a.currency !== (lane === 'QUALITY_DIPS' ? 'USD' : 'USDC') || !decimal(a.gross) || !decimal(a.costs) || !decimal(a.net)) return '';
+      return `<p>${esc(lane)} / ${esc(a.currency)} filtered exit-fill P&amp;L: gross ${esc(a.gross)} · costs ${esc(a.costs)} · net ${esc(a.net)}. Includes committed entry-cost and realized funding allocations; complete account P&amp;L unchanged.</p>`;
+    }).join('') : '';
+    return `<h3>PAPER trade history</h3><label>Exit reason <select data-paper-exit-filter aria-label="PAPER exit reason">${options}</select></label>${analysis}${unresolved}<p>SIMULATED · Filtering never removes exits from complete account P&amp;L. USD and USDC remain separate. UNKNOWN means attribution unavailable, not a proven strategy exit.</p><div class="paperTable"><table><tr><th>Account</th><th>Session</th><th>Exit reason</th><th>Exit quantity</th><th>Remaining</th><th>Gross</th><th>Costs</th><th>Net</th></tr>${rows}</table></div>`;
   }
 
   function renderAccounts(data, now) {
@@ -157,6 +183,21 @@
     const freshness = document.getElementById('paperFreshness');
     const market = document.getElementById('paperMarket');
     const multi = document.getElementById('paperMultiMarket');
+    let historyFilter = 'ALL';
+    function paintMulti(force = false) {
+      if (!multi || !multiLast) return;
+      const prior = multi.querySelector ? multi.querySelector('[data-paper-exit-filter]') : null;
+      if (!force && prior && document.activeElement === prior) return;
+      multi.innerHTML = renderUnified(multiLast, clock(), historyFilter);
+      const next = multi.querySelector ? multi.querySelector('[data-paper-exit-filter]') : null;
+      if (prior && next && next.replaceWith) { next.replaceWith(prior); prior.value = historyFilter; }
+    }
+    if (multi && multi.addEventListener) multi.addEventListener('change', event => {
+      if (event.target && event.target.hasAttribute && event.target.hasAttribute('data-paper-exit-filter')) {
+        historyFilter = event.target.value;
+        if (multiLast) paintMulti(true);
+      }
+    });
     let multiLast = null;
     let marketLast = null;
     let active = false, busy = false, generation = 0, abort = null, last = null, pinned = null, high = -1, fingerprint = null, readFailed = false;
@@ -164,7 +205,7 @@
     const clear = (state, reason) => { last = null; content.innerHTML = '<p class="empty">Financial amounts and positions are UNAVAILABLE.</p>'; announce(state, reason); };
     const age = () => {
       if (market && marketLast) { try { market.innerHTML = renderMarket(marketLast, clock()); } catch { market.innerHTML = '<p>Live L1: UNAVAILABLE</p>'; } }
-      if (multi && multiLast) multi.innerHTML = renderUnified(multiLast, clock());
+      if (multi && multiLast) paintMulti();
       if (!last) return;
       const elapsed = Math.floor(clock() / 1000) - last.observed_at;
       announce(readFailed || elapsed < 0 || elapsed > 30 ? 'STALE' : 'ACKNOWLEDGED · report ' + last.report_status,
@@ -185,7 +226,7 @@
         if (!active || ticket !== generation) return;
         if (controller.signal.aborted) throw Error('FINANCIAL_READ_TIMEOUT');
         if (market) { marketLast = data.market_data || null; market.innerHTML = renderMarket(marketLast, clock()); }
-        if (multi) { multiLast = data.multi_market || null; multi.innerHTML = renderUnified(multiLast, clock()); }
+        if (multi) { multiLast = data.multi_market || null; paintMulti(); }
         if (data.status !== 'ACKNOWLEDGED') { clear(data.status, Array.isArray(data.reasons) ? data.reasons.join(' · ') : 'Verified financial evidence unavailable.'); return; }
         const identity = stable([data.account_id, data.epoch, data.policy_digest]);
         if (pinned !== null && pinned !== identity) throw Error('ACCOUNT_OR_POLICY_REPLACED');
@@ -218,7 +259,7 @@
       destroy() { active = false; generation += 1; if (abort) abort.abort(); }
     };
   }
-  const api = {ENDPOINT, createController, validate, renderMarket, renderUnified};
+  const api = {ENDPOINT, createController, validate, renderMarket, renderUnified, renderTradeHistory};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.AtlasSelectedPaper = api;
 })(globalThis);

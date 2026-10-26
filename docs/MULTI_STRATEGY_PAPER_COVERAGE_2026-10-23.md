@@ -201,3 +201,8 @@ Final42case combined native-child/HTTP/supervisor selection passed0fail0skip;37o
 ## Source-bound unified acceptance update - 2026-10-25
 
 Quality Dips and Hyperliquid actual source/planner/native paths have disposable two-lane publication/reconciliation/Stop coverage. Exact writer roster verifier and bounded capacity safe-stop implemented; genuine original Control Center human-assisted Stop/Close and browser read accepted only in synthetic fixtures. Neither lane operationally accepted; separate USD/USDC preserved. Other strategies unchanged. See SOURCE_PRODUCER_ROSTER_CAPACITY_2026-10-25.md. B1/C1/D1/E1 BLOCKED; PAPER NO; production NO-GO.
+
+
+## Desktop-session policy update - 2026-10-26
+
+Quality Dips/Hyperliquid source/disposable history now distinguishes strategy, stop-loss/take-profit, user/risk shutdown and unknown exits across retained sessions. Normal owned Control Center close reuses globally reserved Stop; filters preserve complete separate USD/USDC P&L. Intermittent user-launched desktop sessions supersede the 24/7 target. Runtime/operational acceptance remains blocked;no other strategy activated. See DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md.

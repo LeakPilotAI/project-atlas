@@ -410,3 +410,15 @@ Final42case combined native-child/HTTP/supervisor selection passed0fail0skip;37o
 ## Current source/roster/capacity outcome — 2026-10-25
 
 VERIFIED bounded source/disposable increment;54new cases in89combinedpasses;user-assisted actual ControlCenter Stop/Close and genuine browser native-hash preservation;not operational acceptance or indefinite capacity. Overall task BLOCKED; BLOCKED_WAIT/no ACTIVE task supersedes historical ACTIVE entries above. Obtain accepted bounded session/capacity envelope (or separately authorize immutable continuation), authenticated native source-publication custody/issuer/clock/transport, and actual 15-role/eight-exclusion roster evidence. No reset/adoption or synthetic authority promotion. Then separately authorize dependency installation/inception/read-only release; no trading trial until B1/C1/D1/E1 acceptance. Read docs/SOURCE_PRODUCER_ROSTER_CAPACITY_CONTINUATION_2026-10-25.md. All21 decisions/seven phases/B1C1D1E1BLOCKED unchanged;PAPERNO;productionNO-GO.
+
+
+## Desktop-session persistence and exit classification — 2026-10-26
+
+| ID | Objective / acceptance | Dependencies | Status | Files/evidence | Exact next action |
+|---|---|---|---|---|---|
+| DESKTOP_SESSION_PERSISTENCE_EXIT_CLASSIFICATION | Durable intermittent sessions, native reason/Stop binding, read-only history, repeated/crash/GUI acceptance | Source/disposable authorization; no operational gate waiver | VERIFIED | docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md | Review immutable continuation/cumulative workload and accepted actual dependencies;no reset/adoption or startup |
+
+Current execution BLOCKED_WAIT/no ACTIVE task. This supersedes historical 24/7 targets, not financial gates. 291distinctPython/48JS passes,0finalfailed/skip across documented selections;not a single repository-wide run. UNIFIED_PERP_FINANCIAL_COMPLETENESS and B1/C1/D1/E1 remain BLOCKED on real acceptance. Review the cumulative128capacity envelope/immutable segmented continuation proposal in docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md; obtain accepted actual source custody/issuer/clock/session and writer-roster dependencies plus B1/C1/D1/E1 acceptance before separately authorized installation/inception/read-only launch and intermittent PAPER trial. Never reset/adopt/replay unresolved history. Read docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md. All21decisions/sevenphases unchanged;PAPERNO;productionNO-GO.
+
+
+Final desktop owned-close increment:295distinctPython/48JS pass,0finalfail/skip. 43+41+206+14+9 selections overlap18cases;2/11followups overlap and are not added. Known quiescent open positions may close exact owned test processes only with separate accepted incomplete-close authority;UNKNOWN or pending writers refuse;financial status remains INCOMPLETE/no FINAL. Desktop source milestone VERIFIED;current BLOCKED_WAIT/no ACTIVE. All historical gates unchanged.

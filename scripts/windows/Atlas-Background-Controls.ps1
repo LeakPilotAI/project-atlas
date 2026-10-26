@@ -85,9 +85,16 @@ $dashboardStop.Add_Click({
     }
 })
 $form.Controls.Add($dashboardStop)
+$script:KeepAtlasRunning = $false
 $form.Add_FormClosing({
     param($sender, $eventArgs)
-    try { Close-AtlasSelectedPaperDashboard; Close-AtlasReadOnlyDashboard } catch {
+    try {
+        if (-not $script:KeepAtlasRunning -and $null -ne $AcceptedPaperSession) {
+            $result = Invoke-AtlasPaperStop $AcceptedPaperSession
+            Set-StatusMessage "$($result.phase): $($result.outcome.status) / $($result.outcome.position_state)" ([System.Drawing.Color]::DarkSlateGray)
+        }
+        Close-AtlasSelectedPaperDashboard; Close-AtlasReadOnlyDashboard
+    } catch {
         $eventArgs.Cancel = $true
         Set-StatusMessage $_.Exception.Message ([System.Drawing.Color]::DarkRed)
     }
@@ -398,7 +405,7 @@ $closeGui = New-Object System.Windows.Forms.Button
 $closeGui.Text = 'Close GUI - Keep Atlas Running'
 $closeGui.Location = New-Object System.Drawing.Point(238, 440)
 $closeGui.Size = New-Object System.Drawing.Size(227, 32)
-$closeGui.Add_Click({ $form.Close() })
+$closeGui.Add_Click({ $script:KeepAtlasRunning = $true; $form.Close() })
 $form.Controls.Add($closeGui)
 # A request can always display the gate refusal without a recovery-capable Status call.
 $startButton.Enabled = $true

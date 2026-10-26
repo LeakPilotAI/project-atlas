@@ -223,4 +223,11 @@ class QualityDipsUnifiedShutdown:
                               'session_id': self.session_id, 'cutoff_at': report['period']['cutoff_inclusive']}
             return strict(body(self.completed))
         except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+            # Quiesce acknowledged positions; UNKNOWN is never recovery authority.
+            if not self.runtime.uncertain:
+                try:
+                    self.writer._cut()
+                    self.writer.runtime.stop()
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                    pass
             return {'state': 'INCOMPLETE', 'reason': 'QD_PRICE_FINANCIAL_REPORT_OR_DRAIN_UNRESOLVED'}

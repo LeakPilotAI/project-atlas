@@ -14197,11 +14197,27 @@ Next action: Read docs/UNIFIED_ACTUAL_STRATEGY_NATIVE_CUSTODY_CONTINUATION_2026-
 All seven phases/21decisions and historical evidence preserved. B1/C1/D1/E1 BLOCKED. No real protected roots/inception/providers/credentials/services/Genesis/startupchange. D-only/existingaccount/originalUI/PAPER-only. PAPER startup NO;production NO-GO.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: Authenticated actual source producers, exact native roster and bounded capacity safe Stop
 Status: Source/disposable increment verified; overall UNIFIED_PERP_FINANCIAL_COMPLETENESS BLOCKED; BLOCKED_WAIT/no ACTIVE. All seven phases/21 decisions preserved; PAPER NO; production NO-GO.
 Evidence: 89combinedpass/0fail/0skip,54new; broad622/0/1true-symlink NOTEXECUTED;QD155/0/0;capacity9/0/0;opQD32/0/0;opPerp30/0/0;JS42/0/0,overlapping selections not summed. Actual original WinForms user-assisted Stop/Close and genuine browser native/source-hash preservation succeeded with synthetic accounts only. Read docs/SOURCE_PRODUCER_ROSTER_CAPACITY_2026-10-25.md.
 Next action: Obtain accepted bounded session/capacity envelope (or separately authorize immutable continuation), authenticated native source-publication custody/issuer/clock/transport, and actual 15-role/eight-exclusion roster evidence. No reset/adoption or synthetic authority promotion. Then separately authorize dependency installation/inception/read-only release; no trading trial until B1/C1/D1/E1 acceptance. Read docs/SOURCE_PRODUCER_ROSTER_CAPACITY_CONTINUATION_2026-10-25.md.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
+Milestone: Desktop persistence and user-shutdown classification
+Status: Source/disposable milestone VERIFIED; operational BLOCKED_WAIT. Intermittent user-started desktop use supersedes24/7target;allsevenphases/21decisions preserved;PAPERNO;productionNO-GO.
+Evidence:291distinctPython/48JS pass0finalfailed/skip across43+41+206+14 selections with13overlap;final2followup overlaps. Genuine original WinForms Close/HTTP Stop and real browser/filter/native-hash preservation. Source authority/provisioning unchanged. Read docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md.
+Next action: Review the cumulative128capacity envelope/immutable segmented continuation proposal in docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md; obtain accepted actual source custody/issuer/clock/session and writer-roster dependencies plus B1/C1/D1/E1 acceptance before separately authorized installation/inception/read-only launch and intermittent PAPER trial. Never reset/adopt/replay unresolved history. Read docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: Desktop-session persistence and durable shutdown reason, including safe incomplete-owned-close
+Status: Source/disposable VERIFIED;operational BLOCKED_WAIT. Intermittent desktop use supersedes24/7;allsevenphases/21decisions preserved;PAPERNO;productionNO-GO.
+Evidence:295distinctPython/48JS pass0finalfailed/skip;43+41+206+14+9 selections overlap18;2/11followups overlap. Exact native Stop/entry-cost/funding/history,three same-account sessions,owned WinForms Close/HTTP,real browser read/filter/hash preservation. Separately accepted quiescent open-position process exit remainsINCOMPLETE/noFINAL;UNKNOWN/pending refuse. See docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md.
+Next action: Review cumulative128capacity/immutable segmented continuation in docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md and accept actual issuer/clock/session/current-source custody, complete writer roster and separate incomplete-owned-close authority. B1/C1/D1/E1 acceptance and separate installation/inception/read-only release precede intermittent autonomous PAPER trial. Never reset/adopt/replay unresolved history. Read docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

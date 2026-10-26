@@ -39,6 +39,7 @@ class UnifiedMarketReadCapability:
         if type(self._runtime.portfolio) is UnifiedPortfolioCustody:
             accounts = self._runtime.portfolio.read_accounts(self._runtime.grant)
             value['accounts'] = accounts
+            value['trade_history'] = self._runtime.portfolio.read_trade_history(self._runtime.grant)
             if accounts['state'] != 'ACKNOWLEDGED': value['financial_state'] = 'UNKNOWN'
         return value
 
@@ -64,17 +65,19 @@ class UnifiedControlStopBridge:
     def request_stop(self, mode):
         if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY") or not self.verify_session():
             raise ValueError("UNIFIED_CONTROL_SESSION_OR_MODE_UNVERIFIED")
-        outcome = self.runtime.stop(emergency=mode == "EMERGENCY")
+        outcome = self.runtime.stop(emergency=mode == "EMERGENCY", reason="UNKNOWN" if mode == "EMERGENCY" else "USER_SHUTDOWN")
         financial_flat = complete = outcome["state"] == "STOPPED"
         process_state = 'NOT_REQUESTED'
         if self.owned_close is not None:
             process_state = 'UNVERIFIED'
             portfolio = self.runtime.portfolio
-            verifier = getattr(getattr(portfolio, 'authority', None), 'verify_owned_shutdown', None)
+            verifier = getattr(getattr(portfolio, 'authority', None),
+                'verify_owned_shutdown' if complete else 'verify_incomplete_owned_shutdown', None)
             roster_reader = getattr(getattr(portfolio, 'ownership', None), 'owned_roster', None)
             try:
                 if (self.owned_close is not self._close_binding or verifier is None or roster_reader is None
-                        or not complete or portfolio.verify_drain(self.runtime.grant) is not True):
+                        or (not complete and (self.runtime.uncertain or mode != 'SHUTDOWN_FLATTEN'))
+                        or portfolio.verify_drain(self.runtime.grant) is not True):
                     raise ValueError('UNIFIED_OWNED_CLOSE_DRAIN_REQUIRED')
                 with portfolio.lease({'grant': self.runtime.grant}) as admitted:
                     if admitted.owner.check() is not True or portfolio.verify_drain(self.runtime.grant) is not True:
@@ -92,12 +95,15 @@ class UnifiedControlStopBridge:
                             or roster['account_binding'] != digest({k: digest(w.manifest) for k,w in portfolio.writers.items()})):
                         raise ValueError('UNIFIED_EXACT_OWNED_ROSTER_REQUIRED')
                     context = {'grant': self.runtime.grant, 'roster': roster, 'outcome': outcome}
+                    if not complete:
+                        context['acknowledged_cuts'] = {k:w._cut() for k,w in portfolio.writers.items()}
+                        context['admission'] = portfolio.journal.snapshot()
                     if verifier(context, self.owned_close, portfolio.components) is not True:
                         raise ValueError('UNIFIED_OWNED_CLOSE_AUTHORITY_REQUIRED')
                     if (self.owned_close.close_verified(strict(body(roster))) is not True
                             or self.owned_close.verify_exit(strict(body(roster))) is not True):
                         raise ValueError('UNIFIED_EXACT_OWNED_EXIT_UNACKNOWLEDGED')
-                    process_state = 'VERIFIED_EXIT'
+                    process_state = 'VERIFIED_EXIT' if complete else 'VERIFIED_EXIT_WITH_UNRESOLVED_POSITIONS'
             except (ValueError, OSError, TimeoutError, KeyError, TypeError):
                 complete, process_state = False, 'INCOMPLETE'
         self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED", "outcome": {
@@ -126,6 +132,7 @@ class UnifiedPaperRuntime:
         self.gate = Lock()
         self.stop_gate = Lock()
         self.stop_result = None
+        self.stop_context = None
         self.run_lock = asyncio.Lock()
         self.entry_closed = Event()
         self.observations = dict.fromkeys(LANES)
@@ -220,7 +227,7 @@ class UnifiedPaperRuntime:
                         try:
                             proposal = await asyncio.wait_for(planner(row), 2)
                         except ControlCapacityReached:
-                            self.stop()  # Existing bounded flatten/drain; no reset or automatic restart.
+                            self.stop(reason="RISK_SHUTDOWN")  # Existing bounded flatten/drain; no reset or automatic restart.
                             break
                         except FinancialSourceUncertain:
                             self.entry_closed.set()
@@ -238,7 +245,7 @@ class UnifiedPaperRuntime:
                                 else:
                                     self.dispatch(lane, proposal)
                             except ControlCapacityReached:
-                                self.stop()
+                                self.stop(reason="RISK_SHUTDOWN")
                                 break
                             except ValueError:
                                 if self.uncertain:
@@ -358,6 +365,9 @@ class UnifiedPaperRuntime:
             request = {"lane": lane, "grant": self.grant, "proposal": proposal}
             if shutdown:
                 request["mode"] = "SHUTDOWN_REDUCING_EXIT_V1"
+            classifier = getattr(self.portfolio, "exit_classification", None)
+            if proposal["kind"] == "EXIT" and classifier is not None:
+                request["exit_classification"] = classifier(lane, proposal, self.grant, self.stop_context if shutdown else None)
             with self.portfolio.lease(request) as custody:
                 # This lease must exclude every competing financial writer.
                 if custody.verify(request) is not True:
@@ -420,11 +430,14 @@ class UnifiedPaperRuntime:
             if self.state == "RUNNING":
                 self.state = "PAUSED"
 
-    def stop(self, *, emergency=False):
+    def stop(self, *, emergency=False, reason="UNKNOWN"):
         self.entry_closed.set()  # Immediate new-entry closure before waiting for an accepted drain.
         with self.stop_gate:
             if self.stop_result is not None:
                 return strict(body(self.stop_result))
+            from app.services.paper_exit_history import stop_command
+            self.stop_context = (stop_command(self.grant, reason, self.clock())
+                if hasattr(self.portfolio, "exit_classification") else None)
             result = self._stop(emergency=emergency)
             self.stop_result = strict(body(result))
             return result
@@ -439,7 +452,8 @@ class UnifiedPaperRuntime:
         if native:
             close = getattr(self.portfolio, "close_entry_admission", None)
             try:
-                closed = close is not None and close(self.grant) is True
+                closed = close is not None and (close(self.grant, stop_context=self.stop_context)
+                    if hasattr(self.portfolio, "exit_classification") else close(self.grant)) is True
             except (ValueError, OSError, TimeoutError):
                 closed = False
             if not closed:

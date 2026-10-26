@@ -19,7 +19,7 @@ from unified_actual_lanes_fixture import build
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--browser-only',action='store_true');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--browser-only',action='store_true');parser.add_argument('--window-close',action='store_true');args=parser.parse_args()
     repo=Path(__file__).resolve().parents[1]
     confinement=Path(os.environ['ATLAS_PERP_ORDER_TEST_ROOT']);qd=Path(os.environ['ATLAS_UNIFIED_QD_TEST_ROOT'])
     assert confinement.parent==repo/'logs/diagnostics' and confinement.name.startswith('perp-order-custody-')
@@ -55,9 +55,20 @@ $session | Add-Member ScriptMethod request_stop { param($mode)
  $v=Invoke-RestMethod ($this.url+'/_atlas/control/stop') -Method Post -ContentType 'application/json' -Headers @{Origin=$this.url;'X-Atlas-Control'=$this.token} -Body (@{mode=$mode}|ConvertTo-Json -Compress)
  [IO.File]::WriteAllText($env:ATLAS_FIXTURE_RESULT,($v|ConvertTo-Json -Depth 20)); return $v
 }
+if ($env:ATLAS_FIXTURE_WINDOW_CLOSE -eq '1') {
+ Add-Type -AssemblyName System.Windows.Forms
+ $desktopCloseTimer=New-Object System.Windows.Forms.Timer
+ $desktopCloseTimer.Interval=1500
+ $desktopCloseTimer.Add_Tick({
+  $owned=@([System.Windows.Forms.Application]::OpenForms | Where-Object { $_.Text -ceq 'Atlas Control Center' })
+  if ($owned.Count -eq 1) { $desktopCloseTimer.Stop(); $owned[0].Close() }
+ })
+ $desktopCloseTimer.Start()
+}
 & './scripts/windows/Atlas-Background-Controls.ps1' -AcceptedPaperSession $session
 ''',encoding='utf-8')
         env={**os.environ,'ATLAS_FIXTURE_URL':origin,'ATLAS_FIXTURE_TOKEN':token,'ATLAS_FIXTURE_HOST':ready['host_id'],
+            'ATLAS_FIXTURE_WINDOW_CLOSE':'1' if args.window_close else '0',
             'ATLAS_FIXTURE_RESULT':str(root/'gui-stop-result.json'),'TEMP':str(root),'TMP':str(root)}
         gui=subprocess.Popen([str(Path(os.environ['SystemRoot'])/'System32/WindowsPowerShell/v1.0/powershell.exe'),
             '-NoProfile','-STA','-File',str(wrapper)],cwd=repo,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
@@ -77,9 +88,11 @@ $session | Add-Member ScriptMethod request_stop { param($mode)
         result=json.loads((root/'gui-stop-result.json').read_text(encoding='utf-8-sig'))
         assert result['outcome']['status']=='FLATTENED',result
         assert s.journal.snapshot()['state']['finalized']
+        history=s.custody.read_trade_history(s.r.grant)
+        assert history['status']=='ACKNOWLEDGED' and all(r['reason']=='USER_SHUTDOWN' for r in history['rows']),history
         before_read={p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in before}
         (root/'acceptance-result.json').write_text(json.dumps({'gui_exit':0,'stop':result,
-            'financial_final':s.journal.snapshot()['state']['finalized'],'initial_source_file_count':len(before),
+            'trade_history':history,'window_close':args.window_close,'financial_final':s.journal.snapshot()['state']['finalized'],'initial_source_file_count':len(before),
             'final_financial_file_hashes':before_read}),encoding='utf-8')
     finally:
         if s.r.grant is not None and s.r.state!='STOPPED':s.r.stop()

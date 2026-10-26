@@ -6,6 +6,7 @@ must be installed independently; a local hash or test lease grants no authority.
 """
 import copy
 from contextlib import contextmanager
+from decimal import DecimalException
 
 from app.services.paper_financial_replay import (
     ControlCapacityReached,
@@ -32,10 +33,20 @@ def portfolio_transition(scope, manifest, state, event):
         text(p['session_id'])
         after.update(session=p['grant_digest'], entry_closed=False, finalized=None)
         after['sessions'].append(p['grant_digest'])
+        after.pop('stop_context', None)
     elif event['kind'] == 'CLOSE':
-        if p != {'grant_digest': state['session']} or state['session'] is None:
+        if (set(p) not in ({'grant_digest'}, {'grant_digest','stop_context'})
+                or p['grant_digest'] != state['session'] or state['session'] is None):
             raise ValueError('UNIFIED_CLOSE_SESSION_MISMATCH')
         after['entry_closed'] = True
+        if 'stop_context' in p:
+            context = p['stop_context']
+            if (set(context)!={'schema','session_id','command_id','reason','requested_at'}
+                    or context['schema'] != 'ATLAS_DESKTOP_STOP_V1' or context['reason'] not in ('USER_SHUTDOWN','RISK_SHUTDOWN','UNKNOWN')
+                    or context['command_id']!='stop:'+digest([state['session'],context['reason']])
+                    or type(context['requested_at']) is not int or context['requested_at']>event['at']):
+                raise ValueError('INVALID_DURABLE_STOP_CONTEXT')
+            after['stop_context'] = strict(body(context))
     elif event['kind'] == 'RESERVE':
         request = p
         ident = event['order_id']
@@ -128,11 +139,18 @@ class UnifiedPortfolioCustody:
 
     order_lease = lease
 
-    def close_entry_admission(self, grant):
+    def close_entry_admission(self, grant, *, stop_context=None):
         with self.lease({'grant': grant}) as lease:
             state = self.journal.snapshot()['state']
             if state['session'] != digest(grant): return False
-            if not state['entry_closed']: self._event('CLOSE', 'close:' + digest(grant), {'grant_digest': digest(grant)})
+            if not state['entry_closed']:
+                payload={'grant_digest':digest(grant)}
+                if stop_context is not None:
+                    from app.services.paper_exit_history import validate_stop
+                    payload['stop_context']=validate_stop(stop_context,grant)
+                self._event('CLOSE', 'close:' + digest(grant), payload)
+            elif stop_context is not None and state.get('stop_context')!=stop_context:
+                raise ValueError('DURABLE_STOP_COMMAND_CONFLICT')
             return lease.owner.check() is True
 
     def verify_drain(self, grant):
@@ -177,6 +195,31 @@ class UnifiedPortfolioCustody:
                         accounts[lane]['available_cash'] = None
             return {**unavailable, 'state': 'ACKNOWLEDGED', 'accounts': strict(body(accounts))}
 
+    def exit_classification(self, lane, proposal, grant, stop_context=None):
+        from app.services.paper_exit_history import classify_exit
+        return classify_exit(lane,proposal,grant,stop_context,self.writers[lane])
+
+    def read_trade_history(self, grant):
+        from app.services.paper_exit_history import reconcile_history
+        unavailable={'schema':'ATLAS_EXIT_HISTORY_V1','status':'INCOMPLETE','rows':[],
+            'accounts':None,'unresolved':[],'total_cash':None,'total_net':None,'startup_authorized':False}
+        try:
+            self._verify();before=self.journal.snapshot()
+            unavailable['unresolved']=[{'lane':r['request']['lane'],'operation_id':key,
+                'session_id':r['request']['grant']['session_id'],'state':'UNKNOWN_ACKNOWLEDGEMENT'}
+                for key,r in before['state']['operations'].items()
+                if r['state']!='ACKNOWLEDGED' and r['request']['proposal']['kind']=='EXIT']
+            with self.ownership.lease(grant,self.writers,self.clock()) as owner:
+                cuts={k:w._cut() for k,w in self.writers.items()}
+                verifier=getattr(self.authority,'verify_read_cuts',None)
+                if (owner.check() is not True or verifier is None
+                        or verifier(grant,self.components,cuts,self.clock()) is not True):return unavailable
+                result=reconcile_history(before,cuts,self.writers)
+                if before!=self.journal.snapshot():return unavailable
+                return result
+        except (ValueError,OSError,KeyError,TypeError,DecimalException):
+            return unavailable
+
     def finalize_shutdown(self, grant, outcomes, lanes):
         """Persist only the already native-verified lane reports and final drain."""
         with self.lease({'grant': grant}) as lease:
@@ -214,6 +257,10 @@ class PortfolioLease:
         if state['session'] != digest(request['grant']) or any(r['state'] == 'RESERVED' for r in state['operations'].values()):
             return False
         kind = request['proposal']['kind']
+        if kind=='EXIT' and 'exit_classification' in request:
+            stop=state.get('stop_context') if request.get('mode')=='SHUTDOWN_REDUCING_EXIT_V1' else None
+            if request['exit_classification']!=self.custody.exit_classification(request['lane'],request['proposal'],request['grant'],stop):
+                raise ValueError('EXIT_CLASSIFICATION_NOT_SOURCE_BOUND')
         if state['entry_closed'] and kind in ('ENTRY', 'RESTING_ORDER'): return False
         old = state['operations'].get(request['proposal']['operation_id'])
         if old is not None:

@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "UNIFIED_MARKET_SOURCE_FOUNDATION",
+  "last_verified_task": "DESKTOP_SESSION_PERSISTENCE_EXIT_CLASSIFICATION",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -10,51 +10,40 @@
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim."
   },
   "latest_tests": {
-    "passed": 89,
+    "passed": 295,
     "failed": 0,
     "skipped": 0,
-    "new_cases": 54,
-    "single_combined_run": true,
-    "selection": "11-file source/roster/native/crash/capacity/actual-lanes/order/HTTP/owned-close combined run only; not entire repository",
-    "other_overlapping_selections": [
-      {
-        "passed": 622,
-        "failed": 0,
-        "skipped": 1
-      },
-      {
-        "passed": 155,
-        "failed": 0,
-        "skipped": 0
-      },
-      {
-        "passed": 9,
-        "failed": 0,
-        "skipped": 0
-      },
-      {
-        "passed": 32,
-        "failed": 0,
-        "skipped": 0
-      },
-      {
-        "passed": 30,
-        "failed": 0,
-        "skipped": 0
-      }
+    "new_cases": 27,
+    "single_combined_run": false,
+    "final_selections_passed": [
+      43,
+      41,
+      206,
+      14,
+      9
     ],
-    "javascript_passed": 42,
-    "not_executed": "True symlink privilege 1314; initial automated GUI visibility attempt. Fresh user-assisted actual GUI Stop/Close and real browser read executed successfully.",
-    "operational_acceptance": false
+    "overlapping_cases_between_selections": 18,
+    "javascript_passed": 48,
+    "javascript_new_cases": 6,
+    "operational_acceptance": false,
+    "additional_overlapping_final_followup": {
+      "passed": [
+        2,
+        11
+      ],
+      "failed": 0,
+      "skipped": 0
+    },
+    "not_executed": "No new true-symlink or physical power-loss testing; genuine owned WinForms Close and browser filter/read ran with disposable accounts."
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Obtain accepted bounded session/capacity envelope (or separately authorize immutable continuation), authenticated native source-publication custody/issuer/clock/transport, and actual 15-role/eight-exclusion roster evidence. No reset/adoption or synthetic authority promotion. Then separately authorize dependency installation/inception/read-only release; no trading trial until B1/C1/D1/E1 acceptance. Read docs/SOURCE_PRODUCER_ROSTER_CAPACITY_CONTINUATION_2026-10-25.md.",
+  "exact_next_action": "Review cumulative128capacity/immutable segmented continuation in docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md and accept actual issuer/clock/session/current-source custody, complete writer roster and separate incomplete-owned-close authority. B1/C1/D1/E1 acceptance and separate installation/inception/read-only release precede intermittent autonomous PAPER trial. Never reset/adopt/replay unresolved history. Read docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
     "skipped": 0,
     "overlap_combined": true,
-    "selection": "final capacity/source-bound native follow-up"
+    "selection": "final exact-owned close and separately accepted/refused incomplete-close scenarios"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -136,10 +125,11 @@
     "OPERATIONAL_PAPER_READINESS_AND_RECORD_CODEC": "VERIFIED_SOURCE_CODEC_AND_ACCEPTANCE_CHECKLIST:distinctoperationalrecords/pins on existingFS2math/projection;105+120+2=227pass1privilege-skip. Sandboxmutexfailure retained;nativepermittedrerun passed. No real13dirs/keys/services/marketdata/startup. Independent B1C1D1E1 stillblocked.",
     "UNIFIED_MARKET_SOURCE_FOUNDATION": "VERIFIED scoped source/disposable only:180Python/40JS/5PSassertions/2parses;63new;12766reference symbols;IEXauth+2subscriptions/0Sundayquotes;native readHTTP/browser and control transport contracts;no full unified financial runtime or operational acceptance.",
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "BLOCKED: source/fixture implementation advanced;real accepted source custody/roster/capacity/release evidence unavailable. No operational activation.",
-    "UNIFIED_SOURCE_PRODUCER_ROSTER_CAPACITY": "VERIFIED bounded source/disposable increment;54new cases in89combinedpasses;user-assisted actual ControlCenter Stop/Close and genuine browser native-hash preservation;not operational acceptance or indefinite capacity."
+    "UNIFIED_SOURCE_PRODUCER_ROSTER_CAPACITY": "VERIFIED bounded source/disposable increment;54new cases in89combinedpasses;user-assisted actual ControlCenter Stop/Close and genuine browser native-hash preservation;not operational acceptance or indefinite capacity.",
+    "DESKTOP_SESSION_PERSISTENCE_EXIT_CLASSIFICATION": "VERIFIED source/disposable:durable Stop/exit reason, exact receipt/history/entry-cost/funding analytics,normal owned window-close,three same-account native sessions and separately accepted quiescent incomplete-owned-close;295distinctPython/48JS across stated selections. No operational authority or financial continuation/reset."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 83,
+  "progress_revision": 86,
   "continuation_report": "docs/UNIFIED_ACTUAL_STRATEGY_NATIVE_CUSTODY_CONTINUATION_2026-10-25.md",
   "blocked_wait_reason": null,
   "publication_validation": {
@@ -286,7 +276,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/SOURCE_PRODUCER_ROSTER_CAPACITY_CONTINUATION_2026-10-25.md",
+  "recovery_document": "docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -955,7 +945,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/SOURCE_PRODUCER_ROSTER_CAPACITY_CONTINUATION_2026-10-25.md",
+  "continuation_checkpoint": "docs/DESKTOP_SESSION_EXIT_HISTORY_CONTINUATION_2026-10-26.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1353,5 +1343,83 @@
     "not_executed": "True-symlink privilege unavailable (1314); full retained-child two-lane and interactive WinForms acceptance remain incomplete",
     "operational_acceptance": false,
     "selection": "prior853distinct selection plus final42case owned-childHTTP/supervisor selection;37of42 overlap prior cases;5new retained-native-child cases"
+  },
+  "retained_before_desktop_tests": {
+    "passed": 89,
+    "failed": 0,
+    "skipped": 0,
+    "new_cases": 54,
+    "single_combined_run": true,
+    "selection": "11-file source/roster/native/crash/capacity/actual-lanes/order/HTTP/owned-close combined run only; not entire repository",
+    "other_overlapping_selections": [
+      {
+        "passed": 622,
+        "failed": 0,
+        "skipped": 1
+      },
+      {
+        "passed": 155,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "passed": 32,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "passed": 30,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "javascript_passed": 42,
+    "not_executed": "True symlink privilege 1314; initial automated GUI visibility attempt. Fresh user-assisted actual GUI Stop/Close and real browser read executed successfully.",
+    "operational_acceptance": false
+  },
+  "desktop_session_policy": "docs/ATLAS_DESKTOP_SESSION_POLICY_V1.json",
+  "desktop_session_evidence": {
+    "source_milestone": "VERIFIED",
+    "operating_model": "INTERMITTENT_USER_STARTED",
+    "always_on_required": false,
+    "genuine_owned_window_close": true,
+    "real_browser_filter_and_unchanged_financial_reads": true,
+    "same_account_financial_sessions": 3,
+    "record_capacity_resets_on_restart": false,
+    "immutable_continuation": "PROPOSED_NOT_IMPLEMENTED_NOT_ACCEPTED",
+    "report": "docs/DESKTOP_SESSION_EXIT_HISTORY_2026-10-26.md",
+    "separate_incomplete_owned_close": "SOURCE_NATIVE_TESTED_DEFAULT_REFUSING_WITHOUT_SEPARATE_ACCEPTANCE"
+  },
+  "retained_before_incomplete_owned_close_tests": {
+    "passed": 295,
+    "failed": 0,
+    "skipped": 0,
+    "new_cases": 27,
+    "single_combined_run": false,
+    "final_selections_passed": [
+      43,
+      41,
+      206,
+      14,
+      9
+    ],
+    "overlapping_cases_between_selections": 18,
+    "javascript_passed": 48,
+    "javascript_new_cases": 6,
+    "operational_acceptance": false,
+    "additional_overlapping_final_followup": {
+      "passed": [
+        2,
+        11
+      ],
+      "failed": 0,
+      "skipped": 0
+    },
+    "not_executed": "No new true-symlink or physical power-loss testing; genuine owned WinForms Close and browser filter/read ran with disposable accounts."
   }
 }
