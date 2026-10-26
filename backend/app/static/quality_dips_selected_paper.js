@@ -30,7 +30,31 @@
       const signal = connection !== 'CONNECTED' ? 'UNAVAILABLE' : row.signal === null ? 'No validated signal — monitoring continues' : label(row.signal);
       return `<tr><td>${lane}</td><td>${connection}</td><td>${['OPEN','CLOSED','UNKNOWN'].includes(row.session) ? row.session : 'UNKNOWN'}</td><td>${signal}</td><td>${date(row.at)}</td></tr>`;
     }).join('');
-    return `<h3>Unified PAPER supervision</h3><p>${esc(data.state)} · ${label(data.financial_state)}</p><div class="paperTable"><table><tr><th>Market</th><th>Connection</th><th>Session</th><th>Signal</th><th>Observation</th></tr>${rows}</table></div><p>Stocks respect exchange sessions; Hyperliquid monitoring is continuous when its feed is healthy. Perpetual collateral, funding and leverage require separate accounting. Combined cash/equity: UNAVAILABLE. No implied trading authorization.</p>`;
+    return `<h3>Unified PAPER supervision</h3><p>${esc(data.state)} · ${label(data.financial_state)}</p><div class="paperTable"><table><tr><th>Market</th><th>Connection</th><th>Session</th><th>Signal</th><th>Observation</th></tr>${rows}</table></div>${renderAccounts(data.accounts, now)}<p>Stocks respect exchange sessions; Hyperliquid monitoring is continuous when its feed is healthy. Perpetual collateral, funding and leverage require separate accounting. Combined cash/equity: UNAVAILABLE. No implied trading authorization.</p>`;
+  }
+
+  function renderAccounts(data, now) {
+    if (data == null) return '';
+    if (!object(data) || data.schema !== 'ATLAS_UNIFIED_ACCOUNT_CUTS_V1' || data.state !== 'ACKNOWLEDGED' ||
+        data.startup_authorized !== false || data.total_cash !== null || data.total_equity !== null || !object(data.accounts))
+      return '<p role="status">Separate strategy financial cuts: UNKNOWN / UNAVAILABLE.</p>';
+    return ['QUALITY_DIPS','HYPERLIQUID'].map(lane => {
+      const a = data.accounts[lane], currency = lane === 'QUALITY_DIPS' ? 'USD' : 'USDC';
+      if (!object(a) || a.currency !== currency || !text(a.epoch) || !revision(a.source_revision) ||
+          !text(a.source_head) || !revision(a.observed_at) || !object(a.positions) || Object.keys(a.positions).length > 3 ||
+          !['opening_cash','cash','gross','realized_costs','net'].every(k => decimal(a[k])) ||
+          (a.available_cash !== null && !decimal(a.available_cash)) ||
+          a.valuation !== null || a.valuation_status !== 'UNAVAILABLE')
+        return `<p>${lane}: financial evidence UNAVAILABLE.</p>`;
+      const value = v => decimal(v) ? `${esc(v)} ${currency}` : 'UNAVAILABLE';
+      const age = now / 1000 - a.observed_at;
+      const freshness = age < 0 || age > 5 ? 'STALE / CLOCK UNCERTAIN' : 'ACKNOWLEDGED';
+      const positions = Object.values(a.positions).map(p => object(p) && text(p.symbol) && decimal(p.remaining) ?
+        `${label(p.symbol)} ${label(p.side)} · ${esc(p.remaining)} remaining` : 'UNAVAILABLE').join('; ') || 'No open positions';
+      const resting = object(a.resting_orders) ? Object.values(a.resting_orders).map(o => object(o) && text(o.symbol) && decimal(o.quantity) && decimal(o.limit_price) ?
+        `${label(o.symbol)} ${label(o.state)} · ${esc(o.quantity)} at ${esc(o.limit_price)} (not a fill)` : 'UNAVAILABLE').join('; ') || 'None' : 'UNAVAILABLE';
+      return `<h4>${lane} · separate simulated ${currency} account</h4><p>${freshness}</p><dl class="paperFacts">${fact('Epoch', label(a.epoch))}${fact('Source revision', esc(a.source_revision))}${fact('Source head', label(a.source_head))}${fact('Observed at (UTC)', date(a.observed_at))}${fact('Hypothetical opening cash', value(a.opening_cash))}${fact('Reconciled cash', value(a.cash))}${fact('Available cash', value(a.available_cash))}${fact('Realized gross P&L', value(a.gross))}${fact('Realized trading costs', value(a.realized_costs))}${fact('Realized net P&L', value(a.net))}${fact('Modeled fees', value(a.fees))}${fact('Modeled slippage', value(a.slippage))}${fact('Settled funding', value(a.funding))}${fact('Positions', positions)}${fact('Resting orders', resting)}${fact('Unrealized valuation / equity', 'UNAVAILABLE')}</dl>`;
+    }).join('');
   }
 
   function renderMarket(data, now) {

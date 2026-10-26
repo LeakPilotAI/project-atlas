@@ -121,11 +121,22 @@ class ReadComposition:
     def preflight(self):
         return self.read_committed(self.account, self.epoch)
 
+    def verify_control_bridge(self, bridge):
+        verifier = getattr(self.acceptance, 'verify_control_binding', None)
+        return (verifier is not None and self.admitted(lambda: verifier(self.enrollment, self.identity, bridge)) is True
+                and bridge.verify_session() is True)
 
-def build_app(composition, port, *, market_reader=None, unified_reader=None):
+
+def build_app(composition, port, *, market_reader=None, unified_reader=None, control_bridge=None, control_token=None):
     composition.preflight()  # Refuse before even publishing an application.
     origin = f"http://127.0.0.1:{port}"
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+    if control_bridge is not None:
+        verifier = getattr(composition, 'verify_control_bridge', None)
+        if verifier is None or verifier(control_bridge) is not True:
+            raise ValueError('SEPARATE_CONTROL_COMPOSITION_ACCEPTANCE_REQUIRED')
+        from app.services.quality_dips_stop_bridge import register_stop_routes
+        register_stop_routes(app, bridge=control_bridge, origin=origin, token=control_token)
     app.include_router(create_router(reader=composition, verifier=composition, clock=composition.clock,
                                     account_id=composition.account, epoch=composition.epoch,
                                     market_reader=market_reader, unified_reader=unified_reader))
@@ -136,9 +147,10 @@ def build_app(composition, port, *, market_reader=None, unified_reader=None):
         path, query = request.url.path, request.url.query
         if (request.headers.getlist("host") != [origin.removeprefix("http://")]
                 or request.headers.getlist("origin") not in ([], [origin])
-                or request.headers.get("sec-fetch-site") == "cross-site" or request.method != "GET"):
+                or request.headers.get("sec-fetch-site") == "cross-site"
+                or request.method != 'GET' and not (control_bridge is not None and request.method == 'POST' and path == '/_atlas/control/stop')):
             response = Response(status_code=403)
-        elif (path not in {*ASSETS, "/health", SELECTED}
+        elif (path not in {*ASSETS, "/health", SELECTED, *({'/_atlas/control/stop'} if control_bridge is not None else set())}
                 or (path == "/quality_dips.html" and query != "mode=selected-paper")
                 or (path != "/quality_dips.html" and query)):
             response = Response(status_code=404)
@@ -172,10 +184,11 @@ def build_app(composition, port, *, market_reader=None, unified_reader=None):
 
 class OwnedReadHost:
     """Owns only its listener/server thread. No process termination API."""
-    def __init__(self, composition, *, market_reader=None, unified_reader=None):
+    def __init__(self, composition, *, market_reader=None, unified_reader=None, control_bridge=None, control_token=None):
         self.composition = composition
         self.market_reader = market_reader
         self.unified_reader = unified_reader
+        self.control_bridge, self.control_token = control_bridge, control_token
         self.listener = self.server = self.thread = self.ready = None
 
     def open_read_only_session(self):
@@ -212,14 +225,19 @@ class OwnedReadHost:
                 raise ValueError("READ_HOST_CONTEXT_RETIRED_OR_SHARED_RECOMPOSE_REQUIRED")
             self.composition.host_claimed = True
         self.composition.preflight()  # No listener allocation before admission.
+        if self.control_bridge is not None:
+            verifier = getattr(self.composition, 'verify_control_bridge', None)
+            if verifier is None or verifier(self.control_bridge) is not True:
+                raise ValueError('SEPARATE_CONTROL_COMPOSITION_ACCEPTANCE_REQUIRED')
         self.listener = socket.socket()
         try:
             self.listener.bind(("127.0.0.1", 0))
             self.listener.listen(16)
             port = self.listener.getsockname()[1]
             app = (build_app(self.composition, port)
-                   if self.market_reader is None and self.unified_reader is None else
-                   build_app(self.composition, port, market_reader=self.market_reader, unified_reader=self.unified_reader))
+                   if self.market_reader is None and self.unified_reader is None and self.control_bridge is None else
+                   build_app(self.composition, port, market_reader=self.market_reader, unified_reader=self.unified_reader,
+                             control_bridge=self.control_bridge, control_token=self.control_token))
             self.ready = {"host_id": self.composition.host_id, "mode": MODE,
                           "process": self.composition.identity,
                           "url": f"http://127.0.0.1:{port}/quality_dips.html?mode=selected-paper"}

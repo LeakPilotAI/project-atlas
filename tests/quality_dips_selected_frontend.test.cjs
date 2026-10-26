@@ -28,6 +28,23 @@ test('unified view rejects invented totals and escapes signal labels',()=>{
   assert.match(ui.renderUnified(d,STAMP*1000),/&lt;script&gt;/);
   d.total_equity='1000';assert.match(ui.renderUnified(d,STAMP*1000),/UNAVAILABLE/);
 });
+function accountCuts(){return {schema:'ATLAS_UNIFIED_ACCOUNT_CUTS_V1',state:'ACKNOWLEDGED',startup_authorized:false,total_cash:null,total_equity:null,
+  accounts:Object.fromEntries(['QUALITY_DIPS','HYPERLIQUID'].map(lane=>[lane,{epoch:lane+'-synthetic',strategy:lane,currency:lane==='QUALITY_DIPS'?'USD':'USDC',
+    source_revision:2,source_head:'a'.repeat(64),observed_at:STAMP,opening_cash:'1000',cash:'999.125',available_cash:'950',gross:'0.5',realized_costs:'0.2',net:'0.3',
+    fees:null,slippage:null,funding:null,positions:{p:{symbol:'<unsafe>',side:'LONG',remaining:'0.6'}},resting_orders:{o:{symbol:'BTC',state:'RESERVED',quantity:'0.4',limit_price:'100'}},
+    valuation:null,valuation_status:'UNAVAILABLE'}]))};}
+test('separate native account cuts show exact quantities currencies and unavailable valuation',()=>{
+  const d=unifiedView();d.accounts=accountCuts();const s=ui.renderUnified(d,STAMP*1000);
+  for(const value of ['999.125 USD','999.125 USDC','0.6 remaining','not a fill','&lt;unsafe&gt;','Modeled fees</dt><dd>UNAVAILABLE','Unrealized valuation / equity</dt><dd>UNAVAILABLE'])assert.ok(s.includes(value),value);
+  assert.doesNotMatch(s,/<unsafe>/);
+});
+test('unverified native cuts and currency substitutions refuse apparent financial balances',()=>{
+  const d=unifiedView();d.accounts=accountCuts();d.accounts.state='UNKNOWN';
+  assert.doesNotMatch(ui.renderUnified(d,STAMP*1000),/999.125/);
+  d.accounts.state='ACKNOWLEDGED';d.accounts.accounts.HYPERLIQUID.currency='USD';
+  assert.match(ui.renderUnified(d,STAMP*1000),/HYPERLIQUID: financial evidence UNAVAILABLE/);
+  d.accounts=accountCuts();assert.match(ui.renderUnified(d,(STAMP+6)*1000),/STALE \/ CLOCK UNCERTAIN/);
+});
 function iexView(){return {schema:'ATLAS_ALPACA_IEX_VIEW_V1',feed:'IEX',scope:'SINGLE_EXCHANGE_NOT_NBBO',
   size_units:'ROUND_LOTS',connection:'CONNECTED',authenticated:true,subscribed:true,paper_startup_authorized:false,
   observed_at:STAMP,quotes:[{symbol:'MSFT',bid:'100',ask:'100.1',bid_lots:1,ask_lots:2,

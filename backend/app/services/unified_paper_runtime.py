@@ -8,7 +8,7 @@ thread lock. No default custodian, portfolio allocation or trading grant exists.
 import asyncio
 from threading import Event, Lock
 
-from app.services.paper_financial_replay import body, digest, strict, text
+from app.services.paper_financial_replay import FinancialSourceUncertain, body, digest, strict, text
 from app.services.paper_portfolio_risk import (
     LANES,
     check_portfolio_accounting_update,
@@ -24,9 +24,16 @@ class UnifiedMarketReadCapability:
         if type(runtime) is not UnifiedPaperRuntime:
             raise ValueError("UNIFIED_VERIFIED_RUNTIME_REQUIRED")
         self._read = runtime.read_snapshot
+        self._runtime = runtime
 
     def read(self):
-        return self._read()
+        value = self._read()
+        from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+        if type(self._runtime.portfolio) is UnifiedPortfolioCustody:
+            accounts = self._runtime.portfolio.read_accounts(self._runtime.grant)
+            value['accounts'] = accounts
+            if accounts['state'] != 'ACKNOWLEDGED': value['financial_state'] = 'UNKNOWN'
+        return value
 
 
 class UnifiedControlStopBridge:
@@ -168,12 +175,21 @@ class UnifiedPaperRuntime:
                             continue
                         try:
                             proposal = await asyncio.wait_for(planner(row), 2)
+                        except FinancialSourceUncertain:
+                            self.entry_closed.set()
+                            self.uncertain, self.state = True, 'STOP_INCOMPLETE'
+                            break
                         except Exception:  # noqa: BLE001 - isolate read-only strategy planning; never echo provider errors
                             self.observations[lane] = {**row, "signal": None, "connection": "UNAVAILABLE"}
                             continue
                         if proposal is not None:
                             try:
-                                self.dispatch(lane, proposal)
+                                if proposal.get('kind') == 'RESTING_ORDER':
+                                    self.admit_resting(proposal)
+                                elif proposal.get('kind') == 'CANCEL_RESTING_ORDER':
+                                    self.cancel_resting(proposal)
+                                else:
+                                    self.dispatch(lane, proposal)
                             except ValueError:
                                 if self.uncertain:
                                     break
@@ -184,6 +200,72 @@ class UnifiedPaperRuntime:
 
     def dispatch(self, lane, proposal):
         return self._dispatch(lane, proposal, shutdown=False)
+
+    def admit_resting(self, proposal):
+        return self._resting(proposal, cancel=False)
+
+    def cancel_resting(self, proposal):
+        return self._resting(proposal, cancel=True)
+
+    def _resting(self, proposal, *, cancel):
+        """Reserve pending exposure before control publication; never a fill."""
+        proposal = strict(body(proposal))
+        if proposal.get('kind') != ('CANCEL_RESTING_ORDER' if cancel else 'RESTING_ORDER'):
+            raise ValueError('UNIFIED_EXACT_RESTING_ACTION_REQUIRED')
+        with self.gate, self._lease() as installation:
+            self._verify(installation)
+            expired = (cancel and self.state in ('RUNNING', 'PAUSED')
+                       and type(proposal.get('order', {}).get('expires_at')) is int
+                       and self.clock() >= proposal['order']['expires_at'])
+            if (self.uncertain or (cancel and not expired and (self.state != 'STOPPING' or not self.entry_closed.is_set()))
+                    or (not cancel and (self.state != 'RUNNING' or self.entry_closed.is_set()))):
+                raise ValueError('UNIFIED_RESTING_ADMISSION_CLOSED_OR_UNKNOWN')
+            lane = self.lanes['HYPERLIQUID']
+            observation = self.observations['HYPERLIQUID']
+            if not cancel and (observation is None or observation['connection'] != 'CONNECTED'
+                    or observation['session'] != 'OPEN' or not 0 <= self.clock() - observation['at'] <= 5):
+                raise ValueError('UNIFIED_RESTING_CURRENT_MARKET_REQUIRED')
+            if lane.verify_resting(proposal, observation) is not True:
+                raise ValueError('UNIFIED_RESTING_STRATEGY_UNVERIFIED')
+            port = getattr(self.portfolio, 'order_lease', None)
+            if port is None:
+                raise ValueError('UNIFIED_ACCEPTED_PENDING_EXPOSURE_CUSTODY_REQUIRED')
+            request = {'lane': 'HYPERLIQUID', 'grant': self.grant, 'proposal': proposal,
+                       'mode': 'CANCEL_PENDING_EXPOSURE_V1' if cancel else 'RESERVE_PENDING_EXPOSURE_V1'}
+            with port(request) as custody:
+                if custody.verify(request) is not True:
+                    raise ValueError('UNIFIED_PENDING_EXPOSURE_UNVERIFIED')
+                lookup = getattr(custody, 'acknowledged', None)
+                prior = lookup(request) if lookup is not None else None
+                if prior is not None:
+                    if prior.get('state') != 'ACKNOWLEDGED' or prior.get('binding') != digest(request):
+                        raise ValueError('UNIFIED_ORDER_REPLAY_UNVERIFIED')
+                    receipt = custody.replay(request, prior)
+                    if custody.verify_receipt(request, receipt) is not True:
+                        raise ValueError('UNIFIED_ORDER_REPLAY_RECEIPT_UNVERIFIED')
+                    return receipt
+                if cancel:
+                    check_portfolio_reducing_exit(custody.policy, custody.before, custody.projected, now=self.clock())
+                else:
+                    check_portfolio_cut(custody.policy, custody.before, now=self.clock())
+                    check_portfolio_cut(custody.policy, custody.projected, now=self.clock())
+                reservation = custody.reserve(request)
+                if reservation.get('state') != 'RESERVED' or reservation.get('binding') != digest(request):
+                    self.uncertain, self.state = True, 'STOP_INCOMPLETE'
+                    raise ValueError('UNIFIED_ORDER_RESERVATION_UNKNOWN')
+                self.uncertain = True
+                try:
+                    receipt = lane.dispatch_resting(proposal, reservation)
+                    if custody.verify_receipt(request, receipt) is not True:
+                        raise ValueError('UNIFIED_ORDER_CONTROL_ACK_UNKNOWN')
+                    self._verify(installation)
+                    if custody.acknowledge(request, receipt) is not True:
+                        raise ValueError('UNIFIED_ORDER_GLOBAL_ACK_UNKNOWN')
+                except BaseException:
+                    self.state = 'STOP_INCOMPLETE'
+                    raise
+                self.uncertain = False
+                return receipt
 
     def dispatch_shutdown_exit(self, lane, proposal):
         """Exit-only Stop port; current installation/custody must approve it.
@@ -330,6 +412,12 @@ class UnifiedPaperRuntime:
         with self.gate:
             complete = (not self.uncertain and not emergency and drained
                         and all(v.get("state") == "ACKNOWLEDGED_FLAT_AND_DRAINED" for v in outcomes.values()))
+            finalize = getattr(self.portfolio, 'finalize_shutdown', None)
+            if complete and finalize is not None:
+                try:
+                    complete = finalize(self.grant, outcomes, self.lanes) is True
+                except (ValueError, OSError, TimeoutError):
+                    self.uncertain, complete = True, False
             self.state = "STOPPED" if complete else "STOP_INCOMPLETE"
         return {"state": self.state, "lanes": outcomes, "auto_resume": False}
 

@@ -1,6 +1,7 @@
 """Actual IEX parser, candidate/V5 planner and native writer; synthetic source authority."""
 import copy
 import json
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
@@ -28,7 +29,7 @@ def components(s):
     b = candidate(n)
     f, _ = feed()
     f.clock = lambda: n.now[0]
-    f.receive(json.dumps([message(bp=99.9, ap=100, t='2026-10-26T14:00:02Z')]))
+    f.receive(json.dumps([message(bp=99.9, ap=100, t=datetime.fromtimestamp(n.now[0], UTC).isoformat().replace('+00:00', 'Z'))]))
     observer = IEXMarketObserver(f, calendar=SimpleNamespace(read=lambda now: 'OPEN'), clock=f.clock)
     reader = SimpleNamespace(value={'instrument': b['instrument'], 'bundles': [b], 'observation': None})
     reader.read_request = lambda timeout: copy.deepcopy(reader.value)

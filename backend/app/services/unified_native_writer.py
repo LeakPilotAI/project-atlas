@@ -4,6 +4,7 @@ Existing FS2 test records are supported only in the explicit disposable domain.
 An operational perpetual codec/enrollment is deliberately not invented here.
 """
 from app.services.paper_financial_replay import (
+    FinancialSourceUncertain,
     body,
     digest,
     number,
@@ -143,7 +144,8 @@ class PerpShutdownCoordinator:
     Ownership/drain remains external accepted evidence, never inferred from PID.
     """
     def __init__(self, *, writer, books, reports, clock, session_id, started_at):
-        if (type(writer) not in (NativeFinancialWriter, OperationalPerpFinancialWriter)
+        from app.services.perp_resting_writer import RestingPerpWriter
+        if (type(writer) not in (NativeFinancialWriter, OperationalPerpFinancialWriter, RestingPerpWriter)
                 or reports.store is not writer.store or books is None or clock is None
                 or type(started_at) is not int or started_at <= 0):
             raise ValueError('PERP_SHUTDOWN_EXACT_COMPONENTS_REQUIRED')
@@ -176,6 +178,13 @@ class PerpShutdownCoordinator:
         if emergency:
             return {"state": 'INCOMPLETE', "reason": 'EMERGENCY_POSITIONS_PRESERVED'}
         try:
+            if hasattr(self.writer, 'orders'):
+                for key, row in self.writer._control()['state']['orders'].items():
+                    if row['state'] == 'FILL_PENDING':
+                        raise ValueError('PERP_RESTING_FILL_UNKNOWN')
+                    if row['state'] == 'RESERVED':
+                        self.runtime.cancel_resting({'operation_id': 'perp-cancel:' + digest([self.session_id, key]),
+                            'kind': 'CANCEL_RESTING_ORDER', 'order': row['order']})
             cut = self.writer._cut()
             if self.completed is not None:
                 if cut['head'] != self.completed['source_head']:
@@ -204,6 +213,8 @@ class PerpShutdownCoordinator:
             cut = self.writer._cut()
             if self.runtime.uncertain or any(number(p['remaining']) > 0 for p in cut['state']['positions'].values()):
                 raise ValueError('PERP_SHUTDOWN_FINANCIAL_CUT_UNRESOLVED')
+            if hasattr(self.writer, 'verify_order_drain') and self.writer.verify_order_drain() is not True:
+                raise ValueError('PERP_RESTING_CONTROL_DRAIN_UNRESOLVED')
             cutoff = self.clock()
             document = self.reports.publish_session(session_id=self.session_id, started_at=self.started_at,
                                                      cutoff_at=cutoff, observed_at=cutoff)
@@ -231,7 +242,8 @@ class CanonicalWriterLane:
     proposals and the authority must authenticate its exact identity and evidence.
     """
     def __init__(self, *, writer, observer, planner, shutdown, reports=None):
-        if type(writer) not in (NativeFinancialWriter, OperationalPerpFinancialWriter, EnrolledQualityDipsWriter) or any(x is None for x in (observer, planner, shutdown, reports)):
+        from app.services.perp_resting_writer import RestingPerpWriter
+        if type(writer) not in (NativeFinancialWriter, OperationalPerpFinancialWriter, EnrolledQualityDipsWriter, RestingPerpWriter) or any(x is None for x in (observer, planner, shutdown, reports)):
             raise ValueError("CANONICAL_EXISTING_LANE_COMPONENTS_REQUIRED")
         self.writer, self.observer, self.planner, self.shutdown = writer, observer, planner, shutdown
         self.reports = reports
@@ -261,7 +273,11 @@ class CanonicalWriterLane:
 
     async def next_proposal(self, observation):
         self._verify()
-        return await self.planner.next_proposal(observation, self.writer._cut())
+        try:
+            cut = self.writer._cut()
+        except (OSError, ValueError) as error:
+            raise FinancialSourceUncertain('CANONICAL_CURRENT_FINANCIAL_SOURCE_UNCERTAIN') from error
+        return await self.planner.next_proposal(observation, cut)
 
     def verify_proposal(self, proposal, observation):
         self._verify()
@@ -270,6 +286,14 @@ class CanonicalWriterLane:
     def dispatch(self, proposal, reservation):
         self._verify()
         return self.writer.dispatch(proposal, reservation)
+
+    def verify_resting(self, proposal, observation):
+        self._verify()
+        return self.writer.verify_resting(proposal, observation)
+
+    def dispatch_resting(self, proposal, reservation):
+        self._verify()
+        return self.writer.dispatch_resting(proposal, reservation)
 
     def stop(self, *, emergency):
         self._verify()

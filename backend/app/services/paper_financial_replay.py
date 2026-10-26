@@ -11,6 +11,10 @@ from decimal import ROUND_HALF_EVEN, Context, Decimal, Inexact, localcontext
 from zoneinfo import ZoneInfo
 
 
+class FinancialSourceUncertain(ValueError):
+    """Current durable financial/control evidence cannot establish a safe cut."""
+
+
 def body(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
