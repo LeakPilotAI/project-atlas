@@ -454,3 +454,7 @@ Operator scope decision: HOLD REAL_HISTORY_HTTP_ACCEPTANCE until exact six journ
 ## NEW ten-directory observation preflight - 2026-10-26
 
 TEN_DIRECTORY_OBSERVATION_PREFLIGHT: VERIFIED assessment only;10eligible historical journals/62records,7manifests,all unchanged. No host/new observation log. TEN_DIRECTORY_OBSERVATION_HTTP_APPROVAL: BLOCKED_WAIT pending explicit NEW scope approval. Original six roster permanently UNRECONSTRUCTABLE;no invented membership. Exact private scope referenced by TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md.
+
+## Approved NEW ten-scope real-history run - 2026-10-26
+
+NEW_TEN_REAL_HISTORY_SAFETY_AND_CLOSURE: VERIFIED source hashes,HTTP safety and exact-owned closure;overall PARTIAL_ACCEPTANCE due cap cutoff/request accounting gap. ONE approval consumed;1host/1log,10+7hashes unchanged,62JS regressions pass. Visibility source fix unit-verified only. No automatic rerun,current-data/financial gates still BLOCKED. See TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md.

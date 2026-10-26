@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "LOCAL_BROWSER_RECOVERY_AND_OPERATOR_GUIDE",
+  "last_verified_task": "NEW_TEN_REAL_HISTORY_SAFETY_AND_CLOSURE",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -8,21 +8,22 @@
     "D1": "FS1-FS3 disposable engineering verified; strict-root correction and120native-planpasses/1notexecuted do not accept real storage enrollment,issuer,custody,clock,rollback/recovery authority.",
     "E1": "Dependent gates and operator authorization absent",
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim.",
-    "REAL_HISTORY_HTTP_ACCEPTANCE_SCOPE": "Original six membership permanently UNRECONSTRUCTABLE;authorization unused. New ten-scope assessment does not reconstruct or expand it.",
-    "TEN_DIRECTORY_OBSERVATION_HTTP_APPROVAL": "Ten historical journals eligible in new assessment;explicit NEW bounded HTTP test approval pending."
+    "REAL_HISTORY_HTTP_ACCEPTANCE_SCOPE": "Original six membership permanently UNRECONSTRUCTABLE;authorization unused. New ten-scope assessment does not reconstruct or expand it."
   },
   "latest_tests": {
-    "passed": 237,
+    "framework": "node:test",
+    "passed": 62,
     "failed": 0,
     "skipped": 0,
-    "single_combined_run": true,
-    "javascript_passed": 60,
-    "chrome_scenarios_passed": 3,
+    "python_cases_executed": 0,
+    "http_assertions_passed": 10,
+    "real_history_hosts_executed": 1,
+    "single_combined_run": false,
     "operational_acceptance": false,
-    "not_executed": "Interactive native browser control approval timed out;physical window dragging;operational financial/source enrollment or trial. Exact in-app MutationObserver origin unresolved."
+    "limitations": "Partial browser acceptance;96admitted requests,limit refusal uncounted;1unattributed in-app MutationObserver error;no replacement host or live-financial launch."
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Present the exact private ten-directory scope for explicit NEW approval. If approved,recheck pinned hashes/identities and run only ONE bounded127.0.0.1 observation host with ONE log. No providers/financial activation.",
+  "exact_next_action": "Read TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md. Preserve completed one-run evidence;no automatic retry. Accepted current publication/provider/clock/custody and B1/C1/D1/E1 decisions precede operational integration. Future bounded runner must count boundary refusals;visibility fix unit-verified only.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -115,9 +116,9 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 92,
-  "continuation_report": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md",
-  "blocked_wait_reason": "New ten-directory proposal requires operator approval;no host/log creation authorized by assessment.",
+  "progress_revision": 93,
+  "continuation_report": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md",
+  "blocked_wait_reason": "One approved run consumed;current publications/provider/custody and financial release gates remain unaccepted. Do not repeat host under consumed scope.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
@@ -224,7 +225,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md",
+  "recovery_checkpoint": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -262,7 +263,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md",
+  "recovery_document": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -931,7 +932,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md",
+  "continuation_checkpoint": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1536,7 +1537,7 @@
     "report": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md"
   },
   "ten_directory_observation_preflight": {
-    "status": "ASSESSED_AWAITING_NEW_SCOPE_APPROVAL",
+    "status": "NEW_SCOPE_APPROVED_RUN_CONSUMED",
     "directories_assessed": 10,
     "eligible_historical_read_only": 10,
     "excluded": 0,
@@ -1550,10 +1551,50 @@
     "observation_logs_created": 0,
     "provider_connections": 0,
     "financial_authority": false,
-    "http_test_approved": false,
+    "http_test_approved": true,
     "private_manifest": "logs/diagnostics/ten-journal-preflight-private.json",
     "private_manifest_sha256": "66ce2e48c2ce7f43c486f991146fb91746e47d71cf5acf798b0b63b85e3ec032",
     "exact_proposed_scope": "logs/diagnostics/TEN_OBSERVATION_HTTP_PROPOSED_SCOPE_2026-10-26.md",
     "report": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md"
+  },
+  "retained_pre_real_history_tests": {
+    "passed": 237,
+    "failed": 0,
+    "skipped": 0,
+    "single_combined_run": true,
+    "javascript_passed": 60,
+    "chrome_scenarios_passed": 3,
+    "operational_acceptance": false,
+    "not_executed": "Interactive native browser control approval timed out;physical window dragging;operational financial/source enrollment or trial. Exact in-app MutationObserver origin unresolved."
+  },
+  "ten_directory_http_acceptance": {
+    "status": "PARTIAL_ACCEPTANCE_CLOSED_VERIFIED",
+    "operator_approved_new_scope": true,
+    "approval_consumed": true,
+    "hosts_started": 1,
+    "new_observation_logs_created": 1,
+    "log_records": 103,
+    "log_chain_valid": true,
+    "extra_session_files_created": 0,
+    "journal_hashes_unchanged": 10,
+    "readiness_manifest_hashes_unchanged": 7,
+    "source_count": 10,
+    "http_assertions_passed": 10,
+    "admitted_http_requests": 96,
+    "strict_total_received_requests": "NOT_SEPARATELY_COUNTED_LIMIT_REFUSAL_BRANCH",
+    "elapsed_seconds": 176.953,
+    "shutdown": "GRACEFUL_SELF_CLOSE_AT_REQUEST_CAP",
+    "process_absent_verified": true,
+    "port_released_verified": true,
+    "browser_tab_closed": true,
+    "browser_historical_render_verified": true,
+    "browser_qd_unavailable_verified": true,
+    "late_financial_browser_read": "UNAVAILABLE_AFTER_CAP;NULL_FINANCIAL_JSON_VERIFIED_EARLIER_BY_HTTP",
+    "browser_console_errors": 1,
+    "provider_connections": 0,
+    "financial_writers": 0,
+    "current_live_dashboard": false,
+    "audit_private_locator": "logs/observation-only/session-test-realhistory-*/observations.jsonl;match NEW_TEN_SCOPE_APPROVAL.manifest_sha256=66ce2e48c2ce7f43c486f991146fb91746e47d71cf5acf798b0b63b85e3ec032",
+    "report": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md"
   }
 }
