@@ -14179,12 +14179,21 @@ Evidence:622+155+32+30passes overlap47=792distinct/0failed/1true-symlink NOT EXE
 Next action: Actual perp discovery/resting-order/executable receipt custody and funding/mark routing,accepted QD scanner source bindings,complete real writer roster/global drain/owned-close,both coordinators and genuine two-lane abrupt recovery/Windows/ControlCenter acceptance. No protected roots,provider/credential/startup/Genesis/gate changes.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: Actual two-strategy native custody and financial FINAL
 Status: UNIFIED_PERP_FINANCIAL_COMPLETENESS remains sole ACTIVE; source/disposable subset verified, operational integration incomplete.
 Evidence: Actual QD V5/scanner publication reader and actual existing perp discovery/lifecycle/queue-fill/funding/mark/native writer paths assembled under handle-bound global reservation custody. Both original Stop/report coordinators and durable global FINAL. Final853 distinctPython passed/0failed/1true-symlink NOTEXECUTED across622+155+32+30+30+26+5 selections minus47overlap;42JS. Genuine disposable HTTP/shippedPowerShellStop, native cross-process races/crashes and real-browser observation;not interactiveWinForms or operational acceptance.
 Next action: Read docs/UNIFIED_ACTUAL_STRATEGY_NATIVE_CUSTODY_CONTINUATION_2026-10-25.md. Bind actual authenticated source producers;complete actual writer/process roster and retained owned-close after financial FINAL;resolve128-transition control continuation;full retained-child continuous/recovery/ControlCenter acceptance. Do not repeat completed source/order/financialengine work or treat synthetic authority as enrollment.
 All seven phases/21decisions and historical bytes preserved. B1/C1/D1/E1 BLOCKED. No protected roots/inception/providers/credentials/services/Genesis/startupchanges. D-only/existingaccount/originalUI/PAPER-only. PAPER startup NO;production NO-GO.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: Actual two-strategy financial FINAL to retained owned-close
+Status: UNIFIED_PERP_FINANCIAL_COMPLETENESS sole ACTIVE; source/disposable verified subset,operational source/roster acceptance incomplete.
+Evidence: Continued after30170410;direct existing close_verified/verify_exit capability bound exact session/PID/creation/image/native writer-roster/account identities. Native global ownership lease/mutex held through graceful owned EOF/exit. Final42case actual two-lane native-childHTTP/supervisor selection passed0fail0skip;5new+853prior=858distinct Python passes/0finalfail/1true-symlink NOTEXECUTED;42JS. Native financial/runtime code reused;no process discovery/kill/name/port termination. Financial FLAT and process INCOMPLETE remain separate.
+Next action: Read docs/UNIFIED_ACTUAL_STRATEGY_NATIVE_CUSTODY_CONTINUATION_2026-10-25.md. Bind authenticated actual QD/perp source producers and complete accepted actual writer/process roster;resolve128transition custody/continuous-session policy;full retained-child continuous source/recovery/interactiveControlCenter acceptance. Do not repeat financial,source-planner,globalFINAL or retained-owned-close ports.
+All seven phases/21decisions and historical evidence preserved. B1/C1/D1/E1 BLOCKED. No real protected roots/inception/providers/credentials/services/Genesis/startupchange. D-only/existingaccount/originalUI/PAPER-only. PAPER startup NO;production NO-GO.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

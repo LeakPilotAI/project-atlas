@@ -11,10 +11,10 @@
     "E1": "Dependent gates and operator authorization absent"
   },
   "latest_tests": {
-    "passed": 853,
+    "passed": 858,
     "failed": 0,
     "skipped": 1,
-    "new_cases": 30,
+    "new_cases": 35,
     "additional_existing_cases": 31,
     "final_selections_passed": [
       622,
@@ -23,23 +23,25 @@
       30,
       30,
       26,
-      5
+      5,
+      42
     ],
-    "overlapping_cases_between_selections": 47,
+    "overlapping_cases_between_selections": 84,
     "single_combined_run": false,
     "javascript_passed": 42,
     "not_executed": "True-symlink privilege unavailable (1314); full retained-child two-lane and interactive WinForms acceptance remain incomplete",
     "operational_acceptance": false,
-    "selection": "28-file broad financial/discovery/startup/archive;10-file QD V3/V5/nativeHTTP;2-file opQD;opPerp;4-file new actual native source/order/global races/crashes/two-laneHTTP;native read-service;frontend application"
+    "selection": "prior853distinct selection plus final42case owned-childHTTP/supervisor selection;37of42 overlap prior cases;5new retained-native-child cases"
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Bind installed authenticated QD ranking/monitor and Hyperliquid market/candle/trade-queue/metadata/historical funding-oracle producers to completed current-source ports; preserve raw source versions and no mark-touch fills. Complete actual writer/resource/process roster and accepted ownership/drain adapter; connect existing retained owned-close after native financial FINAL, with process exit separate from flatten. Resolve bounded128-transition control capacity without reset/rollover adoption. Execute full retained-child two-lane continuous/recovery/Windows interactive ControlCenter acceptance. Source task remains ACTIVE; no protected account/provider activation authorized. Read docs/UNIFIED_ACTUAL_STRATEGY_NATIVE_CUSTODY_CONTINUATION_2026-10-25.md",
+  "exact_next_action": "Bind actual authenticated QD ranking/monitor and Hyperliquid raw market/candle/trade-queue/metadata/historical settlement-oracle producers to the completed current-source ports, without changing raw research/execution evidence. Independently establish the complete actual writer/resource/process roster consumed by the now implemented owned_roster/close_verified/verify_exit bridge. Resolve128-transition control capacity and accepted continuous-session/recovery policy without reset/adoption. Execute full retained-child two-lane continuous source/lifecycle and interactive Windows ControlCenter acceptance. Financial global FINAL and source retained-owned-close port are done;do not repeat. No provider activation,protected inception or operational dependency installation authorized. Read docs/UNIFIED_ACTUAL_STRATEGY_NATIVE_CUSTODY_CONTINUATION_2026-10-25.md.",
   "latest_focused_tests": {
-    "passed": 30,
+    "passed": 42,
     "failed": 0,
     "skipped": 0,
     "overlap_combined": true,
-    "selection": "final four-file native orders/global custody/actual two-lane/HTTP/Windows Stop selection, included in853 distinct"
+    "new_cases": 5,
+    "selection": "final retained-native-child/global mutex/real HTTP/supervisor combined selection;37 overlap prior853,5new=858distinct"
   },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -120,10 +122,10 @@
     "AUTONOMOUS_NATIVE_FINANCIAL_BINDING_V5": "VERIFIED_CONFINED_LOCAL_ENROLLED_CONTRACT_PATH:V4-before/V3nativefinancialaction/V4-after underwriterlease;actualFS2FS3 replay/report;184+111+33=328passes,29new. Sourcefailure falselycleanStop reproduced/fixed;originalfailure retained. No accepted operational authority or real13dirs access.",
     "OPERATIONAL_PAPER_READINESS_AND_RECORD_CODEC": "VERIFIED_SOURCE_CODEC_AND_ACCEPTANCE_CHECKLIST:distinctoperationalrecords/pins on existingFS2math/projection;105+120+2=227pass1privilege-skip. Sandboxmutexfailure retained;nativepermittedrerun passed. No real13dirs/keys/services/marketdata/startup. Independent B1C1D1E1 stillblocked.",
     "UNIFIED_MARKET_SOURCE_FOUNDATION": "VERIFIED scoped source/disposable only:180Python/40JS/5PSassertions/2parses;63new;12766reference symbols;IEXauth+2subscriptions/0Sundayquotes;native readHTTP/browser and control transport contracts;no full unified financial runtime or operational acceptance.",
-    "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "ACTIVE: actual existing QD/perp planners and original native writers now assembled under native global reservation/control, actual maker queue evidence/funding/mark routing and both Stop/report coordinators;30new cases pass. Actual authenticated producer installation, complete native writer/process roster/owned closure and continuous capacity acceptance unfinished. No operational authority."
+    "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "ACTIVE: actual QD/perp planners/native writers under durable order/global reservation/FINAL;both Stop/report coordinators;retained owned-close/independent exit port through genuineHTTP.35newcases pass;858distinct total. Actual authenticated source producers,complete operational native roster and bounded-control continuous-session acceptance remain incomplete. No operational authority."
   },
   "execution_status": "CONTINUATION_REQUIRED",
-  "progress_revision": 81,
+  "progress_revision": 82,
   "continuation_report": "docs/UNIFIED_ACTUAL_STRATEGY_NATIVE_CUSTODY_CONTINUATION_2026-10-25.md",
   "blocked_wait_reason": null,
   "publication_validation": {
@@ -1270,7 +1272,10 @@
     "operational_acceptance": false,
     "startup_authorized": false,
     "control_capacity": 128,
-    "capacity_rollover_supported": false
+    "capacity_rollover_supported": false,
+    "retained_owned_close_source": true,
+    "genuine_native_child_exit_after_http_stop": true,
+    "global_mutex_held_through_owned_close": true
   },
   "retained_before_actual_native_custody_latest_tests": {
     "passed": 792,
@@ -1289,5 +1294,27 @@
     "not_executed": "True-symlink privilege unavailable (1314); no new real-browser/WinForms/full two-lane acceptance",
     "operational_acceptance": false,
     "selection": "financial/perp/discovery/report/startup/archive28files;actualQDsource/globalStop/native/runtime/HTTP10files;operationalQD2files;operationalPerp1file"
+  },
+  "retained_before_owned_close_latest_tests": {
+    "passed": 853,
+    "failed": 0,
+    "skipped": 1,
+    "new_cases": 30,
+    "additional_existing_cases": 31,
+    "final_selections_passed": [
+      622,
+      155,
+      32,
+      30,
+      30,
+      26,
+      5
+    ],
+    "overlapping_cases_between_selections": 47,
+    "single_combined_run": false,
+    "javascript_passed": 42,
+    "not_executed": "True-symlink privilege unavailable (1314); full retained-child two-lane and interactive WinForms acceptance remain incomplete",
+    "operational_acceptance": false,
+    "selection": "28-file broad financial/discovery/startup/archive;10-file QD V3/V5/nativeHTTP;2-file opQD;opPerp;4-file new actual native source/order/global races/crashes/two-laneHTTP;native read-service;frontend application"
   }
 }

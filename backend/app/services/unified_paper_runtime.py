@@ -39,10 +39,12 @@ class UnifiedMarketReadCapability:
 class UnifiedControlStopBridge:
     """Existing Control Center stop/loopback transport contract, never startup."""
 
-    def __init__(self, runtime):
+    def __init__(self, runtime, *, owned_close=None):
         if type(runtime) is not UnifiedPaperRuntime:
             raise ValueError("UNIFIED_ACCEPTED_RUNTIME_REQUIRED")
         self.runtime = runtime
+        self.owned_close = owned_close
+        self._close_binding = owned_close
         self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "IDLE", "outcome": None}
 
     def verify_session(self):
@@ -56,12 +58,47 @@ class UnifiedControlStopBridge:
         if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY") or not self.verify_session():
             raise ValueError("UNIFIED_CONTROL_SESSION_OR_MODE_UNVERIFIED")
         outcome = self.runtime.stop(emergency=mode == "EMERGENCY")
-        complete = outcome["state"] == "STOPPED"
+        financial_flat = complete = outcome["state"] == "STOPPED"
+        process_state = 'NOT_REQUESTED'
+        if self.owned_close is not None:
+            process_state = 'UNVERIFIED'
+            portfolio = self.runtime.portfolio
+            verifier = getattr(getattr(portfolio, 'authority', None), 'verify_owned_shutdown', None)
+            roster_reader = getattr(getattr(portfolio, 'ownership', None), 'owned_roster', None)
+            try:
+                if (self.owned_close is not self._close_binding or verifier is None or roster_reader is None
+                        or not complete or portfolio.verify_drain(self.runtime.grant) is not True):
+                    raise ValueError('UNIFIED_OWNED_CLOSE_DRAIN_REQUIRED')
+                with portfolio.lease({'grant': self.runtime.grant}) as admitted:
+                    if admitted.owner.check() is not True or portfolio.verify_drain(self.runtime.grant) is not True:
+                        raise ValueError('UNIFIED_OWNERSHIP_CHANGED_BEFORE_CLOSE')
+                    roster = strict(body(roster_reader(self.runtime.grant, portfolio.writers, self.runtime.clock())))
+                    if (type(roster) is not dict or set(roster) != {'schema', 'session_id', 'processes', 'writer_binding', 'account_binding'}
+                            or roster['schema'] != 'ATLAS_UNIFIED_OWNED_ROSTER_V1'
+                            or roster['session_id'] != self.runtime.grant['session_id']
+                            or type(roster['processes']) is not list or not 0 < len(roster['processes']) <= 32
+                            or len({p['pid'] for p in roster['processes']}) != len(roster['processes'])
+                            or any(set(p) != {'pid', 'created', 'image'} or type(p['pid']) is not int or p['pid'] <= 0
+                                   or type(p['created']) is not int or p['created'] <= 0
+                                   or type(p['image']) is not str or not p['image'] for p in roster['processes'])
+                            or roster['writer_binding'] != portfolio.journal.manifest['roster_digest']
+                            or roster['account_binding'] != digest({k: digest(w.manifest) for k,w in portfolio.writers.items()})):
+                        raise ValueError('UNIFIED_EXACT_OWNED_ROSTER_REQUIRED')
+                    context = {'grant': self.runtime.grant, 'roster': roster, 'outcome': outcome}
+                    if verifier(context, self.owned_close, portfolio.components) is not True:
+                        raise ValueError('UNIFIED_OWNED_CLOSE_AUTHORITY_REQUIRED')
+                    if (self.owned_close.close_verified(strict(body(roster))) is not True
+                            or self.owned_close.verify_exit(strict(body(roster))) is not True):
+                        raise ValueError('UNIFIED_EXACT_OWNED_EXIT_UNACKNOWLEDGED')
+                    process_state = 'VERIFIED_EXIT'
+            except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                complete, process_state = False, 'INCOMPLETE'
         self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED", "outcome": {
             "schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,
             "status": "FLATTENED" if complete else "SHUTDOWN_INCOMPLETE",
-            "position_state": "FLAT" if complete else "UNKNOWN" if self.runtime.uncertain else "POSITION_OPEN",
-            "lanes": outcome["lanes"], "cash": None, "reason": "SEPARATE_ACKNOWLEDGED_LANE_OUTCOMES_REQUIRED"}}
+            "position_state": "FLAT" if financial_flat else "UNKNOWN" if self.runtime.uncertain else "POSITION_OPEN",
+            "lanes": outcome["lanes"], "cash": None, "process_shutdown": process_state,
+            "reason": "SEPARATE_ACKNOWLEDGED_LANE_OUTCOMES_REQUIRED"}}
         return strict(body(self.progress))
 
     def status(self):

@@ -37,9 +37,9 @@ def capture(s):
             for root in (s.root, s.qd_root) for p in root.rglob('*') if p.is_file()}
 
 
-def host(s):
+def host(s, *, owned_close=None):
     reader = s.s.runtime.runtime.readonly()
-    bridge = UnifiedControlStopBridge(s.r)
+    bridge = UnifiedControlStopBridge(s.r, owned_close=owned_close)
     process = m.observe_self()
     account = s.s.runtime.runtime.reader.enrollment['account_id']
     epoch = s.q.writer.manifest['epoch']
