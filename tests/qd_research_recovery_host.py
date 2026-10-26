@@ -1,5 +1,6 @@
 """Confined original-page recovery host; synthetic research, no providers/financial stores."""
 import json
+import os
 import sys
 import threading
 import uuid
@@ -39,7 +40,7 @@ def main():
    value,mime=result[key];result[key]=(value.replace(b'</body>',b'<script>'+hub_driver+b'</script></body>'),mime)
   return result
  desktop_observation.assets=test_assets
- host,identity=make_host(session,research_reader=reader)
+ host,identity=make_host(session,research_reader=reader,request_limit=96,deadline_seconds=180)
  original_get=host.RequestHandlerClass.do_GET
  def test_get(self):
   if self.path in ('/__test__/phase/unavailable','/__test__/phase/recovered'):
@@ -54,9 +55,11 @@ def main():
   return original(self,status,value,mime)
  host.RequestHandlerClass.response=response
  worker=threading.Thread(target=host.serve_forever,daemon=True);worker.start()
- ready={'root':str(root),'url':'http://127.0.0.1:'+str(host.server_port)+'/quality_dips.html','host_id':identity,'mode':'DISPOSABLE_SYNTHETIC_ONLY'}
+ from disposable_host_owner import observe_pid
+ process=observe_pid(os.getpid())
+ ready={'pid':os.getpid(),'creation_filetime':process['created'],'image':process['image'],'root':str(root),'url':'http://127.0.0.1:'+str(host.server_port)+'/quality_dips.html','host_id':identity,'mode':'DISPOSABLE_SYNTHETIC_ONLY'}
  (root/'ready.json').write_text(json.dumps(ready));print(json.dumps(ready),flush=True)
  try:sys.stdin.readline()
- finally:host.shutdown();host.server_close();worker.join(5);session.append('SESSION_STOP',{'financial_writers':False});(root/'closed.json').write_text(json.dumps({'closed':True}))
+ finally:host.shutdown();host.server_close();worker.join(5);session.append('SESSION_STOP',{'financial_writers':False});(root/'closed.json').write_text(json.dumps({'closed':not worker.is_alive(),'request_counts':host.counts()}))
 
 if __name__=='__main__':main()

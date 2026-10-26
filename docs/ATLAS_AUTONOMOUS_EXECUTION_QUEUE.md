@@ -458,3 +458,7 @@ TEN_DIRECTORY_OBSERVATION_PREFLIGHT: VERIFIED assessment only;10eligible histori
 ## Approved NEW ten-scope real-history run - 2026-10-26
 
 NEW_TEN_REAL_HISTORY_SAFETY_AND_CLOSURE: VERIFIED source hashes,HTTP safety and exact-owned closure;overall PARTIAL_ACCEPTANCE due cap cutoff/request accounting gap. ONE approval consumed;1host/1log,10+7hashes unchanged,62JS regressions pass. Visibility source fix unit-verified only. No automatic rerun,current-data/financial gates still BLOCKED. See TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md.
+
+## Disposable accounting/browser completion - 2026-10-26
+
+BOUNDED_HTTP_BROWSER_DISPOSABLE_COMPLETION: VERIFIED source/disposable only.41Python/48JS/2final installed-Chrome scenarios pass;each final host17attempts=15admitted+2rejected,pending0;owned processes/ports released. Historical ten-scope remains PARTIAL and consumed;no retained-history reads/hosts. No ACTIVE task;BLOCKED_WAIT on external source/custody/clock/provider and B1/C1/D1/E1 acceptance. See BOUNDED_HTTP_BROWSER_COMPLETION_2026-10-26.md.

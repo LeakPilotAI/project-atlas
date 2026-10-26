@@ -163,7 +163,7 @@ def assets():
  return result
 
 
-def make_host(session,port=0,*,research_reader=None):
+def make_host(session,port=0,*,research_reader=None,request_limit=None,deadline_seconds=180):
  content=assets();identity=uuid.uuid4().hex
  class Handler(BaseHTTPRequestHandler):
   def response(self,status,value,mime='application/json'):
@@ -208,6 +208,9 @@ def make_host(session,port=0,*,research_reader=None):
     if state.get('iex'):value['market_data']=state['iex']
     return self.response(200,value)
    return self.response(503 if route.startswith('/api/') else 404,{'status':'UNAVAILABLE','reason':'NO_OBSERVATION_CAPABILITY_FOR_THIS_PATH','financial_writers':False})
+  def send_response(self,code,message=None):
+   if request_limit is not None:self.server.record_status(code)
+   return super().send_response(code,message)
   def do_POST(self):return self.response(403,{'status':'REFUSED','reason':'OBSERVATION_ONLY_NO_COMMANDS'})
   do_PUT=do_DELETE=do_PATCH=do_POST
   def log_message(self,*args):pass
@@ -216,6 +219,9 @@ def make_host(session,port=0,*,research_reader=None):
   def server_bind(self):
    if hasattr(socket,'SO_EXCLUSIVEADDRUSE'):self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
    super().server_bind()
+ if request_limit is not None:
+  from scripts.observation_runtime.bounded_http import BoundedHTTPServer
+  return BoundedHTTPServer(('127.0.0.1',port),Handler,limit=request_limit,seconds=deadline_seconds),identity
  return Server(('127.0.0.1',port),Handler),identity
 
 

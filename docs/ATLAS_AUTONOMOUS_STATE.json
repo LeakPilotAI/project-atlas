@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "NEW_TEN_REAL_HISTORY_SAFETY_AND_CLOSURE",
+  "last_verified_task": "BOUNDED_HTTP_BROWSER_DISPOSABLE_COMPLETION",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -11,19 +11,27 @@
     "REAL_HISTORY_HTTP_ACCEPTANCE_SCOPE": "Original six membership permanently UNRECONSTRUCTABLE;authorization unused. New ten-scope assessment does not reconstruct or expand it."
   },
   "latest_tests": {
-    "framework": "node:test",
-    "passed": 62,
-    "failed": 0,
-    "skipped": 0,
-    "python_cases_executed": 0,
-    "http_assertions_passed": 10,
-    "real_history_hosts_executed": 1,
+    "python": {
+      "passed": 41,
+      "failed": 0,
+      "skipped": 0
+    },
+    "javascript": {
+      "passed": 48,
+      "failed": 0,
+      "skipped": 0
+    },
+    "installed_chrome": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
     "single_combined_run": false,
     "operational_acceptance": false,
-    "limitations": "Partial browser acceptance;96admitted requests,limit refusal uncounted;1unattributed in-app MutationObserver error;no replacement host or live-financial launch."
+    "historical_acceptance_promoted": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Read TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md. Preserve completed one-run evidence;no automatic retry. Accepted current publication/provider/clock/custody and B1/C1/D1/E1 decisions precede operational integration. Future bounded runner must count boundary refusals;visibility fix unit-verified only.",
+  "exact_next_action": "BLOCKED_WAIT: corrected transport and final financial browser refusal verified disposably. Preserve consumed ten-history partial acceptance; no automatic retained-history rerun. Obtain accepted current source/custody/clock/provider and B1/C1/D1/E1 decisions before operational launch; a historical rerun needs separate explicit bounded permission.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -1596,5 +1604,40 @@
     "current_live_dashboard": false,
     "audit_private_locator": "logs/observation-only/session-test-realhistory-*/observations.jsonl;match NEW_TEN_SCOPE_APPROVAL.manifest_sha256=66ce2e48c2ce7f43c486f991146fb91746e47d71cf5acf798b0b63b85e3ec032",
     "report": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md"
+  },
+  "retained_ten_scope_tests": {
+    "framework": "node:test",
+    "passed": 62,
+    "failed": 0,
+    "skipped": 0,
+    "python_cases_executed": 0,
+    "http_assertions_passed": 10,
+    "real_history_hosts_executed": 1,
+    "single_combined_run": false,
+    "operational_acceptance": false,
+    "limitations": "Partial browser acceptance;96admitted requests,limit refusal uncounted;1unattributed in-app MutationObserver error;no replacement host or live-financial launch."
+  },
+  "bounded_http_browser_completion": {
+    "status": "VERIFIED_DISPOSABLE_ONLY",
+    "final_host_counts": [
+      {
+        "total_attempted": 17,
+        "admitted": 15,
+        "rejected": 2,
+        "pending": 0
+      },
+      {
+        "total_attempted": 17,
+        "admitted": 15,
+        "rejected": 2,
+        "pending": 0
+      }
+    ],
+    "synthetic_browser_hosts_total": 4,
+    "final_processes_exited": 2,
+    "final_ports_released": 2,
+    "historical_hosts_started": 0,
+    "retained_journals_accessed": 0,
+    "report": "docs/BOUNDED_HTTP_BROWSER_COMPLETION_2026-10-26.md"
   }
 }

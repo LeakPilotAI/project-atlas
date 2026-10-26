@@ -17,3 +17,13 @@ test('initially hidden observation iframe makes no read requests',()=>{
  const context=vm.createContext({document:{hidden:false,createElement:element,body:{append(){}}},window:{frameElement:{closest:()=>({classList:{contains:()=>false}})}},fetch:()=>{calls++;throw Error('must not run')},setInterval(){}});
  vm.runInContext(fs.readFileSync('scripts/observation_runtime/observation_status.js','utf8'),context);assert.equal(calls,0);
 });
+
+test('slow status response cannot accumulate overlapping polling requests',async()=>{
+ let calls=0,tick,release;
+ const element=()=>({style:{},append(){},textContent:'',open:false});
+ const context=vm.createContext({document:{hidden:false,createElement:element,body:{append(){}}},window:{frameElement:null},fetch:()=>{calls++;return new Promise(resolve=>{release=resolve})},setInterval:fn=>{tick=fn}});
+ vm.runInContext(fs.readFileSync('scripts/observation_runtime/observation_status.js','utf8'),context);
+ await tick();await tick();assert.equal(calls,1);
+ release({ok:true,json:async()=>({status:'DISCONNECTED'})});await new Promise(setImmediate);
+ const pending=tick();assert.equal(calls,2);release({ok:true,json:async()=>({status:'DISCONNECTED'})});await pending;
+});
