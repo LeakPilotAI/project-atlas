@@ -75,3 +75,21 @@ def test_accepted_local_anchor_continuity(damage):
     else:
         sample = clock.sample()
         assert sample["utc"] == 1001 and clock.verify(sample)
+
+
+@pytest.mark.parametrize('damage', ['before-anchor', 'extra-field', 'boolean-uncertainty'])
+def test_clock_sample_cannot_precede_anchor_or_change_versioned_shape(damage):
+    anchor = {'schema': 'QD_PERSONAL_UTC_ANCHOR_V1', 'utc': 1000, 'monotonic_ns': 10**9,
+              'boot_id': 'SYNTHETIC_BOOT', 'source': 'SYNTHETIC_CLOCK', 'expires_at': 1030,
+              'uncertainty_ms': 0}
+    clock = PersonalClockContinuity(anchor=anchor, authority=SimpleNamespace(verify=lambda a: True),
+                                   monotonic_ns=lambda: 10**9, wall_utc=lambda: 1000,
+                                   boot_identity=lambda: 'SYNTHETIC_BOOT')
+    sample = clock.sample()
+    if damage == 'before-anchor':
+        sample.update(monotonic_ns=0, utc=999)
+    elif damage == 'extra-field':
+        sample['foreign_clock_authority'] = True
+    else:
+        sample['uncertainty_ms'] = False
+    assert not clock.verify(sample)

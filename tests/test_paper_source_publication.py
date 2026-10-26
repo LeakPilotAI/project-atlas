@@ -223,3 +223,38 @@ async def test_real_adapter_public_observation_populates_cache_without_extra_req
     result=await a.paper_execution_observation('BTC',clock_ms=lambda:100001)
     assert a.paper_source_snapshot()['facts']['books']['BTC']['parsed']==result
     assert len(calls)==2 and not a.paper_source_snapshot()['connected']
+
+
+@pytest.mark.parametrize('damage', ['expiry', 'pin-race', 'invalid-clock'])
+def test_read_refuses_source_changed_during_authority_verification(damage):
+    s = perp_source()
+    s.p.capture()
+    last = s.p.last
+    if damage == 'expiry':
+        s.now[0] = 105  # Exactly fresh at read start, expired at read completion.
+        def verify(*args):
+            s.now[0] = 106
+            return True
+        s.a.verify_current = verify
+    elif damage == 'pin-race':
+        def verify(*args):
+            s.archive.pin['revision'] += 1
+            return True
+        s.a.verify_current = verify
+    else:
+        s.now[0] = 100.0  # Trusted UTC contract requires an exact integer, not a float.
+    with pytest.raises(ValueError):
+        s.p.read_current()
+    assert s.p.last == last
+
+
+def test_perp_cache_authority_cannot_return_a_publication_that_expired_during_check():
+    s = perp_source()
+    s.p.capture()
+    s.now[0] = 105
+    def verify(*args):
+        s.now[0] = 106
+        return True
+    s.a.verify_cache = verify
+    with pytest.raises(ValueError):
+        s.p.read_cut()

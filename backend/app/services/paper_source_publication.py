@@ -46,10 +46,16 @@ class SourcePublication:
                 for k,v in self.components.items()) or self.authority.verify_components(self.components) is not True):
             raise ValueError('SOURCE_COMPONENTS_CHANGED')
 
+    def _now(self):
+        now = self.clock()
+        if type(now) is not int or now < 0:
+            raise ValueError('SOURCE_AUTHENTICATED_UTC_CLOCK_REQUIRED')
+        return now
+
     def publish(self, packet, sources):
         self._verify()
         self._shape(packet)
-        now=self.clock()
+        now=self._now()
         old=self.archive.current()
         if (packet.get('revision')!=old['revision']+1
                 or self.authority.verify_publication(self.components,old,packet,sources,now) is not True):
@@ -63,7 +69,7 @@ class SourcePublication:
 
     def read_current(self):
         self._verify()
-        now=self.clock(); before=self.archive.current()
+        now=self._now(); before=self.archive.current()
         packet=strict(body(self.archive.read(before)))
         self._shape(packet)
         identity=(packet['source_id'],packet['revision'],digest(packet))
@@ -79,8 +85,12 @@ class SourcePublication:
                 or self.last is not None and (identity[0]!=self.last[0] or identity[1]<self.last[1]
                     or identity[1]==self.last[1] and identity[2]!=self.last[2])):
             raise ValueError('SOURCE_CURRENT_CUSTODY_ROLLBACK_OR_FRESHNESS_REFUSED')
-        end=self.clock()
-        if type(end) is not int or not 0<=end-now<=1:raise ValueError('SOURCE_CLOCK_CONTINUITY_REFUSED')
+        self._verify()
+        end=self._now()
+        if (not 0 <= end-now <= 1
+                or not 0 <= end-packet['observed_at'] <= (30 if self.lane == 'QUALITY_DIPS' else 5)
+                or self.archive.current() != before):
+            raise ValueError('SOURCE_CLOCK_CURRENT_CUT_OR_FRESHNESS_CHANGED')
         self.last=identity
         return packet
 
@@ -91,7 +101,7 @@ class SourcePublication:
                 or packet['schema']!=schema or packet['source_id']!=self.source_id
                 or type(packet['revision']) is not int or packet['revision']<1
                 or type(packet['observed_at']) is not int
-                or not 0<=self.clock()-packet['observed_at']<=(30 if self.lane=='QUALITY_DIPS' else 5)
+                or not 0<=self._now()-packet['observed_at']<=(30 if self.lane=='QUALITY_DIPS' else 5)
                 or len(body(packet).encode())>131072):
             raise ValueError('EXACT_CURRENT_SOURCE_PACKET_REQUIRED')
 
@@ -99,9 +109,9 @@ class SourcePublication:
         self._verify()
         old=self.archive.current()
         if (type(old.get('revision')) is not int or old['revision']<0
-                or self.authority.verify_head(self.components,old,self.clock()) is not True):
+                or self.authority.verify_head(self.components,old,self._now()) is not True):
             raise ValueError('SOURCE_AUTHENTICATED_HIGH_WATER_REQUIRED')
-        return {'schema':schema,'source_id':self.source_id,'revision':old['revision']+1,'observed_at':self.clock()}
+        return {'schema':schema,'source_id':self.source_id,'revision':old['revision']+1,'observed_at':self._now()}
 
 
 class QualityDipsSourcePublication(SourcePublication):
@@ -116,7 +126,7 @@ class QualityDipsSourcePublication(SourcePublication):
     def publish_scanner(self, rows, observed_at):
         self._verify()
         raw=strict(body(self.research.read_current()))
-        now=self.clock()
+        now=self._now()
         if (set(raw)!= {'board','observations','instruments','quotes','publication','monitors'}
                 or type(raw['instruments']) is not list or len(raw['instruments'])>16
                 or type(raw['board']) is not list or len(raw['board'])>100
@@ -156,7 +166,7 @@ class PerpSourcePublication(SourcePublication):
             _paper_execution_observation,
             _paper_funding_observation,
         )
-        cached=self.adapter.paper_source_snapshot(); now=self.clock()
+        cached=self.adapter.paper_source_snapshot(); now=self._now()
         if (cached.get('schema')!='HL_SOURCE_CACHE_V1' or cached.get('connected') is not True
                 or self.authority.verify_cache(self.components,cached,now) is not True):
             raise ValueError('PERP_AUTHENTICATED_CONNECTED_CACHE_REQUIRED')
@@ -243,6 +253,10 @@ class PerpSourcePublication(SourcePublication):
         value=self.read_current()
         cache=self.adapter.paper_source_snapshot()
         if (cache['connected'] is not True or self._published_cache!=digest(cache)
-                or self.authority.verify_cache(self.components,cache,self.clock()) is not True):
+                or self.authority.verify_cache(self.components,cache,self._now()) is not True):
             raise ValueError('PERP_SOURCE_CACHE_CHANGED_REPUBLICATION_REQUIRED')
+        end = self._now()
+        if (not 0 <= end-value['observed_at'] <= 5
+                or self.adapter.paper_source_snapshot() != cache):
+            raise ValueError('PERP_SOURCE_CHANGED_DURING_CACHE_VERIFICATION')
         return value

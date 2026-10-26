@@ -116,12 +116,16 @@ class PersonalClockContinuity:
     def verify(self, sample):
         now = self.sample()
         return (
-            sample.get("schema") == now["schema"]
+            type(sample) is dict
+            and set(sample) == set(now)
+            and sample.get("schema") == now["schema"]
             and sample.get("source") == now["source"]
             and type(sample.get("monotonic_ns")) is int
             and type(sample.get("utc")) is int
+            and self.anchor["monotonic_ns"] <= sample["monotonic_ns"]
             and 0 <= now["monotonic_ns"] - sample["monotonic_ns"] <= 10**9
             and sample["utc"]
             == self.anchor["utc"] + (sample["monotonic_ns"] - self.anchor["monotonic_ns"]) // 10**9
-            and sample.get("uncertainty_ms") == self.anchor["uncertainty_ms"]
+            and type(sample.get("uncertainty_ms")) is int
+            and sample["uncertainty_ms"] == self.anchor["uncertainty_ms"]
         )

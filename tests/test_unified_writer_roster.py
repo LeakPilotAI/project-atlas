@@ -49,3 +49,17 @@ def test_missing_foreign_and_unverified_native_roster_refuses(damage):
 def test_enrollment_requires_every_role_and_exclusion_receipt():
     s=fixture();s.e['roles'].pop('SESSION_RESERVATION')
     with pytest.raises(ValueError):UnifiedWriterRoster(enrollment=s.e,writers=s.writers,observer=s.observer,authority=s.a,clock=lambda:100)
+
+
+@pytest.mark.parametrize('finish', [103, 99, 100.0])
+def test_roster_observation_must_still_be_fresh_when_verification_finishes(finish):
+    s = fixture()
+    now = [100]
+    def verify(*args):
+        now[0] = finish
+        return True
+    s.a.verify_observation = verify
+    roster = UnifiedWriterRoster(enrollment=s.e, writers=s.writers, observer=s.observer,
+                                 authority=s.a, clock=lambda: now[0])
+    with pytest.raises(ValueError):
+        roster.owned_roster({'session_id': 'synthetic-session'}, s.writers, 100)

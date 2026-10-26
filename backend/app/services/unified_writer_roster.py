@@ -54,7 +54,7 @@ class UnifiedWriterRoster:
 
     def _read(self,grant,writers):
         e=self.enrollment;now=self.clock()
-        if (body(e)!=self._enrollment or set(writers)!= {'QUALITY_DIPS','HYPERLIQUID'} or writers!=self.writers
+        if (type(now) is not int or now < 0 or body(e)!=self._enrollment or set(writers)!= {'QUALITY_DIPS','HYPERLIQUID'} or writers!=self.writers
                 or any(writers[k] is not self.components['writers'][k] for k in writers)
                 or any(getattr(self,k) is not self.components[k] for k in ('observer','clock','authority'))
                 or digest({k:digest(w.manifest) for k,w in writers.items()})!=e['account_binding']
@@ -70,6 +70,11 @@ class UnifiedWriterRoster:
                 or any(type(x) is not int or x<0 for x in value['active_operations'].values())
                 or self.authority.verify_observation(e,value,now) is not True):
             raise ValueError('NATIVE_WRITER_RESOURCE_OR_QUIESCENCE_UNVERIFIED')
+        end = self.clock()
+        if (type(end) is not int or not 0 <= end-now <= 1
+                or not 0 <= end-value['observed_at'] <= 2
+                or body(e) != self._enrollment):
+            raise ValueError('WRITER_OBSERVATION_CLOCK_OR_FRESHNESS_CHANGED')
         return value
 
     @contextmanager

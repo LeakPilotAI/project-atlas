@@ -31,7 +31,7 @@ class QualityDipsPublicationReader:
             raise ValueError('QD_PUBLICATION_SESSION_CLOSED')
         packet = strict(body(self.source.read_publication(timeout=timeout)))
         now, cut = runtime._now(), self.writer._cut()
-        if (type(packet) is not dict or set(packet) != {'schema', 'source_id', 'revision', 'observed_at', 'bundles', 'monitors'}
+        if (type(now) is not int or now < 0 or type(packet) is not dict or set(packet) != {'schema', 'source_id', 'revision', 'observed_at', 'bundles', 'monitors'}
                 or packet['schema'] != 'QD_SCANNER_PUBLICATION_V1' or type(packet['source_id']) is not str or not packet['source_id']
                 or type(packet['revision']) is not int or packet['revision'] < 1
                 or type(packet['observed_at']) is not int or not 0 <= now - packet['observed_at'] <= 30
@@ -46,7 +46,6 @@ class QualityDipsPublicationReader:
         if self._last is not None and (identity[0] != self._last[0] or identity[1] < self._last[1]
                 or identity[1] == self._last[1] and identity[2] != self._last[2]):
             raise ValueError('QD_SCANNER_SOURCE_ROLLBACK_OR_CONFLICT')
-        self._last = identity
         positions = [p for p in cut['state']['positions'].values() if number(p['remaining']) > 0]
         if len(positions) > 1:
             raise ValueError('QD_UNEXPECTED_POSITION_COUNT')
@@ -56,11 +55,25 @@ class QualityDipsPublicationReader:
             if (observation is None or observation.get('instrument') != p['instrument'] or observation.get('symbol') != p['symbol']
                     or type(observation.get('observed_at')) is not int or not 0 <= now - observation['observed_at'] <= 30):
                 raise ValueError('QD_CURRENT_POSITION_MONITOR_UNAVAILABLE')
-            return {'instrument': p['instrument'], 'bundles': [], 'observation': observation}
-        if not packet['bundles']:
-            return None
-        candidates = [strict(runtime.engine.candidates.candidate(bundle, level='L1', now=now)) for bundle in packet['bundles']]
-        if len({(c['cohort_id'], c['source_revision'], c['generation']) for c in candidates}) != 1:
-            raise ValueError('QD_PUBLICATION_CROSS_COHORT')
-        selected = min(candidates, key=lambda c: (c['ranking']['rank'], -number(str(c['score'])), c['ranking']['instrument_id']))
-        return {'instrument': selected['execution']['instrument'], 'bundles': packet['bundles'], 'observation': None}
+            result = {'instrument': p['instrument'], 'bundles': [], 'observation': observation}
+        elif not packet['bundles']:
+            result = None
+        else:
+            candidates = [strict(runtime.engine.candidates.candidate(bundle, level='L1', now=now)) for bundle in packet['bundles']]
+            if len({(c['cohort_id'], c['source_revision'], c['generation']) for c in candidates}) != 1:
+                raise ValueError('QD_PUBLICATION_CROSS_COHORT')
+            selected = min(candidates, key=lambda c: (c['ranking']['rank'], -number(str(c['score'])), c['ranking']['instrument_id']))
+            result = {'instrument': selected['execution']['instrument'], 'bundles': packet['bundles'], 'observation': None}
+        # Authentication/planning can cross a freshness boundary or financial cut.
+        # Do not return a command input (including no-signal) from that old cut.
+        self._verify()
+        authenticated = verifier(self.writer.binding, packet, cut, runtime._now()) is True
+        end = runtime._now()
+        if (type(end) is not int or not 0 <= end-now <= 1
+                or not 0 <= end-packet['observed_at'] <= 30
+                or runtime.grant is None or runtime.stopped.is_set() or runtime.halted
+                or body(self.writer._cut()) != body(cut)
+                or not authenticated):
+            raise ValueError('QD_PUBLICATION_COMPLETION_CONTEXT_CHANGED')
+        self._last = identity
+        return result
