@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "FRONTEND_RESEARCH_READ_CONNECTIONS",
+  "last_verified_task": "LOCAL_BROWSER_RECOVERY_AND_OPERATOR_GUIDE",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -10,16 +10,17 @@
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim."
   },
   "latest_tests": {
-    "passed": 236,
+    "passed": 237,
     "failed": 0,
     "skipped": 0,
     "single_combined_run": true,
-    "javascript_passed": 57,
+    "javascript_passed": 60,
+    "chrome_scenarios_passed": 3,
     "operational_acceptance": false,
-    "not_executed": "Real retained-history host start rejected by auto-review; native resize unavailable; browser error attribution unresolved; no current-source or operational financial acceptance."
+    "not_executed": "Interactive native browser control approval timed out;physical window dragging;operational financial/source enrollment or trial. Exact in-app MutationObserver origin unresolved."
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Supply accepted current nonmutating QD publication source/authority/clock; obtain bounded real retained-observation host permission; attribute browser integration error and complete resized/current-data acceptance. No financial or provider activation.",
+  "exact_next_action": "Obtain accepted current nonmutating publication source/authority/clock and provider scope;independent B1/C1/D1/E1 decisions precede enrollment,inception and financial launch. Existing source read/recovery and real Chrome acceptance verified;do not rebuild engines.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -112,9 +113,9 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 89,
-  "continuation_report": "docs/FRONTEND_RESEARCH_CONNECTIONS_CONTINUATION_2026-10-26.md",
-  "blocked_wait_reason": "Current source authority absent; real host permission blocked by automatic review; browser attribution/resize capability unavailable.",
+  "progress_revision": 90,
+  "continuation_report": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_CONTINUATION_2026-10-26.md",
+  "blocked_wait_reason": "Accepted real source/custody/provider/release dependencies unavailable;interactive browser and exact in-app error source remain unverified.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
@@ -221,7 +222,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/FRONTEND_RESEARCH_CONNECTIONS_CONTINUATION_2026-10-26.md",
+  "recovery_checkpoint": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_CONTINUATION_2026-10-26.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -259,7 +260,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/FRONTEND_RESEARCH_CONNECTIONS_CONTINUATION_2026-10-26.md",
+  "recovery_document": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_CONTINUATION_2026-10-26.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -928,7 +929,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/FRONTEND_RESEARCH_CONNECTIONS_CONTINUATION_2026-10-26.md",
+  "continuation_checkpoint": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_CONTINUATION_2026-10-26.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1465,7 +1466,10 @@
     "resize_executed": false,
     "legacy_port_8000_unreachable": true,
     "original_ui_preserved": true,
-    "user_session_interrupted": false
+    "user_session_interrupted": false,
+    "chrome_desktop_and_narrow_recovery": true,
+    "chrome_six_tab_navigation": true,
+    "interactive_window_resize_executed": false
   },
   "retained_frontend_stabilization_tests": {
     "passed": 471,
@@ -1490,5 +1494,24 @@
     "current_qd_authority_installed": false,
     "provider_requests": 0,
     "test_hosts_closed": true
+  },
+  "retained_research_read_validation": {
+    "passed": 236,
+    "failed": 0,
+    "skipped": 0,
+    "single_combined_run": true,
+    "javascript_passed": 57,
+    "operational_acceptance": false,
+    "not_executed": "Real retained-history host start rejected by auto-review; native resize unavailable; browser error attribution unresolved; no current-source or operational financial acceptance."
+  },
+  "local_browser_recovery": {
+    "chrome_scenarios": 3,
+    "genuine_chrome_executed": true,
+    "current_real_dashboard_populated": false,
+    "test_hosts_closed": 3,
+    "provider_requests": 0,
+    "operator_guide_current": true,
+    "false_stop_success_fixed": true,
+    "report": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_2026-10-26.md"
   }
 }

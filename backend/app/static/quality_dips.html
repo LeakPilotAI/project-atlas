@@ -255,6 +255,8 @@ let selectedFinancialMode=false, researchGeneration=0, researchBusy=false;
 const paperController=typeof AtlasSelectedPaper==='object'?AtlasSelectedPaper.createController({document}):null;
 function visibleRows(){const query=$('search').value.trim().toUpperCase(),state=$('stateFilter').value;return rows.filter(r=>(!query||String(r.symbol).toUpperCase().includes(query))&&(state==='all'||(state==='qualified'?qualified(r):v3(r).patient_state===state)))}
 function renderBoard(){
+ if(!snapshot&&failed&&document.querySelector?.('meta[name="atlas-observation"]')?.content==='readonly'){$('board').innerHTML='<tr><td colspan="9" class="empty">No accepted research evidence. PAPER disabled.</td></tr>';$('boardNote').textContent='No accepted research evidence';return}
+
  const visible=visibleRows();
  $('board').innerHTML=visible.length?visible.map(r=>`<tr class="${r.symbol===selectedSymbol?'selected':''}"><td class="muted">${rows.indexOf(r)+1}</td><td><button data-symbol="${esc(r.symbol)}" aria-label="Inspect ${esc(r.symbol)}">${esc(r.symbol)}</button></td><td>${money(quote(r))}</td><td>${money(v3(r).fair_value_anchor)}</td><td class="${finite(v3(r).discount_to_fair_value_pct)?Number(v3(r).discount_to_fair_value_pct)>=0?'positive':'negative':''}">${pct(v3(r).discount_to_fair_value_pct)}</td><td class="muted">${esc(r.thesis||'UNKNOWN')}</td><td class="scoreCell">${num(r.opportunity_score)}</td><td>${badge(v3(r).patient_state)}</td><td class="${tone(quality(r))}">${esc(quality(r))}</td></tr>`).join(''):`<tr><td colspan="9" class="empty">${rows.length?'No research matches these display filters.':snapshot?.runtime_refresh?.state==='WARMING'?'Research is warming. Waiting for the first snapshot.':'No investment research rows available.'}</td></tr>`;
  $('boardNote').textContent=`${visible.length} of ${rows.length} research rows · Existing V2 priority / opportunity score order · Select a symbol for evidence`;
@@ -289,6 +291,7 @@ function renderSummary(d){
  $('candidateCount').textContent=num(rows.length,0);$('candidateNote').textContent=rows.filter(qualified).length+' V3 qualified · '+rows.filter(r=>v3(r).patient_state==='WATCH').length+' watch';
  $('refreshState').textContent=rt.state||'UNAVAILABLE';$('refreshState').className='metricValue compact '+(rt.state==='FRESH'?'positive':'caution');
  $('refreshAge').textContent=finite(rt.age_sec)?'Snapshot age '+num(rt.age_sec,0)+'s':'Snapshot age unavailable';
+ const source=d.source_evidence;if(source){$('refreshAge').textContent+=' · '+String(source.source_id)+' · revision '+String(source.revision)+' · observed '+(Number.isFinite(source.observed_at)?new Date(source.observed_at*1000).toISOString():'UNAVAILABLE');}
  $('status').textContent=rt.state==='FRESH'?'Research snapshot refreshed':rt.state==='STALE'?'STALE · last research snapshot shown':rt.state==='WARMING'?'WARMING · waiting for research':'Snapshot freshness unavailable';
  const colors=['#20dcdd','#eab55c','#00d5a5','#7dacf5','#ff3554'];
  const states=['WATCH','ACCUMULATION','DEEP_VALUE','GENERATIONAL','THESIS_BROKEN'];
@@ -313,7 +316,46 @@ async function load(){
  if(selectedFinancialMode){if(paperController)return paperController.load();$('paperStatus').textContent='UNAVAILABLE';$('paperFreshness').textContent='Selected-account script unavailable. No research fallback.';return}
  if(researchBusy)return;
  researchBusy=true;const ticket=researchGeneration;
- try{const res=await atlasFetch(document.querySelector?.('meta[name="atlas-observation"]')?.content==='readonly'?'/api/observation/quality-dips':'/api/investments/quality-dips?limit=50');if(!res.ok)throw new Error('HTTP '+res.status);const data=await res.json();if(selectedFinancialMode||ticket!==researchGeneration)return;acceptSnapshot(data)}catch{if(selectedFinancialMode||ticket!==researchGeneration)return;failed=true;$('status').textContent=snapshot?'STALE · connection unavailable; last good research preserved':'Research temporarily unavailable · retrying automatically';$('refreshState').textContent=snapshot?'STALE':'UNAVAILABLE';$('refreshState').className='metricValue compact caution';$('refreshAge').textContent='Refresh failed · last update unverified';if(!snapshot){$('radar').innerHTML='<div class="empty">Research temporarily unavailable.</div>';$('board').innerHTML='<tr><td colspan="9" class="empty">Research temporarily unavailable. Retrying automatically.</td></tr>'}renderSelection()}finally{researchBusy=false}
+ try{const res=await atlasFetch(document.querySelector?.('meta[name="atlas-observation"]')?.content==='readonly'?'/api/observation/quality-dips':'/api/investments/quality-dips?limit=50');if(!res.ok){
+  if(
+    res.status===503 &&
+    document.querySelector?.('meta[name="atlas-observation"]')?.content==='readonly'
+  ){
+    throw new Error('OBSERVATION_RESEARCH_UNAVAILABLE');
+  }
+  throw new Error('HTTP '+res.status);
+}const data=await res.json();if(selectedFinancialMode||ticket!==researchGeneration)return;acceptSnapshot(data)}catch(e){
+  if(selectedFinancialMode||ticket!==researchGeneration)return;
+  failed=true;
+  if(e.message==='OBSERVATION_RESEARCH_UNAVAILABLE'||(e.status===503&&document.querySelector?.('meta[name="atlas-observation"]')?.content==='readonly')){
+    snapshot=null;
+    rows=[];
+    selectedSymbol=null;
+    $('evidenceCount').textContent='UNAVAILABLE';
+    $('evidenceNote').textContent='No accepted research evidence';
+    $('evidenceProgress').hidden=true;
+    $('evidenceProgress').value=0;
+    $('quoteCount').textContent='UNAVAILABLE';
+    $('quoteNote').textContent='No accepted quote evidence';
+    $('candidateCount').textContent='UNAVAILABLE';
+    $('candidateNote').textContent='No accepted candidates';
+    $('boardNote').textContent='No accepted research evidence';
+    $('pipeline').innerHTML='';
+    $('forwardSummary').innerHTML='';
+    $('diagnostics').innerHTML='';
+    $('sourceHealth').textContent='Quote source evidence UNAVAILABLE';
+    $('stateLegend').textContent='Research state evidence UNAVAILABLE';
+    $('stateDonut').style.background='#173440';
+    $('status').textContent='VERIFIED RESEARCH UNAVAILABLE - OBSERVATION ONLY';
+    $('refreshState').textContent='UNAVAILABLE';
+    $('refreshState').className='metricValue compact caution';
+    $('refreshAge').textContent='No accepted research evidence';
+    $('radar').innerHTML='<div class="empty">Verified research unavailable.</div>';
+    $('board').innerHTML='<tr><td colspan="9" class="empty">No accepted research evidence. PAPER disabled.</td></tr>';
+    renderSelection();
+    return;
+  }
+$('status').textContent=snapshot?'STALE · connection unavailable; last good research preserved':'Research temporarily unavailable · retrying automatically';$('refreshState').textContent=snapshot?'STALE':'UNAVAILABLE';$('refreshState').className='metricValue compact caution';$('refreshAge').textContent='Refresh failed · last update unverified';if(!snapshot){$('radar').innerHTML='<div class="empty">Research temporarily unavailable.</div>';$('board').innerHTML='<tr><td colspan="9" class="empty">Research temporarily unavailable. Retrying automatically.</td></tr>'}renderSelection()}finally{researchBusy=false}
 }
 function setFinancialMode(active){
  const next=active===true;if(selectedFinancialMode===next)return;

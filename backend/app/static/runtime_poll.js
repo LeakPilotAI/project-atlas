@@ -84,7 +84,7 @@ async function atlasFetch(url, timeout=6500){
   const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),timeout);
   try {
     const response=await fetch(url,{cache:'no-store',signal:controller.signal});
-    if(!response.ok)throw Error('HTTP '+response.status);
+    if(!response.ok){const error=Error('HTTP '+response.status);error.status=response.status;throw error;}
     // Consume the body inside the deadline, not just the response headers.
     const data=await response.json();
     atlasRuntimeReady=true;

@@ -440,3 +440,7 @@ No ACTIVE engineering task remains in this bounded execution. Financial BLOCKED_
 ## Frontend research read connections - 2026-10-26
 
 FRONTEND_RESEARCH_READ_CONNECTIONS: VERIFIED source/disposable; operational BLOCKED_WAIT.236Python/57JS. See FRONTEND_RESEARCH_CONNECTIONS_2026-10-26.md. Next: accepted current read-source dependencies, bounded real-host permission, browser error/resize acceptance. No ACTIVE financial task or gate promotion.
+
+## Local completion / browser recovery - 2026-10-26
+
+LOCAL_BROWSER_RECOVERY_AND_OPERATOR_GUIDE: VERIFIED scoped source/disposable acceptance.237Python/60JS;3installed-Chrome scenarios. No ACTIVE task; operational BLOCKED_WAIT on accepted real source/clock/custody/provider and B1/C1/D1/E1 decisions. See LOCAL_COMPLETION_BROWSER_RECOVERY_2026-10-26.md.

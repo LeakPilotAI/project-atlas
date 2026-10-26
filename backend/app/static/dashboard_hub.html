@@ -110,6 +110,12 @@ tabs.forEach(btn=>btn.addEventListener('click',()=>activate(btn)));
 tabs.forEach(btn=>btn.setAttribute('role','tab'));
 activate(document.querySelector('.tab.on')||tabs[0]);
 function setProbe(id, ok, text){const dot=document.getElementById(id+'Dot'), label=document.getElementById(id+'State'); if(label) label.textContent=text; if(dot) dot.classList.toggle('good', !!ok);}
-async function shellHealth(){try{const r=await fetch('/health',{cache:'no-store'});if(!r.ok)throw 0;const h=await r.json();setProbe('api', h.status==='ok', 'API ONLINE');setProbe('scan', !!h.scanner_running, h.scanner_running?'SCANNER RUNNING':'SCANNER STOPPED');setProbe('paper', !!h.paper_trade_tracker_running, h.paper_trade_tracker_running?'PAPER TRACKER ON':'PAPER TRACKER OFF')}catch(e){setProbe('api', false, 'API RECONNECTING');setProbe('scan', false, 'SCANNER UNKNOWN');setProbe('paper', false, 'PAPER TRACKER UNKNOWN')}}
+async function shellHealth(){try{const r=await fetch('/health',{cache:'no-store'});if(!r.ok)throw 0;const h=await r.json();setProbe(
+  'api',
+  h.status==='ok',
+  h.mode==='OBSERVATION_ONLY'
+    ? 'OBSERVATION HOST ONLINE'
+    : 'API ONLINE'
+);setProbe('scan', !!h.scanner_running, h.scanner_running?'SCANNER RUNNING':'SCANNER STOPPED');setProbe('paper', !!h.paper_trade_tracker_running, h.paper_trade_tracker_running?'PAPER TRACKER ON':'PAPER TRACKER OFF')}catch(e){setProbe('api', false, 'API RECONNECTING');setProbe('scan', false, 'SCANNER UNKNOWN');setProbe('paper', false, 'PAPER TRACKER UNKNOWN')}}
 shellHealth();setInterval(shellHealth,10000);
 </script></body></html>
