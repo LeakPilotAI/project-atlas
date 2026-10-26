@@ -14229,11 +14229,19 @@ Evidence: docs/DESKTOP_OBSERVATION_LAUNCH_2026-10-26.md.109Python/49JS final dis
 Next action: Inspect original running observation UI; obtain accepted nonmutating QD research inputs and separately authorized market-hours data scope. No financial inception/activation before accepted scope,complete writer ownership,custody/clock/session,current pins,cumulative capacity and release authority. Read docs/DESKTOP_OBSERVATION_LAUNCH_CONTINUATION_2026-10-26.md.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: Desktop stabilization and original frontend investigation
 Status: Source repairs verified; connected UI and operational acceptance BLOCKED_WAIT. PAPER NO;production NO-GO.21 decisions/seven phases unchanged.
 Evidence: docs/DESKTOP_STABILIZATION_FRONTEND_2026-10-26.md;471 Python across disjoint runs,54 JS;real original six-tab browser audit; retained failures and unexecuted resize/error attribution recorded.
 Next action: Resolve browser error/resize acceptance and obtain accepted current nonmutating research/enrollment sources; preserve original frontend,Genesis,protected accounts and gates. Do not start legacy port8000 backend.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: Original frontend research read connections
+Status: Source/disposable verified; operational BLOCKED_WAIT.21decisions/seven phases unchanged.
+Evidence: docs/FRONTEND_RESEARCH_CONNECTIONS_2026-10-26.md;236Python/57JS;6original tabs genuine browser;6real retained journals unchanged;no current-data acceptance.
+Next action: Accepted current QD read source/authority/clock, bounded real-host permission and browser error/resize acceptance. No protected backend/provider/financial startup. PAPER NO;production NO-GO.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

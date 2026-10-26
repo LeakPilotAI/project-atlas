@@ -153,3 +153,31 @@ def test_complete_original_route_inventory_and_assets(host):
     for path in m.ASSETS:
         assert request(host,path)[0]==200,path
     assert hashlib.sha256((host[0].root/'observations.jsonl').read_bytes()).hexdigest()==before
+
+def test_observation_http_read_ports_refuse_without_source_and_preserve_journal(host):
+    assert request(host,'/api/observation/quality-dips')[0]==503
+    assert request(host,'/api/observation/hyperliquid')[0]==503
+    session=host[0]
+    session.append('HYPERLIQUID_PUBLIC_RESPONSE',{'request':{'type':'metaAndAssetCtxs'},'received_at':100,'response':[{'universe':[{'name':s} for s in ('BTC','ETH','SOL')]},[{'markPx':'100','funding':'0'} for _ in range(3)]]})
+    before=(session.root/'observations.jsonl').read_bytes()
+    status,raw=request(host,'/api/observation/hyperliquid');view=json.loads(raw)
+    assert status==200 and view['freshness']=='STALE_NOT_EXECUTABLE' and view['current_signals'] is None
+    assert (session.root/'observations.jsonl').read_bytes()==before
+    assert request(host,'/api/investments/quality-dips')[0]==503
+
+def test_injected_current_research_http_and_revocation_are_readonly(host):
+    from test_observation_research_reads import setup
+    source,reader=setup()
+    server,identity=m.make_host(host[0],research_reader=reader)
+    worker=threading.Thread(target=server.serve_forever,daemon=True);worker.start()
+    scoped=(host[0],server,identity)
+    before=(host[0].root/'observations.jsonl').read_bytes()
+    try:
+        status,raw=request(scoped,'/api/observation/quality-dips');view=json.loads(raw)
+        assert status==200 and [r['symbol'] for r in view['board']]==['MSFT','SPY']
+        assert view['financial_execution_authorized'] is False
+        source.value['observed_at']=0
+        assert request(scoped,'/api/observation/quality-dips')[0]==503
+        assert request(scoped,'/api/investments/quality-dips')[0]==503
+        assert (host[0].root/'observations.jsonl').read_bytes()==before
+    finally:server.shutdown();server.server_close();worker.join(3)

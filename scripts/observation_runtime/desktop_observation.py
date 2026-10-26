@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 
 REPO=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(REPO/'backend'))
+sys.path.insert(0,str(REPO))
 STATIC=REPO/'backend/app/static'
 PAGES={'/dashboard/future':'future_overview.html','/api/investments/prospective/view':'prospective_research.html','/':'dashboard_hub.html','/dashboard':'dashboard_hub.html','/dashboard/perps':'dashboard_shell.html',
  '/dashboard/legacy':'dashboard.html','/api/investments/quality-dips/view':'quality_dips.html',
@@ -154,6 +155,7 @@ def assets():
  for route,name in {**PAGES,**ASSETS}.items():
   data=(STATIC/name).read_bytes()
   if name.endswith('.html'):
+   data=data.replace(b'<head>',b'<head><meta name="atlas-observation" content="readonly">')
    ending=b'</body>' if b'</body>' in data else b'</html>'
    data=data.replace(ending,b'<script src="/static/observation_status.js"></script>'+ending)
   result[route]=(data,'text/html; charset=utf-8' if name.endswith('.html') else 'image/png' if name.endswith('.png') else 'text/javascript; charset=utf-8' if name.endswith('.js') else 'text/css; charset=utf-8')
@@ -161,7 +163,7 @@ def assets():
  return result
 
 
-def make_host(session,port=0):
+def make_host(session,port=0,*,research_reader=None):
  content=assets();identity=uuid.uuid4().hex
  class Handler(BaseHTTPRequestHandler):
   def response(self,status,value,mime='application/json'):
@@ -178,6 +180,16 @@ def make_host(session,port=0):
    if route=='/api/observation/diagnostics':
     try:return self.response(200,session.diagnostics())
     except (OSError,ValueError,KeyError,TypeError):return self.response(503,{'status':'INCOMPLETE','reason':'OBSERVATION_DIAGNOSTICS_UNVERIFIED'})
+   if route=='/api/observation/quality-dips':
+    try:
+     if research_reader is None:raise ValueError('NO_ACCEPTED_CURRENT_RESEARCH_PUBLICATION')
+     return self.response(200,research_reader.read())
+    except (OSError,ValueError,KeyError,TypeError):return self.response(503,{'status':'UNAVAILABLE','reason':'CURRENT_RESEARCH_PUBLICATION_UNVERIFIED','board':None})
+   if route=='/api/observation/hyperliquid':
+    try:
+     from scripts.observation_runtime.research_reads import retained_hyperliquid
+     return self.response(200,retained_hyperliquid(session.history()))
+    except (OSError,ValueError,KeyError,TypeError):return self.response(503,{'status':'UNAVAILABLE','reason':'RETAINED_OBSERVATION_UNVERIFIED','markets':None})
    if route=='/api/observation/research':
     try:return self.response(200,session.research())
     except (OSError,ValueError,KeyError,TypeError):return self.response(503,{'status':'UNAVAILABLE','reason':'RETAINED_RESEARCH_UNVERIFIED'})

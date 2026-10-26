@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "DESKTOP_STABILIZATION_FRONTEND_SOURCE_REPAIRS",
+  "last_verified_task": "FRONTEND_RESEARCH_READ_CONNECTIONS",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -10,22 +10,16 @@
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim."
   },
   "latest_tests": {
-    "passed": 471,
+    "passed": 236,
     "failed": 0,
     "skipped": 0,
-    "single_combined_run": false,
-    "disjoint_final_selections": [
-      209,
-      137,
-      3,
-      122
-    ],
-    "javascript_passed": 54,
+    "single_combined_run": true,
+    "javascript_passed": 57,
     "operational_acceptance": false,
-    "not_executed": "Native window resize, privileged symlink, physical power-loss and operational financial trial; browser MutationObserver attribution unresolved."
+    "not_executed": "Real retained-history host start rejected by auto-review; native resize unavailable; browser error attribution unresolved; no current-source or operational financial acceptance."
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Resolve unattributed browser error and resized-window acceptance; obtain accepted current read-only research/enrollment inputs before connecting operational data. Do not restart legacy port8000 backend or treat unavailable panels as restored live functionality.",
+  "exact_next_action": "Supply accepted current nonmutating QD publication source/authority/clock; obtain bounded real retained-observation host permission; attribute browser integration error and complete resized/current-data acceptance. No financial or provider activation.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -118,9 +112,9 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 88,
-  "continuation_report": "docs/DESKTOP_STABILIZATION_FRONTEND_CONTINUATION_2026-10-26.md",
-  "blocked_wait_reason": "Accepted current read-only sources/enrollment unavailable; genuine browser resize and unattributed browser error acceptance remain incomplete.",
+  "progress_revision": 89,
+  "continuation_report": "docs/FRONTEND_RESEARCH_CONNECTIONS_CONTINUATION_2026-10-26.md",
+  "blocked_wait_reason": "Current source authority absent; real host permission blocked by automatic review; browser attribution/resize capability unavailable.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
@@ -227,7 +221,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/DESKTOP_STABILIZATION_FRONTEND_CONTINUATION_2026-10-26.md",
+  "recovery_checkpoint": "docs/FRONTEND_RESEARCH_CONNECTIONS_CONTINUATION_2026-10-26.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -265,7 +259,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/DESKTOP_STABILIZATION_FRONTEND_CONTINUATION_2026-10-26.md",
+  "recovery_document": "docs/FRONTEND_RESEARCH_CONNECTIONS_CONTINUATION_2026-10-26.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -934,7 +928,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/DESKTOP_STABILIZATION_FRONTEND_CONTINUATION_2026-10-26.md",
+  "continuation_checkpoint": "docs/FRONTEND_RESEARCH_CONNECTIONS_CONTINUATION_2026-10-26.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1472,5 +1466,29 @@
     "legacy_port_8000_unreachable": true,
     "original_ui_preserved": true,
     "user_session_interrupted": false
+  },
+  "retained_frontend_stabilization_tests": {
+    "passed": 471,
+    "failed": 0,
+    "skipped": 0,
+    "single_combined_run": false,
+    "disjoint_final_selections": [
+      209,
+      137,
+      3,
+      122
+    ],
+    "javascript_passed": 54,
+    "operational_acceptance": false,
+    "not_executed": "Native window resize, privileged symlink, physical power-loss and operational financial trial; browser MutationObserver attribution unresolved."
+  },
+  "research_read_connections": {
+    "source_implemented": true,
+    "actual_current_dashboard_populated": false,
+    "retained_real_journals_unchanged": 6,
+    "retained_markets": 3,
+    "current_qd_authority_installed": false,
+    "provider_requests": 0,
+    "test_hosts_closed": true
   }
 }

@@ -146,7 +146,7 @@ function renderUnavailable(){
 async function load(){
   const results=await Promise.allSettled([
     atlasFetch('/api/live',8000).then(r=>r.ok?r.json():Promise.reject(Error('live '+r.status))),
-    atlasFetch('/api/investments/quality-dips?limit=50',8000).then(r=>r.ok?r.json():Promise.reject(Error('quality '+r.status))),
+    atlasFetch(document.querySelector?.('meta[name="atlas-observation"]')?.content==='readonly'?'/api/observation/quality-dips':'/api/investments/quality-dips?limit=50',8000).then(r=>r.ok?r.json():Promise.reject(Error('quality '+r.status))),
     atlasFetch('/api/investments/prospective/report',8000).then(r=>r.ok?r.json():Promise.reject(Error('prospective '+r.status)))
   ]);
   if(results[0].status==='fulfilled')LIVE=results[0].value;if(results[1].status==='fulfilled')QD=results[1].value;if(results[2].status==='fulfilled')PRO=results[2].value;

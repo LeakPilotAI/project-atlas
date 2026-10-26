@@ -436,3 +436,7 @@ No ACTIVE engineering task remains in this bounded execution. Financial BLOCKED_
 | ID | Objective | Status | Evidence | Next action |
 |---|---|---|---|---|
 | DESKTOP_OPERATIONAL_STABILIZATION | Correct research input/read defects, observation diagnostics and disposable desktop/financial regressions | VERIFIED scoped source repairs; operational/UI acceptance BLOCKED_WAIT | DESKTOP_STABILIZATION_FRONTEND_2026-10-26.md | Resolve browser/resize acceptance and obtain accepted current read sources; no legacy startup |
+
+## Frontend research read connections - 2026-10-26
+
+FRONTEND_RESEARCH_READ_CONNECTIONS: VERIFIED source/disposable; operational BLOCKED_WAIT.236Python/57JS. See FRONTEND_RESEARCH_CONNECTIONS_2026-10-26.md. Next: accepted current read-source dependencies, bounded real-host permission, browser error/resize acceptance. No ACTIVE financial task or gate promotion.
