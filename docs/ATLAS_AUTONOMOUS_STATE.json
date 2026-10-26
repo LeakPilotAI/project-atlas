@@ -7,7 +7,9 @@
     "C1": "Native retained fixture command/account/lifetime validated, but actual Atlas ownership, full writer/resource roster and independent drain remain unaccepted.",
     "D1": "FS1-FS3 disposable engineering verified; strict-root correction and120native-planpasses/1notexecuted do not accept real storage enrollment,issuer,custody,clock,rollback/recovery authority.",
     "E1": "Dependent gates and operator authorization absent",
-    "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim."
+    "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim.",
+    "REAL_HISTORY_HTTP_ACCEPTANCE_SCOPE": "Original six membership permanently UNRECONSTRUCTABLE;authorization unused. New ten-scope assessment does not reconstruct or expand it.",
+    "TEN_DIRECTORY_OBSERVATION_HTTP_APPROVAL": "Ten historical journals eligible in new assessment;explicit NEW bounded HTTP test approval pending."
   },
   "latest_tests": {
     "passed": 237,
@@ -20,7 +22,7 @@
     "not_executed": "Interactive native browser control approval timed out;physical window dragging;operational financial/source enrollment or trial. Exact in-app MutationObserver origin unresolved."
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "Obtain accepted current nonmutating publication source/authority/clock and provider scope;independent B1/C1/D1/E1 decisions precede enrollment,inception and financial launch. Existing source read/recovery and real Chrome acceptance verified;do not rebuild engines.",
+  "exact_next_action": "Present the exact private ten-directory scope for explicit NEW approval. If approved,recheck pinned hashes/identities and run only ONE bounded127.0.0.1 observation host with ONE log. No providers/financial activation.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -113,9 +115,9 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 90,
-  "continuation_report": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_CONTINUATION_2026-10-26.md",
-  "blocked_wait_reason": "Accepted real source/custody/provider/release dependencies unavailable;interactive browser and exact in-app error source remain unverified.",
+  "progress_revision": 92,
+  "continuation_report": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md",
+  "blocked_wait_reason": "New ten-directory proposal requires operator approval;no host/log creation authorized by assessment.",
   "publication_validation": {
     "source_and_disposable_tests_reviewed": true,
     "private_artifacts_excluded": true,
@@ -222,7 +224,7 @@
     "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_CONTINUATION_2026-10-26.md",
+  "recovery_checkpoint": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -260,7 +262,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_CONTINUATION_2026-10-26.md",
+  "recovery_document": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -929,7 +931,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_CONTINUATION_2026-10-26.md",
+  "continuation_checkpoint": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1513,5 +1515,45 @@
     "operator_guide_current": true,
     "false_stop_success_fixed": true,
     "report": "docs/LOCAL_COMPLETION_BROWSER_RECOVERY_2026-10-26.md"
+  },
+  "real_history_http_acceptance": {
+    "status": "HISTORICAL_SIX_SCOPE_UNRECONSTRUCTABLE_UNUSED",
+    "authorized_journals": 6,
+    "observed_candidate_directories": 10,
+    "journal_contents_read": 0,
+    "hosts_started": 0,
+    "new_observation_logs_created": 0,
+    "original_hash_verification": "NOT_EXECUTED",
+    "operator_scope_question_pending": false,
+    "report": "docs/REAL_HISTORY_HTTP_ACCEPTANCE_2026-10-26.md",
+    "operator_scope_decision": "Original membership unreconstructable;do not invent;new ten-directory assessment is separate."
+  },
+  "historical_six_roster_finding": {
+    "status": "UNRECONSTRUCTABLE",
+    "operator_confirmed_permanent_finding": true,
+    "infer_from_dates_allowed": false,
+    "new_scope_may_relabel_history": false,
+    "report": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md"
+  },
+  "ten_directory_observation_preflight": {
+    "status": "ASSESSED_AWAITING_NEW_SCOPE_APPROVAL",
+    "directories_assessed": 10,
+    "eligible_historical_read_only": 10,
+    "excluded": 0,
+    "record_count": 62,
+    "readiness_manifests_present": 7,
+    "readiness_manifests_absent": 3,
+    "journal_hashes_unchanged": 10,
+    "manifest_hashes_unchanged": 7,
+    "existing_reader_agreement": 10,
+    "hosts_started": 0,
+    "observation_logs_created": 0,
+    "provider_connections": 0,
+    "financial_authority": false,
+    "http_test_approved": false,
+    "private_manifest": "logs/diagnostics/ten-journal-preflight-private.json",
+    "private_manifest_sha256": "66ce2e48c2ce7f43c486f991146fb91746e47d71cf5acf798b0b63b85e3ec032",
+    "exact_proposed_scope": "logs/diagnostics/TEN_OBSERVATION_HTTP_PROPOSED_SCOPE_2026-10-26.md",
+    "report": "docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md"
   }
 }

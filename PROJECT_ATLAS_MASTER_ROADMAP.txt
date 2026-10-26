@@ -14245,11 +14245,35 @@ Evidence: docs/FRONTEND_RESEARCH_CONNECTIONS_2026-10-26.md;236Python/57JS;6origi
 Next action: Accepted current QD read source/authority/clock, bounded real-host permission and browser error/resize acceptance. No protected backend/provider/financial startup. PAPER NO;production NO-GO.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: Local completion - actual Chrome research recovery and current operator guide
 Status: Scoped source/disposable VERIFIED;overall PARTIALLY COMPLETE;operational BLOCKED_WAIT.21decisions/seven phases unchanged.
 Evidence: docs/LOCAL_COMPLETION_BROWSER_RECOVERY_2026-10-26.md;237Python/60JS;3actual Chrome scenarios;six-tab navigation;desktop/narrow HTTP503 recovery;baseline2failures retained.
 Next action: Accepted current publication/source authority/clock/provider scope and independent B1/C1/D1/E1 decisions before financial enrollment/inception/startup. Exact in-app error source/interactive resizing remain incomplete. PAPER NO;production NO-GO.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
+Milestone: ONE authorized real-history HTTP acceptance - preflight scope reconciliation
+Status: BLOCKED_WAIT / NOT EXECUTED.6journals authorized;10directory candidates present;0hosts/0new observation logs.
+Evidence: docs/REAL_HISTORY_HTTP_ACCEPTANCE_2026-10-26.md;directory metadata audit and read-only host source audit only;no journal contents read/hash acceptance claimed.
+Next action: Receive exact six scope confirmation,then run ONE pinned-roster127.0.0.1 host with original before/afterSHA256 and owned closure. No provider/financial activation.21decisions/seven phases unchanged;PAPER NO;production NO-GO.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
+Milestone: ONE authorized real-history HTTP acceptance - preflight scope reconciliation
+Status: BLOCKED_WAIT / NOT EXECUTED.6journals authorized;10directory candidates present;0hosts/0new observation logs.
+Evidence: docs/REAL_HISTORY_HTTP_ACCEPTANCE_2026-10-26.md;directory metadata audit and read-only host source audit only;no journal contents read/hash acceptance claimed.
+Next action: Operator explicitly HOLD until exact six journals are identified;then run ONE pinned-roster127.0.0.1 host with original before/afterSHA256 and owned closure. No provider/financial activation.21decisions/seven phases unchanged;PAPER NO;production NO-GO.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: NEW ten-directory historical observation preflight
+Status: Assessment VERIFIED;new HTTP test BLOCKED_WAIT for explicit approval. Original six membership permanently UNRECONSTRUCTABLE;never invent or relabel history.
+Evidence: docs/TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md;10eligible journals/62records;7ready manifests;10journal and7manifest hashes stable;existing reader agreement10;0hosts/0new observation logs/provider connections.
+Next action: Present private exact NEW ten-directory scope for approval;only after approval run ONE pinned127.0.0.1 host/ONE log with graceful closure and before/afterhashes. No source expansion/provider/financial activation.21decisions/seven phases unchanged;PAPER NO;production NO-GO.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

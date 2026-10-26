@@ -444,3 +444,13 @@ FRONTEND_RESEARCH_READ_CONNECTIONS: VERIFIED source/disposable; operational BLOC
 ## Local completion / browser recovery - 2026-10-26
 
 LOCAL_BROWSER_RECOVERY_AND_OPERATOR_GUIDE: VERIFIED scoped source/disposable acceptance.237Python/60JS;3installed-Chrome scenarios. No ACTIVE task; operational BLOCKED_WAIT on accepted real source/clock/custody/provider and B1/C1/D1/E1 decisions. See LOCAL_COMPLETION_BROWSER_RECOVERY_2026-10-26.md.
+
+## ONE real-history HTTP acceptance - 2026-10-26
+
+REAL_HISTORY_HTTP_ACCEPTANCE: BLOCKED_WAIT before host creation.6authorized journals/10observed directory candidates. Exact six confirmation pending;0hosts/0new observation logs. See REAL_HISTORY_HTTP_ACCEPTANCE_2026-10-26.md. Earlier source verification remains valid;no operational gate promotion.
+
+Operator scope decision: HOLD REAL_HISTORY_HTTP_ACCEPTANCE until exact six journals are identified. No timestamp inference;one-host authorization unused.
+
+## NEW ten-directory observation preflight - 2026-10-26
+
+TEN_DIRECTORY_OBSERVATION_PREFLIGHT: VERIFIED assessment only;10eligible historical journals/62records,7manifests,all unchanged. No host/new observation log. TEN_DIRECTORY_OBSERVATION_HTTP_APPROVAL: BLOCKED_WAIT pending explicit NEW scope approval. Original six roster permanently UNRECONSTRUCTABLE;no invented membership. Exact private scope referenced by TEN_DIRECTORY_OBSERVATION_PREFLIGHT_2026-10-26.md.
