@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from app.services.paper_financial_replay import digest
+from app.services.paper_financial_replay import body, digest
 from app.services.personal_paper_runtime import (
     CHECKS,
     PERSONAL_GATES,
@@ -166,3 +166,29 @@ def test_native_approval_reader_construction_has_no_store_initialization():
     )
     r=NativePersonalActivationReader(root='D:\\AtlasCustody\\PersonalPaper\\SYNTHETIC-ONLY',native_root=[1,2,0],binding={'id':[1,3,0],'sha256':'a'*64})
     assert r.root.endswith('SYNTHETIC-ONLY') # read deliberately not called
+
+
+@pytest.mark.parametrize('damage',[None,'account','release','writer'])
+def test_personal_unified_binds_both_actual_native_account_contracts_before_construction(damage):
+    from app.services.unified_native_writer import CanonicalWriterLane
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    from test_personal_paper_inception_memory import system
+    q,h=system('QUALITY_DIPS'),system('HYPERLIQUID')
+    try:
+        writers={k:SimpleNamespace(store=SimpleNamespace(enrollment=s.n),manifest=s.m) for k,s in (('QUALITY_DIPS',q),('HYPERLIQUID',h))}
+        lanes={k:CanonicalWriterLane.__new__(CanonicalWriterLane) for k in writers}
+        for k,lane in lanes.items():lane.writer=writers[k]
+        # No native constructor or runtime action is run in this contract test.
+        portfolio=UnifiedPortfolioCustody.__new__(UnifiedPortfolioCustody);portfolio.writers=writers
+        clock=lambda:1000;ports={'lanes':lanes,'portfolio':portfolio,'clock':clock}
+        i=installed(accounts={k:digest(w.store.enrollment) for k,w in writers.items()},ports=ports)
+        if damage=='account':writers['HYPERLIQUID'].store.enrollment=copy.deepcopy(h.n);writers['HYPERLIQUID'].store.enrollment['account_id']='FOREIGN'
+        elif damage=='release':
+            i.i.release='f'*64;i.i._scope=body({'release':i.i.release,'accounts':i.i.accounts})
+        elif damage=='writer':lanes['QUALITY_DIPS'].writer=object()
+        if damage:
+            with pytest.raises(ValueError):compose_personal_unified(policy=i.p,lanes=lanes,portfolio=portfolio,clock=clock,installation=i.i)
+        else:
+            runtime=compose_personal_unified(policy=i.p,lanes=lanes,portfolio=portfolio,clock=clock,installation=i.i)
+            assert runtime.state=='STOPPED' and runtime.grant is None
+    finally:q.ledger.db.close();h.ledger.db.close()

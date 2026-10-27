@@ -199,6 +199,18 @@ def compose_personal_unified(*,policy=None,lanes=None,portfolio=None,clock=None,
     if any(x is None for x in (policy,lanes,portfolio,clock,installation)):raise ValueError('PERSONAL_UNIFIED_ACTIVATION_REQUIRED')
     p=validate_policy(policy)
     if type(installation) is not PersonalOperatorInstallation or body(installation.policy)!=body(p) or set(installation.accounts)!={'QUALITY_DIPS','HYPERLIQUID'}:raise ValueError('PERSONAL_COMPLETE_REAL_ACCOUNTS_REQUIRED')
+    from app.services.perp_operational_contract import validate_enrollment as validate_perp
+    from app.services.unified_native_writer import CanonicalWriterLane
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    if (type(portfolio) is not UnifiedPortfolioCustody or type(lanes) is not dict
+            or set(lanes)!={'QUALITY_DIPS','HYPERLIQUID'} or set(portfolio.writers)!=set(lanes)):
+        raise ValueError('PERSONAL_ACTUAL_UNIFIED_LANES_REQUIRED')
+    for lane,writer in portfolio.writers.items():
+        if type(lanes[lane]) is not CanonicalWriterLane or lanes[lane].writer is not writer:raise ValueError('PERSONAL_UNIFIED_WRITER_SUBSTITUTION')
+        native=(validate_enrollment if lane=='QUALITY_DIPS' else validate_perp)(writer.store.enrollment)
+        if (digest(native)!=installation.accounts[lane] or native['release_digest']!=installation.release
+                or native['inception_digest']!=digest(writer.manifest)):
+            raise ValueError('PERSONAL_UNIFIED_ACCOUNT_RELEASE_SUBSTITUTION')
     ports={'lanes':lanes,'portfolio':portfolio,'clock':clock}
     with installation.lease({'schema':'ATLAS_PERSONAL_UNIFIED_COMPOSITION_V1','profile':PROFILE}) as lease:
         checked_personal_installation(lease,{'schema':'ATLAS_PERSONAL_UNIFIED_COMPOSITION_V1','profile':PROFILE})
