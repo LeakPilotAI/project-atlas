@@ -24,7 +24,7 @@
     "financial_startup_authorized": false
   },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Review docs/MINIMUM_PERSONAL_PAPER_PATH_2026-10-27.md and authorize the smallestQD-only local installation/commissioning subset of existing activation bundle. V5Jobharness is deferred,not a runtime prerequisite. Actual D:runtime/resources/clock/writer/currentpins/StartStopbindings,inception,currentranking/entitleddata and boundedpilot remain essential and unauthorized. No external-reviewer chain.",
+  "exact_next_action": "Obtain explicit operator decision for QD-only installation/enrollment/nativefinancial verification,once-only1000simulatedUSD inception,entitled bounded currentQD/IEXdata and one60second autonomouspilot with ownedStop/reconciliation/manualrestart,per existing activation bundle/private exact scope. Actual desktop shortcuts verified OBSERVATION_ONLY,not an installed financial launcher. No V5execution required;do not launch/accountinitialize/connectproviders under source-only permission.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -2035,5 +2035,15 @@
     "providers_connected": false,
     "paper_started": false,
     "report": "docs/MINIMUM_PERSONAL_PAPER_PATH_2026-10-27.md"
+  },
+  "desktop_readonly_preflight_20261027": {
+    "shortcut_metadata_read": true,
+    "shortcut_invoked_or_modified": false,
+    "start_target": "scripts/windows/Atlas-Observation-Shortcut.ps1",
+    "stop_target": "scripts/windows/Atlas-Observation-Shortcut-Stop.ps1",
+    "mode": "OBSERVATION_ONLY",
+    "paper_session_installed_or_started": false,
+    "new_tests_run": false,
+    "existing_test_evidence_preserved": true
   }
 }

@@ -1,3 +1,7 @@
+# Current authorization boundary - read-only desktop confirmation
+
+Actual Atlas desktoplinks are observation-only;verified metadata,not launched/modified. BLOCKED_WAIT remains on explicit QDinstallation/nativefinancialverification/inception/currentdata/boundedpilot scope,not V5. Prior276Python/8PowerShell evidence retained without rerun. Next exact decision in docs/MINIMUM_PERSONAL_PAPER_PATH_2026-10-27.md;no new phase/authority.
+
 # Active priority correction - minimum personal PAPER path
 
 V5 JobObject harness is DEFERRED,not a dependency of existing PAPER runtime;four red harness findings preserved,not accepted. Essential FormClosing/drain fix verified:276Pythonpasses plus8PowerShellfakechecks;8native/abrupt-child cases unexecuted. BLOCKED_WAIT only on actual local installation/enrollment,inception,currentdata andboundedpilot authorization/evidence. Minimal supported route compose_personal_qd;no fakeperp account. See docs/MINIMUM_PERSONAL_PAPER_PATH_2026-10-27.md. Prior checkpoints below historical,including oldV5critical-path designation now superseded. No newphase orfinancialpermission.
