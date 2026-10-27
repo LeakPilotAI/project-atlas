@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "POST_V2_OPERATIONAL_RELEASE_BOUNDARY",
+  "last_verified_task": "PERSONAL_PAPER_POLICY_PROPOSAL_AND_SESSION_INTEGRITY",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -11,16 +11,18 @@
     "REAL_HISTORY_HTTP_ACCEPTANCE_SCOPE": "Original six membership permanently UNRECONSTRUCTABLE;authorization unused. New ten-scope assessment does not reconstruct or expand it."
   },
   "latest_tests": {
-    "selection": "postV2pure catalog pre-effect scope/cut/resource regressions",
-    "passed": 47,
+    "selection": "personal session reservation integrity plus existing pure clock regressions",
+    "passed": 16,
     "failed": 0,
     "skipped": 0,
-    "new_cases": 8,
+    "deselected": 3,
+    "new_cases": 7,
     "native_executed": false,
-    "operational_acceptance": false
+    "financial_store_created": false,
+    "policy_applied": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "BLOCKED_WAIT: review docs/POST_V2_OPERATIONAL_RELEASE_BOUNDARY_2026-10-26.md and18-rowPOST_V2_PAPER_ACCEPTANCE_MATRIX_2026-10-26.json. Designate independent reviewers/evidence owners (currentlyUNASSIGNED);accept profile/integration/capacity decisions before separately authorizing protected operational source changes,then one bounded native compatibility run. New fixture catalog pre-effect scope guard passed8newpure cases/47combined,but native revalidation awaits a new Bgrant. V1/V2grants consumed;no newroot/link/nativepublication/provider/enrollment/startup authorized. True-symlink privilege absent/current DeveloperModeopt-in absent;NOT_EXECUTED stays open. B1/C1/D1/E1,all21decisions unchanged.",
+  "exact_next_action": "AWAIT_SOLE_OPERATOR_POLICY_DECISION: approve/reject docs/PERSONAL_PAPER_RELEASE_POLICY_PROPOSAL_2026-10-26.md / PERSONAL_PAPER_ONLY_V1. Proposal removes mandatory external reviewers/custodians for personal PAPER;no reviewer designation requested. Do not apply policy yet. After approval,source-only personal-profile/local-operator integration,reusing existing components;then one concrete bounded activation bundle. Currentstrict21decisions/history unchanged,not accepted;no account/provider/startup authorized. Session reservation integrity fix verified16pure/in-memory tests;3file-backed cases not rerun.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -1833,5 +1835,20 @@
     "C_changes_authorized": false,
     "financial_startup_authorized": false,
     "gate_promotions": 0
+  },
+  "personal_paper_release_proposal": {
+    "profile": "PERSONAL_PAPER_ONLY_V1",
+    "status": "PROPOSED_NOT_APPLIED",
+    "human_report": "docs/PERSONAL_PAPER_RELEASE_POLICY_PROPOSAL_2026-10-26.md",
+    "proposal": "docs/PERSONAL_PAPER_RELEASE_PROPOSAL_V1_2026-10-26.json",
+    "operator": "SOLE_LOCAL_OPERATOR",
+    "external_reviewers_proposed_required": false,
+    "independent_custody_proposed_required": false,
+    "technical_safety_controls_retained": true,
+    "policy_approved": false,
+    "policy_applied": false,
+    "financial_startup_authorized": false,
+    "gate_promotions": 0,
+    "source_fix": "ExistingPersonalSessionReservations conditionalACK/body/revocation/readback integrity;no authority installation"
   }
 }

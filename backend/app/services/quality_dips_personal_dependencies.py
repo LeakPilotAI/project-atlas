@@ -15,6 +15,7 @@ class PersonalSessionReservations:
         self.ledger, self.authorization, self.fault = ledger, authorization, fault
 
     def reserve(self, request):
+        request = strict(body(request))
         if self.authorization.verify(request) is not True:
             raise ValueError("PERSONAL_OPERATOR_SESSION_UNVERIFIED")
         ident = request["grant"]["session_id"]
@@ -27,18 +28,25 @@ class PersonalSessionReservations:
                 "INSERT INTO personal_sessions VALUES(?,?,?)", (ident, body(request), "PENDING")
             )
         self.fault("after_pending")
+        if self.authorization.verify(request) is not True:
+            raise ValueError("PERSONAL_SESSION_REVOKED_PENDING")
         with self.ledger.connect() as db:
             db.execute("BEGIN IMMEDIATE")
-            db.execute(
-                "UPDATE personal_sessions SET state='ACKNOWLEDGED' WHERE id=? AND state='PENDING'",
-                (ident,),
+            changed = db.execute(
+                "UPDATE personal_sessions SET state='ACKNOWLEDGED' WHERE id=? AND body=? AND state='PENDING'",
+                (ident, body(request)),
             )
+            if changed.rowcount != 1:
+                raise ValueError("PERSONAL_SESSION_PENDING_CONFLICT_OR_UNCERTAIN")
         self.fault("after_ack")
-        return {
+        receipt = {
             "schema": "QD_AUTO_NATIVE_SESSION_RESERVATION_V4",
             "request_digest": digest(request),
             "status": "ACKNOWLEDGED",
         }
+        if self.verify(request, receipt) is not True:
+            raise ValueError("PERSONAL_SESSION_ACK_READBACK_UNCERTAIN")
+        return receipt
 
     def verify(self, request, receipt):
         with self.ledger.connect(readonly=True) as db:
