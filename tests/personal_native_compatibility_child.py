@@ -20,11 +20,18 @@ def main():
     parser.add_argument('--case');parser.add_argument('--lane',choices=('QUALITY_DIPS','HYPERLIQUID'))
     parser.add_argument('--phase',choices=('before_reservation','pending','source','commit','ack'))
     args=parser.parse_args()
-    from personal_native_compatibility_fixture import NativeCase, checked_budget
-    b=checked_budget()
-    timer=threading.Timer(450 if args.suite else 25,lambda:os._exit(97));timer.daemon=True;timer.start()
+    # Handshake confirms interpreter and control-channel readiness only.
+    # Fixture imports and budget checks happen after the parent's GO signal.
     print(json.dumps({'ready':os.getpid()}),flush=True)
     if sys.stdin.readline(4)!='GO\n':return 96
+
+    # No test or fixture operation occurs before scope/budget validation.
+    from personal_native_compatibility_fixture import NativeCase, checked_budget
+    b=checked_budget()
+    timer=threading.Timer(450 if args.suite else 25,lambda:os._exit(97))
+    timer.daemon=True
+    timer.start()
+
     if args.suite:
         import pytest
         results=[]

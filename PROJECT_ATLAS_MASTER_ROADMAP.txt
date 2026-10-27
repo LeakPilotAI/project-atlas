@@ -14429,11 +14429,19 @@ Evidence:Sourcebasec63b4972.335financial/personal-sourcepasses13deselected;107li
 Next action:Operator review bounded V5 source-containment/OwnedChild integration boundary;do not execute native suite or create V5approval. Four acceptance assertions red and Jobmodules absent from manifest. After separately authorized binding/sourceinventory and native600second4096entry128MiBsynthetic verification,authorize D:runtime/resources/inception,data and bounded pilot separately. No externalreviewer chain;UNKNOWN/stale/missingauthority/capacity refuse. No live money.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone:Actual OwnedChild live-handle retention and retry repairs
 Status:VERIFIED_OFFLINE_REPAIRS;BLOCKED_WAIT_V5_NATIVE_AUTHORIZATION;PAPERstartupNO;productionNO-GO
 Evidence:Basea8896316;fourOwnedChildcontainmentfailuresreproducedunchanged.6newfakefailurecasesreproducedthenfixed;8newcases;final115lifecyclepasses4retainedintegrationfailures9.78s plus81disjointfinancial/runtimepasses3deselected3.22s.196distinctpasses4failuresthisincrement;old285/431evidenceretained. Livehandle/pipespreservedonidentity/budget/waitrefusal;explicitexitrequired;closefailuresretrywithoutdoubleclose/evidencerepublication;constructorretainsowner. NativeV5manifestnowhonestlySTALEafterfix;approvalabsent/rootabsent. No native/process/provider/financialactivation/UI/Genesischanges. docs/PERSONAL_PAPER_OWNED_CHILD_CONTINUATION_2026-10-27.md.
 Next action:SOLE_OPERATOR decide exact existingV5containednativeimplementation/OwnedChildbindingandboundedsynthetictestscope;refreshcomplete sourceinventorybeforeexecutionapproval. Do not createapproval/execute native tests now.600seconds4096entries128MiBsyntheticboundary;oldgrantsnotreused. D:runtime/resourceinstallation,inception,data/pilotstillseparatelyunauthorized. Fourredintegrationassertionsnotwaived;noexternalreviewerchain;no live money.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone:V5 exact source manifest and bounded synthetic authorization package refreshed
+Status:VERIFIED_SOURCE_REVIEW_ONLY;BLOCKED_WAIT_V5_CONTAINMENT_SOURCE_SCOPE;PAPERstartupNO;productionNO-GO
+Evidence:Base dd077975;47code/test/policypins including Job/API/launch and cleanup regressions;LFsource and rawsnapshot hashes. Manifestsha256975bd8bddfb2b77d765b05d230fe70ac176b8b101ab02dc63c3c36276ed43579. OldV5_FINAL retainedunchanged. Runner now verifies newmanifest then refuses execution_readyFalse before fixturecreation.71pure/offlinepasses0fail0skip2.96s;8newcases. Originalfourcontainmentfailuresand285/431/196evidenceretained. No approvals/nativechildren/financialservices/providers/Genesis. docs/PERSONAL_NATIVE_V5_OPERATOR_REVIEW_PACKAGE_2026-10-27.md.
+Next action:Soleoperator review source-only V5containment binding and600second4096entry128MiBexactsyntheticboundary;do not execute current manifest. After authorized sourcebinding/fakeAPIacceptance,refresh completed-source digest for explicit nativeV5executionapproval. Existing approvalfileabsent/rootabsent. No operationalinstallation,inception,data orPAPERstartup permission;noexternalreviewerchain.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

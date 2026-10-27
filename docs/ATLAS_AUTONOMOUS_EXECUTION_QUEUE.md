@@ -1,3 +1,7 @@
+# V5 manifest review - 2026-10-27
+
+VERIFIED_SOURCE_REVIEW:47pins,71pure/offlinepasses;execution_readyFalse. BLOCKED_WAIT:no ACTIVE native/financial task. Soleoperator review docs/PERSONAL_NATIVE_V5_OPERATOR_REVIEW_PACKAGE_2026-10-27.md. Existingfourcontainmentfailuresnotwaived;noapproval/nativechild/financialactivation. Sourcebinding authorization first,completed-source digest and separate boundedexecutiondecision next. Historical evidence below preserved.
+
 # OwnedChild repair checkpoint - 2026-10-27
 
 VERIFIED_OFFLINE:8newcases;196disjointpasses4retainednativeintegrationfailures. BLOCKED_WAIT:no ACTIVE executable native/financial task;V5approvalabsent/sourcebindingstale. Soleoperator decision for exact contained native integration scope then reviewed source inventory and separate synthetic test approval. See docs/PERSONAL_PAPER_OWNED_CHILD_CONTINUATION_2026-10-27.md. Prior evidence below preserved.

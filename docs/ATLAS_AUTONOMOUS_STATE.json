@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "PERSONAL_OWNED_CHILD_OFFLINE_RETENTION_AND_RETRY",
+  "last_verified_task": "V5_EXACT_SOURCE_MANIFEST_AND_BOUNDED_REVIEW_PACKAGE",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "PERSONAL_NATIVE_COMPATIBILITY": "V5 approval absent;four actual OwnedChild Job containment assertions remain failing. Complete explicitly authorized native binding and expanded source inventory before any separately authorized synthetic native test. No old grant reuse;true-symlink1314 remains NOT_EXECUTED,not an administrative veto.",
@@ -24,7 +24,7 @@
     "financial_startup_authorized": false
   },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Review docs/PERSONAL_PAPER_OWNED_CHILD_CONTINUATION_2026-10-27.md. V5 approval absent;source manifest stale after repair. Establish exact contained native integration scope;refresh complete source inventory before separately approved execution. No operational startup/inception/data permission. Four original integration tests remain failing and preserved.",
+  "exact_next_action": "Operator review docs/PERSONAL_NATIVE_V5_OPERATOR_REVIEW_PACKAGE_2026-10-27.md:source-only containment binding scope;current47file manifest execution_readyFalse. Complete authorized binding then present refreshed completed-source digest for separate nativeV5executionapproval. No approval artifact/native execution/financial permission granted.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -1999,5 +1999,20 @@
     "v5_source_scope": "STALE_REFUSED",
     "v5_approval_exists": false,
     "report": "docs/PERSONAL_PAPER_OWNED_CHILD_CONTINUATION_2026-10-27.md"
+  },
+  "v5_manifest_review_20261027": {
+    "source_files": 47,
+    "manifest": "docs/PERSONAL_NATIVE_V5_SOURCE_MANIFEST_REVIEW_2026-10-27.json",
+    "manifest_sha256": "975bd8bddfb2b77d765b05d230fe70ac176b8b101ab02dc63c3c36276ed43579",
+    "passed": 71,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "elapsed_seconds": 2.96,
+    "new_cases": 8,
+    "execution_ready": false,
+    "native_children_executed": 0,
+    "approval_file_created": false,
+    "package": "docs/PERSONAL_NATIVE_V5_OPERATOR_REVIEW_PACKAGE_2026-10-27.md"
   }
 }

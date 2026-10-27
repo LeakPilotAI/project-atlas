@@ -107,7 +107,7 @@ class NativeFixtureBudget:
 
     def usage(self,*,allow_links=False):
         _,files,byte_limit=self.limits()
-        count=int(self.anchor['authorization']=='P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V1');logical=0;charged=0;unit=self.anchor['allocation_unit']
+        count=int(self.anchor['authorization'] in ('P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V1','P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V2','P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V3','P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V4','P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V5'));logical=0;charged=0;unit=self.anchor['allocation_unit']
         if count:charged=2*unit
         pending=[self.root]
         while pending:
@@ -186,5 +186,5 @@ def create_session(root,*,started_monotonic_ns,authorization="P-ATLAS-NATIVE-CON
     with (root/'session-budget.json').open('x',encoding='utf8') as stream:json.dump(anchor,stream)
     with (root/'session-budget.lock').open('xb') as stream:stream.write(b'0')
     with (root/'session-reservations.json').open('x',encoding='utf8') as stream:
-        json.dump({'entries':4 if authorization=='P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V1' else 3,'charged_bytes':unit*12},stream);stream.flush();os.fsync(stream.fileno())
+        json.dump({'entries':4 if authorization in ('P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V1','P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V2','P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V3','P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V4','P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V5') else 3,'charged_bytes':unit*12},stream);stream.flush();os.fsync(stream.fileno())
     return NativeFixtureBudget(root)

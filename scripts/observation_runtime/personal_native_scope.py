@@ -1,8 +1,8 @@
 """Pure proposed native-test scope. Constants are boundaries,not permission."""
 import ntpath
 
-AUTHORIZATION='P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V1'
-ROOT=r'D:\Work\Project Atlas\logs\diagnostics\continuation-fixture-d8a9f847f38c4bde9376e5158581280e'
+AUTHORIZATION='P-ATLAS-PERSONAL-NATIVE-COMPATIBILITY-V5'
+ROOT=r'D:\Work\Project Atlas\logs\diagnostics\continuation-fixture-20f5937ddc2c44658cfd719193eb7591'
 SECONDS,ENTRIES,BYTES=600,4096,128*1024*1024
 
 

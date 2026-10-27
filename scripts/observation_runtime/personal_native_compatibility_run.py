@@ -17,8 +17,21 @@ from scripts.observation_runtime.personal_native_scope import (
     require_scope,
 )
 
-SCOPE_FILE=REPO/'docs/PERSONAL_NATIVE_COMPATIBILITY_EXECUTION_PROPOSAL_2026-10-27.json'
+SCOPE_FILE=REPO/'docs/PERSONAL_NATIVE_V5_SOURCE_MANIFEST_REVIEW_2026-10-27.json'
 SOURCE_FILES=(
+    'scripts/observation_runtime/personal_native_job.py',
+    'scripts/observation_runtime/personal_native_windows_api.py',
+    'scripts/observation_runtime/personal_native_launch_contract.py',
+    'tests/test_personal_native_cleanup_failure_offline.py',
+    'tests/test_personal_native_failure_retention_offline.py',
+    'tests/test_personal_native_job_behavior_offline.py',
+    'tests/test_personal_native_job_cleanup_offline.py',
+    'tests/test_personal_native_job_containment_offline.py',
+    'tests/test_personal_native_job_ownership_offline.py',
+    'tests/test_personal_native_launch_contract_offline.py',
+    'tests/test_personal_native_live_handle_retention_offline.py',
+    'tests/test_personal_native_windows_api_offline.py',
+    'tests/test_personal_v5_manifest_review_pure.py',
     'scripts/observation_runtime/personal_native_scope.py',
     'scripts/observation_runtime/personal_native_compatibility_run.py',
     'scripts/observation_runtime/personal_paper_inception.py',
@@ -72,15 +85,42 @@ def plan():
     return {'schema':'PERSONAL_NATIVE_TEST_SCOPE_V1','authorization_required':AUTHORIZATION,
             'status':'PROPOSED_NOT_AUTHORIZED','root':ROOT,'seconds':600,'entries':4096,'bytes':134217728,
             'operational_accounts':False,'providers':False,'network_listeners':False,'genesis':False,
+            'source_manifest':SCOPE_FILE.relative_to(REPO).as_posix(),'execution_ready':False,
             'test_file':'tests/test_personal_native_compatibility.py','cleanup':'REAP_EXACT_RETAINED_CHILDREN_KEEP_EVIDENCE_NO_RECURSIVE_DELETE'}
+
+
+def require_operator_approval(approved_scope):
+    """A separate operator decision is required before consuming V5."""
+    approval_path = REPO / "docs/PERSONAL_NATIVE_COMPATIBILITY_OPERATOR_APPROVAL_V5.json"
+
+    if not approval_path.is_file():
+        raise ValueError("NATIVE_OPERATOR_APPROVAL_RECORD_REQUIRED")
+
+    approval = json.loads(approval_path.read_text(encoding="utf8"))
+
+    expected = {
+        "schema": "ATLAS_NATIVE_OPERATOR_APPROVAL_V1",
+        "authorization": AUTHORIZATION,
+        "root": ROOT,
+        "decision": "APPROVED_FOR_NATIVE_TESTS_ONLY",
+        "financial_startup_authorized": False,
+        "live_trading_authorized": False,
+    }
+
+    if approval != expected or approved_scope != AUTHORIZATION:
+        raise ValueError("NATIVE_OPERATOR_APPROVAL_INVALID")
 
 
 def execute(approved_scope):
     require_scope(approved_scope,ROOT)
+    require_operator_approval(approved_scope)
     if os.name!='nt':raise ValueError('WINDOWS_NATIVE_TEST_ONLY')
     from scripts.observation_runtime.native_fixture_budget import create_session
     started=time.monotonic_ns()
-    verify_source_scope(json.loads(SCOPE_FILE.read_text(encoding='utf8')))
+    scope=json.loads(SCOPE_FILE.read_text(encoding='utf8'))
+    verify_source_scope(scope)
+    if scope.get('execution_ready') is not True:
+        raise ValueError('NATIVE_CONTAINMENT_NOT_READY_FOR_EXECUTION')
     b=create_session(Path(ROOT),started_monotonic_ns=started,authorization=approved_scope)
     b.directory(b.root/'native');b.directory(b.root/'evidence')
     os.environ['ATLAS_PERSONAL_NATIVE_TEST_APPROVAL']=approved_scope
