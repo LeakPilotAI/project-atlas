@@ -263,11 +263,26 @@ class NativeSwitchFixture:
             self.out=BoundedOutput(f.w.WindowsOutput(str(self.base)),budget)
             if f.native.file_identity(self.out.root_handle)!=custody.current()['root']:raise ValueError('CATALOG_ROOT_CHANGED')
 
+    def _verified_catalog_scope(self):
+        """Check immutable catalog enrollment before any successor publication."""
+        pin=self.custody.current()
+        if (type(pin) is not dict or set(pin)!={'schema','root','scope','selection'}
+                or pin['schema']!='NATIVE_SWITCH_FIXTURE_PIN_V1'
+                or self.custody.verify(pin) is not True
+                or f.native.file_identity(self.out.root_handle)!=pin['root']):
+            raise NativeContinuationUnknown('CATALOG_PIN_OR_ROOT_UNVERIFIED')
+        value=strict(f.s.read_bound(self.out,'scope.json',pin['scope'])[0].decode())
+        expected={'schema':'NATIVE_SWITCH_FIXTURE_SCOPE_V1','roles':{k:digest(v.scope) for k,v in self.journals.items()}}
+        if value!=expected or self.custody.current()!=pin or self.custody.verify(pin) is not True:
+            raise NativeContinuationUnknown('CATALOG_SCOPE_OR_CURRENTNESS_CHANGED')
+        return pin
+
     def switch(self,*,fault=lambda phase:None):
         with self.ExitStack() as stack:
             stack.enter_context(self.custody.lease())
             for name in sorted(self.journals):stack.enter_context(self.journals[name].custody.lease())
-            if self.custody.current()['selection'] is not None:
+            current=self._verified_catalog_scope()
+            if current['selection'] is not None:
                 existing=self.inspect()
                 if existing['status']!='ACKNOWLEDGED':raise NativeContinuationUnknown('SWITCH_COMMIT_WITHOUT_ADMISSION_ACK')
                 return existing
@@ -314,17 +329,15 @@ class NativeSwitchFixture:
             return self.inspect()
 
     def inspect(self):
+        pin=self._verified_catalog_scope()
         if not self.status.acknowledged():
             if self.status.receipt() is None and self.custody.current()['selection'] is None and {p.name for p in Path(self.out.root).iterdir()}=={'scope.json'}:
                 return {'status':'UNSELECTED','startup_authorized':False}
             return {'status':'UNKNOWN','startup_authorized':False}
-        pin=self.custody.current();selection=pin['selection']
+        selection=pin['selection']
         if selection is None:raise NativeContinuationUnknown('NO_ACKNOWLEDGED_SELECTION')
         values={stage:strict(f.s.read_bound(self.out,stage+'.json',selection[stage])[0].decode()) for stage in selection}
         scope=self.out.inner if isinstance(self.out,BoundedOutput) else self.out
-        bound_scope=strict(f.s.read_bound(scope,'scope.json',pin['scope'])[0].decode())
-        expected_scope={'schema':'NATIVE_SWITCH_FIXTURE_SCOPE_V1','roles':{k:digest(v.scope) for k,v in self.journals.items()}}
-        if bound_scope!=expected_scope:raise NativeContinuationUnknown('CATALOG_SCOPE_CONFLICT')
         cuts={k:v.read() for k,v in self.journals.items()}
         current={k:j.custody.current() for k,j in self.journals.items()}
         validate_switch_cut(pin,values,current,cuts,self.status.receipt())
