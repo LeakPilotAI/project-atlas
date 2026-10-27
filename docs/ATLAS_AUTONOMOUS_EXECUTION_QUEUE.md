@@ -1,3 +1,7 @@
+# Active priority correction - minimum personal PAPER path
+
+V5 JobObject harness is DEFERRED,not a dependency of existing PAPER runtime;four red harness findings preserved,not accepted. Essential FormClosing/drain fix verified:276Pythonpasses plus8PowerShellfakechecks;8native/abrupt-child cases unexecuted. BLOCKED_WAIT only on actual local installation/enrollment,inception,currentdata andboundedpilot authorization/evidence. Minimal supported route compose_personal_qd;no fakeperp account. See docs/MINIMUM_PERSONAL_PAPER_PATH_2026-10-27.md. Prior checkpoints below historical,including oldV5critical-path designation now superseded. No newphase orfinancialpermission.
+
 # V5 manifest review - 2026-10-27
 
 VERIFIED_SOURCE_REVIEW:47pins,71pure/offlinepasses;execution_readyFalse. BLOCKED_WAIT:no ACTIVE native/financial task. Soleoperator review docs/PERSONAL_NATIVE_V5_OPERATOR_REVIEW_PACKAGE_2026-10-27.md. Existingfourcontainmentfailuresnotwaived;noapproval/nativechild/financialactivation. Sourcebinding authorization first,completed-source digest and separate boundedexecutiondecision next. Historical evidence below preserved.

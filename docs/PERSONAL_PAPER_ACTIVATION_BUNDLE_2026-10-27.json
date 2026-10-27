@@ -1,4 +1,28 @@
 {
+  "minimum_pilot_dependency_classification": {
+    "scope": "PERSONAL_PAPER_ONLY_V1;classification only,not activation or historical gate promotion",
+    "minimum_supported_factory": "backend/app/services/personal_paper_runtime.py::compose_personal_qd",
+    "quality_dips_only_first_pilot_supported": true,
+    "hyperliquid_before_initialization": "NOT_INITIALIZED;no fabricated counterpart or1000USDCbalance;separate account retained for later authorized lane",
+    "essential": [
+      "Actual D:runtime/resource/clock/current-pin/writer installation and accepted local operator action",
+      "Once-only simulated account inception and native readback",
+      "Authorized current ranking/instrument/calendar and executable L1 data",
+      "Actual selected account dashboard and owned Start/Stop/restart acceptance",
+      "Existing financial/account/risk/UNKNOWN/capacity protections"
+    ],
+    "deferred": [
+      "V5 OwnedChild JobObject containment for native test harness;not imported by PAPER runtime",
+      "Extended months-long soak;begins after initial acceptance",
+      "Native continuation expansion beyond first bounded capacity;never reset retained history"
+    ],
+    "out_of_scope": [
+      "Live-money order routing",
+      "Withdrawals/transfers/wallet signing",
+      "VPS/cloud/public deployment"
+    ],
+    "financial_startup_authorized": false
+  },
   "schema": "ATLAS_PERSONAL_ACTIVATION_BUNDLE_V1",
   "profile": "PERSONAL_PAPER_ONLY_V1",
   "status": "PROPOSED_NOT_AUTHORIZED",
@@ -6,13 +30,13 @@
   "financial_startup_authorized": false,
   "operator": "SOLE_LOCAL_OPERATOR",
   "external_reviewer_required": false,
-  "code_release": "c8df2e9cd61077daf308c07df78ea12c14ea4e52",
+  "code_release": "06d264a2444a7d599786faf940493f4981883b30",
   "policy": "docs/ATLAS_PERSONAL_PAPER_RELEASE_POLICY.json",
   "policy_sha256": "4d67c4ef2d692719a9195d0d5b3068cb91e352a357425a085f83c96779550ff2",
   "pilot_id": "personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78",
   "paths": {
-    "release": "D:\\AtlasRuntime\\releases\\c8df2e9cd61077daf308c07df78ea12c14ea4e52",
-    "interpreter": "D:\\AtlasRuntime\\releases\\c8df2e9cd61077daf308c07df78ea12c14ea4e52\\python\\python.exe",
+    "release": "D:\\AtlasRuntime\\releases\\06d264a2444a7d599786faf940493f4981883b30",
+    "interpreter": "D:\\AtlasRuntime\\releases\\06d264a2444a7d599786faf940493f4981883b30\\python\\python.exe",
     "activation_root": "D:\\AtlasCustody\\PersonalPaper\\personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78",
     "activation_record": "D:\\AtlasCustody\\PersonalPaper\\personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78\\activation.json",
     "portfolio_control": "D:\\AtlasCustody\\PersonalPaper\\personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78\\portfolio",
@@ -104,13 +128,22 @@
     "processes": "RETAINED_TEST_OWNED_SELF_EXITING_ONLY"
   },
   "remaining_permissions": [
+    "EXACT_LOCAL_INSTALL_AND_RESOURCE_ENROLLMENT",
+    "NATIVE_FINANCIAL_STORAGE_VERIFICATION_NO_V5_JOB_REQUIREMENT",
+    "ONCE_ONLY_QD_SIMULATED_INCEPTION",
+    "BOUNDED_AUTHORIZED_CURRENT_RANKING_AND_IEX_DATA",
+    "BOUNDED_QD_AUTONOMOUS_PAPER_SESSION"
+  ],
+  "historical_strict_gate_promotions": 0,
+  "local_exact_scope": "logs/diagnostics/PERSONAL_PAPER_MINIMUM_SCOPE_PRIVATE_2026-10-27.json",
+  "public_resource_paths": "REDACTED_NOT_CONSUMABLE;actual existing provisioning identifiers remain private",
+  "prior_proposed_code_release": "c8df2e9cd61077daf308c07df78ea12c14ea4e52",
+  "historical_full_unified_remaining_permissions": [
     "CONFINED_NATIVE_COMPATIBILITY_RUN",
     "EXACT_LOCAL_INSTALL_AND_RESOURCE_ENROLLMENT",
     "ONCE_ONLY_TWO_ACCOUNT_SIMULATED_INCEPTION",
     "BOUNDED_PROVIDER_DATA_ONLY_ACCESS",
     "BOUNDED_AUTONOMOUS_PAPER_SESSION"
   ],
-  "historical_strict_gate_promotions": 0,
-  "local_exact_scope": "logs/diagnostics/PERSONAL_PAPER_ACTIVATION_SCOPE_PRIVATE_2026-10-27.json",
-  "public_resource_paths": "REDACTED_NOT_CONSUMABLE;actual existing provisioning identifiers remain private"
+  "prior_local_exact_scope": "logs/diagnostics/PERSONAL_PAPER_ACTIVATION_SCOPE_PRIVATE_2026-10-27.json"
 }

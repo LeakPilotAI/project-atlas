@@ -1,6 +1,14 @@
+# Active pilot priority correction - October 27, 2026
+
+V5 OwnedChild JobObject work is a DEFERRED native-test-harness improvement,not an import/dependency of the actual personal PAPER runtime. Its four red assertions and all prior evidence remain preserved;no safety requirement is waived. Do not require V5completion to begin the distinct personal installation/financial acceptance path. Actual financial native identity,resource,writer,ACK/readback and recovery verification remain essential and separately authorized. The historical proposal below remains intact and is superseded only where it says V5compatibility must happen first.
+
+The smallest supported first pilot may use existing compose_personal_qd with just the Quality Dips account. Hyperliquid remains separately1000USDCproposed,NOT_INITIALIZED until separately admitted;no synthetic counterpart or merged cash. The unified two-account path remains available after both actual accounts are enrolled. No startup,inception,provider or financial permission is granted by this correction. Existing local installation/accepted inputs and actual desktop Start/Stop still need commissioning. See docs/MINIMUM_PERSONAL_PAPER_PATH_2026-10-27.md for actual source trace and required operator scope.
+
+---
+
 # Consolidated personal PAPER activation bundle — NOT AUTHORIZED
 
-Operator:you,the sole local operator. Profile:PERSONAL_PAPER_ONLY_V1,already approved for source integration. Code release:`c8df2e9cd61077daf308c07df78ea12c14ea4e52`. Public resource paths below and in the companion JSON are redacted. The exact existing epoch and proposed new account identifiers/paths are in the IGNORED local file `logs/diagnostics/PERSONAL_PAPER_ACTIVATION_SCOPE_PRIVATE_2026-10-27.json`;review that file locally before authorizing execution. It contains no credentials or observed nativeIDs and is not runtime authority. Do not publish it. This document requests no external reviewer,custodian,committee or enterprise signoff. It does not authorize its own execution.
+Operator:you,the sole local operator. Profile:PERSONAL_PAPER_ONLY_V1,already approved for source integration. Code release:`06d264a2444a7d599786faf940493f4981883b30`. Public resource paths below and in the companion JSON are redacted. The exact existing epoch and proposed new account identifiers/paths are in the IGNORED local file `logs/diagnostics/PERSONAL_PAPER_MINIMUM_SCOPE_PRIVATE_2026-10-27.json`;review that file locally before authorizing execution. It contains no credentials or observed nativeIDs and is not runtime authority. Do not publish it. This document requests no external reviewer,custodian,committee or enterprise signoff. It does not authorize its own execution.
 
 ## Account inception configuration
 
@@ -13,7 +21,7 @@ Each inception has zero positions,obligations,gross/cost/netP&L and source revis
 
 ## Proposed resources and installed dependencies
 
-- Release:`D:\AtlasRuntime\releases\c8df2e9cd61077daf308c07df78ea12c14ea4e52`. Actual interpreter:`...\python\python.exe`,with pinned runtime/dependency inventory onD:. A release GitSHA is not a64hexartifact digest;compute and bind the actual immutable release manifest at packaging. Keep the old release directory untouched. No machine-wide install,service,newWindowsaccount,root/projectACLchange orC:deployment.
+- Release:`D:\AtlasRuntime\releases\06d264a2444a7d599786faf940493f4981883b30`. Actual interpreter:`...\python\python.exe`,with pinned runtime/dependency inventory onD:. A release GitSHA is not a64hexartifact digest;compute and bind the actual immutable release manifest at packaging. Keep the old release directory untouched. No machine-wide install,service,newWindowsaccount,root/projectACLchange orC:deployment.
 - QD existing `D:\AtlasPaper\QualityDips\EXISTING_PRIVATE_QD_EPOCH\source`,projection,report,control plus a proposed NEW coordination child;QDcustody under `D:\AtlasCustody\QualityDips\EXISTING_PRIVATE_QD_EPOCH`. Reverify all existing nativeIDs,owner/SYSTEMACLs and namespaces;stop on conflicts rather than repair/adopt.
 - New perp source/projection/report/control/coordination:`D:\AtlasPaper\Hyperliquid\PROPOSED_PRIVATE_PERP_EPOCH`;custody:`D:\AtlasCustody\Hyperliquid\PROPOSED_PRIVATE_PERP_EPOCH`. Only new required parents/children,owner/SYSTEMACLs. Capture actual native identities,not invented IDs.
 - Personal activation/global portfolio/source publications:`D:\AtlasCustody\PersonalPaper\personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78` and exactly named children in JSON. Local approval is `LOCAL_OPERATOR`,not a synthetic issuer or strict gate approval. Protect newly created children only. The same operator owns session/current-pin coordination;it supplies local consistency,not independent anti-rollback.
