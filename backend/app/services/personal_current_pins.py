@@ -32,8 +32,9 @@ class PersonalCurrentPins:
                 or len(after[field])!=len(before[field])+1 or len(after[field])>128 or after[field][:-1]!=before[field]
                 or {k:v for k,v in before.items() if k!=field}!={k:v for k,v in after.items() if k!=field}):raise ValueError('PERSONAL_PIN_NONAPPEND_OR_RESOURCE_SUBSTITUTION')
         if self.current()!=before:raise ValueError('PERSONAL_PIN_STALE_CAS')
+        expected_generation=self.known[0]
         with self.ledger.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            changed=db.execute('UPDATE personal_current SET body=?,generation=generation+1 WHERE name=? AND body=?',(body(after),self.name,body(before)))
+            changed=db.execute('UPDATE personal_current SET body=?,generation=generation+1 WHERE name=? AND body=? AND generation=?',(body(after),self.name,body(before),expected_generation))
             if changed.rowcount!=1:raise ValueError('PERSONAL_PIN_STALE_CAS')
         if self.current()!=after:raise ValueError('PERSONAL_PIN_COMMIT_READBACK_UNKNOWN')

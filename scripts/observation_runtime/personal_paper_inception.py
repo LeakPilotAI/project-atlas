@@ -22,8 +22,17 @@ from app.services.personal_paper_runtime import PROFILE, validate_policy
 from scripts.observation_runtime.quality_dips_one_time_publisher import OneTimePublisher
 
 
+def native_primitives():
+    # Existing-only native access;source tests may inject OS doubles explicitly.
+    spec=importlib.util.spec_from_file_location('personal_inception_bound',Path(__file__).parents[1]/'volume_inspector/snapshot_store.py')
+    native=importlib.util.module_from_spec(spec);spec.loader.exec_module(native)
+    return native
+
+
 def validate_personal_inception(value):
-    e=strict(body(value));policy=validate_policy(e['personal_policy']);lane=e['lane'];m=e['parameters']
+    e=strict(body(value))
+    if type(e) is not dict or set(e)!={'profile','personal_policy','lane','native_enrollment','parameters','report_scope'}:raise ValueError('PERSONAL_INCEPTION_SCHEMA')
+    policy=validate_policy(e['personal_policy']);lane=e['lane'];m=e['parameters']
     if lane=='QUALITY_DIPS':
         from app.services.quality_dips_autonomous_enrollment import validate_enrollment
     elif lane=='HYPERLIQUID':
@@ -42,7 +51,42 @@ def validate_personal_inception(value):
         if (m.get('provenance')!='ACCEPTED_PERP_PAPER_PARAMETERS_V1' or n['policy_digest']!=digest(p)
                 or not set(p['symbols'])<=set(policy['accounts'][lane]['universe']) or Decimal(p['risk_limit'])>1
                 or p['max_positions']>3 or Decimal(p['session_stop'])>Decimal(-3)):raise ValueError('PERSONAL_PERP_PARAMETERS')
+    expected_scope={'schema':'FS3_QD_REPORT_SCOPE_V2' if lane=='QUALITY_DIPS' else 'FS3_PERP_REPORT_SCOPE_V3',
+                    'account_id':n['account_id'],'epoch':n['epoch'],'policy_digest':digest(m),'timezone':m['timezone'],
+                    'session_reporting_policy':'ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1'}
+    if lane=='HYPERLIQUID':expected_scope['funding_reporting_policy']='POSTED_CASH_AND_SETTLEMENT_ACCRUAL_V1'
+    if body(e['report_scope'])!=body(expected_scope):raise ValueError('PERSONAL_REPORT_ACCOUNT_SCOPE_CONFLICT')
     return lane,n,m
+
+
+def validate_initial_current(enrollment,value):
+    from app.investment.quality_dips_operational_contract import hashed, native_id
+    lane,n,m=validate_personal_inception(enrollment);current=strict(body(value))
+    if (type(current) is not dict or set(current)!={'schema','profile','enrollment_digest','lane','source','reports',
+            'state_digest','revision','acknowledged_revision','generation','status','projection'}
+            or current['schema']!='PERSONAL_INITIAL_CURRENT_V1' or current['profile']!=PROFILE
+            or current['enrollment_digest']!=digest(n) or current['lane']!=lane
+            or current['status']!='ACKNOWLEDGED'
+            or any(type(current[k]) is not int for k in ('generation','revision','acknowledged_revision'))
+            or current['generation']!=1 or current['revision']!=0 or current['acknowledged_revision']!=0):
+        raise ValueError('PERSONAL_INITIAL_CUT_TYPE_OR_BINDING')
+    hashed(current['state_digest'])
+    source,reports,projection=(current[k] for k in ('source','reports','projection'))
+    if (type(source) is not dict or set(source)!={'schema','root','inception','epoch','entries'}
+            or source['schema']!=('QD_AUTO_OP_PIN_V1' if lane=='QUALITY_DIPS' else 'PERP_AUTO_OP_PIN_V1')
+            or source['root']!=n['resources']['source']['native_id'] or source['epoch']!=n['epoch'] or source['entries']!=[]
+            or type(reports) is not dict or set(reports)!={'schema','root','scope','reports'}
+            or reports['schema']!=('FS3_REPORT_PIN_V1' if lane=='QUALITY_DIPS' else 'PERP_AUTO_OP_REPORT_PIN_V1')
+            or reports['root']!=n['resources']['report']['native_id'] or type(reports['reports']) is not list or len(reports['reports'])!=1
+            or type(projection) is not dict or set(projection)!={'root','required','acknowledged'}
+            or projection['root']!=n['resources']['projection']['native_id']
+            or any(type(projection[k]) is not int or projection[k]!=0 for k in ('required','acknowledged'))):
+        raise ValueError('PERSONAL_INITIAL_PIN_OR_PROJECTION_CONFLICT')
+    for root in (source['root'],reports['root'],projection['root']):native_id(root)
+    for binding in (source['inception'],reports['scope'],*reports['reports']):
+        if type(binding) is not dict or set(binding)!={'id','sha256'}:raise ValueError('PERSONAL_INITIAL_FILE_BINDING')
+        native_id(binding['id']);hashed(binding['sha256'])
+    return lane,n,m,current
 
 
 class PersonalInceptionPublisher(OneTimePublisher):
@@ -82,9 +126,9 @@ class NativePersonalInceptionFiles:
     """
     @contextmanager
     def open(self,enrollment):
-        spec=importlib.util.spec_from_file_location('personal_inception_bound',Path(__file__).parents[1]/'volume_inspector/snapshot_store.py')
-        native=importlib.util.module_from_spec(spec);spec.loader.exec_module(native)
-        e=enrollment['native_enrollment'];outputs={};expected={r:{} for r in ('source','projection','report')}
+        enrollment=strict(body(enrollment));_,e,_=validate_personal_inception(enrollment)
+        native=native_primitives()
+        outputs={};expected={r:{} for r in ('source','projection','report')}
         try:
             for role in expected:
                 root=e['resources'][role]
@@ -159,22 +203,22 @@ class PersonalInceptionBootstrap:
 class NativePersonalInitialReadback:
     """Existing native immutable bytes + separate FS1/FS3 arithmetic audit."""
     def verify(self,enrollment,current):
-        lane,n,expected_manifest=validate_personal_inception(enrollment)
-        if (current.get('schema')!='PERSONAL_INITIAL_CURRENT_V1' or current.get('profile')!=PROFILE
-                or current.get('enrollment_digest')!=digest(n) or current.get('lane')!=lane or current.get('generation')!=1
-                or current.get('projection')!={'root':n['resources']['projection']['native_id'],'required':0,'acknowledged':0}
-                or current['source'].get('schema')!=('QD_AUTO_OP_PIN_V1' if lane=='QUALITY_DIPS' else 'PERP_AUTO_OP_PIN_V1')
-                or current['reports'].get('schema')!=('FS3_REPORT_PIN_V1' if lane=='QUALITY_DIPS' else 'PERP_AUTO_OP_REPORT_PIN_V1')
-                or len(current['reports'].get('reports',[]))!=1):raise ValueError('PERSONAL_INITIAL_CUT_TYPE_OR_BINDING')
-        spec=importlib.util.spec_from_file_location('personal_initial_readback',Path(__file__).parents[1]/'volume_inspector/snapshot_store.py')
-        native=importlib.util.module_from_spec(spec);spec.loader.exec_module(native)
-        n=enrollment['native_enrollment'];expected_manifest=enrollment['parameters'];outputs={}
+        original_enrollment,original_current=enrollment,current
+        sealed_enrollment,sealed_current=body(enrollment),body(current)
+        enrollment=strict(sealed_enrollment)
+        lane,n,expected_manifest,current=validate_initial_current(enrollment,current)
+        native=native_primitives();outputs={}
         try:
             for role in ('source','projection','report'):
                 out=native.w.WindowsOutput(n['resources'][role]['path']);outputs[role]=out
                 if native.native.file_identity(out.root_handle)!=n['resources'][role]['native_id']:raise ValueError('PERSONAL_INITIAL_ROOT_SUBSTITUTION')
-            if ({p.name for p in Path(outputs['source'].root).iterdir()}!={'inception.json'} or list(Path(outputs['projection'].root).iterdir())
-                    or {p.name for p in Path(outputs['report'].root).iterdir()}!={'scope.json','0001-report.json'}):raise ValueError('PERSONAL_INITIAL_NAMESPACE')
+            def inventory():
+                for role,out in outputs.items():
+                    out._verify()
+                    if native.native.file_identity(out.root_handle)!=n['resources'][role]['native_id']:raise ValueError('PERSONAL_INITIAL_ROOT_SUBSTITUTION')
+                if ({p.name for p in Path(outputs['source'].root).iterdir()}!={'inception.json'} or list(Path(outputs['projection'].root).iterdir())
+                        or {p.name for p in Path(outputs['report'].root).iterdir()}!={'scope.json','0001-report.json'}):raise ValueError('PERSONAL_INITIAL_NAMESPACE')
+            inventory()
             source=current['source'];report_pin=current['reports']
             value=strict(native.read_bound(outputs['source'],'inception.json',source['inception'])[0].decode())
             expected_schema='QD_AUTO_OP_INCEPTION_V1' if enrollment['lane']=='QUALITY_DIPS' else 'PERP_AUTO_OP_INCEPTION_V1'
@@ -183,13 +227,17 @@ class NativePersonalInitialReadback:
             doc=strict(native.read_bound(outputs['report'],'0001-report.json',report_pin['reports'][0])[0].decode())
             state,_,_=replay_verified_events(expected_manifest,[]);audit_financial_events(expected_manifest,[],state)
             if (source['entries']!=[] or source['root']!=n['resources']['source']['native_id'] or source['epoch']!=n['epoch']
-                    or report_pin['root']!=n['resources']['report']['native_id'] or doc['revision']!=1 or doc['previous']!=report_pin['scope']
+                    or report_pin['root']!=n['resources']['report']['native_id']
+                    or type(doc) is not dict or set(doc)!={'schema','revision','previous','report_id','report'}
+                    or type(doc['revision']) is not int or doc['revision']!=1 or doc['previous']!=report_pin['scope']
                     or doc['schema']!=('FS3_REPORT_DOCUMENT_V1' if lane=='QUALITY_DIPS' else 'PERP_AUTO_OP_REPORT_DOCUMENT_V1')
                     or scope!=enrollment['report_scope'] or doc['report_id']!=digest(doc['report']) or current['state_digest']!=digest(state)
                     or current['revision']!=0 or current['acknowledged_revision']!=0 or current['status']!='ACKNOWLEDGED'):
                 raise ValueError('PERSONAL_INITIAL_CUT_CONFLICT')
             logical={'epoch':n['epoch'],'entries':[],'root':source['root'],'inception':source['inception']}
             audit_daily_report(doc['report'],scope,expected_manifest,logical,[],state)
+            inventory()
+            if body(original_enrollment)!=sealed_enrollment or body(original_current)!=sealed_current:raise ValueError('PERSONAL_INITIAL_READ_INPUT_CHANGED')
             return True
         finally:
             for out in outputs.values():out.close()

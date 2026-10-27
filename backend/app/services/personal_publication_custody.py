@@ -19,6 +19,7 @@ class PersonalPublicationCustody:
         with self.ledger.connect(readonly=True) as db:return db.execute('SELECT intent,context,state,current,commit_body,ack_body FROM personal_publications WHERE id=?',(ident,)).fetchone()
     @contextmanager
     def reserve(self,intent,context,now):
+        intent,context=strict(body(intent)),strict(body(context))
         ident=intent['operation_id'];i,c=body(intent),body(context)
         with self.ledger.connect() as db:
             db.execute('BEGIN IMMEDIATE')
