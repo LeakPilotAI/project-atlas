@@ -226,8 +226,8 @@ def validate_switch_cut(pin, values, current_pins, cuts, status_receipt):
                 or set(current_pins)!=roles or set(cuts)!=roles
                 or set(i)!={'schema','before'} or i['schema']!='NATIVE_SWITCH_FIXTURE_INTENT_V1'
                 or set(i['before'])!=roles
-                or set(r)!={'schema','intent','before','selected','state_digests','roots'}
-                or r['schema']!='NATIVE_SWITCH_FIXTURE_RECORD_V1'
+                or set(r)!=({'schema','intent','before','selected','state_digests','roots'} | ({'ownership_map'} if r.get('schema')=='NATIVE_SWITCH_FIXTURE_RECORD_V2' else set()))
+                or r['schema'] not in ('NATIVE_SWITCH_FIXTURE_RECORD_V1','NATIVE_SWITCH_FIXTURE_RECORD_V2')
                 or r['intent']!=selection['intent'] or r['before']!=i['before']
                 or r['selected']!={k:digest(v) for k,v in current_pins.items()}
                 or r['state_digests']!={k:digest(v['state']) for k,v in cuts.items()}
@@ -244,11 +244,11 @@ def validate_switch_cut(pin, values, current_pins, cuts, status_receipt):
 class NativeSwitchFixture:
     """All-role fixture selection barrier;separate physical writes are NOT atomic."""
     ROLES=frozenset({'QD_SOURCE','PERP_SOURCE','QD_REPORT','PERP_REPORT','PERP_ORDERS','GLOBAL'})
-    def __init__(self,*,base,budget,custody,status,authority,journals):
+    def __init__(self,*,base,budget,custody,status,authority,journals,ownership=None):
         from contextlib import ExitStack
         self.ExitStack=ExitStack
         self.base=Path(base);self.budget=budget;self.custody=custody;self.status=status;self.authority=authority
-        self.journals=journals
+        self.journals=journals;self.ownership=ownership
         if set(journals)!=self.ROLES or not self.base.is_relative_to(budget.root):
             raise ValueError('COMPLETE_FIXTURE_SWITCH_ROSTER_REQUIRED')
         if self.custody.current() is None:
@@ -267,7 +267,10 @@ class NativeSwitchFixture:
         with self.ExitStack() as stack:
             stack.enter_context(self.custody.lease())
             for name in sorted(self.journals):stack.enter_context(self.journals[name].custody.lease())
-            if self.custody.current()['selection'] is not None:return self.inspect()
+            if self.custody.current()['selection'] is not None:
+                existing=self.inspect()
+                if existing['status']!='ACKNOWLEDGED':raise NativeContinuationUnknown('SWITCH_COMMIT_WITHOUT_ADMISSION_ACK')
+                return existing
             cuts={k:v.read() for k,v in self.journals.items()}
             if (any(len(v['pin']['segments'])>=2 for v in cuts.values())
                     or self.authority.verify_switch(cuts) is not True):raise ValueError('ALL_ROLE_FINAL_DRAIN_REQUIRED')
@@ -281,6 +284,7 @@ class NativeSwitchFixture:
             if any(row['state'] in ('RESERVED','FILL_PENDING') for row in cuts['PERP_ORDERS']['state']['orders'].values()):
                 raise ValueError('RESTING_ORDER_BLOCKS_SWITCH')
             if cuts['GLOBAL']['state'].get('finalized') is None:raise ValueError('GLOBAL_FINAL_REQUIRED')
+            fault('before_reservation')
             self.status.pending();fault('reserved')
             intent={'schema':'NATIVE_SWITCH_FIXTURE_INTENT_V1','before':{k:digest(v['pin']) for k,v in cuts.items()}}
             ib=self.out.write_bound('intent.json',f.encoded(intent));fault('intent')
@@ -294,6 +298,9 @@ class NativeSwitchFixture:
                 'before':intent['before'],'selected':{k:digest(v) for k,v in selected.items()},
                 'state_digests':{k:digest(v['state']) for k,v in cuts.items()},
                 'roots':{k:[{'source':s['root'],'projection':s['projection']} for s in v['segments']] for k,v in selected.items()}}
+            if self.ownership is not None:
+                mapping=self.ownership.prepare(cuts,selected)
+                record.update(schema='NATIVE_SWITCH_FIXTURE_RECORD_V2',ownership_map=self.out.write_bound('ownership-map.json',f.encoded(mapping)))
             rb=self.out.write_bound('record.json',f.encoded(record));fault('record')
             cb=self.out.write_bound('commit.json',f.encoded({'schema':'NATIVE_SWITCH_FIXTURE_COMMIT_V1','record':rb,'intent':ib}));fault('commit')
             for name,journal in self.journals.items():
@@ -307,7 +314,10 @@ class NativeSwitchFixture:
             return self.inspect()
 
     def inspect(self):
-        if not self.status.acknowledged():return {'status':'UNKNOWN','startup_authorized':False}
+        if not self.status.acknowledged():
+            if self.status.receipt() is None and self.custody.current()['selection'] is None and {p.name for p in Path(self.out.root).iterdir()}=={'scope.json'}:
+                return {'status':'UNSELECTED','startup_authorized':False}
+            return {'status':'UNKNOWN','startup_authorized':False}
         pin=self.custody.current();selection=pin['selection']
         if selection is None:raise NativeContinuationUnknown('NO_ACKNOWLEDGED_SELECTION')
         values={stage:strict(f.s.read_bound(self.out,stage+'.json',selection[stage])[0].decode()) for stage in selection}
@@ -318,6 +328,12 @@ class NativeSwitchFixture:
         cuts={k:v.read() for k,v in self.journals.items()}
         current={k:j.custody.current() for k,j in self.journals.items()}
         validate_switch_cut(pin,values,current,cuts,self.status.receipt())
+        record=values['record']
+        if record['schema']=='NATIVE_SWITCH_FIXTURE_RECORD_V2':
+            if self.ownership is None:raise NativeContinuationUnknown('OWNERSHIP_VERIFIER_MISSING')
+            mapping=strict(f.s.read_bound(scope,'ownership-map.json',record['ownership_map'])[0].decode())
+            if self.ownership.verify(mapping,cuts) is not True:raise NativeContinuationUnknown('OWNERSHIP_RESOURCE_MAP_CONFLICT')
+        elif self.ownership is not None:raise NativeContinuationUnknown('OWNERSHIP_SCHEMA_DOWNGRADE')
         if self.custody.verify(pin) is not True or self.authority.verify_switch(cuts) is not True:
             raise NativeContinuationUnknown('CATALOG_CURRENTNESS_OR_AUTHORITY_CHANGED')
         return {'status':'ACKNOWLEDGED','cuts':cuts,'startup_authorized':False}
