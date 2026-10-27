@@ -127,4 +127,3 @@ def create_session(root,*,started_monotonic_ns):
     with (root/'session-budget.json').open('x',encoding='utf8') as stream:json.dump(anchor,stream)
     with (root/'session-budget.lock').open('xb') as stream:stream.write(b'0')
     return NativeFixtureBudget(root)
-

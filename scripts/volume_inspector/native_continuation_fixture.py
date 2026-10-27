@@ -298,4 +298,3 @@ class NativeSwitchFixture:
         return {'status':'ACKNOWLEDGED','cuts':cuts,'startup_authorized':False}
 
     def close(self):self.out.close()
-

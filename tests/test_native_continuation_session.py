@@ -216,4 +216,3 @@ def test_complete_role_catalog_switch_and_unknown_barrier(phase):
     finally:
         switch.close()
         for journal in journals.values():journal.close()
-

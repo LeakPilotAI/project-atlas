@@ -19,4 +19,3 @@ s=ledger(b,p,a,'QD',m)
 row=canonical_records(m,[strict(records()['QUALITY_DIPS'][0]['command'])])[0]
 s.append(row,fault=lambda stage:os._exit(73) if stage==phase else None)
 s.close()
-
