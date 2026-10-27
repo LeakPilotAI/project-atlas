@@ -192,3 +192,15 @@ def test_personal_unified_binds_both_actual_native_account_contracts_before_cons
             runtime=compose_personal_unified(policy=i.p,lanes=lanes,portfolio=portfolio,clock=clock,installation=i.i)
             assert runtime.state=='STOPPED' and runtime.grant is None
     finally:q.ledger.db.close();h.ledger.db.close()
+
+
+@pytest.mark.parametrize('damage',['genesis','cloud','universe','perp-universe','fractional','override'])
+def test_personal_policy_retains_isolation_and_instrument_boundaries(damage):
+    p=policy()
+    if damage=='genesis':p['genesis_access_allowed']=True
+    elif damage=='cloud':p['vps_cloud_new_windows_account_allowed']=True
+    elif damage=='universe':p['accounts']['QUALITY_DIPS']['universe']='UNRESTRICTED'
+    elif damage=='perp-universe':p['accounts']['HYPERLIQUID']['universe'].append('UNAPPROVED')
+    elif damage=='fractional':p['accounts']['QUALITY_DIPS']['fractional']='ALWAYS'
+    else:p['authority']['technical_refusals_not_overrideable_by_start']=False
+    with pytest.raises(ValueError):validate_policy(p)

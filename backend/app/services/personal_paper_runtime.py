@@ -30,12 +30,16 @@ def validate_policy(value):
             or p.get('operator_model')!='SOLE_LOCAL_OPERATOR' or p.get('deployment')!='D_ONLY_EXISTING_WINDOWS_ACCOUNT'
             or p.get('startup_authorized') is not False or p.get('activation_authorized') is not False
             or p.get('financial_publication_authorized') is not False or p.get('provider_activation_authorized') is not False
-            or p.get('historical_gate_promotions')!=0):raise ValueError('PERSONAL_APPROVED_POLICY_REQUIRED_NO_ACTIVATION_IMPLIED')
+            or p.get('historical_gate_promotions')!=0
+            or p.get('vps_cloud_new_windows_account_allowed') is not False or p.get('genesis_access_allowed') is not False
+            or p.get('preserve_original_frontend') is not True):raise ValueError('PERSONAL_APPROVED_POLICY_REQUIRED_NO_ACTIVATION_IMPLIED')
     a=p['authority'];s=p['account_separation'];q=p['accounts']['QUALITY_DIPS'];h=p['accounts']['HYPERLIQUID']
-    if (a['release_decision']!='SOLE_OPERATOR' or any(a[k] is not False for k in ('external_reviewer_required','external_issuer_required','independent_custodian_required','per_trade_confirmation'))
+    if (a['release_decision']!='SOLE_OPERATOR' or a.get('technical_refusals_not_overrideable_by_start') is not True or any(a[k] is not False for k in ('external_reviewer_required','external_issuer_required','independent_custodian_required','per_trade_confirmation'))
             or any(s[k] is not False for k in ('transfers','cash_netting','assume_usdc_equals_usd','synthetic_counterpart_for_uninitialized_lane','legacy_adoption','historical_positions_assumed_closed'))
             or (q['currency'],q['opening_balance'],q['max_entry_notional'],q['max_open_positions'],q['long_only'],q['scale_in'])!=('SIMULATED_USD','1000','100',1,True,False)
             or (h['currency'],h['opening_balance'],h['max_risk_per_trade'],h['max_open_positions'],h['session_stop_R'])!=('SIMULATED_USDC','1000','1',3,'-3')
+            or q['universe']!='ELIGIBLE_EXISTING_QD_RANKED_STOCKS_ETFS' or q['fractional']!='ONLY_WHEN_SUPPORTED'
+            or type(h['max_open_positions']) is not int or h['universe']!=['BTC','ETH','SOL']
             or type(q['max_open_positions']) is not int or q['long_only'] is not True or q['scale_in'] is not False
             or q['fee_bps_per_side']!='2' or q['slippage_bps_per_side']!='2'
             or set(p['prohibited_capabilities'])!={'REAL_ORDER_EXECUTION','REAL_CAPITAL_ENROLLMENT','WITHDRAWAL','TRANSFER','WALLET_SIGNING','PAPER_TO_LIVE_PROMOTION','LIVE_TOGGLE','LIVE_ORDER_SDK_OR_DORMANT_ROUTE'}):raise ValueError('PERSONAL_SAFETY_POLICY_CHANGED')

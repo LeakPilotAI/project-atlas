@@ -30,7 +30,7 @@ def validate_personal_inception(value):
         from app.services.perp_operational_contract import validate_enrollment
     else:raise ValueError('PERSONAL_INCEPTION_LANE')
     n=validate_enrollment(e['native_enrollment']);validate_manifest(m)
-    if (e['profile']!=PROFILE or m['opening_cash']!='1000' or n['epoch']!=m['epoch']
+    if (e['profile']!=PROFILE or m['opening_cash']!='1000' or Decimal(m['initial_net_r'])!=0 or n['epoch']!=m['epoch']
             or n['inception_digest']!=digest(m) or n['release_digest']!=m['release']
             or m['schema']!=('PAPER_EPOCH_AUTONOMOUS_QD_V1' if lane=='QUALITY_DIPS' else 'PAPER_EPOCH_PERP_OPERATIONAL_V1')):
         raise ValueError('PERSONAL_INCEPTION_ACCOUNT_BINDING')
@@ -126,7 +126,14 @@ class PersonalInceptionBootstrap:
         self.publication,self.issuer,self.clock,self.readback=publication,issuer,clock,readback
     def scope(self):
         e=self.enrollment;n=e['native_enrollment']
-        return {'schema':'PERSONAL_GENESIS_INTENT_V1','profile':PROFILE,'operation_id':'personal-inception:'+digest([n['account_id'],n['epoch']]),'enrollment_digest':digest(e),'account_id':n['account_id'],'epoch':n['epoch'],'lane':e['lane']}
+        intent={'schema':'PERSONAL_GENESIS_INTENT_V1','profile':PROFILE,'operation_id':'personal-inception:'+digest([n['account_id'],n['epoch']]),'enrollment_digest':digest(e),'account_id':n['account_id'],'epoch':n['epoch'],'lane':e['lane']}
+        if e['lane']=='QUALITY_DIPS':
+            from app.services.quality_dips_autonomous_enrollment import (
+                publication_intent,
+            )
+            intent['native_intent']=publication_intent(n)
+            intent['operation_id']=intent['native_intent']['operation_id']
+        return intent
     def prepare(self):
         scope=self.scope()
         with self.issuer.lease(scope,self.clock()) as lease:
@@ -136,6 +143,17 @@ class PersonalInceptionBootstrap:
         current,ack=self.publication.acknowledged(self.scope()['operation_id'])
         if self.readback.verify(self.enrollment,current) is not True:raise ValueError('PERSONAL_INITIAL_READBACK_REFUSED')
         return {'schema':'PERSONAL_GENESIS_READY_V1','publication_digest':digest(ack),'current_digest':digest(current),'current':current,'financial_startup_authorized':False}
+
+
+    def native_publication(self):
+        # The actual V4 intent is durably inside the personal reservation;this
+        # view binds its original identity,never renames a fixture/manual effect.
+        scope=self.scope()
+        if self.enrollment['lane']!='QUALITY_DIPS' or 'native_intent' not in scope:raise ValueError('PERSONAL_QD_PUBLICATION_ONLY')
+        ready=self.verify_publication();_,ack=self.publication.acknowledged(scope['operation_id'])
+        if ready['publication_digest']!=digest(ack):raise ValueError('PERSONAL_PUBLICATION_CHANGED')
+        return {'schema':'QD_AUTO_NATIVE_PUBLICATION_V4','intent_digest':digest(scope['native_intent']),
+                'operation_id':scope['native_intent']['operation_id'],'status':'ACKNOWLEDGED','ack_id':digest(ack)}
 
 
 class NativePersonalInitialReadback:

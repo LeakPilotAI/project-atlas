@@ -92,7 +92,7 @@ def test_partial_or_unacknowledged_publication_is_unknown_never_replayed(failure
 
 
 @pytest.mark.parametrize('lane',['QUALITY_DIPS','HYPERLIQUID'])
-@pytest.mark.parametrize('damage',['foreign-enrollment','cash','fees-or-risk','account-policy'])
+@pytest.mark.parametrize('damage',['foreign-enrollment','cash','fees-or-risk','account-policy','risk-baseline'])
 def test_invalid_personal_inception_refuses_before_reservation_or_file_writes(lane,damage):
     from scripts.observation_runtime.personal_paper_inception import (
         validate_personal_inception,
@@ -103,6 +103,7 @@ def test_invalid_personal_inception_refuses_before_reservation_or_file_writes(la
         if damage=='foreign-enrollment':e['native_enrollment']['schema']='FS2_TEST_PIN_V1'
         elif damage=='cash':e['parameters']['opening_cash']='1001'
         elif damage=='account-policy':e['native_enrollment']['policy_digest']='f'*64
+        elif damage=='risk-baseline':e['parameters']['initial_net_r']='1';e['native_enrollment']['inception_digest']=digest(e['parameters'])
         elif lane=='QUALITY_DIPS':e['parameters']['fees_bps']='0';e['native_enrollment']['inception_digest']=digest(e['parameters'])
         else:
             e['parameters']['perp_policy']['risk_limit']='2'
@@ -122,4 +123,17 @@ def test_corrupt_receipt_schema_never_yields_acknowledged_inception(column):
         value=json.loads(s.custody.row(op)[index]);value['schema']='UNTRUSTED_TEST_RECEIPT'
         s.ledger.db.execute('UPDATE personal_publications SET '+column+'=? WHERE id=?',(json.dumps(value),op));s.ledger.db.commit()
         with pytest.raises(ValueError):s.b.verify_publication()
+    finally:s.ledger.db.close()
+
+
+
+def test_personal_once_only_publication_preserves_actual_v4_intent_identity():
+    from app.services.quality_dips_autonomous_enrollment import publication_intent
+    s=system('QUALITY_DIPS')
+    try:
+        with pytest.raises(ValueError):s.b.native_publication()
+        s.pub.publish();expected=publication_intent(s.n);proof=s.b.native_publication()
+        assert s.b.scope()['native_intent']==expected
+        assert proof['operation_id']==expected['operation_id'] and proof['intent_digest']==digest(expected)
+        assert proof['ack_id']==digest(s.custody.acknowledged(expected['operation_id'])[1])
     finally:s.ledger.db.close()
