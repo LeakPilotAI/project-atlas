@@ -1,28 +1,30 @@
 {
   "active_task": null,
-  "last_verified_task": "PERSONAL_PAPER_POLICY_PROPOSAL_AND_SESSION_INTEGRITY",
+  "last_verified_task": "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION",
   "next_eligible_tasks": [],
   "blocked_tasks": {
-    "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
-    "C1": "Native retained fixture command/account/lifetime validated, but actual Atlas ownership, full writer/resource roster and independent drain remain unaccepted.",
-    "D1": "FS1-FS3 disposable engineering verified; strict-root correction and120native-planpasses/1notexecuted do not accept real storage enrollment,issuer,custody,clock,rollback/recovery authority.",
-    "E1": "Dependent gates and operator authorization absent",
-    "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim.",
-    "REAL_HISTORY_HTTP_ACCEPTANCE_SCOPE": "Original six membership permanently UNRECONSTRUCTABLE;authorization unused. New ten-scope assessment does not reconstruct or expand it."
+    "PERSONAL_NATIVE_COMPATIBILITY": "Changed personal inception/native-control path needs ONE new confined synthetic compatibility execution;not authorized by source-only approval. ConsumedV1/V2grants not reused;true-symlink1314 remains honestly NOT_EXECUTED,not an administrative pilot veto.",
+    "PERSONAL_LOCAL_INSTALLATION": "Actual D-resident runtime image,exact native roots/ACL/current operator/process roster and installed technical verifier bindings not yet enrolled. No account/store/credential/service installation authorized. Existing13directories untouched in this task.",
+    "PERSONAL_SIMULATED_INCEPTION": "Once-only1000USDand1000USDC publication requires separate activation authorization and passing native/resource checks;no financial account initialized.",
+    "PERSONAL_CURRENT_DATA": "New session provider access/rights,budgets,current QD ranking/instrument/calendar/quote evidence,perp execution/funding and risk conversion evidence require scoped permission and actual validation;no providers connected.",
+    "PERSONAL_BOUNDED_START": "Operator must review ONE consolidated activation bundle;startup remains unauthorized. Existing128guards/Stopreserves and actual measured capacity required;no fake counterpart or unacknowledged effect allowed."
   },
   "latest_tests": {
-    "selection": "personal session reservation integrity plus existing pure clock regressions",
-    "passed": 16,
+    "selection": "Personal source/in-memory adapters,existing strict V4 pure safeguards,session/clock and static PAPER policy regressions",
+    "passed": 263,
     "failed": 0,
     "skipped": 0,
-    "deselected": 3,
-    "new_cases": 7,
+    "errors": 0,
+    "deselected": 13,
+    "new_cases": 71,
+    "elapsed_seconds": 10.59,
     "native_executed": false,
     "financial_store_created": false,
-    "policy_applied": false
+    "policy_applied": true,
+    "financial_startup_authorized": false
   },
-  "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "AWAIT_SOLE_OPERATOR_POLICY_DECISION: approve/reject docs/PERSONAL_PAPER_RELEASE_POLICY_PROPOSAL_2026-10-26.md / PERSONAL_PAPER_ONLY_V1. Proposal removes mandatory external reviewers/custodians for personal PAPER;no reviewer designation requested. Do not apply policy yet. After approval,source-only personal-profile/local-operator integration,reusing existing components;then one concrete bounded activation bundle. Currentstrict21decisions/history unchanged,not accepted;no account/provider/startup authorized. Session reservation integrity fix verified16pure/in-memory tests;3file-backed cases not rerun.",
+  "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
+  "exact_next_action": "Review docs/PERSONAL_PAPER_ACTIVATION_BUNDLE_2026-10-27.md and companion proposed JSON. Sole operator may authorize its exact confined native test,local D:installation/resource enrollment,once-only separate simulated inceptions,provider data scopes and60second commissioning pilot in ONE conditional grant,or a subset. No current permission for those actions. Run technical preflight/adapter conformance first;refuse missing facts/UNKNOWN/corruption;do not invent acceptance or restart financial operations. No historical journals/13actualQDdirectories/providers/Genesis accessed in current source task.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -112,16 +114,19 @@
     "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "BLOCKED: source/fixture implementation advanced;real accepted source custody/roster/capacity/release evidence unavailable. No operational activation.",
     "UNIFIED_SOURCE_PRODUCER_ROSTER_CAPACITY": "VERIFIED bounded source/disposable increment;54new cases in89combinedpasses;user-assisted actual ControlCenter Stop/Close and genuine browser native-hash preservation;not operational acceptance or indefinite capacity.",
     "DESKTOP_SESSION_PERSISTENCE_EXIT_CLASSIFICATION": "VERIFIED source/disposable:durable Stop/exit reason, exact receipt/history/entry-cost/funding analytics,normal owned window-close,three same-account native sessions and separately accepted quiescent incomplete-owned-close;295distinctPython/48JS across stated selections. No operational authority or financial continuation/reset.",
-    "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active."
+    "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
+    "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
   "execution_status": "BLOCKED_WAIT",
-  "progress_revision": 93,
-  "continuation_report": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md",
-  "blocked_wait_reason": "One approved run consumed;current publications/provider/custody and financial release gates remain unaccepted. Do not repeat host under consumed scope.",
+  "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
+  "continuation_report": "docs/PERSONAL_PAPER_POLICY_IMPLEMENTATION_2026-10-27.md",
+  "blocked_wait_reason": "Only installation/native execution/data/inception/session actions outside this source-only approval remain for commissioning;no mandatory external reviewer/issuer/custodian vacancy.",
   "publication_validation": {
-    "source_and_disposable_tests_reviewed": true,
-    "private_artifacts_excluded": true,
-    "operational_acceptance": false
+    "source_release": "c8df2e9cd61077daf308c07df78ea12c14ea4e52",
+    "source_remote_verified": true,
+    "source_branch": "chatgpt/atlas-rebuild-v1",
+    "documentation_commit": "THIS_CHECKPOINT_COMMIT;resolve_with_git_log_and_verify_remote",
+    "no_operational_evidence_in_git": true
   },
   "latest_readonly_validation": {
     "source_bytes_identity_size_mtime_unchanged_in_observed_reads": true,
@@ -137,15 +142,7 @@
     "operational_acceptance": false,
     "historical_compatibility": "two explicit synthetic base-commit golden cases plus neighboring fixtures;no original financial records read"
   },
-  "pending_independent_review": {
-    "reviewer_designated_by_operator": "ChatGPT after eligible Codex engineering",
-    "proposal": "docs/QUALITY_DIPS_B1_PROPOSED_SCOPE_2026-10-24.json",
-    "handoff": "docs/QUALITY_DIPS_B1_REVIEW_HANDOFF_2026-10-24.md",
-    "status": "ADVISORY_SUITABLE_WITH_CONDITIONS_NOT_ACCEPTED",
-    "proposal_sha256": "1bb70beaaa518a20c217eeef235d4e7c76ea8aa04ce6bc6ddbd35c793ccf20ac",
-    "review_artifact": "docs/QUALITY_DIPS_ADVISORY_REVIEW_V1_2026-10-24.json",
-    "operational_acceptance": false
-  },
+  "pending_independent_review": [],
   "permanent_core_scope_document": "docs/CORE_SCOPE_FS1_MONDAY_READINESS_2026-10-24.md",
   "latest_native_security_selection_retained": {
     "passed": 45,
@@ -163,11 +160,12 @@
     "gate_override": false
   },
   "readiness_tracks": {
-    "offline_engineering": "FS1_FS2_FS3_SCOPED_COMPLETE_OVERALL_INCOMPLETE",
-    "disposable_native_financial": "FS3_VERIFIED_120_PASS_1_NOT_EXECUTED_NOT_OPERATIONAL_ACCEPTANCE",
-    "operational_integration": "INCOMPLETE",
-    "independent_governance": "INCOMPLETE",
-    "first_supervised_session": "NOT_AUTHORIZED"
+    "personal_source": "VERIFIED254source/in-memorypasses;not native operational acceptance",
+    "personal_installation": "NOT_AUTHORIZED_NOT_INSTALLED",
+    "financial_inception": "NOT_AUTHORIZED_NOT_PUBLISHED",
+    "current_market_data": "NO_NEW_AUTHORIZATION_OR_CONNECTION",
+    "financial_pilot": "NOT_AUTHORIZED",
+    "trial_sessions": 0
   },
   "prediction_core_concept": "ATLAS NEW-LISTING PRICE DISCOVERY AND REPRICING (NLPD);category-agnostic only supported/permitted categories;existing pre-event/single-position policy unchanged",
   "deferred_optional_work": [
@@ -206,25 +204,23 @@
   },
   "b1_current_review_proposal": "docs/QUALITY_DIPS_B1_ACCEPTANCE_PROPOSAL_V3_2026-10-24.json",
   "quality_dips_current_scope": {
-    "schema": "QD_OPERATOR_SCOPE_CORRECTION_V1",
-    "date": "2026-10-24",
-    "status": "OFFLINE_IMPLEMENTED_NOT_OPERATIONALLY_ACCEPTED",
-    "supersedes_restriction": "MSFT_ONLY",
-    "instrument_scope": "All eligible ranked stocks and ETFs with independently verified identity, execution support, fresh ranking and price evidence",
-    "opening_cash_usd": "1000",
-    "maximum_entry_usd": "100",
-    "maximum_open_positions": 1,
+    "profile": "PERSONAL_PAPER_ONLY_V1",
+    "autonomous": true,
+    "manual_per_trade_confirmation": false,
+    "simulated_cash": "1000USD",
+    "universe": "ELIGIBLE_EXISTING_QD_RANKED_STOCKS_ETFS",
+    "entry_cap": "100USD",
+    "max_positions": 1,
     "long_only": true,
-    "fractional_only_where_supported": true,
     "scale_in": false,
-    "entries_and_exits": "MANUAL_CONFIRMATION",
-    "overnight_holding": true,
-    "startup_authorized": false,
-    "operational_acceptance": false,
-    "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
+    "fees_bps": "2",
+    "slippage_bps": "2",
+    "overnight_allowed": true,
+    "normal_stop": "FRESH_EVIDENCE_USER_SHUTDOWN_FLATTEN_ELSE_EXPLICIT_INCOMPLETE",
+    "real_account_initialized": false
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md",
+  "recovery_checkpoint": "docs/PERSONAL_PAPER_SOURCE_CONTINUATION_2026-10-27.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -262,7 +258,7 @@
     "native_symlink": "NOT EXECUTED: privilege1314",
     "operational_acceptance": false
   },
-  "recovery_document": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md",
+  "recovery_document": "docs/PERSONAL_PAPER_SOURCE_CONTINUATION_2026-10-27.md",
   "retained_fs3_native_validation": {
     "selection_passed": 120,
     "failed": 0,
@@ -409,7 +405,7 @@
     "operational_trial_started": false,
     "protected_startup_unchanged": true
   },
-  "latest_test_run_milestone": "PAPER_FIRST_RELEASE_PROGRAM_V1",
+  "latest_test_run_milestone": "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION",
   "retained_offline_recovery_validation": {
     "passed": 173,
     "failed": 0,
@@ -549,8 +545,8 @@
     "selection": "native operational reader/bridge,operational contract,pure read,selected policy/integration,FS1,startup,existing HTTP",
     "operational_acceptance": false
   },
-  "paper_release_policy_document": "docs/ATLAS_PAPER_RELEASE_POLICY.json",
-  "paper_release_policy_sha256": "264b387c8afcd9563749f03d9322fc0763450f46113f0f784431aacc92ba7b9b",
+  "paper_release_policy_document": "docs/ATLAS_PERSONAL_PAPER_RELEASE_POLICY.json",
+  "paper_release_policy_sha256": "4d67c4ef2d692719a9195d0d5b3068cb91e352a357425a085f83c96779550ff2",
   "permanent_release_scope": {
     "program": "PAPER_FIRST_NO_LIVE_MONEY_IMPLEMENTATION",
     "live_money_implementation_allowed": false,
@@ -931,7 +927,7 @@
     "startup_authorized": false,
     "accepted_authority_supplied": false
   },
-  "continuation_checkpoint": "docs/TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md",
+  "continuation_checkpoint": "docs/PERSONAL_PAPER_SOURCE_CONTINUATION_2026-10-27.md",
   "personal_paper_shutdown": {
     "status": "SOURCE_DISPOSABLE_VERIFIED",
     "normal_mode": "SHUTDOWN_FLATTEN",
@@ -1838,17 +1834,133 @@
   },
   "personal_paper_release_proposal": {
     "profile": "PERSONAL_PAPER_ONLY_V1",
-    "status": "PROPOSED_NOT_APPLIED",
-    "human_report": "docs/PERSONAL_PAPER_RELEASE_POLICY_PROPOSAL_2026-10-26.md",
-    "proposal": "docs/PERSONAL_PAPER_RELEASE_PROPOSAL_V1_2026-10-26.json",
+    "status": "APPROVED_APPLIED_SOURCE_ONLY",
     "operator": "SOLE_LOCAL_OPERATOR",
-    "external_reviewers_proposed_required": false,
-    "independent_custody_proposed_required": false,
-    "technical_safety_controls_retained": true,
-    "policy_approved": false,
-    "policy_applied": false,
+    "approved_on": "2026-10-27",
+    "policy_approved": true,
+    "policy_applied": true,
+    "external_reviewers_required": false,
+    "independent_custody_required": false,
+    "historical_gate_promotions": 0,
     "financial_startup_authorized": false,
-    "gate_promotions": 0,
-    "source_fix": "ExistingPersonalSessionReservations conditionalACK/body/revocation/readback integrity;no authority installation"
-  }
+    "prior_unaccepted_proposal_preserved": "docs/PERSONAL_PAPER_RELEASE_PROPOSAL_V1_2026-10-26.json",
+    "active_policy": "docs/ATLAS_PERSONAL_PAPER_RELEASE_POLICY.json"
+  },
+  "personal_policy_preapproval_snapshot": {
+    "blocked_tasks": {
+      "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
+      "C1": "Native retained fixture command/account/lifetime validated, but actual Atlas ownership, full writer/resource roster and independent drain remain unaccepted.",
+      "D1": "FS1-FS3 disposable engineering verified; strict-root correction and120native-planpasses/1notexecuted do not accept real storage enrollment,issuer,custody,clock,rollback/recovery authority.",
+      "E1": "Dependent gates and operator authorization absent",
+      "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim.",
+      "REAL_HISTORY_HTTP_ACCEPTANCE_SCOPE": "Original six membership permanently UNRECONSTRUCTABLE;authorization unused. New ten-scope assessment does not reconstruct or expand it."
+    },
+    "latest_tests": {
+      "selection": "personal session reservation integrity plus existing pure clock regressions",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 3,
+      "new_cases": 7,
+      "native_executed": false,
+      "financial_store_created": false,
+      "policy_applied": false
+    },
+    "exact_next_action": "AWAIT_SOLE_OPERATOR_POLICY_DECISION: approve/reject docs/PERSONAL_PAPER_RELEASE_POLICY_PROPOSAL_2026-10-26.md / PERSONAL_PAPER_ONLY_V1. Proposal removes mandatory external reviewers/custodians for personal PAPER;no reviewer designation requested. Do not apply policy yet. After approval,source-only personal-profile/local-operator integration,reusing existing components;then one concrete bounded activation bundle. Currentstrict21decisions/history unchanged,not accepted;no account/provider/startup authorized. Session reservation integrity fix verified16pure/in-memory tests;3file-backed cases not rerun.",
+    "pending_independent_review": {
+      "reviewer_designated_by_operator": "ChatGPT after eligible Codex engineering",
+      "proposal": "docs/QUALITY_DIPS_B1_PROPOSED_SCOPE_2026-10-24.json",
+      "handoff": "docs/QUALITY_DIPS_B1_REVIEW_HANDOFF_2026-10-24.md",
+      "status": "ADVISORY_SUITABLE_WITH_CONDITIONS_NOT_ACCEPTED",
+      "proposal_sha256": "1bb70beaaa518a20c217eeef235d4e7c76ea8aa04ce6bc6ddbd35c793ccf20ac",
+      "review_artifact": "docs/QUALITY_DIPS_ADVISORY_REVIEW_V1_2026-10-24.json",
+      "operational_acceptance": false
+    },
+    "paper_release_policy_document": "docs/ATLAS_PAPER_RELEASE_POLICY.json",
+    "paper_release_policy_sha256": "264b387c8afcd9563749f03d9322fc0763450f46113f0f784431aacc92ba7b9b",
+    "personal_paper_release_proposal": {
+      "profile": "PERSONAL_PAPER_ONLY_V1",
+      "status": "PROPOSED_NOT_APPLIED",
+      "human_report": "docs/PERSONAL_PAPER_RELEASE_POLICY_PROPOSAL_2026-10-26.md",
+      "proposal": "docs/PERSONAL_PAPER_RELEASE_PROPOSAL_V1_2026-10-26.json",
+      "operator": "SOLE_LOCAL_OPERATOR",
+      "external_reviewers_proposed_required": false,
+      "independent_custody_proposed_required": false,
+      "technical_safety_controls_retained": true,
+      "policy_approved": false,
+      "policy_applied": false,
+      "financial_startup_authorized": false,
+      "gate_promotions": 0,
+      "source_fix": "ExistingPersonalSessionReservations conditionalACK/body/revocation/readback integrity;no authority installation"
+    },
+    "readiness_tracks": {
+      "offline_engineering": "FS1_FS2_FS3_SCOPED_COMPLETE_OVERALL_INCOMPLETE",
+      "disposable_native_financial": "FS3_VERIFIED_120_PASS_1_NOT_EXECUTED_NOT_OPERATIONAL_ACCEPTANCE",
+      "operational_integration": "INCOMPLETE",
+      "independent_governance": "INCOMPLETE",
+      "first_supervised_session": "NOT_AUTHORIZED"
+    },
+    "quality_dips_current_scope": {
+      "schema": "QD_OPERATOR_SCOPE_CORRECTION_V1",
+      "date": "2026-10-24",
+      "status": "OFFLINE_IMPLEMENTED_NOT_OPERATIONALLY_ACCEPTED",
+      "supersedes_restriction": "MSFT_ONLY",
+      "instrument_scope": "All eligible ranked stocks and ETFs with independently verified identity, execution support, fresh ranking and price evidence",
+      "opening_cash_usd": "1000",
+      "maximum_entry_usd": "100",
+      "maximum_open_positions": 1,
+      "long_only": true,
+      "fractional_only_where_supported": true,
+      "scale_in": false,
+      "entries_and_exits": "MANUAL_CONFIRMATION",
+      "overnight_holding": true,
+      "startup_authorized": false,
+      "operational_acceptance": false,
+      "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
+    },
+    "publication_validation": {
+      "source_and_disposable_tests_reviewed": true,
+      "private_artifacts_excluded": true,
+      "operational_acceptance": false
+    }
+  },
+  "historical_strict_blocked_tasks": {
+    "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
+    "C1": "Native retained fixture command/account/lifetime validated, but actual Atlas ownership, full writer/resource roster and independent drain remain unaccepted.",
+    "D1": "FS1-FS3 disposable engineering verified; strict-root correction and120native-planpasses/1notexecuted do not accept real storage enrollment,issuer,custody,clock,rollback/recovery authority.",
+    "E1": "Dependent gates and operator authorization absent",
+    "UNIFIED_PERP_FINANCIAL_COMPLETENESS": "Source/fixture increment verified; actual accepted source custody, complete enrolled writer roster, capacity envelope and operational release evidence unavailable. No synthetic authority or bounded-capacity rollover claim.",
+    "REAL_HISTORY_HTTP_ACCEPTANCE_SCOPE": "Original six membership permanently UNRECONSTRUCTABLE;authorization unused. New ten-scope assessment does not reconstruct or expand it."
+  },
+  "active_release_profile": "PERSONAL_PAPER_ONLY_V1",
+  "release_authority": "SOLE_LOCAL_OPERATOR",
+  "historical_strict_applicability": "PRESERVED_NOT_PROMOTED;external reviewer/custodian requirements are NOT personal release prerequisites",
+  "retained_personal_validation_attempt": {
+    "passed": 239,
+    "failed": 0,
+    "errors": 5,
+    "deselected": 10,
+    "reason": "Default temp-directory setup denied before application code:3file-backedfinancialtests+2source-copytests. Source-copy tests later passed using confined D:source scratch;3financial tests not rerun. Original error outcome retained,not erased."
+  },
+  "personal_active_account_scopes": {
+    "QUALITY_DIPS": "1000SIMULATED_USD",
+    "HYPERLIQUID": "1000SIMULATED_USDC",
+    "consolidated_cash": false,
+    "transfers": false,
+    "real_money_capabilities": false,
+    "legacy_adoption": false
+  },
+  "activation_bundle": "docs/PERSONAL_PAPER_ACTIVATION_BUNDLE_2026-10-27.md",
+  "retained_observation_authorization": "Six-member roster unreconstructable finding preserved. Ten-scope one-run consumed. No retained-history host authorization reused.",
+  "personal_activation_scope_publication": "Exact account epochs/native provisioning identifiers excluded fromGit;local ignored activation scope required for operator review. No realfinancialsources read.",
+  "latest_personal_boundary_tests": {
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 29,
+    "elapsed_seconds": 1.47,
+    "disjoint_from_263": true,
+    "selection": "InertQ8/Q9read/write/API/refusal/source-registration cases only;no stores/hosts"
+  },
+  "personal_milestone_distinct_passes": 285
 }

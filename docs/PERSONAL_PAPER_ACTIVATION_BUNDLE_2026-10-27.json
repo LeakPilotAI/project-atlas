@@ -1,0 +1,116 @@
+{
+  "schema": "ATLAS_PERSONAL_ACTIVATION_BUNDLE_V1",
+  "profile": "PERSONAL_PAPER_ONLY_V1",
+  "status": "PROPOSED_NOT_AUTHORIZED",
+  "runtime_consumable": false,
+  "financial_startup_authorized": false,
+  "operator": "SOLE_LOCAL_OPERATOR",
+  "external_reviewer_required": false,
+  "code_release": "c8df2e9cd61077daf308c07df78ea12c14ea4e52",
+  "policy": "docs/ATLAS_PERSONAL_PAPER_RELEASE_POLICY.json",
+  "policy_sha256": "4d67c4ef2d692719a9195d0d5b3068cb91e352a357425a085f83c96779550ff2",
+  "pilot_id": "personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78",
+  "paths": {
+    "release": "D:\\AtlasRuntime\\releases\\c8df2e9cd61077daf308c07df78ea12c14ea4e52",
+    "interpreter": "D:\\AtlasRuntime\\releases\\c8df2e9cd61077daf308c07df78ea12c14ea4e52\\python\\python.exe",
+    "activation_root": "D:\\AtlasCustody\\PersonalPaper\\personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78",
+    "activation_record": "D:\\AtlasCustody\\PersonalPaper\\personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78\\activation.json",
+    "portfolio_control": "D:\\AtlasCustody\\PersonalPaper\\personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78\\portfolio",
+    "source_publications": "D:\\AtlasCustody\\PersonalPaper\\personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78\\sources",
+    "logs": "D:\\Work\\Project Atlas\\logs\\observation\\personal-pilot-20261027-32736db6f1ba4e8aa9dacd05b0619e78"
+  },
+  "accounts": {
+    "QUALITY_DIPS": {
+      "epoch": "EXISTING_PRIVATE_QD_EPOCH",
+      "account_id": "atlas-personal-quality_dips-EXISTING_PRIVATE_QD_EPOCH",
+      "roles": {
+        "source": "D:\\AtlasPaper\\QualityDips\\EXISTING_PRIVATE_QD_EPOCH\\source",
+        "projection": "D:\\AtlasPaper\\QualityDips\\EXISTING_PRIVATE_QD_EPOCH\\projection",
+        "report": "D:\\AtlasPaper\\QualityDips\\EXISTING_PRIVATE_QD_EPOCH\\report",
+        "control": "D:\\AtlasPaper\\QualityDips\\EXISTING_PRIVATE_QD_EPOCH\\control",
+        "coordination": "D:\\AtlasPaper\\QualityDips\\EXISTING_PRIVATE_QD_EPOCH\\coordination"
+      },
+      "custody": "D:\\AtlasCustody\\QualityDips\\EXISTING_PRIVATE_QD_EPOCH",
+      "native_ids": null,
+      "financial_state": "NOT_INSPECTED_OR_INITIALIZED_IN_THIS_TASK"
+    },
+    "HYPERLIQUID": {
+      "epoch": "PROPOSED_PRIVATE_PERP_EPOCH",
+      "account_id": "atlas-personal-hyperliquid-PROPOSED_PRIVATE_PERP_EPOCH",
+      "roles": {
+        "source": "D:\\AtlasPaper\\Hyperliquid\\PROPOSED_PRIVATE_PERP_EPOCH\\source",
+        "projection": "D:\\AtlasPaper\\Hyperliquid\\PROPOSED_PRIVATE_PERP_EPOCH\\projection",
+        "report": "D:\\AtlasPaper\\Hyperliquid\\PROPOSED_PRIVATE_PERP_EPOCH\\report",
+        "control": "D:\\AtlasPaper\\Hyperliquid\\PROPOSED_PRIVATE_PERP_EPOCH\\control",
+        "coordination": "D:\\AtlasPaper\\Hyperliquid\\PROPOSED_PRIVATE_PERP_EPOCH\\coordination"
+      },
+      "custody": "D:\\AtlasCustody\\Hyperliquid\\PROPOSED_PRIVATE_PERP_EPOCH",
+      "native_ids": null,
+      "financial_state": "NOT_INSPECTED_OR_INITIALIZED_IN_THIS_TASK"
+    }
+  },
+  "inception": {
+    "QUALITY_DIPS": {
+      "currency": "USD",
+      "simulated_opening": "1000"
+    },
+    "HYPERLIQUID": {
+      "currency": "USDC",
+      "simulated_opening": "1000"
+    },
+    "positions": 0,
+    "obligations": 0,
+    "gross_pnl": "0",
+    "costs": "0",
+    "net_pnl": "0",
+    "legacy_adoption": false,
+    "once_only": true,
+    "source_revision": 0,
+    "acknowledged_revision": 0,
+    "initial_projection_documents": 0,
+    "report": "EXISTING_FS3_CALENDAR_REPORT_EXPLICIT_CUTOFF_OPEN_DAY_MAY_BE_INCOMPLETE"
+  },
+  "pilot": {
+    "active_seconds": 60,
+    "interval_seconds": 5,
+    "max_authority_seconds": 240,
+    "local_clock_anchor_max_seconds": 300,
+    "stop_at_seconds": 60,
+    "shutdown_reserve_seconds": 120,
+    "max_observation_turns_per_lane_budget": 13,
+    "qd_max_observations_grant": 16,
+    "normal_proposal_budget_both_lanes": 26,
+    "worst_case_global_records_budget": 95,
+    "per_store_record_limit": 128,
+    "required_global_free_slots": 95,
+    "separate_accounts": true,
+    "synthetic_counterpart": false,
+    "no_signal": "VALID_IDLE_NOT_FAILURE",
+    "session_approved": false,
+    "startup_attempts": 1,
+    "automatic_restart": false
+  },
+  "native_compatibility_proposal": {
+    "authorized": false,
+    "roots": 1,
+    "root_parent": "D:\\Work\\Project Atlas\\logs\\diagnostics",
+    "root_prefix": "personal-paper-native-",
+    "time_seconds_including_cleanup": 600,
+    "filesystem_entries": 4096,
+    "charged_bytes": 134217728,
+    "synthetic_only": true,
+    "junction_targets": "OWNED_DESCENDANTS_ONLY",
+    "symlink_privilege_change": false,
+    "processes": "RETAINED_TEST_OWNED_SELF_EXITING_ONLY"
+  },
+  "remaining_permissions": [
+    "CONFINED_NATIVE_COMPATIBILITY_RUN",
+    "EXACT_LOCAL_INSTALL_AND_RESOURCE_ENROLLMENT",
+    "ONCE_ONLY_TWO_ACCOUNT_SIMULATED_INCEPTION",
+    "BOUNDED_PROVIDER_DATA_ONLY_ACCESS",
+    "BOUNDED_AUTONOMOUS_PAPER_SESSION"
+  ],
+  "historical_strict_gate_promotions": 0,
+  "local_exact_scope": "logs/diagnostics/PERSONAL_PAPER_ACTIVATION_SCOPE_PRIVATE_2026-10-27.json",
+  "public_resource_paths": "REDACTED_NOT_CONSUMABLE;actual existing provisioning identifiers remain private"
+}
