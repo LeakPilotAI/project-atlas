@@ -1,0 +1,146 @@
+{
+  "schema": "ATLAS_E1_PROVIDER_PLANNING_V1",
+  "status": "PROPOSED_NOT_ACCEPTED",
+  "runtime_consumable": false,
+  "startup_authorized": false,
+  "gate_promotions": 0,
+  "operational_action_authorized": false,
+  "providers": [
+    {
+      "id": "ALPACA_IEX",
+      "purpose": "Selected stock/ETF L1 observations",
+      "source_files": [
+        "backend/app/investment/alpaca_iex.py",
+        "backend/app/services/quality_dips_iex_input.py"
+      ],
+      "endpoints": [
+        "wss://stream.data.alpaca.markets/v2/iex"
+      ],
+      "feed_scope": "IEX_SINGLE_EXCHANGE_NOT_NBBO",
+      "authentication": "operator-enrolled provider credentials,authenticated subscription ACK and exact transport/source identity",
+      "rights_required": [
+        "automated PAPER/non-display use",
+        "local quote display",
+        "storage/retention and permitted derived use",
+        "actual account/symbol/subscription entitlements"
+      ],
+      "timestamps": [
+        "provider event timestamp",
+        "local authenticated UTC receipt",
+        "session/calendar/halts/corporate-action/instrument mapping",
+        "accepted strict quote-age and discontinuity bounds"
+      ],
+      "provenance": [
+        "instrument identity and fractional units",
+        "original bid/ask,size,spread,participation,source revisions",
+        "no stale/unsupported fills;no scanner refresh via read GET"
+      ],
+      "status": "UNACCEPTED_NOT_CONNECTED",
+      "connection_authorized": false,
+      "subscription_activated": false,
+      "rights_evidence": null,
+      "credentials_enrolled": false,
+      "reviewer": "UNASSIGNED",
+      "evidence_owner": "UNASSIGNED",
+      "independent_acceptance_criteria": [
+        "documented provider/producer rights and authenticated enrollment",
+        "actual source completeness/timestamps/currentness and stale/outage/reconnect refusal",
+        "complete actual transport budgets including redirects/retries/other consumers",
+        "accepted instrument/session/fill/funding policy and reviewer disposition"
+      ],
+      "request_budget": null
+    },
+    {
+      "id": "HYPERLIQUID_PUBLIC",
+      "purpose": "Perpetual research and accepted executable/funding evidence",
+      "source_files": [
+        "backend/app/adapters/hyperliquid.py",
+        "backend/app/services/paper_source_publication.py",
+        "backend/app/services/perp_source_planner.py"
+      ],
+      "endpoints": [
+        "https://api.hyperliquid.xyz/info",
+        "wss://api.hyperliquid.xyz/ws"
+      ],
+      "feed_scope": "PUBLIC_BTC_ETH_SOL_NOT_TRADE_AUTHORITY",
+      "authentication": "accepted TLS/transport/source-currentness and public feed provenance;no wallet or live-order SDK",
+      "rights_required": [
+        "automated collection/simulation",
+        "local display and retention",
+        "accepted rate/request/subscription budgets for all consumers"
+      ],
+      "timestamps": [
+        "exchange book/trade timestamps and sequence continuity",
+        "authenticated UTC receipt and source revision",
+        "historical funding settlement boundary and oracle timestamp"
+      ],
+      "provenance": [
+        "metadata/instrument/lot/leverage/fee schedule source cut",
+        "actual executable book/size/spread",
+        "maker resting queue plus complete trade window;mark touch is not execution",
+        "due funding needs historical settlement oracle;missing evidence refuses"
+      ],
+      "status": "UNACCEPTED_NOT_CONNECTED",
+      "connection_authorized": false,
+      "subscription_activated": false,
+      "rights_evidence": null,
+      "credentials_enrolled": false,
+      "reviewer": "UNASSIGNED",
+      "evidence_owner": "UNASSIGNED",
+      "independent_acceptance_criteria": [
+        "documented provider/producer rights and authenticated enrollment",
+        "actual source completeness/timestamps/currentness and stale/outage/reconnect refusal",
+        "complete actual transport budgets including redirects/retries/other consumers",
+        "accepted instrument/session/fill/funding policy and reviewer disposition"
+      ],
+      "request_budget": null
+    },
+    {
+      "id": "QUALITY_DIPS_RESEARCH_PUBLICATION",
+      "purpose": "Ranked current research candidate/monitor evidence,not trade authorization",
+      "source_files": [
+        "backend/app/services/quality_dip_scanner.py",
+        "backend/app/investment/engine.py",
+        "backend/app/investment/research.py",
+        "backend/app/services/quality_dips_publication_reader.py"
+      ],
+      "endpoints": [],
+      "feed_scope": "ACCEPTED_PUBLISHED_RESEARCH_PORT_NOT_DIRECT_PROVIDER_REFRESH",
+      "authentication": "enrolled original publisher/research/current-cut issuer;caller digest is not authority",
+      "rights_required": [
+        "rights of each upstream research/quote source",
+        "licensed derived ranking/display/retention scope"
+      ],
+      "timestamps": [
+        "research and ranking revision/cohort/cut",
+        "instrument quote timestamp and freshness",
+        "supersession/invalidation and source completeness"
+      ],
+      "provenance": [
+        "actual eligible ranked stocks/ETFs and exact source identities",
+        "instrument metadata and execution eligibility separate from rank",
+        "legacy quote overlay can dispatch Robinhood/Yahoo;both remain separately denied until rights/activation accepted"
+      ],
+      "status": "UNACCEPTED_NOT_CONNECTED",
+      "connection_authorized": false,
+      "subscription_activated": false,
+      "rights_evidence": null,
+      "credentials_enrolled": false,
+      "reviewer": "UNASSIGNED",
+      "evidence_owner": "UNASSIGNED",
+      "independent_acceptance_criteria": [
+        "documented provider/producer rights and authenticated enrollment",
+        "actual source completeness/timestamps/currentness and stale/outage/reconnect refusal",
+        "complete actual transport budgets including redirects/retries/other consumers",
+        "accepted instrument/session/fill/funding policy and reviewer disposition"
+      ],
+      "request_budget": null
+    }
+  ],
+  "legacy_upstream_sources_not_activated": [
+    "backend/app/investment/robinhood_equity_quotes.py",
+    "backend/app/investment/yfinance_client.py"
+  ],
+  "no_provider_requests_performed": true,
+  "no_subscription_rights_inferred": true
+}
