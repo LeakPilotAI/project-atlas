@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "PERSONAL_FINAL_OFFLINE_FIXES_NATIVE_ACCEPTANCE_STILL_BLOCKED",
+  "last_verified_task": "PERSONAL_OWNED_CHILD_OFFLINE_RETENTION_AND_RETRY",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "PERSONAL_NATIVE_COMPATIBILITY": "V5 approval absent;four actual OwnedChild Job containment assertions remain failing. Complete explicitly authorized native binding and expanded source inventory before any separately authorized synthetic native test. No old grant reuse;true-symlink1314 remains NOT_EXECUTED,not an administrative veto.",
@@ -24,7 +24,7 @@
     "financial_startup_authorized": false
   },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Review docs/PERSONAL_PAPER_FINAL_READINESS_2026-10-27.md. No V5 approval;four OwnedChild containment acceptance assertions remain red. Establish bounded source integration authorization and refresh complete source inventory before separately authorized native test. No financial startup/inception/provider/real-resource permission.",
+  "exact_next_action": "Review docs/PERSONAL_PAPER_OWNED_CHILD_CONTINUATION_2026-10-27.md. V5 approval absent;source manifest stale after repair. Establish exact contained native integration scope;refresh complete source inventory before separately approved execution. No operational startup/inception/data permission. Four original integration tests remain failing and preserved.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -1985,5 +1985,19 @@
     "native_executed": false,
     "financial_startup_authorized": false,
     "report": "docs/PERSONAL_PAPER_FINAL_READINESS_2026-10-27.md"
+  },
+  "owned_child_repair_20261027": {
+    "passed": 196,
+    "failed": 4,
+    "skipped": 0,
+    "errors": 0,
+    "new_cases": 8,
+    "lifecycle_passed": 115,
+    "financial_passed": 81,
+    "financial_deselected": 3,
+    "native_executed": false,
+    "v5_source_scope": "STALE_REFUSED",
+    "v5_approval_exists": false,
+    "report": "docs/PERSONAL_PAPER_OWNED_CHILD_CONTINUATION_2026-10-27.md"
   }
 }

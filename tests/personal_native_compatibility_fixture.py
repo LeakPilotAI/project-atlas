@@ -167,8 +167,8 @@ class OwnedChild:
             observe_pid,
         )
         self.b=checked_budget();self.seconds=seconds;self.started=time.monotonic()
-        executable=str(Path(sys._base_executable).resolve());repo=Path(__file__).resolve().parents[1]
-        env=dict(os.environ,PYTHONDONTWRITEBYTECODE='1',PYTEST_DISABLE_PLUGIN_AUTOLOAD='1',
+        venv_executable=str(Path(sys.executable).resolve());executable=str(Path(sys._base_executable).resolve());repo=Path(__file__).resolve().parents[1]
+        env=dict(os.environ,PYTHONDONTWRITEBYTECODE='1',PYTEST_DISABLE_PLUGIN_AUTOLOAD='1',__PYVENV_LAUNCHER__=venv_executable,
                  PYTHONPATH=os.pathsep.join(str(p) for p in (repo,repo/'backend',repo/'tests',Path(sys.prefix)/'Lib/site-packages')))
         self.p=subprocess.Popen([executable,'-B',str(Path(__file__).with_name('personal_native_compatibility_child.py')),*args],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,text=True,creationflags=subprocess.CREATE_NO_WINDOW)
         self.lines=queue.Queue(maxsize=8);self.errors=[]
@@ -185,22 +185,75 @@ class OwnedChild:
         try:
             self.created=observe_handle(int(self.p._handle));self.identity=observe_pid(self.p.pid)
             if self.identity!={'pid':self.p.pid,'created':self.created,'image':str(Path(executable).resolve()).casefold()}:raise ValueError('EXACT_CHILD_IMAGE')
-            ready=json.loads(self.lines.get(timeout=min(10,seconds)))
+            deadline=time.monotonic()+min(10,seconds)
+            while True:
+                remaining=deadline-time.monotonic()
+                if remaining<=0:
+                    raise RuntimeError(
+                        'CHILD_STARTUP_TIMEOUT '
+                        f'pid={self.p.pid} '
+                        f'exitcode={self.p.poll()} '
+                        f'stderr={"".join(self.errors)[:8192]!r}'
+                    )
+                try:
+                    line=self.lines.get(timeout=min(0.2,remaining))
+                    break
+                except queue.Empty:
+                    if self.p.poll() is not None:
+                        for reader in self.readers:
+                            reader.join(timeout=0.5)
+                        raise RuntimeError(
+                            'CHILD_EXITED_BEFORE_READY '
+                            f'pid={self.p.pid} '
+                            f'exitcode={self.p.returncode} '
+                            f'stderr={"".join(self.errors)[:8192]!r}'
+                        )
+            ready=json.loads(line)
             if ready.get('ready')!=self.p.pid:raise ValueError('CHILD_HANDSHAKE')
             self.p.stdin.write('GO\n');self.p.stdin.flush();self.p.stdin.close()
-        except BaseException:
-            self.p.stdin.close()
-            try:self.p.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                if not hasattr(self,'created') or observe_handle(int(self.p._handle))!=self.created:raise ValueError('UNVERIFIABLE_CHILD_PRESERVED') from None
-                self.p.terminate();self.p.wait(timeout=5)
+        except BaseException as failure:
+            failure.owned_child = self
+            try:
+                self.p.stdin.close()
+                try:self.p.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    if not hasattr(self,'created') or observe_handle(int(self.p._handle))!=self.created:raise ValueError('UNVERIFIABLE_CHILD_PRESERVED') from None
+                    self.p.terminate();self.p.wait(timeout=5)
+            except BaseException as cleanup_failure:
+                cleanup_failure.owned_child = self
+                raise
             finally:
-                if self.p.poll() is not None:self.p._handle.Close()
+                self._release_exited_resources()
             raise
+
+    def _release_exited_resources(self):
+        # One canonical owner: self retains Popen and every incomplete close.
+        if self.p.poll() is None:
+            return
+        released = getattr(self, '_released_resources', set())
+        self._released_resources = released
+        errors = []
+        for name, resource in (('stdout', self.p.stdout), ('stderr', self.p.stderr),
+                               ('process', self.p._handle)):
+            if name in released:
+                continue
+            try:
+                if name == 'process':resource.Close()
+                else:resource.close()
+            except Exception as exc:
+                errors.append(f'{name}: {exc}')
+            else:
+                released.add(name)
+        if errors:
+            failure = RuntimeError('OWNED_RESOURCE_CLEANUP_INCOMPLETE: ' + '; '.join(errors))
+            failure.owned_child = self
+            raise failure
 
     def finish(self):
         from scripts.observation_runtime.disposable_host_owner import observe_handle
         try:
+            if hasattr(self, '_finished_evidence'):
+                return self._finished_evidence
             if observe_handle(int(self.p._handle))!=self.created:raise ValueError('CHILD_CREATION_CHANGED')
             limit=min(self.seconds,540-self.b.check())
             if limit<=0:raise ValueError('CHILD_BUDGET_DEADLINE')
@@ -208,6 +261,7 @@ class OwnedChild:
             except subprocess.TimeoutExpired:
                 if observe_handle(int(self.p._handle))!=self.created:raise ValueError('NO_FOREIGN_TERMINATION') from None
                 self.p.terminate();self.p.wait(timeout=5);raise ValueError('EXACT_OWNED_CHILD_TIMEOUT') from None
+            if self.p.poll() is None:raise ValueError('OWNED_CHILD_STILL_RUNNING')
             if observe_handle(int(self.p._handle))!=self.created:raise ValueError('EXIT_IDENTITY_CHANGED')
             for thread in self.readers:thread.join(timeout=2)
             if any(thread.is_alive() for thread in self.readers):raise ValueError('OWNED_PIPE_DRAIN_INCOMPLETE')
@@ -216,7 +270,14 @@ class OwnedChild:
             evidence={'process':self.identity,'returncode':self.p.returncode,'reaped':self.p.poll() is not None,
                       'stdout':values,'error':''.join(self.errors)[:8192]}
             self.b.write(self.b.root/'evidence'/('child-'+str(self.created)+'-'+str(self.p.pid)+'.json'),body(evidence).encode())
+            self._finished_evidence = evidence
             return evidence
+        except BaseException as exc:
+            # The exception keeps the canonical owner reachable for explicit
+            # reconciliation/retry; never abandon a potentially live process.
+            exc.owned_child = self
+            raise
         finally:
-            for stream in (self.p.stdout,self.p.stderr):stream.close()
-            self.p._handle.Close()
+            # poll() checks the retained Popen handle. An identity or budget
+            # refusal does not establish exit or authorize losing that handle.
+            self._release_exited_resources()
