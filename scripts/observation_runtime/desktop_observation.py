@@ -40,7 +40,8 @@ def initial():
   'perpetuals':{'scope':['BTC','ETH','SOL'],'scanner':'WAITING_FOR_DATA','signals':None,'financial_execution_authorized':False},
   'accounts':{'QUALITY_DIPS':{'currency':'USD','proposed_hypothetical_opening':'1000','status':'NOT_INITIALIZED_OR_READ',
    'cash':None,'positions':None,'capacity_remaining':None},'HYPERLIQUID':{'currency':'USDC','proposed_hypothetical_opening':'1000',
-   'status':'NOT_INITIALIZED_OR_READ','cash':None,'positions':None,'capacity_remaining':None}},'financial_gates':'B1_C1_D1_E1_BLOCKED'}
+   'status':'NOT_INITIALIZED_OR_READ','cash':None,'positions':None,'capacity_remaining':None}},'financial_gates':'PERSONAL_ACTIVATION_PENDING','release_profile':'PERSONAL_PAPER_ONLY_V1',
+  'release_authority':'SOLE_LOCAL_OPERATOR','historical_strict_gates':'B1_C1_D1_E1_BLOCKED_NOT_PERSONAL_REVIEW_PREREQUISITES'}
 
 
 class Session:

@@ -10,7 +10,8 @@ from app.services.quality_dips_operational_runtime import OperationalEnrolledRun
 
 class EnrolledQualityDipsWriter:
     def __init__(self, *, runtime, authority):
-        if type(runtime) not in (EnrolledAutonomousRuntime, OperationalEnrolledRuntime) or authority is None:
+        from app.services.personal_paper_runtime import PersonalEnrolledRuntime
+        if type(runtime) not in (EnrolledAutonomousRuntime, OperationalEnrolledRuntime, PersonalEnrolledRuntime) or authority is None:
             raise ValueError('UNIFIED_QD_EXISTING_ENROLLED_RUNTIME_REQUIRED')
         self.runtime, self.authority = runtime, authority
         self.store = runtime.financial.store

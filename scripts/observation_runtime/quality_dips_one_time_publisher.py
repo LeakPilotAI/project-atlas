@@ -118,6 +118,76 @@ class OneTimePublisher:
             # be commit-before-ack. Do not infer UNPUBLISHED or retry it.
             raise PublicationUnknown("GENESIS_RESERVATION_UNKNOWN_NO_REPLAY") from error
 
+    writer_context_schema = "QD_OP_GENESIS_WRITER_V1"
+    pending_schema = "QD_OP_GENESIS_PENDING_V1"
+    commit_schema = "QD_OP_GENESIS_COMMIT_V1"
+
+    def _build_current(self, e, files, now, boundary):
+        inception = files.write(
+            "source", "inception.json", e["account"]
+        )
+        source = {
+            "schema": "QD_OP_SOURCE_PIN_V1",
+            "resource_id": e["resources"]["source"]["resource_id"],
+            "native_root": e["resources"]["source"]["native_root"],
+            "revision": 0,
+            "inception": inception,
+            "records": [],
+            "head_digest": inception["sha256"],
+        }
+        state, snapshots = replay(
+            e, {"revision": 0, "source": source}, [], now
+        )
+        if body(state) != body(initial()):
+            raise ValueError("GENESIS_ARITHMETIC_REFUSED")
+        projection = {
+            "schema": "QD_OP_PROJECTION_DOCUMENT_V1",
+            "enrollment_digest": digest(e),
+            "source_pin_digest": digest(source),
+            "revision": 0,
+            "state": state,
+        }
+        cutoff = boundary()
+        report = {
+            "schema": "QD_OP_REPORT_DOCUMENT_V2",
+            "enrollment_digest": digest(e),
+            "source_pin_digest": digest(source),
+            "revision": 0,
+            "status": "INCOMPLETE",
+            "timezone": "America/New_York",
+            "cutoff": cutoff,
+            "history": history(
+                [], snapshots, cutoff, "America/New_York"
+            ),
+        }
+        current = {
+            "schema": "QD_OP_CURRENT_V1",
+            "enrollment_digest": digest(e),
+            "generation": 1,
+            "revision": 0,
+            "acknowledged_revision": 0,
+            "status": "ACKNOWLEDGED",
+            "source": source,
+        }
+        for role, doc in (
+            ("projection", projection),
+            ("report", report),
+        ):
+            boundary()
+            pin = files.write(role, role + ".json", doc)
+            current[role] = {
+                "schema": "QD_OP_"
+                + role.upper()
+                + "_PIN_"
+                + ("V2" if role == "report" else "V1"),
+                "resource_id": e["resources"][role]["resource_id"],
+                "native_root": e["resources"][role]["native_root"],
+                "revision": 0,
+                "source_pin_digest": digest(source),
+                "record": pin,
+            }
+        return current
+
     def publish(self):
         b = self.bootstrap
         if self.custody is not b.publication:
@@ -129,7 +199,7 @@ class OneTimePublisher:
         identity = strict(body(self.observer()))
         process(identity)
         context = {
-            "schema": "QD_OP_GENESIS_WRITER_V1",
+            "schema": self.writer_context_schema,
             "intent_digest": digest(intent),
             "process": identity,
         }
@@ -159,7 +229,7 @@ class OneTimePublisher:
                     reservation = strict(body(txn.snapshot))
                     exact(
                         reservation,
-                        "QD_OP_GENESIS_PENDING_V1",
+                        self.pending_schema,
                         {
                             "operation_id",
                             "intent_digest",
@@ -186,75 +256,13 @@ class OneTimePublisher:
                     boundary()
                     with self.files.open(e) as files:
                         boundary()
-                        inception = files.write(
-                            "source", "inception.json", e["account"]
-                        )
-                        source = {
-                            "schema": "QD_OP_SOURCE_PIN_V1",
-                            "resource_id": e["resources"]["source"]["resource_id"],
-                            "native_root": e["resources"]["source"]["native_root"],
-                            "revision": 0,
-                            "inception": inception,
-                            "records": [],
-                            "head_digest": inception["sha256"],
-                        }
-                        state, snapshots = replay(
-                            e, {"revision": 0, "source": source}, [], now
-                        )
-                        if body(state) != body(initial()):
-                            raise ValueError("GENESIS_ARITHMETIC_REFUSED")
-                        projection = {
-                            "schema": "QD_OP_PROJECTION_DOCUMENT_V1",
-                            "enrollment_digest": digest(e),
-                            "source_pin_digest": digest(source),
-                            "revision": 0,
-                            "state": state,
-                        }
-                        cutoff = boundary()
-                        report = {
-                            "schema": "QD_OP_REPORT_DOCUMENT_V2",
-                            "enrollment_digest": digest(e),
-                            "source_pin_digest": digest(source),
-                            "revision": 0,
-                            "status": "INCOMPLETE",
-                            "timezone": "America/New_York",
-                            "cutoff": cutoff,
-                            "history": history(
-                                [], snapshots, cutoff, "America/New_York"
-                            ),
-                        }
-                        current = {
-                            "schema": "QD_OP_CURRENT_V1",
-                            "enrollment_digest": digest(e),
-                            "generation": 1,
-                            "revision": 0,
-                            "acknowledged_revision": 0,
-                            "status": "ACKNOWLEDGED",
-                            "source": source,
-                        }
-                        for role, doc in (
-                            ("projection", projection),
-                            ("report", report),
-                        ):
-                            boundary()
-                            pin = files.write(role, role + ".json", doc)
-                            current[role] = {
-                                "schema": "QD_OP_"
-                                + role.upper()
-                                + "_PIN_"
-                                + ("V2" if role == "report" else "V1"),
-                                "resource_id": e["resources"][role]["resource_id"],
-                                "native_root": e["resources"][role]["native_root"],
-                                "revision": 0,
-                                "source_pin_digest": digest(source),
-                                "record": pin,
-                            }
+                        current = self._build_current(e, files, now, boundary)
                         files.verify()
                         boundary()
                         commit = txn.commit(strict(body(current)), boundary())
                         exact(
                             commit,
-                            "QD_OP_GENESIS_COMMIT_V1",
+                            self.commit_schema,
                             {
                                 "operation_id",
                                 "intent_digest",

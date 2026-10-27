@@ -110,6 +110,11 @@ class AutonomousNativeEnrollment:
     None of these trust implementations is installed or synthesized by this class.
     """
 
+    acceptance_schema = "QD_AUTO_NATIVE_ACCEPTANCE_V4"
+    acceptance_profile = PROFILE
+    gate_names = ("B1", "C1", "D1", "E1")
+    gate_status = "ACCEPTED"
+
     def __init__(
         self,
         *,
@@ -199,7 +204,7 @@ class AutonomousNativeEnrollment:
                 a = self._checked(accepted, now)
                 exact(
                     a,
-                    "QD_AUTO_NATIVE_ACCEPTANCE_V4",
+                    self.acceptance_schema,
                     {
                         "request_digest",
                         "scope",
@@ -215,8 +220,8 @@ class AutonomousNativeEnrollment:
                     a["request_digest"] != digest(request)
                     or a["scope"] != self.scope
                     or a["acceptance_id"] != e["acceptance_id"]
-                    or a["profile"] != PROFILE
-                    or a["gates"] != dict.fromkeys(("B1", "C1", "D1", "E1"), "ACCEPTED")
+                    or a["profile"] != self.acceptance_profile
+                    or a["gates"] != dict.fromkeys(self.gate_names, self.gate_status)
                     or a["revoked"] is not False
                 ):
                     raise ValueError("AUTO_ENROLLMENT_PROFILE_NOT_ACCEPTED")

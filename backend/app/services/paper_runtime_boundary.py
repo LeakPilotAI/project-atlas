@@ -26,7 +26,7 @@ class PaperRuntimeBoundary:
         self._reading = Lock()
 
     def submit(self, _command):
-        raise PaperBoundaryRefused("MUTATION_DISABLED: B1/C1/D1/E1 and runtime integration unaccepted")
+        raise PaperBoundaryRefused("MUTATION_DISABLED: no financial activation or registered writer")
 
     def snapshot(self):
         if not self._reading.acquire(blocking=False):

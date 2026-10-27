@@ -28,4 +28,4 @@ class PaperWriteRequestContract:
                 (type(position) is not str or not position.startswith(self.epoch + ":") or len(position) <= len(self.epoch) + 1)):
             raise PaperBoundaryRefused("POSITION_BINDING_MISMATCH")
         # Syntactically valid expectation is not an accepted epoch or financial authority.
-        raise PaperBoundaryRefused("EXECUTION_DISABLED: B1/C1/D1/E1 unaccepted; no writer registered")
+        raise PaperBoundaryRefused("EXECUTION_DISABLED: no financial activation or registered writer")

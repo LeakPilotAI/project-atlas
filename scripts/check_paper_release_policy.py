@@ -2,7 +2,9 @@
 
 Detects recognizable accidental order SDKs, order dispatch and live toggles.
 Not a sandbox or proof against obfuscation/plugins; reviewed release inventory,
-protected startup and independent B1/C1/D1/E1 acceptance remain required.
+protected startup and actual technical/activation checks remain required. The
+strict historical profile retains its original B1/C1/D1/E1 requirements;the
+approved personal profile is controlled by its sole operator.
 """
 import argparse
 import ast
@@ -302,6 +304,14 @@ def audit(root=ROOT):
                 findings.append('LEGACY_SAFETY_GUARD_CHANGED')
             count += 1
             if findings: issues.append({'path': name, 'findings': findings})
+    personal_path=root/'docs/ATLAS_PERSONAL_PAPER_RELEASE_POLICY.json'
+    if personal_path.exists():
+        personal=json.loads(personal_path.read_text(encoding='utf8'))
+        if (personal.get('schema')!='ATLAS_PERSONAL_PAPER_RELEASE_POLICY_V1' or personal.get('policy_approved') is not True
+                or personal.get('profile_id')!='PERSONAL_PAPER_ONLY_V1'
+                or personal.get('startup_authorized') is not False or personal.get('activation_authorized') is not False
+                or any(personal['authority'][k] is not False for k in ('external_reviewer_required','external_issuer_required','independent_custodian_required','per_trade_confirmation'))):
+            raise ValueError('PERSONAL_POLICY_OR_ACTIVATION_BOUNDARY_INVALID')
     return {'schema':'ATLAS_PAPER_STATIC_AUDIT_V1','source_files':count,'issues':issues,
             'operational_acceptance':False,'startup_authorized':False}
 
