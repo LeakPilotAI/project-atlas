@@ -195,6 +195,32 @@ class FinancialRecordStore:
                               "head": head, "audit": audit, "pin_schema": pin["schema"],
                               "acknowledged_operations": {key: digest(value[0]) for key, value in operations.items()}})
 
+    def export_continuation_fixture(self, *, expected_pin):
+        """Read-only FS1 rows for an independently pinned DISPOSABLE cut.
+
+        Never use snapshot()/guard() here: those may acquire a writer mutex or
+        publish a refusal latch. Operational codecs must use a separately
+        reviewed admission-aware export; inherited calls explicitly refuse.
+        """
+        if record_version(self, 'pin') != 'FS2_TEST_PIN_V1':
+            raise Refused('NATIVE_CONTINUATION_OPERATIONAL_EXPORT_NOT_AUTHORIZED')
+        if body(self.trust.current()) != body(expected_pin):
+            raise Refused('CONTINUATION_EXPECTED_SOURCE_CUT_CHANGED')
+        pin, manifest, rows, state, head, operations, audit = self._inspect_existing()
+        if (pin.get('schema') != 'FS2_TEST_PIN_V1' or body(pin) != body(expected_pin)
+                or manifest.get('schema') not in ('PAPER_EPOCH_FIXTURE_V1',
+                    'PAPER_EPOCH_AUTONOMOUS_QD_V1','PAPER_EPOCH_PERP_FIXTURE_V2')
+                or not 0 <= len(rows) <= MAX_OPERATIONS or len(pin['entries']) != len(rows)
+                or type(state['revision']) is not int or state['revision'] != len(rows)
+                or len(operations) != len(rows) or type(audit['source_revision']) is not int
+                or audit['source_revision'] != len(rows) or pin['epoch'] != manifest['epoch']
+                or body(self.trust.current()) != body(expected_pin)):
+            raise Refused('CONTINUATION_COMPLETE_ACKNOWLEDGED_FIXTURE_CUT_REQUIRED')
+        return copy.deepcopy({'schema':'FS2_CONTINUATION_FIXTURE_EXPORT_V1',
+            'execution_domain':'DISPOSABLE','source_pin':pin,'manifest':manifest,'rows':rows,
+            'state':state,'head':head,'audit':audit,'remaining_operations':MAX_OPERATIONS-len(rows),
+            'startup_authorized':False})
+
     def remaining_operations(self):
         """Authenticated existing-only capacity read; no reset or writer mutex."""
         return MAX_OPERATIONS-self.verified_cut()['state']['revision']

@@ -474,3 +474,7 @@ CONSOLIDATED_OPERATOR_DECISION_AND_CAPACITY_DESIGN: VERIFIED package/offline des
 ## Authorized immutable continuation resumed - 2026-10-26
 
 IMMUTABLE_CONTINUATION_OFFLINE_IMPLEMENTATION: VERIFIED fixture-only committed-event archive/replay/crash/concurrency/corruption/capacity/FS3report compatibility;277combinedpassed0failed/skipped,53newcases. Zero-remaining assertion verified text-format issue;exact financial flat/cost/exposure/audit assertions strengthened. B1V4/C1roster/D1dependencies/E1providers planning manifests complete;independent roles UNASSIGNED,all gates unchanged. No ACTIVE task;BLOCKED_WAIT on actual acceptance/enrollment/native mappings and separate activation permissions. No operational128expansion or protected writer hookup. See IMMUTABLE_CONTINUATION_OFFLINE_IMPLEMENTATION_2026-10-26.md.
+
+## Native continuation interface boundary - 2026-10-26
+
+NATIVE_CONTINUATION_FIXTURE_EXPORT_CONTRACT: VERIFIED source-only22passes;actual FinancialRecordStore test-codec read export/pure complete-cut catch-up,operational codec refusal,joint128overflow/prefix/authority checks. Prior277offline cases preserved,not rerun. No ACTIVE task;BLOCKED_WAIT on proposed P-ATLAS-NATIVE-CONTINUATION-DISPOSABLE-V1 before native root/ACL/publication and successor tests. Operational mappings/dispatch/capacity unchanged. See NATIVE_CONTINUATION_INTERFACE_BOUNDARY_2026-10-26.md.

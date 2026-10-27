@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "IMMUTABLE_CONTINUATION_OFFLINE_IMPLEMENTATION",
+  "last_verified_task": "NATIVE_CONTINUATION_FIXTURE_EXPORT_CONTRACT",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -11,16 +11,16 @@
     "REAL_HISTORY_HTTP_ACCEPTANCE_SCOPE": "Original six membership permanently UNRECONSTRUCTABLE;authorization unused. New ten-scope assessment does not reconstruct or expand it."
   },
   "latest_tests": {
-    "selection": "offline continuation,planning manifests,FS1,perpV2,PAPER policy,unified runtime",
-    "passed": 277,
+    "selection": "native fixture read export/pure catch-up contract",
+    "passed": 22,
     "failed": 0,
     "skipped": 0,
     "single_combined_run": true,
-    "new_cases": 53,
+    "native_filesystem_acceptance": false,
     "operational_acceptance": false
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "BLOCKED_WAIT: read IMMUTABLE_CONTINUATION_OFFLINE_IMPLEMENTATION_2026-10-26.md and four B1/C1/D1/E1 planning manifests. Assign independent reviewers/evidence owners;provide accepted actual scope,roster,issuer/currentness/clock/provider and native successor mappings/capacity evidence. Separate permission for actual verification,enrollment,inception,data access/native admission/startup. Do not repeat completed offline continuation or browser suites without changes;do not reset128or adopt retained state.",
+  "exact_next_action": "BLOCKED_WAIT: review NATIVE_CONTINUATION_INTERFACE_BOUNDARY_2026-10-26.md and approve/reject proposed P-ATLAS-NATIVE-CONTINUATION-DISPOSABLE-V1 before native root/ACL/publication tests.22source-only export/contract tests pass;277prioroffline tests preserved. No actual native successor or operational routing installed. B1/C1/D1/E1,real custody/resources/providers and separate activation remain blocked.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -1709,5 +1709,22 @@
     "independent_roles": "UNASSIGNED",
     "financial_startup_authorized": false,
     "junit_evidence": "logs/diagnostics/continuation-final-verified-b88cb7fb480f4559b8ab80fe2860080e.xml"
+  },
+  "retained_277_continuation_tests": {
+    "selection": "offline continuation,planning manifests,FS1,perpV2,PAPER policy,unified runtime",
+    "passed": 277,
+    "failed": 0,
+    "skipped": 0,
+    "single_combined_run": true,
+    "new_cases": 53,
+    "operational_acceptance": false
+  },
+  "native_continuation_interface": {
+    "status": "SOURCE_FIXTURE_EXPORT_VERIFIED_NATIVE_WRITE_SCOPE_UNAPPROVED",
+    "report": "docs/NATIVE_CONTINUATION_INTERFACE_BOUNDARY_2026-10-26.md",
+    "proposed_native_authorization_granted": false,
+    "actual_native_roots_created": 0,
+    "native_financial_publishers_activated": 0,
+    "operational_routing_changed": false
   }
 }
