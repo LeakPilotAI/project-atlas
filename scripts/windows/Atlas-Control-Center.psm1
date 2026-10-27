@@ -17,7 +17,7 @@ function Get-AtlasFullStartupGate([string]$Root) {
 function Get-AtlasFullFrontendDecision([string]$Root) {
     return (Get-AtlasFullStartupGate $Root) + ' Full frontend ownership/readiness is not established; read-only dashboard remains separate.'
 }
-function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emergency) {
+function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emergency, [switch]$RequireFinished) {
     if ($null -eq $AcceptedSession -or $AcceptedSession.verify_session() -isnot [bool] -or
         -not $AcceptedSession.verify_session()) {
         throw 'PAPER_STOP_NOT_ENROLLED: no accepted owned session; no legacy stop fallback.'
@@ -27,6 +27,14 @@ function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emerge
     if ($result.schema -cne 'QD_CONTROL_STOP_V1' -or
         $result.phase -cnotin @('FINISHED', 'IN_PROGRESS')) {
         throw 'PAPER_STOP_OUTCOME_UNVERIFIED'
+    }
+    # Window close must not discard a pending financial drain. The normal Stop
+    # button may still display IN_PROGRESS while the coordinator retains work.
+    if ($RequireFinished -and $result.phase -cne 'FINISHED') {
+        throw 'PAPER_STOP_STILL_IN_PROGRESS: keep the Control Center open until drain finishes.'
+    }
+    if ($RequireFinished -and $null -eq $result.outcome) {
+        throw 'PAPER_STOP_OUTCOME_UNVERIFIED: no finished outcome; ownership retained.'
     }
     return $result
 }

@@ -91,7 +91,7 @@ $form.Add_FormClosing({
     param($sender, $eventArgs)
     try {
         if (-not $script:KeepAtlasRunning -and $null -ne $AcceptedPaperSession) {
-            $result = Invoke-AtlasPaperStop $AcceptedPaperSession
+            $result = Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished
             Set-StatusMessage "$($result.phase): $($result.outcome.status) / $($result.outcome.position_state)" ([System.Drawing.Color]::DarkSlateGray)
         }
         Close-AtlasSelectedPaperDashboard; Close-AtlasObservationDashboard; Close-AtlasReadOnlyDashboard
