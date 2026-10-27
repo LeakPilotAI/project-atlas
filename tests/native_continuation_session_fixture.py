@@ -88,4 +88,5 @@ class SwitchStatus:
     def pending(self):self.budget.write(self.path,b'{"status":"PENDING"}',replace=self.path.exists())
     def acknowledge(self,pin_digest):
         self.budget.write(self.path,body({'status':'ACKNOWLEDGED','catalog':pin_digest}).encode(),replace=True)
-    def acknowledged(self):return self.path.exists() and json.loads(self.path.read_text())['status']=='ACKNOWLEDGED'
+    def receipt(self):return json.loads(self.path.read_text()) if self.path.exists() else None
+    def acknowledged(self):return self.receipt() is not None and self.receipt().get('status')=='ACKNOWLEDGED'

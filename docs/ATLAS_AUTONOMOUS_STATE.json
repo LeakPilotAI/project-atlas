@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "NATIVE_CONTINUATION_DISPOSABLE_INCREMENT",
+  "last_verified_task": "NATIVE_CONTINUATION_V2_SOURCE_PREFLIGHT",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "B1": "Independent complete licensed/archive source and witness unavailable;local replay verified but cannot certify undisclosed positions/cashflows",
@@ -18,7 +18,7 @@
     "selection": "27 distinct native fixture cases;26+1 selections;8 overlap guard rerun"
   },
   "release_gate_state": "21 unchanged;production NO-GO",
-  "exact_next_action": "BLOCKED_WAIT at bounded session completion: retain the one fixture root and original deadline;do not create another root or reset budget. Review native disposable report. Remaining native15-role ownership/nonempty order/calendar-report/namespace/recovery acceptance requires separately bounded continuation authorization;real B1/C1/D1/E1 and independent custody/resources/provider/activation remain blocked. No operational migration or startup.",
+  "exact_next_action": "BLOCKED_WAIT: operator approval of P-ATLAS-NATIVE-CONTINUATION-DISPOSABLE-V2 in docs/NATIVE_CONTINUATION_V2_EXECUTION_PROPOSAL_2026-10-26.md. Proposed exact new root remains absent.23pure cut-consistency tests passed;ACK/scope/root-map hardening requires native revalidation. V1 grant consumed;no new native session/root/ACL/publisher run.27/277/22historical evidence retained;B1/C1/D1/E1 and financial startup remain blocked.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -1757,6 +1757,29 @@
     },
     "test_children_reaped": true,
     "hosts_started": 0,
+    "operational_acceptance": false
+  },
+  "native_continuation_v2_preflight": {
+    "status": "SOURCE_PREFLIGHT_VERIFIED_WAITING_FOR_ONE_NATIVE_AUTHORIZATION",
+    "proposal": "docs/NATIVE_CONTINUATION_V2_EXECUTION_PROPOSAL_2026-10-26.md",
+    "authorization": "P-ATLAS-NATIVE-CONTINUATION-DISPOSABLE-V2",
+    "granted": false,
+    "new_native_roots_created": 0,
+    "native_tests_executed": false,
+    "source_only_tests": {
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    "remaining_native_scope": [
+      "15-role/8-exclusion mapping",
+      "populated orders",
+      "populated reports",
+      "junction/symlink containment",
+      "catalog child crash/restart",
+      "inconsistent custody refusal",
+      "financial/projection parity"
+    ],
     "operational_acceptance": false
   }
 }

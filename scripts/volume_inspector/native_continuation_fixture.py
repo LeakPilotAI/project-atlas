@@ -214,6 +214,33 @@ def financial_derive(manifest,rows):
     return {'state':state,'financial_head':head}
 
 
+
+def validate_switch_cut(pin, values, current_pins, cuts, status_receipt):
+    """Pure fixture cut consistency. Not authority,ownership or native verification."""
+    try:
+        selection=pin['selection'];r=values['record'];c=values['commit'];a=values['ack'];i=values['intent']
+        roles=NativeSwitchFixture.ROLES
+        if (set(pin)!={'schema','root','scope','selection'} or pin['schema']!='NATIVE_SWITCH_FIXTURE_PIN_V1'
+                or set(selection)!={'intent','record','commit','ack'} or set(values)!=set(selection)
+                or status_receipt!={'status':'ACKNOWLEDGED','catalog':digest(pin)}
+                or set(current_pins)!=roles or set(cuts)!=roles
+                or set(i)!={'schema','before'} or i['schema']!='NATIVE_SWITCH_FIXTURE_INTENT_V1'
+                or set(i['before'])!=roles
+                or set(r)!={'schema','intent','before','selected','state_digests','roots'}
+                or r['schema']!='NATIVE_SWITCH_FIXTURE_RECORD_V1'
+                or r['intent']!=selection['intent'] or r['before']!=i['before']
+                or r['selected']!={k:digest(v) for k,v in current_pins.items()}
+                or r['state_digests']!={k:digest(v['state']) for k,v in cuts.items()}
+                or r['roots']!={k:[{'source':x['root'],'projection':x['projection']} for x in v['segments']] for k,v in current_pins.items()}
+                or any(v['pin']!=current_pins[k] for k,v in cuts.items())
+                or c!={'schema':'NATIVE_SWITCH_FIXTURE_COMMIT_V1','record':selection['record'],'intent':selection['intent']}
+                or a!={'schema':'NATIVE_SWITCH_FIXTURE_ACK_V1','commit':selection['commit']}):
+            raise NativeContinuationUnknown('CATALOG_CUT_OR_ACK_CONFLICT')
+    except (KeyError,TypeError,IndexError) as exc:
+        raise NativeContinuationUnknown('INCOMPLETE_CATALOG_EVIDENCE') from exc
+    return True
+
+
 class NativeSwitchFixture:
     """All-role fixture selection barrier;separate physical writes are NOT atomic."""
     ROLES=frozenset({'QD_SOURCE','PERP_SOURCE','QD_REPORT','PERP_REPORT','PERP_ORDERS','GLOBAL'})
@@ -284,17 +311,15 @@ class NativeSwitchFixture:
         pin=self.custody.current();selection=pin['selection']
         if selection is None:raise NativeContinuationUnknown('NO_ACKNOWLEDGED_SELECTION')
         values={stage:strict(f.s.read_bound(self.out,stage+'.json',selection[stage])[0].decode()) for stage in selection}
-        r=values['record'];c=values['commit'];a=values['ack'];i=values['intent']
-        if (r['intent']!=selection['intent'] or r['before']!=i['before']
-                or c!={'schema':'NATIVE_SWITCH_FIXTURE_COMMIT_V1','record':selection['record'],'intent':selection['intent']}
-                or a!={'schema':'NATIVE_SWITCH_FIXTURE_ACK_V1','commit':selection['commit']}
-                or any(digest(j.custody.current())!=r['selected'][k] for k,j in self.journals.items())
-                or self.custody.verify(pin) is not True):
-            raise NativeContinuationUnknown('CATALOG_CURRENTNESS_OR_ACK_CONFLICT')
+        scope=self.out.inner if isinstance(self.out,BoundedOutput) else self.out
+        bound_scope=strict(f.s.read_bound(scope,'scope.json',pin['scope'])[0].decode())
+        expected_scope={'schema':'NATIVE_SWITCH_FIXTURE_SCOPE_V1','roles':{k:digest(v.scope) for k,v in self.journals.items()}}
+        if bound_scope!=expected_scope:raise NativeContinuationUnknown('CATALOG_SCOPE_CONFLICT')
         cuts={k:v.read() for k,v in self.journals.items()}
-        if any(digest(v['state'])!=r['state_digests'][k] for k,v in cuts.items()):
-            # Selection receipt proves the switch cut,not later financial activity.
-            raise NativeContinuationUnknown('CATALOG_SOURCE_ADVANCED_AFTER_SWITCH')
+        current={k:j.custody.current() for k,j in self.journals.items()}
+        validate_switch_cut(pin,values,current,cuts,self.status.receipt())
+        if self.custody.verify(pin) is not True or self.authority.verify_switch(cuts) is not True:
+            raise NativeContinuationUnknown('CATALOG_CURRENTNESS_OR_AUTHORITY_CHANGED')
         return {'status':'ACKNOWLEDGED','cuts':cuts,'startup_authorized':False}
 
     def close(self):self.out.close()
