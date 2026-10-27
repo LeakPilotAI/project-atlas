@@ -1,10 +1,10 @@
 {
   "active_task": null,
-  "last_verified_task": "W32TIME_STARTED_CONFIGURATION_UNCHANGED_SINGLE_RESYNC_UNSUCCESSFUL",
+  "last_verified_task": "ADDITIONAL_WINDOWS_RESYNC_SUCCEEDED_CONFIGURATION_UNCHANGED",
   "next_eligible_tasks": [],
   "blocked_tasks": {
-    "PERSONAL_LOCAL_INSTALLATION": "APPROVED_QD_ONLY;pausedbeforewrites. W32TimeRunningManual afterauthorizedstart,but single resyncnoData/Leap3/Stratum0;acceptedUTC evidence fails. No additional resync/source/configuration change authorized.",
-    "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyAPPROVED,notattempted;clock syncstillunverified. Finalreservation/publication eligibilitynotexecuted;Hyperliquidnotauthorized.",
+    "PERSONAL_LOCAL_INSTALLATION": "APPROVED_QD_ONLY;notstarted. WindowsSyncsuccessbutacceptedclockanchor<=1000msuncertaintyunproven;currentRootDisp7.8018211s. No declaredaccuracyinvented. No source/settingschange orfurthermanualresyncpermission.",
+    "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyAPPROVED,notattempted;acceptedclockuncertaintyevidence remainsmissing. NoHyperliquidaccountauthorized.",
     "PERSONAL_CURRENT_DATA": "QD research/IEXdata access conditionallyAPPROVEDwithin existingrights/budgets;notattempted becausepreflightstopped. No Hyperliquidactivation.",
     "PERSONAL_BOUNDED_START": "ONE60secondQDautonomouspilot APPROVEDbutunused;clock/resources/financial/data checks must pass. No automaticresume,furtherpilot orotheraccount authorization.",
     "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Read-only real native owner/ACL/13resourcechecksPASSED. Actual financialpublication/readback/recovery acceptance stillunexecuted;authorizedQDonlybutpausedonclock. V5harnessnotrequired."
@@ -24,7 +24,7 @@
     "financial_startup_authorized": false
   },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Resolve valid UTC data from currentconfiguredWindowsTime source or obtain explicit new boundedclock action. W32TimeRunningManual,source/startupunchanged;ONEresyncreturned no data despite exit0;Leap3/Stratum0/error1. Do not retry single request orchange source/settings. ExistingQDcommissioninggrant approvedunused;repeatclock/resources thencontinue sameinstallation/inception/data/one60secondpilot/Stop/restartscope.",
+  "exact_next_action": "WindowsSync restoredLeap0Stratum5/error0;current RootDisp7.8018211s doesnotjustifydeclaredacceptedanchoruncertainty<=1000ms. Obtain legitimateacceptedboundedaccuracy evidence/read-onlysettling verification withoutchangingappvalidator orfabricatinguncertainty. Manualresyncgrantused;no source/settingschange orfurtherresyncpermission. OnceALLclock/resourcespasscontinue SAMEapprovedunusedQDcommissioning;no financialreapproval.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -117,7 +117,7 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "BLOCKED_TIME_SOURCE_NO_SYNC_DATA",
+  "execution_status": "BLOCKED_CLOCK_UNCERTAINTY_EVIDENCE",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
   "continuation_report": "docs/PERSONAL_PAPER_POLICY_IMPLEMENTATION_2026-10-27.md",
   "blocked_wait_reason": "Only installation/native execution/data/inception/session actions outside this source-only approval remain for commissioning;no mandatory external reviewer/issuer/custodian vacancy.",
@@ -2051,7 +2051,7 @@
     "scope_record": "docs/QD_COMMISSIONING_OPERATOR_SCOPE_2026-10-27.json",
     "native_resource_checks_passed": 25,
     "native_resource_checks_failed": 0,
-    "clock_result": "BLOCKED_UNSYNCHRONIZED_NO_TIME_DATA;W32TIME_RUNNING_MANUAL;ONE_RESYNC_USED",
+    "clock_result": "SYNCHRONIZED;CONTINUITY_PASS;ACCEPTED_1000MS_UNCERTAINTY_EVIDENCE_NOT_ESTABLISHED",
     "installation_started": false,
     "inception_started": false,
     "provider_access_attempted": false,
@@ -2092,5 +2092,71 @@
     "v5_execution": false,
     "live_orders": false,
     "genesis_access": false
+  },
+  "windows_time_recovery_diagnostics_20261027": {
+    "current_source": "time.windows.com,0x9",
+    "dns_resolved": true,
+    "ntp_diagnostic_samples": 3,
+    "ntp_replies": 3,
+    "diagnostic_offset_ms": [
+      "13.6828",
+      "15.2912",
+      "13.8496"
+    ],
+    "service_synchronized": false,
+    "exact_failure_cause_proven": false,
+    "additional_resync_requests": 0,
+    "configuration_changes": 0,
+    "commissioning_resumed": false,
+    "report": "docs/WINDOWS_TIME_RECOVERY_DIAGNOSIS_2026-10-27.md"
+  },
+  "windows_time_additional_sync_20261027": {
+    "schema": "ATLAS_WINDOWS_TIME_ADDITIONAL_SYNC_RESULT_V1",
+    "date": "2026-10-27",
+    "authorization": "Explicit operator reply Approve one additional resync",
+    "source": "time.windows.com,0x9",
+    "additional_resync_requests": 1,
+    "semantic_resync_success": true,
+    "command_exitcode": 0,
+    "source_and_startup_unchanged": true,
+    "service": "Running",
+    "startup": "Manual",
+    "last_reported_successful_sync_local": "10/27/2026 9:06:21 AM",
+    "clock_status": {
+      "leap_indicator": 0,
+      "stratum": 5,
+      "last_sync_error": 0,
+      "state_machine": "1_HOLD",
+      "root_dispersion_seconds": "7.8018211",
+      "root_delay_seconds": "0.0501914",
+      "advertised_root_distance_seconds": "7.8269168"
+    },
+    "post_sync_diagnostic_samples": {
+      "count": 3,
+      "server_leap": 0,
+      "server_stratum": 4,
+      "offset_ms": [
+        "27.1289",
+        "28.9544",
+        "27.8934"
+      ],
+      "roundtrip_ms": [
+        "33.6951",
+        "32.2018",
+        "33.8494"
+      ]
+    },
+    "observed_continuity": {
+      "elapsed_monotonic_seconds": 20.032,
+      "wall_monotonic_difference_seconds": 0.0024779491424560263,
+      "passes_existing_two_second_discontinuity_check": true
+    },
+    "accepted_atlas_clock_anchor_issued": false,
+    "existing_anchor_uncertainty_ceiling_ms": 1000,
+    "clock_validator_changed": false,
+    "uncertainty_bound_adequately_established": false,
+    "commissioning_resumed": false,
+    "pilot_consumed": false,
+    "further_resync_authorized": false
   }
 }

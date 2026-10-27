@@ -1,3 +1,11 @@
+# Latestadditionalresync outcome - UTCsync restored,uncertaintyproofstillmissing
+
+ONEnewexplicitlyapprovedplain/resyncSUCCEEDED tosamepeer;Leap0/Stratum5/error0,source/startupunchanged. Continuity20scheckPASS. BLOCKED_CLOCK_UNCERTAINTY_EVIDENCE:WindowsRootDisp7.8018s cannotjustifyaccepted<=1000msanchor;no validatorchange/newhardcodedgate/fakeanchor. No furtherresync/settingspermission. ExistingQDgrantapprovedunused;do notrepeatfinancialauthorizationrequest. No installation/inception/provider/pilot/restartstarted. docs/WINDOWS_TIME_RECOVERY_DIAGNOSIS_2026-10-27.md currentoutcome;earlierpermissionrequest below nowhistorical/consumed.
+
+# Current WindowsTime diagnosis - no replacement orconfigurationchange indicated
+
+Currentpeer/DNS and3NTPdiagnosticreplies verified;W32Timeitselfstillunsynchronized. BLOCKED_WAIT_ONE_ADDITIONAL_CURRENT_SOURCE_RESYNC_PERMISSION. No resyncrequestorclockvalidationchange madeunderdiagnosticsscope. Exactcauseunproven;sourceport123pathnotfullytested. RequestONEplain/resync tosamepeerthenverify;iffailstop. ExistingQDcommissioningapprovedunused. docs/WINDOWS_TIME_RECOVERY_DIAGNOSIS_2026-10-27.md. Prioroutcomesbelowretained.
+
 # Currentclockresult - approvedsingle resyncfailedsemantically
 
 W32TimeStarted/Running/Manual;originalsource/startupunchanged. ONEresyncreturned no timedata despite exit0;Leap3,Stratum0,LastSyncError1. BLOCKED_TIME_SOURCE_NO_SYNC_DATA;noACTIVEcommissioningtask. Single-resyncgrantconsumed;do notretry/change source. QDcommissioningremainsapprovedunused;resolveacceptedclockevidence thenrepeatresources/continueSAMEgrant. Nofinancial/provider/pilot/inceptionstarted. Latestactualevidence docs/QD_COMMISSIONING_PREFLIGHT_RESULT_2026-10-27.md. Earlierstopped-service finding below historical,now superseded.
