@@ -1,10 +1,10 @@
 {
   "active_task": null,
-  "last_verified_task": "QD_COMMISSIONING_NATIVE_RESOURCE_PREFLIGHT_PASSED",
+  "last_verified_task": "W32TIME_STARTED_CONFIGURATION_UNCHANGED_SINGLE_RESYNC_UNSUCCESSFUL",
   "next_eligible_tasks": [],
   "blocked_tasks": {
-    "PERSONAL_LOCAL_INSTALLATION": "APPROVED_QD_ONLY;paused before writes on actualclockpreflight failure;D:release/newactivation/coordination destinations absent. No WindowsTime repair/systemwidechange authorized.",
-    "PERSONAL_SIMULATED_INCEPTION": "QD once-only1000simulatedUSD conditionallyAPPROVED;not attempted becauseclockevidencefailed;finalpublishereligibility/reservation not yetexecuted. Hyperliquidnotauthorized.",
+    "PERSONAL_LOCAL_INSTALLATION": "APPROVED_QD_ONLY;pausedbeforewrites. W32TimeRunningManual afterauthorizedstart,but single resyncnoData/Leap3/Stratum0;acceptedUTC evidence fails. No additional resync/source/configuration change authorized.",
+    "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyAPPROVED,notattempted;clock syncstillunverified. Finalreservation/publication eligibilitynotexecuted;Hyperliquidnotauthorized.",
     "PERSONAL_CURRENT_DATA": "QD research/IEXdata access conditionallyAPPROVEDwithin existingrights/budgets;notattempted becausepreflightstopped. No Hyperliquidactivation.",
     "PERSONAL_BOUNDED_START": "ONE60secondQDautonomouspilot APPROVEDbutunused;clock/resources/financial/data checks must pass. No automaticresume,furtherpilot orotheraccount authorization.",
     "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Read-only real native owner/ACL/13resourcechecksPASSED. Actual financialpublication/readback/recovery acceptance stillunexecuted;authorizedQDonlybutpausedonclock. V5harnessnotrequired."
@@ -24,7 +24,7 @@
     "financial_startup_authorized": false
   },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Resolve accepted WindowsUTCsync evidence:actualw32tm status unavailable because service stopped0x80070426. Operator may manually syncWindows time or separately authorize exact service repair;no machinewidechangescurrentlyauthorized. Thenrepeatclockcheck and continue existingAPPROVEDQD-only installation/inception/data/one60secondpilot/Stop/restart. No repeatfinancialgrantneeded;pilot/inceptionunused.",
+  "exact_next_action": "Resolve valid UTC data from currentconfiguredWindowsTime source or obtain explicit new boundedclock action. W32TimeRunningManual,source/startupunchanged;ONEresyncreturned no data despite exit0;Leap3/Stratum0/error1. Do not retry single request orchange source/settings. ExistingQDcommissioninggrant approvedunused;repeatclock/resources thencontinue sameinstallation/inception/data/one60secondpilot/Stop/restartscope.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -117,7 +117,7 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "BLOCKED_TECHNICAL_CLOCK_PREFLIGHT",
+  "execution_status": "BLOCKED_TIME_SOURCE_NO_SYNC_DATA",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
   "continuation_report": "docs/PERSONAL_PAPER_POLICY_IMPLEMENTATION_2026-10-27.md",
   "blocked_wait_reason": "Only installation/native execution/data/inception/session actions outside this source-only approval remain for commissioning;no mandatory external reviewer/issuer/custodian vacancy.",
@@ -2051,7 +2051,7 @@
     "scope_record": "docs/QD_COMMISSIONING_OPERATOR_SCOPE_2026-10-27.json",
     "native_resource_checks_passed": 25,
     "native_resource_checks_failed": 0,
-    "clock_result": "BLOCKED_SERVICE_NOT_STARTED_0x80070426",
+    "clock_result": "BLOCKED_UNSYNCHRONIZED_NO_TIME_DATA;W32TIME_RUNNING_MANUAL;ONE_RESYNC_USED",
     "installation_started": false,
     "inception_started": false,
     "provider_access_attempted": false,
@@ -2060,5 +2060,37 @@
     "shutdown": "NO_TRADING_RUNTIME_STARTED;READONLY_HANDLES_RELEASED",
     "restart_verification": "NOT_EXECUTED",
     "report": "docs/QD_COMMISSIONING_PREFLIGHT_RESULT_2026-10-27.md"
+  },
+  "windows_time_action_20261027": {
+    "schema": "ATLAS_QD_WINDOWS_TIME_ACTION_RESULT_V1",
+    "date": "2026-10-27",
+    "operator_authorized": [
+      "START_EXISTING_W32TIME",
+      "ONE_RESYNC_USING_CURRENT_SOURCE",
+      "READ_ONLY_CLOCK_VERIFICATION"
+    ],
+    "service_started": true,
+    "start_method": "EXACT_net.exe_start_W32Time_WITH_STANDARD_UAC",
+    "startup_type": "Manual",
+    "startup_and_configured_source_unchanged": true,
+    "resync_requests": 1,
+    "resync_exitcode": 0,
+    "resync_semantic_result": "FAILED_NO_TIME_DATA_AVAILABLE",
+    "verification": {
+      "leap_indicator": "3_NOT_SYNCHRONIZED",
+      "stratum": 0,
+      "root_dispersion_seconds": "16.9611029",
+      "last_sync_error": 1
+    },
+    "commissioning_continued": false,
+    "financial_publication_attempted": false,
+    "provider_connection_attempted": false,
+    "pilot_consumed": false,
+    "windows_time_start_authorization_used": true,
+    "single_resync_authorization_used": true,
+    "additional_resync_or_source_changes_authorized": false,
+    "v5_execution": false,
+    "live_orders": false,
+    "genesis_access": false
   }
 }

@@ -1,3 +1,7 @@
+# Currentclockresult - approvedsingle resyncfailedsemantically
+
+W32TimeStarted/Running/Manual;originalsource/startupunchanged. ONEresyncreturned no timedata despite exit0;Leap3,Stratum0,LastSyncError1. BLOCKED_TIME_SOURCE_NO_SYNC_DATA;noACTIVEcommissioningtask. Single-resyncgrantconsumed;do notretry/change source. QDcommissioningremainsapprovedunused;resolveacceptedclockevidence thenrepeatresources/continueSAMEgrant. Nofinancial/provider/pilot/inceptionstarted. Latestactualevidence docs/QD_COMMISSIONING_PREFLIGHT_RESULT_2026-10-27.md. Earlierstopped-service finding below historical,now superseded.
+
 # Current approved QDcommissioning - stopped at requiredclockpreflight
 
 Operator explicitlyAPPROVED QDonlyinstallation/nativefinancialchecks/once-only1000simulatedUSD/currentQD-IEXdata/one60secondpilot/Stop/restart. Realnative resourcepreflightPASSED;WindowsUTCsyncqueryFAILED(service stopped0x80070426). BLOCKED_TECHNICAL_CLOCK,noACTIVEactivationtask. No financialpublication/provider/pilot started;approvalunused. Resolveclockevidence withoutunauthorizedsystemchanges thencontinueSAMEgrant;do notrequestfinancialapprovalagain. docs/QD_COMMISSIONING_PREFLIGHT_RESULT_2026-10-27.md. Prior authorization-pending entries below are historical andsuperseded bythis explicitgrant;21historicaldecisionsunchanged.

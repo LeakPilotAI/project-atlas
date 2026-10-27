@@ -1,3 +1,26 @@
+# Latest clock action - October 27, 2026
+
+**COMMISSIONING STILL BLOCKED:CURRENT TIME SOURCE PROVIDED NO SYNC DATA.**
+
+The operator separately approved starting existingW32Time,one resynchronization using its current source,and read-only clock verification,without changing source/startupsettings. Start-Service initially lacked service-control permission. The standard WindowsUAC path then ran exactly net.exe start W32Time:exit0,serviceRunning. No arbitrary installer or unrelated service was elevated.
+
+Exactly ONE w32tm.exe /resync was then requested through the approved administrator context. Captured output: **“The computer did not resync because no time data was available.”** Native command exitcode was0;it was **not** interpreted as synchronization success.
+
+Actual post-request status:LeapIndicator3(not synchronized),Stratum0(unspecified),RootDispersion16.9611029seconds,LastSyncError1(no time data). This does not measure a16.96second wall-clock error;it fails to establish the existing<=1000ms accepted UTC-anchor bound. No accurate/synchronized clock proof was fabricated.
+
+A final local-only peer query returnedoneActiveclient peer,but peerStratum0 remains unspecified. Activepeer status and a reported historical LastSuccessfulSyncTime do not override the unsynchronizedclock/error result. No DNS/UDPprobe or secondresync was sent.
+
+Read-back confirms W32TimeRunning,StartTypeManual,and unchanged original Start/Type/NtpServer configuration. No manual time change,resync retry,time-source change,startupchange,firewallchange or other service operation was performed. W32Time is intentionally left running under the operator's start approval;the short-lived exact command processes exited. No Atlas financial runtime/host was launched.
+
+Per the operator's explicit stop-on-sync-failure requirement,installation,inception,provider access,60secondpilot and restart acceptance remain UNEXECUTED. The separate QDcommissioning grant remains approved/unused;the single Windowsresync grant is consumed. Balance/positions remain UNAVAILABLE because no account was initialized. The25earlier native resource checks remain retained evidence and must be revalidated before future writes;they do not replace clock or financial acceptance.
+
+Next:resolve availability of valid time data from the current configured Windows source,or explicitly authorize a different bounded clock action if desired. No secondresync or sourcechange is currently authorized. Once acceptableUTC evidence is available,repeat read-only clock/resource checks and continue the SAMEunused QDcommissioning grant. Do not request financial authorization again for that unchanged scope. Do not run the existing single-request script again.
+
+Private full command/status/configuration receipts remain ignored under logs/diagnostics. Public result:docs/QD_WINDOWS_TIME_ACTION_RESULT_2026-10-27.json. No source code or financial record changed;no unrelated test suite rerun. V5,Hyperliquid inception,liveorders andGenesis remain excluded.
+
+---
+# Earlier preflight - retained historical evidence
+
 # Authorized QD commissioning - actual preflight result, October 27, 2026
 
 **BLOCKED AT CLOCK PREFLIGHT.** The operator explicitly approved QD-only installation/enrollment,native financial verification,once-only1000simulatedUSD inception if eligible,current authorized QD/IEXdata,one60second autonomousPAPERpilot,ownedStop/reconciliation and restart verification. This approval exists;do not request financial authorization again for the same unused scope. It does not approve Windows-wide service/settings changes,Hyperliquid,V5,liveorders orGenesis.

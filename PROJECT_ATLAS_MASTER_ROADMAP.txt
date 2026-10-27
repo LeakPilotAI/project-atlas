@@ -14477,11 +14477,19 @@ Evidence:Entry11210bc5;realD:healthyNTFS/physicalvolumeidentitypass;25actualnati
 Next action:OperatorrestoreWindowsUTCsync evidence manually or separatelyauthorizeexactWindowsTimeservicerepair;no systemwidechangesmadeunderDonlyscope. ThenrepeatclockpreflightandcontinueexistingapprovedQDinstallation/nativefinancialverification/once-only1000USDinception/currentQD-IEXdata/one60secondpilot/ownedStop/restart. Do not requestsamefinancialpermissionagain;no fakeanchor,secondaccount,secondpilot,liveorders,V5,Genesis or gatewaiver.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone:Explicit QDcommissioning approval recorded;real native directory preflight passed;clock check blocked
 Status:APPROVED_QD_SCOPE_PAUSED_TECHNICAL_CLOCK;PAPER_NOT_STARTED;productionNO-GO
 Evidence:Entry11210bc5;realD:healthyNTFS/physicalvolumeidentitypass;25actualnativechecksallpass across13originaldirectories/ownerSYSTEMACLs/nativeIDs/parents;QDfinancialdirs empty/newdestinationsabsent/auditunchanged. Actualw32tm/query/status/verboseexit1=0x80070426service not started;SCreadconfirmsDEMAND_STARTmanual,notdisabled;acceptedUTCsync/uncertaintyevidenceunavailable,not a claimclockwrong. Allnativehandlesreleased. NoDinstallation,inception,credential/provider,desktop,pilot,Hyperliquid,V5 orGenesischanges. One60secondQDpilotapprovalunused. docs/QD_COMMISSIONING_PREFLIGHT_RESULT_2026-10-27.md;docs/QD_COMMISSIONING_OPERATOR_SCOPE_2026-10-27.json. Prior276Python/8PowerShellevd retainedwithoutunnecessaryrerun.
 Next action:OperatorrestoreWindowsUTCsync evidence manually or separatelyauthorizeexactWindowsTimeservicerepair;no systemwidechangesmadeunderDonlyscope. ThenrepeatclockpreflightandcontinueexistingapprovedQDinstallation/nativefinancialverification/once-only1000USDinception/currentQD-IEXdata/one60secondpilot/ownedStop/restart. Do not requestsamefinancialpermissionagain;no fakeanchor,secondaccount,secondpilot,liveorders,V5,Genesis or gatewaiver.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone:Approved W32Time start completed;single resync returned no time data;clock evidence fails
+Status:APPROVED_QD_COMMISSIONING_STOPPED_AT_UNSYNCHRONIZED_CLOCK;PAPER_NOT_STARTED;productionNO-GO
+Evidence:Based2460660. Exact net.exe startW32Time viaUACexit0;Running/Manualconfirmed. ONE w32tm/resyncrequestoutput saysdidnotresyncbecause no time data;exit0notfalselyPASS. Read-onlystatusLeap3/Stratum0/RootDispersion16.9611029s/LastSyncError1. Originalsource/startupconfigunchanged. No secondrequest/manualtime/source/startup/firewall/other-servicechange.25priornativechecks retained,notrerun;Dinstallation/inception/credentials/providers/pilot/restartstillunexecuted. docs/QD_COMMISSIONING_PREFLIGHT_RESULT_2026-10-27.md;docs/QD_WINDOWS_TIME_ACTION_RESULT_2026-10-27.json. DeferrednativeWIP/evidence/historypreserved.
+Next action:Resolve currentconfiguredWindows timesource/data availability or obtainexplicitnewboundedclockpermission. One-resyncgrantconsumed;do notretryorchange sourceautomatically. QDfinancialcommissioning grant remainsapprovedunused;afteracceptedUTC/resourceevidencecontinue SAMEQDinstallation/once-only1000USD/currentdata/one60secondpilot/ownedStop/restartscope. No financialreapproval needed forunchangedscope. NoV5,secondaccount,liveorders orGenesis.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===
