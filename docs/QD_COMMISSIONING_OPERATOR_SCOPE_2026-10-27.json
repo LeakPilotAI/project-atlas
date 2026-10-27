@@ -1,0 +1,30 @@
+{
+  "schema": "ATLAS_QD_COMMISSIONING_OPERATOR_SCOPE_V1",
+  "date": "2026-10-27",
+  "authority": "SOLE_LOCAL_OPERATOR",
+  "provenance": "Explicit operator instruction in this chat authorizing the existing bounded QD-only activation bundle",
+  "status": "APPROVED_CONDITIONAL_STOPPED_AT_TECHNICAL_PREFLIGHT",
+  "runtime_consumable": false,
+  "installed_activation_record_created": false,
+  "scope": [
+    "D_LOCAL_QD_INSTALLATION_ENROLLMENT_AND_FINANCIAL_VERIFICATION",
+    "ONCE_ONLY_1000_SIMULATED_USD_INCEPTION_IF_ELIGIBLE",
+    "AUTHORIZED_QD_RESEARCH_AND_IEX_DATA",
+    "ONE_60_SECOND_AUTONOMOUS_QD_PAPER_PILOT",
+    "RECONCILIATION_OWNED_STOP_AND_RESTART_VERIFICATION"
+  ],
+  "exclusions": [
+    "HYPERLIQUID_INCEPTION",
+    "V5_NATIVE_EXECUTION",
+    "REAL_FINANCIAL_ORDERS",
+    "GENESIS",
+    "UNRELATED_INFRASTRUCTURE_OR_SYSTEM_SETTINGS"
+  ],
+  "pilot_consumed": false,
+  "provider_connection_attempted": false,
+  "financial_publication_attempted": false,
+  "system_clock_or_service_repair_authorized": false,
+  "stop_condition": "Any required evidence or safety check fails",
+  "current_blocker": "Accepted UTC synchronization/uncertainty evidence unavailable;Windows Time query reports stopped service0x80070426",
+  "historical_gate_promotions": 0
+}
