@@ -14,7 +14,7 @@ class PaperStopBridge:
     def __init__(self, *, runtime=None, evidence=None, ownership=None, owned_close=None):
         if runtime is None or ownership is None:
             raise ValueError("PAPER_STOP_ACCEPTED_SESSION_REQUIRED")
-        if runtime.enrollment.get('execution_domain') == 'OPERATIONAL_ACCEPTED' and owned_close is None:
+        if runtime.enrollment.get('execution_domain') in ('OPERATIONAL_ACCEPTED', 'PERSONAL_PAPER') and owned_close is None:
             raise ValueError('PAPER_STOP_RETAINED_OWNED_CLOSE_REQUIRED')
         self.runtime, self.evidence = runtime, evidence
         self.ownership, self.owned_close = ownership, owned_close
