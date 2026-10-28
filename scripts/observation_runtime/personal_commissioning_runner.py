@@ -4,7 +4,8 @@ No provider, account, authority or process defaults. The 60-second grant include
 an eight-second Stop reserve: this never extends expired financial authority.
 No successful zero-trade claim can be made without accepted observations.
 """
-from threading import Event
+from contextlib import nullcontext
+from threading import Event, RLock
 
 from app.investment.alpaca_iex import IEXFeed
 from app.services.paper_financial_replay import body, strict
@@ -36,17 +37,57 @@ class PersonalCommissioningRunner:
                        runtime.installation.identity, runtime.runtime.ownership, self.images)
         self.used = False
         self.stop_requested = Event()
+        self.control = None
+        self._control = None
+        self.status_lock = RLock()
+        self.stop_mode = 'SHUTDOWN_FLATTEN'
+        self.control_refused = False
+        self.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'IDLE', 'outcome': None}
 
-    def request_stop(self):
+    def bind_control(self, bridge):
+        from app.services.quality_dips_stop_bridge import PaperStopBridge
+        if (self.used or self.control is not None or type(bridge) is not PaperStopBridge
+                or bridge.runtime is not self.runtime or bridge.runner is not self
+                or bridge.evidence is not self.evidence):
+            raise ValueError('PERSONAL_DRIVER_CONTROL_BINDING')
+        self.control = self._control = bridge
+
+    def control_status(self):
+        self._verify_ports()
+        with self.status_lock:
+            return strict(body(self.progress))
+
+    def refuse_control(self):
+        """Latch failed action verification without publishing financial effects."""
+        with self.status_lock:
+            self.control_refused = True
+            self.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'REFUSED', 'outcome': None}
+        self.runtime.runtime.engine.entry_admission_closed = True
+        self.runtime.runtime.engine.dispatch_closed = True
+        self.stop_requested.set()
+        self.runtime.runtime.stopped.set()
+
+    def request_stop(self, mode='SHUTDOWN_FLATTEN'):
         """UI thread closes admission; only the running driver performs writes."""
         self._verify_ports()
+        if mode not in ('SHUTDOWN_FLATTEN', 'EMERGENCY'):
+            raise ValueError('PERSONAL_DRIVER_STOP_MODE')
+        with self.status_lock:
+            if self.control_refused:
+                raise ValueError('PERSONAL_DRIVER_CONTROL_REFUSED')
+            if self.progress['phase'] == 'FINISHED':
+                return 'STOP_REQUESTED'
+            if mode == 'EMERGENCY':
+                self.stop_mode = mode
+                self.runtime.runtime.engine.dispatch_closed = True
+            self.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'IN_PROGRESS', 'outcome': None}
         self.stop_requested.set()
         self.runtime.runtime.engine.entry_admission_closed = True
         self.runtime.runtime.stopped.set()
         return 'STOP_REQUESTED'
 
     def _verify_ports(self):
-        if self.evidence is not self.source or any(a is not b for a, b in zip(self._ports,
+        if self.control is not self._control or self.evidence is not self.source or any(a is not b for a, b in zip(self._ports,
                 (self.runtime, self.source, self.source.feed, self.source.decision_reader,
                  self.source.authority, self.runtime.installation.identity,
                  self.runtime.runtime.ownership, self.runtime.runtime.engine.ledger.images), strict=True)):
@@ -114,19 +155,33 @@ class PersonalCommissioningRunner:
             r.stopped.set()
             try:
                 self._verify_ports()
+                if self.control_refused:
+                    raise ValueError('PERSONAL_DRIVER_CONTROL_REFUSED')
                 if not started:
                     raise ValueError('PERSONAL_SESSION_START_UNACKNOWLEDGED_NO_REPLAY')
                 # Expiry never grants a new session or a financial exception.
                 authority.verify(request)
                 self.images.begin_reserved_stop()
                 self._budget('STOP')
-                result = owner.stop(mode='SHUTDOWN_FLATTEN', evidence=self.evidence)
+                # HTTP/UI requests never execute financial work on their worker.
+                # Recheck the same existing action lease on the driver thread.
+                mode = self.stop_mode
+                with self.control.authorized(mode) if self.control is not None else nullcontext():
+                    if mode == 'EMERGENCY':
+                        result = {'status': owner.stop(mode=mode), 'position_state': 'UNVERIFIED'}
+                    else:
+                        kwargs = {'owned_close': self.control.owned_close} if self.control is not None else {}
+                        result = owner.stop(mode=mode, evidence=self.evidence, **kwargs)
+                    authority.verify(request)
             except (ValueError, OSError, KeyError, TypeError) as exc:
                 reason = reason or str(exc)[:160]
                 r.engine.dispatch_closed = True
                 r.halted = owner.failed = True
                 result = {'status': 'SHUTDOWN_INCOMPLETE', 'position_state': 'UNKNOWN',
                           'process_shutdown_allowed': False}
+            with self.status_lock:
+                self.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'FINISHED',
+                                 'outcome': strict(body(result))}
         return {'schema': 'PERSONAL_COMMISSIONING_RESULT_V1', 'accepted_observations': observations,
                 'completed': reason is None and observations > 0 and result.get('status') == 'FLATTENED',
                 'reason': reason or ('NO_ACCEPTED_CURRENT_OBSERVATIONS' if not observations else None),

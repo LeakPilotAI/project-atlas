@@ -1,3 +1,7 @@
+## October 28 Control Center driver/session binding increment
+
+ACTIVE: QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH. 366 offline regressions pass. No installation or commissioning. Full factual runtime/source assembly and native capacity/timing remain. See docs/QD_CONTROL_DRIVER_SESSION_BINDING_2026-10-28.md. Prior queue retained below.
+
 ## October 28 bounded driver/drain/capacity increment
 
 ACTIVE: QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH. 685 combined regressions and 68 final overlapping focused cases pass. New source not installed. Full runtime/source assembly and measured native Stop capacity remain incomplete. See docs/QD_RUNNER_DRAIN_CAPACITY_2026-10-28.md. Prior queue retained below.

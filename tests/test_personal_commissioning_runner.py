@@ -1,6 +1,6 @@
 """Explicit in-memory driver doubles. No real enrollment or provider activity."""
 from contextlib import nullcontext
-from threading import Event
+from threading import Event, get_ident
 from types import SimpleNamespace
 
 import pytest
@@ -126,6 +126,79 @@ def test_stop_before_start_refuses_without_reservation():
     s.runner.request_stop()
     with pytest.raises(ValueError, match='ONCE_ONLY'): s.runner.run(s.grant)
     assert not s.calls
+
+
+def test_existing_control_http_queues_stop_to_driver_thread(monkeypatch):
+    from app.services.paper_financial_replay import body
+    from app.services.quality_dips_stop_bridge import PaperStopBridge, register_stop_routes
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    s = setup()
+    s.owner._enrollment = body({'execution_domain': 'PERSONAL_PAPER'})
+    s.r.enrollment['process_identity'] = {'pid': 123, 'created': 456, 'image': 'D:\\synthetic.exe'}
+    # Explicit synthetic action lease; original personal lease regressions run separately.
+    monkeypatch.setattr(PaperStopBridge, 'authorized', lambda self, mode: nullcontext())
+    ownership = SimpleNamespace(verify_session=lambda *args: True)
+    bridge = PaperStopBridge(runtime=s.owner, evidence=s.source, ownership=ownership,
+                             owned_close=object(), runner=s.runner)
+    calls = []
+    s.owner.stop = lambda **kw: calls.append((get_ident(), kw)) or {'status': 'FLATTENED'}
+    app = FastAPI()
+    register_stop_routes(app, bridge=bridge, origin='http://127.0.0.1:8765', token='x'*32)
+    with TestClient(app, base_url='http://127.0.0.1:8765', client=('127.0.0.1', 50000)) as client:
+        def request(timeout):
+            response = client.post('/_atlas/control/stop', json={'mode': 'SHUTDOWN_FLATTEN'},
+                                  headers={'origin':'http://127.0.0.1:8765','x-atlas-control':'x'*32})
+            assert response.status_code == 200 and response.json()['phase'] == 'IN_PROGRESS'
+            assert not calls
+            return {'SYNTHETIC':True}
+        s.source.next = request
+        result = s.runner.run(s.grant)
+    assert len(calls) == 1 and calls[0][0] == get_ident()
+    assert calls[0][1]['owned_close'] is bridge.owned_close
+    assert result['accepted_observations'] == 0
+    assert bridge.status()['phase'] == 'FINISHED'
+    assert bridge.request_stop('SHUTDOWN_FLATTEN')['phase'] == 'FINISHED'
+    assert len(calls) == 1
+
+
+def test_stop_overrunning_grant_cannot_report_clean_completion():
+    s = setup(tick=2)
+    def slow_stop(**kwargs):
+        s.now[0] = 1061
+        return {'status': 'FLATTENED'}
+    s.owner.stop = slow_stop
+    result = s.runner.run(s.grant)
+    assert not result['completed'] and result['shutdown']['status'] == 'SHUTDOWN_INCOMPLETE'
+    assert s.runner.control_status()['outcome']['status'] == 'SHUTDOWN_INCOMPLETE'
+
+
+def test_failed_control_verification_latches_without_financial_replay():
+    s = setup()
+    def refused(timeout):
+        s.runner.request_stop()
+        s.runner.refuse_control()
+        assert s.runner.control_status()['phase'] == 'REFUSED'
+        with pytest.raises(ValueError, match='CONTROL_REFUSED'):
+            s.runner.request_stop()
+    s.source.next = refused
+    result = s.runner.run(s.grant)
+    assert not result['completed'] and result['reason'] == 'PERSONAL_DRIVER_CONTROL_REFUSED'
+    assert result['shutdown']['status'] == 'SHUTDOWN_INCOMPLETE'
+    assert 'stop' not in s.calls and s.r.engine.dispatch_closed
+
+
+def test_emergency_request_never_invokes_graceful_liquidation():
+    s = setup()
+    def request(timeout):
+        s.runner.request_stop('EMERGENCY')
+        s.runner.request_stop('SHUTDOWN_FLATTEN')  # Cannot downgrade emergency.
+    s.source.next = request
+    modes = []
+    s.owner.stop = lambda **kw: modes.append(kw) or 'STOPPED'
+    result = s.runner.run(s.grant)
+    assert modes == [{'mode':'EMERGENCY'}]
+    assert not result['completed'] and result['shutdown']['position_state'] == 'UNVERIFIED'
 
 
 @pytest.mark.parametrize('resource,count', [('source',127),('reports',124)])

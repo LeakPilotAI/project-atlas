@@ -12,7 +12,7 @@ from app.services.paper_financial_replay import body, digest, strict
 
 
 class PaperStopBridge:
-    def __init__(self, *, runtime=None, evidence=None, ownership=None, owned_close=None):
+    def __init__(self, *, runtime=None, evidence=None, ownership=None, owned_close=None, runner=None):
         if runtime is None or ownership is None:
             raise ValueError("PAPER_STOP_ACCEPTED_SESSION_REQUIRED")
         if runtime.enrollment.get('execution_domain') in ('OPERATIONAL_ACCEPTED', 'PERSONAL_PAPER') and owned_close is None:
@@ -22,12 +22,22 @@ class PaperStopBridge:
         self.identity = strict(body(runtime.runtime.enrollment["process_identity"]))
         self.binding = digest(runtime.enrollment)
         self._ports = (runtime, evidence, ownership, owned_close)
+        self.runner = self._runner = runner
+        if runner is not None:
+            from scripts.observation_runtime.personal_commissioning_runner import (
+                PersonalCommissioningRunner,
+            )
+            if (type(runner) is not PersonalCommissioningRunner or runner.runtime is not runtime
+                    or runner.evidence is not evidence):
+                raise ValueError('PAPER_STOP_EXACT_DRIVER_REQUIRED')
+            runner.bind_control(self)
         self.lock = Lock()
         self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "IDLE", "outcome": None}
 
     def verify_session(self):
         return (
             all(a is b for a, b in zip((self.runtime, self.evidence, self.ownership, self.owned_close), self._ports, strict=True))
+            and self.runner is self._runner
             and digest(self.runtime.enrollment) == self.binding
             and self.runtime.runtime.enrollment["process_identity"] == self.identity
             and self.ownership.verify_session(self.binding, strict(body(self.identity))) is True
@@ -42,6 +52,8 @@ class PaperStopBridge:
             # FINISHED status. Preserve financial history in the native runtime;
             # this transport result is explicitly unverified, never replayed.
             self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "REFUSED", "outcome": None}
+            if self.runner is not None:
+                self.runner.refuse_control()
             raise
 
     @contextmanager
@@ -75,6 +87,9 @@ class PaperStopBridge:
             raise ValueError("PAPER_STOP_SESSION_OR_MODE_UNVERIFIED")
         # Close entries even when another bounded shutdown request is in flight.
         self.runtime.runtime.engine.entry_admission_closed = True
+        if self.runner is not None:
+            self.runner.request_stop(mode)
+            return self.runner.control_status()
         if not self.lock.acquire(timeout=2):
             return {"schema": "QD_CONTROL_STOP_V1", "phase": "IN_PROGRESS", "outcome": None}
         try:
@@ -103,7 +118,7 @@ class PaperStopBridge:
     def status(self):
         if not self.verify_session():
             raise ValueError("PAPER_STOP_OWNERSHIP_CHANGED")
-        return strict(body(self.progress))
+        return self.runner.control_status() if self.runner is not None else strict(body(self.progress))
 
 
 def register_stop_routes(app, *, bridge, origin, token):

@@ -1,6 +1,6 @@
 {
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_ONE_SHOT_DRIVER_NATIVE_DRAIN_STOP_RESERVES_685_REGRESSIONS",
+  "last_verified_task": "QD_CONTROL_DRIVER_NATIVE_ENGINE_SESSION_BINDING_366_REGRESSIONS",
   "next_eligible_tasks": [
   "QD_FACTUAL_RUNTIME_AUTHORITY_AND_CURRENT_SOURCE_ASSEMBLY"
 ],
@@ -12,17 +12,14 @@
     "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Original four financial role IDs/ACL/empty inventory verified unchanged. Five synthetic native coordination checks passed;actual operational financial inception/replay/report/Stop/recovery not yet executed. No V5 prerequisite."
   },
   "latest_tests": {
-  "passed": 685,
+  "passed": 366,
   "failed": 0,
   "skipped": 0,
-  "deselected": 21,
   "warnings": 1,
-  "seconds": 27.9,
-  "focused_final_passed": 68,
-  "focused_overlap": true
+  "seconds": 19.18
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Complete factual personal runtime/reader/engine authority and accepted research-source assembly; bind existing IEX/publication ports without synthetic verifiers. Measure complete native operation/Stop write amplification and timing against the new 32commit/256KiB reserves; wire Control Center request_stop to driver thread. New driver reserves final8seconds inside60second grant,never extends expired authority. Current market closed, clock370msPASS at1793179376; reverify both. Source notinstalled; retain fca29cfe release. Only when all checks pass install NEW reviewed release then SAMEapproved once-only1000USD/ONEboundedpilot/reconcile/ownedStop/read-onlyrestart. No new admin approval,V5,Hyperliquid inception,Genesis/liveorders. See docs/QD_RUNNER_DRAIN_CAPACITY_2026-10-28.md.",
+  "exact_next_action": "Complete factual installation/runtime/read authority and genuine current research/execution-evidence assembly; the native engine-session port and Control Center driver-thread Stop connection are implemented, not installed. Measure complete native inception/session/event/pin/report/Stop/restart capacity and timing before acceptance. Do not repeat completed driver/session tests without changes. Refresh clock (last361msPASS at1793181859). Only after all checks pass install NEW immutable release and execute existing once-only1000USD/ONE60second QD pilot including8secondStop reserve,reconciliation,ownedStop,read-onlymanualrestart. No provider/account/pilot performed; no V5/Hyperliquid/Genesis/live money. See docs/QD_CONTROL_DRIVER_SESSION_BINDING_2026-10-28.md",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -2481,5 +2478,32 @@
   "pilot_started": false,
   "complete_native_capacity_acceptance": false,
   "actual_browser_pilot": false
+},
+  "qd_control_driver_session_20261028": {
+  "report": "docs/QD_CONTROL_DRIVER_SESSION_BINDING_2026-10-28.md",
+  "previous_latest_tests": {
+    "passed": 685,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 21,
+    "warnings": 1,
+    "seconds": 27.9,
+    "focused_final_passed": 68,
+    "focused_overlap": true
+  },
+  "status": "SOURCE_VERIFIED_COMMISSIONING_INCOMPLETE_NOT_INSTALLED",
+  "previous_run": {
+    "passed": 365,
+    "failed": 0,
+    "skipped": 13,
+    "skip_reason": "native_fixture_root_not_supplied"
+  },
+  "clock_utc": 1793181859,
+  "clock_uncertainty_ms": 361,
+  "provider_connections": 0,
+  "inception_attempted": false,
+  "pilot_started": false,
+  "genuine_browser": false,
+  "complete_native_capacity_acceptance": false
 }
 }

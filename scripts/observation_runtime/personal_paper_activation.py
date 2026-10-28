@@ -50,6 +50,7 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
     from scripts.observation_runtime.personal_coordination_store import (
         NativePersonalCoordinationImages,
     )
+    from scripts.observation_runtime.personal_engine_session import NativePersonalEngineSession
     from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
     from scripts.observation_runtime.personal_runtime_current import PersonalRuntimeCurrent
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
@@ -94,6 +95,10 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
             or type(sessions) is not PersonalSessionReservations or sessions.ledger is not ledger
             or sessions.authorization is not authority):
         raise ValueError('PERSONAL_INSTALLED_SESSION_OR_WRITER_BINDING')
+    if (type(engine.session_authority) is not NativePersonalEngineSession
+            or engine.session_authority.operator is not authority
+            or body(engine.session_authority.manifest) != body(ledger.manifest)):
+        raise ValueError('PERSONAL_INSTALLED_ENGINE_SESSION_BINDING')
     # Existing-only read rejects missing/partial coordination, without repair.
     with ledger.connect(readonly=True) as db:
         state, head, _ = ledger._load(db)
