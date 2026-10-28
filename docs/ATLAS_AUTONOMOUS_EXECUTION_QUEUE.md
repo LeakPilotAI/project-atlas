@@ -1,3 +1,7 @@
+# Current: clock passed; D runtime installed; financial pilot paused at live-data gate
+
+Approved6/64polling andONEreload complete;716msclockPASS.25nativepreflightchecksPASS. D runtime10178files/903dirs native/ACL/hash verified,stdlib/basePythononD;364msclockPASS. Actual20secondIEX MSFT/SPYauth+subscriptionACK,0quotes/MARKET_CLOSED;closedcleanly. No account/inception/financialpilot/desktopfinancialStartStop. Preserveexistinginstalledrelease;do notreruncreators. NeedcurrentQDresearch/executabledata andremainingrealfinancialdependencybindings underSAMEgrant;no newfinancialapproval. docs/QD_POLLING_CORRECTION_COMMISSIONING_2026-10-27.md. Earlier blockedclock entries below are historical.
+
 # Current: dispersion/polling audit completed; Windows correction awaits approval
 
 One valid sample,32768s poll,localdisp7.9358214s vs server~10ms;warmup hypothesisnot exactinternalproof. Repaired querylatency/error confusion;real historicalcut8248ms stillrefuses.355regressionspass. Proposed MinPollInterval6 +SpecialPollInterval64 +config reload only;NOTAPPLIED,no resync/restart. See docs/QD_ROOT_DISPERSION_AUDIT_2026-10-27.md. SAMEQDgrant unused;historical findings below retained.

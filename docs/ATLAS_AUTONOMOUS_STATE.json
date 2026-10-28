@@ -1,12 +1,12 @@
 {
   "active_task": null,
-  "last_verified_task": "DISPERSION_AUDIT_LATENCY_CORRECTION_355_REGRESSIONS_PASS",
+  "last_verified_task": "POLL_CORRECTION_CLOCK_PASS_D_RUNTIME_INSTALLED_IEX_AUTHENTICATED_MARKET_CLOSED",
   "next_eligible_tasks": [],
   "blocked_tasks": {
-    "PERSONAL_LOCAL_INSTALLATION": "APPROVED_QD_ONLY;notstarted. Controlled one-resync recovery restored synchronization but actual accepted clock uncertainty still fails:8947ms>1000ms,root dispersion7.9358214s. No further resync/settings action authorized.",
-    "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyAPPROVED,notattempted;acceptedclockuncertaintyevidence remainsmissing. NoHyperliquidaccountauthorized.",
-    "PERSONAL_CURRENT_DATA": "QD research/IEXdata access conditionallyAPPROVEDwithin existingrights/budgets;notattempted becausepreflightstopped. No Hyperliquidactivation.",
-    "PERSONAL_BOUNDED_START": "ONE60secondQDautonomouspilot APPROVEDbutunused;clock/resources/financial/data checks must pass. No automaticresume,furtherpilot orotheraccount authorization.",
+    "PERSONAL_LOCAL_INSTALLATION": "D runtime/source files installed;10178native identity/ACL/hash checks,903directories,D-only layout/import/clock checks passed. Full installed financial/session/read-service/enrollment bindings remain uncompleted. Preserve existing release;do not rerun create-only installer.",
+    "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
+    "PERSONAL_CURRENT_DATA": "Authorized20secondMSFT/SPYIEXcheck authenticated/subscribed but zeroquotes whileMARKET_CLOSED;no executablefreshdata or acceptedcurrentQDpublication verified. Socket/taskclosed;no financial effect.",
+    "PERSONAL_BOUNDED_START": "ONE60secondfinancialpilot approved but unused. Clock nowpasses;freshcurrentresearch/data and installed financial bindings mustpass first. No fabricated idle/zero-trade pilot.",
     "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Read-only real native owner/ACL/13resourcechecksPASSED. Actual financialpublication/readback/recovery acceptance stillunexecuted;authorizedQDonlybutpausedonclock. V5harnessnotrequired."
   },
   "latest_tests": {
@@ -24,7 +24,7 @@
     "financial_startup_authorized": false
   },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Read docs/QD_ROOT_DISPERSION_AUDIT_2026-10-27.md. Proposed two Windows settings MinPollInterval10->6,SpecialPollInterval32768->64 and ONE config reload require operator approval; keep source/Manual unchanged,no resync/restart. RootDisp7.9358214s persists;sourceage493s>120s. Latency error repaired;old actualcut still8248ms>1000ms. SAME QD grant unused;no financial reapproval,anchor fabrication,V5 or Genesis.",
+  "exact_next_action": "Do NOT reapply polling values/reload or rerun installation. Clock passed; preserve exact installed D release and native artifact inventory. Account still uninitialized. Resume same QD commissioning only with fresh accepted current Quality Dips research/IEX evidence, then finish installed financial authority/writer/read/dashboard bindings, once-only1000USD inception,60secondpilot/ownedStop/restart. No extra financial approval, automatic session, V5, Hyperliquid or Genesis. See docs/QD_POLLING_CORRECTION_COMMISSIONING_2026-10-27.md.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -117,7 +117,7 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "BLOCKED_WINDOWS_CLOCK_QUALITY_AND_POLLING_CONFIG_APPROVAL",
+  "execution_status": "BLOCKED_CURRENT_DATA_MARKET_CLOSED_BEFORE_INCEPTION",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
   "continuation_report": "docs/PERSONAL_PAPER_POLICY_IMPLEMENTATION_2026-10-27.md",
   "blocked_wait_reason": "Only installation/native execution/data/inception/session actions outside this source-only approval remain for commissioning;no mandatory external reviewer/issuer/custodian vacancy.",
@@ -2051,15 +2051,15 @@
     "scope_record": "docs/QD_COMMISSIONING_OPERATOR_SCOPE_2026-10-27.json",
     "native_resource_checks_passed": 25,
     "native_resource_checks_failed": 0,
-    "clock_result": "SYNCHRONIZED;CONTINUITY_PASS;ACCEPTED_1000MS_UNCERTAINTY_EVIDENCE_NOT_ESTABLISHED",
-    "installation_started": false,
+    "clock_result": "ACTUAL_LOCAL_WINDOWS_VALIDATOR_PASS716MS;INSTALLED_D_INTERPRETER_PASS364MS",
+    "installation_started": true,
     "inception_started": false,
-    "provider_access_attempted": false,
+    "provider_access_attempted": true,
     "paper_started": false,
     "pilot_consumed": false,
-    "shutdown": "NO_TRADING_RUNTIME_STARTED;READONLY_HANDLES_RELEASED",
+    "shutdown": "DATA_ONLY_PROVIDER_TASK_AND_OWNED_DIAGNOSTIC_PROCESSES_EXITED;NO_FINANCIAL_RUNTIME_STARTED",
     "restart_verification": "NOT_EXECUTED",
-    "report": "docs/QD_COMMISSIONING_PREFLIGHT_RESULT_2026-10-27.md"
+    "report": "docs/QD_POLLING_CORRECTION_COMMISSIONING_2026-10-27.md"
   },
   "windows_time_action_20261027": {
     "schema": "ATLAS_QD_WINDOWS_TIME_ACTION_RESULT_V1",
@@ -2250,5 +2250,67 @@
     "commissioning_resumed": false,
     "pilot_consumed": false,
     "report": "docs/QD_ROOT_DISPERSION_AUDIT_2026-10-27.md"
+  },
+  "polling_correction_commissioning_20261027": {
+    "schema": "ATLAS_QD_POLL_CORRECTION_COMMISSIONING_RESULT_V1",
+    "date": "2026-10-27",
+    "poll_changes": {
+      "MinPollInterval": {
+        "before": 10,
+        "after": 6
+      },
+      "SpecialPollInterval": {
+        "before": 32768,
+        "after": 64
+      }
+    },
+    "reload_requests": 1,
+    "resync_requests": 0,
+    "source_and_manual_startup_unchanged": true,
+    "observation_seconds": 121.246,
+    "native_collection_calls": 4,
+    "clock_validator_accepted": true,
+    "clock_bound_ms": 716,
+    "clock_dispersion_seconds": "0.4201763",
+    "native_resource_checks": {
+      "passed": 25,
+      "failed": 0
+    },
+    "runtime_installation": {
+      "status": "D_RUNTIME_LAYOUT_VERIFIED",
+      "files": 10178,
+      "directories": 903,
+      "bytes": 260066032,
+      "file_identity_acl_hash_readbacks": 10178,
+      "source_commit": "aaf0c0232f30deb70dc8bad4d5253776172b7c9b",
+      "artifact_digest": "76a9aa4b24b98e34967b226013ecb5a1fb5e3dc3c912ebe4d003f4af2f06b8c9",
+      "d_resident_layout_verified": true,
+      "installed_interpreter_clock_bound_ms": 364
+    },
+    "market_data": {
+      "provider": "ALPACA_IEX",
+      "scope": "SINGLE_EXCHANGE_NOT_NBBO",
+      "symbols": [
+        "MSFT",
+        "SPY"
+      ],
+      "seconds": 20,
+      "authenticated": true,
+      "subscription_acknowledged": true,
+      "quote_count": 0,
+      "market_session": "MARKET_CLOSED",
+      "fresh_executable_data": false,
+      "closed_cleanly": true
+    },
+    "account_inception_attempted": false,
+    "financial_pilot_started": false,
+    "financial_pilot_consumed": false,
+    "financial_enrollment_complete": false,
+    "desktop_financial_acceptance_executed": false,
+    "shutdown_restart_financial_acceptance_executed": false,
+    "status": "BLOCKED_CURRENT_DATA_MARKET_CLOSED_BEFORE_INCEPTION",
+    "postflight_financial_directories_unchanged_empty": true,
+    "windows_configuration_rollback_executed": false,
+    "report": "docs/QD_POLLING_CORRECTION_COMMISSIONING_2026-10-27.md"
   }
 }

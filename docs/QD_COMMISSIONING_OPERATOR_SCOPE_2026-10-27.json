@@ -3,7 +3,7 @@
   "date": "2026-10-27",
   "authority": "SOLE_LOCAL_OPERATOR",
   "provenance": "Explicit operator instruction in this chat authorizing the existing bounded QD-only activation bundle",
-  "status": "APPROVED_CONDITIONAL_STOPPED_AT_TECHNICAL_PREFLIGHT",
+  "status": "APPROVED_PARTIALLY_EXECUTED_PAUSED_BEFORE_INCEPTION",
   "runtime_consumable": false,
   "installed_activation_record_created": false,
   "scope": [
@@ -21,10 +21,10 @@
     "UNRELATED_INFRASTRUCTURE_OR_SYSTEM_SETTINGS"
   ],
   "pilot_consumed": false,
-  "provider_connection_attempted": false,
+  "provider_connection_attempted": true,
   "financial_publication_attempted": false,
   "system_clock_or_service_repair_authorized": false,
   "stop_condition": "Any required evidence or safety check fails",
-  "current_blocker": "Accepted UTC synchronization/uncertainty evidence unavailable;Windows Time query reports stopped service0x80070426",
+  "current_blocker": "Clock passed;D runtime installed. IEX authenticated/subscribed but market closed and zero fresh quotes. Full installed financial/read/session bindings and current QD publication remain unverified;no inception/pilot.",
   "historical_gate_promotions": 0
 }
