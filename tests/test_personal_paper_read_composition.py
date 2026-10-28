@@ -149,6 +149,7 @@ def test_personal_stop_requires_retained_owned_close_just_like_strict_runtime():
 
 def test_personal_stop_uses_existing_runtime_and_preserves_incomplete_outcome():
     s = setup()
+    s.install.reader.value['actions'].append('SHUTDOWN_FLATTEN')
     s.runtime.runtime.enrollment = {"process_identity": {"pid": os.getpid(), "created": 12345,
                                                         "image": "D:\\SYNTHETIC-READER.exe"}}
     calls = []
@@ -162,3 +163,105 @@ def test_personal_stop_uses_existing_runtime_and_preserves_incomplete_outcome():
     assert s.runtime.runtime.engine.entry_admission_closed is True
     assert calls[0]["owned_close"] is closer
     assert result["outcome"] == outcome and result["phase"] == "FINISHED"
+
+
+def control_setup():
+    s = setup()
+    s.runtime.runtime.enrollment = {'process_identity': {
+        'pid': s.identity['pid'], 'created': s.identity['creation_filetime'], 'image': s.identity['image']}}
+    s.calls = []
+    s.runtime.stop = lambda **kw: s.calls.append(kw) or {'status': 'SHUTDOWN_INCOMPLETE',
+                                                      'position_state': 'POSITION_OPEN'}
+    s.bridge = PaperStopBridge(runtime=s.runtime, evidence=object(), owned_close=object(),
+                              ownership=SimpleNamespace(verify_session=lambda binding, identity: True))
+    return s
+
+
+def test_explicit_personal_stop_binding_registers_without_dispatching():
+    s = control_setup()
+    s.install.reader.value['actions'].append('SHUTDOWN_FLATTEN')
+    assert s.composition.verify_control_bridge(s.bridge) is True
+    app = build_app(s.composition, 8765, control_bridge=s.bridge, control_token='x' * 32)
+    assert '/_atlas/control/stop' in {getattr(r, 'path', None) for r in app.routes}
+    assert s.calls == []
+
+
+@pytest.mark.parametrize('damage', ['read-only', 'foreign-runtime', 'process', 'revoked',
+                                   'owned-close', 'ownership', 'evidence', 'components'])
+def test_personal_stop_requires_current_explicit_scope_and_sealed_ports(damage):
+    s = control_setup()
+    s.install.reader.value['actions'].append('SHUTDOWN_FLATTEN')
+    if damage == 'read-only':
+        s.install.reader.value['actions'] = ['READ_ONLY']
+    elif damage == 'foreign-runtime':
+        s.bridge.runtime = object()
+    elif damage == 'process':
+        s.runtime.runtime.enrollment['process_identity']['created'] += 1
+    elif damage == 'revoked':
+        s.install.i.revoke()
+    elif damage == 'owned-close':
+        s.bridge.owned_close = object()
+    elif damage == 'ownership':
+        s.bridge.ownership = SimpleNamespace(verify_session=lambda *args: True)
+    elif damage == 'evidence':
+        s.bridge.evidence = object()
+    else:
+        s.runtime.installation_components = lambda: {'foreign': object()}
+    with pytest.raises((ValueError, AttributeError)):
+        s.bridge.request_stop('SHUTDOWN_FLATTEN')
+    assert s.calls == []
+    assert not getattr(s.runtime.runtime.engine, 'entry_admission_closed', False)
+
+
+def test_emergency_permission_is_distinct_from_flatten_permission():
+    s = control_setup()
+    s.install.reader.value['actions'].append('SHUTDOWN_FLATTEN')
+    with pytest.raises(ValueError):
+        s.bridge.request_stop('EMERGENCY')
+    assert s.calls == []
+    s.install.reader.value['actions'].append('EMERGENCY_STOP')
+    s.bridge.request_stop('EMERGENCY')
+    assert s.calls == [{'mode': 'EMERGENCY'}]
+
+
+def test_revoked_stop_permission_after_host_construction_refuses_dispatch():
+    s = control_setup()
+    s.install.reader.value['actions'].append('SHUTDOWN_FLATTEN')
+    assert s.composition.verify_control_bridge(s.bridge)
+    s.install.reader.value['actions'] = ['READ_ONLY']
+    with pytest.raises(ValueError):
+        s.bridge.request_stop('SHUTDOWN_FLATTEN')
+    assert s.calls == []
+
+
+def test_personal_control_asgi_requires_transport_and_current_action_permission():
+    s = control_setup()
+    s.install.reader.value['actions'].append('SHUTDOWN_FLATTEN')
+    token = 'synthetic-transport-test-' + 'x' * 32
+    app = build_app(s.composition, 8765, control_bridge=s.bridge, control_token=token)
+    with TestClient(app, base_url='http://127.0.0.1:8765', client=('127.0.0.1', 50000)) as client:
+        path = '/_atlas/control/stop'
+        headers = {'Origin': 'http://127.0.0.1:8765', 'x-atlas-control': token}
+        assert client.post(path, json={'mode': 'SHUTDOWN_FLATTEN'}).status_code == 403
+        assert s.calls == []
+        result = client.post(path, headers=headers, json={'mode': 'SHUTDOWN_FLATTEN'})
+        assert result.status_code == 200
+        assert result.json()['outcome']['position_state'] == 'POSITION_OPEN'
+        assert len(s.calls) == 1
+        s.install.reader.value['actions'] = ['READ_ONLY']
+        assert client.post(path, headers=headers, json={'mode': 'SHUTDOWN_FLATTEN'}).status_code == 409
+        assert len(s.calls) == 1
+
+
+def test_permission_revoked_during_stop_cannot_publish_finished_outcome():
+    s = control_setup()
+    s.install.reader.value['actions'].append('SHUTDOWN_FLATTEN')
+    def stop(**kw):
+        s.calls.append(kw)
+        s.install.i.revoke()
+        return {'status': 'STOPPED', 'position_state': 'FLAT'}
+    s.runtime.stop = stop
+    with pytest.raises(ValueError):
+        s.bridge.request_stop('SHUTDOWN_FLATTEN')
+    assert len(s.calls) == 1
+    assert s.bridge.progress == {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'REFUSED', 'outcome': None}

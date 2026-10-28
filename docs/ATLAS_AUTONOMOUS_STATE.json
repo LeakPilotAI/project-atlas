@@ -1,6 +1,6 @@
 {
   "active_task": null,
-  "last_verified_task": "PERSONAL_READ_COMPOSITION_STOP_GUARD_377_TESTS_NEW_D_RELEASE_VERIFIED",
+  "last_verified_task": "PERSONAL_CONTROL_BINDING_ACTION_LEASE_390_REGRESSIONS",
   "next_eligible_tasks": [],
   "blocked_tasks": {
     "PERSONAL_LOCAL_INSTALLATION": "New tested D release dcf2edde installed:10179files/903dirs native identity/ACL/hash verified;old release unchanged. Personal read-host bridge and owned-close safety guard implemented and installed. Genuine financial/custody/session/writer/read-control enrollment remains incomplete;no activation record or financial account.",
@@ -10,20 +10,16 @@
     "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Read-only real native owner/ACL/13resourcechecksPASSED. Actual financialpublication/readback/recovery acceptance stillunexecuted;clockpasses,butcurrentdataandgenuinefinancialdependencybindingremainpending. V5harnessnotrequired."
   },
   "latest_tests": {
-    "selection": "Personal read-host/owned-Stop source binding plus existing clock/accounting/risk/inception/session/desktop-policy regressions; synthetic ASGI only",
-    "passed": 377,
+    "selection": "Same prior377 relevant cases plus13personalcontrol cases;synthetic memory/ASGI only",
+    "passed": 390,
     "failed": 0,
     "skipped": 0,
-    "errors": 0,
     "deselected": 18,
     "warnings": 1,
-    "elapsed_seconds": 9.31,
-    "native_financial_fixture_tests_executed": false,
-    "financial_account_initialized": false,
-    "paper_pilot_executed": false
+    "seconds": 12.83
   },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Market closed;do not repeat IEX/no fake current research. New source dcf2edde and immutable D release installed/verified;artifact df2c2cea6ee2db53e8773b486aca823a2d04c569ea1908a44871e96d39bf3d98;old release preserved. Reverify exact installed native inventory,clock,and current QD research/instrument/calendar/IEX evidence at regular session. Complete genuine financial/custody/session/writer and accepted Stop/read-service composition before once-only1000USD inception and ONE60secondpilot/reconcile/ownedStop/restart/desktop acceptance. No new financial approval for same grant;no fixtures as current data,no global process termination,V5,Hyperliquid or Genesis. See docs/QD_PERSONAL_BINDINGS_PROGRESS_2026-10-27.md.",
+  "exact_next_action": "Preserve installed dcf2edde release;new control-binding source is not installed. Clock actual205msPASS;marketclosed. Complete actual handle-bound local activation and native coordination/current/session/writer ports and accepted QD source publication adapter;do not use fixture ledger or blanket True technical maps. Scanner _consume starts shared investment work/bootstrap;do not use it as a safe research-only refresh without isolation. Verify current ranking/instrument/calendar and entitled fresh IEX in regular session before SAME approved once-only1000USD and ONE60secondpilot/reconcile/ownedStop/restart/desktop. No new reviewer or repeat financial approval;no provider reconnection afterhours,V5,Hyperliquidinception,Genesis or liveorders. See docs/QD_PERSONAL_CONTROL_BINDING_2026-10-27.md.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -116,7 +112,7 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "BLOCKED_CURRENT_MARKET_RESEARCH_DATA_AND_UNCOMPLETED_FINANCIAL_ENROLLMENT",
+  "execution_status": "BLOCKED_CURRENT_RESEARCH_MARKET_CLOSED_AND_NATIVE_ENROLLMENT_BINDINGS",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
   "continuation_report": "docs/PERSONAL_PAPER_POLICY_IMPLEMENTATION_2026-10-27.md",
   "blocked_wait_reason": "Only installation/native execution/data/inception/session actions outside this source-only approval remain for commissioning;no mandatory external reviewer/issuer/custodian vacancy.",
@@ -2358,5 +2354,42 @@
     "actual_desktop_browser_acceptance_executed": false,
     "status": "BLOCKED_CURRENT_MARKET_RESEARCH_DATA_AND_UNCOMPLETED_FINANCIAL_ENROLLMENT",
     "report": "docs/QD_PERSONAL_BINDINGS_PROGRESS_2026-10-27.md"
+  },
+  "personal_control_binding_20261027": {
+    "previous_latest_tests": {
+      "selection": "Personal read-host/owned-Stop source binding plus existing clock/accounting/risk/inception/session/desktop-policy regressions; synthetic ASGI only",
+      "passed": 377,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "deselected": 18,
+      "warnings": 1,
+      "elapsed_seconds": 9.31,
+      "native_financial_fixture_tests_executed": false,
+      "financial_account_initialized": false,
+      "paper_pilot_executed": false
+    },
+    "schema": "ATLAS_QD_PERSONAL_CONTROL_BINDING_V1",
+    "tests": {
+      "passed": 390,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 18,
+      "warnings": 1,
+      "seconds": 12.83
+    },
+    "clock_uncertainty_ms": 205,
+    "clock_result": "PASS",
+    "market_session": "MARKET_CLOSED",
+    "operational_activation_record_present": false,
+    "operational_source_publications_present": false,
+    "financial_inception_attempted": false,
+    "pilot_started": false,
+    "provider_connections": 0,
+    "read_control_source_binding_complete": true,
+    "real_financial_enrollment_complete": false,
+    "browser_executed": false,
+    "installed_release_unchanged": "dcf2edde7f929c5284ae9969b64e493210a84e58",
+    "new_source_installed": false
   }
 }

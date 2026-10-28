@@ -104,6 +104,15 @@ class PersonalReadComposition:
         return self.read_committed(self.account, self.epoch)
 
     def verify_control_bridge(self, bridge):
-        # Read permission never authorizes Stop/financial POSTs. A separately
-        # installed control composition must implement that binding explicitly.
-        return False
+        from app.services.quality_dips_stop_bridge import PaperStopBridge
+
+        self._verify()
+        process = {'pid': self.identity['pid'], 'created': self.identity['creation_filetime'],
+                   'image': self.identity['image']}
+        if (type(bridge) is not PaperStopBridge or bridge.runtime is not self.runtime
+                or body(bridge.identity) != body(process)):
+            return False
+        # READ_ONLY is insufficient. The explicit action lease is also checked
+        # on every command by the bridge, not just at route registration.
+        with bridge.authorized('SHUTDOWN_FLATTEN'):
+            return True
