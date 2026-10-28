@@ -3,7 +3,7 @@ import importlib.util
 import ntpath
 from pathlib import Path
 
-from app.services.paper_financial_replay import strict
+from app.services.paper_financial_replay import body, digest, strict
 
 
 class NativePersonalActivationReader:
@@ -28,3 +28,60 @@ class NativePersonalActivationReader:
             value=strict(native.read_bound(out,'activation.json',self.binding)[0].decode())
         if value.get('schema')!='ATLAS_PERSONAL_ACTIVATION_V1' or value.get('origin')!='LOCAL_OPERATOR':raise ValueError('PERSONAL_APPROVAL_NO_FIXTURE_OR_STRICT_SUBSTITUTION')
         return value
+
+
+def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_dependencies=None,
+                                native_dependencies=None, store=None, native_reader=None,
+                                installation=None, local_clock=None, runtime_id=None):
+    """Minimum installed QD assembly; no default authority, paths or activation.
+
+    The sole operator's native activation record, actual clock and native-backed
+    mirror are mandatory. It delegates to the existing personal runtime without
+    changing strict/manual contracts or creating a session, account or provider.
+    Caller owns all explicitly installed dependency handles.
+    """
+    from app.services.personal_native_coordination import PersonalNativeCoordination
+    from app.services.personal_paper_runtime import (
+        PersonalOperatorInstallation,
+        compose_personal_qd,
+    )
+    from app.services.quality_dips_autonomous_enrollment import validate_enrollment
+
+    from scripts.observation_runtime.personal_coordination_store import (
+        NativePersonalCoordinationImages,
+    )
+    from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+
+    if (any(v is None for v in (policy, enrollment, runtime_dependencies, native_dependencies,
+                                store, native_reader, installation, local_clock, runtime_id))
+            or type(installation) is not PersonalOperatorInstallation
+            or type(installation.reader) is not NativePersonalActivationReader
+            or type(local_clock) is not LocalWindowsClock):
+        raise ValueError('PERSONAL_INSTALLED_NATIVE_DEPENDENCIES_REQUIRED')
+    local_clock.require_operational(runtime_id)
+    e = validate_enrollment(enrollment)
+    engine = runtime_dependencies['engine']
+    ledger = engine.ledger
+    if (type(ledger) is not PersonalNativeCoordination
+            or type(ledger.images) is not NativePersonalCoordinationImages
+            or ledger.images.root_id != e['resources']['coordination']['native_id']
+            or ledger.images.enrollment != digest(e)
+            or ledger.images.root != e['resources']['coordination']['path']
+            or ledger.path.parent != Path(ledger.images.root)
+            or digest(ledger.manifest) != e['inception_digest']
+            or engine.clock is not local_clock or native_dependencies['clock'] is not local_clock
+            or body(native_reader.enrollment) != body(e)):
+        raise ValueError('PERSONAL_INSTALLED_COORDINATION_OR_CLOCK_BINDING')
+    # Existing-only read rejects missing/partial coordination, without repair.
+    with ledger.connect(readonly=True) as db:
+        state, head, _ = ledger._load(db)
+        if db.execute('SELECT 1 FROM projections WHERE receipt IS NULL').fetchone():
+            raise ValueError('PERSONAL_INSTALLED_UNACKNOWLEDGED_COORDINATION')
+    native_reader.verify_resources()
+    cut = native_reader.read_committed()
+    if (cut.get('schema') != 'QD_AUTO_OP_READ_V1' or cut.get('state') != state
+            or cut.get('head') != head or cut.get('manifest') != ledger.manifest):
+        raise ValueError('PERSONAL_INSTALLED_NATIVE_MIRROR_DISAGREEMENT')
+    return compose_personal_qd(policy=policy, enrollment=e, runtime_dependencies=runtime_dependencies,
+                              native_dependencies=native_dependencies, store=store,
+                              native_reader=native_reader, installation=installation)
