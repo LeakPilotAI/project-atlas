@@ -75,4 +75,3 @@ class CanonicalCoordinationSQL:
             db.commit()
             fault("after_commit")
             return receipt
-
