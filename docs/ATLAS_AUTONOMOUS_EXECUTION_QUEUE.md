@@ -1,3 +1,7 @@
+# Current: local clock binding complete; actual Windows synchronization still fails
+
+Signed native tool/UTC/QPC/runtime binding implemented;349passed,0failed,0skipped,18deselected. Actual acquisition refuses CLOCK_UNSYNCHRONIZED; no anchor or financial effect. Need genuine sync/<=1000ms evidence, not another implementation or enterprise issuer. No resync/settings permission; SAMEQDgrant unused. docs/QD_LOCAL_WINDOWS_CLOCK_BINDING_2026-10-27.md. Earlier missing-binding findings below are preserved historical snapshots.
+
 # Current: missing local clock acquisition binding, not another service restart
 
 Source trace found consumer + synthetic tests only. PERSONAL policy excludes external PKI/reviewer but retains <=1000ms runtime evidence. No existing operational acquisition procedure found; no fake anchor or validator change. Current Windows still Leap3/Stratum0.17pure clock tests pass; same QD grant unused. See docs/QD_CLOCK_AUTHORITY_DEPENDENCY_2026-10-27.md. Source-only work is already authorized; no invented administrative approval.
