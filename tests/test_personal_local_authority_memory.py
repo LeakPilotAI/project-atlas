@@ -72,8 +72,8 @@ def test_native_authority_defaults_to_refusal_without_native_binding():
     with pytest.raises(ValueError): authority_module.NativePersonalOperatorAuthority()
 
 
-def owner(monkeypatch, result=0):
-    e = copy.deepcopy(fixture().e)
+def owner(monkeypatch, result=0, enrollment=None):
+    e = copy.deepcopy(fixture().e if enrollment is None else enrollment)
     now, released, closed, waits = [1000], [], [], []
     self_id = {'pid': os.getpid(), 'creation_filetime': 123, 'image': 'D:\\SYNTHETIC-only.exe'}
     e['writers'] = {k: {'schema': 'QD_OP_PROCESS_ID_V1', **self_id} for k in e['writers']}

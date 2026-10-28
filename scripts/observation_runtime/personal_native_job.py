@@ -118,7 +118,7 @@ class FailedAdmissionCleanup:
             raise RuntimeError("CLEANUP_INCOMPLETE: " + "; ".join(errors))
 
 
-def launch_contained_child(api, command):
+def launch_contained_child(api, command, *, verify_suspended=None):
     """Admit a suspended child only after Job Object assignment.
 
     Dependency-injected only; the Windows adapter still refuses creation.
@@ -132,6 +132,8 @@ def launch_contained_child(api, command):
         process, thread = api.create_suspended_child(command)
         api.assign_child(job, process)
         child_assigned = True
+        if verify_suspended is not None and verify_suspended(process, thread) is not True:
+            raise RuntimeError("NATIVE_SUSPENDED_IDENTITY_REQUIRED")
         api.resume_child(thread)
         api.close_handle(thread)
         thread = None

@@ -111,6 +111,14 @@ class NativePersonalWriterOwnership:
 
     def _context(self, request):
         e = self.enrollment
+        if set(request) == {'schema', 'reader_enrollment'} and request['schema'] == 'PERSONAL_NATIVE_READ_LEASE_V1':
+            read = request['reader_enrollment']
+            if (read.get('schema') != 'QD_AUTO_OP_READ_ENROLLMENT_V1'
+                    or read.get('account_id') != e['account_id'] or read.get('epoch') != e['epoch']
+                    or any(read.get(role + '_root') != e['resources'][role]['native_id']
+                           for role in ('source', 'projection', 'report'))):
+                raise ValueError('PERSONAL_WRITER_READ_SCOPE')
+            return 'READ_ONLY', request
         if request.get('schema') == 'PERSONAL_GENESIS_WRITER_V1':
             if (set(request) != {'schema', 'intent_digest', 'process'} or self.inception_intent is None
                     or request['intent_digest'] != digest(self.inception_intent)
@@ -157,6 +165,8 @@ class NativePersonalWriterOwnership:
             try:
                 if result == 128:
                     self.poisoned = True
+                    if action == 'READ_ONLY':
+                        raise ValueError('PERSONAL_READ_ABANDONED_WRITER_NO_MUTATION')
                     # Never clear/repair this record. If publication itself
                     # fails, the instance still refuses; recovery is not implied.
                     self.outputs['control'].write_bound('unknown-writer.json', body({

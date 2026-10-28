@@ -15,6 +15,103 @@ from scripts.observation_runtime.personal_paper_inception import (
 )
 
 
+class PersonalNativeReadAuthority:
+    """Existing selected-reader lease over acknowledged local pins and ownership.
+
+    The selected reader still performs native replay, projection and FS3 audit.
+    This lease supplies no financial command permission or independent custody.
+    """
+    def __init__(self, *, bootstrap=None, source=None, reports=None, ownership=None, enrollment=None):
+        from app.services.personal_current_pins import PersonalCurrentPins
+
+        from scripts.observation_runtime.personal_writer_ownership import (
+            NativePersonalWriterOwnership,
+        )
+
+        if (bootstrap is None or type(source) is not PersonalCurrentPins
+                or type(reports) is not PersonalCurrentPins
+                or type(ownership) is not NativePersonalWriterOwnership or type(enrollment) is not dict):
+            raise ValueError('PERSONAL_READ_NATIVE_DEPENDENCIES_REQUIRED')
+        lane, native, manifest = validate_personal_inception(bootstrap.enrollment)
+        if (lane != 'QUALITY_DIPS' or body(ownership.enrollment) != body(native)
+                or source.ledger is not reports.ledger or ownership.ledger is not source.ledger
+                or bootstrap.publication.ledger is not source.ledger or source.name == reports.name):
+            raise ValueError('PERSONAL_READ_COMPONENT_BINDING')
+        self.bootstrap, self.source, self.reports, self.ownership = bootstrap, source, reports, ownership
+        self.enrollment = strict(body(enrollment))
+        self.clock = ownership.authority.clock
+        self._ports = bootstrap, source, reports, ownership, self.clock
+        self._enrollment, self._native, self._manifest = body(enrollment), body(native), body(manifest)
+        self._bootstrap = body(bootstrap.enrollment)
+        self._water = None
+        self._request = {'schema': 'PERSONAL_NATIVE_READ_LEASE_V1', 'reader_enrollment': self.enrollment}
+        ownership._context(self._request)  # Scope validation only; no handle operation.
+        if (enrollment.get('manifest_digest') != digest(manifest)
+                or enrollment.get('policy_digest') != native['policy_digest']):
+            raise ValueError('PERSONAL_READ_MANIFEST_SCOPE')
+
+    def _capture(self, now):
+        if (any(a is not b for a, b in zip(
+                (self.bootstrap, self.source, self.reports, self.ownership, self.clock), self._ports, strict=True))
+                or body(self.enrollment) != self._enrollment
+                or body(self.bootstrap.enrollment) != self._bootstrap
+                or body(self.ownership.enrollment) != self._native
+                or type(now) is not int or now != self.clock()):
+            raise ValueError('PERSONAL_READ_CONTEXT_CHANGED')
+        original, _ack = self.bootstrap.publication.acknowledged(self.bootstrap.scope()['operation_id'])
+        validate_initial_current(self.bootstrap.enrollment, original)
+        source, reports = self.source.current(), self.reports.current()
+        sg, rg = self.source.known[0], self.reports.known[0]
+        if (source.get('schema') != 'QD_AUTO_OP_PIN_V1' or reports.get('schema') != 'FS3_REPORT_PIN_V1'
+                or type(source.get('entries')) is not list or type(reports.get('reports')) is not list
+                or not 0 <= len(source['entries']) <= 128 or not 1 <= len(reports['reports']) <= 128
+                or sg != len(source['entries']) or rg != len(reports['reports']) - 1
+                or {k: v for k, v in source.items() if k != 'entries'}
+                != {k: v for k, v in original['source'].items() if k != 'entries'}
+                or {k: v for k, v in reports.items() if k != 'reports'}
+                != {k: v for k, v in original['reports'].items() if k != 'reports'}
+                or reports['reports'][:1] != original['reports']['reports']
+                or self.enrollment.get('inception') != source['inception']):
+            raise ValueError('PERSONAL_READ_CURRENT_PREFIX_OR_REVISION')
+        with self.source.ledger.connect(readonly=True) as db:
+            self.source.ledger._load(db)
+            if (db.execute('SELECT 1 FROM projections WHERE receipt IS NULL').fetchone()
+                    or db.execute("SELECT 1 FROM personal_publications WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()
+                    or db.execute("SELECT 1 FROM personal_sessions WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()):
+                raise ValueError('PERSONAL_READ_PENDING_OR_UNKNOWN')
+        fingerprint = digest([source, reports])
+        if self._water and (sg < self._water[0] or rg < self._water[1]
+                or (sg, rg) == self._water[:2] and fingerprint != self._water[2]):
+            raise ValueError('PERSONAL_READ_OBSERVED_ROLLBACK')
+        self._water = sg, rg, fingerprint
+        return source, reports, sg, rg
+
+    @contextmanager
+    def lease(self, enrollment, now):
+        if body(enrollment) != self._enrollment:
+            raise ValueError('PERSONAL_READ_FOREIGN_ENROLLMENT')
+        with self.ownership.lease(self._request, now) as owned:
+            cut = self._capture(now)
+            source, reports, sg, rg = cut
+            snapshot = {'schema': 'QD_READ_CURRENT_V1', 'enrollment_digest': digest(enrollment),
+                        'observed_at': now, 'expires_at': now + 5, 'generation': 1 + sg + rg,
+                        'source': source, 'reports': reports, 'high_water': sg,
+                        'acknowledged_revision': sg, 'status': 'ACKNOWLEDGED'}
+            sealed, owner = body(snapshot), self
+
+            class Lease:
+                def __init__(self): self.snapshot = strict(sealed)
+                def check(self, candidate, stamp):
+                    return (type(stamp) is int and now <= stamp <= now + 5
+                            and body(candidate) == sealed and body(self.snapshot) == sealed
+                            and owned.check(owned.snapshot, stamp) is True and owner._capture(stamp) == cut)
+
+            lease = Lease()
+            yield lease
+            if not lease.check(snapshot, self.clock()):
+                raise ValueError('PERSONAL_READ_LEASE_CHANGED')
+
+
 class PersonalRuntimeCurrent:
     def __init__(self, *, bootstrap=None, source=None, reports=None, reader=None,
                  native_reader=None, clock=None):

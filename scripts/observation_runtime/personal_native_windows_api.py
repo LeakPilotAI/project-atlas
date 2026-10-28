@@ -1,7 +1,7 @@
 """Windows Job Object API adapter for Atlas V5.
 
-NOT CONNECTED TO OWNEDCHILD.
-DOES NOT CREATE CHILD PROCESSES.
+Source-bound to the confined fixture adapter.
+Default invocation cannot create child processes without V5 execution approval.
 NATIVE COMPATIBILITY EXECUTION REMAINS UNAUTHORIZED.
 
 Job creation is available only through an explicit method call.
@@ -92,6 +92,15 @@ class PROCESS_INFORMATION(ctypes.Structure):
     ]
 
 
+class JOBOBJECT_BASIC_ACCOUNTING_INFORMATION(ctypes.Structure):
+    _fields_ = [
+        ('TotalUserTime', LARGE_INTEGER), ('TotalKernelTime', LARGE_INTEGER),
+        ('ThisPeriodTotalUserTime', LARGE_INTEGER), ('ThisPeriodTotalKernelTime', LARGE_INTEGER),
+        ('TotalPageFaultCount', wintypes.DWORD), ('TotalProcesses', wintypes.DWORD),
+        ('ActiveProcesses', wintypes.DWORD), ('TotalTerminatedProcesses', wintypes.DWORD),
+    ]
+
+
 class WindowsJobAPI:
     """Explicit Windows Job Object management only."""
 
@@ -156,6 +165,14 @@ class WindowsJobAPI:
         ]
         self.kernel32.TerminateJobObject.restype = wintypes.BOOL
 
+        self.kernel32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        self.kernel32.TerminateProcess.restype = wintypes.BOOL
+        self.kernel32.QueryInformationJobObject.argtypes = [
+            wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p,
+            wintypes.DWORD, ctypes.c_void_p,
+        ]
+        self.kernel32.QueryInformationJobObject.restype = wintypes.BOOL
+
         self.kernel32.GetExitCodeProcess.argtypes = [
             wintypes.HANDLE,
             ctypes.POINTER(wintypes.DWORD),
@@ -192,25 +209,25 @@ class WindowsJobAPI:
             raise ctypes.WinError(ctypes.get_last_error())
 
     def create_suspended_child(self, command):
-        """Reserved for authorized suspended-process creation.
+        """Use only an explicitly injected suspended transport, never Popen."""
+        creator = getattr(self, 'suspended_creator', None)
+        if creator is None:
+            raise RuntimeError('NATIVE_CHILD_LAUNCH_BLOCKED_PENDING_V5_INTEGRATION')
+        return creator(command)
 
-        This method remains intentionally unavailable.
+    def terminate_process(self, process):
+        if not process:
+            raise RuntimeError('NATIVE_PROCESS_INVALID_HANDLE')
+        if not self.kernel32.TerminateProcess(process, 1):
+            raise ctypes.WinError(ctypes.get_last_error())
 
-        Before activation, implementation must establish:
-        - Explicit V5 operator authorization.
-        - Exact executable and command-line validation.
-        - CREATE_SUSPENDED process creation.
-        - Disabled unintended handle inheritance.
-        - Ownership of both returned Windows handles.
-        - Guaranteed cleanup on partial failure.
-        - Job Object assignment before thread resumption.
-        - Existing OwnedChild identity and handshake checks.
+    # Named Win32 policy wrappers used by the existing fixture owner.
+    CreateJobObject = create_job
 
-        No process is created by this implementation.
-        """
-        raise RuntimeError(
-            "NATIVE_CHILD_LAUNCH_BLOCKED_PENDING_V5_INTEGRATION"
-        )
+    def SetInformationJobObject(self, job, limit_flags):
+        if limit_flags != JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE:
+            raise ValueError('EXACT_KILL_ON_CLOSE_POLICY_REQUIRED')
+        return self.configure_kill_on_close(job)
 
     def assign_child(self, job, process):
         """Assign an explicitly owned process handle to a Job Object."""
@@ -232,6 +249,8 @@ class WindowsJobAPI:
         if result == 0xFFFFFFFF:
             raise ctypes.WinError(ctypes.get_last_error())
 
+        if result != 1:
+            raise RuntimeError('NATIVE_UNEXPECTED_SUSPEND_COUNT')
         return result
 
     def terminate_job(self, job):
@@ -243,3 +262,14 @@ class WindowsJobAPI:
 
         if not ok:
             raise ctypes.WinError(ctypes.get_last_error())
+
+    AssignProcessToJobObject = assign_child
+    ResumeThread = resume_child
+
+    def active_processes(self, job):
+        info = JOBOBJECT_BASIC_ACCOUNTING_INFORMATION()
+        if not self.kernel32.QueryInformationJobObject(
+            job, 1, ctypes.byref(info), ctypes.sizeof(info), None
+        ):
+            raise ctypes.WinError(ctypes.get_last_error())
+        return int(info.ActiveProcesses)

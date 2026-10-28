@@ -564,20 +564,30 @@ class AutonomousPaper:
         try:
             receipt = self.ledger.execute(prepare, projection_required=True, fault=fault)
             fault("before_ack")
+            with self.ledger.connect(readonly=True) as db:
+                state, head, operations = self.ledger._load(db)
+                command = operations[operation][0]
+            evidence = {"canonical_receipt": receipt, "execution": "SIMULATED"}
+            if self.publication is not None:
+                # Native current-pin custody may use this same immutable image
+                # store. Do not hold an older writable image across publication.
+                # A failure still leaves the reserved operation unacknowledged.
+                evidence["native"] = self.publication.publish(command, receipt, state)
+                fault("after_native_ack")
+            ack = body({"ack_digest": digest(evidence), "evidence": evidence})
             with self.ledger.connect() as db:
                 db.execute("BEGIN IMMEDIATE")
-                state, _, operations = self.ledger._load(db)
-                evidence = {"canonical_receipt": receipt, "execution": "SIMULATED"}
-                if self.publication is not None:
-                    # Reserve locally first. Native failure leaves the durable local ACK NULL.
-                    # No distributed atomicity or blind cross-store repair is claimed.
-                    evidence["native"] = self.publication.publish(operations[operation][0], receipt, state)
-                    fault("after_native_ack")
-                ack = body({"ack_digest": digest(evidence), "evidence": evidence})
-                db.execute(
-                    "UPDATE projections SET receipt=? WHERE id=? AND receipt IS NULL",
-                    (ack, operation),
-                )
+                after, after_head, after_operations = self.ledger._load(db)
+                if (body(after) != body(state) or after_head != head
+                        or body(after_operations.get(operation)) != body(operations[operation])):
+                    raise ValueError("AUTO_NATIVE_COORDINATION_CHANGED_BEFORE_ACK")
+                existing = db.execute("SELECT receipt FROM projections WHERE id=?", (operation,)).fetchone()
+                if existing is None or existing[0] not in (None, ack):
+                    raise ValueError("AUTO_NATIVE_COORDINATION_ACK_CONFLICT")
+                if existing[0] is None and db.execute(
+                        "UPDATE projections SET receipt=? WHERE id=? AND receipt IS NULL",
+                        (ack, operation)).rowcount != 1:
+                    raise ValueError("AUTO_NATIVE_COORDINATION_ACK_UNKNOWN")
             fault("after_ack")
             audit = self.reconcile()
             self._record_activity(decision_id, "ACKNOWLEDGED", None)

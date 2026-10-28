@@ -350,8 +350,13 @@ def test_existing_runtime_next_protocol_uses_explicit_decisions_and_no_duplicate
     frame = port.next(0.01)
     assert frame["schema"] == "QD_AUTO_OBSERVATION_V3" and frame["sequence"] == 1
     assert frame["request"]["quotes"][0]["clock_uncertainty_seconds"] == "1"
+    assert port.verify_observation(frame, now=int(f.clock()))
+    altered = json.loads(json.dumps(frame))
+    altered['request']['quotes'][0]['bid'] = '999'
+    with pytest.raises(IEXRefused): port.verify_observation(altered, now=int(f.clock()))
     assert port.next(0.01) is None
     f.disconnect()
+    with pytest.raises(IEXRefused): port.verify_observation(frame, now=int(f.clock()))
     with pytest.raises(IEXRefused):
         port.next(0.01)
 

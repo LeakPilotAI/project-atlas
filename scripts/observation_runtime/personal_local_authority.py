@@ -82,3 +82,73 @@ class NativePersonalOperatorAuthority:
                 <= min(grant['issued_at'] + 60, record['expires_at'])):
             raise ValueError('PERSONAL_OPERATOR_60_SECOND_SESSION_REQUIRED')
         return True
+
+
+class NativePersonalRuntimeAuthority:
+    """V3 proofs from the existing native operator, clock, custody and writer ports."""
+    def __init__(self, *, operator=None, engine_session=None, custody=None, ownership=None,
+                 source=None, enrollment=None):
+        from app.services.quality_dips_iex_input import IEXPaperQuotes
+
+        from scripts.observation_runtime.personal_engine_session import NativePersonalEngineSession
+        from scripts.observation_runtime.personal_runtime_current import PersonalRuntimeCurrent
+        from scripts.observation_runtime.personal_writer_ownership import (
+            NativePersonalWriterOwnership,
+        )
+
+        if (type(operator) is not NativePersonalOperatorAuthority
+                or type(engine_session) is not NativePersonalEngineSession
+                or type(custody) is not PersonalRuntimeCurrent
+                or type(ownership) is not NativePersonalWriterOwnership
+                or type(source) is not IEXPaperQuotes or type(enrollment) is not dict
+                or engine_session.operator is not operator or ownership.authority is not operator
+                or custody.clock is not operator.clock):
+            raise ValueError('PERSONAL_RUNTIME_NATIVE_DEPENDENCIES_REQUIRED')
+        self.operator, self.engine_session, self.custody = operator, engine_session, custody
+        self.ownership, self.source = ownership, source
+        self.enrollment = strict(body(enrollment))
+        self._ports = operator, engine_session, custody, ownership, source
+        self._enrollment, self._grant = body(enrollment), None
+        ownership._context({'enrollment': enrollment, 'grant': None})
+
+    def verify(self, kind, request, *, now):
+        if (any(a is not b for a, b in zip(
+                (self.operator, self.engine_session, self.custody, self.ownership, self.source),
+                self._ports, strict=True)) or body(self.enrollment) != self._enrollment
+                or type(now) is not int or now != self.operator.clock()):
+            raise ValueError('PERSONAL_RUNTIME_AUTHORITY_CHANGED')
+        self.operator.activation('AUTO_PAPER')
+        request = strict(body(request))
+        context = {'enrollment': self.enrollment,
+                   'grant': strict(self._grant) if self._grant is not None else None}
+        if kind == 'CLOCK':
+            if (set(request) != {'enrollment_digest', 'sample'}
+                    or request['enrollment_digest'] != digest(self.enrollment)
+                    or self.operator.clock.verify_runtime_sample(request['sample']) is not True):
+                raise ValueError('PERSONAL_RUNTIME_CLOCK_REFUSED')
+        elif kind == 'SESSION':
+            if (set(request) != {'enrollment', 'grant'} or body(request['enrollment']) != self._enrollment
+                    or type(request['grant']) is not dict
+                    or request['grant'].get('schema') != 'QD_AUTO_LOCAL_SESSION_V3'
+                    or request['grant'].get('enrollment_digest') != digest(self.enrollment)
+                    or self._grant is not None and body(request['grant']) != self._grant):
+                raise ValueError('PERSONAL_RUNTIME_SESSION_REFUSED')
+            self.engine_session.verify(request['grant']['engine_grant'], now=now)
+            self._grant = body(request['grant'])
+        elif kind in ('CURRENT', 'DRAIN', 'OBSERVATION'):
+            if self._grant is None:
+                raise ValueError('PERSONAL_RUNTIME_SESSION_MISSING')
+            self.engine_session.verify(context['grant']['engine_grant'], now=now)
+            if kind == 'CURRENT':
+                if request != self.custody.current(context, now=now):
+                    raise ValueError('PERSONAL_RUNTIME_CURRENT_REFUSED')
+            elif kind == 'DRAIN':
+                if request != self.ownership.drain(context, now=now):
+                    raise ValueError('PERSONAL_RUNTIME_DRAIN_REFUSED')
+            elif (request.get('session_id') != context['grant']['engine_grant']['session_id']
+                  or self.source.verify_observation(request, now=now) is not True):
+                raise ValueError('PERSONAL_RUNTIME_OBSERVATION_REFUSED')
+        else:
+            raise ValueError('PERSONAL_RUNTIME_UNKNOWN_PROOF_KIND')
+        return {'schema': 'QD_AUTO_LOCAL_AUTHORITY_V3', 'kind': kind, 'verified': True,
+                'binding': digest(request), 'scope': 'LOCAL_ENROLLED', 'issuer_id': 'PERSONAL_LOCAL_OPERATOR'}

@@ -11,7 +11,10 @@ from app.services.quality_dips_publication_reader import QualityDipsPublicationR
 
 from scripts.observation_runtime.personal_commissioning_runner import PersonalCommissioningRunner
 from scripts.observation_runtime.personal_coordination_store import NativePersonalCoordinationImages
-from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
+from scripts.observation_runtime.personal_local_authority import (
+    NativePersonalOperatorAuthority,
+    NativePersonalRuntimeAuthority,
+)
 from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
 
 
@@ -56,6 +59,8 @@ def setup(*, tick=10, frame=True, start_failure=False):
     source.feed = object.__new__(IEXFeed)
     source.decision_reader = object.__new__(QualityDipsPublicationReader)
     source.authority, source.session_id = object(), 'synthetic-once'
+    r.authority = object.__new__(NativePersonalRuntimeAuthority)
+    r.authority.source = source
     runner = PersonalCommissioningRunner(runtime=owner, source=source)
     grant = {'native_grant': {'issued_at': 1000, 'expires_at': 1060, 'session_id': 'synthetic-once'}}
     return SimpleNamespace(**locals())

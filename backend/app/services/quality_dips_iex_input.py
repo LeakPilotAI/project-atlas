@@ -13,6 +13,7 @@ class IEXPaperQuotes:
         self.feed, self.authority = feed, execution_authority
         self.session_id, self.decision_reader = session_id, decision_reader
         self._last_quote, self._sequence = None, 0
+        self._issued_frame = None
 
     def quote(self, instrument):
         if self.authority is None:
@@ -130,7 +131,7 @@ class IEXPaperQuotes:
             return None
         self._last_quote = packet["sequence"]
         self._sequence += 1
-        return {
+        frame = {
             "schema": "QD_AUTO_OBSERVATION_V3",
             "session_id": self.session_id,
             "sequence": self._sequence,
@@ -142,3 +143,19 @@ class IEXPaperQuotes:
                 "quotes": [packet],
             },
         }
+        self._issued_frame = (body(frame), strict(body(request['instrument'])),
+                              self.feed, self.authority, self.decision_reader, self.session_id)
+        return frame
+
+    def verify_observation(self, frame, *, now):
+        """Verify only an observation issued by this admitted reader/feed binding."""
+        issued = self._issued_frame
+        if (issued is None or body(frame) != issued[0] or type(now) is not int
+                or now != int(self.feed.clock()) or not 0 <= now-frame['observed_at'] <= 5
+                or self.feed is not issued[2] or self.authority is not issued[3]
+                or self.decision_reader is not issued[4] or self.session_id != issued[5]):
+            raise IEXRefused('IEX_OBSERVATION_NOT_ISSUED_OR_STALE')
+        # Revalidate the actual feed and execution lease; no refresh or provider call.
+        if self.quote(issued[1]) != frame['request']['quotes'][0]:
+            raise IEXRefused('IEX_OBSERVATION_QUOTE_CHANGED')
+        return True

@@ -14,7 +14,10 @@ from app.services.quality_dips_iex_input import IEXPaperQuotes
 from app.services.quality_dips_publication_reader import QualityDipsPublicationReader
 
 from scripts.observation_runtime.personal_coordination_store import NativePersonalCoordinationImages
-from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
+from scripts.observation_runtime.personal_local_authority import (
+    NativePersonalOperatorAuthority,
+    NativePersonalRuntimeAuthority,
+)
 from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
 
 
@@ -24,6 +27,8 @@ class PersonalCommissioningRunner:
                 or type(source.feed) is not IEXFeed
                 or type(source.decision_reader) is not QualityDipsPublicationReader
                 or source.authority is None
+                or type(runtime.runtime.authority) is not NativePersonalRuntimeAuthority
+                or runtime.runtime.authority.source is not source
                 or type(runtime.installation.identity) is not NativePersonalOperatorAuthority
                 or type(runtime.runtime.ownership) is not NativePersonalWriterOwnership
                 or type(runtime.runtime.engine.ledger.images) is not NativePersonalCoordinationImages
@@ -34,7 +39,7 @@ class PersonalCommissioningRunner:
         self.runtime, self.source, self.evidence = runtime, source, source
         self.images = runtime.runtime.engine.ledger.images
         self._ports = (runtime, source, source.feed, source.decision_reader, source.authority,
-                       runtime.installation.identity, runtime.runtime.ownership, self.images)
+                       runtime.installation.identity, runtime.runtime.ownership, self.images, runtime.runtime.authority)
         self.used = False
         self.stop_requested = Event()
         self.control = None
@@ -90,7 +95,8 @@ class PersonalCommissioningRunner:
         if self.control is not self._control or self.evidence is not self.source or any(a is not b for a, b in zip(self._ports,
                 (self.runtime, self.source, self.source.feed, self.source.decision_reader,
                  self.source.authority, self.runtime.installation.identity,
-                 self.runtime.runtime.ownership, self.runtime.runtime.engine.ledger.images), strict=True)):
+                 self.runtime.runtime.ownership, self.runtime.runtime.engine.ledger.images,
+                 self.runtime.runtime.authority), strict=True)):
             raise ValueError('PERSONAL_COMMISSIONING_COMPONENT_CHANGED')
 
     def _budget(self, phase):

@@ -290,6 +290,43 @@ def test_existing_engine_entry_partial_full_reconciles_on_immutable_image_port(t
     assert len(images.history) > 4
 
 
+@pytest.mark.parametrize('failure', [None, 'after-native-ack', 'conflicting-ack'])
+def test_native_publication_can_advance_shared_image_without_stale_outer_commit(tmp_path, failure):
+    from app.services.paper_financial_replay import body, digest
+    from test_quality_dips_autonomous_paper import candidate, quote
+    from test_quality_dips_autonomous_paper import setup as engine_setup
+    n = engine_setup(tmp_path)
+    images = Images(PersonalNativeCoordination.initial_image(n.m))
+    ledger = PersonalNativeCoordination(manifest=n.m, images=images, path=tmp_path/'native-coordination')
+    n.engine.ledger = ledger
+    n.engine.start(n.grant)
+    writes = []
+    def publish(command, receipt, state):
+        with ledger.connect() as db:
+            db.execute("INSERT INTO personal_sessions VALUES('synthetic-pin-advance','{}','ACKNOWLEDGED')")
+            if failure == 'conflicting-ack':
+                evidence = {'canonical_receipt': receipt, 'native': {'SYNTHETIC_CONFLICT': True}}
+                db.execute('UPDATE projections SET receipt=? WHERE id=?',
+                           (body({'evidence': evidence, 'ack_digest': digest(evidence)}), command['operation_id']))
+        writes.append(command['operation_id'])
+        return {'SYNTHETIC_NATIVE_ACK': True}
+    n.engine.publication = SimpleNamespace(publish=publish, verify=lambda records, state: None)
+    def fault(phase):
+        if failure == 'after-native-ack' and phase == 'after_native_ack': raise OSError('SYNTHETIC_ACK_INTERRUPTION')
+    b = candidate(n)
+    result = n.engine.step('once', bundles=[b], quotes=[quote(n,b)], fault=fault)
+    assert result['filled'] is (failure is None)
+    assert len(writes) == 1
+    with ledger.connect(readonly=True) as db:
+        assert db.execute('SELECT COUNT(*) FROM events').fetchone() == (1,)
+        receipt = db.execute('SELECT receipt FROM projections').fetchone()[0]
+        assert (receipt is None) is (failure == 'after-native-ack')
+    if failure:
+        assert result['reason'] == 'UNKNOWN_OR_CORRUPT'
+        assert not n.engine.step('once', bundles=[b], quotes=[quote(n,b)])['filled']
+        assert len(writes) == 1
+
+
 @pytest.mark.parametrize('damage', ['missing-page', 'missing-ack', 'foreign-root', 'orphan-page', 'stale-head'])
 def test_native_snapshot_chain_refuses_conflicting_or_incomplete_evidence(monkeypatch, damage):
     s = native_double(monkeypatch)

@@ -51,8 +51,14 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
         NativePersonalCoordinationImages,
     )
     from scripts.observation_runtime.personal_engine_session import NativePersonalEngineSession
-    from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
-    from scripts.observation_runtime.personal_runtime_current import PersonalRuntimeCurrent
+    from scripts.observation_runtime.personal_local_authority import (
+        NativePersonalOperatorAuthority,
+        NativePersonalRuntimeAuthority,
+    )
+    from scripts.observation_runtime.personal_runtime_current import (
+        PersonalNativeReadAuthority,
+        PersonalRuntimeCurrent,
+    )
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
     from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
 
@@ -99,6 +105,20 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
             or engine.session_authority.operator is not authority
             or body(engine.session_authority.manifest) != body(ledger.manifest)):
         raise ValueError('PERSONAL_INSTALLED_ENGINE_SESSION_BINDING')
+    runtime_authority = runtime_dependencies['authority']
+    if (type(runtime_authority) is not NativePersonalRuntimeAuthority
+            or runtime_authority.operator is not authority
+            or runtime_authority.engine_session is not engine.session_authority
+            or runtime_authority.custody is not custody or runtime_authority.ownership is not owner
+            or body(runtime_authority.enrollment) != body(runtime_dependencies['enrollment'])):
+        raise ValueError('PERSONAL_INSTALLED_RUNTIME_AUTHORITY_BINDING')
+    read_authority = runtime_dependencies['reader'].authority
+    if (type(read_authority) is not PersonalNativeReadAuthority or read_authority.ownership is not owner
+            or read_authority.bootstrap is not custody.bootstrap
+            or read_authority.source is not custody.source or read_authority.reports is not custody.reports
+            or read_authority.clock is not local_clock
+            or body(read_authority.enrollment) != body(runtime_dependencies['reader'].enrollment)):
+        raise ValueError('PERSONAL_INSTALLED_READ_AUTHORITY_BINDING')
     # Existing-only read rejects missing/partial coordination, without repair.
     with ledger.connect(readonly=True) as db:
         state, head, _ = ledger._load(db)
