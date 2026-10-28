@@ -4,7 +4,7 @@ import os
 from types import SimpleNamespace
 
 import pytest
-from app.services.paper_financial_replay import digest
+from app.services.paper_financial_replay import body, digest
 from app.services.quality_dips_personal_dependencies import PersonalSessionReservations
 from test_personal_native_coordination_memory import setup as ledger_setup
 from test_personal_paper_runtime import installed
@@ -151,5 +151,39 @@ def test_competing_or_abandoned_writer_refuses_without_financial_effects(monkeyp
             assert 'unknown-writer.json' in s.files[s.e['resources']['control']['path']]
             with pytest.raises(ValueError), s.port.lease(s.request, s.now[0]):
                 pytest.fail('abandoned writer adopted')
+    finally:
+        s.port.close()
+
+
+@pytest.mark.parametrize('damage', [None, 'projection', 'session', 'publication', 'foreign', 'missing'])
+def test_native_drain_reads_durable_pending_state_without_publication(monkeypatch, damage):
+    s = owner(monkeypatch)
+    _, images, ledger = ledger_setup()
+    s.port.ledger = s.port._ledger = ledger
+    runtime = {'schema': 'QD_AUTO_LOCAL_RUNTIME_V3', 'scope': 'LOCAL_ENROLLED',
+        'process_identity': {'pid': s.self_id['pid'], 'created': 123, 'image': s.self_id['image']},
+        'writer_roster': ['decision', 'source', 'projection', 'report', 'coordination'],
+        'reader_enrollment': {'schema': 'QD_AUTO_OP_READ_ENROLLMENT_V1',
+            'account_id': s.e['account_id'], 'epoch': s.e['epoch'],
+            **{r + '_root': s.e['resources'][r]['native_id'] for r in ('source', 'projection', 'report')}}}
+    request = {'enrollment': runtime, 'grant': {'engine_grant': {'session_id': 'one'}}}
+    reserved = {'scope': 'LOCAL_ENROLLED', 'enrollment': s.e, 'grant': {'session_id': 'one'}}
+    with ledger.connect() as db:
+        if damage != 'missing':
+            if damage == 'foreign': reserved['enrollment'] = {}
+            db.execute('INSERT INTO personal_sessions VALUES(?,?,?)',
+                       ('one', body(reserved), 'PENDING' if damage == 'session' else 'ACKNOWLEDGED'))
+        if damage == 'projection': db.execute("INSERT INTO projections VALUES('pending','{}',NULL)")
+        if damage == 'publication':
+            db.execute("INSERT INTO personal_publications VALUES('unknown','{}','{}','UNKNOWN',NULL,NULL,NULL)")
+    before = list(images.history)
+    try:
+        if damage:
+            with pytest.raises(ValueError): s.port.drain(request, now=1000)
+        else:
+            assert s.port.drain(request, now=1000) == {
+                'schema': 'QD_AUTO_DRAIN_V3', 'enrollment_digest': digest(runtime),
+                'session_id': 'one', 'pending': 0, 'unknown': False}
+        assert images.history == before
     finally:
         s.port.close()

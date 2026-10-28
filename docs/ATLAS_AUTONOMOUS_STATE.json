@@ -1,9 +1,9 @@
 {
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_NATIVE_CURRENT_OPERATOR_WRITER_EXPLICIT_RESEARCH_628_REGRESSIONS",
+  "last_verified_task": "QD_ONE_SHOT_DRIVER_NATIVE_DRAIN_STOP_RESERVES_685_REGRESSIONS",
   "next_eligible_tasks": [
-    "QD_PERSONAL_ACTIVATION_SESSION_WRITER_CURRENT_AND_RESEARCH_BINDING"
-  ],
+  "QD_FACTUAL_RUNTIME_AUTHORITY_AND_CURRENT_SOURCE_ASSEMBLY"
+],
   "blocked_tasks": {
     "PERSONAL_LOCAL_INSTALLATION": "New source fca29cfe installed/verified10182files903directories260098364bytes;native coordination/current/session SQL port and installed-only assembly implemented. Actual activation record and remaining authority/writer/session/current/source bindings remain absent;no account.",
     "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
@@ -12,16 +12,17 @@
     "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Original four financial role IDs/ACL/empty inventory verified unchanged. Five synthetic native coordination checks passed;actual operational financial inception/replay/report/Stop/recovery not yet executed. No V5 prerequisite."
   },
   "latest_tests": {
-  "passed": 628,
+  "passed": 685,
   "failed": 0,
   "skipped": 0,
   "deselected": 21,
   "warnings": 1,
-  "seconds": 26.78,
-  "evidence": "logs/diagnostics/qd-authority-research-combined-20261028.txt"
+  "seconds": 27.9,
+  "focused_final_passed": 68,
+  "focused_overlap": true
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Complete actual commissioning runner activation/port assembly and 60-second session versus Stop/drain boundary; connect accepted current research source to explicit-only calculations and existing source publisher, instrument/calendar/IEX evidence. New source is NOT installed; retain fca29cfe immutable release. Revalidate capacity Stop reserves and native roots, install reviewed complete source using retained installer only into NEW release, then conditional once-only1000USD/ONE60secondpilot/native reconciliation/ownedStop/read-onlyrestart/originalUI. No fixture authority, UNKNOWN replay, extra administrative review, V5, Hyperliquid inception, Genesis or real orders. See docs/QD_LOCAL_AUTHORITY_RESEARCH_2026-10-28.md.",
+  "exact_next_action": "Complete factual personal runtime/reader/engine authority and accepted research-source assembly; bind existing IEX/publication ports without synthetic verifiers. Measure complete native operation/Stop write amplification and timing against the new 32commit/256KiB reserves; wire Control Center request_stop to driver thread. New driver reserves final8seconds inside60second grant,never extends expired authority. Current market closed, clock370msPASS at1793179376; reverify both. Source notinstalled; retain fca29cfe release. Only when all checks pass install NEW reviewed release then SAMEapproved once-only1000USD/ONEboundedpilot/reconcile/ownedStop/read-onlyrestart. No new admin approval,V5,Hyperliquid inception,Genesis/liveorders. See docs/QD_RUNNER_DRAIN_CAPACITY_2026-10-28.md.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -2459,5 +2460,26 @@
   "inception_attempted": false,
   "provider_connections": 0,
   "report": "docs/QD_LOCAL_AUTHORITY_RESEARCH_2026-10-28.md"
+},
+  "qd_runner_drain_capacity_20261028": {
+  "status": "SOURCE_VERIFIED_COMMISSIONING_PAUSED_NOT_INSTALLED",
+  "previous_latest_tests": {
+    "passed": 628,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 21,
+    "warnings": 1,
+    "seconds": 26.78,
+    "evidence": "logs/diagnostics/qd-authority-research-combined-20261028.txt"
+  },
+  "report": "docs/QD_RUNNER_DRAIN_CAPACITY_2026-10-28.md",
+  "clock_uncertainty_ms": 370,
+  "clock_observed_utc": 1793179376,
+  "market": "MARKET_CLOSED",
+  "provider_connections": 0,
+  "inception_attempted": false,
+  "pilot_started": false,
+  "complete_native_capacity_acceptance": false,
+  "actual_browser_pilot": false
 }
 }

@@ -14581,11 +14581,19 @@ Evidence:docs/QD_PERSONAL_CONTROL_BINDING_2026-10-27.md;docs/QD_PERSONAL_CONTROL
 Next action:Complete actual operator-backed activation/nativecoordination/current/session/writer installation and acceptedQDsourcepublication binding without fixtureledger/blanketTruefacts. Scanner_consume has sharedinvestment/bootstrap sideeffects;do notshortcut legacyrefresh. Obtain genuinecurrentresearch/instrument/calendar/freshIEXinregularmarket. Installreviewedsourcewhenrealcompositionready,then SAMEapproved once-only1000USD/ONE60spilot/reconcile/ownedStop/restart/desktop. No repeatapproval/externalreviewer,V5,Hyperliquidinception,Genesis/liveorders;marketopeningalone doesnotcompleteenrollment.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone:Native current custody, concrete operator/session and writer ports, explicit-only Quality Dips research calculation
 Status:628_PASS_0_FAILED_0_SKIPPED_21_DESELECTED;CLOCK_369MS_PASS;SOURCE_NOT_INSTALLED;PAPER_COMMISSIONING_PAUSED;productionNO-GO
 Evidence:docs/QD_LOCAL_AUTHORITY_RESEARCH_2026-10-28.md;docs/QD_NATIVE_COORDINATION_ENROLLMENT_2026-10-28.md. Final628pass/21deselected/1warning26.78seconds. Focused104overlap. Earlier590combined and original asynchronous stall evidence retained. New ports tested with memory doubles, not actual enrollment. Installed fca29cfe release remains unchanged, artifact93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91. No inception/provider/pilot/financialdashboard/restart this increment.
 Next action:Complete actual commissioning runner activation/port assembly,60second expiry versus Stop/drain safety,and accepted current research source publication/instrument/calendar/IEX bindings;explicit-only calculations are not authenticated producer evidence. Verify Stop capacity reserves. Install complete reviewed source into NEW immutable release with retained installer;reverify clock/native roots;then SAMEapproved once-only1000simulatedUSD/ONE60secondpilot/reconcile/ownedStop/read-onlyrestart/originalUI. No duplicate financial approval,external reviewer,V5,Hyperliquid inception,Genesis or live orders. Preserve unrelatedWIP and all history. Missing research is not a successful zero-trade pilot.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone:One-shot personal QD driver, durable native writer drain and cumulative Stop capacity guards
+Status:685_PASS_0_FAILED_0_SKIPPED_21_DESELECTED;68_FINAL_FOCUSED_OVERLAP;CLOCK370MS_PASS;MARKET_CLOSED;SOURCE_NOT_INSTALLED;PAPER_NOT_STARTED
+Evidence:docs/QD_RUNNER_DRAIN_CAPACITY_2026-10-28.md. Original async-plugin6failures and tmpdir1setup-error retained; corrected configuration,no assertion weakening. Native-I/O memory doubles only,no new operational/native publication/provider/account/pilot/browser/GUI acceptance. Installedfca29cfe unchanged.
+Next action:Complete factual personal runtime/reader/engine authority and accepted research-source assembly; bind existing IEX/publication ports without synthetic verifiers. Measure complete native operation/Stop write amplification and timing against the new 32commit/256KiB reserves; wire Control Center request_stop to driver thread. New driver reserves final8seconds inside60second grant,never extends expired authority. Current market closed, clock370msPASS at1793179376; reverify both. Source notinstalled; retain fca29cfe release. Only when all checks pass install NEW reviewed release then SAMEapproved once-only1000USD/ONEboundedpilot/reconcile/ownedStop/read-onlyrestart. No new admin approval,V5,Hyperliquid inception,Genesis/liveorders. See docs/QD_RUNNER_DRAIN_CAPACITY_2026-10-28.md.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

@@ -18,13 +18,16 @@ from scripts.observation_runtime.quality_dips_read_service import observe_self
 
 
 class NativePersonalWriterOwnership:
-    def __init__(self, *, enrollment=None, authority=None, inception_intent=None):
+    def __init__(self, *, enrollment=None, authority=None, inception_intent=None, ledger=None):
         if enrollment is None or type(authority) is not NativePersonalOperatorAuthority:
             raise ValueError('PERSONAL_WRITER_INSTALLED_AUTHORITY_REQUIRED')
         self.enrollment = validate_enrollment(enrollment)
         if body(authority.enrollment) != body(self.enrollment):
             raise ValueError('PERSONAL_WRITER_ENROLLMENT_CONFLICT')
         self.authority, self.native = authority, native_primitives()
+        # Inception may acquire ownership before coordination is installed.
+        # Runtime drain always requires the actual existing native ledger.
+        self.ledger, self._ledger = ledger, ledger
         self._enrollment, self._authority = body(self.enrollment), authority
         self.inception_intent = strict(body(inception_intent)) if inception_intent is not None else None
         self._intent = body(self.inception_intent)
@@ -75,6 +78,36 @@ class NativePersonalWriterOwnership:
             for output in self.outputs.values():
                 output.close()
             self.outputs.clear()
+
+    def drain(self, request, *, now):
+        from app.services.personal_native_coordination import PersonalNativeCoordination
+
+        request = strict(body(request))
+        if (type(self.ledger) is not PersonalNativeCoordination or self.ledger is not self._ledger
+                or set(request) != {'enrollment', 'grant'}):
+            raise ValueError('PERSONAL_WRITER_NATIVE_DRAIN_REQUIRED')
+        with self.lease(request, now) as lease:
+            # Same native transaction lock as every admitted coordination write.
+            # No repairs, schema creation, pending acknowledgement or replay.
+            with self.ledger.connect(readonly=True) as db:
+                db.execute('BEGIN')
+                self.ledger._load(db)
+                pending = db.execute('SELECT COUNT(*) FROM projections WHERE receipt IS NULL').fetchone()[0]
+                pending += db.execute("SELECT COUNT(*) FROM personal_sessions WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()[0]
+                pending += db.execute("SELECT COUNT(*) FROM personal_publications WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()[0]
+                session = request['grant']['engine_grant']['session_id']
+                row = db.execute('SELECT body,state FROM personal_sessions WHERE id=?', (session,)).fetchone()
+                if row is None or row[1] != 'ACKNOWLEDGED':
+                    raise ValueError('PERSONAL_WRITER_SESSION_NOT_ACKNOWLEDGED')
+                reserved = strict(row[0])
+                if (reserved.get('scope') != 'LOCAL_ENROLLED'
+                        or body(reserved.get('enrollment')) != self._enrollment
+                        or reserved.get('grant', {}).get('session_id') != session):
+                    raise ValueError('PERSONAL_WRITER_SESSION_BINDING')
+            if pending or not lease.check(lease.snapshot, self.authority.clock()):
+                raise ValueError('PERSONAL_WRITER_PENDING_OR_UNKNOWN_DRAIN')
+            return {'schema': 'QD_AUTO_DRAIN_V3', 'enrollment_digest': digest(request['enrollment']),
+                    'session_id': session, 'pending': 0, 'unknown': False}
 
     def _context(self, request):
         e = self.enrollment

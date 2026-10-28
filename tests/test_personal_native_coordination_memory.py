@@ -213,6 +213,45 @@ def test_native_cumulative_capacity_and_reservation_refusal_before_effect(monkey
     assert s.files == before
 
 
+def test_native_stop_reserve_enforced_before_intent_and_never_reset(monkeypatch):
+    s = native_double(monkeypatch)
+    monkeypatch.setattr(native_store, 'MAX_REVISIONS', 4)
+    s.owner.initialize(b'initial', authorization=SimpleNamespace(lease=installation_authority))
+    s.owner.reserve_stop_capacity(stop_commits=2, stop_bytes=128)
+    s.owner.require_operation_capacity(commits=1, growth_bytes=10)
+    with s.owner.transaction(readonly=False) as tx:
+        tx.publish(b'initial', b'second')
+    before = copy.deepcopy(s.files)
+    with pytest.raises(ValueError, match='CAPACITY'):
+        s.owner.require_operation_capacity(commits=1, growth_bytes=0)
+    with pytest.raises(ValueError, match='RESERVE'), s.owner.transaction(readonly=False) as tx:
+        tx.publish(b'second', b'forbidden')
+    assert s.files == before and not s.owner.poisoned
+    s.owner.begin_reserved_stop()
+    with s.owner.transaction(readonly=False) as tx:
+        tx.publish(b'second', b'stop')
+    with pytest.raises(ValueError, match='RESERVATION'):
+        s.owner.reserve_stop_capacity(stop_commits=1, stop_bytes=128)
+    assert s.owner.remaining_commits() == 1
+
+
+def test_native_stop_byte_reserve_and_competing_thread_refuse_without_writes(monkeypatch):
+    s = native_double(monkeypatch)
+    s.owner.initialize(b'initial', authorization=SimpleNamespace(lease=installation_authority))
+    s.owner.reserve_stop_capacity(stop_commits=2, stop_bytes=128)
+    before = copy.deepcopy(s.files)
+    with pytest.raises(ValueError, match='RESERVE'), s.owner.transaction(readonly=False) as tx:
+        tx.publish(b'initial', b'x' * (native_store.MAX_IMAGE - 127))
+    errors = []
+    def competing():
+        try: s.owner.begin_reserved_stop()
+        except ValueError as exc: errors.append(str(exc))
+    t = threading.Thread(target=competing)
+    t.start(); t.join(timeout=2)
+    assert not t.is_alive() and errors == ['PERSONAL_COORDINATION_STOP_OWNER_REQUIRED']
+    assert s.files == before
+
+
 def test_native_custody_orphan_or_corrupt_ack_refuses(monkeypatch):
     s = native_double(monkeypatch)
     s.owner.initialize(b'synthetic-image', authorization=SimpleNamespace(lease=installation_authority))

@@ -9,6 +9,7 @@ import hashlib
 import re
 from contextlib import contextmanager
 from pathlib import Path
+from threading import get_ident
 
 from app.services.paper_financial_replay import (
     body,
@@ -41,6 +42,7 @@ class NativePersonalCoordinationImages:
         self.root_id, self.enrollment = list(native_root), enrollment_digest
         self._binding = (self.output, root, tuple(native_root), enrollment_digest)
         self.known, self.poisoned, self.mutex = None, False, None
+        self._stop_capacity = None
         try:
             if self.native.native.file_identity(self.output.root_handle) != self.root_id:
                 raise ValueError('PERSONAL_COORDINATION_FOREIGN_ROOT')
@@ -160,6 +162,12 @@ class NativePersonalCoordinationImages:
             raise ValueError('PERSONAL_COORDINATION_STALE_CAS')
         if pin['revision'] >= MAX_REVISIONS:
             raise ValueError('PERSONAL_COORDINATION_REVISION_CAPACITY')
+        reservation = getattr(self, '_stop_capacity', None)
+        if reservation is not None:
+            ceiling, byte_ceiling = reservation['limits'][reservation['phase']]
+            if (get_ident() != reservation['thread'] or pin['revision'] >= ceiling
+                    or len(image) > byte_ceiling):
+                raise ValueError('PERSONAL_COORDINATION_STOP_RESERVE_PROTECTED')
         revision = pin['revision'] + 1
         prefix = f'{revision:04d}'
         checksum = hashlib.sha256(image).hexdigest()
@@ -230,6 +238,44 @@ class NativePersonalCoordinationImages:
     def remaining_commits(self):
         # Capacity is cumulative across restarts; this never resets/adopts a cut.
         return MAX_REVISIONS - self._load()[1]['revision']
+
+    def reserve_stop_capacity(self, *, stop_commits, stop_bytes):
+        """One process-local admission ceiling over cumulative durable capacity.
+
+        No capacity is replenished on restart. Session replay remains prohibited
+        by durable reservations. This reserves storage, not financial authority.
+        Caller must separately verify the operation's worst-case write budget.
+        """
+        if (getattr(self, '_stop_capacity', None) is not None
+                or type(stop_commits) is not int or not 1 <= stop_commits < MAX_REVISIONS
+                or type(stop_bytes) is not int or not 1 <= stop_bytes < MAX_IMAGE):
+            raise ValueError('PERSONAL_COORDINATION_STOP_RESERVATION_REFUSED')
+        with self._writer():
+            image, pin = self._load()
+            if pin['revision'] >= MAX_REVISIONS-stop_commits or len(image) >= MAX_IMAGE-stop_bytes:
+                raise ValueError('PERSONAL_COORDINATION_NO_STOP_HEADROOM')
+            self._stop_capacity = {'thread': get_ident(), 'phase': 'RUN', 'limits': {
+                'RUN': (MAX_REVISIONS-stop_commits, MAX_IMAGE-stop_bytes),
+                'STOP': (MAX_REVISIONS, MAX_IMAGE)}}
+
+    def begin_reserved_stop(self):
+        with self._writer():
+            reservation = getattr(self, '_stop_capacity', None)
+            if reservation is None or get_ident() != reservation['thread']:
+                raise ValueError('PERSONAL_COORDINATION_STOP_OWNER_REQUIRED')
+            self._load()
+            reservation['phase'] = 'STOP'
+
+    def require_operation_capacity(self, *, commits, growth_bytes):
+        reservation = getattr(self, '_stop_capacity', None)
+        if (reservation is None or get_ident() != reservation['thread']
+                or type(commits) is not int or commits < 1
+                or type(growth_bytes) is not int or growth_bytes < 0):
+            raise ValueError('PERSONAL_COORDINATION_OPERATION_BUDGET_REQUIRED')
+        image, pin = self._load()
+        limit, size = reservation['limits'][reservation['phase']]
+        if pin['revision'] + commits > limit or len(image) + growth_bytes > size:
+            raise ValueError('PERSONAL_COORDINATION_OPERATION_EXCEEDS_RESERVED_CAPACITY')
 
 
 def open_existing_personal_coordination(*, enrollment=None, manifest=None, native_reader=None):

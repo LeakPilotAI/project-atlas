@@ -89,6 +89,7 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
     if (type(authority) is not NativePersonalOperatorAuthority or authority.reader is not installation.reader
             or authority.clock is not local_clock or body(authority.enrollment) != body(e)
             or type(owner) is not NativePersonalWriterOwnership or owner.authority is not authority
+            or owner.ledger is not ledger
             or body(owner.enrollment) != body(e) or runtime_dependencies['ownership'] is not owner
             or type(sessions) is not PersonalSessionReservations or sessions.ledger is not ledger
             or sessions.authorization is not authority):
