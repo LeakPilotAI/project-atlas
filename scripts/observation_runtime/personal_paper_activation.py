@@ -50,6 +50,7 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
     from scripts.observation_runtime.personal_coordination_store import (
         NativePersonalCoordinationImages,
     )
+    from scripts.observation_runtime.personal_runtime_current import PersonalRuntimeCurrent
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 
     if (any(v is None for v in (policy, enrollment, runtime_dependencies, native_dependencies,
@@ -62,6 +63,14 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
     e = validate_enrollment(enrollment)
     engine = runtime_dependencies['engine']
     ledger = engine.ledger
+    custody = native_dependencies['custody']
+    if (type(custody) is not PersonalRuntimeCurrent or runtime_dependencies['custody'] is not custody
+            or custody.source is not store.trust
+            or custody.reports is not runtime_dependencies['reports'].archive.trust
+            or custody.source.ledger is not ledger or custody.reports.ledger is not ledger
+            or custody.reader is not runtime_dependencies['reader'] or custody.native_reader is not native_reader
+            or custody.clock is not local_clock):
+        raise ValueError('PERSONAL_INSTALLED_CURRENT_CUSTODY_BINDING')
     if (type(ledger) is not PersonalNativeCoordination
             or type(ledger.images) is not NativePersonalCoordinationImages
             or ledger.images.root_id != e['resources']['coordination']['native_id']
