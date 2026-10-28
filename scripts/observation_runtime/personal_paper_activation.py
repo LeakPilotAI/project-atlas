@@ -51,6 +51,9 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
         NativePersonalCoordinationImages,
     )
     from scripts.observation_runtime.personal_engine_session import NativePersonalEngineSession
+    from scripts.observation_runtime.personal_financial_authority import (
+        NativePersonalFinancialAuthority,
+    )
     from scripts.observation_runtime.personal_local_authority import (
         NativePersonalOperatorAuthority,
         NativePersonalRuntimeAuthority,
@@ -105,6 +108,13 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
             or engine.session_authority.operator is not authority
             or body(engine.session_authority.manifest) != body(ledger.manifest)):
         raise ValueError('PERSONAL_INSTALLED_ENGINE_SESSION_BINDING')
+    financial_authority = store.authority
+    if (type(financial_authority) is not NativePersonalFinancialAuthority
+            or financial_authority.operator is not authority or financial_authority.ownership is not owner
+            or financial_authority.engine is not engine or financial_authority.session is not engine.session_authority
+            or financial_authority.source is not custody.source or financial_authority.ledger is not ledger
+            or native_reader.dependencies[2] is not financial_authority):
+        raise ValueError('PERSONAL_INSTALLED_FINANCIAL_AUTHORITY_BINDING')
     runtime_authority = runtime_dependencies['authority']
     if (type(runtime_authority) is not NativePersonalRuntimeAuthority
             or runtime_authority.operator is not authority

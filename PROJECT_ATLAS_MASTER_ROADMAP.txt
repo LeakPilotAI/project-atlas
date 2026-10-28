@@ -14597,11 +14597,19 @@ Evidence:docs/QD_RUNNER_DRAIN_CAPACITY_2026-10-28.md. Original async-plugin6fail
 Next action:Complete factual personal runtime/reader/engine authority and accepted research-source assembly; bind existing IEX/publication ports without synthetic verifiers. Measure complete native operation/Stop write amplification and timing against the new 32commit/256KiB reserves; wire Control Center request_stop to driver thread. New driver reserves final8seconds inside60second grant,never extends expired authority. Current market closed, clock370msPASS at1793179376; reverify both. Source notinstalled; retain fca29cfe release. Only when all checks pass install NEW reviewed release then SAMEapproved once-only1000USD/ONEboundedpilot/reconcile/ownedStop/read-onlyrestart. No new admin approval,V5,Hyperliquid inception,Genesis/liveorders. See docs/QD_RUNNER_DRAIN_CAPACITY_2026-10-28.md.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone:Native engine-session binding and original Control Center driver-thread Stop
 Status:366_PASS_0_FAILED_0_SKIPPED;CLOCK361MS_PASS;SOURCE_NOT_INSTALLED;COMMISSIONING_INCOMPLETE
 Evidence:docs/QD_CONTROL_DRIVER_SESSION_BINDING_2026-10-28.md. Prior365pass/13native-skips preserved. ASGI/native-I/O doubles,not genuine browser/native full-path acceptance. No provider/account/pilot.
 Next action:Complete factual installation/runtime/read authority and genuine current research/execution-evidence assembly; the native engine-session port and Control Center driver-thread Stop connection are implemented, not installed. Measure complete native inception/session/event/pin/report/Stop/restart capacity and timing before acceptance. Do not repeat completed driver/session tests without changes. Refresh clock (last361msPASS at1793181859). Only after all checks pass install NEW immutable release and execute existing once-only1000USD/ONE60second QD pilot including8secondStop reserve,reconciliation,ownedStop,read-onlymanualrestart. No provider/account/pilot performed; no V5/Hyperliquid/Genesis/live money. See docs/QD_CONTROL_DRIVER_SESSION_BINDING_2026-10-28.md
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone:Concrete personal financial admission and native pipeline transaction/timing repairs
+Status:579_PASS_0_FAILED_0_SKIPPED_5_SUBTESTS;1_NATIVE_H_PASS;7_PREFLIGHT_PASS;CLOCK356MS_PASS;MARKET_CLOSED;SOURCE_NOT_INSTALLED;NO_OPERATIONAL_ACCOUNT_OR_PILOT
+Evidence:docs/QD_NATIVE_FINANCIAL_ADMISSION_TIMING_2026-10-28.md. NativeH34revisions/106496imagebytes/237entries/2952819bytes/Stopcomponents6.688seconds;actualnativeFS/ownership/drain/reopen withsyntheticissuer/session/market;notcompleteinstalledStop/UIacceptance. OriginalA/B/DfailuresandE/Ftiminggapsretained.
+Next action:Implement factual installed PersonalOperatorInstallation.technical.inspect and finish accepted current research/instrument/calendar/IEX-execution evidence binding; no unconditional verifiers or legacy scanner writes. Concrete personal financial admission, read/runtime authority, driver Stop, shared-image transaction fix and retained native read handles are now implemented. Native synthetic H measured34revisions/106496imagebytes, exit+report+engineStop+drain6.688seconds; complete installed clock/UI/final-session-report/process-close overhead still needs native acceptance inside8secondStop reserve. Existing releasefca29cfe unchanged; activationparent absent; realaccount/pilot notstarted; clock356msPASS at1793189427 MARKET_CLOSED,refresh beforeuse. Read-only preflight now requires explicit reviewed --expected-source SHA and optional exact --activation-root. Onlyafterallchecks installNEWimmutable release and useexisting once-only1000USD/ONE60secondQDgrant, reconcile/ownedStop/read-onlymanualrestart. No V5/HLinception/Genesis/liveorders. See docs/QD_NATIVE_FINANCIAL_ADMISSION_TIMING_2026-10-28.md
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

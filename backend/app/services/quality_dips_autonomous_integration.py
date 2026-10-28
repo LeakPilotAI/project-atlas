@@ -115,7 +115,16 @@ class AutonomousNativePublication:
     def publish(self, command, receipt, state):
         if command.get("schema") != "QD_AUTO_COMMAND_V1" or command.get("manual") is not False:
             raise ValueError("AUTO_NATIVE_CONTRACT_REQUIRED")
-        native = self.store.execute(command, projection_required=True)
+        cut = self.store.verified_cut()
+        prior = cut['acknowledged_operations'].get(command['operation_id'])
+        if prior is not None:
+            if prior != digest(command):
+                raise ValueError('AUTO_NATIVE_OPERATION_CONFLICT')
+            # Read an existing, independently replayed ACK. Never reserve or
+            # replay a financial callback merely to recover an old receipt.
+            native = self.store.operation_receipt(command['operation_id'], prior)
+        else:
+            native = self.store.execute(command, projection_required=True)
         if body(native) != body(receipt):
             raise ValueError("AUTO_NATIVE_ACK_UNKNOWN")
         snapshot = self.store.snapshot()

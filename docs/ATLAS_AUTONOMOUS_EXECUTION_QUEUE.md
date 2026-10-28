@@ -1,3 +1,7 @@
+## October 28 native financial admission and timing increment
+
+ACTIVE: QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH. 579 combined cases, one native synthetic pipeline and seven preflight cases pass. Actual commissioning remains incomplete; no new approval chain. Factual installed technical checks/current research binding and complete installed Stop/UI acceptance remain. See docs/QD_NATIVE_FINANCIAL_ADMISSION_TIMING_2026-10-28.md. Prior queue preserved below.
+
 ## October 28 Control Center driver/session binding increment
 
 ACTIVE: QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH. 366 offline regressions pass. No installation or commissioning. Full factual runtime/source assembly and native capacity/timing remain. See docs/QD_CONTROL_DRIVER_SESSION_BINDING_2026-10-28.md. Prior queue retained below.

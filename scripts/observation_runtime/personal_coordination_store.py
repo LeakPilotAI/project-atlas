@@ -42,6 +42,8 @@ class NativePersonalCoordinationImages:
         self.root_id, self.enrollment = list(native_root), enrollment_digest
         self._binding = (self.output, root, tuple(native_root), enrollment_digest)
         self.known, self.poisoned, self.mutex = None, False, None
+        self._retained_reads = {}
+        self._retained_bytes = 0
         self._stop_capacity = None
         try:
             if self.native.native.file_identity(self.output.root_handle) != self.root_id:
@@ -55,6 +57,10 @@ class NativePersonalCoordinationImages:
             raise
 
     def close(self):
+        for handle, _raw, _binding in getattr(self, '_retained_reads', {}).values():
+            self.native.w.close_handle(handle)
+        self._retained_reads = {}
+        self._retained_bytes = 0
         if self.mutex:
             self.native.w.close_handle(self.mutex)
             self.mutex = None
@@ -77,7 +83,38 @@ class NativePersonalCoordinationImages:
         return names
 
     def _read(self, name, binding=None):
-        return self.native.read_bound(self.output, name, binding)
+        retained = getattr(self, '_retained_reads', None)
+        if retained is None:
+            return self.native.read_bound(self.output, name, binding)
+        cached = retained.get(name)
+        if cached is None:
+            if (len(retained) >= MAX_REVISIONS*(MAX_IMAGE//PAGE+3)
+                    or self._retained_bytes+65536 > MAX_REVISIONS*(MAX_IMAGE+3*65536)):
+                raise ValueError('PERSONAL_COORDINATION_RETAINED_READ_CAPACITY')
+            w = self.native.w
+            # This original relative handle denies write/delete sharing for its
+            # entire lifetime. read_bound performs the established identity,
+            # ACL, link, length and digest checks while this same file is pinned.
+            handle = w.relative_open(self.output.root_handle, name, self.output.sid, False,
+                                     access=w.READ | w.READ_CONTROL)
+            try:
+                raw, actual = self.native.read_bound(self.output, name, binding)
+                if self.native.native.file_identity(handle) != actual['id']:
+                    raise ValueError('PERSONAL_COORDINATION_RETAINED_IDENTITY')
+                cached = (handle, raw, actual)
+                retained[name] = cached
+                self._retained_bytes += len(raw)
+            except BaseException:
+                w.close_handle(handle)
+                raise
+        handle, raw, actual = cached
+        self.native.w.validate_acl(handle, self.output.sid)
+        info = self.native.w.info(handle)
+        if (self.native.native.file_identity(handle) != actual['id'] or info.links != 1
+                or ((info.size_hi << 32) | info.size_lo) != len(raw)
+                or binding is not None and binding != actual):
+            raise ValueError('PERSONAL_COORDINATION_RETAINED_FILE_CHANGED')
+        return raw, {'id':list(actual['id']), 'sha256':actual['sha256']}
 
     def _load(self, *, empty=False):
         names = self._inventory()
@@ -222,14 +259,21 @@ class NativePersonalCoordinationImages:
                 with self._writer():
                     yield
         with scope():
-            _, pin = self._load()
+            image, pin = self._load()
+            initial = [image]
             owner = self
             class Transaction:
                 def read(self):
+                    # The entry cut was just independently read and verified.
+                    # Return that immutable snapshot once; readonly exit and
+                    # every publication still revalidate the native chain.
+                    if initial:
+                        return initial.pop()
                     return owner._load()[0]
                 def publish(self, before, after):
                     if readonly:
                         raise ValueError('PERSONAL_COORDINATION_READ_ONLY')
+                    initial.clear()
                     owner._publish(before, after)
             yield Transaction()
             if readonly and self._load()[1] != pin:

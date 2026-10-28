@@ -24,6 +24,11 @@ from test_personal_paper_inception_memory import system
 from test_quality_dips_autonomous_paper import candidate, entry, monitor, setup
 
 from scripts.observation_runtime.personal_coordination_store import NativePersonalCoordinationImages
+from scripts.observation_runtime.personal_engine_session import NativePersonalEngineSession
+from scripts.observation_runtime.personal_financial_authority import (
+    NativePersonalFinancialAuthority,
+)
+from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
 from scripts.observation_runtime.personal_paper_inception import (
     NativePersonalInceptionFiles,
     NativePersonalInitialReadback,
@@ -31,6 +36,8 @@ from scripts.observation_runtime.personal_paper_inception import (
     PersonalInceptionPublisher,
     native_primitives,
 )
+from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
+from scripts.observation_runtime.quality_dips_read_service import observe_self
 
 
 def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
@@ -72,8 +79,14 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
     for role, resource in s.n['resources'].items():
         with native.w.WindowsOutput.create_root(str(tmp_path/role)) as out:
             resource.update(path=str(out.root), native_id=native.native.file_identity(out.root_handle))
+    process = observe_self()
+    s.n['writers'] = {role:{'schema':'QD_OP_PROCESS_ID_V1', **process} for role in s.n['writers']}
     s.e['native_enrollment'] = s.n
     clock = lambda: s.now[0]
+    operator = object.__new__(NativePersonalOperatorAuthority)
+    operator.enrollment, operator.clock = s.n, clock
+    operator.activation = lambda action: {'SYNTHETIC_ACTION':action}
+    operator.verify = lambda request: request['enrollment'] == s.n
     images = NativePersonalCoordinationImages(root=s.n['resources']['coordination']['path'],
              native_root=s.n['resources']['coordination']['native_id'], enrollment_digest=digest(s.n))
     handles.append(images)
@@ -96,8 +109,11 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
         custody = PersonalPublicationCustody(ledger)
         bootstrap = PersonalInceptionBootstrap(enrollment=s.e, publication=custody, issuer=s.issuer,
                     clock=clock, readback=NativePersonalInitialReadback())
+        ownership = NativePersonalWriterOwnership(enrollment=s.n, authority=operator,
+                                                   inception_intent=bootstrap.scope(), ledger=ledger)
+        handles.append(ownership)
         publisher = PersonalInceptionPublisher(bootstrap=bootstrap, custody=custody,
-                    ownership=s.owner, observer=s.observer, files=NativePersonalInceptionFiles())
+                    ownership=ownership, observer=lambda:{'schema':'QD_OP_PROCESS_ID_V1', **process}, files=NativePersonalInceptionFiles())
         ready = timed('once_only_inception_readback', publisher.publish)
         with pytest.raises(ValueError): publisher.publish()
         with ledger.connect() as db:
@@ -105,7 +121,7 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
         pins = PersonalCurrentPins(ledger=ledger, name='source', clock=clock)
         reports = PersonalCurrentPins(ledger=ledger, name='reports', clock=clock)
         images.reserve_stop_capacity(stop_commits=32, stop_bytes=256*1024)
-        request = {'grant': {'session_id': 'EXPLICIT-SYNTHETIC-ONLY'}}
+        request = {'scope':'LOCAL_ENROLLED','enrollment':s.n,'grant': {'session_id': 'synthetic-session'}}
         reservation = PersonalSessionReservations(ledger=ledger, authorization=SimpleNamespace(verify=lambda r: r == request))
         timed('session_reservation', lambda: reservation.reserve(request))
         spec = importlib.util.spec_from_file_location('pipeline_native', repo/'scripts/volume_inspector/operational_autonomous_store.py')
@@ -115,30 +131,32 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
         projection = reporting.ProjectionTarget(s.n['resources']['projection']['path'], s.n['resources']['projection']['native_id'])
         handles.append(projection)
 
-        class SyntheticFinancialAuthority:
-            @contextmanager
-            def lease(self, req, now):
-                proof = {'schema': 'QD_AUTO_OP_ADMISSION_V1', 'request_digest': digest(req),
-                         'status': 'READ_ACCEPTED' if req['command'] is None else 'PENDING',
-                         'reservation_id': 'SYNTHETIC-NOT-OPERATIONAL', 'expires_at': now+5, 'revoked': False}
-                yield SimpleNamespace(snapshot=proof, check=lambda p,t: p == proof and now <= t <= now+5,
-                    acknowledge=lambda r,receipt,pin: {'schema':'QD_AUTO_OP_RESERVATION_ACK_V1',
-                         'request_digest':digest(r),'receipt_digest':digest(receipt),'status':'ACKNOWLEDGED'},
-                    verify_ack=lambda ack: ack['status']=='ACKNOWLEDGED', mark_unknown=lambda req: None)
+        n = setup(tmp_path, stamp=s.now[0])
+        old = n.engine
+        n.m, n.ledger, n.now = s.m, ledger, s.now
+        n.grant.update(epoch=s.m['epoch'], issued_at=clock(), expires_at=clock()+60)
+        # These explicit synthetic dependency doubles cannot be installed or
+        # accepted as operational authority. The admission/reservation adapter
+        # and NTFS financial/coordination/report protocols below are real code.
+        session = object.__new__(NativePersonalEngineSession)
+        session.operator, session.manifest = operator, s.m
+        def synthetic_session(grant, now):
+            if grant != n.grant or not grant['issued_at'] <= now < grant['expires_at']:
+                raise ValueError('SYNTHETIC_SESSION_REFUSED')
+            return old.session_authority.verify(grant, now=now)
+        session.verify = synthetic_session
+        n.engine = AutonomousPaper(ledger=ledger, candidates=old.candidates, session_authority=session,
+                                   source_authority=old.source_authority, clock=clock)
+        admission = NativePersonalFinancialAuthority(operator=operator, ownership=ownership, engine=n.engine,
+                                                     session=session, source=pins)
 
-        store = module.OperationalAutonomousStore(enrollment=s.n, trust=pins, authority=SyntheticFinancialAuthority(),
+        store = module.OperationalAutonomousStore(enrollment=s.n, trust=pins, authority=admission,
                                                    clock=clock, projection=projection)
         handles.append(store)
         archive = reporting.ReportArchive(s.n['resources']['report']['path'], reports)
         handles.append(archive)
         service = reporting.ReportService(store, archive)
-        n = setup(tmp_path, stamp=s.now[0])
-        old = n.engine
-        n.m, n.ledger, n.now = s.m, ledger, s.now
-        n.grant.update(epoch=s.m['epoch'], issued_at=clock(), expires_at=clock()+60)
-        n.engine = AutonomousPaper(ledger=ledger, candidates=old.candidates, session_authority=old.session_authority,
-                    source_authority=old.source_authority, clock=clock,
-                    publication=AutonomousNativePublication(store=store, manifest=s.m))
+        n.engine.publication = AutonomousNativePublication(store=store, manifest=s.m)
         timed('engine_start', lambda: n.engine.start(n.grant))
         def report(): return service.publish(datetime.fromtimestamp(clock(), UTC).date().isoformat(), clock())
         assert timed('entry', lambda: entry(n))['filled']
@@ -149,6 +167,14 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
         assert timed('full_exit', lambda: monitor(n, candidate(n), 'final', '120', {'classification':'THESIS_BROKEN'}))['filled']
         timed('final_report', report)
         assert timed('engine_stop', n.engine.stop) == 'STOPPED'
+        runtime_scope = {'schema':'QD_AUTO_LOCAL_RUNTIME_V3', 'scope':'LOCAL_ENROLLED',
+                         'process_identity':{'pid':process['pid'],'created':process['creation_filetime'],'image':process['image']},
+                         'writer_roster':['decision','source','projection','report','coordination'],
+                         'reader_enrollment':{'schema':'QD_AUTO_OP_READ_ENROLLMENT_V1', 'account_id':s.n['account_id'], 'epoch':s.n['epoch'],
+                           **{r+'_root':s.n['resources'][r]['native_id'] for r in ('source','projection','report')}}}
+        drained = timed('native_writer_drain', lambda: ownership.drain(
+                        {'enrollment':runtime_scope, 'grant':{'engine_grant':n.grant}}, now=clock()))
+        assert drained['pending'] == 0 and drained['unknown'] is False
         state = timed('native_replay_audit', lambda: store.snapshot()['state'])
         assert number(state['cash']) == number('1015.9136')
         assert all(number(p['remaining']) == 0 and number(p['remaining_entry_costs']) == 0 for p in state['positions'].values())
@@ -156,10 +182,25 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
             assert ledger._load(db)[0] == state
         with pytest.raises(ValueError): reservation.reserve(request)
         image, current = images._load()
+        page = next((tmp_path/'coordination').glob('0001-page-*.bin'))
+        with pytest.raises(OSError), page.open('r+b'):
+            pytest.fail('retained immutable page allowed a writer')
         count, size = budget()
         print(json.dumps({'synthetic_only': True, 'timings_seconds':timings, 'coordination_revision':current['revision'],
               'image_bytes':len(image), 'filesystem_entries':count, 'bytes':size,
               'financial_revision':len(pins.current()['entries']), 'report_count':len(reports.current()['reports']),
+              'retained_handles':len(images._retained_reads), 'retained_write_refused':True,
               'elapsed_seconds':round(time.monotonic()-start,6)}))
     finally:
         for handle in reversed(handles): handle.close()
+        assert images._retained_reads == {} and images._retained_bytes == 0
+    reopened = NativePersonalCoordinationImages(root=s.n['resources']['coordination']['path'],
+               native_root=s.n['resources']['coordination']['native_id'], enrollment_digest=digest(s.n))
+    try:
+        again = PersonalNativeCoordination(manifest=s.m, images=reopened, path=ledger.path)
+        with again.connect(readonly=True) as db:
+            assert again._load(db)[0] == state
+            assert db.execute("SELECT COUNT(*) FROM personal_publications WHERE state!='ACKNOWLEDGED'").fetchone() == (0,)
+        assert reservation.ledger.images.mutex is None
+    finally:
+        reopened.close()
