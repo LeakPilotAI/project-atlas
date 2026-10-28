@@ -1,30 +1,30 @@
 {
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_NATIVE_FINANCIAL_ADMISSION_TIMING_AND_REOPEN_579_REGRESSIONS",
+  "last_verified_task": "QD_FACTUAL_TECHNICAL_SOURCE_CONSUMER_READONLY_NATIVE_RESTART",
   "next_eligible_tasks": [
-  "QD_FACTUAL_INSTALLATION_TECHNICAL_CHECKS_AND_CURRENT_RESEARCH"
+  "QD_ACCEPTED_CURRENT_RESEARCH_PRODUCER_AND_INSTALLED_STOP"
 ],
   "blocked_tasks": {
-    "PERSONAL_LOCAL_INSTALLATION": "New source fca29cfe installed/verified10182files903directories260098364bytes;native coordination/current/session SQL port and installed-only assembly implemented. Actual activation record and remaining authority/writer/session/current/source bindings remain absent;no account.",
-    "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
-    "PERSONAL_CURRENT_DATA": "Actual session code MARKET_CLOSED overnightOct28;no provider call this increment. Current accepted QD source root absent. Need bounded nonfinancial research publication plus actual instrument/calendar and fresh entitled IEX;no oldquote/currenthistory adoption.",
-    "PERSONAL_BOUNDED_START": "ONE60secondfinancialpilot approved but unused. Clock nowpasses;freshcurrentresearch/data and installed financial bindings mustpass first. No fabricated idle/zero-trade pilot.",
-    "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Original four financial role IDs/ACL/empty inventory verified unchanged. Five synthetic native coordination checks passed;actual operational financial inception/replay/report/Stop/recovery not yet executed. No V5 prerequisite."
-  },
+  "PERSONAL_LOCAL_INSTALLATION": "Existing releasefca29cfe immutable inventory reverified read-only10182files903dirs/0handleleak. New factual technical/release/source/read-only restart code notinstalled. Actual release assembly/current accepted source and complete installed Stop stillunverified;no activation.",
+  "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
+  "PERSONAL_CURRENT_DATA": "MARKET_OPEN by existing calendar;0providerconnections thisincrement. Confined actual scanner mode and accepted-publication/IEX consumer implemented. Actual current native research publication/archive and instrument/execution/entitlement evidence not supplied;missingdata refuses.",
+  "PERSONAL_BOUNDED_START": "ONE60secondQDfinancialpilot approved butunused. Actualclock298msPASS at1793194871 expired,refresh. Full installed lifecycle timing/currentdata/nativeactivation/inception mustpass first;no fakeidlepilot.",
+  "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Original four financial role IDs/ACL/empty inventory verified unchanged. Five synthetic native coordination checks passed;actual operational financial inception/replay/report/Stop/recovery not yet executed. No V5 prerequisite."
+},
   "latest_tests": {
-  "passed": 579,
+  "passed": 544,
   "failed": 0,
-  "skipped": 0,
+  "skipped": 97,
   "deselected": 0,
-  "subtests_passed": 5,
   "warnings": 1,
-  "seconds": 32.88,
-  "native_final_passed": 1,
-  "native_final_seconds": 15.73,
-  "preflight_focused_passed": 7
+  "seconds": 54.03,
+  "native_pipeline_passed": 1,
+  "native_pipeline_seconds": 20.65,
+  "focused_technical_research_passed": 22,
+  "focused_overlap_combined": true
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Implement factual installed PersonalOperatorInstallation.technical.inspect and finish accepted current research/instrument/calendar/IEX-execution evidence binding; no unconditional verifiers or legacy scanner writes. Concrete personal financial admission, read/runtime authority, driver Stop, shared-image transaction fix and retained native read handles are now implemented. Native synthetic H measured34revisions/106496imagebytes, exit+report+engineStop+drain6.688seconds; complete installed clock/UI/final-session-report/process-close overhead still needs native acceptance inside8secondStop reserve. Existing releasefca29cfe unchanged; activationparent absent; realaccount/pilot notstarted; clock356msPASS at1793189427 MARKET_CLOSED,refresh beforeuse. Read-only preflight now requires explicit reviewed --expected-source SHA and optional exact --activation-root. Onlyafterallchecks installNEWimmutable release and useexisting once-only1000USD/ONE60secondQDgrant, reconcile/ownedStop/read-onlymanualrestart. No V5/HLinception/Genesis/liveorders. See docs/QD_NATIVE_FINANCIAL_ADMISSION_TIMING_2026-10-28.md",
+  "exact_next_action": "Finish accepted current QD research producer/publication archive and real instrument/fractional/lot-size/calendar/entitlement/IEX execution-authority binding using the new confined existing scanner mode; no fixture archive/blanket verifiers or legacy financial scanner. Factual native release/technical checks, exact source consumer, distinct account/epoch and new-process read-only reconciliation now implemented. Then verify complete installed native Control Center Stop including authority/clock/final-session-report/ACK/drain/owned-close inside8seconds. NativeI synthetic component subtotal6.875seconds is not fullacceptance; real child reopened immutable fixture with unchanged hashes/no session. Onlyafterchecks installNEWverifiedimmutable release, publish/readback genuineactivation and once-only existing-epoch1000simulatedUSD, then acceptedcurrentIEX/research and ONEtotal60secondQDpilot/reconcile/ownedStop/manualreadonlyrestart. Existingreleasefca29cfe remains; no realactivation/inception/provider/pilot. Clock298msPASS at1793194871 is expired evidence,refreshbeforeuse;calendarMARKET_OPEN is notlivequotes. No V5/HLinception/Genesis/liveorders. See docs/QD_FACTUAL_INSTALLATION_RESTART_BINDINGS_2026-10-28.md",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -117,10 +117,10 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "BLOCKED_ACTUAL_LOCAL_AUTHORITY_AND_CURRENT_SOURCE_BINDINGS",
+  "execution_status": "PAUSED_MISSING_ACCEPTED_CURRENT_SOURCE_AND_COMPLETE_INSTALLED_LIFECYCLE",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
-  "continuation_report": "docs/PERSONAL_PAPER_POLICY_IMPLEMENTATION_2026-10-27.md",
-  "blocked_wait_reason": "Only installation/native execution/data/inception/session actions outside this source-only approval remain for commissioning;no mandatory external reviewer/issuer/custodian vacancy.",
+  "continuation_report": "docs/QD_FACTUAL_INSTALLATION_RESTART_BINDINGS_2026-10-28.md",
+  "blocked_wait_reason": "Technical current source/archive/instrument/execution evidence and complete installed Stop notverified. No external-reviewer vacancy or new administrative approvalchain;existing commissioning grant remainsunused.",
   "publication_validation": {
     "source_release": "c8df2e9cd61077daf308c07df78ea12c14ea4e52",
     "source_remote_verified": true,
@@ -2545,6 +2545,42 @@
   "inception_attempted": false,
   "pilot_started": false,
   "new_release_installed": false,
+  "genuine_browser": false,
+  "remaining_source_work": true
+},
+  "qd_factual_installation_restart_20261028": {
+  "report": "docs/QD_FACTUAL_INSTALLATION_RESTART_BINDINGS_2026-10-28.md",
+  "previous_latest_tests": {
+    "passed": 579,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 0,
+    "subtests_passed": 5,
+    "warnings": 1,
+    "seconds": 32.88,
+    "native_final_passed": 1,
+    "native_final_seconds": 15.73,
+    "preflight_focused_passed": 7
+  },
+  "native_fixture": "I",
+  "native_coordination_revisions": 34,
+  "native_entries": 237,
+  "native_bytes": 2952820,
+  "native_stop_components_seconds": 6.875,
+  "complete_installed_stop_accepted": false,
+  "native_readonly_child_verified": true,
+  "child_exited": true,
+  "financial_hashes_unchanged": true,
+  "release_files_readonly_verified": 10182,
+  "release_directories": 903,
+  "release_handle_delta": 0,
+  "clock_utc": 1793194871,
+  "clock_uncertainty_ms": 298,
+  "provider_connections": 0,
+  "real_activation": false,
+  "real_inception": false,
+  "pilot_consumed": false,
+  "new_release": false,
   "genuine_browser": false,
   "remaining_source_work": true
 }

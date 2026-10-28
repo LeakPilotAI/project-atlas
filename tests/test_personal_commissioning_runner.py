@@ -15,6 +15,7 @@ from scripts.observation_runtime.personal_local_authority import (
     NativePersonalOperatorAuthority,
     NativePersonalRuntimeAuthority,
 )
+from scripts.observation_runtime.personal_market_inputs import NativePersonalMarketInputs
 from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
 
 
@@ -61,8 +62,14 @@ def setup(*, tick=10, frame=True, start_failure=False):
     source.authority, source.session_id = object(), 'synthetic-once'
     r.authority = object.__new__(NativePersonalRuntimeAuthority)
     r.authority.source = source
+    market = object.__new__(NativePersonalMarketInputs)
+    market.source = source
+    market.bind_session = lambda grant: None
+    market.preflight = lambda: {'SYNTHETIC_NOT_OPERATIONAL': True}
+    r.engine.source_authority = market
     runner = PersonalCommissioningRunner(runtime=owner, source=source)
-    grant = {'native_grant': {'issued_at': 1000, 'expires_at': 1060, 'session_id': 'synthetic-once'}}
+    grant = {'native_grant': {'issued_at': 1000, 'expires_at': 1060, 'session_id': 'synthetic-once'},
+             'runtime_grant': {'engine_grant': {'SYNTHETIC': True}}}
     return SimpleNamespace(**locals())
 
 

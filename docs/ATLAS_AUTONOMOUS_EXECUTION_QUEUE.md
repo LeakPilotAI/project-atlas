@@ -1,3 +1,7 @@
+## October 28 factual installation and read-only restart increment
+
+ACTIVE: QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH. Concrete technical/release/source-consumer/native read-only restart and confined research scanner verified;actual accepted current publication/execution evidence and complete installed Stop remain. 544pass0fail97NOT_EXECUTED;nativeIpass. No operational activation/inception/provider/pilot. See docs/QD_FACTUAL_INSTALLATION_RESTART_BINDINGS_2026-10-28.md. Prior queue/history preserved below.
+
 ## October 28 native financial admission and timing increment
 
 ACTIVE: QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH. 579 combined cases, one native synthetic pipeline and seven preflight cases pass. Actual commissioning remains incomplete; no new approval chain. Factual installed technical checks/current research binding and complete installed Stop/UI acceptance remain. See docs/QD_NATIVE_FINANCIAL_ADMISSION_TIMING_2026-10-28.md. Prior queue preserved below.

@@ -18,13 +18,16 @@ from scripts.observation_runtime.quality_dips_read_service import observe_self
 
 
 class NativePersonalWriterOwnership:
-    def __init__(self, *, enrollment=None, authority=None, inception_intent=None, ledger=None):
+    def __init__(self, *, enrollment=None, authority=None, inception_intent=None, ledger=None, read_only=False):
         if enrollment is None or type(authority) is not NativePersonalOperatorAuthority:
             raise ValueError('PERSONAL_WRITER_INSTALLED_AUTHORITY_REQUIRED')
         self.enrollment = validate_enrollment(enrollment)
         if body(authority.enrollment) != body(self.enrollment):
             raise ValueError('PERSONAL_WRITER_ENROLLMENT_CONFLICT')
         self.authority, self.native = authority, native_primitives()
+        if type(read_only) is not bool or read_only and inception_intent is not None:
+            raise ValueError('PERSONAL_READ_ONLY_OWNERSHIP_SCOPE')
+        self.read_only = self._read_only = read_only
         # Inception may acquire ownership before coordination is installed.
         # Runtime drain always requires the actual existing native ledger.
         self.ledger, self._ledger = ledger, ledger
@@ -36,7 +39,7 @@ class NativePersonalWriterOwnership:
         raw = observe_self()
         self.identity = {'schema': 'QD_OP_PROCESS_ID_V1', **raw}
         if (raw['pid'] != os.getpid() or not raw['image'].startswith('D:\\')
-                or any(p != self.identity for p in self.enrollment['writers'].values())):
+                or not read_only and any(p != self.identity for p in self.enrollment['writers'].values())):
             raise ValueError('PERSONAL_WRITER_EXACT_SELF_ROSTER_REQUIRED')
         self._identity = body(self.identity)
         try:
@@ -55,6 +58,7 @@ class NativePersonalWriterOwnership:
 
     def _verify(self):
         if (self.poisoned or not self.mutex or self.authority is not self._authority
+                or self.read_only is not self._read_only
                 or body(self.enrollment) != self._enrollment or body(self.identity) != self._identity
                 or body(self.inception_intent) != self._intent
                 or {'schema': 'QD_OP_PROCESS_ID_V1', **observe_self()} != self.identity):
@@ -119,6 +123,8 @@ class NativePersonalWriterOwnership:
                            for role in ('source', 'projection', 'report'))):
                 raise ValueError('PERSONAL_WRITER_READ_SCOPE')
             return 'READ_ONLY', request
+        if self.read_only:
+            raise ValueError('PERSONAL_READ_ONLY_NO_WRITER_ADMISSION')
         if request.get('schema') == 'PERSONAL_GENESIS_WRITER_V1':
             if (set(request) != {'schema', 'intent_digest', 'process'} or self.inception_intent is None
                     or request['intent_digest'] != digest(self.inception_intent)

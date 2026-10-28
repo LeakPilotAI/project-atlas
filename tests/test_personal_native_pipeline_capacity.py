@@ -3,9 +3,13 @@
 This measures real NTFS publication, not operational enrollment or a PAPER pilot.
 It never imports or executes the V5 containment launcher.
 """
+import ctypes as C
+import hashlib
 import importlib.util
 import json
 import os
+import subprocess
+import sys
 import time
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -204,3 +208,30 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
         assert reservation.ledger.images.mutex is None
     finally:
         reopened.close()
+    # A separately observed, self-exiting reader process must reconcile without
+    # rewriting the historical parent writer enrollment or any fixture byte.
+    before={str(p.relative_to(tmp_path)):hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in tmp_path.rglob('*') if p.is_file()}
+    with subprocess.Popen([sys.executable,'-B',str(repo/'tests/personal_readonly_restart_child.py')],
+            stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,
+            creationflags=subprocess.CREATE_NO_WINDOW) as child:
+        from ctypes import wintypes as W
+        k=C.WinDLL('kernel32',use_last_error=True)
+        k.GetProcessTimes.argtypes=[W.HANDLE,*([C.POINTER(W.FILETIME)]*4)]
+        k.QueryFullProcessImageNameW.argtypes=[W.HANDLE,W.DWORD,W.LPWSTR,C.POINTER(W.DWORD)]
+        stamps=[W.FILETIME() for _ in range(4)]
+        image,size=C.create_unicode_buffer(32768),W.DWORD(32768)
+        assert k.GetProcessTimes(W.HANDLE(int(child._handle)),*(C.byref(stamp) for stamp in stamps))
+        assert k.QueryFullProcessImageNameW(W.HANDLE(int(child._handle)),0,image,C.byref(size))
+        observed={'pid':child.pid,'creation_filetime':(stamps[0].dwHighDateTime<<32)|stamps[0].dwLowDateTime,'image':image.value}
+        assert Path(observed['image'])==Path(sys.executable)
+        stdout,stderr=child.communicate(json.dumps({'root':str(tmp_path),'personal_enrollment':s.e,'now':clock()}),timeout=35)
+        assert child.returncode==0,stderr
+        result=json.loads(stdout)
+        assert result['process']==observed and result['writer_rebind_refused'] and result['read_only_restart']
+        assert result['state_digest']==digest(state) and result['source_revision']==3 and result['account_and_epoch_distinct']
+    assert before=={str(p.relative_to(tmp_path)):hashlib.sha256(p.read_bytes()).hexdigest()
+                   for p in tmp_path.rglob('*') if p.is_file()}
+    budget()
+    print(json.dumps({'read_only_child_verified':True,'original_bytes_unchanged':True,
+                      'owned_child_exited':True,'new_financial_session':False}))

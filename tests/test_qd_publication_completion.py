@@ -28,6 +28,39 @@ def test_valid_empty_publication_is_healthy_no_signal():
     assert s.reader._last[1] == 1
 
 
+def test_authenticated_no_entry_monitor_keeps_observation_without_inventing_candidate():
+    s = fixture()
+    from test_quality_dips_integration_v1 import bundle_for
+    for symbol in ('SPY','MSFT'):
+        _m, bundle, _now = bundle_for(symbol, 'ETF' if symbol == 'SPY' else 'STOCK')
+        instrument = bundle['instrument']
+        s.packet['monitors'][instrument['instrument_id']] = {
+            'instrument': instrument, 'symbol': symbol, 'observed_at':100,
+            'current': {'evidence_quality':'UNAVAILABLE'}}
+    result = s.reader.read_request(.2)
+    assert result['instrument']['symbol'] == 'MSFT'
+    assert result['bundles'] == [] and result['observation'] is None
+    assert s.cut['state']['positions'] == {} and s.packet['bundles'] == []
+
+
+@pytest.mark.parametrize('damage', ['stale','future','identity','symbol','currency','class','units','shape'])
+def test_no_entry_observation_never_admits_missing_or_foreign_monitor(damage):
+    s = fixture()
+    item = {'instrument': {'instrument_id':'accepted-id','symbol':'MSFT','asset_class':'STOCK',
+                          'currency':'USD','units':'SHARES'}, 'symbol':'MSFT','observed_at':100}
+    s.packet['monitors']['accepted-id'] = item
+    if damage == 'stale': item['observed_at']=69
+    elif damage == 'future': item['observed_at']=101
+    elif damage == 'identity': item['instrument']['instrument_id']='foreign'
+    elif damage == 'symbol': item['symbol']='OTHER'
+    elif damage == 'currency': item['instrument']['currency']='USDC'
+    elif damage == 'class': item['instrument']['asset_class']='PERP'
+    elif damage == 'units': item['instrument']['units']='CONTRACTS'
+    else: s.packet['monitors']['accepted-id']=None
+    with pytest.raises(ValueError): s.reader.read_request(.2)
+    assert s.reader._last is None
+
+
 @pytest.mark.parametrize('damage', ['expiry', 'clock-backward', 'clock-type', 'cut', 'stop', 'revocation'])
 def test_qd_completion_refuses_changed_source_context(damage):
     s = fixture()

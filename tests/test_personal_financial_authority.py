@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 
 import pytest
+from app.services.paper_financial_replay import digest
 from app.services.personal_current_pins import PersonalCurrentPins
 from app.services.personal_native_coordination import PersonalNativeCoordination
 from test_personal_native_coordination_memory import Images
@@ -14,6 +15,7 @@ from test_quality_dips_autonomous_paper import setup as engine_setup
 from scripts.observation_runtime.personal_engine_session import NativePersonalEngineSession
 from scripts.observation_runtime.personal_financial_authority import (
     NativePersonalFinancialAuthority,
+    NativePersonalFinancialReadAuthority,
 )
 from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
 from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
@@ -44,6 +46,7 @@ def setup(tmp_path):
     with ledger.connect() as db: PersonalCurrentPins.initialize(db, 'source', source)
     pins = PersonalCurrentPins(ledger=ledger, name='source', clock=operator.clock)
     owner = object.__new__(NativePersonalWriterOwnership)
+    owner.read_only = False
     owner.authority, owner.enrollment, owner.ledger = operator, operator.enrollment, ledger
     @contextmanager
     def owned(context, now):
@@ -115,3 +118,20 @@ def test_unacknowledged_operation_stays_uncertain_and_cannot_replay(tmp_path, da
 
 def test_default_refusal():
     with pytest.raises(ValueError): NativePersonalFinancialAuthority()
+
+
+def test_separate_read_authority_never_reserves_or_accepts_a_command(tmp_path):
+    s=setup(tmp_path)
+    s.operator.enrollment['inception_digest']=digest(s.ledger.manifest)
+    s.owner.read_only=True
+    port=NativePersonalFinancialReadAuthority(operator=s.operator,ownership=s.owner,source=s.pins)
+    request={**s.request,'enrollment':s.operator.enrollment,'command':None}
+    before=list(s.images.history)
+    with port.lease(request,s.n.now[0]) as lease:
+        assert lease.snapshot['status']=='READ_ACCEPTED'
+        with pytest.raises(ValueError): lease.acknowledge(request,s.receipt,s.source)
+    assert s.images.history==before
+    with pytest.raises(ValueError),port.lease({**request,'command':s.command},s.n.now[0]):
+        pytest.fail('read authority granted financial publication')
+    assert s.images.history==before
+    with pytest.raises(ValueError): NativePersonalFinancialReadAuthority()

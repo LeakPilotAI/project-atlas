@@ -72,11 +72,13 @@ def test_native_authority_defaults_to_refusal_without_native_binding():
     with pytest.raises(ValueError): authority_module.NativePersonalOperatorAuthority()
 
 
-def owner(monkeypatch, result=0, enrollment=None):
+def owner(monkeypatch, result=0, enrollment=None, read_only=False, historical_writer=False):
     e = copy.deepcopy(fixture().e if enrollment is None else enrollment)
     now, released, closed, waits = [1000], [], [], []
     self_id = {'pid': os.getpid(), 'creation_filetime': 123, 'image': 'D:\\SYNTHETIC-only.exe'}
     e['writers'] = {k: {'schema': 'QD_OP_PROCESS_ID_V1', **self_id} for k in e['writers']}
+    if historical_writer:
+        e['writers'] = {k:{**value,'pid':value['pid']+1} for k,value in e['writers'].items()}
     roots = {r['path']: r['native_id'] for r in e['resources'].values()}
     files = {p: {} for p in roots}
     class Output:
@@ -101,7 +103,8 @@ def owner(monkeypatch, result=0, enrollment=None):
     auth.enrollment, auth.clock = e, lambda: now[0]
     auth.activation = lambda action: {'SYNTHETIC_ACTION': action}
     intent = {'schema': 'SYNTHETIC-INTENT', 'operation_id': 'SYNTHETIC-ONCE'}
-    port = ownership_module.NativePersonalWriterOwnership(enrollment=e, authority=auth, inception_intent=intent)
+    port = ownership_module.NativePersonalWriterOwnership(enrollment=e, authority=auth,
+                  inception_intent=None if read_only else intent, read_only=read_only)
     request = {'scope': 'LOCAL_ENROLLED', 'enrollment': e, 'grant': {'SYNTHETIC': True}}
     return SimpleNamespace(**locals())
 
@@ -121,6 +124,24 @@ def test_exact_self_roster_nested_native_and_inception_lease_closes_handles(monk
     s.port.close()
     assert len(s.released) == 3 and len(s.closed) == 7
     assert all(not values for values in s.files.values())
+
+
+def test_read_only_restart_preserves_historical_writer_and_cannot_admit_operations(monkeypatch):
+    with pytest.raises(ValueError, match='EXACT_SELF_ROSTER'):
+        owner(monkeypatch,historical_writer=True)
+    s=owner(monkeypatch,read_only=True,historical_writer=True)
+    original=copy.deepcopy(s.port.enrollment)
+    read={'schema':'QD_AUTO_OP_READ_ENROLLMENT_V1','account_id':s.e['account_id'],'epoch':s.e['epoch'],
+          **{r+'_root':s.e['resources'][r]['native_id'] for r in ('source','projection','report')}}
+    with s.port.lease({'schema':'PERSONAL_NATIVE_READ_LEASE_V1','reader_enrollment':read},s.now[0]) as lease:
+        assert lease.check(lease.snapshot,s.now[0])
+    with pytest.raises(ValueError,match='NO_WRITER_ADMISSION'),s.port.lease(s.request,s.now[0]):
+        pytest.fail('reader acquired financial writer admission')
+    assert s.port.enrollment==original and all(not values for values in s.files.values())
+    s.port.read_only=False
+    with pytest.raises(ValueError),s.port.lease(s.request,s.now[0]):
+        pytest.fail('mode mutation granted writer authority')
+    s.port.close()
 
 
 @pytest.mark.parametrize('damage', ['process', 'root', 'namespace', 'revocation', 'expiry', 'snapshot'])

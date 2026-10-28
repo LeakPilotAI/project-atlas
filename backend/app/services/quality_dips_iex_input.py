@@ -14,6 +14,7 @@ class IEXPaperQuotes:
         self.session_id, self.decision_reader = session_id, decision_reader
         self._last_quote, self._sequence = None, 0
         self._issued_frame = None
+        self._issued_shutdown = None
 
     def quote(self, instrument):
         if self.authority is None:
@@ -85,7 +86,7 @@ class IEXPaperQuotes:
         if not 0 < timeout <= 2:
             raise IEXRefused("IEX_BOUNDED_READ_REQUIRED")
         packet = self.quote(position["instrument"])
-        return {
+        request = {
             "quotes": [packet],
             "observation": {
                 "symbol": position["symbol"],
@@ -94,6 +95,30 @@ class IEXPaperQuotes:
                 "current": {},
             },
         }
+        self._issued_shutdown = (body({**request,'bundles':[],'shutdown_mode':'SHUTDOWN_FLATTEN'}),
+                                 strict(body(position['instrument'])), self.feed, self.authority, self.session_id)
+        return request
+
+    def verify_source_request(self, request, *, now):
+        if type(request) is not dict:
+            raise IEXRefused('IEX_SOURCE_REQUEST_SCHEMA')
+        if set(request) == {'bundles','quotes','observation'}:
+            if self._issued_frame is None:
+                raise IEXRefused('IEX_NO_ISSUED_OBSERVATION')
+            frame = strict(self._issued_frame[0])
+            if frame['request'] != request:
+                raise IEXRefused('IEX_SOURCE_REQUEST_NOT_ISSUED')
+            return self.verify_observation(frame, now=now)
+        if set(request) == {'bundles','quotes','observation','shutdown_mode'}:
+            issued = self._issued_shutdown
+            if (issued is None or request.get('shutdown_mode') != 'SHUTDOWN_FLATTEN'
+                    or request['bundles'] != [] or body(request) != issued[0]
+                    or self.feed is not issued[2] or self.authority is not issued[3]
+                    or self.session_id != issued[4] or now != int(self.feed.clock())
+                    or self.quote(issued[1]) != request['quotes'][0]):
+                raise IEXRefused('IEX_SHUTDOWN_REQUEST_NOT_ISSUED_OR_STALE')
+            return True
+        raise IEXRefused('IEX_SOURCE_REQUEST_SCHEMA')
 
     def frame(self, *, session_id, sequence, bundles, instrument, observation=None):
         """Accepted ranking bundles remain external; no rankings are manufactured."""

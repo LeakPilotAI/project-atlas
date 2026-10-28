@@ -23,6 +23,7 @@ class NativePersonalFinancialAuthority:
                 or type(ownership) is not NativePersonalWriterOwnership
                 or type(engine) is not AutonomousPaper or type(session) is not NativePersonalEngineSession
                 or type(source) is not PersonalCurrentPins or type(source.ledger) is not PersonalNativeCoordination
+                or ownership.read_only
                 or ownership.authority is not operator or session.operator is not operator
                 or ownership.ledger is not source.ledger or engine.ledger is not source.ledger
                 or engine.session_authority is not session or engine.clock is not operator.clock
@@ -143,3 +144,38 @@ class NativePersonalFinancialAuthority:
                 yield lease
                 if not lease.check(snapshot, self.operator.clock()):
                     raise ValueError('PERSONAL_FINANCIAL_LEASE_CHANGED')
+
+
+class NativePersonalFinancialReadAuthority(NativePersonalFinancialAuthority):
+    """Existing-account reads only; no engine, session, reservation or writer."""
+    def __init__(self, *, operator=None, ownership=None, source=None):
+        if (type(operator) is not NativePersonalOperatorAuthority
+                or type(ownership) is not NativePersonalWriterOwnership or ownership.read_only is not True
+                or ownership.authority is not operator or type(source) is not PersonalCurrentPins
+                or type(source.ledger) is not PersonalNativeCoordination or ownership.ledger is not source.ledger
+                or body(ownership.enrollment) != body(operator.enrollment)
+                or digest(source.ledger.manifest) != operator.enrollment['inception_digest']):
+            raise ValueError('PERSONAL_FINANCIAL_READ_NATIVE_DEPENDENCIES')
+        self.operator, self.ownership, self.source = operator, ownership, source
+        self.engine = self.session = None
+        self.ledger = source.ledger
+        self.custody = PersonalFinancialOperationCustody(self.ledger)
+        self._enrollment = body(operator.enrollment)
+        self._manifest = body(self.ledger.manifest)
+        self._ports = operator, ownership, None, None, source, self.ledger, self.custody
+
+    def _verify(self, command):
+        if (command is not None or self.ownership.read_only is not True
+                or any(a is not b for a,b in zip((self.operator,self.ownership,self.engine,self.session,
+                        self.source,self.ledger,self.custody),self._ports,strict=True))
+                or body(self.operator.enrollment) != self._enrollment
+                or body(self.ownership.enrollment) != self._enrollment
+                or body(self.ledger.manifest) != self._manifest
+                or self.source.ledger is not self.ledger or self.ownership.ledger is not self.ledger
+                or self.custody.ledger is not self.ledger):
+            raise ValueError('PERSONAL_FINANCIAL_READ_NO_WRITE_AUTHORITY')
+        self.operator.activation('READ_ONLY')
+        e = self.operator.enrollment
+        read = {'schema':'QD_AUTO_OP_READ_ENROLLMENT_V1','account_id':e['account_id'],'epoch':e['epoch'],
+                **{r+'_root':e['resources'][r]['native_id'] for r in ('source','projection','report')}}
+        return {'schema':'PERSONAL_NATIVE_READ_LEASE_V1','reader_enrollment':read}, self.operator.clock()

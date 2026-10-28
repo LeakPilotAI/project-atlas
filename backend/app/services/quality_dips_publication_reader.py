@@ -57,7 +57,24 @@ class QualityDipsPublicationReader:
                 raise ValueError('QD_CURRENT_POSITION_MONITOR_UNAVAILABLE')
             result = {'instrument': p['instrument'], 'bundles': [], 'observation': observation}
         elif not packet['bundles']:
-            result = None
+            # A verified current research publication can legitimately contain
+            # no eligible entry. Continue observing an authenticated instrument
+            # without manufacturing a candidate or a position-management event.
+            monitored = []
+            for identity, observation in packet['monitors'].items():
+                instrument = observation.get('instrument') if type(observation) is dict else None
+                if (type(instrument) is not dict or instrument.get('instrument_id') != identity
+                        or type(identity) is not str or not identity
+                        or type(instrument.get('symbol')) is not str or not instrument['symbol']
+                        or observation.get('symbol') != instrument['symbol']
+                        or instrument.get('asset_class') not in ('STOCK', 'ETF')
+                        or instrument.get('currency') != 'USD' or instrument.get('units') != 'SHARES'
+                        or type(observation.get('observed_at')) is not int
+                        or not 0 <= now-observation['observed_at'] <= 30):
+                    raise ValueError('QD_NO_ENTRY_MONITOR_UNVERIFIED')
+                monitored.append((identity, instrument))
+            result = ({'instrument': min(monitored, key=lambda row: row[0])[1],
+                       'bundles': [], 'observation': None} if monitored else None)
         else:
             candidates = [strict(runtime.engine.candidates.candidate(bundle, level='L1', now=now)) for bundle in packet['bundles']]
             if len({(c['cohort_id'], c['source_revision'], c['generation']) for c in candidates}) != 1:

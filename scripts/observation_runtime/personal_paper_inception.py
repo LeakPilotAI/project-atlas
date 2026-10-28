@@ -124,8 +124,24 @@ class NativePersonalInceptionFiles:
 
     Invocation is excluded until the separately approved activation bundle.
     """
+    def __init__(self):
+        self._active = None
+
+    def verify_active(self, enrollment):
+        from threading import get_ident
+        active = self._active
+        if active is None:
+            return False
+        if active[0] != get_ident() or active[1] != body(enrollment):
+            raise ValueError('PERSONAL_INCEPTION_ACTIVE_WRITER_CHANGED')
+        active[2].verify()
+        return True
+
     @contextmanager
     def open(self,enrollment):
+        from threading import get_ident
+        if self._active is not None:
+            raise ValueError('PERSONAL_INCEPTION_FILES_ALREADY_ACTIVE')
         enrollment=strict(body(enrollment));_,e,_=validate_personal_inception(enrollment)
         native=native_primitives()
         outputs={};expected={r:{} for r in ('source','projection','report')}
@@ -143,19 +159,32 @@ class NativePersonalInceptionFiles:
                         out._verify()
                         if {p.name for p in Path(out.root).iterdir()}!=set(expected[role]):raise ValueError('PERSONAL_INCEPTION_NAMESPACE_CHANGED')
                         for name,binding in expected[role].items():native.read_bound(out,name,binding)
-            yield Files()
+            files = Files()
+            self._active = (get_ident(), body(enrollment), files)
+            yield files
         finally:
+            self._active = None
             for out in outputs.values():out.close()
 
 
 class PersonalPublicationIssuer:
     """The same sole-operator activation;no independent issuer role."""
-    def __init__(self,installation):self.installation=installation
+    def __init__(self,installation=None):self.installation=installation
+    def bind_installation(self,installation):
+        from app.services.personal_paper_runtime import PersonalOperatorInstallation
+        if self.installation is not None or type(installation) is not PersonalOperatorInstallation:
+            raise ValueError('PERSONAL_ISSUER_INSTALLATION_BINDING')
+        self.installation=installation
     @contextmanager
     def lease(self,scope,now):
         from types import SimpleNamespace
 
-        from app.services.personal_paper_runtime import checked_personal_installation
+        from app.services.personal_paper_runtime import (
+            PersonalOperatorInstallation,
+            checked_personal_installation,
+        )
+        if type(self.installation) is not PersonalOperatorInstallation:
+            raise ValueError('PERSONAL_ISSUER_INSTALLATION_REQUIRED')
         request={'schema':'ATLAS_PERSONAL_INCEPTION_REQUEST_V1','action':'INITIALIZE_SIMULATED_ACCOUNTS','scope':scope}
         with self.installation.lease(request) as lease:
             original=checked_personal_installation(lease,request)

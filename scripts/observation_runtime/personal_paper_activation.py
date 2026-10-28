@@ -54,10 +54,14 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
     from scripts.observation_runtime.personal_financial_authority import (
         NativePersonalFinancialAuthority,
     )
+    from scripts.observation_runtime.personal_installation_technical import (
+        NativePersonalTechnicalChecks,
+    )
     from scripts.observation_runtime.personal_local_authority import (
         NativePersonalOperatorAuthority,
         NativePersonalRuntimeAuthority,
     )
+    from scripts.observation_runtime.personal_market_inputs import NativePersonalMarketInputs
     from scripts.observation_runtime.personal_runtime_current import (
         PersonalNativeReadAuthority,
         PersonalRuntimeCurrent,
@@ -99,11 +103,18 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
     if (type(authority) is not NativePersonalOperatorAuthority or authority.reader is not installation.reader
             or authority.clock is not local_clock or body(authority.enrollment) != body(e)
             or type(owner) is not NativePersonalWriterOwnership or owner.authority is not authority
+            or owner.read_only
             or owner.ledger is not ledger
             or body(owner.enrollment) != body(e) or runtime_dependencies['ownership'] is not owner
             or type(sessions) is not PersonalSessionReservations or sessions.ledger is not ledger
             or sessions.authorization is not authority):
         raise ValueError('PERSONAL_INSTALLED_SESSION_OR_WRITER_BINDING')
+    technical = installation.technical
+    if (type(technical) is not NativePersonalTechnicalChecks or technical.bootstrap is not custody.bootstrap
+            or technical.ownership is not owner or technical.ledger is not ledger
+            or technical.clock is not local_clock or technical.runtime_id != runtime_id
+            or technical.current is not custody or technical.engine is not engine):
+        raise ValueError('PERSONAL_INSTALLED_FACTUAL_TECHNICAL_CHECKS_REQUIRED')
     if (type(engine.session_authority) is not NativePersonalEngineSession
             or engine.session_authority.operator is not authority
             or body(engine.session_authority.manifest) != body(ledger.manifest)):
@@ -122,6 +133,11 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
             or runtime_authority.custody is not custody or runtime_authority.ownership is not owner
             or body(runtime_authority.enrollment) != body(runtime_dependencies['enrollment'])):
         raise ValueError('PERSONAL_INSTALLED_RUNTIME_AUTHORITY_BINDING')
+    market = engine.source_authority
+    if (type(market) is not NativePersonalMarketInputs or market.operator is not authority
+            or market.session is not engine.session_authority or market.source is not runtime_authority.source
+            or engine.candidates.ranking_authority is not market or engine.candidates.execution_authority is not market):
+        raise ValueError('PERSONAL_INSTALLED_MARKET_SOURCE_BINDING')
     read_authority = runtime_dependencies['reader'].authority
     if (type(read_authority) is not PersonalNativeReadAuthority or read_authority.ownership is not owner
             or read_authority.bootstrap is not custody.bootstrap

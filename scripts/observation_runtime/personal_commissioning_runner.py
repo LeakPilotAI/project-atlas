@@ -18,6 +18,7 @@ from scripts.observation_runtime.personal_local_authority import (
     NativePersonalOperatorAuthority,
     NativePersonalRuntimeAuthority,
 )
+from scripts.observation_runtime.personal_market_inputs import NativePersonalMarketInputs
 from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
 
 
@@ -29,6 +30,8 @@ class PersonalCommissioningRunner:
                 or source.authority is None
                 or type(runtime.runtime.authority) is not NativePersonalRuntimeAuthority
                 or runtime.runtime.authority.source is not source
+                or type(runtime.runtime.engine.source_authority) is not NativePersonalMarketInputs
+                or runtime.runtime.engine.source_authority.source is not source
                 or type(runtime.installation.identity) is not NativePersonalOperatorAuthority
                 or type(runtime.runtime.ownership) is not NativePersonalWriterOwnership
                 or type(runtime.runtime.engine.ledger.images) is not NativePersonalCoordinationImages
@@ -39,7 +42,8 @@ class PersonalCommissioningRunner:
         self.runtime, self.source, self.evidence = runtime, source, source
         self.images = runtime.runtime.engine.ledger.images
         self._ports = (runtime, source, source.feed, source.decision_reader, source.authority,
-                       runtime.installation.identity, runtime.runtime.ownership, self.images, runtime.runtime.authority)
+                       runtime.installation.identity, runtime.runtime.ownership, self.images, runtime.runtime.authority,
+                       runtime.runtime.engine.source_authority)
         self.used = False
         self.stop_requested = Event()
         self.control = None
@@ -96,7 +100,7 @@ class PersonalCommissioningRunner:
                 (self.runtime, self.source, self.source.feed, self.source.decision_reader,
                  self.source.authority, self.runtime.installation.identity,
                  self.runtime.runtime.ownership, self.runtime.runtime.engine.ledger.images,
-                 self.runtime.runtime.authority), strict=True)):
+                 self.runtime.runtime.authority, self.runtime.runtime.engine.source_authority), strict=True)):
             raise ValueError('PERSONAL_COMMISSIONING_COMPONENT_CHANGED')
 
     def _budget(self, phase):
@@ -122,6 +126,9 @@ class PersonalCommissioningRunner:
         authority.verify(request)
         if self.source.session_id != native['session_id']:
             raise ValueError('PERSONAL_COMMISSIONING_SOURCE_SESSION')
+        market = r.engine.source_authority
+        market.bind_session(grant['runtime_grant']['engine_grant'])
+        self.input_preflight = strict(body(market.preflight()))
         now = authority.clock()
         if native['expires_at'] - now <= 8:
             raise ValueError('PERSONAL_NO_BOUNDED_STOP_WINDOW')
