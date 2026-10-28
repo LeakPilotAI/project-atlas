@@ -1,3 +1,7 @@
+# Current: missing local clock acquisition binding, not another service restart
+
+Source trace found consumer + synthetic tests only. PERSONAL policy excludes external PKI/reviewer but retains <=1000ms runtime evidence. No existing operational acquisition procedure found; no fake anchor or validator change. Current Windows still Leap3/Stratum0.17pure clock tests pass; same QD grant unused. See docs/QD_CLOCK_AUTHORITY_DEPENDENCY_2026-10-27.md. Source-only work is already authorized; no invented administrative approval.
+
 # Latest approved start-only result: Running but not synchronized
 
 Manual/source preserved; no explicit resync. Final system Leap3/Stratum0/error1, uncertainty unproven. PC power cycle documented; repeated service crash unproven. Normal poll pending ~9h; no invented clock bound or financial actions. See docs/QD_CLOCK_START_ONLY_RESULT_2026-10-27.md. QD commissioning grant remains unused; earlier entries historical.

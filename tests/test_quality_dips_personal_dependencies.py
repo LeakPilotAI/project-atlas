@@ -93,3 +93,52 @@ def test_clock_sample_cannot_precede_anchor_or_change_versioned_shape(damage):
     else:
         sample['uncertainty_ms'] = False
     assert not clock.verify(sample)
+
+
+@pytest.mark.parametrize("uncertainty", [-1, 0, 999, 1000, 1001, True, 1.0])
+def test_clock_uncertainty_exact_integer_boundary(uncertainty):
+    """Synthetic validation only: a small offset cannot supply this declaration."""
+    anchor = {
+        "schema": "QD_PERSONAL_UTC_ANCHOR_V1",
+        "utc": 1000,
+        "monotonic_ns": 10**9,
+        "boot_id": "SYNTHETIC_BOOT",
+        "source": "SYNTHETIC_CLOCK",
+        "expires_at": 1030,
+        "uncertainty_ms": uncertainty,
+    }
+    clock = PersonalClockContinuity(
+        anchor=anchor,
+        authority=SimpleNamespace(verify=lambda a: True),
+        monotonic_ns=lambda: 10**9,
+        wall_utc=lambda: 1000,
+        boot_identity=lambda: "SYNTHETIC_BOOT",
+    )
+    if type(uncertainty) is int and 0 <= uncertainty <= 1000:
+        sample = clock.sample()
+        assert sample["uncertainty_ms"] == uncertainty
+        assert clock.verify(sample)
+    else:
+        with pytest.raises(ValueError, match="PERSONAL_ACCEPTED_CLOCK_ANCHOR_REQUIRED"):
+            clock.sample()
+
+
+def test_zero_uncertainty_is_not_a_substitute_for_anchor_authentication():
+    anchor = {
+        "schema": "QD_PERSONAL_UTC_ANCHOR_V1",
+        "utc": 1000,
+        "monotonic_ns": 10**9,
+        "boot_id": "SYNTHETIC_BOOT",
+        "source": "SYNTHETIC_CLOCK",
+        "expires_at": 1030,
+        "uncertainty_ms": 0,
+    }
+    clock = PersonalClockContinuity(
+        anchor=anchor,
+        authority=SimpleNamespace(verify=lambda a: False),
+        monotonic_ns=lambda: 10**9,
+        wall_utc=lambda: 1000,
+        boot_identity=lambda: "SYNTHETIC_BOOT",
+    )
+    with pytest.raises(ValueError, match="PERSONAL_ACCEPTED_CLOCK_ANCHOR_REQUIRED"):
+        clock.sample()
