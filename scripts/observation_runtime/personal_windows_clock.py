@@ -62,11 +62,13 @@ def parse_status(text):
     return result
 
 
-def uncertainty_ms(evidence, *, expected_source, duration_ns, lifetime, observed_utc_ns):
+def uncertainty_ms(evidence, *, expected_source, duration_ns, lifetime, observed_utc_ns,
+                   wall_qpc_skew_ns):
     """Conservative NTP quality envelope, never an offset-only assertion.
 
-    Root dispersion + half root delay + absolute phase offset + full local
-    collection interval + 1ms read/decimal margin + 500ppm*(age+lifetime).
+    Root dispersion + half root delay + absolute phase offset + observed local
+    wall/QPC skew + 1ms margin + 500ppm*(age+lifetime+collection interval).
+    Query runtime ages the quality evidence; it is not itself UTC displacement.
     Values are estimates conditional on the accepted Windows/NTP source and
     oscillator model, not an adversarial or physical accuracy certification.
     """
@@ -93,15 +95,16 @@ def uncertainty_ms(evidence, *, expected_source, duration_ns, lifetime, observed
     if not 0 <= age <= MAX_AGE or min(disp, delay) < 0:
         raise ValueError("CLOCK_STALE_OR_NEGATIVE_QUALITY")
     if (type(duration_ns) is not int or not 0 <= duration_ns <= 12 * 10**9
-            or type(lifetime) is not int or not 1 <= lifetime <= 240):
+            or type(lifetime) is not int or not 1 <= lifetime <= 240
+            or type(wall_qpc_skew_ns) is not int or not 0 <= wall_qpc_skew_ns <= 10**7):
         raise ValueError("CLOCK_COLLECTION_OR_VALIDITY")
     if (type(observed_utc_ns) is not int or type(evidence["last_sync_utc"]) is not int
             or evidence["last_sync_utc"] * 10**9 > observed_utc_ns
             or abs(Decimal(observed_utc_ns) / 10**9 - evidence["last_sync_utc"] - age)
             > Decimal(duration_ns) / 10**9 + 2):
         raise ValueError("CLOCK_SYNC_TIMESTAMP_CONFLICT")
-    error = (disp + delay / 2 + abs(offset) + Decimal(duration_ns) / 10**9
-             + Decimal("0.001") + DRIFT * (age + lifetime))
+    error = (disp + delay / 2 + abs(offset) + Decimal(wall_qpc_skew_ns) / 10**9
+             + Decimal("0.001") + DRIFT * (age + lifetime + Decimal(duration_ns) / 10**9))
     bound = int((error * 1000).to_integral_value(rounding=ROUND_CEILING))
     if bound > 1000:
         raise ValueError(f"CLOCK_UNCERTAINTY_EXCEEDED:{bound}ms")
@@ -207,7 +210,8 @@ class LocalWindowsClock:
         if abs((wall_end - wall) - (end - start)) > 10**7:
             raise ValueError("CLOCK_COLLECTION_DISCONTINUITY")
         bound, status = uncertainty_ms(evidence, expected_source=expected_source,
-                                       duration_ns=end-start, lifetime=lifetime, observed_utc_ns=wall_end)
+                                       duration_ns=end-start, lifetime=lifetime, observed_utc_ns=wall_end,
+                                       wall_qpc_skew_ns=abs((wall_end-wall)-(end-start)))
         self._last_read, self._evidence = end, strict(body(evidence))
         self._origin_mono, self._origin_wall = end, wall_end
         self._bound = bound
@@ -225,6 +229,7 @@ class LocalWindowsClock:
             boot_identity=lambda: self._process_scope if probe.identity() == self._identity else "RESTARTED",
         )
         self.evidence = {"schema": "ATLAS_LOCAL_WINDOWS_CLOCK_EVIDENCE_V1",
+                         "budget_model": "NTP_QUALITY_WITH_MEASURED_SKEW_AND_QUERY_AGING_V2",
                          "domain": "LOCAL_WINDOWS" if operational else "DISPOSABLE_SYNTHETIC",
                          "runtime_id": runtime_id, "collected_utc_ns": wall_end,
                          "collection_ns": end-start, "valid_until": anchor["expires_at"],
@@ -257,13 +262,16 @@ class LocalWindowsClock:
             return False
         if now - self._last_read > READ_TTL_NS:
             start = now
+            wall_start = self._probe.wall_ns()
             try:
                 evidence = self._probe.read()
                 end = self._probe.mono()
-                remaining = max(1, self.continuity.anchor["expires_at"] - self._probe.wall_ns() // 10**9)
+                wall_end = self._probe.wall_ns()
+                remaining = max(1, self.continuity.anchor["expires_at"] - wall_end // 10**9)
                 bound, _ = uncertainty_ms(evidence, expected_source=self._expected_source,
                                            duration_ns=end-start, lifetime=remaining,
-                                           observed_utc_ns=self._probe.wall_ns())
+                                           observed_utc_ns=wall_end,
+                                           wall_qpc_skew_ns=abs((wall_end-wall_start)-(end-start)))
                 if bound > self._bound:
                     raise ValueError("CLOCK_BOUND_WORSENED")
                 self._last_read, self._evidence = end, strict(body(evidence))

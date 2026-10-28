@@ -70,11 +70,12 @@ def fixture():
 
 def test_derived_bound_and_existing_validator_acceptance():
     p, c = fixture()
-    # 10ms dispersion +10ms half-delay +5ms phase +1ms read +1ms margin
-    # Source age includes the 1ms collection: 58.0005ms rounds UP to59ms.
-    assert c.evidence["bound_ms"] == 59
+    # 10ms dispersion +10ms half-delay +5ms phase +1ms margin.
+    # 500ppm*(2.001s age+60s lifetime+.001s read) =57.001ms ->58ms.
+    assert c.evidence["bound_ms"] == 58
     assert c.evidence["domain"] == "DISPOSABLE_SYNTHETIC"
-    assert c.continuity.sample()["uncertainty_ms"] == 59
+    assert c.evidence["budget_model"] == "NTP_QUALITY_WITH_MEASURED_SKEW_AND_QUERY_AGING_V2"
+    assert c.continuity.sample()["uncertainty_ms"] == 58
     sample = c.sample()
     assert c.verify(sample)
     assert c.verify_runtime_sample(c.runtime_sample())
@@ -114,14 +115,14 @@ def test_corrupt_missing_stale_or_unsynchronized_evidence_refuses(damage):
     elif damage == "duplicate":
         e["status"] += "Root Dispersion: 0.0000000s\n"
     with pytest.raises(ValueError):
-        uncertainty_ms(e, expected_source=SOURCE, duration_ns=10**6, lifetime=60, observed_utc_ns=1_700_000_000*10**9)
+        uncertainty_ms(e, expected_source=SOURCE, duration_ns=10**6, lifetime=60, observed_utc_ns=1_700_000_000*10**9, wall_qpc_skew_ns=0)
 
 
 def test_zero_unset_dispersion_cannot_override_unsync():
     e = evidence()
     e["status"] = e["status"].replace("0(no warning)", "3(not synchronized)").replace("0.0100000s", "0.0000000s")
     with pytest.raises(ValueError, match="UNSYNCHRONIZED"):
-        uncertainty_ms(e, expected_source=SOURCE, duration_ns=10**6, lifetime=60, observed_utc_ns=1_700_000_000*10**9)
+        uncertainty_ms(e, expected_source=SOURCE, duration_ns=10**6, lifetime=60, observed_utc_ns=1_700_000_000*10**9, wall_qpc_skew_ns=0)
 
 
 def test_fixture_can_never_be_admitted_as_operational():
@@ -168,7 +169,7 @@ def test_fresh_reads_required_and_failed_source_never_auto_recovers():
 @pytest.mark.parametrize("elapsed,lifetime", [(12*10**9+1, 60), (-1, 60), (0, 241), (0, True)])
 def test_collection_or_validity_over_budget_refuses(elapsed, lifetime):
     with pytest.raises(ValueError):
-        uncertainty_ms(evidence(), expected_source=SOURCE, duration_ns=elapsed, lifetime=lifetime, observed_utc_ns=1_700_000_000*10**9)
+        uncertainty_ms(evidence(), expected_source=SOURCE, duration_ns=elapsed, lifetime=lifetime, observed_utc_ns=1_700_000_000*10**9, wall_qpc_skew_ns=0)
 
 
 def test_unknown_localization_refuses_instead_of_guessing():
@@ -193,7 +194,7 @@ def test_missing_future_or_contradictory_last_sync_timestamp_refuses(timestamp):
     value["last_sync_utc"] = timestamp
     with pytest.raises(ValueError, match="SYNC_TIMESTAMP_CONFLICT"):
         uncertainty_ms(value, expected_source=SOURCE, duration_ns=10**6,
-                       lifetime=60, observed_utc_ns=1_700_000_000*10**9)
+                       lifetime=60, observed_utc_ns=1_700_000_000*10**9, wall_qpc_skew_ns=0)
 
 
 def test_prior_instance_anchor_cannot_be_adopted_after_reconstruction():
@@ -222,7 +223,7 @@ def test_oversized_evidence_input_and_missing_native_fields_refuse():
     del value["native"]
     with pytest.raises(ValueError, match="EVIDENCE_SCHEMA"):
         uncertainty_ms(value, expected_source=SOURCE, duration_ns=10**6,
-                       lifetime=60, observed_utc_ns=1_700_000_000*10**9)
+                       lifetime=60, observed_utc_ns=1_700_000_000*10**9, wall_qpc_skew_ns=0)
 
 
 def test_subsecond_clock_step_invalidates_the_declared_error_model():
@@ -241,4 +242,32 @@ def test_nontext_native_field_refuses_cleanly(field):
     value[field] = None
     with pytest.raises(ValueError, match="FIELD_TYPE"):
         uncertainty_ms(value, expected_source=SOURCE, duration_ns=10**6,
-                       lifetime=60, observed_utc_ns=1_700_000_000*10**9)
+                       lifetime=60, observed_utc_ns=1_700_000_000*10**9, wall_qpc_skew_ns=0)
+
+
+def test_query_latency_ages_evidence_without_becoming_a_false_clock_offset():
+    # A1.2second read is not a1.2second clock displacement. All actual clock
+    # quality terms and measured3ms local disagreement still count.
+    bound, _ = uncertainty_ms(evidence(), expected_source=SOURCE,
+                              duration_ns=1_200_000_000, lifetime=60,
+                              observed_utc_ns=1_700_000_000*10**9,
+                              wall_qpc_skew_ns=3_000_000)
+    # 10+10+5+3+1+500ppm*(2+60+1.2)*1000 =60.6ms ->61ms.
+    assert bound == 61
+
+
+@pytest.mark.parametrize("skew", [-1, True, None, 10_000_001])
+def test_missing_invalid_or_excessive_wall_qpc_disagreement_refuses(skew):
+    with pytest.raises(ValueError, match="COLLECTION_OR_VALIDITY"):
+        uncertainty_ms(evidence(), expected_source=SOURCE, duration_ns=10**6,
+                       lifetime=60, observed_utc_ns=1_700_000_000*10**9,
+                       wall_qpc_skew_ns=skew)
+
+
+def test_observed_high_windows_dispersion_remains_rejected_after_latency_repair():
+    value = evidence()
+    value["status"] = value["status"].replace("0.0100000s", "7.9358214s")
+    with pytest.raises(ValueError, match="UNCERTAINTY_EXCEEDED"):
+        uncertainty_ms(value, expected_source=SOURCE, duration_ns=1_200_000_000,
+                       lifetime=60, observed_utc_ns=1_700_000_000*10**9,
+                       wall_qpc_skew_ns=0)

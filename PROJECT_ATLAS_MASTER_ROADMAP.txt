@@ -14541,11 +14541,19 @@ Evidence:docs/QD_LOCAL_WINDOWS_CLOCK_BINDING_2026-10-27.md. New personal_windows
 Next action:Obtain actualWindows synchronization/quality yielding conservative<=1000ms bound through implementedbinding;normalread-onlycheckspermitted,noexplicitresync/source/settingschangeauthorized. SAMEunusedQDcommissioning mayresumeonlyafterclock/resources/financial/data gatespass. No newfinancialapproval/externalreviewer;no fabricatedanchor/account/pilot. Accountuninitialized,balancesUNAVAILABLE. Do not resumeV5.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone:Single authorized controlled resync restored Windows sync; actual clock binding rejected excessive uncertainty
 Status:BLOCKED_CLOCK_UNCERTAINTY_EXCEEDED;PAPER_NOT_STARTED;productionNO-GO
 Evidence:docs/QD_CONTROLLED_TIME_RECOVERY_2026-10-27.md. Entry45e05b7d;one durable-reserved UAC/resync succeeded21:32:32Central/exit0. RunningManual/sourceunchanged;Leap0Stratum5error0. RootDisp7.9358214s,RootDelay0.0341518s;actualbindingrefused8947ms>1000ms. Independent detailedread9494ms differsbycollectionduration;DecimalassertionsPASS. No anchor/financialactivation;349priorregressionsretained/notrerun;nativeWIP/historypreserved.
 Next action:Recovery resyncgrantCONSUMED;no retry/settings/source/startup permission. Need genuineWindowsquality reduction yielding unchangedtotalbound<=1000ms;normalread-onlylaterpollcheckspermitted,no provenconfigurationfix or inventeduncertainty. SAMEQDcommissioninggrantvalidunused;resumeonlyallchecks pass. No financialreapproval/V5/Hyperliquid/liveorders/Genesis. Accountuninitialized/resultsUNAVAILABLE.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone:Dispersion/polling diagnosis and query-latency budget correction verified
+Status:BLOCKED_WINDOWS_CLOCK_QUALITY_AND_POLLING_CONFIG_APPROVAL;PAPER_NOT_STARTED;productionNO-GO
+Evidence:docs/QD_ROOT_DISPERSION_AUDIT_2026-10-27.md. Entry75cb8a17. Serveradvertises~10ms/local7.9358214s,onevalidsample/Hold/poll32768s;filterwarmupinference notproveninternalallocation. Clockbindingcurrentage493s>120s. Corrected full-querytime-as-error into measuredskew+500ppmage;unchangedhistoricalcut9494->8248msSTILLrefuses. Final355passed/0failed/0skipped/18deselected;focused66pass;Ruff/ASTpass. No resync/Windowschanges/financial/V5/Genesisactions;allhistory/nativeWIPpreserved.
+Next action:Operatorapprovalrequired for proposed2DWORDs MinPollInterval10->6 andSpecialPollInterval32768->64 plusONE/config/update;source/Manual/allothersunchanged,no/resync/restart. Bounded15minnormalpollobservation,stopifnone150s,optionalexactrollbackonlyifapproved. NoLocalClockDispersiontuning. SAMEQDcommissioninggrantunused resumesonlyaftergenuine<=1000ms/newnative/resource/dataacceptance. Accountuninitialized/resultsUNAVAILABLE.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

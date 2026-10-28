@@ -1,3 +1,7 @@
+# Current: dispersion/polling audit completed; Windows correction awaits approval
+
+One valid sample,32768s poll,localdisp7.9358214s vs server~10ms;warmup hypothesisnot exactinternalproof. Repaired querylatency/error confusion;real historicalcut8248ms stillrefuses.355regressionspass. Proposed MinPollInterval6 +SpecialPollInterval64 +config reload only;NOTAPPLIED,no resync/restart. See docs/QD_ROOT_DISPERSION_AUDIT_2026-10-27.md. SAMEQDgrant unused;historical findings below retained.
+
 # Current: controlled recovery synchronized Windows; clock uncertainty still fails
 
 ONE explicitly approved resync succeeded; grant consumed. Actualbinding8947ms>1000ms/rootdisp7.9358214s;no fakeanchor orfinancialactivation. Source/startupunchanged;QDgrant unused. Need genuineclockqualityimprovement;no retries/settingspermission. docs/QD_CONTROLLED_TIME_RECOVERY_2026-10-27.md. Prior evidence below retained historically.
