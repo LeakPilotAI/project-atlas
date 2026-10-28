@@ -14533,11 +14533,19 @@ Evidence:docs/QD_CLOCK_AUTHORITY_DEPENDENCY_2026-10-27.md. Consumeronly;no opera
 Next action:Supply legitimate supported local clock evidence acquisition/authentication binding with defensible<=1000ms bound;sourceonlyengineeringalreadypermitted,no newcommittee/credentialapproval implied. CurrentWindowsunsyncalsofails;furtherexplicitresync/settingsnotauthorized andnotadapterfix. No qualifyingexistingprocedurefound;do not fabricateanchor. SAMEapprovedunusedQDcommissioning resumesonlyafteralltechnicalchecks;no financialreapproval/V5/secondaccount/Genesis.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone:Local Windows clock acquisition/authentication binding implemented and actual OS refusal verified
 Status:BLOCKED_CURRENT_WINDOWS_UNSYNCHRONIZED;LOCAL_CLOCK_BINDING_IMPLEMENTED;PAPER_NOT_STARTED;productionNO-GO
 Evidence:docs/QD_LOCAL_WINDOWS_CLOCK_BINDING_2026-10-27.md. New personal_windows_clock.py uses signedWindowsquery/nativeUTC/QPC/process/runtimecapability,conservativequalitybudget andstrictsamevalidator. No operationalfixtureinjection/defaultissuer. Final349passed/0failed/0skipped/18deselected;Ruff/ASTpass. ActualsignedWindowsreadRunning/Leap3/Stratum0/LocalCMOS/LastError1/no successfulsynctimestamp;acquisitionREFUSED CLOCK_UNSYNCHRONIZED,uncertaintyUNAVAILABLE/no anchorissued. No resync/service/settings/provider/financial/V5/Genesisactions. Originalfailure1failed51passed arithmeticroundingcorrected/preserved;allhistory/nativeWIPpreserved.
 Next action:Obtain actualWindows synchronization/quality yielding conservative<=1000ms bound through implementedbinding;normalread-onlycheckspermitted,noexplicitresync/source/settingschangeauthorized. SAMEunusedQDcommissioning mayresumeonlyafterclock/resources/financial/data gatespass. No newfinancialapproval/externalreviewer;no fabricatedanchor/account/pilot. Accountuninitialized,balancesUNAVAILABLE. Do not resumeV5.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone:Single authorized controlled resync restored Windows sync; actual clock binding rejected excessive uncertainty
+Status:BLOCKED_CLOCK_UNCERTAINTY_EXCEEDED;PAPER_NOT_STARTED;productionNO-GO
+Evidence:docs/QD_CONTROLLED_TIME_RECOVERY_2026-10-27.md. Entry45e05b7d;one durable-reserved UAC/resync succeeded21:32:32Central/exit0. RunningManual/sourceunchanged;Leap0Stratum5error0. RootDisp7.9358214s,RootDelay0.0341518s;actualbindingrefused8947ms>1000ms. Independent detailedread9494ms differsbycollectionduration;DecimalassertionsPASS. No anchor/financialactivation;349priorregressionsretained/notrerun;nativeWIP/historypreserved.
+Next action:Recovery resyncgrantCONSUMED;no retry/settings/source/startup permission. Need genuineWindowsquality reduction yielding unchangedtotalbound<=1000ms;normalread-onlylaterpollcheckspermitted,no provenconfigurationfix or inventeduncertainty. SAMEQDcommissioninggrantvalidunused;resumeonlyallchecks pass. No financialreapproval/V5/Hyperliquid/liveorders/Genesis. Accountuninitialized/resultsUNAVAILABLE.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

@@ -1,9 +1,9 @@
 {
   "active_task": null,
-  "last_verified_task": "LOCAL_WINDOWS_CLOCK_BINDING_IMPLEMENTED_349_REGRESSIONS_PASS_ACTUAL_UNSYNC_REFUSED",
+  "last_verified_task": "CONTROLLED_SINGLE_RESYNC_SUCCEEDED_ACTUAL_CLOCK_UNCERTAINTY_REFUSED",
   "next_eligible_tasks": [],
   "blocked_tasks": {
-    "PERSONAL_LOCAL_INSTALLATION": "APPROVED_QD_ONLY;notstarted. Clock acquisition/binding now implemented/tested, but actual Windows remains unsynchronized; no qualifying anchor. No explicit resync/configuration action authorized.",
+    "PERSONAL_LOCAL_INSTALLATION": "APPROVED_QD_ONLY;notstarted. Controlled one-resync recovery restored synchronization but actual accepted clock uncertainty still fails:8947ms>1000ms,root dispersion7.9358214s. No further resync/settings action authorized.",
     "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyAPPROVED,notattempted;acceptedclockuncertaintyevidence remainsmissing. NoHyperliquidaccountauthorized.",
     "PERSONAL_CURRENT_DATA": "QD research/IEXdata access conditionallyAPPROVEDwithin existingrights/budgets;notattempted becausepreflightstopped. No Hyperliquidactivation.",
     "PERSONAL_BOUNDED_START": "ONE60secondQDautonomouspilot APPROVEDbutunused;clock/resources/financial/data checks must pass. No automaticresume,furtherpilot orotheraccount authorization.",
@@ -24,7 +24,7 @@
     "financial_startup_authorized": false
   },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Local Windows clock binding implemented. Actual signed-tool collection refuses CLOCK_UNSYNCHRONIZED (Leap3/Stratum0/LocalCMOS/error1); no anchor issued, uncertainty unavailable. Need genuine sync and quality<=1000ms via existing validator before same unused QD commissioning. No resync/source/settings authority; normal read-only observation allowed. No financial reapproval/external issuer/V5. See docs/QD_LOCAL_WINDOWS_CLOCK_BINDING_2026-10-27.md.",
+  "exact_next_action": "Controlled recovery grant consumed: one resync restored Leap0/Stratum5/error0 at21:32:32Central. Actual binding refuses8947ms>1000ms; root dispersion alone7.9358214s. No anchor or financial activation. Need genuine lower clock error estimate; normal read-only poll checks permitted, no retry/settings/source change. SAME QD commissioning grant valid unused. See docs/QD_CONTROLLED_TIME_RECOVERY_2026-10-27.md.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -117,7 +117,7 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "BLOCKED_CURRENT_WINDOWS_UNSYNCHRONIZED",
+  "execution_status": "BLOCKED_CLOCK_UNCERTAINTY_EXCEEDED",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
   "continuation_report": "docs/PERSONAL_PAPER_POLICY_IMPLEMENTATION_2026-10-27.md",
   "blocked_wait_reason": "Only installation/native execution/data/inception/session actions outside this source-only approval remain for commissioning;no mandatory external reviewer/issuer/custodian vacancy.",
@@ -1866,7 +1866,7 @@
       "financial_store_created": false,
       "policy_applied": false
     },
-    "exact_next_action": "Local Windows clock binding implemented. Actual signed-tool collection refuses CLOCK_UNSYNCHRONIZED (Leap3/Stratum0/LocalCMOS/error1); no anchor issued, uncertainty unavailable. Need genuine sync and quality<=1000ms via existing validator before same unused QD commissioning. No resync/source/settings authority; normal read-only observation allowed. No financial reapproval/external issuer/V5. See docs/QD_LOCAL_WINDOWS_CLOCK_BINDING_2026-10-27.md.",
+    "exact_next_action": "Controlled recovery grant consumed: one resync restored Leap0/Stratum5/error0 at21:32:32Central. Actual binding refuses8947ms>1000ms; root dispersion alone7.9358214s. No anchor or financial activation. Need genuine lower clock error estimate; normal read-only poll checks permitted, no retry/settings/source change. SAME QD commissioning grant valid unused. See docs/QD_CONTROLLED_TIME_RECOVERY_2026-10-27.md.",
     "pending_independent_review": {
       "reviewer_designated_by_operator": "ChatGPT after eligible Codex engineering",
       "proposal": "docs/QUALITY_DIPS_B1_PROPOSED_SCOPE_2026-10-24.json",
@@ -2206,5 +2206,29 @@
     "final_combined_tests": {"passed":349,"failed":0,"skipped":0,"deselected":18,"seconds":11.02},
     "development_failure_preserved": {"failed":1,"passed":51,"deselected":3,"cause":"58.0005ms must round upward to59ms; assertion corrected after arithmetic verification"},
     "report": "docs/QD_LOCAL_WINDOWS_CLOCK_BINDING_2026-10-27.md"
+  },
+  "controlled_clock_recovery_20261027": {
+    "entry_commit": "45e05b7d742ba833f06b7a38c0150ae7199502be",
+    "authorized_resync_limit": 1,
+    "explicit_resync_requests": 1,
+    "resync_semantic_success": true,
+    "resync_exit_code": 0,
+    "recovery_grant_consumed": true,
+    "startup_source_unchanged": true,
+    "leap": 0,
+    "stratum": 5,
+    "last_sync_error": 0,
+    "last_success_local": "2026-10-27T21:32:32-05:00",
+    "root_dispersion_seconds": "7.9358214",
+    "root_delay_seconds": "0.0341518",
+    "detailed_read_budget_ms": 9494,
+    "operational_binding_refusal_ms": 8947,
+    "required_ceiling_ms": 1000,
+    "anchor_issued": false,
+    "commissioning_resumed": false,
+    "pilot_consumed": false,
+    "source_changed": false,
+    "budget_arithmetic_assertions_passed": true,
+    "report": "docs/QD_CONTROLLED_TIME_RECOVERY_2026-10-27.md"
   }
 }

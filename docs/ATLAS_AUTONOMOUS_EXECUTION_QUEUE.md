@@ -1,3 +1,7 @@
+# Current: controlled recovery synchronized Windows; clock uncertainty still fails
+
+ONE explicitly approved resync succeeded; grant consumed. Actualbinding8947ms>1000ms/rootdisp7.9358214s;no fakeanchor orfinancialactivation. Source/startupunchanged;QDgrant unused. Need genuineclockqualityimprovement;no retries/settingspermission. docs/QD_CONTROLLED_TIME_RECOVERY_2026-10-27.md. Prior evidence below retained historically.
+
 # Current: local clock binding complete; actual Windows synchronization still fails
 
 Signed native tool/UTC/QPC/runtime binding implemented;349passed,0failed,0skipped,18deselected. Actual acquisition refuses CLOCK_UNSYNCHRONIZED; no anchor or financial effect. Need genuine sync/<=1000ms evidence, not another implementation or enterprise issuer. No resync/settings permission; SAMEQDgrant unused. docs/QD_LOCAL_WINDOWS_CLOCK_BINDING_2026-10-27.md. Earlier missing-binding findings below are preserved historical snapshots.
