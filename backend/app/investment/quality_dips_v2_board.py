@@ -25,9 +25,13 @@ def _merge_valuation(row: dict[str, Any]) -> tuple[dict[str, Any], bool]:
     return merged, complete
 
 
-def build_v2_projection(row: dict[str, Any]) -> dict[str, Any]:
-    """Return a read-only V2 projection for one investment research row."""
-    runtime_row = enrich_research_row(row)
+def build_v2_projection(row: dict[str, Any], *, allow_stored_evidence: bool = True) -> dict[str, Any]:
+    """Project research; explicit-only callers must disable legacy cache reads.
+
+    This computes no authentication or freshness acceptance. Missing explicit
+    valuation/trend evidence stays missing in the bounded research pathway.
+    """
+    runtime_row = enrich_research_row(row, allow_stored_evidence=allow_stored_evidence)
     merged, valuation_complete = _merge_valuation(runtime_row)
     evidence = adapt_research_row(merged)
     gate = evaluate_v2_gate(evidence)

@@ -41,7 +41,7 @@ def _quality_score(row: dict[str, Any]) -> float | None:
     return round(float(median(present)), 2)
 
 
-def _valuation_sources(row: dict[str, Any]) -> list[dict[str, Any]]:
+def _valuation_sources(row: dict[str, Any], *, allow_stored_evidence: bool = True) -> list[dict[str, Any]]:
     snap = dict(row.get("input_snapshot") or {})
     valuation = dict(snap.get("valuation") or {})
     sources: list[dict[str, Any]] = []
@@ -49,7 +49,7 @@ def _valuation_sources(row: dict[str, Any]) -> list[dict[str, Any]]:
         value, as_of = _measured_value(valuation.get(key))
         if value is not None:
             sources.append({"value": value, "provenance": "ANALYST_CONSENSUS", "as_of": as_of, "confidence": "EXTERNAL_CONSENSUS", "note": label + "; provider-supplied, not an Atlas guarantee"})
-    if len(sources) >= 3:
+    if len(sources) >= 3 or not allow_stored_evidence:
         return sources
     # Operational cache is populated by the API from the same explicit provider fields.
     from app.investment.quality_dips_v2_target_cache import quality_dips_v2_target_cache
@@ -88,7 +88,7 @@ def _trend(row: dict[str, Any]) -> dict[str, Any]:
     return {"short_term": label(20), "intermediate_term": label(50), "long_term": label(200), "momentum": momentum, "relative_strength": None, "sector_regime": None, "market_regime": None, "source": "STORED_DAILY_OHLCV_MA_20_50_200", "as_of": clean[-1][0] + "T23:59:59+00:00"}
 
 
-def enrich_research_row(row: dict[str, Any]) -> dict[str, Any]:
+def enrich_research_row(row: dict[str, Any], *, allow_stored_evidence: bool = True) -> dict[str, Any]:
     out = dict(row)
     components = dict(out.get("components") or {})
     if components.get("quality") is None:
@@ -98,11 +98,11 @@ def enrich_research_row(row: dict[str, Any]) -> dict[str, Any]:
             out["components"] = components
             out["quality_score_provenance"] = "MEDIAN_OF_SCORED_BUSINESS_PILLARS"
     if not out.get("valuation_sources") and not out.get("normalization_sources"):
-        sources = _valuation_sources(out)
+        sources = _valuation_sources(out, allow_stored_evidence=allow_stored_evidence)
         if sources:
             out["valuation_sources"] = sources
     existing_trend = dict(out.get("trend") or out.get("trend_analysis") or {})
-    if not existing_trend.get("as_of"):
+    if not existing_trend.get("as_of") and allow_stored_evidence:
         trend = _trend(out)
         if trend:
             out["trend"] = trend

@@ -53,6 +53,25 @@ def _components(value):
     return ('port',id(value))
 
 
+def validate_activation_record(value, *, policy, operator_id, release, accounts, now, action):
+    """Existing local operator record checks; structure is not native authentication."""
+    value=strict(body(value))
+    fields={'schema','profile','origin','activation_id','operator_id','policy_digest','release_digest','accounts','issued_at','expires_at','actions'}
+    if (type(now) is not int or type(value) is not dict or set(value)!=fields or value['schema']!='ATLAS_PERSONAL_ACTIVATION_V1'
+            or value['profile']!=PROFILE or value['origin']!='LOCAL_OPERATOR'
+            or not isinstance(value['activation_id'],str) or not value['activation_id']
+            or type(value['operator_id']) is not str or not value['operator_id'] or value['operator_id']!=operator_id
+            or value['policy_digest']!=digest(policy) or value['release_digest']!=release
+            or value['accounts']!=accounts or not accounts
+            or set(accounts)-{'QUALITY_DIPS','HYPERLIQUID'}
+            or any(type(value[k]) is not int for k in ('issued_at','expires_at'))
+            or not value['issued_at']<=now<value['expires_at']<=value['issued_at']+1800
+            or type(value['actions']) is not list or len(value['actions'])!=len(set(value['actions']))
+            or set(value['actions'])-{'READ_ONLY','AUTO_PAPER','SHUTDOWN_FLATTEN','EMERGENCY_STOP','INITIALIZE_SIMULATED_ACCOUNTS','CONNECT_APPROVED_DATA'}
+            or action not in value['actions']):raise ValueError('PERSONAL_EXPLICIT_ACTIVATION_REQUIRED')
+    return value
+
+
 class PersonalOperatorInstallation:
     """One local activation record + actual technical facts;no reviewer roles.
 
@@ -74,20 +93,10 @@ class PersonalOperatorInstallation:
     def _read(self,request):
         if (self.revoked or body(self.policy)!=self._policy or body({'release':self.release,'accounts':self.accounts})!=self._scope
                 or any(a is not b for a,b in zip((self.reader,self.identity,self.technical,self.clock),self._ports,strict=True))):raise ValueError('PERSONAL_ACTIVATION_REVOKED_OR_CHANGED')
-        now=self.clock();value=strict(body(self.reader.read()))
-        fields={'schema','profile','origin','activation_id','operator_id','policy_digest','release_digest','accounts','issued_at','expires_at','actions'}
-        if (type(now) is not int or set(value)!=fields or value['schema']!='ATLAS_PERSONAL_ACTIVATION_V1'
-                or value['profile']!=PROFILE or value['origin']!='LOCAL_OPERATOR'
-                or not isinstance(value['activation_id'],str) or not value['activation_id']
-                or type(value['operator_id']) is not str or not value['operator_id'] or value['operator_id']!=self.identity.current_operator()
-                or value['policy_digest']!=digest(self.policy) or value['release_digest']!=self.release
-                or value['accounts']!=self.accounts or not self.accounts
-                or set(self.accounts)-{'QUALITY_DIPS','HYPERLIQUID'}
-                or any(type(value[k]) is not int for k in ('issued_at','expires_at'))
-                or not value['issued_at']<=now<value['expires_at']<=value['issued_at']+1800
-                or type(value['actions']) is not list or len(value['actions'])!=len(set(value['actions']))
-                or set(value['actions'])-{'READ_ONLY','AUTO_PAPER','SHUTDOWN_FLATTEN','EMERGENCY_STOP','INITIALIZE_SIMULATED_ACCOUNTS','CONNECT_APPROVED_DATA'}
-                or request.get('action','AUTO_PAPER') not in value['actions']):raise ValueError('PERSONAL_EXPLICIT_ACTIVATION_REQUIRED')
+        now=self.clock()
+        value=validate_activation_record(self.reader.read(),policy=self.policy,
+            operator_id=self.identity.current_operator(),release=self.release,accounts=self.accounts,
+            now=now,action=request.get('action','AUTO_PAPER'))
         facts=strict(body(self.technical.inspect(request)))
         if set(facts)!=set(CHECKS) or any(x is not True for x in facts.values()):raise ValueError('PERSONAL_TECHNICAL_CHECKS_FAILED')
         return value,now

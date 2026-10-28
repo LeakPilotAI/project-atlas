@@ -50,8 +50,10 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
     from scripts.observation_runtime.personal_coordination_store import (
         NativePersonalCoordinationImages,
     )
+    from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
     from scripts.observation_runtime.personal_runtime_current import PersonalRuntimeCurrent
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+    from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
 
     if (any(v is None for v in (policy, enrollment, runtime_dependencies, native_dependencies,
                                 store, native_reader, installation, local_clock, runtime_id))
@@ -81,6 +83,16 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
             or engine.clock is not local_clock or native_dependencies['clock'] is not local_clock
             or body(native_reader.enrollment) != body(e)):
         raise ValueError('PERSONAL_INSTALLED_COORDINATION_OR_CLOCK_BINDING')
+    from app.services.quality_dips_personal_dependencies import PersonalSessionReservations
+
+    authority, owner, sessions = installation.identity, native_dependencies['ownership'], native_dependencies['sessions']
+    if (type(authority) is not NativePersonalOperatorAuthority or authority.reader is not installation.reader
+            or authority.clock is not local_clock or body(authority.enrollment) != body(e)
+            or type(owner) is not NativePersonalWriterOwnership or owner.authority is not authority
+            or body(owner.enrollment) != body(e) or runtime_dependencies['ownership'] is not owner
+            or type(sessions) is not PersonalSessionReservations or sessions.ledger is not ledger
+            or sessions.authorization is not authority):
+        raise ValueError('PERSONAL_INSTALLED_SESSION_OR_WRITER_BINDING')
     # Existing-only read rejects missing/partial coordination, without repair.
     with ledger.connect(readonly=True) as db:
         state, head, _ = ledger._load(db)

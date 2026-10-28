@@ -1,3 +1,7 @@
+## October 28 local authority/research checkpoint
+
+ACTIVE: QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH. 628 regressions passed; source not installed. See docs/QD_LOCAL_AUTHORITY_RESEARCH_2026-10-28.md for exact remaining runner, expiry/Stop and genuine current-source work. Existing commissioning grant unchanged; inception/pilot unused. Prior queue retained below.
+
 # Current: explicit personal Stop action binding verified; native enrollment and current research pending
 
 390 regressions passed, including prior377 selection. Actual clock205msPASS. Activation/source publication paths absent;marketclosed. New source not installed;existingdcf2edde release preserved. Finish actual local activation/nativecoordination/session/current/writer and accepted research bindings,then SAMEapproved commissioning. See docs/QD_PERSONAL_CONTROL_BINDING_2026-10-27.md. Prior checkpoints below retained.
