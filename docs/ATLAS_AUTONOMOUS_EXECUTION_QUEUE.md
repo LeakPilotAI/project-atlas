@@ -1,3 +1,11 @@
+# Latest approved start-only result: Running but not synchronized
+
+Manual/source preserved; no explicit resync. Final system Leap3/Stratum0/error1, uncertainty unproven. PC power cycle documented; repeated service crash unproven. Normal poll pending ~9h; no invented clock bound or financial actions. See docs/QD_CLOCK_START_ONLY_RESULT_2026-10-27.md. QD commissioning grant remains unused; earlier entries historical.
+
+# Latest read-only clock recheck: service stopped
+
+Current status is unavailable (0x80070426), Manual/source unchanged. Prior morning sync preserved historically. Start-only permission needed under current read-only scope; no explicit resync. See docs/QD_CLOCK_READONLY_RECHECK_2026-10-27.md. QD grant remains unused.
+
 # Latestadditionalresync outcome - UTCsync restored,uncertaintyproofstillmissing
 
 ONEnewexplicitlyapprovedplain/resyncSUCCEEDED tosamepeer;Leap0/Stratum5/error0,source/startupunchanged. Continuity20scheckPASS. BLOCKED_CLOCK_UNCERTAINTY_EVIDENCE:WindowsRootDisp7.8018s cannotjustifyaccepted<=1000msanchor;no validatorchange/newhardcodedgate/fakeanchor. No furtherresync/settingspermission. ExistingQDgrantapprovedunused;do notrepeatfinancialauthorizationrequest. No installation/inception/provider/pilot/restartstarted. docs/WINDOWS_TIME_RECOVERY_DIAGNOSIS_2026-10-27.md currentoutcome;earlierpermissionrequest below nowhistorical/consumed.

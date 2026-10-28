@@ -14501,11 +14501,27 @@ Evidence:Entryb8bd955e. Source time.windows.com,0x9;RunningManual. DNSresolves16
 Next action:SoleoperatorauthorizeONEadditionalw32tm/resyncusingUNCHANGEDconfiguredsource,thenverifyactualclock/UTC/continuity. No source/startup/manualtime/settingschange. IfallclockcheckspassresumeSAMEapprovedQDcommissioning automatically;iffailrecordandstop,noretryloop. No financialreapproval,secondaccount,V5,liveorders orGenesis.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone:Approved additional current-source resync restored synchronization;accuracy declaration still unsupported
 Status:WINDOWS_SYNC_RESTORED_BLOCKED_ATLAS_CLOCK_UNCERTAINTY_EVIDENCE;PAPER_NOT_STARTED;productionNO-GO
 Evidence:Entryb8bd955e;operatorapprovedONEadditionalplain/resync toUNCHANGEDtime.windows.com,0x9. Actualcommandcompleted/exit0;Leap0Stratum5LastSyncError0/LastSuccess09:06:21local;RunningManual/configunchanged.3postSyncdiagnostics27-29msoffset;20.032scontinuitycheck2.478mswall-monodifferencepass. RootDisp7.8018211s/rootdistance7.8269168s persistsHold1;no accepted<=1000msanchorjustified/issued. No validatorchange,LocalClockDispersiontuning,furtherresync or fabricatedclockbound. NoQDinstallation/inception/provider/pilot/restart. docs/WINDOWS_TIME_ADDITIONAL_SYNC_RESULT_2026-10-27.json;docs/WINDOWS_TIME_RECOVERY_DIAGNOSIS_2026-10-27.md. NativeWIP/historicalevidencepreserved.
 Next action:Obtain legitimately acceptedUTCuncertainty<=1000msevidence withoutrelaxingunchangedclockcontract;read-onlysettlingverificationallowed,manualresync/source/settingschangesnotauthorized. No new hardcodedrootdistancegateadded. AfterALLclock/resourcecheckspasscontinue SAMEapprovedunusedQDcommissioning automatically;no financialreapprovalneeded. Do not use smallspot-offsetsamples as maximumerrorproof. NoV5/secondaccount/liveorders/Genesis.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
+Milestone:Read-only clock recheck and exact uncertainty validator trace
+Status:BLOCKED_CURRENT_CLOCK_SERVICE_STOPPED_AND_ACCEPTED_UNCERTAINTY_UNPROVEN;PAPER_NOT_STARTED;productionNO-GO
+Evidence:docs/QD_CLOCK_READONLY_RECHECK_2026-10-27.md. At20:52Central W32TimeStopped/Manual;status/peers0x80070426;peerunchanged. Three diagnostic offsets about-216ms are not accepted uncertainty proof. Current local dispersion/syncageUNAVAILABLE;morning success retained historically. No source/service/settings/resync/financial actions. Validator unchanged;nativeWIP preserved.
+Next action:Obtain scoped permission to start existingW32Time only, Manual/sourceunchanged,NOexplicitresync;observe normalconfiguredsync and fresh quality. Then justify accepted<=1000ms anchor without fabrication before SAMEunusedQDcommissioning. NoV5/Genesis/Hyperliquid/liveorders.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone:Approved existing Windows Time start completed;normal synchronization observed without resync
+Status:BLOCKED_RUNNING_BUT_UNSYNCHRONIZED_AND_UNCERTAINTY_UNPROVEN;PAPER_NOT_STARTED;productionNO-GO
+Evidence:docs/QD_CLOCK_START_ONLY_RESULT_2026-10-27.md. UACnetstart exit0;RunningManual/sourceunchanged. Normalstartup validpacket events but finalsystemLeap3/Stratum0/Unset/LastError1/LocalCMOS;rootdispersion0UNSET isnotaccuracyproof. PeerPending nextpoll~9h. PCshutdown09:39/boot20:32 explains loss of priorrunningstate;no servicecrashproven. No explicitresync/settingschange/financial/V5/Genesisactions. Allpriorhistory/WIPpreserved.
+Next action:Leave approvedexistingserviceRunning/Manual/sourceunchanged;laterread-onlynormalpoll verification permitted. Newexplicitresyncrequiresseparateauthorization anddoesnotguarantee<=1000ms uncertainty. No source/configfixproven. Only genuineacceptedclock/resourcecheckspermit SAMEunusedQDcommissioning;do not re-requestfinancialgrant or inventclockanchor.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===
