@@ -25,6 +25,6 @@
   "financial_publication_attempted": false,
   "system_clock_or_service_repair_authorized": false,
   "stop_condition": "Any required evidence or safety check fails",
-  "current_blocker": "Clock passed;D runtime installed. IEX authenticated/subscribed but market closed and zero fresh quotes. Full installed financial/read/session bindings and current QD publication remain unverified;no inception/pilot.",
+  "current_blocker": "Clock passes;new read/owned-Stop source corrections installed in immutable D release dcf2edde. Market remains closed;current accepted QD research/data and full financial/session/writer/read-control enrollment remain unverified. No inception or pilot.",
   "historical_gate_promotions": 0
 }

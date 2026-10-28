@@ -1,30 +1,29 @@
 {
   "active_task": null,
-  "last_verified_task": "POLL_CORRECTION_CLOCK_PASS_D_RUNTIME_INSTALLED_IEX_AUTHENTICATED_MARKET_CLOSED",
+  "last_verified_task": "PERSONAL_READ_COMPOSITION_STOP_GUARD_377_TESTS_NEW_D_RELEASE_VERIFIED",
   "next_eligible_tasks": [],
   "blocked_tasks": {
-    "PERSONAL_LOCAL_INSTALLATION": "D runtime/source files installed;10178native identity/ACL/hash checks,903directories,D-only layout/import/clock checks passed. Full installed financial/session/read-service/enrollment bindings remain uncompleted. Preserve existing release;do not rerun create-only installer.",
+    "PERSONAL_LOCAL_INSTALLATION": "New tested D release dcf2edde installed:10179files/903dirs native identity/ACL/hash verified;old release unchanged. Personal read-host bridge and owned-close safety guard implemented and installed. Genuine financial/custody/session/writer/read-control enrollment remains incomplete;no activation record or financial account.",
     "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
-    "PERSONAL_CURRENT_DATA": "Authorized20secondMSFT/SPYIEXcheck authenticated/subscribed but zeroquotes whileMARKET_CLOSED;no executablefreshdata or acceptedcurrentQDpublication verified. Socket/taskclosed;no financial effect.",
+    "PERSONAL_CURRENT_DATA": "Current calendar MARKET_CLOSED;no provider reconnection this increment. Earlier IEX20second auth/subscription had0quotes. Need actual accepted current QD scanner/research/instrument/calendar and fresh entitled IEX observations;no invented empty source publication.",
     "PERSONAL_BOUNDED_START": "ONE60secondfinancialpilot approved but unused. Clock nowpasses;freshcurrentresearch/data and installed financial bindings mustpass first. No fabricated idle/zero-trade pilot.",
-    "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Read-only real native owner/ACL/13resourcechecksPASSED. Actual financialpublication/readback/recovery acceptance stillunexecuted;authorizedQDonlybutpausedonclock. V5harnessnotrequired."
+    "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Read-only real native owner/ACL/13resourcechecksPASSED. Actual financialpublication/readback/recovery acceptance stillunexecuted;clockpasses,butcurrentdataandgenuinefinancialdependencybindingremainpending. V5harnessnotrequired."
   },
   "latest_tests": {
-    "selection": "Personal source/in-memory adapters,existing strict V4 pure safeguards,session/clock and static PAPER policy regressions",
-    "passed": 263,
+    "selection": "Personal read-host/owned-Stop source binding plus existing clock/accounting/risk/inception/session/desktop-policy regressions; synthetic ASGI only",
+    "passed": 377,
     "failed": 0,
     "skipped": 0,
     "errors": 0,
-    "deselected": 13,
-    "new_cases": 71,
-    "elapsed_seconds": 10.59,
-    "native_executed": false,
-    "financial_store_created": false,
-    "policy_applied": true,
-    "financial_startup_authorized": false
+    "deselected": 18,
+    "warnings": 1,
+    "elapsed_seconds": 9.31,
+    "native_financial_fixture_tests_executed": false,
+    "financial_account_initialized": false,
+    "paper_pilot_executed": false
   },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Do NOT reapply polling values/reload or rerun installation. Clock passed; preserve exact installed D release and native artifact inventory. Account still uninitialized. Resume same QD commissioning only with fresh accepted current Quality Dips research/IEX evidence, then finish installed financial authority/writer/read/dashboard bindings, once-only1000USD inception,60secondpilot/ownedStop/restart. No extra financial approval, automatic session, V5, Hyperliquid or Genesis. See docs/QD_POLLING_CORRECTION_COMMISSIONING_2026-10-27.md.",
+  "exact_next_action": "Market closed;do not repeat IEX/no fake current research. New source dcf2edde and immutable D release installed/verified;artifact df2c2cea6ee2db53e8773b486aca823a2d04c569ea1908a44871e96d39bf3d98;old release preserved. Reverify exact installed native inventory,clock,and current QD research/instrument/calendar/IEX evidence at regular session. Complete genuine financial/custody/session/writer and accepted Stop/read-service composition before once-only1000USD inception and ONE60secondpilot/reconcile/ownedStop/restart/desktop acceptance. No new financial approval for same grant;no fixtures as current data,no global process termination,V5,Hyperliquid or Genesis. See docs/QD_PERSONAL_BINDINGS_PROGRESS_2026-10-27.md.",
   "latest_focused_tests": {
     "passed": 9,
     "failed": 0,
@@ -117,7 +116,7 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "BLOCKED_CURRENT_DATA_MARKET_CLOSED_BEFORE_INCEPTION",
+  "execution_status": "BLOCKED_CURRENT_MARKET_RESEARCH_DATA_AND_UNCOMPLETED_FINANCIAL_ENROLLMENT",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
   "continuation_report": "docs/PERSONAL_PAPER_POLICY_IMPLEMENTATION_2026-10-27.md",
   "blocked_wait_reason": "Only installation/native execution/data/inception/session actions outside this source-only approval remain for commissioning;no mandatory external reviewer/issuer/custodian vacancy.",
@@ -2051,7 +2050,7 @@
     "scope_record": "docs/QD_COMMISSIONING_OPERATOR_SCOPE_2026-10-27.json",
     "native_resource_checks_passed": 25,
     "native_resource_checks_failed": 0,
-    "clock_result": "ACTUAL_LOCAL_WINDOWS_VALIDATOR_PASS716MS;INSTALLED_D_INTERPRETER_PASS364MS",
+    "clock_result": "ACTUAL_INSTALLED_D_CLOCK_VALIDATOR_PASS180MS_ON_NEW_RELEASE",
     "installation_started": true,
     "inception_started": false,
     "provider_access_attempted": true,
@@ -2059,7 +2058,7 @@
     "pilot_consumed": false,
     "shutdown": "DATA_ONLY_PROVIDER_TASK_AND_OWNED_DIAGNOSTIC_PROCESSES_EXITED;NO_FINANCIAL_RUNTIME_STARTED",
     "restart_verification": "NOT_EXECUTED",
-    "report": "docs/QD_POLLING_CORRECTION_COMMISSIONING_2026-10-27.md"
+    "report": "docs/QD_PERSONAL_BINDINGS_PROGRESS_2026-10-27.md"
   },
   "windows_time_action_20261027": {
     "schema": "ATLAS_QD_WINDOWS_TIME_ACTION_RESULT_V1",
@@ -2312,5 +2311,52 @@
     "postflight_financial_directories_unchanged_empty": true,
     "windows_configuration_rollback_executed": false,
     "report": "docs/QD_POLLING_CORRECTION_COMMISSIONING_2026-10-27.md"
+  },
+  "personal_bindings_progress_20261027": {
+    "previous_latest_test_snapshot": {
+      "selection": "Personal source/in-memory adapters,existing strict V4 pure safeguards,session/clock and static PAPER policy regressions",
+      "passed": 263,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "deselected": 13,
+      "new_cases": 71,
+      "elapsed_seconds": 10.59,
+      "native_executed": false,
+      "financial_store_created": false,
+      "policy_applied": true,
+      "financial_startup_authorized": false
+    },
+    "schema": "ATLAS_PERSONAL_QD_BINDINGS_PROGRESS_V1",
+    "date": "2026-10-27",
+    "source_commit": "dcf2edde7f929c5284ae9969b64e493210a84e58",
+    "new_release_artifact_digest": "df2c2cea6ee2db53e8773b486aca823a2d04c569ea1908a44871e96d39bf3d98",
+    "installed_files_verified": 10179,
+    "installed_directories_verified": 903,
+    "bytes_verified": 260072131,
+    "old_release_preserved": true,
+    "clock_uncertainty_ms": 180,
+    "market_session": "MARKET_CLOSED",
+    "provider_connections_this_increment": 0,
+    "personal_read_composition_implemented": true,
+    "read_only_host_asgi_verified": true,
+    "personal_stop_owned_close_guard_fixed": true,
+    "financial_controls_default_refuse": true,
+    "tests": {
+      "passed": 377,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 18,
+      "warnings": 1,
+      "seconds": 9.31
+    },
+    "financial_inception_attempted": false,
+    "financial_pilot_started": false,
+    "financial_pilot_consumed": false,
+    "financial_roots_unchanged_empty": true,
+    "financial_enrollment_complete": false,
+    "actual_desktop_browser_acceptance_executed": false,
+    "status": "BLOCKED_CURRENT_MARKET_RESEARCH_DATA_AND_UNCOMPLETED_FINANCIAL_ENROLLMENT",
+    "report": "docs/QD_PERSONAL_BINDINGS_PROGRESS_2026-10-27.md"
   }
 }

@@ -1,3 +1,7 @@
+# Current: personal bindings installed; actual enrollment and current market evidence pending
+
+Read bridge and owned Stop refusal repaired;377passed/0failed/0skipped/18deselected. New immutable D release dcf2edde verified10179files/903dirs;clock180msPASS. Market closed; no new provider connection, inception or pilot. Finish genuine financial/custody/session/writer/control enrollment and current QD/IEX acceptance under SAME commissioning grant. See docs/QD_PERSONAL_BINDINGS_PROGRESS_2026-10-27.md. Earlier entries remain historical.
+
 # Current: clock passed; D runtime installed; financial pilot paused at live-data gate
 
 Approved6/64polling andONEreload complete;716msclockPASS.25nativepreflightchecksPASS. D runtime10178files/903dirs native/ACL/hash verified,stdlib/basePythononD;364msclockPASS. Actual20secondIEX MSFT/SPYauth+subscriptionACK,0quotes/MARKET_CLOSED;closedcleanly. No account/inception/financialpilot/desktopfinancialStartStop. Preserveexistinginstalledrelease;do notreruncreators. NeedcurrentQDresearch/executabledata andremainingrealfinancialdependencybindings underSAMEgrant;no newfinancialapproval. docs/QD_POLLING_CORRECTION_COMMISSIONING_2026-10-27.md. Earlier blockedclock entries below are historical.
