@@ -6,35 +6,47 @@ persisted scored evidence, explicit provider targets, and stored daily OHLCV.
 """
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from datetime import datetime
+from typing import Any
 
-from app.investment.quality_dips_v2_evidence import adapt_research_row
 from app.investment.quality_dips_v2_entries import build_entry_ladder
+from app.investment.quality_dips_v2_evidence import adapt_research_row
 from app.investment.quality_dips_v2_gate import evaluate_v2_gate
 from app.investment.quality_dips_v2_runtime import enrich_research_row
-from app.investment.quality_dips_v2_valuation import from_research_row as valuation_from_research_row
+from app.investment.quality_dips_v2_valuation import (
+    from_research_row as valuation_from_research_row,
+)
 from app.investment.quality_dips_v3 import build_v3_entry_plan
 
 
-def _merge_valuation(row: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+def _merge_valuation(row: dict[str, Any], *, now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     merged = dict(row)
-    valuation = valuation_from_research_row(row)
+    valuation = valuation_from_research_row(row, now=now)
     complete = bool(valuation.get("valuation_window_complete"))
     if complete:
         merged["normalization_value"] = dict(valuation.get("normalization_value") or {})
-    return merged, complete
+    elif now is not None:
+        # A previously computed window cannot bypass current source validation.
+        merged.pop("normalization_value", None)
+        merged.pop("valuation_window", None)
+    return merged, valuation
 
 
-def build_v2_projection(row: dict[str, Any], *, allow_stored_evidence: bool = True) -> dict[str, Any]:
+def build_v2_projection(row: dict[str, Any], *, allow_stored_evidence: bool = True, now: datetime | None = None) -> dict[str, Any]:
     """Project research; explicit-only callers must disable legacy cache reads.
 
-    This computes no authentication or freshness acceptance. Missing explicit
+    With now supplied, original estimate freshness is rechecked; this is not
+    source authentication or executable-price acceptance. Missing explicit
     valuation/trend evidence stays missing in the bounded research pathway.
     """
-    runtime_row = enrich_research_row(row, allow_stored_evidence=allow_stored_evidence)
-    merged, valuation_complete = _merge_valuation(runtime_row)
+    if now is not None and allow_stored_evidence:
+        raise ValueError("CURRENT_VALUATION_REQUIRES_EXPLICIT_SOURCES")
+    runtime_row = enrich_research_row(row, allow_stored_evidence=allow_stored_evidence, current_only=now is not None)
+    merged, valuation = _merge_valuation(runtime_row, now=now)
+    valuation_complete = bool(valuation.get("valuation_window_complete"))
     evidence = adapt_research_row(merged)
-    gate = evaluate_v2_gate(evidence)
+    gate = evaluate_v2_gate(evidence, now=now)
 
     ladder = build_entry_ladder(
         symbol=str(evidence.get("symbol") or ""),
@@ -64,8 +76,8 @@ def build_v2_projection(row: dict[str, Any], *, allow_stored_evidence: bool = Tr
         "state_reasons": list(evidence.get("state_reasons") or []),
         "evidence_gate": gate,
         "normalization_value": dict(evidence.get("normalization_value") or {}),
-        "valuation_provenance": list(valuation_from_research_row(runtime_row).get("valuation_provenance") or []),
-        "valuation_source_count": int(valuation_from_research_row(runtime_row).get("valuation_source_count") or 0),
+        "valuation_provenance": list(valuation.get("valuation_provenance") or []),
+        "valuation_source_count": int(valuation.get("valuation_source_count") or 0),
         "quality_score": evidence.get("quality_score"),
         "quality_score_provenance": runtime_row.get("quality_score_provenance"),
         "conservative_upside_pct": evidence.get("conservative_upside_pct"),

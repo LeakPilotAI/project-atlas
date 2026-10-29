@@ -5,12 +5,15 @@ writes. This is calculation, NOT source authentication or executable-price proof
 The existing source-publication authority must verify input provenance and current
 instrument/calendar/quote evidence before this result can support a command.
 """
+from datetime import UTC, datetime
+
 from app.investment.board import build_quality_dips_board
 from app.investment.quality_dips_v2_board import build_v2_projection
 from app.services.paper_financial_replay import body, strict
 
 
-def project_explicit_research(rows):
+def project_explicit_research(rows, *, now=None):
+    now = now or datetime.now(UTC)
     if type(rows) is not list or not 0 < len(rows) <= 50:
         raise ValueError('QD_EXPLICIT_BOUNDED_RESEARCH_REQUIRED')
     # Strict JSON also rejects nonfinite financial/research numbers. Copy before
@@ -32,5 +35,5 @@ def project_explicit_research(rows):
     board = build_quality_dips_board(copied, (), limit=50)
     for item in board:
         item['quality_dips_v2'] = build_v2_projection(
-            indexed[item['symbol']], allow_stored_evidence=False)
+            indexed[item['symbol']], allow_stored_evidence=False, now=now)
     return board

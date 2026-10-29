@@ -6,6 +6,7 @@ stays missing. No brokerage actions and no invented normalization values.
 """
 from __future__ import annotations
 
+from math import isfinite
 from statistics import median
 from typing import Any
 
@@ -14,11 +15,11 @@ from app.investment.history import load_bars
 
 def _float(value: Any) -> float | None:
     try:
-        if value is None:
+        if value is None or isinstance(value, bool):
             return None
         x = float(value)
-        return x if x == x else None
-    except (TypeError, ValueError):
+        return x if isfinite(x) else None
+    except (TypeError, ValueError, OverflowError):
         return None
 
 
@@ -41,14 +42,22 @@ def _quality_score(row: dict[str, Any]) -> float | None:
     return round(float(median(present)), 2)
 
 
-def _valuation_sources(row: dict[str, Any], *, allow_stored_evidence: bool = True) -> list[dict[str, Any]]:
+def _valuation_sources(row: dict[str, Any], *, allow_stored_evidence: bool = True, current_only: bool = False) -> list[dict[str, Any]]:
     snap = dict(row.get("input_snapshot") or {})
     valuation = dict(snap.get("valuation") or {})
     sources: list[dict[str, Any]] = []
     for key, label in (("target_low_price", "analyst target low"), ("target_mean_price", "analyst target mean"), ("target_high_price", "analyst target high")):
-        value, as_of = _measured_value(valuation.get(key))
+        raw = valuation.get(key)
+        if current_only and (not isinstance(raw, dict) or raw.get("availability") is not True
+                             or raw.get("quality", "FRESH") != "FRESH"):
+            continue
+        value, as_of = _measured_value(raw)
         if value is not None:
             sources.append({"value": value, "provenance": "ANALYST_CONSENSUS", "as_of": as_of, "confidence": "EXTERNAL_CONSENSUS", "note": label + "; provider-supplied, not an Atlas guarantee"})
+    if current_only and len(sources) == 3:
+        values = [source["value"] for source in sources]
+        if values != sorted(values):
+            return []  # Contradictory named low/mean/high fields are not scenarios.
     if len(sources) >= 3 or not allow_stored_evidence:
         return sources
     # Operational cache is populated by the API from the same explicit provider fields.
@@ -88,7 +97,7 @@ def _trend(row: dict[str, Any]) -> dict[str, Any]:
     return {"short_term": label(20), "intermediate_term": label(50), "long_term": label(200), "momentum": momentum, "relative_strength": None, "sector_regime": None, "market_regime": None, "source": "STORED_DAILY_OHLCV_MA_20_50_200", "as_of": clean[-1][0] + "T23:59:59+00:00"}
 
 
-def enrich_research_row(row: dict[str, Any], *, allow_stored_evidence: bool = True) -> dict[str, Any]:
+def enrich_research_row(row: dict[str, Any], *, allow_stored_evidence: bool = True, current_only: bool = False) -> dict[str, Any]:
     out = dict(row)
     components = dict(out.get("components") or {})
     if components.get("quality") is None:
@@ -98,7 +107,7 @@ def enrich_research_row(row: dict[str, Any], *, allow_stored_evidence: bool = Tr
             out["components"] = components
             out["quality_score_provenance"] = "MEDIAN_OF_SCORED_BUSINESS_PILLARS"
     if not out.get("valuation_sources") and not out.get("normalization_sources"):
-        sources = _valuation_sources(out, allow_stored_evidence=allow_stored_evidence)
+        sources = _valuation_sources(out, allow_stored_evidence=allow_stored_evidence, current_only=current_only)
         if sources:
             out["valuation_sources"] = sources
     existing_trend = dict(out.get("trend") or out.get("trend_analysis") or {})
