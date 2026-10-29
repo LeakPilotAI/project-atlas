@@ -25,6 +25,6 @@
   "financial_publication_attempted": false,
   "system_clock_or_service_repair_authorized": false,
   "stop_condition": "Any required evidence or safety check fails",
-  "current_blocker": "Full synthetic owned Stop/exit/post-exit readback: six timing failures and one diagnostic pass, 6.8487124-9.3422630 seconds; reliable eight-second acceptance absent. Actual clock refuses service stopped 0x80070426; accepted current research/provider/instrument/executable IEX evidence unavailable. No new release, real activation, inception, provider connection or pilot. Existing conditional QD grant unused.",
+  "current_blocker": "Final three complete disposable cold-reader Stop samples pass <=8seconds, but actual installed authority/clock/resource/Control Center acceptance remains unexecuted. Fresh clock refuses stopped service0x80070426; accepted current research/provider rights/instrument/executable IEX facts unavailable. No new release, real activation/inception/provider connection/pilot; conditional grant unused.",
   "historical_gate_promotions": 0
 }

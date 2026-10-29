@@ -1,4 +1,5 @@
 """Confined native immutable read-cut tests, never operational enrollment."""
+import hashlib
 import json
 import os
 import sqlite3
@@ -136,3 +137,58 @@ def test_separate_owned_process_writer_is_excluded_then_can_publish_after_releas
         assert s.images._inventory()==names
     assert attempt()=={'published':True,'revision':2}
     assert s.images._load()[1]['revision']==2
+
+
+def test_native_v2_reuses_bound_pages_and_fresh_reader_reconstructs_exact_cut(store):
+    s=store
+    before=s.images._load()[0]
+    original={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in Path(s.images.root).iterdir()}
+    after=before+b'x'*98304
+    with s.images.transaction(readonly=False) as tx:tx.publish(before,after)
+    later=after[:-1]+b'y'
+    with s.images.transaction(readonly=False) as tx:tx.publish(after,later)
+    commit=json.loads((Path(s.images.root)/'0003-commit.json').read_bytes())
+    assert commit['schema']=='PERSONAL_NATIVE_COORDINATION_COMMIT_V2'
+    assert sum(p['name'].startswith('0003-') for p in commit['pages'])==1
+    assert all(hashlib.sha256((Path(s.images.root)/n).read_bytes()).hexdigest()==h for n,h in original.items())
+    fresh=NativePersonalCoordinationImages(root=s.images.root,native_root=s.images.root_id,enrollment_digest=s.images.enrollment)
+    try:
+        assert fresh._load()[0]==later
+        with fresh.read_view():assert fresh._load()[0]==later
+    finally:fresh.close()
+
+
+@pytest.mark.parametrize('phase',['intent','page','commit','ack'])
+def test_actual_partial_native_v2_write_refuses_current_and_restart_without_repair(store,phase):
+    s=store;before=s.images._load()[0];write=s.images.output.write_bound
+    def interrupted(name,raw):
+        result=write(name,raw)
+        if name=={'intent':'0002-intent.json','page':'0002-page-0001.bin',
+                  'commit':'0002-commit.json','ack':'0002-ack.json'}[phase]:
+            raise OSError('INJECTED_NATIVE_PUBLICATION_INTERRUPT')
+        return result
+    s.images.output.write_bound=interrupted
+    with pytest.raises(OSError,match='INTERRUPT'),s.images.transaction(readonly=False) as tx:
+        tx.publish(before,b'changed'+before[7:])
+    assert s.images.poisoned
+    fresh=NativePersonalCoordinationImages(root=s.images.root,native_root=s.images.root_id,enrollment_digest=s.images.enrollment)
+    try:
+        with pytest.raises(ValueError,match='NAMESPACE'):fresh._load()
+    finally:fresh.close()
+
+
+def test_abrupt_commit_before_ack_leaves_unknown_native_tail_and_no_replay(store):
+    s=store;repo=Path(__file__).resolve().parents[1]
+    with subprocess.Popen([sys.executable,'-B',str(repo/'tests/personal_read_view_writer_child.py')],
+            stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,
+            creationflags=subprocess.CREATE_NO_WINDOW) as child:
+        identity=observe_pid(child.pid)
+        assert observe_handle(int(child._handle))==identity['created']
+        data={'root':s.images.root,'native_root':s.images.root_id,'enrollment':s.images.enrollment,
+              'abrupt_after_commit':True}
+        _stdout,stderr=child.communicate(json.dumps(data),timeout=12)
+        assert child.returncode==73,stderr
+    assert (Path(s.images.root)/'0002-commit.json').is_file()
+    assert not (Path(s.images.root)/'0002-ack.json').exists()
+    with pytest.raises(ValueError,match='INCOMPLETE_UNKNOWN'):s.images._load()
+    with pytest.raises(ValueError),s.images.transaction(readonly=False):pytest.fail('abrupt outcome replayed')

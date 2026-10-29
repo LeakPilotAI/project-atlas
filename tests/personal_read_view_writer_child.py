@@ -19,6 +19,13 @@ def main():
         raise ValueError('EXACT_SYNTHETIC_ROOT_REQUIRED')
     images=NativePersonalCoordinationImages(root=str(root),native_root=value['native_root'],enrollment_digest=value['enrollment'])
     try:
+        if value.get('abrupt_after_commit') is True:
+            original=images.output.write_bound
+            def abrupt(name,raw):
+                binding=original(name,raw)
+                if name=='0002-commit.json':os._exit(73)
+                return binding
+            images.output.write_bound=abrupt
         try:
             with images.transaction(readonly=False) as tx:
                 before=tx.read();tx.publish(before,before)

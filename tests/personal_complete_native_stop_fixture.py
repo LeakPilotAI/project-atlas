@@ -51,6 +51,7 @@ def complete_financial_stop(*, n, native, bootstrap, pins, reports, ownership, a
     runtime.grant=grant
     runtime.halted=False
     profile={}
+    fixture_before=dict(getattr(n.ledger.images,'_fixture_costs',{}))
     def instrument(port,name,label):
         original=getattr(port,name)
         def measured(*args,**kwargs):
@@ -92,6 +93,8 @@ def complete_financial_stop(*, n, native, bootstrap, pins, reports, ownership, a
     before=body(pins.current())
     assert flatten_and_stop(owner,SimpleNamespace(observe=observe))==outcome and body(pins.current())==before
     assert authority_trace
+    for key,value in getattr(n.ledger.images,'_fixture_costs',{}).items():
+        profile['fixture_'+key]={'calls':1,'inclusive_seconds':value-fixture_before[key]}
     print(__import__('json').dumps({'synthetic_stop_profile_inclusive':profile,
         'installed_authority_clock_process_close_included':False,
         'eight_second_lower_bound_passed':timings['complete_native_financial_stop']+

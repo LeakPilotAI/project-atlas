@@ -24,6 +24,7 @@ from app.services.personal_publication_custody import PersonalPublicationCustody
 from app.services.quality_dips_autonomous_integration import AutonomousNativePublication
 from app.services.quality_dips_autonomous_paper import AutonomousPaper
 from app.services.quality_dips_personal_dependencies import PersonalSessionReservations
+from personal_fixture_budget import fixture_budget
 from test_personal_paper_inception_memory import system
 from test_quality_dips_autonomous_paper import candidate, entry, monitor, setup
 
@@ -56,17 +57,12 @@ def run_native_pipeline(tmp_path, stop_observer=None):
     start = time.monotonic()
     native = native_primitives()
     handles, timings = [], {}
+    fixture_costs = {'budget_seconds': 0.0, 'raw_coordination_write_seconds': 0.0}
 
     def budget(extra=0):
-        count, size = 0, 0
-        for directory, dirs, files in os.walk(root, followlinks=False):
-            for name in dirs+files:
-                path = Path(directory)/name
-                if path.is_symlink() or path.is_junction(): raise ValueError('TEST_LINK_REFUSED')
-                count += 1
-                if name in files: size += path.stat().st_size
-        if count >= 2048 or size+extra > 32*1024*1024 or time.monotonic()-start > 180:
-            raise ValueError('TEST_RESOURCE_LIMIT')
+        began = time.perf_counter()
+        count, size = fixture_budget(root, started=start, extra=extra)
+        fixture_costs['budget_seconds'] += time.perf_counter()-began
         return count, size
 
     def timed(name, callback):
@@ -97,10 +93,13 @@ def run_native_pipeline(tmp_path, stop_observer=None):
     write = images.output.write_bound
     def bounded_write(name, data):
         budget(len(data))
+        began = time.perf_counter()
         result = write(name, data)
+        fixture_costs['raw_coordination_write_seconds'] += time.perf_counter()-began
         budget()
         return result
     images.output.write_bound = bounded_write
+    images._fixture_costs = fixture_costs
 
     @contextmanager
     def synthetic_initialization(request):

@@ -47,6 +47,7 @@ class NativePersonalCoordinationImages:
         self._stop_capacity = None
         self._read_view = None
         self._verified_prefix = None
+        self._page_cut = None
         try:
             if self.native.native.file_identity(self.output.root_handle) != self.root_id:
                 raise ValueError('PERSONAL_COORDINATION_FOREIGN_ROOT')
@@ -64,6 +65,7 @@ class NativePersonalCoordinationImages:
         self._retained_reads = {}
         self._retained_bytes = 0
         self._verified_prefix = None
+        self._page_cut = None
         if self.mutex:
             self.native.w.close_handle(self.mutex)
             self.mutex = None
@@ -134,6 +136,7 @@ class NativePersonalCoordinationImages:
             raise ValueError('PERSONAL_COORDINATION_REVISION_GAP')
         used, previous, image, pin = set(), self.enrollment, None, None
         bindings = {}
+        previous_pages = []
         prefix = getattr(self, '_verified_prefix', None)
         floor = 0
         if prefix is not None:
@@ -147,6 +150,7 @@ class NativePersonalCoordinationImages:
             used, bindings = set(prefix['names']), dict(prefix['bindings'])
             image, pin = prefix['image'], strict(prefix['pin'])
             floor, previous = pin['revision'], pin['head']
+            previous_pages = strict(body(prefix['pages']))
         for revision in sorted(revisions):
             if revision <= floor:
                 continue
@@ -169,18 +173,33 @@ class NativePersonalCoordinationImages:
             commit = strict(commit_raw.decode())
             count = (intent['bytes'] + PAGE - 1) // PAGE
             if (set(commit) != {'schema', 'intent', 'pages'}
-                    or commit['schema'] != 'PERSONAL_NATIVE_COORDINATION_COMMIT_V1'
+                    or commit['schema'] not in ('PERSONAL_NATIVE_COORDINATION_COMMIT_V1',
+                                                'PERSONAL_NATIVE_COORDINATION_COMMIT_V2')
                     or commit['intent'] != intent_id or type(commit['pages']) is not list
                     or len(commit['pages']) != count):
                 raise ValueError('PERSONAL_COORDINATION_COMMIT_CONFLICT')
             blocks = []
-            for index, binding in enumerate(commit['pages'], 1):
-                leaf = f'{prefix}-page-{index:04d}.bin'
+            pages = []
+            for index, entry in enumerate(commit['pages'], 1):
+                new_leaf = f'{prefix}-page-{index:04d}.bin'
+                if commit['schema'] == 'PERSONAL_NATIVE_COORDINATION_COMMIT_V1':
+                    leaf, binding = new_leaf, entry
+                else:
+                    if type(entry) is not dict or set(entry) != {'name', 'binding'}:
+                        raise ValueError('PERSONAL_COORDINATION_PAGE_REFERENCE')
+                    leaf, binding = entry['name'], entry['binding']
+                    # Only the exact same page in the accepted predecessor cut
+                    # may be reused. A path/digest supplied by a caller, another
+                    # position, future revision or older cut is not sufficient.
+                    if leaf != new_leaf and (index > len(previous_pages)
+                                             or entry != previous_pages[index-1]):
+                        raise ValueError('PERSONAL_COORDINATION_FOREIGN_PAGE_REFERENCE')
                 block, _ = self._read(leaf, binding)
                 bindings[leaf] = binding
                 if len(block) != min(PAGE, intent['bytes'] - (index - 1) * PAGE):
                     raise ValueError('PERSONAL_COORDINATION_PAGE_LENGTH')
                 blocks.append(block)
+                pages.append({'name': leaf, 'binding': binding})
                 used.add(leaf)
             image = b''.join(blocks)
             if hashlib.sha256(image).hexdigest() != intent['sha256']:
@@ -193,6 +212,7 @@ class NativePersonalCoordinationImages:
                 raise ValueError('PERSONAL_COORDINATION_ACK_UNKNOWN')
             previous = digest({'ack': ack_id, 'revision': revision, 'image': intent['sha256']})
             pin = {'revision': revision, 'ack': ack_id, 'head': previous}
+            previous_pages = pages
             used.update((intent_name, commit_name, ack_name))
         if used != names or self._inventory() != names:
             raise ValueError('PERSONAL_COORDINATION_NAMESPACE_RACE_OR_ORPHAN')
@@ -200,9 +220,10 @@ class NativePersonalCoordinationImages:
                            or pin['revision'] == self.known['revision'] and pin != self.known):
             raise ValueError('PERSONAL_COORDINATION_OBSERVED_ROLLBACK')
         self.known = pin
+        self._page_cut = {'pin': body(pin), 'pages': previous_pages}
         if names <= getattr(self, '_retained_reads', {}).keys():
             self._verified_prefix = {'names':set(names), 'bindings':bindings,
-                                     'image':image, 'pin':body(pin)}
+                                     'image':image, 'pin':body(pin), 'pages':previous_pages}
         return image, pin
 
     def _check_read_view(self, view):
@@ -290,15 +311,28 @@ class NativePersonalCoordinationImages:
         revision = pin['revision'] + 1
         prefix = f'{revision:04d}'
         checksum = hashlib.sha256(image).hexdigest()
+        page_cut = getattr(self, '_page_cut', None)
+        if not initial and (page_cut is None or page_cut['pin'] != body(pin)):
+            raise ValueError('PERSONAL_COORDINATION_PAGE_CUT_REQUIRED')
         intent = {'schema': 'PERSONAL_NATIVE_COORDINATION_INTENT_V1', 'root': self.root_id,
                   'enrollment': self.enrollment, 'revision': revision, 'previous': pin['head'],
                   'bytes': len(image), 'sha256': checksum}
         try:
             intent_id = self.output.write_bound(prefix + '-intent.json', body(intent).encode())
-            pages = [self.output.write_bound(f'{prefix}-page-{n // PAGE + 1:04d}.bin', image[n:n+PAGE])
-                     for n in range(0, len(image), PAGE)]
+            pages = []
+            for index, offset in enumerate(range(0, len(image), PAGE)):
+                block = image[offset:offset+PAGE]
+                if (not initial and offset < len(current) and block == current[offset:offset+PAGE]):
+                    # _load above reverified the exact immutable predecessor;
+                    # original native identity/ACL checks and readback remain.
+                    page = page_cut['pages'][index]
+                else:
+                    leaf = f'{prefix}-page-{index+1:04d}.bin'
+                    page = {'name': leaf, 'binding': self.output.write_bound(leaf, block)}
+                pages.append(page['binding'] if initial else page)
             commit_id = self.output.write_bound(prefix + '-commit.json', body({
-                'schema': 'PERSONAL_NATIVE_COORDINATION_COMMIT_V1', 'intent': intent_id, 'pages': pages}).encode())
+                'schema': 'PERSONAL_NATIVE_COORDINATION_COMMIT_V1' if initial else 'PERSONAL_NATIVE_COORDINATION_COMMIT_V2',
+                'intent': intent_id, 'pages': pages}).encode())
             self.output.write_bound(prefix + '-ack.json', body({
                 'schema': 'PERSONAL_NATIVE_COORDINATION_ACK_V1', 'commit': commit_id, 'image_digest': checksum}).encode())
             after, _ = self._load()
