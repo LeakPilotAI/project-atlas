@@ -24,6 +24,17 @@
   "normalization_estimates_required": 3,
   "normalization_estimates_generated_by_this_pipeline": false,
   "strategy_or_risk_changes": false,
+  "explicit_nonanalyst_estimation": {
+    "method": "QD_HISTORICAL_EARNINGS_MULTIPLE_V1",
+    "approval": "SOLE_OPERATOR_APPROVED_SOURCE_ONLY_AND_OFFLINE_TESTS_2026-10-29",
+    "enabled_by_default": false,
+    "requires_accepted_original_source_evidence": true,
+    "valuation_method_extension_approved": true,
+    "existing_scoring_and_risk_rules_unchanged": true,
+    "eligibility_changes_require_explicit_method_selection": true,
+    "analyst_targets_generated": false,
+    "financial_activation_authorized": false
+  },
   "operational_publication_authority": false,
   "financial_writer_activation": false,
   "paper_startup_authorized_by_this_policy": false,

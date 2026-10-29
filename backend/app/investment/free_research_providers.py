@@ -17,7 +17,12 @@ from app.investment.free_research_transport import ResearchRefused, utc
 from app.investment.freshness import classify_freshness
 from app.investment.market_hours import ET, session_bounds
 from app.investment.models import MeasuredValue
-from app.investment.sec_edgar_research import normalize_companyfacts, number, valuation
+from app.investment.sec_edgar_research import (
+    normalize_companyfacts,
+    number,
+    ratio_fact_evidence,
+    valuation,
+)
 
 
 def calendar_sessions(packet):
@@ -131,9 +136,12 @@ class FreeResearchBundle:
                 funds=normalize_companyfacts(facts,cik=cik,now=utc(self.now()),retrieved_at=datetime.fromisoformat(receipt['retrieved_at']))
             values=valuation(funds,price,now=utc(self.now()))
             shares=funds.get('shares_outstanding')
-            if (shares and shares.quality==DataQuality.FRESH and price.quality==DataQuality.FRESH
-                    and shares.is_usable() and price.is_usable() and number(price.value)>0):
-                funds['market_cap']=MeasuredValue(value=float(number(price.value)*number(shares.value)),
+            share_fact=ratio_fact_evidence(shares,now=utc(self.now()),units='shares',basis='PERIOD_END_INSTANT')
+            if (share_fact is not None and share_fact[1]>0 and price.quality==DataQuality.FRESH
+                    and price.is_usable() and number(price.value)>0 and price.effective_timestamp is not None
+                    and 0 <= (utc(self.now())-utc(price.effective_timestamp)).total_seconds() <= 900
+                    and (price.retrieved_at is None or utc(price.retrieved_at)<=utc(self.now()))):
+                funds['market_cap']=MeasuredValue(value=float(number(price.value)*share_fact[1]),
                     source='SEC_EDGAR_SHARES_X_ALPACA_REFERENCE',timestamp=price.effective_timestamp,
                     effective_timestamp=price.effective_timestamp,retrieved_at=utc(self.now()),availability=True,
                     quality=DataQuality.FRESH,notes=json.dumps({'shares_evidence':shares.notes,'price_source':price.source,

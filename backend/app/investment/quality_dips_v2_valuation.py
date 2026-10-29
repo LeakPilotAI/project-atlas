@@ -31,6 +31,7 @@ class ValueEstimate:
     as_of: str | None = None
     confidence: str | None = None
     note: str | None = None
+    expires_at: str | None = None
 
 
 def _as_float(value: Any) -> float | None:
@@ -71,6 +72,7 @@ def _normalize_source(raw: dict[str, Any]) -> ValueEstimate | None:
         as_of=raw.get("as_of"),
         confidence=(str(raw.get("confidence")).upper() if raw.get("confidence") is not None else None),
         note=raw.get("note"),
+        expires_at=raw.get("expires_at"),
     )
 
 
@@ -85,6 +87,13 @@ def normalize_sources(sources: Iterable[dict[str, Any]], *, now: datetime | None
                                 or raw.get("quality", "FRESH") != "FRESH"):
             continue
         est = _normalize_source(raw)
+        if est is not None and now is not None and "expires_at" in raw:
+            try:
+                expiry = datetime.fromisoformat(est.expires_at)
+                if expiry.utcoffset() is None or now > expiry:
+                    continue
+            except (TypeError, ValueError, OverflowError):
+                continue
         if est is not None and (now is None or _fresh_as_of(est.as_of, now)):
             out.append(est)
     return out
@@ -133,6 +142,7 @@ def build_normalization_window(sources: Iterable[dict[str, Any]], *, now: dateti
                 "as_of": e.as_of,
                 "confidence": e.confidence,
                 "note": e.note,
+                **({"expires_at": e.expires_at} if e.expires_at is not None else {}),
             }
             for e in estimates
         ],

@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from app.investment.enums import DataQuality
-from app.investment.free_research_transport import ResearchRefused, utc
+from app.investment.free_research_transport import ResearchRefused, decode, utc
 from app.investment.freshness import classify_freshness
 from app.investment.models import MeasuredValue
 
@@ -137,6 +137,42 @@ def normalize_companyfacts(payload, *, cik, now, retrieved_at):
     return result
 
 
+def ratio_fact_evidence(value, *, now, units, basis):
+    """Validate normalized fact continuity, not issuer authenticity or valuation.
+
+    Recheck source dates rather than trusting an old FRESH flag. Return the
+    preserved Decimal amount; float conversion is only a presentation boundary.
+    """
+    if (not isinstance(value, MeasuredValue) or value.source != 'SEC_EDGAR'
+            or value.availability is not True or value.quality != DataQuality.FRESH):
+        return None
+    try:
+        effective, retrieved = utc(value.effective_timestamp), utc(value.retrieved_at)
+        if (utc(value.timestamp) != effective or retrieved > now or effective > retrieved
+                or classify_freshness(effective, kind='fundamental', now=now) != DataQuality.FRESH):
+            return None
+        proof = decode(value.notes)
+        if (type(proof) is not dict or type(proof.get('cik')) is not str
+                or len(proof['cik']) != 10 or not proof['cik'].isdigit()
+                or proof.get('basis') != basis or proof.get('filed_date_precision') != 'DAY'
+                or type(proof.get('evidence')) is not list or not 0 < len(proof['evidence']) <= 64):
+            return None
+        exact = number(proof['exact_decimal'])
+        if number(value.value) != number(float(exact)):
+            return None
+        end = date.fromisoformat(proof['period_end'])
+        rows = proof['evidence']
+        if (any(type(row) is not dict or row.get('units') != units or not row.get('accession') for row in rows)
+                or max(date.fromisoformat(row['end']) for row in rows) != end
+                or max(date.fromisoformat(row['filed']) for row in rows) != effective.date()
+                or effective != datetime.combine(effective.date(), datetime.min.time(), UTC)
+                or any(date.fromisoformat(row['end']) > date.fromisoformat(row['filed']) for row in rows)):
+            return None
+        return proof, exact
+    except (ValueError, TypeError, KeyError, OverflowError):
+        return None
+
+
 def valuation(funds, price, *, now):
     """Only supported ratios, never forecasts, target prices or synthetic scenarios."""
     now = utc(now)
@@ -144,15 +180,20 @@ def valuation(funds, price, *, now):
               for k in ('pe','forward_pe','ps','pb','ev_ebitda','fcf_yield','earnings_yield','price_to_fcf',
                         'target_low_price','target_mean_price','target_high_price')}
     shares = funds.get('shares_outstanding')
-    if not shares or shares.quality != DataQuality.FRESH or not shares.is_usable() or price.quality != DataQuality.FRESH or not price.is_usable(): return result
+    share_fact = ratio_fact_evidence(shares, now=now, units='shares', basis='PERIOD_END_INSTANT')
+    if share_fact is None or share_fact[1] <= 0 or price.quality != DataQuality.FRESH or not price.is_usable(): return result
     if price.effective_timestamp is None or not 0 <= (now-utc(price.effective_timestamp)).total_seconds() <= 900: return result
-    cap = number(shares.value)*number(price.value)
+    if price.retrieved_at is not None and utc(price.retrieved_at) > now: return result
+    cap = share_fact[1]*number(price.value)
     if cap<=0: return result
     for field,metric,invert in [('pe','earnings',False),('ps','revenue',False),('pb','book_equity',False),('price_to_fcf','free_cash_flow',False),
                                 ('fcf_yield','free_cash_flow',True),('earnings_yield','earnings',True)]:
         value = funds.get(metric)
-        if not value or value.quality != DataQuality.FRESH or not value.is_usable() or number(value.value)<=0: continue
-        amount = number(value.value)
+        fact = ratio_fact_evidence(value, now=now, units='USD',
+            basis='PERIOD_END_INSTANT' if metric == 'book_equity' else 'TTM_RECONCILED')
+        if (fact is None or fact[1] <= 0
+                or any(fact[0][key] != share_fact[0][key] for key in ('cik', 'period_end'))): continue
+        amount = fact[1]
         effective = utc(price.effective_timestamp)
         result[field] = MeasuredValue(value=float(amount/cap if invert else cap/amount),source='SEC_EDGAR+ALPACA_DERIVED',
             timestamp=effective,effective_timestamp=effective,retrieved_at=now,availability=True,
