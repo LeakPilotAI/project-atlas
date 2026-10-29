@@ -92,7 +92,7 @@ class InvestmentIngest:
             try:
                 px = await self.price.get_price(entry.symbol)
             except Exception as e:
-                px = MeasuredValue.unknown("yfinance", str(e)[:200])
+                px = MeasuredValue.unknown(getattr(self.price, "name", "unknown"), str(e)[:200])
                 failures.append({"symbol": entry.symbol, "code": "PRICE_FAIL", "message": str(e)[:200]})
             _consume_failure(self.price, failures)
         elif prior is not None:
