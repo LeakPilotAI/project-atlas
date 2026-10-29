@@ -63,7 +63,12 @@ def complete_financial_stop(*, n, native, bootstrap, pins, reports, ownership, a
         setattr(port,name,measured)
     for port,name,label in ((custody,'_capture','current_capture'),(native_reader,'read_committed','native_replay'),
             (reader,'read_committed','selected_read'),(reader,'verify','selected_verify'),
-            (service,'publish','report_publication'),(ownership,'drain','native_drain')):
+            (service,'publish','report_publication'),(ownership,'drain','native_drain'),
+            (n.ledger.images,'_publish','coordination_image_publication'),
+            (n.ledger.images.output,'write_bound','coordination_native_file_write'),
+            (n.engine.publication.store.output,'write_bound','financial_native_file_write'),
+            (projection.output,'write_bound','projection_native_file_write'),
+            (service.archive.output,'write_bound','report_native_file_write')):
         instrument(port,name,label)
     authority_trace=[]
     @contextmanager

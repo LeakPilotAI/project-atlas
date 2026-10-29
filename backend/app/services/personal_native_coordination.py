@@ -7,7 +7,7 @@ Construction never installs a schema, creates a root or grants a session.
 """
 import hashlib
 import sqlite3
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 from app.services.paper_coordination_sql import CanonicalCoordinationSQL
@@ -56,6 +56,12 @@ class PersonalNativeCoordination(CanonicalCoordinationSQL):
         self.images, self.path = images, Path(path)
         self._manifest = body(self.manifest)
         self._ports = (images, self.path)
+
+    def read_view(self):
+        # Native installed images provide the bounded, mutex-held verifier.
+        # In-memory test ports retain their original uncached read behavior.
+        port = getattr(self.images, 'read_view', None)
+        return port() if port is not None else nullcontext()
 
     @contextmanager
     def connect(self, *, readonly=False):

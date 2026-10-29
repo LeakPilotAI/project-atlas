@@ -44,7 +44,7 @@ from scripts.observation_runtime.personal_writer_ownership import NativePersonal
 from scripts.observation_runtime.quality_dips_read_service import observe_self
 
 
-def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
+def run_native_pipeline(tmp_path, stop_observer=None):
     value = os.environ.get('ATLAS_PERSONAL_PIPELINE_TEST_ROOT')
     if value is None:
         pytest.skip('NOT EXECUTED: explicit confined native pipeline root required')
@@ -172,9 +172,20 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
         assert profile in (None,'COMPLETE_FINANCIAL_STOP')
         if profile=='COMPLETE_FINANCIAL_STOP':
             from personal_complete_native_stop_fixture import complete_financial_stop
+            if stop_observer is not None: stop_observer('READY',None)
             complete_financial_stop(n=n,native=s.n,bootstrap=bootstrap,pins=pins,reports=reports,ownership=ownership,
                 admission=admission,module=module,projection=projection,service=service,clock=clock,
                 process=process,timings=timings,timed=timed)
+            if stop_observer is not None:
+                with ledger.connect(readonly=True) as db:
+                    state,_,_=ledger._load(db)
+                    assert not db.execute('SELECT 1 FROM projections WHERE receipt IS NULL').fetchone()
+                assert number(state['cash'])==number('1015.9136')
+                assert all(number(p['remaining'])==number(p['remaining_entry_costs'])==0 for p in state['positions'].values())
+                stop_observer('READBACK',{'root':str(tmp_path),'personal_enrollment':s.e,'now':clock(),
+                    'state_digest':digest(state),'timings':timings,'process':process})
+                budget()
+                return  # finally closes every retained native handle before exit.
         else:
             assert timed('full_exit', lambda: monitor(n, candidate(n), 'final', '120', {'classification':'THESIS_BROKEN'}))['filled']
             timed('final_report', report)
@@ -243,3 +254,7 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
     budget()
     print(json.dumps({'read_only_child_verified':True,'original_bytes_unchanged':True,
                       'owned_child_exited':True,'new_financial_session':False}))
+
+
+def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
+    run_native_pipeline(tmp_path)

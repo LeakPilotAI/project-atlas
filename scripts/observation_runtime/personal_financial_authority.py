@@ -80,27 +80,27 @@ class NativePersonalFinancialAuthority:
         request = strict(body(request))
         if (type(request) is not dict or set(request) != {'schema','enrollment','current','command'}
                 or request['schema'] != 'QD_AUTO_OP_ADMISSION_REQUEST_V1'
+                or body(request['enrollment']) != self._enrollment
+                or self.source is not self._ports[4] or self.ledger is not self._ports[5]
+                or self.source.ledger is not self.ledger):
+            raise ValueError('PERSONAL_FINANCIAL_REQUEST_SCOPE')
+        with self._lease_verified(request, now) as lease:
+            yield lease
+
+    @contextmanager
+    def _lease_verified(self, request, now):
+        request = strict(body(request))
+        if (type(request) is not dict or set(request) != {'schema','enrollment','current','command'}
+                or request['schema'] != 'QD_AUTO_OP_ADMISSION_REQUEST_V1'
                 or body(request['enrollment']) != self._enrollment):
             raise ValueError('PERSONAL_FINANCIAL_REQUEST_SCOPE')
         command = request['command']
         context, stamp = self._verify(command)
-        if type(now) is not int or now != stamp or request['current'] != self.source.current():
+        if type(now) is not int or now != stamp:
             raise ValueError('PERSONAL_FINANCIAL_STALE_CUT')
-        if (request['current'].get('schema') != 'QD_AUTO_OP_PIN_V1'
-                or request['current'].get('root') != self.operator.enrollment['resources']['source']['native_id']
-                or request['current'].get('epoch') != self.ledger.manifest['epoch']
-                or type(request['current'].get('entries')) is not list
-                or not 0 <= len(request['current']['entries']) <= 128):
-            raise ValueError('PERSONAL_FINANCIAL_FOREIGN_SOURCE')
-        with self.ownership.lease(context, now) as owned:
-            if request['current'] != self.source.current():
-                raise ValueError('PERSONAL_FINANCIAL_CUT_CHANGED_BEFORE_ADMISSION')
-            with self.ledger.connect(readonly=True) as db:
-                if db.execute("SELECT 1 FROM personal_publications WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone():
-                    raise ValueError('PERSONAL_FINANCIAL_PENDING_OR_UNKNOWN')
-            expected = None if command is None else self._canonical(command)
-            if command is not None and command['expected_source_revision'] != len(request['current']['entries']):
-                raise ValueError('PERSONAL_FINANCIAL_SOURCE_REVISION')
+        with (self.ownership.lease(context, now) as owned,
+              self.ledger.read_view() if command is None else nullcontext()):
+            expected = self._validate_cut(request, command)
             ident = 'personal-financial:'+digest([self._enrollment, command['operation_id']]) if command is not None else 'read:'+digest(request)
             intent = {'schema':'PERSONAL_FINANCIAL_INTENT_V1','operation_id':ident,'request_digest':digest(request)}
             reservation = self.custody.reserve(intent, context, now) if command is not None else nullcontext(None)
@@ -144,6 +144,30 @@ class NativePersonalFinancialAuthority:
                 yield lease
                 if not lease.check(snapshot, self.operator.clock()):
                     raise ValueError('PERSONAL_FINANCIAL_LEASE_CHANGED')
+
+    def _validate_cut(self, request, command):
+        with self.ledger.read_view():
+            return self._validate_cut_verified(request, command)
+
+    def _validate_cut_verified(self, request, command):
+        if request['current'] != self.source.current():
+            raise ValueError('PERSONAL_FINANCIAL_STALE_CUT')
+        if (request['current'].get('schema') != 'QD_AUTO_OP_PIN_V1'
+                or request['current'].get('root') != self.operator.enrollment['resources']['source']['native_id']
+                or request['current'].get('epoch') != self.ledger.manifest['epoch']
+                or type(request['current'].get('entries')) is not list
+                or not 0 <= len(request['current']['entries']) <= 128):
+            raise ValueError('PERSONAL_FINANCIAL_FOREIGN_SOURCE')
+        if request['current'] != self.source.current():
+            raise ValueError('PERSONAL_FINANCIAL_CUT_CHANGED_BEFORE_ADMISSION')
+        with self.ledger.connect(readonly=True) as db:
+            if db.execute("SELECT 1 FROM personal_publications WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone():
+                raise ValueError('PERSONAL_FINANCIAL_PENDING_OR_UNKNOWN')
+        expected = None if command is None else self._canonical(command)
+        if command is not None and command['expected_source_revision'] != len(request['current']['entries']):
+            raise ValueError('PERSONAL_FINANCIAL_SOURCE_REVISION')
+        return expected
+
 
 
 class NativePersonalFinancialReadAuthority(NativePersonalFinancialAuthority):

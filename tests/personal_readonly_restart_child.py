@@ -107,5 +107,12 @@ def main():
 
 if __name__=='__main__':
     watchdog=Timer(30,lambda:os._exit(70));watchdog.daemon=True;watchdog.start()
-    try: main()
+    try:
+        if sys.argv[1:]==['--ready-before-input']:
+            # Imports are ready, but no account/root/authority has been opened.
+            # A retained read-only service can wait for post-Stop input.
+            print(json.dumps({'reader_ready':True,'process':observe_self()}),flush=True)
+        elif sys.argv[1:]:
+            raise ValueError('SYNTHETIC_READER_MODE_REFUSED')
+        main()
     finally: watchdog.cancel()

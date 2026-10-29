@@ -25,6 +25,6 @@
   "financial_publication_attempted": false,
   "system_clock_or_service_repair_authorized": false,
   "stop_condition": "Any required evidence or safety check fails",
-  "current_blocker": "Complete native financial Stop lowerbound14.953seconds exceeds8seconds beforeinstalledauthority/clock/processclose. Acceptedcurrentresearch/provider/instrument/executionfacts missing. W32TimeStoppedManual0x80070426;marketclosed. No newrelease,realactivation,inception,providerconnectionorpilot. ExistingconditionalQDgrantunused.",
+  "current_blocker": "Full synthetic owned Stop/exit/post-exit readback: six timing failures and one diagnostic pass, 6.8487124-9.3422630 seconds; reliable eight-second acceptance absent. Actual clock refuses service stopped 0x80070426; accepted current research/provider/instrument/executable IEX evidence unavailable. No new release, real activation, inception, provider connection or pilot. Existing conditional QD grant unused.",
   "historical_gate_promotions": 0
 }

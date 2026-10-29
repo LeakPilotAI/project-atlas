@@ -45,6 +45,8 @@ class NativePersonalCoordinationImages:
         self._retained_reads = {}
         self._retained_bytes = 0
         self._stop_capacity = None
+        self._read_view = None
+        self._verified_prefix = None
         try:
             if self.native.native.file_identity(self.output.root_handle) != self.root_id:
                 raise ValueError('PERSONAL_COORDINATION_FOREIGN_ROOT')
@@ -61,6 +63,7 @@ class NativePersonalCoordinationImages:
             self.native.w.close_handle(handle)
         self._retained_reads = {}
         self._retained_bytes = 0
+        self._verified_prefix = None
         if self.mutex:
             self.native.w.close_handle(self.mutex)
             self.mutex = None
@@ -117,6 +120,10 @@ class NativePersonalCoordinationImages:
         return raw, {'id':list(actual['id']), 'sha256':actual['sha256']}
 
     def _load(self, *, empty=False):
+        view = getattr(self, '_read_view', None)
+        if view is not None:
+            self._check_read_view(view)
+            return view['image'], strict(view['pin'])
         names = self._inventory()
         if not names:
             if empty and self.known is None:
@@ -126,12 +133,29 @@ class NativePersonalCoordinationImages:
         if not 1 <= max(revisions) <= MAX_REVISIONS or revisions != set(range(1, max(revisions) + 1)):
             raise ValueError('PERSONAL_COORDINATION_REVISION_GAP')
         used, previous, image, pin = set(), self.enrollment, None, None
+        bindings = {}
+        prefix = getattr(self, '_verified_prefix', None)
+        floor = 0
+        if prefix is not None:
+            if not prefix['names'] <= names:
+                raise ValueError('PERSONAL_COORDINATION_VERIFIED_PREFIX_MISSING')
+            # Revalidate every original native file and ACL. Retained handles
+            # deny content replacement; reuse only the already audited immutable
+            # prefix, never a caller digest or an unverified new generation.
+            for leaf, binding in prefix['bindings'].items():
+                self._read(leaf, binding)
+            used, bindings = set(prefix['names']), dict(prefix['bindings'])
+            image, pin = prefix['image'], strict(prefix['pin'])
+            floor, previous = pin['revision'], pin['head']
         for revision in sorted(revisions):
+            if revision <= floor:
+                continue
             prefix = f'{revision:04d}'
             intent_name, commit_name, ack_name = (prefix + '-' + x + '.json' for x in ('intent', 'commit', 'ack'))
             if not {intent_name, commit_name, ack_name} <= names:
                 raise ValueError('PERSONAL_COORDINATION_INCOMPLETE_UNKNOWN')
             intent_raw, intent_id = self._read(intent_name)
+            bindings[intent_name] = intent_id
             intent = strict(intent_raw.decode())
             if (set(intent) != {'schema', 'root', 'enrollment', 'revision', 'previous', 'bytes', 'sha256'}
                     or intent['schema'] != 'PERSONAL_NATIVE_COORDINATION_INTENT_V1'
@@ -141,6 +165,7 @@ class NativePersonalCoordinationImages:
                     or not 0 < intent['bytes'] <= MAX_IMAGE):
                 raise ValueError('PERSONAL_COORDINATION_INTENT_CONFLICT')
             commit_raw, commit_id = self._read(commit_name)
+            bindings[commit_name] = commit_id
             commit = strict(commit_raw.decode())
             count = (intent['bytes'] + PAGE - 1) // PAGE
             if (set(commit) != {'schema', 'intent', 'pages'}
@@ -152,6 +177,7 @@ class NativePersonalCoordinationImages:
             for index, binding in enumerate(commit['pages'], 1):
                 leaf = f'{prefix}-page-{index:04d}.bin'
                 block, _ = self._read(leaf, binding)
+                bindings[leaf] = binding
                 if len(block) != min(PAGE, intent['bytes'] - (index - 1) * PAGE):
                     raise ValueError('PERSONAL_COORDINATION_PAGE_LENGTH')
                 blocks.append(block)
@@ -160,6 +186,7 @@ class NativePersonalCoordinationImages:
             if hashlib.sha256(image).hexdigest() != intent['sha256']:
                 raise ValueError('PERSONAL_COORDINATION_IMAGE_DIGEST')
             ack_raw, ack_id = self._read(ack_name)
+            bindings[ack_name] = ack_id
             ack = strict(ack_raw.decode())
             if ack != {'schema': 'PERSONAL_NATIVE_COORDINATION_ACK_V1', 'commit': commit_id,
                        'image_digest': intent['sha256']}:
@@ -173,10 +200,63 @@ class NativePersonalCoordinationImages:
                            or pin['revision'] == self.known['revision'] and pin != self.known):
             raise ValueError('PERSONAL_COORDINATION_OBSERVED_ROLLBACK')
         self.known = pin
+        if names <= getattr(self, '_retained_reads', {}).keys():
+            self._verified_prefix = {'names':set(names), 'bindings':bindings,
+                                     'image':image, 'pin':body(pin)}
         return image, pin
+
+    def _check_read_view(self, view):
+        if (get_ident() != view['thread'] or self._read_view is not view
+                or self._inventory() != view['names'] or body(self.known) != view['pin']):
+            raise ValueError('PERSONAL_COORDINATION_READ_VIEW_CHANGED')
+
+    @contextmanager
+    def read_view(self):
+        """One coherent immutable read; never authorizes a financial effect.
+
+        Original file handles deny write/delete sharing. Entry and exit run the
+        complete native chain/identity/ACL/link/digest/ACK verification. Nested
+        read queries check the same root, exact namespace and generation. The
+        native mutex excludes participating writers until exit verification.
+        """
+        active = getattr(self, '_read_view', None)
+        if active is not None:
+            self._check_read_view(active)
+            yield
+            self._check_read_view(active)
+            return
+        self._inventory()
+        result = self.coordinator.wait(self.mutex, 500)
+        if result not in (0, 128):
+            raise ValueError('PERSONAL_COORDINATION_READ_VIEW_BUSY')
+        try:
+            if result == 128:
+                # Read-only observation cannot repair/latch an abandoned writer.
+                raise ValueError('PERSONAL_COORDINATION_READ_VIEW_ABANDONED')
+            image, pin = self._load()
+            names = self._inventory()
+            if not names <= self._retained_reads.keys():
+                raise ValueError('PERSONAL_COORDINATION_READ_VIEW_UNPINNED_FILES')
+            view = {'thread':get_ident(), 'image':image, 'pin':body(pin), 'names':names}
+            self._read_view = view
+            try:
+                yield
+                self._check_read_view(view)
+            finally:
+                self._read_view = None
+                # Even an interrupted read releases no value without a final
+                # complete independent check of the retained native evidence.
+                final, end = self._load()
+                if final != image or body(end) != view['pin']:
+                    raise ValueError('PERSONAL_COORDINATION_READ_VIEW_CUT_CHANGED')
+        finally:
+            self._read_view = None
+            self.native.w.check(self.coordinator.release(self.mutex))
 
     @contextmanager
     def _writer(self):
+        if getattr(self, '_read_view', None) is not None:
+            raise ValueError('PERSONAL_COORDINATION_READ_VIEW_NO_WRITE')
         self._inventory()
         result = self.coordinator.wait(self.mutex, 500)
         if result not in (0, 128):
@@ -192,6 +272,8 @@ class NativePersonalCoordinationImages:
             self.native.w.check(self.coordinator.release(self.mutex))
 
     def _publish(self, before, image, *, initial=False):
+        if getattr(self, '_read_view', None) is not None:
+            raise ValueError('PERSONAL_COORDINATION_READ_VIEW_NO_WRITE')
         if type(image) is not bytes or not 0 < len(image) <= MAX_IMAGE:
             raise ValueError('PERSONAL_COORDINATION_IMAGE_CAPACITY')
         current, pin = self._load(empty=initial)
@@ -251,6 +333,8 @@ class NativePersonalCoordinationImages:
     def transaction(self, *, readonly):
         if type(readonly) is not bool:
             raise ValueError('PERSONAL_COORDINATION_ACCESS_MODE_REQUIRED')
+        if getattr(self, '_read_view', None) is not None and not readonly:
+            raise ValueError('PERSONAL_COORDINATION_READ_VIEW_NO_WRITE')
         @contextmanager
         def scope():
             if readonly:

@@ -77,6 +77,39 @@ def test_pending_commit_ack_and_duplicate_refusal(tmp_path):
     assert s.images.history == before
 
 
+@pytest.mark.parametrize('readonly',[True,False])
+def test_read_snapshot_lock_order_and_no_financial_write_inside_snapshot(tmp_path,readonly):
+    s=setup(tmp_path);active=[0];owners=[0];original=s.ledger.connect
+    @contextmanager
+    def owned(context,now):
+        owners[0]+=1
+        try:yield SimpleNamespace(snapshot=context,check=lambda value,stamp:value==context)
+        finally:owners[0]-=1
+    @contextmanager
+    def view():
+        assert owners[0]>0  # Native ownership always precedes image mutex.
+        active[0]+=1
+        try:yield
+        finally:active[0]-=1
+    @contextmanager
+    def connect(*,readonly=False):
+        assert readonly or not active[0]
+        with original(readonly=readonly) as db:yield db
+    s.owner.lease=owned
+    s.ledger.read_view=view
+    s.ledger.connect=connect
+    request={**s.request,'command':None} if readonly else s.request
+    with s.port.lease(request,s.n.now[0]) as lease:
+        if readonly:
+            assert active[0]>0 and lease.snapshot['status']=='READ_ACCEPTED'
+        else:
+            assert active[0]==0 and lease.snapshot['status']=='PENDING'
+            after={**s.source,'entries':[{'SYNTHETIC_NATIVE_BINDING':True}]}
+            s.pins.advance(s.source,after)
+            assert lease.verify_ack(lease.acknowledge(s.request,s.receipt,after))
+    assert active[0]==owners[0]==0
+
+
 @pytest.mark.parametrize('damage', ['foreign', 'stale', 'manual', 'unreserved', 'session', 'revoked'])
 def test_bad_admission_refuses_before_any_new_publication(tmp_path, damage):
     s = setup(tmp_path)

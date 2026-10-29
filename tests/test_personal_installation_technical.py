@@ -1,6 +1,6 @@
 """Factual check composition with explicit native release/clock/OS doubles."""
 import copy
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from types import SimpleNamespace
 
 import pytest
@@ -38,6 +38,7 @@ def setup(monkeypatch, *, initial=False):
     images.root_id = s.n['resources']['coordination']['native_id']
     images._stop_capacity = None
     images._load = lambda: (b'SYNTHETIC_CONFIG_IMAGE',{'revision':1})
+    images.read_view = nullcontext  # Explicit synthetic I/O port, not native evidence.
     ledger.images = images
     s.b.publication.ledger = ledger
     clock = object.__new__(LocalWindowsClock)

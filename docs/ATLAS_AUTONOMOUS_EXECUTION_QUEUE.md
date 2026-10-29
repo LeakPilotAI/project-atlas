@@ -1,3 +1,7 @@
+## October 28 coherent native read performance and full owned Stop evidence
+
+ACTIVE: QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH. Native read-view/prefix reuse VERIFIED; 418 regression and 8 native safety passes. Full owned Stop: six timing failures and one diagnostic pass (6.8487124-9.3422630s), all financial/read-only checks passed. Eight-second gate remains BLOCKED. Next address 12-image/83-file durable coordination publication without weakening protocol; actual clock service stopped and accepted current research/execution inputs unavailable. NO new installation/activation/inception/provider/pilot. Existing conditional grant unused. All prior queue/history preserved below. See docs/QD_SHUTDOWN_READ_VIEW_PERFORMANCE_2026-10-28.md.
+
 ## October 28 complete native Stop failure and required test resolution
 
 ACTIVE: QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH. Source repairs/accountidentity/8secondelapsedrefusal verified. 184sourcepass/70nativeHTTPpass/14codecpass;69of97previousgatedcasesresolved/28excludedremain. FullnativefinancialStoplowerbound14.953seconds FAILS8seconds;actualinstalledauthority/clock/processclose stillnotincluded. Acceptedcurrentresearch/executionfacts missing;W32TimeStopped/Manual,marketclosed. NO installation/activation/inception/provider/pilot. Next safelyoptimizecoherentnativecutreads,obtainpermittedcurrentdata/clockfacts;existingconditionalgrantremainsunused. See docs/QD_FINAL_STOP_AND_DATA_BLOCKERS_2026-10-28.md. All priorqueue/history preserved below.

@@ -4,7 +4,7 @@ No installer, reservation, writer, recovery or default authority. Same-user pins
 provide local continuity only. Actual read authority and ownership leases remain
 mandatory on the existing readers and runtime; this port cannot replace them.
 """
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 
 from app.services.paper_financial_replay import body, digest, initial_state, strict
 from app.services.quality_dips_autonomous_enrollment import publication_intent
@@ -41,6 +41,7 @@ class PersonalNativeReadAuthority:
         self.enrollment = strict(body(enrollment))
         self.clock = ownership.authority.clock
         self._ports = bootstrap, source, reports, ownership, self.clock
+        self._ledger = source.ledger
         self._enrollment, self._native, self._manifest = body(enrollment), body(native), body(manifest)
         self._bootstrap = body(bootstrap.enrollment)
         self._water = None
@@ -90,7 +91,7 @@ class PersonalNativeReadAuthority:
     def lease(self, enrollment, now):
         if body(enrollment) != self._enrollment:
             raise ValueError('PERSONAL_READ_FOREIGN_ENROLLMENT')
-        with self.ownership.lease(self._request, now) as owned:
+        with self.ownership.lease(self._request, now) as owned, getattr(self._ledger, 'read_view', nullcontext)():
             cut = self._capture(now)
             source, reports, sg, rg = cut
             snapshot = {'schema': 'QD_READ_CURRENT_V1', 'enrollment_digest': digest(enrollment),
@@ -126,6 +127,7 @@ class PersonalRuntimeCurrent:
         self.bootstrap, self.source, self.reports = bootstrap, source, reports
         self.reader, self.native_reader, self.clock = reader, native_reader, clock
         self._ports = (bootstrap, source, reports, reader, native_reader, clock)
+        self._ledger = source.ledger
         self._e, self._m = body(e), body(m)
         self._inception, self._scope = body(bootstrap.enrollment), body(bootstrap.scope())
         self._high_water = None
@@ -146,6 +148,16 @@ class PersonalRuntimeCurrent:
         return source, reports, sg, rg
 
     def _capture(self, now):
+        if self.source is not self._ports[1] or self.source.ledger is not self._ledger:
+            raise ValueError('PERSONAL_CURRENT_COMPONENT_CHANGED')
+        # Same lock order as financial publication: native ownership, then the
+        # coordination snapshot. Never invert it for a concurrent HTTP reader.
+        authority = getattr(self.reader, 'authority', None)
+        scope = authority.lease(self.reader.enrollment, now) if type(authority) is PersonalNativeReadAuthority else nullcontext()
+        with scope:
+            return self._capture_verified(now)
+
+    def _capture_verified(self, now):
         if (any(a is not b for a, b in zip(
                 (self.bootstrap, self.source, self.reports, self.reader, self.native_reader, self.clock),
                 self._ports, strict=True))
