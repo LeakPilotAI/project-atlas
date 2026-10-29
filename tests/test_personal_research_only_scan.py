@@ -14,13 +14,20 @@ from test_investment_phase5 import _entry, bars_from_closes, healthy_snap
 def setup(tmp_path):
     universe = InvestmentUniverse([_entry('MSFT'), _entry('SPY')])
     bars = bars_from_closes([100.0]*280 + [50.0]*20)
+    def snapshot(symbol):
+        result=healthy_snap(universe.get(symbol))
+        stamp=datetime(2026,10,28,14,0,tzinfo=UTC)
+        for value in (result.price,*result.fundamentals.values(),*result.valuation.values()):
+            value.timestamp=value.effective_timestamp=value.retrieved_at=stamp
+        result.retrieved_at=stamp
+        return result
     class Price:
-        async def get_price(self, symbol): return healthy_snap(universe.get(symbol)).price
+        async def get_price(self, symbol): return snapshot(symbol).price
         async def get_daily_ohlcv(self, symbol, **kwargs): return bars
     class Fundamentals:
-        async def get_all(self, symbol): return healthy_snap(universe.get(symbol)).fundamentals
+        async def get_all(self, symbol): return snapshot(symbol).fundamentals
     class Valuation:
-        async def get_all(self, symbol): return healthy_snap(universe.get(symbol)).valuation
+        async def get_all(self, symbol): return snapshot(symbol).valuation
     ingest = InvestmentIngest(universe=universe, price=Price(), fundamentals=Fundamentals(),
         valuation=Valuation(), history_root=tmp_path, persist=False, read_only=True)
     scanner = scan.InvestmentScanner(settings=ScanSettings(enabled=False, persist=False,

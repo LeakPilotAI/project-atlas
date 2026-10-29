@@ -168,9 +168,17 @@ def test_actual_native_inception_financial_events_reports_and_restart(tmp_path):
         assert timed('partial_exit', lambda: monitor(n, candidate(n), 'partial', '110', {'fundamentals_score':60}))['filled']
         timed('partial_report', report)
         images.begin_reserved_stop()
-        assert timed('full_exit', lambda: monitor(n, candidate(n), 'final', '120', {'classification':'THESIS_BROKEN'}))['filled']
-        timed('final_report', report)
-        assert timed('engine_stop', n.engine.stop) == 'STOPPED'
+        profile=os.environ.get('ATLAS_PERSONAL_STOP_PROFILE')
+        assert profile in (None,'COMPLETE_FINANCIAL_STOP')
+        if profile=='COMPLETE_FINANCIAL_STOP':
+            from personal_complete_native_stop_fixture import complete_financial_stop
+            complete_financial_stop(n=n,native=s.n,bootstrap=bootstrap,pins=pins,reports=reports,ownership=ownership,
+                admission=admission,module=module,projection=projection,service=service,clock=clock,
+                process=process,timings=timings,timed=timed)
+        else:
+            assert timed('full_exit', lambda: monitor(n, candidate(n), 'final', '120', {'classification':'THESIS_BROKEN'}))['filled']
+            timed('final_report', report)
+            assert timed('engine_stop', n.engine.stop) == 'STOPPED'
         runtime_scope = {'schema':'QD_AUTO_LOCAL_RUNTIME_V3', 'scope':'LOCAL_ENROLLED',
                          'process_identity':{'pid':process['pid'],'created':process['creation_filetime'],'image':process['image']},
                          'writer_roster':['decision','source','projection','report','coordination'],

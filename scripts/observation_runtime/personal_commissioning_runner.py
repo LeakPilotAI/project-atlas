@@ -6,6 +6,7 @@ No successful zero-trade claim can be made without accepted observations.
 """
 from contextlib import nullcontext
 from threading import Event, RLock
+from time import perf_counter
 
 from app.investment.alpaca_iex import IEXFeed
 from app.services.paper_financial_replay import body, strict
@@ -123,6 +124,7 @@ class PersonalCommissioningRunner:
         authority = owner.installation.identity
         request = {'scope': 'LOCAL_ENROLLED', 'enrollment': owner.admission.enrollment, 'grant': native}
         observations, reason, result, started = 0, None, None, False
+        stop_elapsed = None
         authority.verify(request)
         if self.source.session_id != native['session_id']:
             raise ValueError('PERSONAL_COMMISSIONING_SOURCE_SESSION')
@@ -164,6 +166,7 @@ class PersonalCommissioningRunner:
         except (ValueError, OSError, KeyError, TypeError) as exc:
             reason = str(exc)[:160]
         finally:
+            stop_started = perf_counter()
             r.engine.entry_admission_closed = True
             r.stopped.set()
             try:
@@ -192,10 +195,20 @@ class PersonalCommissioningRunner:
                 r.halted = owner.failed = True
                 result = {'status': 'SHUTDOWN_INCOMPLETE', 'position_state': 'UNKNOWN',
                           'process_shutdown_allowed': False}
+            stop_elapsed = perf_counter()-stop_started
+            if not 0 <= stop_elapsed <= 8:
+                reason = reason or 'PERSONAL_STOP_EIGHT_SECOND_BUDGET_EXCEEDED'
+                r.engine.dispatch_closed = True
+                r.halted = owner.failed = True
+                # A timing failure cannot undo an acknowledged financial exit.
+                # Preserve its fields and classify the overall shutdown honestly.
+                result = {**result, 'financial_status':result['status'], 'status':'SHUTDOWN_INCOMPLETE',
+                          'reason':'PERSONAL_STOP_EIGHT_SECOND_BUDGET_EXCEEDED'}
             with self.status_lock:
                 self.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'FINISHED',
                                  'outcome': strict(body(result))}
         return {'schema': 'PERSONAL_COMMISSIONING_RESULT_V1', 'accepted_observations': observations,
                 'completed': reason is None and observations > 0 and result.get('status') == 'FLATTENED',
                 'reason': reason or ('NO_ACCEPTED_CURRENT_OBSERVATIONS' if not observations else None),
-                'shutdown': result, 'automatic_restart_allowed': False}
+                'shutdown': result, 'stop_elapsed_seconds':stop_elapsed, 'stop_budget_seconds':8,
+                'stop_measurement_scope':'DRIVER_THROUGH_POST_STOP_AUTHORITY', 'automatic_restart_allowed': False}

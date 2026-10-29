@@ -7,6 +7,7 @@ are mandatory. Test records/pins are never imported, renamed or adopted.
 
 import importlib.util
 from contextlib import contextmanager
+from functools import cache
 from pathlib import Path
 from typing import ClassVar
 
@@ -19,6 +20,18 @@ _spec = importlib.util.spec_from_file_location(
 )
 fs2 = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(fs2)
+
+
+@cache
+def _report_read_module():
+    # Cache trusted code loading only, never financial bytes, pins or results.
+    # Every read still performs the original native identity/ACL/replay/audit.
+    spec = importlib.util.spec_from_file_location(
+        "op_auto_reports", Path(__file__).with_name("financial_read_port.py")
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class OperationalAutonomousStore(fs2.FinancialRecordStore):
@@ -295,11 +308,7 @@ class OperationalAutonomousReader:
         ):
             raise ValueError("OP_AUTO_READ_CAPABILITY_BINDING_REQUIRED")
         source = self.read_committed()
-        spec = importlib.util.spec_from_file_location(
-            "op_auto_reports", Path(__file__).with_name("financial_read_port.py")
-        )
-        m = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(m)
+        m = _report_read_module()
         with fs2.w.WindowsOutput(e["resources"]["report"]["path"]) as out:
             if (
                 fs2.native.file_identity(out.root_handle)

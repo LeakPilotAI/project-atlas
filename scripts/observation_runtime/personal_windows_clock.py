@@ -150,6 +150,7 @@ class _WindowsProbe:
         # it does not authenticate the remote NTP server or certify its UTC.
         script = r"""
 $ErrorActionPreference='Stop'
+$ProgressPreference='SilentlyContinue'
 $exe=Join-Path ([Environment]::SystemDirectory) 'w32tm.exe'
 $sig=Get-AuthenticodeSignature -LiteralPath $exe
 if($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation(?:,|$)'){throw 'CLOCK_WINDOWS_TOOL_SIGNATURE'}

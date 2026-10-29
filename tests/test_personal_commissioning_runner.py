@@ -220,3 +220,23 @@ def test_financial_capacity_refuses_before_session_or_financial_effect(resource,
     result = s.runner.run(s.grant)
     assert not result['completed'] and 'CAPACITY' in result['reason']
     assert 'start' not in s.calls and 'stop' not in s.calls
+
+
+def test_wall_time_overrun_refuses_even_when_session_clock_has_not_expired(monkeypatch):
+    import scripts.observation_runtime.personal_commissioning_runner as module
+    s=setup(tick=2)
+    ticks=iter((10.0,18.01))
+    monkeypatch.setattr(module,'perf_counter',lambda:next(ticks))
+    calls=[]
+    s.owner.stop=lambda **kw:calls.append(kw) or {'status':'FLATTENED','position_state':'FLAT','cash':'1001','positions':{}}
+    result=s.runner.run(s.grant)
+    assert not result['completed'] and s.now[0]==1052
+    assert result['reason']=='PERSONAL_STOP_EIGHT_SECOND_BUDGET_EXCEEDED'
+    assert result['shutdown']['status']=='SHUTDOWN_INCOMPLETE'
+    assert result['shutdown']['financial_status']=='FLATTENED' and result['shutdown']['position_state']=='FLAT'
+    assert result['shutdown']['cash']=='1001' and result['shutdown']['positions']=={}
+    assert result['stop_elapsed_seconds']>8 and result['stop_budget_seconds']==8
+    assert s.owner.failed and s.r.engine.dispatch_closed and len(calls)==1
+    assert s.runner.control_status()['outcome']['status']=='SHUTDOWN_INCOMPLETE'
+    with pytest.raises(ValueError,match='ONCE_ONLY'):s.runner.run(s.grant)
+    assert len(calls)==1

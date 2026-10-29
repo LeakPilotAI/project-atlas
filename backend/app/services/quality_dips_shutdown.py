@@ -23,6 +23,15 @@ def save_outcome(engine, outcome):
         )
 
 
+def read_account(runtime):
+    """Bind the stable account and epoch separately, including failure readback."""
+    scope = runtime.enrollment['reader_enrollment']
+    if (type(scope) is not dict or body(runtime.reader.enrollment) != body(scope)
+            or scope.get('epoch') != runtime.engine.ledger.manifest['epoch']):
+        raise ValueError('SHUTDOWN_READER_ACCOUNT_BINDING')
+    return runtime.reader.read_committed(scope['account_id'], scope['epoch'])
+
+
 def flatten_and_stop(owner, evidence=None, owned_close=None):
     """Owner is the existing admitted V5 runtime. Evidence is a bounded L1 port.
 
@@ -63,9 +72,7 @@ def flatten_and_stop(owner, evidence=None, owned_close=None):
     try:
         try:
             with owner._action(), r._admission(r._now()):
-                snapshot = r.reader.read_committed(
-                    engine.ledger.manifest["epoch"], engine.ledger.manifest["epoch"]
-                )
+                snapshot = read_account(r)
                 positions = {
                     k: v
                     for k, v in snapshot["state"]["positions"].items()
@@ -87,9 +94,7 @@ def flatten_and_stop(owner, evidence=None, owned_close=None):
                         raise ValueError(filled.get("reason", "SHUTDOWN_EXIT_REFUSED"))
                     r._publish_report(r._now())
                 engine.reconcile()
-                final = r.reader.read_committed(
-                    engine.ledger.manifest["epoch"], engine.ledger.manifest["epoch"]
-                )
+                final = read_account(r)
                 remaining = {
                     k: v
                     for k, v in final["state"]["positions"].items()
@@ -112,9 +117,7 @@ def flatten_and_stop(owner, evidence=None, owned_close=None):
             # No replay/repair. Attempt only an existing committed read; UNKNOWN
             # stays UNKNOWN if the coordinator/native evidence cannot reconcile.
             try:
-                p = r.reader.read_committed(
-                    engine.ledger.manifest["epoch"], engine.ledger.manifest["epoch"]
-                )
+                p = read_account(r)
                 active = {
                     k: v for k, v in p["state"]["positions"].items() if number(v["remaining"]) > 0
                 }
