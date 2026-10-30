@@ -1,34 +1,39 @@
 {
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_BOUNDED_W32TIME_EXPERIMENT_V1_ABORTED_GUARD_FAILURE_PRESERVED",
+  "last_verified_task": "QD_WINDOWS_TIME_GUARD_REPAIR_V1_OFFLINE_COMPLETE",
   "next_eligible_tasks": [
-  "QD_OFFLINE_CLOCK_EXPERIMENT_GUARD_REPAIR_BEFORE_NEW_SYSTEM_AUTHORIZATION"
+  "OPERATOR_REVIEW_NEW_BOUNDED_WINDOWS_CLOCK_SCOPE_REQUIRED"
 ],
   "blocked_tasks": {
   "PERSONAL_LOCAL_INSTALLATION": "Refreshed638source candidate2c039.../archive0e65fa... verified; revision3manifest/procedure ready for review,notauthorization. Plannednew10204fileDrelease uncreated;newnativeIDs/digest unavailable. Old9410package and isolated10203candidate preserved. Activefca29unchanged. Exactselected executionrunner review/operationalpermission and actualControlCenter/clock/resources/Stop<=8s/restart pending.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
   "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
-  "PERSONAL_BOUNDED_START": "Oneapprovedclockexperiment26sABORTEDguardLastKnownGoodTime;1662/1656msREFUSED. Twoapprovedtargetsrecordedeffective-restored15/360000;originalbroadrollbackstatusUNRESOLVED/exit42preserved,notPASS. Stopafterconsumedgrant;offlineguardrepairneededbeforeanynewexplicitlyauthorizedWindowsrun. PAPERunauthorized.",
+  "PERSONAL_BOUNDED_START": "Offline guard repaired/282passes; V2 source prepared, real effects NOT EXECUTED. Original one-run26s experiment remains aborted/exit42/fullrollbackfalse; historical targets15/360000 readback only, not current verification. 1662/1656ms historical refusals unchanged. Fresh exact Windows authorization required before reinspection/experiment. No clock clearance or PAPER startup from offline results.",
   "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Actual disposable native candidate entry/partial/shutdown/full/replay/audit/ACK/drain/read-only restart verified. No operational financial root or account accessed/initialized; syntheticreceipt/authority cannot enter operational path. Actual activation/inception/current custody not executed."
 },
   "latest_tests": {
-  "passed": 62,
+  "passed": 282,
   "failed": 0,
   "skipped": 0,
-  "seconds": 1.56,
-  "scope": "EXISTING_CLOCK_AND_IEX_REGRESSIONS",
-  "new_cases": 0,
-  "runtime_source_changed": false,
-  "actual_administrator_experiments": 1,
-  "actual_experiment_aborted": true,
-  "complete_observation": false,
-  "clock_qualified": false,
-  "target_setting_restore_readback_verified": true,
-  "original_automated_full_rollback_verified": false,
-  "operational_financial_actions": 0
+  "deselected": 3,
+  "new_cases": 78,
+  "scope": "OFFLINE_GUARD_CLOCK_IEX_POLICY_ROADMAP_PERSONAL_DEPENDENCIES",
+  "primary": {
+    "passed": 265,
+    "seconds": 12.34
+  },
+  "focused_dependencies": {
+    "passed": 17,
+    "seconds": 1.74
+  },
+  "actual_windows_queries": 0,
+  "administrator_elevations": 0,
+  "system_changes": 0,
+  "operational_financial_actions": 0,
+  "native_successor_effects_executed": false
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "ONE approved bounded administratorW32Timeexperiment CONSUMED/ABORTED:oneelevation26.000stotal;local originals15/360000captured,onlyMaxPoll6/Update100applied/effectiveverified,oneapplyreload.Baselinegenuineclock1662msREFUSED,firstapplied1656msREFUSED;noqualifyingbinding/anchor. At~21sappliedscopeguardincorrectlytreatedLastKnownGoodTimeadvancementasforeignconfig.RestoredbothoriginalREG_DWORDvalues15/360000;onerollbackreload andeffectivequeryexit0confirmtargetsLocaloriginal;RunningManual/time.windows.com,0x9unchanged.OriginaladminstatusUNRESOLVED_ROLLBACK_NOT_CONFIRMED_STOP/exit42 andparentREFUSED_OR_UNRESOLVED_STOP preserved;rollback_verifiedFALSEbecausebroadguardalsofailedonLastKnownGoodTime.Offlineonlyrawreview:allotherrecordedConfigvalues/typesmatch,onlyLastKnownGoodTimeQWORDadvanced64.5331075sconsistentwithnormaltimestampstate;noactortrace,neverrestoretimestamp.Exactoriginalguardfailureandfrozen-in-memorycontrolreproducedwithoutOSquery. RecordedtargetrestoreverifieddoesNOTrelabelfullguardorclockexperimentPASS.STOPallfurtherWindowsactionsasrequired;noextraquery/elevation/retryafterstop. Complete180sobservationnotperformed,noconclusionontuningefficacy.62existingclock/IEXtests0fail0skip1.56s;oneactualexperimentaborted. Raw9files97221bytes/originalpayloadandhashesretained,0deletions.NextrepairandtestscopeguardOFFLINEagainstWindowsmetadataadvancementandstrictunexpectedconfigrefusal;separateactualtargetrollbackreadbackfrombroadmetadataaudit.Anycorrectednativeexperimentorliveadminreinspectionrequiresfreshscopeapproval;existinggrantcannotreused. No threshold/age weakening,service/source/firewall/clockset/resync,provider/account/installation/PAPER/Genesisaction. docs/QD_BOUNDED_WINDOWS_TIME_EXPERIMENT_V1_2026-10-30.md",
+  "exact_next_action": "QD-WINDOWS-TIME-GUARD-REPAIR-V1 OFFLINE COMPLETE: strict static/effective configuration guards; only typed monotonic LastKnownGoodTime may advance within 420s; never write/rewind timestamp or use it as clock authority. Independent target readback/full scope/evidence/rollback flags; exact ACKs, partial-write and foreign-conflict refusal. Prepared default-refusing V2 source delegates actual wrappers to pinned guard; no native experiment/Windows query/elevation. 282 distinct tests passed, 0 failed/skipped, 3 unrelated deselected; 78 new. Policy642sources0issues. All9originalfiles97221bytes and original payload hash unchanged; offline repaired replay accepts recorded cut. Original26srun statusUNRESOLVED_ROLLBACK_NOT_CONFIRMED_STOP/exit42 and rollback_verifiedfalse preserved. Historical target readback15/360000 is not fresh system verification; clock1662/1656ms still refused. Old grant consumed; any fresh administrator/current-state verification or corrected bounded experiment needs new explicit scope. Offline eligible guard work complete. No provider/promotion/enrollment/inception/PAPER/Genesis action; actual qualifying clock/currentresearch/custody/executableIEX/operational installation acceptance still required. docs/QD_WINDOWS_TIME_GUARD_REPAIR_V1_2026-10-30.md",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
@@ -120,9 +125,9 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "BLOCKED_CURRENT_PUBLICATION_L1_AND_INSTALLED_ACCEPTANCE",
+  "execution_status": "OFFLINE_GUARD_COMPLETE_AWAITING_NEW_WINDOWS_AUTHORIZATION_AND_CURRENT_EVIDENCE",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
-  "continuation_report": "docs/QD_ZERO_COST_RESEARCH_PIPELINE_2026-10-29.md",
+  "continuation_report": "docs/QD_WINDOWS_TIME_GUARD_REPAIR_V1_2026-10-30.md",
   "blocked_wait_reason": "Free source engineering/access verified. Missing explicit valuation evidence keeps affected instruments ineligible. Real current-publication/executable L1/installation and financial acceptance remain; no fabricated no-entry session. Fresh219msclock snapshot not permanent authority. Sole operator; no enterprise reviewer chain.",
   "publication_validation": {
     "source_release": "c8df2e9cd61077daf308c07df78ea12c14ea4e52",
@@ -223,7 +228,7 @@
     "real_account_initialized": false
   },
   "quality_dips_integration_contract": "docs/QUALITY_DIPS_RUNTIME_INTEGRATION_CONTRACT_V1_2026-10-24.md",
-  "recovery_checkpoint": "docs/PERSONAL_PAPER_SOURCE_CONTINUATION_2026-10-27.md",
+  "recovery_checkpoint": "docs/QD_COMMISSIONING_CONTINUATION_2026-10-27.md",
   "quality_dips_integration_v1": {
     "authorization": "P-QD-INTEGRATION-V1-OFFLINE",
     "status": "SOURCE_IMPLEMENTED_DISPOSABLE_VERIFIED_NOT_REGISTERED",
@@ -3702,5 +3707,83 @@
     "followup_system_queries_or_retries": 0,
     "raw_artifact_entries": 9,
     "raw_artifact_bytes": 97221
-  }
+  },
+  "windows_time_guard_repair_v1_20261030": {
+  "report": "docs/QD_WINDOWS_TIME_GUARD_REPAIR_V1_2026-10-30.md",
+  "base_commit": "e0de68d1ff4129352c5f41d3fd98e2de2b6d4233",
+  "status": "OFFLINE_COMPLETE_NATIVE_NOT_EXECUTED",
+  "tests": {
+    "passed": 282,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 3,
+    "new_cases": 78,
+    "scope": "OFFLINE_GUARD_CLOCK_IEX_POLICY_ROADMAP_PERSONAL_DEPENDENCIES",
+    "primary": {
+      "passed": 265,
+      "seconds": 12.34
+    },
+    "focused_dependencies": {
+      "passed": 17,
+      "seconds": 1.74
+    },
+    "actual_windows_queries": 0,
+    "administrator_elevations": 0,
+    "system_changes": 0,
+    "operational_financial_actions": 0,
+    "native_successor_effects_executed": false
+  },
+  "prior_top_level_values": {
+    "last_verified_task": "QD_BOUNDED_W32TIME_EXPERIMENT_V1_ABORTED_GUARD_FAILURE_PRESERVED",
+    "next_eligible_tasks": [
+      "QD_OFFLINE_CLOCK_EXPERIMENT_GUARD_REPAIR_BEFORE_NEW_SYSTEM_AUTHORIZATION"
+    ],
+    "blocked_tasks": {
+      "PERSONAL_LOCAL_INSTALLATION": "Refreshed638source candidate2c039.../archive0e65fa... verified; revision3manifest/procedure ready for review,notauthorization. Plannednew10204fileDrelease uncreated;newnativeIDs/digest unavailable. Old9410package and isolated10203candidate preserved. Activefca29unchanged. Exactselected executionrunner review/operationalpermission and actualControlCenter/clock/resources/Stop<=8s/restart pending.",
+      "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
+      "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
+      "PERSONAL_BOUNDED_START": "Oneapprovedclockexperiment26sABORTEDguardLastKnownGoodTime;1662/1656msREFUSED. Twoapprovedtargetsrecordedeffective-restored15/360000;originalbroadrollbackstatusUNRESOLVED/exit42preserved,notPASS. Stopafterconsumedgrant;offlineguardrepairneededbeforeanynewexplicitlyauthorizedWindowsrun. PAPERunauthorized.",
+      "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Actual disposable native candidate entry/partial/shutdown/full/replay/audit/ACK/drain/read-only restart verified. No operational financial root or account accessed/initialized; syntheticreceipt/authority cannot enter operational path. Actual activation/inception/current custody not executed."
+    },
+    "latest_tests": {
+      "passed": 62,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 1.56,
+      "scope": "EXISTING_CLOCK_AND_IEX_REGRESSIONS",
+      "new_cases": 0,
+      "runtime_source_changed": false,
+      "actual_administrator_experiments": 1,
+      "actual_experiment_aborted": true,
+      "complete_observation": false,
+      "clock_qualified": false,
+      "target_setting_restore_readback_verified": true,
+      "original_automated_full_rollback_verified": false,
+      "operational_financial_actions": 0
+    },
+    "exact_next_action": "ONE approved bounded administratorW32Timeexperiment CONSUMED/ABORTED:oneelevation26.000stotal;local originals15/360000captured,onlyMaxPoll6/Update100applied/effectiveverified,oneapplyreload.Baselinegenuineclock1662msREFUSED,firstapplied1656msREFUSED;noqualifyingbinding/anchor. At~21sappliedscopeguardincorrectlytreatedLastKnownGoodTimeadvancementasforeignconfig.RestoredbothoriginalREG_DWORDvalues15/360000;onerollbackreload andeffectivequeryexit0confirmtargetsLocaloriginal;RunningManual/time.windows.com,0x9unchanged.OriginaladminstatusUNRESOLVED_ROLLBACK_NOT_CONFIRMED_STOP/exit42 andparentREFUSED_OR_UNRESOLVED_STOP preserved;rollback_verifiedFALSEbecausebroadguardalsofailedonLastKnownGoodTime.Offlineonlyrawreview:allotherrecordedConfigvalues/typesmatch,onlyLastKnownGoodTimeQWORDadvanced64.5331075sconsistentwithnormaltimestampstate;noactortrace,neverrestoretimestamp.Exactoriginalguardfailureandfrozen-in-memorycontrolreproducedwithoutOSquery. RecordedtargetrestoreverifieddoesNOTrelabelfullguardorclockexperimentPASS.STOPallfurtherWindowsactionsasrequired;noextraquery/elevation/retryafterstop. Complete180sobservationnotperformed,noconclusionontuningefficacy.62existingclock/IEXtests0fail0skip1.56s;oneactualexperimentaborted. Raw9files97221bytes/originalpayloadandhashesretained,0deletions.NextrepairandtestscopeguardOFFLINEagainstWindowsmetadataadvancementandstrictunexpectedconfigrefusal;separateactualtargetrollbackreadbackfrombroadmetadataaudit.Anycorrectednativeexperimentorliveadminreinspectionrequiresfreshscopeapproval;existinggrantcannotreused. No threshold/age weakening,service/source/firewall/clockset/resync,provider/account/installation/PAPER/Genesisaction. docs/QD_BOUNDED_WINDOWS_TIME_EXPERIMENT_V1_2026-10-30.md",
+    "execution_status": "BLOCKED_CURRENT_PUBLICATION_L1_AND_INSTALLED_ACCEPTANCE",
+    "continuation_report": "docs/QD_ZERO_COST_RESEARCH_PIPELINE_2026-10-29.md",
+    "recovery_checkpoint": "docs/PERSONAL_PAPER_SOURCE_CONTINUATION_2026-10-27.md"
+  },
+  "original_experiment_status_preserved": true,
+  "original_rollback_verified": false,
+  "original_files_count": 9,
+  "original_files_bytes": 97221,
+  "original_hashes_verified": true,
+  "historical_target_restore_verified": true,
+  "current_system_verification": false,
+  "runtime_allowlist": [
+    "LastKnownGoodTime"
+  ],
+  "runtime_max_advance_seconds": 420,
+  "authority_granted": false,
+  "previous_grant_consumed": true,
+  "successor_default_refuses": true,
+  "module_and_payload_source_only": true,
+  "policy_runtime_sources": 642,
+  "policy_issues": 0,
+  "paper_startup": false,
+  "production": "NO-GO"
+}
 }
