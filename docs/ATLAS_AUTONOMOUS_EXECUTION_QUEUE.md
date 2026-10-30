@@ -1,3 +1,7 @@
+## October30 native installation-copy execution closed
+
+Native behavior verified:10204files903dirs260369081bytes; independent final native readback395.922s.196distinct regressions pass/0fail0skip. Final artifacts515.688s/14347entries266908072logicalbytes, under600s/40000/1GiB. Two harness failures and repo lint-cache write variance preserved; no full scope-compliance PASS. One-run authorization CONSUMED. No operational install/selection/provider/financial/PAPER/clock/Genesis change. Next:soleoperator review exact unselected real-code-copy scope and findings; fresh clock/actual installed verifier required. Promotion/financial/startup remain separate. See docs/QD_NATIVE_INSTALL_ADAPTER_ACCEPTANCE_V1_2026-10-30.md. Prior queue retained below.
+
 ## October30 final fixture observer compatibility verified
 
 241 distinct final passes / 0 failures/skips / 71 new:187adapter7.48s+54delta4.03s. Public synthetic observer retains its original test schema while receiving snapshots; no mutation of copy facts. Proposal canonical SHA256888c645b055b016b165c2133a4f9bf69dabbe6f3d5c259a516a863586b7539f2. No native copy/installation executed; previous240 checkpoint retained below.

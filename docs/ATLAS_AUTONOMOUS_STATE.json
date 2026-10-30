@@ -1,41 +1,103 @@
 {
+  "native_install_adapter_disposable_v1_20261030": {
+  "report": "docs/QD_NATIVE_INSTALL_ADAPTER_ACCEPTANCE_V1_2026-10-30.md",
+  "base_commit": "c2f476ace1f1144e5e937e321f7e095fe92a42a8",
+  "authorization": "P-QD-INSTALL-ADAPTER-NATIVE-DISPOSABLE-V1",
+  "authorization_consumed": true,
+  "root": "logs/diagnostics/qd-native-install-adapter-v1",
+  "native_behavior_verified": true,
+  "full_scope_compliance_pass": false,
+  "candidate": {
+    "files": 10204,
+    "directories": 903,
+    "bytes": 260369081,
+    "copy_seconds": 143.406,
+    "final_native_audit_scope_seconds": 395.922,
+    "retained_native_handles": 0
+  },
+  "scope": {
+    "seconds_at_artifact_finalization": 515.688,
+    "entries": 14347,
+    "logical_bytes": 266908072,
+    "conservative_allocated_upper_bound_bytes": 325673384,
+    "limit_seconds": 600,
+    "limit_entries": 40000,
+    "limit_bytes": 1073741824
+  },
+  "interrupted_files": 3,
+  "original_harness_failures": [
+    "EXPECTED_DOMAIN_REFUSAL_DIAGNOSTIC_TRUNCATED",
+    "AGGREGATE_BUDGET_REFUSED_CONFINED_NEGATIVE_TEST_HARDLINK"
+  ],
+  "write_boundary_variance": "Two existing .ruff_cache/0.16.5 repository entries refreshed by lint outside approved root; preserved, not waived; later lint --no-cache.",
+  "probe_alias_scope": "Both aliases confined to pytest/test_native_hard_link_source_i0; complete native link group accounted, candidate no-link rules unchanged.",
+  "tests": {
+    "passed": 196,
+    "failed": 0,
+    "skipped": 0,
+    "new_cases": 9,
+    "scope": "ONE_BOUNDED_NATIVE_COPY_AND_OFFLINE_REGRESSIONS",
+    "initial_regressions": {
+      "passed": 193,
+      "seconds": 8.45
+    },
+    "guard_followup": {
+      "passed": 9,
+      "seconds": 0.5,
+      "overlap": 6
+    },
+    "harness_failures_retained": 2,
+    "full_scope_compliance_pass": false,
+    "lint_cache_write_variance": true,
+    "operational_installations": 0,
+    "financial_services_started": 0,
+    "provider_connections": 0
+  },
+  "operational_installation": false,
+  "selection_changed": false,
+  "financial_actions": 0,
+  "provider_connections": 0,
+  "windows_time_changes": 0,
+  "genesis_access": false,
+  "original_evidence_preserved": true,
+  "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
+},
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_OPERATIONAL_INSTALL_ADAPTER_REVIEW_V1_SOURCE_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
+  "last_verified_task": "QD_NATIVE_INSTALL_ADAPTER_DISPOSABLE_V1_NATIVE_BEHAVIOR_VERIFIED_SCOPE_VARIANCE_RETAINED",
   "next_eligible_tasks": [
-  "OPERATOR_APPROVAL_P_QD_INSTALL_ADAPTER_NATIVE_DISPOSABLE_V1"
+  "OPERATOR_REVIEW_UNSELECTED_ACTUAL_CODE_COPY_SCOPE_AND_RETAINED_FINDINGS"
 ],
   "blocked_tasks": {
-  "PERSONAL_LOCAL_INSTALLATION": "Exact unselected operational code adapter implemented/source-reviewed and pinned; native execution acceptance not yet performed. Need one newly authorized disposable native copier acceptance (600s/40000entries/1GiB/newfixtureonly), then separate unselected actual D release copy grant. Old637-source candidate unchanged. Two638-source deltas passed 54exact-source-stage tests, not native installed acceptance. No active selection mechanism accepted or changed. Real resources/currentdata and actual ControlCenter financialStop<=8s/dashboard/restart stillpending. Browser error reproduced without Atlas on iframe control; exact browser component unresolved.",
+  "PERSONAL_LOCAL_INSTALLATION": "Shared physical copier genuine native behavior verified in one approved disposable root; final native identity/ACL/hash/namespace readback passed.193+9with6overlap=196distinct regressions pass. Two harness failures and two repo lint-cache entry refreshes outside root retained; no full scope-compliance PASS. No operational D target, selector, shortcut, service, enrollment or provider activation. Exact638source package and three adapter pins unchanged. Next sole-operator review findings and separately authorize pinned unselected actual-code copy with genuine fresh clock and actual-path installed verifier; promotion remains separate. ControlCenter financial Stop/dashboard/restart and current research/resources remain gates.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
   "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
   "PERSONAL_BOUNDED_START": "Installed genuine standard-user/nonAppContainer clock accepted196ms at07:25:21.7872031Central; access blocker resolved for candidate, no administrator runtime/ACL/settings change needed. Capability revoked and process exited; fresh acquisition mandatory. AppContainer error5 preserved as confined-context failure, not ordinary-user defect. Current acceptedresearch/executableIEX/custody and exact operationalrelease enrollment/ControlCenter acceptance stillpending. This directive forbids PAPER startup/promotion/providers/inception.",
   "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Actual disposable native candidate entry/partial/shutdown/full/replay/audit/ACK/drain/read-only restart verified. No operational financial root or account accessed/initialized; syntheticreceipt/authority cannot enter operational path. Actual activation/inception/current custody not executed."
 },
   "latest_tests": {
-  "passed": 241,
+  "passed": 196,
   "failed": 0,
   "skipped": 0,
-  "new_cases": 71,
-  "scope": "SOURCE_ONLY_ADAPTER_SAFETY_AND_EXACT_PACKAGED_DELTA_FIXTURES",
-  "adapter": {
-    "passed": 187,
-    "seconds": 7.48
+  "new_cases": 9,
+  "scope": "ONE_BOUNDED_NATIVE_COPY_AND_OFFLINE_REGRESSIONS",
+  "initial_regressions": {
+    "passed": 193,
+    "seconds": 8.45
   },
-  "packaged_deltas": {
-    "passed": 54,
-    "seconds": 4.03
+  "guard_followup": {
+    "passed": 9,
+    "seconds": 0.5,
+    "overlap": 6
   },
-  "retained_initial_failures": [
-    "OLD_FIXTURE_NON_SHA_HEAD",
-    "APPCONTAINER_HARDLINK_ACCESS_DENIED"
-  ],
-  "actual_new_native_copies": 0,
+  "harness_failures_retained": 2,
+  "full_scope_compliance_pass": false,
+  "lint_cache_write_variance": true,
   "operational_installations": 0,
   "financial_services_started": 0,
   "provider_connections": 0
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "QD-OPERATIONAL-INSTALL-ADAPTER-REVIEW-V1 source review complete. Default-refusing unselected code adapter scripts/install_verified_release.py reuses native copier/shared pure plan; exact proposal/hash/source pins, genuine native clock, tracked manifest, fresh creation IDs, independent installed native/layout/process proof, durable create-new intent/final receipt; NO selector/promotion/account/provider/service. Dependency aliases/duplicates/parent IDs, callback mutation, unchecked close/false zero-handle reporting corrected. 241distinctfinalpasses0fail0skip/71new =187adapter/safety7.48s+54stageddelta4.03s. Old redfixture-head and confined hardlink refusals retained; normal-user rerun passes unchanged assertions. Exact638source stage and both actual import origins verified; source archive/IEX tested offline, not new native installed acceptance. MutationObserver error reproduced on non-Atlas six-iframe control before Atlas; page error traces empty. Attributable to browser/automation environment, exact component unresolved; no app suppression or permanent UI change. Trace host38attempts33admitted5rejected0pending/67.078s, owned process/port/handle closed. Old native candidate10203files903dirs unchanged, final audit8.391s/0handles. No operational copy, real native fixture copy, source/financial enrollment, protected records/journals, provider, WindowsTime change or Genesis access. NEXT operator review/approve ONE disposable native code-copy acceptance: new D-project logs/diagnostics/qd-native-install-adapter-v1 parent only; candidate/interrupted/owned audit children;600s incl verification,40000entries1GiB; OwnerSYSTEM ACL only new fixture children, exact retained D-Python children. No operational destination or authority. After native pass separate pinned unselected real-code-copy scope, then actual resources/currentresearch/executableIEX/ControlCenter financialStop<=8s/dashboard/restart and inception/pilot gates. Source-only proposal docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V1_2026-10-30.json; docs/QD_OPERATIONAL_INSTALL_ADAPTER_REVIEW_V1_2026-10-30.md",
+  "exact_next_action": "Review docs/QD_NATIVE_INSTALL_ADAPTER_ACCEPTANCE_V1_2026-10-30.md and unchanged pinned unselected-code proposal. Native copy10204files903dirs260369081bytes/143.406s; finalnativeaudit395.922s; artifactclose515.688s/14347entries266908072logicalbytes325673384conservativeallocationbytes. One-run grant CONSUMED; no more native tests or fixture writes. Preserve two harness failures and repo lint-cache write variance; subsequent lint --no-cache. Soleoperator may separately authorize exact unselected real D-code copy, not selection/promotion/provider/account/PAPER. Current resource/custody/research/executableIEX/clock and actual financial Stop<=8s/dashboard/restart acceptance still required; PAPER NO, production NO-GO.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
