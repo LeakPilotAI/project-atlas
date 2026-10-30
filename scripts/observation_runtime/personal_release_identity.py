@@ -9,12 +9,32 @@ import os
 import re
 import sys
 import time
+from itertools import islice
 from pathlib import Path, PurePosixPath
+from types import ModuleType
 
 from app.services.paper_financial_replay import body, digest, strict
 
 from scripts.observation_runtime.personal_paper_inception import native_primitives
 from scripts.observation_runtime.quality_dips_read_service import observe_self
+
+
+def _atlas_modules():
+    """Snapshot loaded Atlas origins; never import/refresh a module to verify it."""
+    result=[]
+    for name,module in list(sys.modules.items()):
+        if name!='app' and not name.startswith('app.') and name!='scripts.observation_runtime' and not name.startswith('scripts.observation_runtime.'):
+            continue
+        if type(module) is not ModuleType:
+            raise ValueError('PERSONAL_RELEASE_MODULE_OBJECT')
+        values=vars(module);spec=values.get('__spec__');paths=values.get('__path__')
+        locations=None if paths is None else tuple(islice(iter(paths),9))
+        if locations is not None and not 0<len(locations)<=8:
+            raise ValueError('PERSONAL_RELEASE_MODULE_NAMESPACE_CAPACITY')
+        result.append((name,module,values.get('__file__'),getattr(spec,'origin',None),locations))
+        if len(result)>2048:
+            raise ValueError('PERSONAL_RELEASE_MODULE_CAPACITY')
+    return tuple(result)
 
 
 class NativePersonalReleaseIdentity:
@@ -134,8 +154,43 @@ class NativePersonalReleaseIdentity:
                 or not Path(__file__).resolve().is_relative_to(self.root)):
             raise ValueError('PERSONAL_RELEASE_NOT_EXECUTING_ACCEPTED_IMAGE')
         self.outputs['.']._verify()
+        self._verify_module_inventory()
         return {'source_commit':self.source_commit,'artifact_digest':self.artifact_digest,
                 'process':dict(self._process),'files':len(self.files),'directories':len(self.outputs)}
+
+    def _verify_module_inventory(self):
+        """Reject mixed workspace/releases even when this verifier is installed.
+
+        This checks import-origin/inventory consistency, not a Python sandbox or
+        protection against hostile same-user mutation of interpreter memory.
+        Original file handles and native namespace verifiers remain mandatory.
+        """
+        modules=_atlas_modules();parents=set()
+        if not modules:raise ValueError('PERSONAL_RELEASE_MODULE_COHORT_MISSING')
+        def relative(value,*,directory=False):
+            if type(value) is not str or not Path(value).is_absolute():
+                raise ValueError('PERSONAL_RELEASE_MODULE_ORIGIN_MISSING')
+            try:return self._relative(str(Path(value).relative_to(self.root)),directory=directory).casefold()
+            except (ValueError,TypeError):
+                raise ValueError('PERSONAL_RELEASE_MODULE_FOREIGN_ORIGIN') from None
+        for _name,_module,filename,origin,locations in modules:
+            if filename is not None:
+                key=relative(filename)
+                if (relative(origin)!=key or key not in self.files or key not in self.handles
+                        or self._relative(self.files[key]['path']).casefold()!=key):
+                    raise ValueError('PERSONAL_RELEASE_MODULE_NOT_IN_PINNED_INVENTORY')
+                parents.add(str(Path(key).parent).casefold())
+            elif origin is not None or locations is None:
+                raise ValueError('PERSONAL_RELEASE_MODULE_ORIGIN_MISSING')
+            if locations is not None:
+                parents.update(relative(path,directory=True) for path in locations)
+        for parent in parents:
+            if parent not in self.outputs:
+                raise ValueError('PERSONAL_RELEASE_MODULE_NAMESPACE_UNENROLLED')
+            self.outputs[parent]._verify()
+        if _atlas_modules()!=modules:
+            raise ValueError('PERSONAL_RELEASE_MODULE_COHORT_CHANGED')
+        return len(modules)
 
     def close(self):
         for handle in self.handles.values():
