@@ -1,37 +1,34 @@
 {
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_APPROVED_HISTORICAL_EARNINGS_SOURCE_IMPLEMENTATION",
+  "last_verified_task": "QD_HIST_EPS_EXHIBIT_V1_GENUINE_SOURCE_AND_SCANNER",
   "next_eligible_tasks": [
-  "QD_GENUINE_EPS_FILING_SHARE_BASIS_AND_CURRENT_PUBLICATION_ACCEPTANCE"
+  "QD_CURRENT_CLOCK_EXECUTABLE_INPUT_AND_NATIVE_PUBLICATION_INSTALLED_ACCEPTANCE"
 ],
   "blocked_tasks": {
-  "PERSONAL_LOCAL_INSTALLATION": "Current source-only method/ratio fixes not installed. Existing fca29cfe release preserved; refreshed reviewed source inventory prepared, no dependencies added. Actual native installed financial Stop/dashboard/restart acceptance remains unexecuted.",
+  "PERSONAL_LOCAL_INSTALLATION": "New genuine source/exhibit/transport modules not installed. Existing fca29cfe release retained. Complete source inventory prepared, no dependencies added; actual installed<=8sStop/dashboard/restart remains unexecuted.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
-  "PERSONAL_CURRENT_DATA": "Approved source-only historical earnings recipe implemented and synthetic scanner/board verified. Genuine original EPS filing/share-basis/corporate-action evidence, accepted native current publication and executable IEX still missing. No fabricated targets; no new provider connection.",
-  "PERSONAL_BOUNDED_START": "Conditional ONE60-second QD pilot UNUSED; no activation/inception. Clock snapshot PASSED219ms,requires fresh installation/startup evidence. Accepted current publication/executable IEX/installed financial and owned Stop acceptance still missing. Genuine no-entry scanning may be healthy with complete observations and explicit exclusions, not missing data.",
-  "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Original four financial role IDs/ACL/empty inventory verified unchanged. Five synthetic native coordination checks passed;actual operational financial inception/replay/report/Stop/recovery not yet executed. No V5 prerequisite."
+  "PERSONAL_CURRENT_DATA": "Genuine original EPS/exhibit/share-basis source and research-only scanner verified. Three nonanalyst scenarios generated; original board WATCH, L1notreached and existing evidence thresholds unmet. No accepted current native ranking or executable IEX; regular session closed. No fake eligibility.",
+  "PERSONAL_BOUNDED_START": "Conditional ONE60secondQDgrant UNUSED. Latest actual clock REFUSED W32TimeStopped0x80070426; earlier218/219ms snapshots expired. Need new bounded start-only service authorization, accepted current source/L1 and installed acceptance; no new financial approval within original conditional scope.",
+  "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Prior native synthetic/reconciliation/Stop evidence preserved. No actual account/resource access this increment; historical empty-root observations are not new verification. Actual financial activation/inception/current custody/installed Stop/restart not executed."
 },
   "latest_tests": {
-  "passed": 369,
+  "passed": 406,
   "failed": 0,
   "skipped": 0,
-  "broad_passed": 368,
-  "broad_seconds": 12.79,
-  "additional_disjoint_expiry_passed": 1,
-  "new_method_cases": 44,
-  "new_ratio_source_cases": 28,
-  "prior_297_and_373_and_452_and_native_evidence_retained": true,
-  "source_policy_files": 636,
+  "seconds": 22.07,
+  "source_policy_files": 639,
   "source_policy_issues": 0,
+  "genuine_final_replay_requests": 0,
+  "genuine_final_replay_original_hashes_unchanged": true,
   "installed_acceptance_executed": false
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Approved QD_HISTORICAL_EARNINGS_MULTIPLE_V1 source method implemented, no new method approval needed. 369 distinct relevant passes:368combined+1additional fundamental-expiry case;72new(28ratio/source+44method). Keep real valuation admission blocked until genuine original standalone EPS filing versions and corporate-action/share-basis witnesses bind complete IEX raw history/calendar. No synthetic source verifier, local hash or method label can supply that acceptance. No actual historical multiple/forecast generated;8publiccachehashes unchanged/0newproviderrequests. Use implemented explicit unmixed method attachment and original scanner/board; preserve current scoring/V3/risk and analyst fields. Next genuine source-evidence producer/verification under applicable existing data authorization, accepted current research/ranking custody and regular-session executable IEX/instrument/halts/participation. Prepare committed complete immutable source inventory; existing fca29cfe installed release retained. Need fresh clock, factual financial/resource/session/current custody and actual installed Stop<=8seconds/dashboard/restart acceptance. Only after all technical gates pass use existing UNUSED once-only1000USD/ONEtotal60secondQDgrant. No paid data, Yahoo/FMP, external-reviewer chains, V5, Hyperliquid inception, Genesis, live orders or autostart. docs/QD_HISTORICAL_EARNINGS_METHOD_V1_2026-10-29.md",
+  "exact_next_action": "QD-HIST-EPS-EXHIBIT-V1 COMPLETE: genuine SEC18original10Q+6exhibits/6main8Klinks; CompanyFacts unchanged; EPSproxy19.16/20anchors/scenarios518.9855659787368,613.1718959913326,668.1876986584107; source and actual research-only scanner/original board verified, WATCH/no forced signal. 406relevantpassed/0failed/0skipped; sourceaudit639/0issues; zero-network exact replay and original cache hashes unchanged. Actual 2026-10-30T00:48:30Z clock REFUSED W32TimeStopped0x80070426, prior ms snapshots expired; no service changes/resync. Need bounded start-only W32Time permission then unchanged<=1000ms check; no new source/startup settings. Regular US session closed at final verification; need actual fresh executable IEX and fresh original scoring/instrument/action/halt evidence. Next bind acquired-source handoff to actual enrolled native current-publication/local authority and existing publication reader; research receipts alone do not grant native custody. Refresh/install complete reviewed immutable release only when prerequisites pass; measure actual installed<=8sStop/report/ACK/drain/ownedexit/readback, dashboard and restart. Existing once-only1000USD/ONEtotal60secondQDgrant UNUSED and conditional; no need repeat financial approval within scope. No account/resource modification, operational native child, new financial service or quote stream. No Yahoo/FMP/paid data,V5,Hyperliquid inception,Genesis,liveorders,VPS,autostart. docs/QD_HIST_EPS_EXHIBIT_V1_2026-10-29.md",
   "latest_focused_tests": {
-  "passed": 44,
+  "passed": 281,
   "failed": 0,
-  "includes_scanner_and_additional_expiry": true,
-  "overlap_final_total": true
+  "seconds": 15.06,
+  "overlaps_final_selection": true
 },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -2969,5 +2966,58 @@
     "pilot": false,
     "clock_snapshot_ms": 218,
     "real_source_verifier_installed": false
+  },
+  "hist_eps_exhibit_genuine_20261029": {
+    "report": "docs/QD_HIST_EPS_EXHIBIT_V1_2026-10-29.md",
+    "prior_tests": {
+      "passed": 369,
+      "failed": 0,
+      "skipped": 0,
+      "broad_passed": 368,
+      "broad_seconds": 12.79,
+      "additional_disjoint_expiry_passed": 1,
+      "new_method_cases": 44,
+      "new_ratio_source_cases": 28,
+      "prior_297_and_373_and_452_and_native_evidence_retained": true,
+      "source_policy_files": 636,
+      "source_policy_issues": 0,
+      "installed_acceptance_executed": false
+    },
+    "prior_blockers": {
+      "PERSONAL_LOCAL_INSTALLATION": "Current source-only method/ratio fixes not installed. Existing fca29cfe release preserved; refreshed reviewed source inventory prepared, no dependencies added. Actual native installed financial Stop/dashboard/restart acceptance remains unexecuted.",
+      "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
+      "PERSONAL_CURRENT_DATA": "Approved source-only historical earnings recipe implemented and synthetic scanner/board verified. Genuine original EPS filing/share-basis/corporate-action evidence, accepted native current publication and executable IEX still missing. No fabricated targets; no new provider connection.",
+      "PERSONAL_BOUNDED_START": "Conditional ONE60-second QD pilot UNUSED; no activation/inception. Clock snapshot PASSED219ms,requires fresh installation/startup evidence. Accepted current publication/executable IEX/installed financial and owned Stop acceptance still missing. Genuine no-entry scanning may be healthy with complete observations and explicit exclusions, not missing data.",
+      "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Original four financial role IDs/ACL/empty inventory verified unchanged. Five synthetic native coordination checks passed;actual operational financial inception/replay/report/Stop/recovery not yet executed. No V5 prerequisite."
+    },
+    "original_quarter_documents": 18,
+    "earnings_exhibits": 6,
+    "main_8k_identity_links": 6,
+    "EPS_proxy": "19.16",
+    "anchors": 20,
+    "scenarios": [
+      "518.9855659787368",
+      "613.1718959913326",
+      "668.1876986584107"
+    ],
+    "raw_companyfacts_modified": false,
+    "research_GET_attempts": 54,
+    "new_quote_streams": 0,
+    "scanner_evaluated": 1,
+    "scanner_failed": 0,
+    "original_V3_state": "WATCH",
+    "original_input_digest": "696b37017e347d43750841a46b6d3f0e1fb9ee078f129487ae30b4a0b017dc6b",
+    "final_readonly_replay_requests": 0,
+    "final_cache_files": 51,
+    "final_cache_bytes": 119968249,
+    "all_original_hashes_unchanged": true,
+    "clock_observation_utc": "2026-10-30T00:48:30Z",
+    "clock_status": "REFUSED_W32Time_NOT_STARTED_0x80070426",
+    "native_current_ranking_published": false,
+    "new_release_installed": false,
+    "financial_activation": false,
+    "inception": false,
+    "pilot": false,
+    "stopped_reason": "STOPPED_CLOCK_CURRENT_REGULAR_SESSION_AND_ACTUAL_NATIVE_INSTALLED_ACCEPTANCE_DEPENDENCIES"
   }
 }

@@ -3,7 +3,9 @@ import asyncio
 import copy
 import json
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 from app.investment.enums import AssetType, DataQuality
@@ -104,7 +106,7 @@ def test_observed_negative_cashflow_is_preserved_not_zeroed():
 
 
 def test_ratio_derivation_does_not_invent_normalization_targets():
-    f=normalized();price=MeasuredValue.of(20,source='ALPACA_IEX',timestamp=NOW)
+    f=normalized();price=MeasuredValue.of(20,source='ALPACA_IEX',timestamp=NOW,retrieved_at=NOW)
     values=valuation(f,price,now=NOW)
     assert values['pe'].value==pytest.approx(200/46)
     assert values['ps'].value==pytest.approx(200/460)
@@ -279,7 +281,9 @@ def test_synthetic_cache_cannot_be_relabelled_as_operational_tls(tmp_path):
 
 
 def test_reserved_contact_is_only_permitted_for_synthetic_tests(tmp_path):
-    c=FreeResearchClient(cache_root=tmp_path/'cache',now=lambda:NOW,sec_user_agent=CONTACT)
+    cache_root=Path('D:/Work/Project Atlas/logs/research')/('reserved-contact-test-'+uuid4().hex)
+    assert not cache_root.exists()
+    c=FreeResearchClient(cache_root=cache_root,now=lambda:NOW,sec_user_agent=CONTACT)
     with pytest.raises(ResearchRefused,match='CONTACT'):c.get(SEC,ttl=10)
     assert c.attempted==0 and not c.root.exists()
 

@@ -12,11 +12,13 @@ from app.investment.free_research_providers import calendar_sessions, daily_bars
 from app.investment.free_research_transport import ResearchRefused, utc
 from app.investment.freshness import FUNDAMENTAL_TTL_SECONDS, VALUATION_TTL_SECONDS
 from app.investment.market_hours import ET
+from app.investment.sec_earnings_exhibit import exhibit_rows
 from app.investment.sec_edgar_research import normalize_companyfacts, number, ratio_fact_evidence
 from app.services.paper_financial_replay import body, digest, strict
 
 METHOD = 'QD_HISTORICAL_EARNINGS_MULTIPLE_V1'
 SCHEMA = 'QD_HISTORICAL_EARNINGS_INPUT_V1'
+EXHIBIT_SCHEMA = 'QD_HISTORICAL_EARNINGS_INPUT_V2'
 FIELDS = {'schema','method','domain','instrument','companyfacts','facts_received_at',
           'prices','calendar','price_adjustment','filing_witnesses','price_basis'}
 
@@ -92,7 +94,9 @@ def _build(evidence, *, method, now, verify_source):
     if len(encoded.encode()) > 16*1024*1024:
         refused('INPUT_CAPACITY')
     packet = strict(encoded)
-    if (type(packet) is not dict or set(packet) != FIELDS or packet['schema'] != SCHEMA
+    if (type(packet) is not dict or not (
+            set(packet)==FIELDS and packet['schema']==SCHEMA or
+            set(packet)==FIELDS|{'earnings_exhibits'} and packet['schema']==EXHIBIT_SCHEMA)
             or packet['method'] != METHOD or packet['domain'] not in ('SYNTHETIC','TLS_PUBLIC_PROVIDER')
             or packet['price_adjustment'] != 'raw'):
         refused('INPUT_SCHEMA_OR_PRICE_BASIS')
@@ -127,12 +131,20 @@ def _build(evidence, *, method, now, verify_source):
     raw_rows = packet['companyfacts'].get('facts',{}).get('us-gaap',{}).get('EarningsPerShareDiluted',{}).get('units',{}).get('USD/shares',[])
     if type(raw_rows) is not list or not 0 < len(raw_rows) <= 8192:
         refused('REPORTED_DILUTED_EPS_REQUIRED')
-    rows = []; unique = set()
+    # V1 remains unchanged. V2 keeps the original API object intact and carries
+    # a separately sourced original-exhibit projection; never relabel 8-K rows
+    # inserted into caller-supplied Company Facts as SEC API observations.
+    direct=[]
     for row in raw_rows:
         if type(row) is not dict:
             refused('QUARTER_SCHEMA')
         if row.get('form') not in ('10-K','10-Q','10-K/A','10-Q/A'):
             continue
+        direct.append(row)
+    if packet['schema']==EXHIBIT_SCHEMA:
+        direct+=exhibit_rows(packet['earnings_exhibits'],cik=instrument['cik'])
+    rows = []; unique = set()
+    for row in direct:
         start,end,filed = (date.fromisoformat(row[k]) for k in ('start','end','filed'))
         if filed > now.date() or end > filed:
             refused('QUARTER_SOURCE_TIMESTAMP')
