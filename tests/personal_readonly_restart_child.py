@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from threading import Timer
 
@@ -14,19 +15,29 @@ from app.services.personal_native_coordination import PersonalNativeCoordination
 from app.services.personal_publication_custody import PersonalPublicationCustody
 from app.services.quality_dips_autonomous_integration import AutonomousCoordinationRead
 from app.services.quality_dips_autonomous_paper import AutonomousPaper
-from app.services.quality_dips_operational_presentation import OperationalAutonomousSelectedRead
+from app.services.quality_dips_operational_presentation import (
+    OperationalAutonomousSelectedRead,
+)
 
-from scripts.observation_runtime.personal_coordination_store import NativePersonalCoordinationImages
+from scripts.observation_runtime.personal_coordination_store import (
+    NativePersonalCoordinationImages,
+)
 from scripts.observation_runtime.personal_financial_authority import (
     NativePersonalFinancialReadAuthority,
 )
-from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
+from scripts.observation_runtime.personal_local_authority import (
+    NativePersonalOperatorAuthority,
+)
 from scripts.observation_runtime.personal_paper_inception import (
     NativePersonalInitialReadback,
     PersonalInceptionBootstrap,
 )
-from scripts.observation_runtime.personal_runtime_current import PersonalNativeReadAuthority
-from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
+from scripts.observation_runtime.personal_runtime_current import (
+    PersonalNativeReadAuthority,
+)
+from scripts.observation_runtime.personal_writer_ownership import (
+    NativePersonalWriterOwnership,
+)
 from scripts.observation_runtime.quality_dips_read_service import observe_self
 
 
@@ -36,12 +47,12 @@ class NoFinancialPermission:
     def lease(self, *args, **kwargs): raise ValueError('READ_ONLY_FIXTURE_NO_PUBLICATION_AUTHORITY')
 
 
-def main():
-    raw=sys.stdin.buffer.read(65537)
-    if len(raw)>65536: raise ValueError('FIXTURE_INPUT_CAPACITY')
-    value=strict(raw.decode())
+@contextmanager
+def reopen_readonly_fixture(value):
     root=Path(value['root'])
     repo=Path(__file__).resolve().parents[1]
+    from personal_fixture_sources import fixture_source_root
+    source_repo=fixture_source_root(repo)
     if (root.parent.parent != repo/'logs/diagnostics' or not root.parent.name.startswith('qd-personal-pipeline-')
             or any(p.is_symlink() or p.is_junction() for p in (root,*root.parents))):
         raise ValueError('EXPLICIT_SYNTHETIC_ROOT_REQUIRED')
@@ -72,9 +83,9 @@ def main():
         source=PersonalCurrentPins(ledger=ledger,name='source',clock=clock)
         reports=PersonalCurrentPins(ledger=ledger,name='reports',clock=clock)
         authority=NativePersonalFinancialReadAuthority(operator=operator,ownership=owner,source=source)
-        spec=importlib.util.spec_from_file_location('readonly_restart_codec',repo/'scripts/volume_inspector/operational_autonomous_store.py')
+        spec=importlib.util.spec_from_file_location('readonly_restart_codec',source_repo/'scripts/volume_inspector/operational_autonomous_store.py')
         codec=importlib.util.module_from_spec(spec);spec.loader.exec_module(codec)
-        spec=importlib.util.spec_from_file_location('readonly_restart_report',repo/'scripts/volume_inspector/financial_reporting.py')
+        spec=importlib.util.spec_from_file_location('readonly_restart_report',source_repo/'scripts/volume_inspector/financial_reporting.py')
         report=importlib.util.module_from_spec(spec);spec.loader.exec_module(report)
         projection=report.ProjectionTarget(native['resources']['projection']['path'],native['resources']['projection']['native_id'])
         handles.append(projection)
@@ -98,11 +109,21 @@ def main():
         assert number(payload['state']['cash'])==number('1015.9136')
         assert all(number(p['remaining'])==0 and number(p['remaining_entry_costs'])==0 for p in payload['state']['positions'].values())
         assert engine.grant is None and operator.enrollment==native
-        print(json.dumps({'synthetic_only':True,'read_only_restart':True,'writer_rebind_refused':refused,
+        assert fixture_source_root(repo)==source_repo
+        result={'synthetic_only':True,'read_only_restart':True,'writer_rebind_refused':refused,
             'process':observe_self(),'cash':payload['state']['cash'],'source_revision':payload['source_revision'],
-            'state_digest':digest(payload['state']),'account_and_epoch_distinct':native['account_id']!=native['epoch']}))
+            'state_digest':digest(payload['state']),'account_and_epoch_distinct':native['account_id']!=native['epoch'],
+            'source_root':str(source_repo)}
+        yield {'result':result,'reader':reader,'clock':clock,'native':native,'payload':payload}
     finally:
         for item in reversed(handles): item.close()
+
+
+def main():
+    raw=sys.stdin.buffer.read(65537)
+    if len(raw)>65536: raise ValueError('FIXTURE_INPUT_CAPACITY')
+    value=strict(raw.decode())
+    with reopen_readonly_fixture(value) as opened:print(json.dumps(opened['result']))
 
 
 if __name__=='__main__':

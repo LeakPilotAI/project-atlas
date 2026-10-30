@@ -28,12 +28,18 @@ from personal_fixture_budget import fixture_budget
 from test_personal_paper_inception_memory import system
 from test_quality_dips_autonomous_paper import candidate, entry, monitor, setup
 
-from scripts.observation_runtime.personal_coordination_store import NativePersonalCoordinationImages
-from scripts.observation_runtime.personal_engine_session import NativePersonalEngineSession
+from scripts.observation_runtime.personal_coordination_store import (
+    NativePersonalCoordinationImages,
+)
+from scripts.observation_runtime.personal_engine_session import (
+    NativePersonalEngineSession,
+)
 from scripts.observation_runtime.personal_financial_authority import (
     NativePersonalFinancialAuthority,
 )
-from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
+from scripts.observation_runtime.personal_local_authority import (
+    NativePersonalOperatorAuthority,
+)
 from scripts.observation_runtime.personal_paper_inception import (
     NativePersonalInceptionFiles,
     NativePersonalInitialReadback,
@@ -41,7 +47,9 @@ from scripts.observation_runtime.personal_paper_inception import (
     PersonalInceptionPublisher,
     native_primitives,
 )
-from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
+from scripts.observation_runtime.personal_writer_ownership import (
+    NativePersonalWriterOwnership,
+)
 from scripts.observation_runtime.quality_dips_read_service import observe_self
 
 
@@ -51,6 +59,8 @@ def run_native_pipeline(tmp_path, stop_observer=None):
         pytest.skip('NOT EXECUTED: explicit confined native pipeline root required')
     root = Path(value)
     repo = Path(__file__).resolve().parents[1]
+    from personal_fixture_sources import fixture_source_root
+    source_repo = fixture_source_root(repo)
     assert root.parent == repo/'logs/diagnostics' and root.name.startswith('qd-personal-pipeline-')
     assert tmp_path.is_relative_to(root) and not tmp_path.is_symlink() and not tmp_path.is_junction()
     assert not any(p.is_symlink() or p.is_junction() for p in (root, *root.parents))
@@ -127,9 +137,9 @@ def run_native_pipeline(tmp_path, stop_observer=None):
         request = {'scope':'LOCAL_ENROLLED','enrollment':s.n,'grant': {'session_id': 'synthetic-session'}}
         reservation = PersonalSessionReservations(ledger=ledger, authorization=SimpleNamespace(verify=lambda r: r == request))
         timed('session_reservation', lambda: reservation.reserve(request))
-        spec = importlib.util.spec_from_file_location('pipeline_native', repo/'scripts/volume_inspector/operational_autonomous_store.py')
+        spec = importlib.util.spec_from_file_location('pipeline_native', source_repo/'scripts/volume_inspector/operational_autonomous_store.py')
         module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-        spec = importlib.util.spec_from_file_location('pipeline_reports', repo/'scripts/volume_inspector/financial_reporting.py')
+        spec = importlib.util.spec_from_file_location('pipeline_reports', source_repo/'scripts/volume_inspector/financial_reporting.py')
         reporting = importlib.util.module_from_spec(spec); spec.loader.exec_module(reporting)
         projection = reporting.ProjectionTarget(s.n['resources']['projection']['path'], s.n['resources']['projection']['native_id'])
         handles.append(projection)
@@ -182,7 +192,7 @@ def run_native_pipeline(tmp_path, stop_observer=None):
                 assert number(state['cash'])==number('1015.9136')
                 assert all(number(p['remaining'])==number(p['remaining_entry_costs'])==0 for p in state['positions'].values())
                 stop_observer('READBACK',{'root':str(tmp_path),'personal_enrollment':s.e,'now':clock(),
-                    'state_digest':digest(state),'timings':timings,'process':process})
+                    'state_digest':digest(state),'timings':timings,'process':process,'source_root':str(source_repo)})
                 budget()
                 return  # finally closes every retained native handle before exit.
         else:

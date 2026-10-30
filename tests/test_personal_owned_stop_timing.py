@@ -13,7 +13,10 @@ from pathlib import Path
 
 import pytest
 
-from scripts.observation_runtime.disposable_host_owner import observe_handle, observe_pid
+from scripts.observation_runtime.disposable_host_owner import (
+    observe_handle,
+    observe_pid,
+)
 
 
 def hashes(root):
@@ -47,6 +50,8 @@ def test_three_owned_native_shutdowns_include_exit_and_post_exit_readback(sample
     parent=os.environ.get('ATLAS_OWNED_STOP_TIMING_PARENT')
     if parent is None:pytest.skip('NOT EXECUTED: explicit synthetic timing scope required')
     repo=Path(__file__).resolve().parents[1]
+    from personal_fixture_sources import fixture_source_root
+    source_repo=fixture_source_root(repo)
     parent=Path(parent)
     assert parent.parent==repo/'logs/diagnostics' and parent.name.startswith('qd-owned-stop-timing-')
     assert not any(p.is_symlink() or p.is_junction() for p in (parent,*parent.parents))
@@ -83,6 +88,7 @@ def test_three_owned_native_shutdowns_include_exit_and_post_exit_readback(sample
             assert observe_handle(int(child._handle))==identity['created']
         packets=[json.loads(line) for line in all_lines]
         result=next(p['value'] for p in packets if p.get('timing_channel')==nonce and p.get('phase')=='READBACK')
+        assert result['source_root']==str(source_repo)
         before=hashes(root)
         with (nullcontext(prepared) if prepared is not None else subprocess.Popen(
                 [sys.executable,'-B',str(repo/'tests/personal_readonly_restart_child.py')],
@@ -94,6 +100,7 @@ def test_three_owned_native_shutdowns_include_exit_and_post_exit_readback(sample
             stdout,stderr=reader_child.communicate(json.dumps(data),timeout=30)
             assert reader_child.returncode==0,stderr
             verified=json.loads(stdout)
+            assert verified['source_root']==str(source_repo)
             assert verified['state_digest']==result['state_digest'] and verified['read_only_restart']
             assert verified['writer_rebind_refused']
         assert hashes(root)==before
@@ -102,9 +109,15 @@ def test_three_owned_native_shutdowns_include_exit_and_post_exit_readback(sample
             'financial_bytes_unchanged':True,'coordinator_seconds':result['timings']['complete_native_financial_stop'],
             'stop_to_exit_seconds':exited-started,'stop_exit_and_post_exit_readback_seconds':complete,
             'eight_second_passed':complete<=8,'operational_installation_accepted':False}
+        evidence['installed_candidate_source']=str(source_repo) if source_repo!=repo else None
         evidence['profile_inclusive']=next(p['synthetic_stop_profile_inclusive'] for p in packets
                                            if 'synthetic_stop_profile_inclusive' in p)
         parent.mkdir(exist_ok=True)
         (parent/f'sample-{sample}.json').write_text(json.dumps(evidence,indent=2))
+        if source_repo!=repo:
+            # Retain the exact acknowledged writer cut for subsequent read-only
+            # installed HTTP acceptance; never reconstruct or rebind its writer.
+            with (parent/f'native-readback-{sample}.json').open('x') as stream:
+                json.dump({k:result[k] for k in ('root','personal_enrollment','now')},stream)
         print(json.dumps(evidence))
         assert complete<=8, evidence
