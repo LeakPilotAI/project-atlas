@@ -1,8 +1,10 @@
 """Explicitly confined native nonfinancial research archive; no providers/accounts."""
+import copy
 import hashlib
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -106,3 +108,21 @@ def test_nonparticipating_native_image_write_cannot_hide_as_same_source_revision
     frozen=s.hashes()
     with pytest.raises(ValueError,match='NATIVE_REVISION'):s.archive.current()
     assert s.hashes()==frozen
+
+
+def test_original_qd_candidate_and_provenance_publish_to_actual_native_source_archive(archive,tmp_path):
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from test_quality_dips_autonomous_paper import candidate
+    from test_quality_dips_autonomous_paper import setup as engine_setup
+    s=archive;engine_root=tmp_path/'synthetic-engine';engine_root.mkdir()
+    n=engine_setup(engine_root);s.now[0]=n.now[0];b=candidate(n)
+    raw={'board':b['board'],'observations':{b['instrument']['symbol']:b['observation']},
+        'instruments':[b['instrument']],'quotes':{b['instrument']['symbol']:b['quote']},
+        'publication':b['publication'],'monitors':{}}
+    for name in ('verify_components','verify_publication','verify_head','verify_current','verify_research'):
+        setattr(s.auth,name,lambda *args:s.auth.valid)
+    producer=QualityDipsSourcePublication(research=SimpleNamespace(read_current=lambda:copy.deepcopy(raw)),
+        candidates=n.engine.candidates,source_id=s.e['source_id'],authority=s.auth,archive=s.archive,clock=s.clock)
+    before=n.ledger.snapshot()
+    published=producer.publish_scanner(b['board'],datetime.fromtimestamp(s.now[0],UTC).isoformat())
+    assert published['bundles']==[b] and producer.read_current()==published and n.ledger.snapshot()==before

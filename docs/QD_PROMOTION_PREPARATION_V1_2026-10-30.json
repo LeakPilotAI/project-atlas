@@ -1,0 +1,76 @@
+{
+  "schema": "ATLAS_QD_PROMOTION_PREPARATION_V1",
+  "status": "REVIEWABLE_NOT_AUTHORIZATION",
+  "source_commit": "9410c5a89bd986c843b5a97797f31a68f46e0ffc",
+  "source_files": 638,
+  "source_bytes": 7720024,
+  "inventory_sha256": "aa9e9dee08995e5933de44b3b483eff3df0f54978013de0b377f662406c44d48",
+  "archive_sha256": "624681e1876b4492a1f1242df64f0025b160f29d9cba9e929444127799af0b6b",
+  "archive_consistency": {
+    "schema": "ATLAS_SOURCE_CANDIDATE_VERIFICATION_V1",
+    "archive_sha256": "624681e1876b4492a1f1242df64f0025b160f29d9cba9e929444127799af0b6b",
+    "source_files": 638,
+    "supplied_bytes_consistent": true,
+    "source_authenticated": false,
+    "installation_verified": false,
+    "activation_approved": false
+  },
+  "runtime_delta_from_tested_candidate": [
+    {
+      "path": "scripts/observation_runtime/personal_research_archive.py",
+      "bytes": 8505,
+      "sha256": "f72912dbc6d91431da7ed77b3f05f0a53deae5a8a22b0cf777d9dbbe982d3878"
+    }
+  ],
+  "tested_candidate_source_commit": "2b9ba32a683b62933f29d3b52777a21753e50631",
+  "active_release_unchanged": "fca29cfe7760a28d2569b8b4b91ed1ea99804c3c",
+  "proposed_new_release": "D:/AtlasRuntime/releases/9410c5a89bd986c843b5a97797f31a68f46e0ffc",
+  "proposed_source_root": "D:/AtlasCustody/QualityDips/<existing-private-epoch>/research-source",
+  "required_source_enrollment_schema": "PERSONAL_QD_SOURCE_ARCHIVE_V1",
+  "required_real_observations": [
+    "NEW_NATIVE_SOURCE_ROOT_ID_OWNER_SYSTEM_ACL",
+    "EXACT_ACCOUNT_EPOCH_SOURCE_RELEASE_BINDING",
+    "ACCEPTED_SCANNER_RESEARCH_ENVELOPE_AND_SOURCE_PROVENANCE",
+    "SOURCE_CURRENT_HEAD_AND_PUBLICATION_LEASE",
+    "FRESH_LOCAL_CLOCK_AT_MOST_1000MS",
+    "ENTITLED_FRESH_EXECUTABLE_IEX_SESSION_AND_INSTRUMENT_EVIDENCE",
+    "ACTUAL_INSTALLED_CONTROL_CENTER_STOP_ACK_DRAIN_AND_RESTART"
+  ],
+  "source_capacity": {
+    "native_images": 128,
+    "initial_images": 1,
+    "maximum_source_publications": 127,
+    "reset_allowed": false
+  },
+  "installer_limits": {
+    "seconds": 600,
+    "entries": 40000,
+    "bytes": 1073741824
+  },
+  "on_failure": "PRESERVE_PARTIAL_AND_CURRENT_RELEASE;NO_REPAIR_ADOPTION_OR_FINANCIAL_REPLAY",
+  "promotion_authorized": false,
+  "source_root_creation_authorized": false,
+  "active_installation_changed": false,
+  "provider_activation_authorized": false,
+  "financial_publication_authorized": false,
+  "paper_startup_authorized": false,
+  "automatic_startup": false,
+  "real_order_execution": false,
+  "genesis_access": false,
+  "packet_resources": {
+    "entries": 5,
+    "bytes": 4133214,
+    "seconds": 1.968
+  },
+  "dependency_source_release_inventory_sha256": "93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91",
+  "proposal_revision": 2,
+  "python_dependency_files": 9566,
+  "python_dependency_bytes": 252648893,
+  "python_dependency_inventory_sha256": "a337e2b5bbd0faddfeaaeb4c2b5b30fe1a440c4f682a3c94fbca18427ab44745",
+  "planned_installed_files": 10204,
+  "planned_payload_bytes": 260368917,
+  "proposed_interpreter": "D:/AtlasRuntime/releases/9410c5a89bd986c843b5a97797f31a68f46e0ffc/python/python.exe",
+  "new_native_release_digest": null,
+  "new_native_resource_identities": null,
+  "new_native_release_digest_required_after_readback": true
+}
