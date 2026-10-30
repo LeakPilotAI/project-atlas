@@ -94,7 +94,9 @@ class IEXPaperQuotes:
             ):
                 raise IEXRefused("IEX_INSTRUMENT_ENTITLEMENT_CALENDAR_UNVERIFIED")
             uncertainty = number(accepted["clock_uncertainty_seconds"])
-            if uncertainty < 0:
+            # Physical UTC quality must meet the unchanged personal clock
+            # contract before adding the separate whole-second encoding margin.
+            if not 0 <= uncertainty <= 1:
                 raise IEXRefused("IEX_CLOCK_UNCERTAINTY_REFUSED")
             packet = {
                 "schema": "QD_AUTO_L1_V1",
