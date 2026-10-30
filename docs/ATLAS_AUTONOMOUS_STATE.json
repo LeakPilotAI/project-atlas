@@ -1,32 +1,35 @@
 {
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_WINDOWS_TIME_V2_PREFLIGHT_READONLY_COMPLETE_964MS_AT_RECORDED_CUT",
+  "last_verified_task": "QD_INSTALLED_RUNTIME_CLOCK_VALIDATION_V1_STANDARD_USER_196MS_VERIFIED",
   "next_eligible_tasks": [
-  "REVIEW_BOUNDED_INSTALLED_READONLY_CLOCK_ACCESS_AND_READINESS_SCOPE"
+  "REVIEW_CURRENT_OPERATIONAL_RELEASE_RESOURCE_ACCEPTANCE_AND_CURRENT_DATA_SCOPE"
 ],
   "blocked_tasks": {
   "PERSONAL_LOCAL_INSTALLATION": "Refreshed638source candidate2c039.../archive0e65fa... verified; revision3manifest/procedure ready for review,notauthorization. Plannednew10204fileDrelease uncreated;newnativeIDs/digest unavailable. Old9410package and isolated10203candidate preserved. Activefca29unchanged. Exactselected executionrunner review/operationalpermission and actualControlCenter/clock/resources/Stop<=8s/restart pending.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
   "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
-  "PERSONAL_BOUNDED_START": "Fresh read-only Windows/LocalWindowsClock sample accepted964ms at07:13:24Central; capability revoked,not permanent clearance. Effective originals15/360000 Local restored; old experiment unresolved status preserved. Normal diagnostic process registry access refused; actual intended installed execution-context acquisition still requires verification. No more tuning recommended now. Current source/data/custody/installation gates unchanged; no experiment or PAPER authority in this preflight.",
+  "PERSONAL_BOUNDED_START": "Installed genuine standard-user/nonAppContainer clock accepted196ms at07:25:21.7872031Central; access blocker resolved for candidate, no administrator runtime/ACL/settings change needed. Capability revoked and process exited; fresh acquisition mandatory. AppContainer error5 preserved as confined-context failure, not ordinary-user defect. Current acceptedresearch/executableIEX/custody and exact operationalrelease enrollment/ControlCenter acceptance stillpending. This directive forbids PAPER startup/promotion/providers/inception.",
   "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Actual disposable native candidate entry/partial/shutdown/full/replay/audit/ACK/drain/read-only restart verified. No operational financial root or account accessed/initialized; syntheticreceipt/authority cannot enter operational path. Actual activation/inception/current custody not executed."
 },
   "latest_tests": {
-  "passed": 295,
+  "passed": 102,
   "failed": 0,
   "skipped": 0,
-  "seconds": 13.57,
-  "new_cases": 30,
-  "preserved_guard_cases_reexecuted": 78,
-  "scope": "OFFLINE_V2_GUARD_CLOCK_IEX_POLICY_ROADMAP",
-  "actual_administrator_readonly_inspections": 1,
-  "actual_administrator_experiments": 0,
-  "actual_system_changes": 0,
-  "operational_financial_actions": 0,
-  "native_v2_effects_executed": false
+  "seconds": 5.99,
+  "new_cases": 9,
+  "scope": "OFFLINE_NATIVE_PROBE_CLOCK_IEX_MODULE_BINDING_INSTALLER_REFUSAL",
+  "genuine_installed_clock_comparisons": 2,
+  "standard_user_clock_accepted": true,
+  "appcontainer_access_refused": true,
+  "full_candidate_audits": 3,
+  "candidate_files": 10203,
+  "candidate_directories": 903,
+  "administrator_elevations": 0,
+  "windows_changes": 0,
+  "operational_financial_actions": 0
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "QD-WINDOWS-TIME-V2-PREFLIGHT COMPLETE:normal registry clock access refused; ONE authorized readonly UAC inspection 5.550s completed/owned child exited0. Fresh effective settings Local MaxPoll15 Update360000 restored; RunningManual/time.windows.com,0x9 unchanged,Min6Special64Phase1; zero system changes/reload/resync. Actual unchanged validator and genuine LocalWindowsClock accepted964ms at2026-10-30 07:13:24Central: age25.0689543s dispersion794.1868ms absOffset19.4121ms; combined963.73876115ms. Capability revoked/child exited; temporary evidence not later clearance; remote NTP NoAuth/local process binding only. No new tuning experiment justified/no configuration changes recommended. Native V2 declaration string-false ACK defect reproduced/fixed by exact typed/schema/hash/nonce/QPC helper; 30 new offline cases,295 passes0fail0skip. Prior282/78 evidence preserved; original9files97221bytes/hash unchanged, original aborted26s/exit42/fullrollbackfalse not relabeled; current target readback is separate evidence. V2 native effects/watchdog NOT EXECUTED. Next narrowly authorized installed ordinary-context readonly clock/access and readiness validation, then actual reviewed promotion/currentresearch/custody/executableIEX acceptance under existing technical gates and exact operator scope. No provider/promotion/enrollment/inception/PAPER/Genesis. docs/QD_WINDOWS_TIME_V2_PREFLIGHT_2026-10-30.md",
+  "exact_next_action": "QD-INSTALLED-RUNTIME-CLOCK-VALIDATION-V1 COMPLETE:genuine isolated installed standard-user clock verified. Candidate qd-native-install-2e13e1d5b0f44498/candidate source2b9ba32a... native10203files903dirs IDs/owner-SYSTEMACL/hash/namespace and published637source/9566dependency pins verified; post-execution fullaudit unchanged/handles0. AppContainer-token run refused KEY_READ and minimalKEY_QUERY_VALUE error5; sameinstalledcode standardnonadmin/nonAppContainer reads both successfully, no UAC/ACL changes. Installed actual validator and LocalWindowsClock accepted196ms at2026-10-30 07:25:21.7872031Central; ages53.9569218/54.4241500s,dispersion29.0048ms,absOffset2.5674ms; temporary capability revoked, both owned clock children exited. Normal runtime does not require administrator rights; no settings change recommended. 102pytestpasses0fail0skip/9new offline boundary tests; prior295V2evidence preserved. No runtime source change or candidate promotion; no provider/financialwriter/account/inception/PAPER/Genesis. Next reviewed current operationalrelease/resource acceptance under exact separate authorization plus accepted current research/nativecustody/instrument/calendar/executableIEX; actualControlCenter authority/clock/financialStop<=8s dashboard/restart stillrequired. Fresh clock at actual activation mandatory, never reuse revoked snapshot. docs/QD_INSTALLED_RUNTIME_CLOCK_VALIDATION_V1_2026-10-30.md",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
@@ -118,9 +121,9 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "READONLY_PREFLIGHT_COMPLETE_NO_EXPERIMENT_RECOMMENDED_OPERATIONAL_GATES_RETAINED",
+  "execution_status": "INSTALLED_NORMAL_CLOCK_ACCESS_VERIFIED_OPERATIONAL_AUTHORIZATION_AND_DATA_GATES_REMAIN",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
-  "continuation_report": "docs/QD_WINDOWS_TIME_V2_PREFLIGHT_2026-10-30.md",
+  "continuation_report": "docs/QD_INSTALLED_RUNTIME_CLOCK_VALIDATION_V1_2026-10-30.md",
   "blocked_wait_reason": "Free source engineering/access verified. Missing explicit valuation evidence keeps affected instruments ineligible. Real current-publication/executable L1/installation and financial acceptance remain; no fabricated no-entry session. Fresh219msclock snapshot not permanent authority. Sole operator; no enterprise reviewer chain.",
   "publication_validation": {
     "source_release": "c8df2e9cd61077daf308c07df78ea12c14ea4e52",
@@ -3871,6 +3874,91 @@
   "original_payload_hash_verified": true,
   "policy_sources": 642,
   "policy_issues": 0,
+  "paper_startup": false,
+  "production": "NO-GO"
+},
+  "installed_runtime_clock_validation_v1_20261030": {
+  "report": "docs/QD_INSTALLED_RUNTIME_CLOCK_VALIDATION_V1_2026-10-30.md",
+  "base_commit": "5687ce6893ca6e33dde1af68c712f8dc4e60a3da",
+  "tests": {
+    "passed": 102,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 5.99,
+    "new_cases": 9,
+    "scope": "OFFLINE_NATIVE_PROBE_CLOCK_IEX_MODULE_BINDING_INSTALLER_REFUSAL",
+    "genuine_installed_clock_comparisons": 2,
+    "standard_user_clock_accepted": true,
+    "appcontainer_access_refused": true,
+    "full_candidate_audits": 3,
+    "candidate_files": 10203,
+    "candidate_directories": 903,
+    "administrator_elevations": 0,
+    "windows_changes": 0,
+    "operational_financial_actions": 0
+  },
+  "previous_values": {
+    "last_verified_task": "QD_WINDOWS_TIME_V2_PREFLIGHT_READONLY_COMPLETE_964MS_AT_RECORDED_CUT",
+    "next_eligible_tasks": [
+      "REVIEW_BOUNDED_INSTALLED_READONLY_CLOCK_ACCESS_AND_READINESS_SCOPE"
+    ],
+    "latest_tests": {
+      "passed": 295,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 13.57,
+      "new_cases": 30,
+      "preserved_guard_cases_reexecuted": 78,
+      "scope": "OFFLINE_V2_GUARD_CLOCK_IEX_POLICY_ROADMAP",
+      "actual_administrator_readonly_inspections": 1,
+      "actual_administrator_experiments": 0,
+      "actual_system_changes": 0,
+      "operational_financial_actions": 0,
+      "native_v2_effects_executed": false
+    },
+    "blocked_tasks": {
+      "PERSONAL_LOCAL_INSTALLATION": "Refreshed638source candidate2c039.../archive0e65fa... verified; revision3manifest/procedure ready for review,notauthorization. Plannednew10204fileDrelease uncreated;newnativeIDs/digest unavailable. Old9410package and isolated10203candidate preserved. Activefca29unchanged. Exactselected executionrunner review/operationalpermission and actualControlCenter/clock/resources/Stop<=8s/restart pending.",
+      "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
+      "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
+      "PERSONAL_BOUNDED_START": "Fresh read-only Windows/LocalWindowsClock sample accepted964ms at07:13:24Central; capability revoked,not permanent clearance. Effective originals15/360000 Local restored; old experiment unresolved status preserved. Normal diagnostic process registry access refused; actual intended installed execution-context acquisition still requires verification. No more tuning recommended now. Current source/data/custody/installation gates unchanged; no experiment or PAPER authority in this preflight.",
+      "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Actual disposable native candidate entry/partial/shutdown/full/replay/audit/ACK/drain/read-only restart verified. No operational financial root or account accessed/initialized; syntheticreceipt/authority cannot enter operational path. Actual activation/inception/current custody not executed."
+    },
+    "exact_next_action": "QD-WINDOWS-TIME-V2-PREFLIGHT COMPLETE:normal registry clock access refused; ONE authorized readonly UAC inspection 5.550s completed/owned child exited0. Fresh effective settings Local MaxPoll15 Update360000 restored; RunningManual/time.windows.com,0x9 unchanged,Min6Special64Phase1; zero system changes/reload/resync. Actual unchanged validator and genuine LocalWindowsClock accepted964ms at2026-10-30 07:13:24Central: age25.0689543s dispersion794.1868ms absOffset19.4121ms; combined963.73876115ms. Capability revoked/child exited; temporary evidence not later clearance; remote NTP NoAuth/local process binding only. No new tuning experiment justified/no configuration changes recommended. Native V2 declaration string-false ACK defect reproduced/fixed by exact typed/schema/hash/nonce/QPC helper; 30 new offline cases,295 passes0fail0skip. Prior282/78 evidence preserved; original9files97221bytes/hash unchanged, original aborted26s/exit42/fullrollbackfalse not relabeled; current target readback is separate evidence. V2 native effects/watchdog NOT EXECUTED. Next narrowly authorized installed ordinary-context readonly clock/access and readiness validation, then actual reviewed promotion/currentresearch/custody/executableIEX acceptance under existing technical gates and exact operator scope. No provider/promotion/enrollment/inception/PAPER/Genesis. docs/QD_WINDOWS_TIME_V2_PREFLIGHT_2026-10-30.md",
+    "execution_status": "READONLY_PREFLIGHT_COMPLETE_NO_EXPERIMENT_RECOMMENDED_OPERATIONAL_GATES_RETAINED",
+    "continuation_report": "docs/QD_WINDOWS_TIME_V2_PREFLIGHT_2026-10-30.md",
+    "recovery_checkpoint": "docs/QD_COMMISSIONING_CONTINUATION_2026-10-27.md"
+  },
+  "candidate": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate",
+  "candidate_source_commit": "2b9ba32a683b62933f29d3b52777a21753e50631",
+  "native_identity_acl_hash_namespace_verified": true,
+  "published_source_dependency_pins_verified": true,
+  "native_audit_durations_seconds": [
+    10.237,
+    6.51,
+    8.106
+  ],
+  "candidate_unchanged": true,
+  "normal_process_elevated": false,
+  "appcontainer_control_refused": true,
+  "standard_non_appcontainer_key_read": "SUCCESS",
+  "standard_non_appcontainer_query_value": "SUCCESS",
+  "minimum_query_rights": "KEY_QUERY_VALUE 0x1",
+  "actual_validator_bound_ms": 196,
+  "actual_installed_binding_bound_ms": 196,
+  "measurement_age_seconds": "53.9569218",
+  "binding_age_seconds": "54.4241500",
+  "binding_collected_central": "2026-10-30T07:25:21.7872031-05:00",
+  "root_dispersion_ms": "29.0048",
+  "absolute_offset_ms": "2.5674",
+  "capability_revoked": true,
+  "owned_children_exited": 2,
+  "post_audit_handles": 0,
+  "windows_admin_elevation_needed": false,
+  "registry_acl_changes": 0,
+  "recommended_windows_changes": [],
+  "active_installation_promoted": false,
+  "runtime_source_changed": false,
+  "original_experiment_status_unchanged": true,
   "paper_startup": false,
   "production": "NO-GO"
 }
