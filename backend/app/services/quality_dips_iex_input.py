@@ -4,7 +4,11 @@ Authenticated feed access is not instrument, calendar, session or trading
 authority. The accepted execution verifier supplies those distinct facts.
 """
 
+from datetime import UTC, datetime
+
 from app.investment.alpaca_iex import FEED, IEXRefused
+from app.investment.enums import DataQuality
+from app.investment.models import MeasuredValue
 from app.services.paper_financial_replay import body, digest, number, strict
 
 
@@ -15,6 +19,50 @@ class IEXPaperQuotes:
         self._last_quote, self._sequence = None, 0
         self._issued_frame = None
         self._issued_shutdown = None
+
+    def research_reference_price(self, symbol, *, instrument):
+        """Current accepted ASK -> existing free-research reference-price port.
+
+        Uses the existing research_snapshot ASK convention. No socket/provider
+        refresh, decision frame, session start or financial effect. This value
+        supplies ratios/scoring only; an entry needs its own fresh L1 admission.
+        """
+        if (type(symbol) is not str or type(instrument) is not dict or instrument.get('symbol')!=symbol
+                or instrument.get('asset_class') not in ('STOCK','ETF') or instrument.get('currency')!='USD'
+                or instrument.get('units')!='SHARES' or type(instrument.get('instrument_id')) is not str
+                or not instrument['instrument_id']):
+            raise IEXRefused('IEX_RESEARCH_INSTRUMENT_REQUIRED')
+        frozen=body(instrument)
+        ports=self.feed,self.authority
+        packet=self.quote(instrument)  # Existing entitlement/instrument/calendar/clock lease.
+        # quote() explicitly adds one second for its coarse execution contract.
+        # The underlying accepted physical clock allowance remains <=1second.
+        if not 1<=number(packet['clock_uncertainty_seconds'])<=2:
+            raise IEXRefused('IEX_RESEARCH_CLOCK_UNCERTAINTY')
+        view=self.feed.snapshot()
+        quote=next((q for q in view['quotes'] if q['symbol']==symbol),None)
+        if (not view['authenticated'] or not view['subscribed'] or quote is None or quote['state']!='FRESH'
+                or view['feed_id']!=FEED or 'iex:'+digest([quote['symbol'],quote['timestamp'],quote['bid'],
+                    quote['ask'],quote['bid_lots'],quote['ask_lots']])!=packet['sequence']):
+            raise IEXRefused('IEX_RESEARCH_QUOTE_CHANGED_OR_UNAVAILABLE')
+        stamp=datetime.fromtimestamp(quote['source_ns']//10**9,UTC).replace(microsecond=quote['source_ns']%10**9//1000)
+        received=datetime.fromtimestamp(quote['received_at'],UTC)
+        now=datetime.fromtimestamp(view['observed_at'],UTC)
+        if (not stamp<=received<=now or body(instrument)!=frozen
+                or self.feed is not ports[0] or self.authority is not ports[1]):
+            raise IEXRefused('IEX_RESEARCH_SOURCE_TIME_OR_IDENTITY')
+        result=MeasuredValue(value=float(number(packet['ask'])),source='ALPACA_IEX_ASK_RESEARCH_REFERENCE',
+            timestamp=stamp,effective_timestamp=stamp,retrieved_at=received,availability=True,quality=DataQuality.FRESH,
+            notes=body({'schema':'QD_IEX_RESEARCH_REFERENCE_V1','basis':'ASK_REFERENCE_NOT_FILL',
+                'symbol':symbol,'instrument_id':instrument['instrument_id'],'feed_id':FEED,'scope':'SINGLE_EXCHANGE_NOT_NBBO',
+                'exact_ask':packet['ask'],'source_ns':quote['source_ns'],'sequence':packet['sequence'],
+                'entitlement_id':packet['entitlement_id'],'clock_uncertainty_seconds':packet['clock_uncertainty_seconds'],
+                'financial_execution_authorized':False}))
+        # Refuse a changed/revoked quote/lease rather than blend source cuts.
+        if (body(instrument)!=frozen or self.feed is not ports[0] or self.authority is not ports[1]
+                or self.quote(instrument)!=packet or self.feed is not ports[0] or self.authority is not ports[1]):
+            raise IEXRefused('IEX_RESEARCH_ACCEPTANCE_CHANGED')
+        return result
 
     def quote(self, instrument):
         if self.authority is None:

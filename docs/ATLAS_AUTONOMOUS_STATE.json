@@ -1,30 +1,34 @@
 {
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_RELEASE_MODULE_INVENTORY_SOURCE_PREPARATION_VERIFIED",
+  "last_verified_task": "QD_IEX_RESEARCH_REFERENCE_AND_RELEASE_SOURCE_READINESS",
   "next_eligible_tasks": [
-  "QD_AUTHENTICATED_IEX_RESEARCH_REFERENCE_SOURCE_BINDING"
+  "QD_GENUINE_CURRENT_PUBLICATION_AND_INSTALLED_ACCEPTANCE_WHEN_PREREQUISITES_PASS"
 ],
   "blocked_tasks": {
-  "PERSONAL_LOCAL_INSTALLATION": "Source-only mixed-module release guard fixed and candidate637files/57actualimports bound. New code NOT installed. Existing fca29cfe release retained; actual installed<=8sStop/dashboard/restart remains unexecuted and must include new native parent checks.",
+  "PERSONAL_LOCAL_INSTALLATION": "Source-only candidate637files/7711519bytes/57loaded modules verified; mixed-origin guard and accepted quote-reference source complete, not installed. Existing fca29cfe retained. Actual installed native/resource/writer/current/session and<=8sStop/dashboard/restart not executed.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
-  "PERSONAL_CURRENT_DATA": "Genuine original EPS/exhibit/share-basis source and research-only scanner verified. Three nonanalyst scenarios generated; original board WATCH, L1notreached and existing evidence thresholds unmet. No accepted current native ranking or executable IEX; regular session closed. No fake eligibility.",
+  "PERSONAL_CURRENT_DATA": "Genuine SEC/Alpaca method and original scanner WATCH preserved. Accepted IEX ASK-to-free-research reference source implemented and offline verified; no actual live connection/current quote or native ranking published. Need qualifying clock/regular-session accepted data, instrument/halts/execution and actual source/archive custody binding.",
   "PERSONAL_BOUNDED_START": "Existing conditional60secondQDgrant UNUSED. W32Time started under separate explicit elevated approval, Manual/source unchanged; observation171.801s. Windows sync reported, Atlas separate unchanged preflight2551ms>1000ms REFUSED. Need genuine qualifying clock/current market/native/install evidence; no repeat service authorization or fake UTC proof.",
   "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Prior native synthetic/reconciliation/Stop evidence preserved. No actual account/resource access this increment; historical empty-root observations are not new verification. Actual financial activation/inception/current custody/installed Stop/restart not executed."
 },
   "latest_tests": {
-  "passed": 221,
+  "passed": 325,
   "failed": 0,
   "skipped": 0,
-  "seconds": 9.42,
-  "new_cases": 17,
+  "seconds": 20.37,
+  "new_cases_this_execution": 34,
+  "new_reference_cases": 17,
+  "new_release_module_cases": 17,
   "warnings": 1,
   "warning": "EXISTING_STARLETTE_HTTPX_DEPRECATION",
   "source_policy_files": 639,
   "source_policy_issues": 0,
+  "native_financial_children": 0,
+  "live_provider_requests": 0,
   "installed_acceptance_executed": false
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Installed-image mixed workspace/foreign-module omission reproduced and repaired;221passed0failed0skipped/17new/oneexistingdependencywarning. 637sourcefiles/7708033bytes and57actualAtlasimports inventory-bound; D Python/base verified; source-only NOT installed. Next executable source task: authenticated IEX-cache ASK reference into existing FreeResearchBundle, no provider/socket/financial side effects; explicit reference-not-fill labeling. Then actual current native research publication/custody and installedStop<=8s/dashboard/restart when real dependencies pass. Clock:W32Time approved elevated start/171.801s complete, Manual/source unchanged; separate unchanged preflight2551ms REFUSED; no further start/resync/settings/polling loop. Marketclosed; no fresh quote invented. Prior406/genuine EPS19.16/20anchors preserved. Existing conditional1000USD/ONE60sQDgrantUNUSED; no account/newrelease/native financial child. All21decisions/sevenphases/UI/Genesis/PAPER-only preserved. docs/QD_RELEASE_MODULE_BINDING_2026-10-29.md",
+  "exact_next_action": "Completed source-only installed-module inventory guard plus accepted IEX ASK reference binding to existing FreeResearchBundle. Final325passed0failed0skipped/34new/oneexistingStarlettewarning; previous221/406 and genuine SEC EPS19.16/20anchors preserved. Candidate637files/7711519bytes,57actual Atlasimports inventory-bound,D Python/base,zero new dependencies; NOT installed. Execution boundary: last actual clock2026-10-30T01:10:11Z REFUSED2551ms>1000ms; W32Time Running/Manual/source unchanged at bounded postflight, Windows sync reported but full acceptance/external UTC certification not granted. ONEelevatedstart and171.801swatch consumed; no extra starts,resync,settings,poll loops. Marketclosed; no live provider connection or executable observation. When qualifying clock and regular-session accepted inputs exist, bind actual native current source publication/custody/local authority using completed source/reference paths, verify current instrument/calendar/actions/halts and risk. Then full reviewed immutable installation/native IDs/ACL/hash/module origins,actual<=8sfinancialStop/report/ACK/drain/ownedexit/readback,dashboard/manualcontrols/restart. Actual source/archive enrollment and operational assembly remain incomplete,not replaced by synthetic authorities. Existing conditional once-only1000USD/ONEtotal60sQDgrant UNUSED; no extra financial approval within scope. No operational roots/accounts/native financial child,newinstall,V5,Hyperliquid inception,Genesis,paid/VPS/live/autostart. docs/QD_IEX_RESEARCH_REFERENCE_BINDING_2026-10-29.md",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
@@ -3067,5 +3071,36 @@
     "new_installation": false,
     "inception": false,
     "pilot": false
+  },
+  "iex_research_reference_binding_20261029": {
+    "report": "docs/QD_IEX_RESEARCH_REFERENCE_BINDING_2026-10-29.md",
+    "status": "BLOCKED_WAIT_MANDATORY_CLOCK_CURRENT_INPUT_NATIVE_INSTALLED_EVIDENCE",
+    "prior_tests": {
+      "passed": 221,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.42,
+      "new_cases": 17,
+      "warnings": 1,
+      "warning": "EXISTING_STARLETTE_HTTPX_DEPRECATION",
+      "source_policy_files": 639,
+      "source_policy_issues": 0,
+      "installed_acceptance_executed": false
+    },
+    "passed": 325,
+    "failed": 0,
+    "skipped": 0,
+    "new_cases_this_execution": 34,
+    "source_candidate_files": 637,
+    "source_candidate_bytes": 7711519,
+    "source_candidate_digest": "4ed3ac5fc286e560e8208ce812ed44d73d23da853fdfc88e34356d579f3e3dfd",
+    "actual_prepared_loaded_modules": 57,
+    "live_provider_requests": 0,
+    "native_financial_children": 0,
+    "new_installation": false,
+    "native_current_ranking_published": false,
+    "inception": false,
+    "pilot": false,
+    "original_UI_unchanged": true
   }
 }
