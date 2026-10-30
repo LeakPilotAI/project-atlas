@@ -17,7 +17,7 @@ if($guardText.Length -gt 0 -and $guardText[0] -eq [char]0xfeff){$guardText=$guar
 # verified characters; do not reopen a mutable path after the hash check.
 $guardText=$guardText.Replace("`r`n","`n")
 $guardHash=[BitConverter]::ToString(([Security.Cryptography.SHA256]::Create()).ComputeHash([Text.Encoding]::UTF8.GetBytes($guardText))).Replace('-','').ToLowerInvariant()
-if($guardHash -cne '236db1fa948d89854348faf10d49facba5af2074b7adef8edb86ff0ad3762da8'){throw 'EXACT_REVIEWED_GUARD_SOURCE_MISMATCH'}
+if($guardHash -cne 'a04829941bdddd59f8a5c9dd114e66cee60148448f4285fb1eece503335e4424'){throw 'EXACT_REVIEWED_GUARD_SOURCE_MISMATCH'}
 New-Module -Name AtlasTimeExperimentGuardV2 -ScriptBlock ([scriptblock]::Create($guardText))|Import-Module -DisableNameChecking
 $script:atlasOriginalEffectiveV2=$null
 $ErrorActionPreference='Stop'
@@ -71,6 +71,9 @@ function Assert-Effective($text,$maximum,$update) {
 function Assert-Scope($snapshot,$maximum,$update) {
  $null=Assert-AtlasTimeScope -Original $before -Current $snapshot -ExpectedMaximum $maximum -ExpectedUpdate $update
 }
+function Assert-Qualification($decision,$evidenceHash,$nowQpc,$frequency) {
+ $null=Assert-AtlasTimeQualification -Decision $decision -ExpectedNonce $nonce -EvidenceHash $evidenceHash -NowQpc $nowQpc -Frequency $frequency
+}
 function Assert-Parent {
  $parent=Get-Process -Id $parentPid -ErrorAction Stop
  try{if($parent.StartTime.ToUniversalTime().ToFileTimeUtc() -ne $parentFileTime){throw 'PARENT_IDENTITY_CHANGED'}}finally{$parent.Dispose()}
@@ -118,11 +121,9 @@ try {
   $decisionPath=Join-Path $root 'clock-qualified.json'
   if(Test-Path -LiteralPath $decisionPath){
    $decision=Get-Content -LiteralPath $decisionPath -Raw|ConvertFrom-Json
-   if($decision.nonce -cne $nonce -or -not $decision.binding_verified -or $decision.bound_ms -ge 1000 -or $decision.bound_ms -lt 0 -or $decision.clock_domain -cne 'LOCAL_WINDOWS' -or $decision.source -cne 'time.windows.com,0x9'){throw 'CLOCK_QUALIFICATION_DECLARATION_REFUSED'}
-   $age=([Diagnostics.Stopwatch]::GetTimestamp()-[long]$decision.observed_qpc)/[double][Diagnostics.Stopwatch]::Frequency
-   if($age -lt 0 -or $age -gt 5){throw 'CLOCK_QUALIFICATION_TOO_OLD'}
    $evidence=Join-Path $root 'clock-binding.json'
-   if((Get-FileHash -LiteralPath $evidence -Algorithm SHA256).Hash.ToLowerInvariant() -cne $decision.evidence_sha256){throw 'CLOCK_EVIDENCE_HASH_CHANGED'}
+   $evidenceHash=(Get-FileHash -LiteralPath $evidence -Algorithm SHA256).Hash.ToLowerInvariant()
+   Assert-Qualification $decision $evidenceHash ([Diagnostics.Stopwatch]::GetTimestamp()) ([Diagnostics.Stopwatch]::Frequency)
    $effective=Invoke-Time '/query /configuration /verbose' 'effective_success';Assert-Effective $effective 6 100
    $result['after']=Read-Snapshot;Assert-Scope $result.after 6 100
    $result['full_scope_verified']=$true;$result['qualification']=$decision;$result['status']='SUCCESS_APPLIED_CLOCK_QUALIFIED_TEMPORARILY';$successful=$true

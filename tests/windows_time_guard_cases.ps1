@@ -148,7 +148,7 @@ try{Invoke-AtlasTimeGuardedExperiment|Out-Null}catch{$refused=$_.Exception.Messa
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile($PayloadPath,[ref]$tokens,[ref]$errors)
 if($errors.Count){throw 'SOURCE_SUCCESSOR_PARSE_FAILED'}
-foreach($name in @('Assert-Effective','Assert-Scope')){
+foreach($name in @('Assert-Effective','Assert-Scope','Assert-Qualification')){
     $functions=$ast.FindAll({param($node)$node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name},$true)
     if($functions.Count -ne 1){throw 'EXACT_SUCCESSOR_WRAPPER_NOT_FOUND'}
     . ([scriptblock]::Create($functions[0].Extent.Text))
@@ -169,5 +169,49 @@ $fixture.state.snapshot.configuration_values.LastKnownGoodTime.value+=640000000L
 $null=Assert-AtlasTimeTargetReadback $fixture.state.snapshot (& $fixture.ports.QueryEffective)
 Assert-Scope $fixture.state.snapshot 15 360000
 Assert-Effective (& $fixture.ports.QueryEffective) 15 360000
-@{cases=$rows;default_refused=$refused;successor_wrappers_verified=$true;windows_calls=0;administrator_elevations=0;domain='DISPOSABLE_SYNTHETIC'}|
+$nonce='0123456789abcdef0123456789abcdef';$hash=('ab'*32)
+$qualificationRows=@()
+$qualificationCases=@('valid','zero_bound','bound_999','ack_false','ack_string_false','ack_integer',
+ 'missing_bound','extra_field','bound_boolean','bound_string','bound_float','bound_negative','bound_1000',
+ 'domain_fixture','domain_array','source_changed','source_array','nonce_wrong','nonce_array','hash_wrong','hash_array',
+ 'qpc_future','qpc_stale','qpc_boundary','qpc_string','qpc_boolean','qpc_zero','frequency_zero','frequency_float','now_nan')
+foreach($fault in $qualificationCases){
+ $decision=@{nonce=$nonce;binding_verified=$true;bound_ms=900;clock_domain='LOCAL_WINDOWS';source='time.windows.com,0x9';observed_qpc=9999000L;evidence_sha256=$hash}
+ $now=10000000L;$frequency=1000L
+ switch($fault){
+  'zero_bound'{$decision.bound_ms=0}
+  'bound_999'{$decision.bound_ms=999}
+  'ack_false'{$decision.binding_verified=$false}
+  'ack_string_false'{$decision.binding_verified='false'}
+  'ack_integer'{$decision.binding_verified=1}
+  'missing_bound'{$decision.Remove('bound_ms')}
+  'extra_field'{$decision.extra='foreign'}
+  'bound_boolean'{$decision.bound_ms=$true}
+  'bound_string'{$decision.bound_ms='900'}
+  'bound_float'{$decision.bound_ms=900.0}
+  'bound_negative'{$decision.bound_ms=-1}
+  'bound_1000'{$decision.bound_ms=1000}
+  'domain_fixture'{$decision.clock_domain='DISPOSABLE_SYNTHETIC'}
+  'domain_array'{$decision.clock_domain=@('LOCAL_WINDOWS','LOCAL_WINDOWS')}
+  'source_changed'{$decision.source='foreign.invalid'}
+  'source_array'{$decision.source=@('time.windows.com,0x9','time.windows.com,0x9')}
+  'nonce_wrong'{$decision.nonce=('a'*32)}
+  'nonce_array'{$decision.nonce=@($nonce,$nonce)}
+  'hash_wrong'{$decision.evidence_sha256=('c'*64)}
+  'hash_array'{$decision.evidence_sha256=@($hash,$hash)}
+  'qpc_future'{$decision.observed_qpc=$now+1}
+  'qpc_stale'{$decision.observed_qpc=9994999L}
+  'qpc_boundary'{$decision.observed_qpc=9995000L}
+  'qpc_string'{$decision.observed_qpc='9999000'}
+  'qpc_boolean'{$decision.observed_qpc=$true}
+  'qpc_zero'{$decision.observed_qpc=0L}
+  'frequency_zero'{$frequency=0L}
+  'frequency_float'{$frequency=1000.0}
+  'now_nan'{$now=[double]::NaN}
+ }
+ $accepted=$false;$errorText=$null
+ try{Assert-Qualification $decision $hash $now $frequency;$accepted=$true}catch{$errorText=$_.Exception.Message}
+ $qualificationRows+=@{name=$fault;accepted=$accepted;error=$errorText}
+}
+@{cases=$rows;qualification_cases=$qualificationRows;default_refused=$refused;successor_wrappers_verified=$true;windows_calls=0;administrator_elevations=0;domain='DISPOSABLE_SYNTHETIC'}|
     ConvertTo-Json -Depth 32|Set-Content -LiteralPath $OutputPath -Encoding UTF8

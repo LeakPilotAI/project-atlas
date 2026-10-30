@@ -162,6 +162,38 @@ function Assert-AtlasTimeEffective {
     return $true
 }
 
+function Assert-AtlasTimeQualification {
+    [CmdletBinding()]
+    param([Parameter(Mandatory=$true)]$Decision,
+          [Parameter(Mandatory=$true)]$ExpectedNonce,
+          [Parameter(Mandatory=$true)]$EvidenceHash,
+          [Parameter(Mandatory=$true)]$NowQpc,
+          [Parameter(Mandatory=$true)]$Frequency)
+    # Structural binding to the already-authenticated parent capability, not
+    # authentication of UTC or a substitute for LocalWindowsClock verification.
+    $fields=@('nonce','binding_verified','bound_ms','clock_domain','source','observed_qpc','evidence_sha256')
+    $keys=@(Get-TimeKeys $Decision)
+    if ($keys.Count -ne $fields.Count -or @($fields|Where-Object {$keys -cnotcontains $_}).Count -ne 0) {
+        throw 'TIME_GUARD_QUALIFICATION_SCHEMA'
+    }
+    if ($ExpectedNonce -isnot [string] -or $ExpectedNonce -cnotmatch '^[a-f0-9]{32}$' -or
+        $EvidenceHash -isnot [string] -or $EvidenceHash -cnotmatch '^[a-f0-9]{64}$' -or
+        $Decision.nonce -isnot [string] -or $Decision.nonce -cne $ExpectedNonce -or
+        $Decision.binding_verified -isnot [bool] -or -not $Decision.binding_verified -or
+        -not (Test-TimeInteger $Decision.bound_ms) -or $Decision.bound_ms -lt 0 -or $Decision.bound_ms -ge 1000 -or
+        $Decision.clock_domain -isnot [string] -or $Decision.clock_domain -cne 'LOCAL_WINDOWS' -or
+        $Decision.source -isnot [string] -or $Decision.source -cne 'time.windows.com,0x9' -or
+        $Decision.evidence_sha256 -isnot [string] -or $Decision.evidence_sha256 -cne $EvidenceHash) {
+        throw 'TIME_GUARD_QUALIFICATION_BINDING'
+    }
+    foreach ($counter in @($Decision.observed_qpc,$NowQpc,$Frequency)) {
+        if (-not (Test-TimeInteger $counter) -or $counter -le 0) { throw 'TIME_GUARD_QUALIFICATION_COUNTER' }
+    }
+    $ticks=[decimal]$NowQpc-[decimal]$Decision.observed_qpc
+    if ($ticks -lt 0 -or $ticks -gt [decimal]5*[decimal]$Frequency) { throw 'TIME_GUARD_QUALIFICATION_TOO_OLD' }
+    return $true
+}
+
 function Invoke-AtlasTimeGuardedExperiment {
     [CmdletBinding()]
     param([Collections.IDictionary]$Ports,
@@ -259,4 +291,4 @@ function Invoke-AtlasTimeGuardedExperiment {
     return $result
 }
 
-Export-ModuleMember -Function Assert-AtlasTimeScope,Assert-AtlasTimeEffective,Assert-AtlasTimeTargetReadback,Invoke-AtlasTimeGuardedExperiment
+Export-ModuleMember -Function Assert-AtlasTimeScope,Assert-AtlasTimeEffective,Assert-AtlasTimeTargetReadback,Assert-AtlasTimeQualification,Invoke-AtlasTimeGuardedExperiment

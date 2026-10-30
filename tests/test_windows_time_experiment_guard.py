@@ -141,3 +141,19 @@ def test_successor_pins_guard_text_and_has_only_approved_write_names():
     assert hashlib.sha256(module.replace("\r\n", "\n").encode()).hexdigest() == pin
     assert set(re.findall(r"\.SetValue\('([^']+)'", payload)) == {"MaxPollInterval", "UpdateInterval"}
     assert "target_restore_readback_verified" in payload and "full_scope_verified" in payload
+
+
+@pytest.mark.parametrize("name", [
+    "valid", "zero_bound", "bound_999", "ack_false", "ack_string_false", "ack_integer",
+    "missing_bound", "extra_field", "bound_boolean", "bound_string", "bound_float", "bound_negative", "bound_1000",
+    "domain_fixture", "domain_array", "source_changed", "source_array", "nonce_wrong", "nonce_array",
+    "hash_wrong", "hash_array", "qpc_future", "qpc_stale", "qpc_boundary", "qpc_string", "qpc_boolean",
+    "qpc_zero", "frequency_zero", "frequency_float", "now_nan",
+])
+def test_native_qualification_wrapper_requires_typed_complete_binding(evidence, name):
+    by_name = {row["name"]: row for row in evidence["qualification_cases"]}
+    assert len(by_name) == 30
+    allowed = name in {"valid", "zero_bound", "bound_999", "qpc_boundary"}
+    assert by_name[name]["accepted"] is allowed
+    if not allowed:
+        assert "TIME_GUARD_QUALIFICATION_" in by_name[name]["error"]
