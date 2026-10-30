@@ -1,14 +1,14 @@
 {
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_HIST_EPS_EXHIBIT_V1_GENUINE_SOURCE_AND_SCANNER",
+  "last_verified_task": "QD_BOUNDED_W32TIME_START_AND_CLOCK_REFUSAL_RECORDED",
   "next_eligible_tasks": [
-  "QD_CURRENT_CLOCK_EXECUTABLE_INPUT_AND_NATIVE_PUBLICATION_INSTALLED_ACCEPTANCE"
+  "QD_RELEASE_MODULE_INVENTORY_PREPARATION_OFFLINE"
 ],
   "blocked_tasks": {
   "PERSONAL_LOCAL_INSTALLATION": "New genuine source/exhibit/transport modules not installed. Existing fca29cfe release retained. Complete source inventory prepared, no dependencies added; actual installed<=8sStop/dashboard/restart remains unexecuted.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
   "PERSONAL_CURRENT_DATA": "Genuine original EPS/exhibit/share-basis source and research-only scanner verified. Three nonanalyst scenarios generated; original board WATCH, L1notreached and existing evidence thresholds unmet. No accepted current native ranking or executable IEX; regular session closed. No fake eligibility.",
-  "PERSONAL_BOUNDED_START": "Conditional ONE60secondQDgrant UNUSED. Latest actual clock REFUSED W32TimeStopped0x80070426; earlier218/219ms snapshots expired. Need new bounded start-only service authorization, accepted current source/L1 and installed acceptance; no new financial approval within original conditional scope.",
+  "PERSONAL_BOUNDED_START": "Existing conditional60secondQDgrant UNUSED. W32Time started under separate explicit elevated approval, Manual/source unchanged; observation171.801s. Windows sync reported, Atlas separate unchanged preflight2551ms>1000ms REFUSED. Need genuine qualifying clock/current market/native/install evidence; no repeat service authorization or fake UTC proof.",
   "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Prior native synthetic/reconciliation/Stop evidence preserved. No actual account/resource access this increment; historical empty-root observations are not new verification. Actual financial activation/inception/current custody/installed Stop/restart not executed."
 },
   "latest_tests": {
@@ -23,7 +23,7 @@
   "installed_acceptance_executed": false
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "QD-HIST-EPS-EXHIBIT-V1 COMPLETE: genuine SEC18original10Q+6exhibits/6main8Klinks; CompanyFacts unchanged; EPSproxy19.16/20anchors/scenarios518.9855659787368,613.1718959913326,668.1876986584107; source and actual research-only scanner/original board verified, WATCH/no forced signal. 406relevantpassed/0failed/0skipped; sourceaudit639/0issues; zero-network exact replay and original cache hashes unchanged. Actual 2026-10-30T00:48:30Z clock REFUSED W32TimeStopped0x80070426, prior ms snapshots expired; no service changes/resync. Need bounded start-only W32Time permission then unchanged<=1000ms check; no new source/startup settings. Regular US session closed at final verification; need actual fresh executable IEX and fresh original scoring/instrument/action/halt evidence. Next bind acquired-source handoff to actual enrolled native current-publication/local authority and existing publication reader; research receipts alone do not grant native custody. Refresh/install complete reviewed immutable release only when prerequisites pass; measure actual installed<=8sStop/report/ACK/drain/ownedexit/readback, dashboard and restart. Existing once-only1000USD/ONEtotal60secondQDgrant UNUSED and conditional; no need repeat financial approval within scope. No account/resource modification, operational native child, new financial service or quote stream. No Yahoo/FMP/paid data,V5,Hyperliquid inception,Genesis,liveorders,VPS,autostart. docs/QD_HIST_EPS_EXHIBIT_V1_2026-10-29.md",
+  "exact_next_action": "Approved normal W32Time start failed AccessDenied; separately approved ONEelevated start succeeded. 171.801s/seven observations:Running/Manual/NTP/time.windows.com,0x9 unchanged; Leap0/Stratum5/error0. No resync/settings/time/source change. Separate unchanged Atlas preflight2026-10-30T01:10:11Z REFUSED2551ms>1000ms. Windows-reported sync is not full clock acceptance or independent UTC certification. Both service-start scopes consumed; no retry/polling loop. Continue independent source-only installation preparation: demonstrate and guard loaded Atlas module/release inventory equality using offline tests. Then actual current source/native custody and regular-session executable IEX, immutable verified installation and actual installed<=8sStop/dashboard/restart when eligible. 406prior relevant passes/genuine EPS19.16/20anchors retained. No account/native publication/financial startup/provider stream/newinstall. Conditional once-only1000USD/ONE60secondQDgrant UNUSED. No V5,Genesis,VPS,paid/live/autostart. docs/QD_BOUNDED_W32TIME_RESULT_2026-10-29.md",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
@@ -3019,5 +3019,28 @@
     "inception": false,
     "pilot": false,
     "stopped_reason": "STOPPED_CLOCK_CURRENT_REGULAR_SESSION_AND_ACTUAL_NATIVE_INSTALLED_ACCEPTANCE_DEPENDENCIES"
+  },
+  "w32time_bounded_start_20261029": {
+    "report": "docs/QD_BOUNDED_W32TIME_RESULT_2026-10-29.md",
+    "normal_attempts": 1,
+    "normal_result": "ACCESS_DENIED_NO_CHANGE",
+    "separately_approved_elevation_attempts": 1,
+    "elevated_exit": 0,
+    "observations": 7,
+    "elapsed_seconds": 171.801,
+    "service_postflight": "Running",
+    "startup": "Manual",
+    "source": "time.windows.com,0x9",
+    "forced_sync": false,
+    "configuration_changes": false,
+    "windows_reported_sync": true,
+    "external_UTC_certification": false,
+    "atlas_clock_result": "REFUSED",
+    "atlas_uncertainty_ms": 2551,
+    "maximum_ms": 1000,
+    "prior_next_action": "QD-HIST-EPS-EXHIBIT-V1 COMPLETE: genuine SEC18original10Q+6exhibits/6main8Klinks; CompanyFacts unchanged; EPSproxy19.16/20anchors/scenarios518.9855659787368,613.1718959913326,668.1876986584107; source and actual research-only scanner/original board verified, WATCH/no forced signal. 406relevantpassed/0failed/0skipped; sourceaudit639/0issues; zero-network exact replay and original cache hashes unchanged. Actual 2026-10-30T00:48:30Z clock REFUSED W32TimeStopped0x80070426, prior ms snapshots expired; no service changes/resync. Need bounded start-only W32Time permission then unchanged<=1000ms check; no new source/startup settings. Regular US session closed at final verification; need actual fresh executable IEX and fresh original scoring/instrument/action/halt evidence. Next bind acquired-source handoff to actual enrolled native current-publication/local authority and existing publication reader; research receipts alone do not grant native custody. Refresh/install complete reviewed immutable release only when prerequisites pass; measure actual installed<=8sStop/report/ACK/drain/ownedexit/readback, dashboard and restart. Existing once-only1000USD/ONEtotal60secondQDgrant UNUSED and conditional; no need repeat financial approval within scope. No account/resource modification, operational native child, new financial service or quote stream. No Yahoo/FMP/paid data,V5,Hyperliquid inception,Genesis,liveorders,VPS,autostart. docs/QD_HIST_EPS_EXHIBIT_V1_2026-10-29.md",
+    "inception": false,
+    "pilot": false,
+    "native_publication_children": 0
   }
 }
