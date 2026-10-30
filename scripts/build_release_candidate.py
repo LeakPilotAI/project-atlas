@@ -30,9 +30,36 @@ def git(*args):
 def source_path(root: Path, name: str) -> Path:
     if (not isinstance(name, str) or not name or "\\" in name or ":" in name
             or PurePosixPath(name).is_absolute() or ".." in PurePosixPath(name).parts
-            or PurePosixPath(name).as_posix() != name):
+            or PurePosixPath(name).as_posix() != name
+            or any(part.endswith(('.', ' ')) or any(ord(c)<32 or c in '<>"|?*' for c in part)
+                or re.fullmatch(r'CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³]',part.split('.')[0].rstrip(' .'),re.IGNORECASE)
+                for part in name.split('/'))):
         raise ValueError(f"Unsafe source path: {name}")
     return root / name
+
+
+def windows_namespace(names):
+    """One unambiguous file/directory spelling under the Windows-local policy."""
+    seen={}
+    for name in names:
+        source_path(Path('.'),name)
+        parts=PurePosixPath(name).parts
+        for length in range(1,len(parts)+1):
+            path='/'.join(parts[:length]);role='file' if length==len(parts) else 'directory';key=path.casefold()
+            if key in seen and seen[key]!=(path,role):raise ValueError('Windows namespace alias or file/directory conflict')
+            seen[key]=path,role
+
+
+def new_destination(destination):
+    """Create only a new artifact child; never adopt or repair an existing root."""
+    destination=Path(destination).absolute()
+    for parent in destination.parents:
+        if parent.exists() or parent.is_symlink():
+            info=parent.lstat()
+            if not stat.S_ISDIR(info.st_mode) or getattr(info,'st_file_attributes',0)&0x400:
+                raise ValueError('Unsafe artifact destination ancestor')
+    destination.mkdir(parents=True,exist_ok=False)
+    return destination
 
 
 def source_bytes(root: Path, name: str, *, maximum_bytes: int | None = None) -> bytes:
@@ -92,6 +119,7 @@ def build(destination: Path) -> str:
     extras.update(COMPANIONS)
     extras.add("scripts/build_release_candidate.py")
     selected = sorted(tracked | extras)
+    windows_namespace(selected)
     for name in selected:
         source_path(ROOT, name)
     entries = []
@@ -110,6 +138,10 @@ def build(destination: Path) -> str:
                         "role": "runtime" if name.startswith(("backend/app/", "scripts/windows/", "deploy/")) else "support"})
     manifest = {"contract": "R7E46O_SOURCE_V1", "branch": git("branch", "--show-current")[0],
                 "head": git("rev-parse", "HEAD")[0], "activation_approved": False, "files": entries}
+    return _write_candidate(destination,manifest,contents)
+
+
+def _write_candidate(destination,manifest,contents):
     contents["release-manifest.json"] = (json.dumps(manifest, sort_keys=True, indent=2) + "\n").encode()
     packages = sorted({f"{d.metadata['Name']}=={d.version}" for d in importlib.metadata.distributions()})
     contents["requirements-observed.txt"] = ("\n".join(packages) + "\n").encode()
@@ -124,6 +156,61 @@ def build(destination: Path) -> str:
     digest = hashlib.sha256(output.read_bytes()).hexdigest()
     (destination / "archive.sha256").write_text(digest + "\n", encoding="ascii")
     return digest
+
+
+def build_selected(destination: Path, *, selection: dict, expected_inventory_sha256: str) -> str:
+    """Package an explicit reviewed subset; no untracked input or deployment.
+
+    Hashes bind the supplied selection, not operator/security approval. The
+    original broad source-review build remains separately supported.
+    """
+    if (type(selection) is not dict or set(selection)!={'schema','source_commit','inventory_digest','files'}
+            or selection['schema']!='ATLAS_SOURCE_SELECTION_V1'
+            or type(expected_inventory_sha256) is not str or not re.fullmatch('[0-9a-f]{64}',expected_inventory_sha256)
+            or type(selection['source_commit']) is not str or not re.fullmatch('[0-9a-f]{40}',selection['source_commit'])
+            or type(selection['files']) is not list or not 0<len(selection['files'])<=2048):
+        raise ValueError('Explicit bounded source selection required')
+    selection=dict(selection)
+    rows=selection['files']
+    encoded=json.dumps(rows,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+    if (len(encoded)>1024*1024 or hashlib.sha256(encoded).hexdigest()!=expected_inventory_sha256
+            or selection['inventory_digest']!=expected_inventory_sha256):raise ValueError('Selected inventory digest mismatch')
+    rows=json.loads(encoded)  # Freeze caller-owned rows before reading sources.
+    if git('rev-parse','HEAD')!=[selection['source_commit']]:raise ValueError('Selected source commit mismatch')
+    tracked=set(git('ls-files'));names=[];total=0
+    for row in rows:
+        if (type(row) is not dict or set(row)!={'path','bytes','sha256'} or type(row['path']) is not str
+                or type(row['bytes']) is not int or not 0<=row['bytes']<=16*1024*1024
+                or type(row['sha256']) is not str or not re.fullmatch('[0-9a-f]{64}',row['sha256'])):
+            raise ValueError('Invalid selected source entry')
+        name=row['path'];source_path(ROOT,name)
+        if (name not in tracked or name in names or not name.startswith(ROOTS)
+                or any(part in ('data','__pycache__') for part in PurePosixPath(name).parts)
+                or Path(name).name=='.env' or Path(name).suffix=='.bak'):
+            raise ValueError('Selected source must be explicit safe tracked input')
+        total+=row['bytes'];names.append(name)
+    if total>128*1024*1024 or names!=sorted(names):raise ValueError('Selected inventory order or capacity')
+    windows_namespace([*names,'release-manifest.json','requirements-observed.txt'])
+    # Selected runtime equality, not a blanket clean-tree waiver. Unrelated
+    # edits remain untouched and are neither packaged nor silently committed.
+    for offset in range(0,len(names),64):
+        if git('diff','--name-only','HEAD','--',*names[offset:offset+64]):
+            raise ValueError('Uncommitted selected source refused')
+    contents={};entries=[]
+    for row in rows:
+        content=source_bytes(ROOT,row['path'],maximum_bytes=row['bytes'])
+        if len(content)!=row['bytes'] or hashlib.sha256(content).hexdigest()!=row['sha256']:
+            raise ValueError('Selected source contents changed')
+        contents[row['path']]=content
+        entries.append({**row,'git_status':'tracked','role':'runtime' if row['path'].startswith(
+            ('backend/app/','scripts/windows/','scripts/observation_runtime/','scripts/volume_inspector/')) else 'support'})
+    if git('rev-parse','HEAD')!=[selection['source_commit']]:raise ValueError('Selected source changed during build')
+    manifest={'contract':'R7E46O_SOURCE_V1','branch':git('branch','--show-current')[0],
+        'head':selection['source_commit'],'activation_approved':False,'files':entries}
+    destination=new_destination(destination)
+    pin=_write_candidate(destination,manifest,contents)
+    verify_candidate(destination/'atlas-source.zip',expected_sha256=pin)
+    return pin
 
 def verify_candidate(archive: Path, *, expected_sha256: str) -> dict:
     """Bounded supplied-byte consistency only; no extraction, execution or trust grant."""
@@ -144,6 +231,7 @@ def verify_candidate(archive: Path, *, expected_sha256: str) -> dict:
         members = bundle.infolist()
         if not 2 <= len(members) <= 5000:
             raise ValueError("Bounded archive member count required")
+        windows_namespace([m.filename for m in members])
         seen = set()
         total = 0
         for member in members:
@@ -195,11 +283,55 @@ def verify_candidate(archive: Path, *, expected_sha256: str) -> dict:
             "source_authenticated": False, "installation_verified": False, "activation_approved": False}
 
 
+def verify_staged_candidate(stage: Path, archive: Path, *, expected_sha256: str) -> dict:
+    """Read-only portable staging consistency, never native installed acceptance.
+
+    No extraction/repair, release selection, process execution or ACL operation.
+    A partial staging tree remains evidence and never triggers a blind retry.
+    """
+    verified=verify_candidate(archive,expected_sha256=expected_sha256)
+    archive=Path(archive).absolute()
+    raw=source_bytes(archive.parent,archive.name,maximum_bytes=64*1024*1024)
+    if hashlib.sha256(raw).hexdigest()!=expected_sha256:raise ValueError('Archive changed before stage verification')
+    stage=Path(stage).absolute()
+    for parent in (stage,*stage.parents):
+        info=parent.lstat()
+        if not stat.S_ISDIR(info.st_mode) or getattr(info,'st_file_attributes',0)&0x400:
+            raise ValueError('Unsafe staged directory')
+    with zipfile.ZipFile(io.BytesIO(raw)) as bundle:
+        expected_files=set(bundle.namelist());expected_dirs={'.'}
+        for name in expected_files:
+            expected_dirs.update(str(p) for p in PurePosixPath(name).parents)
+        files=set();directories={'.'};count=0;total=0
+        for parent,dirs,names in os.walk(stage,followlinks=False):
+            for leaf in dirs+names:
+                path=Path(parent)/leaf;relative=path.relative_to(stage).as_posix();source_path(stage,relative)
+                info=path.lstat();count+=1
+                if count>8192 or getattr(info,'st_file_attributes',0)&0x400:
+                    raise ValueError('Staged namespace or capacity refused')
+                if stat.S_ISDIR(info.st_mode):
+                    if relative not in expected_dirs:raise ValueError('Unexpected staged directory')
+                    directories.add(relative)
+                elif stat.S_ISREG(info.st_mode):
+                    if relative not in expected_files:raise ValueError('Unexpected staged file')
+                    maximum=bundle.getinfo(relative).file_size
+                    content=source_bytes(stage,relative,maximum_bytes=maximum)
+                    if content!=bundle.read(relative):raise ValueError('Staged file content mismatch')
+                    total+=len(content);files.add(relative)
+                    if total>128*1024*1024:raise ValueError('Staged byte capacity')
+                else:raise ValueError('Staged nonregular file')
+        if files!=expected_files or directories!=expected_dirs:raise ValueError('Incomplete staged source tree')
+    return {**verified,'schema':'ATLAS_SOURCE_STAGE_CONSISTENCY_V1','source_stage_consistent':True,
+        'staged_files':len(files),'staged_bytes':total,'native_identity_acl_verified':False}
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("destination", type=Path, nargs="?", help="New source-candidate output directory")
     parser.add_argument("--verify", type=Path, metavar="ARCHIVE", help="Verify an existing archive without extracting")
     parser.add_argument("--expected-sha256", metavar="SHA256", help="Separately retained lowercase archive SHA256")
+    parser.add_argument('--selection',type=Path,help='Explicit tracked-only source selection JSON; no deployment')
+    parser.add_argument('--expected-inventory-sha256',help='Separately retained selected file-list SHA256')
     args = parser.parse_args(argv)
     if (args.destination is None) == (args.verify is None):
         parser.error("Choose exactly one build destination or --verify archive")
@@ -207,9 +339,23 @@ def main(argv=None) -> int:
         parser.error("--expected-sha256 requires --verify")
     if args.verify is not None and (args.expected_sha256 is None or not re.fullmatch(r"[0-9a-f]{64}", args.expected_sha256)):
         parser.error("--verify requires an explicit lowercase --expected-sha256")
+    if ((args.selection is None)!=(args.expected_inventory_sha256 is None)
+            or args.selection is not None and args.verify is not None
+            or args.expected_inventory_sha256 is not None and not re.fullmatch('[0-9a-f]{64}',args.expected_inventory_sha256)):
+        parser.error('Selection requires build destination and explicit lowercase inventory SHA256')
     try:
         if args.verify is not None:
             print(json.dumps(verify_candidate(args.verify, expected_sha256=args.expected_sha256), sort_keys=True))
+        elif args.selection is not None:
+            selection_path=args.selection.absolute()
+            def selected_object(pairs):
+                value={}
+                for key,item in pairs:
+                    if key in value:raise ValueError('Duplicate selection JSON key')
+                    value[key]=item
+                return value
+            selection=json.loads(source_bytes(selection_path.parent,selection_path.name,maximum_bytes=1024*1024),object_pairs_hook=selected_object)
+            print(build_selected(args.destination,selection=selection,expected_inventory_sha256=args.expected_inventory_sha256))
         else:
             print(build(args.destination))
     except (ValueError, OSError, zipfile.BadZipFile, EOFError, zlib.error) as error:
