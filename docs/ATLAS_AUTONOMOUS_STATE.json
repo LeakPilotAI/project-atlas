@@ -1,4 +1,71 @@
 {
+  "w32time_service_start_v1_20261030": {
+  "report": "docs/QD_W32TIME_SERVICE_START_CLOCK_REFUSAL_2026-10-30.md",
+  "base_commit": "51888e1e91ef6b45738596cd5f276bbb97257526",
+  "authorization": "P-QD-W32TIME-SERVICE-START-V1",
+  "service_start_scope_complete": true,
+  "normal_start_refused": true,
+  "elevation_flow": "NORMAL_WINDOWS_RUNAS_MICROSOFT_SIGNED_SC_EXE_START_W32TIME_ONLY",
+  "service_tool_exit_code": 0,
+  "immediate_post_start": "StartPending; original REFUSED_STOP record preserved",
+  "final_service": "Running",
+  "startup": "Manual",
+  "configured_type": "NTP",
+  "configured_source": "time.windows.com,0x9",
+  "settings_changes": 0,
+  "explicit_resyncs": 0,
+  "manual_clock_adjustments": 0,
+  "clock": {
+    "status": "REFUSED_UNCERTAINTY_EXCEEDED",
+    "uncertainty_ms": 7933,
+    "threshold_ms": 1000,
+    "max_evidence_age_seconds": 120,
+    "validator_age_gate_passed_before_uncertainty_refusal": true,
+    "exact_validator_age_seconds": null,
+    "preceding_diagnostic": {
+      "leap": 0,
+      "stratum": 5,
+      "last_error": 0,
+      "age_seconds": "41.6574332",
+      "root_dispersion_seconds": "7.7717519",
+      "root_delay_seconds": "0.0325604",
+      "phase_offset_seconds": "0.0013256"
+    },
+    "accepted_capability": false,
+    "initial_acquisition": "CLOCK_UNSYNCHRONIZED_LEAP3_STRATUM0_ERROR1",
+    "observation_script_seconds": [
+      3.578,
+      3.296
+    ],
+    "normal_observation_script_ceiling_seconds": 50,
+    "no_acceptance_retry_after_numerical_refusal": true
+  },
+  "private_evidence": [
+    "logs/diagnostics/qd-w32time-service-start-v1-20261030.json",
+    "logs/diagnostics/qd-w32time-clock-observation-v1-20261030.json",
+    "logs/diagnostics/qd-w32time-bounded-normal-observation-v1-20261030.json"
+  ],
+  "v2_proposal_authorized_unchanged": true,
+  "v2_proposal_sha256": "09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e",
+  "v2_copy_grant_consumed": false,
+  "copy_started": false,
+  "installed_files": 0,
+  "installation_directories_created": 0,
+  "copied_bytes": 0,
+  "intent_created": false,
+  "receipt_created": false,
+  "completion_ack_created": false,
+  "complete_v2_preflight_passed": false,
+  "native_installed_readback": "NOT_EXECUTED",
+  "code_changes": 0,
+  "new_regression_tests_run": 0,
+  "historical_closure_passes_preserved": 223,
+  "financial_actions": 0,
+  "atlas_market_data_provider_connections": 0,
+  "selection_or_promotion": false,
+  "genesis_access": false,
+  "next_boundary": "SEPARATELY_SCOPED_READ_ONLY_CLOCK_QUALITY_DIAGNOSIS_OR_LATER_FRESH_CHECK_NO_SETTINGS_AUTHORITY"
+},
   "unselected_operational_code_copy_v1_20261030": {
   "report": "docs/QD_UNSELECTED_OPERATIONAL_CODE_COPY_PREFLIGHT_2026-10-30.md",
   "base_commit": "ddc1c886eb6cb43a248cb5e53a9c0611335ffc78",
@@ -168,15 +235,15 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "P_QD_UNSELECTED_OPERATIONAL_CODE_COPY_V1_PREFLIGHT_CLOCK_REFUSED_NO_COPY",
+  "last_verified_task": "P_QD_W32TIME_SERVICE_START_V1_SERVICE_RUNNING_CLOCK_7933MS_REFUSED_NO_COPY",
   "next_eligible_tasks": [
-  "SEPARATE_OPERATOR_AUTHORIZATION_BOUNDED_W32TIME_START_NO_SETTINGS_NO_RESYNC"
+  "OPERATOR_SCOPE_READ_ONLY_CLOCK_QUALITY_DIAGNOSIS_OR_LATER_FRESH_RECHECK"
 ],
   "blocked_tasks": {
-  "PERSONAL_LOCAL_INSTALLATION": "ONE unselected actual-code copy authorized; V1/current installer mismatch stopped first, then soleoperator explicitly authorized existing V2 pins09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e with identical app archive/dest/limits/exclusions. Fresh unchanged LocalWindowsClock refused serviceStopped0x80070426 in normal nonadmin/nonAppContainer context. DirectreadW32TimeStopped/Manual/NTP/time.windows.com,0x9. No qualifying uncertainty/age, no settings/start/resync. No destination/intent/receipt/ACK/nativecopy;grantunused. Separate boundedW32Time start authority required before freshclock and remaining native/resource/selected-release/source checks. No promotion/account/provider/financial/PAPER authority.",
+  "PERSONAL_LOCAL_INSTALLATION": "V2 ONE unselected code-copy grant remains explicitlyauthorized/UNUSED. W32Time nowRunning/Manual/time.windows.com,0x9 after authorizednormal-permission refusal and ONE RunAs sc.exe start success. InitialStartPending rawrefusal retained; followupRunning. Windows subsequentlyreportedLeap0/stratum5/error0, precedingdiagnosticage41.6574332s/rootdispersion7.7717519s. GenuineunchangedAtlas clock refused7933ms>1000ms; agegate passed before numericalrefusal, exactseparateage notretained. STOP beforecopy:destination/intent/receipt absent,files0dirs0bytes0. No config/resync/selector/provider/account/PAPER/Genesis change. Service-startscopecomplete; furtherclock-qualityactionmustseparatelyscoped. RemainingcompleteV2native/source/resource/selected-release/readbackpreflight notpassed.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
   "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
-  "PERSONAL_BOUNDED_START": "Installed genuine standard-user/nonAppContainer clock accepted196ms at07:25:21.7872031Central; access blocker resolved for candidate, no administrator runtime/ACL/settings change needed. Capability revoked and process exited; fresh acquisition mandatory. AppContainer error5 preserved as confined-context failure, not ordinary-user defect. Current acceptedresearch/executableIEX/custody and exact operationalrelease enrollment/ControlCenter acceptance stillpending. This directive forbids PAPER startup/promotion/providers/inception.",
+  "PERSONAL_BOUNDED_START": "ServiceRunningManual/NTPsourceunchanged and WindowsreportsLeap0/stratum5/error0, but currentAtlasclock refusal7933ms>1000ms. No acceptedcapability; historical196ms/otheranchors notcurrent. Real resource/release/currentcustody/currentresearch/executableIEX and actualControlCenter financialStop/dashboard/restart remain unaccepted. No PAPER startup or promotion authority.",
   "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Actual disposable native candidate entry/partial/shutdown/full/replay/audit/ACK/drain/read-only restart verified. No operational financial root or account accessed/initialized; syntheticreceipt/authority cannot enter operational path. Actual activation/inception/current custody not executed."
 },
   "latest_tests": {
@@ -196,7 +263,7 @@
   "ruff_passed": true
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Mandatory STOP without copy recorded in docs/QD_UNSELECTED_OPERATIONAL_CODE_COPY_PREFLIGHT_2026-10-30.md. Current V2 ONE unselected operational-code-copy grant explicitlyconfirmed and UNUSED; do not reprompt for V1/V2. Need separate existing W32Time start permission, unchangedManual/time.windows.com,0x9, noresync/config/settings; observe<=180s, administrator permission only if supplied. Genuine clock uncertainty<=1000ms/evidenceage<=120s mustpass, then sameunused grant can continue remaining exact package/native resource/selected-release/clock/source admission and actual reviewed adapter. No service action authorized now. No copy/native installedreadback/receipt/ACK/regression reruns done; files0dirs0bytes0. Historical223tests and priornativefailures/cachevariance/metadataanomaly preserved. No selection/promotion/provider/account/PAPER/Genesis change;productionNO-GO.",
+  "exact_next_action": "STOP recorded in docs/QD_W32TIME_SERVICE_START_CLOCK_REFUSAL_2026-10-30.md. ExistingW32Time serviceRunning/Manual/time.windows.com,0x9; approved service-startactioncomplete/consumed, do not start/elevate/resync/reconfigure again. Atlas refused7933ms uncertainty despitehealthyWindowssync and freshness check passing; precedingrawage41.6574332s/rootdispersion7.7717519s, exactvalidatorage notretained. No clockcap or copy. Need separatelyscoped read-only clock-qualitydiagnosis or laterfreshrecheck; settingscorrection onlywithexplicitauthority. Onlyafter genuine<=1000ms/<=120s and remainingpreflight pass maysameunused V2ONEunselectedcopygrant continue. V2pins09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e unchanged; no dest/intent/receipt/ACK/files/dirs/bytes/nativeinstalledreadback. No sourcechange/regressionrerun; historical223passes/21decisions/sevenphases preserved. No provider/financial/selection/Genesis action;PAPERNO/productionNOGO.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,

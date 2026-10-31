@@ -1,3 +1,11 @@
+# October30 service start complete; clock uncertainty stop
+
+Milestone:P_QD_W32TIME_SERVICE_START_V1_COMPLETE_CLOCK_QUALITY_REFUSED_NO_COPY
+Status:SERVICE_RUNNING_MANUAL_SOURCE_UNCHANGED;CLOCK_7933MS_EXCEEDS_1000MS;V2_COPY_GRANT_UNUSED;PAPER_NO
+Evidence:docs/QD_W32TIME_SERVICE_START_CLOCK_REFUSAL_2026-10-30.md. Normal Start-Service refused; exactlyone Microsoft-signed sc.exe start W32Time through normal RunAs permission flow returned0, processdisposed. ImmediateStartPending/earlyREFUSED rawrecord preserved; followup/finalRunning, no repeatedstart. Manual/NTP/time.windows.com,0x9 unchanged; no registry/config/startup/peer/firewall/reload/restart/resync/manualtime change. InitialclockUNSYNCHRONIZED leap3/stratum0/error1; normalobservation thenWindowsLeap0/stratum5/error0. Precedingfresh diagnostic age41.6574332s,dispersion7.7717519s,delay0.0325604s,offset0.0013256s. Genuineunchangedvalidator refused7933ms; own agegate passed beforeuncertainty refusal, exact separateage notretained. No acceptedcap, no furthercheckafter numericalrefusal. Scripts3.578s+3.296s, normalwindow50s endedearly. V2pins09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e stillmatch;dest/intent/receipt absent,files0dirs0bytes0. No installation/preflightpass/readback/selection/financial/provider/Genesis action. Historical223tests and all priorfailures preserved; codeunchanged.
+Next action:Service-start scope complete/consumed; no newstart/elevation/resync/config action. Separately scope read-only clock-quality diagnosis or laterfreshcheck; any correction needs explicitauthority. Keep7933ms refusal,1000ms/120s unchanged. Only after genuineclock and remaining preflight pass may sameunused V2 ONE unselected-code-copy grant resume; no promotion/account/provider/PAPER authority. Preserve21decisions/sevenphases/B1C1D1E1;productionNO-GO.
+
+
 # October30 authorized unselected copy: clock preflight stop
 
 Milestone:P_QD_UNSELECTED_OPERATIONAL_CODE_COPY_V1_PREFLIGHT_REFUSED_NO_COPY
