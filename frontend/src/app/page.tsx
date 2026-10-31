@@ -1,6 +1,9 @@
 "use client";
 
+import { PageIdentity } from "@/app/components/PageIdentity";
+import { SurfaceNavLink } from "@/app/components/SurfaceNavLink";
 import { useEffect, useState, type ReactNode } from "react";
+import CryptoQualityDipsStatusPanel from "@/app/components/CryptoQualityDipsStatusPanel";
 
 const API = "http://127.0.0.1:8000";
 
@@ -54,6 +57,13 @@ function ago(iso?: unknown): string {
   return new Date(t).toLocaleString();
 }
 
+function RelativeTime({ value }: { value?: unknown }) {
+  if (!value || typeof value !== "string") return <>{ago(value)}</>;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return <>{ago(value)}</>;
+  return <time dateTime={parsed.toISOString()}>{ago(value)}</time>;
+}
+
 function n(v: unknown, d = 0): number {
   const x = Number(v);
   return Number.isFinite(x) ? x : d;
@@ -99,7 +109,7 @@ export default function Dashboard() {
   if (!live && !error) {
     return (
       <div className="min-h-screen bg-[#07080b] text-zinc-200 flex items-center justify-center">
-        <p className="text-sm tracking-wide text-zinc-500">Connecting to Atlas…</p>
+        <p role="status" aria-live="polite" aria-atomic="true" className="text-sm tracking-wide text-zinc-500">Connecting to Atlas…</p>
       </div>
     );
   }
@@ -121,30 +131,32 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#07080b] text-zinc-200">
       <header className="border-b border-white/5 bg-[#0b0d12]/90 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-emerald-500/80">Live command center</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">Project Atlas</h1>
-            <p className="text-xs text-zinc-500 mt-1">
-              Bot runs in the Atlas window. This page is watch-only. Discord is the alert feed.
-            </p>
-          </div>
-          <div className="text-right text-xs text-zinc-500">
-            <div>Refresh {tick === 0 ? "just now" : "every 8s"} · {ago(live?.updated_at)}</div>
-            <div className={error ? "text-rose-400" : "text-emerald-400"}>
-              {error ? "API down" : "API connected"}
+          <PageIdentity
+            eyebrow="Live command center"
+            title="Project Atlas"
+            tone="operational"
+            description="Bot runs in the Atlas window. This page is watch-only. Discord is the alert feed."
+          />
+          <div className="flex flex-wrap items-end gap-4">
+            <nav aria-label="Research navigation"><SurfaceNavLink href="/research/surfaces" variant="primary">Research Surfaces</SurfaceNavLink></nav>
+            <div className="text-right text-xs text-zinc-500">
+              <div>Refresh {tick === 0 ? "just now" : "every 8s"} · <RelativeTime value={live?.updated_at} /></div>
+              <div role="status" aria-live="polite" aria-atomic="true" aria-label={error ? "Application programming interface down" : "Application programming interface connected"} className={error ? "text-rose-400" : "text-emerald-400"}>
+                {error ? "API down" : "API connected"}
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+      <main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {error && (
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+          <div role="alert" aria-label="Application programming interface error" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
             {error}
           </div>
         )}
 
-        <section className="flex flex-wrap gap-2">
+        <section aria-label="System health" className="flex flex-wrap gap-2">
           <Pill label="Scanner" on={!!h.scanner} />
           <Pill label="Perp micro" on={!!h.perp_micro} />
           <Pill label="Paper" on={!!h.paper_tracker} />
@@ -155,20 +167,22 @@ export default function Dashboard() {
             Liquid names {n(h.liquid_count)}
           </span>
           <span className="px-2.5 py-1 rounded-full text-[11px] border border-white/10 text-zinc-400">
-            Last scan {ago(h.last_cycle_at)}
+            Last scan <RelativeTime value={h.last_cycle_at} />
           </span>
         </section>
 
-        <section className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
-          <p className="text-[11px] uppercase tracking-widest text-amber-400/80">Why no paper trade</p>
+        <CryptoQualityDipsStatusPanel />
+
+        <section aria-labelledby="why-no-paper-title" className="rounded-2xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
+          <h2 id="why-no-paper-title" className="text-[11px] uppercase tracking-widest text-amber-400/80">Why no paper trade</h2>
           <p className="text-lg text-zinc-100 mt-1">{why.headline || live?.bottleneck || "Waiting on first scan cycle."}</p>
           {live?.bottleneck && (
             <p className="text-sm text-zinc-500 mt-1">{String(live.bottleneck)}</p>
           )}
         </section>
 
-        <section>
-          <h2 className="text-sm font-medium text-zinc-400 mb-3">Last 24 hours — perp funnel</h2>
+        <section aria-labelledby="perp-funnel-title">
+          <h2 id="perp-funnel-title" className="text-sm font-medium text-zinc-400 mb-3">Last 24 hours — perp funnel</h2>
           <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
             {FUNNEL.map((s) => {
               const val = n(funnel[s.key]);
@@ -176,7 +190,7 @@ export default function Dashboard() {
               return (
                 <div key={s.key} className="rounded-xl border border-white/8 bg-[#10131a] p-3">
                   <div className="h-16 flex items-end mb-2">
-                    <div className="w-full rounded-sm bg-emerald-500/70" style={{ height: hgt }} />
+                    <div role="progressbar" aria-label={`${s.label}: ${val} of ${maxFunnel}`} aria-valuemin={0} aria-valuemax={maxFunnel} aria-valuenow={val} className="w-full rounded-sm bg-emerald-500/70" style={{ height: hgt }} />
                   </div>
                   <div className="text-lg font-semibold text-white tabular-nums">{val}</div>
                   <div className="text-[11px] text-zinc-500">{s.label}</div>
@@ -190,7 +204,7 @@ export default function Dashboard() {
           </p>
         </section>
 
-        <section className="grid md:grid-cols-4 gap-3">
+        <section aria-label="Session metrics" className="grid md:grid-cols-4 gap-3">
           <Stat label="Session open" value={n(journal.open)} />
           <Stat label="Session closed" value={n(journal.closed)} hint={String(session.session_id || "all-time")} />
           <Stat
@@ -206,16 +220,18 @@ export default function Dashboard() {
             {opens.length === 0 ? (
               <Empty text="No open paper trades. Bot is scanning — Discord fires when one qualifies." />
             ) : (
-              <table className="w-full text-sm">
-                <thead className="text-zinc-500 text-left text-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[42rem] text-sm">
+                  <caption className="sr-only">Open paper trades with current entry, mark, stop, excursion, and age data.</caption>
+                  <thead className="text-zinc-500 text-left text-xs">
                   <tr>
-                    <th className="py-2">Symbol</th>
-                    <th>Side</th>
-                    <th>Entry</th>
-                    <th>Mark</th>
-                    <th>Stop</th>
-                    <th>MFE R</th>
-                    <th>Age</th>
+                    <th scope="col" className="py-2">Symbol</th>
+                    <th scope="col">Side</th>
+                    <th scope="col">Entry</th>
+                    <th scope="col">Mark</th>
+                    <th scope="col">Stop</th>
+                    <th scope="col">MFE R</th>
+                    <th scope="col">Age</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -233,24 +249,25 @@ export default function Dashboard() {
                         {t.stale_quote ? (
                           <span className="text-amber-400">stale quote</span>
                         ) : (
-                          ago(t.opened_at)
+                          <RelativeTime value={t.opened_at} />
                         )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
             )}
           </Card>
 
           <Card title="Live activity">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <Dt k="Last HL data" v={ago(live?.activity?.last_market_data)} />
-              <Dt k="Last candles" v={ago(live?.activity?.last_candles)} />
-              <Dt k="Last evaluation" v={ago(live?.activity?.last_evaluation)} />
-              <Dt k="Last qualified" v={ago(live?.activity?.last_qualified)} />
-              <Dt k="Last paper open" v={ago(live?.activity?.last_paper_open)} />
-              <Dt k="Last Discord" v={ago(live?.activity?.last_discord_alert)} />
+              <Dt k="Last HL data" v={<RelativeTime value={live?.activity?.last_market_data} />} />
+              <Dt k="Last candles" v={<RelativeTime value={live?.activity?.last_candles} />} />
+              <Dt k="Last evaluation" v={<RelativeTime value={live?.activity?.last_evaluation} />} />
+              <Dt k="Last qualified" v={<RelativeTime value={live?.activity?.last_qualified} />} />
+              <Dt k="Last paper open" v={<RelativeTime value={live?.activity?.last_paper_open} />} />
+              <Dt k="Last Discord" v={<RelativeTime value={live?.activity?.last_discord_alert} />} />
               <Dt k="Discord subs" v={String(live?.activity?.discord_subscribers ?? "—")} />
               <Dt k="Last error" v={h.last_error ? String(h.last_error) : "none"} />
             </dl>
@@ -260,21 +277,23 @@ export default function Dashboard() {
         <section className="grid lg:grid-cols-2 gap-4">
           <Card title="Quality dip — prepare to buy (research)">
             <p className="text-[11px] text-zinc-500 mb-3">
-              Strong names off highs. Discord DMs PREPARE / ACCUMULATE. Scan {ago(live?.quality_dips?.last_scan_at)}.
+              Strong names off highs. Discord DMs PREPARE / ACCUMULATE. Scan <RelativeTime value={live?.quality_dips?.last_scan_at} />.
               You place any buy. Atlas does not.
             </p>
             {prepare.length === 0 && dips.length === 0 ? (
               <Empty text="No dip snapshot yet — scanner runs about every 15 minutes while the engine is up." />
             ) : (
-              <table className="w-full text-sm">
-                <thead className="text-zinc-500 text-left text-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[40rem] text-sm">
+                  <caption className="sr-only">Quality dip research candidates with action, price-change context, and thesis.</caption>
+                  <thead className="text-zinc-500 text-left text-xs">
                   <tr>
-                    <th className="py-2">Action</th>
-                    <th>Symbol</th>
-                    <th>Off high</th>
-                    <th>1d</th>
-                    <th>5d</th>
-                    <th>Thesis</th>
+                    <th scope="col" className="py-2">Action</th>
+                    <th scope="col">Symbol</th>
+                    <th scope="col">Off high</th>
+                    <th scope="col">1d</th>
+                    <th scope="col">5d</th>
+                    <th scope="col">Thesis</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -289,7 +308,8 @@ export default function Dashboard() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
             )}
           </Card>
 
@@ -297,13 +317,15 @@ export default function Dashboard() {
             {opps.length === 0 ? (
               <Empty text="No stored perp setups yet. Strict gates on purpose — do not loosen them from this page." />
             ) : (
-              <table className="w-full text-sm">
-                <thead className="text-zinc-500 text-left text-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[30rem] text-sm">
+                  <caption className="sr-only">Stored perpetual opportunities with status, side, and entry price.</caption>
+                  <thead className="text-zinc-500 text-left text-xs">
                   <tr>
-                    <th className="py-2">Symbol</th>
-                    <th>Status</th>
-                    <th>Side</th>
-                    <th>Entry</th>
+                    <th scope="col" className="py-2">Symbol</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Side</th>
+                    <th scope="col">Entry</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -316,13 +338,14 @@ export default function Dashboard() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
             )}
           </Card>
         </section>
 
-        <section className="rounded-2xl border border-white/8 bg-[#10131a] px-5 py-4">
-          <h2 className="text-sm font-medium text-zinc-300 mb-3">Active gates (not editable here)</h2>
+        <section aria-labelledby="active-gates-title" className="rounded-2xl border border-white/8 bg-[#10131a] px-5 py-4">
+          <h2 id="active-gates-title" className="text-sm font-medium text-zinc-300 mb-3">Active gates (not editable here)</h2>
           <div className="flex flex-wrap gap-2 text-xs">
             <Chip>RSI {fmt(gates.rsi_long, 0)} / {fmt(gates.rsi_short, 0)}</Chip>
             <Chip>Extension {fmt(gates.extension_pct, 1)}%</Chip>
@@ -352,20 +375,20 @@ function Pill({ label, on }: { label: string; on: boolean }) {
 
 function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-[#10131a] p-4">
-      <p className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</p>
-      <p className="text-2xl font-semibold text-white mt-1 tabular-nums">{value}</p>
-      {hint && <p className="text-[11px] text-zinc-600 mt-1">{hint}</p>}
-    </div>
+    <dl className="rounded-2xl border border-white/8 bg-[#10131a] p-4">
+      <dt className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</dt>
+      <dd className="text-2xl font-semibold text-white mt-1 tabular-nums">{value}</dd>
+      {hint && <dd className="text-[11px] text-zinc-600 mt-1">{hint}</dd>}
+    </dl>
   );
 }
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-[#10131a] p-5">
+    <section aria-label={title} className="rounded-2xl border border-white/8 bg-[#10131a] p-5">
       <h2 className="text-sm font-medium text-zinc-300 mb-3">{title}</h2>
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -373,7 +396,7 @@ function Empty({ text }: { text: string }) {
   return <p className="text-sm text-zinc-500 leading-relaxed">{text}</p>;
 }
 
-function Dt({ k, v }: { k: string; v: string }) {
+function Dt({ k, v }: { k: string; v: ReactNode }) {
   return (
     <>
       <dt className="text-zinc-500">{k}</dt>

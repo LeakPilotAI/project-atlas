@@ -4,7 +4,7 @@ Manual:  `InvestmentScanner(...).run_once()`
 Scheduled: `await scanner.start()` behind INVESTMENT_SCAN_ENABLED (default false).
 
 Crashes here must never stop the trading engine. start() / the loop swallow errors.
-No real orders. No ML. No look-ahead: scoring uses bars with session_date ≤ T.
+No real orders. No ML. No look-ahead: scoring uses bars with session_date â‰¤ T.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from app.investment.history import load_bars
 from app.investment.ingest import FetchPlan, InvestmentIngest
 from app.investment.intelligence import evaluate_equity_move
 from app.investment.lookahead import as_of_date, filter_bars_as_of
-from app.investment.market_hours import session_status
+from app.investment.market_hours import next_scan_delay, session_bounds, session_status
 from app.investment.models import MeasuredValue, PortfolioInput
 from app.investment.move_store import append_move_event
 from app.investment.notify import deliver_investment_alert, format_equity_move_alert
@@ -243,7 +243,7 @@ def _age_ok(ts: Optional[datetime], ttl: float, now: datetime) -> bool:
         return False
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
-    return (now - ts).total_seconds() <= ttl
+    return 0 <= (now - ts).total_seconds() <= ttl
 
 
 def plan_fetches(
@@ -258,10 +258,14 @@ def plan_fetches(
 ) -> FetchPlan:
     """Skip provider calls when cached data is still within the refresh window.
 
-    MARKET_CLOSED: last session close cannot get fresher — skip live price if we
+    MARKET_CLOSED: last session close cannot get fresher â€” skip live price if we
     already have a prior snapshot. Fundamentals/valuation still refresh on their TTLs.
     """
     price_due = not _age_ok(state.last(symbol, "price"), settings.price_refresh_seconds, now)
+    bounds = session_bounds(now)
+    last_price = state.last(symbol, "price")
+    if session == "MARKET_OPEN" and bounds and (last_price is None or last_price < bounds[0]):
+        price_due = True  # A pre-open fetch cannot suppress the first regular-session quote.
     hist_due = not _age_ok(state.last(symbol, "history"), settings.history_refresh_seconds, now) or not has_history
     fund_due = not _age_ok(state.last(symbol, "fundamentals"), settings.fundamental_refresh_seconds, now)
     val_due = not _age_ok(state.last(symbol, "valuation"), settings.valuation_refresh_seconds, now)
@@ -285,7 +289,7 @@ def failed_record(symbol: str, name: str, reason: str, as_of: datetime) -> Resea
         missing_critical=["price", "fundamentals", "valuation"],
         generational_blockers=[reason],
         data_risk=[reason],
-        coverage_label="provider failure — no invented values",
+        coverage_label="provider failure â€” no invented values",
     )
     rec.explain.data_quality_notes.append(reason)
     rec.explain.missing_data.extend(["price", "fundamentals", "valuation"])
@@ -347,7 +351,7 @@ def format_scan_dashboard(report: ScanReport) -> str:
     if report.session == "MARKET_CLOSED":
         lines += ["", "Market is CLOSED. Research may update; last session prints are not live quotes."]
     elif report.session == "SYSTEM_OFFLINE":
-        lines += ["", "SYSTEM OFFLINE — not the same as a closed market."]
+        lines += ["", "SYSTEM OFFLINE â€” not the same as a closed market."]
     ev = report.evaluation_counts or {}
     lines += [
         "",
@@ -389,7 +393,12 @@ class InvestmentScanner:
         persist: Optional[bool] = None,
         notify: Optional[Callable] = None,
         system_ok: bool = True,
+        research_only: bool = False,
     ) -> None:
+        if type(research_only) is not bool:
+            raise ValueError("RESEARCH_ONLY_MODE_REQUIRED")
+        self.research_only = research_only
+        self._research_only = research_only
         self.settings = settings
         self._universe_override = universe
         self.ingest = ingest
@@ -408,6 +417,23 @@ class InvestmentScanner:
         self._running = False
         self.last_report: Optional[ScanReport] = None
         self._latest: Dict[str, InvestmentSnapshot] = {}
+        if research_only:
+            self._verify_research_only()
+
+    def _verify_research_only(self) -> None:
+        """Confined scoring, not a provider grant or financial scanner launch."""
+        if (type(self.settings) is not ScanSettings or self.settings.persist
+                or self.settings.notify_discord or self.settings.enabled
+                or type(self._universe_override) is not InvestmentUniverse
+                or not 0 < len(self._universe_override) <= 16
+                or type(self.ingest) is not InvestmentIngest or not self.ingest.read_only
+                or self.ingest.persist or self.ingest.snapshot_path is not None
+                or self.ingest.universe is not self._universe_override
+                or self.history_root is None or Path(self.ingest.history_root) != Path(self.history_root)
+                or self._persist_override is not False
+                or any(value is not None for value in (self.paper,self._portfolio_override,self.alert_store,
+                    self._notify,self.observations_path,self.outcomes_path,self.fetch_state_path))):
+            raise ValueError("RESEARCH_ONLY_EXPLICIT_NONFINANCIAL_INPUTS_REQUIRED")
 
     @property
     def running(self) -> bool:
@@ -461,6 +487,8 @@ class InvestmentScanner:
 
     async def start(self) -> None:
         """Opt-in. Never raises into the trading lifespan."""
+        if self.research_only is not self._research_only or self.research_only:
+            raise ValueError("RESEARCH_ONLY_NO_BACKGROUND_START")
         try:
             if self._task and not self._task.done():
                 return
@@ -485,7 +513,7 @@ class InvestmentScanner:
             self._task.cancel()
             try:
                 await self._task
-            except (asyncio.CancelledError, Exception):
+            except asyncio.CancelledError:
                 pass
             self._task = None
         log.info("investment scanner stopped")
@@ -499,15 +527,19 @@ class InvestmentScanner:
             except Exception as e:
                 log.warning("investment scan cycle failed; trading continues", error=str(e)[:200])
             cfg = self._cfg()
-            session = session_status(system_ok=self.system_ok)
-            delay = cfg.interval_open_seconds if session == "MARKET_OPEN" else cfg.interval_closed_seconds
-            delay = max(60.0, float(delay))
+            delay = next_scan_delay(_now(), open_seconds=cfg.interval_open_seconds,
+                                    closed_seconds=cfg.interval_closed_seconds,
+                                    system_ok=self.system_ok)
             try:
                 await asyncio.sleep(delay)
             except asyncio.CancelledError:
                 break
 
     async def run_once(self, *, now: Optional[datetime] = None) -> ScanReport:
+        if self.research_only is not self._research_only:
+            raise ValueError("RESEARCH_ONLY_MODE_CHANGED")
+        if self.research_only:
+            self._verify_research_only()
         now = now or _now()
         cfg = self._cfg()
         persist = self._persist(cfg)
@@ -523,9 +555,9 @@ class InvestmentScanner:
         ordered = universe.scan_order()
         report.universe = len(ordered)
         ing = self._ing(universe, persist)
-        store = self._store(persist)
-        port = self._port()
-        paper = self._paper_book(port, persist)
+        store = AlertStore(persist=False) if self.research_only else self._store(persist)
+        port = PortfolioInput() if self.research_only else self._port()
+        paper = None if self.research_only else self._paper_book(port, persist)
         fetch_state = FetchState(path=self.fetch_state_path if self.fetch_state_path is not None else (FETCH_STATE_PATH if persist else None))
         obs_path = self.observations_path if self.observations_path is not None else (OBSERVATIONS_PATH if persist else None)
         out_path = self.outcomes_path if self.outcomes_path is not None else (OUTCOMES_PATH if persist else None)
@@ -596,17 +628,19 @@ class InvestmentScanner:
         report.data_health = format_data_health(report)
         self.last_report = report
         try:
-            set_equity_tape(tape_rows)
+            if not self.research_only:
+                set_equity_tape(tape_rows)
         except Exception as e:
             log.warning("equity tape update failed", error=str(e)[:160])
         if persist:
             append_scan_log(report)
             try:
-                save_last_cycle(cycle_summary(report))
+                summary = await asyncio.to_thread(cycle_summary, report)
+                await asyncio.to_thread(save_last_cycle, summary)
             except Exception as e:
                 log.warning("last cycle persist failed", error=str(e)[:160])
             try:
-                self._enrich_past(now=now, outcomes_path=out_path)
+                await asyncio.to_thread(self._enrich_past, now=now, outcomes_path=out_path)
             except Exception as e:
                 log.warning("outcome enrichment failed", error=str(e)[:200])
         return report
@@ -630,7 +664,7 @@ class InvestmentScanner:
         tape_rows: Optional[List[dict]] = None,
     ) -> ScanObservation:
         prior = self._latest.get(entry.symbol)
-        if prior is None:
+        if prior is None and not self.research_only:
             prior = load_latest_snapshot(entry.symbol)
             if prior is not None:
                 self._latest[entry.symbol] = prior
@@ -661,7 +695,8 @@ class InvestmentScanner:
         if plan.valuation:
             fetch_state.touch(entry.symbol, valuation=now)
 
-        raw_bars = load_bars(entry.symbol, root=self.history_root or getattr(ing, "history_root", None))
+        raw_bars = (ing.research_bars(entry.symbol) if self.research_only else
+                    await asyncio.to_thread(load_bars, entry.symbol, root=self.history_root or getattr(ing, "history_root", None)))
         bars = filter_bars_as_of(raw_bars, now)
         rec = self.research.score_snapshot(snap, bars, as_of=now)
         rec.timestamp = now
@@ -674,21 +709,22 @@ class InvestmentScanner:
             rec.explain.invalidation.extend(dnotes)
 
         headlines: List[dict] = []
-        intel = evaluate_equity_move(
+        intel = await asyncio.to_thread(evaluate_equity_move,
             entry,
             rec,
             universe=universe,
             history_root=self.history_root or getattr(ing, "history_root", None),
             headlines=headlines,
             deteriorating=deteriorating,
+            **({'bars_by_symbol':{symbol:ing.research_bars(symbol) for symbol in universe.symbols()}} if self.research_only else {}),
         )
         mv_score = intel["move"].score
-        if mv_score is not None and mv_score >= 65:
+        if not self.research_only and mv_score is not None and mv_score >= 65:
             try:
                 from app.investment.cause import fetch_yahoo_headlines
 
                 headlines = await fetch_yahoo_headlines(entry.symbol)
-                intel = evaluate_equity_move(
+                intel = await asyncio.to_thread(evaluate_equity_move,
                     entry,
                     rec,
                     universe=universe,
@@ -866,6 +902,7 @@ class InvestmentScanner:
         obs_path = self.observations_path or OBSERVATIONS_PATH
         rows = load_observations(obs_path)
         already = {r.get("observation_id") for r in load_outcomes(outcomes_path)}
+        bars_by_symbol = {}
         for row in rows:
             oid = row.get("observation_id")
             if not oid or oid in already:
@@ -878,11 +915,13 @@ class InvestmentScanner:
             except Exception:
                 continue
             if as_of >= now:
-                continue  # current cycle — leave outcomes NULL
+                continue  # current cycle â€” leave outcomes NULL
             symbol = str(row.get("symbol") or "")
             if not symbol:
                 continue
-            bars = load_bars(symbol, root=self.history_root)
+            if symbol not in bars_by_symbol:
+                bars_by_symbol[symbol] = load_bars(symbol, root=self.history_root)
+            bars = bars_by_symbol[symbol]
             try:
                 written = enrich_observation(row, bars, now=now, outcomes_path=outcomes_path)
                 if written:
@@ -903,7 +942,4 @@ async def start_investment_scanner() -> None:
 
 
 async def stop_investment_scanner() -> None:
-    try:
-        await investment_scanner.stop()
-    except Exception:
-        pass
+    await investment_scanner.stop()

@@ -1,0 +1,29 @@
+{
+  "exit_code": 0,
+  "timeout": false,
+  "start": "2026-10-18T22:28:32.312894-05:00",
+  "end": "2026-10-18T22:28:32.350777-05:00",
+  "elapsed_seconds": 0.03099999999994907,
+  "args": [
+    "--host",
+    "npipe:////./pipe/dockerDesktopLinuxEngine",
+    "image",
+    "inspect",
+    "sha256:2ec3306c7d7e5714f49db15ea0db636622e01d061e87ceac27d0ec2bbd1b2574",
+    "--format",
+    "{\"Id\":{{json .Id}},\"Descriptor\":{{json .Descriptor}}}"
+  ],
+  "stdout_bytes": 248,
+  "stderr_bytes": 0,
+  "within_output_bound": true,
+  "stdout": "{\"Id\":\"sha256:2ec3306c7d7e5714f49db15ea0db636622e01d061e87ceac27d0ec2bbd1b2574\",\"Descriptor\":{\"digest\":\"sha256:2ec3306c7d7e5714f49db15ea0db636622e01d061e87ceac27d0ec2bbd1b2574\",\"mediaType\":\"application/vnd.oci.image.manifest.v1+json\",\"size\":1029}}\n",
+  "stderr": "",
+  "payload": {
+    "Id": "sha256:2ec3306c7d7e5714f49db15ea0db636622e01d061e87ceac27d0ec2bbd1b2574",
+    "Descriptor": {
+      "digest": "sha256:2ec3306c7d7e5714f49db15ea0db636622e01d061e87ceac27d0ec2bbd1b2574",
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "size": 1029
+    }
+  }
+}

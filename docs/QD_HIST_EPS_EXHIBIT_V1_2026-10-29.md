@@ -1,0 +1,74 @@
+# QD-HIST-EPS-EXHIBIT-V1 — genuine original-source acceptance
+
+Source base: `66069b9c15deeae0269739e72686bd98285bd3f2`, branch `chatgpt/atlas-rebuild-v1`. Work and final observations occurred October 29 Central; the final UTC receipts are October 30. This completes the requested original-earnings-exhibit research increment. It does not grant financial startup or alter PERSONAL_PAPER_ONLY_V1, the 21 historical decisions, seven phases, strict/manual contracts or existing risk policies.
+
+## Implemented source path
+
+`sec_filing_evidence.py` verifies official SEC submissions metadata, CIK/ticker, accession, filing/report dates, exact primary-document references, original inline-XBRL issuer/type/period, standard namespaces, consolidated contexts and units. It preserves exact UTF-8 bytes and hashes. Historical DEI date namespaces and official 2021Q4/2022Q4 versions are supported explicitly; unknown namespaces, missing identity contexts, nil/continued identity facts, inconsistent duplicate facts and unsupported transforms refuse. Unrelated currency/custom units never become USD.
+
+`sec_earnings_exhibit.py` implements **QD-HIST-EPS-EXHIBIT-V1**. It first verifies the original 8-K and the actual unique linked earnings-release exhibit in that same official accession directory. Its deliberately bounded HTML-table dialect requires the issuer's GAAP income statement, explicit three-month end and year, USD-per-share/millions labels, diluted EPS, same-period weighted-average diluted shares and consistent reported net income. It maps colspan/rowspan and CSS-hidden spacer cells explicitly. Annual/YTD columns, basic EPS, non-GAAP reconciliations and point-in-time shares outstanding cannot substitute. Unsupported layouts refuse. EPS is directly read, never derived by subtraction. The rounded net-income/share check only detects contradictions; it never calculates replacement EPS. Parser bounds remain finite: 16MiB document, 250,000 nodes, 128 tables, 4,096 rows/table, 64 columns and 16-row spans.
+
+`genuine_historical_source.py` composes the existing bounded transport and approved calculation. It checks actual asset/ticker/CIK/business identity, current Company Facts, original accession versions, completed raw/split IEX history, calendar and corporate-action coverage. The new input **QD_HISTORICAL_EARNINGS_INPUT_V2** carries original-exhibit facts separately; **Company Facts remains byte/content unchanged**. V1 is still supported unchanged. The source verifier binds the frozen acquired cut, receipts and provenance domain, expires after 60 seconds, refuses mutation/clock reversal, and reserves capture once even under concurrent calls. Its explicit `attach_research` handoff is read-only and reuses the existing scanner row attachment and original board; it cannot sign or publish a current native ranking or grant financial authority. No default source issuer or runtime service is installed.
+
+The current earnings-table issuer alias is explicitly bound to Microsoft's SEC CIK. This is a supported parser dialect, **not** an MSFT-only financial policy or an unrestricted universe assumption. Unsupported issuer/table dialects stay ineligible for this extraction path. Other existing Quality Dips candidates and rankings are not rewritten.
+
+`free_research_transport.py` now permits only the required official submissions/documents, split-only IEX history and read-only corporate-actions endpoint alongside existing authorized sources. No orders, accounts, transfers, paid feeds, redirects or automatic retries. Cache-only replay refuses before any network attempt. The default cache remains 64MiB; a non-default original-filing archival run can explicitly select at most **128MiB**, still at most128 entries/16MiB response and bounded attempts/time. A demonstrated first-file preflight defect was fixed: limits now apply before creating even a new cache directory/file. This changes **no native financial record-capacity guard**. A missing cache or failed source attempt is never repaired into financial authority.
+
+## Genuine filing evidence
+
+All values below came from actual permitted SEC/Alpaca TLS GET responses, not fixtures. SEC submissions and primary 8-K identity/link verification precede every exhibit. Each comparative column retains its actual later publication date; it is never backdated into an earlier historical cut.
+
+| June quarter | Original accession | Filed | Direct diluted EPS, USD/share | Weighted-average diluted shares |
+|---|---|---|---:|---:|
+| 2026 | `0001193125-26-323632` | 2026-07-29 | 4.81 | 7,443,000,000 |
+| 2025 | `0000950170-25-100226` | 2025-07-30 | 3.65 | 7,461,000,000 |
+| 2024 | `0000950170-24-087835` | 2024-07-30 | 2.95 | 7,472,000,000 |
+| 2023 | `0000950170-23-034400` | 2023-07-25 | 2.69 | 7,467,000,000 |
+| 2022 | `0001193125-22-202034` | 2022-07-26 | 2.23 | 7,506,000,000 |
+| 2021 | `0001193125-21-225746` | 2021-07-27 | 2.17 | 7,581,000,000 |
+
+Original exhibits: [2026](https://www.sec.gov/Archives/edgar/data/789019/000119312526323632/msft-ex99_1.htm), [2025](https://www.sec.gov/Archives/edgar/data/789019/000095017025100226/msft-ex99_1.htm), [2024](https://www.sec.gov/Archives/edgar/data/789019/000095017024087835/msft-ex99_1.htm), [2023](https://www.sec.gov/Archives/edgar/data/789019/000095017023034400/msft-ex99_1.htm), [2022](https://www.sec.gov/Archives/edgar/data/789019/000119312522202034/d372382dex991.htm), [2021](https://www.sec.gov/Archives/edgar/data/789019/000119312521225746/d200100dex991.htm).
+
+The original September2026 [10-Q](https://www.sec.gov/Archives/edgar/data/789019/000119312526436133/msft-20260930.htm), accession `0001193125-26-436133`, filed October28, directly verifies quarterly EPS **4.92** and weighted diluted shares **7,446,000,000**. Its current common shares outstanding and the quarterly/annual weighted averages remain distinct. The original June2026 10-K had annual EPS17.95 but no standalone-quarter EPS; that initial refusal remains valid. The original Company Facts missing-June finding is not rewritten into a claim that the API supplied these quarters.
+
+Final independent read-only replay verifies **18 original 10-Q financial documents +6 earnings exhibits**, with6 additional original 8-K identity/link checks, 40 source receipts, identical input digest, identical20 anchors/scenarios, zero new requests and all51 retained research-cache hashes unchanged. Input digest: `696b37017e347d43750841a46b6d3f0e1fb9ee078f129487ae30b4a0b017dc6b`.
+
+Raw/split IEX histories match across the queried completed sessions. Corporate-actions access succeeded. The returned cash merger identifies Microsoft as **acquirer** of Nuance, not a conversion of Microsoft shares; its explicit mapping is retained. Cash dividends do not alter raw price/share units. Any split, unsupported conversion, differing adjustment factor, missing session or incomplete pagination refuses. This is scoped to retrieved provider history, **not** a universal guarantee of instantaneous corporate-action/halt discovery. Current execution still needs its separate accepted instrument/action/halt evidence. See [Alpaca corporate-action coverage limitations](https://docs.alpaca.markets/us/reference/corporateactions-1).
+
+## Genuine calculation and original scanner result
+
+The approved method is unchanged: four directly reported quarterly diluted EPS values sum to **19.16**, explicitly the quarterly-EPS proxy, not annual weighted-share EPS. Twenty historical anchors produce:
+
+| Correlated non-analyst scenario | Model value, USD/share |
+|---|---:|
+| 25th percentile | 518.9855659787368 |
+| 50th percentile | 613.1718959913326 |
+| 75th percentile | 668.1876986584107 |
+
+These are one historical relative-valuation model's outputs, not analyst forecasts, independent estimates, fair-value guarantees or realized performance. Existing five-year cohort, minimum12/33months, 5–60 multiples, <=2 dispersion, current positive reconciled FCF, source expiry, V3 margins/scoring and all risk checks remain unchanged.
+
+The actual `InvestmentScanner(research_only=True)` evaluated1 symbol/0 failures, using the genuine free-source bundle. The selected method then reached the original V3 board with3 valuation sources. Legacy book/portfolio access was forbidden, no legacy history directory was created, and original input hashes stayed unchanged. The resulting state is **WATCH**, not entry-ready: evidence below MEDIUM, valuation evidence below50, and unchanged L1 limit **521.19** versus historical completed close **530.39**. No filter was weakened to create activity. The completed close is explicitly historical/stale for execution, not an executable L1 price. No current native ranking was published or claimed.
+
+Actual source acquisition used **54 bounded research GET attempts** in total across retained original-source probes and corrected attempts: initial14; exhibit/full-history increments13/0/2/1/8/9/2; final genuine scanner5. Cache-only replays0. Each increment had its own explicit finite count/time ceiling, at most2 requests/sec and zero automatic retries. No Yahoo/FMP/paid source or live quote stream. The final scanner archive has51 files/**119,968,249bytes**, below its explicit134,217,728byte ceiling; each earlier cache remains retained and unchanged. This is a per-run archival limit, not a claim that all retained copies together use only that amount. No cleanup/deletion occurred. Real contact/credentials, raw responses and machine-specific evidence remain ignored/local, not in Git.
+
+## Tests, failures and limits
+
+Final relevant regression selection: **406 passed /0 failed /0 skipped**, 22.07seconds, including original research/valuation/V3, autonomous simulated risk, personal market-input compatibility and PAPER-only policy checks. An additional exact staged-file compatibility run passed48/0/0 in2.07seconds; these overlap the406, not48new distinct cases. Interrupted-session unrelated formatting remains in the working tree; only the reviewed fixture timestamp/contact-path corrections are included in the commit. Ruff passes all changed/new source and tests; static PAPER audit639 files/0issues. Prior369/452/native14/Stop evidence remains historical evidence, not added to this total.
+
+Preserved intermediate failures: invalid-year column accepted (fixed, assertion retained); fixture reference-price receipt unintentionally used real wall time beyond the fixed test cut (explicit fixture receipt now matches its cut, source validator unchanged); source EPS text4.00 versus exact numeric4 (assertion now compares exact Decimal, underlying four quarters unchanged); first-file cache overflow (fixed before write). Genuine source failures separately retain missing June Company Facts/10-K, cash-acquirer classification, old row-span/hidden-spacer layouts,82-table document capacity, historical DEI namespace and64MiB archive capacity. The final zero-network replay revalidates the corrected parser against all original files. An initial restricted Windows asyncio test run stalled and was stopped using exact verified PID/image/creation/command identity; all artifacts remain. The successful normal Windows-permission run completed; no unrelated process was stopped.
+
+No native financial test child, V5 containment, installed financial lifecycle, new browser/HTTP host, operational provider stream or real account was started. UI files and financial writers were not changed. Existing browser/disposable Stop evidence is not reclassified as current installed acceptance.
+
+## Actual operational boundary and next actions
+
+At **19:48:30 Central October29 (00:48:30Z October30)**, Atlas's unchanged local clock acquisition refused: **W32Time not started,0x80070426**. No service start/reload/resync/settings change was performed. Earlier218/219ms snapshots are expired and cannot authorize this runtime. U.S. regular-session calendar for October29 was13:30–20:00UTC; it was closed during final verification. No fresh executable IEX observation is asserted.
+
+1. **Required new bounded service permission:** start only existing W32Time, preserve Manual/source, no resync or configuration change, observe normal sync for up to180seconds and rerun unchanged <=1000ms evidence acquisition. Earlier one-shot starts do not grant repeated service changes. No relaxed clock threshold.
+2. At eligible regular-session time, supply actual authenticated IEX quotes to the existing free-research reference-price port, rerun original scoring and explicit accepted method, verify current instrument/action/halt/spread/size/participation evidence. WATCH/no valid entries is a legitimate result; missing source evidence is not a successful idle pilot.
+3. Bind the completed acquired-source handoff to the existing `QualityDipsSourcePublication`/`QualityDipsPublicationReader` through actual enrolled native current-publication custody and local operator verification. The research-only source receipt alone does not supply that native authority; the remaining actual enrollment/source-authority wiring and readback are not claimed completed by these tests.
+4. Use the refreshed full reviewed immutable source inventory, preserve existing releases, verify actual installed resources/ACLs/hash/runtime identity and session/current/writer bindings. Measure actual installed financial Stop/report/ACK/drain/owned exit/post-exit readback <=8seconds, original dashboard/controls and restart. Prior **disposable** Stop samples remain5.8230861/4.8807553/5.7629487seconds; no installed timing sample exists.
+5. Only after all actual mandatory conditions pass, continue the already-approved **UNUSED once-only1000simulatedUSD/ONEtotal60second QD grant**. No repeat financial authorization request is needed within that scope. No Hyperliquid inception, multi-day session, live orders, automatic startup, VPS or Genesis action is authorized.
+
+Existing installed release remains `fca29cfe7760a28d2569b8b4b91ed1ea99804c3c`, retained digest `93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91`. New source is not installed. Refreshed source-only inventory:637 files/7,704,978bytes, zero new dependencies, digest `e8dbb084630bb3e8daee1924bba575a71a70d274f77317c33324f084b387f690`; retained locally, not native installation/authority evidence. Protected operational account resources were not inspected or modified by this increment; prior empty-root observations remain historical. **No financial activation/inception. Actual balance/positions uninitialized/unasserted. Pilot NOT EXECUTED; seven-day trial0.**
+
+**QD-HIST-EPS-EXHIBIT-V1 source and genuine research verification COMPLETE. Current native-ranking/installed operational acceptance BLOCKED. PAPER startup:NO. Production:NO-GO.** Stop reason: mandatory stopped-clock/current-session/deployment acceptance dependencies, not a voluntary pause after a small subtask. No external reviewer chain has been introduced.

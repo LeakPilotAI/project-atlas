@@ -38,11 +38,15 @@ async def close_redis() -> None:
     if _redis is not None:
         try:
             await _redis.aclose()
-        except Exception:
+        except Exception as primary_error:
             try:
                 await _redis.close()
-            except Exception:
-                pass
+            except Exception as fallback_error:
+                # Retain ownership for retry; a failed close is not a closed client.
+                log.error("Redis client cleanup failed",
+                          primary_type=type(primary_error).__name__,
+                          fallback_type=type(fallback_error).__name__)
+                raise fallback_error from primary_error
         _redis = None
         log.info("Redis client closed")
 

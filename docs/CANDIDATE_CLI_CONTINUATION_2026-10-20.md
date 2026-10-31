@@ -1,0 +1,9 @@
+# Candidate CLI continuation — October20,2026
+
+Existing build destination CLI preserved (one SHA256 line). New explicit --verify ARCHIVE --expected-sha256 SHA256 mode prints stable non-activating verification JSON without extraction/install/activation. Exclusive mode validation and malformed pins exit2 before I/O; expected storage/ZIP/hash refusal exits1 with sanitized operation/error-type JSON on stderr. Library exceptions retain their original context; unexpected implementation errors are not blanket-caught.
+
+13 new CLI cases,24 verifier cases and prior identity/extraction regressions:64 native tests passed in20.11s, zero failures/skips. An actual CLI subprocess verified a synthetic archive from a different working directory. Source, file inventory and input bytes remained unchanged. Targeted Ruff passes; prior604 AFI/362 JavaScript evidence unchanged. Existing3 builder lint findings and original sandbox/implementation failure evidence remain preserved. No real candidate, services, provider or protected data operated.
+
+All21 gate decisions and production lock unchanged; production NO-GO. Seven phases and AFI1–10 PENDING remain. No full Atlas startup, live data or new authority. Existing native Goal preserved; prior usageLimited status is not completion. No duplicate Goal/automation.
+
+Next automatically selected work: reproduce exact share-volume precision mismatch in pure offline candle validation. Current backend converts raw volume to float then permits2**53, whereas frontend uses Number.isSafeInteger. Check large and near-integral string inputs and batch atomicity; minimally correct only caller-supplied research validation, preserve scanner C1–C4/production code paths, and test ingestion→persist→API→browser compatibility using isolated fixtures. No provider or service operations.

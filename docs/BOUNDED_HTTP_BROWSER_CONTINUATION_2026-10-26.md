@@ -1,0 +1,3 @@
+# Exact recovery checkpoint
+
+Read BOUNDED_HTTP_BROWSER_COMPLETION_2026-10-26.md and autonomous state. Source/disposable engineering complete. No ACTIVE task. Preserve TEN_DIRECTORY_HTTP_ACCEPTANCE_2026-10-26.md unchanged as historical partial acceptance; its one-run authorization is consumed. Do not read retained journals or start another retained-history host without new explicit permission. No operational authority is installed. Next genuine dependency is accepted source/custody/clock/provider and B1/C1/D1/E1 evidence, not another synthetic engine or automatic rerun. Financial PAPER unauthorized; production NO-GO.

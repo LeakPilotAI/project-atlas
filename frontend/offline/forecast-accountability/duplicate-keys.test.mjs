@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import api from './view.cjs';
+const fixture=JSON.parse(fs.readFileSync(new URL('../../../tests/fixtures/afi-log-loss-v2/corrected-browser.json',import.meta.url),'utf8'));
+const hash=text=>createHash('sha256').update(text).digest('hex');
+const envelope=text=>JSON.stringify({schema:'AFI_BROWSER_REPORT_V1',report_json:text,payload_sha256:hash(text)});
+for(const key of ['production_approved','production\\u005fapproved'])test(`conflicting forecast authority duplicate ${key} refuses`,async()=>{const text=fixture.source_report_json.replace('{','{"'+key+'":true,');await assert.rejects(()=>api.verifyEnvelope(envelope(text),hash),/Duplicate/);});
+test('identical repeated report field refuses before scoring',async()=>{const text=fixture.source_report_json.replace('{','{"production_approved":false,');await assert.rejects(()=>api.verifyEnvelope(envelope(text),hash),/Duplicate/);});
+test('nested outcome duplicate refuses despite matching byte digest',async()=>{const text=fixture.source_report_json.replace('"actual":','"actual":999,"actual":');assert.notEqual(text,fixture.source_report_json);await assert.rejects(()=>api.verifyEnvelope(envelope(text),hash),/Duplicate/);});
+test('outer payload digest duplicate refuses',async()=>{const text=envelope(fixture.source_report_json).replace('{','{"payload_sha256":"'+'0'.repeat(64)+'",');await assert.rejects(()=>api.verifyEnvelope(text,hash),/Duplicate/);});
+test('V2 companion nested source duplicate refuses',async()=>{const v=structuredClone(fixture);v.source_report_json=v.source_report_json.replace('{','{"production_approved":true,');v.source_report_sha256=hash(v.source_report_json);await assert.rejects(()=>api.verifyLogLossEnvelope(JSON.stringify(v),hash),/Duplicate/);});
+test('existing V2 native source and score results remain unchanged',async()=>{const original=await api.verifyLogLossEnvelope(JSON.stringify(fixture),hash);assert.equal(original.diagnostics.schema,'AFI_LOG_LOSS_DIAGNOSTICS_V2');const report=await api.verifyEnvelope(envelope(fixture.source_report_json),hash);assert.deepEqual(report,JSON.parse(fixture.source_report_json));});
+test('valid pretty envelope with escaped report contents remains accepted',async()=>{const original=JSON.parse(envelope(fixture.source_report_json));const result=await api.verifyEnvelope(JSON.stringify(original,null,4),hash);assert.equal(result.rows.length,JSON.parse(fixture.source_report_json).rows.length);});
+test('refused duplicate import removes previously verified loader model',async()=>{const events=[];const loader=api.createLoader(value=>events.push(value),hash);await loader.load(envelope(fixture.source_report_json));assert.equal(events.at(-1).status,'VERIFIED');await loader.load(envelope(fixture.source_report_json.replace('{','{"production_approved":true,')));assert.equal(events.at(-1).status,'REFUSED');assert.equal(events.at(-1).report,null);assert.match(events.at(-1).message,/Duplicate/);});

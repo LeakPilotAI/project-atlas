@@ -1,0 +1,18 @@
+# R7E46S - cash-scanner operator decision (NOT APPROVED)
+
+This package consolidates docs/R7E46P_CASH_SCOPE_DECISION.md. No cash source is changed in S. Committed HEAD f9df47b4cd80dd647d85043aba617cf00c4e6dc0 is a comparison reference, not proof of a previously runtime-accepted implementation. The four changes were explicitly requested as R7E44G source repairs; acceptance in the combined release and runtime certification remain separate.
+
+| Decision | Original behavior at HEAD | Current behavior / reason | Risk of acceptance | Risk of rejection / reversal | Isolated regression evidence |
+|---|---|---|---|---|---|
+| C1: future cache timestamp | Any computed age <=TTL counted as fresh, including negative age | Require 0 <= age <= TTL; prevent future cache records suppressing fresh fetches | Clock skew now causes refetch/rejection rather than apparent freshness; provider load must stay bounded | Reintroduces future-as-fresh behavior | test_authoritative_timestamp_boundaries; test_paper_rejects_missing_future_invalid_and_conflicting_timestamps; inspect scan._age_ok diff |
+| C2: first regular-session price | A pre-open quote could remain inside price TTL after opening | Force price refresh when last quote predates that session's open; fundamentals/valuation still follow their own TTLs | One additional opening price fetch per affected symbol; opening provider coverage/latency not certified | Opening scan can use a pre-open price or delay its first real regular-session fetch | test_opening_pass_refreshes_preopen_price_without_extra_fundamentals |
+| C3: next-open wake-up | Closed-session interval, historically 6 hours, could sleep over opening | Calendar-aware wake-up capped by closed interval, retaining a 60s minimum and configured open cadence | Requires correct calendar/timezone; opening delay may still approach 60s near the boundary; not a tick-level SLA | Reintroduces missed opening scans caused by long sleep | test_next_open_handles_weekends_holidays_and_dst; test_wake_at_open_with_existing_minimum_rate; test_real_scanner_loop_uses_calendar_wakeup |
+| C4: session calendar | Weekdays 09:30–16:00 ET; no explicit exchange holidays/early closes | Bounded 2026–2028 NYSE holidays, 13:00 ET early closes, DST-aware boundaries and unsupported-horizon fail-closed behavior | Calendar must be maintained, including unscheduled closures; outside horizon is SYSTEM_OFFLINE | Holiday/early-close periods can be falsely treated as regular market hours | test_calendar_holidays_early_closes_and_horizon; weekend/holiday/DST cases above |
+
+Tests are in tests/test_r7e44g_data_reliability.py. S reruns the isolated reliability suite; exact current counts live in the S result.json/logs. Historical G full 2,135 passed / 3 xfailed and R full 2,288 passed / 3 xfailed are historical corroboration, not new live acceptance. S baseline/preservation.json verifies byte-identical scan.py and market_hours.py.
+
+Operator decision ready to record, individually or as one scope bundle:
+
+"Accept C1-C4 as the existing R7E44G cash-scanner source scope in the next complete Atlas release candidate, retaining session restrictions and configured rate limits. This accepts scope only; it does not authorize startup, extended-hours collection, live provider calls, trading/Discord changes, migration or benchmarking."
+
+Alternative: specify which item is not accepted, provide a verified accepted target, and authorize a separately isolated narrowed candidate. Do not silently revert known freshness/wake-up repairs. No decision is inferred from S and no baseline is silently rewritten.

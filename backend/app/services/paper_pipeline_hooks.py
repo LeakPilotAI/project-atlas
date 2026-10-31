@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import asyncio
 
 
 def apply() -> None:
@@ -10,6 +11,66 @@ def apply() -> None:
     from app.services.paper_try_symbol import instrumented_try_symbol
     from app.services.perp_micro_coach import PerpMicroCoach
     from app.services.shadow_research import ShadowResearch
+    from app.services.paper_journal import JOURNAL_PATH, iter_jsonl, paper_journal
+    from app.services.perp_manual_service import PerpManualService
+    from app.services.perp_setup_paper_mirror import SOURCE as AUTO_PAPER_SOURCE
+    from app.services.perp_setup_paper_mirror import perp_setup_paper_mirror
+    from app.services.v4_journal_observer import install_paper_journal_observer
+
+    # V4 shadow observation is independent of the legacy coach hook. Install it
+    # first so a previously-hooked coach cannot accidentally skip activation.
+    install_paper_journal_observer(paper_journal)
+
+    # Manual-perp setups automatically mirror into the common append-only paper
+    # journal only after price actually reaches an active L1/L2/L3 state. PREPARE
+    # means a resting manual order can be staged; it is NOT counted as a paper fill.
+    # This keeps paper evidence honest while requiring no user click.
+    if not getattr(PerpManualService, "_atlas_auto_paper_hooked", False):
+        orig_manual_refresh = PerpManualService.refresh
+
+        def _auto_paper_stats() -> dict:
+            opened_ids: set[str] = set()
+            closed_ids: set[str] = set()
+            for row in iter_jsonl(JOURNAL_PATH):
+                if str(row.get("source") or "") != AUTO_PAPER_SOURCE:
+                    continue
+                tid = str(row.get("trade_id") or "")
+                if not tid:
+                    continue
+                if row.get("event") == "open":
+                    opened_ids.add(tid)
+                elif row.get("event") == "close":
+                    closed_ids.add(tid)
+            return {
+                "source": AUTO_PAPER_SOURCE,
+                "opened_total": len(opened_ids),
+                "closed_total": len(closed_ids),
+                "open_count": len(opened_ids - closed_ids),
+                "included_in_paper_journal": True,
+                "counts_for_live": False,
+            }
+
+        async def _manual_refresh(self):
+            # PerpAlertDeliveryService is the single owner of manual-limit PAPER
+            # reconciliation.  The manual market refresh must not run a second
+            # mirror pass: duplicate passes caused repeated journal work/fsync on
+            # the API event loop as the evidence files grew.
+            snap = await orig_manual_refresh(self)
+            try:
+                stats = perp_setup_paper_mirror.status()
+                stats["managed_by"] = "perp_alert_delivery"
+                stats["updated_at"] = datetime.now(timezone.utc).isoformat()
+                self.last_snapshot["auto_paper"] = stats
+            except Exception as exc:
+                self.last_snapshot["auto_paper"] = {
+                    "managed_by": "perp_alert_delivery",
+                    "error": f"{type(exc).__name__}: {str(exc)[:180]}",
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }
+            return self.snapshot()
+
+        PerpManualService.refresh = _manual_refresh
+        PerpManualService._atlas_auto_paper_hooked = True
 
     if getattr(PerpMicroCoach, "_atlas_pipeline_hooked", False):
         return

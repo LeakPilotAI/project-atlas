@@ -1,0 +1,8 @@
+{
+  "origin": "original pre-configuration synthetic interval forecast and outcome chain; copied byte-identically from cohort-provenance-20261019/legacy-fixture-generation",
+  "hashes": {
+    "6d71c50f04f3873d1c1b6df090253f10a0fc05efe6c21104cd428973ad58df86.json": "6645b2c3f1818b8c78692f21bb8fab25abf03d33ac761d67bea58bd67e070d83",
+    "a383937fb1a294f6740098d7bbc2369a42c94d7794f4712296a0533bd7a24cd0.json": "1db8d2d90c783f4fc15cb27aa29f00ca7908813ed1f95a5fd0e37f90c76cd8a0"
+  },
+  "synthetic_only": true
+}

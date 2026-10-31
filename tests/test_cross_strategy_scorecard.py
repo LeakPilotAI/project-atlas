@@ -1,0 +1,152 @@
+from app.services.cross_strategy_scorecard import build_cross_strategy_scorecard
+
+
+def test_cross_strategy_scorecard_preserves_native_units_and_no_universal_metric():
+    day = [
+        {"net_pnl_r": 1.0, "result": "TP", "exit_timestamp": "2026-10-05T10:00:00+00:00"},
+        {"net_pnl_r": -0.5, "result": "STOP", "exit_timestamp": "2026-10-05T11:00:00+00:00"},
+    ]
+    investment = {
+        "paper_policy_version": "QUALITY_DIPS_PAPER_V1",
+        "summary": {"open_lots": 1, "closed_lots": 2},
+        "closed_lots": [
+            {"realized_return_pct": 10.0, "realized_pnl": 10.0},
+            {"realized_return_pct": -4.0, "realized_pnl": -4.0},
+        ],
+        "timeline": [{"event": "close_lot", "timestamp": "2026-10-05T12:00:00+00:00"}],
+    }
+    prediction = {
+        "engine_version": "prediction-paper-reprice-v1",
+        "summary": {
+            "open_positions": 0,
+            "closed_trades": 2,
+            "net_pnl_dollars": 6.0,
+            "win_rate": 0.5,
+            "expired_unclosed_trades": 0,
+        },
+        "events": [{"event": "close", "timestamp": "2026-10-05T13:00:00+00:00"}],
+    }
+
+    report = build_cross_strategy_scorecard(
+        day_rows=day,
+        investment_snapshot=investment,
+        prediction_snapshot=prediction,
+    )
+    lanes = {row["lane"]: row for row in report["lanes"]}
+
+    assert lanes["DAY_TRADING"]["expectancy"] == 0.25
+    assert lanes["DAY_TRADING"]["expectancy_unit"] == "R_PER_CLOSED_TRADE"
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["expectancy"] == 3.0
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["expectancy_unit"] == "MEAN_REALIZED_RETURN_PCT_PER_CLOSED_LOT"
+    assert lanes["PREDICTION"]["expectancy"] == 3.0
+    assert lanes["PREDICTION"]["expectancy_unit"] == "NET_DOLLARS_PER_CLOSED_REPRICING_TRADE"
+    assert report["comparison_rules"]["universal_win_rate"] is None
+    assert report["comparison_rules"]["universal_expectancy"] is None
+    assert report["comparison_rules"]["pool_lane_pnl"] is False
+    assert report["live_capital_allowed"] is False
+    assert report["automatic_real_money_execution"] is False
+
+
+def test_cross_strategy_scorecard_keeps_missing_samples_unavailable_not_zero():
+    report = build_cross_strategy_scorecard(
+        day_rows=[],
+        investment_snapshot={
+            "paper_policy_version": "QUALITY_DIPS_PAPER_V1",
+            "summary": {"open_lots": 0, "closed_lots": 0},
+            "closed_lots": [],
+            "timeline": [],
+        },
+        prediction_snapshot={
+            "engine_version": "prediction-paper-reprice-v1",
+            "summary": {"open_positions": 0, "closed_trades": 0, "net_pnl_dollars": 0.0},
+            "events": [],
+        },
+    )
+    for lane in report["lanes"]:
+        assert lane["sample_size"] == 0
+        assert lane["expectancy"] is None
+        assert lane["win_rate"] is None
+        assert lane["realized_status"] == "NO_CLOSED_SAMPLE"
+    assert report["comparison_rules"]["missing_metrics_are_zero"] is False
+
+
+def test_evidence_health_and_provenance_are_interpretive_only():
+    day = [{"net_pnl_r": 0.5, "exit_timestamp": "2026-10-05T10:00:00+00:00"}]
+    report = build_cross_strategy_scorecard(
+        day_rows=day,
+        investment_snapshot={"paper_policy_version": "QUALITY_DIPS_PAPER_V1", "summary": {}, "closed_lots": [], "timeline": []},
+        prediction_snapshot={"engine_version": "p1", "summary": {}, "events": []},
+    )
+    lanes = {row["lane"]: row for row in report["lanes"]}
+    assert lanes["DAY_TRADING"]["evidence_health"]["band"] == "THIN"
+    assert lanes["DAY_TRADING"]["evidence_health"]["strategy_action"] is None
+    assert lanes["DAY_TRADING"]["evidence_health"]["threshold_change"] is None
+    assert lanes["DAY_TRADING"]["evidence_health"]["sizing_change"] is None
+    assert lanes["DAY_TRADING"]["evidence_health"]["promotion_allowed"] is False
+    assert lanes["DAY_TRADING"]["provenance"]["durable_source"] == "DAY_TRADING_PAPER_JOURNAL"
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["evidence_health"]["band"] == "NO_EVIDENCE"
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["provenance"]["durable_source"] == "QUALITY_DIPS_PAPER_V1_JOURNAL"
+    assert lanes["PREDICTION"]["provenance"]["durable_source"] == "PREDICTION_PAPER_TRADE_JOURNAL"
+    assert report["comparison_rules"]["evidence_health_is_strategy_action"] is False
+
+
+def test_reconstruction_from_same_durable_snapshots_preserves_truth_with_empty_lanes():
+    day = [
+        {"net_pnl_r": 1.0, "exit_timestamp": "2026-10-05T10:00:00+00:00"},
+        {"net_pnl_r": -0.25, "exit_timestamp": "2026-10-05T11:00:00+00:00"},
+    ]
+    investment = {"paper_policy_version": "QUALITY_DIPS_PAPER_V1", "summary": {"open_lots": 0, "closed_lots": 0}, "closed_lots": [], "timeline": []}
+    prediction = {"engine_version": "p1", "summary": {"open_positions": 0, "closed_trades": 0, "net_pnl_dollars": 0.0}, "events": []}
+
+    first = build_cross_strategy_scorecard(day_rows=list(day), investment_snapshot=dict(investment), prediction_snapshot=dict(prediction))
+    rebuilt = build_cross_strategy_scorecard(day_rows=list(day), investment_snapshot=dict(investment), prediction_snapshot=dict(prediction))
+    first_lanes = {row["lane"]: row for row in first["lanes"]}
+    rebuilt_lanes = {row["lane"]: row for row in rebuilt["lanes"]}
+
+    for lane in first_lanes:
+        assert rebuilt_lanes[lane]["sample_size"] == first_lanes[lane]["sample_size"]
+        assert rebuilt_lanes[lane]["expectancy"] == first_lanes[lane]["expectancy"]
+        assert rebuilt_lanes[lane]["realized_status"] == first_lanes[lane]["realized_status"]
+        assert rebuilt_lanes[lane]["provenance"] == first_lanes[lane]["provenance"]
+    assert rebuilt_lanes["INVESTMENT_QUALITY_DIPS_V1"]["expectancy"] is None
+    assert rebuilt_lanes["PREDICTION"]["expectancy"] is None
+    assert rebuilt["comparison_rules"]["universal_expectancy"] is None
+
+
+def test_evidence_checkpoint_tracks_growth_without_performance_claim():
+    day = [{"net_pnl_r": 0.5, "exit_timestamp": "2026-10-05T10:00:00+00:00"}]
+    report = build_cross_strategy_scorecard(
+        day_rows=day,
+        investment_snapshot={"summary": {}, "closed_lots": [], "timeline": []},
+        prediction_snapshot={"summary": {}, "events": []},
+        previous_checkpoints={"DAY_TRADING": {"sample_size": 0}},
+        integrity={"DAY_TRADING": {"status": "OK"}, "INVESTMENT_QUALITY_DIPS_V1": {"status": "MISSING_EMPTY"}, "PREDICTION": {"status": "MISSING_EMPTY"}},
+    )
+    lane = {row["lane"]: row for row in report["lanes"]}["DAY_TRADING"]
+    assert lane["evidence_checkpoint"]["movement"] == "GROWING"
+    assert lane["evidence_checkpoint"]["performance_interpretation"] is None
+    assert lane["journal_integrity"]["status"] == "OK"
+
+
+def test_partial_lane_integrity_cannot_create_or_contaminate_performance():
+    day = [{"net_pnl_r": 1.0, "exit_timestamp": "2026-10-05T10:00:00+00:00"}]
+    integrity = {
+        "DAY_TRADING": {"status": "OK", "malformed_records": 0},
+        "INVESTMENT_QUALITY_DIPS_V1": {"status": "PARTIAL", "malformed_records": 1, "reconstruction_status": "FAILED_ISOLATED"},
+        "PREDICTION": {"status": "MISSING_EMPTY", "malformed_records": 0},
+    }
+    report = build_cross_strategy_scorecard(
+        day_rows=day,
+        investment_snapshot={"summary": {"open_lots": 0, "closed_lots": 0}, "closed_lots": [], "timeline": []},
+        prediction_snapshot={"summary": {"open_positions": 0, "closed_trades": 0, "net_pnl_dollars": 0.0}, "events": []},
+        integrity=integrity,
+    )
+    lanes = {row["lane"]: row for row in report["lanes"]}
+    assert lanes["DAY_TRADING"]["sample_size"] == 1
+    assert lanes["DAY_TRADING"]["expectancy"] == 1.0
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["sample_size"] == 0
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["expectancy"] is None
+    assert lanes["INVESTMENT_QUALITY_DIPS_V1"]["journal_integrity"]["reconstruction_status"] == "FAILED_ISOLATED"
+    assert lanes["PREDICTION"]["sample_size"] == 0
+    assert lanes["PREDICTION"]["expectancy"] is None
+    assert report["comparison_rules"]["universal_expectancy"] is None

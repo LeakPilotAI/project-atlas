@@ -1,0 +1,11 @@
+# Issue-time corporate-action visual context — 2026-10-21
+
+Implemented _action_context in daily_forecast_visual.py and integrated it into each forecast panel. Only same-asset corporate-action receipts available by that forecast issue are shown. Effective-by-issue and announced-future-effective events are distinct. A bounded128-row table retains total visible count, action ID/kind, receipt/effective clocks, amount/unit and source commitments. Later receipts/other assets are excluded. Prices remain unadjusted; dividends excluded from price returns; no total-return, reconciliation, completeness, source-truth or calibration claim. No-action rendering path remains byte-equivalent to the prior path.
+
+Added7 focused tests in tests/test_daily_action_visual.py including a full source-action receipt -> daily export -> forecast -> scriptless visual integration; late/foreign exclusion, bounded output, escaping, malformed clocks and unchanged no-action rendering. Existing price-fitting/cross-split refusal behavior unchanged.
+
+Validation:87 focused action/visual/bridge tests passed;9 clean-extraction packaging tests passed25.92s. Targeted Ruff/compilation passed. No final test failures/skips. Original preliminary86-pass run retained. No browser acceptance established.
+
+Separate unresolved compatibility finding: an actual prior immutable stock/ETF demo failed current verify_daily_export with Export binding does not reconstruct. Diagnostic prior-verification.txt preserves this failure. Investigation identified newer record source_sha256 fields and five new action audit fields; old artifacts have neither. Source/price values were not changed. This is not a failing new-action test but is a real old-artifact reconstruction gap; do not claim all prior demos reproduce. Old files remain untouched. Next priority is exact, schema-bounded legacy export reconstruction with adversarial tests; never strip action evidence from a current export to fabricate compatibility, never rewrite old receipts.
+
+All21 release decisions and startup lock unchanged; production NO-GO; AFI1–10 PENDING. No Atlas/Docker/provider/Genesis operations, runtime census, protected-state changes, trading/Discord, backups/restoration or Git mutation. Seven phases remain incomplete. Native browser gate remains NOT_ESTABLISHED.

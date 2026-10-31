@@ -1,0 +1,9 @@
+{
+  "available": false,
+  "exit_code": 1,
+  "endpoint": "npipe:////./pipe/dockerDesktopLinuxEngine",
+  "operation": "read-only formatted daemon info",
+  "stdout": "{\"ID\":\"\",\"ServerVersion\":\"\",\"OSType\":\"\"}\n",
+  "exact_failure": "failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.\n",
+  "cli_sha256": "1aaf3dd59c24ff4c83d930bc51ecac8bf6f6f4e7a310573ee69d14ca3a7ef85c"
+}

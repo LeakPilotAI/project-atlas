@@ -88,6 +88,14 @@ class Settings(BaseSettings):
     # Don't fade a 5m runaway. Knives were the "terrible" book.
     perp_micro_max_extension_pct: float = 3.5
     perp_micro_scan_seconds: float = 60.0
+    atlas_gaming_mode: bool = False
+
+    @property
+    def effective_perp_micro_scan_seconds(self) -> float:
+        """Slow discovery in opt-in gaming mode; never slow paper management."""
+        if self.atlas_gaming_mode:
+            return max(float(self.perp_micro_scan_seconds), 180.0)
+        return float(self.perp_micro_scan_seconds)
     perp_micro_min_rr: float = 1.8
     # EXIT (paper management). Does not change entry RSI/ext/min R:R.
     # desk-v4 0.6R TP: n=65 WR 45% exp -0.18R — worse than 1.0R (desk-v3 -0.06R).
@@ -186,6 +194,20 @@ class Settings(BaseSettings):
     investment_max_retries: int = 2
     investment_retry_base_seconds: float = 1.0
     investment_history_period: str = "5y"
+
+    def validate_runtime_configuration(self) -> None:
+        """Fail closed on tracked example/default credentials before runtime startup."""
+        secret = str(self.secret_key or "").strip().lower()
+        database = str(self.database_url or "").strip().lower()
+        errors: list[str] = []
+        if not secret or secret in {"change-me", "change-me-in-production"}:
+            errors.append("SECRET_KEY must be set to a non-placeholder local value")
+        if not database:
+            errors.append("DATABASE_URL must be configured")
+        elif "change-me" in database or "atlas_secure_password_2026" in database:
+            errors.append("DATABASE_URL must not use tracked example/default credentials")
+        if errors:
+            raise ValueError("Unsafe Atlas runtime configuration: " + "; ".join(errors))
 
     @property
     def database_url_safe(self) -> str:

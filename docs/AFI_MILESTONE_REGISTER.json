@@ -1,0 +1,317 @@
+{
+  "initiative": "ATLAS FORECAST INTELLIGENCE",
+  "abbreviation": "AFI",
+  "registered": "2026-10-19",
+  "market_priority": [
+    "US_EQUITIES",
+    "ETFS",
+    "CRYPTOCURRENCIES"
+  ],
+  "additional_markets": "DATA_LICENSING_AND_VALIDATION_REQUIRED",
+  "horizons": [
+    "1_DAY",
+    "5_DAYS",
+    "1_WEEK",
+    "1_MONTH",
+    "3_MONTHS",
+    "6_MONTHS",
+    "1_YEAR",
+    "5_YEARS",
+    "SCENARIO_2030",
+    "SCENARIO_2040",
+    "SCENARIO_2050"
+  ],
+  "milestones": [
+    {
+      "id": "AFI-1",
+      "name": "Forecast architecture and evidence contracts",
+      "status": "PENDING",
+      "minimum_acceptance": "Reviewed versioned forecast/data/outcome schemas, horizon/calendar conventions, provenance and refusal contracts, threat boundaries and no-trading invariants; independent acceptance required.",
+      "dependencies": []
+    },
+    {
+      "id": "AFI-2",
+      "name": "Historical datasets and point-in-time integrity",
+      "status": "PENDING",
+      "minimum_acceptance": "Authorized point-in-time source datasets, as-published revisions, splits/dividends/delistings/universe/currency metadata, known-at provenance, hashes, completeness and freshness audits.",
+      "dependencies": [
+        "AFI-1",
+        "PROVIDER_RIGHTS_AND_ARCHIVE_PROVENANCE"
+      ]
+    },
+    {
+      "id": "AFI-3",
+      "name": "Baseline statistical forecasting models",
+      "status": "PENDING",
+      "minimum_acceptance": "Reproducible naive/statistical baselines fitted only to eligible past data, asset/horizon-specific protocols and tests; no inferred entitlement or predictive edge.",
+      "dependencies": [
+        "AFI-1",
+        "AFI-2"
+      ]
+    },
+    {
+      "id": "AFI-4",
+      "name": "Walk-forward backtesting and forecast scoring",
+      "status": "PENDING",
+      "minimum_acceptance": "Purged walk-forward training/validation/untouched holdout, declared embargo, reproducible paired baseline comparisons, missing-outcome accounting and out-of-sample scoring.",
+      "dependencies": [
+        "AFI-2",
+        "AFI-3",
+        "UNTOUCHED_HOLDOUT"
+      ]
+    },
+    {
+      "id": "AFI-5",
+      "name": "Calibrated uncertainty and scenario modeling",
+      "status": "PENDING",
+      "minimum_acceptance": "Calibrated interval coverage, uncertainty/error diagnostics and bull/base/bear scenarios using adequate real out-of-sample evidence; scenario assumptions and failure modes explicit.",
+      "dependencies": [
+        "AFI-4",
+        "ADEQUATE_REAL_OUT_OF_SAMPLE_EVIDENCE"
+      ]
+    },
+    {
+      "id": "AFI-6",
+      "name": "Multi-market forecast comparison",
+      "status": "PENDING",
+      "minimum_acceptance": "Separate equity/ETF/crypto and horizon/model/data cohorts, unit-aware normalized comparisons, regime/selection-bias controls and evidence attribution.",
+      "dependencies": [
+        "AFI-4",
+        "AFI-5"
+      ]
+    },
+    {
+      "id": "AFI-7",
+      "name": "Forecast history, accountability, and diagnostics",
+      "status": "PENDING",
+      "minimum_acceptance": "Reuse immutable evidence/versioned artifact infrastructure; durable forecast IDs and fingerprints, actual-versus-predicted outcomes, corrections with provenance, no historical rewriting and independent recovery acceptance.",
+      "dependencies": [
+        "AFI-1",
+        "DURABILITY_AND_RECOVERY_ACCEPTANCE"
+      ]
+    },
+    {
+      "id": "AFI-8",
+      "name": "Frontend forecast dashboard",
+      "status": "PENDING",
+      "minimum_acceptance": "Read-only forecast dashboard with provenance/as-of timestamps, sample-size warnings, interval/scenario displays and unavailable/insufficient-evidence states; no execution controls.",
+      "dependencies": [
+        "AFI-5",
+        "AFI-6",
+        "AFI-7"
+      ]
+    },
+    {
+      "id": "AFI-9",
+      "name": "Long-horizon scenario research through 2050",
+      "status": "PENDING",
+      "minimum_acceptance": "Conditional long-horizon scenarios through 2030/2040/2050 with uncertainty, structural breaks, assumption sensitivity and no false precision or guaranteed prices.",
+      "dependencies": [
+        "AFI-2",
+        "AFI-5",
+        "EXPLICIT_LONG_HORIZON_SCENARIO_ASSUMPTIONS"
+      ]
+    },
+    {
+      "id": "AFI-10",
+      "name": "Independent acceptance and controlled activation readiness",
+      "status": "PENDING",
+      "minimum_acceptance": "Independent reproducibility, licensing/security/reliability/model-risk review and controlled activation plan; all existing gates plus explicit operator approval; no automated trading authority.",
+      "dependencies": [
+        "AFI-1",
+        "AFI-2",
+        "AFI-3",
+        "AFI-4",
+        "AFI-5",
+        "AFI-6",
+        "AFI-7",
+        "AFI-8",
+        "AFI-9",
+        "EXISTING_21_GATES",
+        "OPERATOR_APPROVAL"
+      ]
+    }
+  ],
+  "official_milestones_complete": 0,
+  "offline_groundwork": "Pure forecast diagnostics, immutable revision refusal, explicit dataset manifest/PIT/quality/adjustment review, synthetic dataset-bound scoring, selection/holdout declaration audit and earlier holdout durability repair; no real dataset/model/calibration acceptance.",
+  "production_release": "NO-GO",
+  "automated_trading_authority": false,
+  "last_offline_contract_review": "2026-10-19",
+  "acceptance_review": {
+    "report": "docs/AFI_CONTRACT_DATASET_ACCEPTANCE_2026-10-19.md",
+    "AFI-1": {
+      "decision": "PENDING",
+      "accepted_scope": "Isolated synthetic daily-close 1D/5D contracts only",
+      "remaining": [
+        "Independent full architecture acceptance",
+        "Asset-specific 1W/month/year/scenario conventions",
+        "Reviewed authenticated source/model and training-provenance contract",
+        "Accepted immutable forecast-history and recovery contract; actual ledger implementation belongs to AFI-7"
+      ]
+    },
+    "AFI-2": {
+      "decision": "PENDING",
+      "accepted_scope": "Bounded byte-integrity and PIT declaration checks on synthetic fixtures only",
+      "remaining": [
+        "Explicit provider rights and archive provenance",
+        "Authorized real as-published historical datasets",
+        "Independent universe/delisting and corporate-action completeness audit",
+        "Real dataset quality/freshness/calendar acceptance"
+      ]
+    },
+    "synthetic_performance_is_skill": false,
+    "production_approved": false
+  },
+  "autonomous_offline_progress": [
+    {
+      "stage": "BASELINE_FITTER",
+      "scope": "SYNTHETIC_ONLY",
+      "passed": 20,
+      "report": "docs/AUTONOMOUS_CONTINUATION_2026-10-19.md",
+      "official_milestone_completion": false
+    },
+    {
+      "stage": "WALK_FORWARD_AND_FROZEN_HOLDOUT",
+      "scope": "SYNTHETIC_ONLY",
+      "new_cases": 15,
+      "regression_passes": 153,
+      "official_milestone_completion": false
+    },
+    {
+      "stage": "FROZEN_INTERVAL_DIAGNOSTICS",
+      "scope": "SYNTHETIC_ONLY_NO_COVERAGE_GUARANTEE",
+      "new_cases": 12,
+      "official_milestone_completion": false
+    },
+    {
+      "stage": "IMMUTABLE_SYNTHETIC_FORECAST_ARTIFACTS",
+      "scope": "ISOLATED_EXCLUSIVE_PUBLICATION_NOT_PRODUCTION_HISTORY_ACCEPTANCE",
+      "new_cases": 9,
+      "native_passed": 9,
+      "official_milestone_completion": false
+    },
+    {
+      "stage": "COMPARISON_SCENARIOS_STANDALONE_DASHBOARD",
+      "scope": "OFFLINE_SYNTHETIC_NO_FRONTEND_INTEGRATION",
+      "new_cases": 11,
+      "official_milestone_completion": false
+    },
+    {
+      "stage": "INTEGRATED_IDENTITY_AND_HISTORICAL_REPLAY_RELIABILITY",
+      "scope": "OFFLINE_ONLY",
+      "unique_regression_passes": 388,
+      "new_session_cases": 85,
+      "official_milestone_completion": false
+    },
+    {
+      "stage": "EXPLICIT_OFFLINE_CLI_AND_CONCRETE_FIXTURE_OUTPUTS",
+      "scope": "SYNTHETIC_FILES_ONLY",
+      "new_cases": 7,
+      "shared_publication_native_passed": 17,
+      "official_milestone_completion": false
+    },
+    {
+      "stage": "EXPLICIT_OUTCOME_VINTAGES",
+      "scope": "SYNTHETIC_PIT_SELECTION_AND_CALIBRATION",
+      "afi_native_passed": 220,
+      "unique_current_cases": 405,
+      "new_session_cases": 98,
+      "official_milestone_completion": false
+    }
+  ],
+  "latest_continuation_report": "docs/AUTONOMOUS_INTERVAL_CONTINUATION_2026-10-19.md",
+  "full_roadmap_progress": [
+    {
+      "increment": "SOURCE_ARCHIVE_BINDING",
+      "scope": "OFFLINE_SYNTHETIC_SUPPLIED_BYTES_NOT_EXECUTABLE_ATTESTATION",
+      "native_afi_passes": 231,
+      "new_cases": 11,
+      "official_complete": false
+    },
+    {
+      "increment": "IMMUTABLE_OUTCOME_CORRECTION_HISTORY",
+      "scope": "OFFLINE_SUPPLIED_CHAIN_NOT_GLOBAL_HISTORY_WITNESS",
+      "new_cases": 15,
+      "official_complete": false
+    },
+    {
+      "increment": "ACCOUNTABILITY_REPORT_AND_BUNDLE_CLI",
+      "scope": "OFFLINE_SYNTHETIC_READ_ONLY_UI_NO_PRODUCTION_ROUTE",
+      "new_cases": 12,
+      "official_complete": false
+    },
+    {
+      "increment": "INTERACTIVE_LOCAL_FILE_VIEWER",
+      "scope": "OFFLINE_NO_PRODUCTION_ROUTE_OR_NATIVE_VISUAL_ACCEPTANCE",
+      "node_tests_passed": 23,
+      "official_complete": false
+    },
+    {
+      "increment": "SELF_CONTAINED_SOURCE_ARCHIVES",
+      "scope": "BYTE_REPRODUCIBILITY_NOT_EXECUTABLE_ATTESTATION",
+      "new_cases": 3,
+      "official_complete": false
+    },
+    {
+      "increment": "PORTABLE_ACCOUNTABILITY_AND_CURRENT_SOURCE_END_TO_END",
+      "scope": "SYNTHETIC_ONLY_NO_NATIVE_BROWSER_OR_EXECUTION_ATTESTATION",
+      "new_python_cases": 5,
+      "official_complete": false
+    },
+    {
+      "increment": "HISTORICAL_NUMERIC_CONTEXT_AND_VIEWER_CHRONOLOGY",
+      "scope": "REPLAY_INPUTS_AND_LOCAL_VIEWER_ONLY",
+      "new_python_cases": 12,
+      "new_node_cases": 6,
+      "official_complete": false
+    },
+    {
+      "increment": "DIRECTIONAL_ACCOUNTABILITY_DIAGNOSTICS",
+      "scope": "SYNTHETIC_DESCRIPTIVE_NO_TRADE_EDGE_OR_SKILL",
+      "new_python_cases": 9,
+      "official_complete": false
+    },
+    {
+      "increment": "PRIOR_SESSION_V1_GOLDEN_COMPATIBILITY",
+      "scope": "SYNTHETIC_ACTUAL_PRESERVED_BYTES",
+      "new_python_cases": 2,
+      "official_complete": false
+    }
+  ],
+  "full_roadmap_verified_python_cases": 482,
+  "full_roadmap_verified_node_cases": 29,
+  "native_continuation": "ACTIVE_CODEX_GOAL_USER_AUTHORIZED",
+  "interval_continuation_progress": [
+    {
+      "increment": "INTERVAL_ACCOUNTABILITY_AND_LOCAL_UI",
+      "new_python_cases": 19,
+      "node_cases": 43,
+      "scope": "SYNTHETIC_ONLY",
+      "official_complete": false
+    },
+    {
+      "increment": "EQUITY_ETF_CALENDAR_AND_DELAYED_PUBLICATION",
+      "new_python_cases": 10,
+      "scope": "FORECAST_RESEARCH_ONLY_CASH_SCANNER_UNCHANGED",
+      "official_complete": false
+    },
+    {
+      "increment": "EXPLICIT_FROZEN_INTERVAL_CLI",
+      "new_python_cases": 6,
+      "scope": "NO_AUTOMATIC_FIT_OR_ACTIVATION",
+      "official_complete": false
+    },
+    {
+      "increment": "MODEL_CONFIGURATION_COHORT_BINDING_AND_LEGACY_REPORT_COMPATIBILITY",
+      "new_python_cases": 5,
+      "official_complete": false
+    },
+    {
+      "increment": "ACTUAL_SOURCE_BOUND_INTERVAL_CLI_TO_CORRECTED_VIEWER",
+      "new_python_cases": 1,
+      "official_complete": false
+    }
+  ],
+  "interval_current_python_passed": 362,
+  "interval_current_node_passed": 45
+}

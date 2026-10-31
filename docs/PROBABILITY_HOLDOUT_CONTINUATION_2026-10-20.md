@@ -1,0 +1,45 @@
+# Frozen probability protocol and holdout — October20,2026
+
+Scoped offline synthetic acceptance. Production NO-GO.21 canonical release decisions unchanged:5 scoped PASS,13 BLOCKED,3 NOT_TESTED. AFI-1–10 PENDING. Prior482-case checkpoint and7 intended hashes verified. Native autonomous Goal ACTIVE. No fresh runtime census.
+
+## Working functionality
+
+An explicit probability protocol now freezes the existing pre-freeze point-model selection, fixed probability algorithm/smoothing declaration, planned holdout timestamps, lookback/horizon and data/source commitments. Selection still uses only pre-freeze point MAE with existing embargo/label checks; it never selects smoothing or probability parameters using holdout Brier errors. A fresh fixed algorithm declaration is shared with forecast publication without changing existing probability artifact identities.
+
+Planned holdouts must be bounded, aware, unique, chronological and post-freeze, with no selection overlap. Evaluation requires an explicit caller-retained protocol SHA-256 and reconstructs the entire protocol from original reviewed inputs. Canonical comparison distinguishes booleans from counts and rejects extra/malformed fields. A self-reported or newly rehashed digest is insufficient under the retained original pin. Changed rules, case lists, selection, false independent-unseen flags or wrong/missing pins refuse before scoring/publication. Evaluation uses the exact planned holdout, fixed selected point model and issue-time probability refits; explicit outcome-vintage/pending/refusal semantics remain.
+
+This demonstrates algorithmic partitioning only. The caller could fabricate a different plan and a new pin after observing data; local hashes do not prove independent custody, creation-time attestation or full-machine rollback resistance. independently_unseen remains false. No retuning, calibration, skill, production or trading authority is granted. Planned future cases can be declared, but evaluation refuses not-yet-issued cases until eligible evidence time. Changed dataset/source bytes require a distinct protocol; no silent lineage migration.
+
+The offline CLI has mutually exclusive --freeze-probability-plan and --probability-protocol modes alongside existing single-forecast/replay modes. Freeze plans have exact explicit selection/holdout/frozen_at/lookback/embargo fields. Creation publishes checked append-preserved JSON and returns its internal protocol pin. Holdout requires --expected-protocol-sha256; method/lookback/horizon/probability/interval overrides refuse rather than being silently ignored. Asset mismatch refuses. Single-forecast/replay defaults retain previous behavior.
+
+Holdout mode publishes immutable content-addressed JSON and scriptless HTML after protocol reconstruction and replay. Formatting reconstructs inputs rather than trusting imported metrics. Success requires both publications and readback hashes. Partial evidence is never deleted. No runtime paths, provider calls, browser execution controls, registry or production integration introduced.
+
+## Usable artifacts
+
+logs/diagnostics/probability-holdout-20261020/sample-protocol.json, sample-holdout.json and sample-holdout.html copy an actual published two-case synthetic protocol/evaluation. sample-provenance.json records exact source paths and hashes. Open the HTML locally; no server or service needed. Native browser visual acceptance not claimed. The report keeps honest denominators, Brier/baseline comparisons, training/label commitments and INSUFFICIENT_EVIDENCE.
+
+## Exact validation
+
+Full guarded native AFI suite502 passed,0 failed/skipped,35.01s. Node viewer suite122 passed,0 failed/skipped/cancelled.20 new Python cases; focused20 passed. No test failures in this increment. Initial Ruff found2 import-organization issues; corrected only those changed imports. Targeted Ruff, Python compilation and dependency consistency pass. No PowerShell source changed. Final whitespace/guard results retained in evidence directory.
+
+Verified exact selection reconstruction, fixed alpha/beta declaration, retained-pin rehash rejection, malformed boolean smoothing, missing/wrong pins, duplicate/pre-freeze/overlap/backward/empty planned cases, unavailable or embargoed labels, label-vintage pending-to-resolved accounting without protocol mutation, idempotent checked publication, actual CLI freeze/evaluate/override refusal and asset-conflict no-write behavior. Existing frozen legacy artifacts/source/selection/interval/accountability regressions pass.
+
+## Next executable work
+
+Expose fixed-bin probability reliability diagnostics in offline replay/holdout reports: per-bin sample counts, mean forecast probability and observed UP frequency, the actual weighted error denominator, empty/missing states and repeated-target warnings. Reuse existing score-cohort calibration bins and verify against original forecasts/outcomes. Do not pool incompatible assets/configurations, call sparse bins calibrated, infer confidence or invent independent samples. Integrate user-visible evidence and meaningful regressions, then continue the wider authorized roadmap.
+
+No Atlas/Docker/provider/Genesis operations, protected state/config/ACL/shortcut changes, real volumes/backups/restoration, production integration, PAPER/live/Discord activation or Git mutation. Independent datasets/rights, real skill/calibration, runtime/backup/restoration/Gaming/clean-machine, cash scope, lint and Discord/recovery gates remain blocked as documented.
+
+## Complete remaining seven-phase roadmap
+
+1. Core reliability and operations: obtain cash-scanner combined-release scope acceptance; retain provider pacing/ownership/drain regressions; verify provider terms and Yahoo internal request behavior, resolve nonterminating-worker operational acceptance and controlled workload thresholds; resolve release-quality/Ruff policy; independently validate final artifacts, dependency portability and license companions; separately authorize live-data acceptance, disabled rollback and sustained recovery. Preserve normal PAPER cadence and permanent low-resource Gaming Mode objective. Extended benchmarking/optimization requires separate approval.
+2. Evidence Engine: immutable timestamped hypotheses and outcomes, replay, precision/recall/calibration, false positives, realistic PAPER fees/slippage/funding, leakage/look-ahead controls, reproducible reports and Research Memory/analogues. E29 baseline/challenger remains NOT_READY; Alpha/cadence/corroboration remains context-only.
+3. Fifteen-minute crypto PAPER: eligibility/jurisdiction/market rules, fees and settlement; timestamped price/depth and spot/perpetual volatility/funding/liquidity joins; independent probability calibration and executable edge; realistic depth/cost fills, actual settlement and out-of-sample regime evidence before any separate live-capital proposal.
+4. Cross-market intelligence: unified equity/ETF/crypto/derivatives evidence, liquidity/positioning/anomalies, explainable scores, uncertainty/invalidation and reproducibility; suspicious-activity outputs remain cautious hypotheses.
+5. SaaS: demand validation/pilots, tiers/auth/tenant boundaries/billing/entitlements, APIs/dashboards/exports/alerts, onboarding/support/analytics, licensing and unit economics. Pricing remains unvalidated.
+6. Institutional readiness: RBAC, audit/security/incident processes, reproducible governed workspaces, API stability, evidence metrics, licensing/compliance and enterprise pilots. No VPS/hosted dependency is authorized.
+7. Commercial scale: product-market fit/retention, partnerships/integrations, white-label/API licensing, evidence-led expansion, revenue/margin/cost/churn measurement and disciplined reinvestment.
+
+Cross-phase unfinished obligations: E136 independent rollback witness, dual-database rollback/consent resurrection and atomic recovery snapshot gates; recovery fencing, recipient-specific transport/render/storage, uncertainty/dead-letter handling. Discord requires explicit approval and durable no-backfill activation watermark; never automatically retry uncertain sends. Prediction PAPER requires exactly-once identities, pre-deadline protection and auto-flat. Portfolio-versus-strategy risk policy remains undecided. Preserve Prediction Market Intelligence V2 PM-V2.1 through PM-V2.6: discovery, probability/calibration, executable edge, pre-event PAPER, evidence/backtests and dashboard. One position per market; no combos/stacking/averaging/opposing YES+NO; settlement research does not override pre-event gates. Atlas/Genesis separation and PAPER_ONLY/MANUAL_ONLY are permanent. No production activation, live trading or automatic Discord is authorized.
+
+AFI-1 contracts; AFI-2 PIT datasets; AFI-3 baselines; AFI-4 walk-forward scoring; AFI-5 uncertainty/calibration; AFI-6 multi-market comparison; AFI-7 accountability; AFI-8 dashboard; AFI-9 scenarios through2050; AFI-10 independent acceptance: ALL PENDING. Preserve permanent Gaming objective, Atlas/Genesis separation and Prediction Market Intelligence V2 protections.

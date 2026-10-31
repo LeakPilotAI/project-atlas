@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
-from app.investment.history import append_bars, load_dates
+from app.investment.history import append_bars, load_bars, load_dates
 from app.investment.models import MeasuredValue
 from app.investment.quality_report import summarize_snapshots
 from app.investment.snapshot import InvestmentSnapshot, persist_snapshot, snapshot_from_parts
@@ -53,12 +53,23 @@ class InvestmentIngest:
         history_root=None,
         snapshot_path: Optional[Path] = None,
         persist: bool = True,
+        read_only: bool = False,
     ) -> None:
-        client = YFinanceClient()
-        self.universe = universe or load_universe()
-        self.price = price or YahooPriceProvider(client)
-        self.fundamentals = fundamentals or YahooFundamentalProvider(client)
-        self.valuation = valuation or YahooValuationProvider(client)
+        if type(read_only) is not bool or read_only and (persist or any(
+                value is None for value in (universe, price, fundamentals, valuation, history_root))
+                or snapshot_path is not None):
+            raise ValueError("RESEARCH_READ_ONLY_EXPLICIT_INPUTS_REQUIRED")
+        self.read_only = read_only
+        self._read_only_mode = read_only
+        self._read_only_history = {}
+        if read_only:
+            self.universe, self.price, self.fundamentals, self.valuation = universe, price, fundamentals, valuation
+        else:
+            client = YFinanceClient()
+            self.universe = universe or load_universe()
+            self.price = price or YahooPriceProvider(client)
+            self.fundamentals = fundamentals or YahooFundamentalProvider(client)
+            self.valuation = valuation or YahooValuationProvider(client)
         self.history_root = history_root
         self.snapshot_path = snapshot_path
         self.persist = persist
@@ -72,6 +83,8 @@ class InvestmentIngest:
         fetch: Optional[FetchPlan] = None,
         prior: Optional[InvestmentSnapshot] = None,
     ) -> InvestmentSnapshot:
+        if self.read_only is not self._read_only_mode or self.read_only and (self.persist or self.snapshot_path is not None):
+            raise ValueError("RESEARCH_READ_ONLY_MODE_CHANGED")
         plan = fetch or FetchPlan()
         failures: list = []
 
@@ -79,7 +92,7 @@ class InvestmentIngest:
             try:
                 px = await self.price.get_price(entry.symbol)
             except Exception as e:
-                px = MeasuredValue.unknown("yfinance", str(e)[:200])
+                px = MeasuredValue.unknown(getattr(self.price, "name", "unknown"), str(e)[:200])
                 failures.append({"symbol": entry.symbol, "code": "PRICE_FAIL", "message": str(e)[:200]})
             _consume_failure(self.price, failures)
         elif prior is not None:
@@ -97,7 +110,9 @@ class InvestmentIngest:
                 bars = []
                 failures.append({"symbol": entry.symbol, "code": "HISTORY_FAIL", "message": str(e)[:200]})
             _consume_failure(self.price, failures)
-            stored = append_bars(entry.symbol, bars, root=self.history_root) if bars else {"written": 0}
+            stored = append_bars(entry.symbol, bars, root=self.history_root) if bars and not self.read_only else {"written": 0}
+            if self.read_only and bars:
+                self._read_only_history[entry.symbol] = tuple(bars)
 
         if plan.fundamentals:
             try:
@@ -136,6 +151,13 @@ class InvestmentIngest:
         if self.persist:
             persist_snapshot(snap, path=self.snapshot_path)
         return snap
+
+    def research_bars(self, symbol):
+        if not self.read_only or self.persist:
+            raise ValueError("RESEARCH_READ_ONLY_HISTORY_REQUIRED")
+        if symbol in self._read_only_history:
+            return self._read_only_history[symbol]
+        return tuple(load_bars(symbol, root=self.history_root))
 
     async def ingest_universe(self, *, history_period: str = "5y") -> List[InvestmentSnapshot]:
         out: List[InvestmentSnapshot] = []

@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import structlog
 
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
+
 from app.core.config import get_settings
 
 log = structlog.get_logger(__name__)
@@ -231,16 +233,21 @@ class AutoLadderService:
                 f"HITs fire one level at a time as price reaches each step.\n"
                 f"You place every order. Atlas does not execute."
             )
-            await send_discord_alert(
-                symbol=symbol,
-                title=f"Auto Ladder · {symbol} · {len(levels)} levels",
-                description=desc,
-                price=price,
-                severity="MEDIUM",
-                opportunity=70,
-                confidence=70,
-                risk=40,
+            payload = {
+                "symbol": symbol,
+                "title": f"Auto Ladder · {symbol} · {len(levels)} levels",
+                "description": desc,
+                "severity": "MEDIUM",
+            }
+            typed = legacy_payload_event(
+                lane="SYSTEM",
+                event_type="SESSION",
+                identity=f"auto-ladder-created:{symbol}",
+                payload=payload,
+                provenance=["auto-ladder"],
+                material=True,
             )
+            await deliver_legacy_payload(typed, sender=send_discord_alert)
         except Exception as e:
             log.warning("Auto ladder notify failed", symbol=symbol, error=str(e))
 

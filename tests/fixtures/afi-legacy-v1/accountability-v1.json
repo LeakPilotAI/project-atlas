@@ -1,0 +1,151 @@
+{
+  "asof": "2026-10-20T00:00:00+00:00",
+  "calibration_established": false,
+  "correction_n": 1,
+  "directional_diagnostics": {
+    "cohorts": [
+      {
+        "cohort": {
+          "asset_class": "CRYPTO",
+          "asset_id": "CRYPTO:BTC-USD",
+          "horizon": "1D",
+          "model": "NO_CHANGE"
+        },
+        "correct_n": 0,
+        "directional_accuracy": 0.0,
+        "down": {
+          "actual_n": 0,
+          "false_negative_n": 0,
+          "false_positive_n": 0,
+          "precision": null,
+          "predicted_n": 0,
+          "recall": null,
+          "true_positive_n": 0
+        },
+        "matrix": {
+          "DOWN": {
+            "DOWN": 0,
+            "FLAT": 0,
+            "UP": 0
+          },
+          "FLAT": {
+            "DOWN": 0,
+            "FLAT": 0,
+            "UP": 1
+          },
+          "UP": {
+            "DOWN": 0,
+            "FLAT": 0,
+            "UP": 0
+          }
+        },
+        "pending_n": 0,
+        "resolved_n": 1,
+        "status": "DIAGNOSTIC_ONLY",
+        "up": {
+          "actual_n": 1,
+          "false_negative_n": 1,
+          "false_positive_n": 0,
+          "precision": null,
+          "predicted_n": 0,
+          "recall": 0.0,
+          "true_positive_n": 0
+        }
+      }
+    ],
+    "flat_is_separate": true,
+    "matrix_columns": "OBSERVED_DIRECTION",
+    "matrix_rows": "FORECAST_DIRECTION",
+    "pending_excluded_from_accuracy": true,
+    "trade_opportunity_or_profitability_established": false
+  },
+  "evidence_class": "SYNTHETIC",
+  "forecast_n": 1,
+  "history_completeness_verified": false,
+  "live_feed_freshness_verified": false,
+  "production_approved": false,
+  "recovery_authorized": false,
+  "report_sha256": "b50f6ac782b43ac4627fe5b81b506f6e5ccda73705607184d669d7337818a6eb",
+  "rows": [
+    {
+      "actual": 155.0,
+      "asset_class": "CRYPTO",
+      "asset_id": "CRYPTO:BTC-USD",
+      "correction_n": 1,
+      "expected_head": "de33e9b2a3aebeff913a7680f65fad95bfb901040d0e29a776df85a00343a35e",
+      "forecast_artifact_sha256": "17b5bacda12d7447fb8a92dd2d4fc816ecb0116bc0bcb68a7496909aaee04e80",
+      "forecast_dataset_sha256": "31dd80e1a761dccddbd772eb2a4b1d54bf4fc10baf085a27f4b9697249dc7bca",
+      "forecast_point": 138.0,
+      "forecast_sha256": "ef106584429dffe818166e7ea487b9b24a36a77ee15f6573eab6a75d03f562b8",
+      "history_n": 2,
+      "horizon": "1D",
+      "issued_at": "2026-10-17T00:01:00+00:00",
+      "last_reconciled_asof": "2026-10-19T13:00:00+00:00",
+      "latest_event": "CORRECTION",
+      "model": "NO_CHANGE",
+      "outcome_dataset_sha256": "1322e9bba150944758d614f290fc60ed242950f8ebfe794d2ec6aa1c6c8227ea",
+      "reconciliation_freshness": "NOT_INDEPENDENTLY_ESTABLISHED",
+      "reference": 138.0,
+      "release_source_sha256": "4bdefc81070c77874a4d353b632963952f5d80cc4b10468c0f26a954da11f4a2",
+      "source_available_at": "2026-10-19T12:00:00+00:00",
+      "source_revision": "v2",
+      "status": "RESOLVED",
+      "target_at": "2026-10-18T00:00:00+00:00"
+    }
+  ],
+  "schema": "AFI_ACCOUNTABILITY_REPORT_V1",
+  "score": {
+    "asof": "2026-10-20T00:00:00+00:00",
+    "baseline": "PAIRED_NO_PRICE_CHANGE_AND_UNINFORMATIVE_P_UP_0.5",
+    "binary_event": "PRICE_STRICTLY_ABOVE_REFERENCE; FLAT_IS_NOT_UP",
+    "calendar_horizon_semantics": "CALLER_DECLARED_NOT_INDEPENDENTLY_VERIFIED",
+    "calibration_established": false,
+    "cohorts": [
+      {
+        "brier": null,
+        "calibration_bins": [],
+        "cohort": {
+          "asset_class": "CRYPTO",
+          "asset_id": "CRYPTO:BTC-USD",
+          "code_sha256": "f2ae0b8400c0f1ded3012f99d983e361df53099a66b6e82f2d81c07ef3f62807",
+          "dataset_id": "fixture-data",
+          "dataset_manifest_sha256": "c32108a131b69840aa24954226aabaeaf1f088e11b9ee7d45665babc0d0ad298",
+          "dataset_sha256": "31dd80e1a761dccddbd772eb2a4b1d54bf4fc10baf085a27f4b9697249dc7bca",
+          "dataset_version": "v1",
+          "evidence_class": "SYNTHETIC",
+          "horizon": "1D",
+          "interval_level": null,
+          "model_id": "NO_CHANGE",
+          "model_version": "f2ae0b8400c0f1ded3012f99d983e361df53099a66b6e82f2d81c07ef3f62807"
+        },
+        "directional_accuracy": 0.0,
+        "expected_calibration_error": null,
+        "flat_outcome_n": 0,
+        "interval_coverage": null,
+        "interval_n": 0,
+        "mae": 17.0,
+        "mae_ratio_to_no_change": 1.0,
+        "mape_percent": 10.967741935483872,
+        "mean_interval_score": null,
+        "mean_interval_width": null,
+        "n": 1,
+        "no_change_mae": 17.0,
+        "no_change_rmse": 17.0,
+        "probability_n": 0,
+        "rmse": 17.0,
+        "smape_percent": 11.604095563139932,
+        "status": "INSUFFICIENT_EVIDENCE",
+        "uninformative_half_probability_brier": null
+      }
+    ],
+    "dataset_authenticated": false,
+    "issued_n": 1,
+    "pending_n": 0,
+    "production_approved": false,
+    "scope": "OFFLINE_DIAGNOSTIC",
+    "scored_n": 1,
+    "status": "INSUFFICIENT_EVIDENCE",
+    "trading_authority": false
+  },
+  "trading_authority": false
+}

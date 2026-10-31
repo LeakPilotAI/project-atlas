@@ -1,0 +1,62 @@
+{
+  "schema": "ATLAS_QD_POLL_CORRECTION_COMMISSIONING_RESULT_V1",
+  "date": "2026-10-27",
+  "poll_changes": {
+    "MinPollInterval": {
+      "before": 10,
+      "after": 6
+    },
+    "SpecialPollInterval": {
+      "before": 32768,
+      "after": 64
+    }
+  },
+  "reload_requests": 1,
+  "resync_requests": 0,
+  "source_and_manual_startup_unchanged": true,
+  "observation_seconds": 121.246,
+  "native_collection_calls": 4,
+  "clock_validator_accepted": true,
+  "clock_bound_ms": 716,
+  "clock_dispersion_seconds": "0.4201763",
+  "native_resource_checks": {
+    "passed": 25,
+    "failed": 0
+  },
+  "runtime_installation": {
+    "status": "D_RUNTIME_LAYOUT_VERIFIED",
+    "files": 10178,
+    "directories": 903,
+    "bytes": 260066032,
+    "file_identity_acl_hash_readbacks": 10178,
+    "source_commit": "aaf0c0232f30deb70dc8bad4d5253776172b7c9b",
+    "artifact_digest": "76a9aa4b24b98e34967b226013ecb5a1fb5e3dc3c912ebe4d003f4af2f06b8c9",
+    "d_resident_layout_verified": true,
+    "installed_interpreter_clock_bound_ms": 364
+  },
+  "market_data": {
+    "provider": "ALPACA_IEX",
+    "scope": "SINGLE_EXCHANGE_NOT_NBBO",
+    "symbols": [
+      "MSFT",
+      "SPY"
+    ],
+    "seconds": 20,
+    "authenticated": true,
+    "subscription_acknowledged": true,
+    "quote_count": 0,
+    "market_session": "MARKET_CLOSED",
+    "fresh_executable_data": false,
+    "closed_cleanly": true
+  },
+  "account_inception_attempted": false,
+  "financial_pilot_started": false,
+  "financial_pilot_consumed": false,
+  "financial_enrollment_complete": false,
+  "desktop_financial_acceptance_executed": false,
+  "shutdown_restart_financial_acceptance_executed": false,
+  "status": "BLOCKED_CURRENT_DATA_MARKET_CLOSED_BEFORE_INCEPTION",
+  "postflight_financial_directories_unchanged_empty": true,
+  "windows_configuration_rollback_executed": false,
+  "report": "docs/QD_POLLING_CORRECTION_COMMISSIONING_2026-10-27.md"
+}

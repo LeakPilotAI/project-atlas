@@ -1,0 +1,10 @@
+{
+  "schema": "ATLAS_SYNTHETIC_MARKET_FIXTURE_PROVENANCE_V1",
+  "api_response_sha256": "ae9d5560739a450451e351d1368af8c747e0b44e7812900c75881e7d775930ab",
+  "source": "Actual in-process create_replay_app response; current producer equality verified by test_current_api_matches_actual_frontend_contract_fixture",
+  "data_mode": "SYNTHETIC_REPLAY",
+  "real_market_evidence": false,
+  "provider_authorized": false,
+  "production_approved": false,
+  "producer_sha256": "eea7686107bd7608f135eaea551045dfcb937b849b8c6555c4ddfcd20dca08f8"
+}
