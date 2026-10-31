@@ -1,4 +1,87 @@
 {
+  "w32time_quality_diagnosis_v1_20261030": {
+  "report": "docs/QD_W32TIME_QUALITY_DIAGNOSIS_V1_2026-10-30.md",
+  "base_commit": "946a0de1dfb19654895c4da3ee6696c9b6cf3ba8",
+  "scope": "READ_ONLY_NO_AUTOMATIC_INSTALLATION",
+  "native_samples": 9,
+  "accepted_samples": 9,
+  "bounds_ms": [
+    206,
+    216,
+    226,
+    196,
+    206,
+    216,
+    201,
+    211,
+    221
+  ],
+  "min_bound_ms": 196,
+  "max_bound_ms": 226,
+  "final_bound_ms": 221,
+  "source_age_range_seconds": [
+    "6.1858822",
+    "65.9862311"
+  ],
+  "final_source_age_seconds": "57.9497566",
+  "root_dispersion_range_seconds": [
+    "0.0386427",
+    "0.0397267"
+  ],
+  "final_root_dispersion_seconds": "0.0386427",
+  "root_delay_range_seconds": [
+    "0.0319063",
+    "0.0324946"
+  ],
+  "final_root_delay_seconds": "0.0319063",
+  "final_phase_offset_seconds": "0.0151616",
+  "source": "time.windows.com,0x9",
+  "service": "Running",
+  "startup": "Manual",
+  "leap": 0,
+  "stratum": 5,
+  "last_sync_error": 0,
+  "poll_report": "8 (256s)",
+  "peer": {
+    "mode": 3,
+    "stratum": 4,
+    "reachability": 255,
+    "valid_data_counter": 8,
+    "authentication": "NoAuth"
+  },
+  "observation_seconds": 161.562,
+  "total_diagnostic_seconds": 164.891,
+  "all_capabilities_revoked_and_verified": true,
+  "operational_capability_retained": false,
+  "elevated": false,
+  "appcontainer": false,
+  "static_selected_configuration_unchanged": true,
+  "selected_values_match_historical_964": true,
+  "live_configuration_and_source_rpc": "ACCESS_DENIED_0x80070005_NOT_ELEVATED",
+  "corroboration": "Currentregistry/absentselectedpolicykeys/recentOperational263Localvalues; native status and peers readable",
+  "event_records": {
+    "System": 13,
+    "Operational": 30
+  },
+  "confirmed_previous_failure_factor": "HIGH_REPORTED_ROOT_DISPERSION",
+  "likely_mechanism": "TRANSIENT_POST_START_SAMPLE_FILTERING_AND_CLOCK_CONVERGENCE_INFERENCE",
+  "unknown": "Exactoriginalupstream-versus-Windowsinternal dispersion split notobservable",
+  "configuration_change_recommended": false,
+  "clock_source_sha256": "a1d21ca5f55579ebbc690347fee3b902c26ea4c5d7e1f6ae292945a4f174571e",
+  "private_evidence_root": "logs/diagnostics/qd-w32time-quality-diagnosis-v1-20261030",
+  "windows_changes": 0,
+  "service_actions": 0,
+  "forced_resyncs": 0,
+  "installation_copy": false,
+  "v2_copy_grant_consumed": false,
+  "financial_actions": 0,
+  "atlas_market_data_provider_connections": 0,
+  "genesis_access": false,
+  "runtime_code_changes": 0,
+  "regression_suites_repeated": false,
+  "historical_results_and_failures_preserved": true,
+  "next_action": "SeparateexecutionresumeexistingV2copygrantwithnewgenuineclockandcompleteoriginalpreflight; noautomaticcopyinthisdiagnostic"
+},
   "w32time_service_start_v1_20261030": {
   "report": "docs/QD_W32TIME_SERVICE_START_CLOCK_REFUSAL_2026-10-30.md",
   "base_commit": "51888e1e91ef6b45738596cd5f276bbb97257526",
@@ -235,15 +318,15 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "P_QD_W32TIME_SERVICE_START_V1_SERVICE_RUNNING_CLOCK_7933MS_REFUSED_NO_COPY",
+  "last_verified_task": "QD_W32TIME_QUALITY_DIAGNOSIS_V1_NINE_NATIVE_ACCEPTANCES_ALL_REVOKED_NO_INSTALL",
   "next_eligible_tasks": [
-  "OPERATOR_SCOPE_READ_ONLY_CLOCK_QUALITY_DIAGNOSIS_OR_LATER_FRESH_RECHECK"
+  "SEPARATE_EXECUTION_RESUME_UNUSED_AUTHORIZED_V2_COPY_WITH_NEW_CLOCK_AND_COMPLETE_PREFLIGHT"
 ],
   "blocked_tasks": {
-  "PERSONAL_LOCAL_INSTALLATION": "V2 ONE unselected code-copy grant remains explicitlyauthorized/UNUSED. W32Time nowRunning/Manual/time.windows.com,0x9 after authorizednormal-permission refusal and ONE RunAs sc.exe start success. InitialStartPending rawrefusal retained; followupRunning. Windows subsequentlyreportedLeap0/stratum5/error0, precedingdiagnosticage41.6574332s/rootdispersion7.7717519s. GenuineunchangedAtlas clock refused7933ms>1000ms; agegate passed before numericalrefusal, exactseparateage notretained. STOP beforecopy:destination/intent/receipt absent,files0dirs0bytes0. No config/resync/selector/provider/account/PAPER/Genesis change. Service-startscopecomplete; furtherclock-qualityactionmustseparatelyscoped. RemainingcompleteV2native/source/resource/selected-release/readbackpreflight notpassed.",
+  "PERSONAL_LOCAL_INSTALLATION": "Read-only qualitydiagnosis nine genuineclockacceptances196..226ms/161.562s, allcapsrevoked, serviceRunningManual/time.windows.com,0x9. Rootdispersion naturallyrecoveredbeforefirstsample to38.6..39.7ms; selectedstaticconfigunchanged/matches964 values. No Windows tuningjustified. Currenttaskexplicitlyforbidsautomaticcopy; V2ONE unselectedcopygrant remainsauthorizedUNUSED. Inseparateexecution re-acquireactualinstaller runtimeclock and completeallsource/native/resource/selected-releasepreflight; nohistoricalanchor reuse. Actualcodecopy/readback/receipt/ACK/selection/promotion/resource/currentcustody/currentresearch/executableIEX/financialStop-dashboard-restart remain pending.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
   "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
-  "PERSONAL_BOUNDED_START": "ServiceRunningManual/NTPsourceunchanged and WindowsreportsLeap0/stratum5/error0, but currentAtlasclock refusal7933ms>1000ms. No acceptedcapability; historical196ms/otheranchors notcurrent. Real resource/release/currentcustody/currentresearch/executableIEX and actualControlCenter financialStop/dashboard/restart remain unaccepted. No PAPER startup or promotion authority.",
+  "PERSONAL_BOUNDED_START": "Nativeclockacquisition passed9times196..226ms atdiagnosticcut, then allcapabilitiesrevoked/process exited; notpermanentUTCclearance. Actualrelease/native resource/currentcustody/research/executableIEX and ControlCenter financialStop/dashboard/restart remain unaccepted. No PAPERstartup/promotion/provider/inception authority in diagnostic.",
   "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Actual disposable native candidate entry/partial/shutdown/full/replay/audit/ACK/drain/read-only restart verified. No operational financial root or account accessed/initialized; syntheticreceipt/authority cannot enter operational path. Actual activation/inception/current custody not executed."
 },
   "latest_tests": {
@@ -263,7 +346,7 @@
   "ruff_passed": true
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP recorded in docs/QD_W32TIME_SERVICE_START_CLOCK_REFUSAL_2026-10-30.md. ExistingW32Time serviceRunning/Manual/time.windows.com,0x9; approved service-startactioncomplete/consumed, do not start/elevate/resync/reconfigure again. Atlas refused7933ms uncertainty despitehealthyWindowssync and freshness check passing; precedingrawage41.6574332s/rootdispersion7.7717519s, exactvalidatorage notretained. No clockcap or copy. Need separatelyscoped read-only clock-qualitydiagnosis or laterfreshrecheck; settingscorrection onlywithexplicitauthority. Onlyafter genuine<=1000ms/<=120s and remainingpreflight pass maysameunused V2ONEunselectedcopygrant continue. V2pins09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e unchanged; no dest/intent/receipt/ACK/files/dirs/bytes/nativeinstalledreadback. No sourcechange/regressionrerun; historical223passes/21decisions/sevenphases preserved. No provider/financial/selection/Genesis action;PAPERNO/productionNOGO.",
+  "exact_next_action": "Read docs/QD_W32TIME_QUALITY_DIAGNOSIS_V1_2026-10-30.md. Read-onlydiagnosiscomplete:9nativeacceptedbounds206,216,226,196,206,216,201,211,221ms; ages6.1858822..65.9862311s; window161.562s/total164.891s; allcapsrevoked. Rootdispersion38.6427..39.7267ms naturallyrecovered beforefirstsample; delay31.9063..32.4946ms, final221ms/age57.9497566s. Source/time modelhash unchanged; localconfigmatches9647selectedvalues, beforeafterstaticunchanged. Normalconfig/sourceRPCdenied butnative-status/registry/peers/eventscorroborate; no elevation. Mostlikelypoststartfilter/convergence, exactupstream-local splitnotproved. No configuration changejustified. CurrentexecutionNOcopy. Separateexecutionmay resume sameunused authorizedV2unselectedcopy with NEWclock andalloriginalpreflight; do not reaskV2approvaloraddreviewerchain. No Windows setting/service/resync/provider/financial/installation/Genesis action;21decisions/sevenphases/B1C1D1E1 unchanged; PAPERNO/productionNOGO.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
