@@ -209,8 +209,14 @@ def test_reviewed_proposal_cannot_expand_into_activation_or_foreign_paths(damage
 
 def test_review_proposal_pins_exact_three_adapter_sources():
     root=Path(__file__).resolve().parents[1]
-    value=json.loads((root/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V1_2026-10-30.json').read_bytes())
+    value=json.loads((root/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V2_2026-10-30.json').read_bytes())
     assert set(value['adapter_source_sha256'])=={'scripts/install_verified_release.py','scripts/native_install_plan.py',
                                                'scripts/native_install_candidate.py'}
     for name,pin in value['adapter_source_sha256'].items():
         assert hashlib.sha256((root/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()==pin
+
+
+def test_historical_native_copy_proposal_is_preserved_exactly():
+    root=Path(__file__).resolve().parents[1]
+    raw=(root/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V1_2026-10-30.json').read_bytes().replace(b'\r\n',b'\n')
+    assert hashlib.sha256(raw).hexdigest()=='888c645b055b016b165c2133a4f9bf69dabbe6f3d5c259a516a863586b7539f2'

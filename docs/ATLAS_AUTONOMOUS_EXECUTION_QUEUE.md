@@ -1,3 +1,7 @@
+## October30 native-copy source closure complete
+
+223pass0fail0skip11.66s; genuine retained read-only schema refusal, no full native copy. Bounded diagnostics and predeclared identity-bound negative alias groups; shared accounting preserves original error; caches/TEMP confined and Ruff no-cache. Finalfixture15.907s2458entries3243965bytes; cache/original evidence/full metadata unchanged. Original failures and variance retained; intermediate digest-only metadata anomaly remains unattributed with intact originalbytes/IDs and subsequent full comparisons. Old grant CONSUMED; no operational authority. Review docs/QD_NATIVE_COPY_ACCEPTANCE_CLOSURE_V1_2026-10-30.md and unapproved V2 pins; fresh bounded grant only if claiming revised full-harness native compliance. Prior queue preserved below.
+
 ## October30 native installation-copy execution closed
 
 Native behavior verified:10204files903dirs260369081bytes; independent final native readback395.922s.196distinct regressions pass/0fail0skip. Final artifacts515.688s/14347entries266908072logicalbytes, under600s/40000/1GiB. Two harness failures and repo lint-cache write variance preserved; no full scope-compliance PASS. One-run authorization CONSUMED. No operational install/selection/provider/financial/PAPER/clock/Genesis change. Next:soleoperator review exact unselected real-code-copy scope and findings; fresh clock/actual installed verifier required. Promotion/financial/startup remain separate. See docs/QD_NATIVE_INSTALL_ADAPTER_ACCEPTANCE_V1_2026-10-30.md. Prior queue retained below.

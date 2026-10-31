@@ -15,14 +15,23 @@ import sys
 import time
 from pathlib import Path
 
+if __name__=='__main__':
+    sys.path[:0]=[str(Path(__file__).resolve().parents[1]/'backend'),str(Path(__file__).resolve().parents[1])]
+
+from scripts.native_copy_test_scope import (
+    account,
+    confined_environment,
+    preserve_terminal_accounting,
+)
+
 REPO = Path(__file__).resolve().parents[1]
 ROOT = REPO / 'logs/diagnostics/qd-native-install-adapter-v1'
 GRANT = 'P-QD-INSTALL-ADAPTER-NATIVE-DISPOSABLE-V1'
 LIMITS = {'seconds': 600, 'entries': 40000, 'bytes': 1024**3}
 
 
-def contained(path, root=ROOT):
-    path, root = Path(path).absolute(), Path(root).absolute()
+def contained(path, root=None):
+    path, root = Path(path).absolute(), Path(ROOT if root is None else root).absolute()
     if not path.is_relative_to(root):
         raise ValueError('DISPOSABLE_NAMESPACE_ESCAPE')
     for parent in (path, *path.parents):
@@ -33,35 +42,29 @@ def contained(path, root=ROOT):
     return path
 
 
-def usage(root=ROOT, *, permitted_probe_links=()):
-    entries, size = 1, 0
-    links={}
-    for parent, dirs, files in os.walk(contained(root), followlinks=False):
-        for leaf in dirs + files:
-            path = Path(parent) / leaf
-            info = path.lstat()
-            if getattr(info, 'st_file_attributes', 0) & 0x400 or stat.S_ISLNK(info.st_mode):
-                raise ValueError('DISPOSABLE_REPARSE_REFUSED')
-            entries += 1
-            if stat.S_ISREG(info.st_mode):
-                size += info.st_size
-                if info.st_nlink != 1:
-                    relative=path.relative_to(root).as_posix()
-                    if relative not in permitted_probe_links:
-                        raise ValueError('DISPOSABLE_SPECIAL_OR_LINKED_FILE')
-                    links.setdefault((info.st_dev,info.st_ino),[]).append((relative,info.st_nlink))
-            elif not stat.S_ISDIR(info.st_mode):
-                raise ValueError('DISPOSABLE_SPECIAL_OR_LINKED_FILE')
-    for group in links.values():
-        if any(count!=len(group) for _,count in group):
-            raise ValueError('DISPOSABLE_EXTERNAL_HARDLINK_ALIAS')
-    return entries, size
+def usage(root=None):
+    counts=account(ROOT if root is None else root)
+    return counts['entries'],counts['logical_bytes']
+
+
+def budget_usage():
+    counts=account(ROOT)
+    return counts['entries'],counts['allocation_upper_bound_bytes']
 
 
 def enforce(started, entries, size, *, now=None):
     elapsed = (time.monotonic() if now is None else now) - started
     if elapsed >= 590 or entries >= LIMITS['entries'] or size >= LIMITS['bytes']:
         raise ValueError('DISPOSABLE_LIMIT_REFUSAL_PRESERVE_PARTIAL')
+
+
+def terminal_record(name,result,started):
+    error=sys.exception()
+    if error is not None:
+        result=dict(result,status='REFUSED_PRESERVE_PARTIAL',primary_error=type(error).__name__+':'+str(error))
+    result=preserve_terminal_accounting(result,ROOT,started,now=time.monotonic(),limit=590)
+    save(name,result)
+    return result
 
 
 def save(name, value):
@@ -77,9 +80,9 @@ def save(name, value):
 
 
 def pins():
-    proposal_path = REPO / 'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V1_2026-10-30.json'
+    proposal_path = REPO / 'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V2_2026-10-30.json'
     raw = proposal_path.read_bytes().replace(b'\r\n', b'\n')
-    if hashlib.sha256(raw).hexdigest() != '888c645b055b016b165c2133a4f9bf69dabbe6f3d5c259a516a863586b7539f2':
+    if hashlib.sha256(raw).hexdigest() != '09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e':
         raise ValueError('APPROVED_PROPOSAL_CHANGED')
     proposal = json.loads(raw)
     for name, pin in proposal['adapter_source_sha256'].items():
@@ -116,7 +119,7 @@ def worker(started, resume=False):
         now = time.monotonic()
         enforce(started, 0, 0, now=now)
         if now - last_check > 4:
-            enforce(started, *usage())
+            enforce(started, *budget_usage())
             last_check = time.monotonic()
         return True
 
@@ -127,7 +130,9 @@ def worker(started, resume=False):
         except (ValueError, OSError, KeyError, TypeError) as error:
             if expected not in str(error) or kind is not None and not isinstance(error,kind):
                 raise
-            events.append({'test': name, 'result': 'PASS', 'refusal': str(error)[:250]})
+            from scripts.install_verified_release import bounded_child_diagnostic
+            events.append({'test': name, 'result': 'PASS',
+                'refusal':getattr(error,'diagnostic',bounded_child_diagnostic(str(error).encode()))})
         else:
             raise AssertionError('MISSING_REQUIRED_REFUSAL:' + name)
 
@@ -258,7 +263,9 @@ print(json.dumps({'executable':sys.executable,'prefix':sys.prefix,'stdlib':sysco
             'test_candidate_windows_namespace', 'test_personal_release_module_binding',
             'test_nonfinancial_resource_host', 'test_windows_clock_probe_boundary',
             'test_native_install_adapter_acceptance']
+        (ROOT/'probe-registry').mkdir(exist_ok=False)
         command = [sys.executable, '-B', '-m', 'pytest', '-q', '-p', 'no:cacheprovider', '-p', 'pytest_asyncio.plugin',
+            '-p','native_copy_scope_plugin',
             '--basetemp', str(ROOT/'pytest'), *[str(REPO/'tests'/(n+'.py')) for n in test_names]]
         output = run_owned(command, timeout=min(70, 555-(time.monotonic()-started)), cwd=ROOT, tests=True)
         (ROOT/'regressions.txt').write_bytes(output)
@@ -276,8 +283,7 @@ print(json.dumps({'executable':sys.executable,'prefix':sys.prefix,'stdlib':sysco
         result.update(status='REFUSED_PRESERVE_PARTIAL', error=type(error).__name__+':'+str(error))
         raise
     finally:
-        result.update(seconds=round(time.monotonic()-started, 3), usage_before_final_audit=dict(zip(('entries','bytes'),usage())))
-        save('continuation-result.json' if resume else 'result.json', result)
+        result=terminal_record('continuation-result.json' if resume else 'result.json',result,started)
         print(json.dumps({'status': result['status'], 'seconds': result['seconds']}), flush=True)
 
 
@@ -288,10 +294,9 @@ def run_owned(command, *, timeout, cwd, tests=False):
     )
     if timeout <= 0:
         raise ValueError('DISPOSABLE_LIMIT_REFUSAL_PRESERVE_PARTIAL')
-    env = dict(os.environ)
-    env.pop('PYTHONHOME', None)
-    env.update(PYTHONDONTWRITEBYTECODE='1', PYTHONNOUSERSITE='1', TEMP=str(ROOT), TMP=str(ROOT),
-        PYTEST_DISABLE_PLUGIN_AUTOLOAD='1', PYTHONPATH=os.pathsep.join([str(REPO/'backend'),str(REPO),str(REPO/'tests')]) if tests else '')
+    env=confined_environment(ROOT)
+    env.update(ATLAS_NEGATIVE_PROBE_ROOT=str(ROOT),
+        PYTHONPATH=os.pathsep.join([str(REPO/'backend'),str(REPO),str(REPO/'tests')]) if tests else '')
     process = subprocess.Popen(command, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         creationflags=subprocess.CREATE_NO_WINDOW)
     accepted = False
@@ -328,11 +333,18 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.grant != GRANT or os.name != 'nt':
         raise SystemExit('EXPLICIT_SINGLE_DISPOSABLE_WINDOWS_GRANT_REQUIRED')
+    if (ROOT/'final-scope-accounting.json').exists():
+        raise ValueError('ORIGINAL_NATIVE_AUTHORIZATION_CONSUMED_NO_REEXECUTION')
     if args.finalize_owned_read_only:
         return finalize_owned()
     if args.worker_start is not None:
         if ROOT != Path.cwd() or not ROOT.is_dir():
             raise ValueError('EXACT_OWNED_FIXTURE_REQUIRED')
+        accepted=json.loads((ROOT/'authorization.json').read_bytes())
+        if (accepted['grant']!=GRANT or accepted['limits']!=LIMITS
+                or args.worker_start!=accepted['started_monotonic']):
+            raise ValueError('ORIGINAL_NATIVE_DEADLINE_REQUIRED')
+        enforce(args.worker_start,*budget_usage())
         return worker(args.worker_start,args.continue_owned)
     started = time.monotonic()
     contained(ROOT)
@@ -348,10 +360,9 @@ def main(argv=None):
                 '--worker-start',str(started),'--continue-owned'],timeout=max(1,580-(time.monotonic()-started)),cwd=ROOT)
             (ROOT/'continuation-output.txt').write_bytes(output)
         finally:
-            entries,size=usage();elapsed=time.monotonic()-started
-            save('continuation-supervisor-final.json',{'seconds':round(elapsed,3),'entries_before_final':entries,
-                'bytes_before_final':size,'process_handle_closed':True,'retained_process_running':False,
-                'port_opened':False,'limits_pass':elapsed<600 and entries+1<40000 and size+65536<1024**3})
+            elapsed=time.monotonic()-started
+            terminal_record('continuation-supervisor-final.json',{'status':'COMPLETED_CHILD_RETURNED',
+                'port_opened':False},started)
         print(json.dumps({'continued_original_run':True,'seconds':round(elapsed,3)}),flush=True)
         return
     if os.path.lexists(ROOT):
@@ -373,12 +384,9 @@ def main(argv=None):
             '--worker-start', str(started)], timeout=max(1,580-(time.monotonic()-started)), cwd=ROOT)
         (ROOT/'worker-output.txt').write_bytes(output)
     finally:
-        entries, size = usage()
         elapsed = time.monotonic()-started
-        save('supervisor-final.json', {'seconds':round(elapsed,3),'entries_before_final':entries,'bytes_before_final':size,
-            'process_handle_closed':True,'retained_process_running':False,'port_opened':False,
-            'limits_pass':elapsed<600 and entries+1<40000 and size+65536<1024**3})
-    print(json.dumps({'root':str(ROOT),'seconds':round(elapsed,3),'entries_before_final':entries,'bytes_before_final':size}),flush=True)
+        terminal_record('supervisor-final.json',{'status':'COMPLETED_CHILD_RETURNED','port_opened':False},started)
+    print(json.dumps({'root':str(ROOT),'seconds':round(elapsed,3)}),flush=True)
 
 
 def finalize_owned():
@@ -392,11 +400,9 @@ def finalize_owned():
     if accepted['grant']!=GRANT or accepted['limits']!=LIMITS:
         raise ValueError('EXACT_ORIGINAL_AUTHORIZATION_REQUIRED')
     started=accepted['started_monotonic']
-    probes={'pytest/test_native_hard_link_source_i0/outside-source.py',
-            'pytest/test_native_hard_link_source_i0/source/backend/app/example.py'}
     def bound():
         enforce(started,0,0)
-    enforce(started,*usage(permitted_probe_links=probes))
+    enforce(started,*budget_usage())
     if (ROOT/'final-readonly-acceptance.json').exists():raise ValueError('FINALIZATION_ALREADY_RECORDED')
     pins()
     copy_fact=json.loads((ROOT/'copy-NATIVE_COPY_ACL_IDENTITY_HASH_VERIFIED_UNSELECTED.json').read_bytes())
@@ -438,7 +444,7 @@ def finalize_owned():
                 {r['path'] for r in receipt['directories']},bound)
     finally:
         assert not opened and all(not out.handles for out in outputs.values())
-    entries,size=usage(permitted_probe_links=probes);enforce(started,entries,size)
+    counts=account(ROOT);entries,size=counts['entries'],counts['logical_bytes'];enforce(started,entries,size)
     # NTFS allocation unit was separately observed as4096; conservatively charge
     # every entry including directories and duplicate hardlink aliases in full.
     conservative_allocation=size+entries*4096
@@ -449,7 +455,7 @@ def finalize_owned():
         'directories':len(receipt['directories']),'readback_bytes':read_bytes,
         'entries_before_final':entries,'logical_bytes_before_final':size,
         'conservative_allocation_bytes':conservative_allocation,'retained_native_handles':0,
-        'regressions':{'passed':193,'failed':0,'skipped':0},'classified_probe_aliases':sorted(probes),
+        'regressions':{'passed':193,'failed':0,'skipped':0},'classified_probe_groups':counts['declared_materialized_groups'],
         'unexpected_links':0,'financial_actions':0,'provider_connections':0,'new_children_in_finalization':0,
         'original_failures_preserved':True,'operational_acceptance':False})
     print(json.dumps({'final_native_readback':'PASS','original_scope_seconds':round(time.monotonic()-started,3),

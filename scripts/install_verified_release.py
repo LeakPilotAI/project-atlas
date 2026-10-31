@@ -18,6 +18,22 @@ from scripts.native_install_candidate import _copy_prepared_code
 from scripts.native_install_plan import prepare_install_inputs
 
 
+def bounded_child_diagnostic(raw):
+    """Retain the terminal refusal and a digest, without unbounded trace output."""
+    if type(raw) is not bytes:raise TypeError('CHILD_DIAGNOSTIC_BYTES_REQUIRED')
+    text=raw.decode('utf-8',errors='replace')
+    return {'schema':'QD_CHILD_DIAGNOSTIC_V1','bytes':len(raw),
+        'sha256':hashlib.sha256(raw).hexdigest(),'truncated':len(text)>4096,
+        'head':text[:2048],'tail':text[-2048:] if len(text)>2048 else ''}
+
+
+class InstalledReadbackRefusal(ValueError):
+    def __init__(self,stderr,*,returncode,stdout_bytes):
+        self.diagnostic=bounded_child_diagnostic(stderr)
+        self.diagnostic.update(returncode=returncode,stdout_bytes=stdout_bytes)
+        super().__init__('INSTALLED_RUNTIME_READBACK_REFUSED:'+json.dumps(self.diagnostic,sort_keys=True))
+
+
 def write_new_json(path, value):
     raw=json.dumps(value,sort_keys=True,allow_nan=False).encode()
     flags=os.O_WRONLY|os.O_CREAT|os.O_EXCL|getattr(os,'O_BINARY',0)
@@ -110,7 +126,7 @@ print(json.dumps({'layout':layout,'native_proof':proof,'handles_after_close':len
             raise ValueError('EXACT_OWNED_INSTALL_READBACK_TIMEOUT') from None
         if child.returncode or len(stdout)>65536:
             child._handle.Close()
-            raise ValueError('INSTALLED_RUNTIME_READBACK_REFUSED:'+stderr.decode(errors='replace')[:250])
+            raise InstalledReadbackRefusal(stderr,returncode=child.returncode,stdout_bytes=len(stdout))
     child._handle.Close()
     result=json.loads(stdout.decode('utf-8-sig'))
     return validate_installed_readback(result,destination,receipt,artifact_digest,identity)
@@ -206,7 +222,7 @@ def main(argv=None):
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 
     repo=Path(__file__).resolve().parents[1]
-    expected=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V1_2026-10-30.json'
+    expected=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V2_2026-10-30.json'
     if Path(args.proposal).absolute()!=expected:raise ValueError('EXACT_INSTALL_PROPOSAL_REQUIRED')
     raw=source_bytes(repo,str(expected.relative_to(repo)).replace('\\','/'),maximum_bytes=65536)
     if hashlib.sha256(raw.replace(b'\r\n',b'\n')).hexdigest()!=args.proposal_sha256:

@@ -1,3 +1,11 @@
+# October30 native-copy source closure
+
+Milestone:QD_NATIVE_COPY_ACCEPTANCE_CLOSURE_V1_SOURCE_AND_DISPOSABLE_VALIDATION_COMPLETE
+Status:223_PASS_0FAIL_0SKIP;ORIGINAL_FAILURES_AND_CACHE_VARIANCE_PRESERVED;NO_NEW_FULL_NATIVE_COPY;PAPER_NO
+Evidence:docs/QD_NATIVE_COPY_ACCEPTANCE_CLOSURE_V1_2026-10-30.md. Bounded diagnostic head/tail+raw digest preserves real refusal; pre-test declarations bind exact owned negative hardlink pair, parent identity/full alias counts, unknown/outside/substituted links refuse. Physical copier/source plan unchanged. Worker/supervisor accounting preserve primary errors; caches/TEMP confined and lint --no-cache. Final audited fixture223pass11.66s;Ruffpass;15.907s/2458entries3243965logicalbytes13311933conservativeallocationbytes including finalresult. One intentional outside write denied beforecreation; no unexpected denial; repo caches/original evidence/full candidate metadata unchanged. Genuine retained D-interpreter read-only disposable-schema refusal visible. Original10204 hashes/namespace/NTFS-ID components/linkcounts confirmed unchanged. Original2nativefailures+cachevariance retained; interim null-device/WindowsID/defaultroot errors fixed; digest-only metadata mismatch remains unattributed, full rows now preserved/two later comparisons pass. Historical V1 proposal unchanged; unapproved V2 hash09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e; exact10-source manifest. No provider/financial/WindowsTime/activeinstall/Genesis changes;21decisions/sevenphases preserved.
+Next action:Soleoperator review source closure and unapproved V2 pins. No full copy needed for source repairs; fresh bounded authorization/full execution required only to certify revised full native harness uninterrupted scope-compliance. Old grant consumed. Actual unselected copy, selector/promotion, real resource/current custody, fresh clock/currentresearch/executableIEX, actual financialStop<=8s/dashboard/restart and PAPER commissioning remain separately gated. No operational authority requested or assumed.
+
+
 # October30 native copy checkpoint
 
 Milestone:QD_NATIVE_INSTALL_ADAPTER_DISPOSABLE_V1_NATIVE_COPY_AND_FINAL_AUDIT_VERIFIED

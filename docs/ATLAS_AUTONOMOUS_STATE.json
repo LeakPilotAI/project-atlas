@@ -1,4 +1,62 @@
 {
+  "native_copy_acceptance_closure_v1_20261030": {
+  "report": "docs/QD_NATIVE_COPY_ACCEPTANCE_CLOSURE_V1_2026-10-30.md",
+  "base_commit": "5da418094ea58544b2abcb03f539a468519135a0",
+  "source_complete": true,
+  "full_native_copy_executed": false,
+  "tests": {
+    "passed": 223,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 11.66,
+    "new_cases": 30,
+    "superseded_bare_whitelist_cases": 3,
+    "scope": "OFFLINE_FIXTURES_AND_GENUINE_READ_ONLY_RETAINED_DISPOSABLE_REFUSAL",
+    "full_native_copy_executed": false,
+    "native_financial_publications": 0,
+    "provider_connections": 0,
+    "unexpected_python_write_denials": 0,
+    "intentional_outside_write_denied": 1,
+    "old_evidence_and_repo_caches_unchanged": true,
+    "ruff_passed": true
+  },
+  "final_fixture": "logs/diagnostics/qd-native-copy-closure-v1-6be275cc068b",
+  "scope": {
+    "seconds": 15.907,
+    "entries": 2458,
+    "files": 1190,
+    "directories": 1268,
+    "logical_bytes": 3243965,
+    "allocation_upper_bound_bytes": 13311933
+  },
+  "repairs": [
+    "BOUNDED_TYPED_CHILD_DIAGNOSTIC_HEAD_TAIL_DIGEST",
+    "PREDECLARED_EXACT_TEST_ALIAS_GROUPS_AND_PARENT_ID",
+    "SHARED_ACCOUNTING_PRESERVES_PRIMARY_ERROR",
+    "CONFINED_ENVIRONMENT_NO_CACHE_LINT",
+    "EXACT_ACCOUNTING_INCLUDES_FINAL_RESULT",
+    "CONSUMED_GRANT_REFUSAL_AND_ORIGINAL_DEADLINE_BINDING"
+  ],
+  "historical_native_evidence_preserved": true,
+  "historical_native_scope_pass_not_relabelled": true,
+  "original_cache_variance_not_waived": true,
+  "intermediate_current_failures_preserved": [
+    "NULL_DEVICE_LINT_GROUPING_SETUP",
+    "WINDOWS_PARAMETER_ID_AND_CAPTURED_DEFAULT_ROOT",
+    "UNATTRIBUTED_DIGEST_ONLY_METADATA_COMPARISON"
+  ],
+  "metadata_finding": "Individual earlier baseline rows unavailable; raw finding retained. Original10204hashes/sizes/namespace/ID-components/links intact; complete metadata comparisons passed twice subsequently.",
+  "current_v2_proposal": "docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V2_2026-10-30.json",
+  "v2_canonical_sha256": "09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e",
+  "historical_v1_proposal_unchanged": true,
+  "source_manifest": "docs/QD_NATIVE_COPY_CLOSURE_SOURCE_MANIFEST_V1_2026-10-30.json",
+  "operational_authorization": false,
+  "financial_activation": false,
+  "provider_connection": false,
+  "windows_time_change": false,
+  "genesis_access": false,
+  "native_rerun_condition": "Fresh bounded grant/run required only to claim revised complete native harness uninterrupted scope-compliance; no such claim or execution now."
+},
   "native_install_adapter_disposable_v1_20261030": {
   "report": "docs/QD_NATIVE_INSTALL_ADAPTER_ACCEPTANCE_V1_2026-10-30.md",
   "base_commit": "c2f476ace1f1144e5e937e321f7e095fe92a42a8",
@@ -63,41 +121,35 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_NATIVE_INSTALL_ADAPTER_DISPOSABLE_V1_NATIVE_BEHAVIOR_VERIFIED_SCOPE_VARIANCE_RETAINED",
+  "last_verified_task": "QD_NATIVE_COPY_ACCEPTANCE_CLOSURE_V1_SOURCE_COMPLETE_223_PASS_NO_FULL_NATIVE_RERUN",
   "next_eligible_tasks": [
-  "OPERATOR_REVIEW_UNSELECTED_ACTUAL_CODE_COPY_SCOPE_AND_RETAINED_FINDINGS"
+  "SOLE_OPERATOR_REVIEW_SOURCE_CLOSURE_AND_UNAPPROVED_V2_PINS"
 ],
   "blocked_tasks": {
-  "PERSONAL_LOCAL_INSTALLATION": "Shared physical copier genuine native behavior verified in one approved disposable root; final native identity/ACL/hash/namespace readback passed.193+9with6overlap=196distinct regressions pass. Two harness failures and two repo lint-cache entry refreshes outside root retained; no full scope-compliance PASS. No operational D target, selector, shortcut, service, enrollment or provider activation. Exact638source package and three adapter pins unchanged. Next sole-operator review findings and separately authorize pinned unselected actual-code copy with genuine fresh clock and actual-path installed verifier; promotion remains separate. ControlCenter financial Stop/dashboard/restart and current research/resources remain gates.",
+  "PERSONAL_LOCAL_INSTALLATION": "Diagnostic/negative-probe/cache-accounting source closure validated223pass0fail0skip; genuine retained interpreter read-only disposable-schema refusal confirmed. Physical copier/source plan unchanged; all original10204file hashes/namespace/ID-components/linkcounts intact. Full candidate metadata and old evidence/repo caches unchanged in final runs. Original native failures/cachevariance preserved, no retroactive scope PASS. No new full copy. V2 proposal09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e is unapproved and current CLI pin path; V1 unchanged. Fresh full-native authorization needed only for revised full-harness uninterrupted native compliance claim. Actual D code copy/promotion/selection not authorized; real resource/custody/currentdata/clock and actual ControlCenter financialStop/dashboard/restart remain.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
   "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
   "PERSONAL_BOUNDED_START": "Installed genuine standard-user/nonAppContainer clock accepted196ms at07:25:21.7872031Central; access blocker resolved for candidate, no administrator runtime/ACL/settings change needed. Capability revoked and process exited; fresh acquisition mandatory. AppContainer error5 preserved as confined-context failure, not ordinary-user defect. Current acceptedresearch/executableIEX/custody and exact operationalrelease enrollment/ControlCenter acceptance stillpending. This directive forbids PAPER startup/promotion/providers/inception.",
   "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Actual disposable native candidate entry/partial/shutdown/full/replay/audit/ACK/drain/read-only restart verified. No operational financial root or account accessed/initialized; syntheticreceipt/authority cannot enter operational path. Actual activation/inception/current custody not executed."
 },
   "latest_tests": {
-  "passed": 196,
+  "passed": 223,
   "failed": 0,
   "skipped": 0,
-  "new_cases": 9,
-  "scope": "ONE_BOUNDED_NATIVE_COPY_AND_OFFLINE_REGRESSIONS",
-  "initial_regressions": {
-    "passed": 193,
-    "seconds": 8.45
-  },
-  "guard_followup": {
-    "passed": 9,
-    "seconds": 0.5,
-    "overlap": 6
-  },
-  "harness_failures_retained": 2,
-  "full_scope_compliance_pass": false,
-  "lint_cache_write_variance": true,
-  "operational_installations": 0,
-  "financial_services_started": 0,
-  "provider_connections": 0
+  "seconds": 11.66,
+  "new_cases": 30,
+  "superseded_bare_whitelist_cases": 3,
+  "scope": "OFFLINE_FIXTURES_AND_GENUINE_READ_ONLY_RETAINED_DISPOSABLE_REFUSAL",
+  "full_native_copy_executed": false,
+  "native_financial_publications": 0,
+  "provider_connections": 0,
+  "unexpected_python_write_denials": 0,
+  "intentional_outside_write_denied": 1,
+  "old_evidence_and_repo_caches_unchanged": true,
+  "ruff_passed": true
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Review docs/QD_NATIVE_INSTALL_ADAPTER_ACCEPTANCE_V1_2026-10-30.md and unchanged pinned unselected-code proposal. Native copy10204files903dirs260369081bytes/143.406s; finalnativeaudit395.922s; artifactclose515.688s/14347entries266908072logicalbytes325673384conservativeallocationbytes. One-run grant CONSUMED; no more native tests or fixture writes. Preserve two harness failures and repo lint-cache write variance; subsequent lint --no-cache. Soleoperator may separately authorize exact unselected real D-code copy, not selection/promotion/provider/account/PAPER. Current resource/custody/research/executableIEX/clock and actual financial Stop<=8s/dashboard/restart acceptance still required; PAPER NO, production NO-GO.",
+  "exact_next_action": "Review docs/QD_NATIVE_COPY_ACCEPTANCE_CLOSURE_V1_2026-10-30.md and ten-source closure manifest.223pass0fail0skip11.66s;finalfixture15.907s2458entries3243965logicalbytes13311933allocationbound includingresult. One intentional outside write blocked; cache/evidence/candidate metadata unchanged. Original2nativefailures/cachevariance remain; intermediate digest-only metadata mismatch unattributed but originalhashes/IDs intact and full-row comparisons pass. No full native copy repeated. Old grant consumed. New V2 proposal09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e is review-only; no operational authorization requested/assumed. Source fixes do not require recopy; a revised whole-native uninterrupted-compliance claim needs a fresh bounded grant/run. All actual install/selection/financial/provider/PAPER gates stay closed; sole operator, no enterprise reviewers.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
