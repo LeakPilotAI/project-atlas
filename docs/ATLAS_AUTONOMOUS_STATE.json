@@ -1,4 +1,51 @@
 {
+  "unselected_operational_code_copy_v1_20261030": {
+  "report": "docs/QD_UNSELECTED_OPERATIONAL_CODE_COPY_PREFLIGHT_2026-10-30.md",
+  "base_commit": "ddc1c886eb6cb43a248cb5e53a9c0611335ffc78",
+  "authorization": "P-QD-UNSELECTED-OPERATIONAL-CODE-COPY-V1",
+  "operator_v2_confirmation_received": true,
+  "proposal": "docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V2_2026-10-30.json",
+  "proposal_canonical_sha256": "09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e",
+  "initial_v1_mismatch_preserved": true,
+  "current_adapter_pins_match": true,
+  "intended_release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+  "destination": "D:/AtlasRuntime/releases/2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+  "copy_started": false,
+  "copy_grant_consumed": false,
+  "installation_files": 0,
+  "installation_directories": 0,
+  "copied_bytes": 0,
+  "intent_created": false,
+  "receipt_created": false,
+  "completion_ack_created": false,
+  "native_installed_readback": "NOT_EXECUTED",
+  "clock": {
+    "status": "REFUSED",
+    "reason": "CLOCK_STATUS_QUERY_FAILED_SERVICE_NOT_STARTED_0x80070426",
+    "service": "Stopped",
+    "startup": "Manual",
+    "configured_type": "NTP",
+    "configured_source": "time.windows.com,0x9",
+    "uncertainty_ms": null,
+    "evidence_age_seconds": null,
+    "threshold_ms": 1000,
+    "max_age_seconds": 120,
+    "normal_user": true,
+    "elevated": false,
+    "appcontainer": false,
+    "capability_accepted": false,
+    "system_changes": 0
+  },
+  "clock_private_evidence": "logs/diagnostics/qd-unselected-operational-code-copy-clock-preflight-v1-20261030.json",
+  "regression_tests_run": 0,
+  "historical_closure_passes_preserved": 223,
+  "selected_release_written": false,
+  "selected_release_integrity_reaudit": "NOT_EXECUTED_AFTER_MANDATORY_CLOCK_STOP",
+  "financial_actions": 0,
+  "provider_connections": 0,
+  "genesis_access": false,
+  "required_next_authorization": "BOUNDED_EXISTING_W32TIME_START_ONLY_NO_SETTINGS_SOURCE_STARTUP_OR_RESYNC_CHANGE"
+},
   "native_copy_acceptance_closure_v1_20261030": {
   "report": "docs/QD_NATIVE_COPY_ACCEPTANCE_CLOSURE_V1_2026-10-30.md",
   "base_commit": "5da418094ea58544b2abcb03f539a468519135a0",
@@ -121,12 +168,12 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_NATIVE_COPY_ACCEPTANCE_CLOSURE_V1_SOURCE_COMPLETE_223_PASS_NO_FULL_NATIVE_RERUN",
+  "last_verified_task": "P_QD_UNSELECTED_OPERATIONAL_CODE_COPY_V1_PREFLIGHT_CLOCK_REFUSED_NO_COPY",
   "next_eligible_tasks": [
-  "SOLE_OPERATOR_REVIEW_SOURCE_CLOSURE_AND_UNAPPROVED_V2_PINS"
+  "SEPARATE_OPERATOR_AUTHORIZATION_BOUNDED_W32TIME_START_NO_SETTINGS_NO_RESYNC"
 ],
   "blocked_tasks": {
-  "PERSONAL_LOCAL_INSTALLATION": "Diagnostic/negative-probe/cache-accounting source closure validated223pass0fail0skip; genuine retained interpreter read-only disposable-schema refusal confirmed. Physical copier/source plan unchanged; all original10204file hashes/namespace/ID-components/linkcounts intact. Full candidate metadata and old evidence/repo caches unchanged in final runs. Original native failures/cachevariance preserved, no retroactive scope PASS. No new full copy. V2 proposal09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e is unapproved and current CLI pin path; V1 unchanged. Fresh full-native authorization needed only for revised full-harness uninterrupted native compliance claim. Actual D code copy/promotion/selection not authorized; real resource/custody/currentdata/clock and actual ControlCenter financialStop/dashboard/restart remain.",
+  "PERSONAL_LOCAL_INSTALLATION": "ONE unselected actual-code copy authorized; V1/current installer mismatch stopped first, then soleoperator explicitly authorized existing V2 pins09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e with identical app archive/dest/limits/exclusions. Fresh unchanged LocalWindowsClock refused serviceStopped0x80070426 in normal nonadmin/nonAppContainer context. DirectreadW32TimeStopped/Manual/NTP/time.windows.com,0x9. No qualifying uncertainty/age, no settings/start/resync. No destination/intent/receipt/ACK/nativecopy;grantunused. Separate boundedW32Time start authority required before freshclock and remaining native/resource/selected-release/source checks. No promotion/account/provider/financial/PAPER authority.",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
   "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
   "PERSONAL_BOUNDED_START": "Installed genuine standard-user/nonAppContainer clock accepted196ms at07:25:21.7872031Central; access blocker resolved for candidate, no administrator runtime/ACL/settings change needed. Capability revoked and process exited; fresh acquisition mandatory. AppContainer error5 preserved as confined-context failure, not ordinary-user defect. Current acceptedresearch/executableIEX/custody and exact operationalrelease enrollment/ControlCenter acceptance stillpending. This directive forbids PAPER startup/promotion/providers/inception.",
@@ -149,7 +196,7 @@
   "ruff_passed": true
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Review docs/QD_NATIVE_COPY_ACCEPTANCE_CLOSURE_V1_2026-10-30.md and ten-source closure manifest.223pass0fail0skip11.66s;finalfixture15.907s2458entries3243965logicalbytes13311933allocationbound includingresult. One intentional outside write blocked; cache/evidence/candidate metadata unchanged. Original2nativefailures/cachevariance remain; intermediate digest-only metadata mismatch unattributed but originalhashes/IDs intact and full-row comparisons pass. No full native copy repeated. Old grant consumed. New V2 proposal09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e is review-only; no operational authorization requested/assumed. Source fixes do not require recopy; a revised whole-native uninterrupted-compliance claim needs a fresh bounded grant/run. All actual install/selection/financial/provider/PAPER gates stay closed; sole operator, no enterprise reviewers.",
+  "exact_next_action": "Mandatory STOP without copy recorded in docs/QD_UNSELECTED_OPERATIONAL_CODE_COPY_PREFLIGHT_2026-10-30.md. Current V2 ONE unselected operational-code-copy grant explicitlyconfirmed and UNUSED; do not reprompt for V1/V2. Need separate existing W32Time start permission, unchangedManual/time.windows.com,0x9, noresync/config/settings; observe<=180s, administrator permission only if supplied. Genuine clock uncertainty<=1000ms/evidenceage<=120s mustpass, then sameunused grant can continue remaining exact package/native resource/selected-release/clock/source admission and actual reviewed adapter. No service action authorized now. No copy/native installedreadback/receipt/ACK/regression reruns done; files0dirs0bytes0. Historical223tests and priornativefailures/cachevariance/metadataanomaly preserved. No selection/promotion/provider/account/PAPER/Genesis change;productionNO-GO.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
