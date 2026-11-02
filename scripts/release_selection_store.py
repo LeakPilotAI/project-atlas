@@ -21,7 +21,9 @@ class NativeSelectionStore:
     def disposable(cls, *, root, native_root):
         """Explicit native fixture domain; never operational selector authority."""
         path = Path(root).absolute()
-        repo = Path(__file__).resolve().parents[1]
+        # The disposable namespace stays the same when this module is installed
+        # inside a fixture support package; never infer a new workspace there.
+        repo = Path("D:/Work/Project Atlas")
         relative = path.relative_to(repo / "logs/diagnostics")
         if (
             not relative.parts[0].startswith("qd-selector-v1-native-")

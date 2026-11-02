@@ -1,13 +1,18 @@
 # Selected immutable release only. No legacy fallback, providers or financial Start.
 function Open-AtlasInstalledNonfinancialDashboard {
-    param([object]$Binding = $null, [switch]$Approved)
+    param([object]$Binding = $null, [switch]$Approved, [switch]$Disposable)
     if (-not $Approved) { throw 'EXPLICIT_NONFINANCIAL_DESKTOP_AUTHORIZATION_REQUIRED' }
     if ($script:installedNonfinancialOwner) { throw 'OWNED_RUNTIME_MUST_BE_RECONCILED_BEFORE_RESTART' }
     if ($script:installedNonfinancialLastFailure) { throw 'INSTALLED_NONFINANCIAL_RECONCILIATION_REQUIRED' }
     $fields = @('domain','head','native_root','release','requests','schema','seconds','support_sha256')
+    $version2 = $null -ne $Binding -and $Binding.schema -ceq 'QD_NONFINANCIAL_DESKTOP_BINDING_V2'
+    if ($version2) { $fields += @('deployment_sha256','support_receipt_sha256') }
+    if ($Disposable) { $fields += @('fixture_base') }
+    $fields = @($fields | Sort-Object)
+    $domain = if ($Disposable) { 'DISPOSABLE' } else { 'WINDOWS_LOCAL' }
     if ($null -eq $Binding -or
         (@($Binding.PSObject.Properties.Name | Sort-Object) -join ',') -cne ($fields -join ',') -or
-        $Binding.schema -cne 'QD_NONFINANCIAL_DESKTOP_BINDING_V1' -or $Binding.domain -cne 'WINDOWS_LOCAL' -or
+        $Binding.schema -cnotin @('QD_NONFINANCIAL_DESKTOP_BINDING_V1','QD_NONFINANCIAL_DESKTOP_BINDING_V2') -or $Binding.domain -cne $domain -or
         $Binding.release -cnotmatch '^[a-f0-9]{40}$' -or $Binding.head -cnotmatch '^[a-f0-9]{64}$' -or
         $Binding.support_sha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'EXACT_NONFINANCIAL_DESKTOP_BINDING_REQUIRED' }
     foreach ($number in @($Binding.seconds,$Binding.requests)+@($Binding.native_root)) {
@@ -20,11 +25,20 @@ function Open-AtlasInstalledNonfinancialDashboard {
         @($Binding.native_root | Where-Object { $_ -lt 0 -or $_ -gt [uint32]::MaxValue }).Count) {
         throw 'BOUNDED_NONFINANCIAL_DESKTOP_REQUIRED'
     }
-    $support = "D:\AtlasRuntime\launchers\$($Binding.support_sha256)"
+    $base = 'D:\AtlasRuntime'
+    if ($Disposable) {
+        if (-not $version2 -or $Binding.fixture_base -cnotmatch '^D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-selector-v1-native-[a-zA-Z0-9-]+\\[a-zA-Z0-9-]+$') {
+            throw 'EXACT_DISPOSABLE_DESKTOP_SCOPE_REQUIRED'
+        }
+        $base=$Binding.fixture_base
+    }
+    $support = Join-Path $base "launchers\$($Binding.support_sha256)"
     if ($PSScriptRoot -ine (Join-Path $support 'scripts\windows')) {
         throw 'INSTALLED_DESKTOP_ADAPTER_REQUIRED_NO_WORKSPACE_FALLBACK'
     }
-    $release = "D:\AtlasRuntime\releases\$($Binding.release)"
+    if (-not $version2 -or $Binding.deployment_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+        $Binding.support_receipt_sha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'ACCEPTED_SUPPORT_DEPLOYMENT_PINS_REQUIRED' }
+    $release = Join-Path $base "releases\$($Binding.release)"
     $python = Join-Path $release 'python\python.exe'
     $entry = Join-Path $support 'scripts\installed_nonfinancial_launcher.py'
     if (-not (Test-Path -LiteralPath $python -PathType Leaf) -or -not (Test-Path -LiteralPath $entry -PathType Leaf)) {
@@ -32,8 +46,10 @@ function Open-AtlasInstalledNonfinancialDashboard {
     }
     $info = New-Object System.Diagnostics.ProcessStartInfo
     $info.FileName = $python
-    $info.Arguments = '-I -B "'+$entry+'" --execute-approved-nonfinancial --release '+$Binding.release+
+    $execution = if ($Disposable) { '--execute-disposable-acceptance' } else { '--execute-approved-nonfinancial' }
+    $info.Arguments = '-I -B "'+$entry+'" '+$execution+' --release '+$Binding.release+
         ' --expected-head '+$Binding.head+' --support-sha256 '+$Binding.support_sha256+
+        ' --deployment-sha256 '+$Binding.deployment_sha256+' --support-receipt-sha256 '+$Binding.support_receipt_sha256+
         ' --native-root '+($Binding.native_root -join ' ')+' --seconds '+$Binding.seconds+' --requests '+$Binding.requests
     $info.WorkingDirectory=$release
     $info.UseShellExecute=$false
@@ -55,14 +71,24 @@ function Open-AtlasInstalledNonfinancialDashboard {
         $line=$process.StandardOutput.ReadLineAsync()
         if (-not $line.Wait(180000)) { throw 'INSTALLED_NONFINANCIAL_STARTUP_TIMEOUT' }
         $ready=$line.Result | ConvertFrom-Json
-        if ($process.HasExited -or $ready.schema -cne 'QD_INSTALLED_NONFINANCIAL_CONTROLLER_V1' -or
-            $ready.controller.pid -ne $owner.Pid -or $ready.controller.created -ne $owner.Created -or
-            $ready.controller.image -ine $owner.Image -or $owner.Image -ine $python -or
-            $ready.dashboard.release -cne $Binding.release -or $ready.dashboard.head -cne $Binding.head -or
-            $ready.dashboard.url -cnotmatch '^http://127\.0\.0\.1:[0-9]+/$' -or
-            $ready.dashboard.mode -cne 'INSTALLED_NONFINANCIAL_ONLY' -or
-            $ready.dashboard.providers -ne $false -or $ready.dashboard.financial_writers -ne $false -or
-            $ready.dashboard.trading -ne $false) { throw 'OWNED_INSTALLED_DESKTOP_READINESS_REFUSED' }
+        $expectedMode=if ($Disposable) { 'DISPOSABLE_NONFINANCIAL_ONLY' } else { 'INSTALLED_NONFINANCIAL_ONLY' }
+        $checks=[ordered]@{
+            running=(-not $process.HasExited)
+            schema=($ready.schema -ceq 'QD_INSTALLED_NONFINANCIAL_CONTROLLER_V1')
+            pid=($ready.controller.pid -eq $owner.Pid)
+            created=($ready.controller.created -eq $owner.Created)
+            image=($ready.controller.image -ieq $owner.Image -and $owner.Image -ieq $python)
+            release=($ready.dashboard.release -ceq $Binding.release)
+            head=($ready.dashboard.head -ceq $Binding.head)
+            url=($ready.dashboard.url -cmatch '^http://127\.0\.0\.1:[0-9]+/$')
+            mode=($ready.dashboard.mode -ceq $expectedMode)
+            providers=($ready.dashboard.providers -is [bool] -and $ready.dashboard.providers -eq $false)
+            writers=($ready.dashboard.financial_writers -is [bool] -and $ready.dashboard.financial_writers -eq $false)
+            trading=($ready.dashboard.trading -is [bool] -and $ready.dashboard.trading -eq $false)
+            autostart=($ready.dashboard.automatic_startup -is [bool] -and $ready.dashboard.automatic_startup -eq $false)
+        }
+        $failed=@($checks.Keys | Where-Object { $checks[$_] -ne $true })
+        if ($failed.Count) { throw ('OWNED_INSTALLED_DESKTOP_READINESS_REFUSED:'+($failed -join ',')) }
         $owner.Ready=$ready.dashboard
         return $ready.dashboard # Existing UI may open this URL after verified readiness.
     } catch {

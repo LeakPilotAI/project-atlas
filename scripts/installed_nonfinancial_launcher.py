@@ -14,12 +14,16 @@ from threading import get_ident
 
 def support_entry(argv):
     """Validate the future installed tool package before any Atlas import."""
-    if "--execute-approved-nonfinancial" not in argv:
+    disposable = "--execute-disposable-acceptance" in argv
+    if "--execute-approved-nonfinancial" not in argv and not disposable:
         raise SystemExit(
             "REFUSED: explicit accepted selection and bounded nonfinancial launch authorization required."
         )
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute-approved-nonfinancial", action="store_true")
+    parser.add_argument("--execute-disposable-acceptance", action="store_true")
+    parser.add_argument("--deployment-sha256")
+    parser.add_argument("--support-receipt-sha256")
     parser.add_argument("--release", required=True)
     parser.add_argument("--expected-head", required=True)
     parser.add_argument("--native-root", required=True, nargs=3, type=int)
@@ -39,9 +43,19 @@ def support_entry(argv):
     ):
         raise ValueError("EXACT_BOUNDED_INSTALLED_LAUNCH_ARGUMENTS_REQUIRED")
     support = Path(__file__).absolute().parents[1]
-    if support != Path("D:/AtlasRuntime/launchers") / args.support_sha256:
+    base = Path("D:/AtlasRuntime")
+    if disposable:
+        base = support.parent.parent
+        try:
+            parts = base.relative_to(Path("D:/Work/Project Atlas/logs/diagnostics")).parts
+        except ValueError:
+            raise ValueError("DISPOSABLE_INSTALLED_SUPPORT_REQUIRED") from None
+        if len(parts) != 2 or not parts[0].startswith("qd-selector-v1-native-") or args.execute_approved_nonfinancial:
+            raise ValueError("DISPOSABLE_INSTALLED_SUPPORT_REQUIRED")
+    expected_support = base / "launchers" / args.support_sha256 if disposable else Path("D:/AtlasRuntime/launchers") / args.support_sha256
+    if support != expected_support:
         raise ValueError("INSTALLED_SUPPORT_ROOT_REQUIRED_NO_WORKSPACE_FALLBACK")
-    app = Path("D:/AtlasRuntime/releases") / args.release
+    app = base / "releases" / args.release if disposable else Path("D:/AtlasRuntime/releases") / args.release
     if (
         Path(sys.executable) != app / "python/python.exe"
         or Path(sys.base_prefix) != app / "python"
@@ -76,9 +90,11 @@ def support_entry(argv):
         "scripts/native_install_plan.py",
         "scripts/windows/Atlas-Installed-Nonfinancial.psm1",
     }
+    if manifest.get("schema") == "QD_NONFINANCIAL_LAUNCHER_SUPPORT_V2":
+        expected.add("scripts/support_deployment.py")
     rows = manifest.get("support_sources")
     if (
-        manifest.get("schema") != "QD_NONFINANCIAL_LAUNCHER_SUPPORT_V1"
+        manifest.get("schema") not in ("QD_NONFINANCIAL_LAUNCHER_SUPPORT_V1", "QD_NONFINANCIAL_LAUNCHER_SUPPORT_V2")
         or manifest.get("application_release") != args.release
         or type(rows) is not list
         or len(rows) != len(expected)
@@ -113,7 +129,8 @@ def support_entry(argv):
     return args
 
 
-if __name__ == "__main__" and "--execute-approved-nonfinancial" not in sys.argv[1:]:
+if (__name__ == "__main__" and "--execute-approved-nonfinancial" not in sys.argv[1:]
+        and "--execute-disposable-acceptance" not in sys.argv[1:]):
     raise SystemExit(
         "REFUSED: explicit accepted selection and bounded nonfinancial launch authorization required."
     )
@@ -214,6 +231,39 @@ print(json.dumps(dict(stage='CLOSED',financial_actions=0,provider_connections=0,
  handles_after_close=len(owner.handles)+len(owner.outputs),counts=server.counts())),flush=True)
 """
 
+# A separate explicit fixture preamble uses the same external-effect guard and
+# actual dashboard/owned Stop body. Operational paths/authority remain unchanged.
+DISPOSABLE_CHILD = r"""
+import json,os,sys,threading,time
+from pathlib import Path
+line=sys.stdin.buffer.readline(2049)
+if len(line)>2048 or not line.endswith(b'\n'):raise ValueError('DISPOSABLE_LAUNCH_INPUT_BOUND')
+request=json.loads(line);spec=request['reference'];root=Path(spec['root']);base=root.parents[1]
+parts=base.relative_to(Path('D:/Work/Project Atlas/logs/diagnostics')).parts
+if (len(parts)!=2 or not parts[0].startswith('qd-selector-v1-native-') or spec['domain']!='DISPOSABLE'
+ or root!=base/'releases'/spec['release'] or Path(sys.executable)!=root/'python/python.exe'
+ or Path(sys.base_prefix)!=root/'python' or sys.version_info[:2]!=(3,12)
+ or set(request)!={'reference','head','seconds','requests'}
+ or type(request['seconds']) is not int or not 1<=request['seconds']<=120
+ or type(request['requests']) is not int or not 1<=request['requests']<=96):raise ValueError('DISPOSABLE_INSTALLED_INTERPRETER_REQUIRED')
+if any(not Path(p).resolve().is_relative_to(root) for p in sys.path if p):raise ValueError('DISPOSABLE_FOREIGN_IMPORT')
+sys.path[:0]=[str(root/'backend'),str(root)]
+supports=list((base/'launchers').iterdir())
+if len(supports)!=1:raise ValueError('DISPOSABLE_EXACT_SUPPORT_REQUIRED')
+support=supports[0];raw=(support/'support-manifest.json').read_bytes()
+import hashlib
+if hashlib.sha256(raw).hexdigest()!=support.name:raise ValueError('DISPOSABLE_SUPPORT_PIN')
+package=json.loads(raw);row=next(r for r in package['support_sources'] if r['path']=='scripts/support_deployment.py')
+raw=(support/row['path']).read_bytes()
+if len(raw)!=row['bytes'] or hashlib.sha256(raw).hexdigest()!=row['sha256']:raise ValueError('DISPOSABLE_SUPPORT_VERIFIER_HASH')
+sys.path.insert(0,str(support))
+""" + CHILD[CHILD.index("def audit("):CHILD.index("from scripts.observation_runtime.personal_release_identity")] + r"""
+from scripts.observation_runtime import desktop_observation as app
+from scripts.observation_runtime.disposable_host_owner import observe_pid
+from scripts.support_deployment import DisposableBundleOwner
+owner=DisposableBundleOwner(spec)
+""" + CHILD[CHILD.index("server=None"):].replace("mode='INSTALLED_NONFINANCIAL_ONLY'", "mode='DISPOSABLE_NONFINANCIAL_ONLY'")
+
 
 def read_ready(child, *, seconds=180):
     """Bounded Windows pipe peek: no abandoned stdout reader thread."""
@@ -271,6 +321,25 @@ class InstalledNonfinancialLauncher:
         self.owner_thread = None
         self._stop_started = self._last_outcome = None
         self._terminal_error = None
+        self._disposable = False
+
+    @classmethod
+    def disposable(cls, *, selector):
+        from scripts.release_selection_store import NativeSelectionStore
+        from scripts.support_deployment import DisposableInstalledReleaseVerifier
+        if (type(selector) is not ReleaseSelector or selector.domain != "DISPOSABLE"
+                or type(selector.store) is not NativeSelectionStore or selector.store.domain != "DISPOSABLE"
+                or type(selector.verifier) is not DisposableInstalledReleaseVerifier
+                or getattr(selector.clock, "domain", None) != "DISPOSABLE"):
+            raise ValueError("EXACT_DISPOSABLE_NATIVE_LAUNCH_DEPENDENCIES_REQUIRED")
+        value = cls.__new__(cls)
+        value.selector = value._selector = selector
+        value.child = value.lease = value.ready = None
+        value._owned_child = value._owned_handle = value._owned_created = None
+        value.owner_thread = None
+        value._stop_started = value._last_outcome = value._terminal_error = None
+        value._disposable = True
+        return value
 
     def open(
         self,
@@ -330,7 +399,7 @@ class InstalledNonfinancialLauncher:
             }
             env.update(PYTHONDONTWRITEBYTECODE="1", PYTHONNOUSERSITE="1")
             self.child = subprocess.Popen(
-                [str(executable), "-I", "-B", "-c", CHILD],
+                [str(executable), "-I", "-B", "-c", DISPOSABLE_CHILD if self._disposable else CHILD],
                 cwd=reference["root"],
                 env=env,
                 stdin=subprocess.PIPE,
@@ -368,7 +437,7 @@ class InstalledNonfinancialLauncher:
             if (
                 len(raw) > 65536
                 or ready.get("stage") != "READY"
-                or ready.get("mode") != "INSTALLED_NONFINANCIAL_ONLY"
+                or ready.get("mode") != ("DISPOSABLE_NONFINANCIAL_ONLY" if self._disposable else "INSTALLED_NONFINANCIAL_ONLY")
                 or ready.get("release") != reference["release"]
                 or ready.get("head") != expected_head
                 or ready.get("pid") != identity["pid"]
@@ -541,9 +610,11 @@ def run_installed_entry(args, *, approved=False):
     if approved is not True:
         raise ValueError("EXPLICIT_NONFINANCIAL_ENTRY_AUTHORIZATION_REQUIRED")
     support = Path(__file__).absolute().parents[1]
-    app = Path("D:/AtlasRuntime/releases") / args.release
+    disposable = getattr(args, "execute_disposable_acceptance", False) is True
+    base = support.parent.parent if disposable else Path("D:/AtlasRuntime")
+    app = base / "releases" / args.release
     if (
-        support != Path("D:/AtlasRuntime/launchers") / args.support_sha256
+        support != base / "launchers" / args.support_sha256
         or Path(sys.executable) != app / "python/python.exe"
         or Path(sys.base_prefix) != app / "python"
     ):
@@ -553,20 +624,47 @@ def run_installed_entry(args, *, approved=False):
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
     from scripts.release_selection import NativeInstalledReleaseVerifier
     from scripts.release_selection_store import NativeSelectionStore
-
-    clock = LocalWindowsClock(
-        expected_source="time.windows.com,0x9",
-        runtime_id="qd-installed-nonfinancial-" + args.expected_head,
+    from scripts.support_deployment import (
+        SupportLease,
+        fixture_base,
+        pin,
+        safe_read,
+        sha,
+        verify_deployment,
     )
-    store = owner = None
+
+    pin(args.deployment_sha256); pin(args.support_receipt_sha256)
+    raw = safe_read(base / "support-installations" / args.support_sha256 / "receipt.json", 65536)
+    receipt = strict(raw); deployment = receipt["deployment"]
+    if sha(encoded(deployment)) != args.deployment_sha256:
+        raise ValueError("EXACT_ACCEPTED_SUPPORT_DEPLOYMENT_REQUIRED")
+    proof = verify_deployment(deployment, expected_receipt_sha256=args.support_receipt_sha256)
+    if proof["selection_id"] != args.native_root or deployment["support_manifest_sha256"] != args.support_sha256:
+        raise ValueError("ACCEPTED_SUPPORT_SELECTION_BINDING")
+    if deployment["domain"] != ("DISPOSABLE" if disposable else "WINDOWS_LOCAL"):
+        raise ValueError("SUPPORT_LAUNCH_DOMAIN_MISMATCH")
+
+    if disposable:
+        fixture_base(base)
+        from scripts.support_deployment import DisposableInstalledReleaseVerifier
+        class DisposableClock:
+            domain = "DISPOSABLE"
+            def require_operational(self, runtime):
+                return runtime
+            def revoke(self):
+                pass
+        clock = DisposableClock()
+    else:
+        clock = LocalWindowsClock(expected_source="time.windows.com,0x9", runtime_id="qd-installed-nonfinancial-" + args.expected_head)
+    store = owner = support_lease = None
     try:
-        store = NativeSelectionStore(
-            root="D:\\AtlasRuntime\\selection", native_root=args.native_root
-        )
+        support_lease = SupportLease(proof)
+        store = (NativeSelectionStore.disposable(root=base / "selection", native_root=args.native_root)
+                 if disposable else NativeSelectionStore(root="D:\\AtlasRuntime\\selection", native_root=args.native_root))
         selector = ReleaseSelector(
-            store=store, verifier=NativeInstalledReleaseVerifier(), clock=clock
+            store=store, verifier=DisposableInstalledReleaseVerifier() if disposable else NativeInstalledReleaseVerifier(), clock=clock
         )
-        owner = InstalledNonfinancialLauncher(selector=selector)
+        owner = InstalledNonfinancialLauncher.disposable(selector=selector) if disposable else InstalledNonfinancialLauncher(selector=selector)
         ready = owner.open(
             expected_head=args.expected_head,
             expected_release=args.release,
@@ -614,13 +712,17 @@ def run_installed_entry(args, *, approved=False):
             )
         print(encoded(owner.close()).decode(), flush=True)
     finally:
-        clock.revoke()
         try:
             if owner is not None and owner.child is not None:
                 finish_owned_entry(owner)
         finally:
-            if store is not None and store.owner is None:
-                store.close()
+            try:
+                if store is not None and store.owner is None:
+                    store.close()
+            finally:
+                if support_lease is not None:
+                    support_lease.close()
+                clock.revoke()
 
 
 def finish_owned_entry(owner):
@@ -660,4 +762,4 @@ def finish_owned_entry(owner):
 
 
 if __name__ == "__main__":
-    run_installed_entry(_entry_args, approved=_entry_args.execute_approved_nonfinancial)
+    run_installed_entry(_entry_args, approved=_entry_args.execute_approved_nonfinancial or _entry_args.execute_disposable_acceptance)
