@@ -10,6 +10,7 @@ from http.client import HTTPConnection
 from pathlib import Path
 
 import pytest
+from support_native_cleanup import finish_controller
 
 from scripts import support_deployment as s
 from scripts.build_support_deployment import build
@@ -112,6 +113,7 @@ def test_real_installed_powershell_open_close_restart_http_and_rollback(deployed
     child = subprocess.Popen([r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe", "-NoProfile", "-File", str(script)],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW, env=environment)
     samples, ports, identities = [], [], []
+    captured_terminal = None
     try:
         for cycle in range(2):
             ready = json.loads(read_ready(child, seconds=180)); assert ready["mode"] == "DISPOSABLE_NONFINANCIAL_ONLY"
@@ -138,22 +140,13 @@ def test_real_installed_powershell_open_close_restart_http_and_rollback(deployed
                 assert sock.connect_ex(("127.0.0.1", port)) != 0
         child.stdin.close(); child.stdin = None
         stdout, stderr = child.communicate(timeout=10)
+        captured_terminal = stdout, stderr
         assert child.returncode == 0 and not stdout and not stderr
     finally:
-        if child.poll() is None:
-            child.stdin.close() if child.stdin is not None else None
-            child.stdin = None
-            tail, errors = child.communicate(timeout=120)
-        else:
-            tail = child.stdout.read() if child.stdout is not None else b""
-            errors = child.stderr.read() if child.stderr is not None else b""
-        (d["case"] / "controller-terminal-stdout.log").write_bytes(tail)
-        (d["case"] / "controller-terminal-stderr.log").write_bytes(errors)
-        for stream in (child.stdin, child.stdout, child.stderr):
-            if stream is not None:
-                stream.close()
-        child._handle.Close()
-        store.close()
+        def record_terminal(tail, errors):
+            (d["case"] / "controller-terminal-stdout.log").write_bytes(tail)
+            (d["case"] / "controller-terminal-stderr.log").write_bytes(errors)
+        finish_controller(child, store, captured=captured_terminal, record=record_terminal)
     # Real native reopening and append-only rollback to verified UNSELECTED baseline.
     store = NativeSelectionStore.disposable(root=Path(m["selection"]), native_root=r["selection_id"])
     try:

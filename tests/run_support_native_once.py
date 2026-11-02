@@ -18,9 +18,9 @@ from ctypes import wintypes as W
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-ROOT = REPO / "logs/diagnostics/qd-selector-v1-native-support-final-20261101"
-PROPOSAL = REPO / "docs/QD_SUPPORT_DEPLOYMENT_AUTHORIZATION_PROPOSAL_V1_2026-11-01.md"
-PROPOSAL_SHA = "bf1303ec30c514c0039596d0c06259d7502973cdfaca64d35e1d1777876fece2"
+ROOT = REPO / "logs/diagnostics/qd-selector-v1-native-support-image-repair-20261102"
+PROPOSAL = REPO / "docs/QD_SUPPORT_READY_IMAGE_REVALIDATION_PROPOSAL_V1_2026-11-02.md"
+PROPOSAL_SHA = "1314f50ddf8ec3a59a5a9b8b3961f7306e2143ebd92d698d9fc297fb5800cd5e"
 MAX_SECONDS, MAX_ENTRIES, MAX_BYTES = 600, 40000, 512 * 1024**2
 TESTS = ["tests/test_support_deployment.py", "tests/test_support_deployment_native.py",
          "tests/test_installed_nonfinancial_launcher.py", "tests/test_release_selection.py",
@@ -106,9 +106,9 @@ def supervisor():
             raise ValueError("APPROVED_ROOT_ANCESTOR_REFUSED")
     if shutil.disk_usage(ROOT.parent).free < MAX_BYTES:
         raise ValueError("INSUFFICIENT_APPROVED_FIXTURE_CAPACITY")
-    m = json.loads((REPO / "docs/QD_SUPPORT_DEPLOYMENT_MANIFEST_V1_2026-11-01.json").read_bytes())
-    _, files = prepare(m, REPO / "logs/diagnostics/qd-support-deployment-reviewed-source-20261101/support-source.zip",
-                       "260438e7ca62713ce5911cf0f43c7be0ef01115dc22d4f9c3fb014cc2175bc8f")
+    m = json.loads((REPO / "docs/QD_SUPPORT_DEPLOYMENT_MANIFEST_V1_2026-11-02.json").read_bytes())
+    _, files = prepare(m, REPO / "logs/diagnostics/qd-support-deployment-reviewed-source-20261101/readiness-image-repair/support-source.zip",
+                       "7947f54e82d74079b378ad14c238dadb4259671ee7ed5c9d03e952d5d8327cd3")
     for name, raw in files.items():
         if name != "support-manifest.json" and (REPO / name).read_bytes().replace(b"\r\n", b"\n") != raw:
             raise ValueError("REVIEWED_SOURCE_CHANGED_BEFORE_RUN")
@@ -135,7 +135,7 @@ def supervisor():
     started = time.monotonic(); ROOT.mkdir(exist_ok=False)
     initial = ROOT.stat(); root_id = initial.st_dev, initial.st_ino
     result = {"schema": "QD_SUPPORT_NATIVE_SINGLE_RUN_V1", "authorization_consumed": True,
-              "base_commit": "5f92dcd185b8810d99ece2407bcd8af8a9abb763", "proposal_sha256": PROPOSAL_SHA,
+              "base_commit": "0ae3181afb3e39875ebed2d5bcd0e79e5edd522d", "proposal_sha256": PROPOSAL_SHA,
               "limits": {"seconds": MAX_SECONDS, "entries": MAX_ENTRIES, "accounted_bytes": MAX_BYTES},
               "fixture_selector_only_operator_clarified": True, "operational_effects": False,
               "forced_job_cleanup": False, "peak_entries": 0, "peak_accounted_bytes": 0}
