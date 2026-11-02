@@ -14973,11 +14973,19 @@ Evidence: docs/QD_W32TIME_RECOVERY_DEPLOYMENT_RESUME_V1_2026-11-02.md. Base4fd24
 Next action: STOP after checkpointcommit/nonforcepush/remoteverification. Operator may start only existingW32Time from administratorWindows session or separately authorize ONE elevatedstart via normalapproval; preserveManual/time.windows.com,0x9/noresync/configchanges. Then reportRunning and explicitly resume same exactnonfinancialscope afterfreshgenuineclock<=1000ms/age<=120s and allnativeidentity/ACL/receipt/ACK/resource/dependency/rollback gates. No automaticretry/provider/financial/PAPER/shortcut/Genesis authority.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: QD_READONLY_DEPLOYMENT_PREFLIGHT_W32TIME_RUNNING_CLOCK_1922MS_REFUSED
 Status: READ_ONLY_BOUNDED_CLOCK_REFUSAL;NO_DEPLOYMENT_PREFLIGHT_OR_OPERATIONAL_EFFECT;PAPER_NO;PRODUCTION_NO_GO
 Evidence: docs/QD_READONLY_DEPLOYMENT_PREFLIGHT_2026-11-02.md. Base29e69a17/branch recovered. Running/Manual/time.windows.com,0x9/NTP normalpermission read; restricted CIM/registry refusal retained, no administrator elevation. Initial installedclock UNSYNCHRONIZED; five genuine passive acquisitions7939/3921/3937/1920/1922ms refuse; whole176.072s within180. LastsubsequentWindowsstatus Leap0/Stratum5/Error0/age11.541337s/dispersion1.7754289s/delay0.0330293s/offset0.0024701s. No acceptedcapability;1000ms/120s unchanged. No service/systemtime/config/resync/installation/selection/launch/provider/financial/PAPER/Genesis actions. Full nativeapplication/support/resource/ACK/dependency/selector/rollback preflight notrun afterclockfailure. No regression suite repeated; prior224pass1harnessfailure/sixoffline and allhistory/21decisions/sevenphases/B1C1D1E1/unrelatedresearch preserved.
 Next action: STOP currentdiagnostic. Future bounded read-only clockrecheck, no service start/config correction established; only after genuineclockpass complete exact read-only deploymentpreflight. Latestprompt explicitly requires operator confirmation before installation/selection/launch. Freshclock mandatory at anylateraction; no historicalclock reuse or financialauthority.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: QD_W32TIME_PASSIVE_RECHECK_V1_INSTALLED_CLOCK_ACCEPTED_185MS_CAPABILITY_REVOKED
+Status: READ_ONLY_CLOCK_ACCEPTANCE;TEMPORARY_CAPABILITY_REVOKED;NO_OPERATIONAL_MUTATIONS;PAPER_NO;PRODUCTION_NO_GO
+Evidence: docs/QD_W32TIME_PASSIVE_RECHECK_V1_2026-11-02.md. Base2915d4794b4befcc691783b80e85ad8bb4e99f87/branch/roadmap/state recovered; unrelatedresearch hash preserved. One genuine installed D interpreter ordinary-user acquisition accepted185ms at2026-11-02T07:44:32.6181739Z, sourceage16.3538423s;collector3.639s within300, capabilityrevoked andprocess exited. Running/time.windows.com,0x9/NTP;Leap0/Stratum5/Error0;rootdispersion0.0321482s/rootdelay0.0326090s/offset0.0054892s. FollowingOSqueryage17.7904917s distinct. Initial/final/lowest185ms(onepoint), lowerthanprior1922ms/noin-run-stabilityclaim. Largestmeasuredqualityterm32.1482msdispersion;largestmodeledallowance129.324msholdover(including120msplannedvalidity). Unchanged1000ms/120s acceptancecriteria. No admin/servicecontrol/config/resync/systemtime/deployment/selection/host/provider/financial/PAPER/Genesis action. No pytest suite rerun; all priorfailures/21decisions/sevenphases/B1C1D1E1/UI/history retained.
+Next action: STOP after documentation/archivalverification/commit/nonforcepush/remotecheck. Exact reviewed READ-ONLY deploymentpreflight remains: installedapp/support/nativeidentity/ACL/receipt/ACK/dependency/namespace/resource/selector/rollback/provider-disabled/financial-isolation, withfreshgenuineclock. Operatorconfirmation required before installation/selection/launch; revokedmeasurement is historicalevidence, not startupauthority. No financial/provider/PAPER/Genesis scope.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===
