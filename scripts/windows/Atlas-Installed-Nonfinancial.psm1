@@ -1,4 +1,32 @@
 # Selected immutable release only. No legacy fallback, providers or financial Start.
+function Assert-AtlasInstalledReadyIdentity {
+    param([object]$Owner, [object]$Ready, [object]$Binding, [string]$Python, [bool]$Disposable)
+    # Process.Start returns before Windows finishes loading the executable's
+    # module list. Do not retain an early MainModule snapshot across readiness.
+    # Query again only after the controller has emitted its authenticated-origin
+    # READY record; still require exact equality with both native claim and path.
+    $Owner.Process.Refresh()
+    $Owner.Image=$Owner.Process.MainModule.FileName
+    $expectedMode=if ($Disposable) { 'DISPOSABLE_NONFINANCIAL_ONLY' } else { 'INSTALLED_NONFINANCIAL_ONLY' }
+    $checks=[ordered]@{
+        running=(-not $Owner.Process.HasExited)
+        schema=($Ready.schema -ceq 'QD_INSTALLED_NONFINANCIAL_CONTROLLER_V1')
+        pid=($Ready.controller.pid -eq $Owner.Pid)
+        created=($Ready.controller.created -eq $Owner.Created)
+        image=($Ready.controller.image -ieq $Owner.Image -and $Owner.Image -ieq $Python)
+        release=($Ready.dashboard.release -ceq $Binding.release)
+        head=($Ready.dashboard.head -ceq $Binding.head)
+        url=($Ready.dashboard.url -cmatch '^http://127\.0\.0\.1:[0-9]+/$')
+        mode=($Ready.dashboard.mode -ceq $expectedMode)
+        providers=($Ready.dashboard.providers -is [bool] -and $Ready.dashboard.providers -eq $false)
+        writers=($Ready.dashboard.financial_writers -is [bool] -and $Ready.dashboard.financial_writers -eq $false)
+        trading=($Ready.dashboard.trading -is [bool] -and $Ready.dashboard.trading -eq $false)
+        autostart=($Ready.dashboard.automatic_startup -is [bool] -and $Ready.dashboard.automatic_startup -eq $false)
+    }
+    $failed=@($checks.Keys | Where-Object { $checks[$_] -ne $true })
+    if ($failed.Count) { throw ('OWNED_INSTALLED_DESKTOP_READINESS_REFUSED:'+($failed -join ',')) }
+}
+
 function Open-AtlasInstalledNonfinancialDashboard {
     param([object]$Binding = $null, [switch]$Approved, [switch]$Disposable)
     if (-not $Approved) { throw 'EXPLICIT_NONFINANCIAL_DESKTOP_AUTHORIZATION_REQUIRED' }
@@ -65,30 +93,13 @@ function Open-AtlasInstalledNonfinancialDashboard {
     $process.StartInfo=$info
     if (-not $process.Start()) { $process.Dispose(); throw 'OWNED_NONFINANCIAL_START_REFUSED' }
     $owner=[pscustomobject]@{Process=$process;Pid=$process.Id;Created=$process.StartTime.ToUniversalTime().ToFileTimeUtc();
-        Image=$process.MainModule.FileName;Ready=$null;StopWatch=$null;InputClosed=$false;Stderr=$process.StandardError.ReadToEndAsync()}
+        Image=$null;Ready=$null;StopWatch=$null;InputClosed=$false;Stderr=$process.StandardError.ReadToEndAsync()}
     $script:installedNonfinancialOwner=$owner
     try {
         $line=$process.StandardOutput.ReadLineAsync()
         if (-not $line.Wait(180000)) { throw 'INSTALLED_NONFINANCIAL_STARTUP_TIMEOUT' }
         $ready=$line.Result | ConvertFrom-Json
-        $expectedMode=if ($Disposable) { 'DISPOSABLE_NONFINANCIAL_ONLY' } else { 'INSTALLED_NONFINANCIAL_ONLY' }
-        $checks=[ordered]@{
-            running=(-not $process.HasExited)
-            schema=($ready.schema -ceq 'QD_INSTALLED_NONFINANCIAL_CONTROLLER_V1')
-            pid=($ready.controller.pid -eq $owner.Pid)
-            created=($ready.controller.created -eq $owner.Created)
-            image=($ready.controller.image -ieq $owner.Image -and $owner.Image -ieq $python)
-            release=($ready.dashboard.release -ceq $Binding.release)
-            head=($ready.dashboard.head -ceq $Binding.head)
-            url=($ready.dashboard.url -cmatch '^http://127\.0\.0\.1:[0-9]+/$')
-            mode=($ready.dashboard.mode -ceq $expectedMode)
-            providers=($ready.dashboard.providers -is [bool] -and $ready.dashboard.providers -eq $false)
-            writers=($ready.dashboard.financial_writers -is [bool] -and $ready.dashboard.financial_writers -eq $false)
-            trading=($ready.dashboard.trading -is [bool] -and $ready.dashboard.trading -eq $false)
-            autostart=($ready.dashboard.automatic_startup -is [bool] -and $ready.dashboard.automatic_startup -eq $false)
-        }
-        $failed=@($checks.Keys | Where-Object { $checks[$_] -ne $true })
-        if ($failed.Count) { throw ('OWNED_INSTALLED_DESKTOP_READINESS_REFUSED:'+($failed -join ',')) }
+        Assert-AtlasInstalledReadyIdentity -Owner $owner -Ready $ready -Binding $Binding -Python $python -Disposable ([bool]$Disposable)
         $owner.Ready=$ready.dashboard
         return $ready.dashboard # Existing UI may open this URL after verified readiness.
     } catch {

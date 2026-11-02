@@ -1,4 +1,95 @@
 {
+  "support_native_single_run_v1_20261102": {
+  "report": "docs/QD_SUPPORT_NATIVE_SINGLE_RUN_V1_2026-11-02.md",
+  "next_proposal": "docs/QD_SUPPORT_READY_IMAGE_REVALIDATION_PROPOSAL_V1_2026-11-02.md",
+  "base_commit": "5f92dcd185b8810d99ece2407bcd8af8a9abb763",
+  "authorization": "FRESH_EXPLICIT_SINGLE_USE_CONSUMED",
+  "operator_fixture_selector_clarification": true,
+  "native_fixture": "logs/diagnostics/qd-selector-v1-native-support-final-20261101",
+  "status": "NATIVE_SUITE_FAILURE_PRESERVED_REPAIR_OFFLINE_ONLY",
+  "run": {
+    "passed": 224,
+    "failed": 1,
+    "skipped": 0,
+    "seconds": 268.86,
+    "worker_seconds": 268.953,
+    "supervised_seconds": 269.532,
+    "scope": "ONE_FRESH_NATIVE_DISPOSABLE_FULL_SUITE_CONSUMED",
+    "failure": "SECOND_OPEN_READINESS_IMAGE_PREDICATE",
+    "first_stop_seconds": 1.9351642,
+    "observed_first_stop_seconds": 1.969,
+    "restart": "REFUSED",
+    "final_stop_seconds": null,
+    "job_active_after_worker": 0,
+    "job_handles_closed": true,
+    "forced_cleanup": false,
+    "entries_including_result": 13370,
+    "logical_bytes": 264756869,
+    "accounted_bytes": 319520389,
+    "post_repair_offline": {
+      "powershell_contracts_passed": 19,
+      "powershell_contracts_failed": 0,
+      "completed_worker_refusal_passed": 1,
+      "native_repair_confirmation": false
+    },
+    "operational_effects": false
+  },
+  "native_copy": {
+    "files": 10204,
+    "directories": 903,
+    "bytes": 260369081,
+    "seconds": 165.375
+  },
+  "support_install": {
+    "seconds": 0.515,
+    "new_entries": 20,
+    "written_bytes": 167148,
+    "independent_readback": true,
+    "handles_after_close": 0
+  },
+  "filesystem_write_instrumentation": {
+    "allowed": 2936,
+    "denied": 0,
+    "whole_system_native_audit": false
+  },
+  "cleanup": {
+    "owned_images_remaining": 0,
+    "job_active": 0,
+    "handles_closed": true,
+    "first_port_probed": true,
+    "rejected_second_port_independently_probed": false
+  },
+  "cause": "IMAGE_PREDICATE_CONFIRMED_EARLY_SNAPSHOT_ORDERING_DEFECT_FIXED_CAUSAL_LINK_NOT_PROVEN",
+  "repaired_support_sha256": "5b027d7dc0853975ee751c2c83145a9820a95da28041263b3585b56a4312eccc",
+  "repaired_archive_sha256": "dc6269c8b7ff6babcf73340c5aa5987a128ae1d76e6092ce1def653814af01bf",
+  "repaired_deployment_sha256": "7947f54e82d74079b378ad14c238dadb4259671ee7ed5c9d03e952d5d8327cd3",
+  "native_repair_validation": false,
+  "further_native_runs": 0,
+  "operational_installation": false,
+  "operational_selection": false,
+  "providers": 0,
+  "financial_actions": 0,
+  "paper_sessions": 0,
+  "windows_time_changes": false,
+  "historical_evidence_preserved": true
+},
+  "retained_before_support_native_single_run_latest_tests": {
+  "passed": 209,
+  "failed": 0,
+  "skipped": 0,
+  "seconds": 13.3,
+  "test_call_seconds": 13.422,
+  "new_support_cases": 50,
+  "existing_relevant_cases": 159,
+  "scope": "SOURCE_OFFLINE_FIXTURES_NO_NATIVE_INSTALLATION_COPY",
+  "python_permitted_write_events": 2616,
+  "python_outside_write_denials": 0,
+  "fixture": "logs/diagnostics/qd-support-source-regressions-20261101-a88d4a8f",
+  "native_restart_acceptance": false,
+  "operational_effects": false,
+  "ruff_no_cache": true,
+  "compile_and_exact_package_validation": true
+},
   "support_deployment_engineering_v1_20261101": {
   "report": "docs/QD_SUPPORT_DEPLOYMENT_ENGINEERING_V1_2026-11-01.md",
   "authorization_proposal": "docs/QD_SUPPORT_DEPLOYMENT_AUTHORIZATION_PROPOSAL_V1_2026-11-01.md",
@@ -792,36 +883,46 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_SUPPORT_DEPLOYMENT_V1_SOURCE_IMPLEMENTED_NATIVE_RESTART_ACCEPTANCE_BLOCKED",
+  "last_verified_task": "QD_SUPPORT_NATIVE_SINGLE_RUN_V1_CONSUMED_IMAGE_REFUSAL_SOURCE_REPAIR_OFFLINE_ONLY",
   "next_eligible_tasks": [
-  "SOLE_OPERATOR_AUTHORIZE_ONE_FRESH_NATIVE_DISPOSABLE_SUPPORT_COPY_AND_TWO_CYCLE_VALIDATION"
+  "OPERATOR_REVIEW_REPAIRED_IMAGE_SOURCE_AND_FRESH_NATIVE_VALIDATION_PROPOSAL"
 ],
   "blocked_tasks": {
-  "PERSONAL_LOCAL_INSTALLATION": "Source support installer, manifest, receipt/ACK/native readback, selection provisioning, immutable support lease and selector CLI implemented. Prior native copy10204files903dirs and support/readback passed; first PS Close passes1.566..2.130s, second Open still readiness-refuses. Latest source209pass0fail0skip. Current named-predicate guard package not natively redeployed: automatic review twice rejected new nativecopy as needing fresh one-run grant. Operational roots/selection/shortcuts untouched. Need exact one fresh disposable validation first; conditional operational proposal is not permission. docs/QD_SUPPORT_DEPLOYMENT_ENGINEERING_V1_2026-11-01.md",
+  "PERSONAL_LOCAL_INSTALLATION": "One explicitly fresh native grant consumed; no automaticretry. 224pass1fail0skip269.532s within600s40000entries512MiB; native10204files903dirs/support independentreadback passed. FirstPSStop1.9351642s; secondOpen fails image only. AllownedJobdescendants0/no force. EarlyMainModule snapshot source defect repaired via postREADY Refresh/native image query,19offline cases and worker-reuse refusal pass; Windowscausal attribution and nativefix confirmation remain pending. Repair candidate support5b027d7d.../ZIPdc6269c8.../deployment7947f54e... source-only, not installed. Further genuine run needs a NEW explicit grant/root/config; docs/QD_SUPPORT_NATIVE_SINGLE_RUN_V1_2026-11-02.md",
   "PERSONAL_SIMULATED_INCEPTION": "QD1000simulatedUSD conditionallyapproved;notattempted. Four original financial-role roots identity/ACL unchanged and empty. No Hyperliquid account.",
   "PERSONAL_CURRENT_DATA": "Native researcharchive/sourceconsumer/source-only guards verified. Actualresearch envelope/provenance/currenthead/lease/root enrollment and current entitledinstrument/calendar/executableIEX missing. No providerconnect/currentrankingpublication. IEXphysicalclock0..1s guard corrected;historyisnotcurrent.",
   "PERSONAL_BOUNDED_START": "PAPER_NO;source-only milestone. Complete two-cycle installed nonfinancial PS restart/Stop/dashboard acceptance pending and no operational support installation. Current entitled research/executableIEX, actual native financial enrollment/current custody/writer/session, fresh genuine clock and separate commissioning authorization remain mandatory. No new operator or independent acceptance inferred from fixtures.",
   "PERSONAL_NATIVE_FINANCIAL_ACCEPTANCE": "Actual disposable native candidate entry/partial/shutdown/full/replay/audit/ACK/drain/read-only restart verified. No operational financial root or account accessed/initialized; syntheticreceipt/authority cannot enter operational path. Actual activation/inception/current custody not executed."
 },
   "latest_tests": {
-  "passed": 209,
-  "failed": 0,
+  "passed": 224,
+  "failed": 1,
   "skipped": 0,
-  "seconds": 13.3,
-  "test_call_seconds": 13.422,
-  "new_support_cases": 50,
-  "existing_relevant_cases": 159,
-  "scope": "SOURCE_OFFLINE_FIXTURES_NO_NATIVE_INSTALLATION_COPY",
-  "python_permitted_write_events": 2616,
-  "python_outside_write_denials": 0,
-  "fixture": "logs/diagnostics/qd-support-source-regressions-20261101-a88d4a8f",
-  "native_restart_acceptance": false,
-  "operational_effects": false,
-  "ruff_no_cache": true,
-  "compile_and_exact_package_validation": true
+  "seconds": 268.86,
+  "worker_seconds": 268.953,
+  "supervised_seconds": 269.532,
+  "scope": "ONE_FRESH_NATIVE_DISPOSABLE_FULL_SUITE_CONSUMED",
+  "failure": "SECOND_OPEN_READINESS_IMAGE_PREDICATE",
+  "first_stop_seconds": 1.9351642,
+  "observed_first_stop_seconds": 1.969,
+  "restart": "REFUSED",
+  "final_stop_seconds": null,
+  "job_active_after_worker": 0,
+  "job_handles_closed": true,
+  "forced_cleanup": false,
+  "entries_including_result": 13370,
+  "logical_bytes": 264756869,
+  "accounted_bytes": 319520389,
+  "post_repair_offline": {
+    "powershell_contracts_passed": 19,
+    "powershell_contracts_failed": 0,
+    "completed_worker_refusal_passed": 1,
+    "native_repair_confirmation": false
+  },
+  "operational_effects": false
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "Native validation BLOCKED by automatic approval review after two explicit rejections; do not bypass. Soleoperator decision: ONE fresh synthetic native-copy plus installed support/PS two-cycle acceptance at D:/Work/Project Atlas/logs/diagnostics/qd-selector-v1-native-support-final-20261101 (still absent),600s/40000entries/512MiB; plan<300MiB12000entries/nativecopy350s; support600s8192entries64MiB; apps90s96attempts/Stop8s. No operational effects. Diagnose secondOpen with current named readiness predicates; never label first-cycle successes complete restart acceptance. After pass and finalpin review, separately authorize exact nonfinancial operational support deployment/selection/ControlCenter/dashboard/Stop/restart/baseline rollback under conditional proposal docs/QD_SUPPORT_DEPLOYMENT_AUTHORIZATION_PROPOSAL_V1_2026-11-01.md. No providers, financial activation/inception/PAPER, WindowsTime changes or Genesis.",
+  "exact_next_action": "STOP after source/docs commit/push/remote verification. Fresh single native grant consumed:224pass1fail0skip, secondOpen image guard refused, firstStop1.9351642s. No rerun of final-20261101 root. Review source repair/new pins and docs/QD_SUPPORT_READY_IMAGE_REVALIDATION_PROPOSAL_V1_2026-11-02.md. If operator explicitly approves, configure existing watchdog for exact new image-repair-20261102 root/proposalhash/source manifest/archive pins and perform one fresh bounded native two-cycle validation,600s40000entries512MiB/Stop8s. Native confirmation required before operational support install/selection; no providers, financial inception/PAPER/WindowsTime/Genesis authority.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
