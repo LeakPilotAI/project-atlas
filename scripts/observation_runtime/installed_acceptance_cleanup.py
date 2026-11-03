@@ -16,6 +16,7 @@ from scripts.observation_runtime.disposable_host_owner import (
     observe_handle,
     observe_pid,
 )
+from scripts.observation_runtime.socket_evidence import reconcile
 
 
 def socket_cleanup(snapshot, *, address, port, stopped_ns, now_ns=None):
@@ -206,7 +207,7 @@ class AcceptanceController:
             self.refused = True
             raise
 
-    def next_cycle(self, snapshot, *, address, port):
+    def next_cycle(self, snapshot, *, address, port, observations=None):
         if self.refused or self.stop_ack is None or self.stopped_ns is None:
             raise ValueError("SECOND_OPEN_REQUIRES_VERIFIED_STOP_AND_CLEANUP")
         evidence = socket_cleanup(
@@ -215,12 +216,18 @@ class AcceptanceController:
         if not evidence["accepted"]:
             self.refused = True
             raise ValueError("SECOND_OPEN_SOCKET_OR_PROCESS_CLEANUP_UNRESOLVED")
+        crosscheck = reconcile(
+            observations, address=address, port=port, after_ns=self.stopped_ns
+        )
+        if not crosscheck["cleanup_clear"]:
+            self.refused = True
+            raise ValueError("SECOND_OPEN_REQUIRES_UNANIMOUS_FRESH_SOCKET_EVIDENCE")
         self._verify(live=True)
         self.process.stdin.write(b"NEXT\n")
         self.process.stdin.flush()
         self.stop_ack = self.stopped_ns = None
         self.stop_attempted = False
-        return evidence
+        return {**evidence, "crosscheck": crosscheck}
 
     def finish(self, *, timeout=12):
         """EOF, reap, then close handles. On timeout retain ownership; never kill."""

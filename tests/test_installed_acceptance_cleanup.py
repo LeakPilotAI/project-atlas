@@ -401,7 +401,22 @@ def test_only_complete_current_socket_and_process_evidence_admits_next(
     guard, child, _ = controller
     guard.stop()
     monkeypatch.setattr(c.time, "perf_counter_ns", lambda: 1300000000)
-    assert guard.next_cycle(snapshot(), address="127.0.0.1", port=42001)["accepted"]
+    observations = [
+        {
+            "source": source,
+            "complete": True,
+            "error": None,
+            "rows": [],
+            "query_address": "127.0.0.1",
+            "query_port": 42001,
+            "started_ns": 1_100_000_000,
+            "finished_ns": 1_200_000_000,
+        }
+        for source in ("CIM", "IP_HELPER", "NETSTAT")
+    ]
+    assert guard.next_cycle(
+        snapshot(), address="127.0.0.1", port=42001, observations=observations
+    )["accepted"]
     guard.ready("b" * 32)
     guard.stop()
     guard.finish()
@@ -442,3 +457,62 @@ def test_unverified_controller_exit_never_becomes_success(controller, code, err,
     child.err = err
     child.out = out
     assert not guard.finish()["accepted"] and child._handle.closed
+
+
+@pytest.mark.parametrize(
+    "problem",
+    [
+        "missing",
+        "native_zero",
+        "cim_zero",
+        "pid_zero",
+        "missing_owner",
+        "conflict",
+        "failed_query",
+        "stale",
+        "foreign_listener",
+    ],
+)
+def test_second_open_requires_full_unanimous_crosscheck(
+    controller, monkeypatch, problem
+):
+    guard, child, _ = controller
+    guard.stop()
+    monkeypatch.setattr(c.time, "perf_counter_ns", lambda: 1_300_000_000)
+    observations = [
+        {
+            "source": source,
+            "complete": True,
+            "error": None,
+            "rows": [],
+            "query_address": "127.0.0.1",
+            "query_port": 42001,
+            "started_ns": 1_100_000_000,
+            "finished_ns": 1_200_000_000,
+        }
+        for source in ("CIM", "IP_HELPER", "NETSTAT")
+    ]
+    if problem == "missing":
+        observations = None
+    elif problem in ("native_zero", "cim_zero"):
+        observations[1 if problem == "native_zero" else 0]["rows"] = [row(state=0)]
+    elif problem == "pid_zero":
+        for observed in observations:
+            observed["rows"] = [row(owner_pid=0)]
+    elif problem == "missing_owner":
+        observations[1]["rows"] = [row(owner_present=False, owner_pid=None)]
+    elif problem == "conflict":
+        observations[1]["rows"] = [row(state=11, owner_pid=0)]
+    elif problem == "failed_query":
+        observations[1]["error"] = "API_ERROR"
+    elif problem == "stale":
+        observations[1]["started_ns"] = 1
+    elif problem == "foreign_listener":
+        for observed in observations:
+            observed["rows"] = [row(owner_pid=99999)]
+    with pytest.raises(ValueError, match="UNANIMOUS"):
+        guard.next_cycle(
+            snapshot(), address="127.0.0.1", port=42001, observations=observations
+        )
+    assert b"NEXT\n" not in child.events
+    guard.finish()
