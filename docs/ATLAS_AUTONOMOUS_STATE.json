@@ -1,4 +1,465 @@
 {
+  "qd_v4_ownership_refusal_recovery_20261103": {
+  "evidence": {
+    "milestone": "QD-V4-OWNERSHIP-REFUSAL-RECOVERY",
+    "status": "RECOVERY_COMPLETE_BLOCKED_HISTORICAL_PARENT_AND_LAUNCH_HANDLE_UNRESOLVED",
+    "report": "docs/QD_V4_OWNERSHIP_REFUSAL_RECOVERY_2026-11-03.md",
+    "passed": 150,
+    "failed": 0,
+    "skipped": 0,
+    "new_tests": 24,
+    "suites": [
+      {
+        "xml": "final-focused.xml",
+        "passed": 24,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "xml": "adjacent.xml",
+        "passed": 126,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "initial_setup_errors": 24,
+    "initial_setup_cause": "NEW_REPORTING_PARENT_MISSING_NO_TEST_BODY_EXECUTED",
+    "historical_acceptance": "FAIL",
+    "authorization_consumed": true,
+    "installed_cycles": 0,
+    "selection_attempted": false,
+    "rollback_required": false,
+    "historical_clock_uncertainty_ms": 704,
+    "historical_clock_age_seconds": "8.5643160",
+    "clock_capability_revoked": true,
+    "native_integrity_groups_passed": 8,
+    "unclaimed_pid": 19940,
+    "historical_parent_identity": null,
+    "historical_retained_launch_handle": null,
+    "redirector_explanation": "PLAUSIBLE_NOT_PROVEN_NO_RETROACTIVE_OWNERSHIP",
+    "runtime_roster_changes": 0,
+    "allowlist_changes": 0,
+    "original_source_pins_unchanged": 128,
+    "last_verified_selector": {
+      "revision": 6,
+      "selected": null,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "fresh_operational_read_during_recovery": false
+    },
+    "original_protected_files_preserved": 17,
+    "original_selector_names": 12,
+    "new_approval_package_required_after_verified_launch_correction": true,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "raw_acceptance_hashes": {
+      "capture.py": "cfbf5ed35caa361f3befd4515cb07bad6dc086355793e349c6c92650f5d33ba9",
+      "checkpoint-result.txt": "39e26c928016ad9dd42e67f8eccbd265bf827cf16a3c600908212dea11088ac1",
+      "checkpoint_result.py": "c967006232380e935f0acf44a74b192412cdf343f0726b41418157f1d0ba41f8",
+      "clock-preflight-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "clock-preflight-stdout.log": "aea31f2cb1596fa9289c45024cd593ccb853085ee4b0077ba53f9f9be7bdd282",
+      "clock_preflight.py": "73ad0ec6d3b64c00cf4a83ad2813a0ffcbcdd3bea4e6d7819a9e30ddd862b2e2",
+      "continuation-before.bin": "835c880174887fa76abe828e79e0737488ad1308f3af9f59bf37985a4171b10f",
+      "controller.ps1": "0cdb786137aeeebd267f7158b169510006f68e910c914f8bab8a0db613f1a886",
+      "gate.py": "7b699068fb4862804dbb48fa33afdf67d568b33bec0efa2169fae065bda515e3",
+      "helper-primary-claim.json": "0e64ea1339ab002492a8e0f5b50363376b1b3bc2d3becfbcf9bfa6ee6a09867a",
+      "metadata-preflight-result.json": "0efe502d0b9583f98dc66419a06328be7e7908c05321f5e00bd1cfaedce91f42",
+      "metadata-preflight-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "metadata-preflight-stdout.log": "549ec8fd577511bf41f55a8178945413398995054557a6733d8b89e8e30ac6a9",
+      "metadata_preflight.ps1": "87f880ea454fab1c01ed96be7317bef4297fdfb6493648b8095c39976aab1b70",
+      "native-preflight-progress.json": "556a679ea04a7abd8a0ca4dec7cef983ee03ce40d2d618279d45fd2ae52ec1b9",
+      "native-preflight-result.json": "f303921e5e524c26f958beb005920c9315a45966c399c1b083dad126f5a27542",
+      "native-preflight-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "native-preflight-stdout.log": "88b91e281166a382198b36dab30d5079d177f06165e54b8c38a4532fe6bd5bc0",
+      "native_preflight.py": "992642779434ae1b54ad84ab11c6d19574a5f8b59506b4576ba639de18562194",
+      "observation-1.json": "0988a67527eb329b9367bbaac2ceae1ef25fe525848557392e1e86657b4313ee",
+      "post-abort-preservation.json": "b1c20c83d90641331e4a05624f0586ff9de8468513080bb723437a9bd0ec252d",
+      "proposal.json": "1ef77abe4c0c392b5877f5fdc1c8102f56a5c5f3cf5d321e8cc2b6db168ff604",
+      "queue-before.bin": "488db3b5aac3c78fbb9895eb57d4d9ba0588e3d8773e976b85ec00e56d8d253b",
+      "record_result.py": "996efb54fae0920f9b82166a9a5b3e00d8e63e6bf84f37b9e2771812b9a527aa",
+      "report-summary.json": "549677abac2934c073c75141985a7ca7739efbb32801260cc49146980f6edaff",
+      "restore_known_head.py": "409137d3a847f40ae23fb2b1dffa604d4de2edf3c849a462af4236f19212044e",
+      "roadmap-before.bin": "0d194828b229d5bcb3cf17cac4884d0b523694271e7e04212efccd07ddc23d1b",
+      "scope-sha256.txt": "09cd6a550498670911bad42c99fdb5a4d5decf49c78344fd0ad282eef2ca3424",
+      "single-use-claim.json": "f67ca9463bcd3950ac0954c5c02e03ba44a50118eec977fada29e4bccd739732",
+      "source-manifest.json": "4e92e55705465811106c067aebd6dcb24f96035d9af3fd44b2851b4131593140",
+      "state-before.json": "b6d034a964a46e8d2e85cd58d7e96d01b640cbd1841526c01b968423f9dffa96",
+      "static-policy-audit.json": "3737716ba200c06826dc377da8bfc909ff6b338b6b15cc00e43293bc8f6731c4",
+      "summary.json": "a80a1f358f133d7f3c08a24ae96383dd146eb5ae611c81cf39f1cce01550a9fc",
+      "supervise.py": "2b4a3ba36a78bad2e22e60e3e663b01e76b5a697a6de3c5b37a9d4246dbe0c57",
+      "supervisor-result.json": "f38eb1ac62997d17d177aa3413ec1c4fd581d2d157fb1cbb27eff791d6e08123",
+      "worker-result.json": "32abba8ee9d6a075fbf37e1059e8d7fcbdac5a3bc4c1ae88f3bf9152ebdc83f5",
+      "worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "worker-stdout.log": "a5140d84adeb4383e0de935c6b327bd8d6da3b3d0a8ce7b0baa7c0d85da9f62c",
+      "worker.py": "6e82c786796e84b87f830513cc58fbcc0640ed4d4696a3532fe0992019296d88"
+    }
+  },
+  "prior_latest_tests": {
+    "status": "FAIL_METADATA_UNCLAIMED_SUPERVISOR_LAUNCH_PROCESS_NO_SELECTION",
+    "starting_commit": "f9bc9692a77224ba27dbae0a963c08995e6685f4",
+    "scope_sha256": "737d3f6fea4cda5d60194ea03f619d5d778acd0b6fcf60ebfde78cb815b8dd84",
+    "source_pins": 128,
+    "source_pins_unchanged": true,
+    "authorization_consumed": true,
+    "attempts": 1,
+    "retries": 0,
+    "clock": {
+      "accepted": true,
+      "uncertainty_ms": 704,
+      "sync_age_seconds": "8.5643160",
+      "source": "time.windows.com,0x9",
+      "leap": 0,
+      "stratum": 5,
+      "last_sync_error": 0,
+      "root_dispersion_seconds": "0.2987465",
+      "root_delay_seconds": "0.0310017",
+      "phase_offset_seconds": "-0.2631030",
+      "capability_revoked": true,
+      "not_permanent_clearance": true
+    },
+    "native_preflight": {
+      "passed": true,
+      "groups": 8,
+      "seconds": 20.815169199999218,
+      "application": {
+        "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+        "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+        "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+        "files": 10204,
+        "directories": 903,
+        "bytes": 260369081,
+        "verified_required_dependencies": 15
+      },
+      "support_receipt_sha256": "01bb0f6efb04c706e594acb8c63759ee682e4bce2f2062882015edff36d6ce91",
+      "baseline": {
+        "resource_exists": true,
+        "records": 6,
+        "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+        "selected": null,
+        "rollback_target_head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc"
+      }
+    },
+    "metadata": {
+      "passed": false,
+      "error": "EXISTING_ATLAS_PROCESS_REQUIRES_OWNERSHIP_REVIEW",
+      "declared_helper_pids": [
+        24704,
+        28996,
+        21700
+      ],
+      "unexpected_pid": 19940,
+      "unexpected_image": "D:\\Work\\Project Atlas\\backend\\.venv\\Scripts\\python.exe",
+      "all_declared_scalar_pid_creation_image_comparisons_passed": true
+    },
+    "preselection_socket_cut": "NOT_REACHED",
+    "selection_revision_7": "NOT_ATTEMPTED",
+    "opens_attempted": 0,
+    "browser_ack_timings": [],
+    "stop_timings": [],
+    "dashboard": "NOT_EXECUTED",
+    "cycle_socket_cleanup": "N/A_NO_APPLICATION_HOST_OR_PORT",
+    "rollback_revision_8": "NOT_NEEDED_NOT_ATTEMPTED",
+    "final_selector": {
+      "revision": 6,
+      "selected": null,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "native_verified_in_preflight": true,
+      "post_abort_bytes_and_12_names_unchanged": true,
+      "post_abort_native_reopen": false
+    },
+    "cleanup": {
+      "job_active_processes": 0,
+      "job_and_worker_handles_closed": true,
+      "known_process_ids_still_present": 0,
+      "forced_termination": false,
+      "blank_test_browser_tabs_closed": 1,
+      "installed_browser_navigations": 0,
+      "original_receipt_ack_journal_and_selector_files_unchanged": 17,
+      "later_cleanup_does_not_retrofit_ownership_acceptance": true
+    },
+    "execution_resources": {
+      "seconds": 26.864379099999496,
+      "conservatively_charged_entries_before_result": 66,
+      "logical_bytes_before_result": 2150559,
+      "accounted_bytes_before_result": 2420895
+    },
+    "post_reporting_scope_before_summary": {
+      "entries": 73,
+      "logical_bytes": 2177651,
+      "accounted_bytes": 2476659
+    },
+    "limits": {
+      "seconds": 600,
+      "entries": 8192,
+      "accounted_bytes": 67108864
+    },
+    "runtime_source_changes": 0,
+    "new_pytest_executions": 0,
+    "prior_303_and_421_pass_evidence_preserved": true,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "support_reinstallation": false,
+    "journal_reset": false,
+    "windows_time_or_network_changes": 0,
+    "desktop_shortcut_changes": 0,
+    "genesis_changes": 0,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "post_reporting_scope_after_summary": {
+      "entries": 73,
+      "logical_bytes": 2177651,
+      "accounted_bytes": 2476659
+    },
+    "static_release_policy_audit": {
+      "source_files": 653,
+      "issues": 0,
+      "operational_acceptance": false,
+      "startup_authorized": false
+    }
+  },
+  "prior_blocked_tasks": {
+    "INSTALLED_NONFINANCIAL_ACCEPTANCE": "FAILED before selection: metadata roster containsone unclaimedPID19940 Dsourcevenvpython runningexactapproved supervisorcommand. Three declaredhelpers24704/28996/21700 passnativePIDcreationimage checks; unclaimedcount1guardrefuses. No installedOpen/browserACK/Stop1/2. No latecleanup canretrofit accept.",
+    "FRESH_ACCEPTANCE_AUTHORITY": "CONSUMED: one V4scope737d3f6f/f9bc9692 attempt. Preserveclaim/root/results/source128. No reset/reinstall/reuse/retry. Source launch-roster correction, proof, NEW exactpackage/root/currentbaselineand NEW explicit single-use grant required.",
+    "CURRENT_SELECTOR_AND_INSTALLATION": "Nativepreflight8groups passed2c/5b/receiptACKjournal/r6UNSELECTEDc9bc240c. Nooperationalmutations attempted and no newr7/r8. Postabort17originalfilehashes and12selectornames unchanged; fourrecordedPIDsabsent/Job0/handlesclosed/noforce. Postabortnativeidentityreopen NOT performed, no claimbeyondbyte/namespacepreservation.",
+    "CLOCK_AND_DATA": "Genuineinstalled704ms/age8.5643160s acceptedthenrevoked; RunningAuto/NTP/sourcecorrect. Historicaltemporarysample isnotcurrentclearance. Freshunchanged<=1000ms120s/acceptedsource requiredatfuturepublication. No service/config/resync/data-provider actions.",
+    "FINANCIAL_COMMISSIONING": "PAPERNO/productionNO-GO. No financialaccount read/inception/writer/provider/realorder/PAPER activation; B1C1D1E1/21decisions preserved. Financialcurrentresearch/custody/executableIEX/calendar/risk/nativeauthority and separately scoped financialacceptance remainrequired."
+  },
+  "prior_exact_next_action": "STOP after this single failedV4attempt report/archive/recovery/commit/nonforcepush/remoteverify. Guard correctly refused unclaimedlaunchPID19940 beforeselection; do not patchclaimedroster orretry underconsumedgrant. NextSOURCE-ONLYlaunchboundary review/test must retain/verify originalwrapperPIDcreationimagehandle/role or exactreviewedwrapper-free launch; no commandline/parentPID blanketexclusion. Fresh corrected scope/source/root/actualr6/fullnativeclockpreflight and NEWexplicitgrant required before anotherinstalledOpen. Original V4claim/source128/metadatafailures/17protectedhashes/selector12names retained. docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_RESULT_V4_2026-11-03.md",
+  "prior_last_verified_task": "QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_V4_FAILED_METADATA_UNCLAIMED_LAUNCH_PROCESS",
+  "prior_next_eligible_tasks": [
+    "SOURCE_ONLY_SUPERVISOR_VENV_LAUNCH_IDENTITY_BINDING_REVIEW_AND_OFFLINE_TESTS",
+    "ONLY_AFTER_REVIEWED_CORRECTION_AND_NEW_EXPLICIT_GRANT_FRESH_INSTALLED_ACCEPTANCE"
+  ]
+},
+  "qd_final_installed_nonfinancial_acceptance_result_v4_20261103": {
+  "status": "FAIL_METADATA_UNCLAIMED_SUPERVISOR_LAUNCH_PROCESS_NO_SELECTION",
+  "report": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_RESULT_V4_2026-11-03.md",
+  "evidence": {
+    "status": "FAIL_METADATA_UNCLAIMED_SUPERVISOR_LAUNCH_PROCESS_NO_SELECTION",
+    "starting_commit": "f9bc9692a77224ba27dbae0a963c08995e6685f4",
+    "scope_sha256": "737d3f6fea4cda5d60194ea03f619d5d778acd0b6fcf60ebfde78cb815b8dd84",
+    "source_pins": 128,
+    "source_pins_unchanged": true,
+    "authorization_consumed": true,
+    "attempts": 1,
+    "retries": 0,
+    "clock": {
+      "accepted": true,
+      "uncertainty_ms": 704,
+      "sync_age_seconds": "8.5643160",
+      "source": "time.windows.com,0x9",
+      "leap": 0,
+      "stratum": 5,
+      "last_sync_error": 0,
+      "root_dispersion_seconds": "0.2987465",
+      "root_delay_seconds": "0.0310017",
+      "phase_offset_seconds": "-0.2631030",
+      "capability_revoked": true,
+      "not_permanent_clearance": true
+    },
+    "native_preflight": {
+      "passed": true,
+      "groups": 8,
+      "seconds": 20.815169199999218,
+      "application": {
+        "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+        "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+        "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+        "files": 10204,
+        "directories": 903,
+        "bytes": 260369081,
+        "verified_required_dependencies": 15
+      },
+      "support_receipt_sha256": "01bb0f6efb04c706e594acb8c63759ee682e4bce2f2062882015edff36d6ce91",
+      "baseline": {
+        "resource_exists": true,
+        "records": 6,
+        "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+        "selected": null,
+        "rollback_target_head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc"
+      }
+    },
+    "metadata": {
+      "passed": false,
+      "error": "EXISTING_ATLAS_PROCESS_REQUIRES_OWNERSHIP_REVIEW",
+      "declared_helper_pids": [
+        24704,
+        28996,
+        21700
+      ],
+      "unexpected_pid": 19940,
+      "unexpected_image": "D:\\Work\\Project Atlas\\backend\\.venv\\Scripts\\python.exe",
+      "all_declared_scalar_pid_creation_image_comparisons_passed": true
+    },
+    "preselection_socket_cut": "NOT_REACHED",
+    "selection_revision_7": "NOT_ATTEMPTED",
+    "opens_attempted": 0,
+    "browser_ack_timings": [],
+    "stop_timings": [],
+    "dashboard": "NOT_EXECUTED",
+    "cycle_socket_cleanup": "N/A_NO_APPLICATION_HOST_OR_PORT",
+    "rollback_revision_8": "NOT_NEEDED_NOT_ATTEMPTED",
+    "final_selector": {
+      "revision": 6,
+      "selected": null,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "native_verified_in_preflight": true,
+      "post_abort_bytes_and_12_names_unchanged": true,
+      "post_abort_native_reopen": false
+    },
+    "cleanup": {
+      "job_active_processes": 0,
+      "job_and_worker_handles_closed": true,
+      "known_process_ids_still_present": 0,
+      "forced_termination": false,
+      "blank_test_browser_tabs_closed": 1,
+      "installed_browser_navigations": 0,
+      "original_receipt_ack_journal_and_selector_files_unchanged": 17,
+      "later_cleanup_does_not_retrofit_ownership_acceptance": true
+    },
+    "execution_resources": {
+      "seconds": 26.864379099999496,
+      "conservatively_charged_entries_before_result": 66,
+      "logical_bytes_before_result": 2150559,
+      "accounted_bytes_before_result": 2420895
+    },
+    "post_reporting_scope_before_summary": {
+      "entries": 73,
+      "logical_bytes": 2177651,
+      "accounted_bytes": 2476659
+    },
+    "limits": {
+      "seconds": 600,
+      "entries": 8192,
+      "accounted_bytes": 67108864
+    },
+    "runtime_source_changes": 0,
+    "new_pytest_executions": 0,
+    "prior_303_and_421_pass_evidence_preserved": true,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "support_reinstallation": false,
+    "journal_reset": false,
+    "windows_time_or_network_changes": 0,
+    "desktop_shortcut_changes": 0,
+    "genesis_changes": 0,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "post_reporting_scope_after_summary": {
+      "entries": 73,
+      "logical_bytes": 2177651,
+      "accounted_bytes": 2476659
+    },
+    "static_release_policy_audit": {
+      "source_files": 653,
+      "issues": 0,
+      "operational_acceptance": false,
+      "startup_authorized": false
+    }
+  },
+  "prior_latest_tests": {
+    "status": "READY_FOR_FRESH_V4_INSTALLED_ACCEPTANCE_AUTHORIZATION_NOT_EXECUTION",
+    "starting_commit": "3374010c826fab2a1a2e4a5bfa0710ab022b3ecd",
+    "proposal": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V4_2026-11-03.md",
+    "scope_sha256": "737d3f6fea4cda5d60194ea03f619d5d778acd0b6fcf60ebfde78cb815b8dd84",
+    "source_files": 128,
+    "source_manifest_sha256": "4e92e55705465811106c067aebd6dcb24f96035d9af3fd44b2851b4131593140",
+    "read_only_native_review": {
+      "accepted": true,
+      "groups": 8,
+      "seconds": 6.630590600001597,
+      "application": {
+        "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+        "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+        "files": 10204,
+        "directories": 903,
+        "bytes": 260369081,
+        "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+        "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+        "required_dependencies": 15
+      },
+      "baseline": {
+        "revision": 6,
+        "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+        "selected": null,
+        "freshly_verified": true,
+        "collected_utc_ns": 1793699365178939200,
+        "native_root": [
+          4004218753,
+          65536,
+          1532785
+        ],
+        "native_record_pairs": 6,
+        "namespace_files": 12,
+        "two_new_records_fit": true
+      },
+      "original_receipt_ack_journal_selector_bytes_unchanged": true,
+      "installed_processes_started": 0,
+      "operational_mutations": 0,
+      "handles_closed": true,
+      "service_query_handles_closed": 2
+    },
+    "clock": {
+      "service_read_only": "RUNNING",
+      "startup_read_only": "AUTO_START",
+      "quality_measured": false,
+      "acceptance_capability_created": false,
+      "fresh_future_selection_clock_required": true,
+      "maximum_uncertainty_ms": 1000,
+      "maximum_age_seconds": 120,
+      "service_or_configuration_changes": 0
+    },
+    "tests": {
+      "passed": 303,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 15.84,
+      "new_package_cases": 51,
+      "earlier_focused_package_passes_overlapping": 49,
+      "prior_421_preserved_not_repeated": true
+    },
+    "prior_genuine_disposable_tcp": {
+      "two_cycle_passed": true,
+      "complete_stop_seconds": [
+        2.3749056,
+        2.3473608
+      ],
+      "earlier_failed_v4_runs_preserved": 2,
+      "original_v3_failure_preserved": true,
+      "reexecuted_here": false
+    },
+    "static_policy_audit": {
+      "sources": 653,
+      "issues": 0,
+      "operational_acceptance": false,
+      "startup_authorized": false
+    },
+    "lint_format_python_ps_parse": "PASS",
+    "initial_tool_dependency_refusal_preserved": true,
+    "new_scope_is_permission": false,
+    "execution_claim_created": false,
+    "operational_authorization_consumed": false,
+    "installed_acceptance_completed": false,
+    "release_selected": false,
+    "provider_connections": 0,
+    "financial_actions": 0,
+    "financial_account_read_or_initialization": false,
+    "support_reinstallation_or_journal_reset": false,
+    "windows_time_changes": 0,
+    "genesis_changes": 0,
+    "paper_startup": false,
+    "production": "NO-GO"
+  },
+  "prior_blocked_tasks": {
+    "FRESH_INSTALLED_AUTHORIZATION": "REQUIRED: no operational grant consumed or implied by preparation. Exact V4 proposal/scope737d3f6f/source128/resultingreviewedcommit and NEW explicit single-use grant required; oldpackages/grants/roots not reusable.",
+    "GENUINE_INSTALLED_ACCEPTANCE": "Not performed. Need two genuine installed provider-disabled Open/browser/Stop cycles, READY/image/installedorigins/financialUNAVAILABLE,45s actualACK/8scompleteStop, all3socket/process/handlecleanup and verifiedknownheadrollbackr8tofreshlyreverifiedr6null.",
+    "CLOCK_AND_CURRENT_BASELINE": "W32TimeRunningAutomatic readonly observed only, no quality acceptance. Future NEW genuine clock<=1000ms age<=120s/acceptedsource immediatelyatnativepublication; reread currentexactr6c9bc240c beforeanymutation. No service/source/config/resync permission in package.",
+    "FINANCIAL_COMMISSIONING": "PAPERNO/productionNO-GO. This package cannot grant financialauthority/accountinception/provideractivation. Currentresearch/custody/clock/executableIEX/financialacceptance remainseparate; protectedfinancialrecords notaccessed or changed.",
+    "HISTORICAL_TCP_AMBIGUITIES": "State0/PID0LISTEN underlyingWindows representations unresolved and stillrefuse. OriginalV3/twoearlierV4failures retained; finaldisposablepass doesnotconvert priorfailures or prove installedacceptance."
+  },
+  "prior_exact_next_action": "STOP after V4 approval package preparation, archival roadmap/recovery update, commit, non-force push and remote SHA verification. READY ONLY for operator review/NEW single-use exactV4 installednonfinancialacceptance grant at proposal docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V4_2026-11-03.md canonicalSHA 737d3f6fea4cda5d60194ea03f619d5d778acd0b6fcf60ebfde78cb815b8dd84. No automatic execution. Fresh source/Git/native application/support/receiptACKjournal/actualr6/rollback/ACL/clock<=1000ms120s/providerdisabled/resourcepreflight mandatory; any drift STOP without operational repair. Futureselectr7only2c,2genuinecycles45sACK8sStop, strictV4EOF/3readers/processLAST, exactownedcleanup and knownsafe r8rollbacktor6UNSELECTED under600s8192entries64MiB. No financial/provider/PAPER/Time/Genesis authority."
+},
   "qd_final_installed_nonfinancial_acceptance_v4_preparation_20261103": {
   "status": "READY_FOR_FRESH_V4_INSTALLED_ACCEPTANCE_AUTHORIZATION_NOT_EXECUTION",
   "proposal": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V4_2026-11-03.md",
@@ -3454,113 +3915,114 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_V4_PREPARATION_READY_NOT_AUTHORIZED",
+  "last_verified_task": "QD_V4_OWNERSHIP_REFUSAL_RECOVERY_COMPLETE_HISTORICAL_ANCESTRY_UNRESOLVED",
   "next_eligible_tasks": [
-  "OPERATOR_REVIEW_EXACT_V4_PROPOSAL_HASH_AND_RESULTING_GIT_CHECKPOINT",
-  "ONLY_AFTER_NEW_EXPLICIT_GRANT_RUN_FRESH_PREFLIGHT_AND_ONE_BOUNDED_TWO_CYCLE_INSTALLED_ACCEPTANCE"
+  "SOURCE_ONLY_REVIEW_OF_RETAINED_LAUNCH_COMMAND_PARENT_HANDLE_ROLE_LIFECYCLE_BINDING",
+  "FRESH_PACKAGE_AND_EXPLICIT_SINGLE_USE_GRANT_AFTER_VERIFIED_CORRECTION"
 ],
   "blocked_tasks": {
-  "FRESH_INSTALLED_AUTHORIZATION": "REQUIRED: no operational grant consumed or implied by preparation. Exact V4 proposal/scope737d3f6f/source128/resultingreviewedcommit and NEW explicit single-use grant required; oldpackages/grants/roots not reusable.",
-  "GENUINE_INSTALLED_ACCEPTANCE": "Not performed. Need two genuine installed provider-disabled Open/browser/Stop cycles, READY/image/installedorigins/financialUNAVAILABLE,45s actualACK/8scompleteStop, all3socket/process/handlecleanup and verifiedknownheadrollbackr8tofreshlyreverifiedr6null.",
-  "CLOCK_AND_CURRENT_BASELINE": "W32TimeRunningAutomatic readonly observed only, no quality acceptance. Future NEW genuine clock<=1000ms age<=120s/acceptedsource immediatelyatnativepublication; reread currentexactr6c9bc240c beforeanymutation. No service/source/config/resync permission in package.",
-  "FINANCIAL_COMMISSIONING": "PAPERNO/productionNO-GO. This package cannot grant financialauthority/accountinception/provideractivation. Currentresearch/custody/clock/executableIEX/financialacceptance remainseparate; protectedfinancialrecords notaccessed or changed.",
-  "HISTORICAL_TCP_AMBIGUITIES": "State0/PID0LISTEN underlyingWindows representations unresolved and stillrefuse. OriginalV3/twoearlierV4failures retained; finaldisposablepass doesnotconvert priorfailures or prove installedacceptance."
+  "HISTORICAL_IDENTITY": "PID19940 command/image/serialized creation captured; parent identity and retained original native handle not captured. Redirector plausible, not proved. Refusal correct. No roster/allowlist fix justified by historical proof.",
+  "INSTALLED_ACCEPTANCE": "Original V4 FAIL/consumed; zero Opens/select/rollback. Last verified UNSELECTED r6 preserved; no fresh operational read this recovery. New exact launch-boundary review/proof, approval package/root/pins and explicit grant required; no automatic retry.",
+  "CLOCK": "Historical704ms8.5643160s capability revoked; not current clearance. No Time queries/configuration or service actions this recovery.",
+  "FINANCIAL": "PAPER NO/production NO-GO. Current research/executable IEX/financial authority/custody and separate operational acceptance remain required. No providers, accounts, writers or financial startup authorized here."
 },
   "latest_tests": {
-  "status": "READY_FOR_FRESH_V4_INSTALLED_ACCEPTANCE_AUTHORIZATION_NOT_EXECUTION",
-  "starting_commit": "3374010c826fab2a1a2e4a5bfa0710ab022b3ecd",
-  "proposal": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V4_2026-11-03.md",
-  "scope_sha256": "737d3f6fea4cda5d60194ea03f619d5d778acd0b6fcf60ebfde78cb815b8dd84",
-  "source_files": 128,
-  "source_manifest_sha256": "4e92e55705465811106c067aebd6dcb24f96035d9af3fd44b2851b4131593140",
-  "read_only_native_review": {
-    "accepted": true,
-    "groups": 8,
-    "seconds": 6.630590600001597,
-    "application": {
-      "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
-      "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
-      "files": 10204,
-      "directories": 903,
-      "bytes": 260369081,
-      "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
-      "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
-      "required_dependencies": 15
+  "milestone": "QD-V4-OWNERSHIP-REFUSAL-RECOVERY",
+  "status": "RECOVERY_COMPLETE_BLOCKED_HISTORICAL_PARENT_AND_LAUNCH_HANDLE_UNRESOLVED",
+  "report": "docs/QD_V4_OWNERSHIP_REFUSAL_RECOVERY_2026-11-03.md",
+  "passed": 150,
+  "failed": 0,
+  "skipped": 0,
+  "new_tests": 24,
+  "suites": [
+    {
+      "xml": "final-focused.xml",
+      "passed": 24,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
     },
-    "baseline": {
-      "revision": 6,
-      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
-      "selected": null,
-      "freshly_verified": true,
-      "collected_utc_ns": 1793699365178939200,
-      "native_root": [
-        4004218753,
-        65536,
-        1532785
-      ],
-      "native_record_pairs": 6,
-      "namespace_files": 12,
-      "two_new_records_fit": true
-    },
-    "original_receipt_ack_journal_selector_bytes_unchanged": true,
-    "installed_processes_started": 0,
-    "operational_mutations": 0,
-    "handles_closed": true,
-    "service_query_handles_closed": 2
+    {
+      "xml": "adjacent.xml",
+      "passed": 126,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "initial_setup_errors": 24,
+  "initial_setup_cause": "NEW_REPORTING_PARENT_MISSING_NO_TEST_BODY_EXECUTED",
+  "historical_acceptance": "FAIL",
+  "authorization_consumed": true,
+  "installed_cycles": 0,
+  "selection_attempted": false,
+  "rollback_required": false,
+  "historical_clock_uncertainty_ms": 704,
+  "historical_clock_age_seconds": "8.5643160",
+  "clock_capability_revoked": true,
+  "native_integrity_groups_passed": 8,
+  "unclaimed_pid": 19940,
+  "historical_parent_identity": null,
+  "historical_retained_launch_handle": null,
+  "redirector_explanation": "PLAUSIBLE_NOT_PROVEN_NO_RETROACTIVE_OWNERSHIP",
+  "runtime_roster_changes": 0,
+  "allowlist_changes": 0,
+  "original_source_pins_unchanged": 128,
+  "last_verified_selector": {
+    "revision": 6,
+    "selected": null,
+    "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+    "fresh_operational_read_during_recovery": false
   },
-  "clock": {
-    "service_read_only": "RUNNING",
-    "startup_read_only": "AUTO_START",
-    "quality_measured": false,
-    "acceptance_capability_created": false,
-    "fresh_future_selection_clock_required": true,
-    "maximum_uncertainty_ms": 1000,
-    "maximum_age_seconds": 120,
-    "service_or_configuration_changes": 0
-  },
-  "tests": {
-    "passed": 303,
-    "failed": 0,
-    "skipped": 0,
-    "seconds": 15.84,
-    "new_package_cases": 51,
-    "earlier_focused_package_passes_overlapping": 49,
-    "prior_421_preserved_not_repeated": true
-  },
-  "prior_genuine_disposable_tcp": {
-    "two_cycle_passed": true,
-    "complete_stop_seconds": [
-      2.3749056,
-      2.3473608
-    ],
-    "earlier_failed_v4_runs_preserved": 2,
-    "original_v3_failure_preserved": true,
-    "reexecuted_here": false
-  },
-  "static_policy_audit": {
-    "sources": 653,
-    "issues": 0,
-    "operational_acceptance": false,
-    "startup_authorized": false
-  },
-  "lint_format_python_ps_parse": "PASS",
-  "initial_tool_dependency_refusal_preserved": true,
-  "new_scope_is_permission": false,
-  "execution_claim_created": false,
-  "operational_authorization_consumed": false,
-  "installed_acceptance_completed": false,
-  "release_selected": false,
-  "provider_connections": 0,
-  "financial_actions": 0,
-  "financial_account_read_or_initialization": false,
-  "support_reinstallation_or_journal_reset": false,
-  "windows_time_changes": 0,
-  "genesis_changes": 0,
+  "original_protected_files_preserved": 17,
+  "original_selector_names": 12,
+  "new_approval_package_required_after_verified_launch_correction": true,
   "paper_startup": false,
-  "production": "NO-GO"
+  "production": "NO-GO",
+  "raw_acceptance_hashes": {
+    "capture.py": "cfbf5ed35caa361f3befd4515cb07bad6dc086355793e349c6c92650f5d33ba9",
+    "checkpoint-result.txt": "39e26c928016ad9dd42e67f8eccbd265bf827cf16a3c600908212dea11088ac1",
+    "checkpoint_result.py": "c967006232380e935f0acf44a74b192412cdf343f0726b41418157f1d0ba41f8",
+    "clock-preflight-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "clock-preflight-stdout.log": "aea31f2cb1596fa9289c45024cd593ccb853085ee4b0077ba53f9f9be7bdd282",
+    "clock_preflight.py": "73ad0ec6d3b64c00cf4a83ad2813a0ffcbcdd3bea4e6d7819a9e30ddd862b2e2",
+    "continuation-before.bin": "835c880174887fa76abe828e79e0737488ad1308f3af9f59bf37985a4171b10f",
+    "controller.ps1": "0cdb786137aeeebd267f7158b169510006f68e910c914f8bab8a0db613f1a886",
+    "gate.py": "7b699068fb4862804dbb48fa33afdf67d568b33bec0efa2169fae065bda515e3",
+    "helper-primary-claim.json": "0e64ea1339ab002492a8e0f5b50363376b1b3bc2d3becfbcf9bfa6ee6a09867a",
+    "metadata-preflight-result.json": "0efe502d0b9583f98dc66419a06328be7e7908c05321f5e00bd1cfaedce91f42",
+    "metadata-preflight-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "metadata-preflight-stdout.log": "549ec8fd577511bf41f55a8178945413398995054557a6733d8b89e8e30ac6a9",
+    "metadata_preflight.ps1": "87f880ea454fab1c01ed96be7317bef4297fdfb6493648b8095c39976aab1b70",
+    "native-preflight-progress.json": "556a679ea04a7abd8a0ca4dec7cef983ee03ce40d2d618279d45fd2ae52ec1b9",
+    "native-preflight-result.json": "f303921e5e524c26f958beb005920c9315a45966c399c1b083dad126f5a27542",
+    "native-preflight-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "native-preflight-stdout.log": "88b91e281166a382198b36dab30d5079d177f06165e54b8c38a4532fe6bd5bc0",
+    "native_preflight.py": "992642779434ae1b54ad84ab11c6d19574a5f8b59506b4576ba639de18562194",
+    "observation-1.json": "0988a67527eb329b9367bbaac2ceae1ef25fe525848557392e1e86657b4313ee",
+    "post-abort-preservation.json": "b1c20c83d90641331e4a05624f0586ff9de8468513080bb723437a9bd0ec252d",
+    "proposal.json": "1ef77abe4c0c392b5877f5fdc1c8102f56a5c5f3cf5d321e8cc2b6db168ff604",
+    "queue-before.bin": "488db3b5aac3c78fbb9895eb57d4d9ba0588e3d8773e976b85ec00e56d8d253b",
+    "record_result.py": "996efb54fae0920f9b82166a9a5b3e00d8e63e6bf84f37b9e2771812b9a527aa",
+    "report-summary.json": "549677abac2934c073c75141985a7ca7739efbb32801260cc49146980f6edaff",
+    "restore_known_head.py": "409137d3a847f40ae23fb2b1dffa604d4de2edf3c849a462af4236f19212044e",
+    "roadmap-before.bin": "0d194828b229d5bcb3cf17cac4884d0b523694271e7e04212efccd07ddc23d1b",
+    "scope-sha256.txt": "09cd6a550498670911bad42c99fdb5a4d5decf49c78344fd0ad282eef2ca3424",
+    "single-use-claim.json": "f67ca9463bcd3950ac0954c5c02e03ba44a50118eec977fada29e4bccd739732",
+    "source-manifest.json": "4e92e55705465811106c067aebd6dcb24f96035d9af3fd44b2851b4131593140",
+    "state-before.json": "b6d034a964a46e8d2e85cd58d7e96d01b640cbd1841526c01b968423f9dffa96",
+    "static-policy-audit.json": "3737716ba200c06826dc377da8bfc909ff6b338b6b15cc00e43293bc8f6731c4",
+    "summary.json": "a80a1f358f133d7f3c08a24ae96383dd146eb5ae611c81cf39f1cce01550a9fc",
+    "supervise.py": "2b4a3ba36a78bad2e22e60e3e663b01e76b5a697a6de3c5b37a9d4246dbe0c57",
+    "supervisor-result.json": "f38eb1ac62997d17d177aa3413ec1c4fd581d2d157fb1cbb27eff791d6e08123",
+    "worker-result.json": "32abba8ee9d6a075fbf37e1059e8d7fcbdac5a3bc4c1ae88f3bf9152ebdc83f5",
+    "worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "worker-stdout.log": "a5140d84adeb4383e0de935c6b327bd8d6da3b3d0a8ce7b0baa7c0d85da9f62c",
+    "worker.py": "6e82c786796e84b87f830513cc58fbcc0640ed4d4696a3532fe0992019296d88"
+  }
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP after V4 approval package preparation, archival roadmap/recovery update, commit, non-force push and remote SHA verification. READY ONLY for operator review/NEW single-use exactV4 installednonfinancialacceptance grant at proposal docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V4_2026-11-03.md canonicalSHA 737d3f6fea4cda5d60194ea03f619d5d778acd0b6fcf60ebfde78cb815b8dd84. No automatic execution. Fresh source/Git/native application/support/receiptACKjournal/actualr6/rollback/ACL/clock<=1000ms120s/providerdisabled/resourcepreflight mandatory; any drift STOP without operational repair. Futureselectr7only2c,2genuinecycles45sACK8sStop, strictV4EOF/3readers/processLAST, exactownedcleanup and knownsafe r8rollbacktor6UNSELECTED under600s8192entries64MiB. No financial/provider/PAPER/Time/Genesis authority.",
+  "exact_next_action": "STOP after recovery report, 150-pass offline validation, archival roadmap/state update, commit/non-force push and remote verification. No installed retry. Before a new approval package, review retained exact launch executable/command/parent identity/creation/handle/role/lifecycle binding or an equivalent reviewed wrapper-free launch. Never adopt historical PID19940 from command/name alone. docs/QD_V4_OWNERSHIP_REFUSAL_RECOVERY_2026-11-03.md",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
