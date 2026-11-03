@@ -1,4 +1,425 @@
 {
+  "qd_v5_installed_acceptance_package_preparation_20261103": {
+  "evidence": {
+    "status": "READY_FOR_FRESH_V5_INSTALLED_ACCEPTANCE_AUTHORIZATION",
+    "report": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V5_2026-11-03.md",
+    "starting_commit": "e7fd431c563c4e4a65a0094651ec700e846f1921",
+    "package": {
+      "scope_sha256": "03115a70b79cba7df029cd8f61215ce59567feaec4d42749a8000dd7dda1cd37",
+      "scope_raw_sha256": "f3b10526555ae0f8fbdc7c97a7203de09d459aede925b8d1e458981785a37ee5",
+      "source_manifest_sha256": "0b4efbda291b1727e2f844203471b8ac0a26d79f1fa530cebdfc3e3fb4eef64d",
+      "source_files": 155,
+      "root": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103",
+      "authorization_consumed": false
+    },
+    "passed": 353,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 26.54,
+    "new_v5_cases": 79,
+    "final_native_owner_probe": {
+      "accepted": true,
+      "domain": "DISPOSABLE_NATIVE_OWNERSHIP_ONLY",
+      "installed_launches": 0,
+      "selection_mutations": 0,
+      "financial_actions": 0,
+      "actual_suspended_creation_and_job_assignment_function": true,
+      "worker_exit": 0,
+      "final_job_active": 0,
+      "replies": 15,
+      "child": {
+        "domain": "DISPOSABLE_NATIVE_OWNERSHIP_ONLY",
+        "installed_launches": 0,
+        "financial_actions": 0,
+        "startup_authorized": false,
+        "accepted": true,
+        "actual_worker_action_queries": 4,
+        "claims": [
+          {
+            "pid": 30492,
+            "created": 134381998871493793,
+            "image": "c:\\windows\\system32\\windowspowershell\\v1.0\\powershell.exe",
+            "command_line": "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -File tests/run_v5_outer_owner_probe.ps1 -DisposableRoot \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v5-outer-owner-probe-final-20261103\"",
+            "parent_pid": 29184
+          },
+          {
+            "pid": 27548,
+            "created": 134381998877197266,
+            "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe",
+            "command_line": "\"C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" -I -B \"D:\\Work\\Project Atlas\\tests\\v5_outer_owner_probe.py\" --disposable-native-owner-probe \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v5-outer-owner-probe-final-20261103\"",
+            "parent_pid": 30492
+          }
+        ],
+        "job_members": [
+          27548
+        ],
+        "original_handles_verified": true,
+        "duplicate_handles_and_images_closed": true
+      },
+      "handles_closed": true,
+      "forced_cleanup": false,
+      "seconds": 13.2096188,
+      "entries": 47,
+      "bytes": 14067
+    },
+    "native_probe_reporting_usage": [
+      {
+        "root": "logs/diagnostics/qd-v5-outer-owner-probe-20261103",
+        "entries_including_final_result": 9,
+        "logical_bytes_including_final_result": 5869,
+        "conservative_accounted_bytes": 42733,
+        "passed": false,
+        "seconds": 0.3369277,
+        "forced_cleanup": false,
+        "result_sha256": "6398e9b70b6c197d8ad188053f75d5b8bb4250329ac86024e182332351249595"
+      },
+      {
+        "root": "logs/diagnostics/qd-v5-outer-owner-probe-actions-20261103",
+        "entries_including_final_result": 48,
+        "logical_bytes_including_final_result": 16453,
+        "conservative_accounted_bytes": 213061,
+        "passed": true,
+        "seconds": 12.3878367,
+        "forced_cleanup": false,
+        "result_sha256": "1f58e24f2b1722e90b157650c09392efad761f187dac96f4fa53f0fb78fcec3d"
+      },
+      {
+        "root": "logs/diagnostics/qd-v5-outer-owner-probe-final-20261103",
+        "entries_including_final_result": 48,
+        "logical_bytes_including_final_result": 16516,
+        "conservative_accounted_bytes": 213124,
+        "passed": true,
+        "seconds": 13.2096188,
+        "forced_cleanup": false,
+        "result_sha256": "da00d805fa7c4a9cccc95c086b648760ebc075f90a0d73d48fe0630a2f54ed63"
+      },
+      {
+        "root": "logs/diagnostics/qd-v5-outer-owner-probe-query-host-20261103",
+        "entries_including_final_result": 23,
+        "logical_bytes_including_final_result": 11776,
+        "conservative_accounted_bytes": 105984,
+        "passed": true,
+        "seconds": 12.414513999999999,
+        "forced_cleanup": false,
+        "result_sha256": "b1fac9f02021775f7c1355c21d053f3d9918ac6156a1d6467d0aa785e8c833d0"
+      },
+      {
+        "root": "logs/diagnostics/qd-v5-outer-owner-probe-valid-input-20261103",
+        "entries_including_final_result": 9,
+        "logical_bytes_including_final_result": 6837,
+        "conservative_accounted_bytes": 43701,
+        "passed": false,
+        "seconds": 0.3342188,
+        "forced_cleanup": false,
+        "result_sha256": "75ffaadd6e3c8a84ed64d2c97ce20b35fcffb956e095568b327cdf33b89d121f"
+      }
+    ],
+    "read_only_integrity_groups": 8,
+    "inventory_seconds": 7.2589850000003935,
+    "application": {
+      "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+      "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+      "files": 10204,
+      "directories": 903,
+      "bytes": 260369081,
+      "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+      "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+      "required_dependencies": 15
+    },
+    "freshly_read_selector": {
+      "revision": 6,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "selected": null,
+      "freshly_verified": true,
+      "collected_utc_ns": 1793720952964166300,
+      "native_root": [
+        4004218753,
+        65536,
+        1532785
+      ],
+      "native_record_pairs": 6,
+      "namespace_files": 12,
+      "two_new_records_fit": true
+    },
+    "protected_metadata_original_files_preserved": 17,
+    "v4_raw_files_preserved": 39,
+    "v4_source_pins_preserved": 128,
+    "v4_acceptance": "FAIL",
+    "v4_authorization_consumed": true,
+    "historical_pid_19940": "UNRESOLVED_NOT_RETROCLAIMED",
+    "new_operational_grant_consumed": false,
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "windows_time_changes": 0,
+    "clock_acceptance_issued": false,
+    "genesis_access": false,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "next_prerequisite": "NEW explicit single-use operator authorization naming V5 proposal/canonical scope and resulting preparation commit; then full fresh native/receipt/ACL/revision6/clock/socket/process preflight, exactly two installed cycles and reviewed revision8 rollback. No earlier grant reuse."
+  },
+  "prior_last_verified_task": "QD_V5_VERIFIED_LAUNCH_OWNERSHIP_BINDING_READY_FOR_APPROVAL_PACKAGE_PREPARATION",
+  "prior_latest_tests": {
+    "status": "READY_FOR_V5_APPROVAL_PACKAGE_PREPARATION",
+    "report": "docs/QD_V5_VERIFIED_LAUNCH_OWNERSHIP_BINDING_2026-11-03.md",
+    "starting_commit": "220efd0a7f0ef1827101ccb93bb76fa06756070a",
+    "passed": 217,
+    "failed": 0,
+    "skipped": 0,
+    "new_offline_cases": 67,
+    "native_cases": 6,
+    "native_passed": 6,
+    "native_failed_final": 0,
+    "native_negative_checks_refused": 20,
+    "exited_live_claims_refused": 4,
+    "native_seconds": 54.944228100001055,
+    "native_case_results": [
+      {
+        "case": "direct-supervisor",
+        "passed": true,
+        "seconds": 10.298239199997624,
+        "launch_pid": 18644,
+        "ready": {
+          "pid": 18644,
+          "nonce": "306c5a56d015458e910ef5c56694d5bb",
+          "role": "acceptance_supervisor"
+        },
+        "handles_closed": true,
+        "final_job_pids": []
+      },
+      {
+        "case": "venv-supervisor",
+        "passed": true,
+        "seconds": 13.153088599996408,
+        "launch_pid": 24116,
+        "ready": {
+          "pid": 20952,
+          "nonce": "870e28948b154822a08919cbbcb52924",
+          "role": "acceptance_supervisor"
+        },
+        "handles_closed": true,
+        "final_job_pids": []
+      },
+      {
+        "case": "direct-worker",
+        "passed": true,
+        "seconds": 10.318013500000234,
+        "launch_pid": 17324,
+        "ready": {
+          "pid": 17324,
+          "nonce": "58334f3ab0214aba84cc0510c53dfcf2",
+          "role": "acceptance_worker"
+        },
+        "handles_closed": true,
+        "final_job_pids": []
+      },
+      {
+        "case": "venv-worker",
+        "passed": true,
+        "seconds": 12.853696500002115,
+        "launch_pid": 32724,
+        "ready": {
+          "pid": 6536,
+          "nonce": "151f32b065074bc0aa5e35310398a248",
+          "role": "acceptance_worker"
+        },
+        "handles_closed": true,
+        "final_job_pids": []
+      },
+      {
+        "case": "direct-unexpected",
+        "passed": true,
+        "seconds": 3.583164299998316,
+        "launch_pid": 6436,
+        "ready": {
+          "pid": 6436,
+          "nonce": "a5ae03675b8e4e559bf4bddd36f9606a",
+          "role": "acceptance_supervisor"
+        },
+        "handles_closed": true,
+        "final_job_pids": []
+      },
+      {
+        "case": "venv-unexpected",
+        "passed": true,
+        "seconds": 4.716219599999022,
+        "launch_pid": 1828,
+        "ready": {
+          "pid": 20532,
+          "nonce": "0d1ee0749a6b4741a481af43d30d2e25",
+          "role": "acceptance_supervisor"
+        },
+        "handles_closed": true,
+        "final_job_pids": []
+      }
+    ],
+    "native_image_pins": [
+      [
+        "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe",
+        [
+          2318409083,
+          1572864,
+          1005046
+        ],
+        "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a"
+      ],
+      [
+        "d:\\work\\project atlas\\backend\\.venv\\scripts\\python.exe",
+        [
+          4004218753,
+          3014656,
+          94130
+        ],
+        "0b471133e110cfb53a061cad528ce8e517d7b9ac41a0a396c39ad795a487fc14"
+      ],
+      [
+        "c:\\windows\\system32\\conhost.exe",
+        [
+          2318409083,
+          655360,
+          1086490
+        ],
+        "dd5c3514132d92052004d302c66c756ffb6beef572de6538b4fc55f62579eb11"
+      ]
+    ],
+    "source_hashes": {
+      "tests\\run_launch_ownership_native.py": "cc9cdbbf9d887fe8060bcf935805104da0123061c54697ce66a5a347f1ba263b",
+      "tests\\launch_ownership_child.py": "954034279f5c01a1d794990f74cd1f58863651dedc079550819943f98492c5de",
+      "scripts\\observation_runtime\\launch_ownership.py": "83dca6bfe3a71b7cea5ed98d65cb69be63c117efaad68e8fe3127a5735bb572c",
+      "scripts\\observation_runtime\\launch_ownership_windows.py": "a3d59d8841f45d8d0fb4d33ec238256aa7a1939db31b7cbf6071d78c04ade951"
+    },
+    "final_jobs_empty": true,
+    "final_handles_closed": true,
+    "final_forced_cleanup": false,
+    "preliminary_failures_preserved": true,
+    "raw_result_hashes": {
+      "logs\\diagnostics\\qd-v5-launch-ownership-20261103\\native-result.json": "87a592674e1b933709b86b0079dec3cec94a7643d03ebd33ded78ef3d574658d",
+      "logs\\diagnostics\\qd-v5-launch-ownership-20261103\\direct-supervisor\\result.json": "9a2d8cbac0c5a28f942fd62ef1681b1f993660a913aff5ce64eaeff8181cc7a7",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\native-result.json": "e4e6412a62abc66d9223373a9c0c71018b54890c534e30f3b5f80ec7debed049",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\direct-supervisor\\result.json": "263bb39989764f2c2d6767fb26d1ad75fac97e2b8ba9f7770f289c3849d0cc80",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\direct-unexpected\\result.json": "2c879e1986c0cc556a885528e41dc09f8c8a2d298681f24bb7c05dfef6046647",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\direct-worker\\result.json": "63e37412207c8d942ba6a379dd38971a9adba16a6c36fd0edffe0e2cdbb8c682",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\venv-supervisor\\result.json": "8a70bf521001e2ce4929e74a9958e79bac0ac099ad1be4c740940310d4ea0e24",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\venv-unexpected\\result.json": "46780a8e1e6229f9f669ce8668b7b6b4ffd60e493605a29c30ded102637a7f61",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\venv-worker\\result.json": "681788dd8337720f37132931c68bc041903ccf8f17226b796f50c6c04de12dd4",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-console-bound-20261103\\native-result.json": "2bf2e7869b79d9735a6b49e3ba089455181d075eaee49a348296140137cf187c",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-detached-20261103\\native-result.json": "d8dc38f7d62c569dbaced243626c17861748373ce875d1c5fa1f4736bf8f4ae8",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-detached-20261103\\direct-supervisor\\result.json": "af02d887dd38cccdf0a9be7225af5f29bbcda68d4ad8eb4619dad04ec8552088",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-20261103\\native-result.json": "146d32b17ab80010aa3d34eb2b3e86dc93664a5188a4a77f1fd146662674767a",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-20261103\\direct-supervisor\\result.json": "72a1118a7f16d3884df8736368ecb586f8f189815f6669156b769016879fe4ec",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-20261103\\venv-supervisor\\result.json": "3a751c9529f7a89f2ac1ea442f3c62668a3769b3fe03b5d832bf756d924372a9",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-status-20261103\\native-result.json": "a73a61612b9e6e5b50d728fea3d7a5454f58b73ecc6cc58b50b3fd86b31e7a74",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-status-20261103\\venv-supervisor\\result.json": "a7aad1600531d443ecd6e90dd7e655751b7c4d63099e5be304c67b113a412bad",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-final-20261103\\native-result.json": "e1a7ba653a5da1521ac455b27e1abff965a82166c43e7c0baff76d6bf92f1bac",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-final-20261103\\direct-supervisor\\result.json": "b07e5b9b3cde89057315b8340b9e87e8494d6b2d1366126442872e226bbe0a45",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-final-20261103\\venv-supervisor\\result.json": "4153548c43dfbbea338c50cc2457ae0b925856af70359464292209b13382cbda",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-normal-20261103\\native-result.json": "5660e4b4f81a0a12f389cb5297fa92057a823b67b60919b32684e1f8aa11ecc6",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-normal-20261103\\direct-supervisor\\result.json": "4492734936c4909e24fa521809861066dfaafb284098ca6213ab951136bce4fb",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-ready-20261103\\native-result.json": "76cf8d64802877f15a39e2339452bb8a56235e4cedba227084cd95d1d33a12ef",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-ready-20261103\\direct-supervisor\\result.json": "5df7fc62dc4cc0391a4b5290590521d20de057301b0edbe740873b1ac2bce482",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-roster-20261103\\native-result.json": "104ce8e52eaaf760fb20523538e73879a35028908bcfa7e42379a8b95de7f4ff",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-roster-20261103\\direct-supervisor\\result.json": "6c855d33c481b388f5c6ead9588ff17100f83a0e51586df650802e7974c438d9",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\native-result.json": "f89857b60ae9ae41e61db3617f0d74179ad800bf9713917e9eec97ff209f0b8e",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\direct-supervisor\\result.json": "57dbc9b476079cca659b75ab82f01e28155083782d019ef2d3e0b821f4e0de17",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\direct-unexpected\\result.json": "e2868c5f8db2ca9f2c0f74921bab66b246369cf644b415b35649a33e71075104",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\direct-worker\\result.json": "56681565a1b4cbe012ad7ff417de90698370c2931c39ce188913d270cf09f58d",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\venv-supervisor\\result.json": "bd5f6dc5bece918ec13ad6c1aaebaff681909c98202448eab5df4aea7c986686",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\venv-unexpected\\result.json": "34b1b97f52a803682bff944495991499efcd3d414d3824bfcf14d9cd20cc1ad5",
+      "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\venv-worker\\result.json": "6be4dff8383ad7b387c8530bb2c6253df4ac0c1511f3107a290101685beedafb"
+    },
+    "reporting_usage_before_checkpoints": [
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-20261103",
+        "entries": 156,
+        "logical_bytes": 107874
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103",
+        "entries": 22,
+        "logical_bytes": 73672
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-console-bound-20261103",
+        "entries": 4,
+        "logical_bytes": 681
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-detached-20261103",
+        "entries": 7,
+        "logical_bytes": 13497
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-20261103",
+        "entries": 10,
+        "logical_bytes": 19209
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-status-20261103",
+        "entries": 7,
+        "logical_bytes": 17007
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-final-20261103",
+        "entries": 10,
+        "logical_bytes": 29054
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-normal-20261103",
+        "entries": 7,
+        "logical_bytes": 2540
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-ready-20261103",
+        "entries": 7,
+        "logical_bytes": 6276
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-roster-20261103",
+        "entries": 7,
+        "logical_bytes": 6732
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103",
+        "entries": 22,
+        "logical_bytes": 93815
+      }
+    ],
+    "v4_acceptance": "FAIL",
+    "v4_authorization_consumed": true,
+    "v4_raw_files_unchanged": 39,
+    "v4_source_pins_unchanged": 128,
+    "historical_pid_19940_ancestry": "UNRESOLVED_NOT_RETROCLAIMED",
+    "venv_redirector_mechanism": "PROVEN_IN_NEW_DISPOSABLE_LAUNCHES",
+    "last_verified_selector": {
+      "revision": 6,
+      "selected": null,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "fresh_operational_read": false
+    },
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "windows_time_changes": 0,
+    "genesis_access": false,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "next_prerequisite": "Prepare new V5 exact outer-launch package with retained capability wired into actual helper roster and revalidated at each boundary; then fresh explicit single-use installed acceptance grant. No V4 reuse."
+  },
+  "prior_next_eligible_tasks": [
+    "PREPARE_EXACT_V5_OUTER_LAUNCH_PACKAGE_WITH_RETAINED_BINDING_AND_COMPLETE_ROLE_ROSTER",
+    "ONLY_AFTER_FRESH_OPERATOR_GRANT_RUN_CURRENT_INSTALLED_ACCEPTANCE_PREFLIGHT_AND_TWO_CYCLES"
+  ],
+  "prior_blocked_tasks": {
+    "V5_PACKAGE_AND_INSTALLED_ACCEPTANCE": "New verified binding and disposable native evidence ready. Existing V4 entry point intentionally unchanged; actual outer-launch/parent/runtime/console capability handoff and per-boundary revalidation must be wired and pinned in NEW V5 approval package, unused evidence root and fresh explicit single-use grant before installed execution.",
+    "HISTORICAL_V4": "FAIL/consumed remains unchanged. Historical PID19940 parent/launch handle absent; new redirector reproduction is not retroactive acceptance. Original39rawfiles128pins and17protected-preservation evidence retained.",
+    "SELECTOR": "Last independently verified UNSELECTED revision6/c9bc240c. No fresh operational read or mutation here; future full native/receipt/ACL/rollback reread mandatory.",
+    "CLOCK_AND_MARKET": "No clock/provider connection in this milestone. Original704ms sample revoked/historical, not current clearance. Fresh genuine <=1000ms/<=120s clock and entitled/current research/executable IEX/calendar evidence still required.",
+    "FINANCIAL": "No operational account/writer/inception/PAPER authority here. Existing B1/C1/D1/E1 technical requirements, financial custody/ACK/reconciliation, limits and separate explicit financial activation authority remain. PAPERNO/productionNO-GO."
+  },
+  "prior_exact_next_action": "STOP after verified source/disposable validation, V5 report, archival roadmap/state update, commit/non-force push and remote verification. Next authorized engineering milestone is V5 approval-package preparation: exact outer-launch binding, full retained role roster, revalidation handoff, source/root/destination/dependency pins and actual current baseline review. Installed acceptance itself needs NEW explicit single-use authorization/full fresh preflight. No V4 reuse, installed launch, selection, provider or financial action now. docs/QD_V5_VERIFIED_LAUNCH_OWNERSHIP_BINDING_2026-11-03.md"
+},
   "qd_v5_verified_launch_ownership_binding_20261103": {
   "evidence": {
     "status": "READY_FOR_V5_APPROVAL_PACKAGE_PREPARATION",
@@ -4271,267 +4692,179 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_V5_VERIFIED_LAUNCH_OWNERSHIP_BINDING_READY_FOR_APPROVAL_PACKAGE_PREPARATION",
+  "last_verified_task": "QD_V5_INSTALLED_ACCEPTANCE_PACKAGE_PREPARATION_READY_FOR_FRESH_AUTHORIZATION",
   "next_eligible_tasks": [
-  "PREPARE_EXACT_V5_OUTER_LAUNCH_PACKAGE_WITH_RETAINED_BINDING_AND_COMPLETE_ROLE_ROSTER",
-  "ONLY_AFTER_FRESH_OPERATOR_GRANT_RUN_CURRENT_INSTALLED_ACCEPTANCE_PREFLIGHT_AND_TWO_CYCLES"
+  "OPERATOR_REVIEW_EXACT_V5_PACKAGE_AND_RESULTING_COMMIT",
+  "ONLY_AFTER_NEW_EXPLICIT_SINGLE_USE_GRANT_FRESH_V5_PREFLIGHT_TWO_INSTALLED_NONFINANCIAL_CYCLES_AND_KNOWN_HEAD_ROLLBACK"
 ],
   "blocked_tasks": {
-  "V5_PACKAGE_AND_INSTALLED_ACCEPTANCE": "New verified binding and disposable native evidence ready. Existing V4 entry point intentionally unchanged; actual outer-launch/parent/runtime/console capability handoff and per-boundary revalidation must be wired and pinned in NEW V5 approval package, unused evidence root and fresh explicit single-use grant before installed execution.",
-  "HISTORICAL_V4": "FAIL/consumed remains unchanged. Historical PID19940 parent/launch handle absent; new redirector reproduction is not retroactive acceptance. Original39rawfiles128pins and17protected-preservation evidence retained.",
-  "SELECTOR": "Last independently verified UNSELECTED revision6/c9bc240c. No fresh operational read or mutation here; future full native/receipt/ACL/rollback reread mandatory.",
-  "CLOCK_AND_MARKET": "No clock/provider connection in this milestone. Original704ms sample revoked/historical, not current clearance. Fresh genuine <=1000ms/<=120s clock and entitled/current research/executable IEX/calendar evidence still required.",
-  "FINANCIAL": "No operational account/writer/inception/PAPER authority here. Existing B1/C1/D1/E1 technical requirements, financial custody/ACK/reconciliation, limits and separate explicit financial activation authority remain. PAPERNO/productionNO-GO."
+  "V5_INSTALLED_ACCEPTANCE": "Source/disposable integration READY; actual full installed role graph, live module origins, browser ACK45s and complete Stop8s must still pass. NEW explicit single-use V5 grant required. No installed app or selection in preparation. Fresh evidence root unused; r7/r8 absent from this milestone.",
+  "CURRENT_BASELINE": "Fresh read-only native inventory eight groups PASS:10204files903dirs15deps; support original receipts/ACK/journal preserved17files; selector independently UNSELECTEDr6 c9bc240c nativeID[4004218753,65536,1532785]. Future preflight must reread all exact identities/ACLs/pins/head/resource/rollback; drift refuses.",
+  "CLOCK": "No current clock-quality capability collected or issued. Running/Auto observed only; not synchronization proof. NEW genuine<=1000ms uncertainty/<=120s age and accepted source required; no Time settings/resync or historical sample reuse.",
+  "HISTORICAL_V4": "FAIL/consumed unchanged;39rawfiles128sourcepins preserved. HistoricalPID19940 ancestry/launch handle unresolved; prospective redirector reproduction not retroactive acceptance. State0/PID0LISTENING remain failclosed.",
+  "FINANCIAL": "Nonfinancial package grants no account/writer/provider/PAPER activation. B1/C1/D1/E1 technical gates, accepted current research/native custody, fresh entitled executable IEX/calendar, account inception/custody/ACK/reconciliation/risk and separate financial authority remain. Operator sole personal release authority; no external reviewer chains. PAPERNO/productionNO-GO."
 },
   "latest_tests": {
-  "status": "READY_FOR_V5_APPROVAL_PACKAGE_PREPARATION",
-  "report": "docs/QD_V5_VERIFIED_LAUNCH_OWNERSHIP_BINDING_2026-11-03.md",
-  "starting_commit": "220efd0a7f0ef1827101ccb93bb76fa06756070a",
-  "passed": 217,
+  "status": "READY_FOR_FRESH_V5_INSTALLED_ACCEPTANCE_AUTHORIZATION",
+  "report": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V5_2026-11-03.md",
+  "starting_commit": "e7fd431c563c4e4a65a0094651ec700e846f1921",
+  "package": {
+    "scope_sha256": "03115a70b79cba7df029cd8f61215ce59567feaec4d42749a8000dd7dda1cd37",
+    "scope_raw_sha256": "f3b10526555ae0f8fbdc7c97a7203de09d459aede925b8d1e458981785a37ee5",
+    "source_manifest_sha256": "0b4efbda291b1727e2f844203471b8ac0a26d79f1fa530cebdfc3e3fb4eef64d",
+    "source_files": 155,
+    "root": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103",
+    "authorization_consumed": false
+  },
+  "passed": 353,
   "failed": 0,
   "skipped": 0,
-  "new_offline_cases": 67,
-  "native_cases": 6,
-  "native_passed": 6,
-  "native_failed_final": 0,
-  "native_negative_checks_refused": 20,
-  "exited_live_claims_refused": 4,
-  "native_seconds": 54.944228100001055,
-  "native_case_results": [
+  "seconds": 26.54,
+  "new_v5_cases": 79,
+  "final_native_owner_probe": {
+    "accepted": true,
+    "domain": "DISPOSABLE_NATIVE_OWNERSHIP_ONLY",
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "financial_actions": 0,
+    "actual_suspended_creation_and_job_assignment_function": true,
+    "worker_exit": 0,
+    "final_job_active": 0,
+    "replies": 15,
+    "child": {
+      "domain": "DISPOSABLE_NATIVE_OWNERSHIP_ONLY",
+      "installed_launches": 0,
+      "financial_actions": 0,
+      "startup_authorized": false,
+      "accepted": true,
+      "actual_worker_action_queries": 4,
+      "claims": [
+        {
+          "pid": 30492,
+          "created": 134381998871493793,
+          "image": "c:\\windows\\system32\\windowspowershell\\v1.0\\powershell.exe",
+          "command_line": "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -File tests/run_v5_outer_owner_probe.ps1 -DisposableRoot \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v5-outer-owner-probe-final-20261103\"",
+          "parent_pid": 29184
+        },
+        {
+          "pid": 27548,
+          "created": 134381998877197266,
+          "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe",
+          "command_line": "\"C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" -I -B \"D:\\Work\\Project Atlas\\tests\\v5_outer_owner_probe.py\" --disposable-native-owner-probe \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v5-outer-owner-probe-final-20261103\"",
+          "parent_pid": 30492
+        }
+      ],
+      "job_members": [
+        27548
+      ],
+      "original_handles_verified": true,
+      "duplicate_handles_and_images_closed": true
+    },
+    "handles_closed": true,
+    "forced_cleanup": false,
+    "seconds": 13.2096188,
+    "entries": 47,
+    "bytes": 14067
+  },
+  "native_probe_reporting_usage": [
     {
-      "case": "direct-supervisor",
-      "passed": true,
-      "seconds": 10.298239199997624,
-      "launch_pid": 18644,
-      "ready": {
-        "pid": 18644,
-        "nonce": "306c5a56d015458e910ef5c56694d5bb",
-        "role": "acceptance_supervisor"
-      },
-      "handles_closed": true,
-      "final_job_pids": []
+      "root": "logs/diagnostics/qd-v5-outer-owner-probe-20261103",
+      "entries_including_final_result": 9,
+      "logical_bytes_including_final_result": 5869,
+      "conservative_accounted_bytes": 42733,
+      "passed": false,
+      "seconds": 0.3369277,
+      "forced_cleanup": false,
+      "result_sha256": "6398e9b70b6c197d8ad188053f75d5b8bb4250329ac86024e182332351249595"
     },
     {
-      "case": "venv-supervisor",
+      "root": "logs/diagnostics/qd-v5-outer-owner-probe-actions-20261103",
+      "entries_including_final_result": 48,
+      "logical_bytes_including_final_result": 16453,
+      "conservative_accounted_bytes": 213061,
       "passed": true,
-      "seconds": 13.153088599996408,
-      "launch_pid": 24116,
-      "ready": {
-        "pid": 20952,
-        "nonce": "870e28948b154822a08919cbbcb52924",
-        "role": "acceptance_supervisor"
-      },
-      "handles_closed": true,
-      "final_job_pids": []
+      "seconds": 12.3878367,
+      "forced_cleanup": false,
+      "result_sha256": "1f58e24f2b1722e90b157650c09392efad761f187dac96f4fa53f0fb78fcec3d"
     },
     {
-      "case": "direct-worker",
+      "root": "logs/diagnostics/qd-v5-outer-owner-probe-final-20261103",
+      "entries_including_final_result": 48,
+      "logical_bytes_including_final_result": 16516,
+      "conservative_accounted_bytes": 213124,
       "passed": true,
-      "seconds": 10.318013500000234,
-      "launch_pid": 17324,
-      "ready": {
-        "pid": 17324,
-        "nonce": "58334f3ab0214aba84cc0510c53dfcf2",
-        "role": "acceptance_worker"
-      },
-      "handles_closed": true,
-      "final_job_pids": []
+      "seconds": 13.2096188,
+      "forced_cleanup": false,
+      "result_sha256": "da00d805fa7c4a9cccc95c086b648760ebc075f90a0d73d48fe0630a2f54ed63"
     },
     {
-      "case": "venv-worker",
+      "root": "logs/diagnostics/qd-v5-outer-owner-probe-query-host-20261103",
+      "entries_including_final_result": 23,
+      "logical_bytes_including_final_result": 11776,
+      "conservative_accounted_bytes": 105984,
       "passed": true,
-      "seconds": 12.853696500002115,
-      "launch_pid": 32724,
-      "ready": {
-        "pid": 6536,
-        "nonce": "151f32b065074bc0aa5e35310398a248",
-        "role": "acceptance_worker"
-      },
-      "handles_closed": true,
-      "final_job_pids": []
+      "seconds": 12.414513999999999,
+      "forced_cleanup": false,
+      "result_sha256": "b1fac9f02021775f7c1355c21d053f3d9918ac6156a1d6467d0aa785e8c833d0"
     },
     {
-      "case": "direct-unexpected",
-      "passed": true,
-      "seconds": 3.583164299998316,
-      "launch_pid": 6436,
-      "ready": {
-        "pid": 6436,
-        "nonce": "a5ae03675b8e4e559bf4bddd36f9606a",
-        "role": "acceptance_supervisor"
-      },
-      "handles_closed": true,
-      "final_job_pids": []
-    },
-    {
-      "case": "venv-unexpected",
-      "passed": true,
-      "seconds": 4.716219599999022,
-      "launch_pid": 1828,
-      "ready": {
-        "pid": 20532,
-        "nonce": "0d1ee0749a6b4741a481af43d30d2e25",
-        "role": "acceptance_supervisor"
-      },
-      "handles_closed": true,
-      "final_job_pids": []
+      "root": "logs/diagnostics/qd-v5-outer-owner-probe-valid-input-20261103",
+      "entries_including_final_result": 9,
+      "logical_bytes_including_final_result": 6837,
+      "conservative_accounted_bytes": 43701,
+      "passed": false,
+      "seconds": 0.3342188,
+      "forced_cleanup": false,
+      "result_sha256": "75ffaadd6e3c8a84ed64d2c97ce20b35fcffb956e095568b327cdf33b89d121f"
     }
   ],
-  "native_image_pins": [
-    [
-      "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe",
-      [
-        2318409083,
-        1572864,
-        1005046
-      ],
-      "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a"
-    ],
-    [
-      "d:\\work\\project atlas\\backend\\.venv\\scripts\\python.exe",
-      [
-        4004218753,
-        3014656,
-        94130
-      ],
-      "0b471133e110cfb53a061cad528ce8e517d7b9ac41a0a396c39ad795a487fc14"
-    ],
-    [
-      "c:\\windows\\system32\\conhost.exe",
-      [
-        2318409083,
-        655360,
-        1086490
-      ],
-      "dd5c3514132d92052004d302c66c756ffb6beef572de6538b4fc55f62579eb11"
-    ]
-  ],
-  "source_hashes": {
-    "tests\\run_launch_ownership_native.py": "cc9cdbbf9d887fe8060bcf935805104da0123061c54697ce66a5a347f1ba263b",
-    "tests\\launch_ownership_child.py": "954034279f5c01a1d794990f74cd1f58863651dedc079550819943f98492c5de",
-    "scripts\\observation_runtime\\launch_ownership.py": "83dca6bfe3a71b7cea5ed98d65cb69be63c117efaad68e8fe3127a5735bb572c",
-    "scripts\\observation_runtime\\launch_ownership_windows.py": "a3d59d8841f45d8d0fb4d33ec238256aa7a1939db31b7cbf6071d78c04ade951"
+  "read_only_integrity_groups": 8,
+  "inventory_seconds": 7.2589850000003935,
+  "application": {
+    "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "files": 10204,
+    "directories": 903,
+    "bytes": 260369081,
+    "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+    "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+    "required_dependencies": 15
   },
-  "final_jobs_empty": true,
-  "final_handles_closed": true,
-  "final_forced_cleanup": false,
-  "preliminary_failures_preserved": true,
-  "raw_result_hashes": {
-    "logs\\diagnostics\\qd-v5-launch-ownership-20261103\\native-result.json": "87a592674e1b933709b86b0079dec3cec94a7643d03ebd33ded78ef3d574658d",
-    "logs\\diagnostics\\qd-v5-launch-ownership-20261103\\direct-supervisor\\result.json": "9a2d8cbac0c5a28f942fd62ef1681b1f993660a913aff5ce64eaeff8181cc7a7",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\native-result.json": "e4e6412a62abc66d9223373a9c0c71018b54890c534e30f3b5f80ec7debed049",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\direct-supervisor\\result.json": "263bb39989764f2c2d6767fb26d1ad75fac97e2b8ba9f7770f289c3849d0cc80",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\direct-unexpected\\result.json": "2c879e1986c0cc556a885528e41dc09f8c8a2d298681f24bb7c05dfef6046647",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\direct-worker\\result.json": "63e37412207c8d942ba6a379dd38971a9adba16a6c36fd0edffe0e2cdbb8c682",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\venv-supervisor\\result.json": "8a70bf521001e2ce4929e74a9958e79bac0ac099ad1be4c740940310d4ea0e24",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\venv-unexpected\\result.json": "46780a8e1e6229f9f669ce8668b7b6b4ffd60e493605a29c30ded102637a7f61",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103\\venv-worker\\result.json": "681788dd8337720f37132931c68bc041903ccf8f17226b796f50c6c04de12dd4",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-console-bound-20261103\\native-result.json": "2bf2e7869b79d9735a6b49e3ba089455181d075eaee49a348296140137cf187c",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-detached-20261103\\native-result.json": "d8dc38f7d62c569dbaced243626c17861748373ce875d1c5fa1f4736bf8f4ae8",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-detached-20261103\\direct-supervisor\\result.json": "af02d887dd38cccdf0a9be7225af5f29bbcda68d4ad8eb4619dad04ec8552088",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-20261103\\native-result.json": "146d32b17ab80010aa3d34eb2b3e86dc93664a5188a4a77f1fd146662674767a",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-20261103\\direct-supervisor\\result.json": "72a1118a7f16d3884df8736368ecb586f8f189815f6669156b769016879fe4ec",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-20261103\\venv-supervisor\\result.json": "3a751c9529f7a89f2ac1ea442f3c62668a3769b3fe03b5d832bf756d924372a9",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-status-20261103\\native-result.json": "a73a61612b9e6e5b50d728fea3d7a5454f58b73ecc6cc58b50b3fd86b31e7a74",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-status-20261103\\venv-supervisor\\result.json": "a7aad1600531d443ecd6e90dd7e655751b7c4d63099e5be304c67b113a412bad",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-final-20261103\\native-result.json": "e1a7ba653a5da1521ac455b27e1abff965a82166c43e7c0baff76d6bf92f1bac",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-final-20261103\\direct-supervisor\\result.json": "b07e5b9b3cde89057315b8340b9e87e8494d6b2d1366126442872e226bbe0a45",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-final-20261103\\venv-supervisor\\result.json": "4153548c43dfbbea338c50cc2457ae0b925856af70359464292209b13382cbda",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-normal-20261103\\native-result.json": "5660e4b4f81a0a12f389cb5297fa92057a823b67b60919b32684e1f8aa11ecc6",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-normal-20261103\\direct-supervisor\\result.json": "4492734936c4909e24fa521809861066dfaafb284098ca6213ab951136bce4fb",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-ready-20261103\\native-result.json": "76cf8d64802877f15a39e2339452bb8a56235e4cedba227084cd95d1d33a12ef",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-ready-20261103\\direct-supervisor\\result.json": "5df7fc62dc4cc0391a4b5290590521d20de057301b0edbe740873b1ac2bce482",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-roster-20261103\\native-result.json": "104ce8e52eaaf760fb20523538e73879a35028908bcfa7e42379a8b95de7f4ff",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-roster-20261103\\direct-supervisor\\result.json": "6c855d33c481b388f5c6ead9588ff17100f83a0e51586df650802e7974c438d9",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\native-result.json": "f89857b60ae9ae41e61db3617f0d74179ad800bf9713917e9eec97ff209f0b8e",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\direct-supervisor\\result.json": "57dbc9b476079cca659b75ab82f01e28155083782d019ef2d3e0b821f4e0de17",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\direct-unexpected\\result.json": "e2868c5f8db2ca9f2c0f74921bab66b246369cf644b415b35649a33e71075104",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\direct-worker\\result.json": "56681565a1b4cbe012ad7ff417de90698370c2931c39ce188913d270cf09f58d",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\venv-supervisor\\result.json": "bd5f6dc5bece918ec13ad6c1aaebaff681909c98202448eab5df4aea7c986686",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\venv-unexpected\\result.json": "34b1b97f52a803682bff944495991499efcd3d414d3824bfcf14d9cd20cc1ad5",
-    "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103\\venv-worker\\result.json": "6be4dff8383ad7b387c8530bb2c6253df4ac0c1511f3107a290101685beedafb"
+  "freshly_read_selector": {
+    "revision": 6,
+    "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+    "selected": null,
+    "freshly_verified": true,
+    "collected_utc_ns": 1793720952964166300,
+    "native_root": [
+      4004218753,
+      65536,
+      1532785
+    ],
+    "native_record_pairs": 6,
+    "namespace_files": 12,
+    "two_new_records_fit": true
   },
-  "reporting_usage_before_checkpoints": [
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-20261103",
-      "entries": 156,
-      "logical_bytes": 107874
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-complete-20261103",
-      "entries": 22,
-      "logical_bytes": 73672
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-console-bound-20261103",
-      "entries": 4,
-      "logical_bytes": 681
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-detached-20261103",
-      "entries": 7,
-      "logical_bytes": 13497
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-20261103",
-      "entries": 10,
-      "logical_bytes": 19209
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-exit-status-20261103",
-      "entries": 7,
-      "logical_bytes": 17007
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-final-20261103",
-      "entries": 10,
-      "logical_bytes": 29054
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-normal-20261103",
-      "entries": 7,
-      "logical_bytes": 2540
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-ready-20261103",
-      "entries": 7,
-      "logical_bytes": 6276
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-roster-20261103",
-      "entries": 7,
-      "logical_bytes": 6732
-    },
-    {
-      "root": "logs\\diagnostics\\qd-v5-launch-ownership-native-verified-20261103",
-      "entries": 22,
-      "logical_bytes": 93815
-    }
-  ],
+  "protected_metadata_original_files_preserved": 17,
+  "v4_raw_files_preserved": 39,
+  "v4_source_pins_preserved": 128,
   "v4_acceptance": "FAIL",
   "v4_authorization_consumed": true,
-  "v4_raw_files_unchanged": 39,
-  "v4_source_pins_unchanged": 128,
-  "historical_pid_19940_ancestry": "UNRESOLVED_NOT_RETROCLAIMED",
-  "venv_redirector_mechanism": "PROVEN_IN_NEW_DISPOSABLE_LAUNCHES",
-  "last_verified_selector": {
-    "revision": 6,
-    "selected": null,
-    "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
-    "fresh_operational_read": false
-  },
+  "historical_pid_19940": "UNRESOLVED_NOT_RETROCLAIMED",
+  "new_operational_grant_consumed": false,
   "installed_launches": 0,
   "selection_mutations": 0,
   "financial_actions": 0,
   "provider_connections": 0,
   "windows_time_changes": 0,
+  "clock_acceptance_issued": false,
   "genesis_access": false,
   "paper_startup": false,
   "production": "NO-GO",
-  "next_prerequisite": "Prepare new V5 exact outer-launch package with retained capability wired into actual helper roster and revalidated at each boundary; then fresh explicit single-use installed acceptance grant. No V4 reuse."
+  "next_prerequisite": "NEW explicit single-use operator authorization naming V5 proposal/canonical scope and resulting preparation commit; then full fresh native/receipt/ACL/revision6/clock/socket/process preflight, exactly two installed cycles and reviewed revision8 rollback. No earlier grant reuse."
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP after verified source/disposable validation, V5 report, archival roadmap/state update, commit/non-force push and remote verification. Next authorized engineering milestone is V5 approval-package preparation: exact outer-launch binding, full retained role roster, revalidation handoff, source/root/destination/dependency pins and actual current baseline review. Installed acceptance itself needs NEW explicit single-use authorization/full fresh preflight. No V4 reuse, installed launch, selection, provider or financial action now. docs/QD_V5_VERIFIED_LAUNCH_OWNERSHIP_BINDING_2026-11-03.md",
+  "exact_next_action": "STOP after V5 package preparation, archival roadmap/recovery update, commit/non-force push and remote verification. Operator review docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V5_2026-11-03.md canonical 03115a70b79cba7df029cd8f61215ce59567feaec4d42749a8000dd7dda1cd37 and resulting reviewed commit; NEW single-use600s8192entries64MiB installed NONFINANCIAL acceptance grant required before exact r7release selection/two provider-disabled OpenStop/browser cycles/r8known-head rollback to UNSELECTEDr6. Full fresh clock/native/receipt/ACL/socket/process preflight mandatory. No V4 reuse, installed launch, selection, providers, account activation or PAPER now.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,

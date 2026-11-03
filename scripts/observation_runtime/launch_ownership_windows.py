@@ -128,12 +128,26 @@ class ImageLease:
 
 
 class WindowsLaunchObserver:
-    def __init__(self, native, job, images, temp_root, *, deadline_ns=None):
+    def __init__(
+        self,
+        native,
+        job,
+        images,
+        temp_root,
+        *,
+        deadline_ns=None,
+        query_creation_flags=None,
+    ):
         self.native, self.job, self.images = native, job, images
         self.temp_root = Path(temp_root).absolute()
         require(self.temp_root.is_dir(), "EXISTING_DISPOSABLE_QUERY_TEMP_REQUIRED")
         self.evidence = []
         self.deadline_ns = deadline_ns
+        self.query_creation_flags = (
+            subprocess.CREATE_NO_WINDOW
+            if query_creation_flags is None
+            else query_creation_flags
+        )
 
     def lifecycle(self, handle):
         # The retained creation handle still identifies an exited process.
@@ -189,10 +203,11 @@ class WindowsLaunchObserver:
         observed = subprocess.run(
             [str(ps), "-NoProfile", "-NonInteractive", "-Command", command],
             env=env,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             timeout=6,
             check=False,
-            creationflags=subprocess.CREATE_NO_WINDOW,
+            creationflags=self.query_creation_flags,
         )
         if observed.returncode or observed.stderr or len(observed.stdout) >= 65536:
             # Preserve the failed independent query; an empty successful-looking
@@ -211,6 +226,7 @@ class WindowsLaunchObserver:
             and len(observed.stdout) < 65536,
             "INDEPENDENT_COMMAND_ANCESTRY_QUERY_FAILED",
         )
+        require(bool(observed.stdout), "INDEPENDENT_QUERY_JSON_REQUIRED")
         row = json.loads(observed.stdout)
         after = self.native.native(handle)
         require(
