@@ -6,8 +6,6 @@ sys.path.insert(0,str(Path(__file__).parent))
 from gate import validate_scope
 validate_scope(os.environ['ATLAS_AUTH_SCOPE_SHA256'],os.environ['ATLAS_AUTH_APPROVED_HEAD'])
 from pathlib import Path
-from contextlib import closing
-from http.client import HTTPConnection
 import ctypes
 import hashlib
 import json
@@ -51,6 +49,7 @@ selection = None
 retained_actions=[]
 from capture import collect as collect_cleanup
 from scripts.observation_runtime.installed_acceptance_sequence import PreselectionCut, run_cycle
+from scripts.observation_runtime.acceptance_http_probe import probe
 def remaining(): return deadline - time.perf_counter()
 def save(): (e / 'worker-result.json').write_text(json.dumps(result, indent=2))
 def timing(event, cycle=0, **details):
@@ -158,17 +157,16 @@ try:
             port=int(ready['url'].rstrip('/').rsplit(':',1)[-1])
             diagnostics={'pages':[]}
             for page in ('/dashboard','/dashboard/perps','/quality_dips.html','/dashboard/investment','/dashboard/archive','/dashboard/command-center'):
-                with closing(HTTPConnection('127.0.0.1', port, timeout=3)) as c:
-                    c.request('GET', page); response = c.getresponse(); data = response.read()
-                    assert response.status == 200 and b'<html' in data.lower() and "connect-src 'self'" in response.getheader('Content-Security-Policy')
+                response=probe(port=port,path=page)
+                headers={k.lower():v for k,v in response['headers'].items()}
+                assert response['status']==200 and b'<html' in response['data'].lower() and "connect-src 'self'" in headers['content-security-policy']
                 diagnostics['pages'].append(page)
-            with closing(HTTPConnection('127.0.0.1', port, timeout=3)) as c:
-                c.request('GET','/api/investments/quality-dips/selected-paper'); response=c.getresponse(); data=json.loads(response.read())
-                assert response.status == 200 and data['cash'] is data['positions'] is None and data['startup_authorized'] is False
-                diagnostics['selected_account'] = data
-            with closing(HTTPConnection('127.0.0.1', port, timeout=3)) as c:
-                c.request('POST','/anything'); response=c.getresponse(); response.read(); assert response.status == 403
+            response=probe(port=port,path='/api/investments/quality-dips/selected-paper');data=json.loads(response['data'])
+            assert response['status']==200 and data['cash'] is data['positions'] is None and data['startup_authorized'] is False
+            diagnostics['selected_account'] = data
+            response=probe(port=port,path='/anything',method='POST'); assert response['status']==403
             diagnostics['financial_post_status'] = 403
+            diagnostics['all_probe_peer_eof_and_client_handles_closed']=True
             return diagnostics
         def collect_cycle(current,after,cycle=cycle):
             port=int(current['url'].rstrip('/').rsplit(':',1)[-1])

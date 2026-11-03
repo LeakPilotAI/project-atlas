@@ -1,4 +1,214 @@
 {
+  "qd_windows_tcp_cleanup_agreement_v4_20261103": {
+  "status": "READY_FOR_FRESH_INSTALLED_ACCEPTANCE_AUTHORIZATION_SOURCE_AND_DISPOSABLE_ONLY",
+  "report": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md",
+  "evidence": {
+    "status": "READY_FOR_FRESH_INSTALLED_ACCEPTANCE_AUTHORIZATION_SOURCE_AND_DISPOSABLE_ONLY",
+    "starting_commit": "574f1a4c3804c493b44d4334edba110d31f2ef6c",
+    "report": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md",
+    "offline": {
+      "passed": 421,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 22.9,
+      "prior_cases_preserved": 382,
+      "new_cases": 39
+    },
+    "native": {
+      "runs": 3,
+      "passed": 1,
+      "failed_preserved": 2,
+      "skipped": 0,
+      "final_run_seconds": 23.72599839999748,
+      "complete_stop_seconds": [
+        2.3749056,
+        2.3473608
+      ],
+      "stop_components_seconds": [
+        0.020604600002116058,
+        0.015338200002588565
+      ],
+      "passing_cycle_ports": [
+        49872,
+        65092
+      ],
+      "new_query_handles_closed": 69,
+      "test_child_handles_closed": 6,
+      "final_readback_handles_closed": 45,
+      "final_known_ports": [
+        49872,
+        51168,
+        51170,
+        51520,
+        53341,
+        58645,
+        59562,
+        59743,
+        59744,
+        59830,
+        61883,
+        64221,
+        64776,
+        64778,
+        65092
+      ],
+      "unknown_initial_failure_http_port_not_reconstructed": true,
+      "attempts_retried": 0,
+      "forced_termination": false,
+      "footprints_after_result_serialization": {
+        "native-run": {
+          "entries": 66,
+          "logical_bytes": 121209,
+          "accounted_bytes": 391545
+        },
+        "native-run-image-corrected": {
+          "entries": 79,
+          "logical_bytes": 143845,
+          "accounted_bytes": 467429
+        },
+        "native-run-eof-drained": {
+          "entries": 114,
+          "logical_bytes": 287556,
+          "accounted_bytes": 754500
+        },
+        "native-final-readback": {
+          "entries": 166,
+          "logical_bytes": 206162,
+          "accounted_bytes": 886098
+        }
+      }
+    },
+    "root_cause": "Fresh serial readers matched identical endpoints at different lifecycle moments. HTTP body completion did not verify peer TCP EOF. Reader order alone failed; EOF-drained new two-cycle run passed. Exact underlying Windows State0/PID0LISTEN representation remains unexplained and refused.",
+    "original_v3_failure_preserved": true,
+    "unchanged_validators": [
+      "socket_evidence",
+      "installed_acceptance_cleanup",
+      "installed_acceptance_sequence",
+      "installed_acceptance_handoff"
+    ],
+    "clock_queries": 0,
+    "installed_launches": 0,
+    "operational_selection_or_rollback": 0,
+    "new_installed_authorization_requested_or_consumed": false,
+    "protected_financial_or_journal_changes": 0,
+    "provider_connections": 0,
+    "financial_actions": 0,
+    "genesis_changes": 0,
+    "windows_settings_changes": 0,
+    "selector": {
+      "revision": 6,
+      "selected": null,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "fresh_readback": false
+    },
+    "old_v3_scope_reusable": false,
+    "fresh_v4_exact_package_required_before_any_installed_grant": true,
+    "source_manifest": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_SOURCES_2026-11-03.json",
+    "source_manifest_sha256": "c8720e6b6fd24d5c2d6da0b41c64bfdfed0b819aa3c9f5cb33187636dc7f265a",
+    "static_policy_audit": {
+      "sources": 652,
+      "issues": 0,
+      "operational_acceptance": false
+    },
+    "paper_startup": false,
+    "production": "NO-GO"
+  },
+  "prior_latest_tests": {
+    "status": "BLOCKED_REQUIRED_NATIVE_SECOND_CYCLE_CLEANUP_DISAGREEMENT",
+    "execution_date": "2026-11-03 America/Chicago",
+    "requested_report_filename_date": "2026-11-02",
+    "starting_commit": "395ca25b8cff1c7bcf489a7fc2c1bc11bb46174b",
+    "source_corrections_complete": true,
+    "installed_acceptance_passed": false,
+    "offline_tests": {
+      "passed": 382,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 18.88
+    },
+    "final_changed_source_tests": {
+      "passed": 88,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 3.62,
+      "overlaps_382": true
+    },
+    "initial_tests": {
+      "passed": 48,
+      "failed": 18,
+      "seconds": 2.74,
+      "cause": "managed process denied unnecessary os.link; test-coordination publication corrected to Windows atomic no-replace rename; financial codec untouched"
+    },
+    "native_runs": 1,
+    "native_passed": 0,
+    "native_failed": 1,
+    "native_seconds": 56.337762300001486,
+    "native_held_listener_preselection_refused": true,
+    "native_valid_preselection_callback": 1,
+    "native_callback_is_fixture_begin_only": true,
+    "native_operational_selection_actions": 0,
+    "native_browser_checks": 2,
+    "native_first_ack_received_seconds": 25.2533001,
+    "native_second_ack_generated_seconds": 22.002712,
+    "native_second_received_timestamp": "NOT_RETAINED_DUE_FAILED_CYCLE_RESULT;receipt gate necessarily passed before Stop; later source persists receipts",
+    "native_first_complete_stop_seconds": 2.0998932,
+    "native_second_cleanup_failure": "IP_HELPER FIN_WAIT1(6),CIM CLOSED(1),NETSTAT absent for same transient connection;commonTIME_WAIT row retained",
+    "native_later_cleanup_clear": true,
+    "native_later_cleanup_does_not_clear_failure": true,
+    "native_query_handles_closed": 12,
+    "additional_final_readback_handles_closed": 6,
+    "native_child_exit": 0,
+    "native_child_handle_closed": true,
+    "forced_termination": false,
+    "native_usage_at_result": {
+      "entries": 51,
+      "logical_bytes": 83545,
+      "accounted_bytes": 292441
+    },
+    "native_root_usage_after_final_clearance": {
+      "entries": 75,
+      "logical_bytes": 125407,
+      "accounted_bytes": 432607
+    },
+    "native_limits": {
+      "seconds": 180,
+      "entries": 1024,
+      "accounted_bytes": 16777216
+    },
+    "native_installed_application_launches": 0,
+    "real_browser": "IAB_ACCESSIBILITY_CONFIRMED_SYNTHETIC_PAGE_ONLY",
+    "screenshot": "CAPTURE_UNAVAILABLE_ERROR_PRESERVED_NOT_SUPPRESSED",
+    "live_clock_queries": 0,
+    "windows_settings_changes": 0,
+    "operational_selection_or_rollback": 0,
+    "support_installation_or_journal_mutations": 0,
+    "new_operational_authorizations_consumed": 0,
+    "retained_operational_baseline": {
+      "revision": 6,
+      "selected": null,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "readback_this_task": false
+    },
+    "reviewed_source_files": 113,
+    "source_manifest_sha256": "db1d3304e671aead3fb3499cc346d31cde34e9df9112df5911db38bfb043c05b",
+    "scope_sha256": "d9d41b12585f777ad1723ae87c139d5be094240e86583190b93ac9400c755d9d",
+    "operational_template_default_refuses": true,
+    "operational_entry_explicitly_blocked_by_failed_native_validation": true,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "genesis_changes": 0,
+    "paper_startup": false,
+    "production": "NO-GO"
+  },
+  "prior_blocked_tasks": {
+    "TWO_CYCLE_NONFINANCIAL_ACCEPTANCE": "BLOCKED: one disposable native cycle passed, second cleanup refused CROSS_SOURCE_DISAGREEMENT: IPHelper FIN_WAIT1(6), CIM CLOSED(1), netstat absent; no passing complete second Stop. Later all-clear is cleanup evidence only. Installed paired acceptance remains unexecuted this task.",
+    "FRESH_ACCEPTANCE_AUTHORITY": "No new operational grant consumed or granted. Prior grants consumed. V3 review package explicitly refuses operational entry while required native validation failed. Future exact source/scope/root/current baseline, fresh clock and NEW single-use grant remain mandatory.",
+    "SOURCE_CORRECTIONS": "Browser notify/ACK processing precede unrelated diagnostics;45s from verifiedREADY unchanged. Actual receipt timing checked; raw fresh preselection3readers then strictCIMlast checked immediately at callback. Endpoint/owner/refusal/receipt hardening offline verified. Latest hardening not freshly native-passed.",
+    "PERSONAL_LOCAL_INSTALLATION": "Preserve existing application/support/receipt/ACK/journal. Last genuinely verified operational baseline r6 UNSELECTED c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc retained; no fresh operational readback or changes this task. No reinstallation/reset/select/rollback/installed launch.",
+    "FINANCIAL_COMMISSIONING": "PAPER NO; production NO-GO. No provider/financial/account/inception/live authority from this source-only milestone; technical gates/B1/C1/D1/E1/21decisions unchanged. No fresh clock measurement or service/configuration change."
+  },
+  "prior_exact_next_action": "STOP after offline correction, report, archival checkpoint, commit, non-force push and remote verification. V3 remains BLOCKED by mandatory disposable second-cycle transient socket disagreement; do not retry installed acceptance. Preserve all raw failure and later cleanup evidence. Next related source/disposable feasibility may investigate TCP teardown ordering/timing without normalizing states, resampling failed cycles into passes or changing strict three-reader/8s gates. Updated exact source/scope/root/currentr6, required native success, fresh clock and NEW explicit operational authorization are prerequisites for installed acceptance. docs/QD_INSTALLED_ACCEPTANCE_HARNESS_V3_CORRECTION_2026-11-02.md"
+},
   "qd_installed_acceptance_harness_v3_correction_20261103": {
   "starting_commit": "395ca25b8cff1c7bcf489a7fc2c1bc11bb46174b",
   "report": "docs/QD_INSTALLED_ACCEPTANCE_HARNESS_V3_CORRECTION_2026-11-02.md",
@@ -3029,107 +3239,130 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_INSTALLED_ACCEPTANCE_HARNESS_V3_SOURCE_CORRECTED_NATIVE_SECOND_CYCLE_BLOCKED",
+  "last_verified_task": "QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_READY_SOURCE_DISPOSABLE_ONLY",
   "next_eligible_tasks": [
-  "AFTER_THIS_STOP_SOURCE_OR_DISPOSABLE_TRANSIENT_TCP_THREE_READER_FEASIBILITY_UNCHANGED_GATES",
-  "ONLY_AFTER_REQUIRED_NATIVE_PASS_REVIEW_UPDATED_EXACT_SCOPE_AND_REQUEST_NEW_INSTALLED_AUTHORIZATION"
+  "AFTER_CURRENT_STOP_PREPARE_EXACT_FRESH_V4_INSTALLED_ACCEPTANCE_REVIEW_PACKAGE",
+  "SEPARATE_EXPLICIT_AUTHORIZATION_AND_FULL_FRESH_PREFLIGHT_REQUIRED_BEFORE_INSTALLED_RUN"
 ],
   "blocked_tasks": {
-  "TWO_CYCLE_NONFINANCIAL_ACCEPTANCE": "BLOCKED: one disposable native cycle passed, second cleanup refused CROSS_SOURCE_DISAGREEMENT: IPHelper FIN_WAIT1(6), CIM CLOSED(1), netstat absent; no passing complete second Stop. Later all-clear is cleanup evidence only. Installed paired acceptance remains unexecuted this task.",
-  "FRESH_ACCEPTANCE_AUTHORITY": "No new operational grant consumed or granted. Prior grants consumed. V3 review package explicitly refuses operational entry while required native validation failed. Future exact source/scope/root/current baseline, fresh clock and NEW single-use grant remain mandatory.",
-  "SOURCE_CORRECTIONS": "Browser notify/ACK processing precede unrelated diagnostics;45s from verifiedREADY unchanged. Actual receipt timing checked; raw fresh preselection3readers then strictCIMlast checked immediately at callback. Endpoint/owner/refusal/receipt hardening offline verified. Latest hardening not freshly native-passed.",
-  "PERSONAL_LOCAL_INSTALLATION": "Preserve existing application/support/receipt/ACK/journal. Last genuinely verified operational baseline r6 UNSELECTED c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc retained; no fresh operational readback or changes this task. No reinstallation/reset/select/rollback/installed launch.",
-  "FINANCIAL_COMMISSIONING": "PAPER NO; production NO-GO. No provider/financial/account/inception/live authority from this source-only milestone; technical gates/B1/C1/D1/E1/21decisions unchanged. No fresh clock measurement or service/configuration change."
+  "INSTALLED_NONFINANCIAL_ACCEPTANCE": "Not executed. Native disposable final2cycles passed2.3749056/2.3473608s; genuine installed45s browser and8s completeStop remain unverified. No installed authorization requested or consumed.",
+  "FRESH_ACCEPTANCE_PACKAGE": "Previous V3 source manifest/scope remain historical and blocked; current changed bytes must be bound to fresh exact V4 package before any new grant. Retained baseline r6 UNSELECTEDc9bc240c not reread operationally in this task.",
+  "HISTORICAL_TCP_AMBIGUITIES": "Underlying Windows State0/PID0LISTEN/CLOSED representation not fully explained; all ambiguities still refuse. Original V3 and first2V4 failures preserved; no resampling into passes. First failed fixture HTTPport not retained/reconstructed; later15knownport/read-only process clearance distinct from acceptance.",
+  "FINANCIAL_COMMISSIONING": "No PAPER authorization from this work. Financialcustody/currentresearch/executableIEX/freshclock/activation stillseparate/unaccepted; protectedaccounts/supportreceiptACKjournal unchanged. Existing B1/C1/D1/E1/21decisions retained."
 },
   "latest_tests": {
-  "status": "BLOCKED_REQUIRED_NATIVE_SECOND_CYCLE_CLEANUP_DISAGREEMENT",
-  "execution_date": "2026-11-03 America/Chicago",
-  "requested_report_filename_date": "2026-11-02",
-  "starting_commit": "395ca25b8cff1c7bcf489a7fc2c1bc11bb46174b",
-  "source_corrections_complete": true,
-  "installed_acceptance_passed": false,
-  "offline_tests": {
-    "passed": 382,
+  "status": "READY_FOR_FRESH_INSTALLED_ACCEPTANCE_AUTHORIZATION_SOURCE_AND_DISPOSABLE_ONLY",
+  "starting_commit": "574f1a4c3804c493b44d4334edba110d31f2ef6c",
+  "report": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md",
+  "offline": {
+    "passed": 421,
     "failed": 0,
     "skipped": 0,
-    "seconds": 18.88
+    "seconds": 22.9,
+    "prior_cases_preserved": 382,
+    "new_cases": 39
   },
-  "final_changed_source_tests": {
-    "passed": 88,
-    "failed": 0,
+  "native": {
+    "runs": 3,
+    "passed": 1,
+    "failed_preserved": 2,
     "skipped": 0,
-    "seconds": 3.62,
-    "overlaps_382": true
+    "final_run_seconds": 23.72599839999748,
+    "complete_stop_seconds": [
+      2.3749056,
+      2.3473608
+    ],
+    "stop_components_seconds": [
+      0.020604600002116058,
+      0.015338200002588565
+    ],
+    "passing_cycle_ports": [
+      49872,
+      65092
+    ],
+    "new_query_handles_closed": 69,
+    "test_child_handles_closed": 6,
+    "final_readback_handles_closed": 45,
+    "final_known_ports": [
+      49872,
+      51168,
+      51170,
+      51520,
+      53341,
+      58645,
+      59562,
+      59743,
+      59744,
+      59830,
+      61883,
+      64221,
+      64776,
+      64778,
+      65092
+    ],
+    "unknown_initial_failure_http_port_not_reconstructed": true,
+    "attempts_retried": 0,
+    "forced_termination": false,
+    "footprints_after_result_serialization": {
+      "native-run": {
+        "entries": 66,
+        "logical_bytes": 121209,
+        "accounted_bytes": 391545
+      },
+      "native-run-image-corrected": {
+        "entries": 79,
+        "logical_bytes": 143845,
+        "accounted_bytes": 467429
+      },
+      "native-run-eof-drained": {
+        "entries": 114,
+        "logical_bytes": 287556,
+        "accounted_bytes": 754500
+      },
+      "native-final-readback": {
+        "entries": 166,
+        "logical_bytes": 206162,
+        "accounted_bytes": 886098
+      }
+    }
   },
-  "initial_tests": {
-    "passed": 48,
-    "failed": 18,
-    "seconds": 2.74,
-    "cause": "managed process denied unnecessary os.link; test-coordination publication corrected to Windows atomic no-replace rename; financial codec untouched"
-  },
-  "native_runs": 1,
-  "native_passed": 0,
-  "native_failed": 1,
-  "native_seconds": 56.337762300001486,
-  "native_held_listener_preselection_refused": true,
-  "native_valid_preselection_callback": 1,
-  "native_callback_is_fixture_begin_only": true,
-  "native_operational_selection_actions": 0,
-  "native_browser_checks": 2,
-  "native_first_ack_received_seconds": 25.2533001,
-  "native_second_ack_generated_seconds": 22.002712,
-  "native_second_received_timestamp": "NOT_RETAINED_DUE_FAILED_CYCLE_RESULT;receipt gate necessarily passed before Stop; later source persists receipts",
-  "native_first_complete_stop_seconds": 2.0998932,
-  "native_second_cleanup_failure": "IP_HELPER FIN_WAIT1(6),CIM CLOSED(1),NETSTAT absent for same transient connection;commonTIME_WAIT row retained",
-  "native_later_cleanup_clear": true,
-  "native_later_cleanup_does_not_clear_failure": true,
-  "native_query_handles_closed": 12,
-  "additional_final_readback_handles_closed": 6,
-  "native_child_exit": 0,
-  "native_child_handle_closed": true,
-  "forced_termination": false,
-  "native_usage_at_result": {
-    "entries": 51,
-    "logical_bytes": 83545,
-    "accounted_bytes": 292441
-  },
-  "native_root_usage_after_final_clearance": {
-    "entries": 75,
-    "logical_bytes": 125407,
-    "accounted_bytes": 432607
-  },
-  "native_limits": {
-    "seconds": 180,
-    "entries": 1024,
-    "accounted_bytes": 16777216
-  },
-  "native_installed_application_launches": 0,
-  "real_browser": "IAB_ACCESSIBILITY_CONFIRMED_SYNTHETIC_PAGE_ONLY",
-  "screenshot": "CAPTURE_UNAVAILABLE_ERROR_PRESERVED_NOT_SUPPRESSED",
-  "live_clock_queries": 0,
-  "windows_settings_changes": 0,
+  "root_cause": "Fresh serial readers matched identical endpoints at different lifecycle moments. HTTP body completion did not verify peer TCP EOF. Reader order alone failed; EOF-drained new two-cycle run passed. Exact underlying Windows State0/PID0LISTEN representation remains unexplained and refused.",
+  "original_v3_failure_preserved": true,
+  "unchanged_validators": [
+    "socket_evidence",
+    "installed_acceptance_cleanup",
+    "installed_acceptance_sequence",
+    "installed_acceptance_handoff"
+  ],
+  "clock_queries": 0,
+  "installed_launches": 0,
   "operational_selection_or_rollback": 0,
-  "support_installation_or_journal_mutations": 0,
-  "new_operational_authorizations_consumed": 0,
-  "retained_operational_baseline": {
+  "new_installed_authorization_requested_or_consumed": false,
+  "protected_financial_or_journal_changes": 0,
+  "provider_connections": 0,
+  "financial_actions": 0,
+  "genesis_changes": 0,
+  "windows_settings_changes": 0,
+  "selector": {
     "revision": 6,
     "selected": null,
     "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
-    "readback_this_task": false
+    "fresh_readback": false
   },
-  "reviewed_source_files": 113,
-  "source_manifest_sha256": "db1d3304e671aead3fb3499cc346d31cde34e9df9112df5911db38bfb043c05b",
-  "scope_sha256": "d9d41b12585f777ad1723ae87c139d5be094240e86583190b93ac9400c755d9d",
-  "operational_template_default_refuses": true,
-  "operational_entry_explicitly_blocked_by_failed_native_validation": true,
-  "financial_actions": 0,
-  "provider_connections": 0,
-  "genesis_changes": 0,
+  "old_v3_scope_reusable": false,
+  "fresh_v4_exact_package_required_before_any_installed_grant": true,
+  "source_manifest": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_SOURCES_2026-11-03.json",
+  "source_manifest_sha256": "c8720e6b6fd24d5c2d6da0b41c64bfdfed0b819aa3c9f5cb33187636dc7f265a",
+  "static_policy_audit": {
+    "sources": 652,
+    "issues": 0,
+    "operational_acceptance": false
+  },
   "paper_startup": false,
   "production": "NO-GO"
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP after offline correction, report, archival checkpoint, commit, non-force push and remote verification. V3 remains BLOCKED by mandatory disposable second-cycle transient socket disagreement; do not retry installed acceptance. Preserve all raw failure and later cleanup evidence. Next related source/disposable feasibility may investigate TCP teardown ordering/timing without normalizing states, resampling failed cycles into passes or changing strict three-reader/8s gates. Updated exact source/scope/root/currentr6, required native success, fresh clock and NEW explicit operational authorization are prerequisites for installed acceptance. docs/QD_INSTALLED_ACCEPTANCE_HARNESS_V3_CORRECTION_2026-11-02.md",
+  "exact_next_action": "STOP after offline/native validation, report, archival checkpoint, commit, non-force push and remote verification. V4 source/disposable prerequisites READY; no installed launch or approval request. Next future action is exact V4 acceptance package preparation/review and fresh actual baseline verification before separate explicit user authorization/fullfreshclock/release/support/native/ACL/isolation preflight. OldV3 pins/scope/grants cannot be reused. No providers/financial/PAPER/Windows changes/Genesis. docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,

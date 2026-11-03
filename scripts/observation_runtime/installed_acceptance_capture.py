@@ -13,12 +13,23 @@ from scripts.observation_runtime.socket_evidence import (
     reconcile,
 )
 
+LEGACY_ORDER = ("IP_HELPER", "CIM", "NETSTAT")
+TEARDOWN_ORDER = ("CIM", "NETSTAT", "IP_HELPER")
 
-def collect(*, repo, evidence, port, after_ns, label, run):
+
+def collect(*, repo, evidence, port, after_ns, label, run, reader_order=LEGACY_ORDER):
+    # Starting the slow provider first avoids an immediate native sample followed
+    # by its process/provider startup gap during rapid TCP teardown. This is one
+    # cut, not a settle/retry loop; the same unanimous validators still decide.
+    if type(reader_order) is not tuple or reader_order not in (
+        LEGACY_ORDER,
+        TEARDOWN_ORDER,
+    ):
+        raise ValueError("EXACT_THREE_READER_ORDER_REQUIRED")
     repo, evidence = Path(repo), Path(evidence)
     ps = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
     frames = []
-    for source in ("IP_HELPER", "CIM", "NETSTAT"):
+    for source in reader_order:
         before = time.perf_counter_ns()
         frame = {
             "source": source,
@@ -107,6 +118,7 @@ def collect(*, repo, evidence, port, after_ns, label, run):
     snapshot = json.loads(data)
     now = time.perf_counter_ns()
     result = {
+        "reader_order": list(reader_order),
         "observations": frames,
         "snapshot": snapshot,
         "finished_ns": now,
