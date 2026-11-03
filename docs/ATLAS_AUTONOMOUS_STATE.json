@@ -1,4 +1,219 @@
 {
+  "qd_final_installed_nonfinancial_acceptance_v4_preparation_20261103": {
+  "status": "READY_FOR_FRESH_V4_INSTALLED_ACCEPTANCE_AUTHORIZATION_NOT_EXECUTION",
+  "proposal": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V4_2026-11-03.md",
+  "evidence": {
+    "status": "READY_FOR_FRESH_V4_INSTALLED_ACCEPTANCE_AUTHORIZATION_NOT_EXECUTION",
+    "starting_commit": "3374010c826fab2a1a2e4a5bfa0710ab022b3ecd",
+    "proposal": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V4_2026-11-03.md",
+    "scope_sha256": "737d3f6fea4cda5d60194ea03f619d5d778acd0b6fcf60ebfde78cb815b8dd84",
+    "source_files": 128,
+    "source_manifest_sha256": "4e92e55705465811106c067aebd6dcb24f96035d9af3fd44b2851b4131593140",
+    "read_only_native_review": {
+      "accepted": true,
+      "groups": 8,
+      "seconds": 6.630590600001597,
+      "application": {
+        "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+        "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+        "files": 10204,
+        "directories": 903,
+        "bytes": 260369081,
+        "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+        "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+        "required_dependencies": 15
+      },
+      "baseline": {
+        "revision": 6,
+        "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+        "selected": null,
+        "freshly_verified": true,
+        "collected_utc_ns": 1793699365178939200,
+        "native_root": [
+          4004218753,
+          65536,
+          1532785
+        ],
+        "native_record_pairs": 6,
+        "namespace_files": 12,
+        "two_new_records_fit": true
+      },
+      "original_receipt_ack_journal_selector_bytes_unchanged": true,
+      "installed_processes_started": 0,
+      "operational_mutations": 0,
+      "handles_closed": true,
+      "service_query_handles_closed": 2
+    },
+    "clock": {
+      "service_read_only": "RUNNING",
+      "startup_read_only": "AUTO_START",
+      "quality_measured": false,
+      "acceptance_capability_created": false,
+      "fresh_future_selection_clock_required": true,
+      "maximum_uncertainty_ms": 1000,
+      "maximum_age_seconds": 120,
+      "service_or_configuration_changes": 0
+    },
+    "tests": {
+      "passed": 303,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 15.84,
+      "new_package_cases": 51,
+      "earlier_focused_package_passes_overlapping": 49,
+      "prior_421_preserved_not_repeated": true
+    },
+    "prior_genuine_disposable_tcp": {
+      "two_cycle_passed": true,
+      "complete_stop_seconds": [
+        2.3749056,
+        2.3473608
+      ],
+      "earlier_failed_v4_runs_preserved": 2,
+      "original_v3_failure_preserved": true,
+      "reexecuted_here": false
+    },
+    "static_policy_audit": {
+      "sources": 653,
+      "issues": 0,
+      "operational_acceptance": false,
+      "startup_authorized": false
+    },
+    "lint_format_python_ps_parse": "PASS",
+    "initial_tool_dependency_refusal_preserved": true,
+    "new_scope_is_permission": false,
+    "execution_claim_created": false,
+    "operational_authorization_consumed": false,
+    "installed_acceptance_completed": false,
+    "release_selected": false,
+    "provider_connections": 0,
+    "financial_actions": 0,
+    "financial_account_read_or_initialization": false,
+    "support_reinstallation_or_journal_reset": false,
+    "windows_time_changes": 0,
+    "genesis_changes": 0,
+    "paper_startup": false,
+    "production": "NO-GO"
+  },
+  "prior_latest_tests": {
+    "status": "READY_FOR_FRESH_INSTALLED_ACCEPTANCE_AUTHORIZATION_SOURCE_AND_DISPOSABLE_ONLY",
+    "starting_commit": "574f1a4c3804c493b44d4334edba110d31f2ef6c",
+    "report": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md",
+    "offline": {
+      "passed": 421,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 22.9,
+      "prior_cases_preserved": 382,
+      "new_cases": 39
+    },
+    "native": {
+      "runs": 3,
+      "passed": 1,
+      "failed_preserved": 2,
+      "skipped": 0,
+      "final_run_seconds": 23.72599839999748,
+      "complete_stop_seconds": [
+        2.3749056,
+        2.3473608
+      ],
+      "stop_components_seconds": [
+        0.020604600002116058,
+        0.015338200002588565
+      ],
+      "passing_cycle_ports": [
+        49872,
+        65092
+      ],
+      "new_query_handles_closed": 69,
+      "test_child_handles_closed": 6,
+      "final_readback_handles_closed": 45,
+      "final_known_ports": [
+        49872,
+        51168,
+        51170,
+        51520,
+        53341,
+        58645,
+        59562,
+        59743,
+        59744,
+        59830,
+        61883,
+        64221,
+        64776,
+        64778,
+        65092
+      ],
+      "unknown_initial_failure_http_port_not_reconstructed": true,
+      "attempts_retried": 0,
+      "forced_termination": false,
+      "footprints_after_result_serialization": {
+        "native-run": {
+          "entries": 66,
+          "logical_bytes": 121209,
+          "accounted_bytes": 391545
+        },
+        "native-run-image-corrected": {
+          "entries": 79,
+          "logical_bytes": 143845,
+          "accounted_bytes": 467429
+        },
+        "native-run-eof-drained": {
+          "entries": 114,
+          "logical_bytes": 287556,
+          "accounted_bytes": 754500
+        },
+        "native-final-readback": {
+          "entries": 166,
+          "logical_bytes": 206162,
+          "accounted_bytes": 886098
+        }
+      }
+    },
+    "root_cause": "Fresh serial readers matched identical endpoints at different lifecycle moments. HTTP body completion did not verify peer TCP EOF. Reader order alone failed; EOF-drained new two-cycle run passed. Exact underlying Windows State0/PID0LISTEN representation remains unexplained and refused.",
+    "original_v3_failure_preserved": true,
+    "unchanged_validators": [
+      "socket_evidence",
+      "installed_acceptance_cleanup",
+      "installed_acceptance_sequence",
+      "installed_acceptance_handoff"
+    ],
+    "clock_queries": 0,
+    "installed_launches": 0,
+    "operational_selection_or_rollback": 0,
+    "new_installed_authorization_requested_or_consumed": false,
+    "protected_financial_or_journal_changes": 0,
+    "provider_connections": 0,
+    "financial_actions": 0,
+    "genesis_changes": 0,
+    "windows_settings_changes": 0,
+    "selector": {
+      "revision": 6,
+      "selected": null,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "fresh_readback": false
+    },
+    "old_v3_scope_reusable": false,
+    "fresh_v4_exact_package_required_before_any_installed_grant": true,
+    "source_manifest": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_SOURCES_2026-11-03.json",
+    "source_manifest_sha256": "c8720e6b6fd24d5c2d6da0b41c64bfdfed0b819aa3c9f5cb33187636dc7f265a",
+    "static_policy_audit": {
+      "sources": 652,
+      "issues": 0,
+      "operational_acceptance": false
+    },
+    "paper_startup": false,
+    "production": "NO-GO"
+  },
+  "prior_blocked_tasks": {
+    "INSTALLED_NONFINANCIAL_ACCEPTANCE": "Not executed. Native disposable final2cycles passed2.3749056/2.3473608s; genuine installed45s browser and8s completeStop remain unverified. No installed authorization requested or consumed.",
+    "FRESH_ACCEPTANCE_PACKAGE": "Previous V3 source manifest/scope remain historical and blocked; current changed bytes must be bound to fresh exact V4 package before any new grant. Retained baseline r6 UNSELECTEDc9bc240c not reread operationally in this task.",
+    "HISTORICAL_TCP_AMBIGUITIES": "Underlying Windows State0/PID0LISTEN/CLOSED representation not fully explained; all ambiguities still refuse. Original V3 and first2V4 failures preserved; no resampling into passes. First failed fixture HTTPport not retained/reconstructed; later15knownport/read-only process clearance distinct from acceptance.",
+    "FINANCIAL_COMMISSIONING": "No PAPER authorization from this work. Financialcustody/currentresearch/executableIEX/freshclock/activation stillseparate/unaccepted; protectedaccounts/supportreceiptACKjournal unchanged. Existing B1/C1/D1/E1/21decisions retained."
+  },
+  "prior_exact_next_action": "STOP after offline/native validation, report, archival checkpoint, commit, non-force push and remote verification. V4 source/disposable prerequisites READY; no installed launch or approval request. Next future action is exact V4 acceptance package preparation/review and fresh actual baseline verification before separate explicit user authorization/fullfreshclock/release/support/native/ACL/isolation preflight. OldV3 pins/scope/grants cannot be reused. No providers/financial/PAPER/Windows changes/Genesis. docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md"
+},
   "qd_windows_tcp_cleanup_agreement_v4_20261103": {
   "status": "READY_FOR_FRESH_INSTALLED_ACCEPTANCE_AUTHORIZATION_SOURCE_AND_DISPOSABLE_ONLY",
   "report": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md",
@@ -3239,130 +3454,113 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_READY_SOURCE_DISPOSABLE_ONLY",
+  "last_verified_task": "QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_V4_PREPARATION_READY_NOT_AUTHORIZED",
   "next_eligible_tasks": [
-  "AFTER_CURRENT_STOP_PREPARE_EXACT_FRESH_V4_INSTALLED_ACCEPTANCE_REVIEW_PACKAGE",
-  "SEPARATE_EXPLICIT_AUTHORIZATION_AND_FULL_FRESH_PREFLIGHT_REQUIRED_BEFORE_INSTALLED_RUN"
+  "OPERATOR_REVIEW_EXACT_V4_PROPOSAL_HASH_AND_RESULTING_GIT_CHECKPOINT",
+  "ONLY_AFTER_NEW_EXPLICIT_GRANT_RUN_FRESH_PREFLIGHT_AND_ONE_BOUNDED_TWO_CYCLE_INSTALLED_ACCEPTANCE"
 ],
   "blocked_tasks": {
-  "INSTALLED_NONFINANCIAL_ACCEPTANCE": "Not executed. Native disposable final2cycles passed2.3749056/2.3473608s; genuine installed45s browser and8s completeStop remain unverified. No installed authorization requested or consumed.",
-  "FRESH_ACCEPTANCE_PACKAGE": "Previous V3 source manifest/scope remain historical and blocked; current changed bytes must be bound to fresh exact V4 package before any new grant. Retained baseline r6 UNSELECTEDc9bc240c not reread operationally in this task.",
-  "HISTORICAL_TCP_AMBIGUITIES": "Underlying Windows State0/PID0LISTEN/CLOSED representation not fully explained; all ambiguities still refuse. Original V3 and first2V4 failures preserved; no resampling into passes. First failed fixture HTTPport not retained/reconstructed; later15knownport/read-only process clearance distinct from acceptance.",
-  "FINANCIAL_COMMISSIONING": "No PAPER authorization from this work. Financialcustody/currentresearch/executableIEX/freshclock/activation stillseparate/unaccepted; protectedaccounts/supportreceiptACKjournal unchanged. Existing B1/C1/D1/E1/21decisions retained."
+  "FRESH_INSTALLED_AUTHORIZATION": "REQUIRED: no operational grant consumed or implied by preparation. Exact V4 proposal/scope737d3f6f/source128/resultingreviewedcommit and NEW explicit single-use grant required; oldpackages/grants/roots not reusable.",
+  "GENUINE_INSTALLED_ACCEPTANCE": "Not performed. Need two genuine installed provider-disabled Open/browser/Stop cycles, READY/image/installedorigins/financialUNAVAILABLE,45s actualACK/8scompleteStop, all3socket/process/handlecleanup and verifiedknownheadrollbackr8tofreshlyreverifiedr6null.",
+  "CLOCK_AND_CURRENT_BASELINE": "W32TimeRunningAutomatic readonly observed only, no quality acceptance. Future NEW genuine clock<=1000ms age<=120s/acceptedsource immediatelyatnativepublication; reread currentexactr6c9bc240c beforeanymutation. No service/source/config/resync permission in package.",
+  "FINANCIAL_COMMISSIONING": "PAPERNO/productionNO-GO. This package cannot grant financialauthority/accountinception/provideractivation. Currentresearch/custody/clock/executableIEX/financialacceptance remainseparate; protectedfinancialrecords notaccessed or changed.",
+  "HISTORICAL_TCP_AMBIGUITIES": "State0/PID0LISTEN underlyingWindows representations unresolved and stillrefuse. OriginalV3/twoearlierV4failures retained; finaldisposablepass doesnotconvert priorfailures or prove installedacceptance."
 },
   "latest_tests": {
-  "status": "READY_FOR_FRESH_INSTALLED_ACCEPTANCE_AUTHORIZATION_SOURCE_AND_DISPOSABLE_ONLY",
-  "starting_commit": "574f1a4c3804c493b44d4334edba110d31f2ef6c",
-  "report": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md",
-  "offline": {
-    "passed": 421,
+  "status": "READY_FOR_FRESH_V4_INSTALLED_ACCEPTANCE_AUTHORIZATION_NOT_EXECUTION",
+  "starting_commit": "3374010c826fab2a1a2e4a5bfa0710ab022b3ecd",
+  "proposal": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V4_2026-11-03.md",
+  "scope_sha256": "737d3f6fea4cda5d60194ea03f619d5d778acd0b6fcf60ebfde78cb815b8dd84",
+  "source_files": 128,
+  "source_manifest_sha256": "4e92e55705465811106c067aebd6dcb24f96035d9af3fd44b2851b4131593140",
+  "read_only_native_review": {
+    "accepted": true,
+    "groups": 8,
+    "seconds": 6.630590600001597,
+    "application": {
+      "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+      "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+      "files": 10204,
+      "directories": 903,
+      "bytes": 260369081,
+      "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+      "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+      "required_dependencies": 15
+    },
+    "baseline": {
+      "revision": 6,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "selected": null,
+      "freshly_verified": true,
+      "collected_utc_ns": 1793699365178939200,
+      "native_root": [
+        4004218753,
+        65536,
+        1532785
+      ],
+      "native_record_pairs": 6,
+      "namespace_files": 12,
+      "two_new_records_fit": true
+    },
+    "original_receipt_ack_journal_selector_bytes_unchanged": true,
+    "installed_processes_started": 0,
+    "operational_mutations": 0,
+    "handles_closed": true,
+    "service_query_handles_closed": 2
+  },
+  "clock": {
+    "service_read_only": "RUNNING",
+    "startup_read_only": "AUTO_START",
+    "quality_measured": false,
+    "acceptance_capability_created": false,
+    "fresh_future_selection_clock_required": true,
+    "maximum_uncertainty_ms": 1000,
+    "maximum_age_seconds": 120,
+    "service_or_configuration_changes": 0
+  },
+  "tests": {
+    "passed": 303,
     "failed": 0,
     "skipped": 0,
-    "seconds": 22.9,
-    "prior_cases_preserved": 382,
-    "new_cases": 39
+    "seconds": 15.84,
+    "new_package_cases": 51,
+    "earlier_focused_package_passes_overlapping": 49,
+    "prior_421_preserved_not_repeated": true
   },
-  "native": {
-    "runs": 3,
-    "passed": 1,
-    "failed_preserved": 2,
-    "skipped": 0,
-    "final_run_seconds": 23.72599839999748,
+  "prior_genuine_disposable_tcp": {
+    "two_cycle_passed": true,
     "complete_stop_seconds": [
       2.3749056,
       2.3473608
     ],
-    "stop_components_seconds": [
-      0.020604600002116058,
-      0.015338200002588565
-    ],
-    "passing_cycle_ports": [
-      49872,
-      65092
-    ],
-    "new_query_handles_closed": 69,
-    "test_child_handles_closed": 6,
-    "final_readback_handles_closed": 45,
-    "final_known_ports": [
-      49872,
-      51168,
-      51170,
-      51520,
-      53341,
-      58645,
-      59562,
-      59743,
-      59744,
-      59830,
-      61883,
-      64221,
-      64776,
-      64778,
-      65092
-    ],
-    "unknown_initial_failure_http_port_not_reconstructed": true,
-    "attempts_retried": 0,
-    "forced_termination": false,
-    "footprints_after_result_serialization": {
-      "native-run": {
-        "entries": 66,
-        "logical_bytes": 121209,
-        "accounted_bytes": 391545
-      },
-      "native-run-image-corrected": {
-        "entries": 79,
-        "logical_bytes": 143845,
-        "accounted_bytes": 467429
-      },
-      "native-run-eof-drained": {
-        "entries": 114,
-        "logical_bytes": 287556,
-        "accounted_bytes": 754500
-      },
-      "native-final-readback": {
-        "entries": 166,
-        "logical_bytes": 206162,
-        "accounted_bytes": 886098
-      }
-    }
+    "earlier_failed_v4_runs_preserved": 2,
+    "original_v3_failure_preserved": true,
+    "reexecuted_here": false
   },
-  "root_cause": "Fresh serial readers matched identical endpoints at different lifecycle moments. HTTP body completion did not verify peer TCP EOF. Reader order alone failed; EOF-drained new two-cycle run passed. Exact underlying Windows State0/PID0LISTEN representation remains unexplained and refused.",
-  "original_v3_failure_preserved": true,
-  "unchanged_validators": [
-    "socket_evidence",
-    "installed_acceptance_cleanup",
-    "installed_acceptance_sequence",
-    "installed_acceptance_handoff"
-  ],
-  "clock_queries": 0,
-  "installed_launches": 0,
-  "operational_selection_or_rollback": 0,
-  "new_installed_authorization_requested_or_consumed": false,
-  "protected_financial_or_journal_changes": 0,
+  "static_policy_audit": {
+    "sources": 653,
+    "issues": 0,
+    "operational_acceptance": false,
+    "startup_authorized": false
+  },
+  "lint_format_python_ps_parse": "PASS",
+  "initial_tool_dependency_refusal_preserved": true,
+  "new_scope_is_permission": false,
+  "execution_claim_created": false,
+  "operational_authorization_consumed": false,
+  "installed_acceptance_completed": false,
+  "release_selected": false,
   "provider_connections": 0,
   "financial_actions": 0,
+  "financial_account_read_or_initialization": false,
+  "support_reinstallation_or_journal_reset": false,
+  "windows_time_changes": 0,
   "genesis_changes": 0,
-  "windows_settings_changes": 0,
-  "selector": {
-    "revision": 6,
-    "selected": null,
-    "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
-    "fresh_readback": false
-  },
-  "old_v3_scope_reusable": false,
-  "fresh_v4_exact_package_required_before_any_installed_grant": true,
-  "source_manifest": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_SOURCES_2026-11-03.json",
-  "source_manifest_sha256": "c8720e6b6fd24d5c2d6da0b41c64bfdfed0b819aa3c9f5cb33187636dc7f265a",
-  "static_policy_audit": {
-    "sources": 652,
-    "issues": 0,
-    "operational_acceptance": false
-  },
   "paper_startup": false,
   "production": "NO-GO"
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP after offline/native validation, report, archival checkpoint, commit, non-force push and remote verification. V4 source/disposable prerequisites READY; no installed launch or approval request. Next future action is exact V4 acceptance package preparation/review and fresh actual baseline verification before separate explicit user authorization/fullfreshclock/release/support/native/ACL/isolation preflight. OldV3 pins/scope/grants cannot be reused. No providers/financial/PAPER/Windows changes/Genesis. docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md",
+  "exact_next_action": "STOP after V4 approval package preparation, archival roadmap/recovery update, commit, non-force push and remote SHA verification. READY ONLY for operator review/NEW single-use exactV4 installednonfinancialacceptance grant at proposal docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_PROPOSAL_V4_2026-11-03.md canonicalSHA 737d3f6fea4cda5d60194ea03f619d5d778acd0b6fcf60ebfde78cb815b8dd84. No automatic execution. Fresh source/Git/native application/support/receiptACKjournal/actualr6/rollback/ACL/clock<=1000ms120s/providerdisabled/resourcepreflight mandatory; any drift STOP without operational repair. Futureselectr7only2c,2genuinecycles45sACK8sStop, strictV4EOF/3readers/processLAST, exactownedcleanup and knownsafe r8rollbacktor6UNSELECTED under600s8192entries64MiB. No financial/provider/PAPER/Time/Genesis authority.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
