@@ -36,8 +36,15 @@ def initial_image(enrollment):
 
 
 class NativePersonalResearchArchive:
+    # Reuse this immutable image protocol for another explicitly typed source,
+    # without accepting that source in the existing QD schema or constructors.
+    _validate_enrollment=staticmethod(validate_enrollment)
+    _initial_image=staticmethod(initial_image)
+    _image_schema=IMAGE
+    _max_packet_age=30
+
     def __init__(self, *, enrollment=None, images=None, authority=None, clock=None):
-        self.enrollment=validate_enrollment(enrollment)
+        self.enrollment=self._validate_enrollment(enrollment)
         if type(images) is not NativePersonalCoordinationImages or authority is None or clock is None:
             raise ValueError('ACCEPTED_QD_SOURCE_ARCHIVE_PORTS_REQUIRED')
         self.images,self.authority,self.clock=images,authority,clock
@@ -58,22 +65,25 @@ class NativePersonalResearchArchive:
         if type(now) is not int or now<0:raise ValueError('QD_SOURCE_ARCHIVE_CLOCK_REQUIRED')
         return now
 
+    def _packet_valid(self,packet,revision):
+        return (type(packet) is dict and set(packet)=={'schema','source_id','revision','observed_at','bundles','monitors'}
+                and packet['schema']=='QD_SCANNER_PUBLICATION_V1' and type(packet['bundles']) is list
+                and len(packet['bundles'])<=16 and type(packet['monitors']) is dict and len(packet['monitors'])<=16)
+
     def _image(self,raw):
         if type(raw) is not bytes or not 0<len(raw)<=1024*1024:raise ValueError('QD_SOURCE_ARCHIVE_IMAGE_CAPACITY')
         value=strict(raw.decode())
         if (type(value) is not dict or set(value)!={'schema','enrollment','revision','previous','packet','sources'}
-                or value['schema']!=IMAGE or value['enrollment']!=digest(self.enrollment)
+                or value['schema']!=self._image_schema or value['enrollment']!=digest(self.enrollment)
                 or type(value['revision']) is not int or not 0<=value['revision']<=127):
             raise ValueError('QD_SOURCE_ARCHIVE_IMAGE_SCOPE')
         if value['revision']==0:
-            if value!=strict(initial_image(self.enrollment).decode()):raise ValueError('QD_SOURCE_ARCHIVE_FALSE_INITIAL')
+            if value!=strict(self._initial_image(self.enrollment).decode()):raise ValueError('QD_SOURCE_ARCHIVE_FALSE_INITIAL')
         else:
             packet=value['packet']
-            if (type(packet) is not dict or set(packet)!={'schema','source_id','revision','observed_at','bundles','monitors'}
-                    or packet['schema']!='QD_SCANNER_PUBLICATION_V1' or packet['source_id']!=self.enrollment['source_id']
+            if (not self._packet_valid(packet,value['revision']) or packet['source_id']!=self.enrollment['source_id']
                     or type(packet['revision']) is not int or packet['revision']!=value['revision']
-                    or type(packet['observed_at']) is not int or type(packet['bundles']) is not list or len(packet['bundles'])>16
-                    or type(packet['monitors']) is not dict or len(packet['monitors'])>16
+                    or type(packet['observed_at']) is not int
                     or len(body(packet).encode())>131072 or type(value['sources']) is not dict
                     or type(value['previous']) is not str or not re.fullmatch('[0-9a-f]{64}',value['previous'])):
                 raise ValueError('QD_SOURCE_ARCHIVE_RECORD_SCHEMA')
@@ -130,11 +140,11 @@ class NativePersonalResearchArchive:
                 with self.images.transaction(readonly=False) as tx:
                     before=tx.read();old=self._image(before);head=self._accepted(old,now)
                     if head!=expected:raise ValueError('QD_SOURCE_ARCHIVE_STALE_CAS')
-                    after={'schema':IMAGE,'enrollment':digest(self.enrollment),'revision':old['revision']+1,
+                    after={'schema':self._image_schema,'enrollment':digest(self.enrollment),'revision':old['revision']+1,
                         'previous':digest(old),'packet':packet,'sources':sources}
                     raw=body(after).encode();self._image(raw)
                     stamp=self._now()
-                    if not 0<=stamp-packet['observed_at']<=30:raise ValueError('QD_SOURCE_ARCHIVE_PUBLICATION_NOT_CURRENT')
+                    if not 0<=stamp-packet['observed_at']<=self._max_packet_age:raise ValueError('QD_SOURCE_ARCHIVE_PUBLICATION_NOT_CURRENT')
                     if not 0<=stamp-now<=1 or lease.check(request,stamp) is not True:
                         raise ValueError('QD_SOURCE_ARCHIVE_AUTHORITY_CHANGED_BEFORE_EFFECT')
                     tx.publish(before,raw)

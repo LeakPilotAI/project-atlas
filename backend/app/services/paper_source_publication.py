@@ -165,7 +165,8 @@ class PerpSourcePublication(SourcePublication):
         self._published_cache=None
         self._verify()
 
-    def capture(self):
+    def prepare_capture(self):
+        """Validate/normalize original evidence without publishing a successor."""
         self._verify()
         from app.adapters.hyperliquid import (
             _paper_execution_observation,
@@ -250,7 +251,13 @@ class PerpSourcePublication(SourcePublication):
             'funding':funding,'oracles':oracles,'maker_fills':proofs,'setups':self.lifecycle.read_current()}
         if self.adapter.paper_source_snapshot()!=cached or self.orders.snapshot()!=control:
             raise ValueError('PERP_SOURCE_CHANGED_DURING_PUBLICATION')
-        result=self.publish(packet,{'cache':cached,'orders':control})
+        return packet,{'cache':cached,'orders':control}
+
+    def capture(self, *, evidence=None, expected_head=None):
+        packet,sources=self.prepare_capture()
+        if evidence is not None:sources['current_input']=strict(body(evidence))
+        result=self.publish(packet,sources,expected_head=expected_head)
+        cached=sources['cache']
         self._published_cache=digest(cached)
         return result
 

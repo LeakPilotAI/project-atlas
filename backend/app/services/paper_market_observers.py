@@ -45,8 +45,9 @@ class HyperliquidMarketObserver:
             raise ValueError("MARKET_EXISTING_HYPERLIQUID_ADAPTER_REQUIRED")
         self.adapter, self.clock, self.last = adapter, clock, None
         if source is not None:
+            from app.services.hyperliquid_current_producer import HyperliquidCurrentProducer
             from app.services.paper_source_publication import PerpSourcePublication
-            if type(source) is not PerpSourcePublication or source.adapter is not adapter:
+            if type(source) not in (PerpSourcePublication,HyperliquidCurrentProducer) or source.adapter is not adapter:
                 raise ValueError('MARKET_AUTHENTICATED_ORIGINAL_SOURCE_REQUIRED')
         self.source=source
 

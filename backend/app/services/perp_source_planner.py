@@ -56,6 +56,19 @@ def discovery_plans(markets, candles, symbols):
     return output[:8]
 
 
+def source_research_plans(packet, control, symbols, *, now):
+    """Existing discovery/lifecycle sequence, shared with read-only source views."""
+    plans = discovery_plans(packet['markets'], packet['candles'], symbols)
+    previous = {row['order']['plan']['discovery']['setup_key']: row['order']['plan']['discovery']
+                for row in control.values() if 'discovery' in row['order']['plan']}
+    if type(packet['setups']) is not list or len(packet['setups']) > 32:
+        raise ValueError('PERP_AUTHENTICATED_LIFECYCLE_SNAPSHOT_REQUIRED')
+    if len({row['setup_key'] for row in packet['setups']}) != len(packet['setups']):
+        raise ValueError('PERP_CONFLICTING_LIFECYCLE_SNAPSHOT')
+    previous.update({row['setup_key']: row for row in packet['setups']})
+    return reconcile_setups(plans, previous=previous.values(), now=datetime.fromtimestamp(now, UTC))
+
+
 class PerpSourcePlanner:
     def __init__(self, *, writer, source, clock, session_id):
         if type(writer) is not RestingPerpWriter or source is None or clock is None or not session_id:
@@ -180,15 +193,7 @@ class PerpSourcePlanner:
         if any(row['state'] == 'RESERVED' for row in control.values()):
             self.last = 'RESTING_NO_EXECUTION_EVIDENCE'
             return None
-        plans = discovery_plans(packet['markets'], packet['candles'], manifest['perp_policy']['symbols'])
-        previous = {row['order']['plan']['discovery']['setup_key']: row['order']['plan']['discovery']
-                    for row in control.values() if 'discovery' in row['order']['plan']}
-        if type(packet['setups']) is not list or len(packet['setups']) > 32:
-            raise ValueError('PERP_AUTHENTICATED_LIFECYCLE_SNAPSHOT_REQUIRED')
-        if len({row['setup_key'] for row in packet['setups']}) != len(packet['setups']):
-            raise ValueError('PERP_CONFLICTING_LIFECYCLE_SNAPSHOT')
-        previous.update({row['setup_key']: row for row in packet['setups']})
-        plans = reconcile_setups(plans, previous=previous.values(), now=datetime.fromtimestamp(now, UTC))
+        plans = source_research_plans(packet, control, manifest['perp_policy']['symbols'], now=now)
         for row in build_perp_board(plans):
             if row['manual_instruction']['action'] != 'PLACE_RESTING_L1':
                 continue
