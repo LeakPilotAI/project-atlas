@@ -142,6 +142,13 @@ class Mailbox:
             while True:
                 for i, item in enumerate(self.pending):
                     if item["kind"] == kind:
+                        now = self.channel.clock()
+                        need(
+                            now < deadline_ns
+                            and 0 <= now - item["sent_ns"] <= 6 * 10**9,
+                            "STALE_QUEUED_IPC_FRAME",
+                        )
+                        self.channel.endpoint.verify_peer(self.channel.binding)
                         return self.pending.pop(i)
                 need(len(self.pending) < 16, "IPC_MAILBOX_CAPACITY")
                 item = self.channel.receive(deadline_ns=deadline_ns)
@@ -159,6 +166,7 @@ class Mailbox:
                         "OUTPUT",
                         "EXIT",
                         "FAILURE",
+                        "INPUT",
                     },
                     "UNSUPPORTED_IPC_INTERLEAVING",
                 )

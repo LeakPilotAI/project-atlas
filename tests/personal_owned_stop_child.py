@@ -26,6 +26,8 @@ def main():
             raw=guard.read_input(maximum_bytes=1024, timeout=8, line=True)
             command=json.loads(raw)
             guard.verify_received_stop(command, nonce, identity)
+        elif phase=='READBACK' and hasattr(guard.processes,'financial_readback'):
+            guard.processes.financial_readback(value)
     run_native_pipeline(account,stop_observer=observe)
 
 

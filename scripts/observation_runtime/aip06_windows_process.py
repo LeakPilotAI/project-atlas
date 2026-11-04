@@ -102,6 +102,7 @@ class Win32ProcessCalls:
             "WaitForSingleObject": ([W.HANDLE, W.DWORD], W.DWORD),
             "GetExitCodeProcess": ([W.HANDLE, C.POINTER(W.DWORD)], W.BOOL),
             "TerminateJobObject": ([W.HANDLE, W.UINT], W.BOOL),
+            "TerminateProcess": ([W.HANDLE, W.UINT], W.BOOL),
             "ReadFile": (
                 [W.HANDLE, C.c_void_p, W.DWORD, C.POINTER(W.DWORD), C.c_void_p],
                 W.BOOL,
@@ -311,6 +312,13 @@ class Win32ProcessCalls:
 
     def terminate_owned_job(self, job):
         self.check(self.k.TerminateJobObject(job, 71))
+
+    def terminate_created(self, handle, original):
+        need(
+            self.native(handle) == original,
+            "ORIGINAL_CREATED_HANDLE_CHANGED_BEFORE_ABORT",
+        )
+        self.check(self.k.TerminateProcess(handle, 71))
 
     def usage(self, process):
         ps = C.WinDLL("psapi", use_last_error=True)

@@ -257,12 +257,17 @@ class SharedResources:
     Whole matching history rollback needs an independently held expected head.
     """
 
-    def __init__(self, journal, *, clock_ns, expected_head=None, bootstrap=None):
+    def __init__(self, journal, *, clock_ns, expected_head=None, bootstrap=None, intrinsic_io=None):
         need(
             journal is not None and callable(clock_ns),
             "EXPLICIT_JOURNAL_AND_CLOCK_REQUIRED",
         )
         self.journal, self.clock = journal, clock_ns
+        self.intrinsic_io=intrinsic_io
+        if intrinsic_io is not None:
+            from scripts.observation_runtime.aip06_intrinsic_io import IntrinsicJournalIO
+            need(type(intrinsic_io) is IntrinsicJournalIO,'EXACT_SHARED_INTRINSIC_IO_ACCOUNTING')
+            intrinsic_io.quiescent()
         self.lock, self.uncertain = RLock(), False
         rows = journal.read()
         need(
@@ -296,6 +301,7 @@ class SharedResources:
         if expected_head is not None:
             need(self.head == expected_head, "JOURNAL_ROLLBACK_OR_CONFLICT")
         self._fresh()
+        if intrinsic_io is not None:intrinsic_io.bind(self)
 
     @property
     def state(self):
@@ -512,6 +518,7 @@ class SharedResources:
             "JOURNAL_HANDLE_RELEASE_UNVERIFIED",
         )
         self._apply(event)
+        if self.intrinsic_io is not None:self.intrinsic_io.quiescent()
         self.uncertain = False
         return self.head
 
@@ -732,6 +739,7 @@ class SharedResources:
             )
             state = copied(self._state)
             state["stops"][key]["state"] = status
+            if status=='FAILED':state['mode']='STOP'
             return self._commit(state, cleanup=True)
 
     def close(self, owner, key, *, observer):
@@ -1263,6 +1271,8 @@ class StopVerification:
             self.resources.resolve_stop(self.request, "CLOSED")
             snapshot = self.resources.read()
             done = self.clock()
+            intrinsic=getattr(self.resources,'intrinsic_io',None)
+            if intrinsic is not None:intrinsic.quiescent()
             need(
                 integer(done)
                 and self.started <= process_cut["at_ns"] <= done

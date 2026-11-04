@@ -224,6 +224,7 @@ class Broker:
                 "bind_reserved_process",
                 "reserve_stop_request",
                 "resolve_stop",
+                "bind_native_handle",
             },
             "RPC_METHOD_NOT_PERMITTED",
         )
@@ -231,6 +232,17 @@ class Broker:
         if method == "read":
             need(not args and not kw and request["proof"] is None, "RPC_READ_ARGUMENTS")
             return self.resources.read()
+        if method == "bind_native_handle":
+            need(
+                len(args) == 3
+                and args[0] == self.owner
+                and not kw
+                and request["proof"] is None,
+                "RPC_NATIVE_HANDLE_ARGUMENTS",
+            )
+            return self.verifier.bind_native_handle(
+                self.channel.binding, args[1], args[2]
+            )
         if method in ("reserve", "charge_write", "close"):
             need(args and args[0] == self.owner, "RPC_FOREIGN_OWNER")
             if method == "close":
@@ -371,6 +383,8 @@ class RemoteResources(SharedResources):
         self.uncertain = False
         self.lock = threading.RLock()
         self._recovered = False
+        from scripts.observation_runtime.aip06_windows_pump import Mailbox
+        self.mailbox=Mailbox(channel)
 
     @property
     def state(self):
@@ -398,9 +412,7 @@ class RemoteResources(SharedResources):
             }
             end = self.clock() + MAX_IPC_NS
             self.channel.send("REQUEST", request, deadline_ns=end)
-            result = self.channel.receive(deadline_ns=end, expected_kind="REPLY")[
-                "payload"
-            ]
+            result = self.mailbox.receive('REPLY',deadline_ns=end)['payload']
             need(
                 type(result) is dict
                 and set(result)
@@ -440,6 +452,10 @@ class RemoteResources(SharedResources):
 
     def charge_write(self, *args, **kwargs):
         return self.call("charge_write", args, kwargs)
+
+    def bind_native_handle(self, key, handle):
+        self.proofs.bind(key, handle)
+        return self.call("bind_native_handle", (self.owner, key, handle), {})
 
     def close(self, owner, key, *, observer):
         need(observer.closed(owner, key) is True, "LOCAL_RELEASE_UNVERIFIED")

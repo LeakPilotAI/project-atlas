@@ -48,7 +48,7 @@ class NoFinancialPermission:
 
 @contextmanager
 def reopen_readonly_fixture(value):
-    guarded.require_fixture('independent-readonly-restart')
+    guard=guarded.require_fixture('independent-readonly-restart')
     root=Path(value['root'])
     repo=Path(__file__).resolve().parents[1]
     from personal_fixture_sources import fixture_source_root
@@ -114,6 +114,20 @@ def reopen_readonly_fixture(value):
             'process':observe_self(),'cash':payload['state']['cash'],'source_revision':payload['source_revision'],
             'state_digest':digest(payload['state']),'account_and_epoch_distinct':native['account_id']!=native['epoch'],
             'source_root':str(source_repo)}
+        if 'request' in value:
+            from scripts.observation_runtime.aip06_harness import SCOPE_HASH,need
+            from scripts.observation_runtime.aip06_stop import personal_financial_reply
+            from scripts.observation_runtime.personal_runtime_current import PersonalRuntimeCurrent
+            request=value['request'];guard.check()
+            record=guard.resources.state['stops'].get(request.get('operation_id'))
+            need(request.get('scope')==SCOPE_HASH and record is not None
+                 and record['state']=='PENDING' and record['request']==digest(request),
+                 'READONLY_RESTART_CURRENT_STOP_REQUEST')
+            current=PersonalRuntimeCurrent(bootstrap=bootstrap,source=source,reports=reports,reader=reader,
+                                          native_reader=native_reader,clock=clock)
+            result={'request':request,'financial':personal_financial_reply(guard=guard,root=str(root),native=native,
+                manifest=manifest,native_reader=native_reader,selected_reader=reader,current=current,clock=clock,
+                writer_rebind_refused=refused)}
         yield {'result':result,'reader':reader,'clock':clock,'native':native,'payload':payload}
     finally:
         for item in reversed(handles): item.close()
@@ -124,7 +138,12 @@ def main():
     raw = guard.read_input(maximum_bytes=65536, timeout=30)
     if len(raw)>65536: raise ValueError('FIXTURE_INPUT_CAPACITY')
     value=strict(raw.decode())
-    with reopen_readonly_fixture(value) as opened:print(json.dumps(opened['result']))
+    with reopen_readonly_fixture(value) as opened:
+        print(json.dumps(opened['result']),flush=True)
+        if 'request' in value:
+            if not hasattr(guard.processes,'wait_readonly_ack'):
+                raise ValueError('READONLY_RECEIPT_PORT_NOT_BOUND')
+            guard.processes.wait_readonly_ack(opened['result'])
 
 
 if __name__=='__main__':

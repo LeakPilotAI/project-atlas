@@ -338,9 +338,17 @@ class NativeController:
         io.mkdir(journal_path)
         escrow.close(owner_key, "bootstrap:journal", observer=io)
         identity = io.inspect(journal_path)["id"]
+        from scripts.observation_runtime.aip06_intrinsic_io import IntrinsicJournalIO
+
+        book.intrinsic = IntrinsicJournalIO(
+            owner=owner_key, clock_ns=self.clock, started_ns=escrow.started
+        )
         journal = CreateNewJournal(NativeJournalIO(io, identity), identity)
         resources = SharedResources(
-            journal, clock_ns=self.clock, bootstrap=escrow.seal(owner)
+            journal,
+            clock_ns=self.clock,
+            bootstrap=escrow.seal(owner),
+            intrinsic_io=book.intrinsic,
         )
         need(
             resources.register_owner(owner, controller=True) == owner_key,

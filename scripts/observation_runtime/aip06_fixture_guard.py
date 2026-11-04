@@ -187,8 +187,10 @@ def audit(event, args):
         "os.truncate",
     }:
         need(mode == "effect", "UNATTRIBUTED_FILESYSTEM_MUTATION:" + event)
-    elif event in {"subprocess.Popen", "os.system", "os.posix_spawn", "os.spawn"}:
+    elif event in {"subprocess.Popen", "os.system", "os.posix_spawn", "os.spawn", "_winapi.CreateProcess"}:
         need(mode == "process", "UNOWNED_PROCESS_LAUNCH")
+    elif event in {'socket.bind','socket.connect'}:
+        raise ValueError('AIP06_NATIVE_FIXTURE_NO_NETWORK_TRANSPORT')
     elif event == "sqlite3.connect":
         need(args[0] == ":memory:" or mode == "sqlite", "UNRESERVED_SQLITE_DATABASE")
 
@@ -275,6 +277,7 @@ class FixtureGuard:
 
     def check(self):
         need(not self.failed, "FIXTURE_FAILURE_LATCHED")
+        need(self.stop is None or self.stop.failure is None,'STOP_FAILURE_LATCHED')
         need(
             not any(
                 os.environ.get(k)
@@ -590,6 +593,15 @@ class FixtureGuard:
         raise ValueError("UNSUPPORTED_NATIVE_MUTATION:" + event)
 
     def spawn(self, argv, **options):
+        try:
+            return self._spawn(argv, **options)
+        except BaseException:
+            self.failed=True
+            if hasattr(self.processes,'refuse_current_launch'):
+                self.processes.refuse_current_launch()
+            raise
+
+    def _spawn(self, argv, **options):
         """The process port uses suspended creation; never ordinary Popen fallback."""
         self.check()
         need(

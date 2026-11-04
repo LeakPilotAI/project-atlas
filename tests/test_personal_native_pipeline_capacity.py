@@ -181,7 +181,7 @@ def run_native_pipeline(tmp_path, stop_observer=None):
         assert profile in (None,'COMPLETE_FINANCIAL_STOP')
         if profile=='COMPLETE_FINANCIAL_STOP':
             from personal_complete_native_stop_fixture import complete_financial_stop
-            if stop_observer is not None: stop_observer('READY',None)
+            if stop_observer is not None: stop_observer('READY',{'native':s.n,'manifest':s.m,'source_revision':len(pins.current()['entries'])})
             complete_financial_stop(n=n,native=s.n,bootstrap=bootstrap,pins=pins,reports=reports,ownership=ownership,
                 admission=admission,module=module,projection=projection,service=service,clock=clock,
                 process=process,timings=timings,timed=timed)

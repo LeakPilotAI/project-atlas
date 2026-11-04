@@ -327,6 +327,7 @@ class AllocationBook:
         self.lock = threading.RLock()
         self.journal_live = {}
         self.journal_batch = False
+        self.intrinsic = None
 
     def fresh(self, deadline=None):
         self.resources.read()
@@ -340,6 +341,8 @@ class AllocationBook:
             key = f"winio:{self.serial}"
             if journal:
                 need(len(self.journal_live) < 16, "JOURNAL_TRANSIENT_HANDLE_CAPACITY")
+                if self.intrinsic is not None:
+                    self.intrinsic.acquire(key)
             else:
                 self.fresh()
                 self.resources.reserve(
@@ -356,6 +359,8 @@ class AllocationBook:
                 h = callback()
             except NativeOpenFailed:
                 self.released.add(key)
+                if journal and self.intrinsic is not None:
+                    self.intrinsic.no_allocation(key)
                 if not journal:
                     self.resources.close(self.owner, key, observer=self)
                 raise
@@ -371,6 +376,8 @@ class AllocationBook:
                 "LIVE_HANDLE_REUSE",
             )
             target[key] = {"handle": raw}
+            if journal and self.intrinsic is not None:
+                self.intrinsic.created(key, raw)
             if not journal and hasattr(self.resources, "bind_native_handle"):
                 self.resources.bind_native_handle(key, raw)
             return key, raw
@@ -380,6 +387,8 @@ class AllocationBook:
         need(target.get(key) == {"handle": handle}, "EXACT_OWNED_IO_LIFETIME_REQUIRED")
         self.calls.close(handle)
         need(self.calls.closed(handle), "IO_HANDLE_RELEASE_UNVERIFIED")
+        if journal and self.intrinsic is not None:
+            self.intrinsic.released(key, handle, observer=self.calls)
         del target[key]
         self.released.add(key)
         if not journal:
@@ -399,6 +408,8 @@ class AllocationBook:
         finally:
             self.journal_batch = False
             need(not self.journal_live, "JOURNAL_NATIVE_HANDLES_NOT_CLOSED")
+            if self.intrinsic is not None:
+                self.intrinsic.quiescent()
 
 
 class NativeIO:

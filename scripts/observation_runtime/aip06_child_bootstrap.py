@@ -202,7 +202,13 @@ class ChildBootstrap:
         self.guard.check()
         self.state = "RUNNING"
         with self.guard.installed():
-            result = runner(self.target)
+            port = self.guard.processes
+            if hasattr(port, "output_context"):
+                with port.output_context():
+                    result = runner(self.target)
+            else:
+                result = runner(self.target)
+            if hasattr(self.guard.io,'close_cache'):self.guard.io.close_cache()
         self.state = "EXITED"
         self.channel.send(
             "EXIT",
