@@ -11424,10 +11424,10 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "AIP_06_NATIVE_ACCEPTANCE_READINESS_REVIEW_COMPLETE_EXECUTION_BLOCKED",
+  "last_verified_task": "AIP_06_SOURCE_HARNESS_CONTRACTS_VALIDATED_NATIVE_FIXTURE_BINDING_BLOCKED",
   "next_eligible_tasks": [
-  "AIP-06-NATIVE-HARNESS-PREPARATION: separately requested SOURCE-ONLY integration of existing owned Stop/launch/Job/shared-budget/root-map/bounded-read/fault matrix;offline validation only. No native or operational authority implied.",
-  "Then final exact executable contract/pins and fresh sole-operator disposable native approval;AIP06 remains BLOCKED. AIP07 not started."
+  "Finish source-only concrete native journal/filesystem/query/process/fixture adapter integration and bounded controller; offline validate before executable pins/proposal and separate native grant. No native execution now.",
+  "AIP07 remains conditional on changed original-contract browser/listener capability;not started."
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -11444,36 +11444,34 @@
   "aip04_installed_dashboard_boundary": "AIP04 read-model contracts do not install or accept a dashboard/runtime: immutable source integration, accepted native read/account/current-source custody, actual browser/Control Center/Stop/restart evidence and V6 capabilities remain separately scoped. Unsupported panes and Stop/continuation remain explicitly UNAVAILABLE; no financial/provider activation.",
   "aip05_real_discord_and_recovery_boundary": "AIP05 is isolated source/disposable only. Real Discord transport/recipient/category/rate consent, credentials, accepted current recovery/custody evidence and actual delivery proof remain unauthorized/unaccepted. Local append-only checkpoint does not prove whole-directory/host antirollback. Operational runtime hooks/native financial ACKs and installed financial/clock/provider/V6 gates remain unchanged.",
   "AIP06_NATIVE_ACCEPTANCE": "Offline34 new/1160 Python/42 Node pass. Actual native lanes/current identity cuts/ACK/kill/drain/capacity and complete Stop reserve remain NOT EXECUTED; exact separately reviewed bounded disposable resource/process authorization required. No installed or operational authority.",
-  "AIP06_NATIVE_READINESS_REVIEW": "BLOCKED_FOR_EXECUTION: actual financial-worker/child/diagnostic-query ownership/Job binding,shared prospective allocated-storage/time/process budget,exact3-slot roots,bounded reads and missing native fault/load cases need source-only harness integration. Existing parent-observed Stop/readback test reusable. D:interpreter exists/two hashes observed;full native runtime inventory/ACLs not reverified. No native approval consumed."
+  "AIP06_NATIVE_READINESS_REVIEW": "BLOCKED_FOR_EXECUTION: actual financial-worker/child/diagnostic-query ownership/Job binding,shared prospective allocated-storage/time/process budget,exact3-slot roots,bounded reads and missing native fault/load cases need source-only harness integration. Existing parent-observed Stop/readback test reusable. D:interpreter exists/two hashes observed;full native runtime inventory/ACLs not reverified. No native approval consumed.",
+  "AIP06_SOURCE_HARNESS_PREPARATION": "BLOCKED: source guards/100new mock cases validated;concrete Windows journal/filesystem/native-write and process/query/controller/owned-Stop fixture adapters are not wired. Legacy raw native commands remain ineligible. No native approval should be requested until remaining source integration/offline proof is complete."
 },
   "latest_tests": {
-  "base_commit": "695588d09e322a68d1deb8dca565cc8b68f9221a",
-  "result": "AIP_06_BLOCKED_NATIVE_ACCEPTANCE_OFFLINE_SLICE_VALIDATED",
-  "report": "docs/AIP_06_COMPOSED_ACCOUNTING_RISK_RECOVERY_2026-11-04.md",
-  "fault_matrix": "docs/AIP_06_COMPOSED_ACCOUNTING_RISK_FAULT_MATRIX_2026-11-04.json",
-  "passed": 1160,
+  "base_commit": "ebf5e6541002db55a1bbbfb2d644d1dd016f63bc",
+  "result": "HARNESS_PREPARATION_BLOCKED_NATIVE_FIXTURE_PORT_BINDING_INCOMPLETE",
+  "source_contracts_validated": true,
+  "report": "docs/AIP_06_SOURCE_ONLY_NATIVE_HARNESS_PREPARATION_2026-11-04.md",
+  "passed": 1338,
   "failed": 0,
   "errors": 0,
   "skipped": 0,
-  "new_cases": 34,
-  "preserved_aip05_case_ids": 969,
-  "modules": 61,
-  "python_artifacts": [
-    {
-      "path": "logs/diagnostics/aip-06-composed-recovery-20261104/acceptance.xml",
-      "sha256": "7e58c45a0798baf79bdd4e80545f00e1f7f8c3474ac45e9ef3d107e61bbe85b1",
-      "passed": 1098
-    },
-    {
-      "path": "logs/diagnostics/aip-06-composed-recovery-20261104/clock.xml",
-      "sha256": "6979367d429b1341023b9a5a3be197d49f23690ad64dd0758b795f94928fd305",
-      "passed": 62
-    }
+  "deselected": 5,
+  "deselected_case_ids": [
+    "tests.test_paper_epoch_fixture::test_abrupt_process_crash_recovery[after_commit]",
+    "tests.test_paper_epoch_fixture::test_abrupt_process_crash_recovery[before_commit]",
+    "tests.test_paper_epoch_fixture::test_abrupt_process_crash_recovery[before_event]",
+    "tests.test_quality_dips_autonomous_paper::test_abrupt_process_exit_and_recovery_do_not_duplicate[after_ack-62]",
+    "tests.test_quality_dips_autonomous_paper::test_abrupt_process_exit_and_recovery_do_not_duplicate[after_commit-61]"
   ],
+  "deselection_reason": "No financial-worker launch: exclude5 Python accounting-fixture child self-exit tests; prior passing evidence retained, assertions unchanged.",
+  "new_python_cases": 100,
+  "modules": 64,
   "node_tests": {
     "passed": 42,
     "failed": 0,
     "skipped": 0,
+    "cancelled": 0,
     "new_cases": 0
   },
   "standalone_poll_contract": "PASS_NOT_ADDED_TO_TEST_COUNT",
@@ -11481,18 +11479,25 @@
     "Existing Starlette/httpx TestClient deprecation",
     "Existing Discord audioop deprecation"
   ],
-  "offline_slice": "COMPLETE",
-  "native_acceptance": "NOT_EXECUTED_NO_NEW_REVIEWED_NATIVE_SCOPE",
-  "complete_milestone_count": 5,
-  "total_canonical_milestones": 18,
+  "junit": "logs/diagnostics/aip-06-source-harness-20261104/acceptance-final.xml",
+  "junit_sha256": "965e8ce6a1fd3713fad08bae06d95e69e69540cf513650585960b578029367ae",
+  "source_sha256": {
+    "scripts/observation_runtime/aip06_harness.py": "bb9eb8221b95f3e2670da22cefe4b529f9d4fdfb0ce569495d8c01dd03fa9700",
+    "tests/test_aip06_harness.py": "c35344854080ffa16ba441b8ca0ed786612a02393bcc14a4bfeba69bf1133bf6"
+  },
+  "native_tests_executed": 0,
+  "financial_workers_launched": 0,
+  "native_ports_bound": false,
+  "executable_native_approval_package": false,
+  "authorization_consumed": false,
   "aip06_complete": false,
+  "completed_milestones": 5,
+  "total_milestones": 18,
   "next_canonical_milestone": "AIP-07-CHANGED-CAPABILITY-PREFLIGHT",
-  "next_action": "STOP_AFTER_AIP06_CHECKPOINT. Prepare/review exact bounded disposable native financial-lane matrix authorization before any native run; do not start AIP07 or installed acceptance.",
-  "paper_startup": false,
-  "production": "NO_GO"
+  "next_action": "Finish source-only concrete native journal/filesystem/query/process/fixture adapter integration and bounded controller; offline validate before executable pins/proposal and separate native grant. No native execution now."
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP_AFTER_AIP06_NATIVE_READINESS_REVIEW_DOCS_CHECKPOINT_COMMIT_NONFORCE_PUSH_REMOTE_SHA_VERIFY. Next source-only AIP06 native-harness preparation as specified in docs/AIP_06_NATIVE_ACCEPTANCE_READINESS_REVIEW_2026-11-04.md before a fresh executable native approval package. No native execution/installed/provider/account/financial/PAPER/V6/Windows changes. AIP06BLOCKED;5of18complete;PAPER:NO;production:NO-GO.",
+  "exact_next_action": "STOP_AFTER_SOURCE_HARNESS_CONTRACT_VALIDATION_REPORT_ROADMAP_RECOVERY_COMMIT_NONFORCE_PUSH_REMOTE_SHA_VERIFY. Finish source-only concrete native journal/filesystem/query/process/fixture adapter integration and bounded controller; offline validate before executable pins/proposal and separate native grant. No native execution now. AIP06BLOCKED;5of18complete;PAPER:NO;production:NO-GO.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
@@ -16920,6 +16925,127 @@
       "AIP06_NATIVE_ACCEPTANCE": "Offline34 new/1160 Python/42 Node pass. Actual native lanes/current identity cuts/ACK/kill/drain/capacity and complete Stop reserve remain NOT EXECUTED; exact separately reviewed bounded disposable resource/process authorization required. No installed or operational authority."
     },
     "exact_next_action": "STOP_AFTER_AIP06_CHECKPOINT. Prepare/review exact bounded disposable native financial-lane matrix authorization before any native run; do not start AIP07 or installed acceptance."
+  }
+},
+  "aip_06_source_only_native_harness_preparation_20261104": {
+  "result": {
+    "base_commit": "ebf5e6541002db55a1bbbfb2d644d1dd016f63bc",
+    "result": "HARNESS_PREPARATION_BLOCKED_NATIVE_FIXTURE_PORT_BINDING_INCOMPLETE",
+    "source_contracts_validated": true,
+    "report": "docs/AIP_06_SOURCE_ONLY_NATIVE_HARNESS_PREPARATION_2026-11-04.md",
+    "passed": 1338,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 5,
+    "deselected_case_ids": [
+      "tests.test_paper_epoch_fixture::test_abrupt_process_crash_recovery[after_commit]",
+      "tests.test_paper_epoch_fixture::test_abrupt_process_crash_recovery[before_commit]",
+      "tests.test_paper_epoch_fixture::test_abrupt_process_crash_recovery[before_event]",
+      "tests.test_quality_dips_autonomous_paper::test_abrupt_process_exit_and_recovery_do_not_duplicate[after_ack-62]",
+      "tests.test_quality_dips_autonomous_paper::test_abrupt_process_exit_and_recovery_do_not_duplicate[after_commit-61]"
+    ],
+    "deselection_reason": "No financial-worker launch: exclude5 Python accounting-fixture child self-exit tests; prior passing evidence retained, assertions unchanged.",
+    "new_python_cases": 100,
+    "modules": 64,
+    "node_tests": {
+      "passed": 42,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "new_cases": 0
+    },
+    "standalone_poll_contract": "PASS_NOT_ADDED_TO_TEST_COUNT",
+    "warnings": [
+      "Existing Starlette/httpx TestClient deprecation",
+      "Existing Discord audioop deprecation"
+    ],
+    "junit": "logs/diagnostics/aip-06-source-harness-20261104/acceptance-final.xml",
+    "junit_sha256": "965e8ce6a1fd3713fad08bae06d95e69e69540cf513650585960b578029367ae",
+    "source_sha256": {
+      "scripts/observation_runtime/aip06_harness.py": "bb9eb8221b95f3e2670da22cefe4b529f9d4fdfb0ce569495d8c01dd03fa9700",
+      "tests/test_aip06_harness.py": "c35344854080ffa16ba441b8ca0ed786612a02393bcc14a4bfeba69bf1133bf6"
+    },
+    "native_tests_executed": 0,
+    "financial_workers_launched": 0,
+    "native_ports_bound": false,
+    "executable_native_approval_package": false,
+    "authorization_consumed": false,
+    "aip06_complete": false,
+    "completed_milestones": 5,
+    "total_milestones": 18,
+    "next_canonical_milestone": "AIP-07-CHANGED-CAPABILITY-PREFLIGHT",
+    "next_action": "Finish source-only concrete native journal/filesystem/query/process/fixture adapter integration and bounded controller; offline validate before executable pins/proposal and separate native grant. No native execution now."
+  },
+  "prior_active_fields": {
+    "last_verified_task": "AIP_06_NATIVE_ACCEPTANCE_READINESS_REVIEW_COMPLETE_EXECUTION_BLOCKED",
+    "latest_tests": {
+      "base_commit": "695588d09e322a68d1deb8dca565cc8b68f9221a",
+      "result": "AIP_06_BLOCKED_NATIVE_ACCEPTANCE_OFFLINE_SLICE_VALIDATED",
+      "report": "docs/AIP_06_COMPOSED_ACCOUNTING_RISK_RECOVERY_2026-11-04.md",
+      "fault_matrix": "docs/AIP_06_COMPOSED_ACCOUNTING_RISK_FAULT_MATRIX_2026-11-04.json",
+      "passed": 1160,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "new_cases": 34,
+      "preserved_aip05_case_ids": 969,
+      "modules": 61,
+      "python_artifacts": [
+        {
+          "path": "logs/diagnostics/aip-06-composed-recovery-20261104/acceptance.xml",
+          "sha256": "7e58c45a0798baf79bdd4e80545f00e1f7f8c3474ac45e9ef3d107e61bbe85b1",
+          "passed": 1098
+        },
+        {
+          "path": "logs/diagnostics/aip-06-composed-recovery-20261104/clock.xml",
+          "sha256": "6979367d429b1341023b9a5a3be197d49f23690ad64dd0758b795f94928fd305",
+          "passed": 62
+        }
+      ],
+      "node_tests": {
+        "passed": 42,
+        "failed": 0,
+        "skipped": 0,
+        "new_cases": 0
+      },
+      "standalone_poll_contract": "PASS_NOT_ADDED_TO_TEST_COUNT",
+      "warnings": [
+        "Existing Starlette/httpx TestClient deprecation",
+        "Existing Discord audioop deprecation"
+      ],
+      "offline_slice": "COMPLETE",
+      "native_acceptance": "NOT_EXECUTED_NO_NEW_REVIEWED_NATIVE_SCOPE",
+      "complete_milestone_count": 5,
+      "total_canonical_milestones": 18,
+      "aip06_complete": false,
+      "next_canonical_milestone": "AIP-07-CHANGED-CAPABILITY-PREFLIGHT",
+      "next_action": "STOP_AFTER_AIP06_CHECKPOINT. Prepare/review exact bounded disposable native financial-lane matrix authorization before any native run; do not start AIP07 or installed acceptance.",
+      "paper_startup": false,
+      "production": "NO_GO"
+    },
+    "next_eligible_tasks": [
+      "AIP-06-NATIVE-HARNESS-PREPARATION: separately requested SOURCE-ONLY integration of existing owned Stop/launch/Job/shared-budget/root-map/bounded-read/fault matrix;offline validation only. No native or operational authority implied.",
+      "Then final exact executable contract/pins and fresh sole-operator disposable native approval;AIP06 remains BLOCKED. AIP07 not started."
+    ],
+    "blocked_tasks": {
+      "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
+      "SUPPLEMENTARY_DIAGNOSTIC": "A2 documentedlisteneronly/GetTcpTable2 couldinvestigate materiallydifferentmethod/context, not replaceoriginalreaders. Needsnarrowexecution scope, no automaticexistingcontractclearance.",
+      "ALTERNATIVE_CONTRACT": "B researchonlynotapproved/implemented/equivalent. Native socket-sharing hasmutation/descriptorlifetime/namespace/supportidentity/Stoprisks; separate soleoperator approvalaftercompleteproposal/disposableequivalence. Existing3readercleanup,45sACK,8sStop untouched.",
+      "TRUSTED_BROWSER": "FreshcatalogonlyIAB2/MCPApps1. Need policycheckedWindowsChromewindow/tabidentity/currentURL/localnavigation/postorigin/render/genuineACK/tabclose. Nativepathrestorationcanqualify; no invented signedURLtokenor mandatoryCDPifnativeworks. No alternatebrowser/screenshot/manualtypedURLsubstitution.",
+      "NEXT_MILESTONE": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1 onlyafterconcretenamedchangedapprovedcapability/environmentcandidateandnarrowauth. No unchangedexperiment/integrated/installedretry.",
+      "PAPER_COMMISSIONING": "Nonfinancialacceptance stillnotfinancialreadiness. Freshclock1000ms120s/currentQDresearch/nativecustody/entitledIEX/instrumentcalendar/dependencies/financialenrollmentonceinception/custodyACK/reconciliation/risk/financialStoprestart/manualworkflow andseparateboundedPAPERstartup required. HistoricalUNSELECTEDr6 only. B1C1D1E1/21decisions7phases/soleoperator preserved.",
+      "INTEGRATED_PAPER_COMPLETION": "AIP01+AIP02source/disposableCOMPLETE. Actualprovider/sourceauthorityenrollment,currentnativecustody,installedfinancialruntime,riskconversion,Stop/restartandB1C1D1E1/pilotremainunaccepted. Canonicalpreparationisnotfinancialruntimeconnection.",
+      "ADDITIONAL_FINANCIAL_COHORTS": "Longterm book defaults10000researchseed/no general exit; prediction preevent != settlement. Explicit approved model/allocation needed; retired equity worker stays retired.",
+      "CURRENT_TASK_BOUNDARY": "STOP after AIP02validatedsource/docs/commit/nonforcepush/remoteverify. NextAIP03sourceboundaryonly;nooperationalmigration/storageexpansion/nativegrantreuse.",
+      "INSTALLED_SOURCE_PARITY": "AIP01+AIP02module/schema/typedsourcearchivehooksnotinstalled. Futureexactmanifest/sourcepinreviewandimmutabledeploymentrequiretheirscope;frozenpayload/support/selector/recordsuntouched.",
+      "aip03_operational_boundary": "SOURCE_REVIEW_COMPLETE; operational codec/enrollment/current-map switch and actual workload/Stop capacity remain separately scoped. No installed/provider/account activation.",
+      "aip04_installed_dashboard_boundary": "AIP04 read-model contracts do not install or accept a dashboard/runtime: immutable source integration, accepted native read/account/current-source custody, actual browser/Control Center/Stop/restart evidence and V6 capabilities remain separately scoped. Unsupported panes and Stop/continuation remain explicitly UNAVAILABLE; no financial/provider activation.",
+      "aip05_real_discord_and_recovery_boundary": "AIP05 is isolated source/disposable only. Real Discord transport/recipient/category/rate consent, credentials, accepted current recovery/custody evidence and actual delivery proof remain unauthorized/unaccepted. Local append-only checkpoint does not prove whole-directory/host antirollback. Operational runtime hooks/native financial ACKs and installed financial/clock/provider/V6 gates remain unchanged.",
+      "AIP06_NATIVE_ACCEPTANCE": "Offline34 new/1160 Python/42 Node pass. Actual native lanes/current identity cuts/ACK/kill/drain/capacity and complete Stop reserve remain NOT EXECUTED; exact separately reviewed bounded disposable resource/process authorization required. No installed or operational authority.",
+      "AIP06_NATIVE_READINESS_REVIEW": "BLOCKED_FOR_EXECUTION: actual financial-worker/child/diagnostic-query ownership/Job binding,shared prospective allocated-storage/time/process budget,exact3-slot roots,bounded reads and missing native fault/load cases need source-only harness integration. Existing parent-observed Stop/readback test reusable. D:interpreter exists/two hashes observed;full native runtime inventory/ACLs not reverified. No native approval consumed."
+    },
+    "exact_next_action": "STOP_AFTER_AIP06_NATIVE_READINESS_REVIEW_DOCS_CHECKPOINT_COMMIT_NONFORCE_PUSH_REMOTE_SHA_VERIFY. Next source-only AIP06 native-harness preparation as specified in docs/AIP_06_NATIVE_ACCEPTANCE_READINESS_REVIEW_2026-11-04.md before a fresh executable native approval package. No native execution/installed/provider/account/financial/PAPER/V6/Windows changes. AIP06BLOCKED;5of18complete;PAPER:NO;production:NO-GO."
   }
 }
 }
