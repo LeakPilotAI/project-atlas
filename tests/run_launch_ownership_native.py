@@ -444,8 +444,14 @@ def run_case(root, native, images, kind, deadline_ns):
 def main():
     # This legacy probe still needs a fully shared controller port. A bare
     # readiness-review command must not bypass the AIP06 guard installation.
-    guarded.require_fixture("legacy-native-ownership-probe")
-    raise OwnershipRefused("AIP06_LEGACY_PROBE_CONTROLLER_PORT_NOT_BOUND")
+    guard = guarded.require_fixture("legacy-native-ownership-probe")
+    if not hasattr(guard.processes, "legacy_probe"):
+        raise OwnershipRefused("AIP06_LEGACY_PROBE_CONTROLLER_PORT_NOT_BOUND")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--disposable-root", required=True)
+    parser.add_argument("--cases", nargs="+", required=True)
+    args = parser.parse_args()
+    return guard.processes.legacy_probe(args.disposable_root, args.cases)
     # Historical implementation retained below for review; never a new grant.
     parser = argparse.ArgumentParser()
     parser.add_argument("--disposable-root", required=True)

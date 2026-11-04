@@ -7,6 +7,7 @@ port is provided, and this module never imports a runtime or executes a command.
 
 import copy
 import ntpath
+from dataclasses import dataclass
 from decimal import Decimal
 from threading import RLock
 from types import MappingProxyType
@@ -59,6 +60,22 @@ SCOPE = {
     "native_authority": False,
 }
 SCOPE_HASH = digest(SCOPE)
+
+
+@dataclass(frozen=True)
+class BootstrapReservation:
+    """First create-new directory escrow, before a journal can physically exist.
+
+    Only a new empty SharedResources may import this reservation. It confers no
+    process, financial, recovery or execution authority. The first actual event
+    durably records these already charged allocations before child execution.
+    """
+    scope: str
+    owner: dict
+    entries: int
+    charged_bytes: int
+    started_ns: int
+    resources: dict
 
 
 class HarnessRefused(ValueError):
@@ -240,7 +257,7 @@ class SharedResources:
     Whole matching history rollback needs an independently held expected head.
     """
 
-    def __init__(self, journal, *, clock_ns, expected_head=None):
+    def __init__(self, journal, *, clock_ns, expected_head=None, bootstrap=None):
         need(
             journal is not None and callable(clock_ns),
             "EXPLICIT_JOURNAL_AND_CLOCK_REQUIRED",
@@ -254,6 +271,12 @@ class SharedResources:
         )
         need(not rows or expected_head is not None, "RECOVERY_EXPECTED_HEAD_REQUIRED")
         self._recovered = bool(rows)
+        need(bootstrap is None or type(bootstrap) is BootstrapReservation and not rows
+             and expected_head is None and bootstrap.scope==SCOPE_HASH,
+             'FRESH_BOOTSTRAP_ESCROW_ONLY')
+        self._bootstrap=None if bootstrap is None else BootstrapReservation(
+            bootstrap.scope,copied(bootstrap.owner),bootstrap.entries,bootstrap.charged_bytes,
+            bootstrap.started_ns,copied(bootstrap.resources))
         self._rows = []
         self._state = {
             "owners": {},
@@ -533,6 +556,16 @@ class SharedResources:
             if state["controller"] is None:
                 need(controller is True, "CONTROLLER_MUST_BIND_FIRST")
                 state["controller"] = key
+                if self._bootstrap is not None:
+                    boot=self._bootstrap
+                    need(body(boot.owner)==body(observed) and integer(boot.entries)
+                         and integer(boot.charged_bytes) and boot.entries<LIMITS['entries']-LIMITS['stop_entries']
+                         and boot.charged_bytes<LIMITS['bytes']-LIMITS['stop_bytes']
+                         and integer(boot.started_ns) and boot.started_ns<=self.clock()
+                         and type(boot.resources) is dict and all(v['owner']==key for v in boot.resources.values()),
+                         'BOOTSTRAP_OWNER_OR_BUDGET_CONFLICT')
+                    state.update(entries=boot.entries,charged_bytes=boot.charged_bytes,
+                                 started_ns=boot.started_ns,resources=copied(boot.resources))
             else:
                 need(controller is False, "ONE_CONTROLLER_ONLY")
             self._commit(state, cleanup=cleanup)

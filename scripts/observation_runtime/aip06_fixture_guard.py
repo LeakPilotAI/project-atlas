@@ -204,8 +204,10 @@ class FixtureGuard:
     """
 
     def __init__(self, *, resources, paths, ownership, owner, io, processes, clock_ns):
+        from scripts.observation_runtime.aip06_ipc import RemoteResources
+
         need(
-            type(resources) is SharedResources
+            type(resources) in (SharedResources, RemoteResources)
             and type(paths) is FixturePaths
             and type(ownership) is WorkerOwnership
             and ownership.resources is resources,
@@ -229,6 +231,8 @@ class FixtureGuard:
         self.case_results = []
         self.launch_nonces = set()
         self.query_active = False
+        if hasattr(io, "bind_guard"):
+            io.bind_guard(self)
 
     @contextlib.contextmanager
     def installed(self):
@@ -312,7 +316,7 @@ class FixtureGuard:
 
     def reserve(self, key, kind, *, size=0, entries=0):
         self.check()
-        return self.ledger(
+        result = self.ledger(
             "reserve",
             self.owner,
             key,
@@ -321,6 +325,13 @@ class FixtureGuard:
             size=size,
             cleanup=self.cleanup(),
         )
+        if hasattr(self.io, "begin"):
+            self.io.begin(self.owner, key, kind, None)
+        return result
+
+    def effect_path(self, key, path):
+        if hasattr(self.io, "bind_path"):
+            self.io.bind_path(key, os.fspath(path))
 
     def validate_path(self, path, *, create=False):
         alias, parts = self.locate(path)
@@ -343,6 +354,7 @@ class FixtureGuard:
         intent = self.validate_path(path, create=True)
         key = self.key("directory")
         self.reserve(key, "directory", entries=1)
+        self.effect_path(key, path)
         with self.internal("effect"):
             self.io.mkdir(os.fspath(path))
         if intent is not None:
@@ -362,6 +374,7 @@ class FixtureGuard:
         self.validate_path(path, create=True)
         key = self.key("file")
         self.reserve(key, "file", entries=1, size=len(data))
+        self.effect_path(key, path)
         with self.internal("effect"):
             self.io.write_new(os.fspath(path), data)
         row = self.io.readback(os.fspath(path))
@@ -397,6 +410,7 @@ class FixtureGuard:
         row = self.io.readback(os.fspath(source))
         key = self.key("replacement")
         self.reserve(key, "file", entries=1, size=row["bytes"])
+        self.effect_path(key, target)
         with self.internal("effect"):
             self.io.replace_owned(os.fspath(source), os.fspath(target))
         need(
@@ -627,7 +641,11 @@ class FixtureGuard:
             "FINITE_NATIVE_JOB_LIMITS_REQUIRED",
         )
         need(
-            plan["request"].launch_command == list2cmdline(list(argv))
+            plan["request"].launch_command == (
+                self.processes.command_line(tuple(argv), options)
+                if hasattr(self.processes, "command_line")
+                else list2cmdline(list(argv))
+            )
             and type(plan["resource_kinds"]) is tuple
             and 1 <= len(plan["resource_kinds"]) <= 64
             and {"job", "thread", "image", "pipe"} <= set(plan["resource_kinds"])
@@ -645,6 +663,8 @@ class FixtureGuard:
             key = self.key(kind)
             self.reserve(key, kind)
             keys.append(key)
+        if hasattr(self.processes, "preallocate"):
+            self.processes.preallocate(plan, keys)
         with self.internal("process"):
             child = self.processes.create_suspended(plan, permit, tuple(argv), options)
         job = self.processes.verify_suspended_job(child, plan)
@@ -672,6 +692,7 @@ class FixtureGuard:
                 runtime_handle=child.runtime_handle,
                 ready=ready,
             )
+        binding_head = self.resources.head
         self.processes.attach_guards(child, self, plan["name"], keys)
         allocated = self.processes.allocations(child)
         need(
@@ -701,7 +722,7 @@ class FixtureGuard:
                 "scope": SCOPE_HASH,
                 "nonce": plan["request"].nonce,
                 "owner": digest(self.ownership.bindings[plan["name"]].runtime),
-                "reservation_head": self.resources.head,
+                "reservation_head": binding_head,
                 "guarded": True,
             },
             "CHILD_SHARED_GUARD_BINDING_REQUIRED",
