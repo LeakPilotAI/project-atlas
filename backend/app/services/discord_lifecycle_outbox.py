@@ -180,10 +180,14 @@ class DiscordLifecycleOutbox:
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path, timeout=5.0, isolation_level=None)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys=ON")
-        connection.execute("PRAGMA busy_timeout=5000")
-        connection.execute("PRAGMA synchronous=FULL")
+        try:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys=ON")
+            connection.execute("PRAGMA busy_timeout=5000")
+            connection.execute("PRAGMA synchronous=FULL")
+        except BaseException:
+            connection.close()
+            raise
         return connection
 
     def _initialize(self) -> None:
@@ -270,6 +274,7 @@ class DiscordLifecycleOutbox:
             check = connection.execute("PRAGMA quick_check").fetchone()[0]
             if check != "ok":
                 raise LifecycleContractError("lifecycle outbox integrity check failed")
+            self._validate_events(connection)
 
     @staticmethod
     def _validated_recipients(recipients: set[int] | list[int] | tuple[int, ...]) -> list[str]:
@@ -315,6 +320,7 @@ class DiscordLifecycleOutbox:
         with closing(self._connect()) as connection:
             connection.execute("BEGIN IMMEDIATE")
             try:
+                self._validate_events(connection)
                 existing = connection.execute(
                     """
                     SELECT event_type, source, entity_id, source_event_id, source_sequence,
@@ -330,6 +336,14 @@ class DiscordLifecycleOutbox:
                         )
                     connection.execute("COMMIT")
                     return False
+
+                if (
+                    connection.execute("SELECT COUNT(*) FROM lifecycle_events").fetchone()[0]
+                    >= 4096
+                ):
+                    raise LifecycleContractError(
+                        "lifecycle event capacity exhausted; no history reset"
+                    )
 
                 latest = connection.execute(
                     "SELECT MAX(source_sequence) FROM lifecycle_events WHERE source=? AND entity_id=?",
@@ -373,6 +387,7 @@ class DiscordLifecycleOutbox:
         with closing(self._connect()) as connection:
             connection.execute("BEGIN IMMEDIATE")
             try:
+                self._validate_events(connection)
                 recovered = connection.execute(
                     """
                     UPDATE lifecycle_deliveries
@@ -571,3 +586,36 @@ class DiscordLifecycleOutbox:
             }
             for row in rows
         }
+
+    @staticmethod
+    def _validate_events(connection):
+        """Replay event identity/order before trusting a recovered pending row."""
+        rows = connection.execute(
+            "SELECT * FROM lifecycle_events ORDER BY source,entity_id,source_sequence LIMIT 4097"
+        ).fetchall()
+        if (
+            len(rows) > 4096
+            or connection.execute("PRAGMA foreign_key_check").fetchone() is not None
+        ):
+            raise LifecycleContractError("outbox capacity or referential integrity failure")
+        sequences = {}
+        for row in rows:
+            event = make_lifecycle_event(
+                event_type=row["event_type"],
+                source=row["source"],
+                entity_id=row["entity_id"],
+                source_event_id=row["source_event_id"],
+                source_sequence=row["source_sequence"],
+                occurred_at=datetime.fromisoformat(row["occurred_at"]),
+                payload=json.loads(row["payload_json"]),
+            )
+            if (
+                event.event_id != row["event_id"]
+                or event.payload_json != row["payload_json"]
+                or event.occurred_at != row["occurred_at"]
+            ):
+                raise LifecycleContractError("corrupt lifecycle event identity")
+            key = event.source, event.entity_id
+            if event.source_sequence != sequences.get(key, 0) + 1:
+                raise LifecycleContractError("recovered lifecycle sequence gap")
+            sequences[key] = event.source_sequence

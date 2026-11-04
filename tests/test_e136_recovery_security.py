@@ -29,7 +29,8 @@ def test_restored_consent_rejected_by_current_witness(tmp_path):
 
     restored = DiscordConsentGenerations(consent_path)
 
-    assert restored.authorized(12345, 1)
+    # A current local checkpoint now also refuses restoration of consent alone.
+    assert not restored.authorized(12345, 1)
     assert not witness.matches(12345, restored.database_id, 1, True)
 
 

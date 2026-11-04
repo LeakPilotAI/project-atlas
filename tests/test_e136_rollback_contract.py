@@ -1,15 +1,10 @@
-﻿"""E136 Phase 2F: expected recovery behavior, isolated from production."""
+"""E136 Phase 2F: expected recovery behavior, isolated from production."""
 
 import shutil
 
-import pytest
 from app.services.discord_consent_generations import DiscordConsentGenerations
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="E136 independent rollback witness not yet implemented",
-)
 def test_restored_consent_cannot_reauthorize_revoked_generation(tmp_path):
     database = tmp_path / "consent.sqlite3"
     backup = tmp_path / "backup.sqlite3"

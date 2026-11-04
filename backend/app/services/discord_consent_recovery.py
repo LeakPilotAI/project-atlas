@@ -1,4 +1,4 @@
-﻿"""Read-only E136 recovery diagnostics; never grants delivery authority."""
+"""Read-only E136 recovery diagnostics; never grants delivery authority."""
 
 from __future__ import annotations
 
@@ -49,6 +49,14 @@ def assess_recovery(
             subscribed,
         )
         if not matches:
+            return RecoveryAssessment(RecoveryStatus.QUARANTINE)
+
+        # A witness callback/other coordinator can change consent between reads.
+        # Never publish the earlier positive assessment after that transition.
+        if coordinator._state(recipient_id) != state:
+            return RecoveryAssessment(RecoveryStatus.QUARANTINE)
+        checkpoint, _, _ = coordinator.consent.checkpoint.read()
+        if checkpoint.get(str(recipient_id)) != state:
             return RecoveryAssessment(RecoveryStatus.QUARANTINE)
 
         return RecoveryAssessment(

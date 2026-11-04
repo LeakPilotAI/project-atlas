@@ -20,7 +20,9 @@ def _make_adapter(tmp_path):
 def test_missing_consent_evidence_rejected(tmp_path):
     _, adapter = _make_adapter(tmp_path)
 
-    assert not adapter.enqueue("evt-missing-1", 12345, generation=None, database_id=None)
+    assert not adapter.enqueue(
+        "evt-missing-1", 12345, generation=None, database_id=None
+    )
     assert not adapter.enqueue("evt-missing-2", 12345, generation=1, database_id=None)
 
 
@@ -136,7 +138,9 @@ def test_concurrent_dispatch_workers_only_one_claims_transport(tmp_path):
         return True
 
     threads = [
-        threading.Thread(target=adapter.dispatch_due, args=("evt-concurrent", 12345, sender))
+        threading.Thread(
+            target=adapter.dispatch_due, args=("evt-concurrent", 12345, sender)
+        )
         for _ in range(2)
     ]
     for thread in threads:
@@ -220,14 +224,18 @@ def test_process_interruption_after_claim_is_recovered_by_stale_lease(tmp_path):
         )
         db.commit()
 
-    assert adapter.dispatch_due("evt-stale-lease", 12345, lambda: True)
+    sends = []
+    assert not adapter.dispatch_due(
+        "evt-stale-lease", 12345, lambda: sends.append(True) or True
+    )
+    assert sends == []
 
     with sqlite3.connect(adapter.path) as db:
         status = db.execute(
             "SELECT status FROM delivery_queue WHERE event_id=?",
             ("evt-stale-lease",),
         ).fetchone()[0]
-    assert status == "sent"
+    assert status == "uncertain"
 
 
 def test_active_dispatch_lease_blocks_reentry_from_a_second_worker(tmp_path):
@@ -276,7 +284,9 @@ def test_retry_after_uncertain_transport_outcome_is_rejected_until_requeue(tmp_p
     assert status == "uncertain"
 
 
-def test_revocation_after_authorization_is_limitated_to_pre_admission_boundary(tmp_path):
+def test_revocation_after_authorization_is_limitated_to_pre_admission_boundary(
+    tmp_path,
+):
     coordinator, adapter = _make_adapter(tmp_path)
     coordinator.set_subscription(12345, True)
 
@@ -303,5 +313,7 @@ def test_recovery_assessment_is_diagnostic_only(tmp_path):
     assessment = assess_recovery(coordinator, 12345)
 
     assert assessment.status == RecoveryStatus.CONSISTENT
-    assert not adapter.authorize_for_delivery(12345, None, coordinator.consent.database_id)
+    assert not adapter.authorize_for_delivery(
+        12345, None, coordinator.consent.database_id
+    )
     assert not adapter.authorize_for_delivery(12345, 1, None)

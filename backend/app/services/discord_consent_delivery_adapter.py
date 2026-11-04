@@ -143,14 +143,7 @@ class DiscordConsentDeliveryAdapter:
                         updated_at,
                         created_at
                     ) VALUES (?, ?, ?, ?, 'queued', NULL, NULL, strftime('%s','now'), strftime('%s','now'))
-                    ON CONFLICT(event_id) DO UPDATE SET
-                        recipient_id=excluded.recipient_id,
-                        consent_generation=excluded.consent_generation,
-                        consent_database_id=excluded.consent_database_id,
-                        status='queued',
-                        lease_token=NULL,
-                        lease_expires_at=NULL,
-                        updated_at=strftime('%s','now')
+                    ON CONFLICT(event_id) DO NOTHING
                     """,
                     (
                         event_id,
@@ -159,13 +152,22 @@ class DiscordConsentDeliveryAdapter:
                         database_id,
                     ),
                 )
+                row = db.execute(
+                    "SELECT recipient_id,consent_generation,consent_database_id,status FROM delivery_queue WHERE event_id=?",
+                    (event_id,),
+                ).fetchone()
                 db.commit()
-                return True
+                return (
+                    row["recipient_id"] == str(recipient_id)
+                    and row["consent_generation"] == generation
+                    and row["consent_database_id"] == database_id
+                    and row["status"] in {"queued", "dispatching", "sent"}
+                )
             except Exception:
                 db.rollback()
                 raise
 
-    def _claim_dispatch(self, event_id: str) -> bool:
+    def _claim_dispatch(self, event_id: str) -> str | None:
         now = time.time()
         lease_expires_at = now + 30.0
         lease_token = secrets.token_hex(16)
@@ -185,18 +187,25 @@ class DiscordConsentDeliveryAdapter:
                 if status in {"sent", "denied", "uncertain"}:
                     db.rollback()
                     return False
-                if status == "dispatching" and existing_expiry is not None and float(existing_expiry) > now:
+                if status == "dispatching":
+                    if existing_expiry is None or float(existing_expiry) <= now:
+                        db.execute(
+                            "UPDATE delivery_queue SET status='uncertain',lease_token=NULL,lease_expires_at=NULL WHERE event_id=?",
+                            (event_id,),
+                        )
+                        db.commit()
+                        return False
                     db.rollback()
                     return False
 
                 changed = db.execute(
                     "UPDATE delivery_queue "
                     "SET status='dispatching', lease_token=?, lease_expires_at=?, updated_at=strftime('%s','now') "
-                    "WHERE event_id=? AND (status='queued' OR (status='dispatching' AND (lease_expires_at IS NULL OR lease_expires_at <= ?)))",
-                    (lease_token, lease_expires_at, event_id, now),
+                    "WHERE event_id=? AND status='queued'",
+                    (lease_token, lease_expires_at, event_id),
                 ).rowcount
                 db.commit()
-                return changed == 1
+                return lease_token if changed == 1 else None
             except Exception:
                 db.rollback()
                 raise
@@ -243,36 +252,43 @@ class DiscordConsentDeliveryAdapter:
         ):
             self._set_status(event_id, "denied")
             return False
-        if not self._claim_dispatch(event_id):
+        token = self._claim_dispatch(event_id)
+        if not token:
             return False
         if not self.authorize_for_delivery(
             int(stored_recipient),
             stored_generation,
             stored_database_id,
         ):
-            self._set_status(event_id, "denied")
+            self._set_status(event_id, "denied", token=token)
             return False
 
         try:
-            accepted = bool(sender())
+            accepted = sender()
         except Exception:  # noqa: BLE001 - fail closed on any sender failure
-            self._set_status(event_id, "uncertain")
+            self._set_status(event_id, "uncertain", token=token)
             return False
 
-        if not accepted:
-            self._set_status(event_id, "denied")
+        if accepted is not True:
+            self._set_status(event_id, "denied" if accepted is False else "uncertain", token=token)
             return False
 
-        self._set_status(event_id, "sent")
-        return True
+        return self._set_status(event_id, "sent", token=token)
 
-    def _set_status(self, event_id: str, status: str) -> None:
+    def _set_status(self, event_id: str, status: str, *, token=None) -> bool:
         valid = {"queued", "dispatching", "sent", "denied", "uncertain"}
         if status not in valid:
             raise ConsentDeliveryAdapterError("unsupported delivery status")
         with closing(self._connect()) as db:
-            db.execute(
-                "UPDATE delivery_queue SET status=?, lease_token=NULL, lease_expires_at=NULL, updated_at=strftime('%s','now') WHERE event_id=?",
-                (status, event_id),
-            )
+            if token is None:
+                changed = db.execute(
+                    "UPDATE delivery_queue SET status=?,lease_token=NULL,lease_expires_at=NULL WHERE event_id=? AND status='queued'",
+                    (status, event_id),
+                ).rowcount
+            else:
+                changed = db.execute(
+                    "UPDATE delivery_queue SET status=?,lease_token=NULL,lease_expires_at=NULL WHERE event_id=? AND status='dispatching' AND lease_token=?",
+                    (status, event_id, token),
+                ).rowcount
             db.commit()
+            return changed == 1

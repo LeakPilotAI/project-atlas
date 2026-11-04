@@ -1,8 +1,7 @@
-﻿"""E136 D4D-2B: deterministic recovery snapshot race contract."""
+"""E136 D4D-2B: deterministic recovery snapshot race contract."""
 
 from unittest.mock import patch
 
-import pytest
 from app.services.discord_consent_coordinator import DiscordConsentCoordinator
 from app.services.discord_consent_recovery import (
     RecoveryStatus,
@@ -10,10 +9,6 @@ from app.services.discord_consent_recovery import (
 )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Two separate reads do not provide an atomic recovery snapshot",
-)
 def test_revocation_during_assessment_cannot_return_stale_consistent(tmp_path):
     coordinator = DiscordConsentCoordinator.create(
         tmp_path / "consent.sqlite3",
@@ -45,6 +40,5 @@ def test_revocation_during_assessment_cannot_return_stale_consistent(tmp_path):
 
     # A stale positive result would be unsafe as a delivery decision.
     assert not (
-        assessment.status is RecoveryStatus.CONSISTENT
-        and assessment.subscribed is True
+        assessment.status is RecoveryStatus.CONSISTENT and assessment.subscribed is True
     )

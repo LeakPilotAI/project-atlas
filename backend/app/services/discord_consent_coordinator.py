@@ -53,8 +53,7 @@ class DiscordConsentCoordinator:
         with closing(self.consent._connect()) as db:
             self.consent._assert_identity(db)
             row = db.execute(
-                "SELECT generation, subscribed "
-                "FROM consent_generations WHERE recipient_id=?",
+                "SELECT generation, subscribed FROM consent_generations WHERE recipient_id=?",
                 (recipient,),
             ).fetchone()
 
@@ -83,8 +82,7 @@ class DiscordConsentCoordinator:
             try:
                 self.consent._assert_identity(db)
                 row = db.execute(
-                    "SELECT generation, subscribed "
-                    "FROM consent_generations WHERE recipient_id=?",
+                    "SELECT generation, subscribed FROM consent_generations WHERE recipient_id=?",
                     (recipient,),
                 ).fetchone()
 
@@ -111,11 +109,15 @@ class DiscordConsentCoordinator:
                         previous_generation,
                         previous_status,
                     ):
-                        raise ConsentWitnessError(
-                            "consent and witness disagree; recovery required"
-                        )
+                        raise ConsentWitnessError("consent and witness disagree; recovery required")
 
                     if previous_status == subscribed:
+                        try:
+                            self.consent._assert_checkpoint(db)
+                        except ConsentStateError as exc:
+                            raise ConsentWitnessError(
+                                "consent checkpoint disagrees; recovery required"
+                            ) from exc
                         db.commit()
                         return previous_generation
 
@@ -125,6 +127,15 @@ class DiscordConsentCoordinator:
                     next_generation = previous_generation + 1
                 else:
                     next_generation = 1
+
+                # Local immutable high-water is separate from both SQLite files.
+                # It detects their restoration, not rollback of the entire host.
+                try:
+                    self.consent._assert_checkpoint(db)
+                except ConsentStateError as exc:
+                    raise ConsentWitnessError(
+                        "consent checkpoint disagrees; recovery required"
+                    ) from exc
 
                 # Witness-first commit while holding the consent lock.
                 # A crash between commits remains fail-closed and
@@ -150,6 +161,7 @@ class DiscordConsentCoordinator:
                         (next_generation, int(subscribed), recipient),
                     )
 
+                self.consent.checkpoint.advance(recipient, next_generation, subscribed)
                 db.commit()
                 return next_generation
             except BaseException:
@@ -164,12 +176,13 @@ class DiscordConsentCoordinator:
             if not self.consent.authorized(recipient_id, generation):
                 return False
 
-            return self.witness.matches(
+            matched = self.witness.matches(
                 recipient_id,
                 self.consent.database_id,
                 generation,
                 True,
             )
+            return matched and self.consent.authorized(recipient_id, generation)
         except (
             ConsentStateError,
             ConsentWitnessError,

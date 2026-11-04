@@ -3,6 +3,7 @@
 Only new trades opened after an explicit durable watermark are eligible. Historical
 trades stay excluded, so E134's original sequence can satisfy E133 without rebasing.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -11,7 +12,7 @@ import json
 import sqlite3
 import tempfile
 import threading
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -59,8 +60,12 @@ class IsolatedPaperLifecycleProducer:
             tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             version = db.execute("PRAGMA user_version").fetchone()[0]
             if not tables and version == 0:
-                db.execute("CREATE TABLE state (id INTEGER PRIMARY KEY CHECK(id=1), document TEXT NOT NULL)")
-                db.execute("CREATE TABLE staged (offset INTEGER PRIMARY KEY, event_id TEXT UNIQUE NOT NULL, event TEXT NOT NULL, recipients TEXT NOT NULL, consent TEXT NOT NULL)")
+                db.execute(
+                    "CREATE TABLE state (id INTEGER PRIMARY KEY CHECK(id=1), document TEXT NOT NULL)"
+                )
+                db.execute(
+                    "CREATE TABLE staged (offset INTEGER PRIMARY KEY, event_id TEXT UNIQUE NOT NULL, event TEXT NOT NULL, recipients TEXT NOT NULL, consent TEXT NOT NULL)"
+                )
                 db.execute("PRAGMA user_version=1")
             elif tables != {"state", "staged"} or version != 1:
                 raise LifecycleContractError("unrecognized producer database; no reset allowed")
@@ -95,8 +100,14 @@ class IsolatedPaperLifecycleProducer:
         batch = read_paper_journal_identities(self.journal)
         after = self.journal.stat()
         signature = lambda s: (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns)
-        if signature(before) != signature(after) or len(raw) != before.st_size or not batch.reliable:
-            raise LifecycleContractError("journal changed, incomplete, or unreliable; no cursor advance")
+        if (
+            signature(before) != signature(after)
+            or len(raw) != before.st_size
+            or not batch.reliable
+        ):
+            raise LifecycleContractError(
+                "journal changed, incomplete, or unreliable; no cursor advance"
+            )
         return raw, batch, [before.st_dev, before.st_ino]
 
     def _consent(self):
@@ -114,8 +125,10 @@ class IsolatedPaperLifecycleProducer:
         if not store.reliable or signature(before) != signature(after):
             raise LifecycleContractError("subscription snapshot unreliable")
         return sorted(store.subscriber_ids), {
-            "exists": True, "identity": [before.st_dev, before.st_ino],
-            "mtime": before.st_mtime_ns, "hash": _digest(raw),
+            "exists": True,
+            "identity": [before.st_dev, before.st_ino],
+            "mtime": before.st_mtime_ns,
+            "hash": _digest(raw),
         }
 
     @staticmethod
@@ -130,13 +143,20 @@ class IsolatedPaperLifecycleProducer:
 
     @staticmethod
     def _verify(state, raw, identity):
-        if (identity != state["journal_identity"] or len(raw) < state["cursor"]
-                or _digest(raw[:state["cursor"]]) != state["prefix_sha256"]):
-            raise LifecycleContractError("journal truncation, replacement or rewrite; manual review required")
+        if (
+            identity != state["journal_identity"]
+            or len(raw) < state["cursor"]
+            or _digest(raw[: state["cursor"]]) != state["prefix_sha256"]
+        ):
+            raise LifecycleContractError(
+                "journal truncation, replacement or rewrite; manual review required"
+            )
 
     @staticmethod
     def _save(db, state):
-        db.execute("INSERT OR REPLACE INTO state VALUES (1, ?)", (json.dumps(state, sort_keys=True),))
+        db.execute(
+            "INSERT OR REPLACE INTO state VALUES (1, ?)", (json.dumps(state, sort_keys=True),)
+        )
 
     def activate_for_simulation(self, *, approval_reference: str):
         """Explicit fixture-only activation at EOF; never auto-initialized by process()."""
@@ -146,15 +166,21 @@ class IsolatedPaperLifecycleProducer:
             if db.execute("SELECT 1 FROM state").fetchone():
                 raise LifecycleContractError("activation already exists; cannot reset watermark")
             raw, batch, identity = self._read_source()
-            self._save(db, {
-                "version": 1, "activation_approval": approval_reference,
-                "activated_at": datetime.now(UTC).isoformat(),
-                "activation_offset": len(raw), "cursor": len(raw),
-                "prefix_sha256": _digest(raw), "journal_identity": identity,
-                "outbox_identity": _identity(self.outbox_path),
-                "excluded_trades": sorted({event.entity_id for event in batch.events}),
-                "delivery_approval": None,
-            })
+            self._save(
+                db,
+                {
+                    "version": 1,
+                    "activation_approval": approval_reference,
+                    "activated_at": datetime.now(UTC).isoformat(),
+                    "activation_offset": len(raw),
+                    "cursor": len(raw),
+                    "prefix_sha256": _digest(raw),
+                    "journal_identity": identity,
+                    "outbox_identity": _identity(self.outbox_path),
+                    "excluded_trades": sorted({event.entity_id for event in batch.events}),
+                    "delivery_approval": None,
+                },
+            )
 
     def approve_simulated_delivery(self, *, approval_reference: str):
         if not isinstance(approval_reference, str) or not approval_reference.strip():
@@ -168,6 +194,7 @@ class IsolatedPaperLifecycleProducer:
         """Freeze new eligible events/recipients atomically, then transfer idempotently."""
         if self._stopped.is_set():
             raise LifecycleContractError("producer stopped")
+        self._verify_handoff()
         with self._transaction() as db:
             state = self._state(db)
             raw, batch, identity = self._read_source()
@@ -182,10 +209,19 @@ class IsolatedPaperLifecycleProducer:
                     continue
                 if event.source_sequence == 1 and event.event_type != "PAPER_ENTRY":
                     raise LifecycleContractError("post-activation orphan lifecycle event")
-                db.execute("INSERT INTO staged VALUES (?, ?, ?, ?, ?)", (
-                    offset, event.event_id, json.dumps(asdict(event)),
-                    json.dumps(recipients), json.dumps(consent, sort_keys=True),
-                ))
+                selected_recipients, selected_consent = self._event_consent(
+                    event, recipients, consent
+                )
+                db.execute(
+                    "INSERT INTO staged VALUES (?, ?, ?, ?, ?)",
+                    (
+                        offset,
+                        event.event_id,
+                        json.dumps(asdict(event)),
+                        json.dumps(selected_recipients),
+                        json.dumps(selected_consent, sort_keys=True),
+                    ),
+                )
                 added += 1
             state.update(cursor=len(raw), prefix_sha256=_digest(raw))
             self._save(db, state)
@@ -196,8 +232,41 @@ class IsolatedPaperLifecycleProducer:
         for event, recipients in rows:
             if self._stopped.is_set():
                 break
-            self.outbox.enqueue(LifecycleEvent(**json.loads(event)), json.loads(recipients))
+            value = LifecycleEvent(**json.loads(event))
+            self.outbox.enqueue(value, json.loads(recipients))
+            with self._transaction() as db:
+                state = self._state(db)
+                state["transferred"] = sorted(set(state.get("transferred", [])) | {value.event_id})
+                self._save(db, state)
         return added
+
+    def _verify_handoff(self):
+        """Cross-check durable staging/transfer receipts without changing them."""
+        # Serialize the cut against staging/transfer-marker commits. The outbox
+        # transaction always closes before a publisher acquires this lock.
+        with self._transaction() as db:
+            row = db.execute("SELECT document FROM state WHERE id=1").fetchone()
+            state = json.loads(row[0]) if row else {}
+            staged = {
+                r[0]: json.loads(r[1]) for r in db.execute("SELECT event_id,event FROM staged")
+            }
+            if state and _identity(self.outbox_path) != state["outbox_identity"]:
+                raise LifecycleContractError("outbox replaced; manual recovery required")
+            with closing(self.outbox._connect()) as outbox_db:
+                self.outbox._validate_events(outbox_db)
+                actual = {
+                    r["event_id"]: r for r in outbox_db.execute("SELECT * FROM lifecycle_events")
+                }
+        if set(actual) - set(staged) or not set(state.get("transferred", [])) <= set(actual):
+            raise LifecycleContractError("missing or foreign transferred notification")
+        for event_id, row in actual.items():
+            event = LifecycleEvent(**staged[event_id])
+            if any(row[k] != v for k, v in asdict(event).items()):
+                raise LifecycleContractError("outbox differs from committed staged event")
+
+    def _event_consent(self, event, recipients, consent):
+        """Default E135 behavior retained; typed adapters may narrow categories."""
+        return recipients, consent
 
     def stop(self):
         """Stop future admission/sends; do not delete durable work or cancel the runtime."""
@@ -212,6 +281,7 @@ class IsolatedPaperLifecycleProducer:
         """
         if getattr(sender, "simulation_only", None) is not True:
             raise LifecycleContractError("only an explicit simulation transport is accepted")
+        self._verify_handoff()
 
         def authorize(event=None, recipient=None):
             if self._stopped.is_set():
@@ -220,16 +290,29 @@ class IsolatedPaperLifecycleProducer:
                 state = self._state(db)
                 if not state.get("delivery_approval"):
                     raise LifecycleContractError("explicit simulated delivery approval required")
-                raw, _, identity = self._read_source()
+                raw, batch, identity = self._read_source()
                 self._verify(state, raw, identity)
                 if _identity(self.outbox_path) != state["outbox_identity"]:
                     raise LifecycleContractError("outbox replaced; manual recovery required")
                 if event is not None:
-                    row = db.execute("SELECT consent, recipients FROM staged WHERE event_id=?", (event.event_id,)).fetchone()
+                    row = db.execute(
+                        "SELECT consent, recipients, event FROM staged WHERE event_id=?",
+                        (event.event_id,),
+                    ).fetchone()
                     recipients, consent = self._consent()
-                    if (row is None or json.loads(row[0]) != consent
-                            or recipient not in recipients or recipient not in json.loads(row[1])):
-                        raise LifecycleContractError("recipient consent changed; operator review required")
+                    if (
+                        row is None
+                        or event not in batch.events
+                        or event.entity_id in state["excluded_trades"]
+                        or int(event.source_event_id.rsplit(":", 1)[1]) < state["activation_offset"]
+                        or LifecycleEvent(**json.loads(row[2])) != event
+                        or json.loads(row[0]) != consent
+                        or recipient not in recipients
+                        or recipient not in json.loads(row[1])
+                    ):
+                        raise LifecycleContractError(
+                            "recipient consent changed; operator review required"
+                        )
                     return consent
 
         await asyncio.to_thread(authorize)

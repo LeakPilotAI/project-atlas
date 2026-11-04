@@ -1,15 +1,10 @@
-﻿"""E136 Phase 2H-D2: coordinated historical rollback contract."""
+"""E136 Phase 2H-D2: coordinated historical rollback contract."""
 
 import shutil
 
-import pytest
 from app.services.discord_consent_coordinator import DiscordConsentCoordinator
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Matching historical copies of both databases can restore revoked consent",
-)
 def test_dual_database_rollback_cannot_reauthorize_revoked_consent(tmp_path):
     consent_path = tmp_path / "consent.sqlite3"
     witness_path = tmp_path / "witness.sqlite3"

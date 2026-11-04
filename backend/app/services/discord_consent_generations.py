@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+import os
 import sqlite3
 import uuid
 from contextlib import closing
+from itertools import islice
 from pathlib import Path
 
 from app.alerts.subscriptions import validate_discord_user_id
@@ -12,6 +16,116 @@ from app.alerts.subscriptions import validate_discord_user_id
 
 class ConsentStateError(RuntimeError):
     """Consent evidence is missing, invalid, or unreliable."""
+
+
+class _ConsentCheckpoint:
+    """Local append-only high-water outside restorable SQLite files.
+
+    Not a remote issuer or protection against rollback of the complete directory.
+    Provisioned only by explicit create; missing/torn history never self-repairs.
+    """
+
+    def __init__(self, path, database_id):
+        self.path = Path(str(path) + "." + database_id + ".checkpoint")
+        self.database_id = database_id
+
+    @staticmethod
+    def _body(value):
+        return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+
+    def create(self):
+        self.path.mkdir(exist_ok=False)
+        self._write(
+            "scope.json",
+            {"schema": "ISOLATED_CONSENT_CHECKPOINT_V1", "database_id": self.database_id},
+        )
+
+    def _write(self, name, value):
+        raw = self._body(value)
+        with (self.path / name).open("xb") as stream:
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+
+    def read(self):
+        if not self.path.is_dir() or any(
+            p.is_symlink() or p.is_junction() for p in (self.path, *self.path.parents)
+        ):
+            raise ConsentStateError("consent checkpoint unavailable or escaped")
+        files = list(islice(self.path.iterdir(), 4098))
+        if len(files) > 4097:
+            raise ConsentStateError("consent checkpoint capacity")
+        names = {p.name for p in files}
+        count = len(files) - 1
+        if names != {"scope.json", *(f"{i:04d}.json" for i in range(1, count + 1))}:
+            raise ConsentStateError("incomplete consent checkpoint")
+
+        def read(name):
+            file = self.path / name
+            if (
+                file.is_symlink()
+                or not file.is_file()
+                or file.stat().st_nlink != 1
+                or file.stat().st_size > 2048
+            ):
+                raise ConsentStateError("checkpoint identity or size conflict")
+            raw = file.read_bytes()
+            value = json.loads(raw)
+            if self._body(value) != raw:
+                raise ConsentStateError("noncanonical checkpoint")
+            return value
+
+        scope = {"schema": "ISOLATED_CONSENT_CHECKPOINT_V1", "database_id": self.database_id}
+        if read("scope.json") != scope:
+            raise ConsentStateError("checkpoint database identity conflict")
+        head = hashlib.sha256(self._body(scope)).hexdigest()
+        states = {}
+        for index in range(1, count + 1):
+            row = read(f"{index:04d}.json")
+            if (
+                set(row) != {"index", "parent", "recipient", "generation", "subscribed"}
+                or type(row["index"]) is not int
+                or row["index"] != index
+                or row["parent"] != head
+                or type(row["subscribed"]) is not bool
+                or type(row["generation"]) is not int
+                or type(row["recipient"]) is not str
+            ):
+                raise ConsentStateError("checkpoint chain conflict")
+            validate_discord_user_id(int(row["recipient"]))
+            previous = states.get(row["recipient"])
+            if (
+                row["generation"] != (previous[0] + 1 if previous else 1)
+                or previous is not None
+                and previous[1] == row["subscribed"]
+            ):
+                raise ConsentStateError("checkpoint generation conflict")
+            states[row["recipient"]] = (row["generation"], row["subscribed"])
+            head = hashlib.sha256(self._body(row)).hexdigest()
+        return states, count, head
+
+    def advance(self, recipient, generation, subscribed):
+        states, count, head = self.read()
+        old = states.get(recipient)
+        if old == (generation, subscribed):
+            return
+        if (
+            count >= 4096
+            or generation != (old[0] + 1 if old else 1)
+            or old is not None
+            and old[1] == subscribed
+        ):
+            raise ConsentStateError("checkpoint exhausted or conflicting transition")
+        self._write(
+            f"{count + 1:04d}.json",
+            {
+                "index": count + 1,
+                "parent": head,
+                "recipient": recipient,
+                "generation": generation,
+                "subscribed": subscribed,
+            },
+        )
 
 
 class DiscordConsentGenerations:
@@ -25,6 +139,7 @@ class DiscordConsentGenerations:
             raise ConsentStateError("consent database must be explicitly provisioned")
         self._validate()
         self._database_id = self.database_id
+        self.checkpoint = _ConsentCheckpoint(self.path, self._database_id)
 
     @classmethod
     def create(cls, path: Path) -> DiscordConsentGenerations:
@@ -38,7 +153,20 @@ class DiscordConsentGenerations:
         instance = cls.__new__(cls)
         instance.path = path
         instance._initialize()
-        return cls(path)
+        created = cls(path)
+        created.checkpoint.create()
+        return created
+
+    def _assert_checkpoint(self, db):
+        states, _, _ = self.checkpoint.read()
+        rows = db.execute(
+            "SELECT recipient_id,generation,subscribed FROM consent_generations"
+        ).fetchall()
+        current = {r["recipient_id"]: (r["generation"], bool(r["subscribed"])) for r in rows}
+        if current != states or any(
+            type(r["generation"]) is not int or r["subscribed"] not in (0, 1) for r in rows
+        ):
+            raise ConsentStateError("consent rollback or incomplete checkpoint publication")
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(
@@ -63,8 +191,7 @@ class DiscordConsentGenerations:
                     """
                 )
                 db.execute(
-                    "CREATE TABLE consent_metadata "
-                    "(key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+                    "CREATE TABLE consent_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
                 )
                 db.execute(
                     "INSERT INTO consent_metadata (key, value) VALUES (?, ?)",
@@ -91,9 +218,7 @@ class DiscordConsentGenerations:
             raise ConsentStateError("invalid consent database") from exc
 
     def _assert_identity(self, db: sqlite3.Connection) -> None:
-        row = db.execute(
-            "SELECT value FROM consent_metadata WHERE key='database_id'"
-        ).fetchone()
+        row = db.execute("SELECT value FROM consent_metadata WHERE key='database_id'").fetchone()
         if row is None or row["value"] != self._database_id:
             raise ConsentStateError("consent database identity changed")
 
@@ -122,9 +247,9 @@ class DiscordConsentGenerations:
             db.execute("BEGIN IMMEDIATE")
             try:
                 self._assert_identity(db)
+                self._assert_checkpoint(db)
                 row = db.execute(
-                    "SELECT generation, subscribed FROM consent_generations "
-                    "WHERE recipient_id=?",
+                    "SELECT generation, subscribed FROM consent_generations WHERE recipient_id=?",
                     (recipient,),
                 ).fetchone()
 
@@ -150,6 +275,7 @@ class DiscordConsentGenerations:
                             (generation, int(subscribed), recipient),
                         )
 
+                self.checkpoint.advance(recipient, generation, subscribed)
                 db.commit()
                 return generation
             except Exception:
@@ -165,9 +291,9 @@ class DiscordConsentGenerations:
         try:
             with closing(self._connect()) as db:
                 self._assert_identity(db)
+                self._assert_checkpoint(db)
                 row = db.execute(
-                    "SELECT generation, subscribed FROM consent_generations "
-                    "WHERE recipient_id=?",
+                    "SELECT generation, subscribed FROM consent_generations WHERE recipient_id=?",
                     (recipient,),
                 ).fetchone()
 
@@ -179,5 +305,5 @@ class DiscordConsentGenerations:
                 return False
 
             return row["subscribed"] == 1 and row["generation"] == generation
-        except (sqlite3.Error, OSError, ConsentStateError):
+        except (sqlite3.Error, OSError, ValueError, ConsentStateError):
             return False

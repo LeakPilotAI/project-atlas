@@ -1,14 +1,29 @@
 """Read-only alerting for PAPER reconciliation failures."""
+
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
-from datetime import datetime, timedelta, timezone
-from typing import Any, Awaitable, Callable
+from app.services.e48_discord_events import deliver_legacy_payload, legacy_payload_event
 
-from app.alerts.discord import send_discord_alert
-from app.services.perp_paper_observability import reconciliation_summary
-from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
+
+async def send_discord_alert(**kwargs):
+    # Importing an isolated alert test must not load operational subscriptions.
+    from app.alerts.discord import send_discord_alert as disabled_sender
+
+    return await disabled_sender(**kwargs)
+
+
+def reconciliation_summary():
+    # Preserve the existing real reader only when explicitly invoked. Tests can
+    # inject their reconciliation cut without constructing legacy journal objects.
+    from app.services.perp_paper_observability import reconciliation_summary as reader
+
+    return reader()
+
 
 Sender = Callable[..., Awaitable[bool]]
 
@@ -36,22 +51,30 @@ async def alert_reconciliation_if_needed(
 ) -> dict[str, Any]:
     global _last_alert_signature, _last_alert_at
     rec = await asyncio.to_thread(reconciliation_summary)
-    checked_at = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    checked_at = (now or datetime.now(UTC)).astimezone(UTC)
     signature = _signature(rec)
     if rec.get("reconciliation_ok"):
         reset_reconciliation_alert_state()
         return {
-            "attempted": 0, "delivered": 0, "reconciliation_ok": True,
-            "suppressed": False, "signature": signature, "checked_at": checked_at.isoformat(),
+            "attempted": 0,
+            "delivered": 0,
+            "reconciliation_ok": True,
+            "suppressed": False,
+            "signature": signature,
+            "checked_at": checked_at.isoformat(),
         }
     cooldown = max(0.0, float(cooldown_seconds))
     if _last_alert_signature == signature and _last_alert_at is not None:
         elapsed = (checked_at - _last_alert_at).total_seconds()
         if elapsed < cooldown:
             return {
-                "attempted": 0, "delivered": 0, "reconciliation_ok": False,
-                "suppressed": True, "suppression_reason": "cooldown",
-                "signature": signature, "checked_at": checked_at.isoformat(),
+                "attempted": 0,
+                "delivered": 0,
+                "reconciliation_ok": False,
+                "suppressed": True,
+                "suppression_reason": "cooldown",
+                "signature": signature,
+                "checked_at": checked_at.isoformat(),
                 "next_alert_at": (_last_alert_at + timedelta(seconds=cooldown)).isoformat(),
             }
     description = (
@@ -59,15 +82,32 @@ async def alert_reconciliation_if_needed(
         f"Current auto-paper open trades: {rec.get('journal_currently_open', 0)}\n"
         "PAPER evidence requires operator review. No live order action was taken."
     )
-    payload = {"symbol":"PAPER","title":"Atlas PAPER reconciliation warning","description":description,
-               "severity":"HIGH","opportunity":0,"confidence":100,"risk":100}
-    typed = legacy_payload_event(lane="SYSTEM", event_type="HEALTH", identity=signature,
-                                 payload=payload, provenance=["paper-reconciliation"], material=True)
+    payload = {
+        "symbol": "PAPER",
+        "title": "Atlas PAPER reconciliation warning",
+        "description": description,
+        "severity": "HIGH",
+        "opportunity": 0,
+        "confidence": 100,
+        "risk": 100,
+    }
+    typed = legacy_payload_event(
+        lane="SYSTEM",
+        event_type="HEALTH",
+        identity=signature,
+        payload=payload,
+        provenance=["paper-reconciliation"],
+        material=True,
+    )
     ok = bool((await deliver_legacy_payload(typed, sender=sender))["acknowledged"])
     if ok:
         _last_alert_signature = signature
         _last_alert_at = checked_at
     return {
-        "attempted": 1, "delivered": int(ok), "reconciliation_ok": False,
-        "suppressed": False, "signature": signature, "checked_at": checked_at.isoformat(),
+        "attempted": 1,
+        "delivered": int(ok),
+        "reconciliation_ok": False,
+        "suppressed": False,
+        "signature": signature,
+        "checked_at": checked_at.isoformat(),
     }
