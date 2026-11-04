@@ -1,4 +1,349 @@
 {
+  "qd_v6_installed_acceptance_package_preparation_20261103": {
+  "evidence": {
+    "status": "BLOCKED_INTEGRATED_V6_REHEARSAL_ROSTER_AND_BROWSER_URL_POLICY",
+    "report": "docs/QD_V6_INSTALLED_ACCEPTANCE_PACKAGE_PREPARATION_2026-11-03.md",
+    "starting_commit": "af8b0a332529c082ebd97319cf0b1abe745c7be8",
+    "passed": 528,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 33.3,
+    "new_offline_cases": 8,
+    "prior_520_included": true,
+    "native_rehearsal_sessions": 1,
+    "native_rehearsal_passed": 0,
+    "native_rehearsal_failed": 1,
+    "completed_cycles": 0,
+    "native_rehearsal": {
+      "status": "REFUSED_PRESERVE_EVIDENCE",
+      "authorization_consumed": true,
+      "forced_job_cleanup": false,
+      "worker_exit": 2,
+      "handles_closed": true,
+      "scope_verifier": {
+        "original_handle_verified": true,
+        "created": 134382338397972540,
+        "pid": 13644,
+        "exit": 0,
+        "command": "\"C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" -I -B \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v6-integrated-rehearsal-20261103\\gate.py\" --verify-only dbf214eca72fca897fcfd9b45eaf069de4e5a68be81d7c8f5ced9bd8c18b11dc af8b0a332529c082ebd97319cf0b1abe745c7be8"
+      },
+      "error": "LOG_WRITER_EXIT_NONZERO",
+      "log_handles_closed": true,
+      "final_job_active": 0,
+      "seconds": 16.363865099999998,
+      "resources": {
+        "entries": 32,
+        "logical_bytes": 41043,
+        "accounted_bytes": 172115
+      }
+    },
+    "worker_rehearsal": {
+      "accepted": false,
+      "domain": "DISPOSABLE_INTEGRATED_ONLY",
+      "cycles": [],
+      "installed_launches": 0,
+      "selection_mutations": 0,
+      "financial_actions": 0,
+      "provider_connections": 0,
+      "emergency_cleanup": false,
+      "error": "OwnershipRefused('V5_INCOMPLETE_OR_UNEXPECTED_JOB_ROSTER')",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v6-integrated-rehearsal-20261103\\worker.py\", line 124, in <module>\n    owner.verify()\n  File \"D:\\Work\\Project Atlas\\scripts\\acceptance_harness_v5\\ownership.py\", line 269, in verify\n    self.binding.verify()\n  File \"D:\\Work\\Project Atlas\\scripts\\observation_runtime\\launch_ownership.py\", line 256, in verify\n    self.api.members() == {v[\"pid\"] for v in rows_to_verify},\n    ^^^^^^^^^^^^^^^^^^\n  File \"D:\\Work\\Project Atlas\\scripts\\acceptance_harness_v5\\ownership.py\", line 93, in members\n    self.owner.verify_native()\n  File \"D:\\Work\\Project Atlas\\scripts\\acceptance_harness_v5\\ownership.py\", line 260, in verify_native\n    require(\n  File \"D:\\Work\\Project Atlas\\scripts\\observation_runtime\\launch_ownership.py\", line 18, in require\n    raise OwnershipRefused(reason)\nscripts.observation_runtime.launch_ownership.OwnershipRefused: V5_INCOMPLETE_OR_UNEXPECTED_JOB_ROSTER\n",
+      "precycle_child_closed": true,
+      "retained_handles_closed": true,
+      "seconds": 15.824543000000176
+    },
+    "job_packet_at_refusal": {
+      "nonce": "15ac6bab95dd4117802ef3f0fb223b17",
+      "collected_ns": 2941568674700,
+      "scope_sha256": "dbf214eca72fca897fcfd9b45eaf069de4e5a68be81d7c8f5ced9bd8c18b11dc",
+      "pids": [
+        21588,
+        25952,
+        6228
+      ],
+      "seq": 7
+    },
+    "rehearsal_resources": {
+      "entries_including_final_result": 33,
+      "logical_bytes": 42138,
+      "accounted_bytes": 177306
+    },
+    "rehearsal_raw_hashes": {
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/actual-source-identity.json": "f2a24062e07da18361fc496da45c7dad25bb32293e01d533a2a29de86c30e55b",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/fixture-scope.json": "dd8ef094cba946043c47a0fb5c8759b98cd215848ba42c52d92fd7f7e9ae0587",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/fixture-source-manifest.json": "7b945dfdf2efbcee5f4319743829d28f170438a2148f8950479154d9bc388d79",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/gate-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/gate-stdout.log": "af281afc6d1b951ecbb2a823a6d33486497d16757fd7016b66af8273c16d3873",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/gate.py": "8b8aedc274c060d6253265a7dce3844cf8307ba211762cd9a2e0c3d6e36ef31f",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000001.request.json": "39b2e941eea13e6c304ccfda45bb0d95008e51f0dc8e3a24c394fdf19f0fcc60",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000001.response.json": "e5132076051bd91d466799d97e38b7bed086310c9f0a7919d719adb80994a25d",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000002.request.json": "62f02ebcd8fac6fc8862ee2eeaa33171524c1976e4b73aef8c712446c69f7475",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000002.response.json": "bc1b57fd7ace1bc8ed14012f102e110966b243b0a7264ada38c8900eb7cfc760",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000003.request.json": "e6bc94cf8f94258a0fdf357a55d31179315aaa16ae85ce6cfa479ec97a3658f6",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000003.response.json": "8ca53d1f51a3370dff2f153c97d354a37b287ae70caa3162d9077025f4962822",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000004.request.json": "4c04d4eee583b7214d2127a310b56b6d7fce9b9e8f5e25fb5565c42f092f3b6d",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000004.response.json": "929c54a2ddbcf9fd6c11d278bb188b6f57f61f003818e66bf0bd00c1c28b5218",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000005.request.json": "b4f899312ed2d5b5aebbb739dc31175d1bb74394825604242cc0d3635f0e54ec",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000005.response.json": "a33cf3924ccd41119b3a106c332c09415e7d7da16c1b3e6028a79538c4d50251",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000006.request.json": "970a2b1accaba366ba79c40874dbf66df9db641cfd2bd6b13c4ade64c95cae09",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000006.response.json": "b2dd1235ae7294f27f0e171f549c6f07181d6d4bd5b871c908ae3169637e146b",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000007.request.json": "6bab239b12d755ab400dc9936f58a17407fbb2fa1a89d637a02a5762115afb47",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000007.response.json": "c13afb8b58dd96d62039e849b3107d40ce54639a9c6111bf7914de56a14ff8f1",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/outer-launch.json": "6912b7c7900327284cb2df501b5cc4311ba859b40243a86d6842f1c314044be7",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/rehearsal-result.json": "5530d982d09557c2052d4ae7d51425eb9fc3b9a2dae3dbe80d682bd5e3815afe",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/resource_audit.ps1": "4b195863192b7e86ac472b1181ea929e2af03e1972bb22a95b5c0f3b038904e5",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/single-use-claim.json": "3dcbd0e767098ee54da2a3c0fd5d96fa3c068b478279f7fec7f4a9b6244a4153",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/supervisor-result.json": "ecd29837a36dbd782ae2d9e7887089bc065931874555f0bce3c3469ebfa22e97",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker-logs.json": "93e8de868afd9af2744e17c1027e9cb395a00532fff7c760e198e873994c8ec6",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker-logs.ready": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker-stdout.log": "56103843a4842421894708dd1dbeeae13ca2b9e2eea92c110144a5c4bdce9341",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker.py": "6f456d925caf6b0508f2581c45a41f05fc7cdf125dad0a84d8ab5c7d88e56e04",
+      "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/WorkerLog.psm1": "5c5a0fbac65d768b547c26926bb9cb13d0ae9b9c3d9a04f53bddcf6d22a8b1e3"
+    },
+    "browser_tool_status": "COMPUTER_USE_STOPPED_CURRENT_CHROME_URL_NOT_CONFIDENTLY_VERIFIABLE_NO_BYPASS",
+    "browser_tabs_opened": 0,
+    "browser_acknowledgements": 0,
+    "browser_deadline_seconds": 45,
+    "stop_deadline_seconds": 8,
+    "read_only_installation_groups_passed": 8,
+    "read_only_inventory_seconds": 75.08466419999968,
+    "application": {
+      "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+      "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+      "files": 10204,
+      "directories": 903,
+      "bytes": 260369081,
+      "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+      "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+      "required_dependencies": 15
+    },
+    "fresh_selector": {
+      "revision": 6,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "selected": null,
+      "freshly_verified": true,
+      "collected_utc_ns": 1793760450976820200,
+      "native_root": [
+        4004218753,
+        65536,
+        1532785
+      ],
+      "native_record_pairs": 6,
+      "namespace_files": 12,
+      "two_new_records_fit": true
+    },
+    "original_17_metadata_names_hashes_preserved": true,
+    "read_only_handles_closed": true,
+    "v5_acceptance": "FAIL",
+    "v5_authorization_consumed": true,
+    "v5_source_pins_preserved": 155,
+    "source_sha256": {
+      "tests/run_v6_integrated_rehearsal.ps1": "1c6e25104b297f3e702443ca4ab2cd1b85388baa8eef392503e69c49d9cb1b27",
+      "tests/v6_integrated_rehearsal_worker.py": "6f456d925caf6b0508f2581c45a41f05fc7cdf125dad0a84d8ab5c7d88e56e04",
+      "tests/v6_rehearsal_gate.py": "8b8aedc274c060d6253265a7dce3844cf8307ba211762cd9a2e0c3d6e36ef31f",
+      "tests/test_v6_integrated_rehearsal.py": "d9d58a5d352c776172b31bc55f9652d1c510a2f51dc4721d51b51dc0f0a260ac"
+    },
+    "operational_proposal_created": false,
+    "operational_v6_execution_root_created": false,
+    "operational_authorizations_consumed": 0,
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "windows_time_changes": 0,
+    "clock_acceptance_collected": false,
+    "genesis_access": false,
+    "unrelated_test_preserved": true,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "next_prerequisite": "Capture expected/observed retained identities before disposable controller admission and establish the unexpected Job member role without allowlist expansion or PID adoption. Recover a policy-verifiable genuine browser surface without bypassing the stopped computer-use tool. Then a separately executable fresh integrated rehearsal must pass two real disposable cycles before any READY V6 package can be prepared."
+  },
+  "prior_last_verified_task": "QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_READY_FOR_APPROVAL_PACKAGE_PREPARATION",
+  "prior_latest_tests": {
+    "status": "READY_FOR_V6_APPROVAL_PACKAGE_PREPARATION",
+    "report": "docs/QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_2026-11-03.md",
+    "starting_commit": "e672bd52c53fce2e82da812936f2a384f16b1c01",
+    "passed": 520,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 32.49,
+    "new_offline_cases": 22,
+    "historical_preparation_phase_fixture_cases": 1,
+    "original_v5_tests_modified": false,
+    "historical_353_protection_cases_included": true,
+    "native_unique_cases": 33,
+    "final_native_executions": 66,
+    "final_native_failed": 0,
+    "final_native": [
+      {
+        "root": "logs\\diagnostics\\qd-v6-worker-log-native-verified-a-20261103",
+        "passed": 33,
+        "failed": 0,
+        "seconds": 8.373894,
+        "entries_including_final_result": 457,
+        "logical_bytes": 2295947,
+        "accounted_bytes": 4167819,
+        "sha256": "6a47b725e1d22daa7fbe05d2f332300fcf5e5fb9816891b09a04f885b4cd9514"
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v6-worker-log-native-verified-b-20261103",
+        "passed": 33,
+        "failed": 0,
+        "seconds": 8.3418669,
+        "entries_including_final_result": 457,
+        "logical_bytes": 2295955,
+        "accounted_bytes": 4167827,
+        "sha256": "4cb9162a4b397f7a5f61dbbe0c9b517738b91c1fbdce761bdf2bed6d203463c6"
+      }
+    ],
+    "intentional_own_worker_termination_negative_cases": 2,
+    "emergency_cleanup_in_final_native_runs": false,
+    "prototype_native_results_preserved": [
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-20261103",
+        "passed": false,
+        "cases_completed": 1,
+        "seconds": 0.4130078,
+        "result_sha256": "e171ca3236600bfb27ec445e814ef16d75da0a7e03d95ff7847873bfbe469b44"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-commit-cut-20261103",
+        "passed": true,
+        "cases_completed": 33,
+        "seconds": 7.853413,
+        "result_sha256": "04f790cd99f094ea67ab0ffa823c3e994649d24cb8430cba127c1e264adb5c79"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-crlf-20261103",
+        "passed": false,
+        "cases_completed": 4,
+        "seconds": 5.1925289999999995,
+        "result_sha256": "64970df355cf0bb166e355e5952021b7c4ac64c669e8f5bfddcf353b337144ba"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-diagnostics-20261103",
+        "passed": false,
+        "cases_completed": 8,
+        "seconds": 6.4552951,
+        "result_sha256": "367ca7fe08f9cff19eb043bd6e90b1aa9983498a2107f4e5b86bf5a7792fc6d3"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-exclusive-20261103",
+        "passed": true,
+        "cases_completed": 30,
+        "seconds": 7.1948785,
+        "result_sha256": "8145308b321c51d71f75419b81bb7250b0575b3b900b41e2e626271624810513"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-final-20261103",
+        "passed": false,
+        "cases_completed": 8,
+        "seconds": 6.6888065,
+        "result_sha256": "287a52fa8262024ffb0460845054d82a4afff0c58bc9568e4552c30aa64417ad"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-namespace-20261103",
+        "passed": false,
+        "cases_completed": 4,
+        "seconds": 1.4174798,
+        "result_sha256": "fcf48fd275c163aa7d8d1edc669f8d9b6c2e10cc54d091640b1645c6be3ece6d"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-repeat-final-20261103",
+        "passed": true,
+        "cases_completed": 33,
+        "seconds": 8.2803766,
+        "result_sha256": "467d063caa82652049c5ffba5585064b7c41d2efd665422c3ea0597ab2570d43"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-verified-a-20261103",
+        "passed": true,
+        "cases_completed": 33,
+        "seconds": 8.373894,
+        "result_sha256": "6a47b725e1d22daa7fbe05d2f332300fcf5e5fb9816891b09a04f885b4cd9514"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-verified-b-20261103",
+        "passed": true,
+        "cases_completed": 33,
+        "seconds": 8.3418669,
+        "result_sha256": "4cb9162a4b397f7a5f61dbbe0c9b517738b91c1fbdce761bdf2bed6d203463c6"
+      }
+    ],
+    "source_sha256": {
+      "scripts/acceptance_harness_v6/__init__.py": "75b223f1ade09b71790f52989213dca297d5461d0901073c6e30c8b77912111f",
+      "scripts/acceptance_harness_v6/worker.py": "0bd63347704c106124aff1d2776b766e454a7ed70963910cff42cfc0de0526df",
+      "scripts/acceptance_harness_v6/worker_log.py": "3ae2fa471f3b287aa1ec5adcf9a375ab914a38a273730367181a38276a00d1af",
+      "scripts/acceptance_harness_v6/supervise.ps1": "d4e3987d63531075462213bdac90a79c386ca585e0f0e1318d211ff49fb5ff03",
+      "scripts/acceptance_harness_v6/WorkerLog.psm1": "5c5a0fbac65d768b547c26926bb9cb13d0ae9b9c3d9a04f53bddcf6d22a8b1e3",
+      "tests/test_worker_log_v6.py": "95d265812243005a2b0398180d3f6f34a4879fe993815f21552e6a872fc2f6f7",
+      "tests/v6_log_writer_fixture.py": "8d94bc8356897c4263a635bcfb1f9c18219b3c638d4239a87a458c391eeb56eb",
+      "tests/run_v6_worker_log_native.ps1": "fcdf696cf42291fd016262deca19e9b75a02b07c6d62983b5b8d0d80f56e0712",
+      "tests/v6_regression_context.py": "10cda7906bdedbc46ee1ffd49b4ae7ee7e535645594f47066ea1fedf63955e8a"
+    },
+    "fresh_read_only_baseline": {
+      "accepted": true,
+      "operational_mutations": 0,
+      "installed_launches": 0,
+      "baseline": {
+        "revision": 6,
+        "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+        "selected": null
+      },
+      "record_pairs": 6,
+      "selector_names": 12,
+      "selector_native_id": [
+        4004218753,
+        65536,
+        1532785
+      ],
+      "original_metadata_files_preserved": 17,
+      "receipt_ack_acl_verified": true,
+      "all_read_handles_closed": true,
+      "collected_utc_ns": 1793759178550951200,
+      "seconds": 0.37460810000015954
+    },
+    "v5_acceptance": "FAIL",
+    "v5_authorization_consumed": true,
+    "v5_raw_hashes_preserved": {
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\single-use-claim.json": "20c6ff7db95564a0b6c9b707912f563e3ca50c8832a365675262e6b672c42a2a",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\outer-launch.json": "65a5acbab5cf6528ac46fdb79bef509f054fd5df8697dccabaa6e5de86c3f2b7",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\supervisor-result.json": "fa11bf9b7bb3281e8e99fc03e2224c1c7d1b3d1c11605c0d83f63b88cd1853b3",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\milestone-summary.json": "9a1fc61f6e7f60ce3bc80e6e798e536171d8479c51aa4b67163fabc09a466633",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\post-run-integrity.json": "19bcb137c8de5b48e1e057a281cf50399f727375719335140515c7c087a1680b",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\git-remote-verification.json": "198eac90bb95f4401ede901f91a81fa170ecd06c46a7f147e4eef1e7f1ab55b2"
+    },
+    "v5_source_pins_unchanged": 155,
+    "no_new_approval_package": true,
+    "no_operational_grant_consumed": true,
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "windows_time_changes": 0,
+    "clock_acceptance_issued": false,
+    "genesis_access": false,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "remaining_uncertainty": "Original transient fixture command PermissionError exact Win32 subcause unavailable; producer-completion ordering now explicit and final repeats pass. Full V6 installed composition/browser/Stop/origins/clock not executed; source-only correction is not installed acceptance.",
+    "next_prerequisite": "Prepare a separate exact V6 approval package with fresh unused root, updated gate/source/native log-declaration and module pins, current baseline and bounded procedure. Then NEW explicit single-use installed authorization/full fresh preflight. Do not create or execute that package under this milestone."
+  },
+  "prior_next_eligible_tasks": [
+    "PREPARE_SEPARATE_EXACT_V6_APPROVAL_PACKAGE_WITH_NEW_UNUSED_ROOT_AND_FRESH_BASELINE",
+    "ONLY_AFTER_NEW_OPERATOR_GRANT_RUN_INSTALLED_NONFINANCIAL_ACCEPTANCE_WITH_ALL_UNCHANGED_GATES"
+  ],
+  "prior_blocked_tasks": {
+    "V6_PACKAGE_AND_INSTALLED_ACCEPTANCE": "Source reader/publisher and V6 supervisor/worker fork validated;520regressions and2x33native pass. No V6 approval package/root/grant created. Next separately prepare exact gate/module/source/log-declaration/marker pins and unused root; actual installed full composition/browser45s/Stop8s/clock remains missing and needs NEW operator authorization.",
+    "V5_HISTORY": "FAIL/consumed2.997116s log sharing refusal unchanged;155pins and all saved raw hashes preserved. No V5 source/copy changes, no old-root reset or retry. Old unused-root invariant exercised only on explicitly disposable pre-execution copy; actual consumed root remains unchanged.",
+    "CURRENT_BASELINE": "Fresh read-only native UNSELECTEDr6c9bc240c,6pairs12names/root[4004218753,65536,1532785];17original metadata hashes/names/supportreceiptACKACL preserved/readhandlesclosed. No selection mutation, installed launch, rollback or financial access.",
+    "CLOCK_MARKET_FINANCIAL": "No current clock authority collected; fresh<=1000ms120s and all native/socket/process/rollback requirements remain. B1C1D1E1/21decisions7phases/currentresearch/nativecustody/freshentitledIEX/calendar/accountinception/custodyACK/reconciliation/risk and separate financial authority unchanged. PAPERNO/productionNO-GO.",
+    "RESIDUAL": "Historical transient fixture command open PermissionError exact Win32 subcause not captured. Explicit producer completion now enforced; final repeated native runs pass without ignoring failures. Actual installed V6 topology/timing not established by fixtures."
+  },
+  "prior_exact_next_action": "STOP after V6 source/disposable correction/report/archive/state/commit/nonforcepush/remoteverify. docs/QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_2026-11-03.md READY_FOR_V6_APPROVAL_PACKAGE_PREPARATION. Next separate engineering milestone prepares exact V6 source/gate/log/module pins and NEW unused evidence root/current baseline; then NEW explicit single-use installed authorization/fullfreshpreflight. No installed launch/selection, no V5 reuse or automatic proposal/execution here. PAPERNO/productionNO-GO."
+},
   "qd_v6_concurrent_worker_log_access_correction_20261103": {
   "evidence": {
     "status": "READY_FOR_V6_APPROVAL_PACKAGE_PREPARATION",
@@ -5334,191 +5679,179 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_READY_FOR_APPROVAL_PACKAGE_PREPARATION",
+  "last_verified_task": "QD_V6_INSTALLED_ACCEPTANCE_PACKAGE_PREPARATION_BLOCKED_INTEGRATED_ROSTER_BROWSER_URL",
   "next_eligible_tasks": [
-  "PREPARE_SEPARATE_EXACT_V6_APPROVAL_PACKAGE_WITH_NEW_UNUSED_ROOT_AND_FRESH_BASELINE",
-  "ONLY_AFTER_NEW_OPERATOR_GRANT_RUN_INSTALLED_NONFINANCIAL_ACCEPTANCE_WITH_ALL_UNCHANGED_GATES"
+  "OFFLINE_CAPTURE_COMPLETE_EXPECTED_AND_OBSERVED_FIXTURE_ROLE_IDENTITIES_BEFORE_ADMISSION",
+  "RECOVER_POLICY_VERIFIABLE_BROWSER_SURFACE_WITHOUT_BYPASS_THEN_FRESH_DISPOSABLE_INTEGRATED_REHEARSAL"
 ],
   "blocked_tasks": {
-  "V6_PACKAGE_AND_INSTALLED_ACCEPTANCE": "Source reader/publisher and V6 supervisor/worker fork validated;520regressions and2x33native pass. No V6 approval package/root/grant created. Next separately prepare exact gate/module/source/log-declaration/marker pins and unused root; actual installed full composition/browser45s/Stop8s/clock remains missing and needs NEW operator authorization.",
-  "V5_HISTORY": "FAIL/consumed2.997116s log sharing refusal unchanged;155pins and all saved raw hashes preserved. No V5 source/copy changes, no old-root reset or retry. Old unused-root invariant exercised only on explicitly disposable pre-execution copy; actual consumed root remains unchanged.",
-  "CURRENT_BASELINE": "Fresh read-only native UNSELECTEDr6c9bc240c,6pairs12names/root[4004218753,65536,1532785];17original metadata hashes/names/supportreceiptACKACL preserved/readhandlesclosed. No selection mutation, installed launch, rollback or financial access.",
-  "CLOCK_MARKET_FINANCIAL": "No current clock authority collected; fresh<=1000ms120s and all native/socket/process/rollback requirements remain. B1C1D1E1/21decisions7phases/currentresearch/nativecustody/freshentitledIEX/calendar/accountinception/custodyACK/reconciliation/risk and separate financial authority unchanged. PAPERNO/productionNO-GO.",
-  "RESIDUAL": "Historical transient fixture command open PermissionError exact Win32 subcause not captured. Explicit producer completion now enforced; final repeated native runs pass without ignoring failures. Actual installed V6 topology/timing not established by fixtures."
+  "V6_INTEGRATED_REQUIRED": "FAIL16.3638651s/zero cycles. Actual V6 owner/log loop fixture worker original handle retained; before first BEGIN/Open, V5_INCOMPLETE_OR_UNEXPECTED_JOB_ROSTER. Jobpacket#7=[21588,25952,6228],worker21588 known; which otherPID is declared controller/unclaimed role not retained. No role inference/allowlist widening. Worker exit2/log rejects nonzero; normal fixtureEOF/retained+loghandlesclosed/Job0/no force. Unrecorded seedport lacks exact3readerreadback.",
+  "BROWSER_TOOL": "ComputerUse stopped: currentChromeURL not reliably verifiable for policy. No further appinput/alternative browsermethod/tab/ACK. Need legitimate tool recovery without bypass; independent of native roster failure.",
+  "V6_APPROVAL_PACKAGE": "NOT_ISSUED. Passing528offline and prior66isolatedlog cases cannot replace mandatory integrated two-cycle/browser/Stop/socket/CIMlast/Job proof. No operational V6 scope/source package/root/claim/grant. No installedlaunch/selection or operationalauth consumed.",
+  "INSTALLED_BASELINE": "Read-only eightgroupsPASS75.0846642s10204files903dirs260369081bytes15deps/frozen638parity/support5b027d7d/receiptACKjournal/nativeIDsACL;17metadata unchanged/allhandlesclosed. FreshUNSELECTEDr6c9bc240c/native[4004218753,65536,1532785]/6pairs12names/two-recordcapacity/knownheadrollbackmetadata verified. No mutation.",
+  "HISTORY_AND_FINANCIAL": "V5FAIL/consumed and155pins/rawhashes preserved;V4history intact. No currentclockauthority. B1C1D1E1/21decisions7phases/freshclock1000ms120s/currentresearch/nativecustody/entitledexecutableIEX/calendar/accountinception/custodyACK/reconciliation/risk/separatefinancialauthority unchanged. PAPERNO/productionNO-GO."
 },
   "latest_tests": {
-  "status": "READY_FOR_V6_APPROVAL_PACKAGE_PREPARATION",
-  "report": "docs/QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_2026-11-03.md",
-  "starting_commit": "e672bd52c53fce2e82da812936f2a384f16b1c01",
-  "passed": 520,
+  "status": "BLOCKED_INTEGRATED_V6_REHEARSAL_ROSTER_AND_BROWSER_URL_POLICY",
+  "report": "docs/QD_V6_INSTALLED_ACCEPTANCE_PACKAGE_PREPARATION_2026-11-03.md",
+  "starting_commit": "af8b0a332529c082ebd97319cf0b1abe745c7be8",
+  "passed": 528,
   "failed": 0,
   "skipped": 0,
-  "seconds": 32.49,
-  "new_offline_cases": 22,
-  "historical_preparation_phase_fixture_cases": 1,
-  "original_v5_tests_modified": false,
-  "historical_353_protection_cases_included": true,
-  "native_unique_cases": 33,
-  "final_native_executions": 66,
-  "final_native_failed": 0,
-  "final_native": [
-    {
-      "root": "logs\\diagnostics\\qd-v6-worker-log-native-verified-a-20261103",
-      "passed": 33,
-      "failed": 0,
-      "seconds": 8.373894,
-      "entries_including_final_result": 457,
-      "logical_bytes": 2295947,
-      "accounted_bytes": 4167819,
-      "sha256": "6a47b725e1d22daa7fbe05d2f332300fcf5e5fb9816891b09a04f885b4cd9514"
+  "seconds": 33.3,
+  "new_offline_cases": 8,
+  "prior_520_included": true,
+  "native_rehearsal_sessions": 1,
+  "native_rehearsal_passed": 0,
+  "native_rehearsal_failed": 1,
+  "completed_cycles": 0,
+  "native_rehearsal": {
+    "status": "REFUSED_PRESERVE_EVIDENCE",
+    "authorization_consumed": true,
+    "forced_job_cleanup": false,
+    "worker_exit": 2,
+    "handles_closed": true,
+    "scope_verifier": {
+      "original_handle_verified": true,
+      "created": 134382338397972540,
+      "pid": 13644,
+      "exit": 0,
+      "command": "\"C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" -I -B \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v6-integrated-rehearsal-20261103\\gate.py\" --verify-only dbf214eca72fca897fcfd9b45eaf069de4e5a68be81d7c8f5ced9bd8c18b11dc af8b0a332529c082ebd97319cf0b1abe745c7be8"
     },
-    {
-      "root": "logs\\diagnostics\\qd-v6-worker-log-native-verified-b-20261103",
-      "passed": 33,
-      "failed": 0,
-      "seconds": 8.3418669,
-      "entries_including_final_result": 457,
-      "logical_bytes": 2295955,
-      "accounted_bytes": 4167827,
-      "sha256": "4cb9162a4b397f7a5f61dbbe0c9b517738b91c1fbdce761bdf2bed6d203463c6"
+    "error": "LOG_WRITER_EXIT_NONZERO",
+    "log_handles_closed": true,
+    "final_job_active": 0,
+    "seconds": 16.363865099999998,
+    "resources": {
+      "entries": 32,
+      "logical_bytes": 41043,
+      "accounted_bytes": 172115
     }
-  ],
-  "intentional_own_worker_termination_negative_cases": 2,
-  "emergency_cleanup_in_final_native_runs": false,
-  "prototype_native_results_preserved": [
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-20261103",
-      "passed": false,
-      "cases_completed": 1,
-      "seconds": 0.4130078,
-      "result_sha256": "e171ca3236600bfb27ec445e814ef16d75da0a7e03d95ff7847873bfbe469b44"
-    },
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-commit-cut-20261103",
-      "passed": true,
-      "cases_completed": 33,
-      "seconds": 7.853413,
-      "result_sha256": "04f790cd99f094ea67ab0ffa823c3e994649d24cb8430cba127c1e264adb5c79"
-    },
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-crlf-20261103",
-      "passed": false,
-      "cases_completed": 4,
-      "seconds": 5.1925289999999995,
-      "result_sha256": "64970df355cf0bb166e355e5952021b7c4ac64c669e8f5bfddcf353b337144ba"
-    },
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-diagnostics-20261103",
-      "passed": false,
-      "cases_completed": 8,
-      "seconds": 6.4552951,
-      "result_sha256": "367ca7fe08f9cff19eb043bd6e90b1aa9983498a2107f4e5b86bf5a7792fc6d3"
-    },
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-exclusive-20261103",
-      "passed": true,
-      "cases_completed": 30,
-      "seconds": 7.1948785,
-      "result_sha256": "8145308b321c51d71f75419b81bb7250b0575b3b900b41e2e626271624810513"
-    },
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-final-20261103",
-      "passed": false,
-      "cases_completed": 8,
-      "seconds": 6.6888065,
-      "result_sha256": "287a52fa8262024ffb0460845054d82a4afff0c58bc9568e4552c30aa64417ad"
-    },
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-namespace-20261103",
-      "passed": false,
-      "cases_completed": 4,
-      "seconds": 1.4174798,
-      "result_sha256": "fcf48fd275c163aa7d8d1edc669f8d9b6c2e10cc54d091640b1645c6be3ece6d"
-    },
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-repeat-final-20261103",
-      "passed": true,
-      "cases_completed": 33,
-      "seconds": 8.2803766,
-      "result_sha256": "467d063caa82652049c5ffba5585064b7c41d2efd665422c3ea0597ab2570d43"
-    },
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-verified-a-20261103",
-      "passed": true,
-      "cases_completed": 33,
-      "seconds": 8.373894,
-      "result_sha256": "6a47b725e1d22daa7fbe05d2f332300fcf5e5fb9816891b09a04f885b4cd9514"
-    },
-    {
-      "root": "logs/diagnostics/qd-v6-worker-log-native-verified-b-20261103",
-      "passed": true,
-      "cases_completed": 33,
-      "seconds": 8.3418669,
-      "result_sha256": "4cb9162a4b397f7a5f61dbbe0c9b517738b91c1fbdce761bdf2bed6d203463c6"
-    }
-  ],
-  "source_sha256": {
-    "scripts/acceptance_harness_v6/__init__.py": "75b223f1ade09b71790f52989213dca297d5461d0901073c6e30c8b77912111f",
-    "scripts/acceptance_harness_v6/worker.py": "0bd63347704c106124aff1d2776b766e454a7ed70963910cff42cfc0de0526df",
-    "scripts/acceptance_harness_v6/worker_log.py": "3ae2fa471f3b287aa1ec5adcf9a375ab914a38a273730367181a38276a00d1af",
-    "scripts/acceptance_harness_v6/supervise.ps1": "d4e3987d63531075462213bdac90a79c386ca585e0f0e1318d211ff49fb5ff03",
-    "scripts/acceptance_harness_v6/WorkerLog.psm1": "5c5a0fbac65d768b547c26926bb9cb13d0ae9b9c3d9a04f53bddcf6d22a8b1e3",
-    "tests/test_worker_log_v6.py": "95d265812243005a2b0398180d3f6f34a4879fe993815f21552e6a872fc2f6f7",
-    "tests/v6_log_writer_fixture.py": "8d94bc8356897c4263a635bcfb1f9c18219b3c638d4239a87a458c391eeb56eb",
-    "tests/run_v6_worker_log_native.ps1": "fcdf696cf42291fd016262deca19e9b75a02b07c6d62983b5b8d0d80f56e0712",
-    "tests/v6_regression_context.py": "10cda7906bdedbc46ee1ffd49b4ae7ee7e535645594f47066ea1fedf63955e8a"
   },
-  "fresh_read_only_baseline": {
-    "accepted": true,
-    "operational_mutations": 0,
+  "worker_rehearsal": {
+    "accepted": false,
+    "domain": "DISPOSABLE_INTEGRATED_ONLY",
+    "cycles": [],
     "installed_launches": 0,
-    "baseline": {
-      "revision": 6,
-      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
-      "selected": null
-    },
-    "record_pairs": 6,
-    "selector_names": 12,
-    "selector_native_id": [
+    "selection_mutations": 0,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "emergency_cleanup": false,
+    "error": "OwnershipRefused('V5_INCOMPLETE_OR_UNEXPECTED_JOB_ROSTER')",
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v6-integrated-rehearsal-20261103\\worker.py\", line 124, in <module>\n    owner.verify()\n  File \"D:\\Work\\Project Atlas\\scripts\\acceptance_harness_v5\\ownership.py\", line 269, in verify\n    self.binding.verify()\n  File \"D:\\Work\\Project Atlas\\scripts\\observation_runtime\\launch_ownership.py\", line 256, in verify\n    self.api.members() == {v[\"pid\"] for v in rows_to_verify},\n    ^^^^^^^^^^^^^^^^^^\n  File \"D:\\Work\\Project Atlas\\scripts\\acceptance_harness_v5\\ownership.py\", line 93, in members\n    self.owner.verify_native()\n  File \"D:\\Work\\Project Atlas\\scripts\\acceptance_harness_v5\\ownership.py\", line 260, in verify_native\n    require(\n  File \"D:\\Work\\Project Atlas\\scripts\\observation_runtime\\launch_ownership.py\", line 18, in require\n    raise OwnershipRefused(reason)\nscripts.observation_runtime.launch_ownership.OwnershipRefused: V5_INCOMPLETE_OR_UNEXPECTED_JOB_ROSTER\n",
+    "precycle_child_closed": true,
+    "retained_handles_closed": true,
+    "seconds": 15.824543000000176
+  },
+  "job_packet_at_refusal": {
+    "nonce": "15ac6bab95dd4117802ef3f0fb223b17",
+    "collected_ns": 2941568674700,
+    "scope_sha256": "dbf214eca72fca897fcfd9b45eaf069de4e5a68be81d7c8f5ced9bd8c18b11dc",
+    "pids": [
+      21588,
+      25952,
+      6228
+    ],
+    "seq": 7
+  },
+  "rehearsal_resources": {
+    "entries_including_final_result": 33,
+    "logical_bytes": 42138,
+    "accounted_bytes": 177306
+  },
+  "rehearsal_raw_hashes": {
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/actual-source-identity.json": "f2a24062e07da18361fc496da45c7dad25bb32293e01d533a2a29de86c30e55b",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/fixture-scope.json": "dd8ef094cba946043c47a0fb5c8759b98cd215848ba42c52d92fd7f7e9ae0587",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/fixture-source-manifest.json": "7b945dfdf2efbcee5f4319743829d28f170438a2148f8950479154d9bc388d79",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/gate-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/gate-stdout.log": "af281afc6d1b951ecbb2a823a6d33486497d16757fd7016b66af8273c16d3873",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/gate.py": "8b8aedc274c060d6253265a7dce3844cf8307ba211762cd9a2e0c3d6e36ef31f",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000001.request.json": "39b2e941eea13e6c304ccfda45bb0d95008e51f0dc8e3a24c394fdf19f0fcc60",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000001.response.json": "e5132076051bd91d466799d97e38b7bed086310c9f0a7919d719adb80994a25d",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000002.request.json": "62f02ebcd8fac6fc8862ee2eeaa33171524c1976e4b73aef8c712446c69f7475",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000002.response.json": "bc1b57fd7ace1bc8ed14012f102e110966b243b0a7264ada38c8900eb7cfc760",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000003.request.json": "e6bc94cf8f94258a0fdf357a55d31179315aaa16ae85ce6cfa479ec97a3658f6",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000003.response.json": "8ca53d1f51a3370dff2f153c97d354a37b287ae70caa3162d9077025f4962822",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000004.request.json": "4c04d4eee583b7214d2127a310b56b6d7fce9b9e8f5e25fb5565c42f092f3b6d",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000004.response.json": "929c54a2ddbcf9fd6c11d278bb188b6f57f61f003818e66bf0bd00c1c28b5218",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000005.request.json": "b4f899312ed2d5b5aebbb739dc31175d1bb74394825604242cc0d3635f0e54ec",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000005.response.json": "a33cf3924ccd41119b3a106c332c09415e7d7da16c1b3e6028a79538c4d50251",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000006.request.json": "970a2b1accaba366ba79c40874dbf66df9db641cfd2bd6b13c4ade64c95cae09",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000006.response.json": "b2dd1235ae7294f27f0e171f549c6f07181d6d4bd5b871c908ae3169637e146b",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000007.request.json": "6bab239b12d755ab400dc9936f58a17407fbb2fa1a89d637a02a5762115afb47",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/job-000007.response.json": "c13afb8b58dd96d62039e849b3107d40ce54639a9c6111bf7914de56a14ff8f1",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/outer-launch.json": "6912b7c7900327284cb2df501b5cc4311ba859b40243a86d6842f1c314044be7",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/rehearsal-result.json": "5530d982d09557c2052d4ae7d51425eb9fc3b9a2dae3dbe80d682bd5e3815afe",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/resource_audit.ps1": "4b195863192b7e86ac472b1181ea929e2af03e1972bb22a95b5c0f3b038904e5",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/single-use-claim.json": "3dcbd0e767098ee54da2a3c0fd5d96fa3c068b478279f7fec7f4a9b6244a4153",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/supervisor-result.json": "ecd29837a36dbd782ae2d9e7887089bc065931874555f0bce3c3469ebfa22e97",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker-logs.json": "93e8de868afd9af2744e17c1027e9cb395a00532fff7c760e198e873994c8ec6",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker-logs.ready": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker-stdout.log": "56103843a4842421894708dd1dbeeae13ca2b9e2eea92c110144a5c4bdce9341",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/worker.py": "6f456d925caf6b0508f2581c45a41f05fc7cdf125dad0a84d8ab5c7d88e56e04",
+    "logs/diagnostics/qd-v6-integrated-rehearsal-20261103/WorkerLog.psm1": "5c5a0fbac65d768b547c26926bb9cb13d0ae9b9c3d9a04f53bddcf6d22a8b1e3"
+  },
+  "browser_tool_status": "COMPUTER_USE_STOPPED_CURRENT_CHROME_URL_NOT_CONFIDENTLY_VERIFIABLE_NO_BYPASS",
+  "browser_tabs_opened": 0,
+  "browser_acknowledgements": 0,
+  "browser_deadline_seconds": 45,
+  "stop_deadline_seconds": 8,
+  "read_only_installation_groups_passed": 8,
+  "read_only_inventory_seconds": 75.08466419999968,
+  "application": {
+    "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "files": 10204,
+    "directories": 903,
+    "bytes": 260369081,
+    "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+    "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+    "required_dependencies": 15
+  },
+  "fresh_selector": {
+    "revision": 6,
+    "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+    "selected": null,
+    "freshly_verified": true,
+    "collected_utc_ns": 1793760450976820200,
+    "native_root": [
       4004218753,
       65536,
       1532785
     ],
-    "original_metadata_files_preserved": 17,
-    "receipt_ack_acl_verified": true,
-    "all_read_handles_closed": true,
-    "collected_utc_ns": 1793759178550951200,
-    "seconds": 0.37460810000015954
+    "native_record_pairs": 6,
+    "namespace_files": 12,
+    "two_new_records_fit": true
   },
+  "original_17_metadata_names_hashes_preserved": true,
+  "read_only_handles_closed": true,
   "v5_acceptance": "FAIL",
   "v5_authorization_consumed": true,
-  "v5_raw_hashes_preserved": {
-    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\single-use-claim.json": "20c6ff7db95564a0b6c9b707912f563e3ca50c8832a365675262e6b672c42a2a",
-    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\outer-launch.json": "65a5acbab5cf6528ac46fdb79bef509f054fd5df8697dccabaa6e5de86c3f2b7",
-    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\supervisor-result.json": "fa11bf9b7bb3281e8e99fc03e2224c1c7d1b3d1c11605c0d83f63b88cd1853b3",
-    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\milestone-summary.json": "9a1fc61f6e7f60ce3bc80e6e798e536171d8479c51aa4b67163fabc09a466633",
-    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\post-run-integrity.json": "19bcb137c8de5b48e1e057a281cf50399f727375719335140515c7c087a1680b",
-    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\git-remote-verification.json": "198eac90bb95f4401ede901f91a81fa170ecd06c46a7f147e4eef1e7f1ab55b2"
+  "v5_source_pins_preserved": 155,
+  "source_sha256": {
+    "tests/run_v6_integrated_rehearsal.ps1": "1c6e25104b297f3e702443ca4ab2cd1b85388baa8eef392503e69c49d9cb1b27",
+    "tests/v6_integrated_rehearsal_worker.py": "6f456d925caf6b0508f2581c45a41f05fc7cdf125dad0a84d8ab5c7d88e56e04",
+    "tests/v6_rehearsal_gate.py": "8b8aedc274c060d6253265a7dce3844cf8307ba211762cd9a2e0c3d6e36ef31f",
+    "tests/test_v6_integrated_rehearsal.py": "d9d58a5d352c776172b31bc55f9652d1c510a2f51dc4721d51b51dc0f0a260ac"
   },
-  "v5_source_pins_unchanged": 155,
-  "no_new_approval_package": true,
-  "no_operational_grant_consumed": true,
+  "operational_proposal_created": false,
+  "operational_v6_execution_root_created": false,
+  "operational_authorizations_consumed": 0,
   "installed_launches": 0,
   "selection_mutations": 0,
   "financial_actions": 0,
   "provider_connections": 0,
   "windows_time_changes": 0,
-  "clock_acceptance_issued": false,
+  "clock_acceptance_collected": false,
   "genesis_access": false,
+  "unrelated_test_preserved": true,
   "paper_startup": false,
   "production": "NO-GO",
-  "remaining_uncertainty": "Original transient fixture command PermissionError exact Win32 subcause unavailable; producer-completion ordering now explicit and final repeats pass. Full V6 installed composition/browser/Stop/origins/clock not executed; source-only correction is not installed acceptance.",
-  "next_prerequisite": "Prepare a separate exact V6 approval package with fresh unused root, updated gate/source/native log-declaration and module pins, current baseline and bounded procedure. Then NEW explicit single-use installed authorization/full fresh preflight. Do not create or execute that package under this milestone."
+  "next_prerequisite": "Capture expected/observed retained identities before disposable controller admission and establish the unexpected Job member role without allowlist expansion or PID adoption. Recover a policy-verifiable genuine browser surface without bypassing the stopped computer-use tool. Then a separately executable fresh integrated rehearsal must pass two real disposable cycles before any READY V6 package can be prepared."
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP after V6 source/disposable correction/report/archive/state/commit/nonforcepush/remoteverify. docs/QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_2026-11-03.md READY_FOR_V6_APPROVAL_PACKAGE_PREPARATION. Next separate engineering milestone prepares exact V6 source/gate/log/module pins and NEW unused evidence root/current baseline; then NEW explicit single-use installed authorization/fullfreshpreflight. No installed launch/selection, no V5 reuse or automatic proposal/execution here. PAPERNO/productionNO-GO.",
+  "exact_next_action": "STOP after BLOCKED V6 preparation report/archive/recovery/commit/nonforcepush/remoteverify. docs/QD_V6_INSTALLED_ACCEPTANCE_PACKAGE_PREPARATION_2026-11-03.md Next offline role-identity capture before admission and establish unclaimedJobmember without adoptingPIDs; legitimate currentURL-verifiable browser tool recovery without bypass; fresh disposable integrated two-cycle45sACK8sStop/EOF/3readers/CIMlast/Job cleanup must PASS before any READY V6 proposal. Do not issue finalproposal from isolated tests; no installedlaunch/selection/grant or V5reuse. PAPERNO/productionNO-GO.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
