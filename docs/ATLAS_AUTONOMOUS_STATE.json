@@ -1,4 +1,331 @@
 {
+  "qd_v6_concurrent_worker_log_access_correction_20261103": {
+  "evidence": {
+    "status": "READY_FOR_V6_APPROVAL_PACKAGE_PREPARATION",
+    "report": "docs/QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_2026-11-03.md",
+    "starting_commit": "e672bd52c53fce2e82da812936f2a384f16b1c01",
+    "passed": 520,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 32.49,
+    "new_offline_cases": 22,
+    "historical_preparation_phase_fixture_cases": 1,
+    "original_v5_tests_modified": false,
+    "historical_353_protection_cases_included": true,
+    "native_unique_cases": 33,
+    "final_native_executions": 66,
+    "final_native_failed": 0,
+    "final_native": [
+      {
+        "root": "logs\\diagnostics\\qd-v6-worker-log-native-verified-a-20261103",
+        "passed": 33,
+        "failed": 0,
+        "seconds": 8.373894,
+        "entries_including_final_result": 457,
+        "logical_bytes": 2295947,
+        "accounted_bytes": 4167819,
+        "sha256": "6a47b725e1d22daa7fbe05d2f332300fcf5e5fb9816891b09a04f885b4cd9514"
+      },
+      {
+        "root": "logs\\diagnostics\\qd-v6-worker-log-native-verified-b-20261103",
+        "passed": 33,
+        "failed": 0,
+        "seconds": 8.3418669,
+        "entries_including_final_result": 457,
+        "logical_bytes": 2295955,
+        "accounted_bytes": 4167827,
+        "sha256": "4cb9162a4b397f7a5f61dbbe0c9b517738b91c1fbdce761bdf2bed6d203463c6"
+      }
+    ],
+    "intentional_own_worker_termination_negative_cases": 2,
+    "emergency_cleanup_in_final_native_runs": false,
+    "prototype_native_results_preserved": [
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-20261103",
+        "passed": false,
+        "cases_completed": 1,
+        "seconds": 0.4130078,
+        "result_sha256": "e171ca3236600bfb27ec445e814ef16d75da0a7e03d95ff7847873bfbe469b44"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-commit-cut-20261103",
+        "passed": true,
+        "cases_completed": 33,
+        "seconds": 7.853413,
+        "result_sha256": "04f790cd99f094ea67ab0ffa823c3e994649d24cb8430cba127c1e264adb5c79"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-crlf-20261103",
+        "passed": false,
+        "cases_completed": 4,
+        "seconds": 5.1925289999999995,
+        "result_sha256": "64970df355cf0bb166e355e5952021b7c4ac64c669e8f5bfddcf353b337144ba"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-diagnostics-20261103",
+        "passed": false,
+        "cases_completed": 8,
+        "seconds": 6.4552951,
+        "result_sha256": "367ca7fe08f9cff19eb043bd6e90b1aa9983498a2107f4e5b86bf5a7792fc6d3"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-exclusive-20261103",
+        "passed": true,
+        "cases_completed": 30,
+        "seconds": 7.1948785,
+        "result_sha256": "8145308b321c51d71f75419b81bb7250b0575b3b900b41e2e626271624810513"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-final-20261103",
+        "passed": false,
+        "cases_completed": 8,
+        "seconds": 6.6888065,
+        "result_sha256": "287a52fa8262024ffb0460845054d82a4afff0c58bc9568e4552c30aa64417ad"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-namespace-20261103",
+        "passed": false,
+        "cases_completed": 4,
+        "seconds": 1.4174798,
+        "result_sha256": "fcf48fd275c163aa7d8d1edc669f8d9b6c2e10cc54d091640b1645c6be3ece6d"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-repeat-final-20261103",
+        "passed": true,
+        "cases_completed": 33,
+        "seconds": 8.2803766,
+        "result_sha256": "467d063caa82652049c5ffba5585064b7c41d2efd665422c3ea0597ab2570d43"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-verified-a-20261103",
+        "passed": true,
+        "cases_completed": 33,
+        "seconds": 8.373894,
+        "result_sha256": "6a47b725e1d22daa7fbe05d2f332300fcf5e5fb9816891b09a04f885b4cd9514"
+      },
+      {
+        "root": "logs/diagnostics/qd-v6-worker-log-native-verified-b-20261103",
+        "passed": true,
+        "cases_completed": 33,
+        "seconds": 8.3418669,
+        "result_sha256": "4cb9162a4b397f7a5f61dbbe0c9b517738b91c1fbdce761bdf2bed6d203463c6"
+      }
+    ],
+    "source_sha256": {
+      "scripts/acceptance_harness_v6/__init__.py": "75b223f1ade09b71790f52989213dca297d5461d0901073c6e30c8b77912111f",
+      "scripts/acceptance_harness_v6/worker.py": "0bd63347704c106124aff1d2776b766e454a7ed70963910cff42cfc0de0526df",
+      "scripts/acceptance_harness_v6/worker_log.py": "3ae2fa471f3b287aa1ec5adcf9a375ab914a38a273730367181a38276a00d1af",
+      "scripts/acceptance_harness_v6/supervise.ps1": "d4e3987d63531075462213bdac90a79c386ca585e0f0e1318d211ff49fb5ff03",
+      "scripts/acceptance_harness_v6/WorkerLog.psm1": "5c5a0fbac65d768b547c26926bb9cb13d0ae9b9c3d9a04f53bddcf6d22a8b1e3",
+      "tests/test_worker_log_v6.py": "95d265812243005a2b0398180d3f6f34a4879fe993815f21552e6a872fc2f6f7",
+      "tests/v6_log_writer_fixture.py": "8d94bc8356897c4263a635bcfb1f9c18219b3c638d4239a87a458c391eeb56eb",
+      "tests/run_v6_worker_log_native.ps1": "fcdf696cf42291fd016262deca19e9b75a02b07c6d62983b5b8d0d80f56e0712",
+      "tests/v6_regression_context.py": "10cda7906bdedbc46ee1ffd49b4ae7ee7e535645594f47066ea1fedf63955e8a"
+    },
+    "fresh_read_only_baseline": {
+      "accepted": true,
+      "operational_mutations": 0,
+      "installed_launches": 0,
+      "baseline": {
+        "revision": 6,
+        "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+        "selected": null
+      },
+      "record_pairs": 6,
+      "selector_names": 12,
+      "selector_native_id": [
+        4004218753,
+        65536,
+        1532785
+      ],
+      "original_metadata_files_preserved": 17,
+      "receipt_ack_acl_verified": true,
+      "all_read_handles_closed": true,
+      "collected_utc_ns": 1793759178550951200,
+      "seconds": 0.37460810000015954
+    },
+    "v5_acceptance": "FAIL",
+    "v5_authorization_consumed": true,
+    "v5_raw_hashes_preserved": {
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\single-use-claim.json": "20c6ff7db95564a0b6c9b707912f563e3ca50c8832a365675262e6b672c42a2a",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\outer-launch.json": "65a5acbab5cf6528ac46fdb79bef509f054fd5df8697dccabaa6e5de86c3f2b7",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\supervisor-result.json": "fa11bf9b7bb3281e8e99fc03e2224c1c7d1b3d1c11605c0d83f63b88cd1853b3",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\milestone-summary.json": "9a1fc61f6e7f60ce3bc80e6e798e536171d8479c51aa4b67163fabc09a466633",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\post-run-integrity.json": "19bcb137c8de5b48e1e057a281cf50399f727375719335140515c7c087a1680b",
+      "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\git-remote-verification.json": "198eac90bb95f4401ede901f91a81fa170ecd06c46a7f147e4eef1e7f1ab55b2"
+    },
+    "v5_source_pins_unchanged": 155,
+    "no_new_approval_package": true,
+    "no_operational_grant_consumed": true,
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "windows_time_changes": 0,
+    "clock_acceptance_issued": false,
+    "genesis_access": false,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "remaining_uncertainty": "Original transient fixture command PermissionError exact Win32 subcause unavailable; producer-completion ordering now explicit and final repeats pass. Full V6 installed composition/browser/Stop/origins/clock not executed; source-only correction is not installed acceptance.",
+    "next_prerequisite": "Prepare a separate exact V6 approval package with fresh unused root, updated gate/source/native log-declaration and module pins, current baseline and bounded procedure. Then NEW explicit single-use installed authorization/full fresh preflight. Do not create or execute that package under this milestone."
+  },
+  "prior_last_verified_task": "QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_V5_FAIL_LOG_SHARING_BEFORE_SELECTION",
+  "prior_latest_tests": {
+    "status": "INSTALLED_V5_ACCEPTANCE_FAIL_SUPERVISOR_LOG_SHARING_BEFORE_CLOCK_OR_SELECTION",
+    "acceptance": "FAIL",
+    "starting_commit": "353c1f8be380545e28595bdb0d4a1e562e606944",
+    "report": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_RESULT_V5_2026-11-03.md",
+    "authorization_consumed": true,
+    "automatic_retry_performed": false,
+    "scope_sha256": "03115a70b79cba7df029cd8f61215ce59567feaec4d42749a8000dd7dda1cd37",
+    "scope_raw_sha256": "f3b10526555ae0f8fbdc7c97a7203de09d459aede925b8d1e458981785a37ee5",
+    "source_manifest_sha256": "0b4efbda291b1727e2f844203471b8ac0a26d79f1fa530cebdfc3e3fb4eef64d",
+    "source_pins_verified": 155,
+    "application_release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "support_id": "5b027d7dc0853975ee751c2c83145a9820a95da28041263b3585b56a4312eccc",
+    "one_bounded_session": {
+      "status": "REFUSED_PRESERVE_EVIDENCE",
+      "authorization_consumed": true,
+      "forced_job_cleanup": true,
+      "worker_exit": null,
+      "handles_closed": true,
+      "scope_verifier": {
+        "original_handle_verified": true,
+        "created": 134382311836376093,
+        "pid": 21416,
+        "exit": 0,
+        "command": "\"C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" -I -B \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\gate.py\" --verify-only 03115a70b79cba7df029cd8f61215ce59567feaec4d42749a8000dd7dda1cd37 353c1f8be380545e28595bdb0d4a1e562e606944"
+      },
+      "error": "Exception calling \"ReadAllText\" with \"1\" argument(s): \"The process cannot access the file 'D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stdout.log' because it is being used by another process.\"",
+      "final_job_active": 0,
+      "seconds": 2.9971159999999997,
+      "resources": {
+        "entries": 56,
+        "logical_bytes": 315025,
+        "accounted_bytes": 544401
+      }
+    },
+    "fresh_clock": "NOT_COLLECTED_EARLY_OBSERVER_ABORT",
+    "clock_uncertainty_ms": null,
+    "clock_age_seconds": null,
+    "full_fresh_native_preflight": "NOT_REACHED",
+    "preselection_socket_cut": "NOT_REACHED",
+    "new_process_roster_admission": "NOT_COMPLETED",
+    "installed_opens": 0,
+    "browser_ack_seconds": [
+      null,
+      null
+    ],
+    "stop_seconds": [
+      null,
+      null
+    ],
+    "selection_mutations": 0,
+    "selection_revision_created": null,
+    "rollback": "NOT_REQUIRED_NO_SELECTION",
+    "final_selector": {
+      "revision": 6,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "selected": null,
+      "native_record_pairs": 6,
+      "namespace_files": 12,
+      "native_root": [
+        4004218753,
+        65536,
+        1532785
+      ],
+      "collected_utc_ns": 1793757693326725900
+    },
+    "post_failure_read_only_integrity": {
+      "accepted": true,
+      "purpose": "FAILURE_CLOSEOUT_ONLY_NOT_ACCEPTANCE",
+      "operational_mutations": 0,
+      "installed_launches": 0,
+      "all_original_17_metadata_hashes_and_names_preserved": true,
+      "support_receipt_ack_native_id_acl_readback_verified": true,
+      "final_selector": {
+        "revision": 6,
+        "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+        "selected": null,
+        "native_record_pairs": 6,
+        "namespace_files": 12,
+        "native_root": [
+          4004218753,
+          65536,
+          1532785
+        ],
+        "collected_utc_ns": 1793757693326725900
+      },
+      "selector_handles_closed": true,
+      "original_parent_worker_verifier_pids_absent": [
+        4280,
+        21424,
+        21416
+      ],
+      "process_query_original_handle_closed": true,
+      "supervisor_final_job_active": 0,
+      "supervisor_forced_owned_job_cleanup": true,
+      "supervisor_original_handles_closed": true,
+      "seconds": 0.8945118999999977
+    },
+    "resources_before_reporting": {
+      "entries": 60,
+      "logical_bytes": 321659,
+      "accounted_bytes": 567419
+    },
+    "new_owned_evidence_before_summary": {
+      "entries": 13,
+      "logical_bytes": 33148
+    },
+    "raw_result_sha256": {
+      "supervisor-result.json": "fa11bf9b7bb3281e8e99fc03e2224c1c7d1b3d1c11605c0d83f63b88cd1853b3",
+      "single-use-claim.json": "20c6ff7db95564a0b6c9b707912f563e3ca50c8832a365675262e6b672c42a2a",
+      "outer-launch.json": "65a5acbab5cf6528ac46fdb79bef509f054fd5df8697dccabaa6e5de86c3f2b7",
+      "worker-stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gate-stdout.log": "673c83d9826d50c1f53c646ee60f2d95486514e20a79bb12a682cf151b7be606",
+      "gate-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "post-run-integrity.json": "19bcb137c8de5b48e1e057a281cf50399f727375719335140515c7c087a1680b",
+      "evidence-validation.json": "4e58b7620bdb00b38a9458a89e262fefc5202d3aa187cf2379a340085705b528"
+    },
+    "source_code_changes": false,
+    "prior_source_regression_evidence": {
+      "passed": 353,
+      "failed": 0,
+      "skipped": 0,
+      "newly_executed": false
+    },
+    "new_regression_suite_executed": false,
+    "reason_no_regression_rerun": "Pinned sources unchanged; stop after one failed bounded session and reporting. No broad suites repeated.",
+    "v4_acceptance": "FAIL",
+    "v4_authorization_consumed": true,
+    "v4_raw_files_unchanged": 39,
+    "v4_source_pins_unchanged": 128,
+    "original_metadata_files_preserved": 17,
+    "unrelated_test_preserved": true,
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "windows_time_changes": 0,
+    "genesis_access": false,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "next_prerequisite": "Offline repair/regression of supervisor concurrent log-reader sharing/bounded tail/partial or missing log/early worker exit/drain. Preserve strict identity, Job containment, resource and 45s/8s gates. Refresh affected source/scope/root pins into a NEW approval package; obtain NEW explicit single-use installed grant. Never rerun this consumed root or edit its frozen run copies."
+  },
+  "prior_next_eligible_tasks": [
+    "OFFLINE_CORRECT_AND_TEST_SUPERVISOR_CONCURRENT_LOG_READER_WITHOUT_NATIVE_INSTALLED_LAUNCH",
+    "PREPARE_NEW_PINNED_UNUSED_ACCEPTANCE_PACKAGE_AFTER_DISPOSABLE_VALIDATION_THEN_REQUEST_NEW_OPERATOR_GRANT"
+  ],
+  "prior_blocked_tasks": {
+    "V5_CONSUMED_FAIL": "ONE approved invocation from353c1f8b consumed. Static scope155pins/verifier originalhandle exit0 passed. Concurrent ReadAllText of worker open stdout raised Windows sharing error; refused2.997116s, reviewed exact-owned Job containment true, Job0/outerhandlesclosed. Workerexitnull, no graceful shutdown claim. No clock/nativepreflight/selection/installedOpen/browser/Stop/socketacceptance reached. No automaticretry.",
+    "CURRENT_SELECTOR_AND_PRESERVATION": "Postfailure native readback UNSELECTEDr6c9bc240c,6pairs12names,nativeID[4004218753,65536,1532785];17original metadata hashes/names unchanged/supportreceiptACKACL accepted/readhandlesclosed;parent4280/worker21424/verifier21416 absent. No r7/r8 or rollback. Raw failure retained; originalV4FAIL39raw128pins consumed/historicalPID19940unresolved preserved.",
+    "NEXT_ENGINEERING": "Offline fix/regression explicit read-only sharing for concurrent supervisor log reader, bounded partial/missing/error/workerexit/drain cases, strict original identity/Job/error/refusal preserved. New source/root/scope pins and separately validated approval package required; no edits to frozen run copies or reuse of consumed grant.",
+    "CLOCK_AND_INSTALLED_ACCEPTANCE": "No fresh clock sample/capability in failed attempt; prior values historical only. Fresh<=1000ms<=120s source/synchronization and full exact native/receipt/ACL/baseline/socket/CIMlast/rollback preflight mandatory. Actual installed two-cycle browser45s/completeStop8s never executed; remain blocked.",
+    "FINANCIAL": "B1/C1/D1/E1 technical gates/21decisions7phases unchanged. No provider/account/writer/PAPER authority. Current acceptedresearch/nativecustody/freshentitledIEX/calendar/clock/accountinception/custodyACK/reconciliation/risk and separate financial approval remain. Operator sole releaseauthority. PAPERNO/productionNO-GO."
+  },
+  "prior_exact_next_action": "STOP after preserving V5 FAIL/consumed2.997116s concurrent worker-stdout ReadAllText sharing error, postfailure native r6UNSELECTED/17filepreservation, archivalroadmap/state/reportcommit/push/remoteverify. Next engineering milestone is OFFLINE correction and disposable validation of explicit read-only shared log tail and failure handling; do not edit frozen V5 copies or retry consumed root. Then NEW exact source/scope/root package and NEW explicit installed single-use grant for freshpreflight/two45sACK8sStop cycles/knownheadrollback. docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_RESULT_V5_2026-11-03.md PAPERNO/productionNO-GO."
+},
   "qd_final_installed_nonfinancial_acceptance_result_v5_20261103": {
   "evidence": {
     "status": "INSTALLED_V5_ACCEPTANCE_FAIL_SUPERVISOR_LOG_SHARING_BEFORE_CLOCK_OR_SELECTION",
@@ -5007,161 +5334,191 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_V5_FAIL_LOG_SHARING_BEFORE_SELECTION",
+  "last_verified_task": "QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_READY_FOR_APPROVAL_PACKAGE_PREPARATION",
   "next_eligible_tasks": [
-  "OFFLINE_CORRECT_AND_TEST_SUPERVISOR_CONCURRENT_LOG_READER_WITHOUT_NATIVE_INSTALLED_LAUNCH",
-  "PREPARE_NEW_PINNED_UNUSED_ACCEPTANCE_PACKAGE_AFTER_DISPOSABLE_VALIDATION_THEN_REQUEST_NEW_OPERATOR_GRANT"
+  "PREPARE_SEPARATE_EXACT_V6_APPROVAL_PACKAGE_WITH_NEW_UNUSED_ROOT_AND_FRESH_BASELINE",
+  "ONLY_AFTER_NEW_OPERATOR_GRANT_RUN_INSTALLED_NONFINANCIAL_ACCEPTANCE_WITH_ALL_UNCHANGED_GATES"
 ],
   "blocked_tasks": {
-  "V5_CONSUMED_FAIL": "ONE approved invocation from353c1f8b consumed. Static scope155pins/verifier originalhandle exit0 passed. Concurrent ReadAllText of worker open stdout raised Windows sharing error; refused2.997116s, reviewed exact-owned Job containment true, Job0/outerhandlesclosed. Workerexitnull, no graceful shutdown claim. No clock/nativepreflight/selection/installedOpen/browser/Stop/socketacceptance reached. No automaticretry.",
-  "CURRENT_SELECTOR_AND_PRESERVATION": "Postfailure native readback UNSELECTEDr6c9bc240c,6pairs12names,nativeID[4004218753,65536,1532785];17original metadata hashes/names unchanged/supportreceiptACKACL accepted/readhandlesclosed;parent4280/worker21424/verifier21416 absent. No r7/r8 or rollback. Raw failure retained; originalV4FAIL39raw128pins consumed/historicalPID19940unresolved preserved.",
-  "NEXT_ENGINEERING": "Offline fix/regression explicit read-only sharing for concurrent supervisor log reader, bounded partial/missing/error/workerexit/drain cases, strict original identity/Job/error/refusal preserved. New source/root/scope pins and separately validated approval package required; no edits to frozen run copies or reuse of consumed grant.",
-  "CLOCK_AND_INSTALLED_ACCEPTANCE": "No fresh clock sample/capability in failed attempt; prior values historical only. Fresh<=1000ms<=120s source/synchronization and full exact native/receipt/ACL/baseline/socket/CIMlast/rollback preflight mandatory. Actual installed two-cycle browser45s/completeStop8s never executed; remain blocked.",
-  "FINANCIAL": "B1/C1/D1/E1 technical gates/21decisions7phases unchanged. No provider/account/writer/PAPER authority. Current acceptedresearch/nativecustody/freshentitledIEX/calendar/clock/accountinception/custodyACK/reconciliation/risk and separate financial approval remain. Operator sole releaseauthority. PAPERNO/productionNO-GO."
+  "V6_PACKAGE_AND_INSTALLED_ACCEPTANCE": "Source reader/publisher and V6 supervisor/worker fork validated;520regressions and2x33native pass. No V6 approval package/root/grant created. Next separately prepare exact gate/module/source/log-declaration/marker pins and unused root; actual installed full composition/browser45s/Stop8s/clock remains missing and needs NEW operator authorization.",
+  "V5_HISTORY": "FAIL/consumed2.997116s log sharing refusal unchanged;155pins and all saved raw hashes preserved. No V5 source/copy changes, no old-root reset or retry. Old unused-root invariant exercised only on explicitly disposable pre-execution copy; actual consumed root remains unchanged.",
+  "CURRENT_BASELINE": "Fresh read-only native UNSELECTEDr6c9bc240c,6pairs12names/root[4004218753,65536,1532785];17original metadata hashes/names/supportreceiptACKACL preserved/readhandlesclosed. No selection mutation, installed launch, rollback or financial access.",
+  "CLOCK_MARKET_FINANCIAL": "No current clock authority collected; fresh<=1000ms120s and all native/socket/process/rollback requirements remain. B1C1D1E1/21decisions7phases/currentresearch/nativecustody/freshentitledIEX/calendar/accountinception/custodyACK/reconciliation/risk and separate financial authority unchanged. PAPERNO/productionNO-GO.",
+  "RESIDUAL": "Historical transient fixture command open PermissionError exact Win32 subcause not captured. Explicit producer completion now enforced; final repeated native runs pass without ignoring failures. Actual installed V6 topology/timing not established by fixtures."
 },
   "latest_tests": {
-  "status": "INSTALLED_V5_ACCEPTANCE_FAIL_SUPERVISOR_LOG_SHARING_BEFORE_CLOCK_OR_SELECTION",
-  "acceptance": "FAIL",
-  "starting_commit": "353c1f8be380545e28595bdb0d4a1e562e606944",
-  "report": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_RESULT_V5_2026-11-03.md",
-  "authorization_consumed": true,
-  "automatic_retry_performed": false,
-  "scope_sha256": "03115a70b79cba7df029cd8f61215ce59567feaec4d42749a8000dd7dda1cd37",
-  "scope_raw_sha256": "f3b10526555ae0f8fbdc7c97a7203de09d459aede925b8d1e458981785a37ee5",
-  "source_manifest_sha256": "0b4efbda291b1727e2f844203471b8ac0a26d79f1fa530cebdfc3e3fb4eef64d",
-  "source_pins_verified": 155,
-  "application_release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
-  "support_id": "5b027d7dc0853975ee751c2c83145a9820a95da28041263b3585b56a4312eccc",
-  "one_bounded_session": {
-    "status": "REFUSED_PRESERVE_EVIDENCE",
-    "authorization_consumed": true,
-    "forced_job_cleanup": true,
-    "worker_exit": null,
-    "handles_closed": true,
-    "scope_verifier": {
-      "original_handle_verified": true,
-      "created": 134382311836376093,
-      "pid": 21416,
-      "exit": 0,
-      "command": "\"C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" -I -B \"D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\gate.py\" --verify-only 03115a70b79cba7df029cd8f61215ce59567feaec4d42749a8000dd7dda1cd37 353c1f8be380545e28595bdb0d4a1e562e606944"
+  "status": "READY_FOR_V6_APPROVAL_PACKAGE_PREPARATION",
+  "report": "docs/QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_2026-11-03.md",
+  "starting_commit": "e672bd52c53fce2e82da812936f2a384f16b1c01",
+  "passed": 520,
+  "failed": 0,
+  "skipped": 0,
+  "seconds": 32.49,
+  "new_offline_cases": 22,
+  "historical_preparation_phase_fixture_cases": 1,
+  "original_v5_tests_modified": false,
+  "historical_353_protection_cases_included": true,
+  "native_unique_cases": 33,
+  "final_native_executions": 66,
+  "final_native_failed": 0,
+  "final_native": [
+    {
+      "root": "logs\\diagnostics\\qd-v6-worker-log-native-verified-a-20261103",
+      "passed": 33,
+      "failed": 0,
+      "seconds": 8.373894,
+      "entries_including_final_result": 457,
+      "logical_bytes": 2295947,
+      "accounted_bytes": 4167819,
+      "sha256": "6a47b725e1d22daa7fbe05d2f332300fcf5e5fb9816891b09a04f885b4cd9514"
     },
-    "error": "Exception calling \"ReadAllText\" with \"1\" argument(s): \"The process cannot access the file 'D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stdout.log' because it is being used by another process.\"",
-    "final_job_active": 0,
-    "seconds": 2.9971159999999997,
-    "resources": {
-      "entries": 56,
-      "logical_bytes": 315025,
-      "accounted_bytes": 544401
+    {
+      "root": "logs\\diagnostics\\qd-v6-worker-log-native-verified-b-20261103",
+      "passed": 33,
+      "failed": 0,
+      "seconds": 8.3418669,
+      "entries_including_final_result": 457,
+      "logical_bytes": 2295955,
+      "accounted_bytes": 4167827,
+      "sha256": "4cb9162a4b397f7a5f61dbbe0c9b517738b91c1fbdce761bdf2bed6d203463c6"
     }
+  ],
+  "intentional_own_worker_termination_negative_cases": 2,
+  "emergency_cleanup_in_final_native_runs": false,
+  "prototype_native_results_preserved": [
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-20261103",
+      "passed": false,
+      "cases_completed": 1,
+      "seconds": 0.4130078,
+      "result_sha256": "e171ca3236600bfb27ec445e814ef16d75da0a7e03d95ff7847873bfbe469b44"
+    },
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-commit-cut-20261103",
+      "passed": true,
+      "cases_completed": 33,
+      "seconds": 7.853413,
+      "result_sha256": "04f790cd99f094ea67ab0ffa823c3e994649d24cb8430cba127c1e264adb5c79"
+    },
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-crlf-20261103",
+      "passed": false,
+      "cases_completed": 4,
+      "seconds": 5.1925289999999995,
+      "result_sha256": "64970df355cf0bb166e355e5952021b7c4ac64c669e8f5bfddcf353b337144ba"
+    },
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-diagnostics-20261103",
+      "passed": false,
+      "cases_completed": 8,
+      "seconds": 6.4552951,
+      "result_sha256": "367ca7fe08f9cff19eb043bd6e90b1aa9983498a2107f4e5b86bf5a7792fc6d3"
+    },
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-exclusive-20261103",
+      "passed": true,
+      "cases_completed": 30,
+      "seconds": 7.1948785,
+      "result_sha256": "8145308b321c51d71f75419b81bb7250b0575b3b900b41e2e626271624810513"
+    },
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-final-20261103",
+      "passed": false,
+      "cases_completed": 8,
+      "seconds": 6.6888065,
+      "result_sha256": "287a52fa8262024ffb0460845054d82a4afff0c58bc9568e4552c30aa64417ad"
+    },
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-namespace-20261103",
+      "passed": false,
+      "cases_completed": 4,
+      "seconds": 1.4174798,
+      "result_sha256": "fcf48fd275c163aa7d8d1edc669f8d9b6c2e10cc54d091640b1645c6be3ece6d"
+    },
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-repeat-final-20261103",
+      "passed": true,
+      "cases_completed": 33,
+      "seconds": 8.2803766,
+      "result_sha256": "467d063caa82652049c5ffba5585064b7c41d2efd665422c3ea0597ab2570d43"
+    },
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-verified-a-20261103",
+      "passed": true,
+      "cases_completed": 33,
+      "seconds": 8.373894,
+      "result_sha256": "6a47b725e1d22daa7fbe05d2f332300fcf5e5fb9816891b09a04f885b4cd9514"
+    },
+    {
+      "root": "logs/diagnostics/qd-v6-worker-log-native-verified-b-20261103",
+      "passed": true,
+      "cases_completed": 33,
+      "seconds": 8.3418669,
+      "result_sha256": "4cb9162a4b397f7a5f61dbbe0c9b517738b91c1fbdce761bdf2bed6d203463c6"
+    }
+  ],
+  "source_sha256": {
+    "scripts/acceptance_harness_v6/__init__.py": "75b223f1ade09b71790f52989213dca297d5461d0901073c6e30c8b77912111f",
+    "scripts/acceptance_harness_v6/worker.py": "0bd63347704c106124aff1d2776b766e454a7ed70963910cff42cfc0de0526df",
+    "scripts/acceptance_harness_v6/worker_log.py": "3ae2fa471f3b287aa1ec5adcf9a375ab914a38a273730367181a38276a00d1af",
+    "scripts/acceptance_harness_v6/supervise.ps1": "d4e3987d63531075462213bdac90a79c386ca585e0f0e1318d211ff49fb5ff03",
+    "scripts/acceptance_harness_v6/WorkerLog.psm1": "5c5a0fbac65d768b547c26926bb9cb13d0ae9b9c3d9a04f53bddcf6d22a8b1e3",
+    "tests/test_worker_log_v6.py": "95d265812243005a2b0398180d3f6f34a4879fe993815f21552e6a872fc2f6f7",
+    "tests/v6_log_writer_fixture.py": "8d94bc8356897c4263a635bcfb1f9c18219b3c638d4239a87a458c391eeb56eb",
+    "tests/run_v6_worker_log_native.ps1": "fcdf696cf42291fd016262deca19e9b75a02b07c6d62983b5b8d0d80f56e0712",
+    "tests/v6_regression_context.py": "10cda7906bdedbc46ee1ffd49b4ae7ee7e535645594f47066ea1fedf63955e8a"
   },
-  "fresh_clock": "NOT_COLLECTED_EARLY_OBSERVER_ABORT",
-  "clock_uncertainty_ms": null,
-  "clock_age_seconds": null,
-  "full_fresh_native_preflight": "NOT_REACHED",
-  "preselection_socket_cut": "NOT_REACHED",
-  "new_process_roster_admission": "NOT_COMPLETED",
-  "installed_opens": 0,
-  "browser_ack_seconds": [
-    null,
-    null
-  ],
-  "stop_seconds": [
-    null,
-    null
-  ],
-  "selection_mutations": 0,
-  "selection_revision_created": null,
-  "rollback": "NOT_REQUIRED_NO_SELECTION",
-  "final_selector": {
-    "revision": 6,
-    "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
-    "selected": null,
-    "native_record_pairs": 6,
-    "namespace_files": 12,
-    "native_root": [
+  "fresh_read_only_baseline": {
+    "accepted": true,
+    "operational_mutations": 0,
+    "installed_launches": 0,
+    "baseline": {
+      "revision": 6,
+      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+      "selected": null
+    },
+    "record_pairs": 6,
+    "selector_names": 12,
+    "selector_native_id": [
       4004218753,
       65536,
       1532785
     ],
-    "collected_utc_ns": 1793757693326725900
+    "original_metadata_files_preserved": 17,
+    "receipt_ack_acl_verified": true,
+    "all_read_handles_closed": true,
+    "collected_utc_ns": 1793759178550951200,
+    "seconds": 0.37460810000015954
   },
-  "post_failure_read_only_integrity": {
-    "accepted": true,
-    "purpose": "FAILURE_CLOSEOUT_ONLY_NOT_ACCEPTANCE",
-    "operational_mutations": 0,
-    "installed_launches": 0,
-    "all_original_17_metadata_hashes_and_names_preserved": true,
-    "support_receipt_ack_native_id_acl_readback_verified": true,
-    "final_selector": {
-      "revision": 6,
-      "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
-      "selected": null,
-      "native_record_pairs": 6,
-      "namespace_files": 12,
-      "native_root": [
-        4004218753,
-        65536,
-        1532785
-      ],
-      "collected_utc_ns": 1793757693326725900
-    },
-    "selector_handles_closed": true,
-    "original_parent_worker_verifier_pids_absent": [
-      4280,
-      21424,
-      21416
-    ],
-    "process_query_original_handle_closed": true,
-    "supervisor_final_job_active": 0,
-    "supervisor_forced_owned_job_cleanup": true,
-    "supervisor_original_handles_closed": true,
-    "seconds": 0.8945118999999977
+  "v5_acceptance": "FAIL",
+  "v5_authorization_consumed": true,
+  "v5_raw_hashes_preserved": {
+    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\single-use-claim.json": "20c6ff7db95564a0b6c9b707912f563e3ca50c8832a365675262e6b672c42a2a",
+    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\outer-launch.json": "65a5acbab5cf6528ac46fdb79bef509f054fd5df8697dccabaa6e5de86c3f2b7",
+    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\supervisor-result.json": "fa11bf9b7bb3281e8e99fc03e2224c1c7d1b3d1c11605c0d83f63b88cd1853b3",
+    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\milestone-summary.json": "9a1fc61f6e7f60ce3bc80e6e798e536171d8479c51aa4b67163fabc09a466633",
+    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\post-run-integrity.json": "19bcb137c8de5b48e1e057a281cf50399f727375719335140515c7c087a1680b",
+    "logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v5-20261103\\git-remote-verification.json": "198eac90bb95f4401ede901f91a81fa170ecd06c46a7f147e4eef1e7f1ab55b2"
   },
-  "resources_before_reporting": {
-    "entries": 60,
-    "logical_bytes": 321659,
-    "accounted_bytes": 567419
-  },
-  "new_owned_evidence_before_summary": {
-    "entries": 13,
-    "logical_bytes": 33148
-  },
-  "raw_result_sha256": {
-    "supervisor-result.json": "fa11bf9b7bb3281e8e99fc03e2224c1c7d1b3d1c11605c0d83f63b88cd1853b3",
-    "single-use-claim.json": "20c6ff7db95564a0b6c9b707912f563e3ca50c8832a365675262e6b672c42a2a",
-    "outer-launch.json": "65a5acbab5cf6528ac46fdb79bef509f054fd5df8697dccabaa6e5de86c3f2b7",
-    "worker-stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "worker-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "gate-stdout.log": "673c83d9826d50c1f53c646ee60f2d95486514e20a79bb12a682cf151b7be606",
-    "gate-stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "post-run-integrity.json": "19bcb137c8de5b48e1e057a281cf50399f727375719335140515c7c087a1680b",
-    "evidence-validation.json": "4e58b7620bdb00b38a9458a89e262fefc5202d3aa187cf2379a340085705b528"
-  },
-  "source_code_changes": false,
-  "prior_source_regression_evidence": {
-    "passed": 353,
-    "failed": 0,
-    "skipped": 0,
-    "newly_executed": false
-  },
-  "new_regression_suite_executed": false,
-  "reason_no_regression_rerun": "Pinned sources unchanged; stop after one failed bounded session and reporting. No broad suites repeated.",
-  "v4_acceptance": "FAIL",
-  "v4_authorization_consumed": true,
-  "v4_raw_files_unchanged": 39,
-  "v4_source_pins_unchanged": 128,
-  "original_metadata_files_preserved": 17,
-  "unrelated_test_preserved": true,
+  "v5_source_pins_unchanged": 155,
+  "no_new_approval_package": true,
+  "no_operational_grant_consumed": true,
+  "installed_launches": 0,
+  "selection_mutations": 0,
   "financial_actions": 0,
   "provider_connections": 0,
   "windows_time_changes": 0,
+  "clock_acceptance_issued": false,
   "genesis_access": false,
   "paper_startup": false,
   "production": "NO-GO",
-  "next_prerequisite": "Offline repair/regression of supervisor concurrent log-reader sharing/bounded tail/partial or missing log/early worker exit/drain. Preserve strict identity, Job containment, resource and 45s/8s gates. Refresh affected source/scope/root pins into a NEW approval package; obtain NEW explicit single-use installed grant. Never rerun this consumed root or edit its frozen run copies."
+  "remaining_uncertainty": "Original transient fixture command PermissionError exact Win32 subcause unavailable; producer-completion ordering now explicit and final repeats pass. Full V6 installed composition/browser/Stop/origins/clock not executed; source-only correction is not installed acceptance.",
+  "next_prerequisite": "Prepare a separate exact V6 approval package with fresh unused root, updated gate/source/native log-declaration and module pins, current baseline and bounded procedure. Then NEW explicit single-use installed authorization/full fresh preflight. Do not create or execute that package under this milestone."
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP after preserving V5 FAIL/consumed2.997116s concurrent worker-stdout ReadAllText sharing error, postfailure native r6UNSELECTED/17filepreservation, archivalroadmap/state/reportcommit/push/remoteverify. Next engineering milestone is OFFLINE correction and disposable validation of explicit read-only shared log tail and failure handling; do not edit frozen V5 copies or retry consumed root. Then NEW exact source/scope/root package and NEW explicit installed single-use grant for freshpreflight/two45sACK8sStop cycles/knownheadrollback. docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_RESULT_V5_2026-11-03.md PAPERNO/productionNO-GO.",
+  "exact_next_action": "STOP after V6 source/disposable correction/report/archive/state/commit/nonforcepush/remoteverify. docs/QD_V6_CONCURRENT_WORKER_LOG_ACCESS_CORRECTION_2026-11-03.md READY_FOR_V6_APPROVAL_PACKAGE_PREPARATION. Next separate engineering milestone prepares exact V6 source/gate/log/module pins and NEW unused evidence root/current baseline; then NEW explicit single-use installed authorization/fullfreshpreflight. No installed launch/selection, no V5 reuse or automatic proposal/execution here. PAPERNO/productionNO-GO.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
