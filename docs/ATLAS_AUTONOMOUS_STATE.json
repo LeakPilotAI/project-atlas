@@ -1,4 +1,350 @@
 {
+  "atlas_integrated_paper_completion_audit_20261103": {
+  "audit": {
+    "status": "AUDIT_COMPLETE_INTEGRATED_OPERATIONAL_PAPER_NOT_READY",
+    "report": "docs/ATLAS_INTEGRATED_PAPER_COMPLETION_AUDIT_2026-11-03.md",
+    "starting_commit": "2e554bdfbd4a06028975b34b507c485dd8161e57",
+    "work_kind": "READ_ONLY_REPOSITORY_EVIDENCE_AUDIT_DOCUMENTATION_ONLY",
+    "runtime_tests_executed": 0,
+    "recovered_full_suite": {
+      "passed": 590,
+      "failed": 0,
+      "skipped": 0,
+      "sha256": "83ba1e7639b2ee973cf96ab3554d238ca4da3cf225f447e5d3b2842726caafee"
+    },
+    "recovered_overlapping_focused_passed": 24,
+    "historical_gate_counts": {
+      "PASS": 5,
+      "BLOCKED": 13,
+      "NOT_TESTED": 3
+    },
+    "historical_gate_promotions": 0,
+    "personal_authority": "SOLE_LOCAL_OPERATOR_NO_EXTERNAL_REVIEWER_CHAIN",
+    "financial_lanes": [
+      "QUALITY_DIPS_SIMULATED_USD",
+      "HYPERLIQUID_SIMULATED_USDC"
+    ],
+    "operationally_commissioned_lanes_proven": [],
+    "current_account_records_inspected": false,
+    "selector_provenance": "HISTORICAL_UNSELECTED_REVISION_6_NOT_FRESH_REREAD",
+    "acceptance_contract_changed": false,
+    "v6_status": "BLOCKED_UNCHANGED_ACTIVE_THREE_READER_AND_TRUSTED_CHROME_PREREQUISITES",
+    "milestones": [
+      {
+        "id": "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+        "depends_on": [],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+        "depends_on": [
+          "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
+        "depends_on": [
+          "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+          "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
+        "depends_on": [
+          "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY",
+        "depends_on": [
+          "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+          "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+        "depends_on": [
+          "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+          "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+          "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
+          "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
+          "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-07-CHANGED-CAPABILITY-PREFLIGHT",
+        "depends_on": [],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-08-V6-DISPOSABLE-INTEGRATED-REHEARSAL",
+        "depends_on": [
+          "AIP-07-CHANGED-CAPABILITY-PREFLIGHT"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
+        "depends_on": [
+          "AIP-08-V6-DISPOSABLE-INTEGRATED-REHEARSAL"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES",
+        "depends_on": [
+          "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+          "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
+          "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+          "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-11-CURRENT-QD-RESEARCH-AND-IEX-ACCEPTANCE",
+        "depends_on": [
+          "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+          "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-12-FIRST-QD-BOUNDED-PILOT",
+        "depends_on": [
+          "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+          "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
+          "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES",
+          "AIP-11-CURRENT-QD-RESEARCH-AND-IEX-ACCEPTANCE"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-13-HL-DATA-AND-ONCE-ONLY-ENROLLMENT",
+        "depends_on": [
+          "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+          "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+          "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT",
+        "depends_on": [
+          "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+          "AIP-12-FIRST-QD-BOUNDED-PILOT",
+          "AIP-13-HL-DATA-AND-ONCE-ONLY-ENROLLMENT"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-15-NOTIFICATION-AND-MANUAL-WORKFLOW-ACCEPTANCE",
+        "depends_on": [
+          "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY",
+          "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
+          "AIP-12-FIRST-QD-BOUNDED-PILOT",
+          "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-16-CONTINUOUS-LOCAL-RELIABILITY",
+        "depends_on": [
+          "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
+          "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT",
+          "AIP-15-NOTIFICATION-AND-MANUAL-WORKFLOW-ACCEPTANCE"
+        ],
+        "conditional_scope": false
+      },
+      {
+        "id": "AIP-17-CONDITIONAL-INVESTMENT-FINANCIAL-LANE",
+        "depends_on": [
+          "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+          "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+        ],
+        "conditional_scope": true
+      },
+      {
+        "id": "AIP-18-CONDITIONAL-PREDICTION-FINANCIAL-AND-SETTLEMENT-SCOPE",
+        "depends_on": [
+          "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+          "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+        ],
+        "conditional_scope": true
+      }
+    ],
+    "estimates_executions": {
+      "qd_first_pilot": {
+        "best": 7,
+        "realistic": [
+          10,
+          15
+        ],
+        "adverse": [
+          20,
+          30
+        ]
+      },
+      "current_two_lane_platform": {
+        "best": 12,
+        "realistic": [
+          20,
+          28
+        ],
+        "adverse": [
+          35,
+          50
+        ]
+      },
+      "including_conditional_financial_scopes": {
+        "best": 14,
+        "realistic": [
+          24,
+          34
+        ],
+        "adverse": [
+          40,
+          60
+        ]
+      },
+      "external_wait": "UNBOUNDED_NO_GUARANTEE"
+    },
+    "next_independent_milestone": "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+    "documentation_validation": "12_STATIC_DOCUMENTATION_CONSISTENCY_AND_PRESERVATION_CHECKS_PASS_NO_RUNTIME_TEST_EXECUTION",
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "native_experiments": 0,
+    "browser_navigation": 0,
+    "provider_connections": 0,
+    "financial_actions": 0,
+    "windows_changes": 0,
+    "genesis_access": false,
+    "paper_startup": false,
+    "production": "NO-GO"
+  },
+  "prior_active_fields": {
+    "last_verified_task": "QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_BLOCKED",
+    "latest_tests": {
+      "status": "BLOCKED_V6_INTEGRATED_AND_INSTALLED_ACCEPTANCE_ENVIRONMENT_PREREQUISITES",
+      "report": "docs/QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_2026-11-03.md",
+      "starting_commit": "0ddb39085af413690b460389fc8d90b038991da1",
+      "work_kind": "DOCUMENTATION_ONLY_ARCHITECTURE_DECISION",
+      "recommendation": "C1_PRESERVE_EXISTING_CONTRACT_RESOLVE_VERIFIED_ENVIRONMENT_PREREQUISITES",
+      "recommended_path_currently_ready": false,
+      "existing_contract_changed": false,
+      "alternative_contract_approved": false,
+      "alternative_contract_implemented": false,
+      "native_evidence_provenance": "RECOVERED_HASH_VERIFIED_STABLE_RUN_NOT_REPEATED",
+      "recovered_regression_tests": 590,
+      "recovered_regression_failures": 0,
+      "recovered_regression_skipped": 0,
+      "prior_checkpoint_focused_passed": 24,
+      "runtime_tests_rerun": 0,
+      "current_validation": "DOCUMENT_EVIDENCE_AND_PRESERVATION_CHECKS_PASS",
+      "raw_files_hash_verified": 247,
+      "source_files_hash_verified": 5,
+      "v5_source_pins_verified": 155,
+      "windows_os_defect_confirmed": false,
+      "active_three_reader_pass": false,
+      "historical_cleanup": "RECOVERED_PASS_NOT_NEW_RUNTIME_CLEARANCE",
+      "browser_inventory_provenance": "FRESH_READ_ONLY_cua.listBrowsers_IN_ARCHITECTURE_TASK",
+      "browser_providers": [
+        {
+          "id": "2",
+          "name": "ChatGPT in-app browser",
+          "type": "iab",
+          "family": null
+        },
+        {
+          "id": "1",
+          "name": "Codex MCP Apps",
+          "type": "mcpapps",
+          "family": null
+        }
+      ],
+      "trusted_chrome_navigation_demonstrated": false,
+      "separate_signed_url_token_required": false,
+      "options": {
+        "A1": {
+          "classification": "EXISTING_CONTRACT",
+          "feasible_now": false,
+          "effect": "BLOCKED_UNCHANGED_CURRENT_READERS_AND_BROWSER"
+        },
+        "A2": {
+          "classification": "SUPPLEMENTARY_DIAGNOSIS_NOT_REPLACEMENT",
+          "approved_execution_now": false,
+          "estimated_effort": "0.5\u20131.5 engineering days conditional",
+          "effect": "ROOT_CAUSE_INFORMATION_ONLY_NO_AUTOMATIC_PROMOTION"
+        },
+        "B": {
+          "classification": "NEW_ACTIVE_EVIDENCE_CONTRACT_REQUIRES_OPERATOR_APPROVAL",
+          "approved": false,
+          "implemented": false,
+          "estimated_effort": "3\u20135 engineering days plus support packaging/acceptance; equivalence unproven",
+          "risks": [
+            "shared_socket_mutation_capability",
+            "duplicate_keeps_socket_open",
+            "competing_binding_coverage_unproven",
+            "new_support_identity_and_stop_proof"
+          ]
+        },
+        "C1": {
+          "classification": "CONTRACT_PRESERVING_ENVIRONMENT_PATH",
+          "recommended": true,
+          "ready_now": false,
+          "external_resolution_time": "UNKNOWN",
+          "engineering_preflight_effort": "1\u20132 hours per genuinely changed capability",
+          "exact_changes_selected": false
+        },
+        "B2": {
+          "classification": "DIFFERENT_BROWSER_TARGET_CONTRACT_CHANGE",
+          "approved": false,
+          "recommended": false,
+          "estimated_effort": "0.5\u20131.5 engineering days; equivalence/reachability unproven"
+        }
+      },
+      "operator_decisions": [
+        "Provide narrowly approved trusted Chrome tab connection or restore policy-checked native tool path.",
+        "Select a concrete supported native diagnostic/environment candidate; authorize exact system/access change only if needed.",
+        "Approve an alternative contract only after a separate complete technical proposal if current observer restoration proves impractical."
+      ],
+      "next_executable_milestone": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1",
+      "next_milestone_entry_conditions": [
+        "Named genuinely changed approved browser capability and/or concrete materially different native observation/environment candidate",
+        "Exact narrow execution/mutation authorization where required; no unchanged experiment retry"
+      ],
+      "installed_launches": 0,
+      "selection_mutations": 0,
+      "integrated_rehearsals": 0,
+      "native_experiments": 0,
+      "browser_navigation": 0,
+      "browser_acknowledgements": 0,
+      "provider_connections": 0,
+      "financial_actions": 0,
+      "windows_time_changes": 0,
+      "genesis_access": false,
+      "paper_startup": false,
+      "production": "NO-GO"
+    },
+    "next_eligible_tasks": [
+      "STOP_AFTER_DOCUMENTED_DECISION_ARCHIVE_COMMIT_PUSH_REMOTE_VERIFY",
+      "WAIT_FOR_NAMED_CHANGED_CAPABILITY_OR_SEPARATELY_APPROVED_EQUIVALENT_CONTRACT_DESIGN"
+    ],
+    "blocked_tasks": {
+      "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
+      "SUPPLEMENTARY_DIAGNOSTIC": "A2 documentedlisteneronly/GetTcpTable2 couldinvestigate materiallydifferentmethod/context, not replaceoriginalreaders. Needsnarrowexecution scope, no automaticexistingcontractclearance.",
+      "ALTERNATIVE_CONTRACT": "B researchonlynotapproved/implemented/equivalent. Native socket-sharing hasmutation/descriptorlifetime/namespace/supportidentity/Stoprisks; separate soleoperator approvalaftercompleteproposal/disposableequivalence. Existing3readercleanup,45sACK,8sStop untouched.",
+      "TRUSTED_BROWSER": "FreshcatalogonlyIAB2/MCPApps1. Need policycheckedWindowsChromewindow/tabidentity/currentURL/localnavigation/postorigin/render/genuineACK/tabclose. Nativepathrestorationcanqualify; no invented signedURLtokenor mandatoryCDPifnativeworks. No alternatebrowser/screenshot/manualtypedURLsubstitution.",
+      "NEXT_MILESTONE": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1 onlyafterconcretenamedchangedapprovedcapability/environmentcandidateandnarrowauth. No unchangedexperiment/integrated/installedretry.",
+      "PAPER_COMMISSIONING": "Nonfinancialacceptance stillnotfinancialreadiness. Freshclock1000ms120s/currentQDresearch/nativecustody/entitledIEX/instrumentcalendar/dependencies/financialenrollmentonceinception/custodyACK/reconciliation/risk/financialStoprestart/manualworkflow andseparateboundedPAPERstartup required. HistoricalUNSELECTEDr6 only. B1C1D1E1/21decisions7phases/soleoperator preserved."
+    },
+    "exact_next_action": "STOP after architecturedecisionreport/archive/state/validateddocumentation-onlycommitnonforcepushremoteSHAverify. docs/QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_2026-11-03.md recommendsC1unchangedcontract/environmentcapabilityresolution, currentlyBLOCKED. No approvedautomaticalternativecontract/Windowsrepair/browserenrollment/installedlaunch/selection/integratedrehearsal. Nextchangedcapabilitypreflightonlywithconcretenewcandidateandrequirednarrowauthorization. PAPERNO/productionNO-GO."
+  }
+},
   "qd_v6_acceptance_evidence_architecture_decision_20261103": {
   "decision": {
     "status": "BLOCKED_V6_INTEGRATED_AND_INSTALLED_ACCEPTANCE_ENVIRONMENT_PREREQUISITES",
@@ -10616,10 +10962,11 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_BLOCKED",
+  "last_verified_task": "ATLAS_INTEGRATED_PAPER_COMPLETION_AUDIT_COMPLETE_OPERATIONAL_PAPER_NOT_READY",
   "next_eligible_tasks": [
-  "STOP_AFTER_DOCUMENTED_DECISION_ARCHIVE_COMMIT_PUSH_REMOTE_VERIFY",
-  "WAIT_FOR_NAMED_CHANGED_CAPABILITY_OR_SEPARATELY_APPROVED_EQUIVALENT_CONTRACT_DESIGN"
+  "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY SOURCE_ONLY_DISPOSABLE_MOCKS_FUTURE_TASK",
+  "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS SOURCE_ONLY_NO_BROWSER",
+  "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY OFFLINE_FAKE_SENDER_NO_DELIVERY"
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -10627,112 +10974,239 @@
   "ALTERNATIVE_CONTRACT": "B researchonlynotapproved/implemented/equivalent. Native socket-sharing hasmutation/descriptorlifetime/namespace/supportidentity/Stoprisks; separate soleoperator approvalaftercompleteproposal/disposableequivalence. Existing3readercleanup,45sACK,8sStop untouched.",
   "TRUSTED_BROWSER": "FreshcatalogonlyIAB2/MCPApps1. Need policycheckedWindowsChromewindow/tabidentity/currentURL/localnavigation/postorigin/render/genuineACK/tabclose. Nativepathrestorationcanqualify; no invented signedURLtokenor mandatoryCDPifnativeworks. No alternatebrowser/screenshot/manualtypedURLsubstitution.",
   "NEXT_MILESTONE": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1 onlyafterconcretenamedchangedapprovedcapability/environmentcandidateandnarrowauth. No unchangedexperiment/integrated/installedretry.",
-  "PAPER_COMMISSIONING": "Nonfinancialacceptance stillnotfinancialreadiness. Freshclock1000ms120s/currentQDresearch/nativecustody/entitledIEX/instrumentcalendar/dependencies/financialenrollmentonceinception/custodyACK/reconciliation/risk/financialStoprestart/manualworkflow andseparateboundedPAPERstartup required. HistoricalUNSELECTEDr6 only. B1C1D1E1/21decisions7phases/soleoperator preserved."
+  "PAPER_COMMISSIONING": "Nonfinancialacceptance stillnotfinancialreadiness. Freshclock1000ms120s/currentQDresearch/nativecustody/entitledIEX/instrumentcalendar/dependencies/financialenrollmentonceinception/custodyACK/reconciliation/risk/financialStoprestart/manualworkflow andseparateboundedPAPERstartup required. HistoricalUNSELECTEDr6 only. B1C1D1E1/21decisions7phases/soleoperator preserved.",
+  "INTEGRATED_PAPER_COMPLETION": "Current source producers/native custody/installed assembly and financial acceptance incomplete; see audited18milestone plan. No account balance or current provider entitlement asserted.",
+  "ADDITIONAL_FINANCIAL_COHORTS": "Longterm book defaults10000researchseed/no general exit; prediction preevent != settlement. Explicit approved model/allocation needed; retired equity worker stays retired.",
+  "CURRENT_TASK_BOUNDARY": "STOP after read-only audit/documentation checkpoint; no implementation or operational execution under this task."
 },
   "latest_tests": {
-  "status": "BLOCKED_V6_INTEGRATED_AND_INSTALLED_ACCEPTANCE_ENVIRONMENT_PREREQUISITES",
-  "report": "docs/QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_2026-11-03.md",
-  "starting_commit": "0ddb39085af413690b460389fc8d90b038991da1",
-  "work_kind": "DOCUMENTATION_ONLY_ARCHITECTURE_DECISION",
-  "recommendation": "C1_PRESERVE_EXISTING_CONTRACT_RESOLVE_VERIFIED_ENVIRONMENT_PREREQUISITES",
-  "recommended_path_currently_ready": false,
-  "existing_contract_changed": false,
-  "alternative_contract_approved": false,
-  "alternative_contract_implemented": false,
-  "native_evidence_provenance": "RECOVERED_HASH_VERIFIED_STABLE_RUN_NOT_REPEATED",
-  "recovered_regression_tests": 590,
-  "recovered_regression_failures": 0,
-  "recovered_regression_skipped": 0,
-  "prior_checkpoint_focused_passed": 24,
-  "runtime_tests_rerun": 0,
-  "current_validation": "DOCUMENT_EVIDENCE_AND_PRESERVATION_CHECKS_PASS",
-  "raw_files_hash_verified": 247,
-  "source_files_hash_verified": 5,
-  "v5_source_pins_verified": 155,
-  "windows_os_defect_confirmed": false,
-  "active_three_reader_pass": false,
-  "historical_cleanup": "RECOVERED_PASS_NOT_NEW_RUNTIME_CLEARANCE",
-  "browser_inventory_provenance": "FRESH_READ_ONLY_cua.listBrowsers_IN_ARCHITECTURE_TASK",
-  "browser_providers": [
+  "status": "AUDIT_COMPLETE_INTEGRATED_OPERATIONAL_PAPER_NOT_READY",
+  "report": "docs/ATLAS_INTEGRATED_PAPER_COMPLETION_AUDIT_2026-11-03.md",
+  "starting_commit": "2e554bdfbd4a06028975b34b507c485dd8161e57",
+  "work_kind": "READ_ONLY_REPOSITORY_EVIDENCE_AUDIT_DOCUMENTATION_ONLY",
+  "runtime_tests_executed": 0,
+  "recovered_full_suite": {
+    "passed": 590,
+    "failed": 0,
+    "skipped": 0,
+    "sha256": "83ba1e7639b2ee973cf96ab3554d238ca4da3cf225f447e5d3b2842726caafee"
+  },
+  "recovered_overlapping_focused_passed": 24,
+  "historical_gate_counts": {
+    "PASS": 5,
+    "BLOCKED": 13,
+    "NOT_TESTED": 3
+  },
+  "historical_gate_promotions": 0,
+  "personal_authority": "SOLE_LOCAL_OPERATOR_NO_EXTERNAL_REVIEWER_CHAIN",
+  "financial_lanes": [
+    "QUALITY_DIPS_SIMULATED_USD",
+    "HYPERLIQUID_SIMULATED_USDC"
+  ],
+  "operationally_commissioned_lanes_proven": [],
+  "current_account_records_inspected": false,
+  "selector_provenance": "HISTORICAL_UNSELECTED_REVISION_6_NOT_FRESH_REREAD",
+  "acceptance_contract_changed": false,
+  "v6_status": "BLOCKED_UNCHANGED_ACTIVE_THREE_READER_AND_TRUSTED_CHROME_PREREQUISITES",
+  "milestones": [
     {
-      "id": "2",
-      "name": "ChatGPT in-app browser",
-      "type": "iab",
-      "family": null
+      "id": "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+      "depends_on": [],
+      "conditional_scope": false
     },
     {
-      "id": "1",
-      "name": "Codex MCP Apps",
-      "type": "mcpapps",
-      "family": null
+      "id": "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+      "depends_on": [
+        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
+      "depends_on": [
+        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+        "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
+      "depends_on": [
+        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY",
+      "depends_on": [
+        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+        "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+      "depends_on": [
+        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+        "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+        "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
+        "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
+        "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-07-CHANGED-CAPABILITY-PREFLIGHT",
+      "depends_on": [],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-08-V6-DISPOSABLE-INTEGRATED-REHEARSAL",
+      "depends_on": [
+        "AIP-07-CHANGED-CAPABILITY-PREFLIGHT"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
+      "depends_on": [
+        "AIP-08-V6-DISPOSABLE-INTEGRATED-REHEARSAL"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES",
+      "depends_on": [
+        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+        "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
+        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+        "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-11-CURRENT-QD-RESEARCH-AND-IEX-ACCEPTANCE",
+      "depends_on": [
+        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-12-FIRST-QD-BOUNDED-PILOT",
+      "depends_on": [
+        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+        "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
+        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES",
+        "AIP-11-CURRENT-QD-RESEARCH-AND-IEX-ACCEPTANCE"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-13-HL-DATA-AND-ONCE-ONLY-ENROLLMENT",
+      "depends_on": [
+        "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT",
+      "depends_on": [
+        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+        "AIP-12-FIRST-QD-BOUNDED-PILOT",
+        "AIP-13-HL-DATA-AND-ONCE-ONLY-ENROLLMENT"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-15-NOTIFICATION-AND-MANUAL-WORKFLOW-ACCEPTANCE",
+      "depends_on": [
+        "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY",
+        "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
+        "AIP-12-FIRST-QD-BOUNDED-PILOT",
+        "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-16-CONTINUOUS-LOCAL-RELIABILITY",
+      "depends_on": [
+        "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
+        "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT",
+        "AIP-15-NOTIFICATION-AND-MANUAL-WORKFLOW-ACCEPTANCE"
+      ],
+      "conditional_scope": false
+    },
+    {
+      "id": "AIP-17-CONDITIONAL-INVESTMENT-FINANCIAL-LANE",
+      "depends_on": [
+        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+      ],
+      "conditional_scope": true
+    },
+    {
+      "id": "AIP-18-CONDITIONAL-PREDICTION-FINANCIAL-AND-SETTLEMENT-SCOPE",
+      "depends_on": [
+        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+      ],
+      "conditional_scope": true
     }
   ],
-  "trusted_chrome_navigation_demonstrated": false,
-  "separate_signed_url_token_required": false,
-  "options": {
-    "A1": {
-      "classification": "EXISTING_CONTRACT",
-      "feasible_now": false,
-      "effect": "BLOCKED_UNCHANGED_CURRENT_READERS_AND_BROWSER"
-    },
-    "A2": {
-      "classification": "SUPPLEMENTARY_DIAGNOSIS_NOT_REPLACEMENT",
-      "approved_execution_now": false,
-      "estimated_effort": "0.5\u20131.5 engineering days conditional",
-      "effect": "ROOT_CAUSE_INFORMATION_ONLY_NO_AUTOMATIC_PROMOTION"
-    },
-    "B": {
-      "classification": "NEW_ACTIVE_EVIDENCE_CONTRACT_REQUIRES_OPERATOR_APPROVAL",
-      "approved": false,
-      "implemented": false,
-      "estimated_effort": "3\u20135 engineering days plus support packaging/acceptance; equivalence unproven",
-      "risks": [
-        "shared_socket_mutation_capability",
-        "duplicate_keeps_socket_open",
-        "competing_binding_coverage_unproven",
-        "new_support_identity_and_stop_proof"
+  "estimates_executions": {
+    "qd_first_pilot": {
+      "best": 7,
+      "realistic": [
+        10,
+        15
+      ],
+      "adverse": [
+        20,
+        30
       ]
     },
-    "C1": {
-      "classification": "CONTRACT_PRESERVING_ENVIRONMENT_PATH",
-      "recommended": true,
-      "ready_now": false,
-      "external_resolution_time": "UNKNOWN",
-      "engineering_preflight_effort": "1\u20132 hours per genuinely changed capability",
-      "exact_changes_selected": false
+    "current_two_lane_platform": {
+      "best": 12,
+      "realistic": [
+        20,
+        28
+      ],
+      "adverse": [
+        35,
+        50
+      ]
     },
-    "B2": {
-      "classification": "DIFFERENT_BROWSER_TARGET_CONTRACT_CHANGE",
-      "approved": false,
-      "recommended": false,
-      "estimated_effort": "0.5\u20131.5 engineering days; equivalence/reachability unproven"
-    }
+    "including_conditional_financial_scopes": {
+      "best": 14,
+      "realistic": [
+        24,
+        34
+      ],
+      "adverse": [
+        40,
+        60
+      ]
+    },
+    "external_wait": "UNBOUNDED_NO_GUARANTEE"
   },
-  "operator_decisions": [
-    "Provide narrowly approved trusted Chrome tab connection or restore policy-checked native tool path.",
-    "Select a concrete supported native diagnostic/environment candidate; authorize exact system/access change only if needed.",
-    "Approve an alternative contract only after a separate complete technical proposal if current observer restoration proves impractical."
-  ],
-  "next_executable_milestone": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1",
-  "next_milestone_entry_conditions": [
-    "Named genuinely changed approved browser capability and/or concrete materially different native observation/environment candidate",
-    "Exact narrow execution/mutation authorization where required; no unchanged experiment retry"
-  ],
+  "next_independent_milestone": "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+  "documentation_validation": "12_STATIC_DOCUMENTATION_CONSISTENCY_AND_PRESERVATION_CHECKS_PASS_NO_RUNTIME_TEST_EXECUTION",
   "installed_launches": 0,
   "selection_mutations": 0,
-  "integrated_rehearsals": 0,
   "native_experiments": 0,
   "browser_navigation": 0,
-  "browser_acknowledgements": 0,
   "provider_connections": 0,
   "financial_actions": 0,
-  "windows_time_changes": 0,
+  "windows_changes": 0,
   "genesis_access": false,
   "paper_startup": false,
   "production": "NO-GO"
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP after architecturedecisionreport/archive/state/validateddocumentation-onlycommitnonforcepushremoteSHAverify. docs/QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_2026-11-03.md recommendsC1unchangedcontract/environmentcapabilityresolution, currentlyBLOCKED. No approvedautomaticalternativecontract/Windowsrepair/browserenrollment/installedlaunch/selection/integratedrehearsal. Nextchangedcapabilitypreflightonlywithconcretenewcandidateandrequirednarrowauthorization. PAPERNO/productionNO-GO.",
+  "exact_next_action": "STOP_AFTER_AUDIT_DOCUMENTATION_COMMIT_PUSH_REMOTE_VERIFY. Next engineering milestone AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY uses source-only/disposable fixtures; no provider, operational publication, installed launch or activation. V6 waiting only on materially changed approved capabilities.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
