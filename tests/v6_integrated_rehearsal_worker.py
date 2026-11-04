@@ -42,10 +42,18 @@ from scripts.observation_runtime.installed_acceptance_sequence import (
     PreselectionCut,
     run_cycle,
 )
+from tests.v6_http_diagnostic import verify_http_diagnostic_listener
+from tests.v6_job_attribution import (
+    admit_disposable_adapter_console,
+    inspect_adapter_job,
+    retire_disposable_adapter,
+    verify_disposable_adapter_candidate,
+)
 
 owner = None
 child = None
 controller = None
+candidate_handles = {}
 result = {
     "accepted": False,
     "domain": "DISPOSABLE_INTEGRATED_ONLY",
@@ -121,8 +129,63 @@ try:
     identity = observe_pid(child.pid)
     assert identity["created"] == observe_handle(int(child._handle))
     owner.controller(child, command)
-    owner.verify()
     result["retained_controller_identity"] = identity
+    # Capture before any membership admission; a refusal must not erase the
+    # original launch/ancestry/member evidence again.
+    result["launch_request"] = {
+        "command": command,
+        "handle": int(child._handle),
+        "parent_pid": os.getpid(),
+    }
+    packet, candidate_handles = inspect_adapter_job(owner, child, command)
+    write("job-attribution.json", packet)
+    adapter = owner.records["control_center_adapter"][1]
+    spec = scope["ownership"]["images"]["console"]
+    candidate = verify_disposable_adapter_candidate(
+        packet,
+        owner.worker,
+        adapter,
+        command,
+        (spec["path"].casefold(), tuple(spec["id"]), spec["sha256"]),
+        scope["ownership"]["console_command"],
+    )
+    result["candidate_topology"] = candidate
+    if scope.get("identity_probe_only") is True:
+        seed = json.loads(read_ready(child, seconds=5))
+        result["seed_port"] = seed["seed_port"]
+        child.stdin.close()
+        child.stdin = None
+        out, err = child.communicate(timeout=5)
+        assert child.returncode == 0 and not err
+        child.stdout.close()
+        child.stderr.close()
+        result["original_controller_exit"] = owner.raw.lifecycle(int(child._handle))
+        assert result["original_controller_exit"]["exit_code"] == 0
+        result["candidate_exits"] = {}
+        for pid, h in candidate_handles.items():
+            assert owner.k.WaitForSingleObject(h, 3000) == 0
+            result["candidate_exits"][str(pid)] = owner.raw.lifecycle(h)
+            observed = next(
+                row["native"]
+                for row in packet["records"]
+                if row["native"]["pid"] == pid
+            )
+            assert result["candidate_exits"][str(pid)] == {
+                "pid": pid,
+                "created": observed["created"],
+                "exited": True,
+                "exit_code": 0,
+            }
+        child._handle.Close()
+        child = None
+        owner.records.pop("control_center_adapter")
+        result["final_claims"] = owner.verify()
+        result["final_job_members_before_worker_exit"] = sorted(owner.raw.members())
+        result["attribution_only"] = True
+        result["accepted"] = True
+        write("rehearsal-result.json", result)
+        raise SystemExit(0)
+    admit_disposable_adapter_console(owner, packet, candidate_handles, command)
     write("registered-role-claims.json", owner.export())
     seed = json.loads(read_ready(child, seconds=5))
     port = seed["seed_port"]
@@ -151,7 +214,105 @@ try:
     PreselectionCut(
         address="127.0.0.1", port=port, after_ns=boundary, packet=cut
     ).dispatch(begin_fixture)
-    controller = AcceptanceController(child, identity)
+
+    class DisposableController(AcceptanceController):
+        def finish(self, *, timeout=12):
+            final = super().finish(timeout=timeout)
+            if final["accepted"]:
+                retire_disposable_adapter(owner)
+            return final
+
+    controller = DisposableController(child, identity)
+    if scope.get("http_diagnostic_only") is True:
+        # One direct HTTP diagnostic, never browser ACK/two-cycle acceptance.
+        result["kind"] = "DIRECT_HTTP_AND_SUPPLEMENTAL_CLEANUP_ONLY"
+        ready = json.loads(read_ready(child, seconds=10))
+        assert ready["mode"] == "DISPOSABLE_CONTROL_FIXTURE"
+        assert ready["pid"] == identity["pid"]
+        assert ready["image"].casefold() == identity["image"]
+        endpoint = int(ready["url"].rstrip("/").rsplit(":", 1)[-1])
+        assert ready["url"] == f"http://127.0.0.1:{endpoint}/"
+        assert all(
+            ready[k] is False
+            for k in ("providers", "financial_writers", "trading", "automatic_startup")
+        )
+        owner.verify()
+        result["ready"] = ready
+        result["ready_observed_ns"] = time.perf_counter_ns()
+        result["ready_observed_utc_ns"] = time.time_ns()
+        live_boundary = time.perf_counter_ns()
+        live = collect(
+            repo=repo,
+            evidence=root,
+            port=endpoint,
+            after_ns=live_boundary,
+            label="http-listening",
+            run=run,
+        )
+        result["independent_listening"] = live
+        try:
+            result["http_probe_readiness"] = verify_http_diagnostic_listener(
+                live,
+                port=endpoint,
+                pid=identity["pid"],
+                after_ns=live_boundary,
+                now_ns=time.perf_counter_ns(),
+            )
+        except ValueError as exc:
+            # The operator explicitly authorized this exact fixture's direct
+            # GET for diagnosis. A successful GET cannot clear the native
+            # listener refusal or become browser/financial startup authority.
+            result["http_probe_readiness"] = {
+                "accepted": False,
+                "error": str(exc),
+                "three_reader_acceptance": False,
+                "financial_or_browser_authority": False,
+            }
+        before_http = time.perf_counter_ns()
+        response = probe(port=endpoint, path="/")
+        assert (
+            response["status"] == 200 and b"synthetic test evidence" in response["data"]
+        )
+        result["direct_http"] = {
+            "status": response["status"],
+            "started_ns": before_http,
+            "finished_ns": time.perf_counter_ns(),
+            "peer_eof": response["peer_eof"],
+            "client_handle_closed": response["client_handle_closed"],
+            "bytes": len(response["data"]),
+        }
+        controller.ready(ready["host_id"])
+        result["stop"] = controller.stop()
+        result["drain"] = {
+            k: v
+            for k, v in controller.finish().items()
+            if k not in ("stdout", "stderr")
+        }
+        assert result["drain"]["accepted"]
+        child = None
+        result["supplemental_cleanup"] = []
+        # New independent cuts, not retroactive acceptance of earlier failures.
+        for number in (endpoint, 60103, 60105, 62833):
+            proof = collect(
+                repo=repo,
+                evidence=root,
+                port=number,
+                after_ns=controller.stopped_ns,
+                label=f"http-final-{number}",
+                run=run,
+            )
+            assert (
+                proof["crosscheck"]["cleanup_clear"]
+                and proof["socket_process"]["accepted"]
+            )
+            result["supplemental_cleanup"].append({"port": number, "evidence": proof})
+        result["final_claims"] = owner.verify()
+        result["final_job_members_before_worker_exit"] = sorted(owner.raw.members())
+        assert result["final_job_members_before_worker_exit"] == [os.getpid()]
+        result["accepted"] = True
+        result["diagnostic_completed_not_browser_or_native_listener_acceptance"] = True
+        write("rehearsal-result.json", result)
+        raise SystemExit(0)
     for cycle in (1, 2):
         ready = json.loads(read_ready(child, seconds=10))
         observed = time.perf_counter_ns()
@@ -230,8 +391,22 @@ try:
         result["cycles"].append(sample)
         write("rehearsal-result.json", result)
         if cycle == 2:
-            owner.controller_closed()
             child = None
+    result["final_port_readbacks"] = []
+    for completed in result["cycles"]:
+        endpoint = completed["cleanup"]["port"]
+        proof = collect(
+            repo=repo,
+            evidence=root,
+            port=endpoint,
+            after_ns=controller.stopped_ns,
+            label=f"final-{completed['cycle']}",
+            run=run,
+        )
+        assert (
+            proof["crosscheck"]["cleanup_clear"] and proof["socket_process"]["accepted"]
+        )
+        result["final_port_readbacks"].append(proof)
     result["final_claims"] = owner.verify()
     result["final_job_members_before_worker_exit"] = sorted(owner.raw.members())
     assert result["final_job_members_before_worker_exit"] == [os.getpid()]
@@ -254,8 +429,9 @@ finally:
             result["cleanup_error"] = str(exc)
     elif child is not None:
         try:
-            child.stdin.close()
-            child.stdin = None
+            if child.stdin is not None:
+                child.stdin.close()
+                child.stdin = None
             out, err = child.communicate(timeout=5)
             child.stdout.close()
             child.stderr.close()
@@ -264,6 +440,9 @@ finally:
         except Exception as exc:  # noqa: BLE001 - retain refusal and exact owned cleanup evidence.
             result["cleanup_error"] = str(exc)
     if owner is not None:
+        for h in candidate_handles.values():
+            owner.native.check(owner.k.CloseHandle(h))
+        candidate_handles.clear()
         try:
             owner.close()
             result["retained_handles_closed"] = True

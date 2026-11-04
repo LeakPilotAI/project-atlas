@@ -95,3 +95,27 @@ def test_rehearsal_runs_actual_outer_body_with_confined_accounting_only():
     ):
         assert marker in worker
     assert '"selection_mutations": 0' in worker
+
+
+def test_http_diagnostic_exits_before_browser_or_two_cycle_execution():
+    import ast
+
+    worker = ast.parse((REPO / "tests/v6_integrated_rehearsal_worker.py").read_text())
+    guarded = next(n for n in worker.body if isinstance(n, ast.Try))
+    branch = next(
+        n
+        for n in guarded.body
+        if isinstance(n, ast.If) and "http_diagnostic_only" in ast.unparse(n.test)
+    )
+    names = [ast.unparse(n.func) for n in ast.walk(branch) if isinstance(n, ast.Call)]
+    assert "probe" in names and "collect" in names and "owner.verify" in names
+    assert "run_cycle" not in names and "BrowserWindow" not in names
+    assert any(
+        isinstance(n, ast.Raise) and ast.unparse(n.exc) == "SystemExit(0)"
+        for n in branch.body
+    )
+    assert guarded.body.index(branch) < next(
+        i
+        for i, n in enumerate(guarded.body)
+        if isinstance(n, ast.For) and ast.unparse(n.target) == "cycle"
+    )
