@@ -15314,12 +15314,21 @@ Preservation: previous5activeJSONfieldsarchivedunder aip_05_discord_committed_ev
 Next action: STOPafterAIP05commit/nonforcepush/remoteSHAverify. Next audited AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY source/composedfaultmatrix,notstartedhere;actualnativefixturesrequireseparateboundedreviewedresources. No provider/account/financial/installed permission implied.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY (2026-11-04)
 Status: BLOCKED for full canonical native acceptance. Independently executable offline slice validated;5/18 milestones remain complete,AIP01-05 preserved. PAPER:NO;production:NO-GO.
 Evidence: 1160 distinct Python pass/0failed/0errors/0skipped;34new;all969 AIP05 identities retained. 42Node pass/0failed/0skipped;poll harness separatePASS;2existing warnings. New test source SHA256 d76959a221091974bae7a81392b66e37f51f424d96ec7e95b98178c075f9367a. Report docs/AIP_06_COMPOSED_ACCOUNTING_RISK_RECOVERY_2026-11-04.md. Identity-indexed fault matrix docs/AIP_06_COMPOSED_ACCOUNTING_RISK_FAULT_MATRIX_2026-11-04.json,SHA256 84feb6542bc1288eda35247b8175f0fec05bc85e38097616abb5e73a69d6d59f. Exact synthetic cuts USD revision3 cash1015.9136/costs0.0864;USDC revision4 cash1001.52936/funding-0.03;remaining0/reserved margin0;no consolidated cash. Final focused34pass;initial32pass/1fixture conflict failure retained and corrected without weakening assertion. Native lanes/actual Stop timing NOT EXECUTED,not skipped or substituted with mocks.
 Restrictions: No installed/provider/account/financial-runtime/Discord/PAPER/V6/browser/WindowsTime/Genesis mutation. B1C1D1E1/21decisions,personal sole-operator policy and historical consumed grants unchanged. UNSELECTEDbaseline retained as history,not operationally reread. Unrelated research-test edit preserved/excluded.
 Next action: STOP after AIP06 report/checkpoint/commit/nonforcepush/remoteSHAverify. Exact separately reviewed bounded disposable native roots/processes/commands/sourcepins/time/entry/byte budgets/cleanup needed before completing actual-lane ACK/kill/drain/capacity/Stop<=8s proof. Next canonical AIP07 requires changed supported browser/listener capability;not started. Do not promote5/18 to6/18 or claim operational acceptance.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: AIP-06-NATIVE-ACCEPTANCE-READINESS-REVIEW (2026-11-04)
+Status: Review complete;BLOCKED FOR NATIVE EXECUTION. AIP06 stillBLOCKED;5of18 milestonescomplete. Documentation-only:no native/test/installed/provider/account/browser/Windows changes. PAPER:NO;production:NO-GO.
+Evidence: docs/AIP_06_NATIVE_ACCEPTANCE_READINESS_REVIEW_2026-11-04.md. Static AST/source hashing36files (working/Gittextmatch,rawpins separatelyrecorded),10proposedrootsread-onlycheckedabsent. Existing parent-observed ownedStop+COLDreader test identified/reusable;component financialStop alone excludesprocessclose. Actualfinancialfixtureownershipsynthetic;sharedbudget/rootmap/boundedreads/completeJobandhelperroster/missingnativefaultload coverage stillrequirecode-onlypreparation. D:candidatePythonandDLLhashed/pytestpresent;fullinventorynativeIDsACLsNOTfreshlyverified. DevelopmentvenvbaseC:noteligibleD:proof.
+Evidence: Retained1160Python/42Nodepassing results preserved,notrerun. AIP06cash/cut/faultmatrixandallpriorAIP01-05proof preserved. Proposednewscope600s/8192entries/256MiB aggregate;8ownedprocesses/512MiBprivateaggregate/256MiBperchild/120CPU-seconds;NOTauthorizedorenforcedtoday. No alternateV6contract;noState0reinterpretation;noBrowserbypass;actualcompleteStop<=8sremainsmandatory.
+Next action: STOP afterreview/report/checkpoint/docscommit/nonforcepush/remoteSHAverify. Separatelyrequested AIP-06-NATIVE-HARNESS-PREPARATION source-only/offline mustcloseexactgaps beforefinalexecutablepins+freshsingleusedisposablenativegrant. No barepytest/nativecommandsnow. No operationalgrantorconsumedgrantreuse;B1C1D1E1/21decisions/personalsoloauthority/history/Genesis/unrelatededitpreserved. AIP07notstarted.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===
