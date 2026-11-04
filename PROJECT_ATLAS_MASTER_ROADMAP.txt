@@ -15301,7 +15301,8 @@ Preservation: previous5activeJSONfieldsarchivedunder aip_04_dashboard_read_model
 Next action: STOPafterAIP04commit/nonforcepush/remoteSHAverify. Next audited AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY isolated source/outbox/consent recovery/fakesender scope;notstartedhere. No real notification transport or operational/provider/financial authority implied.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY (2026-11-04)
 Status: COMPLETE SOURCE-ONLY/DISPOSABLE;5of18 audited milestones complete at source scope. No operational/installed/realDiscord/financial acceptance promoted. PAPER NO;production NO-GO.
 Evidence: docs/AIP_05_DISCORD_COMMITTED_EVENT_RECOVERY_2026-11-04.md;969Pythonpassed0failed0errors0skipped/51modules/40new/77.55s;3formerlyxfailstrictcontractsnowrealpasses. Separate42Nodepassed0failed0skipped+existingpollharnessPASS. ExistingStarlette/audioopwarnings2. All770AIP04/667AIP02/396AIP01+52AIP03cases/pins preserved. JUnitSHA 8141fb96c514e71be0ff2878247cb02be41bd39d724f0e77134670edb3ff9ade;logs/diagnostics/aip-05-discord-recovery-20261104.
@@ -15311,6 +15312,14 @@ Validation: E13217/E13328/E13534/E13675/fakereconciliation5/new40=199 +prior770.
 Boundary: source adapters not operational hooks or delivered notifications. Actual recipient/category/rate/transport/credential consent+current accepted recovery/native custody/oneboundedDiscordproof still required;no-notificationpilotcanonlybeexplicitlyscoped,andisnotfeatureacceptance. Existinginstalled/clock1000ms120s/currentdata/provider/account/financialStoprestart/V6active3reader+trustedbrowser/B1C1D1E1+PAPERactivation remain. USD/USDC never pooled;all21decisions/personalsolooperatorpolicyunchanged.
 Preservation: previous5activeJSONfieldsarchivedunder aip_05_discord_committed_event_recovery_20261104;priorroadmapbodyverbatimarchived. AIP01-04/prioraudit/sevenphases/Genesis/unrelated4836test/privateevidence/consumedgrants preserved. No realDiscord/PAPER/autostart/Windows changes.
 Next action: STOPafterAIP05commit/nonforcepush/remoteSHAverify. Next audited AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY source/composedfaultmatrix,notstartedhere;actualnativefixturesrequireseparateboundedreviewedresources. No provider/account/financial/installed permission implied.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY (2026-11-04)
+Status: BLOCKED for full canonical native acceptance. Independently executable offline slice validated;5/18 milestones remain complete,AIP01-05 preserved. PAPER:NO;production:NO-GO.
+Evidence: 1160 distinct Python pass/0failed/0errors/0skipped;34new;all969 AIP05 identities retained. 42Node pass/0failed/0skipped;poll harness separatePASS;2existing warnings. New test source SHA256 d76959a221091974bae7a81392b66e37f51f424d96ec7e95b98178c075f9367a. Report docs/AIP_06_COMPOSED_ACCOUNTING_RISK_RECOVERY_2026-11-04.md. Identity-indexed fault matrix docs/AIP_06_COMPOSED_ACCOUNTING_RISK_FAULT_MATRIX_2026-11-04.json,SHA256 84feb6542bc1288eda35247b8175f0fec05bc85e38097616abb5e73a69d6d59f. Exact synthetic cuts USD revision3 cash1015.9136/costs0.0864;USDC revision4 cash1001.52936/funding-0.03;remaining0/reserved margin0;no consolidated cash. Final focused34pass;initial32pass/1fixture conflict failure retained and corrected without weakening assertion. Native lanes/actual Stop timing NOT EXECUTED,not skipped or substituted with mocks.
+Restrictions: No installed/provider/account/financial-runtime/Discord/PAPER/V6/browser/WindowsTime/Genesis mutation. B1C1D1E1/21decisions,personal sole-operator policy and historical consumed grants unchanged. UNSELECTEDbaseline retained as history,not operationally reread. Unrelated research-test edit preserved/excluded.
+Next action: STOP after AIP06 report/checkpoint/commit/nonforcepush/remoteSHAverify. Exact separately reviewed bounded disposable native roots/processes/commands/sourcepins/time/entry/byte budgets/cleanup needed before completing actual-lane ACK/kill/drain/capacity/Stop<=8s proof. Next canonical AIP07 requires changed supported browser/listener capability;not started. Do not promote5/18 to6/18 or claim operational acceptance.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===
