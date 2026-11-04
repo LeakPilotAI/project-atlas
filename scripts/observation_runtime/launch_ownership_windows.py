@@ -14,6 +14,7 @@ from ctypes import wintypes as W
 from pathlib import Path
 
 from scripts.observation_runtime.launch_ownership import require
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 
 class FileInfo(C.Structure):
@@ -98,7 +99,7 @@ class ImageLease:
             all(not x.is_symlink() and not x.is_junction() for x in (p, *p.parents)),
             "IMAGE_REPARSE_REFUSED",
         )
-        h = api.k.CreateFileW(str(p), 0x80000000, 1, None, 3, 0x80, None)
+        h = guarded.image_open(api, str(p))
         require(h not in (None, C.c_void_p(-1).value), "IMAGE_READ_LEASE_REQUIRED")
         self.handle = h
         try:
@@ -123,7 +124,7 @@ class ImageLease:
 
     def close(self):
         if self.handle is not None:
-            self.api.check(self.api.k.CloseHandle(self.handle))
+            self.api.check(guarded.image_close(self.api, self.handle))
             self.handle = None
 
 
@@ -200,7 +201,8 @@ class WindowsLaunchObserver:
             Path(os.environ["SystemRoot"])
             / "System32/WindowsPowerShell/v1.0/powershell.exe"
         )
-        observed = subprocess.run(
+        query_runner = subprocess.run if guarded.current() is None else guarded.query
+        observed = query_runner(
             [str(ps), "-NoProfile", "-NonInteractive", "-Command", command],
             env=env,
             stdin=subprocess.DEVNULL,

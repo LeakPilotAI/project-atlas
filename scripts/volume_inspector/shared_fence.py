@@ -223,7 +223,7 @@ class Registry:
             sa = w.SA(C.sizeof(w.SA), sd, False)
             name = 'Global\\Atlas-Isolated-Fence-'+hashlib.sha256(encoded(self.root_id)).hexdigest()
             self.mutex_name = name
-            self.mutex = create(C.byref(sa), False, name)
+            self.mutex = w.guarded_mutex(create, C.byref(sa), False, name)
             w.check(self.mutex)
             kernel_acl(self.mutex, self.output.sid)
         finally:

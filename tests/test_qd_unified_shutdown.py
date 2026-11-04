@@ -1,11 +1,11 @@
 """Actual QD shutdown financial effects under unified reservation, synthetic custody."""
 import copy
 import os
-import sqlite3
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 from app.services.paper_financial_replay import digest, number
 from app.services.paper_writer_fixture import provision_fixture_writers
 from app.services.quality_dips_unified_writer import QualityDipsUnifiedShutdown
@@ -21,6 +21,7 @@ from test_unified_paper_runtime import Installation, Lane, accounts
 
 @pytest.fixture
 def system(tmp_path):
+    guarded.require_fixture('qd-unified-system')
     root = Path(os.environ['ATLAS_AUTO_RUNTIME_ROOT'])
     assert root.parent == Path(__file__).resolve().parents[1] / 'logs/diagnostics'
     assert root.name.startswith('qd-auto-runtime-') and tmp_path.is_relative_to(root)
@@ -51,7 +52,7 @@ def composed(s, *, partial=False, empty=False):
     a.verify_lane = lambda binding, actual: actual['writer'] is w and actual['shutdown'] is stop and actual['reports'] is stop.reports
     lane = CanonicalWriterLane(writer=w, observer=Lane('QUALITY_DIPS'), planner=object(), shutdown=stop, reports=stop.reports)
     path = str(s.x.x.root / 'global-stop-fixture.sqlite')
-    with sqlite3.connect(path) as db:
+    with guarded.sqlite_connect(path) as db:
         db.execute('CREATE TABLE control(stopped INTEGER)')
         db.execute('INSERT INTO control VALUES(0)')
     provision_fixture_writers(path, {'qd': 'fixture-incarnation', 'perp': 'fixture-incarnation'})
@@ -97,7 +98,7 @@ def test_actual_qd_global_stop_reserves_then_closes_and_drains(system, partial):
     assert all(number(p['remaining']) == 0 for p in c.w._cut()['state']['positions'].values())
     before = capture(system)
     assert c.r.stop() == result and capture(system) == before
-    with sqlite3.connect(c.path) as db:
+    with guarded.sqlite_connect(c.path) as db:
         assert db.execute('SELECT COUNT(*) FROM writer_operations WHERE acked=1').fetchone() == (1,)
 
 

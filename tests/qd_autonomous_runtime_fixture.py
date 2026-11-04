@@ -8,9 +8,11 @@ from app.services.paper_financial_replay import digest
 from app.services.quality_dips_autonomous_runtime import PROFILE, AutonomousRuntime
 from qd_autonomous_native_fixture import REPO, build
 from test_quality_dips_autonomous_paper import candidate, quote
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 
 def compose(root, confinement, *, stamp, identity_observer=None, coordination_root=None, session_reports=False):
+    guarded.require_fixture('qd-autonomous-native-runtime')
     if identity_observer is None:
         spec = importlib.util.spec_from_file_location("runtime_self_identity", REPO / "scripts/observation_runtime/disposable_host_owner.py")
         identity = importlib.util.module_from_spec(spec)

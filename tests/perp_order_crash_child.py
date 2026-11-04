@@ -9,17 +9,19 @@ from pathlib import Path
 from types import SimpleNamespace
 
 REPO = Path(__file__).resolve().parents[1]
-sys.path[:0] = [str(REPO / 'backend'), str(REPO / 'tests')]
+sys.path[:0] = [str(REPO), str(REPO / 'backend'), str(REPO / 'tests')]
 from perp_order_native_fixture import DurableTestPins, native
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 
 def main():
+    guarded.require_fixture('perp-crash-child')
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', required=True)
     parser.add_argument('--phase', choices=['none', 'before_publication', 'after_record_before_pin', 'after_pin', 'financial-after-ack'], default='none')
     args = parser.parse_args()
     path = Path(args.config).absolute()
-    config = json.loads(path.read_text())
+    config = json.loads(guarded.read_bytes(path))
     confinement = Path(config['confinement']).absolute()
     if (confinement.parent != REPO / 'logs/diagnostics' or not confinement.name.startswith('perp-order-custody-')
             or not path.is_relative_to(confinement) or any(p.is_symlink() or p.is_junction() for p in (confinement, *confinement.parents))):
@@ -37,7 +39,7 @@ def main():
     store = cls(config['root'], trust=pins, authority=authority, clock=clock, manifest=config['manifest'], execution_domain='DISPOSABLE_TEST')
     try:
         if config.get('barrier'):
-            Path(config['ready']).write_text('READY')
+            guarded.write_text(Path(config['ready']), 'READY')
             deadline = time.monotonic() + 5
             while not Path(config['barrier']).exists():
                 if time.monotonic() > deadline: return 72

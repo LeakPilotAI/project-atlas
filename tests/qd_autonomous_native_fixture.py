@@ -15,6 +15,7 @@ from app.services.quality_dips_autonomous_integration import (
     AutonomousSelectedRead,
 )
 from test_quality_dips_autonomous_paper import STAMP, setup
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -38,6 +39,7 @@ class Pins:
 
 
 def build(root, stamp=STAMP, *, coordination_root=None, session_reports=False):
+    guarded.require_fixture('qd-autonomous-native-source')
     n = setup(coordination_root if coordination_root is not None else root, stamp=stamp)
     spec = importlib.util.spec_from_file_location("auto_native_read", REPO / "scripts/volume_inspector/financial_read_port.py")
     port_module = importlib.util.module_from_spec(spec)
@@ -98,7 +100,7 @@ def build_http_fixture(root):
     stamp = int(datetime(2026, 10, 19, 14, tzinfo=UTC).timestamp())
     for count, phase in enumerate(("entry", "partial", "final"), 1):
         base = root / phase
-        base.mkdir()
+        guarded.mkdir(base)
         x = build(base, stamp=stamp)
         try:
             n = x.n
@@ -116,5 +118,5 @@ def build_http_fixture(root):
         finally:
             x.close()
     raw = json.dumps({"schema": "QD_HTTP_AUTO_SYNTHETIC_ONLY_V2", "phases": phases}, sort_keys=True).encode()
-    (root / "fixture.json").write_bytes(raw)
+    guarded.write_bytes(root / "fixture.json", raw)
     return hashlib.sha256(raw).hexdigest()

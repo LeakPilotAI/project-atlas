@@ -3,13 +3,11 @@
 This measures real NTFS publication, not operational enrollment or a PAPER pilot.
 It never imports or executes the V5 containment launcher.
 """
-import ctypes as C
 import hashlib
 import importlib.util
 import json
 import os
 import subprocess
-import sys
 import time
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -51,9 +49,11 @@ from scripts.observation_runtime.personal_writer_ownership import (
     NativePersonalWriterOwnership,
 )
 from scripts.observation_runtime.quality_dips_read_service import observe_self
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 
 def run_native_pipeline(tmp_path, stop_observer=None):
+    guard = guarded.require_fixture('personal-native-pipeline')
     value = os.environ.get('ATLAS_PERSONAL_PIPELINE_TEST_ROOT')
     if value is None:
         pytest.skip('NOT EXECUTED: explicit confined native pipeline root required')
@@ -240,19 +240,12 @@ def run_native_pipeline(tmp_path, stop_observer=None):
     # rewriting the historical parent writer enrollment or any fixture byte.
     before={str(p.relative_to(tmp_path)):hashlib.sha256(p.read_bytes()).hexdigest()
             for p in tmp_path.rglob('*') if p.is_file()}
-    with subprocess.Popen([sys.executable,'-B',str(repo/'tests/personal_readonly_restart_child.py')],
+    with guarded.popen([guard.processes.executable,'-B',str(repo/'tests/personal_readonly_restart_child.py')],
             stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,
             creationflags=subprocess.CREATE_NO_WINDOW) as child:
-        from ctypes import wintypes as W
-        k=C.WinDLL('kernel32',use_last_error=True)
-        k.GetProcessTimes.argtypes=[W.HANDLE,*([C.POINTER(W.FILETIME)]*4)]
-        k.QueryFullProcessImageNameW.argtypes=[W.HANDLE,W.DWORD,W.LPWSTR,C.POINTER(W.DWORD)]
-        stamps=[W.FILETIME() for _ in range(4)]
-        image,size=C.create_unicode_buffer(32768),W.DWORD(32768)
-        assert k.GetProcessTimes(W.HANDLE(int(child._handle)),*(C.byref(stamp) for stamp in stamps))
-        assert k.QueryFullProcessImageNameW(W.HANDLE(int(child._handle)),0,image,C.byref(size))
-        observed={'pid':child.pid,'creation_filetime':(stamps[0].dwHighDateTime<<32)|stamps[0].dwLowDateTime,'image':image.value}
-        assert Path(observed['image'])==Path(sys.executable)
+        identity = child.identity()
+        observed = {'pid': identity['pid'], 'creation_filetime': identity['created'], 'image': identity['image']}
+        assert Path(observed['image']) == Path(guard.processes.executable)
         stdout,stderr=child.communicate(json.dumps({'root':str(tmp_path),'personal_enrollment':s.e,'now':clock()}),timeout=35)
         assert child.returncode==0,stderr
         result=json.loads(stdout)

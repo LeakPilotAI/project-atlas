@@ -2,11 +2,9 @@
 import copy
 import importlib.util
 import json
-import os
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-from threading import Timer
 
 from app.investment.quality_dips_candidate_evidence import CandidateEvidenceAdapter
 from app.services.paper_financial_replay import digest, number, strict
@@ -39,6 +37,7 @@ from scripts.observation_runtime.personal_writer_ownership import (
     NativePersonalWriterOwnership,
 )
 from scripts.observation_runtime.quality_dips_read_service import observe_self
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 
 class NoFinancialPermission:
@@ -49,6 +48,7 @@ class NoFinancialPermission:
 
 @contextmanager
 def reopen_readonly_fixture(value):
+    guarded.require_fixture('independent-readonly-restart')
     root=Path(value['root'])
     repo=Path(__file__).resolve().parents[1]
     from personal_fixture_sources import fixture_source_root
@@ -120,15 +120,16 @@ def reopen_readonly_fixture(value):
 
 
 def main():
-    raw=sys.stdin.buffer.read(65537)
+    guard = guarded.require_fixture('readonly-restart-main')
+    raw = guard.read_input(maximum_bytes=65536, timeout=30)
     if len(raw)>65536: raise ValueError('FIXTURE_INPUT_CAPACITY')
     value=strict(raw.decode())
     with reopen_readonly_fixture(value) as opened:print(json.dumps(opened['result']))
 
 
 if __name__=='__main__':
-    watchdog=Timer(30,lambda:os._exit(70));watchdog.daemon=True;watchdog.start()
-    try:
+    guarded.require_fixture('readonly-restart-bootstrap')
+    with guarded.watchdog(seconds=30,exit_code=70):
         if sys.argv[1:]==['--ready-before-input']:
             # Imports are ready, but no account/root/authority has been opened.
             # A retained read-only service can wait for post-Stop input.
@@ -136,4 +137,3 @@ if __name__=='__main__':
         elif sys.argv[1:]:
             raise ValueError('SYNTHETIC_READER_MODE_REFUSED')
         main()
-    finally: watchdog.cancel()

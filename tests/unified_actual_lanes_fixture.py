@@ -29,6 +29,7 @@ from test_alpaca_iex import message
 from test_qd_unified_source_planner import components
 from test_unified_native_writer import FixtureCustody
 from test_unified_paper_runtime import Installation
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -101,12 +102,13 @@ class ActualSourceRisk:
 
 
 def build(root, confinement, qd_confinement, *, publication_factory=None):
+    guarded.require_fixture('unified-actual-native-build')
     root = Path(root)
     qd_root = Path(qd_confinement) / ('account-' + uuid.uuid4().hex)
-    qd_root.mkdir()
+    guarded.mkdir(qd_root)
     s = build_qd(qd_root, qd_confinement, stamp=1793026790, session_reports=True)
     q = components(s)
-    perproot = root / 'perp'; perproot.mkdir()
+    perproot = root / 'perp'; guarded.mkdir(perproot)
     p = build_perp(perproot, confinement, stamp=s.x.n.now[0] - 1, shared_now=s.x.n.now)
     clock = s.x.x.clock
     q_packet = {'schema': 'QD_SCANNER_PUBLICATION_V1', 'source_id': 'SYNTHETIC_ORIGINAL_SCANNER', 'revision': 1,

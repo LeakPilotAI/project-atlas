@@ -10,7 +10,9 @@ import json
 import ntpath
 import os
 import re
+import sys
 from ctypes import wintypes as W
+from types import SimpleNamespace
 
 if os.name != "nt":
     raise ImportError("Native Windows required")
@@ -69,11 +71,11 @@ def bind(lib, name, args, result=W.BOOL):
     return f
 
 
-create_file = bind(K, "CreateFileW", [W.LPCWSTR, W.DWORD, W.DWORD, C.POINTER(SA), W.DWORD, W.DWORD, W.HANDLE], W.HANDLE)
-close_handle = bind(K, "CloseHandle", [W.HANDLE])
+_raw_create_file = bind(K, "CreateFileW", [W.LPCWSTR, W.DWORD, W.DWORD, C.POINTER(SA), W.DWORD, W.DWORD, W.HANDLE], W.HANDLE)
+_raw_close_handle = bind(K, "CloseHandle", [W.HANDLE])
 get_info = bind(K, "GetFileInformationByHandle", [W.HANDLE, C.POINTER(Info)])
 flush = bind(K, "FlushFileBuffers", [W.HANDLE])
-write_file = bind(K, "WriteFile", [W.HANDLE, C.c_void_p, W.DWORD, C.POINTER(W.DWORD), C.c_void_p])
+_raw_write_file = bind(K, "WriteFile", [W.HANDLE, C.c_void_p, W.DWORD, C.POINTER(W.DWORD), C.c_void_p])
 read_file = bind(K, "ReadFile", [W.HANDLE, C.c_void_p, W.DWORD, C.POINTER(W.DWORD), C.c_void_p])
 create_directory = bind(K, "CreateDirectoryW", [W.LPCWSTR, C.POINTER(SA)])
 nt_create = bind(N, "NtCreateFile", [C.POINTER(W.HANDLE), W.DWORD, C.POINTER(ObjectAttributes), C.POINTER(IO), C.c_void_p, W.DWORD, W.DWORD, W.DWORD, W.DWORD, C.c_void_p, W.DWORD], W.LONG)
@@ -107,9 +109,14 @@ def sid_text(sid):
         local_free(out)
 
 
-def current_sid():
+def _current_token():
     token = W.HANDLE()
     check(open_token(process(), 8, C.byref(token)))
+    return token
+
+
+def current_sid():
+    token = _fixture_call('token', _current_token, ())
     try:
         size = W.DWORD()
         token_info(token, 1, None, 0, C.byref(size))
@@ -187,7 +194,39 @@ def nt_check(status):
         raise C.WinError(nt_error(status), "Native relative operation refused")
 
 
+def _fixture_call(event, callback, values):
+    # No new startup/import graph for operational users. Selected AIP06 fixture
+    # entry points load and REQUIRE this shared guard before reaching native IO.
+    guard = sys.modules.get('scripts.observation_runtime.aip06_fixture_guard')
+    if guard is None:
+        return callback(*values)
+    module = SimpleNamespace(WRITE=WRITE, DELETE=DELETE, READ_CONTROL=READ_CONTROL,
+                             ATTR=ATTR, info=info, validate_acl=validate_acl)
+    return guard.native_call(event, callback, values, module)
+
+
+def create_file(*values):
+    return _fixture_call('absolute_open', _raw_create_file, values)
+
+
+def close_handle(*values):
+    return _fixture_call('close', _raw_close_handle, values)
+
+
+def write_file(*values):
+    return _fixture_call('write', _raw_write_file, values)
+
+
+def guarded_mutex(callback, *values):
+    return _fixture_call('mutex', callback, values)
+
+
 def relative_open(parent, leaf, sid, directory, create=False, access=READ_CONTROL | ATTR | 1):
+    return _fixture_call('relative_open', _relative_open,
+                         (parent, leaf, sid, directory, create, access))
+
+
+def _relative_open(parent, leaf, sid, directory, create=False, access=READ_CONTROL | ATTR | 1):
     if not leaf or leaf in {".", ".."} or any(x in leaf for x in ("/", "\\", ":")):
         raise ValueError("One relative component required")
     text = C.create_unicode_buffer(leaf)
@@ -204,7 +243,8 @@ def relative_open(parent, leaf, sid, directory, create=False, access=READ_CONTRO
             if bool(data.attributes & 0x10) != directory:
                 raise PermissionError("Unexpected object type")
         except BaseException:
-            close_handle(handle)
+            # This unreturned creation handle is still owned by this function.
+            _raw_close_handle(handle)
             raise
         return handle
     finally:
@@ -319,6 +359,9 @@ class WindowsOutput:
             close_handle(h)
 
     def publish(self, name, value):
+        guard = sys.modules.get('scripts.observation_runtime.aip06_fixture_guard')
+        if guard is not None and guard.current() is not None:
+            raise ValueError('HARDLINK_PUBLICATION_NOT_IN_AIP06_FIXTURE_SCOPE')
         data = json.dumps(filtered(json.dumps(value, allow_nan=False).encode()), sort_keys=True, separators=(",", ":")).encode()
         if not re.fullmatch(r"[a-z0-9-]{1,48}\.json", name):
             raise ValueError("Opaque operation filename required")

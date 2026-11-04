@@ -1,12 +1,12 @@
 """Actual native FS2/FS3 writers plus disposable durable coordination; no enrollment."""
 import os
-import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 from app.services.paper_financial_replay import digest
 from app.services.paper_writer_fixture import (
     _validated_operations,
@@ -68,11 +68,11 @@ class FixtureCustody:
         return rows
 
     def verify_restart(self, grant):
-        with sqlite3.connect(self.path) as db:
+        with guarded.sqlite_connect(self.path) as db:
             return db.execute("SELECT stopped FROM control").fetchall() == [(0,)] and all(r[3] == 1 for r in _validated_operations(db))
 
     def close_entry_admission(self, grant):
-        with sqlite3.connect(self.path) as db:
+        with guarded.sqlite_connect(self.path) as db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("BEGIN IMMEDIATE")
             if db.execute("SELECT stopped FROM control").fetchall() not in ([(0,)], [(1,)]): return False
@@ -80,7 +80,7 @@ class FixtureCustody:
         return True
 
     def verify_drain(self, grant):
-        with sqlite3.connect(self.path) as db:
+        with guarded.sqlite_connect(self.path) as db:
             roster = db.execute("SELECT id,incarnation,uncertain FROM writer_roster ORDER BY id").fetchall()
             return (roster == [("perp", "fixture-incarnation", 0), ("qd", "fixture-incarnation", 0)]
                     and db.execute("SELECT stopped FROM control").fetchall() == [(1,)]
@@ -88,7 +88,7 @@ class FixtureCustody:
 
     @contextmanager
     def lease(self, request):
-        with sqlite3.connect(self.path, timeout=2) as db:
+        with guarded.sqlite_connect(self.path, timeout=2) as db:
             db.execute("PRAGMA synchronous=FULL")
             db.execute("BEGIN IMMEDIATE")
             self.db, self.request = db, request
@@ -143,6 +143,7 @@ class FixtureCustody:
 
 @pytest.fixture
 def bundle(tmp_path):
+    guarded.require_fixture('native-writer-bundle')
     root = Path(os.environ["ATLAS_D1_RUN_ROOT"])
     assert root.parent == Path(__file__).resolve().parents[1] / "logs/diagnostics"
     assert root.name.startswith("qd-fs3-report-projection-") and tmp_path.is_relative_to(root)
@@ -153,7 +154,7 @@ def bundle(tmp_path):
     authority = FixtureAuthority(store, pins)
     writer = NativeFinancialWriter(store=store, authority=authority, manifest=manifest(), execution_domain="DISPOSABLE_TEST")
     dbpath = str(tmp_path / "writers.sqlite")
-    with sqlite3.connect(dbpath) as db: db.execute("CREATE TABLE control(stopped INTEGER)"); db.execute("INSERT INTO control VALUES(0)")
+    with guarded.sqlite_connect(dbpath) as db: db.execute("CREATE TABLE control(stopped INTEGER)"); db.execute("INSERT INTO control VALUES(0)")
     provision_fixture_writers(dbpath, {"perp": "fixture-incarnation", "qd": "fixture-incarnation"})
     now = [3602]
     custody = FixtureCustody(dbpath, writer, authority, lambda: now[0])
@@ -235,7 +236,7 @@ def test_shutdown_exit_uses_native_custody_without_reopening_entries(side, bundl
     proposal = {"operation_id": command["operation_id"], "kind": "EXIT", "command": command,
                 "source_head": store.verified_cut()["head"], "strategy_ref": "SYNTHETIC_EXISTING_PLANNER_INPUT"}
     def verify(request):
-        with sqlite3.connect(custody.path) as db:
+        with guarded.sqlite_connect(custody.path) as db:
             return (request["mode"] == "SHUTDOWN_REDUCING_EXIT_V1"
                     and db.execute("SELECT stopped FROM control").fetchall() == [(1,)])
     custody.verify_shutdown_exit = verify

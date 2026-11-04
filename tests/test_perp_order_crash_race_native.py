@@ -9,15 +9,17 @@ from pathlib import Path
 
 import pytest
 import test_perp_source_order_native as fixtures
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 system = fixtures.system
 CHILD = Path(__file__).with_name('perp_order_crash_child.py')
 
 
 def start(path, phase):
+    guard = guarded.require_fixture('perp-crash-child-launch')
     env = dict(os.environ)
-    env['PYTHONPATH'] = os.pathsep.join([str(Path(sys.prefix) / 'Lib/site-packages'), str(CHILD.parents[1] / 'backend')])
-    return subprocess.Popen([sys._base_executable, '-B', str(CHILD), '--config', str(path), '--phase', phase],
+    env['PYTHONPATH'] = os.pathsep.join([str(Path(sys.prefix) / 'Lib/site-packages'), str(CHILD.parents[1] / 'backend'), str(CHILD.parents[1])])
+    return guarded.popen([guard.processes.executable, '-B', str(CHILD), '--config', str(path), '--phase', phase],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env, creationflags=subprocess.CREATE_NO_WINDOW)
 
 
@@ -32,7 +34,7 @@ def config(s, order, **extra):
 async def test_actual_subprocess_crash_at_native_control_boundaries(system, phase):
     s = system
     order = (await s.planner.next_proposal(None, s.writer._cut()))['order']
-    path = s.root / 'crash-config.json'; path.write_text(json.dumps(config(s, order)))
+    path = s.root / 'crash-config.json'; guarded.write_text(path, json.dumps(config(s, order)))
     child = start(path, phase)
     stdout, stderr = child.communicate(timeout=12)
     assert child.returncode == 71, (stdout, stderr)
@@ -56,13 +58,13 @@ async def test_two_native_processes_same_order_have_one_durable_effect(system):
     children = []
     for index in range(2):
         path, ready = s.root / f'race-{index}.json', s.root / f'ready-{index}.json'
-        path.write_text(json.dumps(config(s, order, barrier=str(barrier), ready=str(ready))))
+        guarded.write_text(path, json.dumps(config(s, order, barrier=str(barrier), ready=str(ready))))
         children.append((start(path, 'none'), ready))
     deadline = time.monotonic() + 8
     while not all(ready.exists() for _, ready in children):
         if time.monotonic() > deadline: raise AssertionError('Test-owned children did not become ready')
         await asyncio.sleep(.01)
-    barrier.write_text('GO')
+    guarded.write_text(barrier, 'GO')
     replies = []
     for child, _ in children:
         stdout, stderr = child.communicate(timeout=12)
@@ -79,8 +81,8 @@ async def test_missing_pin_or_rollback_refuses_and_never_adopts_tail(system):
     p = await s.planner.next_proposal(None, s.writer._cut())
     old = s.order_pins.current()
     s.arm(p)
-    s.order_pins.path.write_text(json.dumps(old))  # Explicit disposable coherent-pin rollback probe.
+    guarded.rewrite_text(s.order_pins.path, json.dumps(old))  # Explicit disposable coherent-pin rollback probe.
     with pytest.raises(ValueError): s.orders.snapshot()
-    s.order_pins.path.write_text('{broken')
+    guarded.rewrite_text(s.order_pins.path, '{broken')
     with pytest.raises(ValueError): s.orders.snapshot()
     assert s.store.verified_cut()['state']['revision'] == 0

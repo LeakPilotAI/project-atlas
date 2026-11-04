@@ -1,8 +1,8 @@
 """Durable cooperative fixture writer roster; no production authority or adapters."""
 import hashlib
-import sqlite3
 import time
 from pathlib import Path
+from scripts.observation_runtime.aip06_fixture_guard import sqlite_connect
 
 
 def _validated_operations(db):
@@ -23,7 +23,7 @@ def _validated_operations(db):
 def provision_fixture_writers(path, roster):
     if type(roster) is not dict or not roster or any(type(k) is not str or not k or type(v) is not str or not v for k, v in roster.items()):
         raise ValueError("Exact writer identity/incarnation roster required")
-    with sqlite3.connect(Path(path).resolve().as_uri() + "?mode=rw", uri=True) as db:
+    with sqlite_connect(Path(path).resolve().as_uri() + "?mode=rw", uri=True) as db:
         db.execute("PRAGMA synchronous=FULL")
         db.execute("BEGIN IMMEDIATE")
         db.execute("CREATE TABLE writer_roster(id TEXT PRIMARY KEY, incarnation TEXT NOT NULL, uncertain INTEGER NOT NULL)")
@@ -36,7 +36,7 @@ def fixture_writer_operation(path, *, writer, incarnation, operation, payload, a
         raise ValueError("Stable operation identity required")
     if type(payload) is not str or len(payload) != 64 or any(c not in '0123456789abcdef' for c in payload):
         raise ValueError("Explicit payload SHA256 required")
-    with sqlite3.connect(Path(path).resolve().as_uri() + "?mode=rw", uri=True, timeout=1) as db:
+    with sqlite_connect(Path(path).resolve().as_uri() + "?mode=rw", uri=True, timeout=1) as db:
         db.execute("PRAGMA synchronous=FULL")
         db.execute("BEGIN IMMEDIATE")
         _validated_operations(db)
@@ -74,7 +74,7 @@ def run_fixture_writer(path, *, writer, incarnation, operation, payload, mutatio
 
 
 def close_fixture_writers(path, expected, *, fault=lambda phase: None):
-    with sqlite3.connect(Path(path).resolve().as_uri() + "?mode=rw", uri=True, timeout=1) as db:
+    with sqlite_connect(Path(path).resolve().as_uri() + "?mode=rw", uri=True, timeout=1) as db:
         db.execute("PRAGMA synchronous=FULL")
         db.execute("BEGIN IMMEDIATE")
         if db.execute("SELECT stopped FROM control").fetchall() not in ([(0,)], [(1,)]):

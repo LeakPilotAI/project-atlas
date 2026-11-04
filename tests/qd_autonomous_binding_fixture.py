@@ -17,9 +17,11 @@ from app.services.quality_dips_autonomous_enrollment import (
 from qd_autonomous_runtime_fixture import compose
 from test_quality_dips_autonomous_enrollment import fixture
 from test_quality_dips_autonomous_paper import STAMP
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 
 def build(root, confinement, *, stamp=STAMP, session_reports=False):
+    guarded.require_fixture('qd-autonomous-native-binding')
     spec = importlib.util.spec_from_file_location(
         "v5_fixture_native",
         confinement.parents[2] / "scripts/volume_inspector/snapshot_store.py",

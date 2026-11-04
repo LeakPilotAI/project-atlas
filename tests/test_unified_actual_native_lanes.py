@@ -11,10 +11,12 @@ from app.services.paper_financial_replay import number
 from app.services.unified_paper_runtime import UnifiedPaperRuntime
 from test_perp_order_crash_race_native import start
 from unified_actual_lanes_fixture import build
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 
 @pytest.fixture
 def system(tmp_path):
+    guarded.require_fixture('unified-actual-system')
     conf = Path(os.environ['ATLAS_PERP_ORDER_TEST_ROOT'])
     qdconf = Path(os.environ['ATLAS_UNIFIED_QD_TEST_ROOT'])
     assert tmp_path.is_relative_to(conf)
@@ -117,7 +119,7 @@ async def test_real_child_crash_after_native_fill_before_order_and_global_ack(sy
         'financial': {'root': str(s.p.root / 'source'), 'projection': str(s.p.root / 'projection'),
             'projection_id': s.p.projection_id, 'pin': str(s.p.financial_pins.path), 'command': proposal['command']},
         'orders': {'root': str(s.p.root / 'orders'), 'pin': str(s.p.order_pins.path), 'manifest': s.p.m}}
-    path = s.root / 'two-lane-crash-config.json'; path.write_text(json.dumps(config))
+    path = s.root / 'two-lane-crash-config.json'; guarded.write_text(path, json.dumps(config))
     child = start(path, 'financial-after-ack')
     stdout, stderr = child.communicate(timeout=12)
     assert child.returncode == 71, (stdout, stderr)
@@ -157,7 +159,7 @@ async def test_actual_native_global_reservation_race_is_one_pending_effect(syste
     barrier, children = s.root / 'global-go', []
     for index in range(2):
         path, ready = s.root / f'global-race-{index}.json', s.root / f'global-ready-{index}'
-        path.write_text(json.dumps({'confinement': str(s.confinement), 'portfolio': True,
+        guarded.write_text(path, json.dumps({'confinement': str(s.confinement), 'portfolio': True,
             'root': str(s.root / 'global'), 'pin': str(s.pins.path), 'now': s.clock(), 'manifest': s.binding,
             'event': {'kind': 'RESERVE', 'order_id': proposal['operation_id'], 'at': s.clock(), 'payload': request},
             'reservation': {'fixture': 'SYNTHETIC_RACE'}, 'barrier': str(barrier), 'ready': str(ready)}))
@@ -166,7 +168,7 @@ async def test_actual_native_global_reservation_race_is_one_pending_effect(syste
     while not all(ready.exists() for _, ready in children):
         if time.monotonic() >= deadline: raise AssertionError('Global custody children did not become ready')
         await asyncio.sleep(.01)
-    barrier.write_text('GO')
+    guarded.write_text(barrier, 'GO')
     replies = []
     for child, _ in children:
         stdout, stderr = child.communicate(timeout=12)

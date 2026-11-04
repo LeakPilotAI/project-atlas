@@ -993,7 +993,8 @@ class StopVerification:
         self.clock, self.reader = clock_ns, financial_reader
         need(
             type(expected_accounts) is dict
-            and set(expected_accounts) == {"QUALITY_DIPS", "HYPERLIQUID"},
+            and bool(expected_accounts)
+            and set(expected_accounts) <= {"QUALITY_DIPS", "HYPERLIQUID"},
             "PINNED_ACCOUNT_SCOPE_REQUIRED",
         )
         self.accounts = copied(expected_accounts)
@@ -1098,12 +1099,14 @@ class StopVerification:
             )
             accounts = financial["accounts"]
             need(
-                type(accounts) is dict
-                and set(accounts) == {"QUALITY_DIPS", "HYPERLIQUID"},
-                "TWO_SEPARATE_ACCOUNTS_REQUIRED",
+                type(accounts) is dict and set(accounts) == set(self.accounts),
+                "EXACT_DECLARED_ACCOUNTS_REQUIRED",
             )
             cuts = {}
+            cash_by_lane = {}
             for lane, currency in (("QUALITY_DIPS", "USD"), ("HYPERLIQUID", "USDC")):
+                if lane not in self.accounts:
+                    continue
                 row = accounts[lane]
                 need(
                     self.accounts[lane]
@@ -1126,6 +1129,7 @@ class StopVerification:
                     "ACCOUNT_CURRENCY_CONFLICT",
                 )
                 state, head, _ = replay_verified_events(row["manifest"], row["events"])
+                cash_by_lane[lane] = state["cash"]
                 audit_financial_events(row["manifest"], row["events"], row["snapshot"])
                 need(
                     head == row["source_head"]
@@ -1149,10 +1153,14 @@ class StopVerification:
                     "native_source": copied(row["native_source"]),
                 }
             need(
-                cuts["QUALITY_DIPS"]["account_id"] != cuts["HYPERLIQUID"]["account_id"]
-                and cuts["QUALITY_DIPS"]["epoch"] != cuts["HYPERLIQUID"]["epoch"]
-                and cuts["QUALITY_DIPS"]["native_source"]
-                != cuts["HYPERLIQUID"]["native_source"],
+                len(cuts) == 1
+                or (
+                    cuts["QUALITY_DIPS"]["account_id"]
+                    != cuts["HYPERLIQUID"]["account_id"]
+                    and cuts["QUALITY_DIPS"]["epoch"] != cuts["HYPERLIQUID"]["epoch"]
+                    and cuts["QUALITY_DIPS"]["native_source"]
+                    != cuts["HYPERLIQUID"]["native_source"]
+                ),
                 "ACCOUNT_ALIAS",
             )
             expected = {
@@ -1238,6 +1246,7 @@ class StopVerification:
                 "scope": SCOPE_HASH,
                 "elapsed_ns": done - self.started,
                 "cuts": cuts,
+                "cash_by_lane": cash_by_lane,
                 "resources_head": snapshot["head"],
                 "source_contract_passed": True,
                 "native_acceptance": False,

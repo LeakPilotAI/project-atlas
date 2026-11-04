@@ -32,6 +32,7 @@ from scripts.observation_runtime.launch_ownership_windows import (
     NativeQueries,
     WindowsLaunchObserver,
 )
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 
 class BasicLimits(C.Structure):
@@ -441,6 +442,11 @@ def run_case(root, native, images, kind, deadline_ns):
 
 
 def main():
+    # This legacy probe still needs a fully shared controller port. A bare
+    # readiness-review command must not bypass the AIP06 guard installation.
+    guarded.require_fixture("legacy-native-ownership-probe")
+    raise OwnershipRefused("AIP06_LEGACY_PROBE_CONTROLLER_PORT_NOT_BOUND")
+    # Historical implementation retained below for review; never a new grant.
     parser = argparse.ArgumentParser()
     parser.add_argument("--disposable-root", required=True)
     allowed_cases = (

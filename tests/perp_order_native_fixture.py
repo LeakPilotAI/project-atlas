@@ -2,7 +2,6 @@
 import copy
 import importlib.util
 import json
-import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -12,6 +11,7 @@ from app.services.perp_resting_writer import RestingPerpWriter
 from app.services.perp_source_planner import PerpSourcePlanner
 from app.services.unified_native_writer import NativeFinancialWriter
 from test_perp_financial_v2 import manifest
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 REPO = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('order_test_native', REPO / 'scripts/volume_inspector/resting_order_store.py')
@@ -25,23 +25,18 @@ spec.loader.exec_module(reports)
 class DurableTestPins:
     """Test-owned JSON custody; NOT independent rollback protection or production storage."""
     def __init__(self, path, clock, pin=None):
+        guarded.require_fixture('durable-test-pins')
         self.path, self.clock = Path(path), clock
         if pin is not None:
-            with self.path.open('xb') as stream:
-                stream.write(body(pin).encode())
-                stream.flush()
-                os.fsync(stream.fileno())
-    def current(self): return json.loads(self.path.read_text())
+            guarded.write_bytes(self.path, body(pin).encode())
+    def current(self): return json.loads(guarded.read_bytes(self.path))
     def check_clock(self, at):
         if type(at) is not int or not 0 <= self.clock() - at <= 30: raise ValueError('SYNTHETIC_CLOCK_REFUSED')
     def advance(self, before, after):
         if self.current() != before: raise ValueError('SYNTHETIC_CAS_CONFLICT')
         temporary = self.path.with_suffix('.pending')
-        with temporary.open('xb') as stream:
-            stream.write(body(after).encode())
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, self.path)
+        guarded.write_bytes(temporary, body(after).encode())
+        guarded.replace(temporary, self.path)
 
 
 def book(now, *, bid='99.9', ask='100.1', mark='100'):
@@ -78,6 +73,7 @@ class FixtureAuthority:
 
 
 def build(root, confinement, *, stamp=3601, shared_now=None):
+    guarded.require_fixture('perp-order-native-build')
     root, confinement = Path(root), Path(confinement)
     assert confinement.parent == REPO / 'logs/diagnostics' and confinement.name.startswith('perp-order-custody-')
     assert root.is_relative_to(confinement)

@@ -5,11 +5,11 @@ separate commits and must use the pending/acknowledgement bridge. Local hashes,
 file identity and declared capital do not establish protected operational storage,
 independent opening cash, anti-rollback, trusted clock or startup permission.
 """
-import sqlite3
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from scripts.observation_runtime import aip06_fixture_guard as guarded
 
 from app.services.paper_coordination_sql import CanonicalCoordinationSQL
 from app.services.paper_financial_replay import (
@@ -29,9 +29,12 @@ def create_epoch_fixture(path, manifest):
     if manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1':
         raise ValueError('Operational perpetual inception cannot use fixture SQLite')
     path = Path(path)
-    with path.open("xb"):
-        pass
-    with sqlite3.connect(path) as db:
+    if guarded.current() is None:
+        with path.open("xb"):
+            pass
+    else:
+        guarded.write_bytes(path, b"")
+    with guarded.sqlite_connect(path) as db:
         db.execute("PRAGMA synchronous=FULL")
         db.execute("CREATE TABLE inception(body TEXT NOT NULL)")
         db.execute("CREATE TABLE events(revision INTEGER PRIMARY KEY,id TEXT UNIQUE,body TEXT,parent TEXT,digest TEXT,receipt TEXT)")
@@ -59,7 +62,7 @@ class EpochFixture(CanonicalCoordinationSQL):
         stat = self.path.stat()
         if (stat.st_dev, stat.st_ino) != self.identity or self.path.is_symlink():
             raise ValueError("Changed fixture resource")
-        db = sqlite3.connect(self.path.as_uri() + ("?mode=ro" if readonly else "?mode=rw"), uri=True, timeout=2)
+        db = guarded.sqlite_connect(self.path.as_uri() + ("?mode=ro" if readonly else "?mode=rw"), uri=True, timeout=2)
         if not readonly:
             db.execute("PRAGMA synchronous=FULL")
         return db
