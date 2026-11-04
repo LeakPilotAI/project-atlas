@@ -1,5 +1,5 @@
-param([Parameter(Mandatory=$true)][string]$DisposableRoot,[switch]$IdentityProbeOnly,[switch]$HttpDiagnosticOnly)
-if($IdentityProbeOnly -and $HttpDiagnosticOnly){throw 'ONE_DISPOSABLE_DIAGNOSTIC_MODE_ONLY'}
+param([Parameter(Mandatory=$true)][string]$DisposableRoot,[switch]$IdentityProbeOnly,[switch]$HttpDiagnosticOnly,[switch]$StableListenerProbeOnly)
+if($IdentityProbeOnly -and ($HttpDiagnosticOnly -or $StableListenerProbeOnly)){throw 'ONE_DISPOSABLE_DIAGNOSTIC_MODE_ONLY'}
 $ErrorActionPreference='Stop';$repo='D:\Work\Project Atlas';$root=[IO.Path]::GetFullPath($DisposableRoot)
 if([IO.Path]::GetDirectoryName($root) -ine (Join-Path $repo 'logs\diagnostics') -or [IO.Path]::GetFileName($root) -cnotmatch '^qd-v6-integrated-rehearsal-[a-zA-Z0-9-]+$' -or (Test-Path -LiteralPath $root)){throw 'FRESH_DISPOSABLE_REHEARSAL_ROOT_REQUIRED'}
 [void][IO.Directory]::CreateDirectory($root);[void][IO.Directory]::CreateDirectory((Join-Path $root 'temp'))
@@ -25,17 +25,17 @@ try{
     [Runtime.InteropServices.Marshal]::FreeHGlobal($buffer)
 }finally{$f.Dispose()}
 $helperPin=@{path=$helper;id=$id;sha256=(Get-FileHash -LiteralPath $helper -Algorithm SHA256).Hash.ToLowerInvariant()}
-$fixtureScope=@{domain='DISPOSABLE_INTEGRATED_ONLY';identity_probe_only=[bool]$IdentityProbeOnly;http_diagnostic_only=[bool]$HttpDiagnosticOnly;ownership=@{images=@{observer=$pins.images.observer;powershell=$pins.images.powershell;installed_python=$helperPin;console=$pins.images.console};diagnostic_images=@{netstat=$pins.images.netstat};console_command='\??\C:\WINDOWS\system32\conhost.exe 0x4';direct_adapter_console_exit_code=0}}
+$fixtureScope=@{domain='DISPOSABLE_INTEGRATED_ONLY';identity_probe_only=[bool]$IdentityProbeOnly;http_diagnostic_only=[bool]($HttpDiagnosticOnly -or $StableListenerProbeOnly);stable_listener_probe_only=[bool]$StableListenerProbeOnly;ownership=@{images=@{observer=$pins.images.observer;powershell=$pins.images.powershell;installed_python=$helperPin;console=$pins.images.console};diagnostic_images=@{netstat=$pins.images.netstat};console_command='\??\C:\WINDOWS\system32\conhost.exe 0x4';direct_adapter_console_exit_code=0}}
 $scope=$fixtureScope
 Create-Json 'fixture-scope.json' $fixtureScope
 $sourceRows=@()
-foreach($path in @((Join-Path $repo 'scripts\acceptance_harness_v6\supervise.ps1'),(Join-Path $repo 'scripts\acceptance_harness_v6\worker_log.py'),(Join-Path $repo 'scripts\acceptance_harness_v5\ownership.py'),(Join-Path $repo 'tests\v6_job_attribution.py'),(Join-Path $root 'WorkerLog.psm1'),(Join-Path $root 'worker.py'),(Join-Path $root 'gate.py'),(Join-Path $root 'resource_audit.ps1'))){$item=Get-Item -LiteralPath $path;$sourceRows+=@{path=$path;bytes=$item.Length;sha256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()}}
+foreach($path in @((Join-Path $repo 'scripts\acceptance_harness_v6\supervise.ps1'),(Join-Path $repo 'scripts\acceptance_harness_v6\worker_log.py'),(Join-Path $repo 'scripts\acceptance_harness_v5\ownership.py'),(Join-Path $repo 'tests\v6_job_attribution.py'),(Join-Path $repo 'tests\v6_http_diagnostic.py'),(Join-Path $repo 'tests\v6_stable_listener_evidence.py'),(Join-Path $repo 'tests\v6_stable_listener_fixture.py'),(Join-Path $root 'WorkerLog.psm1'),(Join-Path $root 'worker.py'),(Join-Path $root 'gate.py'),(Join-Path $root 'resource_audit.ps1'))){$item=Get-Item -LiteralPath $path;$sourceRows+=@{path=$path;bytes=$item.Length;sha256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()}}
 Create-Json 'fixture-source-manifest.json' $sourceRows
 $python=$pins.images.observer.path
 $scopeHashCode="import json,hashlib;from pathlib import Path;p=json.loads(Path(r'"+(Join-Path $root 'fixture-scope.json')+"').read_bytes());print(hashlib.sha256(json.dumps(p,sort_keys=True,separators=(',',':')).encode()).hexdigest())"
 $ApprovedScopeSha256= & $python -I -B -c $scopeHashCode
 if($ApprovedScopeSha256 -cnotmatch '^[0-9a-f]{64}$'){throw 'FIXTURE_SCOPE_HASH_REFUSED'}
-$ApprovedCheckpoint='826758c7d6e41141d9cadc8ed504b1630811ecbb'
+$ApprovedCheckpoint='2cc0c8086838875281274d3956d070c3ac82b6eb'
 # The ONLY adapter to the actual outer body is confined resource accounting.
 # No read or write of D:\AtlasRuntime occurs during this rehearsal.
 function Account-Scope {

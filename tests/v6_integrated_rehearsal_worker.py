@@ -49,6 +49,7 @@ from tests.v6_job_attribution import (
     retire_disposable_adapter,
     verify_disposable_adapter_candidate,
 )
+from tests.v6_stable_listener_evidence import verify_stable_interval
 
 owner = None
 child = None
@@ -117,6 +118,16 @@ try:
         str(repo / "tests/harness_v3_fixture_controller.py"),
         "--disposable-fixture-only",
     ]
+    if scope.get("stable_listener_probe_only") is True:
+        assert scope.get("http_diagnostic_only") is True
+        command = [
+            sys.executable,
+            "-I",
+            "-B",
+            str(repo / "tests/v6_stable_listener_fixture.py"),
+            "--disposable-stable-listener-only",
+            str(root),
+        ]
     owner.verify()
     child = subprocess.Popen(
         command,
@@ -240,15 +251,40 @@ try:
         result["ready"] = ready
         result["ready_observed_ns"] = time.perf_counter_ns()
         result["ready_observed_utc_ns"] = time.time_ns()
-        live_boundary = time.perf_counter_ns()
-        live = collect(
-            repo=repo,
-            evidence=root,
-            port=endpoint,
-            after_ns=live_boundary,
-            label="http-listening",
-            run=run,
-        )
+        result["stable_observations"] = []
+        stable_probe = scope.get("stable_listener_probe_only") is True
+        for sample_number in range(1, 4) if stable_probe else (1,):
+            if stable_probe:
+                child.stdin.write(b"WITNESS\n")
+                child.stdin.flush()
+                before_witness = json.loads(read_ready(child, seconds=3))
+            live_boundary = time.perf_counter_ns()
+            live = collect(
+                repo=repo,
+                evidence=root,
+                port=endpoint,
+                after_ns=live_boundary,
+                label=f"stable-listening-{sample_number}"
+                if stable_probe
+                else "http-listening",
+                run=run,
+            )
+            if stable_probe:
+                child.stdin.write(b"WITNESS\n")
+                child.stdin.flush()
+                after_witness = json.loads(read_ready(child, seconds=3))
+                interval = verify_stable_interval(
+                    before_witness, after_witness, live["observations"]
+                )
+                result["stable_observations"].append(
+                    {
+                        "sample": sample_number,
+                        "before": before_witness,
+                        "after": after_witness,
+                        "interval": interval,
+                        "readers": live,
+                    }
+                )
         result["independent_listening"] = live
         try:
             result["http_probe_readiness"] = verify_http_diagnostic_listener(
