@@ -52,11 +52,13 @@ class SourcePublication:
             raise ValueError('SOURCE_AUTHENTICATED_UTC_CLOCK_REQUIRED')
         return now
 
-    def publish(self, packet, sources):
+    def publish(self, packet, sources, *, expected_head=None):
         self._verify()
         self._shape(packet)
         now=self._now()
         old=self.archive.current()
+        if expected_head is not None and old!=expected_head:
+            raise ValueError('SOURCE_EXPECTED_HEAD_CHANGED')
         if (packet.get('revision')!=old['revision']+1
                 or self.authority.verify_publication(self.components,old,packet,sources,now) is not True):
             raise ValueError('AUTHENTICATED_SOURCE_PUBLICATION_REQUIRED')
@@ -123,7 +125,7 @@ class QualityDipsSourcePublication(SourcePublication):
         self.components.update(research=research,candidates=candidates)
         self._verify()
 
-    def publish_scanner(self, rows, observed_at):
+    def publish_scanner(self, rows, observed_at, *, evidence=None, expected_head=None):
         self._verify()
         raw=strict(body(self.research.read_current()))
         now=self._now()
@@ -142,7 +144,10 @@ class QualityDipsSourcePublication(SourcePublication):
             bundles.append(bundle)
         if len(bundles)>16: raise ValueError('QD_SOURCE_CANDIDATE_CAPACITY')
         packet={**self._packet('QD_SCANNER_PUBLICATION_V1'),'bundles':bundles,'monitors':raw['monitors']}
-        return self.publish(packet,{'research':raw,'scanner_rows':rows,'scanner_observed_at':observed_at})
+        sources={'research':raw,'scanner_rows':rows,'scanner_observed_at':observed_at}
+        if evidence is not None:
+            sources['current_input']=strict(body(evidence))
+        return self.publish(packet,sources,expected_head=expected_head)
 
     def read_publication(self,timeout):
         if type(timeout) not in (int,float) or not 0<timeout<=.2: raise ValueError('QD_BOUNDED_SOURCE_READ_REQUIRED')

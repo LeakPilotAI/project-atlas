@@ -105,15 +105,19 @@ class NativePersonalResearchArchive:
         return strict(body(head))
 
     def read(self,expected):
+        return self.read_evidence(expected)['packet']
+
+    def read_evidence(self,expected):
+        """Read the same acknowledged cut, including its original source evidence."""
         self._verify();now=self._now()
         with self.images.transaction(readonly=True) as tx:
             value=self._image(tx.read());head=self._accepted(value,now)
             if head!=expected or value['revision']==0:raise ValueError('QD_SOURCE_ARCHIVE_EXPECTED_CURRENT_REQUIRED')
-            packet=strict(body(value['packet']))
+            result=strict(body({'packet':value['packet'],'sources':value['sources']}))
         self._verify()
         if not 0<=self._now()-now<=1:raise ValueError('QD_SOURCE_ARCHIVE_READ_CLOCK_CHANGED')
         self._water=head
-        return packet
+        return result
 
     def publish(self, *, expected, packet, sources):
         self._verify();now=self._now();packet,sources=strict(body(packet)),strict(body(sources))

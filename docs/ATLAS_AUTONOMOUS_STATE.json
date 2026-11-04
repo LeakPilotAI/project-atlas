@@ -1,4 +1,308 @@
 {
+  "aip_01_qd_current_producer_assembly_20261103": {
+  "result": {
+    "status": "AIP_01_COMPLETE_SOURCE_ONLY_DISPOSABLE_ACCEPTANCE",
+    "report": "docs/AIP_01_QD_CURRENT_PRODUCER_ASSEMBLY_2026-11-03.md",
+    "starting_commit": "4404b116cf23fa9f85231c18e84e4aea98dcaee5",
+    "passed": 396,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "new_test_cases": 57,
+    "console_seconds": 15.9,
+    "junit_seconds": "15.861",
+    "junit_sha256": "fb385ce9a5c29bf65603134fde45ab6a6a0115b40e6118846a4e9d3a5809ed44",
+    "suite_modules": 15,
+    "warning": "EXISTING_STARLETTE_HTTPX_TESTCLIENT_DEPRECATION_NO_DEPENDENCY_CHANGE",
+    "focused_prior_passed": 111,
+    "focused_prior_overlaps_final": true,
+    "intermediate_runs": "Initial33pass1testassertionfailurecorrected;restrictedruninterrupted/exited;onebadfilenameno_tests;382/389/395intermediatepassesoverlapfinal396",
+    "evidence_root": "logs/diagnostics/aip-01-current-producer-20261103",
+    "evidence_proof": "logs/diagnostics/aip-01-current-producer-20261103/source-validation-proof.json",
+    "tested_source_sha256": {
+      "backend/app/services/quality_dips_current_producer.py": "df40231497972592d596726167231a9c1f3dff02da16de1fe88a171472e2bc06",
+      "tests/test_quality_dips_current_producer.py": "49caf5a3ca8b294888ce3d1fdf8e4b95e23b6dd8c6666b285265c1942ac0d77c",
+      "backend/app/services/paper_source_publication.py": "68369f93caff4f4682560436b9b166a49323422f9d17695ff528363d59324bd9",
+      "scripts/observation_runtime/personal_research_archive.py": "7ccec8b82b211dedf9b8549c1ff4c33b2cd11ccdb8705340407616e1eba367fe"
+    },
+    "source_domain": "DISPOSABLE_SYNTHETIC_NOT_OPERATIONAL_ACCEPTANCE",
+    "native_image_io": "EXISTING_PROTOCOL_IN_MEMORY_DOUBLE_NOT_WINDOWS_NATIVE_ACCEPTANCE",
+    "free_bundle_end_to_end": "EXISTING_FREE_BUNDLE_READONLY_INGEST_SCANNER_PRODUCER_ARCHIVE_NO_ENTRY",
+    "external_requests": 0,
+    "synthetic_fetch_attempts": 6,
+    "input_provenance": "EXPLICIT_ENROLLMENT_DOMAIN_INPUT_RECEIPT_AND_ORIGINAL_SOURCE_BYTES_RETAINED",
+    "new_strategy_rules": false,
+    "acceptance_contract_changed": false,
+    "completed_audited_milestones": [
+      "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
+    ],
+    "next_audited_milestone": "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+    "old_590_evidence": "RETAINED_NOT_RERUN_OR_ADDED_TO396",
+    "unrelated_test_sha256": "4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb",
+    "process_cleanup": "NORMAL_TEST_COMMAND_COMPLETION_AND_FINAL_READONLY_CIM_NO_MATCHING_TEST_PROCESS",
+    "installed_financial_runtime_connected": false,
+    "operational_publication": false,
+    "financial_activation": false,
+    "account_inception": false,
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "native_acceptance_runs": 0,
+    "browser_navigation": 0,
+    "provider_connections": 0,
+    "v6_retries": 0,
+    "windows_changes": 0,
+    "genesis_access": false,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "historical_gate_promotions": 0
+  },
+  "prior_active_fields": {
+    "last_verified_task": "ATLAS_INTEGRATED_PAPER_COMPLETION_AUDIT_COMPLETE_OPERATIONAL_PAPER_NOT_READY",
+    "latest_tests": {
+      "status": "AUDIT_COMPLETE_INTEGRATED_OPERATIONAL_PAPER_NOT_READY",
+      "report": "docs/ATLAS_INTEGRATED_PAPER_COMPLETION_AUDIT_2026-11-03.md",
+      "starting_commit": "2e554bdfbd4a06028975b34b507c485dd8161e57",
+      "work_kind": "READ_ONLY_REPOSITORY_EVIDENCE_AUDIT_DOCUMENTATION_ONLY",
+      "runtime_tests_executed": 0,
+      "recovered_full_suite": {
+        "passed": 590,
+        "failed": 0,
+        "skipped": 0,
+        "sha256": "83ba1e7639b2ee973cf96ab3554d238ca4da3cf225f447e5d3b2842726caafee"
+      },
+      "recovered_overlapping_focused_passed": 24,
+      "historical_gate_counts": {
+        "PASS": 5,
+        "BLOCKED": 13,
+        "NOT_TESTED": 3
+      },
+      "historical_gate_promotions": 0,
+      "personal_authority": "SOLE_LOCAL_OPERATOR_NO_EXTERNAL_REVIEWER_CHAIN",
+      "financial_lanes": [
+        "QUALITY_DIPS_SIMULATED_USD",
+        "HYPERLIQUID_SIMULATED_USDC"
+      ],
+      "operationally_commissioned_lanes_proven": [],
+      "current_account_records_inspected": false,
+      "selector_provenance": "HISTORICAL_UNSELECTED_REVISION_6_NOT_FRESH_REREAD",
+      "acceptance_contract_changed": false,
+      "v6_status": "BLOCKED_UNCHANGED_ACTIVE_THREE_READER_AND_TRUSTED_CHROME_PREREQUISITES",
+      "milestones": [
+        {
+          "id": "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+          "depends_on": [],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+          "depends_on": [
+            "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
+          "depends_on": [
+            "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+            "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
+          "depends_on": [
+            "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY",
+          "depends_on": [
+            "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+            "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+          "depends_on": [
+            "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+            "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+            "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
+            "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
+            "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-07-CHANGED-CAPABILITY-PREFLIGHT",
+          "depends_on": [],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-08-V6-DISPOSABLE-INTEGRATED-REHEARSAL",
+          "depends_on": [
+            "AIP-07-CHANGED-CAPABILITY-PREFLIGHT"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
+          "depends_on": [
+            "AIP-08-V6-DISPOSABLE-INTEGRATED-REHEARSAL"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES",
+          "depends_on": [
+            "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+            "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
+            "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+            "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-11-CURRENT-QD-RESEARCH-AND-IEX-ACCEPTANCE",
+          "depends_on": [
+            "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+            "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-12-FIRST-QD-BOUNDED-PILOT",
+          "depends_on": [
+            "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+            "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
+            "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES",
+            "AIP-11-CURRENT-QD-RESEARCH-AND-IEX-ACCEPTANCE"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-13-HL-DATA-AND-ONCE-ONLY-ENROLLMENT",
+          "depends_on": [
+            "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+            "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+            "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT",
+          "depends_on": [
+            "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+            "AIP-12-FIRST-QD-BOUNDED-PILOT",
+            "AIP-13-HL-DATA-AND-ONCE-ONLY-ENROLLMENT"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-15-NOTIFICATION-AND-MANUAL-WORKFLOW-ACCEPTANCE",
+          "depends_on": [
+            "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY",
+            "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
+            "AIP-12-FIRST-QD-BOUNDED-PILOT",
+            "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-16-CONTINUOUS-LOCAL-RELIABILITY",
+          "depends_on": [
+            "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
+            "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT",
+            "AIP-15-NOTIFICATION-AND-MANUAL-WORKFLOW-ACCEPTANCE"
+          ],
+          "conditional_scope": false
+        },
+        {
+          "id": "AIP-17-CONDITIONAL-INVESTMENT-FINANCIAL-LANE",
+          "depends_on": [
+            "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+            "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+          ],
+          "conditional_scope": true
+        },
+        {
+          "id": "AIP-18-CONDITIONAL-PREDICTION-FINANCIAL-AND-SETTLEMENT-SCOPE",
+          "depends_on": [
+            "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
+            "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
+          ],
+          "conditional_scope": true
+        }
+      ],
+      "estimates_executions": {
+        "qd_first_pilot": {
+          "best": 7,
+          "realistic": [
+            10,
+            15
+          ],
+          "adverse": [
+            20,
+            30
+          ]
+        },
+        "current_two_lane_platform": {
+          "best": 12,
+          "realistic": [
+            20,
+            28
+          ],
+          "adverse": [
+            35,
+            50
+          ]
+        },
+        "including_conditional_financial_scopes": {
+          "best": 14,
+          "realistic": [
+            24,
+            34
+          ],
+          "adverse": [
+            40,
+            60
+          ]
+        },
+        "external_wait": "UNBOUNDED_NO_GUARANTEE"
+      },
+      "next_independent_milestone": "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
+      "documentation_validation": "12_STATIC_DOCUMENTATION_CONSISTENCY_AND_PRESERVATION_CHECKS_PASS_NO_RUNTIME_TEST_EXECUTION",
+      "installed_launches": 0,
+      "selection_mutations": 0,
+      "native_experiments": 0,
+      "browser_navigation": 0,
+      "provider_connections": 0,
+      "financial_actions": 0,
+      "windows_changes": 0,
+      "genesis_access": false,
+      "paper_startup": false,
+      "production": "NO-GO"
+    },
+    "next_eligible_tasks": [
+      "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY SOURCE_ONLY_DISPOSABLE_MOCKS_FUTURE_TASK",
+      "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS SOURCE_ONLY_NO_BROWSER",
+      "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY OFFLINE_FAKE_SENDER_NO_DELIVERY"
+    ],
+    "blocked_tasks": {
+      "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
+      "SUPPLEMENTARY_DIAGNOSTIC": "A2 documentedlisteneronly/GetTcpTable2 couldinvestigate materiallydifferentmethod/context, not replaceoriginalreaders. Needsnarrowexecution scope, no automaticexistingcontractclearance.",
+      "ALTERNATIVE_CONTRACT": "B researchonlynotapproved/implemented/equivalent. Native socket-sharing hasmutation/descriptorlifetime/namespace/supportidentity/Stoprisks; separate soleoperator approvalaftercompleteproposal/disposableequivalence. Existing3readercleanup,45sACK,8sStop untouched.",
+      "TRUSTED_BROWSER": "FreshcatalogonlyIAB2/MCPApps1. Need policycheckedWindowsChromewindow/tabidentity/currentURL/localnavigation/postorigin/render/genuineACK/tabclose. Nativepathrestorationcanqualify; no invented signedURLtokenor mandatoryCDPifnativeworks. No alternatebrowser/screenshot/manualtypedURLsubstitution.",
+      "NEXT_MILESTONE": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1 onlyafterconcretenamedchangedapprovedcapability/environmentcandidateandnarrowauth. No unchangedexperiment/integrated/installedretry.",
+      "PAPER_COMMISSIONING": "Nonfinancialacceptance stillnotfinancialreadiness. Freshclock1000ms120s/currentQDresearch/nativecustody/entitledIEX/instrumentcalendar/dependencies/financialenrollmentonceinception/custodyACK/reconciliation/risk/financialStoprestart/manualworkflow andseparateboundedPAPERstartup required. HistoricalUNSELECTEDr6 only. B1C1D1E1/21decisions7phases/soleoperator preserved.",
+      "INTEGRATED_PAPER_COMPLETION": "Current source producers/native custody/installed assembly and financial acceptance incomplete; see audited18milestone plan. No account balance or current provider entitlement asserted.",
+      "ADDITIONAL_FINANCIAL_COHORTS": "Longterm book defaults10000researchseed/no general exit; prediction preevent != settlement. Explicit approved model/allocation needed; retired equity worker stays retired.",
+      "CURRENT_TASK_BOUNDARY": "STOP after read-only audit/documentation checkpoint; no implementation or operational execution under this task."
+    },
+    "exact_next_action": "STOP_AFTER_AUDIT_DOCUMENTATION_COMMIT_PUSH_REMOTE_VERIFY. Next engineering milestone AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY uses source-only/disposable fixtures; no provider, operational publication, installed launch or activation. V6 waiting only on materially changed approved capabilities."
+  }
+},
   "atlas_integrated_paper_completion_audit_20261103": {
   "audit": {
     "status": "AUDIT_COMPLETE_INTEGRATED_OPERATIONAL_PAPER_NOT_READY",
@@ -10962,11 +11266,11 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "ATLAS_INTEGRATED_PAPER_COMPLETION_AUDIT_COMPLETE_OPERATIONAL_PAPER_NOT_READY",
+  "last_verified_task": "AIP_01_QD_CURRENT_PRODUCER_ASSEMBLY_COMPLETE_SOURCE_ONLY",
   "next_eligible_tasks": [
-  "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY SOURCE_ONLY_DISPOSABLE_MOCKS_FUTURE_TASK",
-  "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS SOURCE_ONLY_NO_BROWSER",
-  "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY OFFLINE_FAKE_SENDER_NO_DELIVERY"
+  "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY SOURCE_ONLY_DISPOSABLE_NO_PROVIDER_OR_ACCOUNT",
+  "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS SOURCE_ONLY_NO_INSTALLED_BROWSER",
+  "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY OFFLINE_FAKE_SENDER_ONLY"
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -10975,238 +11279,69 @@
   "TRUSTED_BROWSER": "FreshcatalogonlyIAB2/MCPApps1. Need policycheckedWindowsChromewindow/tabidentity/currentURL/localnavigation/postorigin/render/genuineACK/tabclose. Nativepathrestorationcanqualify; no invented signedURLtokenor mandatoryCDPifnativeworks. No alternatebrowser/screenshot/manualtypedURLsubstitution.",
   "NEXT_MILESTONE": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1 onlyafterconcretenamedchangedapprovedcapability/environmentcandidateandnarrowauth. No unchangedexperiment/integrated/installedretry.",
   "PAPER_COMMISSIONING": "Nonfinancialacceptance stillnotfinancialreadiness. Freshclock1000ms120s/currentQDresearch/nativecustody/entitledIEX/instrumentcalendar/dependencies/financialenrollmentonceinception/custodyACK/reconciliation/risk/financialStoprestart/manualworkflow andseparateboundedPAPERstartup required. HistoricalUNSELECTEDr6 only. B1C1D1E1/21decisions7phases/soleoperator preserved.",
-  "INTEGRATED_PAPER_COMPLETION": "Current source producers/native custody/installed assembly and financial acceptance incomplete; see audited18milestone plan. No account balance or current provider entitlement asserted.",
+  "INTEGRATED_PAPER_COMPLETION": "AIP01source/disposableproducerDONE. Actual acceptedcurrentresearch/sourceauthority/nativepublicationenrollment,installedfinancialassembly,operationalB1C1D1E1andpilotremainincomplete. Newcurrentauthority/marketfreshnessnotasserted.",
   "ADDITIONAL_FINANCIAL_COHORTS": "Longterm book defaults10000researchseed/no general exit; prediction preevent != settlement. Explicit approved model/allocation needed; retired equity worker stays retired.",
-  "CURRENT_TASK_BOUNDARY": "STOP after read-only audit/documentation checkpoint; no implementation or operational execution under this task."
+  "CURRENT_TASK_BOUNDARY": "STOP after AIP01implementation/validation/docs/commit/pushremoteverify. NextAIP02sourceonly; no automaticinstalled/native/provider/financialexecution.",
+  "INSTALLED_SOURCE_PARITY": "AIP01newproducerandpublisher/archivechangesnotinstalled. Futureexplicitmanifest/pinreviewandimmutablepromotionrequired; frozenapplication/support/selectoruntouched."
 },
   "latest_tests": {
-  "status": "AUDIT_COMPLETE_INTEGRATED_OPERATIONAL_PAPER_NOT_READY",
-  "report": "docs/ATLAS_INTEGRATED_PAPER_COMPLETION_AUDIT_2026-11-03.md",
-  "starting_commit": "2e554bdfbd4a06028975b34b507c485dd8161e57",
-  "work_kind": "READ_ONLY_REPOSITORY_EVIDENCE_AUDIT_DOCUMENTATION_ONLY",
-  "runtime_tests_executed": 0,
-  "recovered_full_suite": {
-    "passed": 590,
-    "failed": 0,
-    "skipped": 0,
-    "sha256": "83ba1e7639b2ee973cf96ab3554d238ca4da3cf225f447e5d3b2842726caafee"
+  "status": "AIP_01_COMPLETE_SOURCE_ONLY_DISPOSABLE_ACCEPTANCE",
+  "report": "docs/AIP_01_QD_CURRENT_PRODUCER_ASSEMBLY_2026-11-03.md",
+  "starting_commit": "4404b116cf23fa9f85231c18e84e4aea98dcaee5",
+  "passed": 396,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "new_test_cases": 57,
+  "console_seconds": 15.9,
+  "junit_seconds": "15.861",
+  "junit_sha256": "fb385ce9a5c29bf65603134fde45ab6a6a0115b40e6118846a4e9d3a5809ed44",
+  "suite_modules": 15,
+  "warning": "EXISTING_STARLETTE_HTTPX_TESTCLIENT_DEPRECATION_NO_DEPENDENCY_CHANGE",
+  "focused_prior_passed": 111,
+  "focused_prior_overlaps_final": true,
+  "intermediate_runs": "Initial33pass1testassertionfailurecorrected;restrictedruninterrupted/exited;onebadfilenameno_tests;382/389/395intermediatepassesoverlapfinal396",
+  "evidence_root": "logs/diagnostics/aip-01-current-producer-20261103",
+  "evidence_proof": "logs/diagnostics/aip-01-current-producer-20261103/source-validation-proof.json",
+  "tested_source_sha256": {
+    "backend/app/services/quality_dips_current_producer.py": "df40231497972592d596726167231a9c1f3dff02da16de1fe88a171472e2bc06",
+    "tests/test_quality_dips_current_producer.py": "49caf5a3ca8b294888ce3d1fdf8e4b95e23b6dd8c6666b285265c1942ac0d77c",
+    "backend/app/services/paper_source_publication.py": "68369f93caff4f4682560436b9b166a49323422f9d17695ff528363d59324bd9",
+    "scripts/observation_runtime/personal_research_archive.py": "7ccec8b82b211dedf9b8549c1ff4c33b2cd11ccdb8705340407616e1eba367fe"
   },
-  "recovered_overlapping_focused_passed": 24,
-  "historical_gate_counts": {
-    "PASS": 5,
-    "BLOCKED": 13,
-    "NOT_TESTED": 3
-  },
-  "historical_gate_promotions": 0,
-  "personal_authority": "SOLE_LOCAL_OPERATOR_NO_EXTERNAL_REVIEWER_CHAIN",
-  "financial_lanes": [
-    "QUALITY_DIPS_SIMULATED_USD",
-    "HYPERLIQUID_SIMULATED_USDC"
-  ],
-  "operationally_commissioned_lanes_proven": [],
-  "current_account_records_inspected": false,
-  "selector_provenance": "HISTORICAL_UNSELECTED_REVISION_6_NOT_FRESH_REREAD",
+  "source_domain": "DISPOSABLE_SYNTHETIC_NOT_OPERATIONAL_ACCEPTANCE",
+  "native_image_io": "EXISTING_PROTOCOL_IN_MEMORY_DOUBLE_NOT_WINDOWS_NATIVE_ACCEPTANCE",
+  "free_bundle_end_to_end": "EXISTING_FREE_BUNDLE_READONLY_INGEST_SCANNER_PRODUCER_ARCHIVE_NO_ENTRY",
+  "external_requests": 0,
+  "synthetic_fetch_attempts": 6,
+  "input_provenance": "EXPLICIT_ENROLLMENT_DOMAIN_INPUT_RECEIPT_AND_ORIGINAL_SOURCE_BYTES_RETAINED",
+  "new_strategy_rules": false,
   "acceptance_contract_changed": false,
-  "v6_status": "BLOCKED_UNCHANGED_ACTIVE_THREE_READER_AND_TRUSTED_CHROME_PREREQUISITES",
-  "milestones": [
-    {
-      "id": "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
-      "depends_on": [],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
-      "depends_on": [
-        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
-      "depends_on": [
-        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
-        "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
-      "depends_on": [
-        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY",
-      "depends_on": [
-        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
-        "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
-      "depends_on": [
-        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
-        "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
-        "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
-        "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
-        "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-07-CHANGED-CAPABILITY-PREFLIGHT",
-      "depends_on": [],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-08-V6-DISPOSABLE-INTEGRATED-REHEARSAL",
-      "depends_on": [
-        "AIP-07-CHANGED-CAPABILITY-PREFLIGHT"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
-      "depends_on": [
-        "AIP-08-V6-DISPOSABLE-INTEGRATED-REHEARSAL"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES",
-      "depends_on": [
-        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
-        "AIP-04-DASHBOARD-READ-MODEL-CONTRACTS",
-        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
-        "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-11-CURRENT-QD-RESEARCH-AND-IEX-ACCEPTANCE",
-      "depends_on": [
-        "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
-        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-12-FIRST-QD-BOUNDED-PILOT",
-      "depends_on": [
-        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
-        "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
-        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES",
-        "AIP-11-CURRENT-QD-RESEARCH-AND-IEX-ACCEPTANCE"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-13-HL-DATA-AND-ONCE-ONLY-ENROLLMENT",
-      "depends_on": [
-        "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
-        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
-        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT",
-      "depends_on": [
-        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
-        "AIP-12-FIRST-QD-BOUNDED-PILOT",
-        "AIP-13-HL-DATA-AND-ONCE-ONLY-ENROLLMENT"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-15-NOTIFICATION-AND-MANUAL-WORKFLOW-ACCEPTANCE",
-      "depends_on": [
-        "AIP-05-DISCORD-COMMITTED-EVENT-RECOVERY",
-        "AIP-09-INSTALLED-NONFINANCIAL-ACCEPTANCE",
-        "AIP-12-FIRST-QD-BOUNDED-PILOT",
-        "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-16-CONTINUOUS-LOCAL-RELIABILITY",
-      "depends_on": [
-        "AIP-03-CONTINUATION-OPERATIONAL-BOUNDARY",
-        "AIP-14-BOUNDED-REAL-TWO-LANE-PILOT",
-        "AIP-15-NOTIFICATION-AND-MANUAL-WORKFLOW-ACCEPTANCE"
-      ],
-      "conditional_scope": false
-    },
-    {
-      "id": "AIP-17-CONDITIONAL-INVESTMENT-FINANCIAL-LANE",
-      "depends_on": [
-        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
-        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
-      ],
-      "conditional_scope": true
-    },
-    {
-      "id": "AIP-18-CONDITIONAL-PREDICTION-FINANCIAL-AND-SETTLEMENT-SCOPE",
-      "depends_on": [
-        "AIP-06-COMPOSED-ACCOUNTING-RISK-RECOVERY",
-        "AIP-10-EXACT-FINANCIAL-RELEASE-AND-RESOURCES"
-      ],
-      "conditional_scope": true
-    }
+  "completed_audited_milestones": [
+    "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY"
   ],
-  "estimates_executions": {
-    "qd_first_pilot": {
-      "best": 7,
-      "realistic": [
-        10,
-        15
-      ],
-      "adverse": [
-        20,
-        30
-      ]
-    },
-    "current_two_lane_platform": {
-      "best": 12,
-      "realistic": [
-        20,
-        28
-      ],
-      "adverse": [
-        35,
-        50
-      ]
-    },
-    "including_conditional_financial_scopes": {
-      "best": 14,
-      "realistic": [
-        24,
-        34
-      ],
-      "adverse": [
-        40,
-        60
-      ]
-    },
-    "external_wait": "UNBOUNDED_NO_GUARANTEE"
-  },
-  "next_independent_milestone": "AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY",
-  "documentation_validation": "12_STATIC_DOCUMENTATION_CONSISTENCY_AND_PRESERVATION_CHECKS_PASS_NO_RUNTIME_TEST_EXECUTION",
+  "next_audited_milestone": "AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY",
+  "old_590_evidence": "RETAINED_NOT_RERUN_OR_ADDED_TO396",
+  "unrelated_test_sha256": "4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb",
+  "process_cleanup": "NORMAL_TEST_COMMAND_COMPLETION_AND_FINAL_READONLY_CIM_NO_MATCHING_TEST_PROCESS",
+  "installed_financial_runtime_connected": false,
+  "operational_publication": false,
+  "financial_activation": false,
+  "account_inception": false,
   "installed_launches": 0,
   "selection_mutations": 0,
-  "native_experiments": 0,
+  "native_acceptance_runs": 0,
   "browser_navigation": 0,
   "provider_connections": 0,
-  "financial_actions": 0,
+  "v6_retries": 0,
   "windows_changes": 0,
   "genesis_access": false,
   "paper_startup": false,
-  "production": "NO-GO"
+  "production": "NO-GO",
+  "historical_gate_promotions": 0
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP_AFTER_AUDIT_DOCUMENTATION_COMMIT_PUSH_REMOTE_VERIFY. Next engineering milestone AIP-01-QD-CURRENT-PRODUCER-ASSEMBLY uses source-only/disposable fixtures; no provider, operational publication, installed launch or activation. V6 waiting only on materially changed approved capabilities.",
+  "exact_next_action": "STOP_AFTER_AIP01_VALIDATED_SOURCE_DOCUMENTATION_COMMIT_NONFORCE_PUSH_REMOTE_VERIFY. Next audited milestone AIP-02-HL-SOURCE-AND-UNIFIED-ASSEMBLY uses source-only/disposable fixtures with actual canonical components, no providers/accounts/installedruntime. AIP04/AIP05independent. V6unchangedenvironmentblocksremain; no oldgrantreuse. PAPERNO/productionNO-GO.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
