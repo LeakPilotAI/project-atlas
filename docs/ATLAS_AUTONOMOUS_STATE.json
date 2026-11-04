@@ -1,4 +1,241 @@
 {
+  "qd_v6_acceptance_evidence_architecture_decision_20261103": {
+  "decision": {
+    "status": "BLOCKED_V6_INTEGRATED_AND_INSTALLED_ACCEPTANCE_ENVIRONMENT_PREREQUISITES",
+    "report": "docs/QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_2026-11-03.md",
+    "starting_commit": "0ddb39085af413690b460389fc8d90b038991da1",
+    "work_kind": "DOCUMENTATION_ONLY_ARCHITECTURE_DECISION",
+    "recommendation": "C1_PRESERVE_EXISTING_CONTRACT_RESOLVE_VERIFIED_ENVIRONMENT_PREREQUISITES",
+    "recommended_path_currently_ready": false,
+    "existing_contract_changed": false,
+    "alternative_contract_approved": false,
+    "alternative_contract_implemented": false,
+    "native_evidence_provenance": "RECOVERED_HASH_VERIFIED_STABLE_RUN_NOT_REPEATED",
+    "recovered_regression_tests": 590,
+    "recovered_regression_failures": 0,
+    "recovered_regression_skipped": 0,
+    "prior_checkpoint_focused_passed": 24,
+    "runtime_tests_rerun": 0,
+    "current_validation": "DOCUMENT_EVIDENCE_AND_PRESERVATION_CHECKS_PASS",
+    "raw_files_hash_verified": 247,
+    "source_files_hash_verified": 5,
+    "v5_source_pins_verified": 155,
+    "windows_os_defect_confirmed": false,
+    "active_three_reader_pass": false,
+    "historical_cleanup": "RECOVERED_PASS_NOT_NEW_RUNTIME_CLEARANCE",
+    "browser_inventory_provenance": "FRESH_READ_ONLY_cua.listBrowsers_IN_ARCHITECTURE_TASK",
+    "browser_providers": [
+      {
+        "id": "2",
+        "name": "ChatGPT in-app browser",
+        "type": "iab",
+        "family": null
+      },
+      {
+        "id": "1",
+        "name": "Codex MCP Apps",
+        "type": "mcpapps",
+        "family": null
+      }
+    ],
+    "trusted_chrome_navigation_demonstrated": false,
+    "separate_signed_url_token_required": false,
+    "options": {
+      "A1": {
+        "classification": "EXISTING_CONTRACT",
+        "feasible_now": false,
+        "effect": "BLOCKED_UNCHANGED_CURRENT_READERS_AND_BROWSER"
+      },
+      "A2": {
+        "classification": "SUPPLEMENTARY_DIAGNOSIS_NOT_REPLACEMENT",
+        "approved_execution_now": false,
+        "estimated_effort": "0.5\u20131.5 engineering days conditional",
+        "effect": "ROOT_CAUSE_INFORMATION_ONLY_NO_AUTOMATIC_PROMOTION"
+      },
+      "B": {
+        "classification": "NEW_ACTIVE_EVIDENCE_CONTRACT_REQUIRES_OPERATOR_APPROVAL",
+        "approved": false,
+        "implemented": false,
+        "estimated_effort": "3\u20135 engineering days plus support packaging/acceptance; equivalence unproven",
+        "risks": [
+          "shared_socket_mutation_capability",
+          "duplicate_keeps_socket_open",
+          "competing_binding_coverage_unproven",
+          "new_support_identity_and_stop_proof"
+        ]
+      },
+      "C1": {
+        "classification": "CONTRACT_PRESERVING_ENVIRONMENT_PATH",
+        "recommended": true,
+        "ready_now": false,
+        "external_resolution_time": "UNKNOWN",
+        "engineering_preflight_effort": "1\u20132 hours per genuinely changed capability",
+        "exact_changes_selected": false
+      },
+      "B2": {
+        "classification": "DIFFERENT_BROWSER_TARGET_CONTRACT_CHANGE",
+        "approved": false,
+        "recommended": false,
+        "estimated_effort": "0.5\u20131.5 engineering days; equivalence/reachability unproven"
+      }
+    },
+    "operator_decisions": [
+      "Provide narrowly approved trusted Chrome tab connection or restore policy-checked native tool path.",
+      "Select a concrete supported native diagnostic/environment candidate; authorize exact system/access change only if needed.",
+      "Approve an alternative contract only after a separate complete technical proposal if current observer restoration proves impractical."
+    ],
+    "next_executable_milestone": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1",
+    "next_milestone_entry_conditions": [
+      "Named genuinely changed approved browser capability and/or concrete materially different native observation/environment candidate",
+      "Exact narrow execution/mutation authorization where required; no unchanged experiment retry"
+    ],
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "integrated_rehearsals": 0,
+    "native_experiments": 0,
+    "browser_navigation": 0,
+    "browser_acknowledgements": 0,
+    "provider_connections": 0,
+    "financial_actions": 0,
+    "windows_time_changes": 0,
+    "genesis_access": false,
+    "paper_startup": false,
+    "production": "NO-GO"
+  },
+  "prior_last_verified_task": "QD_V6_EVIDENCE_GATE_CHECKPOINT_RECOVERED_BLOCKED",
+  "prior_latest_tests": {
+    "status": "BLOCKED_V6_INTEGRATED_REHEARSAL_CHECKPOINT_RECOVERED",
+    "report": "docs/QD_V6_EVIDENCE_GATE_RECOVERY_2026-11-03.md",
+    "starting_commit": "2cc0c8086838875281274d3956d070c3ac82b6eb",
+    "git_before": {
+      "local_head": "2cc0c8086838875281274d3956d070c3ac82b6eb",
+      "remote_branch_sha": "2cc0c8086838875281274d3956d070c3ac82b6eb",
+      "prior_increment_committed": false,
+      "prior_increment_pushed": false
+    },
+    "fresh_offline_audit": {
+      "audit_kind": "FRESH_OFFLINE_ARTIFACT_VERIFICATION_NOT_NATIVE_REMEASUREMENT",
+      "source_files_hash_verified": 5,
+      "raw_files_hash_verified": 247,
+      "v5_source_pins_verified": 155,
+      "v5_fail_consumed_raw_preserved": true,
+      "original_575_test_ids_present": true,
+      "recovered_full_suite": {
+        "tests": 590,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xml_seconds": "37.681",
+        "sha256": "83ba1e7639b2ee973cf96ab3554d238ca4da3cf225f447e5d3b2842726caafee"
+      },
+      "fresh_focused_suite": {
+        "tests": 24,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "xml_seconds": "2.028",
+        "sha256": "c0d2e4fc701d5414d562d6a6946b51fdd5b0a941c9e4f7c4403691471a5da408"
+      },
+      "fresh_focused_console_seconds": 2.27,
+      "offline_recomputed_active_gate": [
+        {
+          "sample": 1,
+          "fresh_offline_validator": "REFUSED",
+          "retained_raw_state": 0
+        },
+        {
+          "sample": 2,
+          "fresh_offline_validator": "REFUSED",
+          "retained_raw_state": 0
+        },
+        {
+          "sample": 3,
+          "fresh_offline_validator": "REFUSED",
+          "retained_raw_state": 0
+        }
+      ],
+      "native_measurements_rerun": false,
+      "native_cleanup_rerun": false,
+      "recovered_native_cleanup_result": "PASS_WITH_HASH_VERIFIED_RETAINED_LOGS_NOT_A_NEW_KERNEL_QUERY",
+      "browser_navigation": false,
+      "unrelated_work_preserved": true,
+      "protected_financial_records_read": false
+    },
+    "full_590_provenance": "RECOVERED_JUNIT_AND_LOGS_NOT_RERUN",
+    "native_listener_measurements_provenance": "RECOVERED_HASH_VERIFIED_ARTIFACTS_NOT_NEW_MEASUREMENTS",
+    "recovered_native_findings": {
+      "stable_observations": 3,
+      "socket": 544,
+      "pid": 13908,
+      "endpoint": "127.0.0.1:64357",
+      "so_acceptconn": 1,
+      "cim_state": 0,
+      "ip_helper_state": 0,
+      "netstat_scoped_rows": 0,
+      "strict_cleanup_pass": true,
+      "cleanup_provenance": "RECOVERED_NOT_RERUN",
+      "active_three_reader_pass": false
+    },
+    "windows_os_defect_confirmed": false,
+    "fresh_browser_inventory": {
+      "source": "read-only cua.listBrowsers tool call in checkpoint recovery",
+      "providers": [
+        {
+          "id": "2",
+          "name": "ChatGPT in-app browser",
+          "type": "iab",
+          "family": null
+        },
+        {
+          "id": "1",
+          "name": "Codex MCP Apps",
+          "type": "mcpapps",
+          "family": null
+        }
+      ],
+      "chrome_extension_or_cdp_registered": false,
+      "trusted_chrome_navigation_tested": false
+    },
+    "supported_supplementary_api_candidates": [
+      "GetExtendedTcpTable TCP_TABLE_OWNER_PID_LISTENER",
+      "GetTcpTable2"
+    ],
+    "supplementary_apis_executed_here": false,
+    "alternative_current_contract_satisfaction_demonstrated": false,
+    "alternative_evidence_contract": "PROPOSAL_ONLY_REQUIRES_SEPARATE_OPERATOR_REVIEW_AUTHORIZATION_AND_EQUIVALENCE_TESTS_NOT_IMPLEMENTED",
+    "existing_three_reader_contract_changed": false,
+    "state_zero_reinterpreted": false,
+    "fresh_lint_format_powershell_parse": "PASS",
+    "native_tests_rerun": 0,
+    "browser_navigation": 0,
+    "integrated_rehearsals": 0,
+    "installed_launches": 0,
+    "selection_mutations": 0,
+    "provider_connections": 0,
+    "financial_actions": 0,
+    "genesis_access": false,
+    "paper_startup": false,
+    "production": "NO-GO",
+    "next_prerequisites": [
+      "Genuine qualifying state/endpoint/owner evidence under unchanged three-reader contract; documented supplemental APIs are untested candidates, not replacements.",
+      "Approved Windows Chrome trusted URL/navigation channel, or restoration of supported native verification; no navigation or safety bypass performed.",
+      "Any alternative active-admission contract requires explicit sole-operator approval after equivalent technical safeguards are specified and tested."
+    ]
+  },
+  "prior_next_eligible_tasks": [
+    "STOP_AFTER_VERIFIED_SOURCE_CHECKPOINT_COMMIT_NONFORCE_PUSH_REMOTE_COMPARE",
+    "SUPPLEMENTAL_OBSERVATION_OR_ALTERNATIVE_CONTRACT_AND_TRUSTED_CHROME_PREREQUISITES_REQUIRE_SEPARATE_SCOPE"
+  ],
+  "prior_blocked_tasks": {
+    "SOCKET_EVIDENCE": "Recovered stable3cuts retainedhandle544/PID13908/127.0.0.1:64357 SO_ACCEPTCONN1; CIM/IPHelperrawState0/netstatomission.247rawhashes freshlyverified and originalvalidatorrecomputedREFUSED3/3 offline; no freshnativequery. ExactOScomponentcauseunproven; no confirmedWindowsdefect.",
+    "SUPPORTED_CANDIDATES": "DocumentedGetExtendedTcpTable OWNER_PID_LISTENER andGetTcpTable2 exist, notexecuted/provensufficienthere. Positive supplementaryresultcannotoverride otherreaders; SO1/HTTPalone insufficient. No mechanism demonstratedto satisfyunchangedfullcontract.",
+    "ALTERNATIVE_CONTRACT": "Unapprovedproposalonly: equivalent independentlyverifiable socket/process provenance,exactendpoint/competingbindings,freshness/PIDreuse/refusaltests; preserve3readercleanup/Jobhandles/deadlines. Separate soleoperator reviewauthorization required before applying; no codepolicychange.",
+    "TRUSTED_BROWSER": "FreshreadonlyproviderinventoryagainIAB2/MCPApps1 only, noChromeextension/CDPprovider. Need approvedpolicycheckedWindowsChromeURL/navigation channel orrestorednativepath; no nav/ACK/safetybypass orotherbrowsertargetsubstitution.",
+    "RECOVERED_VALIDATION": "Full590pass0fail0skip recoveredfromJUnit/logs; original575testIDs included. Fresh24pass0fail0skip2.27s +lintformatPSparse. OldstrictcleanupPASS/Job0/handlesclosed/13nosurvivors hashverified logs only, notnewkernelclearance.155V5pinsFAILconsumedraw/unrelated4836test preserved.",
+    "FINANCIAL": "B1C1D1E1/21decisions7phases/history/Genesis restrictions preserved. LastverifiedonlyUNSELECTEDr6 no mutation/currentclock/researchcustody/IEX/accountinception/financialACKacceptance. No installed/integrated/PAPER authority."
+  },
+  "prior_exact_next_action": "STOP after checkpoint-recovery report/archivalroadmap/state/validatedsource-only commit/nonforcepush/remoteSHAcomparison. docs/QD_V6_EVIDENCE_GATE_RECOVERY_2026-11-03.md addendum. V6 integratedrehearsalBLOCKED. Documented supplementaryAPIcandidates untestedhere; no confirmedOSdefect/mandatoryWindowsrepairclaim. Need qualifyingunchanged3readerevidence plusapprovedtrustedWindowsChromeURL/navigation. Any alternativeactive-evidencecontract requires separateoperatorapproval/equivalencetests, notsilentweaken. No newnative/browsernav/installedselection/rehearsal/account/provider/Genesis actions. PAPERNO/productionNO-GO."
+},
   "qd_v6_evidence_gate_checkpoint_recovery_20261103": {
   "evidence": {
     "status": "BLOCKED_V6_INTEGRATED_REHEARSAL_CHECKPOINT_RECOVERED",
@@ -10379,140 +10616,123 @@
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
   "active_task": "QD_PERSONAL_COMMISSIONING_BINDINGS_AND_CURRENT_RESEARCH",
-  "last_verified_task": "QD_V6_EVIDENCE_GATE_CHECKPOINT_RECOVERED_BLOCKED",
+  "last_verified_task": "QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_BLOCKED",
   "next_eligible_tasks": [
-  "STOP_AFTER_VERIFIED_SOURCE_CHECKPOINT_COMMIT_NONFORCE_PUSH_REMOTE_COMPARE",
-  "SUPPLEMENTAL_OBSERVATION_OR_ALTERNATIVE_CONTRACT_AND_TRUSTED_CHROME_PREREQUISITES_REQUIRE_SEPARATE_SCOPE"
+  "STOP_AFTER_DOCUMENTED_DECISION_ARCHIVE_COMMIT_PUSH_REMOTE_VERIFY",
+  "WAIT_FOR_NAMED_CHANGED_CAPABILITY_OR_SEPARATELY_APPROVED_EQUIVALENT_CONTRACT_DESIGN"
 ],
   "blocked_tasks": {
-  "SOCKET_EVIDENCE": "Recovered stable3cuts retainedhandle544/PID13908/127.0.0.1:64357 SO_ACCEPTCONN1; CIM/IPHelperrawState0/netstatomission.247rawhashes freshlyverified and originalvalidatorrecomputedREFUSED3/3 offline; no freshnativequery. ExactOScomponentcauseunproven; no confirmedWindowsdefect.",
-  "SUPPORTED_CANDIDATES": "DocumentedGetExtendedTcpTable OWNER_PID_LISTENER andGetTcpTable2 exist, notexecuted/provensufficienthere. Positive supplementaryresultcannotoverride otherreaders; SO1/HTTPalone insufficient. No mechanism demonstratedto satisfyunchangedfullcontract.",
-  "ALTERNATIVE_CONTRACT": "Unapprovedproposalonly: equivalent independentlyverifiable socket/process provenance,exactendpoint/competingbindings,freshness/PIDreuse/refusaltests; preserve3readercleanup/Jobhandles/deadlines. Separate soleoperator reviewauthorization required before applying; no codepolicychange.",
-  "TRUSTED_BROWSER": "FreshreadonlyproviderinventoryagainIAB2/MCPApps1 only, noChromeextension/CDPprovider. Need approvedpolicycheckedWindowsChromeURL/navigation channel orrestorednativepath; no nav/ACK/safetybypass orotherbrowsertargetsubstitution.",
-  "RECOVERED_VALIDATION": "Full590pass0fail0skip recoveredfromJUnit/logs; original575testIDs included. Fresh24pass0fail0skip2.27s +lintformatPSparse. OldstrictcleanupPASS/Job0/handlesclosed/13nosurvivors hashverified logs only, notnewkernelclearance.155V5pinsFAILconsumedraw/unrelated4836test preserved.",
-  "FINANCIAL": "B1C1D1E1/21decisions7phases/history/Genesis restrictions preserved. LastverifiedonlyUNSELECTEDr6 no mutation/currentclock/researchcustody/IEX/accountinception/financialACKacceptance. No installed/integrated/PAPER authority."
+  "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
+  "SUPPLEMENTARY_DIAGNOSTIC": "A2 documentedlisteneronly/GetTcpTable2 couldinvestigate materiallydifferentmethod/context, not replaceoriginalreaders. Needsnarrowexecution scope, no automaticexistingcontractclearance.",
+  "ALTERNATIVE_CONTRACT": "B researchonlynotapproved/implemented/equivalent. Native socket-sharing hasmutation/descriptorlifetime/namespace/supportidentity/Stoprisks; separate soleoperator approvalaftercompleteproposal/disposableequivalence. Existing3readercleanup,45sACK,8sStop untouched.",
+  "TRUSTED_BROWSER": "FreshcatalogonlyIAB2/MCPApps1. Need policycheckedWindowsChromewindow/tabidentity/currentURL/localnavigation/postorigin/render/genuineACK/tabclose. Nativepathrestorationcanqualify; no invented signedURLtokenor mandatoryCDPifnativeworks. No alternatebrowser/screenshot/manualtypedURLsubstitution.",
+  "NEXT_MILESTONE": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1 onlyafterconcretenamedchangedapprovedcapability/environmentcandidateandnarrowauth. No unchangedexperiment/integrated/installedretry.",
+  "PAPER_COMMISSIONING": "Nonfinancialacceptance stillnotfinancialreadiness. Freshclock1000ms120s/currentQDresearch/nativecustody/entitledIEX/instrumentcalendar/dependencies/financialenrollmentonceinception/custodyACK/reconciliation/risk/financialStoprestart/manualworkflow andseparateboundedPAPERstartup required. HistoricalUNSELECTEDr6 only. B1C1D1E1/21decisions7phases/soleoperator preserved."
 },
   "latest_tests": {
-  "status": "BLOCKED_V6_INTEGRATED_REHEARSAL_CHECKPOINT_RECOVERED",
-  "report": "docs/QD_V6_EVIDENCE_GATE_RECOVERY_2026-11-03.md",
-  "starting_commit": "2cc0c8086838875281274d3956d070c3ac82b6eb",
-  "git_before": {
-    "local_head": "2cc0c8086838875281274d3956d070c3ac82b6eb",
-    "remote_branch_sha": "2cc0c8086838875281274d3956d070c3ac82b6eb",
-    "prior_increment_committed": false,
-    "prior_increment_pushed": false
-  },
-  "fresh_offline_audit": {
-    "audit_kind": "FRESH_OFFLINE_ARTIFACT_VERIFICATION_NOT_NATIVE_REMEASUREMENT",
-    "source_files_hash_verified": 5,
-    "raw_files_hash_verified": 247,
-    "v5_source_pins_verified": 155,
-    "v5_fail_consumed_raw_preserved": true,
-    "original_575_test_ids_present": true,
-    "recovered_full_suite": {
-      "tests": 590,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0,
-      "xml_seconds": "37.681",
-      "sha256": "83ba1e7639b2ee973cf96ab3554d238ca4da3cf225f447e5d3b2842726caafee"
-    },
-    "fresh_focused_suite": {
-      "tests": 24,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0,
-      "xml_seconds": "2.028",
-      "sha256": "c0d2e4fc701d5414d562d6a6946b51fdd5b0a941c9e4f7c4403691471a5da408"
-    },
-    "fresh_focused_console_seconds": 2.27,
-    "offline_recomputed_active_gate": [
-      {
-        "sample": 1,
-        "fresh_offline_validator": "REFUSED",
-        "retained_raw_state": 0
-      },
-      {
-        "sample": 2,
-        "fresh_offline_validator": "REFUSED",
-        "retained_raw_state": 0
-      },
-      {
-        "sample": 3,
-        "fresh_offline_validator": "REFUSED",
-        "retained_raw_state": 0
-      }
-    ],
-    "native_measurements_rerun": false,
-    "native_cleanup_rerun": false,
-    "recovered_native_cleanup_result": "PASS_WITH_HASH_VERIFIED_RETAINED_LOGS_NOT_A_NEW_KERNEL_QUERY",
-    "browser_navigation": false,
-    "unrelated_work_preserved": true,
-    "protected_financial_records_read": false
-  },
-  "full_590_provenance": "RECOVERED_JUNIT_AND_LOGS_NOT_RERUN",
-  "native_listener_measurements_provenance": "RECOVERED_HASH_VERIFIED_ARTIFACTS_NOT_NEW_MEASUREMENTS",
-  "recovered_native_findings": {
-    "stable_observations": 3,
-    "socket": 544,
-    "pid": 13908,
-    "endpoint": "127.0.0.1:64357",
-    "so_acceptconn": 1,
-    "cim_state": 0,
-    "ip_helper_state": 0,
-    "netstat_scoped_rows": 0,
-    "strict_cleanup_pass": true,
-    "cleanup_provenance": "RECOVERED_NOT_RERUN",
-    "active_three_reader_pass": false
-  },
+  "status": "BLOCKED_V6_INTEGRATED_AND_INSTALLED_ACCEPTANCE_ENVIRONMENT_PREREQUISITES",
+  "report": "docs/QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_2026-11-03.md",
+  "starting_commit": "0ddb39085af413690b460389fc8d90b038991da1",
+  "work_kind": "DOCUMENTATION_ONLY_ARCHITECTURE_DECISION",
+  "recommendation": "C1_PRESERVE_EXISTING_CONTRACT_RESOLVE_VERIFIED_ENVIRONMENT_PREREQUISITES",
+  "recommended_path_currently_ready": false,
+  "existing_contract_changed": false,
+  "alternative_contract_approved": false,
+  "alternative_contract_implemented": false,
+  "native_evidence_provenance": "RECOVERED_HASH_VERIFIED_STABLE_RUN_NOT_REPEATED",
+  "recovered_regression_tests": 590,
+  "recovered_regression_failures": 0,
+  "recovered_regression_skipped": 0,
+  "prior_checkpoint_focused_passed": 24,
+  "runtime_tests_rerun": 0,
+  "current_validation": "DOCUMENT_EVIDENCE_AND_PRESERVATION_CHECKS_PASS",
+  "raw_files_hash_verified": 247,
+  "source_files_hash_verified": 5,
+  "v5_source_pins_verified": 155,
   "windows_os_defect_confirmed": false,
-  "fresh_browser_inventory": {
-    "source": "read-only cua.listBrowsers tool call in checkpoint recovery",
-    "providers": [
-      {
-        "id": "2",
-        "name": "ChatGPT in-app browser",
-        "type": "iab",
-        "family": null
-      },
-      {
-        "id": "1",
-        "name": "Codex MCP Apps",
-        "type": "mcpapps",
-        "family": null
-      }
-    ],
-    "chrome_extension_or_cdp_registered": false,
-    "trusted_chrome_navigation_tested": false
-  },
-  "supported_supplementary_api_candidates": [
-    "GetExtendedTcpTable TCP_TABLE_OWNER_PID_LISTENER",
-    "GetTcpTable2"
+  "active_three_reader_pass": false,
+  "historical_cleanup": "RECOVERED_PASS_NOT_NEW_RUNTIME_CLEARANCE",
+  "browser_inventory_provenance": "FRESH_READ_ONLY_cua.listBrowsers_IN_ARCHITECTURE_TASK",
+  "browser_providers": [
+    {
+      "id": "2",
+      "name": "ChatGPT in-app browser",
+      "type": "iab",
+      "family": null
+    },
+    {
+      "id": "1",
+      "name": "Codex MCP Apps",
+      "type": "mcpapps",
+      "family": null
+    }
   ],
-  "supplementary_apis_executed_here": false,
-  "alternative_current_contract_satisfaction_demonstrated": false,
-  "alternative_evidence_contract": "PROPOSAL_ONLY_REQUIRES_SEPARATE_OPERATOR_REVIEW_AUTHORIZATION_AND_EQUIVALENCE_TESTS_NOT_IMPLEMENTED",
-  "existing_three_reader_contract_changed": false,
-  "state_zero_reinterpreted": false,
-  "fresh_lint_format_powershell_parse": "PASS",
-  "native_tests_rerun": 0,
-  "browser_navigation": 0,
-  "integrated_rehearsals": 0,
+  "trusted_chrome_navigation_demonstrated": false,
+  "separate_signed_url_token_required": false,
+  "options": {
+    "A1": {
+      "classification": "EXISTING_CONTRACT",
+      "feasible_now": false,
+      "effect": "BLOCKED_UNCHANGED_CURRENT_READERS_AND_BROWSER"
+    },
+    "A2": {
+      "classification": "SUPPLEMENTARY_DIAGNOSIS_NOT_REPLACEMENT",
+      "approved_execution_now": false,
+      "estimated_effort": "0.5\u20131.5 engineering days conditional",
+      "effect": "ROOT_CAUSE_INFORMATION_ONLY_NO_AUTOMATIC_PROMOTION"
+    },
+    "B": {
+      "classification": "NEW_ACTIVE_EVIDENCE_CONTRACT_REQUIRES_OPERATOR_APPROVAL",
+      "approved": false,
+      "implemented": false,
+      "estimated_effort": "3\u20135 engineering days plus support packaging/acceptance; equivalence unproven",
+      "risks": [
+        "shared_socket_mutation_capability",
+        "duplicate_keeps_socket_open",
+        "competing_binding_coverage_unproven",
+        "new_support_identity_and_stop_proof"
+      ]
+    },
+    "C1": {
+      "classification": "CONTRACT_PRESERVING_ENVIRONMENT_PATH",
+      "recommended": true,
+      "ready_now": false,
+      "external_resolution_time": "UNKNOWN",
+      "engineering_preflight_effort": "1\u20132 hours per genuinely changed capability",
+      "exact_changes_selected": false
+    },
+    "B2": {
+      "classification": "DIFFERENT_BROWSER_TARGET_CONTRACT_CHANGE",
+      "approved": false,
+      "recommended": false,
+      "estimated_effort": "0.5\u20131.5 engineering days; equivalence/reachability unproven"
+    }
+  },
+  "operator_decisions": [
+    "Provide narrowly approved trusted Chrome tab connection or restore policy-checked native tool path.",
+    "Select a concrete supported native diagnostic/environment candidate; authorize exact system/access change only if needed.",
+    "Approve an alternative contract only after a separate complete technical proposal if current observer restoration proves impractical."
+  ],
+  "next_executable_milestone": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1",
+  "next_milestone_entry_conditions": [
+    "Named genuinely changed approved browser capability and/or concrete materially different native observation/environment candidate",
+    "Exact narrow execution/mutation authorization where required; no unchanged experiment retry"
+  ],
   "installed_launches": 0,
   "selection_mutations": 0,
+  "integrated_rehearsals": 0,
+  "native_experiments": 0,
+  "browser_navigation": 0,
+  "browser_acknowledgements": 0,
   "provider_connections": 0,
   "financial_actions": 0,
+  "windows_time_changes": 0,
   "genesis_access": false,
   "paper_startup": false,
-  "production": "NO-GO",
-  "next_prerequisites": [
-    "Genuine qualifying state/endpoint/owner evidence under unchanged three-reader contract; documented supplemental APIs are untested candidates, not replacements.",
-    "Approved Windows Chrome trusted URL/navigation channel, or restoration of supported native verification; no navigation or safety bypass performed.",
-    "Any alternative active-admission contract requires explicit sole-operator approval after equivalent technical safeguards are specified and tested."
-  ]
+  "production": "NO-GO"
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP after checkpoint-recovery report/archivalroadmap/state/validatedsource-only commit/nonforcepush/remoteSHAcomparison. docs/QD_V6_EVIDENCE_GATE_RECOVERY_2026-11-03.md addendum. V6 integratedrehearsalBLOCKED. Documented supplementaryAPIcandidates untestedhere; no confirmedOSdefect/mandatoryWindowsrepairclaim. Need qualifyingunchanged3readerevidence plusapprovedtrustedWindowsChromeURL/navigation. Any alternativeactive-evidencecontract requires separateoperatorapproval/equivalencetests, notsilentweaken. No newnative/browsernav/installedselection/rehearsal/account/provider/Genesis actions. PAPERNO/productionNO-GO.",
+  "exact_next_action": "STOP after architecturedecisionreport/archive/state/validateddocumentation-onlycommitnonforcepushremoteSHAverify. docs/QD_V6_ACCEPTANCE_EVIDENCE_ARCHITECTURE_DECISION_2026-11-03.md recommendsC1unchangedcontract/environmentcapabilityresolution, currentlyBLOCKED. No approvedautomaticalternativecontract/Windowsrepair/browserenrollment/installedlaunch/selection/integratedrehearsal. Nextchangedcapabilitypreflightonlywithconcretenewcandidateandrequirednarrowauthorization. PAPERNO/productionNO-GO.",
   "latest_focused_tests": {
   "passed": 281,
   "failed": 0,
