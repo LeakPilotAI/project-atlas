@@ -288,7 +288,7 @@ class ChildRuntime:
     def _source(self, path, expected):
         need(
             type(path) is str
-            and path.startswith("D:\\")
+            and ntpath.splitdrive(path)[0].casefold() == 'd:'
             and ntpath.normpath(path) == path,
             "CHILD_EXACT_D_SOURCE_PATH",
         )

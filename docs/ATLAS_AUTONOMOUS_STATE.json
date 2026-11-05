@@ -1,4 +1,371 @@
 {
+  "aip_06_physical_path_completion_20261104": {
+  "result": {
+    "base_commit": "59843c6db84462758c4570a6e6b96018b62e4061",
+    "status": "SOURCE_INTEGRATION_BLOCKED_PHYSICAL_IPC_GLOBAL_GRAPH_AND_FULL_PROBES",
+    "report": "docs/AIP_06_PHYSICAL_PATH_COMPLETION_2026-11-04.md",
+    "passed_distinct": 1767,
+    "single_combined_run": false,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected_native_launch_cases": 5,
+    "new_python_cases": 51,
+    "preserved_prior_case_ids": 1716,
+    "broader": {
+      "passed": 1765,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 5,
+      "modules": 71,
+      "junit": "logs/diagnostics/aip-06-physical-path-20261104/verified-final2.xml",
+      "sha256": "9e0075e4a6d73186ec12aa05c5b474c864c29b3bd22924f920cc70adf10df88f"
+    },
+    "final_focused": {
+      "passed": 529,
+      "failed": 0,
+      "skipped": 0,
+      "modules": 8,
+      "junit": "logs/diagnostics/aip-06-physical-path-20261104/focused-final.xml",
+      "sha256": "a6dd2f207c6cc01bd71f1d3eecb357662cd76f31ce06486422b39fada6ab6c0b",
+      "overlaps_broader": 527,
+      "new_after_broader": 2
+    },
+    "differential_validation": "Only suspended graph helper and its tests changed after broader run; final focused run supersedes those cases and covers all native harness/session/query/probe/Stop interop modules. All other tested source byte pins unchanged.",
+    "node": {
+      "passed": 42,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "standalone_poll_contract": "PASS_SEPARATE_NOT_ADDED",
+    "warnings": [
+      "Existing Starlette/httpx TestClient deprecation",
+      "Existing Discord audioop deprecation"
+    ],
+    "source_files_changed": [
+      "scripts/observation_runtime/aip06_child_entry.py",
+      "scripts/observation_runtime/aip06_cleanup_providers.py",
+      "scripts/observation_runtime/aip06_fixture_guard.py",
+      "scripts/observation_runtime/aip06_job_budget.py",
+      "scripts/observation_runtime/aip06_legacy_entry.py",
+      "scripts/observation_runtime/aip06_legacy_probe.py",
+      "scripts/observation_runtime/aip06_native_controller.py",
+      "scripts/observation_runtime/aip06_native_objects.py",
+      "scripts/observation_runtime/aip06_native_query.py",
+      "scripts/observation_runtime/aip06_native_session.py",
+      "scripts/observation_runtime/aip06_suspended_graph.py",
+      "scripts/observation_runtime/aip06_windows_process.py",
+      "tests/test_aip06_physical_path.py",
+      "tests/test_aip06_suspended_graph.py"
+    ],
+    "source_pins": {
+      "scripts/observation_runtime/aip06_child_entry.py": "6489e1c335e4fdf4ab6d013eadfb8e75fd4c5bf19184f66bcbe0523a85d98715",
+      "scripts/observation_runtime/aip06_cleanup_providers.py": "1b9b24848b9f9eaff91c78530bd9d70b1533f75dddeb7757bbae64e82d169e5f",
+      "scripts/observation_runtime/aip06_fixture_guard.py": "d4d37c9e8e8409f7cc8f849364678353e9e89d3fb8329048c764566779aa4453",
+      "scripts/observation_runtime/aip06_job_budget.py": "94fbd893895a4765098610c23b5eb544c8eb6b267bc186d8e8e16ca8e013aa4b",
+      "scripts/observation_runtime/aip06_legacy_entry.py": "5c02a840acad881f20678f76de04e23b9d5207d4f3971584143a4d5591f13150",
+      "scripts/observation_runtime/aip06_legacy_probe.py": "12ac00baeca894f2d09af776b795fd53ff7e06225de06123ab80b3a09d84be22",
+      "scripts/observation_runtime/aip06_native_controller.py": "dad1ec2f7075d9ddf2bb43b491f96351515547d32e00334c6651907c6c571690",
+      "scripts/observation_runtime/aip06_native_objects.py": "04833d9a0950ecf510092e7bafe1bab96770a7ec98e5700e92c37b19cf283265",
+      "scripts/observation_runtime/aip06_native_query.py": "abc293a1d6c3f6edd6b35fe1a4e02eaafe5174f978811e77cf0df478e250181c",
+      "scripts/observation_runtime/aip06_native_session.py": "f5dfecbd902cc42ad632bdcccd3729de3d15d366090f22bd48028a32c5425c82",
+      "scripts/observation_runtime/aip06_suspended_graph.py": "57187701324bc44e0bd336a3dd46ef8303d32d39a77b21db1175e0d1a2886f9b",
+      "scripts/observation_runtime/aip06_windows_process.py": "150b39a891ecb38a43aa2b317af7aaee14cb5ac9f4f92a2569207f0f1d01ebee",
+      "tests/test_aip06_physical_path.py": "66cc3c2fcb551e14a4b60f17bff34778b0e110fc57e899df186975e7fa517673",
+      "tests/test_aip06_suspended_graph.py": "5011ed2ad671845fe005cbbe28b88d800fb0aa9e127036cbaea48c98c611b55e"
+    },
+    "boundary_inventory": "docs/AIP_06_PHYSICAL_PATH_BOUNDARIES_2026-11-04.json",
+    "boundary_inventory_sha256": "ed278cb8acb586c5a1c1c0be333a762ee63948023d3276c634060754033191a6",
+    "indexed_source_files": 75,
+    "entry_points": [
+      {
+        "entry": "FixtureGuard._spawn -> WindowsSessionPort.create_suspended",
+        "status": "EXISTING_GUARDED_PATH_PRESERVED",
+        "guard": "prior shared-ledger slots; exact current birth/image/command/parent; native Jobs before bootstrap",
+        "release": "original exit/retained handle cleanup",
+        "remaining": "physical descendant gateway and global roster not connected"
+      },
+      {
+        "entry": "DeclaredDescendants.declare/stage_suspended/resume_staged/import_binding/release -> SuspendedDescendantGraph",
+        "status": "DIRECT_STAGING_IMPLEMENTED_OFFLINE",
+        "guard": "prior launch slot; original parent/process/thread/image/Job duplication; complete raw parent/leaf Jobs; fresh source/request/counts",
+        "release": "normal exit/thread drain before retained duplicate close; no financial or target RELEASE from stage",
+        "remaining": "forwarded recursive graph/private IPC gateway; true backend qualification"
+      },
+      {
+        "entry": "ChildServices.plan / descendant_gateway",
+        "status": "BLOCKED_SOURCE",
+        "guard": "STAGED_DESCENDANT_GATEWAY_REQUIRED_BEFORE_CREATION",
+        "release": "no unsupported descendant launch",
+        "remaining": "concrete gateway is still None; precreation/staged transfer/bootstrap release RPC not connected"
+      },
+      {
+        "entry": "WindowsChildEndpoints.channel.verify / InheritedIdentity.verify / WorkerOwnership",
+        "status": "BLOCKED_SOURCE_FOR_DESCENDANT_GRAPH",
+        "guard": "original complete native leaf roster remains unchanged; no PID filter",
+        "release": "existing original process/Job shutdown",
+        "remaining": "physical forwarding and complete global graph proof; old leaf binding correctly refuses inherited extra member"
+      },
+      {
+        "entry": "NativeController.bind_cleanup -> FixtureGuard.query -> WindowsSessionPort.native_query -> NativeQueryExecutor",
+        "status": "IMPLEMENTED_OFFLINE",
+        "guard": "exact pinned System32 netstat argv/image; prospectively charged process/Job/pipes/output; independent current native/CIM command/birth; <=6s/65536bytes",
+        "release": "actual terminal status/pipe EOF/owned query Job and handle close; unknown remains reserved and failed; no synthetic READY",
+        "remaining": "genuine Windows execution and runtime pin/ACL/dependency qualification under a separate native grant"
+      },
+      {
+        "entry": "WindowsSessionPort.query_result",
+        "status": "IMPLEMENTED_COMPATIBILITY_READBACK",
+        "guard": "exact guarded query role, bounded output and original exit before handle closure",
+        "release": "guarded process close verified",
+        "remaining": "full physical Python query target not qualified; native netstat uses direct executor"
+      },
+      {
+        "entry": "NativeController.bind_legacy_probes/probe_case/verify_probe_result -> LegacyProbeRunner -> LegacyProbeAdapter",
+        "status": "WORKER_PROJECTION_ONLY_OFFLINE",
+        "guard": "exact pinned guarded entry and retained session; unchanged case/nonce/identity/claims/source and real terminal cut",
+        "release": "normal exit/empty Job/current held-capability close evidence",
+        "remaining": "supervisor formal role and unexpected descendant cases refused; full inherited target production not qualified"
+      },
+      {
+        "entry": "OwnedStopAssembly -> GuardedStopCollector -> ThreeReaderCleanup/StrictProcessCleanup -> envelope release -> StopVerification",
+        "status": "THREE_COMPOSED_OFFLINE_SAMPLES_PASS",
+        "guard": "original exact accounting replay/ACK/drain/cash; netstat actual executor path; all three readers then strict process; same8s; all historical IDs in bounded8-identity groups",
+        "release": "complete shared-ledger/envelope closure and cumulative next-sample accounting",
+        "remaining": "full inherited child+descendant IPC+all legacy cases and actual native timings"
+      },
+      {
+        "entry": "Complete physical four-boundary path",
+        "status": "BLOCKED_SOURCE",
+        "guard": "no omitted stage or mock-only actor can become native acceptance",
+        "release": "no installed/PAPER/financial activation permitted",
+        "remaining": "connect exact blocked source entry points; current integration test does not cover full physical child path"
+      }
+    ],
+    "scope_hash": "c6d62af4297d5ff403a4d627e8135f7aefcaefdde467db12b2df1808c26019b6",
+    "canonical_limits": {
+      "seconds": 600,
+      "work_seconds": 540,
+      "entries": 8192,
+      "bytes": 268435456,
+      "stop_entries": 512,
+      "stop_bytes": 33554432,
+      "processes": 8,
+      "private_bytes": 536870912,
+      "child_private_bytes": 268435456,
+      "cpu_ns": 120000000000
+    },
+    "canonical_limits_and_scope_unchanged": true,
+    "native_tests_executed": 0,
+    "native_workers_launched": 0,
+    "native_queries_executed": 0,
+    "all_native_roots_absent": true,
+    "source_integration_complete": false,
+    "native_acceptance": false,
+    "aip06_complete": false,
+    "completed_milestones": 5,
+    "total_milestones": 18,
+    "paper_startup": false,
+    "production": "NO_GO",
+    "native_authorization_consumed": false,
+    "unrelated_research_test_sha256": "4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb"
+  },
+  "prior_active_fields": {
+    "active_task": "AIP-06-REMAINING-NATIVE-SOURCE-CLOSURE",
+    "last_verified_task": "AIP06_BOOTSTRAP_AND_THREE_SAMPLE_ENVELOPE_OFFLINE_VALIDATED_GRAPH_QUERY_PROBE_SOURCE_BLOCKED",
+    "execution_status": "VALIDATED_PARTIAL_SOURCE_CHECKPOINT_REQUIRED_NATIVE_PATHS_DISCONNECTED",
+    "latest_tests": {
+      "base_commit": "b8a9728dfca06357d1db475f298202f335a43ef5",
+      "status": "SOURCE_INTEGRATION_BLOCKED_DESCENDANT_GRAPH_QUERY_PROBE_AND_WHOLE_PATH_QUALIFICATION",
+      "report": "docs/AIP_06_REMAINING_NATIVE_SOURCE_CLOSURE_2026-11-04.md",
+      "passed": 1716,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 5,
+      "modules": 69,
+      "new_python_cases": 33,
+      "preserved_prior_case_ids": 1683,
+      "focused_passed": 478,
+      "focused_is_subset_of_single_final_run": true,
+      "junit": "logs/diagnostics/aip-06-source-closure-20261104/verified-final.xml",
+      "junit_sha256": "30f8c506161ef6b9f2b0d73ad36556200773e3fe556ce048978cf8c6a59fa915",
+      "node": {
+        "passed": 42,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "standalone_poll_contract": "PASS_SEPARATE_NOT_ADDED",
+      "warnings": [
+        "Existing Starlette/httpx TestClient deprecation",
+        "Existing Discord audioop deprecation"
+      ],
+      "source_files_changed": [
+        "scripts/observation_runtime/aip06_bootstrap_lease.py",
+        "scripts/observation_runtime/aip06_child_bootstrap.py",
+        "scripts/observation_runtime/aip06_child_entry.py",
+        "scripts/observation_runtime/aip06_fixture_guard.py",
+        "scripts/observation_runtime/aip06_ipc.py",
+        "scripts/observation_runtime/aip06_job_budget.py",
+        "scripts/observation_runtime/aip06_native_controller.py",
+        "scripts/observation_runtime/aip06_native_objects.py",
+        "scripts/observation_runtime/aip06_native_session.py",
+        "scripts/observation_runtime/aip06_remote_handles.py",
+        "scripts/observation_runtime/aip06_windows_endpoints.py",
+        "scripts/observation_runtime/aip06_windows_io.py",
+        "scripts/observation_runtime/aip06_windows_process.py",
+        "tests/test_aip06_native_session_stop.py",
+        "tests/test_aip06_physical_native_proofs.py",
+        "tests/test_aip06_source_closure.py"
+      ],
+      "source_pins": {
+        "scripts/observation_runtime/aip06_bootstrap_lease.py": "4123fd53c3563a07e7fea243f38d86b913fcec2245fdd55f97e84a775ad2d9c3",
+        "scripts/observation_runtime/aip06_child_bootstrap.py": "21f3cc36283359570fe93e75378f0d2d658bc85ead861234c5258832c65e98e6",
+        "scripts/observation_runtime/aip06_child_entry.py": "0545a6d22c67ad177ad1bab50f6f7610fe678733bfde3d97fcf1e4db2b9f4756",
+        "scripts/observation_runtime/aip06_fixture_guard.py": "7d6273d08c05df784b24977b0b991827daf83a1f22fafe13cbea53c78c6e47b2",
+        "scripts/observation_runtime/aip06_ipc.py": "12305d0386cd6cb68ad9ae913ff44945890f72150a8944d1a0f9d17a56cafebf",
+        "scripts/observation_runtime/aip06_job_budget.py": "77683ef861e992c0dfd4fae8e1877f2465f33f5511aee18095084059cc9fc51d",
+        "scripts/observation_runtime/aip06_native_controller.py": "ecc140857ad7ced62e619340745e67ab989a8cff154a77e83c13828e0d1ba4bf",
+        "scripts/observation_runtime/aip06_native_objects.py": "9bb06dfd41f82d56d42470c49a0d146ca2fdf4fed65c5016c77bf6b22c454212",
+        "scripts/observation_runtime/aip06_native_session.py": "9cf7cb3c9517eab3ce2c73857a073a5cc05fe74bb3836e248d73d100b6e35f08",
+        "scripts/observation_runtime/aip06_remote_handles.py": "f0dd91429a324e83f1b88c2a4bfdbb7f91c8a88a130f5eb620bf14eae3c054a2",
+        "scripts/observation_runtime/aip06_windows_endpoints.py": "3d0b7cbbfc07fe69040558a129e52a56cc38be1b0620a3de213126a4eccdc3ec",
+        "scripts/observation_runtime/aip06_windows_io.py": "ee2164abee29fd30ef5fbf8bfa8948d53678c46d6afaf7a1121513b9e7c117cf",
+        "scripts/observation_runtime/aip06_windows_process.py": "5d99bb239b919525696a9081d2ae73cec8632ccd2199b57df0a70569c2cc6848",
+        "tests/test_aip06_native_session_stop.py": "ffaf351c3aae4d5264d75d9e55ccbaec3d90a03e1342304aa3d0b8e51907c4ba",
+        "tests/test_aip06_physical_native_proofs.py": "ed2e3a39f30cc8d643aa8a2eb6977b33f01c051787524ed3d448f372907fffdd",
+        "tests/test_aip06_source_closure.py": "afcb1301859e6b73e84929bc7f231108cb04044311b0191697d56ddef11b7b0c"
+      },
+      "boundary_inventory": "docs/AIP_06_REMAINING_NATIVE_SOURCE_BOUNDARIES_2026-11-04.json",
+      "boundary_inventory_sha256": "a41c53f7b8d77baf967a04b51bf3e6a12dfc2337f4e6061c3c82ff235f784fbf",
+      "indexed_source_files": 69,
+      "entry_points": [
+        {
+          "entry": "WindowsChildEndpoints.prepare -> ParentBootstrapLease -> InheritedChannel.open",
+          "status": "CONNECTED_OFFLINE_PARTIAL_QUALIFICATION",
+          "guard": "Original parent ledger before creation; private nonce/scope/exact inherited handles/current identity",
+          "release": "Original birth exit or concrete no-creation outcome; no unknown-outcome refund",
+          "remaining": "Full main/backend/physical child integration not yet proved"
+        },
+        {
+          "entry": "ChildRuntime.inherited_identity/guard_factory/run -> ChildBootstrap.prepare/run",
+          "status": "PARTIAL",
+          "guard": "Native identity/source/runtime/root/primary-token checks; prepaid read-only observer; unchanged BIND revision and ACK/RELEASE",
+          "release": "Current startup duplicate/observer/inherited handles; child peer effects require independent parent release",
+          "remaining": "Positive concrete main/run/backend identity path, initialization/failure and complete physical effect/watchdog qualification"
+        },
+        {
+          "entry": "ChildServices.plan -> descendant_gateway",
+          "status": "BLOCKED_SOURCE",
+          "guard": "STAGED_DESCENDANT_GATEWAY_REQUIRED_BEFORE_CREATION",
+          "release": "No unguarded descendant is created",
+          "remaining": "Pre-resume declaration/transfer/full Job graph and complete descendant enumeration"
+        },
+        {
+          "entry": "RemoteHandleProofs.child -> DeclaredDescendants.declare/import_binding/release -> AggregateJobBudget",
+          "status": "BLOCKED_SOURCE",
+          "guard": "Original retained handles; exact ancestry/request/launch reservation; no PID adoption",
+          "release": "Independent exit and held duplicate close",
+          "remaining": "Suspended staging/forwarding transaction and ancestor/leaf roster composition; existing strict Job conflict preserved"
+        },
+        {
+          "entry": "FixtureGuard.query -> WindowsSessionPort.query_result / native netstat",
+          "status": "BLOCKED_SOURCE",
+          "guard": "Exact query role and six-second/64KiB bound; three-reader gate unchanged",
+          "release": "Guarded query child close required",
+          "remaining": "query_result absent and bounded original-handle native netstat command/output provenance not connected"
+        },
+        {
+          "entry": "LegacyProbeAdapter.run -> NativeController.probe_case/verify_probe_result",
+          "status": "BLOCKED_SOURCE",
+          "guard": "Exact source/session/case and retained native verification required",
+          "release": "Verifier still refuses NATIVE_PROBE_RETAINED_EXIT_AND_RELEASE_PORT_NOT_BOUND",
+          "remaining": "Concrete legacy probe child/supervisor lifecycle and independently retained exit/release verifier"
+        },
+        {
+          "entry": "RemoteResources/Broker -> RetainedPeerHandles / NativeIO",
+          "status": "CONNECTED_OFFLINE_PARTIAL_QUALIFICATION",
+          "guard": "Prior scoped effect reservation; current native parent/type/link/readback; exact original thread signal",
+          "release": "Independent original handle invalidation, native effect readback or peer exit for opaque lifetimes",
+          "remaining": "Full physical child effect/watchdog qualification; no synthetic ACK"
+        },
+        {
+          "entry": "OwnedStopAssembly -> GuardedStopCollector -> NativeController.close_sample_envelope -> StopVerification",
+          "status": "THREE_OFFLINE_SAMPLES_PASS_NATIVE_PENDING",
+          "guard": "Original 8s Stop/ACK/drain/financial replay; socket then process cut; no exempt envelope reservation",
+          "release": "All original envelope handles closed before verifier; bounded next nested envelope retains cumulative ledger/CPU/history",
+          "remaining": "Whole physical descendant/query composition and genuine native three-sample timing"
+        }
+      ],
+      "scope_hash": "c6d62af4297d5ff403a4d627e8135f7aefcaefdde467db12b2df1808c26019b6",
+      "canonical_limits": {
+        "seconds": 600,
+        "work_seconds": 540,
+        "entries": 8192,
+        "bytes": 268435456,
+        "stop_entries": 512,
+        "stop_bytes": 33554432,
+        "processes": 8,
+        "private_bytes": 536870912,
+        "child_private_bytes": 268435456,
+        "cpu_ns": 120000000000
+      },
+      "canonical_limits_and_scope_unchanged": true,
+      "native_tests_executed": 0,
+      "native_financial_workers_launched": 0,
+      "all_native_roots_absent": true,
+      "source_integration_complete": false,
+      "native_acceptance": false,
+      "aip06_complete": false,
+      "completed_milestones": 5,
+      "total_milestones": 18,
+      "native_authorization_consumed": false,
+      "paper_startup": false,
+      "production": "NO_GO",
+      "unrelated_research_test_sha256": "4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb"
+    },
+    "latest_focused_tests": {
+      "passed": 478,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit": "logs/diagnostics/aip-06-source-closure-20261104/verified-final.xml",
+      "subset_of_same_final_run": true
+    },
+    "next_eligible_tasks": [
+      "STOP after requested offline source validation/report/checkpoint, scoped commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED: ChildServices.plan has no pre-resume descendant gateway; DeclaredDescendants/full ancestor-leaf Job graph and declaration forwarding remain disconnected; WindowsSessionPort.query_result and bounded retained native netstat output are absent; NativeController.probe_case/legacy probe lifecycle and original-handle exit/release verifier remain unbound. Next prerequisite is concrete source implementation of those exact paths and one combined injected bootstrap/descendant/query/probe/three-sample Stop test; full ChildRuntime.main/backend and initialization/effect/watchdog failure qualification remains pending. Do not filter Job members, exempt reservations or reset ledger/CPU/limits. No new operator permission is needed for source-only work. Do not prepare native execution authority for this incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/Discord/PAPER/V6/Windows/Genesis operation.",
+      "AIP07 remains the next canonical milestone only after AIP06 acceptance and unchanged capability dependencies. Not started."
+    ],
+    "blocked_tasks": {
+      "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
+      "SUPPLEMENTARY_DIAGNOSTIC": "A2 documentedlisteneronly/GetTcpTable2 couldinvestigate materiallydifferentmethod/context, not replaceoriginalreaders. Needsnarrowexecution scope, no automaticexistingcontractclearance.",
+      "ALTERNATIVE_CONTRACT": "B researchonlynotapproved/implemented/equivalent. Native socket-sharing hasmutation/descriptorlifetime/namespace/supportidentity/Stoprisks; separate soleoperator approvalaftercompleteproposal/disposableequivalence. Existing3readercleanup,45sACK,8sStop untouched.",
+      "TRUSTED_BROWSER": "FreshcatalogonlyIAB2/MCPApps1. Need policycheckedWindowsChromewindow/tabidentity/currentURL/localnavigation/postorigin/render/genuineACK/tabclose. Nativepathrestorationcanqualify; no invented signedURLtokenor mandatoryCDPifnativeworks. No alternatebrowser/screenshot/manualtypedURLsubstitution.",
+      "NEXT_MILESTONE": "QD-V6-CHANGED-CAPABILITY-PREREQUISITE-PREFLIGHT-V1 onlyafterconcretenamedchangedapprovedcapability/environmentcandidateandnarrowauth. No unchangedexperiment/integrated/installedretry.",
+      "PAPER_COMMISSIONING": "Nonfinancialacceptance stillnotfinancialreadiness. Freshclock1000ms120s/currentQDresearch/nativecustody/entitledIEX/instrumentcalendar/dependencies/financialenrollmentonceinception/custodyACK/reconciliation/risk/financialStoprestart/manualworkflow andseparateboundedPAPERstartup required. HistoricalUNSELECTEDr6 only. B1C1D1E1/21decisions7phases/soleoperator preserved.",
+      "INTEGRATED_PAPER_COMPLETION": "AIP01+AIP02source/disposableCOMPLETE. Actualprovider/sourceauthorityenrollment,currentnativecustody,installedfinancialruntime,riskconversion,Stop/restartandB1C1D1E1/pilotremainunaccepted. Canonicalpreparationisnotfinancialruntimeconnection.",
+      "ADDITIONAL_FINANCIAL_COHORTS": "Longterm book defaults10000researchseed/no general exit; prediction preevent != settlement. Explicit approved model/allocation needed; retired equity worker stays retired.",
+      "CURRENT_TASK_BOUNDARY": "STOP after AIP02validatedsource/docs/commit/nonforcepush/remoteverify. NextAIP03sourceboundaryonly;nooperationalmigration/storageexpansion/nativegrantreuse.",
+      "INSTALLED_SOURCE_PARITY": "AIP01+AIP02module/schema/typedsourcearchivehooksnotinstalled. Futureexactmanifest/sourcepinreviewandimmutabledeploymentrequiretheirscope;frozenpayload/support/selector/recordsuntouched.",
+      "aip03_operational_boundary": "SOURCE_REVIEW_COMPLETE; operational codec/enrollment/current-map switch and actual workload/Stop capacity remain separately scoped. No installed/provider/account activation.",
+      "aip04_installed_dashboard_boundary": "AIP04 read-model contracts do not install or accept a dashboard/runtime: immutable source integration, accepted native read/account/current-source custody, actual browser/Control Center/Stop/restart evidence and V6 capabilities remain separately scoped. Unsupported panes and Stop/continuation remain explicitly UNAVAILABLE; no financial/provider activation.",
+      "aip05_real_discord_and_recovery_boundary": "AIP05 is isolated source/disposable only. Real Discord transport/recipient/category/rate consent, credentials, accepted current recovery/custody evidence and actual delivery proof remain unauthorized/unaccepted. Local append-only checkpoint does not prove whole-directory/host antirollback. Operational runtime hooks/native financial ACKs and installed financial/clock/provider/V6 gates remain unchanged.",
+      "AIP06_NATIVE_ACCEPTANCE": "Offline34 new/1160 Python/42 Node pass. Actual native lanes/current identity cuts/ACK/kill/drain/capacity and complete Stop reserve remain NOT EXECUTED; exact separately reviewed bounded disposable resource/process authorization required. No installed or operational authority.",
+      "AIP06_NATIVE_READINESS_REVIEW": "BLOCKED_FOR_EXECUTION: actual financial-worker/child/diagnostic-query ownership/Job binding,shared prospective allocated-storage/time/process budget,exact3-slot roots,bounded reads and missing native fault/load cases need source-only harness integration. Existing parent-observed Stop/readback test reusable. D:interpreter exists/two hashes observed;full native runtime inventory/ACLs not reverified. No native approval consumed.",
+      "AIP06_SOURCE_HARNESS_PREPARATION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
+      "AIP06_NATIVE_FIXTURE_GUARD_INTEGRATION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
+      "AIP06_WINDOWS_NATIVE_ADAPTER_COMPLETION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
+      "AIP06_NATIVE_SESSION_AND_STOP_INTEGRATION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
+      "AIP06_PHYSICAL_TRANSPORT_AND_NATIVE_PROOF_INTEGRATION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
+      "AIP06_REMAINING_NATIVE_SOURCE_CLOSURE": "STOP after requested offline source validation/report/checkpoint, scoped commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED: ChildServices.plan has no pre-resume descendant gateway; DeclaredDescendants/full ancestor-leaf Job graph and declaration forwarding remain disconnected; WindowsSessionPort.query_result and bounded retained native netstat output are absent; NativeController.probe_case/legacy probe lifecycle and original-handle exit/release verifier remain unbound. Next prerequisite is concrete source implementation of those exact paths and one combined injected bootstrap/descendant/query/probe/three-sample Stop test; full ChildRuntime.main/backend and initialization/effect/watchdog failure qualification remains pending. Do not filter Job members, exempt reservations or reset ledger/CPU/limits. No new operator permission is needed for source-only work. Do not prepare native execution authority for this incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/Discord/PAPER/V6/Windows/Genesis operation."
+    },
+    "exact_next_action": "STOP after requested offline source validation/report/checkpoint, scoped commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED: ChildServices.plan has no pre-resume descendant gateway; DeclaredDescendants/full ancestor-leaf Job graph and declaration forwarding remain disconnected; WindowsSessionPort.query_result and bounded retained native netstat output are absent; NativeController.probe_case/legacy probe lifecycle and original-handle exit/release verifier remain unbound. Next prerequisite is concrete source implementation of those exact paths and one combined injected bootstrap/descendant/query/probe/three-sample Stop test; full ChildRuntime.main/backend and initialization/effect/watchdog failure qualification remains pending. Do not filter Job members, exempt reservations or reset ledger/CPU/limits. No new operator permission is needed for source-only work. Do not prepare native execution authority for this incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/Discord/PAPER/V6/Windows/Genesis operation."
+  },
+  "source_integration_complete": false,
+  "completion_count": "5/18"
+},
   "aip_06_remaining_native_source_closure_20261104": {
   "result": {
     "base_commit": "b8a9728dfca06357d1db475f298202f335a43ef5",
@@ -13084,11 +13451,11 @@
   "original_evidence_preserved": true,
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
-  "active_task": "AIP-06-REMAINING-NATIVE-SOURCE-CLOSURE",
-  "last_verified_task": "AIP06_BOOTSTRAP_AND_THREE_SAMPLE_ENVELOPE_OFFLINE_VALIDATED_GRAPH_QUERY_PROBE_SOURCE_BLOCKED",
+  "active_task": "AIP-06-PHYSICAL-PATH-COMPLETION",
+  "last_verified_task": "AIP06_STAGING_QUERY_WORKER_PROBE_AND_COMPOSED_STOP_OFFLINE_VALIDATED_PHYSICAL_GATEWAY_FULL_PROBES_BLOCKED",
   "next_eligible_tasks": [
-  "STOP after requested offline source validation/report/checkpoint, scoped commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED: ChildServices.plan has no pre-resume descendant gateway; DeclaredDescendants/full ancestor-leaf Job graph and declaration forwarding remain disconnected; WindowsSessionPort.query_result and bounded retained native netstat output are absent; NativeController.probe_case/legacy probe lifecycle and original-handle exit/release verifier remain unbound. Next prerequisite is concrete source implementation of those exact paths and one combined injected bootstrap/descendant/query/probe/three-sample Stop test; full ChildRuntime.main/backend and initialization/effect/watchdog failure qualification remains pending. Do not filter Job members, exempt reservations or reset ledger/CPU/limits. No new operator permission is needed for source-only work. Do not prepare native execution authority for this incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/Discord/PAPER/V6/Windows/Genesis operation.",
-  "AIP07 remains the next canonical milestone only after AIP06 acceptance and unchanged capability dependencies. Not started."
+  "STOP after requested source implementation/validation/report/checkpoint, relevant-only commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED. Implemented: prior-reserved original-handle suspended staging/direct complete Job checks/bootstrap count fence/genuine READY import/normal release; bounded pinned native netstat and query_result; retained worker probe projection; composed three-sample accounting/query/reader/Stop release; historical identities queried in bounded groups with the same8s deadline. Exact remaining source: ChildServices.descendant_gateway is None; Broker/RemoteResources lack precreation declaration/staged-transfer/bootstrap-release forwarding; WindowsChildEndpoints.channel.verify, InheritedIdentity.verify and global WorkerOwnership still require their original leaf rosters. Bind the complete forwarded recursive graph without filtering raw Job members or accepting unaccounted births. Legacy direct-supervisor lacks the matching formal launch role and direct-unexpected lacks the descendant path: both refuse before launch. Full inherited main/probe body and four-boundary physical qualification remain unproved. No general planning milestone or new permission is substituted for these implementation gaps. Do not request native execution for the incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/real Discord/PAPER/V6/Windows/Genesis operation.",
+  "AIP07 remains next canonical milestone only after AIP06 acceptance and unchanged external-capability prerequisites. Not started."
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -13106,29 +13473,46 @@
   "aip05_real_discord_and_recovery_boundary": "AIP05 is isolated source/disposable only. Real Discord transport/recipient/category/rate consent, credentials, accepted current recovery/custody evidence and actual delivery proof remain unauthorized/unaccepted. Local append-only checkpoint does not prove whole-directory/host antirollback. Operational runtime hooks/native financial ACKs and installed financial/clock/provider/V6 gates remain unchanged.",
   "AIP06_NATIVE_ACCEPTANCE": "Offline34 new/1160 Python/42 Node pass. Actual native lanes/current identity cuts/ACK/kill/drain/capacity and complete Stop reserve remain NOT EXECUTED; exact separately reviewed bounded disposable resource/process authorization required. No installed or operational authority.",
   "AIP06_NATIVE_READINESS_REVIEW": "BLOCKED_FOR_EXECUTION: actual financial-worker/child/diagnostic-query ownership/Job binding,shared prospective allocated-storage/time/process budget,exact3-slot roots,bounded reads and missing native fault/load cases need source-only harness integration. Existing parent-observed Stop/readback test reusable. D:interpreter exists/two hashes observed;full native runtime inventory/ACLs not reverified. No native approval consumed.",
-  "AIP06_SOURCE_HARNESS_PREPARATION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
-  "AIP06_NATIVE_FIXTURE_GUARD_INTEGRATION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
-  "AIP06_WINDOWS_NATIVE_ADAPTER_COMPLETION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
-  "AIP06_NATIVE_SESSION_AND_STOP_INTEGRATION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
-  "AIP06_PHYSICAL_TRANSPORT_AND_NATIVE_PROOF_INTEGRATION": "PARTIAL SOURCE PROGRESS; see AIP06_REMAINING_NATIVE_SOURCE_CLOSURE. Precharged inherited services and three-sample envelope pass offline paths; descendant staging/graph, query/netstat/probe and whole physical-path qualification remain BLOCKED. No native acceptance.",
-  "AIP06_REMAINING_NATIVE_SOURCE_CLOSURE": "STOP after requested offline source validation/report/checkpoint, scoped commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED: ChildServices.plan has no pre-resume descendant gateway; DeclaredDescendants/full ancestor-leaf Job graph and declaration forwarding remain disconnected; WindowsSessionPort.query_result and bounded retained native netstat output are absent; NativeController.probe_case/legacy probe lifecycle and original-handle exit/release verifier remain unbound. Next prerequisite is concrete source implementation of those exact paths and one combined injected bootstrap/descendant/query/probe/three-sample Stop test; full ChildRuntime.main/backend and initialization/effect/watchdog failure qualification remains pending. Do not filter Job members, exempt reservations or reset ledger/CPU/limits. No new operator permission is needed for source-only work. Do not prepare native execution authority for this incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/Discord/PAPER/V6/Windows/Genesis operation."
+  "AIP06_SOURCE_HARNESS_PREPARATION": "PARTIAL SOURCE PROGRESS; see AIP06_PHYSICAL_PATH_COMPLETION. Suspended registry primitive, bounded netstat, worker-probe verifier and three-sample query/Stop pass offline. Physical descendant IPC/global recursive roster, supervisor/unexpected probes and whole inherited path remain BLOCKED. No native acceptance.",
+  "AIP06_NATIVE_FIXTURE_GUARD_INTEGRATION": "PARTIAL SOURCE PROGRESS; see AIP06_PHYSICAL_PATH_COMPLETION. Suspended registry primitive, bounded netstat, worker-probe verifier and three-sample query/Stop pass offline. Physical descendant IPC/global recursive roster, supervisor/unexpected probes and whole inherited path remain BLOCKED. No native acceptance.",
+  "AIP06_WINDOWS_NATIVE_ADAPTER_COMPLETION": "PARTIAL SOURCE PROGRESS; see AIP06_PHYSICAL_PATH_COMPLETION. Suspended registry primitive, bounded netstat, worker-probe verifier and three-sample query/Stop pass offline. Physical descendant IPC/global recursive roster, supervisor/unexpected probes and whole inherited path remain BLOCKED. No native acceptance.",
+  "AIP06_NATIVE_SESSION_AND_STOP_INTEGRATION": "PARTIAL SOURCE PROGRESS; see AIP06_PHYSICAL_PATH_COMPLETION. Suspended registry primitive, bounded netstat, worker-probe verifier and three-sample query/Stop pass offline. Physical descendant IPC/global recursive roster, supervisor/unexpected probes and whole inherited path remain BLOCKED. No native acceptance.",
+  "AIP06_PHYSICAL_TRANSPORT_AND_NATIVE_PROOF_INTEGRATION": "PARTIAL SOURCE PROGRESS; see AIP06_PHYSICAL_PATH_COMPLETION. Suspended registry primitive, bounded netstat, worker-probe verifier and three-sample query/Stop pass offline. Physical descendant IPC/global recursive roster, supervisor/unexpected probes and whole inherited path remain BLOCKED. No native acceptance.",
+  "AIP06_REMAINING_NATIVE_SOURCE_CLOSURE": "PARTIAL SOURCE PROGRESS; see AIP06_PHYSICAL_PATH_COMPLETION. Suspended registry primitive, bounded netstat, worker-probe verifier and three-sample query/Stop pass offline. Physical descendant IPC/global recursive roster, supervisor/unexpected probes and whole inherited path remain BLOCKED. No native acceptance.",
+  "AIP06_PHYSICAL_PATH_COMPLETION": "STOP after requested source implementation/validation/report/checkpoint, relevant-only commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED. Implemented: prior-reserved original-handle suspended staging/direct complete Job checks/bootstrap count fence/genuine READY import/normal release; bounded pinned native netstat and query_result; retained worker probe projection; composed three-sample accounting/query/reader/Stop release; historical identities queried in bounded groups with the same8s deadline. Exact remaining source: ChildServices.descendant_gateway is None; Broker/RemoteResources lack precreation declaration/staged-transfer/bootstrap-release forwarding; WindowsChildEndpoints.channel.verify, InheritedIdentity.verify and global WorkerOwnership still require their original leaf rosters. Bind the complete forwarded recursive graph without filtering raw Job members or accepting unaccounted births. Legacy direct-supervisor lacks the matching formal launch role and direct-unexpected lacks the descendant path: both refuse before launch. Full inherited main/probe body and four-boundary physical qualification remain unproved. No general planning milestone or new permission is substituted for these implementation gaps. Do not request native execution for the incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/real Discord/PAPER/V6/Windows/Genesis operation."
 },
   "latest_tests": {
-  "base_commit": "b8a9728dfca06357d1db475f298202f335a43ef5",
-  "status": "SOURCE_INTEGRATION_BLOCKED_DESCENDANT_GRAPH_QUERY_PROBE_AND_WHOLE_PATH_QUALIFICATION",
-  "report": "docs/AIP_06_REMAINING_NATIVE_SOURCE_CLOSURE_2026-11-04.md",
-  "passed": 1716,
+  "base_commit": "59843c6db84462758c4570a6e6b96018b62e4061",
+  "status": "SOURCE_INTEGRATION_BLOCKED_PHYSICAL_IPC_GLOBAL_GRAPH_AND_FULL_PROBES",
+  "report": "docs/AIP_06_PHYSICAL_PATH_COMPLETION_2026-11-04.md",
+  "passed_distinct": 1767,
+  "single_combined_run": false,
   "failed": 0,
   "errors": 0,
   "skipped": 0,
-  "deselected": 5,
-  "modules": 69,
-  "new_python_cases": 33,
-  "preserved_prior_case_ids": 1683,
-  "focused_passed": 478,
-  "focused_is_subset_of_single_final_run": true,
-  "junit": "logs/diagnostics/aip-06-source-closure-20261104/verified-final.xml",
-  "junit_sha256": "30f8c506161ef6b9f2b0d73ad36556200773e3fe556ce048978cf8c6a59fa915",
+  "deselected_native_launch_cases": 5,
+  "new_python_cases": 51,
+  "preserved_prior_case_ids": 1716,
+  "broader": {
+    "passed": 1765,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 5,
+    "modules": 71,
+    "junit": "logs/diagnostics/aip-06-physical-path-20261104/verified-final2.xml",
+    "sha256": "9e0075e4a6d73186ec12aa05c5b474c864c29b3bd22924f920cc70adf10df88f"
+  },
+  "final_focused": {
+    "passed": 529,
+    "failed": 0,
+    "skipped": 0,
+    "modules": 8,
+    "junit": "logs/diagnostics/aip-06-physical-path-20261104/focused-final.xml",
+    "sha256": "a6dd2f207c6cc01bd71f1d3eecb357662cd76f31ce06486422b39fada6ab6c0b",
+    "overlaps_broader": 527,
+    "new_after_broader": 2
+  },
+  "differential_validation": "Only suspended graph helper and its tests changed after broader run; final focused run supersedes those cases and covers all native harness/session/query/probe/Stop interop modules. All other tested source byte pins unchanged.",
   "node": {
     "passed": 42,
     "failed": 0,
@@ -13141,100 +13525,103 @@
     "Existing Discord audioop deprecation"
   ],
   "source_files_changed": [
-    "scripts/observation_runtime/aip06_bootstrap_lease.py",
-    "scripts/observation_runtime/aip06_child_bootstrap.py",
     "scripts/observation_runtime/aip06_child_entry.py",
+    "scripts/observation_runtime/aip06_cleanup_providers.py",
     "scripts/observation_runtime/aip06_fixture_guard.py",
-    "scripts/observation_runtime/aip06_ipc.py",
     "scripts/observation_runtime/aip06_job_budget.py",
+    "scripts/observation_runtime/aip06_legacy_entry.py",
+    "scripts/observation_runtime/aip06_legacy_probe.py",
     "scripts/observation_runtime/aip06_native_controller.py",
     "scripts/observation_runtime/aip06_native_objects.py",
+    "scripts/observation_runtime/aip06_native_query.py",
     "scripts/observation_runtime/aip06_native_session.py",
-    "scripts/observation_runtime/aip06_remote_handles.py",
-    "scripts/observation_runtime/aip06_windows_endpoints.py",
-    "scripts/observation_runtime/aip06_windows_io.py",
+    "scripts/observation_runtime/aip06_suspended_graph.py",
     "scripts/observation_runtime/aip06_windows_process.py",
-    "tests/test_aip06_native_session_stop.py",
-    "tests/test_aip06_physical_native_proofs.py",
-    "tests/test_aip06_source_closure.py"
+    "tests/test_aip06_physical_path.py",
+    "tests/test_aip06_suspended_graph.py"
   ],
   "source_pins": {
-    "scripts/observation_runtime/aip06_bootstrap_lease.py": "4123fd53c3563a07e7fea243f38d86b913fcec2245fdd55f97e84a775ad2d9c3",
-    "scripts/observation_runtime/aip06_child_bootstrap.py": "21f3cc36283359570fe93e75378f0d2d658bc85ead861234c5258832c65e98e6",
-    "scripts/observation_runtime/aip06_child_entry.py": "0545a6d22c67ad177ad1bab50f6f7610fe678733bfde3d97fcf1e4db2b9f4756",
-    "scripts/observation_runtime/aip06_fixture_guard.py": "7d6273d08c05df784b24977b0b991827daf83a1f22fafe13cbea53c78c6e47b2",
-    "scripts/observation_runtime/aip06_ipc.py": "12305d0386cd6cb68ad9ae913ff44945890f72150a8944d1a0f9d17a56cafebf",
-    "scripts/observation_runtime/aip06_job_budget.py": "77683ef861e992c0dfd4fae8e1877f2465f33f5511aee18095084059cc9fc51d",
-    "scripts/observation_runtime/aip06_native_controller.py": "ecc140857ad7ced62e619340745e67ab989a8cff154a77e83c13828e0d1ba4bf",
-    "scripts/observation_runtime/aip06_native_objects.py": "9bb06dfd41f82d56d42470c49a0d146ca2fdf4fed65c5016c77bf6b22c454212",
-    "scripts/observation_runtime/aip06_native_session.py": "9cf7cb3c9517eab3ce2c73857a073a5cc05fe74bb3836e248d73d100b6e35f08",
-    "scripts/observation_runtime/aip06_remote_handles.py": "f0dd91429a324e83f1b88c2a4bfdbb7f91c8a88a130f5eb620bf14eae3c054a2",
-    "scripts/observation_runtime/aip06_windows_endpoints.py": "3d0b7cbbfc07fe69040558a129e52a56cc38be1b0620a3de213126a4eccdc3ec",
-    "scripts/observation_runtime/aip06_windows_io.py": "ee2164abee29fd30ef5fbf8bfa8948d53678c46d6afaf7a1121513b9e7c117cf",
-    "scripts/observation_runtime/aip06_windows_process.py": "5d99bb239b919525696a9081d2ae73cec8632ccd2199b57df0a70569c2cc6848",
-    "tests/test_aip06_native_session_stop.py": "ffaf351c3aae4d5264d75d9e55ccbaec3d90a03e1342304aa3d0b8e51907c4ba",
-    "tests/test_aip06_physical_native_proofs.py": "ed2e3a39f30cc8d643aa8a2eb6977b33f01c051787524ed3d448f372907fffdd",
-    "tests/test_aip06_source_closure.py": "afcb1301859e6b73e84929bc7f231108cb04044311b0191697d56ddef11b7b0c"
+    "scripts/observation_runtime/aip06_child_entry.py": "6489e1c335e4fdf4ab6d013eadfb8e75fd4c5bf19184f66bcbe0523a85d98715",
+    "scripts/observation_runtime/aip06_cleanup_providers.py": "1b9b24848b9f9eaff91c78530bd9d70b1533f75dddeb7757bbae64e82d169e5f",
+    "scripts/observation_runtime/aip06_fixture_guard.py": "d4d37c9e8e8409f7cc8f849364678353e9e89d3fb8329048c764566779aa4453",
+    "scripts/observation_runtime/aip06_job_budget.py": "94fbd893895a4765098610c23b5eb544c8eb6b267bc186d8e8e16ca8e013aa4b",
+    "scripts/observation_runtime/aip06_legacy_entry.py": "5c02a840acad881f20678f76de04e23b9d5207d4f3971584143a4d5591f13150",
+    "scripts/observation_runtime/aip06_legacy_probe.py": "12ac00baeca894f2d09af776b795fd53ff7e06225de06123ab80b3a09d84be22",
+    "scripts/observation_runtime/aip06_native_controller.py": "dad1ec2f7075d9ddf2bb43b491f96351515547d32e00334c6651907c6c571690",
+    "scripts/observation_runtime/aip06_native_objects.py": "04833d9a0950ecf510092e7bafe1bab96770a7ec98e5700e92c37b19cf283265",
+    "scripts/observation_runtime/aip06_native_query.py": "abc293a1d6c3f6edd6b35fe1a4e02eaafe5174f978811e77cf0df478e250181c",
+    "scripts/observation_runtime/aip06_native_session.py": "f5dfecbd902cc42ad632bdcccd3729de3d15d366090f22bd48028a32c5425c82",
+    "scripts/observation_runtime/aip06_suspended_graph.py": "57187701324bc44e0bd336a3dd46ef8303d32d39a77b21db1175e0d1a2886f9b",
+    "scripts/observation_runtime/aip06_windows_process.py": "150b39a891ecb38a43aa2b317af7aaee14cb5ac9f4f92a2569207f0f1d01ebee",
+    "tests/test_aip06_physical_path.py": "66cc3c2fcb551e14a4b60f17bff34778b0e110fc57e899df186975e7fa517673",
+    "tests/test_aip06_suspended_graph.py": "5011ed2ad671845fe005cbbe28b88d800fb0aa9e127036cbaea48c98c611b55e"
   },
-  "boundary_inventory": "docs/AIP_06_REMAINING_NATIVE_SOURCE_BOUNDARIES_2026-11-04.json",
-  "boundary_inventory_sha256": "a41c53f7b8d77baf967a04b51bf3e6a12dfc2337f4e6061c3c82ff235f784fbf",
-  "indexed_source_files": 69,
+  "boundary_inventory": "docs/AIP_06_PHYSICAL_PATH_BOUNDARIES_2026-11-04.json",
+  "boundary_inventory_sha256": "ed278cb8acb586c5a1c1c0be333a762ee63948023d3276c634060754033191a6",
+  "indexed_source_files": 75,
   "entry_points": [
     {
-      "entry": "WindowsChildEndpoints.prepare -> ParentBootstrapLease -> InheritedChannel.open",
-      "status": "CONNECTED_OFFLINE_PARTIAL_QUALIFICATION",
-      "guard": "Original parent ledger before creation; private nonce/scope/exact inherited handles/current identity",
-      "release": "Original birth exit or concrete no-creation outcome; no unknown-outcome refund",
-      "remaining": "Full main/backend/physical child integration not yet proved"
+      "entry": "FixtureGuard._spawn -> WindowsSessionPort.create_suspended",
+      "status": "EXISTING_GUARDED_PATH_PRESERVED",
+      "guard": "prior shared-ledger slots; exact current birth/image/command/parent; native Jobs before bootstrap",
+      "release": "original exit/retained handle cleanup",
+      "remaining": "physical descendant gateway and global roster not connected"
     },
     {
-      "entry": "ChildRuntime.inherited_identity/guard_factory/run -> ChildBootstrap.prepare/run",
-      "status": "PARTIAL",
-      "guard": "Native identity/source/runtime/root/primary-token checks; prepaid read-only observer; unchanged BIND revision and ACK/RELEASE",
-      "release": "Current startup duplicate/observer/inherited handles; child peer effects require independent parent release",
-      "remaining": "Positive concrete main/run/backend identity path, initialization/failure and complete physical effect/watchdog qualification"
+      "entry": "DeclaredDescendants.declare/stage_suspended/resume_staged/import_binding/release -> SuspendedDescendantGraph",
+      "status": "DIRECT_STAGING_IMPLEMENTED_OFFLINE",
+      "guard": "prior launch slot; original parent/process/thread/image/Job duplication; complete raw parent/leaf Jobs; fresh source/request/counts",
+      "release": "normal exit/thread drain before retained duplicate close; no financial or target RELEASE from stage",
+      "remaining": "forwarded recursive graph/private IPC gateway; true backend qualification"
     },
     {
-      "entry": "ChildServices.plan -> descendant_gateway",
+      "entry": "ChildServices.plan / descendant_gateway",
       "status": "BLOCKED_SOURCE",
       "guard": "STAGED_DESCENDANT_GATEWAY_REQUIRED_BEFORE_CREATION",
-      "release": "No unguarded descendant is created",
-      "remaining": "Pre-resume declaration/transfer/full Job graph and complete descendant enumeration"
+      "release": "no unsupported descendant launch",
+      "remaining": "concrete gateway is still None; precreation/staged transfer/bootstrap release RPC not connected"
     },
     {
-      "entry": "RemoteHandleProofs.child -> DeclaredDescendants.declare/import_binding/release -> AggregateJobBudget",
+      "entry": "WindowsChildEndpoints.channel.verify / InheritedIdentity.verify / WorkerOwnership",
+      "status": "BLOCKED_SOURCE_FOR_DESCENDANT_GRAPH",
+      "guard": "original complete native leaf roster remains unchanged; no PID filter",
+      "release": "existing original process/Job shutdown",
+      "remaining": "physical forwarding and complete global graph proof; old leaf binding correctly refuses inherited extra member"
+    },
+    {
+      "entry": "NativeController.bind_cleanup -> FixtureGuard.query -> WindowsSessionPort.native_query -> NativeQueryExecutor",
+      "status": "IMPLEMENTED_OFFLINE",
+      "guard": "exact pinned System32 netstat argv/image; prospectively charged process/Job/pipes/output; independent current native/CIM command/birth; <=6s/65536bytes",
+      "release": "actual terminal status/pipe EOF/owned query Job and handle close; unknown remains reserved and failed; no synthetic READY",
+      "remaining": "genuine Windows execution and runtime pin/ACL/dependency qualification under a separate native grant"
+    },
+    {
+      "entry": "WindowsSessionPort.query_result",
+      "status": "IMPLEMENTED_COMPATIBILITY_READBACK",
+      "guard": "exact guarded query role, bounded output and original exit before handle closure",
+      "release": "guarded process close verified",
+      "remaining": "full physical Python query target not qualified; native netstat uses direct executor"
+    },
+    {
+      "entry": "NativeController.bind_legacy_probes/probe_case/verify_probe_result -> LegacyProbeRunner -> LegacyProbeAdapter",
+      "status": "WORKER_PROJECTION_ONLY_OFFLINE",
+      "guard": "exact pinned guarded entry and retained session; unchanged case/nonce/identity/claims/source and real terminal cut",
+      "release": "normal exit/empty Job/current held-capability close evidence",
+      "remaining": "supervisor formal role and unexpected descendant cases refused; full inherited target production not qualified"
+    },
+    {
+      "entry": "OwnedStopAssembly -> GuardedStopCollector -> ThreeReaderCleanup/StrictProcessCleanup -> envelope release -> StopVerification",
+      "status": "THREE_COMPOSED_OFFLINE_SAMPLES_PASS",
+      "guard": "original exact accounting replay/ACK/drain/cash; netstat actual executor path; all three readers then strict process; same8s; all historical IDs in bounded8-identity groups",
+      "release": "complete shared-ledger/envelope closure and cumulative next-sample accounting",
+      "remaining": "full inherited child+descendant IPC+all legacy cases and actual native timings"
+    },
+    {
+      "entry": "Complete physical four-boundary path",
       "status": "BLOCKED_SOURCE",
-      "guard": "Original retained handles; exact ancestry/request/launch reservation; no PID adoption",
-      "release": "Independent exit and held duplicate close",
-      "remaining": "Suspended staging/forwarding transaction and ancestor/leaf roster composition; existing strict Job conflict preserved"
-    },
-    {
-      "entry": "FixtureGuard.query -> WindowsSessionPort.query_result / native netstat",
-      "status": "BLOCKED_SOURCE",
-      "guard": "Exact query role and six-second/64KiB bound; three-reader gate unchanged",
-      "release": "Guarded query child close required",
-      "remaining": "query_result absent and bounded original-handle native netstat command/output provenance not connected"
-    },
-    {
-      "entry": "LegacyProbeAdapter.run -> NativeController.probe_case/verify_probe_result",
-      "status": "BLOCKED_SOURCE",
-      "guard": "Exact source/session/case and retained native verification required",
-      "release": "Verifier still refuses NATIVE_PROBE_RETAINED_EXIT_AND_RELEASE_PORT_NOT_BOUND",
-      "remaining": "Concrete legacy probe child/supervisor lifecycle and independently retained exit/release verifier"
-    },
-    {
-      "entry": "RemoteResources/Broker -> RetainedPeerHandles / NativeIO",
-      "status": "CONNECTED_OFFLINE_PARTIAL_QUALIFICATION",
-      "guard": "Prior scoped effect reservation; current native parent/type/link/readback; exact original thread signal",
-      "release": "Independent original handle invalidation, native effect readback or peer exit for opaque lifetimes",
-      "remaining": "Full physical child effect/watchdog qualification; no synthetic ACK"
-    },
-    {
-      "entry": "OwnedStopAssembly -> GuardedStopCollector -> NativeController.close_sample_envelope -> StopVerification",
-      "status": "THREE_OFFLINE_SAMPLES_PASS_NATIVE_PENDING",
-      "guard": "Original 8s Stop/ACK/drain/financial replay; socket then process cut; no exempt envelope reservation",
-      "release": "All original envelope handles closed before verifier; bounded next nested envelope retains cumulative ledger/CPU/history",
-      "remaining": "Whole physical descendant/query composition and genuine native three-sample timing"
+      "guard": "no omitted stage or mock-only actor can become native acceptance",
+      "release": "no installed/PAPER/financial activation permitted",
+      "remaining": "connect exact blocked source entry points; current integration test does not cover full physical child path"
     }
   ],
   "scope_hash": "c6d62af4297d5ff403a4d627e8135f7aefcaefdde467db12b2df1808c26019b6",
@@ -13252,27 +13639,30 @@
   },
   "canonical_limits_and_scope_unchanged": true,
   "native_tests_executed": 0,
-  "native_financial_workers_launched": 0,
+  "native_workers_launched": 0,
+  "native_queries_executed": 0,
   "all_native_roots_absent": true,
   "source_integration_complete": false,
   "native_acceptance": false,
   "aip06_complete": false,
   "completed_milestones": 5,
   "total_milestones": 18,
-  "native_authorization_consumed": false,
   "paper_startup": false,
   "production": "NO_GO",
+  "native_authorization_consumed": false,
   "unrelated_research_test_sha256": "4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb"
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
-  "exact_next_action": "STOP after requested offline source validation/report/checkpoint, scoped commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED: ChildServices.plan has no pre-resume descendant gateway; DeclaredDescendants/full ancestor-leaf Job graph and declaration forwarding remain disconnected; WindowsSessionPort.query_result and bounded retained native netstat output are absent; NativeController.probe_case/legacy probe lifecycle and original-handle exit/release verifier remain unbound. Next prerequisite is concrete source implementation of those exact paths and one combined injected bootstrap/descendant/query/probe/three-sample Stop test; full ChildRuntime.main/backend and initialization/effect/watchdog failure qualification remains pending. Do not filter Job members, exempt reservations or reset ledger/CPU/limits. No new operator permission is needed for source-only work. Do not prepare native execution authority for this incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/Discord/PAPER/V6/Windows/Genesis operation.",
+  "exact_next_action": "STOP after requested source implementation/validation/report/checkpoint, relevant-only commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED. Implemented: prior-reserved original-handle suspended staging/direct complete Job checks/bootstrap count fence/genuine READY import/normal release; bounded pinned native netstat and query_result; retained worker probe projection; composed three-sample accounting/query/reader/Stop release; historical identities queried in bounded groups with the same8s deadline. Exact remaining source: ChildServices.descendant_gateway is None; Broker/RemoteResources lack precreation declaration/staged-transfer/bootstrap-release forwarding; WindowsChildEndpoints.channel.verify, InheritedIdentity.verify and global WorkerOwnership still require their original leaf rosters. Bind the complete forwarded recursive graph without filtering raw Job members or accepting unaccounted births. Legacy direct-supervisor lacks the matching formal launch role and direct-unexpected lacks the descendant path: both refuse before launch. Full inherited main/probe body and four-boundary physical qualification remain unproved. No general planning milestone or new permission is substituted for these implementation gaps. Do not request native execution for the incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/real Discord/PAPER/V6/Windows/Genesis operation.",
   "latest_focused_tests": {
-  "passed": 478,
+  "passed": 529,
   "failed": 0,
-  "errors": 0,
   "skipped": 0,
-  "junit": "logs/diagnostics/aip-06-source-closure-20261104/verified-final.xml",
-  "subset_of_same_final_run": true
+  "modules": 8,
+  "junit": "logs/diagnostics/aip-06-physical-path-20261104/focused-final.xml",
+  "sha256": "a6dd2f207c6cc01bd71f1d3eecb357662cd76f31ce06486422b39fada6ab6c0b",
+  "overlaps_broader": 527,
+  "new_after_broader": 2
 },
   "outcomes": {
     "B1": "BLOCKED: complete independent source archive and witness unavailable; 141 local consistency cases do not satisfy authenticity/completeness",
@@ -13359,7 +13749,7 @@
     "DESKTOP_OBSERVATION_LAUNCH": "VERIFIED scoped actual original UI/Control Center and bounded authorized data-only observation; financial gates unchanged. IEX auth/subscription0quotes; HL retained replay0plans; no financial account/provider persists active.",
     "PERSONAL_PAPER_POLICY_APPLIED_AND_SOURCE_COMPOSITION": "VERIFIED source-only:sole operator authority,new personal proof domains,local PENDING/COMMIT/ACK/currentCAS,actual FS1/FS3 inception recipes,two-account release binding,default-refusing QD/unified composition.263pass0fail0skip13deselected,71new. No native/provider/host/account execution;strict history preserved. ONE concrete activation bundle prepared. Separate22inertboundarypasses0fail0skip29deselected;285distinctpasses across two disjoint selections."
   },
-  "execution_status": "VALIDATED_PARTIAL_SOURCE_CHECKPOINT_REQUIRED_NATIVE_PATHS_DISCONNECTED",
+  "execution_status": "VALIDATED_PARTIAL_SOURCE_CHECKPOINT_PHYSICAL_IPC_AND_COMPLETE_QUALIFICATION_BLOCKED",
   "progress_revision": "93;PERSONAL_APPROVED_2026-10-27",
   "continuation_report": "docs/QD_OPERATIONAL_INSTALL_ADAPTER_REVIEW_V1_2026-10-30.md",
   "blocked_wait_reason": "Free source engineering/access verified. Missing explicit valuation evidence keeps affected instruments ineligible. Real current-publication/executable L1/installation and financial acceptance remain; no fabricated no-entry session. Fresh219msclock snapshot not permanent authority. Sole operator; no enterprise reviewer chain.",

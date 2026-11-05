@@ -135,9 +135,10 @@ class DeclaredDescendants:
     """
 
     def __init__(
-        self, *, peer, calls, objects, allocations, observer_factory, aggregate
+        self, *, peer, calls, objects, allocations, observer_factory, aggregate, files=None
     ):
         self.peer, self.calls, self.objects = peer, calls, objects
+        self.files = files if files is not None else getattr(objects,'files',None)
         self.allocations, self.observer_factory, self.aggregate = (
             allocations,
             observer_factory,
@@ -145,6 +146,25 @@ class DeclaredDescendants:
         )
         self.declarations, self.bindings, self.held, self.finished = {}, {}, {}, set()
         self.failed = False
+        self.declaration_times = {}
+        self.staging = None
+        if objects is not None and aggregate is not None:
+            from scripts.observation_runtime.aip06_suspended_graph import SuspendedDescendantGraph
+            self.staging = SuspendedDescendantGraph(self)
+
+    def stage_suspended(self, proof):
+        need(self.staging is not None,'NATIVE_SUSPENDED_STAGE_PORT_NOT_BOUND')
+        try:return self.staging.stage(proof)
+        except BaseException:
+            self.failed=True
+            raise
+
+    def resume_staged(self, nonce):
+        need(self.staging is not None,'NATIVE_SUSPENDED_STAGE_PORT_NOT_BOUND')
+        try:return self.staging.resume_bootstrap(nonce)
+        except BaseException:
+            self.failed=True
+            raise
 
     def declare(self, request, *, slot, parent_owner, resources):
         from app.services.paper_financial_replay import digest
@@ -152,7 +172,10 @@ class DeclaredDescendants:
 
         need(type(request) is LaunchRequest, "DESCENDANT_EXACT_LAUNCH_REQUEST")
         request.validate()
-        self.peer.verify()
+        if self.staging is not None and self.staging.nodes:
+            self.staging.verify()
+        else:
+            self.peer.verify()
         need(
             not self.failed
             and request.topology == "direct"
@@ -165,6 +188,8 @@ class DeclaredDescendants:
             "DESCENDANT_PRIOR_DECLARATION_AND_RESERVATION",
         )
         self.declarations[request.nonce] = (request, slot)
+        if self.aggregate is not None:
+            self.declaration_times[request.nonce] = self.aggregate.clock()
 
     def import_binding(self, proof):
         from app.services.paper_financial_replay import body
@@ -179,11 +204,23 @@ class DeclaredDescendants:
             "DESCENDANT_EXACT_TRANSFER_DECLARATION",
         )
         self.failed = True
-        self.peer.verify()
+        if self.staging is not None:
+            need(proof['nonce'] in self.staging.nodes
+                 and self.staging.nodes[proof['nonce']]['phase']=='BOOTSTRAP',
+                 'SUSPENDED_STAGING_REQUIRED_BEFORE_GENUINE_READY')
+            self.staging.verify()
+        else:
+            self.peer.verify()
         request, slot = self.declarations[proof["nonce"]]
         held = self.held.setdefault(proof["nonce"], [])
         local = {}
-        for name in ("parent", "launch", "runtime", "job"):
+        staged = None if self.staging is None else self.staging.nodes[proof['nonce']]
+        if staged is not None:
+            need(all(proof[k]==staged['remote'][k] for k in ('parent','launch','job'))
+                 and proof['runtime']==proof['launch'],'STAGED_ORIGINAL_TRANSFER_CHANGED')
+            local.update({k:staged['local'][k] for k in ('parent','launch','job')})
+            local['runtime']=local['launch']
+        for name in (() if staged is not None else ("parent", "launch", "runtime", "job")):
             need(
                 type(proof[name]) is int and proof[name] > 0,
                 "DESCENDANT_ORIGINAL_HANDLE_REQUIRED",
@@ -209,7 +246,8 @@ class DeclaredDescendants:
         )
         self.aggregate.bind_retained(bound, handle=local["runtime"], job=local["job"])
         self.bindings[proof["nonce"]] = (bound, local["runtime"], slot)
-        self.peer.verify()
+        if self.staging is not None:self.staging.verify()
+        else:self.peer.verify()
         self.failed = False
         return bound, local["runtime"]
 
@@ -222,6 +260,7 @@ class DeclaredDescendants:
         self.failed = True
         result = bound.verify_exit()
         self.aggregate.exited(bound, handle=handle)
+        if self.staging is not None:self.staging.finish(nonce,bound)
         for ticket, h in reversed(self.held[nonce]):
             need(self.aggregate.clock() < deadline_ns, "DESCENDANT_RELEASE_DEADLINE")
             self.calls.close(h)

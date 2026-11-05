@@ -155,6 +155,34 @@ class AggregateJobBudget:
             "AGGREGATE_CONTROLLER_IDENTITY_OR_MEMBERSHIP",
         )
 
+    def bind_query(self, capability, *, handle, job):
+        from scripts.observation_runtime.aip06_native_query import CommandLifetime
+        need(type(capability) is CommandLifetime, 'ORIGINAL_NATIVE_QUERY_CAPABILITY_REQUIRED')
+        capability.verify()
+        native = self.calls.native(handle)
+        row = self.rows.get(native['pid'])
+        need(row is not None and row['native'] == native and row['handle'] == handle
+             and row['job'] == job and row['binding'] is None
+             and capability.runtime_handle == handle
+             and all(capability.runtime[k] == native[k] for k in ('pid','created','image')),
+             'QUERY_REQUIRES_PRIOR_SUSPENDED_ROOT_ATTACHMENT')
+        row['binding'] = capability
+        return self.observe(commit=False)
+
+    def retire_failed_query(self, handle, native):
+        """Failure-only terminal accounting; never financial ACK or Stop PASS."""
+        row = self.rows.get(native['pid'])
+        life = self.calls.lifecycle(handle)
+        need(row is not None and row['native'] == native and row['handle'] == handle
+             and life['pid'] == native['pid'] and life['created'] == native['created']
+             and life['exited'] and not self.calls.members(row['job']),
+             'FAILED_QUERY_ORIGINAL_TERMINAL_EVIDENCE')
+        cpu = self.calls.usage(handle)[1]
+        need(type(cpu) is int and cpu >= row['cpu_ns'], 'FAILED_QUERY_CPU_ROLLBACK')
+        row['cpu_ns'] = cpu
+        self.finished.add(native['pid'])
+        return {'release_only': True, 'financial_ack': False, 'query_passed': False}
+
     def observe(self, *, commit=True):
         need(not self.failed, "AGGREGATE_FAILURE_LATCHED")
         if self.dormant:

@@ -250,6 +250,20 @@ class NativeController:
         self.children = []
         self.io = None
         self.process_port = self.process_allocations = self.cleanup = None
+        self.legacy_probes = None
+
+    def bind_legacy_probes(self, output):
+        self.require_ready()
+        from scripts.observation_runtime.aip06_legacy_probe import LegacyProbeRunner
+        need(self.legacy_probes is None and callable(getattr(output,'append',None)),
+             'ONE_RETAINED_LEGACY_PROBE_BINDING')
+        self.legacy_probes = LegacyProbeRunner(self,output)
+        return self.legacy_probes
+
+    def probe_case(self, name):
+        self.require_ready()
+        need(self.legacy_probes is not None,'RETAINED_LEGACY_PROBE_RUNNER_NOT_BOUND')
+        return self.legacy_probes.run_case(name)
 
     def initialize(self, process_port_factory, *, aggregate_factory=None):
         """Future explicitly authorized execution only. Never called offline."""
@@ -422,10 +436,17 @@ class NativeController:
         self.require_ready()
         need(self.cleanup is None and getattr(self, 'aggregate', None) is not None,
              'ONE_AGGREGATE_NATIVE_CLEANUP_BINDING')
-        need(type(query_argv) in (list, tuple) and len(query_argv) >= 3
+        from scripts.observation_runtime.aip06_native_query import ARGS, NativeQueryExecutor
+        native_command = tuple(query_argv) == ARGS
+        need(type(query_argv) in (list, tuple) and (native_command or (len(query_argv) >= 3
              and list(query_argv[:2]) == [self.profile['executable'], '-B']
-             and query_argv[2] == self.profile['targets'].get('query'),
+             and query_argv[2] == self.profile['targets'].get('query'))),
              'EXACT_REVIEWED_SOCKET_QUERY_SOURCE')
+        if native_command:
+            from scripts.observation_runtime.aip06_pipe_transport import Win32PipeCalls
+            need(self.process_port.native_queries is None,'ONE_NATIVE_QUERY_EXECUTOR')
+            self.process_port.native_queries = NativeQueryExecutor(self.process_port,
+                pipes=Win32PipeCalls(self.calls.k),output=output)
         from scripts.observation_runtime.aip06_cleanup_providers import (
             CimSockets, CimTables, GuardedNetstat, StrictProcessCleanup,
             TcpTables, ThreeReaderCleanup,
@@ -517,7 +538,5 @@ class NativeController:
 
     def verify_probe_result(self, result):
         self.require_ready()
-        # A dictionary saying handles_closed/job_empty is not an independent
-        # retained-lifetime/close observation. Keep the unsupported connection
-        # explicit until the concrete launch session owns those capabilities.
-        raise ValueError("NATIVE_PROBE_RETAINED_EXIT_AND_RELEASE_PORT_NOT_BOUND")
+        need(self.legacy_probes is not None,'NATIVE_PROBE_RETAINED_EXIT_AND_RELEASE_PORT_NOT_BOUND')
+        return self.legacy_probes.verify(result)

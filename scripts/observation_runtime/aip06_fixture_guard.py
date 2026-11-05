@@ -752,6 +752,8 @@ class FixtureGuard:
         self.query_active = True
         child = None
         try:
+            if hasattr(self.processes, 'native_query'):
+                return self.processes.native_query(argv,timeout=timeout,maximum_bytes=65536)
             child = self.spawn(argv, **options)
             need(child.plan["name"] == "query", "EXACT_QUERY_ROLE_REQUIRED")
             return self.processes.query_result(

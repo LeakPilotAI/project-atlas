@@ -130,6 +130,38 @@ class WindowsSessionPort:
         self.failed = False
         self.stop_assembly = None
         self.aggregate = getattr(controller, 'aggregate', None)
+        self.native_queries = None
+
+    def native_query(self, argv, *, timeout, maximum_bytes=65536):
+        need(self.native_queries is not None, 'BOUNDED_NATIVE_QUERY_EXECUTOR_NOT_BOUND')
+        try:
+            return self.native_queries.execute(argv, timeout=timeout, maximum_bytes=maximum_bytes)
+        except BaseException:
+            self.failed = self.guard.failed = True
+            raise
+
+    def legacy_probe(self, root, cases):
+        from scripts.observation_runtime.aip06_outputs import LegacyProbeAdapter
+        need(getattr(self.controller,'legacy_probes',None) is not None,
+             'NATIVE_LEGACY_CONTROLLER_PORT_NOT_BOUND')
+        return LegacyProbeAdapter(self.controller,self.controller.legacy_probes.output).run(root,cases)
+
+    def query_result(self, child, *, timeout, maximum_bytes):
+        """Compatibility readback for a guarded, pinned Python query target.
+
+        System netstat uses native_query directly; no READY is invented for it.
+        """
+        need(child.plan['name'] == 'query' and 0 < timeout <= 6
+             and type(maximum_bytes) is int and 0 < maximum_bytes <= 65536,
+             'EXACT_QUERY_READBACK_REQUIRED')
+        identity = child.identity()
+        stdout,stderr = self.communicate(child.child,None,timeout=timeout,maximum_bytes=maximum_bytes)
+        code = self.returncode(child.child)
+        need(len(stdout.encode()) + len(stderr.encode()) <= maximum_bytes
+             and code == 0,
+             'BOUNDED_QUERY_OUTPUT_AND_EXIT_REQUIRED')
+        child.close()
+        return {'stdout':stdout,'stderr':stderr,'exit_code':0,'identity':identity,'closed':True}
 
     def bind_guard(self, guard):
         need(

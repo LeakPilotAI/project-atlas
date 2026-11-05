@@ -386,20 +386,35 @@ class StrictProcessCleanup:
         aggregate = self.port.aggregate
         usage = aggregate.observe()
         pids = {aggregate.controller["pid"]} | set(aggregate.rows)
-        need(len(pids) <= 8, "STRICT_PROCESS_DECLARED_CAPACITY")
-        predicate = " OR ".join(
-            f"ProcessId={p} OR ParentProcessId={p}" for p in sorted(pids)
-        )
-        raw = self.tables.read(
-            namespace=r"ROOT\CIMV2",
-            query="SELECT "
-            + ",".join(self.FIELDS)
-            + " FROM Win32_Process WHERE "
-            + predicate,
-            fields=self.FIELDS,
-            deadline_ns=deadline_ns,
-            maximum=64,
-        )
+        # The native/ledger limit is eight concurrently owned processes, not
+        # eight historical births across all three Stop samples and queries.
+        # Preserve the old bounded eight-identity query size and the SAME
+        # absolute Stop deadline; never omit old PID/birth observations.
+        from scripts.observation_runtime.aip06_harness import LIMITS
+        need(len(usage['members']) <= LIMITS['processes']
+             and len(pids) <= LIMITS['entries'], "STRICT_PROCESS_DECLARED_CAPACITY")
+        cuts, merged = [], {}
+        ordered = sorted(pids)
+        for offset in range(0,len(ordered),LIMITS['processes']):
+            predicate = " OR ".join(f"ProcessId={p} OR ParentProcessId={p}"
+                                     for p in ordered[offset:offset+LIMITS['processes']])
+            cut = self.tables.read(namespace=r"ROOT\CIMV2",
+                query="SELECT " + ",".join(self.FIELDS) + " FROM Win32_Process WHERE " + predicate,
+                fields=self.FIELDS,deadline_ns=deadline_ns,maximum=64)
+            need(cut['complete'] is True and cut['error'] is None and type(cut['rows']) is list
+                 and len(cut['rows']) <= 64 and start <= cut['started_ns'] <= cut['finished_ns']
+                 <= self.clock() < deadline_ns,'STRICT_PROCESS_ENUMERATION_INCOMPLETE')
+            seen_cut = set()
+            for row in cut['rows']:
+                pid = row['ProcessId']
+                need(type(pid) is int and pid > 4 and pid not in seen_cut,
+                     'STRICT_PROCESS_DUPLICATE_OR_INVALID_PID')
+                seen_cut.add(pid)
+                need(pid not in merged or merged[pid] == row,'STRICT_PROCESS_CONFLICTING_FRESH_CUTS')
+                merged[pid] = row
+            cuts.append(cut)
+        raw = {'complete':True,'error':None,'rows':list(merged.values()),
+               'started_ns':start,'finished_ns':self.clock(),'source_cuts':cuts}
         need(
             raw["complete"] is True
             and raw["error"] is None

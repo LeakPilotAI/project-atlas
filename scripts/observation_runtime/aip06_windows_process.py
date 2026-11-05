@@ -115,6 +115,7 @@ class Win32ProcessCalls:
             "AssignProcessToJobObject": ([W.HANDLE, W.HANDLE], W.BOOL),
             "IsProcessInJob": ([W.HANDLE, W.HANDLE, C.POINTER(W.BOOL)], W.BOOL),
             "ResumeThread": ([W.HANDLE], W.DWORD),
+            "SuspendThread": ([W.HANDLE], W.DWORD),
             "WaitForSingleObject": ([W.HANDLE, W.DWORD], W.DWORD),
             "GetExitCodeProcess": ([W.HANDLE, C.POINTER(W.DWORD)], W.BOOL),
             "TerminateJobObject": ([W.HANDLE, W.UINT], W.BOOL),
@@ -281,6 +282,15 @@ class Win32ProcessCalls:
 
     def resume(self, thread):
         need(self.k.ResumeThread(thread) == 1, "EXACT_SUSPEND_COUNT_REQUIRED")
+
+    def hold_created_thread(self, thread):
+        # Only a declared CREATE_SUSPENDED primary thread is eligible. Keep
+        # the extra verifier fence until the independent graph permits release.
+        need(self.k.SuspendThread(thread) == 1,'STAGED_PRIMARY_THREAD_WAS_NOT_SUSPENDED')
+
+    def resume_staged_thread(self, thread):
+        need(self.k.ResumeThread(thread) == 2,'STAGED_VERIFIER_SUSPEND_FENCE_CHANGED')
+        self.resume(thread)
 
     def wait(self, handle, deadline_ns):
         remaining = deadline_ns - self.clock()
