@@ -1,4 +1,405 @@
 {
+  "aip06_windows_adapter_compatibility_closure_20261105": {
+  "base_commit": "b3c1ad3c99df67f3ec746eccd1cb6ef93b513506",
+  "status": "BLOCKED_NATIVE_OWNER_CONTEXT_PRODUCERS_AND_ASYNC_CONTRACTS",
+  "source_completed": [
+    "Concrete pinned read-only file,independent retained-process,Job,capacity,cold-ledger,original bootstrap-object,retained-financial and cold-archive observation methods.",
+    "Concrete typed raw reader set and grader collection,unchanged three-reader cleanup followed by fresh strict process collection.",
+    "Exact17-row scenario contract/admission registry; ten existing source cases select exact guarded pytest node IDs with create-new per-selection temp namespaces."
+  ],
+  "remaining": {
+    "controller_assembly": {
+      "status": "BLOCKED",
+      "details": "WindowsAcceptanceOwner.reserve/verify_controller refuse: qualified bootstrap admits supervisor only at legacy target; OwnerLaunch expects direct controller CLI. Precreation/all-roots-absent versus already-initialized E/shared ledger also needs one coherent guarded bootstrap. No role widening/raw launcher implemented."
+    },
+    "native_reader_hosting": {
+      "status": "BLOCKED",
+      "details": "Concrete raw provider adapters connected; separate retained observer process, inherited local capabilities/physical IPC and native financial/Stop result projection not connected or observed. Native grader remains closed."
+    },
+    "scenario_assembly": {
+      "status": "BLOCKED",
+      "details": "Exact registry/case-node driver connection implemented, but no qualified per-case physical context producer for17 rows; real producers for F05,F06,F09,F11,F12,BOOTSTRAP-IPC-FAULTS,OWNERSHIP-PROBES absent. No actual pressure/fault/Stop result invented."
+    },
+    "async": {
+      "status": "BLOCKED",
+      "details": "BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT; six relevant target files match, target branch inferred only, D runtime not executed. Approved compliant transport/environment decision remains required; no guard change."
+    },
+    "native_host_identity_acl": {
+      "status": "BLOCKED",
+      "details": "Six target file hashes and three normal-user ACL metadata reads current; complete retained native file/volume/ACL/loaded-origin/process/Job/socket observations still pending. Runtime directory/exe protected ACLs; diagnostics parent inherited. All ten future roots absent."
+    },
+    "authorization": {
+      "status": "PENDING",
+      "details": "No new grant created/requested/consumed; fresh explicit single-use approval and reviewed redemption required only after technical readiness."
+    }
+  },
+  "python": {
+    "passed": 2061,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 5,
+    "warnings": 2,
+    "new_cases": 66,
+    "focus": 248,
+    "broader": 1874,
+    "overlap": 61,
+    "distinct": true,
+    "earlier_fixture_failed": 1,
+    "timeouts": 0,
+    "crashes": 0,
+    "joined_full_repeated": false,
+    "historical_180s_timeout_preserved": true
+  },
+  "node": {
+    "passed": 42,
+    "failed": 0,
+    "skipped": 0
+  },
+  "native_acceptance_executed": false,
+  "financial_workers_launched": false,
+  "manifest_sha256": "bffc7d50648fc1e9d6800f4b03b09a00d980bf48ba4310a8cac0dd4ea2c79f91",
+  "source_pins": 99,
+  "runtime_byte_inventory": {
+    "complete_acl_accepted": false,
+    "directories": 880,
+    "files": 9566,
+    "native_identity_accepted": false,
+    "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\prerequisites-runtime-inventory.json",
+    "read_bytes": 252648893,
+    "sha256": "8711cbc69a63711104903c2bc330366da432b9f83155e96eacf23042512161b2"
+  },
+  "host_async_assessment": {
+    "schema": "AIP06_ASYNC_BRANCH_ASSESSMENT_V1",
+    "compatible": false,
+    "native_acceptance": false,
+    "target_runtime_executed": false,
+    "status": "BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT",
+    "target_byte_match": true,
+    "target_branch": "INFERRED_FROM_MATCHING_BYTES_NOT_EXECUTED",
+    "required": "Approved transport/environment decision; do not exempt loopback or weaken the guard."
+  },
+  "normal_user_acl_reads": 3,
+  "complete_native_acl_acceptance": false,
+  "aip06_status": "BLOCKED",
+  "completion": "5/18",
+  "paper": false,
+  "production": "NO_GO",
+  "authorization": "PENDING_NOT_CREATED_OR_CONSUMED",
+  "report": "docs/AIP_06_WINDOWS_ADAPTER_COMPATIBILITY_CLOSURE_2026-11-05.md",
+  "runs": {
+    "windows-adapter-validated-focus": {
+      "seconds": 9.281,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "windows-adapter-broad": {
+      "seconds": 154.875,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "windows-adapter-node": {
+      "seconds": 0.125,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "windows-adapter-final-focus": {
+      "seconds": 9.156,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "windows-adapter-focus-01": {
+      "seconds": 1.781,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    }
+  },
+  "evidence_hashes": {
+    "windows-adapter-acl-review-v2.json": "f1a644a1e09770f1c80b9b3f5a266e8894d3c6dc3f4b1d2a2b93b73f8b980258",
+    "windows-adapter-acl-review.json": "7bd420a7c0b525298f6c37160f384548eec900c274a54b61e72f6e37d03604e3",
+    "windows-adapter-broad.json": "d7d0d5dfd325b4902e01830d9a968b3f94f901cd88cd8c374d17ff6d3a6d9fa2",
+    "windows-adapter-broad.launch.json": "03ce29570f62218be858e1739c234cb1dcf3f24ca5039d2a63ffbcd824676722",
+    "windows-adapter-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-broad.stdout": "ac03574866ac411921fcf4a61ba465c62e51763492abf3ebe0cd0cae26dec75c",
+    "windows-adapter-final-focus.json": "7a5d09207a32e248d0b61141c6eda3ebe15c6a269a91de0589e6316c56a1442c",
+    "windows-adapter-final-focus.launch.json": "1faa29a8ccbbbe2d77c1f46229fd7fa7db89336c32a7f9406312f02dae1c0bfe",
+    "windows-adapter-final-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-final-focus.stdout": "2c1b1157cdd2110bd310486e0b53a528fcdda3a302f2c02e916f6e5211e62e90",
+    "windows-adapter-final-focus.xml": "f8cc649b20243d7bec3a01db28fcc2f1979641acd89e626aac7dc652279e65ff",
+    "windows-adapter-focus-01.json": "d7447a68f53e8757c1b74ca6833355d81b7c24a0f4cb669e24ebb90d33925be8",
+    "windows-adapter-focus-01.launch.json": "1725057d6659ba5eadb63e9709573e594074772c8f9514e1bdd144ee83b75c35",
+    "windows-adapter-focus-01.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-focus-01.stdout": "0909468d5b75c1048b3ee8e0bdcaee9515645fa1c04f78bf2a01c1d7523b7379",
+    "windows-adapter-focus-01.xml": "5ad4d1ab7ca14507b1c0f8c1cd993c54cfda1bae0d196c59635f114381f018ba",
+    "windows-adapter-manifest-before.json": "cad011ded4cce496a3738212d4092e15075da93bf3da756e60799b96dd445799",
+    "windows-adapter-node.json": "89b6a68d03e5ea703ebde8dcc048ed56322c28b5fa82e5955e6d52b0d92e91fa",
+    "windows-adapter-node.launch.json": "86a69bb82e55a97e219ab46f5c360460ae29d58eba48cdee548464d8fafec52e",
+    "windows-adapter-node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-node.stdout": "9e4def28f5d9794575f97bc89416a0309697602ede4b0a53ea17fc875ef8ab8c",
+    "windows-adapter-static-review.json": "85de3c5f496b27af7501968a1762d7549e74d11abd89a01f7e92c03921700752",
+    "windows-adapter-validated-focus.json": "97ca1bc2d636ed12446f1d9cca0eae1608920b533080a78ad9744c3e5d2cea7e",
+    "windows-adapter-validated-focus.launch.json": "20548fd162abf8ec2d5ce5ecd7a8d55d91f638047288be88323bb55b37154133",
+    "windows-adapter-validated-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-validated-focus.stdout": "0f0b0e12deec054ab7676799877c8863f7f8fcdb18ff812248ed584d5119f668",
+    "windows-adapter-validated-focus.xml": "db27c9ed18f1150d4d55c77b25198e0a175a2317fe08fd2767895ea345153cd8"
+  },
+  "previous_current": {
+    "active_task": "AIP-06-NATIVE-ACCEPTANCE-CONTROL-PLANE",
+    "last_verified_task": "SOURCE_CONTROL_PLANE_OFFLINE_QUALIFIED_NATIVE_BINDINGS_BLOCKED",
+    "next_eligible_tasks": [
+      "STOP after control-plane offline checkpoint and independent remote SHA verification.",
+      "Native execution remains BLOCKED by the exact async/native bindings/identity/reader/authorization prerequisites in the control-plane report. Do not execute candidate, request native approval while unready, or start AIP07."
+    ],
+    "latest_tests": {
+      "base_commit": "e1c1162d3745172d04c5f95abf149cbe3e42e2de",
+      "status": "SOURCE_CONTROL_PLANE_OFFLINE_QUALIFIED_NATIVE_BINDINGS_BLOCKED",
+      "python": {
+        "passed": 2000,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 5,
+        "new_cases": 78,
+        "warnings": 2,
+        "distinct": true,
+        "focus_passed": 182,
+        "broader_passed": 1874,
+        "overlap": 61,
+        "joined_completed_passed": 5,
+        "joined_recheck_complete": true,
+        "timeouts": 1,
+        "crashes": 0
+      },
+      "node": {
+        "passed": 42,
+        "failed": 0,
+        "skipped": 0
+      },
+      "native_acceptance_executed": false,
+      "financial_workers_launched": false,
+      "authorization": "NONE_CREATED_REQUESTED_OR_CONSUMED",
+      "manifest_sha256": "cad011ded4cce496a3738212d4092e15075da93bf3da756e60799b96dd445799",
+      "source_pins": 96,
+      "runtime_inventory": {
+        "complete_acl_accepted": false,
+        "directories": 880,
+        "files": 9566,
+        "native_identity_accepted": false,
+        "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\prerequisites-runtime-inventory.json",
+        "read_bytes": 252648893,
+        "sha256": "8711cbc69a63711104903c2bc330366da432b9f83155e96eacf23042512161b2"
+      },
+      "aip06_status": "BLOCKED",
+      "completion": "5/18",
+      "paper": false,
+      "production": "NO_GO",
+      "report": "docs/AIP_06_NATIVE_ACCEPTANCE_CONTROL_PLANE_2026-11-05.md",
+      "remaining": [
+        "Async/socket-guard compatibility qualification; no policy change.",
+        "Actual guarded per-case fault/load/capacity bindings and guard lifecycle isolation.",
+        "Fresh runtime file/volume/retained identities, complete ACLs and loaded-origin closure.",
+        "Concrete supervised Windows outer-owner, independent process/Job/financial/socket/native-object observer adapters and bounded cleanup/watchdog proof.",
+        "Fresh scoped single-use approval and reviewed atomic redemption; no issuer or consumer supplied."
+      ],
+      "runs": {
+        "control-plane-final-isolated": {
+          "label": "control-plane-final-isolated",
+          "command": [
+            "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "tests/test_aip06_acceptance_control.py",
+            "tests/test_aip06_native_prerequisites.py",
+            "tests/test_aip06_native_session_stop.py",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "-o",
+            "faulthandler_timeout=0",
+            "--basetemp",
+            "logs/diagnostics/aip06-control-plane-final-isolated",
+            "--junitxml",
+            "logs/diagnostics/aip06-combined-validation-20261105/control-plane-final-isolated.xml"
+          ],
+          "parent_pid": 30184,
+          "identity": {
+            "pid": 24908,
+            "created": 134383586616887901,
+            "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+          },
+          "seconds": 6.812,
+          "timeout_limit": 120,
+          "timed_out": false,
+          "exit_code": 0,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "control-plane-broad": {
+          "label": "control-plane-broad",
+          "command": [
+            "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            "-B",
+            "logs/diagnostics/aip06-combined-validation-20261105/inherited_suite.py",
+            "full",
+            "controlplane"
+          ],
+          "parent_pid": 9088,
+          "identity": {
+            "pid": 21032,
+            "created": 134383584231518469,
+            "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+          },
+          "seconds": 189.86,
+          "timeout_limit": 360,
+          "timed_out": false,
+          "exit_code": 0,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "control-plane-node": {
+          "label": "control-plane-node",
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "tests/quality_dips_selected_frontend.test.cjs"
+          ],
+          "parent_pid": 22680,
+          "identity": {
+            "pid": 32036,
+            "created": 134383584237081127,
+            "image": "c:\\program files\\nodejs\\node.exe"
+          },
+          "seconds": 0.156,
+          "timeout_limit": 30,
+          "timed_out": false,
+          "exit_code": 0,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "control-plane-final-focus": {
+          "label": "control-plane-final-focus",
+          "command": [
+            "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "tests/test_aip06_acceptance_control.py",
+            "tests/test_aip06_native_prerequisites.py",
+            "tests/test_aip06_native_session_stop.py",
+            "tests/test_aip06_joined_lifecycle.py",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "-o",
+            "faulthandler_timeout=0",
+            "--basetemp",
+            "logs/diagnostics/aip06-control-plane-final-focus",
+            "--junitxml",
+            "logs/diagnostics/aip06-combined-validation-20261105/control-plane-final-focus.xml"
+          ],
+          "parent_pid": 23392,
+          "identity": {
+            "pid": 11648,
+            "created": 134383584210319632,
+            "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+          },
+          "seconds": 180.047,
+          "timeout_limit": 180,
+          "timed_out": true,
+          "exit_code": 1,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "control-plane-joined-isolated": {
+          "label": "control-plane-joined-isolated",
+          "command": [
+            "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "tests/test_aip06_joined_lifecycle.py",
+            "-v",
+            "-p",
+            "no:cacheprovider",
+            "-o",
+            "faulthandler_timeout=0",
+            "--basetemp",
+            "logs/diagnostics/aip06-control-plane-joined-isolated",
+            "--junitxml",
+            "logs/diagnostics/aip06-combined-validation-20261105/control-plane-joined-isolated.xml"
+          ],
+          "parent_pid": 1464,
+          "identity": {
+            "pid": 11084,
+            "created": 134383586622783171,
+            "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+          },
+          "seconds": 326.687,
+          "timeout_limit": 360,
+          "timed_out": false,
+          "exit_code": 0,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        }
+      },
+      "evidence_hashes": {
+        "control-plane-broad.json": "0e02860cb7cdd750f2184f418bde161676ac15347ae134a77a505f5e1dc8ec56",
+        "control-plane-broad.launch.json": "d43f7285692aa722776fdf3a159bb8b4a7236ddbd8308533d1274290572f918c",
+        "control-plane-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "control-plane-broad.stdout": "4ebb32d5bdf6cc6979157cf97a2858a1a21469939a18f149157327f0f8462004",
+        "control-plane-final-focus.json": "fd3e7e69168b6d4e9371d1323f4c686fc2f6674abf9dde7ccdefbfe784790c3c",
+        "control-plane-final-focus.launch.json": "628728d70b8a99ef5868288fac4988db39994eb4078c33a9a8467916631f238c",
+        "control-plane-final-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "control-plane-final-focus.stdout": "b3cbf431312e8a8fb89e9c996ea4f02df2eb187004282d8af8be3b926684b59c",
+        "control-plane-final-isolated.json": "547ac67bc5f1f5541e41cae9cdd757698967dddc8534233df704a1c568fa0fbc",
+        "control-plane-final-isolated.launch.json": "2d3ade32b159783ff62fb76b2c3be0522db015f35893f15531cd26b284456079",
+        "control-plane-final-isolated.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "control-plane-final-isolated.stdout": "4f3b10b160c564646de673a5a34b1030d42b3125c21d0a32920dd29837ce2a8f",
+        "control-plane-final-isolated.xml": "a572fd710afecfd7f9564fc8d10f39d3227e3df2f493c7888ce6a9b82d5ae848",
+        "control-plane-focus-01.json": "9340eab2696ab16ac3140b1d439e35db7c5270ea033368b8095122e4315d6483",
+        "control-plane-focus-01.launch.json": "537e01ee3bd00fd936af77e92334b2942fbb53fc1720c5d406f930b8869ca436",
+        "control-plane-focus-01.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "control-plane-focus-01.stdout": "64dec3361b9c05cbb749f506957585fd0053998b41dda15c7b7dbd735b6ad421",
+        "control-plane-focus-01.xml": "28fe910f31df636cea614a565ee6f87faa4ba6dca44a71a198de2f23b218a12d",
+        "control-plane-focus-02.json": "51625ec83e058760283fde854c541ac881ab8175c9ee9c7c3d89d8a5d7a0be69",
+        "control-plane-focus-02.launch.json": "91e7ca6a4ffb5a9ec520bdf4622d9d27548f8b9e2eddcb12e1e03014ca507763",
+        "control-plane-focus-02.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "control-plane-focus-02.stdout": "01d377aff935fea0da639d7c5b2652476775efcfb4dde41b7d8edc6eb7e350ce",
+        "control-plane-focus-02.xml": "a6f8bc75916b93ece38125d58c23536cccf5592b7ca0595c4f2524520756a41c",
+        "control-plane-joined-isolated.json": "128d22b18b8a3c00fefa2d757d918cf108d5a1d982536ad2f7ba15f7b30b2c56",
+        "control-plane-joined-isolated.launch.json": "604d492e9acc73a16311b8d7e82754f742f4cf6cac497439ca75702ba30f61d3",
+        "control-plane-joined-isolated.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "control-plane-joined-isolated.stdout": "dd60f80e82e4beb79a4b9b03b36ec9c76913e373bd78dca8ba7e738b3465de4e",
+        "control-plane-joined-isolated.xml": "8b6e2a139960e77a7b6d9ee936bedbd38758673da3f1cae86447bfcf905ef348",
+        "control-plane-manifest-before.json": "859f435752e0b0e2a14cd934b5ac5a263a963816696d6ae2279a5847c197a3b1",
+        "control-plane-node.json": "44eba2e4c7b0ce8a17e1d26d24d182742f80a8f622206262e533ab1acd516651",
+        "control-plane-node.launch.json": "5c2ff1391b6e27cc9bc2bd497913e699f8655517eecb7a908b5e4257871c9e53",
+        "control-plane-node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "control-plane-node.stdout": "02664e837d847b5541c942c75b934fcd7e42022929843c21c80ce2c5221592a8"
+      }
+    }
+  }
+},
   "aip06_native_acceptance_control_plane_20261105": {
   "base_commit": "e1c1162d3745172d04c5f95abf149cbe3e42e2de",
   "status": "SOURCE_CONTROL_PLANE_OFFLINE_QUALIFIED_NATIVE_BINDINGS_BLOCKED",
@@ -15239,11 +15640,11 @@
   "original_evidence_preserved": true,
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
-  "active_task": "AIP-06-NATIVE-ACCEPTANCE-CONTROL-PLANE",
-  "last_verified_task": "SOURCE_CONTROL_PLANE_OFFLINE_QUALIFIED_NATIVE_BINDINGS_BLOCKED",
+  "active_task": "AIP-06-WINDOWS-ADAPTER-AND-COMPATIBILITY-CLOSURE",
+  "last_verified_task": "BLOCKED_NATIVE_OWNER_CONTEXT_PRODUCERS_AND_ASYNC_CONTRACTS",
   "next_eligible_tasks": [
-  "STOP after control-plane offline checkpoint and independent remote SHA verification.",
-  "Native execution remains BLOCKED by the exact async/native bindings/identity/reader/authorization prerequisites in the control-plane report. Do not execute candidate, request native approval while unready, or start AIP07."
+  "STOP after this source adapter/compatibility checkpoint and remote SHA verification.",
+  "Resolve the explicit pinned-controller/fenced-bootstrap/precreation-ledger contract and qualified physical case/reader context producer; implement the seven missing real native producer groups. Async requires a reviewed compliant transport/environment decision; no policy relaxation. Do not request native approval or execute native/installed acceptance/PAPER while unready."
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -15752,27 +16153,85 @@
     "Fresh runtime file/volume/retained identities, complete ACLs and loaded-origin closure.",
     "Concrete supervised Windows outer-owner, independent process/Job/financial/socket/native-object observer adapters and bounded cleanup/watchdog proof.",
     "Fresh scoped single-use approval and reviewed atomic redemption; no issuer or consumer supplied."
-  ]
+  ],
+  "AIP06_WINDOWS_ADAPTER_NATIVE_ASSEMBLY_BLOCKED_20261105": {
+    "controller_assembly": {
+      "status": "BLOCKED",
+      "details": "WindowsAcceptanceOwner.reserve/verify_controller refuse: qualified bootstrap admits supervisor only at legacy target; OwnerLaunch expects direct controller CLI. Precreation/all-roots-absent versus already-initialized E/shared ledger also needs one coherent guarded bootstrap. No role widening/raw launcher implemented."
+    },
+    "native_reader_hosting": {
+      "status": "BLOCKED",
+      "details": "Concrete raw provider adapters connected; separate retained observer process, inherited local capabilities/physical IPC and native financial/Stop result projection not connected or observed. Native grader remains closed."
+    },
+    "scenario_assembly": {
+      "status": "BLOCKED",
+      "details": "Exact registry/case-node driver connection implemented, but no qualified per-case physical context producer for17 rows; real producers for F05,F06,F09,F11,F12,BOOTSTRAP-IPC-FAULTS,OWNERSHIP-PROBES absent. No actual pressure/fault/Stop result invented."
+    },
+    "async": {
+      "status": "BLOCKED",
+      "details": "BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT; six relevant target files match, target branch inferred only, D runtime not executed. Approved compliant transport/environment decision remains required; no guard change."
+    },
+    "native_host_identity_acl": {
+      "status": "BLOCKED",
+      "details": "Six target file hashes and three normal-user ACL metadata reads current; complete retained native file/volume/ACL/loaded-origin/process/Job/socket observations still pending. Runtime directory/exe protected ACLs; diagnostics parent inherited. All ten future roots absent."
+    },
+    "authorization": {
+      "status": "PENDING",
+      "details": "No new grant created/requested/consumed; fresh explicit single-use approval and reviewed redemption required only after technical readiness."
+    }
+  }
 },
   "latest_tests": {
-  "base_commit": "e1c1162d3745172d04c5f95abf149cbe3e42e2de",
-  "status": "SOURCE_CONTROL_PLANE_OFFLINE_QUALIFIED_NATIVE_BINDINGS_BLOCKED",
+  "base_commit": "b3c1ad3c99df67f3ec746eccd1cb6ef93b513506",
+  "status": "BLOCKED_NATIVE_OWNER_CONTEXT_PRODUCERS_AND_ASYNC_CONTRACTS",
+  "source_completed": [
+    "Concrete pinned read-only file,independent retained-process,Job,capacity,cold-ledger,original bootstrap-object,retained-financial and cold-archive observation methods.",
+    "Concrete typed raw reader set and grader collection,unchanged three-reader cleanup followed by fresh strict process collection.",
+    "Exact17-row scenario contract/admission registry; ten existing source cases select exact guarded pytest node IDs with create-new per-selection temp namespaces."
+  ],
+  "remaining": {
+    "controller_assembly": {
+      "status": "BLOCKED",
+      "details": "WindowsAcceptanceOwner.reserve/verify_controller refuse: qualified bootstrap admits supervisor only at legacy target; OwnerLaunch expects direct controller CLI. Precreation/all-roots-absent versus already-initialized E/shared ledger also needs one coherent guarded bootstrap. No role widening/raw launcher implemented."
+    },
+    "native_reader_hosting": {
+      "status": "BLOCKED",
+      "details": "Concrete raw provider adapters connected; separate retained observer process, inherited local capabilities/physical IPC and native financial/Stop result projection not connected or observed. Native grader remains closed."
+    },
+    "scenario_assembly": {
+      "status": "BLOCKED",
+      "details": "Exact registry/case-node driver connection implemented, but no qualified per-case physical context producer for17 rows; real producers for F05,F06,F09,F11,F12,BOOTSTRAP-IPC-FAULTS,OWNERSHIP-PROBES absent. No actual pressure/fault/Stop result invented."
+    },
+    "async": {
+      "status": "BLOCKED",
+      "details": "BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT; six relevant target files match, target branch inferred only, D runtime not executed. Approved compliant transport/environment decision remains required; no guard change."
+    },
+    "native_host_identity_acl": {
+      "status": "BLOCKED",
+      "details": "Six target file hashes and three normal-user ACL metadata reads current; complete retained native file/volume/ACL/loaded-origin/process/Job/socket observations still pending. Runtime directory/exe protected ACLs; diagnostics parent inherited. All ten future roots absent."
+    },
+    "authorization": {
+      "status": "PENDING",
+      "details": "No new grant created/requested/consumed; fresh explicit single-use approval and reviewed redemption required only after technical readiness."
+    }
+  },
   "python": {
-    "passed": 2000,
+    "passed": 2061,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
     "deselected": 5,
-    "new_cases": 78,
     "warnings": 2,
-    "distinct": true,
-    "focus_passed": 182,
-    "broader_passed": 1874,
+    "new_cases": 66,
+    "focus": 248,
+    "broader": 1874,
     "overlap": 61,
-    "joined_completed_passed": 5,
-    "joined_recheck_complete": true,
-    "timeouts": 1,
-    "crashes": 0
+    "distinct": true,
+    "earlier_fixture_failed": 1,
+    "timeouts": 0,
+    "crashes": 0,
+    "joined_full_repeated": false,
+    "historical_180s_timeout_preserved": true
   },
   "node": {
     "passed": 42,
@@ -15781,10 +16240,9 @@
   },
   "native_acceptance_executed": false,
   "financial_workers_launched": false,
-  "authorization": "NONE_CREATED_REQUESTED_OR_CONSUMED",
-  "manifest_sha256": "cad011ded4cce496a3738212d4092e15075da93bf3da756e60799b96dd445799",
-  "source_pins": 96,
-  "runtime_inventory": {
+  "manifest_sha256": "bffc7d50648fc1e9d6800f4b03b09a00d980bf48ba4310a8cac0dd4ea2c79f91",
+  "source_pins": 99,
+  "runtime_byte_inventory": {
     "complete_acl_accepted": false,
     "directories": 880,
     "files": 9566,
@@ -15793,198 +16251,94 @@
     "read_bytes": 252648893,
     "sha256": "8711cbc69a63711104903c2bc330366da432b9f83155e96eacf23042512161b2"
   },
+  "host_async_assessment": {
+    "schema": "AIP06_ASYNC_BRANCH_ASSESSMENT_V1",
+    "compatible": false,
+    "native_acceptance": false,
+    "target_runtime_executed": false,
+    "status": "BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT",
+    "target_byte_match": true,
+    "target_branch": "INFERRED_FROM_MATCHING_BYTES_NOT_EXECUTED",
+    "required": "Approved transport/environment decision; do not exempt loopback or weaken the guard."
+  },
+  "normal_user_acl_reads": 3,
+  "complete_native_acl_acceptance": false,
   "aip06_status": "BLOCKED",
   "completion": "5/18",
   "paper": false,
   "production": "NO_GO",
-  "report": "docs/AIP_06_NATIVE_ACCEPTANCE_CONTROL_PLANE_2026-11-05.md",
-  "remaining": [
-    "Async/socket-guard compatibility qualification; no policy change.",
-    "Actual guarded per-case fault/load/capacity bindings and guard lifecycle isolation.",
-    "Fresh runtime file/volume/retained identities, complete ACLs and loaded-origin closure.",
-    "Concrete supervised Windows outer-owner, independent process/Job/financial/socket/native-object observer adapters and bounded cleanup/watchdog proof.",
-    "Fresh scoped single-use approval and reviewed atomic redemption; no issuer or consumer supplied."
-  ],
+  "authorization": "PENDING_NOT_CREATED_OR_CONSUMED",
+  "report": "docs/AIP_06_WINDOWS_ADAPTER_COMPATIBILITY_CLOSURE_2026-11-05.md",
   "runs": {
-    "control-plane-final-isolated": {
-      "label": "control-plane-final-isolated",
-      "command": [
-        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-        "-B",
-        "-m",
-        "pytest",
-        "tests/test_aip06_acceptance_control.py",
-        "tests/test_aip06_native_prerequisites.py",
-        "tests/test_aip06_native_session_stop.py",
-        "-q",
-        "-p",
-        "no:cacheprovider",
-        "-o",
-        "faulthandler_timeout=0",
-        "--basetemp",
-        "logs/diagnostics/aip06-control-plane-final-isolated",
-        "--junitxml",
-        "logs/diagnostics/aip06-combined-validation-20261105/control-plane-final-isolated.xml"
-      ],
-      "parent_pid": 30184,
-      "identity": {
-        "pid": 24908,
-        "created": 134383586616887901,
-        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
-      },
-      "seconds": 6.812,
-      "timeout_limit": 120,
-      "timed_out": false,
+    "windows-adapter-validated-focus": {
+      "seconds": 9.281,
       "exit_code": 0,
+      "timed_out": false,
       "handle_closed": true,
       "native_acceptance": false,
       "financial_worker": false
     },
-    "control-plane-broad": {
-      "label": "control-plane-broad",
-      "command": [
-        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-        "-B",
-        "logs/diagnostics/aip06-combined-validation-20261105/inherited_suite.py",
-        "full",
-        "controlplane"
-      ],
-      "parent_pid": 9088,
-      "identity": {
-        "pid": 21032,
-        "created": 134383584231518469,
-        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
-      },
-      "seconds": 189.86,
-      "timeout_limit": 360,
-      "timed_out": false,
+    "windows-adapter-broad": {
+      "seconds": 154.875,
       "exit_code": 0,
+      "timed_out": false,
       "handle_closed": true,
       "native_acceptance": false,
       "financial_worker": false
     },
-    "control-plane-node": {
-      "label": "control-plane-node",
-      "command": [
-        "C:\\Program Files\\nodejs\\node.exe",
-        "tests/quality_dips_selected_frontend.test.cjs"
-      ],
-      "parent_pid": 22680,
-      "identity": {
-        "pid": 32036,
-        "created": 134383584237081127,
-        "image": "c:\\program files\\nodejs\\node.exe"
-      },
-      "seconds": 0.156,
-      "timeout_limit": 30,
-      "timed_out": false,
+    "windows-adapter-node": {
+      "seconds": 0.125,
       "exit_code": 0,
+      "timed_out": false,
       "handle_closed": true,
       "native_acceptance": false,
       "financial_worker": false
     },
-    "control-plane-final-focus": {
-      "label": "control-plane-final-focus",
-      "command": [
-        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-        "-B",
-        "-m",
-        "pytest",
-        "tests/test_aip06_acceptance_control.py",
-        "tests/test_aip06_native_prerequisites.py",
-        "tests/test_aip06_native_session_stop.py",
-        "tests/test_aip06_joined_lifecycle.py",
-        "-q",
-        "-p",
-        "no:cacheprovider",
-        "-o",
-        "faulthandler_timeout=0",
-        "--basetemp",
-        "logs/diagnostics/aip06-control-plane-final-focus",
-        "--junitxml",
-        "logs/diagnostics/aip06-combined-validation-20261105/control-plane-final-focus.xml"
-      ],
-      "parent_pid": 23392,
-      "identity": {
-        "pid": 11648,
-        "created": 134383584210319632,
-        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
-      },
-      "seconds": 180.047,
-      "timeout_limit": 180,
-      "timed_out": true,
+    "windows-adapter-final-focus": {
+      "seconds": 9.156,
       "exit_code": 1,
+      "timed_out": false,
       "handle_closed": true,
       "native_acceptance": false,
       "financial_worker": false
     },
-    "control-plane-joined-isolated": {
-      "label": "control-plane-joined-isolated",
-      "command": [
-        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-        "-B",
-        "-m",
-        "pytest",
-        "tests/test_aip06_joined_lifecycle.py",
-        "-v",
-        "-p",
-        "no:cacheprovider",
-        "-o",
-        "faulthandler_timeout=0",
-        "--basetemp",
-        "logs/diagnostics/aip06-control-plane-joined-isolated",
-        "--junitxml",
-        "logs/diagnostics/aip06-combined-validation-20261105/control-plane-joined-isolated.xml"
-      ],
-      "parent_pid": 1464,
-      "identity": {
-        "pid": 11084,
-        "created": 134383586622783171,
-        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
-      },
-      "seconds": 326.687,
-      "timeout_limit": 360,
-      "timed_out": false,
+    "windows-adapter-focus-01": {
+      "seconds": 1.781,
       "exit_code": 0,
+      "timed_out": false,
       "handle_closed": true,
       "native_acceptance": false,
       "financial_worker": false
     }
   },
   "evidence_hashes": {
-    "control-plane-broad.json": "0e02860cb7cdd750f2184f418bde161676ac15347ae134a77a505f5e1dc8ec56",
-    "control-plane-broad.launch.json": "d43f7285692aa722776fdf3a159bb8b4a7236ddbd8308533d1274290572f918c",
-    "control-plane-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "control-plane-broad.stdout": "4ebb32d5bdf6cc6979157cf97a2858a1a21469939a18f149157327f0f8462004",
-    "control-plane-final-focus.json": "fd3e7e69168b6d4e9371d1323f4c686fc2f6674abf9dde7ccdefbfe784790c3c",
-    "control-plane-final-focus.launch.json": "628728d70b8a99ef5868288fac4988db39994eb4078c33a9a8467916631f238c",
-    "control-plane-final-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "control-plane-final-focus.stdout": "b3cbf431312e8a8fb89e9c996ea4f02df2eb187004282d8af8be3b926684b59c",
-    "control-plane-final-isolated.json": "547ac67bc5f1f5541e41cae9cdd757698967dddc8534233df704a1c568fa0fbc",
-    "control-plane-final-isolated.launch.json": "2d3ade32b159783ff62fb76b2c3be0522db015f35893f15531cd26b284456079",
-    "control-plane-final-isolated.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "control-plane-final-isolated.stdout": "4f3b10b160c564646de673a5a34b1030d42b3125c21d0a32920dd29837ce2a8f",
-    "control-plane-final-isolated.xml": "a572fd710afecfd7f9564fc8d10f39d3227e3df2f493c7888ce6a9b82d5ae848",
-    "control-plane-focus-01.json": "9340eab2696ab16ac3140b1d439e35db7c5270ea033368b8095122e4315d6483",
-    "control-plane-focus-01.launch.json": "537e01ee3bd00fd936af77e92334b2942fbb53fc1720c5d406f930b8869ca436",
-    "control-plane-focus-01.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "control-plane-focus-01.stdout": "64dec3361b9c05cbb749f506957585fd0053998b41dda15c7b7dbd735b6ad421",
-    "control-plane-focus-01.xml": "28fe910f31df636cea614a565ee6f87faa4ba6dca44a71a198de2f23b218a12d",
-    "control-plane-focus-02.json": "51625ec83e058760283fde854c541ac881ab8175c9ee9c7c3d89d8a5d7a0be69",
-    "control-plane-focus-02.launch.json": "91e7ca6a4ffb5a9ec520bdf4622d9d27548f8b9e2eddcb12e1e03014ca507763",
-    "control-plane-focus-02.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "control-plane-focus-02.stdout": "01d377aff935fea0da639d7c5b2652476775efcfb4dde41b7d8edc6eb7e350ce",
-    "control-plane-focus-02.xml": "a6f8bc75916b93ece38125d58c23536cccf5592b7ca0595c4f2524520756a41c",
-    "control-plane-joined-isolated.json": "128d22b18b8a3c00fefa2d757d918cf108d5a1d982536ad2f7ba15f7b30b2c56",
-    "control-plane-joined-isolated.launch.json": "604d492e9acc73a16311b8d7e82754f742f4cf6cac497439ca75702ba30f61d3",
-    "control-plane-joined-isolated.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "control-plane-joined-isolated.stdout": "dd60f80e82e4beb79a4b9b03b36ec9c76913e373bd78dca8ba7e738b3465de4e",
-    "control-plane-joined-isolated.xml": "8b6e2a139960e77a7b6d9ee936bedbd38758673da3f1cae86447bfcf905ef348",
-    "control-plane-manifest-before.json": "859f435752e0b0e2a14cd934b5ac5a263a963816696d6ae2279a5847c197a3b1",
-    "control-plane-node.json": "44eba2e4c7b0ce8a17e1d26d24d182742f80a8f622206262e533ab1acd516651",
-    "control-plane-node.launch.json": "5c2ff1391b6e27cc9bc2bd497913e699f8655517eecb7a908b5e4257871c9e53",
-    "control-plane-node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "control-plane-node.stdout": "02664e837d847b5541c942c75b934fcd7e42022929843c21c80ce2c5221592a8"
+    "windows-adapter-acl-review-v2.json": "f1a644a1e09770f1c80b9b3f5a266e8894d3c6dc3f4b1d2a2b93b73f8b980258",
+    "windows-adapter-acl-review.json": "7bd420a7c0b525298f6c37160f384548eec900c274a54b61e72f6e37d03604e3",
+    "windows-adapter-broad.json": "d7d0d5dfd325b4902e01830d9a968b3f94f901cd88cd8c374d17ff6d3a6d9fa2",
+    "windows-adapter-broad.launch.json": "03ce29570f62218be858e1739c234cb1dcf3f24ca5039d2a63ffbcd824676722",
+    "windows-adapter-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-broad.stdout": "ac03574866ac411921fcf4a61ba465c62e51763492abf3ebe0cd0cae26dec75c",
+    "windows-adapter-final-focus.json": "7a5d09207a32e248d0b61141c6eda3ebe15c6a269a91de0589e6316c56a1442c",
+    "windows-adapter-final-focus.launch.json": "1faa29a8ccbbbe2d77c1f46229fd7fa7db89336c32a7f9406312f02dae1c0bfe",
+    "windows-adapter-final-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-final-focus.stdout": "2c1b1157cdd2110bd310486e0b53a528fcdda3a302f2c02e916f6e5211e62e90",
+    "windows-adapter-final-focus.xml": "f8cc649b20243d7bec3a01db28fcc2f1979641acd89e626aac7dc652279e65ff",
+    "windows-adapter-focus-01.json": "d7447a68f53e8757c1b74ca6833355d81b7c24a0f4cb669e24ebb90d33925be8",
+    "windows-adapter-focus-01.launch.json": "1725057d6659ba5eadb63e9709573e594074772c8f9514e1bdd144ee83b75c35",
+    "windows-adapter-focus-01.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-focus-01.stdout": "0909468d5b75c1048b3ee8e0bdcaee9515645fa1c04f78bf2a01c1d7523b7379",
+    "windows-adapter-focus-01.xml": "5ad4d1ab7ca14507b1c0f8c1cd993c54cfda1bae0d196c59635f114381f018ba",
+    "windows-adapter-manifest-before.json": "cad011ded4cce496a3738212d4092e15075da93bf3da756e60799b96dd445799",
+    "windows-adapter-node.json": "89b6a68d03e5ea703ebde8dcc048ed56322c28b5fa82e5955e6d52b0d92e91fa",
+    "windows-adapter-node.launch.json": "86a69bb82e55a97e219ab46f5c360460ae29d58eba48cdee548464d8fafec52e",
+    "windows-adapter-node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-node.stdout": "9e4def28f5d9794575f97bc89416a0309697602ede4b0a53ea17fc875ef8ab8c",
+    "windows-adapter-static-review.json": "85de3c5f496b27af7501968a1762d7549e74d11abd89a01f7e92c03921700752",
+    "windows-adapter-validated-focus.json": "97ca1bc2d636ed12446f1d9cca0eae1608920b533080a78ad9744c3e5d2cea7e",
+    "windows-adapter-validated-focus.launch.json": "20548fd162abf8ec2d5ce5ecd7a8d55d91f638047288be88323bb55b37154133",
+    "windows-adapter-validated-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-adapter-validated-focus.stdout": "0f0b0e12deec054ab7676799877c8863f7f8fcdb18ff812248ed584d5119f668",
+    "windows-adapter-validated-focus.xml": "db27c9ed18f1150d4d55c77b25198e0a175a2317fe08fd2767895ea345153cd8"
   }
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",

@@ -35,3 +35,30 @@ def require_compatible(review):
          and review.get('native_execution') is False and review.get('compatible') is False,
          'ASYNC_REVIEW_NOT_NATIVE_AUTHORITY')
     raise ValueError('ASYNC_COMPATIBILITY_REQUIRES_SEPARATE_EVIDENCE')
+
+
+def assess_observed_branch(review, observation):
+    """An observed host branch can prove refusal, never native compatibility.
+
+    The caller preserves genuine read-only host observations and byte pins.
+    Matching a different runtime's bytes is explicitly labelled inference;
+    this function cannot claim that the target process was executed.
+    """
+    need(type(review) is dict and review.get('schema') == 'AIP06_ASYNC_SOURCE_REVIEW_V1'
+         and review.get('native_execution') is False and review.get('compatible') is False,
+         'ORIGINAL_SOURCE_ASYNC_REVIEW_REQUIRED')
+    need(type(observation) is dict and observation.get('schema') == 'AIP06_READONLY_HOST_ASYNC_BRANCH_V1'
+         and type(observation.get('has_builtin_socketpair')) is bool
+         and observation.get('socket_created') is False and observation.get('loop_created') is False
+         and observation.get('target_runtime_executed') is False,
+         'READONLY_BRANCH_OBSERVATION_NOT_EXECUTION_AUTHORITY')
+    refusal = (observation['has_builtin_socketpair'] is False and review.get('default_proactor') is True
+               and review.get('self_socketpair') is True and review.get('fallback_binds_tcp') is True)
+    return {'schema': 'AIP06_ASYNC_BRANCH_ASSESSMENT_V1', 'compatible': False, 'native_acceptance': False,
+            'target_runtime_executed': False,
+            'status': 'BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT' if refusal
+                      else 'BLOCKED_NATIVE_BRANCH_NOT_QUALIFIED',
+            'target_byte_match': observation.get('target_byte_match') is True,
+            'target_branch': 'INFERRED_FROM_MATCHING_BYTES_NOT_EXECUTED' if observation.get('target_byte_match') is True
+                             else 'UNKNOWN_UNEXECUTED',
+            'required': 'Approved transport/environment decision; do not exempt loopback or weaken the guard.'}

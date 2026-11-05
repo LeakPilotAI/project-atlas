@@ -35,6 +35,24 @@ class IndependentGrader:
     def grade_native(self, *args, **kwargs):
         raise ValueError('NATIVE_READER_ATTESTATION_AND_RUNTIME_BINDING_NOT_QUALIFIED')
 
+    @staticmethod
+    def inspect_windows(adapters, request, *, plan, manifest_sha256, deadline_ns):
+        """Collect raw concrete providers; never promote them to a native PASS.
+
+        Raw Windows evidence is not the injected summary schema. In particular
+        a cached financial reply or owner-supplied booleans cannot replace the
+        original cold-reader/StopVerification chain and reader admission.
+        """
+        from scripts.observation_runtime.aip06_acceptance_plan import validate_plan
+        from scripts.observation_runtime.aip06_windows_acceptance_adapters import WindowsReaderSet
+        validate_plan(plan)
+        need(digest(plan) == manifest_sha256 and type(adapters) is WindowsReaderSet
+             and adapters.pin == manifest_sha256,
+             'EXACT_CONCRETE_WINDOWS_ADAPTERS_AND_MANIFEST')
+        result = adapters.collect(request, deadline_ns=deadline_ns)
+        need(result['native_acceptance'] is False, 'RAW_OBSERVATION_IS_NOT_NATIVE_ACCEPTANCE')
+        return result
+
     def _read(self, name, request, started_ns, deadline_ns):
         cut = copy.deepcopy(self.readers[name].read(request, deadline_ns=deadline_ns))
         now = self.clock()

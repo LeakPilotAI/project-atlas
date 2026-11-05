@@ -8,6 +8,7 @@ import os
 import ntpath
 from pathlib import Path
 import xml.etree.ElementTree as ET
+from app.services.paper_financial_replay import digest
 
 from scripts.observation_runtime.aip06_fixture_guard import require_fixture
 from scripts.observation_runtime.aip06_harness import ROOTS, need, path_for
@@ -24,10 +25,10 @@ SELECTION = {
 
 
 class GuardedTemps:
-    def __init__(self, guard, alias):
+    def __init__(self, guard, alias, *, label='pytest'):
         self.guard, self.alias = guard, alias
         self.dirs = FixtureDirectories(guard)
-        self.base = self.dirs.create(alias, "pytest")
+        self.base = self.dirs.create(alias, label)
         self.serial = 0
 
     def getbasetemp(self):
@@ -111,7 +112,7 @@ class GuardedJUnit:
         self.completed = True
 
 
-def run_reviewed_tests(*, modules, junit_leaf, pytest_main=None):
+def run_reviewed_tests(*, modules, junit_leaf, pytest_main=None, case_ids=None):
     guard = require_fixture("native-pytest-driver")
     need(
         type(modules) in (tuple, list)
@@ -122,6 +123,12 @@ def run_reviewed_tests(*, modules, junit_leaf, pytest_main=None):
     )
     aliases = {SELECTION[m] for m in modules}
     need(len(aliases) == 1, "ONE_NATIVE_FIXTURE_ROOT_PER_TEST_WORKER")
+    if case_ids is not None:
+        from scripts.observation_runtime.aip06_acceptance_plan import schedule
+        reviewed = {r['source_case'] for r in schedule() if r.get('source_case') is not None}
+        need(type(case_ids) in (tuple, list) and case_ids and len(case_ids) == len(set(case_ids))
+             and set(case_ids) <= reviewed and {c.split('::')[0] for c in case_ids} == set(modules),
+             'EXACT_REVIEWED_SCENARIO_NODE_IDS')
     alias = aliases.pop()
     path = path_for("E", junit_leaf)
     need(
@@ -138,7 +145,7 @@ def run_reviewed_tests(*, modules, junit_leaf, pytest_main=None):
         guard.processes.verify_test_source(module)
     if alias not in guard.paths.bound:
         guard.mkdir(ROOTS[alias])
-    temps = GuardedTemps(guard, alias)
+    temps = GuardedTemps(guard, alias, label='pytest' if case_ids is None else 'case-' + digest(list(case_ids))[:32])
     junit = GuardedJUnit(guard, path)
     import pytest
 
@@ -160,11 +167,15 @@ def run_reviewed_tests(*, modules, junit_leaf, pytest_main=None):
         "-p",
         "no:faulthandler",
         "--capture=sys",
-    ] + list(modules)
+    ] + list(modules if case_ids is None else case_ids)
     if any("unified_actual_native_lanes" in m for m in modules):
         args[1:1] = ["-p", "pytest_asyncio.plugin"]
     code = pytest_main(args, plugins=[TempPlugin(), junit])
     need(junit.completed, "MISSING_DURABLE_GUARDED_JUNIT")
+    if case_ids is not None:
+        need(code == 0 and {r['nodeid'] for r in junit.rows} == set(case_ids)
+             and all(r['complete'] and r['outcome'] == 'passed' for r in junit.rows),
+             'EXACT_COMPLETE_SCENARIO_RESULT_REQUIRED')
     return {
         "exit_code": code,
         "junit": path,

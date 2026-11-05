@@ -1,3 +1,19 @@
+# CURRENT UPDATE — Windows adapter / compatibility assessment (November 5, 2026)
+
+**BLOCKED — native owner, physical contexts, producers and async contracts remain unresolved.** AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No new authorization created/requested/redeemed/consumed. Native acceptance and financial workers were not executed.
+
+Detailed report: `docs/AIP_06_WINDOWS_ADAPTER_COMPATIBILITY_CLOSURE_2026-11-05.md`. Implemented and source-validated: handle-bound pinned reads; independent process/Job/usage/cold-ledger/object/archive/retained-response observers; concrete typed raw reader collection using unchanged three-reader sockets then strict processes; exact17-case registry and exact-node guarded driver connection. These do not constitute a working native controller or full native scenario producers.
+
+Concrete remaining source blockers: `WindowsAcceptanceOwner.reserve/verify_controller` deliberately refuse the direct-controller versus fenced legacy-supervisor mismatch; no qualified per-case physical context producer; seven groups still lack actual native producer bindings (F05,F06,F09,F11,F12,bootstrap/IPC,ownership). Independent reader hosting/IPC and complete native financial/Stop result projection also remain unconnected. Do not hide these as evidence-only gaps or approve a native run yet.
+
+Read-only host branch: no built-in socketpair, default Proactor, six corresponding runtime files byte-identical. Its TCP fallback conflicts with the unchanged bind/connect guard. D target branch remains inferred/unexecuted; no socket/loop/D process or policy exception. Three normal-user ACL reads succeeded (runtime directory/exe protected,diagnostics parent inherited); full native identities/ACLs still unaccepted. All10 future roots absent.
+
+2061distinct completed Python passes,42Node passes,0final failures/skips,5native-launch deselections,66new cases,2existing warnings,0current timeouts/crashes. One new fixture clock-reference failure corrected with full affected-suite rerun; older180s timeout preserved,not repeated. Candidate SHA256 `bffc7d50648fc1e9d6800f4b03b09a00d980bf48ba4310a8cac0dd4ea2c79f91`;99source pins verified. Fresh single-use authorization remains PENDING after technical readiness. No native or installed action follows this checkpoint.
+
+The following prior packet/update bytes remain unchanged historical assessments; this update supersedes only current implementation/readiness status.
+
+---
+
 # CURRENT UPDATE — source control plane (November 5, 2026)
 
 **NATIVE AUTHORIZATION PACKET BLOCKED.** Outer-owner/dispatcher/independent grader source infrastructure is now implemented and offline-qualified; concrete native backend/reader authority, async compatibility, fault/load/capacity bindings and current runtime/ACL observations remain pending. Native start always refuses; no grant is created, redeemed or consumed. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
