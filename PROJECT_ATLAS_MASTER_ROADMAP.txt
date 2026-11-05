@@ -15424,13 +15424,24 @@ Remaining: First-transfer physical admission in endpoint/inherited-identity leaf
 Next action: Continue only those exact ownership-forwarding source interfaces from this validated slice. Do not claim complete integration or request native execution; no broader suite until slice closes. Preserve all changes and source history.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: AIP-06-DESCENDANT-OWNERSHIP-CLOSURE (2026-11-05)
 Status: Descendant ownership source slice COMPLETE; native acceptance PENDING. Overall AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
 Implemented: guarded first-transfer capture/admission; complete prospective 12-handle manifest and retained transfer; recursive raw-Job graph and one-root-ledger channel forwarding; correlated fresh graph receipts; verified parent/creator handle and final process-slot release with idempotent accounting.
 Validation: 31 final focused passes (subset); 703 distinct synchronous regression passes across2disjoint runs (669+34),14 modules,0assertion failures/errors/skips in completed runs,5 native-launch cases deselected,0 warnings. Combined14module attempt FAILED interpreter access violation; full73module run BLOCKED in Windows asyncio socketpair setup. Neither is PASS. Node/native acceptance/installed execution not run. Evidence: docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md and logs/diagnostics/aip06-descendant-closure-20261105/.
 Boundary: no supervisor probes or full inherited-path qualification started; no native/installed/provider/account/Discord/PAPER/Windows/Genesis actions. B1C1D1E1 and21 decisions preserved. Unrelated research edit/private evidence/backups retained.
 Next action: STOP after scoped commit/non-force push/independent remote readback. Resolve combined/async test-runner qualification separately; source-only supervisor/unexpected-child probes and full inherited-path qualification remain; native capacity/ACK/drain/restart/complete Stop remain unproved. No native authorization inferred.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: AIP-06-COMBINED-VALIDATION-RECOVERY (2026-11-05)
+Status: COMBINED OFFLINE VALIDATION RECOVERED in qualified profile; native acceptance NOT RUN. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
+Evidence: docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md and logs/diagnostics/aip06-combined-validation-20261105/. Single73module Python run1804passed,0fail/error/skip,5native-launch cases deselected,2warnings; Node42passed,0fail/skip. Focused28+policy3 are subsets, no double counting. Final validation0crashes/timeouts/unresolved hangs. All703prior cases preserved.
+Diagnosis: historicalPythonPID2260,0xC0000005. Timed stack dump plus Python audit callback reproduces outside Atlas; low-level cause not claimed. Restricted localhost TCP returns10013 and socketpair/asyncio waits; identical normal-context controls pass. Separate measured mechanisms, no claimed Windows defect or shared cause.
+Repair: normal permitted Windows test context with external/provider traffic refused, timed dump0 plus original-handle outer600s suite bound. Exact pinned renderer helpers only; financial workers remain prohibited. No product/test-source/acceptance-contract changes. Six diagnostic crashes/five confirmed timeouts and earlier failed policy runs retained; none relabeled PASS.
+Boundary: no supervisor probes/full inherited qualification/native acceptance/installed/provider/account/Discord/PAPER/live/V6/browser/Windows configuration/Genesis/autostart actions. B1C1D1E1 and21decisions unchanged; unrelated edits/private evidence preserved.
+Next action: STOP after scoped docs commit/non-force push/independent remote SHA. Separate source-only probes/full inherited-path qualification remain; native capacity/ACK/drain/restart/complete Stop and operational gates still require their original acceptance and authority. Never re-enable the unsafe timed-dump profile or infer native/PAPER readiness from unit results.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

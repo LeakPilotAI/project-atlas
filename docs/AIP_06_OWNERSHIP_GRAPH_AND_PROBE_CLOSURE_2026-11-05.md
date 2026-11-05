@@ -1,3 +1,55 @@
+# Combined validation recovery — November 5, 2026
+
+**COMBINED OFFLINE VALIDATION RECOVERED in the qualified execution profile.** Base `955ed18fc596d65f1e47709d3a18225906c3c9fc`. No product/strategy/guard code was changed. This is not native acceptance: AIP-06 remains BLOCKED, completion 5/18, PAPER NO, production NO-GO. Historical failures and the entire previous report remain below.
+
+## Historical process and failure evidence
+
+Normal-context read-only Application-event access recovered Event 1000 at **2026-11-05 07:20:02 UTC (01:20:02 Central)**: Python **PID 2260 (0x8D4)**, creation FILETIME **0x1DD6CF58E3A9FDE**, image `C:\Users\renal\AppData\Local\Programs\Python\Python312\python.exe`, fault in `python312.dll`, exception **0xC0000005** (signed exit -1073741819), offset **0x27E990**, report `ced65455-4912-41c7-83e9-47c79ec46c46`. The old process command/parent and original launch handle were not retained; they are not invented or recovered from a currently reused PID. Application events were initially refused in restricted execution and subsequently read successfully in the approved normal context. No UAC, service, registry, firewall, time or networking configuration change occurred. WER dump files were not opened or copied.
+
+The old last completed case was `test_observer_prepaid_batch_can_verify_wire_without_recursive_rpc_reservation`; the active failing case was `test_parent_only_releases_bootstrap_reservations_after_original_exit_or_no_creation`. Its retained stderr shows a **30-second timed traceback**, frames in `aip06_fixture_guard.audit/current`, then the access violation while deepcopying the reservation journal during bootstrap release. This establishes the observed trigger/cut, not a proven C-level interpreter defect.
+
+## Separate bounded reproductions
+
+| Probe | Restricted context | Normal Windows context | Finding |
+|---|---|---|---|
+| Unmodified stdlib socketpair / new asyncio loop | Both stopped at the explicit outer10s limit; instrumented and uninstrumented repetitions agree | Socketpair0.141s; asyncio0.313s; normal exit and closure | Context-specific loopback access failure, not an Atlas financial/IPC dependency |
+| Raw IPv4 localhost TCP, per-socket2s bound | `connect_ex`10013 (access denied), accept timeout | Connect/accept/payload/endpoint checks passed in0.125s | Real transport denial supported independently of pytest |
+| Trace timer without Python audit hook | Completed | Completed | Timer alone did not reproduce the fault |
+| Audit hook without timer | Completed | Completed | Audit hook alone did not reproduce the fault |
+| Timed dump during audit/deepcopy, no Atlas import | Reproduced0xC0000005 | Generic busy-hook trial also reproduced0xC0000005; another completed | Reproducible, timing-dependent audit/trace interaction in this runtime/environment |
+| Timed dump with Atlas audit callback | Active-callback trial crashed; inactive trial completed | Active-callback trial crashed | Consistent trigger; no financial worker, Job, descendant or resource-release fixture was needed |
+
+Raw phases record bind/listen/address/handle, connect10035 and the blocking `accept` call. The local Python312 stdlib `_fallback_socketpair` performs a nonblocking connect followed by a blocking accept; failed asynchronous connectivity can therefore leave loop construction waiting. The raw connect10013 and identical normal-context controls support the permission-context diagnosis. No TCP State0 was reclassified and no three-reader/V6 contract was changed. A socketpair control is not V6 socket acceptance.
+
+The crash and hang do **not** have a demonstrated common cause. The hang disappears in the permitted normal process context. The audit/timer crash can still occur there without sockets or Atlas imports. The precise lower-level CPython/instrumentation/Windows cause remains unproved; no OS defect, patched interpreter or general runtime repair is claimed. New processes use a direct pinned interpreter, `close_fds=True`, retained original launch handles and creation-time/image checks. Thus neither failure requires inherited Atlas handles or financial cleanup. This does not qualify native resource release or Job ownership.
+
+## Targeted repair: validation execution, not weakened guards
+
+1. Use the approved normal Windows process context for genuine localhost-dependent async tests. External DNS/connections remain refused by the diagnostic policy; no provider access or event-loop/socket replacement was introduced.
+2. Set **`faulthandler_timeout=0`** for these audit-heavy tests. Keep ordinary pytest/fatal-error reporting. The old dump timer was diagnostic, not a reliable test deadline: `dump_traceback_later` defaults to `exit=False` ([official Python documentation](https://docs.python.org/3.12/library/faulthandler.html#faulthandler.dump_traceback_later)).
+3. Apply a **real outer process deadline**, independent of the test interpreter:120s focused,600s full,30s standalone Node. Only an original retained process with unchanged PID/creation/image can be stopped on timeout. Timeout/crash/nonzero exit never authorizes PASS; stderr, exit state and handle-close completion are recorded. The600s bound is an offline test-suite budget, not a change to the eight-second Stop,45-second browser ACK or any financial/resource acceptance deadline.
+4. Keep the exact73-module selection, native-launch exclusion expression and assertions. The public selection hook requires every declared module and rejects all others. Source account, currency, provenance and financial safeguards remain unchanged.
+5. Preserve Atlas's own audit denial before the diagnostic policy's fallback refusal. Initially the extra policy preempted a negative test (one assertion failure, then360s outer timeout). A later full run completed with1802 passes/two failures because the blanket ban also rejected existing Node renderer tests. Those failed attempts remain failures. The corrected policy permits only the **two exact AST-extracted/hash-matched renderer snippets**, pinned Node executable, repository CWD and disposable JSON input under the evidence root. Their original20s subprocess bounds and retained creation/handle closure are verified; every financial/other child launch remains refused. No test was removed, assertion changed or native approval granted.
+
+No product defect justified altering the ownership/Stop implementation. The smallest repair was this qualified invocation and diagnostic policy. The unsafe timed-dump combination remains a known reproducible limitation; do not re-enable it and claim the interpreter fixed.
+
+## Final validation (completed, independently checked)
+
+- **Python:1,804 distinct passed,0failed/errors/skipped,5 native-launch cases deselected,2 existing dependency warnings**, all73 reviewed modules in **one process**. Pytest360.90s; outer362.094s within600s; exit0; no timeout/crash. This is the complete reviewed selection, not a claim that every test in the entire repository ran.
+- All703 prior isolated cases appear in the final successful set. Focused28 and policy-focused3 are subsets and are **not added**. Case IDs match the prior1,804-item selection exactly. The actual async research-contract tests now complete using the normal Windows loop.
+- **Node:42passed,0failed/skipped/cancelled**, deterministic DOM/fetch harness, no browser/HTTP listener. The two Node subprocess cases inside Python are Python case IDs and are not added as extra Node tests.
+- Final accepted validation: **0crashes,0timeouts,0unresolved hangs**. Diagnosis also recorded **6reproduced access violations**, **5machine-recorded outer timeouts** (four10s primitives plus the rejected360s run), one raw TCP access-denial/accept failure, three exploratory assertion failures from the new diagnostic policy, and two initial diagnostic-driver refusals. These are retained, not converted to passes. The first driver incorrectly queried the executable after exit (WinError31); the second probed a closed handle and encountered0xC0000008. The corrected ordinary diagnostic runner checks birth through the still-retained handle before closing it, and records successful `Close` completion without claiming AIP native-handle acceptance.
+
+Evidence: `logs/diagnostics/aip06-combined-validation-20261105/` contains original commands, PID/creation records, stdout/stderr, scoped Application events, JUnit, case IDs, executable/helper hashes and final outcomes. Python executable SHA256:`4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a`; DLL:`9a0e3435aaa680d868150f87ab3e388ad2eebc22f87e036155c7b4eda8cd2120`. These identify the tested local files, not a vendor-signature attestation. Private helpers are not runtime authority or part of an installed release. Fresh labels/destinations, unchanged hashes and normal-context approval are required before reproducing their commands; do not reuse an installation/native grant.
+
+## Boundaries and next work
+
+All product/test source bytes remain at the verified base; the unrelated research-test edit remains at SHA256`4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb` and is not staged. Only this report, canonical roadmap and recovery documentation are checkpointed. All21 decisions and B1/C1/D1/E1 remain unchanged. No native financial worker, native acceptance, installed launch/selection, provider/account connection, Discord delivery, PAPER/live order, browser/V6 retry, autostart, Windows configuration change or Genesis modification occurred. Ordinary pytest and the exact renderer helpers were the only validation processes.
+
+The two combined-validation blockers are recovered **for the qualified profile**. Supervisor/unexpected-child implementation, full inherited-path qualification and genuine native capacity/ACK/drain/restart/eight-second Stop evidence remain outside this execution. Current installed/source parity, current provider/research/clock/custody, trusted-browser/V6 and financial commissioning gates are not cleared. AIP-06 BLOCKED;5/18;PAPER NO;production NO-GO. STOP after the scoped documentation commit, non-force push and independent remote verification.
+
+---
+
 # Descendant ownership closure — November 5, 2026
 
 **DESCENDANT OWNERSHIP SOURCE SLICE COMPLETE — NATIVE ACCEPTANCE PENDING.** Base `27d16d819e2d052b22875ed8647d1afb2d7dfcf2`. This supersedes the three pending descendant interfaces in the previous checkpoint below; it does not complete all AIP-06 source work or native acceptance. AIP-06 remains BLOCKED, completion 5/18, PAPER NO, production NO-GO.
