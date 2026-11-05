@@ -132,6 +132,30 @@ class WindowsSessionPort:
         self.aggregate = getattr(controller, 'aggregate', None)
         self.native_queries = None
         self.descendant_gateway = None
+        self.ownership_probes = None
+
+    def ownership_probe(self, case, *, deadline_ns):
+        """Current supervisor and unexpected-child cut; no launch authority."""
+        try:
+            return self._ownership_probe(case, deadline_ns=deadline_ns)
+        except BaseException:
+            self.failed = self.guard.failed = True
+            raise
+
+    def _ownership_probe(self, case, *, deadline_ns):
+        if self.ownership_probes is None:
+            from scripts.observation_runtime.aip06_cleanup_providers import CimTables
+            from scripts.observation_runtime.aip06_ownership_probes import OwnershipProbes
+            from scripts.observation_runtime.aip06_windows_process import CancellableCalls
+            runner = self.controller.legacy_probes
+            need(runner is not None, 'OWNERSHIP_PROBE_OUTPUT_NOT_BOUND')
+            path = ntpath.join(ntpath.dirname(__file__), 'aip06_ownership_probes.py')
+            self.controller.verify_source(path)
+            worker = CancellableCalls(calls=self.calls, allocations=self.allocations_port, clock_ns=self.clock)
+            tables = CimTables(api=self.controller.cim_api, allocations=self.allocations_port,
+                               worker=worker, clock_ns=self.clock)
+            self.ownership_probes = OwnershipProbes(self, tables, runner.output)
+        return self.ownership_probes.collect(case, deadline_ns=deadline_ns)
 
     def native_query(self, argv, *, timeout, maximum_bytes=65536):
         need(self.native_queries is not None, 'BOUNDED_NATIVE_QUERY_EXECUTOR_NOT_BOUND')

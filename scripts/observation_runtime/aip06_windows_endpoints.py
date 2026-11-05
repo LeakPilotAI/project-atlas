@@ -144,6 +144,40 @@ class WindowsChildEndpoints:
         )
         return state
 
+    def ownership_objects(self, port, expected, *, deadline_ns):
+        """Inspect every active private peer, including registered descendants.
+
+        This covers guarded native objects, not arbitrary system handle-table
+        discovery. Missing/deferred opaque native evidence is a refusal.
+        """
+        peers = {}
+
+        def visit(peer):
+            owner = digest(peer.binding.runtime)
+            need(owner not in peers and peer.resources is port.resources,
+                 "PROBE_NATIVE_PEER_DUPLICATE_OR_FOREIGN_LEDGER")
+            peers[owner] = peer
+            for _, broker in getattr(peer, 'forwarded', {}).values():
+                need(not broker.unknown, 'PROBE_NATIVE_FORWARDING_UNCERTAIN')
+                visit(broker.verifier)
+
+        for state in self.state.values():
+            if state['closed']:
+                continue
+            child = state['child']
+            need(state['port'] is port and child.binding is not None
+                 and state['verifier'] is not None, 'PROBE_NATIVE_PEER_EVIDENCE_MISSING')
+            visit(state['verifier'])
+        owners = {digest(row) for row in expected.values()} - {port.guard.owner}
+        need(set(peers) == owners, 'PROBE_NATIVE_PEER_INVENTORY_INCOMPLETE')
+        result = []
+        for owner, peer in sorted(peers.items()):
+            need(peer.binding.runtime['pid'] in expected
+                 and body(peer.binding.runtime) == body(expected[peer.binding.runtime['pid']])
+                 and port.clock() < deadline_ns, 'PROBE_NATIVE_PEER_BIRTH_OR_DEADLINE')
+            result.extend(peer.probe_native_objects(deadline_ns=deadline_ns))
+        return result
+
     def channel(self, child, observed):
         state = self._state(child)
         need(state["channel"] is None, "PIPE_CHANNEL_ONCE_ONLY")

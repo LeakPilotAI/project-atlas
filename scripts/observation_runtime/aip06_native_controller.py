@@ -265,6 +265,14 @@ class NativeController:
         need(self.legacy_probes is not None,'RETAINED_LEGACY_PROBE_RUNNER_NOT_BOUND')
         return self.legacy_probes.run_case(name)
 
+    def probe_supervisor(self, *, deadline_ns):
+        self.require_ready()
+        return self.process_port.ownership_probe('supervisor', deadline_ns=deadline_ns)
+
+    def probe_unexpected_children(self, *, deadline_ns):
+        self.require_ready()
+        return self.process_port.ownership_probe('unexpected-child', deadline_ns=deadline_ns)
+
     def initialize(self, process_port_factory, *, aggregate_factory=None):
         """Future explicitly authorized execution only. Never called offline."""
         need(

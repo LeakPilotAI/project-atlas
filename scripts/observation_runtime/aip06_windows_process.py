@@ -9,6 +9,8 @@ import ntpath
 import os
 import subprocess
 import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from ctypes import wintypes as W
 from dataclasses import dataclass
 
@@ -393,6 +395,20 @@ class Win32ProcessCalls:
         )
 
 
+_observation_deadline = ContextVar('aip06_observation_deadline', default=None)
+
+
+@contextmanager
+def bounded_observations(deadline_ns):
+    """One absolute bound across recursive retained-identity observations."""
+    previous = _observation_deadline.get()
+    token = _observation_deadline.set(min(previous, deadline_ns) if previous is not None else deadline_ns)
+    try:
+        yield
+    finally:
+        _observation_deadline.reset(token)
+
+
 class NativeProcessObserver:
     """Independent CIM plus original kernel handles, per-launch Job, pinned images."""
 
@@ -402,6 +418,9 @@ class NativeProcessObserver:
 
     def observe(self, handle):
         started = self.clock()
+        deadline = _observation_deadline.get()
+        deadline = min(started + 5 * 10**9, deadline) if deadline is not None else started + 5 * 10**9
+        need(started < deadline, 'RETAINED_OBSERVATION_DEADLINE')
         before = self.calls.native(handle)
         need(
             not self.calls.lifecycle(handle)["exited"], "LIVE_RETAINED_PROCESS_REQUIRED"
@@ -411,7 +430,7 @@ class NativeProcessObserver:
                 self.job is not None and self.calls.in_job(handle, self.job),
                 "PROCESS_NOT_IN_RETAINED_JOB",
             )
-        row = self.cim.process(before["pid"], deadline_ns=started + 5 * 10**9)
+        row = self.cim.process(before["pid"], deadline_ns=deadline)
         need(
             type(row) is dict
             and set(row) == {"pid", "created", "image", "parent_pid", "command_line"}
@@ -428,7 +447,7 @@ class NativeProcessObserver:
             and row["created"] // 10 == before["created"] // 10
             and ntpath.normcase(row["image"]) == ntpath.normcase(before["image"])
             and not self.calls.lifecycle(handle)["exited"]
-            and self.clock() - started <= 5 * 10**9,
+            and started <= self.clock() <= deadline,
             "CIM_NATIVE_PROCESS_DISAGREEMENT",
         )
         pin = self.images.get(ntpath.normcase(before["image"]))

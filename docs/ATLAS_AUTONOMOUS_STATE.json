@@ -1,4 +1,145 @@
 {
+  "aip06_supervisor_unexpected_child_probes_20261105": {
+  "base_commit": "5be07663e8e2cee36ad0ba0e9d7427743c9ad6dd",
+  "status": "SUPERVISOR_AND_UNEXPECTED_CHILD_LIVE_EVIDENCE_CONNECTED_OFFLINE_NOT_NATIVE_ACCEPTANCE",
+  "python": {
+    "passed": 1854,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 5,
+    "warnings": 2,
+    "modules": 74,
+    "single_process": true
+  },
+  "new_tests": 50,
+  "focused": {
+    "passed": 50,
+    "subset_of_final": true
+  },
+  "preserved_prior_distinct_python": 1804,
+  "node": {
+    "passed": 42,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "final_run": {
+    "label": "probes-full-verified",
+    "command": [
+      "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "-B",
+      "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\probes_suite.py",
+      "full",
+      "probesverified"
+    ],
+    "parent_pid": 21408,
+    "identity": {
+      "pid": 10876,
+      "created": 134383429405633385,
+      "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+    },
+    "seconds": 485.125,
+    "timeout_limit": 600,
+    "timed_out": false,
+    "exit_code": 0,
+    "handle_closed": true,
+    "native_acceptance": false,
+    "financial_worker": false
+  },
+  "historical_this_slice_assertion_failures": 3,
+  "validation_crashes": 0,
+  "validation_timeouts": 0,
+  "unresolved_hangs_in_qualified_profile": 0,
+  "native_acceptance_executed": false,
+  "financial_workers_launched": false,
+  "inherited_path_qualification_started": false,
+  "legacy_direct_supervisor_unexpected_launch_cases": "STILL_REFUSE_NOT_RECLASSIFIED_AS_LIVE_PROBE_CUTS",
+  "aip06_status": "BLOCKED",
+  "completion_count": "5/18",
+  "paper_startup": false,
+  "production": "NO_GO",
+  "report": "docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md",
+  "previous_current_checkpoint": {
+    "active_task": "AIP-06-COMBINED-VALIDATION-RECOVERY",
+    "last_verified_task": "COMBINED_OFFLINE_VALIDATION_RECOVERED_PROFILE_QUALIFIED_NOT_NATIVE_ACCEPTANCE",
+    "next_eligible_tasks": [
+      "STOP after this bounded validation recovery, documentation commit/non-force push and independent remote SHA verification.",
+      "Separate next source scope: supervisor/unexpected-child probes and full inherited-path qualification. Do not run native acceptance without its own reviewed authority; retain qualified test context and outer deadline, no timed stack dumps. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
+    ],
+    "latest_tests": {
+      "base_commit": "955ed18fc596d65f1e47709d3a18225906c3c9fc",
+      "status": "COMBINED_OFFLINE_VALIDATION_RECOVERED_PROFILE_QUALIFIED_NOT_NATIVE_ACCEPTANCE",
+      "python": {
+        "passed": 1804,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 5,
+        "warnings": 2,
+        "modules": 73,
+        "single_process": true
+      },
+      "focused": {
+        "passed": 28,
+        "subset_of_final": true
+      },
+      "policy_focused": {
+        "passed": 3,
+        "subset_of_final": true
+      },
+      "preserved_prior_distinct_python": 703,
+      "node": {
+        "passed": 42,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "final_run": {
+        "label": "full-final",
+        "command": [
+          "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "-B",
+          "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\suite.py",
+          "full",
+          "final"
+        ],
+        "parent_pid": 32028,
+        "identity": {
+          "pid": 12588,
+          "created": 134383401954043367,
+          "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+        },
+        "seconds": 362.094,
+        "timeout_limit": 600,
+        "timed_out": false,
+        "exit_code": 0,
+        "handle_closed": true,
+        "native_acceptance": false,
+        "financial_worker": false
+      },
+      "diagnostic_crashes": 6,
+      "confirmed_diagnostic_timeouts": 5,
+      "exploratory_assertion_failures": 3,
+      "initial_driver_refusals": 2,
+      "final_validation_crashes": 0,
+      "final_validation_timeouts": 0,
+      "unresolved_hangs_in_qualified_profile": 0,
+      "timed_dump_audit_crash_still_reproducible": true,
+      "low_level_interpreter_cause_proven": false,
+      "socketpair_restricted_context_blocked": true,
+      "normal_context_socketpair_verified": true,
+      "product_source_changed": false,
+      "native_acceptance_executed": false,
+      "financial_workers_launched": false,
+      "aip06_status": "BLOCKED",
+      "completion_count": "5/18",
+      "paper_startup": false,
+      "production": "NO_GO",
+      "report": "docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md"
+    }
+  }
+},
   "aip06_combined_validation_recovery_20261105": {
   "base_commit": "955ed18fc596d65f1e47709d3a18225906c3c9fc",
   "status": "COMBINED_OFFLINE_VALIDATION_RECOVERED_PROFILE_QUALIFIED_NOT_NATIVE_ACCEPTANCE",
@@ -13813,11 +13954,11 @@
   "original_evidence_preserved": true,
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
-  "active_task": "AIP-06-COMBINED-VALIDATION-RECOVERY",
-  "last_verified_task": "COMBINED_OFFLINE_VALIDATION_RECOVERED_PROFILE_QUALIFIED_NOT_NATIVE_ACCEPTANCE",
+  "active_task": "AIP-06-SUPERVISOR-AND-UNEXPECTED-CHILD-PROBES",
+  "last_verified_task": "SUPERVISOR_AND_UNEXPECTED_CHILD_LIVE_EVIDENCE_CONNECTED_OFFLINE_NOT_NATIVE_ACCEPTANCE",
   "next_eligible_tasks": [
-  "STOP after this bounded validation recovery, documentation commit/non-force push and independent remote SHA verification.",
-  "Separate next source scope: supervisor/unexpected-child probes and full inherited-path qualification. Do not run native acceptance without its own reviewed authority; retain qualified test context and outer deadline, no timed stack dumps. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
+  "STOP after source probe implementation/validation/report, scoped commit/non-force push and independent remote SHA verification.",
+  "Separate next source scope: full inherited physical-path qualification, explicitly including the still-refused legacy direct-supervisor/direct-unexpected launch case mappings. Do not infer native readiness or run native acceptance. Preserve qualified normal-context test profile with timed dump disabled. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -13843,30 +13984,28 @@
   "AIP06_REMAINING_NATIVE_SOURCE_CLOSURE": "PARTIAL SOURCE PROGRESS; see AIP06_PHYSICAL_PATH_COMPLETION. Suspended registry primitive, bounded netstat, worker-probe verifier and three-sample query/Stop pass offline. Physical descendant IPC/global recursive roster, supervisor/unexpected probes and whole inherited path remain BLOCKED. No native acceptance.",
   "AIP06_PHYSICAL_PATH_COMPLETION": "STOP after requested source implementation/validation/report/checkpoint, relevant-only commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED. Implemented: prior-reserved original-handle suspended staging/direct complete Job checks/bootstrap count fence/genuine READY import/normal release; bounded pinned native netstat and query_result; retained worker probe projection; composed three-sample accounting/query/reader/Stop release; historical identities queried in bounded groups with the same8s deadline. Exact remaining source: ChildServices.descendant_gateway is None; Broker/RemoteResources lack precreation declaration/staged-transfer/bootstrap-release forwarding; WindowsChildEndpoints.channel.verify, InheritedIdentity.verify and global WorkerOwnership still require their original leaf rosters. Bind the complete forwarded recursive graph without filtering raw Job members or accepting unaccounted births. Legacy direct-supervisor lacks the matching formal launch role and direct-unexpected lacks the descendant path: both refuse before launch. Full inherited main/probe body and four-boundary physical qualification remain unproved. No general planning milestone or new permission is substituted for these implementation gaps. Do not request native execution for the incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/real Discord/PAPER/V6/Windows/Genesis operation.",
   "AIP06_DESCENDANT_OWNERSHIP_CLOSURE": "SOURCE_SLICE_COMPLETE_OFFLINE; no native acceptance. Supervisor/unexpected-child probes and full inherited-path qualification remain outside this completed slice; AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. Historical source checkpoint blockers are retained under their original milestone keys.",
-  "AIP06_COMBINED_VALIDATION_RECOVERY": "RECOVERED only in qualified normal-context/outer-deadline profile. Timed audit dump still faults; no interpreter patch claimed. Native acceptance, probes/full inherited qualification and all financial/V6 gates remain unaccepted."
+  "AIP06_COMBINED_VALIDATION_RECOVERY": "RECOVERED only in qualified normal-context/outer-deadline profile. Timed audit dump still faults; no interpreter patch claimed. Native acceptance, probes/full inherited qualification and all financial/V6 gates remain unaccepted.",
+  "AIP06_SUPERVISOR_UNEXPECTED_PROBES": "Current-controller and complete descendant-inventory live evidence APIs connected and offline validated. Full inherited-path and canonical legacy launch-role/challenge interfaces remain unqualified; genuine native and installed/financial acceptance remain blocked."
 },
   "latest_tests": {
-  "base_commit": "955ed18fc596d65f1e47709d3a18225906c3c9fc",
-  "status": "COMBINED_OFFLINE_VALIDATION_RECOVERED_PROFILE_QUALIFIED_NOT_NATIVE_ACCEPTANCE",
+  "base_commit": "5be07663e8e2cee36ad0ba0e9d7427743c9ad6dd",
+  "status": "SUPERVISOR_AND_UNEXPECTED_CHILD_LIVE_EVIDENCE_CONNECTED_OFFLINE_NOT_NATIVE_ACCEPTANCE",
   "python": {
-    "passed": 1804,
+    "passed": 1854,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
     "deselected": 5,
     "warnings": 2,
-    "modules": 73,
+    "modules": 74,
     "single_process": true
   },
+  "new_tests": 50,
   "focused": {
-    "passed": 28,
+    "passed": 50,
     "subset_of_final": true
   },
-  "policy_focused": {
-    "passed": 3,
-    "subset_of_final": true
-  },
-  "preserved_prior_distinct_python": 703,
+  "preserved_prior_distinct_python": 1804,
   "node": {
     "passed": 42,
     "failed": 0,
@@ -13874,21 +14013,21 @@
     "cancelled": 0
   },
   "final_run": {
-    "label": "full-final",
+    "label": "probes-full-verified",
     "command": [
       "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
       "-B",
-      "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\suite.py",
+      "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\probes_suite.py",
       "full",
-      "final"
+      "probesverified"
     ],
-    "parent_pid": 32028,
+    "parent_pid": 21408,
     "identity": {
-      "pid": 12588,
-      "created": 134383401954043367,
+      "pid": 10876,
+      "created": 134383429405633385,
       "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
     },
-    "seconds": 362.094,
+    "seconds": 485.125,
     "timeout_limit": 600,
     "timed_out": false,
     "exit_code": 0,
@@ -13896,20 +14035,14 @@
     "native_acceptance": false,
     "financial_worker": false
   },
-  "diagnostic_crashes": 6,
-  "confirmed_diagnostic_timeouts": 5,
-  "exploratory_assertion_failures": 3,
-  "initial_driver_refusals": 2,
-  "final_validation_crashes": 0,
-  "final_validation_timeouts": 0,
+  "historical_this_slice_assertion_failures": 3,
+  "validation_crashes": 0,
+  "validation_timeouts": 0,
   "unresolved_hangs_in_qualified_profile": 0,
-  "timed_dump_audit_crash_still_reproducible": true,
-  "low_level_interpreter_cause_proven": false,
-  "socketpair_restricted_context_blocked": true,
-  "normal_context_socketpair_verified": true,
-  "product_source_changed": false,
   "native_acceptance_executed": false,
   "financial_workers_launched": false,
+  "inherited_path_qualification_started": false,
+  "legacy_direct_supervisor_unexpected_launch_cases": "STILL_REFUSE_NOT_RECLASSIFIED_AS_LIVE_PROBE_CUTS",
   "aip06_status": "BLOCKED",
   "completion_count": "5/18",
   "paper_startup": false,

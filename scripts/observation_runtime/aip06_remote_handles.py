@@ -332,6 +332,78 @@ class RetainedPeerHandles:
     def closed(self, owner, key):
         return owner == self.owner and key in self.done
 
+    def probe_native_objects(self, *, deadline_ns):
+        """Reobserve original duplicates and their creator's exact handles.
+
+        No PID reopen or unknown-object adoption. Temporary comparison handles
+        are charged before duplication and credited only after confirmed close.
+        """
+        try:
+            return self._probe_native_objects(deadline_ns=deadline_ns)
+        except BaseException:
+            self.failed = True
+            raise
+
+    def _probe_native_objects(self, *, deadline_ns):
+        need(self.resources.clock() < deadline_ns, 'PROBE_NATIVE_OBJECT_TIMEOUT')
+        wire = {'parent': self.binding.parent, 'child': self.binding.runtime}
+        self.verify_peer(wire)
+        need(self.objects is not None and not self.failed,
+             'PROBE_NATIVE_OBJECT_PROVIDER_MISSING')
+        required = {k for k, r in self.resources.state['resources'].items()
+                    if r['owner'] == self.owner and not r['closed']
+                    and r['kind'] in ('handle', 'thread', 'pipe', 'job', 'image', 'file', 'directory')}
+        for key in required.intersection(self.effects):
+            intent = self.effects[key]
+            need(self.effects_io is not None and self.resources.clock() < deadline_ns,
+                 'PROBE_NATIVE_EFFECT_EVIDENCE_MISSING')
+            current = self.effects_io.inspect(intent['path'])
+            parent = self.effects_io.inspect(intent['parent']['path'])
+            need(parent == intent['parent'] and current is not None
+                 and current['parent_id'] == parent['id'] and current['kind'] == intent['kind']
+                 and not current['reparse'] and current['links'] == 1,
+                 'PROBE_NATIVE_EFFECT_IDENTITY_CHANGED')
+        required -= set(self.effects)
+        need(required == set(self.live) and not self.deferred,
+             'PROBE_NATIVE_OBJECT_EVIDENCE_INCOMPLETE')
+        rows = []
+        for key, item in sorted(self.live.items()):
+            need(item['verified'] is True and self.resources.clock() < deadline_ns,
+                 'PROBE_NATIVE_OBJECT_UNVERIFIED_OR_TIMEOUT')
+            ticket = self.allocations.reserve('probe-object:' + key, 'handle')
+            check = None
+            try:
+                check = self.calls.duplicate(self.binding.runtime_handle, item['remote'])
+                need(self.objects.same(item['local'], check), 'PROBE_NATIVE_OBJECT_REUSED')
+                current = self.objects.observe(item['local'])
+                original = item['identity']
+                need(current['type'] == original['type'], 'PROBE_NATIVE_OBJECT_TYPE_CHANGED')
+                if current['type'] in ('Thread', 'Process'):
+                    need(all(current[k] == original[k] for k in ('pid', 'created')),
+                         'PROBE_NATIVE_OBJECT_BIRTH_CHANGED')
+                elif current['type'] == 'File':
+                    need(current['native']['id'] == original['native']['id']
+                         and current['path'] == original['path']
+                         and not current['native']['reparse'] and current['native']['links'] == 1,
+                         'PROBE_NATIVE_OBJECT_FILE_CHANGED')
+                    self.allowed_path(current['path'])
+                elif current['type'] == 'Token':
+                    need(current == original, 'PROBE_NATIVE_OBJECT_TOKEN_CHANGED')
+                elif current['type'] == 'Job':
+                    need(current['limits'] == original['limits']
+                         and set(current['members']) == set(self.binding.api.members()),
+                         'PROBE_NATIVE_OBJECT_JOB_CHANGED')
+                rows.append({'owner': self.owner, 'key': key, 'identity': digest(current)})
+            finally:
+                # A failed duplicate is an unresolved allocation, never a
+                # fabricated closed handle or refunded reservation.
+                if check is not None:
+                    self.calls.close(check)
+                    need(self.calls.closed(check), 'PROBE_NATIVE_OBJECT_CLOSE_INCOMPLETE')
+                    self.allocations.release(ticket)
+        self.verify_peer(wire)
+        return rows
+
     def child_binding(self, *args):
         need(len(args) == 2 and self.descendants is not None, "REMOTE_DESCENDANT_DECLARATION_PROVIDER_REQUIRED")
         wire, proof = args

@@ -15434,7 +15434,8 @@ Boundary: no supervisor probes or full inherited-path qualification started; no 
 Next action: STOP after scoped commit/non-force push/independent remote readback. Resolve combined/async test-runner qualification separately; source-only supervisor/unexpected-child probes and full inherited-path qualification remain; native capacity/ACK/drain/restart/complete Stop remain unproved. No native authorization inferred.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: AIP-06-COMBINED-VALIDATION-RECOVERY (2026-11-05)
 Status: COMBINED OFFLINE VALIDATION RECOVERED in qualified profile; native acceptance NOT RUN. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
 Evidence: docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md and logs/diagnostics/aip06-combined-validation-20261105/. Single73module Python run1804passed,0fail/error/skip,5native-launch cases deselected,2warnings; Node42passed,0fail/skip. Focused28+policy3 are subsets, no double counting. Final validation0crashes/timeouts/unresolved hangs. All703prior cases preserved.
@@ -15442,6 +15443,15 @@ Diagnosis: historicalPythonPID2260,0xC0000005. Timed stack dump plus Python audi
 Repair: normal permitted Windows test context with external/provider traffic refused, timed dump0 plus original-handle outer600s suite bound. Exact pinned renderer helpers only; financial workers remain prohibited. No product/test-source/acceptance-contract changes. Six diagnostic crashes/five confirmed timeouts and earlier failed policy runs retained; none relabeled PASS.
 Boundary: no supervisor probes/full inherited qualification/native acceptance/installed/provider/account/Discord/PAPER/live/V6/browser/Windows configuration/Genesis/autostart actions. B1C1D1E1 and21decisions unchanged; unrelated edits/private evidence preserved.
 Next action: STOP after scoped docs commit/non-force push/independent remote SHA. Separate source-only probes/full inherited-path qualification remain; native capacity/ACK/drain/restart/complete Stop and operational gates still require their original acceptance and authority. Never re-enable the unsafe timed-dump profile or infer native/PAPER readiness from unit results.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: AIP-06-SUPERVISOR-AND-UNEXPECTED-CHILD-PROBES (2026-11-05)
+Status: CURRENT SUPERVISOR AND UNEXPECTED-DESCENDANT EVIDENCE SOURCE CONNECTIONS IMPLEMENTED/OFFLINE VALIDATED. Not native acceptance. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
+Evidence: docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md and logs/diagnostics/aip06-combined-validation-20261105/probes-result.json. Python1854distinct passed,0fail/error/skip,5native-launch deselected,2existing warnings,74modules one process. All1804prior plus50new; focused/intermediate overlap not added. Node42passed,0fail/skip/cancelled. Final0crash/timeout/hang. Initial3exploratory failures preserved and fixed.
+Implementation: controller/WindowsSessionPort binds bounded current supervisor and actual descendant CIM cuts to original root process/Job handles, retained recursive ancestry, complete Job roster, one ledger and native-object continuity. Resource reservations/account scope/freshness/complete enumeration required. Shared absolute query deadline; versioned output/provenance plus post-publication receipt revision, no financial ACK or fabricated native acceptance.
+Boundary: full inherited-path qualification NOT started. Historical legacy direct-supervisor/direct-unexpected launch cases remain strict refusals; current-controller cuts do not manufacture formal launch/challenge qualification. Timed audit/tracing diagnostic limitation preserved; normal Windows context, outer deadline, no timed dump. All21decisions/B1C1D1E1 and unrelated changes/history preserved. No financial worker/native acceptance/installed/selection/provider/account/Discord/PAPER/live/V6/browser/Windows/Genesis/autostart action.
+Next action: STOP after scoped commit/non-force push/independent remote SHA. Separate source-only inherited-path qualification must resolve/report existing legacy launch-role/challenge case mappings before native-readiness claims. Genuine native capacity/ACK/drain/restart/complete8sStop and operational/financial gates remain pending.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===
