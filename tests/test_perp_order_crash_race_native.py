@@ -20,7 +20,13 @@ def start(path, phase):
     env = dict(os.environ)
     env['PYTHONPATH'] = os.pathsep.join([str(Path(sys.prefix) / 'Lib/site-packages'), str(CHILD.parents[1] / 'backend'), str(CHILD.parents[1])])
     return guarded.popen([guard.processes.executable, '-B', str(CHILD), '--config', str(path), '--phase', phase],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env, creationflags=subprocess.CREATE_NO_WINDOW)
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
+
+
+def declare_race_pair(paths):
+    guard=guarded.require_fixture('perp-race-command-declaration')
+    return guard.processes.declare_race_pair([
+        [guard.processes.executable,'-B',str(CHILD),'--config',str(path),'--phase','none'] for path in paths])
 
 
 def config(s, order, **extra):
@@ -55,11 +61,13 @@ async def test_two_native_processes_same_order_have_one_durable_effect(system):
     s = system
     order = (await s.planner.next_proposal(None, s.writer._cut()))['order']
     barrier = s.root / 'go.json'
-    children = []
+    children = [];inputs=[]
     for index in range(2):
         path, ready = s.root / f'race-{index}.json', s.root / f'ready-{index}.json'
         guarded.write_text(path, json.dumps(config(s, order, barrier=str(barrier), ready=str(ready))))
-        children.append((start(path, 'none'), ready))
+        inputs.append((path,ready))
+    declare_race_pair([path for path,_ in inputs])
+    for path,ready in inputs:children.append((start(path,'none'),ready))
     deadline = time.monotonic() + 8
     while not all(ready.exists() for _, ready in children):
         if time.monotonic() > deadline: raise AssertionError('Test-owned children did not become ready')

@@ -1,3 +1,24 @@
+# CURRENT UPDATE — prerequisite closure (November 5, 2026)
+
+**TECHNICAL PREREQUISITES BLOCKED — NO NATIVE AUTHORIZATION.** Source qualification remains COMPLETE;AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
+
+This current update supersedes the readiness assessment in the retained original review below; the original review bytes and decisions remain historical evidence. Detailed implementation/recovery: `docs/AIP_06_NATIVE_AUTHORIZATION_PREREQUISITE_CLOSURE_2026-11-05.md`.
+
+|Prerequisite|Current status|Exact evidence / remaining interface|
+|---|---|---|
+|B1|BLOCKED|Pinned candidate parser/entry and manifest exist; retained native outer-owner launch/ancestry/shared accounting, execution dispatcher and independent native grader are NOT implemented. The entry deliberately refuses before launch; it is not a complete executor.|
+|B2|RESOLVED_SOURCE_ONLY|Exact two-command declaration now selects race_one/race_two deterministically from distinct owned native config IDs/byte pins. Existing guarded spawn supplies original handles, ancestry, separate prospective reservations and Jobs. Positive two-child injected path and negative cases pass; real native proof is still pending.|
+|B3|BLOCKED|Actual stdlib fallback body, with injected sockets under the unchanged real guard, refuses before LISTEN. Static default Proactor/socketpair review never upgrades to compatibility. Actual D-runtime socketpair branch and a contract-compliant owned setup remain unexecuted/unqualified; no loopback or alternate-IPC exemption.|
+|B4|BLOCKED|A finite proposed17-step matrix and exact540+60s budget are recorded, including all12 financial groups, bootstrap/IPC, ownership and3 Stop/restart samples. Actual native bindings for missing loss/input-loss/interrupted-inception/capacity/source cases, fault injectors, per-case guard isolation and feasibility remain pending; no invented performance/capacity.|
+|B5|BLOCKED|Current byte/stat inventory:9566 files,880 directories,252648893 bytes read in68.409s; no runtime execution. Native file/volume/handle/ACL acceptance, current normal-permission Job/CIM/IP Helper/netstat cuts and complete loaded-origin closure remain pending.|
+|B6|PENDING|Fresh single-use authorization remains pending; no request, grant consumption, native acceptance or operational action occurred.|
+
+Current candidate manifest SHA256 `859f435752e0b0e2a14cd934b5ac5a263a963816696d6ae2279a5847c197a3b1`,93 current source pins; runtime byte snapshot9566files/880directories/252648893bytes (native identity and full ACL acceptance remain pending). Focused offline105passed,0failed/skipped/warnings; Node0/native0 executed. Original five launch cases excluded. Candidate entry only parses/validates/refuses; outer-owner execution/dispatcher/grader are NOT supplied, so do not treat the new path as a runnable acceptance controller. No new grant requested or consumed. All budgets/8sStop/3-reader/financial/21decision gates remain unchanged. No native controller/financial worker or installed Atlas was launched.
+
+---
+
+## Retained original authorization review (unchanged historical text)
+
 # AIP-06 native acceptance authorization packet — November 5, 2026
 
 **NOT READY. AUTHORIZATION PACKET BLOCKED — exact prerequisites below.** Source qualification remains COMPLETE. AIP-06 remains BLOCKED; completion5/18; PAPER NO; production NO-GO. No execution permission is requested or assumed. All prior consumed grants, B1/C1/D1/E1 and all21 historical decisions are preserved.

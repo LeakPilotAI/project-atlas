@@ -157,13 +157,17 @@ async def test_actual_native_global_reservation_race_is_one_pending_effect(syste
     proposal = await s.qlane.next_proposal(s.r.observations['QUALITY_DIPS'])
     request = {'lane': 'QUALITY_DIPS', 'grant': s.r.grant, 'proposal': proposal}
     barrier, children = s.root / 'global-go', []
+    inputs=[]
     for index in range(2):
         path, ready = s.root / f'global-race-{index}.json', s.root / f'global-ready-{index}'
         guarded.write_text(path, json.dumps({'confinement': str(s.confinement), 'portfolio': True,
             'root': str(s.root / 'global'), 'pin': str(s.pins.path), 'now': s.clock(), 'manifest': s.binding,
             'event': {'kind': 'RESERVE', 'order_id': proposal['operation_id'], 'at': s.clock(), 'payload': request},
             'reservation': {'fixture': 'SYNTHETIC_RACE'}, 'barrier': str(barrier), 'ready': str(ready)}))
-        children.append((start(path, 'none'), ready))
+        inputs.append((path,ready))
+    from test_perp_order_crash_race_native import declare_race_pair
+    declare_race_pair([path for path,_ in inputs])
+    for path,ready in inputs:children.append((start(path,'none'),ready))
     deadline = time.monotonic() + 8
     while not all(ready.exists() for _, ready in children):
         if time.monotonic() >= deadline: raise AssertionError('Global custody children did not become ready')

@@ -230,6 +230,11 @@ class WindowsSessionPort:
             len(argv) >= 3 and argv[0] == self.executable and argv[1] == "-B",
             "PINNED_DIRECT_D_COMMAND",
         )
+        race=getattr(self,'race_roles',None)
+        if race is not None and len(argv)>=3 and argv[2] in {
+                self.controller.profile['targets'].get('race_one'),
+                self.controller.profile['targets'].get('race_two')}:
+            return race.claim(argv)
         matches = [
             name
             for name, path in self.controller.profile["targets"].items()
@@ -238,6 +243,15 @@ class WindowsSessionPort:
         ]
         need(len(matches) == 1, "EXACT_UNAMBIGUOUS_DECLARED_TARGET")
         return matches[0]
+
+    def declare_race_pair(self, commands):
+        try:
+            self.controller.verify_source(ntpath.join(ntpath.dirname(__file__),'aip06_race_roles.py'))
+            from scripts.observation_runtime.aip06_race_roles import declare_pair
+            return declare_pair(self,commands)
+        except BaseException:
+            self.failed=self.guard.failed=True
+            raise
 
     def plan(self, argv, options):
         need(
