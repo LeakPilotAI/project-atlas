@@ -227,10 +227,20 @@ class Broker:
                 "bind_native_handle",
                 "defer_native_release",
                 'declare_effect',
+                'declare_descendant',
+                'stage_descendant', 'resume_descendant', 'release_descendant', 'verify_descendants',
             },
             "RPC_METHOD_NOT_PERMITTED",
         )
         self.verifier.verify_peer(self.channel.binding)
+        if method in ('stage_descendant','resume_descendant','release_descendant','verify_descendants'):
+            need(len(args)==2 and args[0]==self.owner and not kw and request['proof'] is None,
+                 'RPC_DESCENDANT_OWNER_OR_ARGUMENTS')
+            return getattr(self.verifier,method)(self.channel.binding,args[1])
+        if method == 'declare_descendant':
+            need(len(args) == 3 and args[0] == self.owner and not kw
+                 and request['proof'] is None, 'RPC_DESCENDANT_DECLARATION_OWNER')
+            return self.verifier.declare_descendant(self.channel.binding,args[1],args[2])
         if method == "read":
             need(not args and not kw and request["proof"] is None, "RPC_READ_ARGUMENTS")
             return self.resources.read()
@@ -489,6 +499,55 @@ class RemoteResources(SharedResources):
              and intent['kind'] == kind and intent['scope'] == SCOPE_HASH, 'REMOTE_EFFECT_ACK_SCOPE')
         self.proofs.effects[key] = digest(intent)
         return intent
+
+    def declare_descendant(self, request, slot):
+        from scripts.observation_runtime.launch_ownership import LaunchRequest
+        need(type(request) is LaunchRequest, 'EXACT_DESCENDANT_LAUNCH_REQUEST')
+        request.validate()
+        return self._checked_descendant('declare_descendant',(self.owner,vars(request),slot),lambda result:
+            result == {'schema':'AIP06_DESCENDANT_DECLARED_V1','owner':self.owner,
+                        'nonce':request.nonce,'slot':slot,'financial_ack':False},
+             'DESCENDANT_DECLARATION_ACK_CONFLICT')
+
+    def _checked_descendant(self, method, args, validate, reason):
+        with self.lock:
+            try:
+                result=self.call(method,args,{})
+                need(validate(result),reason)
+                return result
+            except BaseException:
+                self.uncertain=True
+                raise
+
+    def stage_descendant(self, proof, request, identity):
+        return self._checked_descendant('stage_descendant',(self.owner,proof),lambda v:
+            type(v) is dict and set(v)=={'schema','scope','nonce','identity','request','released_to_bootstrap','financial_ack'}
+            and v['schema']=='AIP06_SUSPENDED_STAGE_V1' and v['scope']==SCOPE_HASH
+            and v['nonce']==request.nonce==proof['nonce'] and v['request']==digest(vars(request))
+            and all(v['identity'].get(k)==identity[k] for k in ('pid','created','image'))
+            and v['released_to_bootstrap'] is False and v['financial_ack'] is False,
+            'DESCENDANT_STAGE_RECEIPT_CONFLICT')
+
+    def resume_descendant(self, nonce, identity):
+        return self._checked_descendant('resume_descendant',(self.owner,nonce),lambda v:
+            v=={'schema':'AIP06_STAGED_BOOTSTRAP_RELEASE_V1','scope':SCOPE_HASH,'nonce':nonce,
+                'identity':identity,'financial_ack':False,'guard_release':False},'DESCENDANT_RESUME_RECEIPT_CONFLICT')
+
+    def release_descendant(self, nonce):
+        return self._checked_descendant('release_descendant',(self.owner,nonce),lambda v:
+            v=={'schema':'AIP06_DESCENDANT_RELEASE_V1','scope':SCOPE_HASH,'nonce':nonce,
+                'owner':self.owner,'duplicates_closed':True,'financial_ack':False},'DESCENDANT_RELEASE_RECEIPT_CONFLICT')
+
+    def verify_descendants(self):
+        return self._checked_descendant('verify_descendants',(self.owner,None),lambda v:
+            type(v) is dict and set(v)=={'scope','peer','members','at_ns','source_head'}
+            and v['scope']==SCOPE_HASH and v['peer']==self.channel.binding['child']
+            and type(v['at_ns']) is int and 0<=self.clock()-v['at_ns']<=MAX_IPC_NS
+            and type(v['members']) is list and len(v['members'])==len(set(v['members']))<=8
+            and all(type(p) is int and p>4 for p in v['members'])
+            and v['peer']['pid'] in v['members'] and type(v['source_head']) is str and len(v['source_head'])==64
+            and set(v['source_head'])<=set('0123456789abcdef'),
+            'DESCENDANT_GRAPH_STALE_OR_CONFLICTING')
 
     def register_owner(self, observed, **kwargs):
         key = digest(observed)

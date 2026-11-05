@@ -1,4 +1,32 @@
 {
+  "aip06_ownership_forwarding_20261105": {
+  "status": "PARTIAL_FORWARDING_VALIDATED_PHYSICAL_ADMISSION_AND_LEDGER_RELEASE_BLOCKED",
+  "report": "docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md",
+  "tests": {
+    "base_commit": "652cc467ce00503e6e62e64e5c4740592d367fac",
+    "first_passed": 115,
+    "final_passed": 211,
+    "overlap": 9,
+    "distinct_passed": 317,
+    "failed": 0,
+    "skipped": 0,
+    "broader_run": false,
+    "native_execution": false,
+    "source_integration_complete": false,
+    "source_pins": {
+      "scripts/observation_runtime/aip06_ipc.py": "c71a5821b1ef97b2fab08ee968072874f5743d315726baafed463cf45269ac3a",
+      "scripts/observation_runtime/aip06_remote_handles.py": "a814ec80310713ac7a97e9fbcfde7465dd79be6d6b74b59991bde3380f8cdf75",
+      "scripts/observation_runtime/aip06_descendant_gateway.py": "3482cf44facee4c5939ea0cc4724b3028bd68ab64402e8c08b2d5c86bcbe1b0e",
+      "scripts/observation_runtime/aip06_child_entry.py": "76a9778ce0a70410977f0d59cdcf431e8efa8a1653528663f4f98847a26d8b20",
+      "scripts/observation_runtime/aip06_native_session.py": "c8e13feceb20de549368edab553eb422f001da86bac80b9c2c26929d14335676",
+      "scripts/observation_runtime/aip06_windows_endpoints.py": "8c7c584e598efc2538b8abe6f2cf1f72ff4f301be3e62b975f5f5b6d1e575bca",
+      "tests/test_aip06_descendant_forwarding.py": "e04e073c7781e57238c044144256df17d2f86fd3159394da12e92826a989c22d"
+    }
+  },
+  "completion_count": "5/18",
+  "paper_startup": false,
+  "production": "NO_GO"
+},
   "aip_06_physical_path_completion_20261104": {
   "result": {
     "base_commit": "59843c6db84462758c4570a6e6b96018b62e4061",

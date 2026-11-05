@@ -131,6 +131,7 @@ class WindowsSessionPort:
         self.stop_assembly = None
         self.aggregate = getattr(controller, 'aggregate', None)
         self.native_queries = None
+        self.descendant_gateway = None
 
     def native_query(self, argv, *, timeout, maximum_bytes=65536):
         need(self.native_queries is not None, 'BOUNDED_NATIVE_QUERY_EXECUTOR_NOT_BOUND')
@@ -453,6 +454,7 @@ class WindowsSessionPort:
             )
             # The launch slot was charged by WorkerOwnership.prepare before
             # this call. There is exactly one direct process, never adoption.
+            if self.descendant_gateway is not None:self.descendant_gateway.before_create(s)
             s.creation_attempted = True
             try:
                 process, thread, pid, tid = self.calls.create_suspended(
@@ -470,6 +472,7 @@ class WindowsSessionPort:
                     s.thread = self._claim(s, "thread", thread)
                 raise
             s.launch_handle = s.runtime_handle = raw_handle(process)
+            s.thread_id = tid
             s.thread = self._claim(s, "thread", thread)
             native = self.calls.native(s.launch_handle)
             s.creation_native = copy.deepcopy(native)
@@ -488,6 +491,7 @@ class WindowsSessionPort:
                 and self.calls.members(s.job) == {pid},
                 "SUSPENDED_JOB_MEMBERSHIP",
             )
+            if self.descendant_gateway is not None:self.descendant_gateway.after_create(s)
             return s
         except BaseException:
             s.failed = True
@@ -512,7 +516,8 @@ class WindowsSessionPort:
 
     def resume(self, child):
         self.verify_suspended_job(child, child.plan)
-        self.calls.resume(child.thread)
+        if self.descendant_gateway is None:self.calls.resume(child.thread)
+        else:self.descendant_gateway.resume(child)
         child.suspended = False
 
     def ready(self, child, *, timeout, maximum_bytes):
@@ -636,6 +641,7 @@ class WindowsSessionPort:
             and not self.calls.members(child.job),
             "VERIFIED_EXIT_BEFORE_HANDLE_CLOSE",
         )
+        if self.descendant_gateway is not None:self.descendant_gateway.release(child)
         self.protocol.close(child, deadline_ns=self.clock() + MAX_IPC_NS)
         if self.aggregate is not None:
             self.aggregate.exited(child.binding, handle=child.runtime_handle)

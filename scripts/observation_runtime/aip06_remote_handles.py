@@ -83,7 +83,11 @@ class RetainedPeerHandles:
             and body(wire["parent"]) == body(self.binding.parent),
             "REMOTE_WIRE_NATIVE_PEER_CONFLICT",
         )
-        self.binding.verify()
+        if self.descendants is not None and self.descendants.staging is not None and self.descendants.staging.nodes:
+            self.descendants.staging.verify()
+            self.descendants.aggregate.observe(commit=False)
+        else:
+            self.binding.verify()
 
     def bind_native_handle(self, wire, key, handle):
         self.verify_peer(wire)
@@ -205,6 +209,54 @@ class RetainedPeerHandles:
         wire, proof = args
         self.verify_peer(wire)
         return self.descendants.import_binding(proof)
+
+    def declare_descendant(self, wire, encoded, slot):
+        from scripts.observation_runtime.launch_ownership import LaunchRequest
+        self.verify_peer(wire)
+        need(self.descendants is not None and type(encoded) is dict
+             and set(encoded) == set(LaunchRequest.__dataclass_fields__),
+             'DESCENDANT_DECLARATION_PROVIDER_OR_SCHEMA')
+        value = dict(encoded)
+        for key in ('launch_image','runtime_image','auxiliary_image'):
+            if value[key] is not None:
+                image = value[key]
+                need(type(image) in (list,tuple) and len(image)==3,
+                     'DESCENDANT_DECLARATION_IMAGE')
+                value[key] = (image[0],tuple(image[1]),image[2])
+        request = LaunchRequest(**value)
+        request.validate()
+        self.descendants.declare(request,slot=slot,parent_owner=self.owner,resources=self.resources)
+        return {'schema':'AIP06_DESCENDANT_DECLARED_V1','owner':self.owner,
+                'nonce':request.nonce,'slot':slot,'financial_ack':False}
+
+    def stage_descendant(self, wire, proof):
+        self.verify_peer(wire)
+        need(self.descendants is not None,'DESCENDANT_STAGE_PROVIDER_REQUIRED')
+        return self.descendants.stage_suspended(proof)
+
+    def resume_descendant(self, wire, nonce):
+        self.verify_peer(wire)
+        need(self.descendants is not None,'DESCENDANT_RESUME_PROVIDER_REQUIRED')
+        return self.descendants.resume_staged(nonce)
+
+    def release_descendant(self, wire, nonce):
+        self.verify_peer(wire)
+        need(self.descendants is not None,'DESCENDANT_RELEASE_PROVIDER_REQUIRED')
+        self.descendants.release(nonce,deadline_ns=self.resources.clock()+6*10**9)
+        need(nonce in self.descendants.finished
+             and all(self.calls.closed(h) for _,h in self.descendants.held[nonce]),
+             'DESCENDANT_RELEASE_INCOMPLETE')
+        return {'schema':'AIP06_DESCENDANT_RELEASE_V1','scope':self.resources.read()['scope'],
+                'nonce':nonce,'owner':self.owner,'duplicates_closed':True,'financial_ack':False}
+
+    def verify_descendants(self, wire, unused):
+        self.verify_peer(wire)
+        need(unused is None and self.descendants is not None and self.descendants.staging is not None,
+             'DESCENDANT_GLOBAL_GRAPH_PROVIDER_REQUIRED')
+        self.descendants.staging.verify()
+        observed=self.descendants.aggregate.observe(commit=False)
+        return {'scope':self.resources.read()['scope'],'peer':wire['child'],
+                'members':observed['members'],'at_ns':observed['at_ns'],'source_head':self.resources.head}
 
     def defer_native_release(self, wire, key):
         """COM addresses/failed opens are not independently closable handles.

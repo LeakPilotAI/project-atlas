@@ -61,6 +61,10 @@ class ChildServices:
         self.port, self.runtime, self.streams = port, runtime, None
         self.watchdogs, self.done = {}, set()
         self.descendant_gateway = None
+        if type(getattr(port,'resources',None)) is RemoteResources:
+            from scripts.observation_runtime.aip06_descendant_gateway import DescendantGateway
+            self.descendant_gateway = DescendantGateway(port)
+            port.descendant_gateway = self.descendant_gateway
 
     def __getattr__(self, name):
         return getattr(self.port, name)

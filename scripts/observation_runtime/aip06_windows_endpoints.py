@@ -250,6 +250,15 @@ class WindowsChildEndpoints:
         )
         if self.descendant_factory is not None:
             verifier.descendants = self.descendant_factory(verifier)
+        elif self.objects is not None and port.aggregate is not None:
+            from scripts.observation_runtime.aip06_native_objects import DeclaredDescendants
+            from scripts.observation_runtime.aip06_windows_process import NativeProcessObserver
+            def observer_factory(*,job,parent):
+                api=NativeProcessObserver(calls=port.calls,cim=port.cim,images=port.pinned_images,clock_ns=self.clock)
+                api.job,api.parent=job,parent
+                return api
+            verifier.descendants=DeclaredDescendants(peer=child.binding,calls=port.calls,objects=self.objects,
+                allocations=port.allocations_port,observer_factory=observer_factory,aggregate=port.aggregate,files=port.files)
         broker = Broker(
             resources=port.resources,
             channel=child.channel.channel,
