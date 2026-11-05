@@ -1,8 +1,8 @@
 """Pinned candidate entry. Refuses unresolved native execution before effects.
 
-The manifest/parser and exact command are concrete; outer-owner native binding
-and independent grader are explicitly absent. This must not masquerade as a
-complete native controller or fall back to subprocess, unguarded APIs or mocks.
+The control-plane logic is injectable and source-qualified separately. Native
+authorization, observer and fault/load/async bindings remain unavailable. This
+entry cannot fall back to subprocess, unguarded APIs or injected qualification.
 """
 
 import argparse
@@ -15,6 +15,13 @@ from scripts.observation_runtime.aip06_harness import need
 
 def prepare(raw, sha256):
     return decode_plan(raw,sha256)
+
+
+def control_plane(raw, sha256, *, clock_ns, files, owner, dispatcher_factory):
+    """Construct only; no native loader, grant, preflight query or execution."""
+    from scripts.observation_runtime.aip06_acceptance_control import OuterOwner
+    return OuterOwner(raw, sha256, clock_ns=clock_ns, files=files, owner=owner,
+                      dispatcher_factory=dispatcher_factory)
 
 
 def main(argv=None):

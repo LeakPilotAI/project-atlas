@@ -76,7 +76,7 @@ def candidate_plan(*, source_pins, runtime_inventory, async_review):
        'runtime_inventory':copy.deepcopy(runtime_inventory),'async_review':copy.deepcopy(async_review),
        'network':'DENY_SOCKET_BIND_CONNECT_EXTERNAL_DNS_PROVIDERS','environment':environment(),'case_environment':case_environment(),
        'excluded_native_launch_cases':list(EXCLUDED),'schedule':schedule(),'phase_budgets':phase_budgets(),
-       'gates':{'B1':'BLOCKED_OUTER_OWNER_RETAINED_LAUNCH_BINDING_AND_NATIVE_GRADER_NOT_SUPPLIED',
+       'gates':{'B1':'BLOCKED_NATIVE_OUTER_OWNER_AND_READER_BINDINGS_SOURCE_CONTROL_PLANE_SUPPLIED',
                 'B2':'RESOLVED_EXACT_PREDECLARED_RACE_COMMANDS_SOURCE_ONLY',
                 'B3':'BLOCKED_DEFAULT_ASYNC_SOCKETPAIR_COMPATIBILITY',
                 'B4':'BLOCKED_NATIVE_FAULT_INJECTOR_AND_ACTUAL_CAPACITY_BINDINGS',
@@ -86,7 +86,7 @@ def candidate_plan(*, source_pins, runtime_inventory, async_review):
            'required':['original-retained-controller-launch-handle','current-parent-creation-identity',
                        'complete-Job-roster','shared-budget-including-owner','finite-EOF-cleanup',
                        'independent-controller-exit-and-native-result-grade'],
-           'binding':'NOT_IMPLEMENTED_NO_RAW_POPEN_FALLBACK'},
+           'binding':'SOURCE_CONTROL_PLANE_NATIVE_BINDING_PENDING'},
        'abort':'FIRST_FAILURE_NO_RETRY_OWNED_CLEANUP_ONLY_NO_OPERATIONAL_ROLLBACK'}
     validate_plan(value)
     return value
@@ -128,7 +128,7 @@ def validate_plan(value):
          and value['gates']['B6']=='PENDING_FRESH_SINGLE_USE_OPERATOR_AUTHORIZATION'
          and all(value['gates'][k].startswith('BLOCKED_') for k in ('B1','B3','B4','B5')),
          'UNRESOLVED_TECHNICAL_GATES_CANNOT_BE_ASSERTED_READY')
-    need(type(value['outer_owner']) is dict and value['outer_owner'].get('binding')=='NOT_IMPLEMENTED_NO_RAW_POPEN_FALLBACK',
+    need(type(value['outer_owner']) is dict and value['outer_owner'].get('binding')=='SOURCE_CONTROL_PLANE_NATIVE_BINDING_PENDING',
          'NO_UNVERIFIED_OUTER_OWNER')
     need(value['environment']==environment() and value['case_environment']==case_environment(),'EXACT_TEST_ENVIRONMENT')
     return copy.deepcopy(value)

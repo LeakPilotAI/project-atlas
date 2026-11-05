@@ -1,3 +1,17 @@
+# CURRENT UPDATE — source control plane (November 5, 2026)
+
+**NATIVE AUTHORIZATION PACKET BLOCKED.** Outer-owner/dispatcher/independent grader source infrastructure is now implemented and offline-qualified; concrete native backend/reader authority, async compatibility, fault/load/capacity bindings and current runtime/ACL observations remain pending. Native start always refuses; no grant is created, redeemed or consumed. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
+
+Current detailed report: `docs/AIP_06_NATIVE_ACCEPTANCE_CONTROL_PLANE_2026-11-05.md`. Candidate SHA256 `cad011ded4cce496a3738212d4092e15075da93bf3da756e60799b96dd445799`,96 current source pins. 2000 distinct completed Python passes;42 Node passes;0 failures/skips in completed commands;5 historical native-launch deselections;2 existing warnings;1 recorded bounded timeouts;0 native tests. Isolated joined file: 5 passed,0 failed/skipped in 326.687s.
+
+Implemented: exact byte/root/budget validation, existing retained-launch identity binding, one-shot serial dispatcher, prospective tickets/roles and owned abort, ten pinned independent source readers, unchanged three-reader sockets before strict processes, final independent release, complete8s Stop bound and all17 proposed scenario obligations. All offline results explicitly remain NOT_NATIVE; native reader attestation has no PASS path.
+
+Required next prerequisites: (1) qualify default async/socket guard compatibility without policy changes; (2) implement exact guarded native fault/load/capacity/per-case bindings; (3) connect concrete supervised owner and independent original-handle/Job/financial/object/socket observers; (4) obtain current runtime IDs/complete ACL and loaded-origin evidence; (5) separately review atomic single-use redemption and obtain a fresh scoped approval only when technically ready. No candidate/native/installed launch is authorized by this packet. All old budgets,three-reader/8sStop/21decision gates remain. Existing runtime byte snapshot is not current native identity or ACL proof.
+
+The following prior update and original review are retained byte-for-byte as historical assessments; this update supersedes only their current source-infrastructure status.
+
+---
+
 # CURRENT UPDATE — prerequisite closure (November 5, 2026)
 
 **TECHNICAL PREREQUISITES BLOCKED — NO NATIVE AUTHORIZATION.** Source qualification remains COMPLETE;AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
