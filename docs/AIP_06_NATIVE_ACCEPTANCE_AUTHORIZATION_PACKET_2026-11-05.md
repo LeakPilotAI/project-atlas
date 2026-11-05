@@ -1,3 +1,17 @@
+# CURRENT UPDATE — controller/bootstrap contract repair (November 5, 2026)
+
+**SOURCE CONTRACT REPAIRED; NATIVE EXECUTION ASSEMBLY BLOCKED.** AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No grant created/requested/consumed, no native acceptance/financial workers, no installed/provider/account/Discord/PAPER/live action.
+
+Authoritative inventory: `docs/AIP_06_NATIVE_EXECUTION_ASSEMBLY_MATRIX_2026-11-05.md`. Exact typed controller intent now declares once at root before creation; original guard creates suspended/assigns Jobs/retains handles; OwnerLaunch verifies both logical target and exact fenced physical command/creation plan/receipt. Precreation receipt is captured before E creation in original initializer, then rebound to one root ledger. Private inherited manifest/dispatcher handoff,preparation-only authenticated output and bounded original cleanup are connected and tested together offline. Native entry/public owner remain refusal-only; dispatch binding never authorizes run.
+
+2111distinct completed Python passes;42Node passes;50new controller cases;0final failed/skipped;5native-launch deselected;2existing warnings;0current timeout/crash. Two earlier joined-test diagnostic failures preserved and corrected (mailbox test path and wrapper input cap); no guard/deadline relaxation. Candidate SHA256 `35d5b799692626aacb10504e584b57ab427fa8d185e6c2151701f95d577854f4`;101current source pins;private packet29,170<=65,536bytes. All10 future native roots absent.
+
+Remaining source implementations: scoped physical case-context and generic independent reader factories/target views/result projection;native F05/F06/F09/F11/bootstrapIPC fault/load producers and full F12/ownership wrapper connections. F05 means REALIZED TRADING LOSS,not run-grant revocation. Detailed seven-row inventory distinguishes missing producers from existing components. Async remains incompatible/unproved under unchanged guard;private pipes do not establish an asyncio wake transport. Native identity/ACL/Job/socket/object/capacity/complete Stop samples and budget feasibility remain unproved. Native success-side loader/redemption/backstop unavailable. Fresh single-use approval only after actual technical readiness.
+
+Next bounded SOURCE-ONLY milestone: AIP-06-SCOPED-CASE-AND-READER-CONTEXT-SOURCE-V1 as defined in the matrix. No new native scope is requested by this update. Previous packet/update bytes below remain unchanged historical evidence; only current source/readiness assessment is superseded.
+
+---
+
 # CURRENT UPDATE — Windows adapter / compatibility assessment (November 5, 2026)
 
 **BLOCKED — native owner, physical contexts, producers and async contracts remain unresolved.** AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No new authorization created/requested/redeemed/consumed. Native acceptance and financial workers were not executed.

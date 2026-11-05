@@ -12,9 +12,9 @@ import ntpath
 from dataclasses import dataclass
 from subprocess import list2cmdline
 
-from app.services.paper_financial_replay import strict
-from scripts.observation_runtime.aip06_acceptance_plan import REPO, decode_plan, schedule
-from scripts.observation_runtime.aip06_harness import LIMITS, ROOTS, need
+from app.services.paper_financial_replay import body, digest, strict
+from scripts.observation_runtime.aip06_acceptance_plan import decode_plan, schedule
+from scripts.observation_runtime.aip06_harness import LIMITS, ROOTS, SCOPE_HASH, need
 from scripts.observation_runtime.launch_ownership import RetainedLaunchBinding, identity
 
 NS = 10**9
@@ -63,20 +63,45 @@ class RefusalOnlyAuthorization:
 class OwnerLaunch:
     binding: RetainedLaunchBinding
     manifest_sha256: str
+    session: object = None
+    intent: object = None
 
     def verify(self, plan, pin):
         need(type(self.binding) is RetainedLaunchBinding and self.manifest_sha256 == pin,
              'ORIGINAL_RETAINED_CONTROLLER_LAUNCH_BINDING_REQUIRED')
+        from scripts.observation_runtime.aip06_controller_contract import ControllerIntent, ROLE, bootstrap_argv
+        from scripts.observation_runtime.aip06_native_session import Session
+        need(type(self.intent) is ControllerIntent and self.intent.sha256 == pin and self.intent.plan() == plan
+             and type(self.session) is Session and self.session.binding is self.binding
+             and self.session.name == ROLE and self.session.plan['request'] is self.binding.request
+             and self.session.argv == self.intent.argv and self.session.target_released
+             and not self.session.suspended and not self.session.failed and not self.session.closed
+             and self.session.launch_handle == self.binding.launch_handle
+             and self.session.runtime_handle == self.binding.runtime_handle
+             and self.session.parent_handle == self.binding.parent_handle,
+             'EXACT_GUARDED_CONTROLLER_SESSION_AND_INTENT_REQUIRED')
         request = self.binding.request
-        command = list2cmdline([plan['executable'], '-B', plan['entry'], '--role', 'controller', '--manifest',
-                               ntpath.join(REPO, 'docs', 'AIP_06_NATIVE_CANDIDATE_RUN_MANIFEST_2026-11-05.json'),
-                               '--manifest-sha256', pin])
+        command = list2cmdline(bootstrap_argv(plan['executable'], request.nonce))
         need(request.role == 'acceptance_supervisor' and request.topology == 'direct'
-             and request.launch_image[0] == plan['executable']
+             and ntpath.normcase(request.launch_image[0]) == ntpath.normcase(plan['executable'])
              and request.launch_command == self.binding.runtime['command_line'] == command,
              'EXACT_CONTROLLER_LAUNCH_ROLE_IMAGE_AND_COMMAND')
+        need(self.session.receipt is not None and self.session.receipt.get('guarded') is True
+             and self.session.receipt.get('scope') == SCOPE_HASH
+             and self.session.receipt.get('nonce') == request.nonce
+             and self.session.receipt.get('owner') == digest(self.binding.runtime)
+             and type(self.session.receipt.get('reservation_head')) is str and len(self.session.receipt['reservation_head']) == 64,
+             'CONTROLLER_BOOTSTRAP_RECEIPT_REQUIRED')
         self.binding.verify()
         return identity(self.binding.parent), identity(self.binding.runtime)
+
+    def preparation_packet(self, plan, pin):
+        self.verify(plan, pin)
+        packet = {'schema':'AIP06_CONTROLLER_PREPARE_V1','scope':SCOPE_HASH,'manifest':pin,
+                'raw':self.intent.raw.decode('utf-8'),'nonce':self.binding.request.nonce,
+                'owner':digest(self.binding.runtime),'parent_owner':digest(self.binding.parent)}
+        need(len(body(packet).encode('utf-8')) <= 65536, 'CONTROLLER_INPUT_WITHIN_EXISTING_GUARD_CAP')
+        return packet
 
 
 class Deadline:

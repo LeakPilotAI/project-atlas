@@ -226,6 +226,17 @@ class WindowsSessionPort:
         return self.stop_assembly.collect(*args, **kwargs)
 
     def _role(self, argv):
+        ENTRY = ntpath.join(ntpath.dirname(ntpath.dirname(BASE)), 'scripts', 'observation_runtime', 'aip06_acceptance_controller.py')
+        if len(argv) >= 3 and argv[2] == ENTRY:
+            self.controller.verify_source(ntpath.join(ntpath.dirname(__file__), 'aip06_controller_contract.py'))
+            from scripts.observation_runtime.aip06_controller_contract import ControllerIntent
+            intent = getattr(self, 'controller_intent', None)
+            need(type(intent) is ControllerIntent, 'EXPLICIT_CONTROLLER_INTENT_BEFORE_CREATION')
+            try:
+                return intent.claim(self, argv)
+            except BaseException:
+                self.failed = self.guard.failed = True
+                raise
         need(
             len(argv) >= 3 and argv[0] == self.executable and argv[1] == "-B",
             "PINNED_DIRECT_D_COMMAND",

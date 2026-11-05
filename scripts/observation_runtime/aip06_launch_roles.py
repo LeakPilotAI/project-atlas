@@ -6,6 +6,11 @@ from scripts.observation_runtime.aip06_harness import BASE, need
 
 
 def launch_role(argv, targets):
+    ENTRY = ntpath.join(ntpath.dirname(ntpath.dirname(BASE)), 'scripts', 'observation_runtime', 'aip06_acceptance_controller.py')
+    if len(argv) >= 3 and argv[2] == ENTRY:
+        from scripts.observation_runtime.aip06_controller_contract import controller_argv
+        controller_argv(argv, targets)
+        return 'acceptance_supervisor'
     legacy = ntpath.join(
         ntpath.dirname(ntpath.dirname(BASE)),
         "scripts",

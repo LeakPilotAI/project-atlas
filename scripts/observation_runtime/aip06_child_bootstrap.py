@@ -99,6 +99,8 @@ class ChildBootstrap:
         guard_factory,
         clock_ns,
         role='acceptance_worker',
+        controller_command=None,
+        controller_targets=None,
     ):
         need(
             channel.role == "CHILD"
@@ -133,9 +135,12 @@ class ChildBootstrap:
         need(role in ('acceptance_worker', 'acceptance_supervisor'), 'EXACT_CHILD_LAUNCH_ROLE')
         if role == 'acceptance_supervisor':
             from scripts.observation_runtime.aip06_harness import BASE
-            need(target == ntpath.join(ntpath.dirname(ntpath.dirname(BASE)), 'scripts',
-                                      'observation_runtime', 'aip06_legacy_entry.py'),
-                 'SUPERVISOR_ONLY_PINNED_LEGACY_TARGET')
+            legacy = ntpath.join(ntpath.dirname(ntpath.dirname(BASE)), 'scripts',
+                                 'observation_runtime', 'aip06_legacy_entry.py')
+            if target != legacy:
+                from scripts.observation_runtime.aip06_controller_contract import ENTRY, CONTRACT, controller_argv
+                need(target == ENTRY and CONTRACT in source_pins, 'SUPERVISOR_ONLY_PINNED_LEGACY_TARGET')
+                controller_argv(controller_command, controller_targets)
         self.role = role
 
     def _deadline(self):

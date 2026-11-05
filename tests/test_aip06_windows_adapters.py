@@ -781,7 +781,7 @@ def test_legacy_output_does_not_manufacture_native_acceptance(damage):
     assert not output.records
 
 
-def bootstrap_fixture(damage=None, role='acceptance_worker'):
+def bootstrap_fixture(damage=None, role='acceptance_worker', target_override=None, pins_override=None, controller_command=None, controller_targets=None):
     x = channels()
     output = Output()
     events = []
@@ -790,7 +790,9 @@ def bootstrap_fixture(damage=None, role='acceptance_worker'):
         from scripts.observation_runtime.aip06_harness import BASE
         target = ntpath.join(ntpath.dirname(ntpath.dirname(BASE)), 'scripts',
                              'observation_runtime', 'aip06_legacy_entry.py')
+    if target_override is not None: target=target_override
     pins = {target: "a" * 64}
+    if pins_override is not None: pins=dict(pins_override)
     verifier = SimpleNamespace(verify_peer=lambda binding: None)
     broker = Broker(
         resources=x.s.ledger,
@@ -850,6 +852,11 @@ def bootstrap_fixture(damage=None, role='acceptance_worker'):
             if damage == "release":
                 release["receipt"] = "f" * 64
             x.parent.send("RELEASE", release, deadline_ns=x.s.now[0] + 6 * 10**9)
+        elif incoming['kind']=='OUTPUT' and target_override is not None:
+            value=incoming['payload']
+            assert value['schema']=='AIP06_CONTROLLER_PREPARED_V1' and value['native_acceptance'] is False
+            assert value['owner']==x.owner and value['manifest']==controller_command[8]
+            output.append(value)
         elif incoming["kind"] != "EXIT":
             raise AssertionError(incoming["kind"])
 
@@ -895,6 +902,8 @@ def bootstrap_fixture(damage=None, role='acceptance_worker'):
         guard_factory=factory,
         clock_ns=lambda: x.s.now[0],
         role=role,
+        controller_command=controller_command,
+        controller_targets=controller_targets,
     )
     return SimpleNamespace(**locals())
 

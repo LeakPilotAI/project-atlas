@@ -383,6 +383,7 @@ class ChildRuntime:
             protocol=protocol,
         )
         services = ChildServices(port, self)
+        context.process_port = services
         self.identity.descendants = services.descendant_gateway.rows
         paths = FixturePaths(io)
         # These are creator-to-child transfers over the original private pipe,
@@ -438,6 +439,9 @@ class ChildRuntime:
             )
             self.verify_source(ntpath.join(ntpath.dirname(__file__), 'aip06_launch_roles.py'))
             from scripts.observation_runtime.aip06_launch_roles import launch_role
+            ENTRY = ntpath.join(ntpath.dirname(__file__), 'aip06_acceptance_controller.py')
+            if descriptor['argv'][2] == ENTRY:
+                self.verify_source(ntpath.join(ntpath.dirname(__file__), 'aip06_controller_contract.py'))
             boot = ChildBootstrap(
                 channel=channel,
                 identity=self.identity,
@@ -447,6 +451,8 @@ class ChildRuntime:
                 guard_factory=self.guard_factory,
                 clock_ns=self.clock,
                 role=launch_role(descriptor['argv'], descriptor['targets']),
+                controller_command=descriptor['argv'],
+                controller_targets=descriptor['targets'],
             )
             boot.prepare()
 

@@ -349,17 +349,15 @@ def test_fault_and_capacity_producers_cannot_be_derived_from_mock_headroom(damag
     assert not x.calls.handles and not x.port.sessions
 
 
-def test_concrete_owner_reports_real_role_mismatch_instead_of_adopting_a_worker_as_supervisor():
+def test_concrete_owner_requires_matched_precreation_instead_of_adopting_a_worker_as_supervisor():
     from test_aip06_native_prerequisites import plan
     x=guarded_fixture();p=plan()
     x.controller.require_ready=lambda:None;x.controller.process_port=x.port
     x.controller.profile['executable']=p['executable'];x.controller.profile['source_pins']=p['source_pins']
     owner=WindowsAcceptanceOwner(controller=x.controller,guard=x.guard,
         capacity=SimpleNamespace(read=lambda **kw:{'observed':True}),clock_ns=lambda:x.now[0])
-    with x.guard.installed():
-        result=owner.preflight(p,manifest_sha256=digest(p),deadline_ns=x.now[0]+10**9)
-    assert result['controller_role']=='acceptance_worker' and result['required_role']=='acceptance_supervisor'
-    assert result['startup_status'].startswith('BLOCKED_') and result['native_acceptance'] is False
+    with x.guard.installed(),pytest.raises(ValueError,match='MATCHED_CONTROLLER_PRECREATION'):
+        owner.preflight(p,manifest_sha256=digest(p),deadline_ns=x.now[0]+10**9)
     with pytest.raises(ValueError,match='NOT_CONNECTED'): owner.verify_controller(object(),deadline_ns=x.now[0]+10**9)
     assert not x.calls.handles
 

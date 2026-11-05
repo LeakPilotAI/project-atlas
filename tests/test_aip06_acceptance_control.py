@@ -17,7 +17,9 @@ from scripts.observation_runtime.aip06_acceptance_control import (
     OwnerLaunch, scenarios,
 )
 from scripts.observation_runtime.aip06_acceptance_grade import IndependentGrader, READERS
-from scripts.observation_runtime.aip06_acceptance_plan import ENTRY, REPO, RUNTIME, candidate_plan
+from scripts.observation_runtime.aip06_acceptance_plan import ENTRY, RUNTIME, candidate_plan
+from scripts.observation_runtime.aip06_controller_contract import CONTRACT, ControllerIntent, ROLE, bootstrap_argv
+from scripts.observation_runtime.aip06_native_session import Session
 from scripts.observation_runtime.aip06_harness import LIMITS, ROOTS, SCOPE_HASH
 from scripts.observation_runtime.launch_ownership import LaunchRequest, RetainedLaunchBinding, identity
 
@@ -32,7 +34,7 @@ class Clock:
 
 class Files:
     def __init__(self):
-        self.rows = {ENTRY: b'entry'}
+        self.rows = {ENTRY: b'entry',CONTRACT:b'contract'}
         self.rows[ntpath.join(RUNTIME, 'python.exe')] = b'injected executable'
         dep = b'injected dependency'
         self.rows[ntpath.join(RUNTIME, 'python312.dll')] = dep
@@ -41,7 +43,7 @@ class Files:
         inventory = {'schema': 'AIP06_READONLY_RUNTIME_BYTES_V1', 'runtime': RUNTIME, 'records': records}
         self.inventory_path = ntpath.join(ntpath.dirname(ROOTS['E']), 'INJECTED-CONTROL-INVENTORY.json')
         raw = body(inventory).encode(); self.rows[self.inventory_path] = raw
-        self.plan = candidate_plan(source_pins={ENTRY: sha(b'entry')}, runtime_inventory={
+        self.plan = candidate_plan(source_pins={ENTRY: sha(b'entry'),CONTRACT:sha(b'contract')}, runtime_inventory={
             'path': self.inventory_path, 'sha256': sha(raw), 'files': 2, 'directories': 0,
             'read_bytes': sum(r['size'] for r in records), 'native_identity_accepted': False,
             'complete_acl_accepted': False}, async_review={'compatible': False, 'native_execution': False})
@@ -76,8 +78,8 @@ class Owner:
     def launch_controller(self, entry, executable, *, deadline_ns):
         self.calls.append('launch')
         x = self.x
-        cmd = list2cmdline([executable, '-B', entry, '--role', 'controller', '--manifest',
-            ntpath.join(REPO, 'docs', 'AIP_06_NATIVE_CANDIDATE_RUN_MANIFEST_2026-11-05.json'), '--manifest-sha256', x.pin])
+        intent=ControllerIntent(x.raw,x.pin)
+        cmd = list2cmdline(bootstrap_argv(executable,'a'*32))
         image = (executable, (1, 2, 3), sha(b'injected executable'))
         rows = {1: dict(pid=101, created=10, image=image[0], file_id=image[1], sha256=image[2],
                         command_line='original owner', parent_pid=99),
@@ -87,7 +89,11 @@ class Owner:
         request = LaunchRequest('acceptance_supervisor', 'a'*32, 'direct', image, image, cmd, cmd)
         binding = RetainedLaunchBinding(x.observer, request, 1, 2)
         binding.bind_runtime(2, {'pid': 102, 'nonce': 'a'*32, 'role': 'acceptance_supervisor'})
-        x.launch = OwnerLaunch(binding, x.pin)
+        session=Session(ROLE,{'name':ROLE,'request':request},{},(),intent.argv,{},x.observer,
+            parent_handle=1,launch_handle=2,runtime_handle=2,binding=binding,suspended=False,target_released=True,
+            receipt={'scope':SCOPE_HASH,'nonce':request.nonce,'owner':digest(binding.runtime),
+                     'reservation_head':'d'*64,'guarded':True})
+        x.launch = OwnerLaunch(binding, x.pin,session,intent)
         return x.launch
 
     def verify_controller(self, first, *, deadline_ns):

@@ -26,11 +26,11 @@ class NativeScenarioContract:
 
 
 def contracts():
-    faults = {'F05': 'hard-session-loss-before-next-native-effect',
+    faults = {'F05': 'hard-realized-session-loss-before-next-admission-no-counterpart-write',
               'F06': 'input-clock-provider-expiry-before-next-admission',
               'F09': 'once-only-inception-interrupted-at-each-durable-cut',
               'F11': 'actual-bounded-native-pressure-with-reserved-stop',
-              'F12': 'source-producer-continuation-notification-native-binding',
+              'F12': 'source-producer-continuation-read-model-committed-notification-native-binding',
               'BOOTSTRAP-IPC-FAULTS': 'bootstrap-credit-receipt-ACK-and-drain-exact-cuts',
               'OWNERSHIP-PROBES': 'contained-unknown-child-and-independent-complete-roster'}
     source = {r['id']: r for r in schedule()}

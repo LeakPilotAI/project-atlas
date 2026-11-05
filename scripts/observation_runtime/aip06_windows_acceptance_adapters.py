@@ -336,20 +336,24 @@ class WindowsReaderSet:
 
 
 class WindowsAcceptanceOwner:
-    """Concrete observations/reservations/owned cleanup for an existing guard.
+    """One create-new receipt and guarded controller session; no native grant.
 
-    No initialize/load/create side effect on construction. The current direct
-    CLI cannot be substituted for the qualified fenced supervisor. That exact
-    startup mismatch is a refusal, not permission for a second raw launcher.
+    Construction is inert. Public launch refuses authority before effects;
+    after admission the implementation uses only the existing suspended guard
+    with an exact typed logical target and original fenced bootstrap command.
     """
     domain = DOMAIN
 
-    def __init__(self, *, controller, guard, capacity, clock_ns):
+    def __init__(self, *, controller, guard, capacity, clock_ns, intent=None, precreation=None):
         self.controller, self.guard, self.capacity, self.clock = controller, guard, capacity, clock_ns
         self.reservations, self.failure = [], None
+        self.intent = intent
+        self.precreation = precreation if precreation is not None else getattr(controller, 'precreation_receipt', None)
+        self.child = None
 
     def start(self, authorization=None):
-        RefusalOnlyAuthorization().require(authorization, manifest_sha256='UNREDEEMABLE_WINDOWS_ADAPTER')
+        RefusalOnlyAuthorization().require(authorization,
+            manifest_sha256=self.intent.sha256 if self.intent is not None else 'UNREDEEMABLE_WINDOWS_ADAPTER')
 
     def verify_current(self, *, deadline_ns):
         self.controller.require_ready(); self.guard.check()
@@ -375,45 +379,95 @@ class WindowsAcceptanceOwner:
                 need(alias in self.guard.paths.bound and self.guard.paths.bound[alias] == row,
                      'NO_EXISTING_NATIVE_FIXTURE_ADOPTION')
             roots[alias] = {'path': path, 'native': row, 'absent': row is None}
-        argv = [plan['executable'], '-B', plan['entry'], '--role', 'controller']
-        role = launch_role(argv, self.controller.profile['targets'])
-        # Preserve the actual qualified role restriction rather than widening
-        # it or disguising this controller as a legacy supervisor/worker.
+        from scripts.observation_runtime.aip06_controller_contract import ControllerIntent, PrecreationReceipt
+        need(type(self.intent) is ControllerIntent and self.intent.plan() == plan
+             and type(self.precreation) is PrecreationReceipt, 'MATCHED_CONTROLLER_PRECREATION_REQUIRED')
+        self.precreation.bind(self.intent, guard=self.guard, clock_ns=self.clock, deadline_ns=deadline_ns)
+        role = launch_role(self.intent.argv, self.controller.profile['targets'])
         return {'domain': DOMAIN, 'manifest': manifest_sha256, 'roots': roots, 'capacity': measured,
                 'controller_role': role, 'required_role': 'acceptance_supervisor',
-                'startup_status': 'BLOCKED_DIRECT_CONTROLLER_VS_FENCED_LEGACY_SUPERVISOR_CONTRACT',
+                'startup_status': 'SOURCE_CONTRACT_BOUND_NATIVE_AUTHORIZATION_PENDING',
                 'native_acceptance': False}
 
     def reserve(self, limits, *, deadline_ns):
         need(limits == dict(LIMITS), 'EXACT_SHARED_OWNER_LIMITS')
+        from scripts.observation_runtime.aip06_controller_contract import ControllerIntent, PrecreationReceipt
+        need(type(self.intent) is ControllerIntent and type(self.precreation) is PrecreationReceipt,
+             'CONTROLLER_BOOTSTRAP_ROLE_AND_SHARED_SESSION_BINDING_NOT_CONNECTED')
         self.verify_current(deadline_ns=deadline_ns)
         need(not self.reservations, 'ONE_OWNER_RESERVATION')
-        # Prospective process/Job/IPC allocations still belong to the existing
-        # guarded SessionFactory. Never reserve a synthetic block of slots and
-        # then create untracked native resources outside that factory.
-        raise ValueError('CONTROLLER_BOOTSTRAP_ROLE_AND_SHARED_SESSION_BINDING_NOT_CONNECTED')
+        self.precreation.bind(self.intent, guard=self.guard, clock_ns=self.clock, deadline_ns=deadline_ns)
+        self.intent.declare(self.controller.process_port)
+        cut = self.guard.resources.read()
+        self.reservations.append({'head':cut['head'],'baseline':set(cut['state']['resources']),'lease':None})
+        return {'held':True,'limits':dict(LIMITS),'includes_outer_owner':True,'stop_capacity_reserved':True,
+                'head':cut['head'],'manifest':self.intent.sha256}
 
     def launch_controller(self, entry, executable, *, deadline_ns):
-        # Authorization refusal happens before even querying a process. The
-        # current CLI/guarded-bootstrap mismatch is separately reported.
+        # No grant is issued/redeemed here. Public native admission stays shut.
         self.start()
+        return self._launch_reserved(entry, executable, deadline_ns=deadline_ns)
+
+    def _launch_reserved(self, entry, executable, *, deadline_ns):
+        """After admission only; tests inject Windows calls into the real guard."""
+        from scripts.observation_runtime.aip06_acceptance_control import OwnerLaunch
+        from scripts.observation_runtime.aip06_fixture_guard import current
+        need(current() is self.guard, 'ORIGINAL_ROOT_GUARD_MUST_BE_INSTALLED')
+        need(self.intent is not None and len(self.reservations) == 1 and self.child is None
+             and not self.reservations[0].get('cancelled', False)
+             and (entry,executable) == (self.intent.plan()['entry'],self.intent.plan()['executable'])
+             and self.clock() < deadline_ns, 'ONE_RESERVED_EXACT_CONTROLLER_LAUNCH')
+        # spawn performs the existing suspended creation, prospective native
+        # reservations, Job assignment, original handle binding and guard ACK.
+        with bounded_observations(deadline_ns):
+            self.child = self.guard.spawn(self.intent.argv)
+        lease = OwnerLaunch(self.child.child.binding,self.intent.sha256,self.child.child,self.intent)
+        self.reservations[0]['lease'] = lease
+        self.verify_controller(lease,deadline_ns=deadline_ns)
+        return lease
 
     def cleanup(self, launch, *, deadline_ns):
         need(self.clock() < deadline_ns, 'OWNER_CLEANUP_DEADLINE')
         if launch is None:
-            need(not self.reservations, 'UNRESOLVED_PARTIAL_OWNER_RESERVATION')
+            need(self.child is None, 'OWNED_CONTROLLER_REQUIRES_EXACT_LAUNCH_FOR_CLEANUP')
+            if self.reservations:
+                self.verify_released(deadline_ns=deadline_ns)
+                self.reservations[0]['cancelled'] = True
             return True
-        raise ValueError('NO_ADOPTION_OF_UNBOUND_CONTROLLER_FOR_CLEANUP')
+        if self.child is not None and self.child.closed:
+            need(self.reservations[0]['lease'] is launch, 'ORIGINAL_CONTROLLER_CLEANUP_IDENTITY')
+            self.child.close()  # Existing idempotent native/ledger close checks.
+            self.verify_released(deadline_ns=deadline_ns)
+            return True
+        self.verify_controller(launch,deadline_ns=deadline_ns)
+        seconds = min(6,(deadline_ns-self.clock())/10**9)
+        need(seconds > 0, 'CONTROLLER_CLEANUP_TIME_REMAINING')
+        self.child.communicate(launch.preparation_packet(self.intent.plan(),self.intent.sha256),timeout=seconds)
+        need(self.child.closed and self.clock() < deadline_ns, 'CONTROLLER_PREPARE_EXIT_AND_CLOSE_REQUIRED')
+        self.verify_released(deadline_ns=deadline_ns)
+        return True
 
     def verify_controller(self, launch, *, deadline_ns):
         need(self.clock() < deadline_ns, 'CONTROLLER_VERIFY_DEADLINE')
-        # There is no declared controller session to adopt. A matching PID or
-        # externally supplied OwnerLaunch cannot manufacture that declaration.
-        raise ValueError('CONTROLLER_BOOTSTRAP_ROLE_AND_SHARED_SESSION_BINDING_NOT_CONNECTED')
+        from scripts.observation_runtime.aip06_controller_contract import ROLE, bootstrap_argv
+        need(self.intent is not None and len(self.reservations) == 1
+             and self.reservations[0]['lease'] is launch and self.child is not None
+             and launch.session is self.child.child and launch.session in self.controller.process_port.sessions
+             and launch.session.creation_attempted and type(launch.session.creation_native) is dict
+             and all(launch.session.creation_native[k] == launch.binding.runtime[k] for k in ('pid','created','image'))
+             and self.guard.ownership.bindings.get(ROLE) is launch.binding,
+             'CONTROLLER_BOOTSTRAP_ROLE_AND_SHARED_SESSION_BINDING_NOT_CONNECTED')
+        declared = self.controller.process_port.plans.get(launch.binding.request.nonce)
+        need(declared is not None and declared['argv'] == self.intent.argv
+             and declared['command'] == bootstrap_argv(self.intent.plan()['executable'],launch.binding.request.nonce),
+             'CONTROLLER_ORIGINAL_CREATION_PLAN_REQUIRED')
+        with bounded_observations(deadline_ns):
+            launch.verify(self.intent.plan(),self.intent.sha256)
 
     def verify_released(self, *, deadline_ns):
-        need(not self.reservations and self.clock() < deadline_ns, 'OWNER_RESERVATIONS_OR_DEADLINE_UNRESOLVED')
+        need(self.clock() < deadline_ns, 'OWNER_RESERVATIONS_OR_DEADLINE_UNRESOLVED')
         state = self.guard.resources.read()['state']
-        need(all(row['closed'] for row in state['resources'].values())
+        baseline = self.reservations[0]['baseline'] if self.reservations else set()
+        need(all(row['closed'] for key,row in state['resources'].items() if key not in baseline)
              and self.controller.process_port.all_members() == set() and self.clock() < deadline_ns,
              'OWNER_RESOURCE_OR_PROCESS_RELEASE_UNRESOLVED')

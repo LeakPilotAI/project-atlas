@@ -217,6 +217,7 @@ class NativeController:
                     "race_one",
                     "race_two",
                     "query",
+                    "acceptance_controller",
                 )
                 and type(v) is str
                 and v in profile["source_pins"]
@@ -224,6 +225,10 @@ class NativeController:
             ),
             "EXACT_CONTROLLER_SOURCE_TARGET_PINS",
         )
+        if 'acceptance_controller' in profile['targets']:
+            from scripts.observation_runtime.aip06_controller_contract import ENTRY
+            need(profile['targets']['acceptance_controller'] == ENTRY,
+                 'ONLY_PINNED_ACCEPTANCE_CONTROLLER_TARGET')
         need(
             set(profile["accounts"]) <= {"QUALITY_DIPS", "HYPERLIQUID"}
             and all(
@@ -250,6 +255,7 @@ class NativeController:
         self.children = []
         self.io = None
         self.process_port = self.process_allocations = self.cleanup = None
+        self.precreation_receipt = None
         self.legacy_probes = None
 
     def bind_legacy_probes(self, output):
@@ -273,7 +279,7 @@ class NativeController:
         self.require_ready()
         return self.process_port.ownership_probe('unexpected-child', deadline_ns=deadline_ns)
 
-    def initialize(self, process_port_factory, *, aggregate_factory=None):
+    def initialize(self, process_port_factory, *, aggregate_factory=None, precreation_intent=None):
         """Future explicitly authorized execution only. Never called offline."""
         need(
             callable(process_port_factory),
@@ -291,6 +297,12 @@ class NativeController:
         )
 
         need(not self.initialized and not self.failed, "ONE_CREATE_NEW_CONTROLLER")
+        if precreation_intent is not None:
+            from scripts.observation_runtime.aip06_controller_contract import ControllerIntent
+            need(type(precreation_intent) is ControllerIntent
+                 and precreation_intent.plan()['source_pins'] == self.profile['source_pins']
+                 and precreation_intent.plan()['executable'] == self.profile['executable'],
+                 'EXACT_CREATE_NEW_CONTROLLER_INTENT_BEFORE_EFFECTS')
         if getattr(process_port_factory, 'requires_aggregate', False) and aggregate_factory is None:
             from scripts.observation_runtime.aip06_job_budget import AggregateJobBudget
             aggregate_factory = AggregateJobBudget
@@ -363,6 +375,10 @@ class NativeController:
         )
         self.io = io
         paths = FixturePaths(io)
+        if precreation_intent is not None:
+            from scripts.observation_runtime.aip06_controller_contract import PrecreationReceipt
+            self.precreation_receipt = PrecreationReceipt.capture(precreation_intent, paths=paths,
+                clock_ns=self.clock, deadline_ns=escrow.started+30*10**9)
         intent = paths.prepare("E")
         escrow.reserve(owner_key, "bootstrap:E", "directory", entries=1)
         io.begin(owner_key, "bootstrap:E", "directory", ROOTS["E"])

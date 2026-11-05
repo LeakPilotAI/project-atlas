@@ -1,4 +1,368 @@
 {
+  "aip06_controller_bootstrap_contract_repair_20261105": {
+  "base_commit": "4f61f896d6daaf1c4cca4166c1378a1cf4988d1d",
+  "status": "CONTROLLER_BOOTSTRAP_SOURCE_REPAIRED_EXECUTION_ASSEMBLY_BLOCKED",
+  "repair": [
+    "Exact typed manifest/logical argv;one root-only controller declaration/claim;formal supervisor and original fenced native bootstrap command.",
+    "Precreation receipt integrated before first mkdir within original bootstrap escrow;one E/shared ledger;current identity/ancestry/Job/handles/creation-plan checks.",
+    "Private inherited manifest bytes/nonce/owner/source binding via production mailbox,64KiB cap,execution-fenced dispatcher handoff,authenticated preparation-only publication and normal owned cleanup.",
+    "One joined injected Windows/real framed memory IPC lifecycle,negative exact comparisons and complete injected original aggregate release. No physical Windows proof claimed."
+  ],
+  "python": {
+    "passed": 2111,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 5,
+    "warnings": 2,
+    "new_cases": 50,
+    "focus": 298,
+    "broader": 1874,
+    "overlap": 61,
+    "distinct": true,
+    "earlier_failed_attempts": 2,
+    "earlier_failed_case": "same joined contract test:direct-channel/mailbox misuse;then wrapper input bound mismatch;both corrected",
+    "timeouts": 0,
+    "crashes": 0,
+    "historical_180s_timeout_preserved": true,
+    "five_original_native_launches_unexecuted": true
+  },
+  "node": {
+    "passed": 42,
+    "failed": 0,
+    "skipped": 0
+  },
+  "native_acceptance_executed": false,
+  "native_financial_workers_launched": false,
+  "manifest_sha256": "35d5b799692626aacb10504e584b57ab427fa8d185e6c2151701f95d577854f4",
+  "source_pins": 101,
+  "manifest_bytes": 26306,
+  "private_packet_bytes": 29170,
+  "private_input_cap": 65536,
+  "aip06_status": "BLOCKED",
+  "completion": "5/18",
+  "paper": false,
+  "production": "NO_GO",
+  "authorization": "PENDING_NONE_CREATED_OR_CONSUMED",
+  "report": "docs/AIP_06_NATIVE_EXECUTION_ASSEMBLY_MATRIX_2026-11-05.md",
+  "remaining": {
+    "case_context_factory": "MISSING concrete NativeScenarioBinding.context issuer with immutable per-case target/namespace view,shared resources,owned reserve/verify/release/abort and current physical identity. Do not mutate global role maps or reset authority.",
+    "reader_host_factory": "MISSING generic separately admitted reader entry/physical local handle import and native grader result projection. Existing raw providers are not native authority.",
+    "producer_inventory": {
+      "F05": "MISSING realized-loss native admission/no-counterpart-write producer; not session revocation.",
+      "F06": "MISSING native clock/provider evidence loss/expiry producer.",
+      "F09": "MISSING native once-only inception interruption producer at all original durability cuts.",
+      "F11": "MISSING actual bounded native pressure/capacity/Stop reserve producer; mocked headroom not proof.",
+      "F12": "EXISTING AIP01-05 components; native wrapper/context/accounting/source/readback connection absent,operational authority blocked.",
+      "BOOTSTRAP-IPC-FAULTS": "MISSING native fault orchestrator; escrow/pipe/credit/refusal cores exist.",
+      "OWNERSHIP-PROBES": "EXISTING guarded probe/challenge producers; driver/context/native reader connection absent."
+    },
+    "async": "BLOCKED: retained observed host TCP socketpair fallback violates unchanged bind/connect guard; private application IPC is not an asyncio wake adapter. No compliant native transport demonstrated or alternative authorized.",
+    "native_identity_acl": "BLOCKED current original native file/volume/ACL/dependency/loaded-origin/process/Job/socket/handle/capacity/cleanup/timing evidence. All three native financial/restart samples unexecuted.",
+    "native_outer_authority": "PENDING reviewed single-use approval/redemption and successful native outer factory/hard backstop. Current entry and public owner remain refusal-only; no approval created/requested/consumed."
+  },
+  "next_source_milestone": "AIP-06-SCOPED-CASE-AND-READER-CONTEXT-SOURCE-V1",
+  "runs": {
+    "controller-contract-checkpoint-focus": {
+      "seconds": 11.438,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-final-broad": {
+      "seconds": 137.391,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-node": {
+      "seconds": 0.172,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-focus-01": {
+      "seconds": 4.391,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-focus-02": {
+      "seconds": 8.938,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-focus-03": {
+      "seconds": 15.156,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-focus-04": {
+      "seconds": 13.281,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-final-focus": {
+      "seconds": 12.25,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-validated-focus": {
+      "seconds": 9.188,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-broad": {
+      "seconds": 170.875,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    }
+  },
+  "evidence_hashes": {
+    "controller-contract-broad.json": "f0698fee5762d5be165924252e5dc2dc6f355d3a8e1779761d3f46a99eb5d4d2",
+    "controller-contract-broad.launch.json": "7ce01cc97e901558b13cc9a1149d49aa44b485ff82ddb19e2dcc488ae141bb09",
+    "controller-contract-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-broad.stdout": "40eaa4ab461f58ee45909a6884d1914ed455a6e055cb4ce3b8a8bba75938bbe0",
+    "controller-contract-checkpoint-focus.json": "f12051352d9725bec5bde1a441a7a02024637dee7bde39f14d857ae72cd2f434",
+    "controller-contract-checkpoint-focus.launch.json": "def8b229fe22514d6bd8136db80e0eb76c3bd0c6bf90439866c61a7ad2f0481f",
+    "controller-contract-checkpoint-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-checkpoint-focus.stdout": "3854a132c8987657530ca4afcf44b11222ea8f4a082414b7ae7246773022adc8",
+    "controller-contract-checkpoint-focus.xml": "66a26a50ef0ea7d987c5431dfaf8ac89d67b93d37530151232b6119c0da6257b",
+    "controller-contract-final-broad.json": "58e08e351e5d5b3ccff4112e051d391e1322952517b2b9f5c823dcb2ae9e391a",
+    "controller-contract-final-broad.launch.json": "c03310f1281ba18c486991b1a9560dd2a3036b05bb3d67264459c2c37ad93c54",
+    "controller-contract-final-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-final-broad.stdout": "5a87b955420aa3178821d1330d644cc37faf5c8d5749a1f7f153afe5a1f51d3d",
+    "controller-contract-final-focus.json": "bd2b578c58469a7de026843a6384275411c00e6f197a236e0d44b0e2f12b5f7b",
+    "controller-contract-final-focus.launch.json": "722c5ec5412e656c8af10425bc379ec7013423fd51f13d3bb841ad68aa933a8c",
+    "controller-contract-final-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-final-focus.stdout": "eea60d1e8698b72106f8b345229a72cb39da5e432f0ef1f328a67b98db96917d",
+    "controller-contract-final-focus.xml": "b0eaddd6b380e6677d9cdcd0a2dae94eacbc24e3828e432c948aebae4d8fda1b",
+    "controller-contract-focus-01.json": "a4f955d07a1cdee70a20ed8745db0bb41686e711540bb60004ec8e3dbc1cd51e",
+    "controller-contract-focus-01.launch.json": "f51d24e700149444441e7b9caee74a5ad4aafc2b101a853d477b99896c12cdd5",
+    "controller-contract-focus-01.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-focus-01.stdout": "d913470aafd3ee899753e04f3815e34825b09d7020b9e2d4403d384bae370dda",
+    "controller-contract-focus-01.xml": "9569aec486a667ae8c4821af8f535b59d024a19fc8ff7faba168170af44fd1d2",
+    "controller-contract-focus-02.json": "a2127bd5472e58361b3bfa116944978b1bb15cac07bbfd3d8d2daf7c0d12f9b2",
+    "controller-contract-focus-02.launch.json": "f30a6a9ea4e8aa83bae401b59d9259d16c9d9726c5d82df72a64e70f9940a6cd",
+    "controller-contract-focus-02.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-focus-02.stdout": "81197ecd0826778fe6e5bebc3c39cc8bf0d9eaee3a41f35a5ab424a2a9460f88",
+    "controller-contract-focus-02.xml": "a02bb37c8932a92730130baa7e0a478951a7c5720370de9a3504427acf745f9f",
+    "controller-contract-focus-03.json": "4e2a40a3c1a3830289567cc06ad676e2e864644db7145371729b9c03162fbc8b",
+    "controller-contract-focus-03.launch.json": "299a5cdbcb7503c7e38474c6f78ef98cfa6d83658a6baf18f003fca7d86e3b9e",
+    "controller-contract-focus-03.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-focus-03.stdout": "8f6d93401c65b5b6ed62dc5d1902e251ed4179b1f35f0acc9c33d457a722fa66",
+    "controller-contract-focus-03.xml": "560df3a0dde929ecdfe2a88cd94e3cbc7f3f80a5906cd60a493145d44b09af41",
+    "controller-contract-focus-04.json": "faba9ebaa2a1d5469cba44bc2a30f7744648ba6de6386fe49d1899e43a36d451",
+    "controller-contract-focus-04.launch.json": "8f9c2dc71d710b1df8ef292746d832a4f5d803db9ab6502ae27a83b3c56b9eb0",
+    "controller-contract-focus-04.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-focus-04.stdout": "249940526c5fcdf26108ece2f28fc7eaac39225480d7c3d1a7667a32a1cf5189",
+    "controller-contract-focus-04.xml": "ce71b41f3e8b0774882e74d77f0234e664b12c9ff59e4172c79b5fe7e53e1841",
+    "controller-contract-manifest-before.json": "bffc7d50648fc1e9d6800f4b03b09a00d980bf48ba4310a8cac0dd4ea2c79f91",
+    "controller-contract-node.json": "ca520f30287d31b1677f05526bd24571d5359ca7e0370c1e72a71caa46c93637",
+    "controller-contract-node.launch.json": "e7a48a3833f082d1479e8ac3dac3e69ac6d62936f631fc1baec44f51e24703e0",
+    "controller-contract-node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-node.stdout": "e22524065aeb664e6290ddd13a0f263bc147bc1423b459f7e9f4b129b6c18e54",
+    "controller-contract-validated-focus.json": "4ea8d9775ab1df55bca37b5549f860641e2cd4d6bda38f36fc33af70320c83a6",
+    "controller-contract-validated-focus.launch.json": "b2e4eb8fee440fd0432698a16c9030ee945c246b9b4e6960d7c376033c8d3781",
+    "controller-contract-validated-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-validated-focus.stdout": "7a145234a0ee3dafb88f4dcc9e75a7fa0a0fdd55a493b29defb8252b0b5a6f54",
+    "controller-contract-validated-focus.xml": "25c41f494a38f37ee1c214d66396b3fced68b6971aaea795dc947033ec7341cd"
+  },
+  "previous_current": {
+    "active_task": "AIP-06-WINDOWS-ADAPTER-AND-COMPATIBILITY-CLOSURE",
+    "last_verified_task": "BLOCKED_NATIVE_OWNER_CONTEXT_PRODUCERS_AND_ASYNC_CONTRACTS",
+    "next_eligible_tasks": [
+      "STOP after this source adapter/compatibility checkpoint and remote SHA verification.",
+      "Resolve the explicit pinned-controller/fenced-bootstrap/precreation-ledger contract and qualified physical case/reader context producer; implement the seven missing real native producer groups. Async requires a reviewed compliant transport/environment decision; no policy relaxation. Do not request native approval or execute native/installed acceptance/PAPER while unready."
+    ],
+    "latest_tests": {
+      "base_commit": "b3c1ad3c99df67f3ec746eccd1cb6ef93b513506",
+      "status": "BLOCKED_NATIVE_OWNER_CONTEXT_PRODUCERS_AND_ASYNC_CONTRACTS",
+      "source_completed": [
+        "Concrete pinned read-only file,independent retained-process,Job,capacity,cold-ledger,original bootstrap-object,retained-financial and cold-archive observation methods.",
+        "Concrete typed raw reader set and grader collection,unchanged three-reader cleanup followed by fresh strict process collection.",
+        "Exact17-row scenario contract/admission registry; ten existing source cases select exact guarded pytest node IDs with create-new per-selection temp namespaces."
+      ],
+      "remaining": {
+        "controller_assembly": {
+          "status": "BLOCKED",
+          "details": "WindowsAcceptanceOwner.reserve/verify_controller refuse: qualified bootstrap admits supervisor only at legacy target; OwnerLaunch expects direct controller CLI. Precreation/all-roots-absent versus already-initialized E/shared ledger also needs one coherent guarded bootstrap. No role widening/raw launcher implemented."
+        },
+        "native_reader_hosting": {
+          "status": "BLOCKED",
+          "details": "Concrete raw provider adapters connected; separate retained observer process, inherited local capabilities/physical IPC and native financial/Stop result projection not connected or observed. Native grader remains closed."
+        },
+        "scenario_assembly": {
+          "status": "BLOCKED",
+          "details": "Exact registry/case-node driver connection implemented, but no qualified per-case physical context producer for17 rows; real producers for F05,F06,F09,F11,F12,BOOTSTRAP-IPC-FAULTS,OWNERSHIP-PROBES absent. No actual pressure/fault/Stop result invented."
+        },
+        "async": {
+          "status": "BLOCKED",
+          "details": "BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT; six relevant target files match, target branch inferred only, D runtime not executed. Approved compliant transport/environment decision remains required; no guard change."
+        },
+        "native_host_identity_acl": {
+          "status": "BLOCKED",
+          "details": "Six target file hashes and three normal-user ACL metadata reads current; complete retained native file/volume/ACL/loaded-origin/process/Job/socket observations still pending. Runtime directory/exe protected ACLs; diagnostics parent inherited. All ten future roots absent."
+        },
+        "authorization": {
+          "status": "PENDING",
+          "details": "No new grant created/requested/consumed; fresh explicit single-use approval and reviewed redemption required only after technical readiness."
+        }
+      },
+      "python": {
+        "passed": 2061,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 5,
+        "warnings": 2,
+        "new_cases": 66,
+        "focus": 248,
+        "broader": 1874,
+        "overlap": 61,
+        "distinct": true,
+        "earlier_fixture_failed": 1,
+        "timeouts": 0,
+        "crashes": 0,
+        "joined_full_repeated": false,
+        "historical_180s_timeout_preserved": true
+      },
+      "node": {
+        "passed": 42,
+        "failed": 0,
+        "skipped": 0
+      },
+      "native_acceptance_executed": false,
+      "financial_workers_launched": false,
+      "manifest_sha256": "bffc7d50648fc1e9d6800f4b03b09a00d980bf48ba4310a8cac0dd4ea2c79f91",
+      "source_pins": 99,
+      "runtime_byte_inventory": {
+        "complete_acl_accepted": false,
+        "directories": 880,
+        "files": 9566,
+        "native_identity_accepted": false,
+        "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\prerequisites-runtime-inventory.json",
+        "read_bytes": 252648893,
+        "sha256": "8711cbc69a63711104903c2bc330366da432b9f83155e96eacf23042512161b2"
+      },
+      "host_async_assessment": {
+        "schema": "AIP06_ASYNC_BRANCH_ASSESSMENT_V1",
+        "compatible": false,
+        "native_acceptance": false,
+        "target_runtime_executed": false,
+        "status": "BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT",
+        "target_byte_match": true,
+        "target_branch": "INFERRED_FROM_MATCHING_BYTES_NOT_EXECUTED",
+        "required": "Approved transport/environment decision; do not exempt loopback or weaken the guard."
+      },
+      "normal_user_acl_reads": 3,
+      "complete_native_acl_acceptance": false,
+      "aip06_status": "BLOCKED",
+      "completion": "5/18",
+      "paper": false,
+      "production": "NO_GO",
+      "authorization": "PENDING_NOT_CREATED_OR_CONSUMED",
+      "report": "docs/AIP_06_WINDOWS_ADAPTER_COMPATIBILITY_CLOSURE_2026-11-05.md",
+      "runs": {
+        "windows-adapter-validated-focus": {
+          "seconds": 9.281,
+          "exit_code": 0,
+          "timed_out": false,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "windows-adapter-broad": {
+          "seconds": 154.875,
+          "exit_code": 0,
+          "timed_out": false,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "windows-adapter-node": {
+          "seconds": 0.125,
+          "exit_code": 0,
+          "timed_out": false,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "windows-adapter-final-focus": {
+          "seconds": 9.156,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "windows-adapter-focus-01": {
+          "seconds": 1.781,
+          "exit_code": 0,
+          "timed_out": false,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        }
+      },
+      "evidence_hashes": {
+        "windows-adapter-acl-review-v2.json": "f1a644a1e09770f1c80b9b3f5a266e8894d3c6dc3f4b1d2a2b93b73f8b980258",
+        "windows-adapter-acl-review.json": "7bd420a7c0b525298f6c37160f384548eec900c274a54b61e72f6e37d03604e3",
+        "windows-adapter-broad.json": "d7d0d5dfd325b4902e01830d9a968b3f94f901cd88cd8c374d17ff6d3a6d9fa2",
+        "windows-adapter-broad.launch.json": "03ce29570f62218be858e1739c234cb1dcf3f24ca5039d2a63ffbcd824676722",
+        "windows-adapter-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "windows-adapter-broad.stdout": "ac03574866ac411921fcf4a61ba465c62e51763492abf3ebe0cd0cae26dec75c",
+        "windows-adapter-final-focus.json": "7a5d09207a32e248d0b61141c6eda3ebe15c6a269a91de0589e6316c56a1442c",
+        "windows-adapter-final-focus.launch.json": "1faa29a8ccbbbe2d77c1f46229fd7fa7db89336c32a7f9406312f02dae1c0bfe",
+        "windows-adapter-final-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "windows-adapter-final-focus.stdout": "2c1b1157cdd2110bd310486e0b53a528fcdda3a302f2c02e916f6e5211e62e90",
+        "windows-adapter-final-focus.xml": "f8cc649b20243d7bec3a01db28fcc2f1979641acd89e626aac7dc652279e65ff",
+        "windows-adapter-focus-01.json": "d7447a68f53e8757c1b74ca6833355d81b7c24a0f4cb669e24ebb90d33925be8",
+        "windows-adapter-focus-01.launch.json": "1725057d6659ba5eadb63e9709573e594074772c8f9514e1bdd144ee83b75c35",
+        "windows-adapter-focus-01.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "windows-adapter-focus-01.stdout": "0909468d5b75c1048b3ee8e0bdcaee9515645fa1c04f78bf2a01c1d7523b7379",
+        "windows-adapter-focus-01.xml": "5ad4d1ab7ca14507b1c0f8c1cd993c54cfda1bae0d196c59635f114381f018ba",
+        "windows-adapter-manifest-before.json": "cad011ded4cce496a3738212d4092e15075da93bf3da756e60799b96dd445799",
+        "windows-adapter-node.json": "89b6a68d03e5ea703ebde8dcc048ed56322c28b5fa82e5955e6d52b0d92e91fa",
+        "windows-adapter-node.launch.json": "86a69bb82e55a97e219ab46f5c360460ae29d58eba48cdee548464d8fafec52e",
+        "windows-adapter-node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "windows-adapter-node.stdout": "9e4def28f5d9794575f97bc89416a0309697602ede4b0a53ea17fc875ef8ab8c",
+        "windows-adapter-static-review.json": "85de3c5f496b27af7501968a1762d7549e74d11abd89a01f7e92c03921700752",
+        "windows-adapter-validated-focus.json": "97ca1bc2d636ed12446f1d9cca0eae1608920b533080a78ad9744c3e5d2cea7e",
+        "windows-adapter-validated-focus.launch.json": "20548fd162abf8ec2d5ce5ecd7a8d55d91f638047288be88323bb55b37154133",
+        "windows-adapter-validated-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "windows-adapter-validated-focus.stdout": "0f0b0e12deec054ab7676799877c8863f7f8fcdb18ff812248ed584d5119f668",
+        "windows-adapter-validated-focus.xml": "db27c9ed18f1150d4d55c77b25198e0a175a2317fe08fd2767895ea345153cd8"
+      }
+    }
+  }
+},
   "aip06_windows_adapter_compatibility_closure_20261105": {
   "base_commit": "b3c1ad3c99df67f3ec746eccd1cb6ef93b513506",
   "status": "BLOCKED_NATIVE_OWNER_CONTEXT_PRODUCERS_AND_ASYNC_CONTRACTS",
@@ -15640,11 +16004,11 @@
   "original_evidence_preserved": true,
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
-  "active_task": "AIP-06-WINDOWS-ADAPTER-AND-COMPATIBILITY-CLOSURE",
-  "last_verified_task": "BLOCKED_NATIVE_OWNER_CONTEXT_PRODUCERS_AND_ASYNC_CONTRACTS",
+  "active_task": "AIP-06-CONTROLLER-BOOTSTRAP-CONTRACT-REPAIR",
+  "last_verified_task": "CONTROLLER_BOOTSTRAP_SOURCE_REPAIRED_EXECUTION_ASSEMBLY_BLOCKED",
   "next_eligible_tasks": [
-  "STOP after this source adapter/compatibility checkpoint and remote SHA verification.",
-  "Resolve the explicit pinned-controller/fenced-bootstrap/precreation-ledger contract and qualified physical case/reader context producer; implement the seven missing real native producer groups. Async requires a reviewed compliant transport/environment decision; no policy relaxation. Do not request native approval or execute native/installed acceptance/PAPER while unready."
+  "STOP after contract repair/inventory/checkpoint and independent remote verification.",
+  "Next exact SOURCE-ONLY milestone: AIP-06-SCOPED-CASE-AND-READER-CONTEXT-SOURCE-V1 from the native execution assembly matrix. Implement concrete scoped context/reader factory before producer orchestration. Async compliant transport remains separately reviewed/unproved. No native/installed execution or approval request while unready."
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -16179,59 +16543,51 @@
       "status": "PENDING",
       "details": "No new grant created/requested/consumed; fresh explicit single-use approval and reviewed redemption required only after technical readiness."
     }
+  },
+  "AIP06_NATIVE_EXECUTION_ASSEMBLY_AFTER_CONTROLLER_REPAIR_20261105": {
+    "case_context_factory": "MISSING concrete NativeScenarioBinding.context issuer with immutable per-case target/namespace view,shared resources,owned reserve/verify/release/abort and current physical identity. Do not mutate global role maps or reset authority.",
+    "reader_host_factory": "MISSING generic separately admitted reader entry/physical local handle import and native grader result projection. Existing raw providers are not native authority.",
+    "producer_inventory": {
+      "F05": "MISSING realized-loss native admission/no-counterpart-write producer; not session revocation.",
+      "F06": "MISSING native clock/provider evidence loss/expiry producer.",
+      "F09": "MISSING native once-only inception interruption producer at all original durability cuts.",
+      "F11": "MISSING actual bounded native pressure/capacity/Stop reserve producer; mocked headroom not proof.",
+      "F12": "EXISTING AIP01-05 components; native wrapper/context/accounting/source/readback connection absent,operational authority blocked.",
+      "BOOTSTRAP-IPC-FAULTS": "MISSING native fault orchestrator; escrow/pipe/credit/refusal cores exist.",
+      "OWNERSHIP-PROBES": "EXISTING guarded probe/challenge producers; driver/context/native reader connection absent."
+    },
+    "async": "BLOCKED: retained observed host TCP socketpair fallback violates unchanged bind/connect guard; private application IPC is not an asyncio wake adapter. No compliant native transport demonstrated or alternative authorized.",
+    "native_identity_acl": "BLOCKED current original native file/volume/ACL/dependency/loaded-origin/process/Job/socket/handle/capacity/cleanup/timing evidence. All three native financial/restart samples unexecuted.",
+    "native_outer_authority": "PENDING reviewed single-use approval/redemption and successful native outer factory/hard backstop. Current entry and public owner remain refusal-only; no approval created/requested/consumed."
   }
 },
   "latest_tests": {
-  "base_commit": "b3c1ad3c99df67f3ec746eccd1cb6ef93b513506",
-  "status": "BLOCKED_NATIVE_OWNER_CONTEXT_PRODUCERS_AND_ASYNC_CONTRACTS",
-  "source_completed": [
-    "Concrete pinned read-only file,independent retained-process,Job,capacity,cold-ledger,original bootstrap-object,retained-financial and cold-archive observation methods.",
-    "Concrete typed raw reader set and grader collection,unchanged three-reader cleanup followed by fresh strict process collection.",
-    "Exact17-row scenario contract/admission registry; ten existing source cases select exact guarded pytest node IDs with create-new per-selection temp namespaces."
+  "base_commit": "4f61f896d6daaf1c4cca4166c1378a1cf4988d1d",
+  "status": "CONTROLLER_BOOTSTRAP_SOURCE_REPAIRED_EXECUTION_ASSEMBLY_BLOCKED",
+  "repair": [
+    "Exact typed manifest/logical argv;one root-only controller declaration/claim;formal supervisor and original fenced native bootstrap command.",
+    "Precreation receipt integrated before first mkdir within original bootstrap escrow;one E/shared ledger;current identity/ancestry/Job/handles/creation-plan checks.",
+    "Private inherited manifest bytes/nonce/owner/source binding via production mailbox,64KiB cap,execution-fenced dispatcher handoff,authenticated preparation-only publication and normal owned cleanup.",
+    "One joined injected Windows/real framed memory IPC lifecycle,negative exact comparisons and complete injected original aggregate release. No physical Windows proof claimed."
   ],
-  "remaining": {
-    "controller_assembly": {
-      "status": "BLOCKED",
-      "details": "WindowsAcceptanceOwner.reserve/verify_controller refuse: qualified bootstrap admits supervisor only at legacy target; OwnerLaunch expects direct controller CLI. Precreation/all-roots-absent versus already-initialized E/shared ledger also needs one coherent guarded bootstrap. No role widening/raw launcher implemented."
-    },
-    "native_reader_hosting": {
-      "status": "BLOCKED",
-      "details": "Concrete raw provider adapters connected; separate retained observer process, inherited local capabilities/physical IPC and native financial/Stop result projection not connected or observed. Native grader remains closed."
-    },
-    "scenario_assembly": {
-      "status": "BLOCKED",
-      "details": "Exact registry/case-node driver connection implemented, but no qualified per-case physical context producer for17 rows; real producers for F05,F06,F09,F11,F12,BOOTSTRAP-IPC-FAULTS,OWNERSHIP-PROBES absent. No actual pressure/fault/Stop result invented."
-    },
-    "async": {
-      "status": "BLOCKED",
-      "details": "BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT; six relevant target files match, target branch inferred only, D runtime not executed. Approved compliant transport/environment decision remains required; no guard change."
-    },
-    "native_host_identity_acl": {
-      "status": "BLOCKED",
-      "details": "Six target file hashes and three normal-user ACL metadata reads current; complete retained native file/volume/ACL/loaded-origin/process/Job/socket observations still pending. Runtime directory/exe protected ACLs; diagnostics parent inherited. All ten future roots absent."
-    },
-    "authorization": {
-      "status": "PENDING",
-      "details": "No new grant created/requested/consumed; fresh explicit single-use approval and reviewed redemption required only after technical readiness."
-    }
-  },
   "python": {
-    "passed": 2061,
+    "passed": 2111,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
     "deselected": 5,
     "warnings": 2,
-    "new_cases": 66,
-    "focus": 248,
+    "new_cases": 50,
+    "focus": 298,
     "broader": 1874,
     "overlap": 61,
     "distinct": true,
-    "earlier_fixture_failed": 1,
+    "earlier_failed_attempts": 2,
+    "earlier_failed_case": "same joined contract test:direct-channel/mailbox misuse;then wrapper input bound mismatch;both corrected",
     "timeouts": 0,
     "crashes": 0,
-    "joined_full_repeated": false,
-    "historical_180s_timeout_preserved": true
+    "historical_180s_timeout_preserved": true,
+    "five_original_native_launches_unexecuted": true
   },
   "node": {
     "passed": 42,
@@ -16239,71 +16595,110 @@
     "skipped": 0
   },
   "native_acceptance_executed": false,
-  "financial_workers_launched": false,
-  "manifest_sha256": "bffc7d50648fc1e9d6800f4b03b09a00d980bf48ba4310a8cac0dd4ea2c79f91",
-  "source_pins": 99,
-  "runtime_byte_inventory": {
-    "complete_acl_accepted": false,
-    "directories": 880,
-    "files": 9566,
-    "native_identity_accepted": false,
-    "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\prerequisites-runtime-inventory.json",
-    "read_bytes": 252648893,
-    "sha256": "8711cbc69a63711104903c2bc330366da432b9f83155e96eacf23042512161b2"
-  },
-  "host_async_assessment": {
-    "schema": "AIP06_ASYNC_BRANCH_ASSESSMENT_V1",
-    "compatible": false,
-    "native_acceptance": false,
-    "target_runtime_executed": false,
-    "status": "BLOCKED_OBSERVED_HOST_TCP_FALLBACK_REQUIRES_FORBIDDEN_BIND_CONNECT",
-    "target_byte_match": true,
-    "target_branch": "INFERRED_FROM_MATCHING_BYTES_NOT_EXECUTED",
-    "required": "Approved transport/environment decision; do not exempt loopback or weaken the guard."
-  },
-  "normal_user_acl_reads": 3,
-  "complete_native_acl_acceptance": false,
+  "native_financial_workers_launched": false,
+  "manifest_sha256": "35d5b799692626aacb10504e584b57ab427fa8d185e6c2151701f95d577854f4",
+  "source_pins": 101,
+  "manifest_bytes": 26306,
+  "private_packet_bytes": 29170,
+  "private_input_cap": 65536,
   "aip06_status": "BLOCKED",
   "completion": "5/18",
   "paper": false,
   "production": "NO_GO",
-  "authorization": "PENDING_NOT_CREATED_OR_CONSUMED",
-  "report": "docs/AIP_06_WINDOWS_ADAPTER_COMPATIBILITY_CLOSURE_2026-11-05.md",
+  "authorization": "PENDING_NONE_CREATED_OR_CONSUMED",
+  "report": "docs/AIP_06_NATIVE_EXECUTION_ASSEMBLY_MATRIX_2026-11-05.md",
+  "remaining": {
+    "case_context_factory": "MISSING concrete NativeScenarioBinding.context issuer with immutable per-case target/namespace view,shared resources,owned reserve/verify/release/abort and current physical identity. Do not mutate global role maps or reset authority.",
+    "reader_host_factory": "MISSING generic separately admitted reader entry/physical local handle import and native grader result projection. Existing raw providers are not native authority.",
+    "producer_inventory": {
+      "F05": "MISSING realized-loss native admission/no-counterpart-write producer; not session revocation.",
+      "F06": "MISSING native clock/provider evidence loss/expiry producer.",
+      "F09": "MISSING native once-only inception interruption producer at all original durability cuts.",
+      "F11": "MISSING actual bounded native pressure/capacity/Stop reserve producer; mocked headroom not proof.",
+      "F12": "EXISTING AIP01-05 components; native wrapper/context/accounting/source/readback connection absent,operational authority blocked.",
+      "BOOTSTRAP-IPC-FAULTS": "MISSING native fault orchestrator; escrow/pipe/credit/refusal cores exist.",
+      "OWNERSHIP-PROBES": "EXISTING guarded probe/challenge producers; driver/context/native reader connection absent."
+    },
+    "async": "BLOCKED: retained observed host TCP socketpair fallback violates unchanged bind/connect guard; private application IPC is not an asyncio wake adapter. No compliant native transport demonstrated or alternative authorized.",
+    "native_identity_acl": "BLOCKED current original native file/volume/ACL/dependency/loaded-origin/process/Job/socket/handle/capacity/cleanup/timing evidence. All three native financial/restart samples unexecuted.",
+    "native_outer_authority": "PENDING reviewed single-use approval/redemption and successful native outer factory/hard backstop. Current entry and public owner remain refusal-only; no approval created/requested/consumed."
+  },
+  "next_source_milestone": "AIP-06-SCOPED-CASE-AND-READER-CONTEXT-SOURCE-V1",
   "runs": {
-    "windows-adapter-validated-focus": {
-      "seconds": 9.281,
+    "controller-contract-checkpoint-focus": {
+      "seconds": 11.438,
       "exit_code": 0,
       "timed_out": false,
       "handle_closed": true,
       "native_acceptance": false,
       "financial_worker": false
     },
-    "windows-adapter-broad": {
-      "seconds": 154.875,
+    "controller-contract-final-broad": {
+      "seconds": 137.391,
       "exit_code": 0,
       "timed_out": false,
       "handle_closed": true,
       "native_acceptance": false,
       "financial_worker": false
     },
-    "windows-adapter-node": {
-      "seconds": 0.125,
+    "controller-contract-node": {
+      "seconds": 0.172,
       "exit_code": 0,
       "timed_out": false,
       "handle_closed": true,
       "native_acceptance": false,
       "financial_worker": false
     },
-    "windows-adapter-final-focus": {
-      "seconds": 9.156,
+    "controller-contract-focus-01": {
+      "seconds": 4.391,
       "exit_code": 1,
       "timed_out": false,
       "handle_closed": true,
       "native_acceptance": false,
       "financial_worker": false
     },
-    "windows-adapter-focus-01": {
-      "seconds": 1.781,
+    "controller-contract-focus-02": {
+      "seconds": 8.938,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-focus-03": {
+      "seconds": 15.156,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-focus-04": {
+      "seconds": 13.281,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-final-focus": {
+      "seconds": 12.25,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-validated-focus": {
+      "seconds": 9.188,
+      "exit_code": 0,
+      "timed_out": false,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "controller-contract-broad": {
+      "seconds": 170.875,
       "exit_code": 0,
       "timed_out": false,
       "handle_closed": true,
@@ -16312,33 +16707,54 @@
     }
   },
   "evidence_hashes": {
-    "windows-adapter-acl-review-v2.json": "f1a644a1e09770f1c80b9b3f5a266e8894d3c6dc3f4b1d2a2b93b73f8b980258",
-    "windows-adapter-acl-review.json": "7bd420a7c0b525298f6c37160f384548eec900c274a54b61e72f6e37d03604e3",
-    "windows-adapter-broad.json": "d7d0d5dfd325b4902e01830d9a968b3f94f901cd88cd8c374d17ff6d3a6d9fa2",
-    "windows-adapter-broad.launch.json": "03ce29570f62218be858e1739c234cb1dcf3f24ca5039d2a63ffbcd824676722",
-    "windows-adapter-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "windows-adapter-broad.stdout": "ac03574866ac411921fcf4a61ba465c62e51763492abf3ebe0cd0cae26dec75c",
-    "windows-adapter-final-focus.json": "7a5d09207a32e248d0b61141c6eda3ebe15c6a269a91de0589e6316c56a1442c",
-    "windows-adapter-final-focus.launch.json": "1faa29a8ccbbbe2d77c1f46229fd7fa7db89336c32a7f9406312f02dae1c0bfe",
-    "windows-adapter-final-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "windows-adapter-final-focus.stdout": "2c1b1157cdd2110bd310486e0b53a528fcdda3a302f2c02e916f6e5211e62e90",
-    "windows-adapter-final-focus.xml": "f8cc649b20243d7bec3a01db28fcc2f1979641acd89e626aac7dc652279e65ff",
-    "windows-adapter-focus-01.json": "d7447a68f53e8757c1b74ca6833355d81b7c24a0f4cb669e24ebb90d33925be8",
-    "windows-adapter-focus-01.launch.json": "1725057d6659ba5eadb63e9709573e594074772c8f9514e1bdd144ee83b75c35",
-    "windows-adapter-focus-01.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "windows-adapter-focus-01.stdout": "0909468d5b75c1048b3ee8e0bdcaee9515645fa1c04f78bf2a01c1d7523b7379",
-    "windows-adapter-focus-01.xml": "5ad4d1ab7ca14507b1c0f8c1cd993c54cfda1bae0d196c59635f114381f018ba",
-    "windows-adapter-manifest-before.json": "cad011ded4cce496a3738212d4092e15075da93bf3da756e60799b96dd445799",
-    "windows-adapter-node.json": "89b6a68d03e5ea703ebde8dcc048ed56322c28b5fa82e5955e6d52b0d92e91fa",
-    "windows-adapter-node.launch.json": "86a69bb82e55a97e219ab46f5c360460ae29d58eba48cdee548464d8fafec52e",
-    "windows-adapter-node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "windows-adapter-node.stdout": "9e4def28f5d9794575f97bc89416a0309697602ede4b0a53ea17fc875ef8ab8c",
-    "windows-adapter-static-review.json": "85de3c5f496b27af7501968a1762d7549e74d11abd89a01f7e92c03921700752",
-    "windows-adapter-validated-focus.json": "97ca1bc2d636ed12446f1d9cca0eae1608920b533080a78ad9744c3e5d2cea7e",
-    "windows-adapter-validated-focus.launch.json": "20548fd162abf8ec2d5ce5ecd7a8d55d91f638047288be88323bb55b37154133",
-    "windows-adapter-validated-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "windows-adapter-validated-focus.stdout": "0f0b0e12deec054ab7676799877c8863f7f8fcdb18ff812248ed584d5119f668",
-    "windows-adapter-validated-focus.xml": "db27c9ed18f1150d4d55c77b25198e0a175a2317fe08fd2767895ea345153cd8"
+    "controller-contract-broad.json": "f0698fee5762d5be165924252e5dc2dc6f355d3a8e1779761d3f46a99eb5d4d2",
+    "controller-contract-broad.launch.json": "7ce01cc97e901558b13cc9a1149d49aa44b485ff82ddb19e2dcc488ae141bb09",
+    "controller-contract-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-broad.stdout": "40eaa4ab461f58ee45909a6884d1914ed455a6e055cb4ce3b8a8bba75938bbe0",
+    "controller-contract-checkpoint-focus.json": "f12051352d9725bec5bde1a441a7a02024637dee7bde39f14d857ae72cd2f434",
+    "controller-contract-checkpoint-focus.launch.json": "def8b229fe22514d6bd8136db80e0eb76c3bd0c6bf90439866c61a7ad2f0481f",
+    "controller-contract-checkpoint-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-checkpoint-focus.stdout": "3854a132c8987657530ca4afcf44b11222ea8f4a082414b7ae7246773022adc8",
+    "controller-contract-checkpoint-focus.xml": "66a26a50ef0ea7d987c5431dfaf8ac89d67b93d37530151232b6119c0da6257b",
+    "controller-contract-final-broad.json": "58e08e351e5d5b3ccff4112e051d391e1322952517b2b9f5c823dcb2ae9e391a",
+    "controller-contract-final-broad.launch.json": "c03310f1281ba18c486991b1a9560dd2a3036b05bb3d67264459c2c37ad93c54",
+    "controller-contract-final-broad.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-final-broad.stdout": "5a87b955420aa3178821d1330d644cc37faf5c8d5749a1f7f153afe5a1f51d3d",
+    "controller-contract-final-focus.json": "bd2b578c58469a7de026843a6384275411c00e6f197a236e0d44b0e2f12b5f7b",
+    "controller-contract-final-focus.launch.json": "722c5ec5412e656c8af10425bc379ec7013423fd51f13d3bb841ad68aa933a8c",
+    "controller-contract-final-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-final-focus.stdout": "eea60d1e8698b72106f8b345229a72cb39da5e432f0ef1f328a67b98db96917d",
+    "controller-contract-final-focus.xml": "b0eaddd6b380e6677d9cdcd0a2dae94eacbc24e3828e432c948aebae4d8fda1b",
+    "controller-contract-focus-01.json": "a4f955d07a1cdee70a20ed8745db0bb41686e711540bb60004ec8e3dbc1cd51e",
+    "controller-contract-focus-01.launch.json": "f51d24e700149444441e7b9caee74a5ad4aafc2b101a853d477b99896c12cdd5",
+    "controller-contract-focus-01.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-focus-01.stdout": "d913470aafd3ee899753e04f3815e34825b09d7020b9e2d4403d384bae370dda",
+    "controller-contract-focus-01.xml": "9569aec486a667ae8c4821af8f535b59d024a19fc8ff7faba168170af44fd1d2",
+    "controller-contract-focus-02.json": "a2127bd5472e58361b3bfa116944978b1bb15cac07bbfd3d8d2daf7c0d12f9b2",
+    "controller-contract-focus-02.launch.json": "f30a6a9ea4e8aa83bae401b59d9259d16c9d9726c5d82df72a64e70f9940a6cd",
+    "controller-contract-focus-02.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-focus-02.stdout": "81197ecd0826778fe6e5bebc3c39cc8bf0d9eaee3a41f35a5ab424a2a9460f88",
+    "controller-contract-focus-02.xml": "a02bb37c8932a92730130baa7e0a478951a7c5720370de9a3504427acf745f9f",
+    "controller-contract-focus-03.json": "4e2a40a3c1a3830289567cc06ad676e2e864644db7145371729b9c03162fbc8b",
+    "controller-contract-focus-03.launch.json": "299a5cdbcb7503c7e38474c6f78ef98cfa6d83658a6baf18f003fca7d86e3b9e",
+    "controller-contract-focus-03.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-focus-03.stdout": "8f6d93401c65b5b6ed62dc5d1902e251ed4179b1f35f0acc9c33d457a722fa66",
+    "controller-contract-focus-03.xml": "560df3a0dde929ecdfe2a88cd94e3cbc7f3f80a5906cd60a493145d44b09af41",
+    "controller-contract-focus-04.json": "faba9ebaa2a1d5469cba44bc2a30f7744648ba6de6386fe49d1899e43a36d451",
+    "controller-contract-focus-04.launch.json": "8f9c2dc71d710b1df8ef292746d832a4f5d803db9ab6502ae27a83b3c56b9eb0",
+    "controller-contract-focus-04.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-focus-04.stdout": "249940526c5fcdf26108ece2f28fc7eaac39225480d7c3d1a7667a32a1cf5189",
+    "controller-contract-focus-04.xml": "ce71b41f3e8b0774882e74d77f0234e664b12c9ff59e4172c79b5fe7e53e1841",
+    "controller-contract-manifest-before.json": "bffc7d50648fc1e9d6800f4b03b09a00d980bf48ba4310a8cac0dd4ea2c79f91",
+    "controller-contract-node.json": "ca520f30287d31b1677f05526bd24571d5359ca7e0370c1e72a71caa46c93637",
+    "controller-contract-node.launch.json": "e7a48a3833f082d1479e8ac3dac3e69ac6d62936f631fc1baec44f51e24703e0",
+    "controller-contract-node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-node.stdout": "e22524065aeb664e6290ddd13a0f263bc147bc1423b459f7e9f4b129b6c18e54",
+    "controller-contract-validated-focus.json": "4ea8d9775ab1df55bca37b5549f860641e2cd4d6bda38f36fc33af70320c83a6",
+    "controller-contract-validated-focus.launch.json": "b2e4eb8fee440fd0432698a16c9030ee945c246b9b4e6960d7c376033c8d3781",
+    "controller-contract-validated-focus.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controller-contract-validated-focus.stdout": "7a145234a0ee3dafb88f4dcc9e75a7fa0a0fdd55a493b29defb8252b0b5a6f54",
+    "controller-contract-validated-focus.xml": "25c41f494a38f37ee1c214d66396b3fced68b6971aaea795dc947033ec7341cd"
   }
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",

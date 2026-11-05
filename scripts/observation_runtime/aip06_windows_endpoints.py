@@ -369,6 +369,13 @@ class WindowsChildEndpoints:
             and frame["target"] == child.argv[2],
             "PIPE_EXIT_TARGET_CONFLICT",
         )
+        if child.plan['name'] == 'acceptance_controller':
+            from scripts.observation_runtime.aip06_controller_contract import verify_prepared
+            prepared = [r['payload'] for r in child.channel.saved_outputs
+                        if type(r['payload']) is dict and r['payload'].get('schema') == 'AIP06_CONTROLLER_PREPARED_V1']
+            need(len(prepared) == 1, 'ONE_AUTHENTICATED_CONTROLLER_PREPARATION_OUTPUT')
+            verify_prepared(prepared[0],binding=child.binding,manifest=child.argv[8],
+                            root_owner=self._state(child)['port'].resources.state['controller'])
         lines = {"stdout": [], "stderr": []}
         for record in child.channel.saved_outputs:
             item = record["payload"]

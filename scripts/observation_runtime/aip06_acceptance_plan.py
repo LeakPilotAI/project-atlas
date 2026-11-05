@@ -21,14 +21,14 @@ def schedule():
         'F02':('tests/test_perp_native_shutdown.py::test_actual_native_stop_flattens_remaining_and_reconciles_session','maker-funding-margin-native-replay'),
         'F03':('tests/test_unified_actual_native_lanes.py::test_actual_qd_scanner_publication_refuses_incomplete_source','source-account-currency-isolation'),
         'F04':('tests/test_unified_actual_native_lanes.py::test_actual_native_global_reservation_race_is_one_pending_effect','one-effect-two-distinct-race-children'),
-        'F05':(None,'native-hard-session-loss-refusal-no-write-other-account'),
+        'F05':(None,'native-realized-session-loss-admission-refusal-no-other-account-write'),
         'F06':(None,'native-input-loss-stale-clock-provider-expiry-refusal'),
         'F07':('tests/test_qd_unified_shutdown.py::test_global_qd_stop_cannot_falsely_complete','missing-drain-identity-refuses-clean-stop'),
         'F08':('tests/test_unified_actual_native_lanes.py::test_global_native_ack_loss_refuses_replay_and_restart','unknown-ack-never-reapply'),
         'F09':(None,'interrupted-native-once-only-inception-exact-cuts'),
         'F10':('tests/test_unified_actual_native_lanes.py::test_real_child_crash_after_native_fill_before_order_and_global_ack','declared-exit71-original-handle-recovery'),
         'F11':(None,'actual-native-capacity-load-and-reserved-stop-not-mocked-headroom'),
-        'F12':(None,'current-native-source-binding-and-producer-continuation-notification-contracts')}
+        'F12':(None,'current-native-source-binding-producer-continuation-read-model-committed-notification-contracts')}
     rows=[{'id':key,'source_case':case,'proof':proof,'status':'NATIVE_CASE_BINDING_PENDING' if case is None
            else 'SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING','max_children':2 if key=='F04' else 1,
            'ack':'exact-account-operation-revision-native-source-projection-report-global',
@@ -76,7 +76,7 @@ def candidate_plan(*, source_pins, runtime_inventory, async_review):
        'runtime_inventory':copy.deepcopy(runtime_inventory),'async_review':copy.deepcopy(async_review),
        'network':'DENY_SOCKET_BIND_CONNECT_EXTERNAL_DNS_PROVIDERS','environment':environment(),'case_environment':case_environment(),
        'excluded_native_launch_cases':list(EXCLUDED),'schedule':schedule(),'phase_budgets':phase_budgets(),
-       'gates':{'B1':'BLOCKED_NATIVE_OUTER_OWNER_AND_READER_BINDINGS_SOURCE_CONTROL_PLANE_SUPPLIED',
+       'gates':{'B1':'BLOCKED_NATIVE_OWNER_READER_CONTEXT_PROOFS_AND_EXECUTION_AUTHORITY',
                 'B2':'RESOLVED_EXACT_PREDECLARED_RACE_COMMANDS_SOURCE_ONLY',
                 'B3':'BLOCKED_DEFAULT_ASYNC_SOCKETPAIR_COMPATIBILITY',
                 'B4':'BLOCKED_NATIVE_FAULT_INJECTOR_AND_ACTUAL_CAPACITY_BINDINGS',
@@ -85,8 +85,9 @@ def candidate_plan(*, source_pins, runtime_inventory, async_review):
        'outer_owner':{'entry':ENTRY,'role':'outer-owner','controller_role':'controller',
            'required':['original-retained-controller-launch-handle','current-parent-creation-identity',
                        'complete-Job-roster','shared-budget-including-owner','finite-EOF-cleanup',
-                       'independent-controller-exit-and-native-result-grade'],
-           'binding':'SOURCE_CONTROL_PLANE_NATIVE_BINDING_PENDING'},
+                       'independent-controller-exit-and-native-result-grade','typed-precreation-controller-intent',
+                       'exact-logical-target-and-fenced-bootstrap-command'],
+           'binding':'FENCED_CONTROLLER_SOURCE_REPAIRED_NATIVE_ACCEPTANCE_PENDING'},
        'abort':'FIRST_FAILURE_NO_RETRY_OWNED_CLEANUP_ONLY_NO_OPERATIONAL_ROLLBACK'}
     validate_plan(value)
     return value
@@ -128,7 +129,7 @@ def validate_plan(value):
          and value['gates']['B6']=='PENDING_FRESH_SINGLE_USE_OPERATOR_AUTHORIZATION'
          and all(value['gates'][k].startswith('BLOCKED_') for k in ('B1','B3','B4','B5')),
          'UNRESOLVED_TECHNICAL_GATES_CANNOT_BE_ASSERTED_READY')
-    need(type(value['outer_owner']) is dict and value['outer_owner'].get('binding')=='SOURCE_CONTROL_PLANE_NATIVE_BINDING_PENDING',
+    need(type(value['outer_owner']) is dict and value['outer_owner'].get('binding')=='FENCED_CONTROLLER_SOURCE_REPAIRED_NATIVE_ACCEPTANCE_PENDING',
          'NO_UNVERIFIED_OUTER_OWNER')
     need(value['environment']==environment() and value['case_environment']==case_environment(),'EXACT_TEST_ENVIRONMENT')
     return copy.deepcopy(value)
