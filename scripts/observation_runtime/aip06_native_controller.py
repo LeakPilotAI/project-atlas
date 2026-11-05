@@ -135,12 +135,13 @@ class NativeAllocations:
         self.serial = 0
         self.live = set()
         self.done = set()
+        self.native_keys = set()
         self.lock = threading.RLock()
 
     def reserve(self, label, kind):
         with self.lock:
             self.serial += 1
-            key = f"{self.namespace}:{label}:{self.serial}"
+            key = f"{self.namespace}:{self.owner}:{label}:{self.serial}"
             cleanup = self.resources.state["mode"] == "STOP" or any(
                 r["state"] == "PENDING" for r in self.resources.state["stops"].values()
             )
@@ -153,10 +154,16 @@ class NativeAllocations:
             need(ticket in self.live, "ONE_NATIVE_RELEASE_TICKET")
             self.live.remove(ticket)
             self.done.add(ticket)
-            if hasattr(self.resources, 'defer_native_release'):
+            if hasattr(self.resources, 'defer_native_release') and ticket not in self.native_keys:
                 self.resources.defer_native_release(self.owner, ticket)
             else:
                 self.resources.close(self.owner, ticket, observer=self)
+
+    def bind_native(self, ticket, handle):
+        need(ticket in self.live and ticket not in self.native_keys, 'RESERVED_NATIVE_ALLOCATION_BINDING')
+        if hasattr(self.resources, 'bind_native_handle'):
+            self.resources.bind_native_handle(ticket,handle)
+        self.native_keys.add(ticket)
 
     def closed(self, owner, key):
         return owner == self.owner and key in self.done
@@ -436,11 +443,31 @@ class NativeController:
         }, port=self.process_port, output=output, clock_ns=self.clock)
         processes = StrictProcessCleanup(port=self.process_port, tables=tables, output=output, clock_ns=self.clock)
         collector = GuardedStopCollector(clock_ns=self.clock, output=output,
-            sockets=sockets, processes=processes, close_io=self.close_native_io)
+            sockets=sockets, processes=processes, close_io=self.close_native_io,
+            finalize_resources=self.close_sample_envelope)
         need(self.process_port.stop_assembly is None, 'NO_REPLACE_EXISTING_STOP_ASSEMBLY')
         self.process_port.stop_assembly = OwnedStopAssembly(self.process_port, collector)
         self.cleanup = {'sockets': sockets, 'processes': processes, 'collector': collector}
         return collector
+
+    def close_sample_envelope(self, *, deadline_ns):
+        """Last action before the original complete-release Stop verifier.
+
+        Original controller/Job query handles close; no persistent reservation
+        is exempted. The next reviewed sample creates a fresh nested envelope
+        and retains the same ledger, process CPU history and cumulative charges.
+        """
+        self.require_ready()
+        need(self.guard.stop is not None and self.guard.stop.request is not None
+             and deadline_ns == self.guard.stop.started + 8*10**9
+             and self.clock() < deadline_ns, 'EXACT_SAMPLE_STOP_FINALIZATION')
+        self.guard.io.close_cache()
+        expected = {key for key,_ in self.aggregate.held}
+        need(self.process_allocations.live == expected and not self.book.live
+             and not self.book.journal_live, 'SAMPLE_NATIVE_ALLOCATION_LEAK')
+        self.aggregate.close(deadline_ns=deadline_ns)
+        need(not self.process_allocations.live and self.clock() <= deadline_ns,
+             'SAMPLE_ENVELOPE_RELEASE_INCOMPLETE')
 
     def verify_source(self, path):
         """Read-only original-handle source pin; the handle is charged first."""

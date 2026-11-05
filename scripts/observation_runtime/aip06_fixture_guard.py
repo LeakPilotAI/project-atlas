@@ -313,7 +313,7 @@ class FixtureGuard:
 
     def key(self, kind):
         self.counter += 1
-        return "fixture:" + kind + ":" + str(self.counter)
+        return "fixture:" + self.owner + ':' + kind + ":" + str(self.counter)
 
     def cleanup(self):
         return self.resources.state["mode"] == "STOP" or any(
@@ -954,6 +954,8 @@ class FixtureGuard:
             self.reserve(
                 capacity, "file", entries=int(existing is None), size=256 * 1024
             )
+            if hasattr(self.io,'capacity'):
+                self.io.capacity(self.owner,capacity,path,256*1024)
             self.databases[path] = {"capacity": capacity, "connections": 0}
             # This is an allocation, not an open database handle. Its charge
             # survives closure; connection handles below have separate lives.

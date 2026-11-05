@@ -15,6 +15,16 @@ from dataclasses import dataclass
 from scripts.observation_runtime.aip06_harness import LIMITS, need
 
 
+class SuspendedLaunchFailure(ValueError):
+    """Creation outcome retained even if restoring inheritance flags fails."""
+
+    def __init__(self, *, created, cause, restore_errors):
+        super().__init__('SUSPENDED_LAUNCH_OR_INHERITANCE_RESTORATION_FAILED')
+        self.created = created
+        self.cause = cause
+        self.restore_errors = tuple(restore_errors)
+
+
 class BasicLimits(C.Structure):
     _fields_ = [
         ("process_cpu", C.c_int64),
@@ -159,6 +169,11 @@ class Win32ProcessCalls:
             return False
         need(C.get_last_error() == 6, "PROCESS_HANDLE_CLOSE_QUERY_FAILED")
         return True
+
+    def signalled(self, handle):
+        state = self.k.WaitForSingleObject(handle,0)
+        need(state in (0,258), 'NATIVE_SIGNAL_STATE_UNAVAILABLE')
+        return state == 0
 
     def native(self, handle):
         pid = self.check(self.k.GetProcessId(handle))
@@ -306,10 +321,15 @@ class Win32ProcessCalls:
         si.dwFlags |= subprocess.STARTF_USESTDHANDLES
         si.hStdInput, si.hStdOutput, si.hStdError = stdin, stdout, stderr
         si.lpAttributeList = {"handle_list": list(inherit_handles)}
-        for handle in inherit_handles:
-            os.set_handle_inheritable(handle, True)
+        originals = {}
+        created = None
+        failure = None
+        restore_errors = []
         try:
-            return _winapi.CreateProcess(
+            for handle in inherit_handles:
+                originals[handle] = os.get_handle_inheritable(handle)
+                os.set_handle_inheritable(handle, True)
+            created = _winapi.CreateProcess(
                 executable,
                 subprocess.list2cmdline(argv),
                 None,
@@ -320,9 +340,23 @@ class Win32ProcessCalls:
                 cwd,
                 si,
             )  # suspended, detached: no implicit console
+        except BaseException as exc:
+            failure = exc
         finally:
-            for handle in inherit_handles:
-                os.set_handle_inheritable(handle, False)
+            for handle, original in reversed(tuple(originals.items())):
+                try:
+                    os.set_handle_inheritable(handle, original)
+                    need(os.get_handle_inheritable(handle) == original,
+                         'INHERITANCE_RESTORATION_READBACK_FAILED')
+                except BaseException as exc:
+                    restore_errors.append(exc)
+        if failure is not None or restore_errors:
+            # Never lose successful CreateProcess's original capabilities to a
+            # later finally error. The guarded caller must abort that exact
+            # suspended process, without reopening by PID.
+            raise SuspendedLaunchFailure(created=created, cause=failure,
+                                         restore_errors=restore_errors) from failure
+        return created
 
     def terminate_owned_job(self, job):
         self.check(self.k.TerminateJobObject(job, 71))
@@ -452,6 +486,8 @@ class CancellableCalls:
         handle = self.calls.check(f(None, 0, procedure, None, 0, C.byref(ident)))
         task = NativeTask(handle, procedure, state, ticket)
         self.pending[handle] = task
+        if hasattr(self.allocations,'bind_native'):
+            self.allocations.bind_native(ticket,handle)
         try:
             self.calls.wait(handle, deadline_ns)
         except BaseException:

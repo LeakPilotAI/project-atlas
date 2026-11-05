@@ -16,6 +16,7 @@ from scripts.observation_runtime.aip06_ipc import Broker, Channel, MAX_IPC_NS
 from scripts.observation_runtime.aip06_pipe_transport import CreditedPipeEndpoint
 from scripts.observation_runtime.aip06_remote_handles import RetainedPeerHandles
 from scripts.observation_runtime.aip06_session_io import ParentFrames
+from scripts.observation_runtime.aip06_bootstrap_lease import ParentBootstrapLease
 
 
 DESCRIPTOR = "AIP06_INHERITED_PIPE_DESCRIPTOR_V1"
@@ -73,6 +74,12 @@ class WindowsChildEndpoints:
             "aip06_child_bootstrap.py",
         )
         port.controller.verify_source(entry)
+        port.controller.verify_source(ntpath.join(ntpath.dirname(entry),'aip06_child_entry.py'))
+        port.controller.verify_source(ntpath.join(ntpath.dirname(entry),'aip06_bootstrap_lease.py'))
+        lease = ParentBootstrapLease(port.resources,port.guard.owner,nonce,self.clock)
+        state = {'port':port,'child':child,'lease':lease,'closed':False,'verifier':None}
+        self.state[nonce] = state
+        lease.reserve()
         pairs = []
         # Record each successfully allocated pair immediately; a later failure
         # leaves the already owned handles in Session.native for guarded abort.
@@ -94,7 +101,7 @@ class WindowsChildEndpoints:
         parent = (data_out[0], data_in[1], credit_in[0], credit_out[1])
         peer = (data_in[0], data_out[1], credit_out[0], credit_in[1])
         need(len(set(parent + peer)) == 8, "DISTINCT_PRIVATE_PIPE_ENDS")
-        self.state[nonce] = {
+        state.update({
             "port": port,
             "child": child,
             "parent": parent,
@@ -104,13 +111,18 @@ class WindowsChildEndpoints:
             "transport": None,
             "verifier": None,
             "closed": False,
-        }
+        })
         env = copy.deepcopy(child.options.get("env", {}))
         need(
             not any(k.startswith("ATLAS_AIP06_INHERITED_") for k in env),
             "NO_INHERITED_DESCRIPTOR_OVERRIDE",
         )
         env["PYTHONDONTWRITEBYTECODE"] = "1"
+        env['PYTHONNOUSERSITE'] = '1'
+        repo=ntpath.dirname(ntpath.dirname(BASE))
+        expected_path=';'.join((ntpath.join(repo,'backend'),ntpath.join(repo,'tests'),repo))
+        need(env.get('PYTHONPATH') in (None,expected_path), 'NO_ALTERNATE_CHILD_PYTHONPATH')
+        env['PYTHONPATH']=expected_path
         env["ATLAS_AIP06_INHERITED_HANDLES"] = ",".join(
             str(h) for h in peer + (child.parent_handle, child.job)
         )
@@ -177,6 +189,10 @@ class WindowsChildEndpoints:
             "argv": list(child.argv),
             "source_pins": port.controller.profile["source_pins"],
             "images": port.controller.profile["images"],
+            'lease':state['lease'].descriptor(),
+            'root_bindings':copy.deepcopy(port.guard.paths.bound),
+            'targets':copy.deepcopy(port.controller.profile['targets']),
+            'sid':getattr(port.io,'sid',None),
         }
         raw = body(descriptor).encode()
         need(0 < len(raw) <= MAX_BOOTSTRAP, "INHERITED_DESCRIPTOR_CAPACITY")
@@ -230,6 +246,7 @@ class WindowsChildEndpoints:
             allowed_path=path_allowed,
             objects=self.objects,
             sid=getattr(port.io, "sid", None),
+            effects_io=port.io,
         )
         if self.descendant_factory is not None:
             verifier.descendants = self.descendant_factory(verifier)
@@ -310,9 +327,13 @@ class WindowsChildEndpoints:
             )
         if state["verifier"] is not None:
             state["verifier"].dispose_after_exit(deadline_ns=deadline_ns)
+        state['lease'].release(calls=port.calls,child=child,deadline_ns=deadline_ns)
         # Session.close_owned_handles owns the actual eight endpoint handles.
         # Do not double-close or fabricate a release inside the protocol.
         state["closed"] = True
+
+    def closed(self, owner, key):
+        return any(s['lease'].closed(owner,key) for s in self.state.values())
 
 
 class InheritedChannel:
@@ -325,7 +346,7 @@ class InheritedChannel:
     """
 
     @staticmethod
-    def open(*, handles, nonce, pipes, identity, clock_ns):
+    def open(*, handles, nonce, pipes, identity=None, identity_factory=None, clock_ns):
         need(
             type(handles) is tuple
             and len(handles) == 6
@@ -338,6 +359,10 @@ class InheritedChannel:
         )
         r, w, cr, cw, parent, job = handles
         capacities = {"data": pipes.capacity(r), "credit": pipes.capacity(cr)}
+        identity_box = [identity]
+        def verify(binding):
+            need(identity_box[0] is not None, 'VERIFIED_INHERITED_IDENTITY_REQUIRED')
+            return identity_box[0].verify(binding)
         transport = CreditedPipeEndpoint(
             api=pipes,
             read_handle=r,
@@ -345,7 +370,7 @@ class InheritedChannel:
             credit_read=cr,
             credit_write=cw,
             clock_ns=clock_ns,
-            verify_peer=identity.verify,
+            verify_peer=verify,
             session_tag=bytes.fromhex(nonce),
             capacities=capacities,
         )
@@ -366,6 +391,7 @@ class InheritedChannel:
                 "argv",
                 "source_pins",
                 "images",
+                'lease','root_bindings','targets','sid',
             }
             and value["schema"] == DESCRIPTOR
             and value["handles"] == list(handles)
@@ -374,6 +400,10 @@ class InheritedChannel:
             and value["capacities"] == capacities,
             "INHERITED_DESCRIPTOR_SCOPE_OR_HANDLES_CONFLICT",
         )
+        if identity_box[0] is None:
+            need(callable(identity_factory), 'NATIVE_INHERITED_IDENTITY_FACTORY_REQUIRED')
+            identity_box[0] = identity_factory(value)
+        identity = identity_box[0]
         need(
             identity.observer.parent == parent and identity.observer.job == job,
             "INHERITED_OBSERVER_ORIGINAL_HANDLES",

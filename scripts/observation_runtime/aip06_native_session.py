@@ -22,7 +22,7 @@ from scripts.observation_runtime.aip06_harness import (
     need,
 )
 from scripts.observation_runtime.aip06_ipc import MAX_IPC_NS
-from scripts.observation_runtime.aip06_windows_process import NativeProcessObserver
+from scripts.observation_runtime.aip06_windows_process import NativeProcessObserver, SuspendedLaunchFailure
 from scripts.observation_runtime.launch_ownership import LaunchRequest
 
 
@@ -57,6 +57,7 @@ class Session:
     failed: bool = False
     closed: bool = False
     creation_native: dict | None = None
+    creation_attempted: bool = False
 
 
 class NativeSessionFactory:
@@ -121,6 +122,7 @@ class WindowsSessionPort:
         )
         self.cim, self.allocations_port, self.protocol = cim, allocations, protocol
         self.executable = controller.profile["executable"]
+        self.pinned_images = copy.deepcopy(controller.profile['images'])
         self.guard = None
         self.plans, self.sessions, self.preallocated = {}, [], {}
         self.current_plan_nonce = None
@@ -149,6 +151,9 @@ class WindowsSessionPort:
 
     def owned_stop_spec(self, *args):
         need(self.stop_assembly is not None, "OWNED_STOP_ASSEMBLY_REQUIRED")
+        sample = args[0]
+        if self.aggregate is not None and sample in (2,3):
+            self.aggregate.rearm(sample)
         return self.stop_assembly.spec(*args)
 
     def financial_ready(self, *args, **kwargs):
@@ -183,6 +188,7 @@ class WindowsSessionPort:
             "BOUND_HEALTHY_SESSION_PORT_REQUIRED",
         )
         self.guard.check()
+        need(self.aggregate is None or not self.aggregate.dormant, 'FRESH_SAMPLE_ENVELOPE_REQUIRED_BEFORE_LAUNCH')
         name = self._role(argv)
         need(
             set(options)
@@ -415,9 +421,22 @@ class WindowsSessionPort:
             )
             # The launch slot was charged by WorkerOwnership.prepare before
             # this call. There is exactly one direct process, never adoption.
-            process, thread, pid, tid = self.calls.create_suspended(
-                executable=self.executable, argv=p["command"], **launch
-            )
+            s.creation_attempted = True
+            try:
+                process, thread, pid, tid = self.calls.create_suspended(
+                    executable=self.executable, argv=p["command"], **launch
+                )
+            except SuspendedLaunchFailure as exc:
+                if exc.created is None:
+                    # This concrete API reports a known failure before creation.
+                    # Unknown third-party/injected failures retain the refusal.
+                    s.creation_attempted = False
+                else:
+                    process, thread, _, _ = exc.created
+                    s.launch_handle = s.runtime_handle = raw_handle(process)
+                    s.creation_native = copy.deepcopy(self.calls.native(s.launch_handle))
+                    s.thread = self._claim(s, "thread", thread)
+                raise
             s.launch_handle = s.runtime_handle = raw_handle(process)
             s.thread = self._claim(s, "thread", thread)
             native = self.calls.native(s.launch_handle)
@@ -527,6 +546,9 @@ class WindowsSessionPort:
 
     def all_members(self):
         if self.aggregate is not None:
+            if self.aggregate.dormant:
+                self.aggregate.observe_closed(commit=False)
+                return set()
             self.aggregate._controller()
             return self.calls.members(self.aggregate.job) - {self.aggregate.controller['pid']}
         result = set()
@@ -740,6 +762,9 @@ class ChannelSessionProtocol:
 
     def close(self, child, *, deadline_ns):
         return self.endpoints.close(child, deadline_ns=deadline_ns)
+
+    def closed(self, owner, key):
+        return self.endpoints.closed(owner,key)
 
     def exchange_reader(self, child, value, *, deadline_ns):
         child.channel.send(

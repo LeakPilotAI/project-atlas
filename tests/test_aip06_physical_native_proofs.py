@@ -346,6 +346,7 @@ def test_concrete_object_observer_preserves_typed_native_identity(kind):
         GetFileType=lambda h: 1,
     )
     calls.processes = SimpleNamespace(
+        signalled=lambda h:False,
         check=lambda v: v,
         native=lambda h: {"pid": 20, "created": 123, "image": EXE},
         lifecycle=lambda h: {

@@ -25,9 +25,14 @@ class AggregateJobBudget:
         self.controller = None
         self.held, self.rows, self.finished = [], {}, set()
         self.last_cpu = 0
+        self.last_parent_cpu = 0
         self.last_job_cpu = 0
         self.failed = False
         self.closed_keys = set()
+        self.generation = 0
+        self.native_cpu_history = {}
+        self.dormant = False
+        self.closed_at = None
         self.limits = {
             "processes": LIMITS["processes"],
             "private_bytes": LIMITS["private_bytes"],
@@ -55,7 +60,7 @@ class AggregateJobBudget:
         )
         ticket = self.allocations.reserve("aggregate-root", "job")
         self.job = self.calls.create_job(
-            "Local\\Atlas-AIP06-Aggregate-" + digest(self.controller)[:32], self.limits
+            "Local\\Atlas-AIP06-Aggregate-" + digest(self.controller)[:32] + f'-{self.generation:02d}', self.limits
         )
         self.held.append((ticket, self.job))
         need(
@@ -152,6 +157,8 @@ class AggregateJobBudget:
 
     def observe(self, *, commit=True):
         need(not self.failed, "AGGREGATE_FAILURE_LATCHED")
+        if self.dormant:
+            return self.observe_closed(commit=commit)
         try:
             self._controller()
             need(
@@ -176,6 +183,8 @@ class AggregateJobBudget:
                 "AGGREGATE_CONTROLLER_USAGE_INVALID",
             )
             memory[owner] = amount
+            need(parent_cpu >= self.last_parent_cpu, 'AGGREGATE_PARENT_CPU_ROLLBACK')
+            self.last_parent_cpu = parent_cpu
             total_private = memory[owner]
             for pid, row in self.rows.items():
                 if row["binding"] is not None:
@@ -234,12 +243,12 @@ class AggregateJobBudget:
                 "AGGREGATE_NATIVE_ACCOUNTING_DISAGREEMENT",
             )
             job_cpu = account["user_ns"] + account["kernel_ns"]
-            need(self.last_job_cpu <= job_cpu, "AGGREGATE_JOB_CPU_ROLLBACK")
+            need(self.native_cpu_history.get(self.generation, 0) <= job_cpu, "AGGREGATE_JOB_CPU_ROLLBACK")
             # Count full original process lifetimes as a conservative lower
             # bound too: Job assignment must not hide the controller bootstrap
             # prefix. Exited process CPU stays recorded after handles close.
             process_cpu = parent_cpu + sum(r["cpu_ns"] for r in self.rows.values())
-            cpu = max(job_cpu, process_cpu)
+            cpu = max(job_cpu, process_cpu, self.last_cpu)
             need(
                 self.last_cpu <= cpu <= LIMITS["cpu_ns"],
                 "AGGREGATE_CPU_LIMIT_OR_COUNTER_ROLLBACK",
@@ -251,6 +260,7 @@ class AggregateJobBudget:
             )
             self.last_cpu = cpu
             self.last_job_cpu = job_cpu
+            self.native_cpu_history[self.generation] = job_cpu
             if commit:
                 self.resources.usage(memory=memory, cpu_ns=cpu)
             return {
@@ -286,6 +296,11 @@ class AggregateJobBudget:
         return self.observe()
 
     def close(self, *, deadline_ns):
+        if self.dormant:
+            need(all(self.allocations.closed(self.resources.state['controller'], k) for k in self.closed_keys),
+                 'AGGREGATE_REPEATED_RELEASE_CONFLICT')
+            return {'controller_job_membership_lasts_until_process_exit': True,
+                    'owned_handles_closed': True, 'financial_ack': False}
         self.observe()
         need(
             self.calls.members(self.job) == {self.controller["pid"]}
@@ -303,8 +318,65 @@ class AggregateJobBudget:
             self.allocations.release(key)
             self.closed_keys.add(key)
         self.held.clear()
+        self.dormant = True
+        self.closed_at = self.clock()
         return {
             "controller_job_membership_lasts_until_process_exit": True,
             "owned_handles_closed": True,
             "financial_ack": False,
         }
+
+    def observe_closed(self, *, commit=True):
+        """No live worker may reappear after its original normal exit.
+
+        The controller is still the caller; GetCurrentProcess is its kernel
+        capability, not OpenProcess(PID). Existing kernel Job limits remain in
+        force after the last query handle closes. No Job is reopened/adopted.
+        A new worker requires a fresh create-new nested envelope first.
+        """
+        need(not self.failed and self.dormant and not self.held and self.closed_at is not None
+             and set(self.rows) == self.finished, 'AGGREGATE_CLOSED_LIFETIMES_REQUIRED')
+        current = self.calls.current()
+        actual = self.calls.native(current)
+        need(all(actual[k] == self.controller[k] for k in ('pid','created','image'))
+             and not self.calls.lifecycle(current)['exited'], 'AGGREGATE_CLOSED_CONTROLLER_CHANGED')
+        memory, cpu = self.calls.usage(current)
+        total = cpu + sum(r['cpu_ns'] for r in self.rows.values())
+        need(type(memory) is int and 0 <= memory <= LIMITS['private_bytes']
+             and type(cpu) is int and cpu >= self.last_parent_cpu and 0 <= total <= LIMITS['cpu_ns'], 'AGGREGATE_CLOSED_USAGE_LIMIT')
+        self.last_parent_cpu = cpu
+        total = max(total, self.last_cpu)
+        self.last_cpu = total
+        values = {self.resources.state['controller']: memory}
+        need(all(r['closed'] or (r['owner'] == self.resources.state['controller']
+                 and r['kind'] in ('file','directory','handle') and k not in self.closed_keys)
+                 for k,r in self.resources.state['resources'].items()), 'AGGREGATE_CLOSED_RESOURCE_LEAK')
+        if commit:
+            self.resources.usage(memory=values,cpu_ns=total)
+        return {'members':[self.controller['pid']], 'cpu_ns':total, 'memory':values,
+                'total_private_bytes':memory,'at_ns':self.clock()}
+
+    def rearm(self, sample):
+        """Create a new finite envelope after a successful, fully closed sample.
+
+        The old kernel membership persists, but no old handle, root, ledger or
+        account is adopted. All charges, old terminal CPU and generations remain.
+        """
+        need(not self.failed and self.dormant and sample in (2,3) and sample == self.generation + 2
+             and not self.resources.recovered and self.resources.state['mode'] == 'WORK'
+             and not any(v['state'] != 'CLOSED' for v in self.resources.state['stops'].values()),
+             'ONLY_SUCCESSFUL_NEXT_STOP_SAMPLE_CAN_REARM')
+        self.observe_closed()
+        self.generation += 1
+        self.failed = True
+        ticket = self.allocations.reserve('aggregate-controller-original','handle')
+        self.controller_handle = self.calls.duplicate(self.calls.current(), self.calls.current())
+        self.held.append((ticket,self.controller_handle))
+        ticket = self.allocations.reserve('aggregate-root','job')
+        self.job = self.calls.create_job('Local\\Atlas-AIP06-Aggregate-' + digest(self.controller)[:32] + f'-{self.generation:02d}',self.limits)
+        self.held.append((ticket,self.job))
+        need(self.calls.job_limits(self.job) == self.limits and not self.calls.members(self.job), 'AGGREGATE_REARM_CREATE_NEW')
+        self.calls.assign(self.job,self.controller_handle)
+        need(self.calls.members(self.job) == {self.controller['pid']}, 'AGGREGATE_REARM_EXACT_CONTROLLER')
+        self.dormant, self.failed = False, False
+        return self.observe()

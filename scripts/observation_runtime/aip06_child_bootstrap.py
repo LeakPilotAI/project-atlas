@@ -219,9 +219,9 @@ class ChildBootstrap:
         return result
 
 
-def main():
-    # No environment flag or command-line JSON can create inherited ownership.
-    raise ValueError("AIP06_NATIVE_CHILD_LAUNCH_PORT_NOT_BOUND")
+def main(argv=None, environ=None, **options):
+    from scripts.observation_runtime.aip06_child_entry import main as inherited_main
+    return inherited_main(argv,environ,**options)
 
 
 if __name__ == "__main__":

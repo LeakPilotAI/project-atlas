@@ -12,6 +12,7 @@ from scripts.observation_runtime.launch_ownership import RetainedLaunchBinding
 class RemoteHandleProofs:
     def __init__(self, owner):
         self.owner, self.handles = owner, {}
+        self.effects = {}
 
     def bind(self, key, handle):
         need(
@@ -24,6 +25,9 @@ class RemoteHandleProofs:
         return {"owner": self.owner, "key": key, "handle": handle}
 
     def release(self, owner, key, observer):
+        if key in self.effects:
+            need(owner == self.owner and observer.closed(owner,key) is True, 'REMOTE_LOCAL_EFFECT_INCOMPLETE')
+            return {'owner':owner,'key':key,'effect':self.effects[key]}
         need(
             owner == self.owner
             and key in self.handles
@@ -55,7 +59,7 @@ class RetainedPeerHandles:
     A failed registration retains its allocated duplicate for owned cleanup.
     """
 
-    def __init__(self, *, binding, resources, calls, files, allocations, allowed_path, objects=None, descendants=None, sid=None):
+    def __init__(self, *, binding, resources, calls, files, allocations, allowed_path, objects=None, descendants=None, sid=None, effects_io=None):
         need(type(binding) is RetainedLaunchBinding, "ORIGINAL_RETAINED_PEER_REQUIRED")
         self.binding, self.resources, self.calls = binding, resources, calls
         self.files, self.allocations, self.allowed_path = (
@@ -70,6 +74,7 @@ class RetainedPeerHandles:
         self.objects, self.descendants = objects, descendants
         self.sid = sid
         self.deferred = set()
+        self.effects_io, self.effects, self.effect_paths, self.reservations = effects_io, {}, {}, {}
 
     def verify_peer(self, wire):
         need(
@@ -151,6 +156,18 @@ class RetainedPeerHandles:
 
     def release_observer(self, wire, key, proof):
         self.verify_peer(wire)
+        if key in self.effects:
+            intent = self.effects[key]
+            need(proof == {'owner':self.owner,'key':key,'effect':digest(intent)}, 'REMOTE_EFFECT_RELEASE_IDENTITY')
+            if intent['kind'] != 'capacity':
+                parent = self.effects_io.inspect(intent['parent']['path'])
+                current = self.effects_io.inspect(intent['path'])
+                need(parent == intent['parent'] and current is not None and current['kind'] == intent['kind']
+                     and current['parent_id'] == parent['id'] and not current['reparse'] and current['links'] == 1,
+                     'REMOTE_EFFECT_NATIVE_READBACK_OR_PARENT_CONFLICT')
+                self.effect_paths[intent['path']] = current['id']
+            self.done.add(key)
+            return self
         item = self.live.get(key)
         need(
             item is not None
@@ -158,6 +175,8 @@ class RetainedPeerHandles:
             and proof == {"owner": self.owner, "key": key, "handle": item["remote"]},
             "REMOTE_RELEASE_IDENTITY",
         )
+        if self.objects is not None and item['identity']['type'] == 'Thread':
+            need(self.objects.observe(item['local'])['exited'] is True, 'REMOTE_THREAD_STILL_RUNNING')
         ticket = self.allocations.reserve("remote-close-probe:" + key, "handle")
         try:
             probe = self.calls.duplicate(self.binding.runtime_handle, item["remote"])
@@ -200,6 +219,33 @@ class RetainedPeerHandles:
              and key not in self.live and key not in self.deferred, 'DEFER_ONLY_UNBOUND_NATIVE_LIFETIME')
         self.deferred.add(key)
         return {'key': key, 'owner': self.owner, 'closed': False, 'release_pending_peer_exit': True, 'financial_ack': False}
+
+    def note_reservation(self, owner, key, kind, **kw):
+        need(owner == self.owner, 'REMOTE_RESERVATION_OWNER')
+        self.reservations[key] = {'kind':kind,**kw}
+
+    def declare_effect(self, wire, key, kind, path, size=None):
+        import ntpath
+        self.verify_peer(wire)
+        row = self.resources.state['resources'].get(key)
+        need(self.effects_io is not None and kind in ('file','directory','capacity') and key not in self.effects
+             and row == {'owner':self.owner,'kind':'file' if kind == 'capacity' else kind,'closed':False},
+             'REMOTE_PRIOR_EFFECT_RESERVATION')
+        self.effects_io.allowed(path)
+        parent = self.effects_io.inspect(ntpath.dirname(path))
+        need(parent is not None and parent['kind'] == 'directory' and not parent['reparse'] and parent['links'] == 1,
+             'REMOTE_EFFECT_NATIVE_PARENT')
+        before = self.effects_io.inspect(path)
+        if kind == 'capacity':
+            need(size == 256*1024 and self.reservations.get(key,{}).get('size') == size,
+                 'REMOTE_SQLITE_CAPACITY_MUST_ALREADY_BE_CHARGED')
+        elif before is not None:
+            known = self.effect_paths.get(path, getattr(getattr(self.effects_io,'guard',None),'file_identities',{}).get(path))
+            need(known == before['id'] and not before['reparse'] and before['links'] == 1, 'REMOTE_NO_FOREIGN_EFFECT_ADOPTION')
+        intent = {'scope':self.resources.read()['scope'],'owner':self.owner,'key':key,'kind':kind,'path':path,
+                  'parent':parent,'before':before,'size':size}
+        self.effects[key] = intent
+        return intent
 
     def dispose_after_exit(self, *, deadline_ns):
         """Kernel exit releases child handles; never a financial drain ACK."""

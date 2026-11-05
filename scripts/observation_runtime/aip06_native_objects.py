@@ -95,6 +95,7 @@ class WindowsObjectCalls:
                 "pid": pid,
                 "tid": tid,
                 "created": (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime,
+                'exited':self.processes.signalled(handle),
             }
         if kind == "Token":
             token = self.files.token_identity(handle)

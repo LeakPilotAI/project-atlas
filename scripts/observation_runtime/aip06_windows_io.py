@@ -349,7 +349,7 @@ class AllocationBook:
         with self.lock:
             need(not journal or self.journal_batch, "NO_AMBIENT_JOURNAL_CAPABILITY")
             self.serial += 1
-            key = f"winio:{self.serial}"
+            key = f"winio:{self.owner}:{self.serial}"
             if journal:
                 need(len(self.journal_live) < 16, "JOURNAL_TRANSIENT_HANDLE_CAPACITY")
                 if self.intrinsic is not None:
@@ -462,6 +462,16 @@ class NativeIO:
         )
         self.allowed(path)
         self.operations[key]["path"] = path
+        if hasattr(self.book.resources,'declare_effect') and self.operations[key]['kind'] in ('file','directory'):
+            self.book.resources.declare_effect(key,self.operations[key]['kind'],path)
+
+    def capacity(self, owner, key, path, size):
+        need(owner == self.book.owner and key in self.operations and self.operations[key]['kind'] == 'file',
+             'PRIOR_SQLITE_CAPACITY_RESERVATION')
+        self.allowed(path)
+        self.operations[key] = {'kind':'capacity','path':path}
+        if hasattr(self.book.resources,'declare_effect'):
+            self.book.resources.declare_effect(key,'capacity',path,size)
 
     def ancestors(self):
         p = "D:\\"
@@ -749,6 +759,8 @@ class NativeIO:
             "OWNED_MUTEX_HANDLE_REQUIRED",
         )
         self.callback_handles[handle.token] = int(handle)
+        if hasattr(self.book.resources,'bind_native_handle'):
+            self.book.resources.bind_native_handle(handle.token,int(handle))
 
     def verify_token(self, handle, owner):
         current = self.calls.current_process_native()
@@ -760,6 +772,8 @@ class NativeIO:
             "OWNED_TOKEN_IDENTITY",
         )
         self.callback_handles[handle.token] = int(handle)
+        if hasattr(self.book.resources,'bind_native_handle'):
+            self.book.resources.bind_native_handle(handle.token,int(handle))
 
     def verify_image(self, handle, path, pin):
         row = self.calls.describe(int(handle))
@@ -770,6 +784,8 @@ class NativeIO:
             "PINNED_NATIVE_IMAGE",
         )
         self.callback_handles[handle.token] = int(handle)
+        if hasattr(self.book.resources,'bind_native_handle'):
+            self.book.resources.bind_native_handle(handle.token,int(handle))
 
     def note_closed(self, owner, key, handle):
         need(owner == self.book.owner, "IO_CLOSE_OWNER")

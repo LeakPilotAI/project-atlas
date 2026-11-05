@@ -63,7 +63,7 @@ class NativeResponses:
         return self.allocate("parent", 10)
 
     def native(self, h):
-        pid = self.handles[h][1]
+        pid = 10 if h == -1 else self.handles[h][1]
         r = self.rows[pid]
         return {k: r[k] for k in ("pid", "created", "image")}
 

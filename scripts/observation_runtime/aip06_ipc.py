@@ -226,6 +226,7 @@ class Broker:
                 "resolve_stop",
                 "bind_native_handle",
                 "defer_native_release",
+                'declare_effect',
             },
             "RPC_METHOD_NOT_PERMITTED",
         )
@@ -247,6 +248,9 @@ class Broker:
         if method == 'defer_native_release':
             need(len(args) == 2 and args[0] == self.owner and not kw and request['proof'] is None, 'RPC_DEFERRED_NATIVE_OWNER')
             return self.verifier.defer_native_release(self.channel.binding, args[1])
+        if method == 'declare_effect':
+            need(len(args) == 5 and args[0] == self.owner and not kw and request['proof'] is None, 'RPC_EFFECT_OWNER')
+            return self.verifier.declare_effect(self.channel.binding,*args[1:])
         if method in ("reserve", "charge_write", "close"):
             need(args and args[0] == self.owner, "RPC_FOREIGN_OWNER")
             if method == "close":
@@ -256,7 +260,10 @@ class Broker:
                 )
                 return self.resources.close(*args, observer=observer)
             need(request["proof"] is None, "RPC_UNEXPECTED_MUTATION_PROOF")
-            return getattr(self.resources, method)(*args, **kw)
+            result = getattr(self.resources, method)(*args, **kw)
+            if method == 'reserve' and hasattr(self.verifier,'note_reservation'):
+                self.verifier.note_reservation(*args,**kw)
+            return result
         if method == "bind_reserved_process":
             need(
                 len(args) == 2 and args[1] == self.owner and not kw,
@@ -470,9 +477,18 @@ class RemoteResources(SharedResources):
 
     def close(self, owner, key, *, observer):
         need(observer.closed(owner, key) is True, "LOCAL_RELEASE_UNVERIFIED")
+        if key not in getattr(self.proofs,'handles',{}) and key not in getattr(self.proofs,'effects',{}) and self.state['resources'][key]['kind'] == 'handle':
+            return self.defer_native_release(owner,key)
         return self.call(
             "close", (owner, key), {}, self.proofs.release(owner, key, observer)
         )
+
+    def declare_effect(self, key, kind, path, size=None):
+        intent = self.call('declare_effect',(self.owner,key,kind,path,size),{})
+        need(intent['owner'] == self.owner and intent['key'] == key and intent['path'] == path
+             and intent['kind'] == kind and intent['scope'] == SCOPE_HASH, 'REMOTE_EFFECT_ACK_SCOPE')
+        self.proofs.effects[key] = digest(intent)
+        return intent
 
     def register_owner(self, observed, **kwargs):
         key = digest(observed)
