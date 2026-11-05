@@ -8,7 +8,6 @@ import copy
 import hashlib
 import json
 from decimal import ROUND_HALF_EVEN, Context, Decimal, Inexact, localcontext
-from zoneinfo import ZoneInfo
 
 
 class FinancialSourceUncertain(ValueError):
@@ -82,6 +81,7 @@ def validate_manifest(m):
         raise ValueError("Exact explicit simulated inception required")
     for key in ("epoch", "release", "provenance"):
         text(m[key])
+    from zoneinfo import ZoneInfo
     ZoneInfo(m["timezone"])
     number(m["initial_net_r"])
     if m["strategy"] == "HYPERLIQUID_MANUAL" and (m["fees_bps"], m["slippage_bps"]) != ("2", "2"):

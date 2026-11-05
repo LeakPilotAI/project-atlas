@@ -42,9 +42,9 @@ class ParentBootstrapLease:
             "BOOTSTRAP_LEASE_ONCE_BEFORE_CREATION",
         )
         self.prepared = True
+        self.resources.reserve_bootstrap(self.owner,self.nonce,cleanup=self.cleanup)
         for serial, kind in enumerate(KINDS):
             key = f"child-bootstrap:{self.nonce}:{serial:03d}"
-            self.resources.reserve(self.owner, key, kind, cleanup=self.cleanup)
             self.keys[key] = kind
         return self.descriptor()
 
@@ -80,10 +80,16 @@ class ParentBootstrapLease:
                 and life["exited"] is True,
                 "BOOTSTRAP_LEASE_REQUIRES_ORIGINAL_CHILD_EXIT",
             )
-        for key in self.keys:
-            need(self.clock() < deadline_ns, "BOOTSTRAP_RELEASE_DEADLINE")
-            self.done.add(key)
-            self.resources.close(self.owner, key, observer=self)
+        from scripts.observation_runtime.aip06_ipc import RemoteResources
+        if type(self.resources) is RemoteResources and child.launch_handle is not None:
+            self.resources.release_bootstrap(self.nonce)
+            need(all(self.resources.state['resources'][key]['closed'] for key in self.keys),
+                 'BOOTSTRAP_ROOT_RELEASE_ACK_INCOMPLETE')
+            self.done.update(self.keys)
+            return {'closed':True,'scope':SCOPE_HASH,'nonce':self.nonce,'financial_ack':False}
+        need(self.clock() < deadline_ns, "BOOTSTRAP_RELEASE_DEADLINE")
+        self.done.update(self.keys)
+        self.resources.close_bootstrap(self.owner,self)
         return {
             "closed": True,
             "scope": SCOPE_HASH,
@@ -139,6 +145,44 @@ class InheritedBootstrapLease:
         self.used, self.done = {}, set()
         self.sealed = False
         self.retained = set()
+        self.native = {}
+        self.capacities = {}
+        self.evidence_sequence = 0
+
+    def bind_native_handle(self, key, handle):
+        need(not self.sealed and key in self.used and key not in self.done
+             and key not in self.native and key not in self.capacities
+             and type(handle) is int and handle > 0, 'BOOTSTRAP_NATIVE_ACQUISITION_BINDING')
+        self.native[key] = {'handle':handle,'acquired_ns':self.clock()}
+
+    def register_capacity(self, key, batch):
+        need(key in self.used and key not in self.native and key not in self.capacities
+             and type(batch) is ObserverBatch and batch.lease is self,
+             'BOOTSTRAP_TYPED_OBSERVER_CAPACITY')
+        self.capacities[key] = batch
+
+    def evidence(self):
+        need(self.sealed, 'BOOTSTRAP_EVIDENCE_AFTER_SEAL_ONLY')
+        self.evidence_sequence += 1
+        slots = {slot:{'state':'RESERVED_NOT_ACQUIRED'} for slot in self.descriptor['slots']}
+        for key, row in self.used.items():
+            item = {'key':key,'kind':row['kind']}
+            if key in self.done:
+                item.update(state='CLOSED_LOCAL',native=self.native.get(key))
+            elif key in self.capacities:
+                batch=self.capacities[key]
+                need(not batch.live,'BOOTSTRAP_OBSERVER_CUT_NOT_QUIESCENT')
+                item.update(state='OBSERVER_CAPACITY',completed=batch.serial,active=0)
+            else:
+                need(key in self.native,'BOOTSTRAP_RETAINED_OBJECT_WITHOUT_ACQUISITION')
+                item.update(state='RETAINED_NATIVE',native=self.native[key])
+            slots[row['parent_slot']] = item
+        from app.services.paper_financial_replay import digest
+        return {'schema':'AIP06_BOOTSTRAP_OBJECT_CUT_V1','scope':SCOPE_HASH,
+                'nonce':self.descriptor['nonce'],'owner':self.owner,
+                'parent_owner':self.descriptor['parent_owner'],'sequence':self.evidence_sequence,
+                'at_ns':self.clock(),'descriptor':digest({k:v for k,v in self.descriptor.items() if k!='reservation_head'}),
+                'slots':slots,'parent_reservations_released':False,'financial_ack':False}
 
     @property
     def state(self):
@@ -226,6 +270,7 @@ class ObserverBatch:
             key = f"observer-envelope:{i}"
             lease.reserve(self.owner, key, kind)
             self.slots[key] = kind
+            lease.register_capacity(key,self)
         self.live, self.completed = {}, set()
         self.serial = 0
 

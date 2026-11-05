@@ -37,6 +37,7 @@ KINDS = frozenset(
         "EXIT",
         "FAILURE",
         "INPUT",
+        "BOOTSTRAP",
     }
 )
 
@@ -243,6 +244,7 @@ class Broker:
             in {
                 "read",
                 "reserve",
+                "reserve_bootstrap",
                 "charge_write",
                 "close",
                 "bind_reserved_process",
@@ -252,7 +254,7 @@ class Broker:
                 "defer_native_release",
                 'declare_effect',
                 'declare_descendant',
-                'stage_descendant', 'resume_descendant', 'release_descendant', 'verify_descendants', 'finalize_descendant', 'forward_operation', 'register_descendant_channel',
+                'stage_descendant', 'resume_descendant', 'release_descendant', 'verify_descendants', 'finalize_descendant', 'forward_operation', 'register_descendant_channel', 'forward_bootstrap', 'release_bootstrap',
             },
             "RPC_METHOD_NOT_PERMITTED",
         )
@@ -260,12 +262,12 @@ class Broker:
             self.verifier.capture_peer(self.channel.binding)
         else:
             self.verifier.verify_peer(self.channel.binding)
-        if method in ('stage_descendant','resume_descendant','release_descendant','verify_descendants','finalize_descendant','forward_operation','register_descendant_channel'):
+        if method in ('stage_descendant','resume_descendant','release_descendant','verify_descendants','finalize_descendant','forward_operation','register_descendant_channel','forward_bootstrap','release_bootstrap'):
             need(len(args)==2 and args[0]==self.owner and not kw and request['proof'] is None,
                  'RPC_DESCENDANT_OWNER_OR_ARGUMENTS')
             return getattr(self.verifier,method)(self.channel.binding,args[1])
         if method == 'declare_descendant':
-            need(len(args) in (3,4) and args[0] == self.owner and not kw
+            need(len(args) in (3,4,5) and args[0] == self.owner and not kw
                  and request['proof'] is None, 'RPC_DESCENDANT_DECLARATION_OWNER')
             return self.verifier.declare_descendant(self.channel.binding,*args[1:])
         if method == "read":
@@ -301,6 +303,10 @@ class Broker:
             if method == 'reserve' and hasattr(self.verifier,'note_reservation'):
                 self.verifier.note_reservation(*args,**kw)
             return result
+        if method=='reserve_bootstrap':
+            need(len(args)==2 and args[0]==self.owner and set(kw)<={'cleanup'} and request['proof'] is None,
+                 'RPC_BOOTSTRAP_ESCROW_OWNER')
+            return self.resources.reserve_bootstrap(*args,**kw)
         if method == "bind_reserved_process":
             need(
                 len(args) == 2 and args[1] == self.owner and not kw,
@@ -524,6 +530,9 @@ class RemoteResources(SharedResources):
     def reserve(self, *args, **kwargs):
         return self.call("reserve", args, kwargs)
 
+    def reserve_bootstrap(self, owner, nonce, *, cleanup=False):
+        return self.call('reserve_bootstrap',(owner,nonce),{'cleanup':cleanup})
+
     def charge_write(self, *args, **kwargs):
         return self.call("charge_write", args, kwargs)
 
@@ -560,15 +569,28 @@ class RemoteResources(SharedResources):
         self.proofs.effects[key] = digest(intent)
         return intent
 
-    def declare_descendant(self, request, slot, *, keys=None):
+    def declare_descendant(self, request, slot, *, keys=None, bootstrap=None):
         from scripts.observation_runtime.launch_ownership import LaunchRequest
         need(type(request) is LaunchRequest, 'EXACT_DESCENDANT_LAUNCH_REQUEST')
         request.validate()
         args=(self.owner,vars(request),slot) + (() if keys is None else (list(keys),))
+        if bootstrap is not None:
+            need(keys is not None,'BOOTSTRAP_REQUIRES_COMPLETE_SESSION_DECLARATION')
+            args += (bootstrap,)
         return self._checked_descendant('declare_descendant',args,lambda result:
             result == {'schema':'AIP06_DESCENDANT_DECLARED_V1','owner':self.owner,
                         'nonce':request.nonce,'slot':slot,'financial_ack':False},
              'DESCENDANT_DECLARATION_ACK_CONFLICT')
+
+    def forward_bootstrap(self, wire, manifest):
+        return self._checked_descendant('forward_bootstrap',(self.owner,{'wire':wire,'manifest':manifest}),
+            lambda v:v == {'scope':SCOPE_HASH,'nonce':wire['nonce'],'cut':digest(manifest),'financial_ack':False},
+            'BOOTSTRAP_FORWARD_RECEIPT_CONFLICT')
+
+    def release_bootstrap(self, nonce):
+        return self._checked_descendant('release_bootstrap',(self.owner,nonce),lambda v:
+            v=={'scope':SCOPE_HASH,'nonce':nonce,'closed':True,'financial_ack':False},
+            'BOOTSTRAP_ROOT_RELEASE_RECEIPT')
 
     def _checked_descendant(self, method, args, validate, reason):
         with self.lock:

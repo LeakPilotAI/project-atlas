@@ -6,16 +6,23 @@ observed pipe capacity minus its unconsumed bytes. Exclusive inherited endpoints
 and monotonically numbered credits are required; no socket or polling process.
 """
 
-import ctypes as C
 import struct
 import threading
-from ctypes import wintypes as W
+C = W = None
+
+
+def _native_types():
+    global C, W
+    import ctypes
+    from ctypes import wintypes
+    C, W = ctypes, wintypes
 
 from scripts.observation_runtime.aip06_harness import need
 
 
 class Win32PipeCalls:
     def __init__(self, kernel):
+        _native_types()
         self.k = kernel
         specs = {
             "PeekNamedPipe": (
@@ -55,6 +62,7 @@ class Win32PipeCalls:
 
     @staticmethod
     def check(ok):
+        _native_types()
         if not ok:
             raise C.WinError(C.get_last_error())
 

@@ -150,6 +150,11 @@ class RetainedPeerHandles:
                 sid=self.sid,effects_io=self.effects_io)
             peer.descendants=DeclaredDescendants(peer=bound,calls=self.calls,objects=self.objects,
                 allocations=self.allocations,observer_factory=r.observer_factory,aggregate=r.aggregate,files=self.files)
+            descriptor=getattr(r,'bootstrap_descriptors',{}).get(nested['nonce'])
+            if descriptor is not None:
+                from scripts.observation_runtime.aip06_bootstrap_evidence import BootstrapObjects
+                peer.bootstrap=BootstrapObjects(descriptor=descriptor,binding=bound,resources=self.resources,
+                    calls=self.calls,objects=self.objects,allocations=self.allocations,clock_ns=self.resources.clock)
             broker=Broker(resources=self.resources,channel=SimpleNamespace(binding=nested),peer_owner=digest(bound.runtime),
                           verifier=peer,output=self.forward_output,clock_ns=self.resources.clock)
             peer.forward_output=self.forward_output
@@ -180,6 +185,24 @@ class RetainedPeerHandles:
         broker.pending_forwarded_head=True
         self.verify_peer(wire)
         return {'result':result,'ownership':evidence}
+
+    def forward_bootstrap(self, wire, value):
+        self.verify_peer(wire)
+        need(type(value) is dict and set(value)=={'wire','manifest'},'BOOTSTRAP_FORWARD_SCHEMA')
+        broker=self._forwarded_peer(wire,value['wire'])
+        capability=getattr(broker.verifier,'bootstrap',None)
+        need(capability is not None,'BOOTSTRAP_PRECREATION_CAPABILITY_REQUIRED')
+        return capability.accept(value['manifest'])
+
+    def release_bootstrap(self, wire, nonce):
+        self.verify_peer(wire)
+        r=self.descendants
+        need(r is not None and nonce in r.finished and nonce in self.forwarded,
+             'BOOTSTRAP_REGISTERED_ORIGINAL_RELEASE_REQUIRED')
+        capability=getattr(self.forwarded[nonce][1].verifier,'bootstrap',None)
+        need(capability is not None and capability.binding is r.bindings[nonce][0],
+             'BOOTSTRAP_ORIGINAL_RELEASE_CAPABILITY')
+        return capability.release_reservations()
 
     def finish_forwarded_heads(self, head):
         pending=getattr(self,'pending_registration',None)
@@ -332,14 +355,14 @@ class RetainedPeerHandles:
     def closed(self, owner, key):
         return owner == self.owner and key in self.done
 
-    def probe_native_objects(self, *, deadline_ns):
+    def probe_native_objects(self, *, deadline_ns, escrows=()):
         """Reobserve original duplicates and their creator's exact handles.
 
         No PID reopen or unknown-object adoption. Temporary comparison handles
         are charged before duplication and credited only after confirmed close.
         """
         try:
-            return self._probe_native_objects(deadline_ns=deadline_ns)
+            return self._probe_native_objects(deadline_ns=deadline_ns,escrows=escrows)
         except BaseException:
             self.failed = True
             raise
@@ -367,7 +390,7 @@ class RetainedPeerHandles:
                      if row['owner']==digest(bound.runtime)),
              'RETIRED_DESCENDANT_RELEASE_INCOMPLETE')
 
-    def _probe_native_objects(self, *, deadline_ns):
+    def _probe_native_objects(self, *, deadline_ns, escrows=()):
         need(self.resources.clock() < deadline_ns, 'PROBE_NATIVE_OBJECT_TIMEOUT')
         wire = {'parent': self.binding.parent, 'child': self.binding.runtime}
         self.verify_peer(wire)
@@ -387,6 +410,15 @@ class RetainedPeerHandles:
                  and not current['reparse'] and current['links'] == 1,
                  'PROBE_NATIVE_EFFECT_IDENTITY_CHANGED')
         required -= set(self.effects)
+        from scripts.observation_runtime.aip06_bootstrap_evidence import BootstrapObjects
+        for capability in escrows:
+            nonce=capability.binding.request.nonce
+            need(type(capability) is BootstrapObjects and capability.resources is self.resources
+                 and self.descendants is not None and nonce in self.descendants.bindings
+                 and self.descendants.bindings[nonce][0] is capability.binding
+                 and body(capability.binding.parent)==body(self.binding.runtime),
+                 'BOOTSTRAP_ORIGINAL_DESCENDANT_CAPABILITY_REQUIRED')
+            required -= capability.verify()
         need(required == set(self.live) and not self.deferred,
              'PROBE_NATIVE_OBJECT_EVIDENCE_INCOMPLETE')
         rows = []
@@ -445,7 +477,7 @@ class RetainedPeerHandles:
         self.verify_peer(wire)
         return self.descendants.import_binding(proof)
 
-    def declare_descendant(self, wire, encoded, slot, keys=None):
+    def declare_descendant(self, wire, encoded, slot, keys=None, bootstrap=None):
         from scripts.observation_runtime.launch_ownership import LaunchRequest
         self.verify_peer(wire)
         need(self.descendants is not None and type(encoded) is dict
@@ -461,6 +493,8 @@ class RetainedPeerHandles:
         request = LaunchRequest(**value)
         request.validate()
         self.descendants.declare(request,slot=slot,parent_owner=self.owner,resources=self.resources)
+        if bootstrap is not None:
+            self.descendants.register_bootstrap(request.nonce,bootstrap)
         if keys is not None:
             need(type(keys) is list and 0<len(keys)<=64 and len(set(keys))==len(keys)
                  and all(type(k) is str and self.resources.state['resources'].get(k,{}).get('owner')==self.owner
@@ -526,6 +560,9 @@ class RetainedPeerHandles:
         need(len(matches)==1,'DESCENDANT_FINAL_RELEASE_DECLARATION')
         nonce=matches[0]
         need(nonce in r.finished and nonce in r.declared_keys,'DESCENDANT_EXIT_AND_MANIFEST_REQUIRED')
+        descriptor=getattr(r,'bootstrap_descriptors',{}).get(nonce)
+        need(descriptor is None or all(self.resources.state['resources'][k]['closed'] for k in descriptor['slots']),
+             'DESCENDANT_BOOTSTRAP_ESCROW_NOT_RELEASED')
         bound,_,slot=r.bindings[nonce]
         need(value['owner']==digest(bound.runtime) and all(self.calls.closed(h) for _,h in r.held[nonce])
              and all(k in self.done and self.resources.state['resources'][k]['closed']
@@ -640,6 +677,7 @@ class RetainedPeerHandles:
             and self.binding.api.members() == set(),
             "REMOTE_RELEASE_REQUIRES_ORIGINAL_PEER_EXIT",
         )
+        if getattr(self,'bootstrap',None) is not None:self.bootstrap.dispose_after_exit()
         for key, item in tuple(self.live.items()):
             need(self.resources.clock() < deadline_ns, "REMOTE_RELEASE_DEADLINE")
             self.calls.close(item["local"])

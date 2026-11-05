@@ -17,7 +17,7 @@ from test_aip06_native_session_stop import EXE, PIN
 from test_aip06_physical_native_proofs import aggregate_fixture
 
 
-def staged_fixture(x=None, peer_process=None, before_create=None, suffix=''):
+def staged_fixture(x=None, peer_process=None, before_create=None, suffix='', physical_manifest=False):
     x = aggregate_fixture() if x is None else x
     peer_process = peer_process or x.guard.spawn([EXE, "-B", x.targets["financial_worker"]])
     peer = peer_process.child.binding
@@ -121,6 +121,9 @@ def staged_fixture(x=None, peer_process=None, before_create=None, suffix=''):
     )
     source = allocate("image", "source-image", lambda: x.files.open_image(EXE))
     thread_ticket = creator.reserve("primary-before-create", "thread")
+    if physical_manifest:
+        for i in range(8):allocate('pipe','before-create-pipe-'+str(i),lambda i=i:x.calls.allocate('pipe',i))
+        registry.declared_keys[request.nonce]=tuple([k for k,h in held]+[thread_ticket])
     assert x.ledger.state["resources"][slot]["kind"] == "launch"
     hp, ht, pid, tid = x.calls.create_suspended(
         executable=EXE, argv=[EXE, "-B", r"D:\reviewed\child.py"]

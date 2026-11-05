@@ -200,6 +200,8 @@ class ChildBootstrap:
         guard.check()  # Actual parent ledger round trip, not local JSON alone.
         self.guard = guard
         guard.launch_role = self.role
+        if hasattr(guard,'bootstrap_export'):
+            self.channel.send('BOOTSTRAP',guard.bootstrap_export(),deadline_ns=self._deadline())
         self.receipt = {
             "scope": SCOPE_HASH,
             "nonce": hello["nonce"],

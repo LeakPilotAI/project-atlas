@@ -173,12 +173,20 @@ class WindowsChildEndpoints:
             visit(state['verifier'])
         owners = {digest(row) for row in expected.values()} - {port.guard.owner}
         need(set(peers) == owners, 'PROBE_NATIVE_PEER_INVENTORY_INCOMPLETE')
+        escrows={};escrow_keys={}
+        for peer in peers.values():
+            capability=getattr(peer,'bootstrap',None)
+            if capability is not None:
+                keys=capability.verify()
+                owner=capability.descriptor['parent_owner']
+                need(not escrow_keys.setdefault(owner,set()).intersection(keys),'BOOTSTRAP_ESCROW_ADOPTED_TWICE')
+                escrow_keys[owner].update(keys);escrows.setdefault(owner,[]).append(capability)
         result = []
         for owner, peer in sorted(peers.items()):
             need(peer.binding.runtime['pid'] in expected
                  and body(peer.binding.runtime) == body(expected[peer.binding.runtime['pid']])
                  and port.clock() < deadline_ns, 'PROBE_NATIVE_PEER_BIRTH_OR_DEADLINE')
-            result.extend(peer.probe_native_objects(deadline_ns=deadline_ns))
+            result.extend(peer.probe_native_objects(deadline_ns=deadline_ns,escrows=escrows.get(owner,())))
         return result
 
     def channel(self, child, observed):
@@ -318,6 +326,16 @@ class WindowsChildEndpoints:
         )
         child.channel.broker = broker
         state["verifier"] = verifier
+        from scripts.observation_runtime.aip06_ipc import RemoteResources
+        if type(port.resources) is RemoteResources:
+            child.channel.bootstrap_handler=lambda manifest:port.resources.forward_bootstrap(child.channel.binding,manifest)
+        else:
+            from scripts.observation_runtime.aip06_bootstrap_evidence import BootstrapObjects
+            verifier.bootstrap=BootstrapObjects(descriptor=state['lease'].descriptor(),binding=child.binding,
+                resources=port.resources,calls=port.calls,objects=self.objects,
+                allocations=port.allocations_port,clock_ns=self.clock)
+            child.channel.bootstrap_handler=verifier.bootstrap.accept
+        child.channel.bootstrap_required=True
         receipt = child.channel.receive(deadline_ns=deadline_ns, expected_kind="ACK")[
             "payload"
         ]

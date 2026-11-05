@@ -15455,7 +15455,8 @@ Boundary: full inherited-path qualification NOT started. Historical legacy direc
 Next action: STOP after scoped commit/non-force push/independent remote SHA. Separate source-only inherited-path qualification must resolve/report existing legacy launch-role/challenge case mappings before native-readiness claims. Genuine native capacity/ACK/drain/restart/complete8sStop and operational/financial gates remain pending.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: AIP-06-INHERITED-PHYSICAL-PATH-QUALIFICATION (2026-11-05)
 Status: SOURCE QUALIFICATION BLOCKED despite passing component regressions. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
 Evidence: docs/AIP_06_INHERITED_PHYSICAL_PATH_QUALIFICATION_2026-11-05.md; logs/diagnostics/aip06-combined-validation-20261105/inherited-result.json. Python1874distinct passed,0fail/error/skip,5native-launch deselected,2existing warnings,75modules one process; Node42passed. All1854prior IDs plus20new; focused141/intermediate overlap not added. Final0crashes/timeouts/hangs. Five exploratory assertion failures preserved, including actual failed full-composition attempt.
@@ -15463,6 +15464,15 @@ Changes: formal pinned direct-supervisor role throughout plan/HELLO/guard/READY/
 Blockers: actual128slot ParentBootstrapLease escrow lacks root-visible acquired-versus-precharged object proof, so PROBE_NATIVE_OBJECT_EVIDENCE_INCOMPLETE remains. Full injected financial composition hits ONE_FIXTURE_SESSION_ONLY; no nested/cleared guard or unauthorized child-process exemption is used. Historical direct-unexpected challenge has no confined guarded unclaimed-child source capability; injected unknown rows are not substituted. Original five financial crash cases remain unmodified/unexecuted, distinct from supervisor probes.
 Boundary: no native financial workers/acceptance, installed launch/selection, provider/account/Discord/PAPER/live/V6/browser/Windows/Genesis/autostart operations. Unrelated edits/history/B1C1D1E1/all21 decisions preserved. Do not infer source/native/PAPER readiness from green tests.
 Next action: STOP after scoped commit/non-force push/independent remote SHA. Review/resolve those exact source proof contracts and isolated-context composition, then demonstrate full injected lifecycle before any native-readiness proposal. No AIP07 or native authorization inferred.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: AIP-06-JOINED-LIFECYCLE-SOURCE-CLOSURE (2026-11-05)
+Status: JOINED SOURCE QUALIFICATION COMPLETE - NATIVE ACCEPTANCE PENDING. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
+Evidence: docs/AIP_06_JOINED_LIFECYCLE_SOURCE_CLOSURE_2026-11-05.md; logs/diagnostics/aip06-combined-validation-20261105/joined-result.json. Python1924distinct passed,0fail/error/skip,5native-launch deselected,2existing warnings; Node42passed. Original1874 IDs preserved plus50new. Four bounded Python commands/78modules; overlapping runs not added. Three joined financial/restart samples pass with original financial assertions intact. Final0crash/timeout/hang; earlier failures/two exploratory outer timeouts retained.
+Changes: exact root-retained bootstrap acquisition/unused-capacity/observer evidence and prospective atomic escrow; typed BOOTSTRAP forwarding before ACK; separate pinned isolated child guard/context; explicit post-RELEASE runner barrier; strict guarded historical unexpected-child source adapter/leaf refusal without adoption. Original handles/ancestry/Jobs/ledger/IPC/ACK/drain/Stop/release/aggregate connected in the joined path. Prospective validation avoids redundant history cloning while preserving full journal readback/CAS/receipt and history immutability.
+Boundary: injected Windows APIs and disposable source state only. No native financial workers/acceptance, installed/selector, provider/account/Discord/PAPER/live/orders, Windows/Genesis/V6/browser/autostart actions. Financial native Stop timing/capacity/identity/restart and original five crash-launch cases remain unproved. No acceptance deadline or existing21decisions/B1C1D1E1 changed. Unrelated source/private historical evidence preserved.
+Next action: STOP after scoped commit/non-force push/independent remote SHA. Separate next scope is native-readiness/acceptance-plan and exact current source/runtime-pin review; execution requires new bounded authorization. Do not infer native/installed/PAPER readiness from source qualification.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

@@ -270,7 +270,7 @@ def test_legacy_unsupported_unexpected_descendant_remains_blocked_before_creatio
         assert next(iter(x.c.legacy_probes.runs.values()))['binding'].finished
         assert not x.port.all_members()
         return
-    with pytest.raises(ValueError, match="SUPPORTED_RETAINED_SOURCE"):
+    with pytest.raises(ValueError, match="UNEXPECTED_REQUIRES_GUARDED_DESCENDANT_SOURCE"):
         x.c.probe_case(case)
     assert "create-suspended" not in x.calls.events
 

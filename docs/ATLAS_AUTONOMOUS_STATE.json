@@ -1,4 +1,340 @@
 {
+  "aip06_joined_lifecycle_source_closure_20261105": {
+  "base_commit": "b92407a2d1f3197740d5bbd0e833e15701d7b690",
+  "status": "JOINED_SOURCE_QUALIFICATION_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
+  "python": {
+    "passed": 1924,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "native_launch_deselected": 5,
+    "warnings": 2,
+    "modules": 78,
+    "single_process": false,
+    "deduplicated": true
+  },
+  "new_distinct_tests": 50,
+  "prior_1874_ids_preserved": true,
+  "node": {
+    "passed": 42,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "joined_financial_samples": 3,
+  "isolated_guards_verified": true,
+  "bootstrap_acquired_objects": "SOURCE_QUALIFIED_INJECTED_NATIVE_API",
+  "historical_unexpected_child": "GUARDED_ADAPTER_SOURCE_CONNECTED_REFUSAL_VERIFIED_NATIVE_LAUNCH_UNEXECUTED",
+  "original_financial_assertions_unchanged": true,
+  "final_crashes": 0,
+  "final_timeouts": 0,
+  "runs": {
+    "joined-regression-qualified": {
+      "label": "joined-regression-qualified",
+      "command": [
+        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "logs/diagnostics/aip06-combined-validation-20261105/inherited_suite.py",
+        "full",
+        "joinedqualified"
+      ],
+      "parent_pid": 3576,
+      "identity": {
+        "pid": 30548,
+        "created": 134383522533755140,
+        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+      },
+      "seconds": 179.937,
+      "timeout_limit": 600,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "joined-financial-qualified": {
+      "label": "joined-financial-qualified",
+      "command": [
+        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_aip06_joined_lifecycle.py",
+        "-k",
+        "three_joined",
+        "-vv",
+        "-s",
+        "-p",
+        "no:cacheprovider",
+        "-o",
+        "faulthandler_timeout=0",
+        "--basetemp",
+        "logs/diagnostics/aip06-joined-financial-qualified-temp",
+        "--junitxml",
+        "logs/diagnostics/aip06-joined-financial-qualified.xml"
+      ],
+      "parent_pid": 30920,
+      "identity": {
+        "pid": 8680,
+        "created": 134383521951136563,
+        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+      },
+      "seconds": 378.844,
+      "timeout_limit": 600,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "joined-sides-qualified": {
+      "label": "joined-sides-qualified",
+      "command": [
+        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_aip06_joined_lifecycle.py",
+        "-k",
+        "not three_joined",
+        "-vv",
+        "-s",
+        "-p",
+        "no:cacheprovider",
+        "-o",
+        "faulthandler_timeout=0",
+        "--basetemp",
+        "logs/diagnostics/aip06-joined-sides-qualified-temp",
+        "--junitxml",
+        "logs/diagnostics/aip06-joined-sides-qualified.xml"
+      ],
+      "parent_pid": 3576,
+      "identity": {
+        "pid": 2244,
+        "created": 134383524333164607,
+        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+      },
+      "seconds": 50.406,
+      "timeout_limit": 300,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "joined-escrow-qualified": {
+      "label": "joined-escrow-qualified",
+      "command": [
+        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_aip06_bootstrap_objects.py",
+        "tests/test_aip06_offline_context.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "-o",
+        "faulthandler_timeout=0",
+        "--basetemp",
+        "logs/diagnostics/aip06-joined-escrow-qualified-temp",
+        "--junitxml",
+        "logs/diagnostics/aip06-joined-escrow-qualified.xml"
+      ],
+      "parent_pid": 5904,
+      "identity": {
+        "pid": 1736,
+        "created": 134383521972975514,
+        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+      },
+      "seconds": 31.343,
+      "timeout_limit": 240,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "joined-final-node": {
+      "label": "joined-final-node",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "tests/quality_dips_selected_frontend.test.cjs"
+      ],
+      "parent_pid": 31864,
+      "identity": {
+        "pid": 31220,
+        "created": 134383516187490179,
+        "image": "c:\\program files\\nodejs\\node.exe"
+      },
+      "seconds": 0.11,
+      "timeout_limit": 30,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    }
+  },
+  "preserved_failed_or_timed_out_runs": [
+    {
+      "label": "joined-current-single",
+      "seconds": 183.484,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-final-lifecycles",
+      "seconds": 600.047,
+      "exit_code": 1,
+      "timed_out": true,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-financial-1",
+      "seconds": 151.047,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-financial-2",
+      "seconds": 558.672,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-full-1",
+      "seconds": 235.812,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-regression-1",
+      "seconds": 140.75,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-1",
+      "seconds": 120.031,
+      "exit_code": 1,
+      "timed_out": true,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-2",
+      "seconds": 28.75,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-3",
+      "seconds": 26.813,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-4",
+      "seconds": 28.047,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-5",
+      "seconds": 27.641,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    }
+  ],
+  "source_pin_count": 35,
+  "native_acceptance_executed": false,
+  "financial_workers_launched": false,
+  "aip06_status": "BLOCKED",
+  "completion_count": "5/18",
+  "paper_startup": false,
+  "production": "NO_GO",
+  "report": "docs/AIP_06_JOINED_LIFECYCLE_SOURCE_CLOSURE_2026-11-05.md",
+  "previous_current_checkpoint": {
+    "active_task": "AIP-06-INHERITED-PHYSICAL-PATH-QUALIFICATION",
+    "last_verified_task": "SOURCE_QUALIFICATION_BLOCKED_EXACT_INHERITED_EVIDENCE_BOUNDARIES",
+    "next_eligible_tasks": [
+      "STOP after qualification report, scoped commit/non-force push and independent remote SHA verification.",
+      "SOURCE QUALIFICATION BLOCKED: review rooted bootstrap escrow/acquired-object evidence, isolated-context full injected lifecycle without nested guards or new launch exemptions, and exact guarded historical unexpected-child challenge. Preserve refusal/charges and original five crash cases. No source-complete/native-readiness claim; AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
+    ],
+    "latest_tests": {
+      "base_commit": "599d1fd932108a7a450d122ee6344ec1f27653c6",
+      "status": "SOURCE_QUALIFICATION_BLOCKED_EXACT_INHERITED_EVIDENCE_BOUNDARIES",
+      "python": {
+        "passed": 1874,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 5,
+        "warnings": 2,
+        "modules": 75,
+        "single_process": true
+      },
+      "new_tests": 20,
+      "focused": {
+        "passed": 141,
+        "subset_of_final": true
+      },
+      "preserved_prior_distinct_python": 1854,
+      "node": {
+        "passed": 42,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "final_run": {
+        "label": "inherited-full-final",
+        "command": [
+          "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "-B",
+          "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\inherited_suite.py",
+          "full",
+          "inheritedfinal"
+        ],
+        "parent_pid": 29972,
+        "identity": {
+          "pid": 27176,
+          "created": 134383460146229745,
+          "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+        },
+        "seconds": 504.766,
+        "timeout_limit": 600,
+        "timed_out": false,
+        "exit_code": 0,
+        "handle_closed": true,
+        "native_acceptance": false,
+        "financial_worker": false
+      },
+      "exploratory_assertion_failures": 5,
+      "validation_crashes": 0,
+      "validation_timeouts": 0,
+      "native_acceptance_executed": false,
+      "financial_workers_launched": false,
+      "supervisor_launch_case": "FORMAL_ROLE_MAPPED_AND_OFFLINE_VALIDATED_NATIVE_EXECUTION_UNPROVED",
+      "unexpected_launch_case": "STILL_REFUSED_NO_GUARDED_UNCLAIMED_CHILD_CHALLENGE_CAPABILITY",
+      "full_composition": "BLOCKED_ONE_FIXTURE_SESSION_ONLY_IN_SINGLE_INTERPRETER",
+      "bootstrap_object_proof": "BLOCKED_PROBE_NATIVE_OBJECT_EVIDENCE_INCOMPLETE_FOR_PRECHARGED_ESCROW",
+      "aip06_status": "BLOCKED",
+      "completion_count": "5/18",
+      "paper_startup": false,
+      "production": "NO_GO",
+      "report": "docs/AIP_06_INHERITED_PHYSICAL_PATH_QUALIFICATION_2026-11-05.md"
+    }
+  }
+},
   "aip06_inherited_physical_path_qualification_20261105": {
   "base_commit": "599d1fd932108a7a450d122ee6344ec1f27653c6",
   "status": "SOURCE_QUALIFICATION_BLOCKED_EXACT_INHERITED_EVIDENCE_BOUNDARIES",
@@ -14087,11 +14423,11 @@
   "original_evidence_preserved": true,
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
-  "active_task": "AIP-06-INHERITED-PHYSICAL-PATH-QUALIFICATION",
-  "last_verified_task": "SOURCE_QUALIFICATION_BLOCKED_EXACT_INHERITED_EVIDENCE_BOUNDARIES",
+  "active_task": "AIP-06-JOINED-LIFECYCLE-SOURCE-CLOSURE",
+  "last_verified_task": "JOINED_SOURCE_QUALIFICATION_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
   "next_eligible_tasks": [
-  "STOP after qualification report, scoped commit/non-force push and independent remote SHA verification.",
-  "SOURCE QUALIFICATION BLOCKED: review rooted bootstrap escrow/acquired-object evidence, isolated-context full injected lifecycle without nested guards or new launch exemptions, and exact guarded historical unexpected-child challenge. Preserve refusal/charges and original five crash cases. No source-complete/native-readiness claim; AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
+  "STOP after joined offline qualification/checkpoint and independent remote SHA verification.",
+  "Separate next prerequisite: update/review exact native disposable readiness/acceptance scope and current source/runtime pins. Actual native identity/capacity/ACK/drain/restart/complete eight-second Stop remain unexecuted and require separate authorization. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -14181,70 +14517,537 @@
     "paper_startup": false,
     "production": "NO_GO",
     "report": "docs/AIP_06_INHERITED_PHYSICAL_PATH_QUALIFICATION_2026-11-05.md"
+  },
+  "AIP06_JOINED_SOURCE_NATIVE_BOUNDARY": {
+    "base_commit": "b92407a2d1f3197740d5bbd0e833e15701d7b690",
+    "status": "JOINED_SOURCE_QUALIFICATION_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
+    "python": {
+      "passed": 1924,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "native_launch_deselected": 5,
+      "warnings": 2,
+      "modules": 78,
+      "single_process": false,
+      "deduplicated": true
+    },
+    "new_distinct_tests": 50,
+    "prior_1874_ids_preserved": true,
+    "node": {
+      "passed": 42,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "joined_financial_samples": 3,
+    "isolated_guards_verified": true,
+    "bootstrap_acquired_objects": "SOURCE_QUALIFIED_INJECTED_NATIVE_API",
+    "historical_unexpected_child": "GUARDED_ADAPTER_SOURCE_CONNECTED_REFUSAL_VERIFIED_NATIVE_LAUNCH_UNEXECUTED",
+    "original_financial_assertions_unchanged": true,
+    "final_crashes": 0,
+    "final_timeouts": 0,
+    "runs": {
+      "joined-regression-qualified": {
+        "label": "joined-regression-qualified",
+        "command": [
+          "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "-B",
+          "logs/diagnostics/aip06-combined-validation-20261105/inherited_suite.py",
+          "full",
+          "joinedqualified"
+        ],
+        "parent_pid": 3576,
+        "identity": {
+          "pid": 30548,
+          "created": 134383522533755140,
+          "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+        },
+        "seconds": 179.937,
+        "timeout_limit": 600,
+        "timed_out": false,
+        "exit_code": 0,
+        "handle_closed": true,
+        "native_acceptance": false,
+        "financial_worker": false
+      },
+      "joined-financial-qualified": {
+        "label": "joined-financial-qualified",
+        "command": [
+          "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "-B",
+          "-m",
+          "pytest",
+          "tests/test_aip06_joined_lifecycle.py",
+          "-k",
+          "three_joined",
+          "-vv",
+          "-s",
+          "-p",
+          "no:cacheprovider",
+          "-o",
+          "faulthandler_timeout=0",
+          "--basetemp",
+          "logs/diagnostics/aip06-joined-financial-qualified-temp",
+          "--junitxml",
+          "logs/diagnostics/aip06-joined-financial-qualified.xml"
+        ],
+        "parent_pid": 30920,
+        "identity": {
+          "pid": 8680,
+          "created": 134383521951136563,
+          "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+        },
+        "seconds": 378.844,
+        "timeout_limit": 600,
+        "timed_out": false,
+        "exit_code": 0,
+        "handle_closed": true,
+        "native_acceptance": false,
+        "financial_worker": false
+      },
+      "joined-sides-qualified": {
+        "label": "joined-sides-qualified",
+        "command": [
+          "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "-B",
+          "-m",
+          "pytest",
+          "tests/test_aip06_joined_lifecycle.py",
+          "-k",
+          "not three_joined",
+          "-vv",
+          "-s",
+          "-p",
+          "no:cacheprovider",
+          "-o",
+          "faulthandler_timeout=0",
+          "--basetemp",
+          "logs/diagnostics/aip06-joined-sides-qualified-temp",
+          "--junitxml",
+          "logs/diagnostics/aip06-joined-sides-qualified.xml"
+        ],
+        "parent_pid": 3576,
+        "identity": {
+          "pid": 2244,
+          "created": 134383524333164607,
+          "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+        },
+        "seconds": 50.406,
+        "timeout_limit": 300,
+        "timed_out": false,
+        "exit_code": 0,
+        "handle_closed": true,
+        "native_acceptance": false,
+        "financial_worker": false
+      },
+      "joined-escrow-qualified": {
+        "label": "joined-escrow-qualified",
+        "command": [
+          "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "-B",
+          "-m",
+          "pytest",
+          "tests/test_aip06_bootstrap_objects.py",
+          "tests/test_aip06_offline_context.py",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "-o",
+          "faulthandler_timeout=0",
+          "--basetemp",
+          "logs/diagnostics/aip06-joined-escrow-qualified-temp",
+          "--junitxml",
+          "logs/diagnostics/aip06-joined-escrow-qualified.xml"
+        ],
+        "parent_pid": 5904,
+        "identity": {
+          "pid": 1736,
+          "created": 134383521972975514,
+          "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+        },
+        "seconds": 31.343,
+        "timeout_limit": 240,
+        "timed_out": false,
+        "exit_code": 0,
+        "handle_closed": true,
+        "native_acceptance": false,
+        "financial_worker": false
+      },
+      "joined-final-node": {
+        "label": "joined-final-node",
+        "command": [
+          "C:\\Program Files\\nodejs\\node.exe",
+          "tests/quality_dips_selected_frontend.test.cjs"
+        ],
+        "parent_pid": 31864,
+        "identity": {
+          "pid": 31220,
+          "created": 134383516187490179,
+          "image": "c:\\program files\\nodejs\\node.exe"
+        },
+        "seconds": 0.11,
+        "timeout_limit": 30,
+        "timed_out": false,
+        "exit_code": 0,
+        "handle_closed": true,
+        "native_acceptance": false,
+        "financial_worker": false
+      }
+    },
+    "preserved_failed_or_timed_out_runs": [
+      {
+        "label": "joined-current-single",
+        "seconds": 183.484,
+        "exit_code": 1,
+        "timed_out": false,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-final-lifecycles",
+        "seconds": 600.047,
+        "exit_code": 1,
+        "timed_out": true,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-financial-1",
+        "seconds": 151.047,
+        "exit_code": 1,
+        "timed_out": false,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-financial-2",
+        "seconds": 558.672,
+        "exit_code": 1,
+        "timed_out": false,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-full-1",
+        "seconds": 235.812,
+        "exit_code": 1,
+        "timed_out": false,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-regression-1",
+        "seconds": 140.75,
+        "exit_code": 1,
+        "timed_out": false,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-smoke-1",
+        "seconds": 120.031,
+        "exit_code": 1,
+        "timed_out": true,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-smoke-2",
+        "seconds": 28.75,
+        "exit_code": 1,
+        "timed_out": false,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-smoke-3",
+        "seconds": 26.813,
+        "exit_code": 1,
+        "timed_out": false,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-smoke-4",
+        "seconds": 28.047,
+        "exit_code": 1,
+        "timed_out": false,
+        "handle_closed": true
+      },
+      {
+        "label": "joined-smoke-5",
+        "seconds": 27.641,
+        "exit_code": 1,
+        "timed_out": false,
+        "handle_closed": true
+      }
+    ],
+    "source_pin_count": 35,
+    "native_acceptance_executed": false,
+    "financial_workers_launched": false,
+    "aip06_status": "BLOCKED",
+    "completion_count": "5/18",
+    "paper_startup": false,
+    "production": "NO_GO",
+    "report": "docs/AIP_06_JOINED_LIFECYCLE_SOURCE_CLOSURE_2026-11-05.md"
   }
 },
   "latest_tests": {
-  "base_commit": "599d1fd932108a7a450d122ee6344ec1f27653c6",
-  "status": "SOURCE_QUALIFICATION_BLOCKED_EXACT_INHERITED_EVIDENCE_BOUNDARIES",
+  "base_commit": "b92407a2d1f3197740d5bbd0e833e15701d7b690",
+  "status": "JOINED_SOURCE_QUALIFICATION_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
   "python": {
-    "passed": 1874,
+    "passed": 1924,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
-    "deselected": 5,
+    "native_launch_deselected": 5,
     "warnings": 2,
-    "modules": 75,
-    "single_process": true
+    "modules": 78,
+    "single_process": false,
+    "deduplicated": true
   },
-  "new_tests": 20,
-  "focused": {
-    "passed": 141,
-    "subset_of_final": true
-  },
-  "preserved_prior_distinct_python": 1854,
+  "new_distinct_tests": 50,
+  "prior_1874_ids_preserved": true,
   "node": {
     "passed": 42,
     "failed": 0,
     "skipped": 0,
     "cancelled": 0
   },
-  "final_run": {
-    "label": "inherited-full-final",
-    "command": [
-      "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-      "-B",
-      "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\inherited_suite.py",
-      "full",
-      "inheritedfinal"
-    ],
-    "parent_pid": 29972,
-    "identity": {
-      "pid": 27176,
-      "created": 134383460146229745,
-      "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+  "joined_financial_samples": 3,
+  "isolated_guards_verified": true,
+  "bootstrap_acquired_objects": "SOURCE_QUALIFIED_INJECTED_NATIVE_API",
+  "historical_unexpected_child": "GUARDED_ADAPTER_SOURCE_CONNECTED_REFUSAL_VERIFIED_NATIVE_LAUNCH_UNEXECUTED",
+  "original_financial_assertions_unchanged": true,
+  "final_crashes": 0,
+  "final_timeouts": 0,
+  "runs": {
+    "joined-regression-qualified": {
+      "label": "joined-regression-qualified",
+      "command": [
+        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "logs/diagnostics/aip06-combined-validation-20261105/inherited_suite.py",
+        "full",
+        "joinedqualified"
+      ],
+      "parent_pid": 3576,
+      "identity": {
+        "pid": 30548,
+        "created": 134383522533755140,
+        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+      },
+      "seconds": 179.937,
+      "timeout_limit": 600,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
     },
-    "seconds": 504.766,
-    "timeout_limit": 600,
-    "timed_out": false,
-    "exit_code": 0,
-    "handle_closed": true,
-    "native_acceptance": false,
-    "financial_worker": false
+    "joined-financial-qualified": {
+      "label": "joined-financial-qualified",
+      "command": [
+        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_aip06_joined_lifecycle.py",
+        "-k",
+        "three_joined",
+        "-vv",
+        "-s",
+        "-p",
+        "no:cacheprovider",
+        "-o",
+        "faulthandler_timeout=0",
+        "--basetemp",
+        "logs/diagnostics/aip06-joined-financial-qualified-temp",
+        "--junitxml",
+        "logs/diagnostics/aip06-joined-financial-qualified.xml"
+      ],
+      "parent_pid": 30920,
+      "identity": {
+        "pid": 8680,
+        "created": 134383521951136563,
+        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+      },
+      "seconds": 378.844,
+      "timeout_limit": 600,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "joined-sides-qualified": {
+      "label": "joined-sides-qualified",
+      "command": [
+        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_aip06_joined_lifecycle.py",
+        "-k",
+        "not three_joined",
+        "-vv",
+        "-s",
+        "-p",
+        "no:cacheprovider",
+        "-o",
+        "faulthandler_timeout=0",
+        "--basetemp",
+        "logs/diagnostics/aip06-joined-sides-qualified-temp",
+        "--junitxml",
+        "logs/diagnostics/aip06-joined-sides-qualified.xml"
+      ],
+      "parent_pid": 3576,
+      "identity": {
+        "pid": 2244,
+        "created": 134383524333164607,
+        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+      },
+      "seconds": 50.406,
+      "timeout_limit": 300,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "joined-escrow-qualified": {
+      "label": "joined-escrow-qualified",
+      "command": [
+        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_aip06_bootstrap_objects.py",
+        "tests/test_aip06_offline_context.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "-o",
+        "faulthandler_timeout=0",
+        "--basetemp",
+        "logs/diagnostics/aip06-joined-escrow-qualified-temp",
+        "--junitxml",
+        "logs/diagnostics/aip06-joined-escrow-qualified.xml"
+      ],
+      "parent_pid": 5904,
+      "identity": {
+        "pid": 1736,
+        "created": 134383521972975514,
+        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+      },
+      "seconds": 31.343,
+      "timeout_limit": 240,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "joined-final-node": {
+      "label": "joined-final-node",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "tests/quality_dips_selected_frontend.test.cjs"
+      ],
+      "parent_pid": 31864,
+      "identity": {
+        "pid": 31220,
+        "created": 134383516187490179,
+        "image": "c:\\program files\\nodejs\\node.exe"
+      },
+      "seconds": 0.11,
+      "timeout_limit": 30,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    }
   },
-  "exploratory_assertion_failures": 5,
-  "validation_crashes": 0,
-  "validation_timeouts": 0,
+  "preserved_failed_or_timed_out_runs": [
+    {
+      "label": "joined-current-single",
+      "seconds": 183.484,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-final-lifecycles",
+      "seconds": 600.047,
+      "exit_code": 1,
+      "timed_out": true,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-financial-1",
+      "seconds": 151.047,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-financial-2",
+      "seconds": 558.672,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-full-1",
+      "seconds": 235.812,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-regression-1",
+      "seconds": 140.75,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-1",
+      "seconds": 120.031,
+      "exit_code": 1,
+      "timed_out": true,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-2",
+      "seconds": 28.75,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-3",
+      "seconds": 26.813,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-4",
+      "seconds": 28.047,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    },
+    {
+      "label": "joined-smoke-5",
+      "seconds": 27.641,
+      "exit_code": 1,
+      "timed_out": false,
+      "handle_closed": true
+    }
+  ],
+  "source_pin_count": 35,
   "native_acceptance_executed": false,
   "financial_workers_launched": false,
-  "supervisor_launch_case": "FORMAL_ROLE_MAPPED_AND_OFFLINE_VALIDATED_NATIVE_EXECUTION_UNPROVED",
-  "unexpected_launch_case": "STILL_REFUSED_NO_GUARDED_UNCLAIMED_CHILD_CHALLENGE_CAPABILITY",
-  "full_composition": "BLOCKED_ONE_FIXTURE_SESSION_ONLY_IN_SINGLE_INTERPRETER",
-  "bootstrap_object_proof": "BLOCKED_PROBE_NATIVE_OBJECT_EVIDENCE_INCOMPLETE_FOR_PRECHARGED_ESCROW",
   "aip06_status": "BLOCKED",
   "completion_count": "5/18",
   "paper_startup": false,
   "production": "NO_GO",
-  "report": "docs/AIP_06_INHERITED_PHYSICAL_PATH_QUALIFICATION_2026-11-05.md"
+  "report": "docs/AIP_06_JOINED_LIFECYCLE_SOURCE_CLOSURE_2026-11-05.md"
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
   "exact_next_action": "STOP after requested source implementation/validation/report/checkpoint, relevant-only commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED. Implemented: prior-reserved original-handle suspended staging/direct complete Job checks/bootstrap count fence/genuine READY import/normal release; bounded pinned native netstat and query_result; retained worker probe projection; composed three-sample accounting/query/reader/Stop release; historical identities queried in bounded groups with the same8s deadline. Exact remaining source: ChildServices.descendant_gateway is None; Broker/RemoteResources lack precreation declaration/staged-transfer/bootstrap-release forwarding; WindowsChildEndpoints.channel.verify, InheritedIdentity.verify and global WorkerOwnership still require their original leaf rosters. Bind the complete forwarded recursive graph without filtering raw Job members or accepting unaccounted births. Legacy direct-supervisor lacks the matching formal launch role and direct-unexpected lacks the descendant path: both refuse before launch. Full inherited main/probe body and four-boundary physical qualification remain unproved. No general planning milestone or new permission is substituted for these implementation gaps. Do not request native execution for the incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/real Discord/PAPER/V6/Windows/Genesis operation.",

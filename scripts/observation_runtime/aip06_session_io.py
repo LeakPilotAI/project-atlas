@@ -25,6 +25,9 @@ class ParentFrames:
         self.failed = False
         self.saved_outputs = []
         self.output_bytes = 0
+        self.bootstrap_handler=None
+        self.bootstrap_required=False
+        self.bootstrap_received=False
 
     @property
     def binding(self):
@@ -50,6 +53,13 @@ class ParentFrames:
                         )
                         self.broker.serve_message(item, deadline_ns=end)
                         continue
+                    if item['kind']=='BOOTSTRAP':
+                        need(self.bootstrap_handler is not None,
+                             'BOOTSTRAP_HANDOFF_UNEXPECTED')
+                        self.bootstrap_handler(item['payload']);self.bootstrap_received=True
+                        continue
+                    if item['kind']=='ACK' and self.bootstrap_required:
+                        need(self.bootstrap_received,'BOOTSTRAP_OBJECT_HANDOFF_BEFORE_ACK_REQUIRED')
                     if item["kind"] == "OUTPUT":
                         self.output_bytes += len(body(item["payload"]).encode())
                         need(
@@ -116,6 +126,7 @@ class ChildSessionIO:
         return raw
 
     def read_input(self, *, timeout, maximum_bytes):
+        self.refresh_bootstrap()
         value = self.channel.receive(
             deadline_ns=self.clock() + min(int(timeout * 10**9), MAX_IPC_NS),
             expected_kind="INPUT",
@@ -126,8 +137,13 @@ class ChildSessionIO:
 
     def emit_output(self, value):
         self.guard.check()
+        self.refresh_bootstrap()
         self.sequence += 1
         self.channel.send("OUTPUT", value, deadline_ns=self.clock() + MAX_IPC_NS)
+
+    def refresh_bootstrap(self):
+        if hasattr(self.guard,'bootstrap_export'):
+            self.channel.send('BOOTSTRAP',self.guard.bootstrap_export(),deadline_ns=self.clock()+MAX_IPC_NS)
 
     def financial_readback(self, value):
         owner = self.channel.binding["child"]

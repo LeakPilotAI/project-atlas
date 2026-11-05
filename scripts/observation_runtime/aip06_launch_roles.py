@@ -22,12 +22,12 @@ def launch_role(argv, targets):
             and type(argv[6]) is str
             and len(argv[6]) == 32
             and set(argv[6]) <= set("0123456789abcdef")
-            and argv[4] in ("direct-worker", "direct-supervisor"),
+            and argv[4] in ("direct-worker", "direct-supervisor", "direct-unexpected"),
             "EXACT_LEGACY_ROLE_COMMAND_REQUIRED",
         )
         return (
             "acceptance_supervisor"
-            if argv[4] == "direct-supervisor"
+            if argv[4] != "direct-worker"
             else "acceptance_worker"
         )
     return "acceptance_worker"

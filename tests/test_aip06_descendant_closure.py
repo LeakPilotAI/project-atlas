@@ -47,9 +47,10 @@ def fixture(f=None):
                                 output=output,clock_ns=lambda:x.now[0])
     b.after_write=lambda:broker.serve_once(deadline_ns=x.now[0]+6*10**9)
     remote=RemoteResources(child,owner=f.owner,initial=x.ledger.read(),clock_ns=lambda:x.now[0],proofs=RemoteHandleProofs(f.owner))
-    for i in range(8):
-        key=f.creator.reserve('pipe-'+str(i),'pipe')
-        f.held.append((key,x.calls.allocate('pipe',i)))
+    if not getattr(f,'physical_manifest',False):
+        for i in range(8):
+            key=f.creator.reserve('pipe-'+str(i),'pipe')
+            f.held.append((key,x.calls.allocate('pipe',i)))
     keys=tuple(k for k,h in f.held)
     f.registry.declared_keys[f.request.nonce]=keys
     allocations={k:{'kind':x.ledger.state['resources'][k]['kind'],'handle':h} for k,h in f.held}

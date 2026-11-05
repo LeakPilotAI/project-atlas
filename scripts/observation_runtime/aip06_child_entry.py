@@ -85,6 +85,11 @@ class ChildServices:
     def read_line(self, **kw):
         return self.streams.read_line(**kw)
 
+    def run_unexpected_challenge(self):
+        self.runtime.verify_source(ntpath.join(ntpath.dirname(__file__),'aip06_unexpected_probe.py'))
+        from scripts.observation_runtime.aip06_unexpected_probe import run_guarded_challenge
+        return run_guarded_challenge(self)
+
     def financial_readback(self, value):
         return self.streams.financial_readback(value)
 
@@ -419,6 +424,7 @@ class ChildRuntime:
         services.streams = ChildSessionIO(guard, clock_ns=self.clock)
         self.book = book
         self.lease.seal(retained=(self.self_key, *self.observer_batch.slots))
+        guard.bootstrap_export=self.lease.evidence
         return guard
 
     def run(self, handles, nonce, *, runner=None):

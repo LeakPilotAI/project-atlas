@@ -7,6 +7,7 @@ release protocol. Callers retain original handles and prospective ledger slots.
 """
 
 import ctypes as C
+import copy
 from ctypes import wintypes as W
 
 from scripts.observation_runtime.aip06_harness import need
@@ -167,6 +168,21 @@ class DeclaredDescendants:
             self.failed=True
             self.staging.failed=True
             raise
+
+    def register_bootstrap(self, nonce, descriptor):
+        from app.services.paper_financial_replay import digest
+        from scripts.observation_runtime.aip06_bootstrap_lease import InheritedBootstrapLease
+        need(not self.failed and nonce in self.declarations
+             and (self.staging is None or nonce not in self.staging.nodes),
+             'BOOTSTRAP_DECLARE_BEFORE_NATIVE_CREATION')
+        InheritedBootstrapLease(descriptor,{'nonce':nonce,'parent':self.peer.runtime,
+                                          'child':self.peer.runtime},self.aggregate.clock)
+        owner=digest(self.peer.runtime)
+        need(all(self.aggregate.resources.state['resources'].get(k)=={'owner':owner,'kind':kind,'closed':False}
+                 for k,kind in descriptor['slots'].items()),'DECLARED_BOOTSTRAP_RESERVATIONS_REQUIRED')
+        if not hasattr(self,'bootstrap_descriptors'):self.bootstrap_descriptors={}
+        need(nonce not in self.bootstrap_descriptors,'BOOTSTRAP_DECLARED_TWICE')
+        self.bootstrap_descriptors[nonce]=copy.deepcopy(descriptor)
 
     def resume_staged(self, nonce):
         need(self.staging is not None,'NATIVE_SUSPENDED_STAGE_PORT_NOT_BOUND')

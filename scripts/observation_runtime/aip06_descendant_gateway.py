@@ -68,7 +68,11 @@ class DescendantGateway:
             need(nonce not in self.pending and session.launch_handle is None
                  and not session.creation_attempted and len(session.permit['slots'])==1,
                  'DESCENDANT_DECLARE_BEFORE_CREATION_ONLY')
-            receipt=self.remote.declare_descendant(request,session.permit['slots'][0],keys=session.keys)
+            endpoints=getattr(getattr(self.port,'protocol',None),'endpoints',None)
+            state=None if endpoints is None else endpoints.state.get(nonce)
+            bootstrap=None if state is None else state['lease'].descriptor()
+            receipt=self.remote.declare_descendant(request,session.permit['slots'][0],keys=session.keys,
+                                                   bootstrap=bootstrap)
             self.pending[nonce]={'session':session,'phase':'DECLARED','receipt':receipt}
             return receipt
         return self._run(operation)

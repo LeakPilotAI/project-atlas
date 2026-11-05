@@ -835,6 +835,12 @@ def bootstrap_fixture(damage=None, role='acceptance_worker'):
             x.parent.send("BIND", bind, deadline_ns=x.s.now[0] + 6 * 10**9)
         elif incoming["kind"] == "REQUEST":
             broker.serve_message(incoming, deadline_ns=x.s.now[0] + 6 * 10**9)
+        elif incoming['kind']=='BOOTSTRAP':
+            value=incoming['payload']
+            assert value['schema']=='AIP06_BOOTSTRAP_OBJECT_CUT_V1' and value['scope']==SCOPE_HASH
+            assert value['owner']==x.owner and value['parent_reservations_released'] is False
+            assert value['financial_ack'] is False and value['sequence']>0
+            x.bootstrap_cut=value  # injected receiver, not native object authority
         elif incoming["kind"] == "ACK":
             release = {
                 "receipt": digest(incoming["payload"]),

@@ -12,7 +12,7 @@ import secrets
 from app.services.paper_financial_replay import strict
 from scripts.observation_runtime.aip06_harness import BASE, SCOPE_HASH, need
 
-CASES = ("direct-worker", "direct-supervisor")
+CASES = ("direct-worker", "direct-supervisor", "direct-unexpected")
 
 
 class LegacyProbeRunner:
@@ -42,6 +42,11 @@ class LegacyProbeRunner:
             "EXACT_GUARDED_LEGACY_SOURCE_REQUIRED",
         )
         c.verify_source(target)
+        if case=='direct-unexpected':
+            from scripts.observation_runtime.aip06_windows_endpoints import WindowsChildEndpoints
+            need(type(getattr(p.protocol,'endpoints',None)) is WindowsChildEndpoints
+                 and p.protocol.endpoints.objects is not None,
+                 'UNEXPECTED_REQUIRES_GUARDED_DESCENDANT_SOURCE')
         nonce = secrets.token_hex(16)
         started = c.clock()
         child = None
@@ -60,7 +65,7 @@ class LegacyProbeRunner:
             bound = g.ownership.bindings["query"]
             claims = bound.verify()
             stdout, stderr = p.communicate(
-                child.child, request, timeout=6, maximum_bytes=65536
+                child.child, request, timeout=45 if case=='direct-unexpected' else 6, maximum_bytes=65536
             )
             need(
                 stderr == ""
@@ -69,7 +74,7 @@ class LegacyProbeRunner:
                 "PROBE_BOUNDED_NORMAL_RESULT",
             )
             lines = stdout.splitlines()
-            need(len(lines) == 1, "EXACT_ONE_PROBE_READY_RECORD")
+            need(len(lines) == (2 if case=='direct-unexpected' else 1), "EXACT_PROBE_READY_RECORDS")
             ready = strict(lines[0])
             expected_ready = {
                 "schema": "AIP06_LEGACY_READY_V1",
@@ -84,6 +89,9 @@ class LegacyProbeRunner:
             need(
                 ready == expected_ready, "PROBE_READY_NATIVE_IDENTITY_OR_CASE_MISMATCH"
             )
+            challenge=None
+            if case=='direct-unexpected':
+                challenge=strict(lines[1]);self._challenge(child.child,challenge)
             # Capture original terminal evidence BEFORE close invalidates handles.
             exit_rows = {
                 "parent": bound.api.observe(bound.parent_handle),
@@ -104,7 +112,7 @@ class LegacyProbeRunner:
                 "claims": claims,
                 "exit": {"normal_exit": True, "job_empty": True},
                 "cleanup": {"handles_closed": True, "job_members": []},
-                "refusal": None,
+                "refusal": challenge,
                 "source": {
                     "schema": "AIP06_RETAINED_PROBE_SOURCE_V1",
                     "scope": SCOPE_HASH,
@@ -143,6 +151,23 @@ class LegacyProbeRunner:
         except BaseException:
             self.failed = True
             raise
+
+    def _challenge(self, child, value):
+        p=self.controller.process_port
+        peer=p.protocol.endpoints.state[child.plan['request'].nonce]['verifier']
+        r=peer.descendants
+        need(type(value) is dict and value.get('schema')=='AIP06_UNEXPECTED_CHALLENGE_V1'
+             and value.get('scope')==SCOPE_HASH and value.get('supervisor')==child.binding.runtime
+             and value.get('refusal')=='UNEXPECTED_OR_MISSING_JOB_PROCESS'
+             and value.get('ownership_accepted') is False and value.get('child_closed') is True
+             and value.get('root_containment_preserved') is True and value.get('native_acceptance') is False
+             and value.get('expected')==[child.binding.runtime['pid']]
+             and r is not None and value.get('auxiliary_nonce') in r.finished,
+             'UNEXPECTED_CHALLENGE_ROOT_RETAINED_WITNESS')
+        nonce=value['auxiliary_nonce'];aux,_,_=r.bindings[nonce]
+        need(value['auxiliary']==aux.runtime and value['actual']==sorted([child.binding.runtime['pid'],aux.runtime['pid']]),
+             'UNEXPECTED_CHALLENGE_ORIGINAL_CHILD_MISMATCH')
+        wire,broker=peer.forwarded[nonce];peer.verify_retired_descendant(wire,broker)
 
     def _verify(self, value):
         c = self.controller
@@ -192,7 +217,7 @@ class LegacyProbeRunner:
             and value["ready"]["created"] == bound.runtime["created"]
             and value["ready"]["nonce"] == nonce
             and value["ready"]["role"] == bound.request.role
-            == ('acceptance_supervisor' if value['case'] == 'direct-supervisor' else 'acceptance_worker')
+            == ('acceptance_worker' if value['case'] == 'direct-worker' else 'acceptance_supervisor')
             and value["claims"]
             == [
                 {

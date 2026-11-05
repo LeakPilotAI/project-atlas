@@ -5,15 +5,18 @@ IPC connection needed to make that reservation. Every worker/event/handle has
 a concrete prelaunch ticket; no unmetered thread or PID-based cleanup fallback.
 """
 
-import ctypes as C
 import threading
-from ctypes import wintypes as W
+C = W = None
 
 from scripts.observation_runtime.aip06_harness import need
 
 
 class WindowsPump:
     def __init__(self, *, calls, clock_ns, tickets, observe):
+        global C, W
+        import ctypes
+        from ctypes import wintypes
+        C, W = ctypes, wintypes
         need(
             type(tickets) is tuple and len(tickets) == 3 and len(set(tickets)) == 3,
             "THREE_PRE_RESERVED_PUMP_TICKETS",

@@ -21,9 +21,15 @@ def main(argv=None):
         args.nonce == binding["nonce"] and digest(current) == guard.owner,
         "PROBE_CURRENT_PRIVATE_LAUNCH_IDENTITY",
     )
-    need(guard.launch_role == ('acceptance_supervisor' if args.case == 'direct-supervisor'
-                              else 'acceptance_worker'), 'PROBE_FORMAL_ROLE_REQUIRED')
-    with guard.watchdog(seconds=6, exit_code=71):
+    need(guard.launch_role == ('acceptance_worker' if args.case == 'direct-worker'
+                              else 'acceptance_supervisor'), 'PROBE_FORMAL_ROLE_REQUIRED')
+    with guard.watchdog(seconds=45 if args.case=='direct-unexpected' else 6, exit_code=71):
+        request=None;challenge=None
+        if args.case=='direct-unexpected':
+            request=strict(guard.read_input(maximum_bytes=65536,timeout=6).decode())
+            need(request=={'schema':'AIP06_PROBE_CLOSE_V1','scope':SCOPE_HASH,
+                           'case':args.case,'nonce':args.nonce},'PROBE_PRIVATE_CLOSE_CORRELATION')
+            challenge=guard.processes.run_unexpected_challenge()
         print(
             json.dumps(
                 {
@@ -39,7 +45,8 @@ def main(argv=None):
             ),
             flush=True,
         )
-        request = strict(guard.read_input(maximum_bytes=65536, timeout=6).decode())
+        if challenge is not None:print(json.dumps(challenge),flush=True)
+        if request is None:request = strict(guard.read_input(maximum_bytes=65536, timeout=6).decode())
         need(
             request
             == {

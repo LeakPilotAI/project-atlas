@@ -1,5 +1,4 @@
 """One approved native fixture session. No operational paths or trust authority."""
-import ctypes
 import json
 import math
 import os
@@ -171,6 +170,7 @@ def create_session(root,*,started_monotonic_ns,authorization="P-ATLAS-NATIVE-CON
         raise BudgetRefused('ONE_NEW_ROOT_ONLY')
     elapsed=(time.monotonic_ns()-started_monotonic_ns)/1e9
     if not 0<=elapsed<seconds:raise BudgetRefused('SESSION_ALREADY_EXPIRED')
+    import ctypes
     sectors=ctypes.c_ulong();bytes_sector=ctypes.c_ulong();free=ctypes.c_ulong();total=ctypes.c_ulong()
     if not ctypes.windll.kernel32.GetDiskFreeSpaceW(str(root.anchor),ctypes.byref(sectors),ctypes.byref(bytes_sector),ctypes.byref(free),ctypes.byref(total)):
         raise OSError('Allocation geometry unavailable')

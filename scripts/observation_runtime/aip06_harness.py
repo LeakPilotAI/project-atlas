@@ -501,7 +501,12 @@ class SharedResources:
         }
         # Validate before writing; restore state even if validation refuses.
         old, rows = self._state, self._rows
-        self._state, self._rows = copied(old), copied(rows)
+        # _apply validates the prospective state and only appends a newly
+        # copied record; it never edits an existing history record. Keep the
+        # preview list separate without recursively cloning the entire growing
+        # history for every reservation. The lock, full journal readback, CAS,
+        # receipt and final application below remain unchanged.
+        self._state, self._rows = copied(old), list(rows)
         try:
             self._apply(event)
         finally:
@@ -656,6 +661,38 @@ class SharedResources:
                 )
             )
             return self._commit(state, cleanup=cleanup)
+
+    def reserve_bootstrap(self, owner, nonce, *, cleanup=False):
+        """One atomic escrow, before any of its native allocations exist."""
+        from scripts.observation_runtime.aip06_bootstrap_lease import KINDS
+        with self.lock:
+            need(not self.recovered or cleanup is True,'RECOVERY_IS_READ_OR_CLEANUP_ONLY')
+            self._fresh(stop=cleanup)
+            need(not cleanup or self._state['mode']=='STOP'
+                 or any(v['state']=='PENDING' for v in self._state['stops'].values()),
+                 'NO_UNSCOPED_CLEANUP_RESERVATION')
+            need(self._state['mode']=='WORK' or cleanup is True,'CLEANUP_ONLY')
+            need(owner in self._state['owners'] and type(nonce) is str and len(nonce)==32
+                 and set(nonce)<=set('0123456789abcdef'),'BOOTSTRAP_ESCROW_OWNER_OR_NONCE')
+            rows={f'child-bootstrap:{nonce}:{i:03d}':{'owner':owner,'kind':kind,'closed':False}
+                  for i,kind in enumerate(KINDS)}
+            need(not set(rows).intersection(self._state['resources']),'BOOTSTRAP_ESCROW_ALREADY_RESERVED')
+            state=copied(self._state);state['resources'].update(rows)
+            return self._commit(state,cleanup=cleanup)
+
+    def close_bootstrap(self, owner, observer):
+        from scripts.observation_runtime.aip06_bootstrap_lease import ParentBootstrapLease
+        from scripts.observation_runtime.aip06_bootstrap_evidence import BootstrapObjects
+        need(type(observer) in (ParentBootstrapLease,BootstrapObjects),'EXACT_BOOTSTRAP_RELEASE_CAPABILITY')
+        keys=observer.keys if type(observer) is ParentBootstrapLease else observer.descriptor['slots']
+        with self.lock:
+            self._fresh(stop=True)
+            need(all(k in self._state['resources'] and self._state['resources'][k]['owner']==owner
+                     and observer.closed(owner,k) is True for k in keys),'BOOTSTRAP_COMPLETE_RELEASE_PROOF')
+            if all(self._state['resources'][k]['closed'] for k in keys):return self.head
+            state=copied(self._state)
+            for key in keys:state['resources'][key]['closed']=True
+            return self._commit(state,cleanup=True)
 
     def bind_reserved_process(
         self, key, parent_owner, binding, handle, *, cleanup=False

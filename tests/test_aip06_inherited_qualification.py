@@ -79,7 +79,7 @@ def test_supervisor_role_cannot_be_requested_for_an_unreviewed_launch(damage):
     if damage == "target":
         targets["query"] = r"D:\foreign.py"
     elif damage == "case":
-        argv[4] = "direct-unexpected"
+        argv[4] = "direct-unexpected-extra"
     elif damage == "nonce":
         argv[6] = "wrong"
     elif damage == "extra":
