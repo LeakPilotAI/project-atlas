@@ -920,6 +920,7 @@ class WorkerOwnership:
 
     def _verify(self):
         need(not self.refused, "OWNERSHIP_REFUSAL_LATCHED")
+        self.resources.read()  # Refresh authenticated root graph receipts first.
         rows = []
         for name, bound in self.bindings.items():
             if name not in self.finished:

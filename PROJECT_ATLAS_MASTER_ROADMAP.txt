@@ -15415,12 +15415,22 @@ Remaining: ChildServices.descendant_gateway; Broker/RemoteResources predeclare/s
 Next action: STOP after requested source implementation/validation/report/checkpoint, relevant-only commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED. Implemented: prior-reserved original-handle suspended staging/direct complete Job checks/bootstrap count fence/genuine READY import/normal release; bounded pinned native netstat and query_result; retained worker probe projection; composed three-sample accounting/query/reader/Stop release; historical identities queried in bounded groups with the same8s deadline. Exact remaining source: ChildServices.descendant_gateway is None; Broker/RemoteResources lack precreation declaration/staged-transfer/bootstrap-release forwarding; WindowsChildEndpoints.channel.verify, InheritedIdentity.verify and global WorkerOwnership still require their original leaf rosters. Bind the complete forwarded recursive graph without filtering raw Job members or accepting unaccounted births. Legacy direct-supervisor lacks the matching formal launch role and direct-unexpected lacks the descendant path: both refuse before launch. Full inherited main/probe body and four-boundary physical qualification remain unproved. No general planning milestone or new permission is substituted for these implementation gaps. Do not request native execution for the incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/real Discord/PAPER/V6/Windows/Genesis operation.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: AIP-06-OWNERSHIP-GRAPH-AND-PROBE-CLOSURE — ownership-forwarding slice (2026-11-05)
 Status: SOURCE INTEGRATION BLOCKED; validated partial forwarding only. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
 Evidence: docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md; focused115+211 passes/9 overlap/317 distinct,0fail/skip; no broader suite or native launch. Receipt-latch, stage/resume/release/graph RPC and concrete gateway/session hooks implemented; original native identity/Job gates preserved.
 Remaining: First-transfer physical admission in endpoint/inherited-identity leaf checks; global/recursive WorkerOwnership graph; creator-handle/process-slot final ledger release. No probe/full-path/native/installed/provider/account/Discord/PAPER/Windows/Genesis work. B1C1D1E1/21 decisions preserved;unrelated edits/evidence retained.
 Next action: Continue only those exact ownership-forwarding source interfaces from this validated slice. Do not claim complete integration or request native execution; no broader suite until slice closes. Preserve all changes and source history.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: AIP-06-DESCENDANT-OWNERSHIP-CLOSURE (2026-11-05)
+Status: Descendant ownership source slice COMPLETE; native acceptance PENDING. Overall AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
+Implemented: guarded first-transfer capture/admission; complete prospective 12-handle manifest and retained transfer; recursive raw-Job graph and one-root-ledger channel forwarding; correlated fresh graph receipts; verified parent/creator handle and final process-slot release with idempotent accounting.
+Validation: 31 final focused passes (subset); 703 distinct synchronous regression passes across2disjoint runs (669+34),14 modules,0assertion failures/errors/skips in completed runs,5 native-launch cases deselected,0 warnings. Combined14module attempt FAILED interpreter access violation; full73module run BLOCKED in Windows asyncio socketpair setup. Neither is PASS. Node/native acceptance/installed execution not run. Evidence: docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md and logs/diagnostics/aip06-descendant-closure-20261105/.
+Boundary: no supervisor probes or full inherited-path qualification started; no native/installed/provider/account/Discord/PAPER/Windows/Genesis actions. B1C1D1E1 and21 decisions preserved. Unrelated research edit/private evidence/backups retained.
+Next action: STOP after scoped commit/non-force push/independent remote readback. Resolve combined/async test-runner qualification separately; source-only supervisor/unexpected-child probes and full inherited-path qualification remain; native capacity/ACK/drain/restart/complete Stop remain unproved. No native authorization inferred.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

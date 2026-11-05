@@ -4,9 +4,16 @@ The parent duplicates from the verified child creation handle, never a PID.
 The child's close declaration is only a request for independent observation.
 """
 
-from app.services.paper_financial_replay import body, digest
+from app.services.paper_financial_replay import body, digest, strict
 from scripts.observation_runtime.aip06_harness import need
 from scripts.observation_runtime.launch_ownership import RetainedLaunchBinding
+
+
+class _DescendantReleased:
+    def __init__(self, peer, owner, key):
+        self.peer,self.owner,self.key=peer,owner,key
+    def closed(self, owner, key):
+        return owner==self.owner and key==self.key and key in self.peer.done
 
 
 class RemoteHandleProofs:
@@ -83,11 +90,132 @@ class RetainedPeerHandles:
             and body(wire["parent"]) == body(self.binding.parent),
             "REMOTE_WIRE_NATIVE_PEER_CONFLICT",
         )
-        if self.descendants is not None and self.descendants.staging is not None and self.descendants.staging.nodes:
+        if getattr(self,'attested',None) is not None:
+            self.capture_peer(wire)
+            rows=self.attested_rows()
+            need(self.binding.api.members()=={self.binding.runtime['pid']} | {r['pid'] for r in rows},
+                 'FORWARDED_NATIVE_JOB_DISAGREEMENT')
+        elif self.descendants is not None and self.descendants.staging is not None and self.descendants.staging.nodes:
             self.descendants.staging.verify()
             self.descendants.aggregate.observe(commit=False)
         else:
             self.binding.verify()
+
+    def attested_rows(self):
+        from scripts.observation_runtime.aip06_graph_evidence import validate_graph_evidence
+        return validate_graph_evidence(self.attested,{'child':self.binding.runtime,'nonce':self.binding.request.nonce},
+                                       self.resources.clock())
+
+    def capture_peer(self, wire):
+        """Identity fence for bounded frame capture, NEVER roster admission."""
+        need(not self.failed and body(wire['child']) == body(self.binding.runtime)
+             and body(wire['parent']) == body(self.binding.parent)
+             and not self.binding.refused and not self.binding.finished
+             and self.binding.api.observe(self.binding.parent_handle) == self.binding.parent
+             and self.binding.api.observe(self.binding.launch_handle) == self.binding.launch
+             and self.binding.api.observe(self.binding.runtime_handle) == self.binding.runtime,
+             'CAPTURE_ORIGINAL_PEER_IDENTITY_LOST')
+
+    def graph_evidence(self):
+        self.verify_peer({'parent':self.binding.parent,'child':self.binding.runtime})
+        rows=[] if self.binding.descendant_graph is None else self.binding.descendant_graph()
+        return {'schema':'AIP06_RETAINED_GRAPH_V1','scope':self.resources.read()['scope'],
+                'peer':self.binding.runtime,'nonce':self.binding.request.nonce,'rows':rows,
+                'at_ns':self.resources.clock(),'source_head':self.resources.head}
+
+    def _forwarded_peer(self, wire, nested, *, create=False):
+        from types import SimpleNamespace
+        from scripts.observation_runtime.aip06_ipc import Broker
+        from scripts.observation_runtime.aip06_native_objects import DeclaredDescendants
+        self.capture_peer(wire)
+        nested=strict(body(nested))
+        need(self.descendants is not None,
+             'FORWARDED_REGISTERED_CHANNEL_REQUIRED')
+        r=self.descendants
+        need(type(nested) is dict and nested.get('nonce') in r.bindings,'FORWARDED_UNREGISTERED_DESCENDANT')
+        bound,_,_=r.bindings[nested['nonce']]
+        need(set(nested)=={'scope','session','nonce','parent','child','job','launch'}
+             and nested['job']==r.staging.nodes[nested['nonce']]['remote']['job']
+             and body(nested.get('parent'))==body(self.binding.runtime)
+             and body(nested.get('child'))==body(bound.runtime)
+             and body(nested.get('launch'))==body(bound.launch)
+             and nested.get('scope')==wire['scope'] and nested.get('session')==wire['session'],
+             'FORWARDED_CHANNEL_ANCESTRY_CONFLICT')
+        if not hasattr(self,'forwarded'):
+            self.forwarded={}
+        if nested['nonce'] not in self.forwarded:
+            need(create,'FORWARDED_CHANNEL_NOT_PRE_REGISTERED')
+            peer=RetainedPeerHandles(binding=bound,resources=self.resources,calls=self.calls,files=self.files,
+                allocations=self.allocations,allowed_path=self.allowed_path,objects=self.objects,
+                sid=self.sid,effects_io=self.effects_io)
+            peer.descendants=DeclaredDescendants(peer=bound,calls=self.calls,objects=self.objects,
+                allocations=self.allocations,observer_factory=r.observer_factory,aggregate=r.aggregate,files=self.files)
+            broker=Broker(resources=self.resources,channel=SimpleNamespace(binding=nested),peer_owner=digest(bound.runtime),
+                          verifier=peer,output=self.forward_output,clock_ns=self.resources.clock)
+            peer.forward_output=self.forward_output
+            self.forwarded[nested['nonce']]=(nested,broker)
+        else:
+            need(not create,'FORWARDED_CHANNEL_ALREADY_REGISTERED')
+        original,broker=self.forwarded[nested['nonce']]
+        need(body(original)==body(nested) and not broker.unknown,'FORWARDED_CHANNEL_REPLAY_OR_UNKNOWN')
+        return broker
+
+    def register_descendant_channel(self, wire, nested):
+        self.verify_peer(wire)
+        self.pending_registration=self._forwarded_peer(wire,nested,create=True)
+        return {'scope':wire['scope'],'nonce':nested['nonce'],'owner':digest(nested['child']),
+                'registered':True,'financial_ack':False}
+
+    def forward_operation(self, wire, value):
+        """Forward ONLY a registered child's original private-channel request."""
+        need(type(value) is dict and set(value)=={'wire','request'}, 'FORWARDED_REQUEST_SCHEMA')
+        broker=self._forwarded_peer(wire,value['wire'])
+        request=value['request'];broker.unknown=True
+        broker.output.append({'schema':'AIP06_FORWARDED_INTENT_V1','peer':broker.owner,'request':request})
+        result=broker._operation(request)
+        evidence=broker.verifier.graph_evidence()
+        broker.output.append({'schema':'AIP06_FORWARDED_RESULT_V1','peer':broker.owner,'operation':digest(request),
+                              'result':result,'ownership':evidence})
+        broker.last=request['revision'];broker.peer_head=self.resources.head;broker.unknown=False
+        broker.pending_forwarded_head=True
+        self.verify_peer(wire)
+        return {'result':result,'ownership':evidence}
+
+    def finish_forwarded_heads(self, head):
+        pending=getattr(self,'pending_registration',None)
+        if pending is not None:
+            pending.peer_head=head;self.pending_registration=None
+        for _,broker in getattr(self,'forwarded',{}).values():
+            if getattr(broker,'pending_forwarded_head',False):
+                broker.peer_head=head;broker.pending_forwarded_head=False
+            broker.verifier.finish_forwarded_heads(head)
+
+    def admit_frame(self, wire, frame):
+        self.capture_peer(wire)
+        request = frame.get('payload', {})
+        from scripts.observation_runtime.aip06_ipc import RemoteResources
+        if frame['kind']=='REQUEST' and type(self.resources) is RemoteResources:
+            # The sole root ledger admits each forwarded operation. No local
+            # resource mutation or descendant adoption is possible here.
+            return
+        if frame['kind']=='REQUEST' and request.get('method')=='forward_operation':
+            need(self.descendants is not None,'FORWARDING_GRAPH_REQUIRED')
+            return
+        if frame['kind'] == 'REQUEST' and request.get('method') in ('stage_descendant','release_descendant'):
+            args = request.get('args')
+            nonce = args[1].get('nonce') if type(args) is list and len(args)==2 and type(args[1]) is dict else (args[1] if type(args) is list and len(args)==2 else None)
+            need(self.descendants is not None and type(args) is list and len(args) == 2
+                 and args[0] == self.owner and nonce in self.descendants.declarations
+                 and request.get('kwargs') == {} and request.get('proof') is None,
+                 'CAPTURE_REQUIRES_PRIOR_SUSPENDED_DECLARATION')
+            if request['method']=='stage_descendant':
+                need(nonce not in self.descendants.staging.nodes,'CAPTURE_STAGE_REPLAY')
+            else:
+                need(nonce in self.descendants.bindings,'CAPTURE_RELEASE_BEFORE_BIND')
+            # Only the authenticated stage request may reach Broker. It journals
+            # its intent BEFORE duplicating handles or admitting the full graph.
+            return
+        self.verify_peer(wire)
 
     def bind_native_handle(self, wire, key, handle):
         self.verify_peer(wire)
@@ -210,7 +338,7 @@ class RetainedPeerHandles:
         self.verify_peer(wire)
         return self.descendants.import_binding(proof)
 
-    def declare_descendant(self, wire, encoded, slot):
+    def declare_descendant(self, wire, encoded, slot, keys=None):
         from scripts.observation_runtime.launch_ownership import LaunchRequest
         self.verify_peer(wire)
         need(self.descendants is not None and type(encoded) is dict
@@ -226,13 +354,97 @@ class RetainedPeerHandles:
         request = LaunchRequest(**value)
         request.validate()
         self.descendants.declare(request,slot=slot,parent_owner=self.owner,resources=self.resources)
+        if keys is not None:
+            need(type(keys) is list and 0<len(keys)<=64 and len(set(keys))==len(keys)
+                 and all(type(k) is str and self.resources.state['resources'].get(k,{}).get('owner')==self.owner
+                         and not self.resources.state['resources'][k]['closed'] for k in keys),
+                 'DESCENDANT_PRIOR_NATIVE_RESERVATIONS')
+            from collections import Counter
+            need(Counter(self.resources.state['resources'][k]['kind'] for k in keys)
+                 == Counter({'job':1,'handle':1,'image':1,'thread':1,'pipe':8}),
+                 'DESCENDANT_EXACT_PHYSICAL_SESSION_RESERVATIONS')
+            self.descendants.declared_keys[request.nonce]=tuple(keys)
         return {'schema':'AIP06_DESCENDANT_DECLARED_V1','owner':self.owner,
                 'nonce':request.nonce,'slot':slot,'financial_ack':False}
 
     def stage_descendant(self, wire, proof):
-        self.verify_peer(wire)
+        try:
+            return self._stage_descendant(wire,proof)
+        except BaseException:
+            self.failed=True
+            if self.descendants is not None and self.descendants.staging is not None:
+                self.descendants.failed=self.descendants.staging.failed=True
+            raise
+
+    def _stage_descendant(self, wire, proof):
+        self.capture_peer(wire)
         need(self.descendants is not None,'DESCENDANT_STAGE_PROVIDER_REQUIRED')
-        return self.descendants.stage_suspended(proof)
+        need(type(proof) is dict and 'allocations' in proof
+             and proof.get('nonce') in self.descendants.declared_keys,
+             'DESCENDANT_PHYSICAL_DECLARATION_AND_MANIFEST_REQUIRED')
+        native_proof={k:v for k,v in proof.items() if k!='allocations'}
+        receipt = self.descendants.stage_suspended(native_proof)
+        if 'allocations' in proof:
+            self._retain_session_allocations(proof)
+        self.verify_peer(wire)
+        return receipt
+
+    def _retain_session_allocations(self, proof):
+        nonce=proof['nonce'];values=proof['allocations'];r=self.descendants
+        need(type(values) is dict and set(values)==set(r.declared_keys.get(nonce,())),
+             'DESCENDANT_COMPLETE_DECLARED_NATIVE_MANIFEST')
+        need(len({v['handle'] for v in values.values()})==len(values), 'DESCENDANT_NATIVE_HANDLE_ALIAS')
+        for key,value in values.items():
+            row=self.resources.state['resources'][key]
+            need(type(value) is dict and set(value)=={'kind','handle'}
+                 and row=={'owner':self.owner,'kind':value['kind'],'closed':False}
+                 and key not in self.live and type(value['handle']) is int and value['handle']>0,
+                 'DESCENDANT_RESERVED_NATIVE_HANDLE')
+            ticket=self.allocations.reserve('descendant-session:'+key,'handle')
+            h=self.calls.duplicate(self.binding.runtime_handle,value['handle'])
+            self.live[key]={'remote':value['handle'],'local':h,'ticket':ticket,'verified':False}
+            actual=self.objects.observe(h)
+            expected={'job':'Job','thread':'Thread','image':'File','pipe':'Pipe','handle':'Process'}[value['kind']]
+            need(actual['type']==expected,'DESCENDANT_SESSION_OBJECT_KIND')
+            if value['kind'] in ('job','thread','image','handle'):
+                original={'job':'job','thread':'thread','image':'image','handle':'parent'}[value['kind']]
+                need(self.objects.same(h,r.staging.nodes[nonce]['local'][original]),'DESCENDANT_SESSION_ORIGINAL_OBJECT')
+            self.live[key].update(verified=True,identity=actual)
+
+    def finalize_descendant(self, wire, value):
+        self.verify_peer(wire)
+        r=self.descendants
+        need(r is not None and type(value) is dict and set(value)=={'owner','slot'}, 'DESCENDANT_FINAL_RELEASE_SCHEMA')
+        matches=[n for n,(_,slot) in r.declarations.items() if slot==value['slot']]
+        need(len(matches)==1,'DESCENDANT_FINAL_RELEASE_DECLARATION')
+        nonce=matches[0]
+        need(nonce in r.finished and nonce in r.declared_keys,'DESCENDANT_EXIT_AND_MANIFEST_REQUIRED')
+        bound,_,slot=r.bindings[nonce]
+        need(value['owner']==digest(bound.runtime) and all(self.calls.closed(h) for _,h in r.held[nonce])
+             and all(k in self.done and self.resources.state['resources'][k]['closed']
+                     for k in r.declared_keys[nonce])
+             and all(row['closed'] for key,row in self.resources.state['resources'].items()
+                     if row['owner']==value['owner'] and key!=slot),'DESCENDANT_HANDLES_OR_LEDGER_LEAK')
+        if self.resources.state['resources'][slot]['closed']:
+            need(slot in self.done,'DESCENDANT_REPEATED_RELEASE_UNVERIFIED')
+            self.descendants.aggregate.observe(commit=False)
+            return {**value,'closed':True,'financial_ack':False}
+        remote=r.staging.nodes[nonce]['remote']['launch']
+        ticket=self.allocations.reserve('descendant-final-original-probe','handle')
+        try:
+            probe=self.calls.duplicate(self.binding.runtime_handle,remote)
+        except OSError as exc:
+            need(getattr(exc,'winerror',None)==6,'DESCENDANT_FINAL_PROBE_UNKNOWN')
+            self.allocations.release(ticket)
+        else:
+            self.calls.close(probe)
+            need(self.calls.closed(probe),'DESCENDANT_FINAL_PROBE_LEAK')
+            self.allocations.release(ticket)
+            raise ValueError('DESCENDANT_CREATOR_PROCESS_HANDLE_LIVE_OR_REUSED')
+        self.done.add(slot)
+        self.resources.close(value['owner'],slot,observer=_DescendantReleased(self,value['owner'],slot))
+        self.descendants.aggregate.observe()
+        return {**value,'closed':True,'financial_ack':False}
 
     def resume_descendant(self, wire, nonce):
         self.verify_peer(wire)
@@ -240,12 +452,22 @@ class RetainedPeerHandles:
         return self.descendants.resume_staged(nonce)
 
     def release_descendant(self, wire, nonce):
-        self.verify_peer(wire)
+        self.capture_peer(wire)
         need(self.descendants is not None,'DESCENDANT_RELEASE_PROVIDER_REQUIRED')
-        self.descendants.release(nonce,deadline_ns=self.resources.clock()+6*10**9)
+        if nonce not in self.descendants.finished:
+            deadline=self.resources.clock()+6*10**9
+            def dispose(bound,handle):
+                forwarded=getattr(self,'forwarded',{}).get(nonce)
+                if forwarded is not None:
+                    broker=forwarded[1]
+                    need(not broker.unknown and broker.verifier.binding is bound
+                         and handle==bound.runtime_handle,'DESCENDANT_EXIT_FORWARDING_IDENTITY')
+                    broker.verifier.dispose_after_exit(deadline_ns=deadline)
+            self.descendants.release(nonce,deadline_ns=deadline,before_close=dispose)
         need(nonce in self.descendants.finished
              and all(self.calls.closed(h) for _,h in self.descendants.held[nonce]),
              'DESCENDANT_RELEASE_INCOMPLETE')
+        self.verify_peer(wire)
         return {'schema':'AIP06_DESCENDANT_RELEASE_V1','scope':self.resources.read()['scope'],
                 'nonce':nonce,'owner':self.owner,'duplicates_closed':True,'financial_ack':False}
 

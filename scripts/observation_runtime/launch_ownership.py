@@ -148,6 +148,7 @@ class RetainedLaunchBinding:
         self.auxiliary_handle = None
         self.refused = False
         self.finished = False
+        self.descendant_graph = None
         self.parent = api.observe(parent_handle)
         self.launch = api.observe(launch_handle)
         identity(self.parent)
@@ -252,6 +253,9 @@ class RetainedLaunchBinding:
                     "AUXILIARY_IDENTITY_CHANGED",
                 )
                 rows_to_verify.append(self.auxiliary)
+            if self.descendant_graph is not None:
+                require(callable(self.descendant_graph), 'RETAINED_DESCENDANT_GRAPH_REQUIRED')
+                rows_to_verify.extend(self.descendant_graph())
             require(
                 self.api.members() == {v["pid"] for v in rows_to_verify},
                 "UNEXPECTED_OR_MISSING_JOB_PROCESS",

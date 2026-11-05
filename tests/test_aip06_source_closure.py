@@ -447,7 +447,7 @@ def test_child_descendant_path_refuses_before_an_unguarded_creation():
     assert services.descendant_gateway is None
 
 
-@pytest.mark.parametrize("damage", [None, "root", "release", "source"])
+@pytest.mark.parametrize("damage", [None, "root", "release", "source", "identity"])
 def test_actual_child_factory_uses_prepaid_bootstrap_and_same_parent_rpc_cut(damage):
     import hashlib
     from scripts.observation_runtime.aip06_child_entry import ChildRuntime
@@ -484,6 +484,8 @@ def test_actual_child_factory_uses_prepaid_bootstrap_and_same_parent_rpc_cut(dam
         clock_ns=now,
     )
     runtime.validated = True
+    runtime.identity = f.identity
+    if damage=='identity':runtime.identity=None
     runtime.lease = lease
     runtime.observer_batch = ObserverBatch(lease)
     runtime.bootstrap_book = runtime.book = AllocationBook(lease, x.owner, files, now)

@@ -88,8 +88,9 @@ class Channel:
         self.sent, self.received, self.failed = 0, 0, False
         self.send_head, self.receive_head = digest(binding), digest(binding)
         self.send_lock, self.receive_lock = threading.RLock(), threading.RLock()
+        self.pending_operation = None
 
-    def deadline(self, deadline_ns):
+    def deadline(self, deadline_ns, *, capturing=False):
         now = self.clock()
         need(
             not self.failed
@@ -98,21 +99,27 @@ class Channel:
             and now < deadline_ns <= now + MAX_IPC_NS,
             "BOUNDED_IPC_DEADLINE",
         )
-        self.endpoint.verify_peer(self.binding)
+        if capturing and hasattr(self.endpoint, 'capture_peer'):
+            self.endpoint.capture_peer(self.binding)
+        else:
+            self.endpoint.verify_peer(self.binding)
         return now
 
     @contextlib.contextmanager
-    def operation(self, lock, deadline_ns):
+    def operation(self, lock, deadline_ns, *, capturing=False):
         with lock:
             try:
-                started = self.deadline(deadline_ns)
+                started = self.deadline(deadline_ns, capturing=capturing)
                 yield started
             except BaseException:
                 self.failed = True
                 raise
 
     def send(self, kind, payload, *, deadline_ns):
-        with self.operation(self.send_lock, deadline_ns) as started:
+        # REQUEST capture conveys evidence only. The parent journals and admits
+        # it before any effect; all other outbound frames retain roster checks.
+        capture = kind == 'REQUEST' and hasattr(self.endpoint, 'capture_peer')
+        with self.operation(self.send_lock, deadline_ns, capturing=capture) as started:
             need(kind in KINDS, "IPC_KIND")
             value = {
                 "schema": VERSION,
@@ -126,6 +133,9 @@ class Channel:
                 "payload": payload,
             }
             raw = encode(value)
+            if kind == 'REQUEST':
+                need(self.pending_operation is None,'IPC_ONE_OUTSTANDING_REQUEST')
+                self.pending_operation=digest(payload)
             self.endpoint.write_all(raw, deadline_ns=deadline_ns)
             need(started <= self.clock() <= deadline_ns, "IPC_SEND_DEADLINE")
             self.sent += 1
@@ -133,7 +143,7 @@ class Channel:
             return self.send_head
 
     def receive(self, *, deadline_ns, expected_kind=None):
-        with self.operation(self.receive_lock, deadline_ns) as started:
+        with self.operation(self.receive_lock, deadline_ns, capturing=True) as started:
             prefix = self.endpoint.read_exact(4, deadline_ns=deadline_ns)
             need(type(prefix) is bytes and len(prefix) == 4, "IPC_FRAME_HEADER")
             count = struct.unpack("!I", prefix)[0]
@@ -171,9 +181,17 @@ class Channel:
                 "IPC_IDENTITY_SEQUENCE_OR_FRESHNESS",
             )
             need(started <= self.clock() <= deadline_ns, "IPC_RECEIVE_DEADLINE")
-            self.endpoint.verify_peer(self.binding)
+            if hasattr(self.endpoint, 'admit_frame'):
+                if self.role=='CHILD' and value['kind']=='REPLY':
+                    need(self.pending_operation is not None and value['payload'].get('operation')==self.pending_operation,
+                         'IPC_REPLY_CORRELATION_REQUIRED')
+                self.endpoint.admit_frame(self.binding, value)
+            else:
+                self.endpoint.verify_peer(self.binding)
             self.received += 1
             self.receive_head = digest(value)
+            if value['kind']=='REPLY':
+                self.pending_operation=None
             return value
 
 
@@ -187,7 +205,7 @@ class Broker:
 
     def __init__(self, *, resources, channel, peer_owner, verifier, output, clock_ns):
         need(
-            type(resources) is SharedResources
+            type(resources) in (SharedResources, RemoteResources)
             and peer_owner in resources.state["owners"]
             and resources.state["owners"][peer_owner] == channel.binding["child"],
             "RETAINED_BROKER_PEER",
@@ -198,6 +216,8 @@ class Broker:
         self.unknown = False
         self.history = []
         self.peer_head = resources.head
+        self.delegated_ownership = None
+        verifier.forward_output = output
 
     def _operation(self, request):
         need(
@@ -214,6 +234,10 @@ class Broker:
         method = request["method"]
         args = request["args"]
         kw = request["kwargs"]
+        if type(self.resources) is RemoteResources:
+            forwarded = self.resources.forward_operation(self.channel.binding, request)
+            self.delegated_ownership = forwarded['ownership']
+            return forwarded['result']
         need(
             method
             in {
@@ -228,19 +252,22 @@ class Broker:
                 "defer_native_release",
                 'declare_effect',
                 'declare_descendant',
-                'stage_descendant', 'resume_descendant', 'release_descendant', 'verify_descendants',
+                'stage_descendant', 'resume_descendant', 'release_descendant', 'verify_descendants', 'finalize_descendant', 'forward_operation', 'register_descendant_channel',
             },
             "RPC_METHOD_NOT_PERMITTED",
         )
-        self.verifier.verify_peer(self.channel.binding)
-        if method in ('stage_descendant','resume_descendant','release_descendant','verify_descendants'):
+        if method in ('stage_descendant','release_descendant','forward_operation'):
+            self.verifier.capture_peer(self.channel.binding)
+        else:
+            self.verifier.verify_peer(self.channel.binding)
+        if method in ('stage_descendant','resume_descendant','release_descendant','verify_descendants','finalize_descendant','forward_operation','register_descendant_channel'):
             need(len(args)==2 and args[0]==self.owner and not kw and request['proof'] is None,
                  'RPC_DESCENDANT_OWNER_OR_ARGUMENTS')
             return getattr(self.verifier,method)(self.channel.binding,args[1])
         if method == 'declare_descendant':
-            need(len(args) == 3 and args[0] == self.owner and not kw
+            need(len(args) in (3,4) and args[0] == self.owner and not kw
                  and request['proof'] is None, 'RPC_DESCENDANT_DECLARATION_OWNER')
-            return self.verifier.declare_descendant(self.channel.binding,args[1],args[2])
+            return self.verifier.declare_descendant(self.channel.binding,*args[1:])
         if method == "read":
             need(not args and not kw and request["proof"] is None, "RPC_READ_ARGUMENTS")
             return self.resources.read()
@@ -326,7 +353,7 @@ class Broker:
             }
         )
         result = self._operation(request)
-        snapshot = self.resources.read()
+        snapshot = copy.deepcopy(self.resources.snapshot) if type(self.resources) is RemoteResources else self.resources.read()
         record = {
             "schema": "AIP06_RPC_RESULT_V1",
             "peer": self.owner,
@@ -335,11 +362,23 @@ class Broker:
             "head": snapshot["head"],
             "result": result,
         }
+        if self.delegated_ownership is not None:
+            record['ownership'] = self.delegated_ownership
+            self.verifier.attested = self.delegated_ownership
+            self.verifier.binding.descendant_graph = self.verifier.attested_rows
+        elif hasattr(self.verifier,'graph_evidence'):
+            record['ownership'] = self.verifier.graph_evidence()
         self.output.append(record)
         self.history.append((operation, record))
         self.last = request["revision"]
-        snapshot = self.resources.read()
+        snapshot = copy.deepcopy(self.resources.snapshot) if type(self.resources) is RemoteResources else self.resources.read()
         reply = {**record, "head": snapshot["head"], "snapshot": snapshot}
+        registration=getattr(self.verifier,'pending_registration',None)
+        if registration is not None:
+            registration.peer_head=snapshot['head']
+            self.verifier.pending_registration=None
+        if hasattr(self.verifier,'finish_forwarded_heads'):
+            self.verifier.finish_forwarded_heads(snapshot['head'])
         self.channel.send("REPLY", reply, deadline_ns=deadline_ns)
         self.peer_head = snapshot["head"]
         self.unknown = False
@@ -436,8 +475,7 @@ class RemoteResources(SharedResources):
             result = self.mailbox.receive('REPLY',deadline_ns=end)['payload']
             need(
                 type(result) is dict
-                and set(result)
-                == {
+                and set(result) in ({
                     "schema",
                     "peer",
                     "operation",
@@ -445,7 +483,7 @@ class RemoteResources(SharedResources):
                     "head",
                     "result",
                     "snapshot",
-                }
+                }, {'schema','peer','operation','revision','head','result','snapshot','ownership'})
                 and result["schema"] == "AIP06_RPC_RESULT_V1"
                 and result["peer"] == self.owner
                 and result["operation"] == digest(request)
@@ -463,7 +501,22 @@ class RemoteResources(SharedResources):
             self.snapshot = copy.deepcopy(result["snapshot"])
             self.revision += 1
             self.uncertain = False
+            self.channel.pending_operation = None
             return copy.deepcopy(result["result"])
+
+    def forward_operation(self, wire, request):
+        from scripts.observation_runtime.aip06_graph_evidence import validate_graph_evidence
+        def validate(value):
+            need(type(value) is dict and set(value)=={'result','ownership'}, 'FORWARDED_RESULT_SCHEMA')
+            validate_graph_evidence(value['ownership'],wire,self.clock())
+            return True
+        return self._checked_descendant('forward_operation',(self.owner,{'wire':wire,'request':request}),
+                                        validate,'FORWARDED_OWNERSHIP_RECEIPT')
+
+    def register_descendant_channel(self, wire):
+        return self._checked_descendant('register_descendant_channel',(self.owner,wire),lambda v:
+            v=={'scope':SCOPE_HASH,'nonce':wire['nonce'],'owner':digest(wire['child']),
+                'registered':True,'financial_ack':False}, 'FORWARDED_CHANNEL_REGISTRATION_RECEIPT')
 
     def read(self):
         return self.call("read", (), {})
@@ -487,6 +540,13 @@ class RemoteResources(SharedResources):
 
     def close(self, owner, key, *, observer):
         need(observer.closed(owner, key) is True, "LOCAL_RELEASE_UNVERIFIED")
+        if owner != self.owner:
+            need(self.state['resources'][key] == {'owner':owner,'kind':'process','closed':False}
+                 or self.state['resources'][key] == {'owner':owner,'kind':'process','closed':True},
+                 'ONLY_DECLARED_DESCENDANT_PROCESS_RELEASE')
+            return self._checked_descendant('finalize_descendant',(self.owner,{'owner':owner,'slot':key}),
+                lambda v:v == {'owner':owner,'slot':key,'closed':True,'financial_ack':False}
+                and self.state['resources'][key]['closed'] is True, 'DESCENDANT_FINAL_RELEASE_INCOMPLETE')
         if key not in getattr(self.proofs,'handles',{}) and key not in getattr(self.proofs,'effects',{}) and self.state['resources'][key]['kind'] == 'handle':
             return self.defer_native_release(owner,key)
         return self.call(
@@ -500,11 +560,12 @@ class RemoteResources(SharedResources):
         self.proofs.effects[key] = digest(intent)
         return intent
 
-    def declare_descendant(self, request, slot):
+    def declare_descendant(self, request, slot, *, keys=None):
         from scripts.observation_runtime.launch_ownership import LaunchRequest
         need(type(request) is LaunchRequest, 'EXACT_DESCENDANT_LAUNCH_REQUEST')
         request.validate()
-        return self._checked_descendant('declare_descendant',(self.owner,vars(request),slot),lambda result:
+        args=(self.owner,vars(request),slot) + (() if keys is None else (list(keys),))
+        return self._checked_descendant('declare_descendant',args,lambda result:
             result == {'schema':'AIP06_DESCENDANT_DECLARED_V1','owner':self.owner,
                         'nonce':request.nonce,'slot':slot,'financial_ack':False},
              'DESCENDANT_DECLARATION_ACK_CONFLICT')

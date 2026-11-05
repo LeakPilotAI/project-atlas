@@ -16,7 +16,7 @@ import time
 from ctypes import wintypes as W
 from types import SimpleNamespace
 
-from app.services.paper_financial_replay import digest
+from app.services.paper_financial_replay import body, digest
 from scripts.observation_runtime.aip06_bootstrap_lease import (
     InheritedBootstrapLease,
     ObserverBatch,
@@ -324,7 +324,9 @@ class ChildRuntime:
 
     def guard_factory(self, *, channel, owner, initial):
         need(
-            self.validated and owner == digest(channel.binding["child"]),
+            self.validated and type(self.identity) is InheritedIdentity
+            and body(self.identity.verify(channel.binding))==body(channel.binding['child'])
+            and owner == digest(channel.binding["child"]),
             "CHILD_CURRENT_BOOTSTRAP_IDENTITY",
         )
         need(
@@ -376,6 +378,7 @@ class ChildRuntime:
             protocol=protocol,
         )
         services = ChildServices(port, self)
+        self.identity.descendants = services.descendant_gateway.rows
         paths = FixturePaths(io)
         # These are creator-to-child transfers over the original private pipe,
         # not adoption of an arbitrary existing directory. Native ancestry/ACLs

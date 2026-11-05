@@ -185,27 +185,8 @@ class SuspendedDescendantGraph:
     def _verify(self):
         """Compare COMPLETE native Jobs, including every declared descendant."""
         self._identity()
-        expected = {self.peer.runtime["pid"]}
-        for nonce, row in self.nodes.items():
-            if nonce in self.closed:
-                continue
-            local, native = row["local"], row["native"]
-            pending = row["pending"]
-            need(
-                self.calls.native(local["launch"]) == native
-                and not self.calls.lifecycle(local["launch"])["exited"]
-                and pending.api.observe(local["parent"]) == pending.parent
-                and pending.api.observe(local["launch"]) == pending.launch,
-                "STAGING_CURRENT_PROCESS_OR_PARENT_CHANGED",
-            )
-            # This registry owns direct descendants of this exact peer. A
-            # deeper graph requires its own forwarded predeclaration; an extra
-            # member is rejected, never subtracted from these observations.
-            need(
-                self.calls.members(local["job"]) == {native["pid"]},
-                "STAGING_LEAF_JOB_HAS_UNDECLARED_DESCENDANT",
-            )
-            expected.add(native["pid"])
+        rows = self.rows(checked=False)
+        expected = {self.peer.runtime['pid']} | {row['pid'] for row in rows}
         need(
             self.calls.members(self.peer.api.job) == expected,
             "STAGING_COMPLETE_PARENT_JOB_CONFLICT",
@@ -216,6 +197,46 @@ class SuspendedDescendantGraph:
             "members": sorted(expected),
             "at_ns": self.clock(),
         }
+
+    def rows(self, *, checked=True):
+        """Traverse original retained edges; compare every raw subtree Job.
+
+        Registries share the one aggregate ledger. A descendant is represented
+        by its independently duplicated launch/parent/Job/image handles, never
+        by a PID supplied by another process or a filtered native roster.
+        """
+        need(not checked or not self.failed, 'STAGING_FAILURE_LATCHED')
+        seen = set()
+        def visit(registry):
+            graph = registry.staging
+            need(not graph.failed or (graph is self and not checked),'DESCENDANT_GRAPH_FAILURE_LATCHED')
+            graph._identity()
+            owner = digest(registry.peer.runtime)
+            need(owner not in seen, 'DESCENDANT_GRAPH_CYCLE_OR_ALIAS')
+            seen.add(owner)
+            result = []
+            for nonce, row in graph.nodes.items():
+                if nonce in graph.closed:
+                    continue
+                local, native, pending = row['local'], row['native'], row['pending']
+                need(self.calls.native(local['launch']) == native
+                     and not self.calls.lifecycle(local['launch'])['exited']
+                     and pending.api.observe(local['parent']) == registry.peer.runtime
+                     and pending.api.observe(local['launch']) == pending.launch
+                     and self.calls.in_job(local['launch'], registry.peer.api.job)
+                     and self.calls.in_job(local['launch'], local['job'])
+                     and self.calls.in_job(local['launch'], registry.aggregate.job),
+                     'STAGING_CURRENT_PROCESS_OR_PARENT_CHANGED')
+                child = registry.aggregate.descendant_registries.get(digest(pending.launch))
+                subtree = [] if child is None else visit(child)
+                need(self.calls.members(local['job']) == {native['pid']} | {r['pid'] for r in subtree},
+                     'STAGING_LEAF_JOB_HAS_UNDECLARED_DESCENDANT')
+                result.extend([pending.launch, *subtree])
+            need(len({r['pid'] for r in result}) == len(result), 'DESCENDANT_BIRTH_ALIAS')
+            need(self.calls.members(registry.peer.api.job) == {registry.peer.runtime['pid']} | {r['pid'] for r in result},
+                 'STAGING_COMPLETE_PARENT_JOB_CONFLICT')
+            return result
+        return visit(self.registry)
 
     def resume_bootstrap(self, nonce):
         try:

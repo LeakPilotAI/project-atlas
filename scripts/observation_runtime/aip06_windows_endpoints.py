@@ -161,6 +161,8 @@ class WindowsChildEndpoints:
 
         def verify(binding):
             need(body(binding) == body(wire), "PIPE_CURRENT_BINDING_CONFLICT")
+            if state['verifier'] is not None:
+                return state['verifier'].verify_peer(binding)
             need(
                 body(child.observer.observe(child.parent_handle)) == body(parent)
                 and body(child.observer.observe(child.launch_handle)) == body(observed)
@@ -180,6 +182,16 @@ class WindowsChildEndpoints:
             session_tag=bytes.fromhex(wire["nonce"]),
             capacities=state["capacities"],
         )
+        def capture(binding):
+            need(body(binding) == body(wire), 'PIPE_CAPTURE_BINDING_CONFLICT')
+            if state['verifier'] is None:
+                return verify(binding)
+            return state['verifier'].capture_peer(binding)
+        def admit(binding, frame):
+            if state['verifier'] is None:
+                return verify(binding)
+            return state['verifier'].admit_frame(binding, frame)
+        transport.capture_peer, transport.admit_frame = capture, admit
         descriptor = {
             "schema": DESCRIPTOR,
             "binding": wire,
@@ -383,6 +395,12 @@ class InheritedChannel:
             session_tag=bytes.fromhex(nonce),
             capacities=capacities,
         )
+        def capture(binding):
+            need(identity_box[0] is not None,'VERIFIED_INHERITED_IDENTITY_REQUIRED')
+            return identity_box[0].capture(binding)
+        def admit(binding,frame):
+            return identity_box[0].admit_frame(binding,frame)
+        transport.capture_peer,transport.admit_frame=capture,admit
         end = clock_ns() + MAX_IPC_NS
         count = struct.unpack("!I", transport.read_exact(4, deadline_ns=end))[0]
         need(0 < count <= MAX_BOOTSTRAP, "INHERITED_DESCRIPTOR_CAPACITY")
@@ -413,6 +431,8 @@ class InheritedChannel:
             need(callable(identity_factory), 'NATIVE_INHERITED_IDENTITY_FACTORY_REQUIRED')
             identity_box[0] = identity_factory(value)
         identity = identity_box[0]
+        identity.clock = clock_ns
+        transport.inherited_identity = identity
         need(
             identity.observer.parent == parent and identity.observer.job == job,
             "INHERITED_OBSERVER_ORIGINAL_HANDLES",

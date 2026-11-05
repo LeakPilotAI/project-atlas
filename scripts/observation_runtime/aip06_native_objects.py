@@ -145,18 +145,27 @@ class DeclaredDescendants:
             aggregate,
         )
         self.declarations, self.bindings, self.held, self.finished = {}, {}, {}, set()
+        self.declared_keys = {}
         self.failed = False
         self.declaration_times = {}
         self.staging = None
         if objects is not None and aggregate is not None:
             from scripts.observation_runtime.aip06_suspended_graph import SuspendedDescendantGraph
             self.staging = SuspendedDescendantGraph(self)
+            if not hasattr(aggregate, 'descendant_registries'):
+                aggregate.descendant_registries = {}
+            from app.services.paper_financial_replay import digest
+            owner = digest(peer.runtime)
+            need(owner not in aggregate.descendant_registries, 'ONE_REGISTRY_PER_RETAINED_BIRTH')
+            aggregate.descendant_registries[owner] = self
+            peer.descendant_graph = self.staging.rows
 
     def stage_suspended(self, proof):
         need(self.staging is not None,'NATIVE_SUSPENDED_STAGE_PORT_NOT_BOUND')
         try:return self.staging.stage(proof)
         except BaseException:
             self.failed=True
+            self.staging.failed=True
             raise
 
     def resume_staged(self, nonce):
@@ -164,6 +173,7 @@ class DeclaredDescendants:
         try:return self.staging.resume_bootstrap(nonce)
         except BaseException:
             self.failed=True
+            self.staging.failed=True
             raise
 
     def declare(self, request, *, slot, parent_owner, resources):
@@ -192,6 +202,14 @@ class DeclaredDescendants:
             self.declaration_times[request.nonce] = self.aggregate.clock()
 
     def import_binding(self, proof):
+        try:
+            return self._import_binding(proof)
+        except BaseException:
+            self.failed=True
+            if self.staging is not None:self.staging.failed=True
+            raise
+
+    def _import_binding(self, proof):
         from app.services.paper_financial_replay import body
         from scripts.observation_runtime.launch_ownership import RetainedLaunchBinding
 
@@ -251,7 +269,15 @@ class DeclaredDescendants:
         self.failed = False
         return bound, local["runtime"]
 
-    def release(self, nonce, *, deadline_ns):
+    def release(self, nonce, *, deadline_ns, before_close=None):
+        try:
+            return self._release(nonce,deadline_ns=deadline_ns,before_close=before_close)
+        except BaseException:
+            self.failed=True
+            if self.staging is not None:self.staging.failed=True
+            raise
+
+    def _release(self, nonce, *, deadline_ns, before_close=None):
         need(
             not self.failed and nonce in self.bindings and nonce not in self.finished,
             "DESCENDANT_BOUND_RELEASE_REQUIRED",
@@ -261,6 +287,8 @@ class DeclaredDescendants:
         result = bound.verify_exit()
         self.aggregate.exited(bound, handle=handle)
         if self.staging is not None:self.staging.finish(nonce,bound)
+        if before_close is not None:
+            before_close(bound,handle)
         for ticket, h in reversed(self.held[nonce]):
             need(self.aggregate.clock() < deadline_ns, "DESCENDANT_RELEASE_DEADLINE")
             self.calls.close(h)

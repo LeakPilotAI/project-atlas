@@ -42,15 +42,38 @@ class InheritedIdentity:
             observer.job == job_handle and observer.parent == parent_handle,
             "INHERITED_OBSERVER_HANDLE_BINDING",
         )
+        self.descendants = None
+        self.attested = None
+        self.clock = None
+
+    def capture(self, binding):
+        child=self.observer.observe(self.current)
+        parent=self.observer.observe(self.parent)
+        need(body(child)==body(binding['child']) and body(parent)==body(binding['parent'])
+             and child['parent_pid']==parent['pid'],'INHERITED_CAPTURE_IDENTITY_CONFLICT')
+        return child
+
+    def admit_frame(self, binding, frame):
+        if frame['kind']=='REPLY':
+            value=frame['payload'].get('ownership')
+            if value is not None:
+                from scripts.observation_runtime.aip06_graph_evidence import validate_graph_evidence
+                need(callable(self.clock),'INHERITED_GRAPH_CLOCK_REQUIRED')
+                validate_graph_evidence(value,binding,self.clock())
+                self.attested=value
+            else:
+                need(self.attested is None,'INHERITED_GRAPH_RECEIPT_MISSING')
+        return self.verify(binding)
 
     def verify(self, binding):
         child = self.observer.observe(self.current)
         parent = self.observer.observe(self.parent)
+        rows = [] if self.descendants is None else self.descendants()
         need(
             body(child) == body(binding["child"])
             and body(parent) == body(binding["parent"])
             and child["parent_pid"] == parent["pid"]
-            and self.observer.members() == {child["pid"]},
+            and self.observer.members() == {child["pid"]} | {r['pid'] for r in rows},
             "INHERITED_ANCESTRY_OR_JOB_CONFLICT",
         )
         return child

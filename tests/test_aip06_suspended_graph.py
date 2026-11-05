@@ -255,6 +255,10 @@ def test_suspended_stage_never_adopts_unverified_handles_or_members(damage):
 def test_staged_full_job_proof_does_not_change_original_leaf_binding_refusal():
     f = staged_fixture()
     f.registry.stage_suspended(f.proof)
+    assert {r['pid'] for r in f.peer.verify()} == {20,30}
+    # Without the separately retained graph, the original leaf-only contract
+    # still rejects the descendant; no PID filtering was introduced.
+    f.peer.descendant_graph = None
     with pytest.raises(ValueError, match="JOB_PROCESS"):
         f.peer.verify()
     assert f.peer.refused

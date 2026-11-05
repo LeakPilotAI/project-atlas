@@ -541,7 +541,12 @@ class WindowsSessionPort:
         child.binding.verify()
         if self.aggregate is not None:
             self.aggregate.bind_retained(child.binding, handle=child.runtime_handle, job=child.job)
-        snapshot = self.resources.read()
+        from scripts.observation_runtime.aip06_ipc import RemoteResources
+        if type(self.resources) is RemoteResources:
+            self.resources.register_descendant_channel(child.channel.channel.binding)
+            snapshot=copy.deepcopy(self.resources.snapshot)
+        else:
+            snapshot = self.resources.read()
         child.receipt = self.protocol.bind(
             child,
             snapshot=snapshot,
