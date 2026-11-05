@@ -55,6 +55,17 @@ class WindowsFileCalls:
             raise NativeOpenFailed(C.get_last_error())
         return h
 
+    def allocation_unit(self):
+        """Read the actual D: geometry; never change the accounting unit."""
+        get = self.w.K.GetDiskFreeSpaceW
+        get.argtypes = [W.LPCWSTR] + [C.POINTER(W.DWORD)] * 4
+        get.restype = W.BOOL
+        values = [W.DWORD() for _ in range(4)]
+        need(bool(get('D:\\', *(C.byref(v) for v in values))), 'D_ALLOCATION_GEOMETRY_UNAVAILABLE')
+        sectors, size, _, _ = [v.value for v in values]
+        need(sectors > 0 and size > 0, 'D_ALLOCATION_GEOMETRY_INVALID')
+        return sectors * size
+
     def open_image(self, path):
         need(
             type(path) is str
@@ -362,7 +373,10 @@ class AllocationBook:
                 if journal and self.intrinsic is not None:
                     self.intrinsic.no_allocation(key)
                 if not journal:
-                    self.resources.close(self.owner, key, observer=self)
+                    if hasattr(self.resources, 'defer_native_release'):
+                        self.resources.defer_native_release(self.owner, key)
+                    else:
+                        self.resources.close(self.owner, key, observer=self)
                 raise
             raw = h.value if hasattr(h, "value") else h
             need(type(raw) is int and 0 < raw < 2**64 - 1, "NATIVE_HANDLE_REQUIRED")

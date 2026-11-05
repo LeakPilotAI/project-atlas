@@ -290,6 +290,9 @@ class FixtureGuard:
             "NO_LEGACY_GRANT_OR_INSTALLED_SCOPE_REUSE",
         )
         self.ledger("read")
+        if hasattr(self.processes, 'verify_budget'):
+            with self.internal('journal'):
+                self.processes.verify_budget()
 
     def locate(self, path):
         value = os.fspath(path)
@@ -744,13 +747,15 @@ class FixtureGuard:
 
     def query(self, argv, **options):
         need(not self.query_active, "RECURSIVE_PROCESS_OBSERVER_REFUSED")
+        timeout = options.pop('timeout', 6)
+        need(type(timeout) in (int, float) and 0 < timeout <= 6, 'BOUNDED_QUERY_DEADLINE_REQUIRED')
         self.query_active = True
         child = None
         try:
             child = self.spawn(argv, **options)
             need(child.plan["name"] == "query", "EXACT_QUERY_ROLE_REQUIRED")
             return self.processes.query_result(
-                child, timeout=min(6, options.get("timeout", 6)), maximum_bytes=65536
+                child, timeout=timeout, maximum_bytes=65536
             )
         finally:
             try:

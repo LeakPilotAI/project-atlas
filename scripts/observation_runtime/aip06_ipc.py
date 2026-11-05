@@ -165,7 +165,7 @@ class Channel:
                 and value["sequence"] == self.received + 1
                 and value["parent"] == self.receive_head
                 and integer(value["sent_ns"])
-                and 0 <= started - value["sent_ns"] <= MAX_IPC_NS
+                and 0 <= self.clock() - value["sent_ns"] <= MAX_IPC_NS
                 and value["kind"] in KINDS
                 and (expected_kind is None or value["kind"] == expected_kind),
                 "IPC_IDENTITY_SEQUENCE_OR_FRESHNESS",
@@ -225,6 +225,7 @@ class Broker:
                 "reserve_stop_request",
                 "resolve_stop",
                 "bind_native_handle",
+                "defer_native_release",
             },
             "RPC_METHOD_NOT_PERMITTED",
         )
@@ -243,6 +244,9 @@ class Broker:
             return self.verifier.bind_native_handle(
                 self.channel.binding, args[1], args[2]
             )
+        if method == 'defer_native_release':
+            need(len(args) == 2 and args[0] == self.owner and not kw and request['proof'] is None, 'RPC_DEFERRED_NATIVE_OWNER')
+            return self.verifier.defer_native_release(self.channel.binding, args[1])
         if method in ("reserve", "charge_write", "close"):
             need(args and args[0] == self.owner, "RPC_FOREIGN_OWNER")
             if method == "close":
@@ -456,6 +460,13 @@ class RemoteResources(SharedResources):
     def bind_native_handle(self, key, handle):
         self.proofs.bind(key, handle)
         return self.call("bind_native_handle", (self.owner, key, handle), {})
+
+    def defer_native_release(self, owner, key):
+        need(owner == self.owner, 'REMOTE_DEFER_FOREIGN_OWNER')
+        result = self.call('defer_native_release', (owner, key), {})
+        need(result == {'key': key, 'owner': owner, 'closed': False, 'release_pending_peer_exit': True, 'financial_ack': False}
+             and self.state['resources'][key]['closed'] is False, 'DEFERRED_NATIVE_RELEASE_IS_NOT_CLOSED')
+        return result
 
     def close(self, owner, key, *, observer):
         need(observer.closed(owner, key) is True, "LOCAL_RELEASE_UNVERIFIED")

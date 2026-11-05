@@ -175,7 +175,7 @@ class RetainedFinancialReply:
 class GuardedStopCollector:
     """Drive the same guard/roster/Stop verifier; all observation ports explicit."""
 
-    def __init__(self, *, clock_ns, output, sockets, processes, close_io):
+    def __init__(self, *, clock_ns, output, sockets, processes, close_io, finalize_resources=None):
         self.clock, self.output, self.sockets, self.processes, self.close_io = (
             clock_ns,
             output,
@@ -185,6 +185,8 @@ class GuardedStopCollector:
         )
         self.pending = {}
         self.failed = False
+        need(finalize_resources is None or callable(finalize_resources), 'EXPLICIT_STOP_RESOURCE_FINALIZER')
+        self.finalize_resources = finalize_resources
 
     def send(self, child, request, *, revision):
         need(
@@ -287,6 +289,9 @@ class GuardedStopCollector:
             }
         )
         need(self.clock() <= deadline_ns, "STOP_OUTPUT_DEADLINE")
+        if self.finalize_resources is not None:
+            self.finalize_resources(deadline_ns=deadline_ns)
+            need(self.clock() <= deadline_ns, 'STOP_RESOURCE_FINALIZATION_DEADLINE')
         self.failed = False
         return evidence
 

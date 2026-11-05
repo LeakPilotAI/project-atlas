@@ -33,7 +33,18 @@ class RemoteHandleProofs:
         return {"owner": owner, "key": key, "handle": self.handles[key]}
 
     def child(self, *args):
-        raise ValueError("REMOTE_DESCENDANT_ORIGINAL_HANDLE_TRANSFER_NOT_BOUND")
+        need(len(args) == 2 and type(args[0]) is RetainedLaunchBinding, "REMOTE_DESCENDANT_RETAINED_BINDING_REQUIRED")
+        binding, handle = args
+        binding.verify()
+        need(digest(binding.parent) == self.owner and handle == binding.runtime_handle, "REMOTE_DESCENDANT_EXACT_PARENT_AND_HANDLE")
+        need(all(type(h) is int and h > 0 for h in (binding.parent_handle, binding.launch_handle,
+             binding.runtime_handle, binding.api.job)), 'REMOTE_DESCENDANT_ORIGINAL_NATIVE_HANDLES')
+        return {
+            "nonce": binding.request.nonce, "parent": binding.parent_handle,
+            "launch": binding.launch_handle, "runtime": binding.runtime_handle,
+            "job": binding.api.job,
+            "ready": {"pid": binding.runtime['pid'], "nonce": binding.request.nonce, "role": binding.request.role},
+        }
 
 
 class RetainedPeerHandles:
@@ -44,7 +55,7 @@ class RetainedPeerHandles:
     A failed registration retains its allocated duplicate for owned cleanup.
     """
 
-    def __init__(self, *, binding, resources, calls, files, allocations, allowed_path):
+    def __init__(self, *, binding, resources, calls, files, allocations, allowed_path, objects=None, descendants=None, sid=None):
         need(type(binding) is RetainedLaunchBinding, "ORIGINAL_RETAINED_PEER_REQUIRED")
         self.binding, self.resources, self.calls = binding, resources, calls
         self.files, self.allocations, self.allowed_path = (
@@ -56,6 +67,9 @@ class RetainedPeerHandles:
         self.live = {}
         self.done = set()
         self.failed = False
+        self.objects, self.descendants = objects, descendants
+        self.sid = sid
+        self.deferred = set()
 
     def verify_peer(self, wire):
         need(
@@ -89,6 +103,37 @@ class RetainedPeerHandles:
             "verified": False,
         }
         try:
+            if self.objects is not None:
+                native = self.objects.observe(duplicate)
+                expected_type = {'thread': 'Thread', 'job': 'Job', 'pipe': 'Pipe', 'image': 'File',
+                                 'file': 'File', 'directory': 'File'}.get(row['kind'])
+                need(expected_type is None or native['type'] == expected_type, 'REMOTE_RESERVED_NATIVE_OBJECT_KIND')
+                check_ticket = self.allocations.reserve('remote-object-continuity:' + key, 'handle')
+                check_handle = self.calls.duplicate(self.binding.runtime_handle, handle)
+                try:
+                    need(self.objects.same(duplicate, check_handle), "REMOTE_KERNEL_OBJECT_CHANGED_DURING_REGISTRATION")
+                finally:
+                    self.calls.close(check_handle)
+                    need(self.calls.closed(check_handle), 'REMOTE_OBJECT_PROBE_NOT_CLOSED')
+                    self.allocations.release(check_ticket)
+                if native['type'] == 'File':
+                    source = self.allowed_path(native['path'])
+                    need(not native['native']['reparse'] and native['native']['links'] == 1, "REMOTE_NATIVE_FILE_IDENTITY")
+                    if type(source) is dict:
+                        need(native['native']['id'] == list(source['file_id']), 'REMOTE_PINNED_SOURCE_FILE_IDENTITY')
+                    if row['kind'] in ('file', 'directory'):
+                        need(native['native']['kind'] == row['kind'], 'REMOTE_FILE_DIRECTORY_KIND_CONFLICT')
+                elif native['type'] in ('Thread', 'Process'):
+                    need(native['pid'] == self.binding.runtime['pid'], "REMOTE_FOREIGN_PROCESS_OR_THREAD")
+                elif native['type'] == 'Job':
+                    need(set(native['members']) == {self.binding.runtime['pid']} and self.calls.in_job(self.binding.runtime_handle, duplicate), "REMOTE_FOREIGN_JOB")
+                elif native['type'] == 'Token':
+                    need(type(self.sid) is str and native['sid'] == self.sid and native['token_type'] == 1, 'REMOTE_PRIMARY_TOKEN_IDENTITY')
+                else:
+                    need(native['type'] in ('Event', 'Mutant', 'Semaphore', 'Timer', 'Pipe'), "REMOTE_OBJECT_UNSUPPORTED")
+                self.binding.verify()
+                self.live[key].update(verified=True, identity=native)
+                return
             native = self.files.describe(duplicate)
             path = self.files.final_path(duplicate)
             self.allowed_path(path)
@@ -137,7 +182,24 @@ class RetainedPeerHandles:
         return owner == self.owner and key in self.done
 
     def child_binding(self, *args):
-        raise ValueError("REMOTE_DESCENDANT_TRANSFER_NOT_BOUND")
+        need(len(args) == 2 and self.descendants is not None, "REMOTE_DESCENDANT_DECLARATION_PROVIDER_REQUIRED")
+        wire, proof = args
+        self.verify_peer(wire)
+        return self.descendants.import_binding(proof)
+
+    def defer_native_release(self, wire, key):
+        """COM addresses/failed opens are not independently closable handles.
+
+        Keep their full reservation live until original peer exit. This ACK
+        records a deferred declaration, never a release or financial drain ACK.
+        Registered kernel handles must use the stronger original-handle proof.
+        """
+        self.verify_peer(wire)
+        row = self.resources.state['resources'].get(key)
+        need(row is not None and row == {'owner': self.owner, 'kind': 'handle', 'closed': False}
+             and key not in self.live and key not in self.deferred, 'DEFER_ONLY_UNBOUND_NATIVE_LIFETIME')
+        self.deferred.add(key)
+        return {'key': key, 'owner': self.owner, 'closed': False, 'release_pending_peer_exit': True, 'financial_ack': False}
 
     def dispose_after_exit(self, *, deadline_ns):
         """Kernel exit releases child handles; never a financial drain ACK."""
@@ -159,6 +221,11 @@ class RetainedPeerHandles:
             del self.live[key]
             self.done.add(key)
             self.resources.close(self.owner, key, observer=self)
+        for key in tuple(self.deferred):
+            need(self.resources.clock() < deadline_ns, 'DEFERRED_PEER_RELEASE_DEADLINE')
+            self.done.add(key)
+            self.resources.close(self.owner, key, observer=self)
+            self.deferred.remove(key)
         return {
             "peer": self.owner,
             "exit_code": life["exit_code"],

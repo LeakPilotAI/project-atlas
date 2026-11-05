@@ -193,6 +193,19 @@ class ComAPI:
             raise ValueError("CIM_EXACT_PROCESS_ENUMERATION_UNAVAILABLE")
         return rows[0]
 
+    def next_row(self, enum, timeout_ms):
+        """One row or authoritative end; WBEM_S_TIMEDOUT is never absence."""
+        rows = (C.c_void_p * 1)()
+        count = C.c_uint32()
+        hr = self.method(enum, 4, [C.c_int32, C.c_uint32, C.POINTER(C.c_void_p), C.POINTER(C.c_uint32)])(enum, timeout_ms, 1, rows, C.byref(count))
+        if hr == 0 and count.value == 1 and rows[0]:
+            return rows[0]
+        if hr == 1 and count.value == 0:
+            return None
+        if rows[0]:
+            self.release(rows[0])
+        raise ValueError('CIM_TABLE_ENUMERATION_INCOMPLETE')
+
     def property(self, obj, name):
         value = Variant()
         try:
@@ -216,6 +229,8 @@ class ComAPI:
                 return int(value.value.i32)
             if value.vt == 19:
                 return int(value.value.u32)
+            if value.vt == 18:
+                return int(value.value.u32 & 0xffff)
             raise ValueError("CIM_UNSUPPORTED_OR_NULL_PROPERTY")
         finally:
             self.ok(self.auto.VariantClear(C.byref(value)))

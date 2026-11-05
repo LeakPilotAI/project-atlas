@@ -75,6 +75,7 @@ class NativeSessionFactory:
             "EXPLICIT_RESERVED_SESSION_PROTOCOL",
         )
         self.protocol = protocol
+        self.requires_aggregate = bool(getattr(getattr(protocol, 'endpoints', None), 'requires_aggregate', False))
         need(
             stop_factory is None or callable(stop_factory),
             "EXPLICIT_STOP_FACTORY_REQUIRED",
@@ -82,6 +83,11 @@ class NativeSessionFactory:
         self.stop_factory = stop_factory
 
     def __call__(self, controller, resources, io, cim, allocations):
+        if self.requires_aggregate:
+            from scripts.observation_runtime.aip06_job_budget import AggregateJobBudget
+            need(type(getattr(controller, 'aggregate', None)) is AggregateJobBudget
+                 and controller.aggregate.job is not None and not controller.aggregate.failed,
+                 'PHYSICAL_SESSIONS_REQUIRE_AGGREGATE_ENVELOPE')
         port = WindowsSessionPort(
             controller=controller,
             resources=resources,
@@ -121,6 +127,7 @@ class WindowsSessionPort:
         self.closed_proofs = set()
         self.failed = False
         self.stop_assembly = None
+        self.aggregate = getattr(controller, 'aggregate', None)
 
     def bind_guard(self, guard):
         need(
@@ -422,6 +429,8 @@ class WindowsSessionPort:
                 and tid > 0,
                 "CREATED_PROCESS_HANDLE_PID_CONFLICT",
             )
+            if self.aggregate is not None:
+                self.aggregate.attach_created(handle=s.launch_handle, job=s.job, native=native)
             self.calls.assign(s.job, s.launch_handle)
             need(
                 self.calls.in_job(s.launch_handle, s.job)
@@ -474,6 +483,8 @@ class WindowsSessionPort:
         )
         child.binding = guard.ownership.bindings[name]
         child.binding.verify()
+        if self.aggregate is not None:
+            self.aggregate.bind_retained(child.binding, handle=child.runtime_handle, job=child.job)
         snapshot = self.resources.read()
         child.receipt = self.protocol.bind(
             child,
@@ -515,6 +526,9 @@ class WindowsSessionPort:
         child.target_released = True
 
     def all_members(self):
+        if self.aggregate is not None:
+            self.aggregate._controller()
+            return self.calls.members(self.aggregate.job) - {self.aggregate.controller['pid']}
         result = set()
         for s in self.sessions:
             if s.job is not None and not s.closed:
@@ -569,6 +583,8 @@ class WindowsSessionPort:
             "VERIFIED_EXIT_BEFORE_HANDLE_CLOSE",
         )
         self.protocol.close(child, deadline_ns=self.clock() + MAX_IPC_NS)
+        if self.aggregate is not None:
+            self.aggregate.exited(child.binding, handle=child.runtime_handle)
         for key in reversed(child.keys):
             self._close(child, key)
         for key in child.permit["slots"]:
@@ -577,6 +593,10 @@ class WindowsSessionPort:
             need(self.calls.closed(child.launch_handle), "PROCESS_HANDLE_NOT_CLOSED")
             self.closed_proofs.add((digest(child.binding.runtime), key))
         child.closed = True
+
+    def verify_budget(self):
+        if self.aggregate is not None:
+            return self.aggregate.observe()
 
     def closed(self, owner, key):
         if (owner, key) in self.closed_proofs:

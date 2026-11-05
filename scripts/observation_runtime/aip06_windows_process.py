@@ -56,6 +56,12 @@ class MemoryCounters(C.Structure):
     ]
 
 
+class JobAccounting(C.Structure):
+    _fields_ = [(n, C.c_int64) for n in ('user', 'kernel', 'period_user', 'period_kernel')] + [
+        (n, W.DWORD) for n in ('faults', 'total', 'active', 'terminated')
+    ]
+
+
 class Win32ProcessCalls:
     """Original creation handles only. No OpenProcess-by-PID method exists."""
 
@@ -183,13 +189,14 @@ class Win32ProcessCalls:
         }
 
     def create_job(self, name, limits):
+        C.set_last_error(0)
         h = self.check(self.k.CreateJobObjectW(None, name))
         if C.get_last_error() == 183:
             self.close(h)
             raise ValueError("NO_EXISTING_JOB_ADOPTION")
         try:
             info = ExtendedLimits()
-            info.basic.flags = 0x2000 | 0x8 | 0x100 | 0x200 | 0x4
+            info.basic.flags = (0x2000 if limits['kill_on_close'] else 0) | 0x8 | 0x100 | 0x200 | 0x4
             info.basic.active = limits["processes"]
             info.basic.job_cpu = limits["cpu_ns"] // 100
             info.process_memory = limits["child_private_bytes"]
@@ -211,7 +218,7 @@ class Win32ProcessCalls:
             )
         )
         need(
-            info.basic.flags == 0x2000 | 0x8 | 0x100 | 0x200 | 0x4,
+            info.basic.flags in (0x2000 | 0x8 | 0x100 | 0x200 | 0x4, 0x8 | 0x100 | 0x200 | 0x4),
             "UNEXPECTED_NATIVE_JOB_FLAGS",
         )
         return {
@@ -219,8 +226,15 @@ class Win32ProcessCalls:
             "private_bytes": info.job_memory,
             "child_private_bytes": info.process_memory,
             "cpu_ns": info.basic.job_cpu * 100,
-            "kill_on_close": True,
+            "kill_on_close": bool(info.basic.flags & 0x2000),
         }
+
+    def job_accounting(self, job):
+        info = JobAccounting()
+        self.check(self.k.QueryInformationJobObject(job, 1, C.byref(info), C.sizeof(info), None))
+        need(info.user >= 0 and info.kernel >= 0 and info.active <= info.total, "INCOMPLETE_NATIVE_JOB_ACCOUNTING")
+        return {'user_ns': info.user * 100, 'kernel_ns': info.kernel * 100,
+                'active': info.active, 'total': info.total, 'terminated': info.terminated}
 
     def members(self, job):
         class List(C.Structure):

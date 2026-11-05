@@ -153,7 +153,10 @@ class NativeAllocations:
             need(ticket in self.live, "ONE_NATIVE_RELEASE_TICKET")
             self.live.remove(ticket)
             self.done.add(ticket)
-            self.resources.close(self.owner, ticket, observer=self)
+            if hasattr(self.resources, 'defer_native_release'):
+                self.resources.defer_native_release(self.owner, ticket)
+            else:
+                self.resources.close(self.owner, ticket, observer=self)
 
     def closed(self, owner, key):
         return owner == self.owner and key in self.done
@@ -239,8 +242,9 @@ class NativeController:
         self.channels = {}
         self.children = []
         self.io = None
+        self.process_port = self.process_allocations = self.cleanup = None
 
-    def initialize(self, process_port_factory):
+    def initialize(self, process_port_factory, *, aggregate_factory=None):
         """Future explicitly authorized execution only. Never called offline."""
         need(
             callable(process_port_factory),
@@ -258,7 +262,12 @@ class NativeController:
         )
 
         need(not self.initialized and not self.failed, "ONE_CREATE_NEW_CONTROLLER")
+        if getattr(process_port_factory, 'requires_aggregate', False) and aggregate_factory is None:
+            from scripts.observation_runtime.aip06_job_budget import AggregateJobBudget
+            aggregate_factory = AggregateJobBudget
         self.failed = True
+        need(callable(getattr(self.files, 'allocation_unit', None))
+             and self.files.allocation_unit() == 4096, 'OBSERVED_D_ALLOCATION_UNIT_MUST_MATCH_4096_BEFORE_MUTATION')
         escrow = BootstrapBudget(self.clock)
         allocations = NativeAllocations(escrow, escrow.owner, namespace="bootstrap")
         cim = BoundedCimQuery(
@@ -358,6 +367,13 @@ class NativeController:
         for source in self.profile["source_pins"]:
             self.verify_source(source)
         process_allocations = NativeAllocations(resources, owner_key)
+        if aggregate_factory is not None:
+            from scripts.observation_runtime.aip06_job_budget import AggregateJobBudget
+            self.aggregate = aggregate_factory(
+                calls=self.calls, resources=resources, allocations=process_allocations, clock_ns=self.clock
+            )
+            need(type(self.aggregate) is AggregateJobBudget, 'EXACT_AGGREGATE_JOB_PROVIDER_REQUIRED')
+            self.aggregate.initialize()
         cim = BoundedCimQuery(
             CimProcessQuery(
                 api=self.cim_api,
@@ -383,8 +399,48 @@ class NativeController:
             clock_ns=self.clock,
         )
         process_port.bind_guard(guard)
+        self.process_port, self.process_allocations = process_port, process_allocations
         self.guard, self.book, self.initialized, self.failed = guard, book, True, False
         return guard
+
+    def bind_cleanup(self, *, ip_helper_dll, output, query_argv):
+        """Wire concrete readers to the existing financial Stop assembly.
+
+        No query or process runs here. The query target must be a reviewed
+        guarded source (and still needs a concrete query-result implementation
+        before native eligibility); a raw external-command fallback is forbidden.
+        The aggregate root handle lifetime is deliberately NOT silently excluded
+        from the original complete-release verifier.
+        """
+        self.require_ready()
+        need(self.cleanup is None and getattr(self, 'aggregate', None) is not None,
+             'ONE_AGGREGATE_NATIVE_CLEANUP_BINDING')
+        need(type(query_argv) in (list, tuple) and len(query_argv) >= 3
+             and list(query_argv[:2]) == [self.profile['executable'], '-B']
+             and query_argv[2] == self.profile['targets'].get('query'),
+             'EXACT_REVIEWED_SOCKET_QUERY_SOURCE')
+        from scripts.observation_runtime.aip06_cleanup_providers import (
+            CimSockets, CimTables, GuardedNetstat, StrictProcessCleanup,
+            TcpTables, ThreeReaderCleanup,
+        )
+        from scripts.observation_runtime.aip06_windows_process import CancellableCalls
+        from scripts.observation_runtime.aip06_owned_stop import OwnedStopAssembly
+        from scripts.observation_runtime.aip06_stop import GuardedStopCollector
+
+        worker = CancellableCalls(calls=self.calls, allocations=self.process_allocations, clock_ns=self.clock)
+        tables = CimTables(api=self.cim_api, allocations=self.process_allocations, worker=worker, clock_ns=self.clock)
+        sockets = ThreeReaderCleanup(readers={
+            'CIM': CimSockets(tables),
+            'IP_HELPER': TcpTables(ip_helper_dll, worker=worker, clock_ns=self.clock),
+            'NETSTAT': GuardedNetstat(self.guard, query_argv),
+        }, port=self.process_port, output=output, clock_ns=self.clock)
+        processes = StrictProcessCleanup(port=self.process_port, tables=tables, output=output, clock_ns=self.clock)
+        collector = GuardedStopCollector(clock_ns=self.clock, output=output,
+            sockets=sockets, processes=processes, close_io=self.close_native_io)
+        need(self.process_port.stop_assembly is None, 'NO_REPLACE_EXISTING_STOP_ASSEMBLY')
+        self.process_port.stop_assembly = OwnedStopAssembly(self.process_port, collector)
+        self.cleanup = {'sockets': sockets, 'processes': processes, 'collector': collector}
+        return collector
 
     def verify_source(self, path):
         """Read-only original-handle source pin; the handle is charged first."""
