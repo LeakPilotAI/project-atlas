@@ -1,4 +1,137 @@
 {
+  "aip06_inherited_physical_path_qualification_20261105": {
+  "base_commit": "599d1fd932108a7a450d122ee6344ec1f27653c6",
+  "status": "SOURCE_QUALIFICATION_BLOCKED_EXACT_INHERITED_EVIDENCE_BOUNDARIES",
+  "python": {
+    "passed": 1874,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 5,
+    "warnings": 2,
+    "modules": 75,
+    "single_process": true
+  },
+  "new_tests": 20,
+  "focused": {
+    "passed": 141,
+    "subset_of_final": true
+  },
+  "preserved_prior_distinct_python": 1854,
+  "node": {
+    "passed": 42,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "final_run": {
+    "label": "inherited-full-final",
+    "command": [
+      "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "-B",
+      "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\inherited_suite.py",
+      "full",
+      "inheritedfinal"
+    ],
+    "parent_pid": 29972,
+    "identity": {
+      "pid": 27176,
+      "created": 134383460146229745,
+      "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+    },
+    "seconds": 504.766,
+    "timeout_limit": 600,
+    "timed_out": false,
+    "exit_code": 0,
+    "handle_closed": true,
+    "native_acceptance": false,
+    "financial_worker": false
+  },
+  "exploratory_assertion_failures": 5,
+  "validation_crashes": 0,
+  "validation_timeouts": 0,
+  "native_acceptance_executed": false,
+  "financial_workers_launched": false,
+  "supervisor_launch_case": "FORMAL_ROLE_MAPPED_AND_OFFLINE_VALIDATED_NATIVE_EXECUTION_UNPROVED",
+  "unexpected_launch_case": "STILL_REFUSED_NO_GUARDED_UNCLAIMED_CHILD_CHALLENGE_CAPABILITY",
+  "full_composition": "BLOCKED_ONE_FIXTURE_SESSION_ONLY_IN_SINGLE_INTERPRETER",
+  "bootstrap_object_proof": "BLOCKED_PROBE_NATIVE_OBJECT_EVIDENCE_INCOMPLETE_FOR_PRECHARGED_ESCROW",
+  "aip06_status": "BLOCKED",
+  "completion_count": "5/18",
+  "paper_startup": false,
+  "production": "NO_GO",
+  "report": "docs/AIP_06_INHERITED_PHYSICAL_PATH_QUALIFICATION_2026-11-05.md",
+  "previous_current_checkpoint": {
+    "active_task": "AIP-06-SUPERVISOR-AND-UNEXPECTED-CHILD-PROBES",
+    "last_verified_task": "SUPERVISOR_AND_UNEXPECTED_CHILD_LIVE_EVIDENCE_CONNECTED_OFFLINE_NOT_NATIVE_ACCEPTANCE",
+    "next_eligible_tasks": [
+      "STOP after source probe implementation/validation/report, scoped commit/non-force push and independent remote SHA verification.",
+      "Separate next source scope: full inherited physical-path qualification, explicitly including the still-refused legacy direct-supervisor/direct-unexpected launch case mappings. Do not infer native readiness or run native acceptance. Preserve qualified normal-context test profile with timed dump disabled. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
+    ],
+    "latest_tests": {
+      "base_commit": "5be07663e8e2cee36ad0ba0e9d7427743c9ad6dd",
+      "status": "SUPERVISOR_AND_UNEXPECTED_CHILD_LIVE_EVIDENCE_CONNECTED_OFFLINE_NOT_NATIVE_ACCEPTANCE",
+      "python": {
+        "passed": 1854,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "deselected": 5,
+        "warnings": 2,
+        "modules": 74,
+        "single_process": true
+      },
+      "new_tests": 50,
+      "focused": {
+        "passed": 50,
+        "subset_of_final": true
+      },
+      "preserved_prior_distinct_python": 1804,
+      "node": {
+        "passed": 42,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "final_run": {
+        "label": "probes-full-verified",
+        "command": [
+          "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+          "-B",
+          "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\probes_suite.py",
+          "full",
+          "probesverified"
+        ],
+        "parent_pid": 21408,
+        "identity": {
+          "pid": 10876,
+          "created": 134383429405633385,
+          "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+        },
+        "seconds": 485.125,
+        "timeout_limit": 600,
+        "timed_out": false,
+        "exit_code": 0,
+        "handle_closed": true,
+        "native_acceptance": false,
+        "financial_worker": false
+      },
+      "historical_this_slice_assertion_failures": 3,
+      "validation_crashes": 0,
+      "validation_timeouts": 0,
+      "unresolved_hangs_in_qualified_profile": 0,
+      "native_acceptance_executed": false,
+      "financial_workers_launched": false,
+      "inherited_path_qualification_started": false,
+      "legacy_direct_supervisor_unexpected_launch_cases": "STILL_REFUSE_NOT_RECLASSIFIED_AS_LIVE_PROBE_CUTS",
+      "aip06_status": "BLOCKED",
+      "completion_count": "5/18",
+      "paper_startup": false,
+      "production": "NO_GO",
+      "report": "docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md"
+    }
+  }
+},
   "aip06_supervisor_unexpected_child_probes_20261105": {
   "base_commit": "5be07663e8e2cee36ad0ba0e9d7427743c9ad6dd",
   "status": "SUPERVISOR_AND_UNEXPECTED_CHILD_LIVE_EVIDENCE_CONNECTED_OFFLINE_NOT_NATIVE_ACCEPTANCE",
@@ -13954,11 +14087,11 @@
   "original_evidence_preserved": true,
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
-  "active_task": "AIP-06-SUPERVISOR-AND-UNEXPECTED-CHILD-PROBES",
-  "last_verified_task": "SUPERVISOR_AND_UNEXPECTED_CHILD_LIVE_EVIDENCE_CONNECTED_OFFLINE_NOT_NATIVE_ACCEPTANCE",
+  "active_task": "AIP-06-INHERITED-PHYSICAL-PATH-QUALIFICATION",
+  "last_verified_task": "SOURCE_QUALIFICATION_BLOCKED_EXACT_INHERITED_EVIDENCE_BOUNDARIES",
   "next_eligible_tasks": [
-  "STOP after source probe implementation/validation/report, scoped commit/non-force push and independent remote SHA verification.",
-  "Separate next source scope: full inherited physical-path qualification, explicitly including the still-refused legacy direct-supervisor/direct-unexpected launch case mappings. Do not infer native readiness or run native acceptance. Preserve qualified normal-context test profile with timed dump disabled. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
+  "STOP after qualification report, scoped commit/non-force push and independent remote SHA verification.",
+  "SOURCE QUALIFICATION BLOCKED: review rooted bootstrap escrow/acquired-object evidence, isolated-context full injected lifecycle without nested guards or new launch exemptions, and exact guarded historical unexpected-child challenge. Preserve refusal/charges and original five crash cases. No source-complete/native-readiness claim; AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -13985,27 +14118,90 @@
   "AIP06_PHYSICAL_PATH_COMPLETION": "STOP after requested source implementation/validation/report/checkpoint, relevant-only commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED. Implemented: prior-reserved original-handle suspended staging/direct complete Job checks/bootstrap count fence/genuine READY import/normal release; bounded pinned native netstat and query_result; retained worker probe projection; composed three-sample accounting/query/reader/Stop release; historical identities queried in bounded groups with the same8s deadline. Exact remaining source: ChildServices.descendant_gateway is None; Broker/RemoteResources lack precreation declaration/staged-transfer/bootstrap-release forwarding; WindowsChildEndpoints.channel.verify, InheritedIdentity.verify and global WorkerOwnership still require their original leaf rosters. Bind the complete forwarded recursive graph without filtering raw Job members or accepting unaccounted births. Legacy direct-supervisor lacks the matching formal launch role and direct-unexpected lacks the descendant path: both refuse before launch. Full inherited main/probe body and four-boundary physical qualification remain unproved. No general planning milestone or new permission is substituted for these implementation gaps. Do not request native execution for the incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/real Discord/PAPER/V6/Windows/Genesis operation.",
   "AIP06_DESCENDANT_OWNERSHIP_CLOSURE": "SOURCE_SLICE_COMPLETE_OFFLINE; no native acceptance. Supervisor/unexpected-child probes and full inherited-path qualification remain outside this completed slice; AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. Historical source checkpoint blockers are retained under their original milestone keys.",
   "AIP06_COMBINED_VALIDATION_RECOVERY": "RECOVERED only in qualified normal-context/outer-deadline profile. Timed audit dump still faults; no interpreter patch claimed. Native acceptance, probes/full inherited qualification and all financial/V6 gates remain unaccepted.",
-  "AIP06_SUPERVISOR_UNEXPECTED_PROBES": "Current-controller and complete descendant-inventory live evidence APIs connected and offline validated. Full inherited-path and canonical legacy launch-role/challenge interfaces remain unqualified; genuine native and installed/financial acceptance remain blocked."
+  "AIP06_SUPERVISOR_UNEXPECTED_PROBES": "Current-controller and complete descendant-inventory live evidence APIs connected and offline validated. Full inherited-path and canonical legacy launch-role/challenge interfaces remain unqualified; genuine native and installed/financial acceptance remain blocked.",
+  "AIP06_INHERITED_PHYSICAL_PATH_QUALIFICATION": {
+    "base_commit": "599d1fd932108a7a450d122ee6344ec1f27653c6",
+    "status": "SOURCE_QUALIFICATION_BLOCKED_EXACT_INHERITED_EVIDENCE_BOUNDARIES",
+    "python": {
+      "passed": 1874,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 5,
+      "warnings": 2,
+      "modules": 75,
+      "single_process": true
+    },
+    "new_tests": 20,
+    "focused": {
+      "passed": 141,
+      "subset_of_final": true
+    },
+    "preserved_prior_distinct_python": 1854,
+    "node": {
+      "passed": 42,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "final_run": {
+      "label": "inherited-full-final",
+      "command": [
+        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-B",
+        "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\inherited_suite.py",
+        "full",
+        "inheritedfinal"
+      ],
+      "parent_pid": 29972,
+      "identity": {
+        "pid": 27176,
+        "created": 134383460146229745,
+        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+      },
+      "seconds": 504.766,
+      "timeout_limit": 600,
+      "timed_out": false,
+      "exit_code": 0,
+      "handle_closed": true,
+      "native_acceptance": false,
+      "financial_worker": false
+    },
+    "exploratory_assertion_failures": 5,
+    "validation_crashes": 0,
+    "validation_timeouts": 0,
+    "native_acceptance_executed": false,
+    "financial_workers_launched": false,
+    "supervisor_launch_case": "FORMAL_ROLE_MAPPED_AND_OFFLINE_VALIDATED_NATIVE_EXECUTION_UNPROVED",
+    "unexpected_launch_case": "STILL_REFUSED_NO_GUARDED_UNCLAIMED_CHILD_CHALLENGE_CAPABILITY",
+    "full_composition": "BLOCKED_ONE_FIXTURE_SESSION_ONLY_IN_SINGLE_INTERPRETER",
+    "bootstrap_object_proof": "BLOCKED_PROBE_NATIVE_OBJECT_EVIDENCE_INCOMPLETE_FOR_PRECHARGED_ESCROW",
+    "aip06_status": "BLOCKED",
+    "completion_count": "5/18",
+    "paper_startup": false,
+    "production": "NO_GO",
+    "report": "docs/AIP_06_INHERITED_PHYSICAL_PATH_QUALIFICATION_2026-11-05.md"
+  }
 },
   "latest_tests": {
-  "base_commit": "5be07663e8e2cee36ad0ba0e9d7427743c9ad6dd",
-  "status": "SUPERVISOR_AND_UNEXPECTED_CHILD_LIVE_EVIDENCE_CONNECTED_OFFLINE_NOT_NATIVE_ACCEPTANCE",
+  "base_commit": "599d1fd932108a7a450d122ee6344ec1f27653c6",
+  "status": "SOURCE_QUALIFICATION_BLOCKED_EXACT_INHERITED_EVIDENCE_BOUNDARIES",
   "python": {
-    "passed": 1854,
+    "passed": 1874,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
     "deselected": 5,
     "warnings": 2,
-    "modules": 74,
+    "modules": 75,
     "single_process": true
   },
-  "new_tests": 50,
+  "new_tests": 20,
   "focused": {
-    "passed": 50,
+    "passed": 141,
     "subset_of_final": true
   },
-  "preserved_prior_distinct_python": 1804,
+  "preserved_prior_distinct_python": 1854,
   "node": {
     "passed": 42,
     "failed": 0,
@@ -14013,21 +14209,21 @@
     "cancelled": 0
   },
   "final_run": {
-    "label": "probes-full-verified",
+    "label": "inherited-full-final",
     "command": [
       "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
       "-B",
-      "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\probes_suite.py",
+      "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-combined-validation-20261105\\inherited_suite.py",
       "full",
-      "probesverified"
+      "inheritedfinal"
     ],
-    "parent_pid": 21408,
+    "parent_pid": 29972,
     "identity": {
-      "pid": 10876,
-      "created": 134383429405633385,
+      "pid": 27176,
+      "created": 134383460146229745,
       "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
     },
-    "seconds": 485.125,
+    "seconds": 504.766,
     "timeout_limit": 600,
     "timed_out": false,
     "exit_code": 0,
@@ -14035,19 +14231,20 @@
     "native_acceptance": false,
     "financial_worker": false
   },
-  "historical_this_slice_assertion_failures": 3,
+  "exploratory_assertion_failures": 5,
   "validation_crashes": 0,
   "validation_timeouts": 0,
-  "unresolved_hangs_in_qualified_profile": 0,
   "native_acceptance_executed": false,
   "financial_workers_launched": false,
-  "inherited_path_qualification_started": false,
-  "legacy_direct_supervisor_unexpected_launch_cases": "STILL_REFUSE_NOT_RECLASSIFIED_AS_LIVE_PROBE_CUTS",
+  "supervisor_launch_case": "FORMAL_ROLE_MAPPED_AND_OFFLINE_VALIDATED_NATIVE_EXECUTION_UNPROVED",
+  "unexpected_launch_case": "STILL_REFUSED_NO_GUARDED_UNCLAIMED_CHILD_CHALLENGE_CAPABILITY",
+  "full_composition": "BLOCKED_ONE_FIXTURE_SESSION_ONLY_IN_SINGLE_INTERPRETER",
+  "bootstrap_object_proof": "BLOCKED_PROBE_NATIVE_OBJECT_EVIDENCE_INCOMPLETE_FOR_PRECHARGED_ESCROW",
   "aip06_status": "BLOCKED",
   "completion_count": "5/18",
   "paper_startup": false,
   "production": "NO_GO",
-  "report": "docs/AIP_06_OWNERSHIP_GRAPH_AND_PROBE_CLOSURE_2026-11-05.md"
+  "report": "docs/AIP_06_INHERITED_PHYSICAL_PATH_QUALIFICATION_2026-11-05.md"
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
   "exact_next_action": "STOP after requested source implementation/validation/report/checkpoint, relevant-only commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED. Implemented: prior-reserved original-handle suspended staging/direct complete Job checks/bootstrap count fence/genuine READY import/normal release; bounded pinned native netstat and query_result; retained worker probe projection; composed three-sample accounting/query/reader/Stop release; historical identities queried in bounded groups with the same8s deadline. Exact remaining source: ChildServices.descendant_gateway is None; Broker/RemoteResources lack precreation declaration/staged-transfer/bootstrap-release forwarding; WindowsChildEndpoints.channel.verify, InheritedIdentity.verify and global WorkerOwnership still require their original leaf rosters. Bind the complete forwarded recursive graph without filtering raw Job members or accepting unaccounted births. Legacy direct-supervisor lacks the matching formal launch role and direct-unexpected lacks the descendant path: both refuse before launch. Full inherited main/probe body and four-boundary physical qualification remain unproved. No general planning milestone or new permission is substituted for these implementation gaps. Do not request native execution for the incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/real Discord/PAPER/V6/Windows/Genesis operation.",

@@ -263,6 +263,13 @@ def test_legacy_verifier_does_not_accept_unretained_or_changed_source(damage):
 @pytest.mark.parametrize("case", ["direct-unexpected", "direct-supervisor"])
 def test_legacy_unsupported_unexpected_descendant_remains_blocked_before_creation(case):
     x = probe_fixture()
+    if case == 'direct-supervisor':
+        # The previously unbound role now has a complete formal source mapping.
+        value = x.c.probe_case(case)
+        assert value['ready']['role'] == 'acceptance_supervisor'
+        assert next(iter(x.c.legacy_probes.runs.values()))['binding'].finished
+        assert not x.port.all_members()
+        return
     with pytest.raises(ValueError, match="SUPPORTED_RETAINED_SOURCE"):
         x.c.probe_case(case)
     assert "create-suspended" not in x.calls.events

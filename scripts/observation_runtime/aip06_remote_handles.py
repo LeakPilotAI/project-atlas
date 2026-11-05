@@ -344,6 +344,29 @@ class RetainedPeerHandles:
             self.failed = True
             raise
 
+    def verify_retired_descendant(self, wire, broker):
+        """A closed forwarding record is history, only after full finalization.
+
+        Finished/PID absence alone never removes a peer from the inventory.
+        The original root registry must prove normal exit, duplicate closure,
+        creator manifest release and the committed process-slot finalization.
+        """
+        r = self.descendants
+        nonce = wire['nonce']
+        need(r is not None and nonce in r.bindings and nonce in r.finished
+             and not r.failed and not broker.unknown, 'RETIRED_DESCENDANT_FINALIZATION_REQUIRED')
+        bound, _, slot = r.bindings[nonce]
+        need(broker.verifier.binding is bound and bound.finished and not bound.refused
+             and body(wire['child']) == body(bound.runtime)
+             and not broker.verifier.live
+             and self.resources.state['resources'][slot]
+             == {'owner':digest(bound.runtime),'kind':'process','closed':True}
+             and all(self.calls.closed(h) for _,h in r.held[nonce])
+             and all(self.resources.state['resources'][k]['closed'] for k in r.declared_keys[nonce])
+             and all(row['closed'] for row in self.resources.state['resources'].values()
+                     if row['owner']==digest(bound.runtime)),
+             'RETIRED_DESCENDANT_RELEASE_INCOMPLETE')
+
     def _probe_native_objects(self, *, deadline_ns):
         need(self.resources.clock() < deadline_ns, 'PROBE_NATIVE_OBJECT_TIMEOUT')
         wire = {'parent': self.binding.parent, 'child': self.binding.runtime}
@@ -390,9 +413,21 @@ class RetainedPeerHandles:
                 elif current['type'] == 'Token':
                     need(current == original, 'PROBE_NATIVE_OBJECT_TOKEN_CHANGED')
                 elif current['type'] == 'Job':
-                    need(current['limits'] == original['limits']
-                         and set(current['members']) == set(self.binding.api.members()),
-                         'PROBE_NATIVE_OBJECT_JOB_CHANGED')
+                    need(current['limits'] == original['limits'], 'PROBE_NATIVE_OBJECT_JOB_CHANGED')
+                    if self.objects.same(item['local'], self.binding.api.job):
+                        need(set(current['members']) == set(self.binding.api.members()),
+                             'PROBE_NATIVE_OBJECT_JOB_CHANGED')
+                    else:
+                        r = self.descendants
+                        need(r is not None and r.staging is not None,
+                             'PROBE_DECLARED_DESCENDANT_JOB_REQUIRED')
+                        matches = [row for nonce,row in r.staging.nodes.items()
+                                   if nonce not in r.staging.closed
+                                   and self.objects.same(item['local'], row['local']['job'])]
+                        need(len(matches) == 1, 'PROBE_UNREGISTERED_DESCENDANT_JOB')
+                        # The existing graph checks every complete raw subtree
+                        # Job; a creator's child Job is not the creator's Job.
+                        r.staging.verify()
                 rows.append({'owner': self.owner, 'key': key, 'identity': digest(current)})
             finally:
                 # A failed duplicate is an unresolved allocation, never a

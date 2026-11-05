@@ -12,7 +12,7 @@ import secrets
 from app.services.paper_financial_replay import strict
 from scripts.observation_runtime.aip06_harness import BASE, SCOPE_HASH, need
 
-CASES = ("direct-worker",)
+CASES = ("direct-worker", "direct-supervisor")
 
 
 class LegacyProbeRunner:
@@ -46,6 +46,8 @@ class LegacyProbeRunner:
         started = c.clock()
         child = None
         argv = [p.executable, "-B", target, "--case", case, "--nonce", nonce]
+        from scripts.observation_runtime.aip06_launch_roles import launch_role
+        role = launch_role(argv, c.profile['targets'])
         request = {
             "schema": "AIP06_PROBE_CLOSE_V1",
             "scope": SCOPE_HASH,
@@ -77,7 +79,7 @@ class LegacyProbeRunner:
                 "pid": identity["pid"],
                 "created": identity["created"],
                 "image": identity["image"],
-                "role": "acceptance_worker",
+                "role": role,
             }
             need(
                 ready == expected_ready, "PROBE_READY_NATIVE_IDENTITY_OR_CASE_MISMATCH"
@@ -189,7 +191,8 @@ class LegacyProbeRunner:
             value["ready"]["pid"] == bound.runtime["pid"]
             and value["ready"]["created"] == bound.runtime["created"]
             and value["ready"]["nonce"] == nonce
-            and value["ready"]["role"] == bound.request.role == "acceptance_worker"
+            and value["ready"]["role"] == bound.request.role
+            == ('acceptance_supervisor' if value['case'] == 'direct-supervisor' else 'acceptance_worker')
             and value["claims"]
             == [
                 {

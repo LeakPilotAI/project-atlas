@@ -220,7 +220,7 @@ class Protocol:
         return {
             "pid": observed["pid"],
             "nonce": child.plan["request"].nonce,
-            "role": "acceptance_worker",
+            "role": child.plan['request'].role,
         }
 
     def bind(self, child, *, snapshot, roots, source_pins, target):

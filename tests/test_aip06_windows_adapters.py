@@ -781,11 +781,15 @@ def test_legacy_output_does_not_manufacture_native_acceptance(damage):
     assert not output.records
 
 
-def bootstrap_fixture(damage=None):
+def bootstrap_fixture(damage=None, role='acceptance_worker'):
     x = channels()
     output = Output()
     events = []
     target = r"D:\reviewed\child.py"
+    if role == 'acceptance_supervisor':
+        from scripts.observation_runtime.aip06_harness import BASE
+        target = ntpath.join(ntpath.dirname(ntpath.dirname(BASE)), 'scripts',
+                             'observation_runtime', 'aip06_legacy_entry.py')
     pins = {target: "a" * 64}
     verifier = SimpleNamespace(verify_peer=lambda binding: None)
     broker = Broker(
@@ -816,6 +820,7 @@ def bootstrap_fixture(damage=None):
         incoming = x.parent.receive(deadline_ns=x.s.now[0] + 6 * 10**9)
         events.append(incoming["kind"])
         if incoming["kind"] == "HELLO":
+            assert incoming['payload']['role'] == role
             bind = {
                 "snapshot": x.s.ledger.read(),
                 "roots": dict(ROOTS),
@@ -883,6 +888,7 @@ def bootstrap_fixture(damage=None):
         verify_source=source,
         guard_factory=factory,
         clock_ns=lambda: x.s.now[0],
+        role=role,
     )
     return SimpleNamespace(**locals())
 

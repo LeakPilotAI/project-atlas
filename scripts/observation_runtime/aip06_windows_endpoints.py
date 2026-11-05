@@ -157,9 +157,12 @@ class WindowsChildEndpoints:
             need(owner not in peers and peer.resources is port.resources,
                  "PROBE_NATIVE_PEER_DUPLICATE_OR_FOREIGN_LEDGER")
             peers[owner] = peer
-            for _, broker in getattr(peer, 'forwarded', {}).values():
+            for wire, broker in getattr(peer, 'forwarded', {}).values():
                 need(not broker.unknown, 'PROBE_NATIVE_FORWARDING_UNCERTAIN')
-                visit(broker.verifier)
+                if broker.verifier.binding.finished:
+                    peer.verify_retired_descendant(wire, broker)
+                else:
+                    visit(broker.verifier)
 
         for state in self.state.values():
             if state['closed']:

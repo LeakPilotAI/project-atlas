@@ -17,17 +17,18 @@ from test_aip06_native_session_stop import EXE, PIN
 from test_aip06_physical_native_proofs import aggregate_fixture
 
 
-def staged_fixture():
-    x = aggregate_fixture()
-    peer_process = x.guard.spawn([EXE, "-B", x.targets["financial_worker"]])
+def staged_fixture(x=None, peer_process=None, before_create=None, suffix=''):
+    x = aggregate_fixture() if x is None else x
+    peer_process = peer_process or x.guard.spawn([EXE, "-B", x.targets["financial_worker"]])
     peer = peer_process.child.binding
     owner = digest(peer.runtime)
-    slot = "prior-descendant-launch"
+    slot = "prior-descendant-launch" + suffix
     x.ledger.reserve(owner, slot, "launch")
     command = EXE + " -B D:\\reviewed\\child.py"
     image = (ntpath.normcase(EXE), tuple(PIN["file_id"]), PIN["sha256"])
     request = LaunchRequest(
-        "acceptance_worker", "d" * 32, "direct", image, image, command, command
+        "acceptance_worker", digest(peer.request.nonce + suffix)[:32] if suffix else "d" * 32,
+        "direct", image, image, command, command
     )
     original_duplicate = x.calls.duplicate
 
@@ -79,9 +80,11 @@ def staged_fixture():
         api.job, api.parent = job, parent
         return api
 
-    objects_port = SimpleNamespace(
-        same=lambda a, b: x.calls.handles[a] == x.calls.handles[b], observe=objects
-    )
+    def same(a, b):
+        if x.calls.handles[a][0] == 'job' or x.calls.handles[b][0] == 'job':
+            return a in x.calls.jobs and b in x.calls.jobs and x.calls.jobs[a] is x.calls.jobs[b]
+        return x.calls.handles[a] == x.calls.handles[b]
+    objects_port = SimpleNamespace(same=same, observe=objects)
     registry = DeclaredDescendants(
         peer=peer,
         calls=x.calls,
@@ -92,6 +95,8 @@ def staged_fixture():
         files=x.files,
     )
     registry.declare(request, slot=slot, parent_owner=owner, resources=x.ledger)
+    if before_create is not None:
+        before_create(x, owner, request)
     creator = NativeAllocations(x.ledger, owner, namespace="source-creator")
     held = []
 

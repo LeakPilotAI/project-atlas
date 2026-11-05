@@ -98,6 +98,7 @@ class ChildBootstrap:
         verify_source,
         guard_factory,
         clock_ns,
+        role='acceptance_worker',
     ):
         need(
             channel.role == "CHILD"
@@ -129,6 +130,13 @@ class ChildBootstrap:
         )
         self.clock, self.failed, self.state = clock_ns, False, "NEW"
         self.guard, self.receipt = None, None
+        need(role in ('acceptance_worker', 'acceptance_supervisor'), 'EXACT_CHILD_LAUNCH_ROLE')
+        if role == 'acceptance_supervisor':
+            from scripts.observation_runtime.aip06_harness import BASE
+            need(target == ntpath.join(ntpath.dirname(ntpath.dirname(BASE)), 'scripts',
+                                      'observation_runtime', 'aip06_legacy_entry.py'),
+                 'SUPERVISOR_ONLY_PINNED_LEGACY_TARGET')
+        self.role = role
 
     def _deadline(self):
         return self.clock() + MAX_IPC_NS
@@ -153,7 +161,7 @@ class ChildBootstrap:
         hello = {
             "pid": child["pid"],
             "nonce": self.channel.binding["nonce"],
-            "role": "acceptance_worker",
+            "role": self.role,
         }
         self.channel.send("HELLO", hello, deadline_ns=self._deadline())
         message = self.channel.receive(
@@ -173,11 +181,10 @@ class ChildBootstrap:
         need(
             snapshot["scope"] == SCOPE_HASH
             and snapshot["state"]["owners"].get(owner) == self.channel.binding["child"]
-            and snapshot["state"]["controller"]
-            == digest(self.channel.binding["parent"])
             and snapshot["state"]["mode"] == "WORK",
             "CHILD_CURRENT_PARENT_LEDGER_REQUIRED",
         )
+        self._rooted_parent(snapshot)
         guard = self.factory(
             channel=self.channel, owner=owner, initial=copy.deepcopy(snapshot)
         )
@@ -192,6 +199,7 @@ class ChildBootstrap:
         self.identity.verify(self.channel.binding)
         guard.check()  # Actual parent ledger round trip, not local JSON alone.
         self.guard = guard
+        guard.launch_role = self.role
         self.receipt = {
             "scope": SCOPE_HASH,
             "nonce": hello["nonce"],
@@ -202,6 +210,33 @@ class ChildBootstrap:
         self.channel.send("ACK", self.receipt, deadline_ns=self._deadline())
         self.state, self.failed = "BOUND", False
         return copy.deepcopy(self.receipt)
+
+    def _rooted_parent(self, snapshot):
+        """Private bound identities plus the single authenticated root ledger.
+
+        Every non-root ancestor must have its own still-open process slot; a
+        registered name/PID alone is insufficient. Native immediate-parent and
+        subtree Job evidence is independently checked by InheritedIdentity and
+        by the root retained descendant graph before BIND and subsequent RPCs.
+        """
+        state = snapshot['state']
+        parent = self.channel.binding['parent']
+        owners = state['owners']
+        need(body(owners.get(digest(parent))) == body(parent), 'CHILD_PARENT_OWNER_MISSING')
+        by_pid = {v['pid']: (k, v) for k, v in owners.items()}
+        need(len(by_pid) == len(owners), 'CHILD_ANCESTOR_PID_ALIAS')
+        cursor, seen = digest(parent), set()
+        while cursor != state['controller']:
+            need(cursor not in seen and cursor in owners, 'CHILD_ROOT_ANCESTRY_CYCLE')
+            seen.add(cursor)
+            row = owners[cursor]
+            slots = [r for r in state['resources'].values()
+                     if r == {'owner': cursor, 'kind': 'process', 'closed': False}]
+            need(len(slots) == 1 and row['parent_pid'] in by_pid,
+                 'CHILD_ROOT_ANCESTOR_PROCESS_SLOT')
+            cursor, ancestor = by_pid[row['parent_pid']]
+            need(ancestor['created'] <= row['created'], 'CHILD_ANCESTOR_BIRTH_ORDER')
+        need(cursor in owners and cursor not in seen, 'CHILD_ROOT_CONTROLLER_MISSING')
 
     def run(self, runner):
         need(

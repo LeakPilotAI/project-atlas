@@ -21,6 +21,8 @@ def main(argv=None):
         args.nonce == binding["nonce"] and digest(current) == guard.owner,
         "PROBE_CURRENT_PRIVATE_LAUNCH_IDENTITY",
     )
+    need(guard.launch_role == ('acceptance_supervisor' if args.case == 'direct-supervisor'
+                              else 'acceptance_worker'), 'PROBE_FORMAL_ROLE_REQUIRED')
     with guard.watchdog(seconds=6, exit_code=71):
         print(
             json.dumps(
@@ -32,7 +34,7 @@ def main(argv=None):
                     "pid": current["pid"],
                     "created": current["created"],
                     "image": current["image"],
-                    "role": "acceptance_worker",
+                    "role": guard.launch_role,
                 }
             ),
             flush=True,

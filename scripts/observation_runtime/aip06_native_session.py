@@ -266,8 +266,10 @@ class WindowsSessionPort:
         )
         pin = self.controller.profile["images"][ntpath.normcase(self.executable)]
         image = (ntpath.normcase(self.executable), tuple(pin["file_id"]), pin["sha256"])
+        self.controller.verify_source(ntpath.join(ntpath.dirname(__file__), 'aip06_launch_roles.py'))
+        from scripts.observation_runtime.aip06_launch_roles import launch_role
         request = LaunchRequest(
-            "acceptance_worker",
+            launch_role(argv, self.controller.profile['targets']),
             nonce,
             "direct",
             image,
@@ -796,7 +798,7 @@ class ChannelSessionProtocol:
             == {
                 "pid": observed["pid"],
                 "nonce": child.plan["request"].nonce,
-                "role": "acceptance_worker",
+                "role": child.plan['request'].role,
             },
             "SESSION_HELLO_IDENTITY",
         )

@@ -11,8 +11,8 @@ from test_aip06_suspended_graph import staged_fixture
 from test_aip06_windows_adapters import MemoryEndpoint, ACCOUNTS, Output
 
 
-def fixture():
-    f=staged_fixture();x=f.x
+def fixture(f=None):
+    f=staged_fixture() if f is None else f;x=f.x
     original=x.calls.duplicate
     def duplicate(source,h):
         if source != -1:
@@ -27,7 +27,7 @@ def fixture():
     def observe(h):
         kind,value=x.calls.handles[h]
         if kind in ('process','parent'):return {'type':'Process',**x.calls.native(h),**x.calls.lifecycle(h)}
-        if kind=='job':return {'type':'Job','members':sorted(x.calls.members(h))}
+        if kind=='job':return {'type':'Job','members':sorted(x.calls.members(h)), 'limits':x.calls.job_limits(h)}
         if kind=='image':return {'type':'File','native':x.files.describe(h),'path':value}
         if kind=='pipe':return {'type':'Pipe'}
         return old_observe(h)

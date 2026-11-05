@@ -430,6 +430,8 @@ class ChildRuntime:
                 identity_factory=self.inherited_identity,
                 clock_ns=self.clock,
             )
+            self.verify_source(ntpath.join(ntpath.dirname(__file__), 'aip06_launch_roles.py'))
+            from scripts.observation_runtime.aip06_launch_roles import launch_role
             boot = ChildBootstrap(
                 channel=channel,
                 identity=self.identity,
@@ -438,6 +440,7 @@ class ChildRuntime:
                 verify_source=self.verify_source,
                 guard_factory=self.guard_factory,
                 clock_ns=self.clock,
+                role=launch_role(descriptor['argv'], descriptor['targets']),
             )
             boot.prepare()
 
