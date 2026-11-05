@@ -1,4 +1,358 @@
 {
+  "aip06_native_acceptance_authorization_review_20261105": {
+  "base_commit": "fbd50811b7a110061a2ce7931af7d03ab5a99474",
+  "review_only": true,
+  "native_tests_executed": 0,
+  "python_tests_executed": 0,
+  "node_tests_executed": 0,
+  "historical_python_cases_independently_reread": 1924,
+  "historical_node_cases": 42,
+  "joined_35_pins_match": true,
+  "source_file_count": 88,
+  "roots_absent": {
+    "E": "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-native-v1-20261104",
+    "P": "D:\\Work\\Project Atlas\\logs\\diagnostics\\perp-order-custody-aip06-v1-20261104",
+    "Q": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-auto-runtime-aip06-v1-20261104",
+    "F": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-fs3-report-projection-aip06-v1-20261104",
+    "N": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-aip06-v1-20261104",
+    "T": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-owned-stop-timing-aip06-v1-20261104",
+    "L": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v5-launch-ownership-aip06-v1-20261104",
+    "S1": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-owned-11111111111111111111111111111111",
+    "S2": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-owned-22222222222222222222222222222222",
+    "S3": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-owned-33333333333333333333333333333333"
+  },
+  "runtime_pins": [
+    {
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\python.exe",
+      "bytes": 104952,
+      "sha256": "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a"
+    },
+    {
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\python312.dll",
+      "bytes": 6945272,
+      "sha256": "9a0e3435aaa680d868150f87ab3e388ad2eebc22f87e036155c7b4eda8cd2120"
+    },
+    {
+      "path": "C:\\Windows\\System32\\netstat.exe",
+      "bytes": 73728,
+      "sha256": "b5159cbf8739b421beec5baf1c5e60e8e5ea36b425e4374f05d95910d7fb49f3"
+    }
+  ],
+  "selection": {
+    "tests/test_unified_actual_native_lanes.py": "P",
+    "tests/test_unified_source_capacity_native.py": "P",
+    "tests/test_qd_unified_shutdown.py": "Q",
+    "tests/test_perp_native_shutdown.py": "F",
+    "tests/test_personal_native_pipeline_capacity.py": "N",
+    "tests/test_personal_owned_stop_timing.py": "T"
+  },
+  "unrelated_sha256": "4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb",
+  "status": "AUTHORIZATION_PACKET_BLOCKED_EXACT_NATIVE_EXECUTION_PREREQUISITES",
+  "blockers": [
+    "No pinned top-level native controller/outer-owner command and complete run profile/manifest.",
+    "The two concurrent existing perp race children use the same target path; no reviewed unambiguous role map is supplied.",
+    "Native async event-loop/socketpair setup has no reviewed route satisfying the existing no-network/owned-resource contract; actual D-runtime branch remains unexecuted.",
+    "Complete 12-group native case/positive-negative/load schedule and duration/resource feasibility not bound to a run manifest.",
+    "D-runtime complete dependency/native-ID/ACL inventory and live normal-permission three-reader/process/Job prerequisites not accepted.",
+    "Fresh single-use native authorization is absent; all previous grants remain consumed."
+  ],
+  "source_qualification": "COMPLETE_NOT_REOPENED",
+  "aip06": "BLOCKED",
+  "completion": "5/18",
+  "paper": false,
+  "production": "NO_GO",
+  "report": "docs/AIP_06_NATIVE_ACCEPTANCE_AUTHORIZATION_PACKET_2026-11-05.md",
+  "runtime_library_pins": [
+    {
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\Lib\\socket.py",
+      "sha256": "423c823130b3e26ebf5bd5645cf1d263d5e3e23c1ffcd02ddd54acb60eb7d6b5"
+    },
+    {
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\Lib\\asyncio\\proactor_events.py",
+      "sha256": "b00ece2377455b6dd2069e8e7d1efd6f79b635b37feb4fc5b47471477e2d3f86"
+    },
+    {
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\Lib\\asyncio\\windows_events.py",
+      "sha256": "0f94acdfd79706099961bb265a0e6431e744234cac3f572209a1653a5321fda7"
+    }
+  ],
+  "new_execution_authorization": false,
+  "ready_for_native_execution": false,
+  "packet_sha256": "562c3df70cfd5f732350b03a9173c00dd0c69f465d84dbfe604e8858b5c7bd3e",
+  "previous_current_checkpoint": {
+    "active_task": "AIP-06-JOINED-LIFECYCLE-SOURCE-CLOSURE",
+    "last_verified_task": "JOINED_SOURCE_QUALIFICATION_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
+    "next_eligible_tasks": [
+      "STOP after joined offline qualification/checkpoint and independent remote SHA verification.",
+      "Separate next prerequisite: update/review exact native disposable readiness/acceptance scope and current source/runtime pins. Actual native identity/capacity/ACK/drain/restart/complete eight-second Stop remain unexecuted and require separate authorization. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
+    ],
+    "latest_tests": {
+      "base_commit": "b92407a2d1f3197740d5bbd0e833e15701d7b690",
+      "status": "JOINED_SOURCE_QUALIFICATION_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
+      "python": {
+        "passed": 1924,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "native_launch_deselected": 5,
+        "warnings": 2,
+        "modules": 78,
+        "single_process": false,
+        "deduplicated": true
+      },
+      "new_distinct_tests": 50,
+      "prior_1874_ids_preserved": true,
+      "node": {
+        "passed": 42,
+        "failed": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "joined_financial_samples": 3,
+      "isolated_guards_verified": true,
+      "bootstrap_acquired_objects": "SOURCE_QUALIFIED_INJECTED_NATIVE_API",
+      "historical_unexpected_child": "GUARDED_ADAPTER_SOURCE_CONNECTED_REFUSAL_VERIFIED_NATIVE_LAUNCH_UNEXECUTED",
+      "original_financial_assertions_unchanged": true,
+      "final_crashes": 0,
+      "final_timeouts": 0,
+      "runs": {
+        "joined-regression-qualified": {
+          "label": "joined-regression-qualified",
+          "command": [
+            "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            "-B",
+            "logs/diagnostics/aip06-combined-validation-20261105/inherited_suite.py",
+            "full",
+            "joinedqualified"
+          ],
+          "parent_pid": 3576,
+          "identity": {
+            "pid": 30548,
+            "created": 134383522533755140,
+            "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+          },
+          "seconds": 179.937,
+          "timeout_limit": 600,
+          "timed_out": false,
+          "exit_code": 0,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "joined-financial-qualified": {
+          "label": "joined-financial-qualified",
+          "command": [
+            "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "tests/test_aip06_joined_lifecycle.py",
+            "-k",
+            "three_joined",
+            "-vv",
+            "-s",
+            "-p",
+            "no:cacheprovider",
+            "-o",
+            "faulthandler_timeout=0",
+            "--basetemp",
+            "logs/diagnostics/aip06-joined-financial-qualified-temp",
+            "--junitxml",
+            "logs/diagnostics/aip06-joined-financial-qualified.xml"
+          ],
+          "parent_pid": 30920,
+          "identity": {
+            "pid": 8680,
+            "created": 134383521951136563,
+            "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+          },
+          "seconds": 378.844,
+          "timeout_limit": 600,
+          "timed_out": false,
+          "exit_code": 0,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "joined-sides-qualified": {
+          "label": "joined-sides-qualified",
+          "command": [
+            "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "tests/test_aip06_joined_lifecycle.py",
+            "-k",
+            "not three_joined",
+            "-vv",
+            "-s",
+            "-p",
+            "no:cacheprovider",
+            "-o",
+            "faulthandler_timeout=0",
+            "--basetemp",
+            "logs/diagnostics/aip06-joined-sides-qualified-temp",
+            "--junitxml",
+            "logs/diagnostics/aip06-joined-sides-qualified.xml"
+          ],
+          "parent_pid": 3576,
+          "identity": {
+            "pid": 2244,
+            "created": 134383524333164607,
+            "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+          },
+          "seconds": 50.406,
+          "timeout_limit": 300,
+          "timed_out": false,
+          "exit_code": 0,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "joined-escrow-qualified": {
+          "label": "joined-escrow-qualified",
+          "command": [
+            "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "tests/test_aip06_bootstrap_objects.py",
+            "tests/test_aip06_offline_context.py",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "-o",
+            "faulthandler_timeout=0",
+            "--basetemp",
+            "logs/diagnostics/aip06-joined-escrow-qualified-temp",
+            "--junitxml",
+            "logs/diagnostics/aip06-joined-escrow-qualified.xml"
+          ],
+          "parent_pid": 5904,
+          "identity": {
+            "pid": 1736,
+            "created": 134383521972975514,
+            "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
+          },
+          "seconds": 31.343,
+          "timeout_limit": 240,
+          "timed_out": false,
+          "exit_code": 0,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        },
+        "joined-final-node": {
+          "label": "joined-final-node",
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "tests/quality_dips_selected_frontend.test.cjs"
+          ],
+          "parent_pid": 31864,
+          "identity": {
+            "pid": 31220,
+            "created": 134383516187490179,
+            "image": "c:\\program files\\nodejs\\node.exe"
+          },
+          "seconds": 0.11,
+          "timeout_limit": 30,
+          "timed_out": false,
+          "exit_code": 0,
+          "handle_closed": true,
+          "native_acceptance": false,
+          "financial_worker": false
+        }
+      },
+      "preserved_failed_or_timed_out_runs": [
+        {
+          "label": "joined-current-single",
+          "seconds": 183.484,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-final-lifecycles",
+          "seconds": 600.047,
+          "exit_code": 1,
+          "timed_out": true,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-financial-1",
+          "seconds": 151.047,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-financial-2",
+          "seconds": 558.672,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-full-1",
+          "seconds": 235.812,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-regression-1",
+          "seconds": 140.75,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-smoke-1",
+          "seconds": 120.031,
+          "exit_code": 1,
+          "timed_out": true,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-smoke-2",
+          "seconds": 28.75,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-smoke-3",
+          "seconds": 26.813,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-smoke-4",
+          "seconds": 28.047,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true
+        },
+        {
+          "label": "joined-smoke-5",
+          "seconds": 27.641,
+          "exit_code": 1,
+          "timed_out": false,
+          "handle_closed": true
+        }
+      ],
+      "source_pin_count": 35,
+      "native_acceptance_executed": false,
+      "financial_workers_launched": false,
+      "aip06_status": "BLOCKED",
+      "completion_count": "5/18",
+      "paper_startup": false,
+      "production": "NO_GO",
+      "report": "docs/AIP_06_JOINED_LIFECYCLE_SOURCE_CLOSURE_2026-11-05.md"
+    }
+  }
+},
   "aip06_joined_lifecycle_source_closure_20261105": {
   "base_commit": "b92407a2d1f3197740d5bbd0e833e15701d7b690",
   "status": "JOINED_SOURCE_QUALIFICATION_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
@@ -14423,11 +14777,11 @@
   "original_evidence_preserved": true,
   "next_authorization": "SEPARATE_EXACT_PINNED_UNSELECTED_ACTUAL_CODE_COPY_ONLY"
 },
-  "active_task": "AIP-06-JOINED-LIFECYCLE-SOURCE-CLOSURE",
-  "last_verified_task": "JOINED_SOURCE_QUALIFICATION_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
+  "active_task": "AIP-06-NATIVE-ACCEPTANCE-AUTHORIZATION-REVIEW",
+  "last_verified_task": "AUTHORIZATION_PACKET_BLOCKED_EXACT_NATIVE_EXECUTION_PREREQUISITES",
   "next_eligible_tasks": [
-  "STOP after joined offline qualification/checkpoint and independent remote SHA verification.",
-  "Separate next prerequisite: update/review exact native disposable readiness/acceptance scope and current source/runtime pins. Actual native identity/capacity/ACK/drain/restart/complete eight-second Stop remain unexecuted and require separate authorization. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
+  "STOP after review-only documentation/commit/non-force push/independent remote SHA.",
+  "Packet NOT READY: separate source-only outer-entry/profile/role-and-case-manifest preparation and native async no-network compatibility review, then exact D-runtime dependency/native-identity read-only prerequisites. Source qualification remains COMPLETE; no native/installed/PAPER execution. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO."
 ],
   "blocked_tasks": {
   "RECOMMENDED_PATH": "C1 retaincurrentcontract. Currentstable3readercutsfailed andtrustedChromecompletepathabsent; no currentlydemonstratedpassingroute. Restorequalifyingenvironmentcondition+trustedbrowsercapability withoutchangedgates; no claimedWindowsOSdefect orverifiedpatchrepair.",
@@ -14782,272 +15136,169 @@
     "paper_startup": false,
     "production": "NO_GO",
     "report": "docs/AIP_06_JOINED_LIFECYCLE_SOURCE_CLOSURE_2026-11-05.md"
+  },
+  "AIP06_NATIVE_AUTHORIZATION_PACKET": {
+    "base_commit": "fbd50811b7a110061a2ce7931af7d03ab5a99474",
+    "review_only": true,
+    "native_tests_executed": 0,
+    "python_tests_executed": 0,
+    "node_tests_executed": 0,
+    "historical_python_cases_independently_reread": 1924,
+    "historical_node_cases": 42,
+    "joined_35_pins_match": true,
+    "source_file_count": 88,
+    "roots_absent": {
+      "E": "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-native-v1-20261104",
+      "P": "D:\\Work\\Project Atlas\\logs\\diagnostics\\perp-order-custody-aip06-v1-20261104",
+      "Q": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-auto-runtime-aip06-v1-20261104",
+      "F": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-fs3-report-projection-aip06-v1-20261104",
+      "N": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-aip06-v1-20261104",
+      "T": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-owned-stop-timing-aip06-v1-20261104",
+      "L": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v5-launch-ownership-aip06-v1-20261104",
+      "S1": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-owned-11111111111111111111111111111111",
+      "S2": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-owned-22222222222222222222222222222222",
+      "S3": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-owned-33333333333333333333333333333333"
+    },
+    "runtime_pins": [
+      {
+        "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\python.exe",
+        "bytes": 104952,
+        "sha256": "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a"
+      },
+      {
+        "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\python312.dll",
+        "bytes": 6945272,
+        "sha256": "9a0e3435aaa680d868150f87ab3e388ad2eebc22f87e036155c7b4eda8cd2120"
+      },
+      {
+        "path": "C:\\Windows\\System32\\netstat.exe",
+        "bytes": 73728,
+        "sha256": "b5159cbf8739b421beec5baf1c5e60e8e5ea36b425e4374f05d95910d7fb49f3"
+      }
+    ],
+    "selection": {
+      "tests/test_unified_actual_native_lanes.py": "P",
+      "tests/test_unified_source_capacity_native.py": "P",
+      "tests/test_qd_unified_shutdown.py": "Q",
+      "tests/test_perp_native_shutdown.py": "F",
+      "tests/test_personal_native_pipeline_capacity.py": "N",
+      "tests/test_personal_owned_stop_timing.py": "T"
+    },
+    "unrelated_sha256": "4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb",
+    "status": "AUTHORIZATION_PACKET_BLOCKED_EXACT_NATIVE_EXECUTION_PREREQUISITES",
+    "blockers": [
+      "No pinned top-level native controller/outer-owner command and complete run profile/manifest.",
+      "The two concurrent existing perp race children use the same target path; no reviewed unambiguous role map is supplied.",
+      "Native async event-loop/socketpair setup has no reviewed route satisfying the existing no-network/owned-resource contract; actual D-runtime branch remains unexecuted.",
+      "Complete 12-group native case/positive-negative/load schedule and duration/resource feasibility not bound to a run manifest.",
+      "D-runtime complete dependency/native-ID/ACL inventory and live normal-permission three-reader/process/Job prerequisites not accepted.",
+      "Fresh single-use native authorization is absent; all previous grants remain consumed."
+    ],
+    "source_qualification": "COMPLETE_NOT_REOPENED",
+    "aip06": "BLOCKED",
+    "completion": "5/18",
+    "paper": false,
+    "production": "NO_GO",
+    "report": "docs/AIP_06_NATIVE_ACCEPTANCE_AUTHORIZATION_PACKET_2026-11-05.md",
+    "runtime_library_pins": [
+      {
+        "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\Lib\\socket.py",
+        "sha256": "423c823130b3e26ebf5bd5645cf1d263d5e3e23c1ffcd02ddd54acb60eb7d6b5"
+      },
+      {
+        "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\Lib\\asyncio\\proactor_events.py",
+        "sha256": "b00ece2377455b6dd2069e8e7d1efd6f79b635b37feb4fc5b47471477e2d3f86"
+      },
+      {
+        "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\Lib\\asyncio\\windows_events.py",
+        "sha256": "0f94acdfd79706099961bb265a0e6431e744234cac3f572209a1653a5321fda7"
+      }
+    ],
+    "new_execution_authorization": false,
+    "ready_for_native_execution": false,
+    "packet_sha256": "562c3df70cfd5f732350b03a9173c00dd0c69f465d84dbfe604e8858b5c7bd3e"
   }
 },
   "latest_tests": {
-  "base_commit": "b92407a2d1f3197740d5bbd0e833e15701d7b690",
-  "status": "JOINED_SOURCE_QUALIFICATION_COMPLETE_NATIVE_ACCEPTANCE_PENDING",
-  "python": {
-    "passed": 1924,
-    "failed": 0,
-    "errors": 0,
-    "skipped": 0,
-    "native_launch_deselected": 5,
-    "warnings": 2,
-    "modules": 78,
-    "single_process": false,
-    "deduplicated": true
+  "base_commit": "fbd50811b7a110061a2ce7931af7d03ab5a99474",
+  "review_only": true,
+  "native_tests_executed": 0,
+  "python_tests_executed": 0,
+  "node_tests_executed": 0,
+  "historical_python_cases_independently_reread": 1924,
+  "historical_node_cases": 42,
+  "joined_35_pins_match": true,
+  "source_file_count": 88,
+  "roots_absent": {
+    "E": "D:\\Work\\Project Atlas\\logs\\diagnostics\\aip06-native-v1-20261104",
+    "P": "D:\\Work\\Project Atlas\\logs\\diagnostics\\perp-order-custody-aip06-v1-20261104",
+    "Q": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-auto-runtime-aip06-v1-20261104",
+    "F": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-fs3-report-projection-aip06-v1-20261104",
+    "N": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-aip06-v1-20261104",
+    "T": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-owned-stop-timing-aip06-v1-20261104",
+    "L": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-v5-launch-ownership-aip06-v1-20261104",
+    "S1": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-owned-11111111111111111111111111111111",
+    "S2": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-owned-22222222222222222222222222222222",
+    "S3": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-personal-pipeline-owned-33333333333333333333333333333333"
   },
-  "new_distinct_tests": 50,
-  "prior_1874_ids_preserved": true,
-  "node": {
-    "passed": 42,
-    "failed": 0,
-    "skipped": 0,
-    "cancelled": 0
-  },
-  "joined_financial_samples": 3,
-  "isolated_guards_verified": true,
-  "bootstrap_acquired_objects": "SOURCE_QUALIFIED_INJECTED_NATIVE_API",
-  "historical_unexpected_child": "GUARDED_ADAPTER_SOURCE_CONNECTED_REFUSAL_VERIFIED_NATIVE_LAUNCH_UNEXECUTED",
-  "original_financial_assertions_unchanged": true,
-  "final_crashes": 0,
-  "final_timeouts": 0,
-  "runs": {
-    "joined-regression-qualified": {
-      "label": "joined-regression-qualified",
-      "command": [
-        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-        "-B",
-        "logs/diagnostics/aip06-combined-validation-20261105/inherited_suite.py",
-        "full",
-        "joinedqualified"
-      ],
-      "parent_pid": 3576,
-      "identity": {
-        "pid": 30548,
-        "created": 134383522533755140,
-        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
-      },
-      "seconds": 179.937,
-      "timeout_limit": 600,
-      "timed_out": false,
-      "exit_code": 0,
-      "handle_closed": true,
-      "native_acceptance": false,
-      "financial_worker": false
-    },
-    "joined-financial-qualified": {
-      "label": "joined-financial-qualified",
-      "command": [
-        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-        "-B",
-        "-m",
-        "pytest",
-        "tests/test_aip06_joined_lifecycle.py",
-        "-k",
-        "three_joined",
-        "-vv",
-        "-s",
-        "-p",
-        "no:cacheprovider",
-        "-o",
-        "faulthandler_timeout=0",
-        "--basetemp",
-        "logs/diagnostics/aip06-joined-financial-qualified-temp",
-        "--junitxml",
-        "logs/diagnostics/aip06-joined-financial-qualified.xml"
-      ],
-      "parent_pid": 30920,
-      "identity": {
-        "pid": 8680,
-        "created": 134383521951136563,
-        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
-      },
-      "seconds": 378.844,
-      "timeout_limit": 600,
-      "timed_out": false,
-      "exit_code": 0,
-      "handle_closed": true,
-      "native_acceptance": false,
-      "financial_worker": false
-    },
-    "joined-sides-qualified": {
-      "label": "joined-sides-qualified",
-      "command": [
-        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-        "-B",
-        "-m",
-        "pytest",
-        "tests/test_aip06_joined_lifecycle.py",
-        "-k",
-        "not three_joined",
-        "-vv",
-        "-s",
-        "-p",
-        "no:cacheprovider",
-        "-o",
-        "faulthandler_timeout=0",
-        "--basetemp",
-        "logs/diagnostics/aip06-joined-sides-qualified-temp",
-        "--junitxml",
-        "logs/diagnostics/aip06-joined-sides-qualified.xml"
-      ],
-      "parent_pid": 3576,
-      "identity": {
-        "pid": 2244,
-        "created": 134383524333164607,
-        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
-      },
-      "seconds": 50.406,
-      "timeout_limit": 300,
-      "timed_out": false,
-      "exit_code": 0,
-      "handle_closed": true,
-      "native_acceptance": false,
-      "financial_worker": false
-    },
-    "joined-escrow-qualified": {
-      "label": "joined-escrow-qualified",
-      "command": [
-        "C:\\Users\\renal\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
-        "-B",
-        "-m",
-        "pytest",
-        "tests/test_aip06_bootstrap_objects.py",
-        "tests/test_aip06_offline_context.py",
-        "-q",
-        "-p",
-        "no:cacheprovider",
-        "-o",
-        "faulthandler_timeout=0",
-        "--basetemp",
-        "logs/diagnostics/aip06-joined-escrow-qualified-temp",
-        "--junitxml",
-        "logs/diagnostics/aip06-joined-escrow-qualified.xml"
-      ],
-      "parent_pid": 5904,
-      "identity": {
-        "pid": 1736,
-        "created": 134383521972975514,
-        "image": "c:\\users\\renal\\appdata\\local\\programs\\python\\python312\\python.exe"
-      },
-      "seconds": 31.343,
-      "timeout_limit": 240,
-      "timed_out": false,
-      "exit_code": 0,
-      "handle_closed": true,
-      "native_acceptance": false,
-      "financial_worker": false
-    },
-    "joined-final-node": {
-      "label": "joined-final-node",
-      "command": [
-        "C:\\Program Files\\nodejs\\node.exe",
-        "tests/quality_dips_selected_frontend.test.cjs"
-      ],
-      "parent_pid": 31864,
-      "identity": {
-        "pid": 31220,
-        "created": 134383516187490179,
-        "image": "c:\\program files\\nodejs\\node.exe"
-      },
-      "seconds": 0.11,
-      "timeout_limit": 30,
-      "timed_out": false,
-      "exit_code": 0,
-      "handle_closed": true,
-      "native_acceptance": false,
-      "financial_worker": false
-    }
-  },
-  "preserved_failed_or_timed_out_runs": [
+  "runtime_pins": [
     {
-      "label": "joined-current-single",
-      "seconds": 183.484,
-      "exit_code": 1,
-      "timed_out": false,
-      "handle_closed": true
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\python.exe",
+      "bytes": 104952,
+      "sha256": "4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a"
     },
     {
-      "label": "joined-final-lifecycles",
-      "seconds": 600.047,
-      "exit_code": 1,
-      "timed_out": true,
-      "handle_closed": true
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\python312.dll",
+      "bytes": 6945272,
+      "sha256": "9a0e3435aaa680d868150f87ab3e388ad2eebc22f87e036155c7b4eda8cd2120"
     },
     {
-      "label": "joined-financial-1",
-      "seconds": 151.047,
-      "exit_code": 1,
-      "timed_out": false,
-      "handle_closed": true
-    },
-    {
-      "label": "joined-financial-2",
-      "seconds": 558.672,
-      "exit_code": 1,
-      "timed_out": false,
-      "handle_closed": true
-    },
-    {
-      "label": "joined-full-1",
-      "seconds": 235.812,
-      "exit_code": 1,
-      "timed_out": false,
-      "handle_closed": true
-    },
-    {
-      "label": "joined-regression-1",
-      "seconds": 140.75,
-      "exit_code": 1,
-      "timed_out": false,
-      "handle_closed": true
-    },
-    {
-      "label": "joined-smoke-1",
-      "seconds": 120.031,
-      "exit_code": 1,
-      "timed_out": true,
-      "handle_closed": true
-    },
-    {
-      "label": "joined-smoke-2",
-      "seconds": 28.75,
-      "exit_code": 1,
-      "timed_out": false,
-      "handle_closed": true
-    },
-    {
-      "label": "joined-smoke-3",
-      "seconds": 26.813,
-      "exit_code": 1,
-      "timed_out": false,
-      "handle_closed": true
-    },
-    {
-      "label": "joined-smoke-4",
-      "seconds": 28.047,
-      "exit_code": 1,
-      "timed_out": false,
-      "handle_closed": true
-    },
-    {
-      "label": "joined-smoke-5",
-      "seconds": 27.641,
-      "exit_code": 1,
-      "timed_out": false,
-      "handle_closed": true
+      "path": "C:\\Windows\\System32\\netstat.exe",
+      "bytes": 73728,
+      "sha256": "b5159cbf8739b421beec5baf1c5e60e8e5ea36b425e4374f05d95910d7fb49f3"
     }
   ],
-  "source_pin_count": 35,
-  "native_acceptance_executed": false,
-  "financial_workers_launched": false,
-  "aip06_status": "BLOCKED",
-  "completion_count": "5/18",
-  "paper_startup": false,
+  "selection": {
+    "tests/test_unified_actual_native_lanes.py": "P",
+    "tests/test_unified_source_capacity_native.py": "P",
+    "tests/test_qd_unified_shutdown.py": "Q",
+    "tests/test_perp_native_shutdown.py": "F",
+    "tests/test_personal_native_pipeline_capacity.py": "N",
+    "tests/test_personal_owned_stop_timing.py": "T"
+  },
+  "unrelated_sha256": "4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb",
+  "status": "AUTHORIZATION_PACKET_BLOCKED_EXACT_NATIVE_EXECUTION_PREREQUISITES",
+  "blockers": [
+    "No pinned top-level native controller/outer-owner command and complete run profile/manifest.",
+    "The two concurrent existing perp race children use the same target path; no reviewed unambiguous role map is supplied.",
+    "Native async event-loop/socketpair setup has no reviewed route satisfying the existing no-network/owned-resource contract; actual D-runtime branch remains unexecuted.",
+    "Complete 12-group native case/positive-negative/load schedule and duration/resource feasibility not bound to a run manifest.",
+    "D-runtime complete dependency/native-ID/ACL inventory and live normal-permission three-reader/process/Job prerequisites not accepted.",
+    "Fresh single-use native authorization is absent; all previous grants remain consumed."
+  ],
+  "source_qualification": "COMPLETE_NOT_REOPENED",
+  "aip06": "BLOCKED",
+  "completion": "5/18",
+  "paper": false,
   "production": "NO_GO",
-  "report": "docs/AIP_06_JOINED_LIFECYCLE_SOURCE_CLOSURE_2026-11-05.md"
+  "report": "docs/AIP_06_NATIVE_ACCEPTANCE_AUTHORIZATION_PACKET_2026-11-05.md",
+  "runtime_library_pins": [
+    {
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\Lib\\socket.py",
+      "sha256": "423c823130b3e26ebf5bd5645cf1d263d5e3e23c1ffcd02ddd54acb60eb7d6b5"
+    },
+    {
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\Lib\\asyncio\\proactor_events.py",
+      "sha256": "b00ece2377455b6dd2069e8e7d1efd6f79b635b37feb4fc5b47471477e2d3f86"
+    },
+    {
+      "path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-native-install-2e13e1d5b0f44498\\candidate\\python\\Lib\\asyncio\\windows_events.py",
+      "sha256": "0f94acdfd79706099961bb265a0e6431e744234cac3f572209a1653a5321fda7"
+    }
+  ],
+  "new_execution_authorization": false,
+  "ready_for_native_execution": false,
+  "packet_sha256": "562c3df70cfd5f732350b03a9173c00dd0c69f465d84dbfe604e8858b5c7bd3e"
 },
   "release_gate_state": "21 historical strict decisions unchanged,not personal administrative prerequisites;PERSONAL policy approved/source applied;financial activationNO;productionNO-GO",
   "exact_next_action": "STOP after requested source implementation/validation/report/checkpoint, relevant-only commit, non-force push and remote SHA verification. SOURCE INTEGRATION BLOCKED. Implemented: prior-reserved original-handle suspended staging/direct complete Job checks/bootstrap count fence/genuine READY import/normal release; bounded pinned native netstat and query_result; retained worker probe projection; composed three-sample accounting/query/reader/Stop release; historical identities queried in bounded groups with the same8s deadline. Exact remaining source: ChildServices.descendant_gateway is None; Broker/RemoteResources lack precreation declaration/staged-transfer/bootstrap-release forwarding; WindowsChildEndpoints.channel.verify, InheritedIdentity.verify and global WorkerOwnership still require their original leaf rosters. Bind the complete forwarded recursive graph without filtering raw Job members or accepting unaccounted births. Legacy direct-supervisor lacks the matching formal launch role and direct-unexpected lacks the descendant path: both refuse before launch. Full inherited main/probe body and four-boundary physical qualification remain unproved. No general planning milestone or new permission is substituted for these implementation gaps. Do not request native execution for the incomplete assembly. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No AIP07/native acceptance/installed launch/selection/provider/account/real Discord/PAPER/V6/Windows/Genesis operation.",
