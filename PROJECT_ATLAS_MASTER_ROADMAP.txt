@@ -16308,3 +16308,68 @@ assembly, acceptance run, or PAPER startup is authorized. B1/C1/D1/E1 and all
 21 safety decisions remain unchanged. Production remains NO-GO. Genesis
 untouched.
 ======================================================================
+
+======================================================================
+PERMANENT PRODUCT DIRECTION - OWNER DECISION - 2026-11-06
+READ THIS SECTION BEFORE PLANNING ANY ATLAS WORK.
+======================================================================
+Atlas has TWO distinct product phases. The current and overriding product
+priority is PHASE 1: PERSONAL PAPER EDITION for ONE owner on local Windows 11.
+The owner wants a usable system now, after weeks of development, to measure
+whether existing trading strategies are profitable. Avoid enterprise-scale
+architecture, unnecessary certification, and documentation-only loops.
+
+PHASE 1 - IMMEDIATE RELEASE TARGET:
+- Manual local start/stop/restart; no VPS, cloud deployment, or autostart.
+- Quality Dips research and simulated entries/exits.
+- Hyperliquid BTC/ETH/SOL PAPER trades, partial/full exits, costs and P&L.
+- Durable simulated cash, orders, positions, fee accounting and recovery.
+- Honest daily reports: net returns, drawdown, win/loss and strategy attribution.
+- Read-only dashboard backed by genuine PAPER records, with provenance/freshness.
+- Optional Discord PAPER notifications only after explicit configuration/consent.
+- Safe coexistence with Genesis: never modify or interfere with Genesis.
+- No real orders, live broker mutations, or production trading.
+- Verify an end-to-end manual local PAPER session, persistence, and clean stop.
+- Separate offline/demo test data from forward PAPER performance evidence.
+- Track seven Personal PAPER release capabilities and their acceptance status
+  separately from the historical 18-milestone AIP-06 roadmap.
+- Passing tests alone is not operational acceptance; profitability must be
+  evaluated from forward PAPER observations, net of realistic costs.
+
+PHASE 1 ENGINEERING PRIORITY RULE:
+First inspect whether AIP-06 physical native case-host/reader acceptance is
+actually a runtime dependency of PERSONAL PAPER. If not, leave that original
+native path disabled and gated, preserve all its source/tests/history, and
+finish the independent PAPER-only runtime. Do not silently bypass a safety
+gate, redefine a historical milestone, or assert 6/18 without its evidence.
+Maintain minimum practical protections: PAPER-only order isolation, accounting
+integrity, manual operation, Genesis isolation, and truthful evidence.
+Do not expand advanced native Windows ownership/security architecture unless
+it is demonstrated to be indispensable to the personal PAPER release.
+If blocked on advanced acceptance, continue other independent PAPER tasks.
+Prioritize functioning vertical slices over repeated speculative frameworks.
+
+PHASE 2 - FUTURE PUBLIC / LARGE-SCALE RELEASE, NOT CURRENT SCOPE:
+Only after the owner reviews sustained forward PAPER performance, net costs,
+drawdowns, robustness across market regimes, and decides to pursue public
+distribution, plan the next phase. Profitability is not guaranteed and is
+not, by itself, sufficient for public or live-money release.
+Then revisit AIP-06 advanced physical acceptance, independent native evidence,
+reviewed handle rights, hardened reader/Job/Stop lifecycles, multi-user
+isolation, authentication/authorization, auditability, observability,
+reliability, scalable infrastructure, deployment security, compliance/legal
+review, provider permissions, incident response, and load testing for
+potentially millions of users. Any real-money execution requires separate
+authorization, risk controls, and appropriate legal/compliance review.
+This future work is PRESERVED, NOT CANCELLED, but must not block Phase 1
+unless a specific current risk or dependency is demonstrated.
+
+CONTINUITY INSTRUCTION FOR ALL FUTURE CHATGPT/COPILOT SESSIONS:
+Read this owner decision and the latest canonical roadmap/recovery checkpoint
+before planning. Keep the two phases and two progress tracks distinct.
+Never turn Phase 1 into an enterprise/public release project by default.
+Report what is genuinely operational, what is tested only, and what remains.
+Preserve B1/C1/D1/E1, the existing 21 safety decisions, production NO-GO,
+and all prior evidence and historical milestones unless explicitly and
+properly reauthorized. Never touch Genesis.
+======================================================================
