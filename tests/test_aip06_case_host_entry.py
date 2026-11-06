@@ -101,7 +101,7 @@ def test_case_host_reads_bounded_private_handoff_and_calls_preflight(monkeypatch
     def read_input(*, maximum_bytes, timeout):
         observed.append((maximum_bytes, timeout))
         return b'{"schema":"packet"}'
-    guard.read_input = read_input
+    guard.processes.read_input = read_input
     monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
     monkeypatch.setattr(host, 'inspect', lambda p, d, g: (p, d, g))
     assert host.inspect_inherited_handoff() == (packet, descriptor, guard)
@@ -135,6 +135,7 @@ def test_case_host_rejects_invalid_private_payload_before_preflight(monkeypatch)
     guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor)),
                             read_input=lambda **kwargs: b'not-json')
     monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
+    guard.processes.read_input = guard.read_input
     monkeypatch.setattr(host, 'inspect', lambda *args: pytest.fail('preflight must not run'))
     with pytest.raises((ValueError, TypeError)):
         host.inspect_inherited_handoff()

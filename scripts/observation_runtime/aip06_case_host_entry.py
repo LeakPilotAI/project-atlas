@@ -28,7 +28,9 @@ def inspect_inherited_handoff(*, maximum_bytes=65536, timeout=6):
          and descriptor.get('targets', {}).get('case_host') == HOST_ENTRY
          and HOST_ENTRY in descriptor.get('source_pins', {}),
          'PINNED_INHERITED_CASE_HOST_COMMAND_REQUIRED')
-    packet = strict(guard.read_input(maximum_bytes=maximum_bytes, timeout=timeout).decode('utf-8'))
+    # ChildServices owns the authenticated input stream; FixtureGuard does not.
+    packet = strict(guard.processes.read_input(
+        maximum_bytes=maximum_bytes, timeout=timeout).decode('utf-8'))
     return inspect(packet, descriptor, guard)
 
 
