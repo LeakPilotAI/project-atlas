@@ -24,7 +24,9 @@ def test_case_host_main_never_promotes_failed_handoff(monkeypatch):
 
 def test_case_host_reads_bounded_private_handoff_and_calls_preflight(monkeypatch):
     observed = []
-    descriptor = {'private': 'descriptor'}
+    descriptor = {'private': 'descriptor', 'argv': ['python', '-B', host.HOST_ENTRY],
+                  'targets': {'case_host': host.HOST_ENTRY},
+                  'source_pins': {host.HOST_ENTRY: 'a' * 64}}
     packet = {'schema': 'packet'}
     guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor)))
     def read_input(*, maximum_bytes, timeout):
@@ -37,6 +39,19 @@ def test_case_host_reads_bounded_private_handoff_and_calls_preflight(monkeypatch
     assert observed == [(65536, 6)]
 
 
+@pytest.mark.parametrize('field', ['argv', 'targets', 'source_pins'])
+def test_case_host_refuses_unbound_launch_descriptor_before_read(monkeypatch, field):
+    descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
+                  'targets': {'case_host': host.HOST_ENTRY},
+                  'source_pins': {host.HOST_ENTRY: 'a' * 64}}
+    descriptor.pop(field)
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor)),
+                            read_input=lambda **kwargs: pytest.fail('read before launch verification'))
+    monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
+    with pytest.raises(ValueError, match='PINNED_INHERITED_CASE_HOST_COMMAND_REQUIRED'):
+        host.inspect_inherited_handoff()
+
+
 @pytest.mark.parametrize('maximum_bytes,timeout', [(0, 6), (65537, 6), (65536, 0), (65536, 7), (True, 6), (65536, True)])
 def test_case_host_rejects_unbounded_read_before_fixture_lookup(maximum_bytes, timeout, monkeypatch):
     monkeypatch.setattr(host, 'require_fixture', lambda name: pytest.fail('unexpected fixture lookup'))
@@ -45,7 +60,10 @@ def test_case_host_rejects_unbounded_read_before_fixture_lookup(maximum_bytes, t
 
 
 def test_case_host_rejects_invalid_private_payload_before_preflight(monkeypatch):
-    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor={})),
+    descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
+                  'targets': {'case_host': host.HOST_ENTRY},
+                  'source_pins': {host.HOST_ENTRY: 'a' * 64}}
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor)),
                             read_input=lambda **kwargs: b'not-json')
     monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
     monkeypatch.setattr(host, 'inspect', lambda *args: pytest.fail('preflight must not run'))

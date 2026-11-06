@@ -4,7 +4,13 @@ This entry can inspect a private handoff but cannot execute case workloads.
 It must never be invoked as an ordinary subprocess or financial worker.
 """
 
+import ntpath
+
 from app.services.paper_financial_replay import strict
+from scripts.observation_runtime.aip06_harness import BASE
+
+HOST_ENTRY = ntpath.join(ntpath.dirname(ntpath.dirname(BASE)), 'scripts',
+                         'observation_runtime', 'aip06_case_host_entry.py')
 from scripts.observation_runtime.aip06_fixture_guard import require_fixture
 from scripts.observation_runtime.aip06_harness import need
 from scripts.observation_runtime.aip06_host_preflight import inspect
@@ -16,6 +22,12 @@ def inspect_inherited_handoff(*, maximum_bytes=65536, timeout=6):
          'BOUNDED_CASE_HOST_HANDOFF_READ_REQUIRED')
     guard = require_fixture('independent-case-host-preflight')
     descriptor = guard.processes.runtime.descriptor
+    argv = descriptor.get('argv')
+    need(type(argv) in (tuple, list) and len(argv) == 3
+         and argv[1] == '-B' and argv[2] == HOST_ENTRY
+         and descriptor.get('targets', {}).get('case_host') == HOST_ENTRY
+         and HOST_ENTRY in descriptor.get('source_pins', {}),
+         'PINNED_INHERITED_CASE_HOST_COMMAND_REQUIRED')
     packet = strict(guard.read_input(maximum_bytes=maximum_bytes, timeout=timeout).decode('utf-8'))
     return inspect(packet, descriptor, guard)
 
