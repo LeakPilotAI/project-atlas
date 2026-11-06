@@ -3,15 +3,17 @@ from types import SimpleNamespace
 import pytest
 from scripts.observation_runtime.aip06_case_host_launch_intent import verify_suspended_host_before_resume
 from scripts.observation_runtime.aip06_harness import LIMITS
+from scripts.observation_runtime.aip06_native_session import Session
 
 
 def setup():
     limits = {k: LIMITS[k] for k in ('processes', 'private_bytes', 'child_private_bytes', 'cpu_ns')}
     limits['kill_on_close'] = True
-    session = SimpleNamespace(name='case_host', suspended=True, failed=False,
-        creation_attempted=True, plan={'parent_owner': 'original',
+    session = Session(name='case_host', permit={}, keys=(), argv=(), options={},
+        observer=None, plan={'parent_owner': 'original',
         'job_limits': limits, 'request': SimpleNamespace(nonce='a'*32, launch_command='pinned-command')},
-        launch_handle=101, runtime_handle=101, parent_handle=100, thread=102, job=103,
+        creation_attempted=True, launch_handle=101, runtime_handle=101,
+        parent_handle=100, thread=102, job=103,
         creation_native={'pid': 555, 'created': 12345, 'image': 'pinned-image'})
     observed = {'limits': dict(limits), 'members': [555], 'suspended': True, 'handle': 103}
     guard = SimpleNamespace(owner='original', resources=SimpleNamespace(
@@ -21,6 +23,7 @@ def setup():
     parent = {'pid': 77}
     session.observer = SimpleNamespace(observe=lambda handle: child if handle == 101 else parent,
                                        members=lambda: {555})
+    session.plan['api'] = session.observer
     return session, observed, guard
 
 
@@ -34,13 +37,14 @@ def test_original_retained_suspended_receipts_are_data_only():
     'wrong_member', 'extra_member', 'wrong_job', 'wrong_limits', 'not_suspended',
     'kill_on_close_disabled', 'retired_nonce', 'observer_wrong_pid',
     'observer_wrong_parent', 'observer_wrong_command', 'observer_extra_member',
-    'observer_wrong_creation', 'observer_wrong_image'])
+    'observer_wrong_creation', 'observer_wrong_image', 'foreign_observer'])
 def test_case_host_refuses_invalid_pre_resume_receipt(damage):
     s, job, guard = setup()
     if damage == 'resumed': s.suspended = False
     if damage == 'failed': s.failed = True
     if damage == 'no_creation': s.creation_attempted = False
     if damage == 'foreign_parent': s.plan['parent_owner'] = 'foreign'
+    if damage == 'foreign_observer': s.plan['api'] = object()
     if damage == 'foreign_handle': s.runtime_handle = 104
     if damage == 'missing_thread': s.thread = None
     if damage == 'missing_job': s.job = None
