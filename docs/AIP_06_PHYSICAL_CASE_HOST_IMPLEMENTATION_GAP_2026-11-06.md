@@ -62,3 +62,7 @@ The 47-module offline/injected AIP-06 regression (excluding separately verified 
 ## Inherited case-host source digest regression (2026-11-06)
 
 The 47-module offline/injected AIP-06 regression (excluding separately verified joined-lifecycle) completed **1,291 passed, 0 failed**, exit code 0, in **120.12 seconds** following commit `226b2cdc`. Ten additional adversarial cases verify malformed case-host and preflight source digests are rejected before source receipts or private input. This is not physical native Windows acceptance. AIP-06 remains incomplete; daily PAPER BLOCKED and production NO-GO. B1/C1/D1/E1 and all 21 decisions unchanged. Genesis untouched.
+
+## Exact cleanup resource-set regression (2026-11-06)
+
+The 47-module offline/injected AIP-06 regression excluding separately tested joined-lifecycle completed **1,293 passed, 0 failed**, exit code 0, in **122.46 seconds** after commit `47368631`. Two additional adversarial cases require exact retained native-resource and process-slot keys before cleanup side effects. Physical Windows native acceptance remains unverified. AIP-06 incomplete, daily PAPER BLOCKED, production NO-GO; B1/C1/D1/E1 and all 21 decisions unchanged. Genesis untouched.
