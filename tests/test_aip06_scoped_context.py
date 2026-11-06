@@ -309,6 +309,40 @@ def test_ownership_probe_driver_never_runs_inside_controller(monkeypatch):
         driver.execute(Context(), {'held': False}, deadline_ns=123)
 
 
+@pytest.mark.parametrize('cut', ['before', 'between', 'after'])
+def test_ownership_probe_driver_refuses_expired_cut_without_extra_probe(cut):
+    from scripts.observation_runtime.aip06_native_scenario_bindings import OwnershipProbeDriver
+    driver = OwnershipProbeDriver()
+    calls = []
+    class Controller:
+        def clock(self):
+            return 100 if len(calls) >= {'before': 0, 'between': 1, 'after': 2}[cut] else 0
+        def probe_supervisor(self, *, deadline_ns):
+            calls.append('supervisor')
+            return 'observed'
+        def probe_unexpected_children(self, *, deadline_ns):
+            calls.append('unexpected')
+            return 'observed'
+    class Context:
+        contract = driver.contract
+        roles = driver.contract.roles
+        reservation = {'held': True}
+        controller = Controller()
+        def verify(self, *, deadline_ns):
+            pass
+        def require_execution(self):
+            pass  # Injected qualified-host stand-in; never a real host.
+    context = Context()
+    if cut == 'between':
+        context.controller.clock = lambda: 100 if calls else 0
+    if cut == 'after':
+        context.controller.clock = lambda: 100 if len(calls) == 2 else 0
+    with pytest.raises(ValueError, match='OWNERSHIP_PROBE_DEADLINE_'):
+        driver.execute(context, context.reservation, deadline_ns=100)
+    assert calls == {'before': [], 'between': ['supervisor'],
+                     'after': ['supervisor', 'unexpected']}[cut]
+
+
 def test_dispatcher_requires_explicit_physical_host_gate_even_for_context_proxy(monkeypatch):
     def check(t):
         from scripts.observation_runtime.aip06_native_scenario_bindings import NativeScenarioBinding

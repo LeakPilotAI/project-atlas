@@ -54,8 +54,12 @@ class OwnershipProbeDriver:
         need(reservation == context.reservation and reservation.get('held') is True,
              'ORIGINAL_OWNERSHIP_PROBE_RESERVATION_REQUIRED')
         context.require_execution()
-        return {'supervisor': context.controller.probe_supervisor(deadline_ns=deadline_ns),
-                'unexpected_children': context.controller.probe_unexpected_children(deadline_ns=deadline_ns)}
+        need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_BEFORE_EFFECT')
+        supervisor = context.controller.probe_supervisor(deadline_ns=deadline_ns)
+        need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_BETWEEN_EFFECTS')
+        unexpected = context.controller.probe_unexpected_children(deadline_ns=deadline_ns)
+        need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_AFTER_EFFECT')
+        return {'supervisor': supervisor, 'unexpected_children': unexpected}
 
 
 class NativeScenarioBinding:
