@@ -120,34 +120,55 @@ tests is physical Windows acceptance.
 | 9 | **Timeout, crash, replay, and partial failure** — all owner-side phases above | One-shot nonce and phase transitions; deadline is monotonic and capped by the active session; original owner retains process/Job/resource capabilities; every side effect has a preceding ledger reservation. | Each phase moves monotonically from reserved to acquired/bound to verified terminal. Retried requests are refused. On partial cleanup, already proved closures may be recorded, but unresolved capabilities remain charged and block complete release. Parent crash/owner loss is not converted into a receipt or restart adoption. | Timeout or process crash means `UNKNOWN` until original-handle/Job evidence proves a terminal outcome. Keep unresolved reservations and latch failure. A killed process does not substitute for reader evidence, Stop acknowledgment, or a complete ledger cut. | Adversarial replay/partial-close cases across case-host, descendant, reader, and native-abort tests; new duplicate-failure case verifies the unresolved state. No power-loss/Windows crash-injection result exists. |
 | 10 | **Physical acceptance evidence** — future separately authorized acceptance owner plus independent reviewer | Fresh explicit, bounded, single-use authorization scoped to exact source pins, Windows build/session, targets, roots, test matrix, resource/time budgets, and allowed cleanup; independent reader/provider binding and Stop plan reviewed first. This specification is not authorization. | Retain independently captured pre/post process identity and ancestry, pinned executable identity, exact Job limits and full roster, actual handle rights/inheritance, reader/provider process identity and all fresh source cuts, Stop ACK/DRAIN (when required), original exit code, empty Job, full resource-ledger terminal state/head, wrapper closure, timeout/replay/fault evidence, and post-run host inventory. Review receipts against actual OS observations and source pins. | Any missing, changed, late, malformed, replayed, provider-self-authored, or contradictory evidence means BLOCKED/FAIL; do not retry under the same authorization or infer qualification from injected tests. | Current suite has no independent physical Windows evidence. Required package and actual acceptance execution remain blocked by fresh authorization and security review. |
 
-## 4. Handle-rights proposal for security review (not approved)
+## 4. Handle-rights matrix and proposal validation (not approved)
 
-The API review supports a **least-rights design direction**, but the current
-code and available injected tests do not justify changing every object-specific
-mask. Before implementation, review the exact calls in
-`WindowsObjectCalls.observe`, `WindowsProcessCalls`, `WindowsFileCalls`, and the
-reader providers against the Windows access-right tables.
+Requirements below apply to the **object handle passed to the listed API**,
+not the process handles used to call `DuplicateHandle`. Microsoft documents
+limited query rights on current Windows and stricter requirements on some
+legacy versions. Atlas has not qualified a supported Windows-version range.
 
-| Object / use | Candidate minimum for observation only | Rights explicitly excluded from reader |
-|---|---|---|
-| Process: identity, lifecycle, wait, Job-membership checks | `PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE`; include `PROCESS_DUP_HANDLE` only on the process handle used as `DuplicateHandle`'s source-process handle, not on a duplicated *target object* by default. | `PROCESS_TERMINATE`, `PROCESS_CREATE_THREAD`, `PROCESS_VM_WRITE`, `PROCESS_SUSPEND_RESUME`, `PROCESS_SET_INFORMATION`. |
-| Thread: ID, owner, creation time, signaled state | `THREAD_QUERY_LIMITED_INFORMATION | SYNCHRONIZE`. | `THREAD_TERMINATE`, `THREAD_SET_CONTEXT`, `THREAD_SUSPEND_RESUME`. |
-| Job: limits, accounting, membership | `JOB_OBJECT_QUERY`. | `JOB_OBJECT_TERMINATE`, `JOB_OBJECT_ASSIGN_PROCESS`, `JOB_OBJECT_SET_ATTRIBUTES`. |
-| Pinned source file: content and metadata reads | `FILE_READ_DATA | FILE_READ_ATTRIBUTES`; `READ_CONTROL` only when the reviewed ACL inspection actually needs it. `PinnedWindowsRead` already opens through a read-only path and separately checks file ID, ACL, final path, bounds, and hash. | `FILE_WRITE_DATA`, `FILE_APPEND_DATA`, `DELETE`, `WRITE_DAC`, `WRITE_OWNER`. |
-| Access token: user SID/type observation | `TOKEN_QUERY` only if a token is in the reviewed reader scope. | Token adjustment, duplication for impersonation, or assignment rights. |
-| Pipe / synchronization object | No general mask approved. Determine exact direction and query operations; do not give a reader a writable endpoint just to observe type/capacity. | Write/read direction not required by the reader, signal/modify rights, or any close-source transfer. |
+| Handle / component | Source operations | Documented requirements | Reader proposal and exclusions | Transfer / close status |
+|---|---|---|---|---|
+| Process — `WindowsProcessCalls`, `WindowsObjectCalls`, `WindowsProcessEvidence` | `GetProcessId`, `GetProcessTimes`, `QueryFullProcessImageNameW`, `GetExitCodeProcess`, `IsProcessInJob`, `GetProcessMemoryInfo`, `WaitForSingleObject` | Query calls accept `PROCESS_QUERY_LIMITED_INFORMATION` or `PROCESS_QUERY_INFORMATION` on current Windows; `WaitForSingleObject` requires `SYNCHRONIZE`. `GetProcessMemoryInfo` accepts query-limited on modern Windows; XP/Server 2003 additionally require query-information and `PROCESS_VM_READ`. | Candidate for modern Windows observation: `PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE`. Exclude `PROCESS_DUP_HANDLE`, `PROCESS_TERMINATE`, `PROCESS_SET_QUOTA`, `PROCESS_SET_INFORMATION`, `PROCESS_SUSPEND_RESUME`, `PROCESS_VM_OPERATION`, and `PROCESS_VM_WRITE` from the reader. Legacy memory observation is blocked pending platform and least-rights review. | `PROCESS_DUP_HANDLE` is required on the source-process and target-process handles passed to `DuplicateHandle`; it is not a right on the duplicated process object. Current duplication uses `DUPLICATE_SAME_ACCESS`, so the proposal is not enforced. Original process close stays with its original owner. |
+| Thread — `WindowsObjectCalls.observe` | `GetProcessIdOfThread`, `GetThreadId`, `GetThreadTimes`, `WaitForSingleObject` | Query calls accept `THREAD_QUERY_LIMITED_INFORMATION` or `THREAD_QUERY_INFORMATION` on current Windows; waiting requires `SYNCHRONIZE`. Older versions may require the full query right. | Candidate: `THREAD_QUERY_LIMITED_INFORMATION | SYNCHRONIZE`. Exclude `THREAD_TERMINATE`, `THREAD_SUSPEND_RESUME`, `THREAD_SET_CONTEXT`, `THREAD_SET_INFORMATION`, token-setting, and impersonation rights. | Peer duplicates preserve source access today. No reader-specific thread duplicate is authorized or qualified; terminal closure needs original-owner proof. |
+| Job — `WindowsProcessCalls`, `WindowsJobEvidence` | `QueryInformationJobObject` for process list, limits, and accounting | `JOB_OBJECT_QUERY`. Assignment, setting limits, and termination separately require `JOB_OBJECT_ASSIGN_PROCESS`, `JOB_OBJECT_SET_ATTRIBUTES`, and `JOB_OBJECT_TERMINATE`. | Candidate observation right: `JOB_OBJECT_QUERY` only. Exclude assign, set-attributes, set-security-attributes, and terminate rights from the reader. | Original controller retains assignment/configuration/termination authority. Reader access is not assembled; no query-only duplicate is actually established. |
+| Access token — `WindowsFileCalls.token_identity`, `WindowsObjectCalls.observe` | `GetTokenInformation` for user SID and token type | `TOKEN_QUERY` for querying token information. | Candidate only if token identity remains in reviewed reader scope: `TOKEN_QUERY`. Exclude `TOKEN_ADJUST_*`, `TOKEN_DUPLICATE`, `TOKEN_ASSIGN_PRIMARY`, and impersonation rights. | Token duplication/opening and reader provisioning are unqualified; no token rights are transferred by the current reader entry. |
+| Pinned file/directory — `WindowsFileCalls`, `PinnedWindowsRead` | Read contents and metadata, inspect final path and ACL, close the opened handle | The source requests generic read plus `READ_CONTROL` and file attributes for pinned images; relative opens use operation-dependent NT access flags. Exact generic mapping, ACL-query needs, and directory operations must be audited per path and API. | Do not publish a single approved mask. `FILE_READ_DATA`, `FILE_READ_ATTRIBUTES`, `READ_CONTROL`, and `SYNCHRONIZE` are candidates only where the exact provider call requires them. Exclude write/append/EA/attribute, delete, DACL/owner mutation, and execute rights. | `PinnedWindowsRead` opens a separate pinned read handle; this is not peer-handle transfer. Its original owner accounts and closes it. A reader must not receive a handle to an output or writable endpoint. |
+| Pipe / event / mutant / semaphore / timer — `WindowsObjectCalls`, `WindowsChildEndpoints` | `GetFileType`, `GetNamedPipeInfo`, `NtQueryObject(ObjectTypeInformation)`, `CompareObjectHandles`, and pipe reads/writes on owner-side channels | No complete documented minimal mask has been established for the exact combined operations. Pipe endpoint direction matters; `NtQueryObject` is not a basis for a portable least-rights grant. | Blocked: no general reader mask. Exclude unused read/write direction, signal/modify, and all mutation rights. `DUPLICATE_CLOSE_SOURCE` is not an ordinary transfer mechanism. | Never use `DUPLICATE_SAME_ACCESS` as proof of least privilege. Exact endpoint rights and close ownership require review. Unknown object types remain refused. |
+| Process handles used to duplicate peer handles — `Win32ProcessCalls.duplicate` | `DuplicateHandle(source_process, source_handle, target_process, ...)` | `PROCESS_DUP_HANDLE` is required on both process handles passed as source and target. `bInheritHandle=False` makes the new handle non-inheritable. `DUPLICATE_SAME_ACCESS` ignores `dwDesiredAccess` and copies the source object's access. | Keep this capability solely in the original controller boundary; do not give it to the reader. Do not treat it as a right on the child process-object duplicate itself. | Current code passes `access=0`, selecting `DUPLICATE_SAME_ACCESS`; it does not enforce the proposed masks. No `DUPLICATE_CLOSE_SOURCE` transfer. A raised duplicate failure is unresolved escrow and cannot be replayed. |
 
-These are candidates, not an approved ABI: some functions have object- and
-Windows-version-specific requirements, and `DUPLICATE_SAME_ACCESS` cannot
-express the candidate masks. The parent must retain the separate
-`PROCESS_DUP_HANDLE` source-process capability needed to inspect a child
-handle-table entry. Never use `DUPLICATE_CLOSE_SOURCE` for ordinary transfer.
-The source handle remains owned by the child until its original owner closes it
-or the child exits.
+`scripts/observation_runtime/aip06_handle_rights.py` adds a pure proposal
+validator for documented process, thread, Job, and token query operations. It
+rejects missing operation rights, mutation/transfer rights, unknown types, and
+unknown operations. Its result is always labeled
+`UNAPPROVED_REVIEW_CANDIDATE`, with `native_handle_verified`,
+`security_approved`, and `execution_authorized` all false. File and IPC object
+masks are deliberately rejected as unreviewed.
+
+The reader input also checks its symbolic access declaration against a closed
+read-only label set and rejects mutation, duplication, inheritance, or write
+labels. This checks only the declaration; it does **not** inspect an OS handle,
+enforce an access mask, or qualify the provider host. The reviewed
+`ReaderIntent.access` remains a declaration, not an OS grant receipt.
+
+Microsoft API references used for this matrix:
+
+- [DuplicateHandle](https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-duplicatehandle)
+- [Process Security and Access Rights](https://learn.microsoft.com/en-us/windows/win32/procthread/process-security-and-access-rights)
+- [GetProcessId](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocessid)
+- [GetProcessTimes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes)
+- [GetProcessMemoryInfo](https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo)
+- [WaitForSingleObject](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitforsingleobject)
+- [Thread Security and Access Rights](https://learn.microsoft.com/en-us/windows/win32/procthread/thread-security-and-access-rights)
+- [GetThreadTimes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getthreadtimes)
+- [Job Object Security and Access Rights](https://learn.microsoft.com/en-us/windows/win32/procthread/job-object-security-and-access-rights)
+- [QueryInformationJobObject](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-queryinformationjobobject)
+- [Access Rights for Access-Token Objects](https://learn.microsoft.com/en-us/windows/win32/secauthz/access-rights-for-access-token-objects)
+- [CreateFileW](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew)
 
 ## 5. Safe source changes in this checkpoint
 
-Two fail-closed source changes are implemented and covered by injected tests:
+Three fail-closed/source-only changes are implemented and covered by injected tests:
 
 1. An owned case-host abort now proves the binding's original Job handle is the
    exact session Job. If the host is still live, it must still be a member of
@@ -161,10 +182,19 @@ Two fail-closed source changes are implemented and covered by injected tests:
    but refuses complete release while that unknown outcome remains. It does
    not refund the ticket, close the child's resource slot, or manufacture a
    successful receipt.
+3. `aip06_handle_rights.py` adds an offline proposal validator for documented
+   process, thread, Job, and token query operations. Reader-context construction
+   rejects symbolic declarations containing mutation, transfer, inheritance,
+   or write labels. The proposal result always remains unapproved and
+   unauthorized; it neither observes nor grants a Windows access mask, and
+   file/IPC masks remain blocked. An adversarial scoped-context test exercises
+   the rejection at the reader boundary.
 
-No actual Windows API was invoked by the new tests. The unresolved duplicate
-escrow intentionally remains a blocker pending review of a trustworthy
-no-target-handle proof or an independently qualified reconciliation method.
+No actual Windows API was invoked by these tests. The candidate rights are not
+connected to `DuplicateHandle`, and the symbolic reader labels do not establish
+provider identity or OS rights. The unresolved duplicate escrow intentionally
+remains a blocker pending review of a trustworthy no-target-handle proof or an
+independently qualified reconciliation method.
 
 ## 6. Human security-review decisions and next executable milestone
 

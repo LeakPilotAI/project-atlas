@@ -9,17 +9,30 @@ import ntpath
 from dataclasses import dataclass
 
 from app.services.paper_financial_replay import body, digest
+
 from scripts.observation_runtime.aip06_acceptance_grade import READERS
 from scripts.observation_runtime.aip06_controller_contract import ControllerContext
-from scripts.observation_runtime.aip06_harness import LIMITS, ROOTS, SCOPE_HASH, need, path_for
-from scripts.observation_runtime.aip06_native_scenario_bindings import bindings, contracts
+from scripts.observation_runtime.aip06_handle_rights import (
+    READER_ACCESS_LABELS,
+    validate_reader_access_declaration,
+)
+from scripts.observation_runtime.aip06_harness import (
+    LIMITS,
+    ROOTS,
+    SCOPE_HASH,
+    need,
+    path_for,
+)
+from scripts.observation_runtime.aip06_native_scenario_bindings import (
+    bindings,
+    contracts,
+)
 from scripts.observation_runtime.aip06_outputs import EvidenceOutput
 from scripts.observation_runtime.launch_ownership import identity
 
 SOURCE = ntpath.join(ntpath.dirname(ntpath.dirname(__file__)), 'observation_runtime', 'aip06_scoped_context.py')
 ACCOUNTS = (('QUALITY_DIPS', 'USD'), ('HYPERLIQUID', 'USDC'))
-ACCESS = ('PROCESS_QUERY_LIMITED_INFORMATION', 'SYNCHRONIZE', 'JOB_OBJECT_QUERY',
-          'FILE_READ_DATA', 'READ_CONTROL')
+ACCESS = READER_ACCESS_LABELS
 APIS = ('GetProcessTimes', 'QueryFullProcessImageNameW', 'QueryInformationJobObject',
         'GetExtendedTcpTable', 'ROOT/StandardCimv2', 'PINNED_NETSTAT', 'NATIVE_READONLY_FILE_ACL')
 
@@ -591,6 +604,8 @@ class ReaderExecutionContext:
              and set(packet) == {'schema','raw','manifest','case','reader','request','nonce','owner','parent_owner'}
              and packet['schema'] == 'AIP06_SCOPED_READER_INPUT_V1'
              and len(body(packet).encode()) <= 65536, 'CLOSED_PRIVATE_READER_INPUT')
+        need(type(packet['reader']) is dict, 'EXACT_READER_ACCESS_DECLARATION_REQUIRED')
+        validate_reader_access_declaration(packet['reader'].get('access'))
         self.guard, self.packet, self.adapters, self.acl_reader = guard, copy.deepcopy(packet), adapters, acl_reader
         intent = ControllerIntent(packet['raw'].encode(), packet['manifest']); self.plan = intent.plan()
         need(SOURCE in self.plan['source_pins'] and READER_ENTRY in self.plan['source_pins'], 'READER_CONTEXT_PINNED_SOURCES')

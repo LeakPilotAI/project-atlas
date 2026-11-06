@@ -779,6 +779,7 @@ def test_reader_lease_cannot_adopt_or_redeclare_a_native_identity(monkeypatch,da
 @pytest.mark.parametrize('damage',['', 'owner-collision','stale-identity','missing-job','missing-reader','acl-denied',
                                   'state-zero','pid-zero-listener','reader-error','survivor','stale-reply','wrong-reply','timeout',
                                   'missing-ack','duplicate-ack','replay','result-tamper','wrong-private-scope','wrong-access',
+                                  'forbidden-access',
                                   'raw-not-dict','raw-cuts-not-list','raw-cuts-short','raw-cut-time-string'])
 def test_separate_reader_context_private_frames_and_complete_parent_release(monkeypatch,damage):
     def start(t):
@@ -791,10 +792,13 @@ def test_separate_reader_context_private_frames_and_complete_parent_release(monk
         packet=parent.prepare(request,deadline_ns=t.x.now[0]+10**9)
         if damage=='wrong-private-scope':packet['case']['accounts']=[['QUALITY_DIPS','USDC']]
         if damage=='wrong-access':packet['reader']['access']=[]
+        if damage=='forbidden-access':
+            packet['reader']['access']=(*packet['reader']['access'],'PROCESS_TERMINATE')
         def after():
             try:
                 if damage in ('owner-collision','stale-identity','missing-job','missing-reader','acl-denied',
-                              'state-zero','pid-zero-listener','reader-error','survivor','wrong-private-scope','wrong-access'):
+                              'state-zero','pid-zero-listener','reader-error','survivor','wrong-private-scope','wrong-access',
+                              'forbidden-access'):
                     with pytest.raises((ValueError,KeyError)):r.run_reader(packet)
                 else:
                     r.run_reader(packet)

@@ -22864,9 +22864,11 @@
     "reconciled_at": "2026-11-06",
     "branch": "chatgpt/atlas-rebuild-v1",
     "base_commit": "420e238996e4b4a5ed814b9a791efde7dc929156",
-    "latest_verified_source_commit": "7e60e550dbf5833b236ab6f460f44d43337e0a07",
+    "latest_verified_source_commit": "d55df0055d9eca54b411dda4a52c2137e5a3d3eb",
     "source_commit_pushed": true,
-    "remote_sha_verified": "7e60e550dbf5833b236ab6f460f44d43337e0a07",
+    "remote_sha_verified": "d55df0055d9eca54b411dda4a52c2137e5a3d3eb",
+    "continuation_changes_committed": false,
+    "continuation_remote_sha_verified": false,
     "completed_milestones": "5/18",
     "active_task": null,
     "contract": {
@@ -22879,7 +22881,9 @@
     "source_changes": [
       "Owned case-host abort checks the retained original Job identity and live membership; refuses root-only termination.",
       "Peer allocation failure latches the peer before duplication.",
-      "Indeterminate DuplicateHandle failure remains unresolved escrow, blocks replay, and prevents complete release."
+      "Indeterminate DuplicateHandle failure remains unresolved escrow, blocks replay, and prevents complete release.",
+      "Offline process/thread/Job/token reader-rights proposals reject unknown or excessive rights and remain unapproved and unauthorized.",
+      "Reader-context construction rejects forbidden symbolic access declarations; it does not inspect or grant native handle masks."
     ],
     "validation": {
       "focused_final": {
@@ -22897,9 +22901,22 @@
         "seconds": 599.74,
         "note": "The run preceded two final added adversarial tests; both are included in focused_final."
       },
+      "reader_rights_continuation": {
+        "modules": 2,
+        "passed": 149,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 31.90
+      },
+      "broader_aip06_continuation": {
+        "modules": 50,
+        "passed": 1432,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 682.36
+      },
       "python": "3.12.10",
-      "pylance_changed_python_files": "NO_ERRORS",
-      "ruff": "20 existing findings in checked files; none on changed lines; no auto-fixes",
+      "ruff_new_rights_files": "PASS",
       "git_diff_check": "PASS",
       "native_api_calls": 0,
       "native_workers_launched": 0,
@@ -22914,6 +22931,7 @@
       "Approve independent physical evidence and any separately scoped native authorization."
     ],
     "next_source_milestone_after_review": "Implement only reviewed peer-handle rights and qualified reader-provider binding behind unchanged execution refusals; test forbidden rights, partial duplication, isolation, and replay.",
+    "source_only_rights_proposal_complete": true,
     "no_unblocked_native_source_work_before_review": true,
     "paper_operational": false,
     "production": "NO-GO",

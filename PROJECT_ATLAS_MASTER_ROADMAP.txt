@@ -16210,3 +16210,47 @@ Roadmap progress remains 5/18 (27.8%). AIP-06 physical acceptance is blocked.
 Daily PAPER is not operational. B1/C1/D1/E1 and all 21 safety decisions remain
 unchanged. Production remains NO-GO. Genesis untouched.
 ======================================================================
+
+PROJECT ATLAS CONTINUATION CHECKPOINT - 2026-11-06
+======================================================================
+
+Active milestone: AIP-06 native case-host and reader ownership contract
+Status: SOURCE-ONLY RIGHTS PROPOSAL VALIDATION COMPLETE; NATIVE ASSEMBLY
+BLOCKED FOR HUMAN SECURITY REVIEW
+
+Completed in this continuation:
+- Added an offline candidate-rights validator for process, thread, Job, and
+  token query operations. Unknown object types/operations, missing operation
+  rights, and mutation/transfer capabilities are rejected. Candidate results
+  are always unapproved, not native-verified, and unauthorized.
+- Wired a closed symbolic read-only declaration check into reader-context
+  construction. Adversarial input containing PROCESS_TERMINATE is refused
+  before reader execution. Symbolic declarations are not OS handle evidence.
+- Kept file/IPC rights, actual DuplicateHandle masks, provider-host identity,
+  and independent provenance blocked rather than asserting unverified rights.
+- Expanded the native ownership contract with the proposal validator's scope
+  and explicit non-authoritative limits.
+
+Verification:
+- Focused reader-rights and scoped-context selection: 2 modules, 149 passed,
+  0 failed, 0 skipped; 31.90 seconds.
+- Full AIP-06 suite: 50 modules, 1,432 passed, 0 failed, 0 skipped;
+  682.36 seconds, Python 3.12.
+- Ruff passed on the new rights validator and its tests using the backend
+  project configuration. Existing import-order findings outside those new
+  files were not auto-fixed.
+- git diff --check passed. No Windows native API calls or workers ran.
+- Current branch and remote were both d55df0055d9eca54b411dda4a52c2137e5a3d3eb
+  before this checkpoint's changes; source changes are awaiting commit/push.
+
+No human review decision or acceptance gate is inferred from this source work.
+Roadmap progress remains 5/18 (27.8%). The next executable milestone is still
+the reviewed, type-specific peer-handle rights and qualified reader-provider
+binding. Human review must first decide exact object masks and
+PROCESS_DUP_HANDLE ownership, supported Windows/Job containment behavior,
+case-host STOP/ACK/DRAIN semantics, duplicate-failure reconciliation, reader
+provider pinning/freshness, and the independent evidence trust root. No native
+assembly, acceptance run, or PAPER startup is authorized. B1/C1/D1/E1 and all
+21 safety decisions remain unchanged. Production remains NO-GO. Genesis
+untouched.
+======================================================================
