@@ -22798,5 +22798,65 @@
     },
     "exact_next_action": "STOP_AFTER_AIP06_NATIVE_READINESS_REVIEW_DOCS_CHECKPOINT_COMMIT_NONFORCE_PUSH_REMOTE_SHA_VERIFY. Next source-only AIP06 native-harness preparation as specified in docs/AIP_06_NATIVE_ACCEPTANCE_READINESS_REVIEW_2026-11-04.md before a fresh executable native approval package. No native execution/installed/provider/account/financial/PAPER/V6/Windows changes. AIP06BLOCKED;5of18complete;PAPER:NO;production:NO-GO."
   }
-}
+},
+  "aip06_batch2_reconciliation_20261106": {
+    "status": "BLOCKED_NO_SAFE_SOURCE_ONLY_MILESTONE",
+    "reconciled_at": "2026-11-06",
+    "branch": "chatgpt/atlas-rebuild-v1",
+    "verified_head_before_checkpoint": "828c448b56113637b7fabfc9a62c2600b2ef9802",
+    "verified_remote_head_before_checkpoint": "828c448b56113637b7fabfc9a62c2600b2ef9802",
+    "completed_milestones": "5/18",
+    "active_task": null,
+    "last_completed_source_milestone": "AIP-06 original-owner abort cleanup integration",
+    "latest_source_commit": "5eb08f104214718d3fb5b4598407faf9771ae11e",
+    "latest_pushed_status_commit": "828c448b56113637b7fabfc9a62c2600b2ef9802",
+    "validation": {
+      "aip06_full_suite_previous_run": {
+        "modules": 50,
+        "passed": 1397,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 620.66
+      },
+      "aip06_focused_this_checkpoint": {
+        "modules": 8,
+        "passed": 269,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 33.08
+      },
+      "free_research_pipeline_this_checkpoint": {
+        "passed": 48,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 2.48
+      },
+      "native_acceptance": false
+    },
+    "remaining_tasks": {
+      "AIP06_case_reader_controller_source_integration": {
+        "status": "BLOCKED_REVIEWED_NATIVE_HANDLE_PROVIDER_CONTRACT",
+        "dependency": "A reviewed exact contract is needed for original-handle peer transfer, reader-provider ownership, failed-open escrow, and terminal release. Existing coordinator/input/reader/ownership-probe components are source-only; no production call site assembles the separate physical hosts. Do not invent handle rights or execution flow."
+      },
+      "AIP06_physical_native_acceptance": {
+        "status": "BLOCKED_AUTHORIZATION_AND_INDEPENDENT_EVIDENCE",
+        "dependency": "Fresh explicit single-use bounded native authorization and independently observed Windows process, Job, reader, Stop, and completion-receipt evidence."
+      },
+      "AIP03_AIP04_AIP05_and_PAPER_operations": {
+        "status": "BLOCKED_EXTERNAL_OPERATIONAL_ACCEPTANCE",
+        "dependency": "Accepted native custody/runtime, current entitled provider evidence, financial enrollment/inception/reconciliation/risk/Stop/restart acceptance, read-only browser acceptance, and separately consented Discord transport where relevant."
+      }
+    },
+    "source_scope_status": {
+      "AIP02": "COMPLETE_SOURCE_ONLY_DISPOSABLE",
+      "AIP03": "COMPLETE_SOURCE_ONLY_DISPOSABLE",
+      "AIP04": "COMPLETE_SOURCE_ONLY_DISPOSABLE",
+      "AIP05": "COMPLETE_SOURCE_ONLY_DISPOSABLE"
+    },
+    "paper_operational": false,
+    "production": "NO-GO",
+    "genesis_access": false,
+    "preexisting_dirty_and_untracked_files_preserved": true,
+    "next_action": "Wait for the reviewed exact original-handle/provider-transfer contract and separate explicit native authorization/evidence. No unblocked source-only milestone identified; do not launch native execution or claim PAPER operational."
+  }
 }
