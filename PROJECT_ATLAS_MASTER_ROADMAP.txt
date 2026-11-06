@@ -16240,8 +16240,9 @@ Verification:
   project configuration. Existing import-order findings outside those new
   files were not auto-fixed.
 - git diff --check passed. No Windows native API calls or workers ran.
-- Current branch and remote were both d55df0055d9eca54b411dda4a52c2137e5a3d3eb
-  before this checkpoint's changes; source changes are awaiting commit/push.
+- The source and checkpoint changes are committed as
+  f96de9c96254505bf90943e45421042ffca17b0a and pushed non-force to
+  chatgpt/atlas-rebuild-v1; the remote SHA was independently verified.
 
 No human review decision or acceptance gate is inferred from this source work.
 Roadmap progress remains 5/18 (27.8%). The next executable milestone is still
