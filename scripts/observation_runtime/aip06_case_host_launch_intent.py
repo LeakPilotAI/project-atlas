@@ -99,6 +99,11 @@ def verify_reserved_suspended_plan(guard, argv, plan):
 def verify_suspended_host_before_resume(session, job, guard):
     """Check original suspended session receipts; not native acceptance authority."""
     port = getattr(guard.processes, 'port', guard.processes)
+    from scripts.observation_runtime.aip06_native_session import Session
+    need(type(session) is Session and type(session.plan) is dict
+         and getattr(session.plan.get('request'), 'nonce', None) is not None
+         and type(job) is dict,
+         'TYPED_SUSPENDED_CASE_HOST_RECEIPT_REQUIRED')
     recorded = getattr(port, 'plans', {}).get(session.plan['request'].nonce)
     need(any(retained is session for retained in port.sessions) and recorded is not None
          and recorded['plan'] is session.plan

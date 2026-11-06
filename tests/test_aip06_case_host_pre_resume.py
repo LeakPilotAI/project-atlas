@@ -91,3 +91,12 @@ def test_equal_but_unretained_session_cannot_authorize_resume():
     guard.processes.port.sessions[:] = [substituted]
     with pytest.raises(ValueError, match="ORIGINAL_RETAINED_CASE_HOST_SESSION_REQUIRED"):
         verify_suspended_host_before_resume(session, job, guard)
+
+@pytest.mark.parametrize("damage", ["missing_plan", "missing_request", "missing_job_receipt"])
+def test_malformed_pre_resume_receipts_fail_closed_before_observation(damage):
+    session, job, guard = setup()
+    if damage == "missing_plan": session.plan = None
+    if damage == "missing_request": session.plan["request"] = None
+    if damage == "missing_job_receipt": job = None
+    with pytest.raises(ValueError, match="TYPED_SUSPENDED_CASE_HOST_RECEIPT_REQUIRED"):
+        verify_suspended_host_before_resume(session, job, guard)
