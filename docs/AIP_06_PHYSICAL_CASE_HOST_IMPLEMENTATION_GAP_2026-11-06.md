@@ -21,8 +21,14 @@ Status: **BLOCKED / NO NATIVE ACCEPTANCE**. This is an implementation audit, not
 5. **Stop and cleanup:** test original owner-held Job termination, escrowed Stop, timeout, unknown child refusal, closed original handles, no leftover descendant, bounded cleanup and durable evidence on Windows under an explicitly authorized native acceptance session.
 6. **Admission:** only after independent native evidence is reviewed, define a narrowly scoped, once-only host execution gate. Never modify the unconditional `require_execution` refusal based solely on a packet, test, or self-attested flag.
 
+## Current integration checkpoint (2026-11-06)
+
+The owner-side launch-intent validator, original guarded case-host plan, suspended Job/observer checks, original session registration, and exact target-release checks now exist and have injected regression coverage (latest nine-suite run: 340 passed). They are **not** a physical acceptance result. The entry additionally checks closed native source receipts for itself and preflight.
+
+The next missing integration is **owner-to-child handoff delivery**. `CaseContext.physical_host_handoff` produces a data-only packet; `inspect_launch_intent` returns it to the owner; `aip06_case_host_entry.inspect_inherited_handoff` awaits an authenticated `ChildServices.read_input` INPUT frame. There is no reviewed owner-side case-host sender in this path connecting those ends. The original `ChildRuntime.run` executes the pinned entry after guarded RELEASE, but the entry has no qualifying handoff unless the original owner delivers it on that child's private channel. Do not substitute environment variables, stdout, a second process, or a synthetic frame.
+
 ## Next engineering slice
 
-Implement a **non-executing owner-side launch-intent validator** that consumes the original `CaseContext` reservation and exact inherited case-host command and rejects missing Job/Stop/handle escrow. Unit-test rejection against the original native controller interfaces. Do not create or resume a process until the complete owner-bound transaction and native authorization are established.
+Implement a bounded, once-only **original-owner case-host INPUT delivery** on the retained authenticated session channel, after exact BIND/RELEASE, using the original reservation and nonce. Prove the sender cannot race Stop, send to a foreign child, replay a packet, or exceed the channel's byte/deadline limits. Test via injected original transport first; retain the unconditional host refusal and production NO-GO. Physical reader, independent Stop/cleanup evidence, and native authorization remain separate later gates.
 
 Roadmap: 5/18 (27.8%); daily PAPER BLOCKED; production NO-GO. Project Genesis out of scope.
