@@ -38,7 +38,11 @@ def inspect_inherited_handoff(*, maximum_bytes=65536, timeout=6):
     verifier = ntpath.join(ntpath.dirname(HOST_ENTRY), 'aip06_host_preflight.py')
     need(verifier in descriptor['source_pins'],
          'PINNED_CASE_HOST_PREFLIGHT_SOURCE_REQUIRED')
-    guard.processes.runtime.verify_source(verifier)
+    source = guard.processes.runtime.verify_source(verifier)
+    need(type(source) is dict and source.get('path') == verifier
+         and source.get('sha256') == descriptor['source_pins'][verifier]
+         and source.get('closed') is True,
+         'CLOSED_INHERITED_PREFLIGHT_SOURCE_RECEIPT_REQUIRED')
     # ChildServices owns the authenticated input stream; FixtureGuard does not.
     packet = strict(guard.processes.read_input(
         maximum_bytes=maximum_bytes, timeout=timeout).decode('utf-8'))
