@@ -1,7 +1,8 @@
 """Fail-closed original-owner case-host orchestration boundary.
 
-This module assembles a verified data-only plan. It does not spawn, resume,
-release, send INPUT, or authorize a physical acceptance session.
+This module prepares an owner-bound plan, binds an existing guarded host,
+and delegates a single INPUT to the original guarded channel. It does not
+spawn, resume, release, or authorize physical case execution.
 """
 from scripts.observation_runtime.aip06_case_host_launch_intent import inspect_launch_intent
 from scripts.observation_runtime.aip06_harness import need
@@ -22,6 +23,8 @@ class CaseHostCoordinator:
         self.host = None
         self.handoff_attempted = False
         self.cleanup_verified = False
+        self.original_child = None
+        self.original_keys = None
 
     def prepare(self, *, deadline_ns):
         need(not self.prepared, 'CASE_HOST_COORDINATOR_REPLAY_REFUSED')
@@ -57,6 +60,8 @@ class CaseHostCoordinator:
              'ORIGINAL_GUARDED_RELEASED_CASE_HOST_REQUIRED')
         port.verify_case_host_scope_after_release(process.child)
         self.host = process
+        self.original_child = process.child
+        self.original_keys = tuple(process.keys)
         return process
 
     def deliver_handoff(self, *, deadline_ns):
@@ -75,9 +80,15 @@ class CaseHostCoordinator:
              'ORIGINAL_CASE_HOST_CLEANUP_CHECK_ONCE_ONLY')
         process = self.host
         port = getattr(self.case.guard.processes, 'port', self.case.guard.processes)
-        need(process.closed is True and process.child.closed is True
-             and any(retained is process.child for retained in port.sessions)
-             and port.resources_closed(process.child, process.keys) is True,
+        need(getattr(process, 'guard', None) is self.case.guard
+             and getattr(process, 'child', None) is self.original_child
+             and self.original_child is not None
+             and type(process.keys) in (tuple, list)
+             and tuple(process.keys) == self.original_keys
+             and bool(self.original_keys)
+             and process.closed is True and process.child.closed is True
+             and any(retained is self.original_child for retained in port.sessions)
+             and port.resources_closed(self.original_child, self.original_keys) is True,
              'ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED')
         self.cleanup_verified = True
         return True

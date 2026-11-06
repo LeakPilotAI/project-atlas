@@ -89,6 +89,28 @@ def test_cleanup_rejects_unclosed_original_host(monkeypatch):
     assert coordinator.cleanup_verified is False
 
 
+def test_cleanup_accepts_only_original_retained_resources(monkeypatch):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = SimpleNamespace(closed=True)
+    host = SimpleNamespace(guard=case.guard, child=child, keys=('original-key',), closed=True)
+    port = SimpleNamespace(sessions=[child], resources_closed=lambda session, keys:
+                           session is child and keys == ('original-key',))
+    case.guard.processes = SimpleNamespace(port=port)
+    coordinator.host = host
+    coordinator.original_child = child
+    coordinator.original_keys = ('original-key',)
+    coordinator.handoff_attempted = True
+    host.keys = ('substituted-key',)
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED'):
+        coordinator.verify_original_cleanup()
+    host.keys = ('original-key',)
+    assert coordinator.verify_original_cleanup() is True
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_CLEANUP_CHECK_ONCE_ONLY'):
+        coordinator.verify_original_cleanup()
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
