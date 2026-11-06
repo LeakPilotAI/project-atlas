@@ -78,3 +78,11 @@ The 47-module offline/injected AIP-06 regression excluding the separately verifi
 ## Post-release original session identity regression (2026-11-06)
 
 The 47-module offline/injected AIP-06 suite, excluding the separately verified joined-lifecycle module, completed **1,313 passed, 0 failed**, exit code 0, in **130.25 seconds**, following commits `5a79c802`, `ad1bacb1`, and `3d7f3715`. Eight additional adversarial cases cover guarded handoff argument typing, exact retained host identity at release, and post-release original session identity/state. These are source-level tests, **not independent native Windows acceptance**. Roadmap remains 5/18; daily PAPER BLOCKED; production NO-GO; B1/C1/D1/E1 and all 21 decisions unchanged. Genesis untouched.
+
+## Missing case-host orchestration call site (2026-11-06)
+
+Static call-site audit across `scripts/**/*.py` finds **no caller** of `CaseContext.deliver_physical_host_handoff` beyond its definition. `CaseContext.admit` invokes `inspect_launch_intent` during guarded spawn preallocation, and `FixtureGuard.spawn` verifies suspended creation, Job membership, binding and release, but neither currently sequences the original guarded case-host spawn with `deliver_physical_host_handoff` and the independent reader and Stop evidence. These are independently tested building blocks, **not a complete physical workflow**.
+
+Next implementation slice: define one owner-scoped, once-only case-host coordinator that (1) consumes the existing original held case reservation and exact pinned HOST_ENTRY command, (2) obtains the original GuardedProcess via the existing guarded spawn path, (3) invokes `case.deliver_physical_host_handoff` only after guarded release, (4) retains original process/Job and Stop ownership for bounded abort/cleanup, and (5) records independent native reader and descendant evidence. Do not invoke it or lift unconditional execution refusal until B1/C1/D1/E1 and explicit native acceptance authorization are satisfied. Add integration tests for ordering, failure/cleanup and one-shot semantics; no synthetic native acceptance claims.
+
+The 1,313-test broad regression is GREEN, but milestone status remains 5/18 (27.8%), daily PAPER BLOCKED and production NO-GO. Genesis untouched.
