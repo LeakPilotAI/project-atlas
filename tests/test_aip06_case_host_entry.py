@@ -35,6 +35,24 @@ def test_case_host_inherited_bootstrap_refuses_after_guarded_release(monkeypatch
         require_fixture('independent-case-host-preflight')
 
 
+@pytest.mark.parametrize('damage', [
+    'ancestry', 'job', 'roots', 'ledger', 'factory',
+    'source', 'source-close', 'release',
+])
+def test_case_host_inherited_bootstrap_failure_matrix_never_enters_target(damage):
+    from test_aip06_windows_adapters import bootstrap_fixture
+    f = bootstrap_fixture(damage=damage, target_override=host.HOST_ENTRY)
+    entered = []
+    with pytest.raises(ValueError):
+        f.boot.prepare()
+        f.boot.run(lambda path: entered.append(path))
+    assert entered == []
+    assert f.boot.failed
+    assert 'EXIT' not in f.events
+    with pytest.raises(ValueError):
+        f.boot.run(lambda path: pytest.fail('bootstrap refusal must be terminal'))
+
+
 def test_case_host_launch_is_exact_inherited_worker_role():
     argv = ['python', '-B', host.HOST_ENTRY]
     targets = {'case_host': host.HOST_ENTRY}
