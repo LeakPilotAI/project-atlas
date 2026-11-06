@@ -329,6 +329,17 @@ def test_final_process_cut_refuses_changed_independent_reader_identity():
     assert all(row['reader'] != 'PROCESS' for row in x.output)
 
 
+@pytest.mark.parametrize('deadline', [0, True, -1])
+def test_reader_refuses_invalid_deadline_before_native_observation(deadline):
+    x = bundle_fixture()
+    observations = []
+    x.evidence.check_reader = lambda **kw: observations.append(kw)
+    with pytest.raises(ValueError, match='INDEPENDENT_READER_DEADLINE_BEFORE_OBSERVATION'):
+        x.bundle.collect(x.request, deadline_ns=deadline)
+    assert not observations and not x.order and not x.output
+    assert x.bundle.failed and x.bundle.sequence == 0
+
+
 def test_final_process_cut_refuses_stale_collection_window():
     x = bundle_fixture()
     original_clock = x.bundle.clock

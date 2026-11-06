@@ -299,6 +299,8 @@ class WindowsReaderSet:
         need(not self.failed and self.sequence == 0,
              'WINDOWS_READER_ONCE_ONLY_COLLECTION_REQUIRED')
         self.failed = True
+        need(type(deadline_ns) is int and self.clock() < deadline_ns,
+             'INDEPENDENT_READER_DEADLINE_BEFORE_OBSERVATION')
         observer = self.processes.check_reader(deadline_ns=deadline_ns)
         rows = []
         # Socket readers first; strict process snapshot LAST. No stale summary
