@@ -8,7 +8,7 @@ from scripts.observation_runtime.aip06_case_host_launch_intent import PREFLIGHT,
 from scripts.observation_runtime.aip06_scoped_context import CaseContext
 
 
-@pytest.mark.parametrize('damage', ['wrong_digest', 'open_handle', 'wrong_path', 'missing_receipt', 'source_error', None])
+@pytest.mark.parametrize('damage', ['wrong_digest', 'open_handle', 'wrong_path', 'missing_receipt', 'source_error', 'malformed_host_pin', 'malformed_preflight_pin', None])
 def test_case_host_requires_two_closed_original_source_receipts_before_handoff(monkeypatch, damage):
     events = []
     pins = {HOST_ENTRY: 'a'*64, PREFLIGHT: 'b'*64}
@@ -37,10 +37,14 @@ def test_case_host_requires_two_closed_original_source_receipts_before_handoff(m
                 'sha256': '0'*64 if damage == 'wrong_digest' and path == PREFLIGHT else pins[path],
                 'closed': False if damage == 'open_handle' and path == PREFLIGHT else True}
     controller.verify_source = verify_source
+    if damage == 'malformed_host_pin': pins[HOST_ENTRY] = 'not-a-digest'
+    if damage == 'malformed_preflight_pin': pins[PREFLIGHT] = 'Z'*64
     if damage is not None:
         with pytest.raises(ValueError):
             inspect_launch_intent(case, ticket, deadline_ns=10**9)
         assert 'handoff' not in events
+        if damage in ('malformed_host_pin', 'malformed_preflight_pin'):
+            assert events == ['verified']
     else:
         result = inspect_launch_intent(case, ticket, deadline_ns=10**9)
         assert result['execution_authorized'] is False

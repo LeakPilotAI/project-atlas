@@ -34,6 +34,11 @@ def inspect_launch_intent(case, reservation, *, deadline_ns):
          'PINNED_NATIVE_CASE_HOST_TARGET_REQUIRED')
     need(type(plan.get('executable')) is str and plan['executable'],
          'ORIGINAL_CASE_HOST_INTERPRETER_REQUIRED')
+    need(all(type(plan['source_pins'][path]) is str
+             and len(plan['source_pins'][path]) == 64
+             and all(char in '0123456789abcdef' for char in plan['source_pins'][path])
+             for path in (HOST_ENTRY, PREFLIGHT)),
+         'VALID_ORIGINAL_CASE_HOST_SOURCE_DIGESTS_REQUIRED')
     # Pin membership is not a disk-integrity check. Reopen the two execution-
     # critical sources through the original charged native-handle verifier
     # before a guarded process can be allocated by the caller.
