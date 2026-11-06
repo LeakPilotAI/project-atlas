@@ -50,6 +50,26 @@ def test_binding_refuses_foreign_host(monkeypatch):
     assert coordinator.host is None
 
 
+def test_handoff_requires_original_bound_host(monkeypatch):
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    with pytest.raises(ValueError, match='BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED'):
+        coordinator.deliver_handoff(deadline_ns=200)
+
+
+def test_handoff_attempt_is_once_only_even_on_failure(monkeypatch):
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    coordinator.host = object()  # Isolate once-only transport behavior from native binding.
+    def refuse(*args, **kwargs):
+        raise OSError('transport failure')
+    monkeypatch.setattr(type(case), 'deliver_physical_host_handoff', refuse)
+    with pytest.raises(OSError, match='transport failure'):
+        coordinator.deliver_handoff(deadline_ns=200)
+    with pytest.raises(ValueError, match='BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED'):
+        coordinator.deliver_handoff(deadline_ns=200)
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)

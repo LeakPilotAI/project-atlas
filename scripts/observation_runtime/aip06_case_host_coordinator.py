@@ -20,6 +20,7 @@ class CaseHostCoordinator:
         self.prepared = False
         self.intent = None
         self.host = None
+        self.handoff_attempted = False
 
     def prepare(self, *, deadline_ns):
         need(not self.prepared, 'CASE_HOST_COORDINATOR_REPLAY_REFUSED')
@@ -56,6 +57,15 @@ class CaseHostCoordinator:
         port.verify_case_host_scope_after_release(process.child)
         self.host = process
         return process
+
+    def deliver_handoff(self, *, deadline_ns):
+        """Once-only original guarded INPUT; transport grants no execution authority."""
+        need(self.host is not None and not self.handoff_attempted,
+             'BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED')
+        # Mark before invoking the guarded channel: partial I/O is never replayed.
+        self.handoff_attempted = True
+        return self.case.deliver_physical_host_handoff(self.host,
+                                                       deadline_ns=deadline_ns)
 
     def execute(self, *args, **kwargs):
         raise ValueError('INDEPENDENT_PHYSICAL_CASE_HOST_NOT_AUTHORIZED')
