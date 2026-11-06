@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import os
 from contextlib import asynccontextmanager
@@ -25,6 +26,17 @@ from app.investment.quality_dips_paper import (
 )
 from app.investment.quality_dips_paper_exit_policy import evaluate_exit
 from app.investment.quality_dips_v3 import build_v3_entry_plan
+from app.services.personal_hyperliquid_public_data import (
+    HyperliquidPublicDataError,
+    initialize_public_data_budget,
+    install_public_data_budget,
+    public_data_read_model,
+    refresh_and_store_public_data,
+)
+from app.services.personal_public_market_data import (
+    market_data_read_model,
+    refresh_and_store_yahoo_public_data,
+)
 
 ACCOUNT_ID = "atlas-personal-qd-test-data-v1"
 OPENING_CASH = 1000.0
@@ -37,6 +49,24 @@ DEFAULT_JOURNAL = (
     / "data"
     / "personal_paper_test"
     / "quality_dips_paper.jsonl"
+)
+DEFAULT_MARKET_DATA = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "personal_paper_public"
+    / "quality_dips_market.jsonl"
+)
+DEFAULT_HYPERLIQUID_MARKET_DATA = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "personal_paper_public"
+    / "hyperliquid_market.jsonl"
+)
+DEFAULT_HYPERLIQUID_BUDGET = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "personal_paper_public"
+    / "hyperliquid_request_budget.sqlite3"
 )
 
 
@@ -275,16 +305,26 @@ def run_test_data_session(path: Path = DEFAULT_JOURNAL) -> dict[str, Any]:
     }
 
 
-def create_app(journal_path: Path = DEFAULT_JOURNAL) -> FastAPI:
+def create_app(
+    journal_path: Path = DEFAULT_JOURNAL,
+    market_data_path: Path = DEFAULT_MARKET_DATA,
+    hyperliquid_data_path: Path = DEFAULT_HYPERLIQUID_MARKET_DATA,
+) -> FastAPI:
     path = Path(journal_path)
+    public_data_path = Path(market_data_path)
+    hyperliquid_data = Path(hyperliquid_data_path)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         events = read_events(path)
         portfolio_snapshot(events)
+        market_data_read_model(public_data_path)
+        public_data_read_model(hyperliquid_data)
         yield
         events = read_events(path)
         portfolio_snapshot(events)
+        market_data_read_model(public_data_path)
+        public_data_read_model(hyperliquid_data)
 
     app = FastAPI(
         title="Atlas Personal Quality Dips PAPER — TEST DATA",
@@ -344,6 +384,14 @@ def create_app(journal_path: Path = DEFAULT_JOURNAL) -> FastAPI:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return build_daily_report(read_events(path), parsed_day)
 
+    @app.get("/api/market-data/quality-dips")
+    def public_market_data() -> dict[str, Any]:
+        return market_data_read_model(public_data_path)
+
+    @app.get("/api/market-data/hyperliquid")
+    def hyperliquid_public_market_data() -> dict[str, Any]:
+        return public_data_read_model(hyperliquid_data)
+
     return app
 
 
@@ -372,6 +420,8 @@ _DASHBOARD_HTML = """<!doctype html>
     <section><h2>Daily report</h2><pre id="report">Loading…</pre></section>
   </div>
   <section><h2>Durable simulated transactions</h2><pre id="trades">Loading…</pre></section>
+  <section><h2>Yahoo public market data — separate from the TEST DATA account</h2><pre id="market-data">Loading…</pre></section>
+  <section><h2>Hyperliquid public market data — BTC / ETH / SOL</h2><pre id="hyperliquid-data">Loading…</pre></section>
   <script>
     async function readLocal(path) {
       const response = await fetch(path, {cache: "no-store"});
@@ -380,9 +430,11 @@ _DASHBOARD_HTML = """<!doctype html>
     }
     async function refresh() {
       try {
-        const [status, portfolio, report, trades] = await Promise.all([
+        const [status, portfolio, report, trades, marketData, hyperliquidData] = await Promise.all([
           readLocal("/api/paper/status"), readLocal("/api/paper/portfolio"),
-          readLocal("/api/paper/report"), readLocal("/api/paper/trades")
+          readLocal("/api/paper/report"), readLocal("/api/paper/trades"),
+          readLocal("/api/market-data/quality-dips"),
+          readLocal("/api/market-data/hyperliquid")
         ]);
         document.querySelector("#freshness").textContent =
           "TEST DATA · journal records: " + status.record_count +
@@ -390,6 +442,38 @@ _DASHBOARD_HTML = """<!doctype html>
         document.querySelector("#portfolio").textContent = JSON.stringify(portfolio, null, 2);
         document.querySelector("#report").textContent = JSON.stringify(report, null, 2);
         document.querySelector("#trades").textContent = JSON.stringify(trades, null, 2);
+        document.querySelector("#market-data").textContent = marketData.record_count
+          ? JSON.stringify(marketData.latest_by_symbol.map(record => ({
+              symbol: record.symbol,
+              provider: record.provider,
+              data_provenance: record.data_provenance,
+              refresh_status: record.refresh_status,
+              retrieved_at: record.retrieved_at,
+              quote: record.quote,
+              provider_errors: record.provider_errors,
+              warnings: record.warnings,
+              historical_daily_bar_count: record.daily_bars.length,
+              recent_daily_bars: record.daily_bars.slice(-10),
+              paper_entry_authorized: record.paper_entry_authorized
+            })), null, 2)
+          : "No public market data loaded. It is fetched only by an explicit manual command.";
+        document.querySelector("#hyperliquid-data").textContent = hyperliquidData.latest
+          ? JSON.stringify({
+             data_provenance: hyperliquidData.data_provenance,
+             freshness: hyperliquidData.freshness,
+             refresh_status: hyperliquidData.latest.refresh_status,
+             retrieved_at: hyperliquidData.latest.retrieved_at,
+             request_budget_remaining: hyperliquidData.latest.request_budget_remaining,
+             current_marks: hyperliquidData.latest.current_marks,
+             daily_bar_counts: Object.fromEntries(
+               Object.entries(hyperliquidData.latest.daily_bars).map(([symbol, bars]) => [symbol, bars.length])
+             ),
+             provider_errors: hyperliquidData.latest.provider_errors,
+             websocket_started: hyperliquidData.latest.websocket_started,
+             paper_entry_authorized: hyperliquidData.paper_entry_authorized,
+             operational_acceptance: hyperliquidData.operational_acceptance
+           }, null, 2)
+          : "No Hyperliquid public data loaded. Fetches require an explicit manual command and request budget.";
         document.querySelector("#error").textContent = "";
       } catch (error) {
         document.querySelector("#freshness").textContent = "Local PAPER data unavailable.";
@@ -407,15 +491,134 @@ def main(argv: list[str] | None = None) -> None:
         description="Standalone loopback Quality Dips PAPER app using TEST DATA only."
     )
     parser.add_argument("--data-path", type=Path, default=DEFAULT_JOURNAL)
+    parser.add_argument("--market-data-path", type=Path, default=DEFAULT_MARKET_DATA)
+    parser.add_argument(
+        "--hyperliquid-data-path",
+        type=Path,
+        default=DEFAULT_HYPERLIQUID_MARKET_DATA,
+    )
+    parser.add_argument(
+        "--hyperliquid-budget-path",
+        type=Path,
+        default=DEFAULT_HYPERLIQUID_BUDGET,
+    )
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument(
         "--run-test-data",
         action="store_true",
         help="execute the fixed offline V3 entry/exit lifecycle and print its records",
     )
+    parser.add_argument(
+        "--fetch-yahoo-public-data",
+        metavar="SYMBOL",
+        help="manually fetch timestamped Yahoo 1-minute data and 5-year daily bars for one symbol",
+    )
+    parser.add_argument(
+        "--initialize-hyperliquid-public-data-budget",
+        action="store_true",
+        help="create the durable 12-request public-info-only budget; no network request is made",
+    )
+    parser.add_argument(
+        "--fetch-hyperliquid-public-data",
+        action="store_true",
+        help="manually fetch public BTC/ETH/SOL mark and bounded daily candle data",
+    )
+    parser.add_argument(
+        "--confirm-read-only-public-data",
+        action="store_true",
+        help="confirm this explicit command is authorized to request public market data",
+    )
     args = parser.parse_args(argv)
+    modes = [
+        args.run_test_data,
+        bool(args.fetch_yahoo_public_data),
+        args.initialize_hyperliquid_public_data_budget,
+        args.fetch_hyperliquid_public_data,
+    ]
+    if sum(modes) > 1:
+        parser.error("Choose only one explicit data or TEST DATA command at a time")
+    if (
+        (args.fetch_yahoo_public_data or args.initialize_hyperliquid_public_data_budget
+         or args.fetch_hyperliquid_public_data)
+        and not args.confirm_read_only_public_data
+    ):
+        parser.error("public market-data commands require --confirm-read-only-public-data")
     if args.run_test_data:
         print(json.dumps(run_test_data_session(args.data_path), indent=2, sort_keys=True))
+        return
+    if args.fetch_yahoo_public_data:
+        record = asyncio.run(
+            refresh_and_store_yahoo_public_data(
+                args.fetch_yahoo_public_data,
+                args.market_data_path,
+            )
+        )
+        sessions = [bar["date"] for bar in record["daily_bars"]]
+        print(json.dumps({
+            "schema": record["schema"],
+            "symbol": record["symbol"],
+            "provider": record["provider"],
+            "data_provenance": record["data_provenance"],
+            "refresh_status": record["refresh_status"],
+            "quote": record["quote"],
+            "daily_bar_count": len(sessions),
+            "first_session": sessions[0] if sessions else None,
+            "last_session": sessions[-1] if sessions else None,
+            "provider_errors": record["provider_errors"],
+            "record_id": record["record_id"],
+            "market_data_path": str(args.market_data_path),
+        }, indent=2, sort_keys=True))
+        return
+    if args.initialize_hyperliquid_public_data_budget:
+        from app.adapters.hyperliquid_request_gate import RequestGateRefused
+
+        try:
+            remaining = initialize_public_data_budget(args.hyperliquid_budget_path)
+        except (HyperliquidPublicDataError, RequestGateRefused) as exc:
+            parser.error(str(exc))
+        print(json.dumps({
+            "status": "INITIALIZED_OR_VALIDATED",
+            "request_budget_remaining": remaining,
+            "maximum_requests": 12,
+            "budget_path": str(args.hyperliquid_budget_path),
+            "network_requests_made": 0,
+            "authorization_scope": "PUBLIC_INFO_READ_ONLY",
+        }, indent=2, sort_keys=True))
+        return
+    if args.fetch_hyperliquid_public_data:
+        from app.adapters.hyperliquid import HyperliquidAdapter
+        from app.adapters.hyperliquid_request_gate import RequestGateRefused
+
+        try:
+            gate = install_public_data_budget(args.hyperliquid_budget_path)
+            record = asyncio.run(
+                refresh_and_store_public_data(
+                    HyperliquidAdapter(),
+                    request_budget=gate,
+                    path=args.hyperliquid_data_path,
+                )
+            )
+        except (HyperliquidPublicDataError, RequestGateRefused) as exc:
+            parser.error(str(exc))
+        counts = {
+            symbol: len(rows)
+            for symbol, rows in record["daily_bars"].items()
+        }
+        print(json.dumps({
+            "schema": record["schema"],
+            "refresh_status": record["refresh_status"],
+            "data_provenance": record["data_provenance"],
+            "retrieved_at": record["retrieved_at"],
+            "record_id": record["record_id"],
+            "current_marks": record["current_marks"],
+            "daily_bar_counts": counts,
+            "provider_errors": record["provider_errors"],
+            "request_budget_remaining": record["request_budget_remaining"],
+            "websocket_started": record["websocket_started"],
+            "private_account_accessed": record["private_account_accessed"],
+            "order_endpoint_used": record["order_endpoint_used"],
+            "hyperliquid_data_path": str(args.hyperliquid_data_path),
+        }, indent=2, sort_keys=True))
         return
     if not 1024 <= args.port <= 65535:
         parser.error("--port must be between 1024 and 65535")
@@ -446,7 +649,15 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit(3)
 
 
-app = create_app(Path(os.environ.get("ATLAS_PERSONAL_PAPER_DATA_PATH", DEFAULT_JOURNAL)))
+app = create_app(
+    Path(os.environ.get("ATLAS_PERSONAL_PAPER_DATA_PATH", DEFAULT_JOURNAL)),
+    hyperliquid_data_path=Path(
+        os.environ.get(
+            "ATLAS_PERSONAL_HYPERLIQUID_DATA_PATH",
+            DEFAULT_HYPERLIQUID_MARKET_DATA,
+        )
+    ),
+)
 
 if __name__ == "__main__":
     main()

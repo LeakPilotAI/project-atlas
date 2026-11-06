@@ -223,6 +223,16 @@ class HyperliquidAdapter:
         await self.refresh_universe()
         await self.start_mids_ws()
 
+    async def connect_http_only(self) -> None:
+        """Prepare gated public HTTP reads without starting the WebSocket worker."""
+        hyperliquid_gate_registry.require_gate()
+        if self._client is None:
+            self._client = httpx.AsyncClient(
+                timeout=httpx.Timeout(30.0, connect=10.0),
+                headers={"Content-Type": "application/json"},
+            )
+        self._connected = True
+
     async def close(self) -> None:
         with self._paper_cache_lock:
             self._paper_cache={k:{} for k in ('books','funding','candles','trades')}

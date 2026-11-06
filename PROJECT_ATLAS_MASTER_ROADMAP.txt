@@ -1,3 +1,72 @@
+PERSONAL PAPER RELEASE UPDATE - 2026-11-06
+This dated update supersedes only stale "CURRENT CHECKPOINT" summaries below.
+Historical roadmap evidence and original milestone count remain unchanged.
+
+Verified branch: chatgpt/atlas-rebuild-v1
+Verified base before this integration: cbf8590fd127a19fafdcc70006922f60fdd39cd8
+Original roadmap completion remains 5/18. Production remains NO-GO.
+AIP-06 native execution and all existing activation gates remain blocked.
+
+PERSONAL PAPER - HYPERLIQUID PUBLIC DATA / READ-ONLY DASHBOARD
+Implemented a manual-only, public-info-only BTC/ETH/SOL market-data refresh
+using the existing Hyperliquid adapter's HTTP-only path. It does not start the
+adapter WebSocket, access private account endpoints, submit orders, update the
+TEST DATA account, or run automatically.
+
+The explicit initialization command creates or validates a durable maximum
+12-attempt request budget; it never resets existing attempts. The manual
+snapshot uses four bounded public-info requests (one mark snapshot plus three
+365-day daily-candle requests), separated by a one-second delay, with a
+30-second local refresh cooldown. Every request remains subject to the
+existing default-deny durable gate. Public market records are stored separately
+from simulated account journals and explicitly deny paper-entry authority.
+
+The separately gated Yahoo Quality Dips public-data feed is also included in
+this integration. Earlier authorized manual evidence persisted one MSFT
+1-minute bar and 1,255 daily bars (2021-11-08 through 2026-11-06); its
+read-only API returned the same persisted record. That quote was labeled LIVE
+under its retrieval-time freshness rule at that earlier retrieval only. It is
+not a current quote, was not normalized into V3 valuation evidence, and was
+not connected to the TEST DATA account.
+
+Manual local evidence on 2026-11-06:
+- Public snapshot status COMPLETE; BTC, ETH, SOL each returned 365 daily bars.
+- No provider errors. Four request attempts consumed; eight of twelve remain.
+- Current mark values are provider mark prices. Their timestamp is explicitly
+  REST_REQUEST_START, not an exchange/provider event timestamp; retrieval-age
+  is recorded and no provider timestamp is claimed.
+- Local GET /api/market-data/hyperliquid returned HTTP 200 and the same record
+  id as the durable journal. The Quality Dips account remained TEST_DATA with
+  zero records. Dashboard API is read-only (POST returns 405 in tests).
+- Dashboard freshness is computed dynamically from local retrieval time only;
+  a follow-up readback correctly classified the older snapshot as
+  STALE_LOCAL_RETRIEVAL. It never claims a provider event timestamp.
+- No server, worker, WebSocket, private-account, order, Discord, or Genesis
+  action was started or observed.
+
+Validation:
+- Expanded focused Hyperliquid and Personal PAPER regression: 127 passed,
+  0 failed, 1 existing Starlette/httpx deprecation warning.
+- Hyperliquid HTTP-only refusal, no-WebSocket, request-budget, provenance,
+  partial-data, journal-corruption/replay, and read-only API tests are included.
+- Ruff and whitespace checks passed for the implementation files.
+- This is verified public-data collection and local readback, not a PAPER
+  trading acceptance. No strategy decision, transaction, account mutation,
+  profitability claim, forward-PAPER result, or production approval is implied.
+
+Exact manual public-data commands (run from backend):
+1. `.\.venv\Scripts\python.exe -m app.personal_paper --initialize-hyperliquid-public-data-budget --confirm-read-only-public-data`
+2. `.\.venv\Scripts\python.exe -m app.personal_paper --fetch-hyperliquid-public-data --confirm-read-only-public-data`
+These are separate, explicit commands. Do not run them unattended. The normal
+standalone Quality Dips TEST DATA server remains independent and uses the
+existing manual start/stop procedure in the checkpoint below.
+
+Next executable milestone: inspect and integrate public Hyperliquid observations
+as read-only inputs to the existing research/strategy projection, preserving
+the timestamp and provenance limits. Do not mutate simulated financial
+accounting or enable forward PAPER trading until its strategy, fee/funding,
+accounting, and personal-activation prerequisites are independently resolved.
+
 PROJECT ATLAS â€” MASTER CONTINUITY ROADMAP
 
 CURRENT CHECKPOINT - READ FIRST

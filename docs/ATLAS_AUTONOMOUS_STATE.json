@@ -31,6 +31,77 @@
     "broad_test_attempt": "Quality Dips wildcard was not a clean regression run: 708 passed, 36 failed, 139 errors, 167 skipped. Failures/errors included existing disposable/native cases requiring DISPOSABLE_ONLY authorization and subprocess root-import-context failures. No authorization variables were set.",
     "next_personal_paper_milestone": "Inspect the existing Hyperliquid PAPER engine and its strategy/accounting/test dependencies; determine whether a TEST DATA-only local integration can safely reuse it without provider connections, native startup, live order adapters, or weakening activation gates."
   },
+  "personal_hyperliquid_public_data_20261106": {
+    "status": "PUBLIC_DATA_REFRESH_AND_LOCAL_READ_ONLY_DASHBOARD_VERIFIED_PAPER_NOT_OPERATIONAL",
+    "base_commit": "cbf8590fd127a19fafdcc70006922f60fdd39cd8",
+    "scope": "Explicitly confirmed manual public Hyperliquid info reads for BTC/ETH/SOL through the existing HTTP-only adapter path. Separate durable public-data journal and GET-only local dashboard API. No strategy/account mutation or financial execution.",
+    "source_implemented": true,
+    "offline_regression": {
+      "passed": 128,
+      "failed": 0,
+      "skipped": 0,
+      "warnings": 1,
+      "warning": "Existing Starlette/httpx TestClient deprecation."
+    },
+    "quality_dips_yahoo_public_data": {
+      "source_implemented": true,
+      "offline_tests_included_in_regression": true,
+      "earlier_authorized_manual_refresh": true,
+      "symbol": "MSFT",
+      "intraday_bars": 1,
+      "historical_daily_bars": 1255,
+      "daily_range": "2021-11-08 through 2026-11-06",
+      "read_only_api_same_persisted_record": true,
+      "freshness_at_that_retrieval": "LIVE",
+      "freshness_is_not_current_now": true,
+      "v3_valuation_evidence_created": false,
+      "simulated_account_mutated": false,
+      "test_data_source_substituted": false
+    },
+    "manual_public_data_refresh": {
+      "attempted_provider_requests": 4,
+      "request_budget_maximum": 12,
+      "request_budget_remaining": 8,
+      "refresh_status": "COMPLETE",
+      "provider_errors": [],
+      "symbols": {
+        "BTC_daily_bars": 365,
+        "ETH_daily_bars": 365,
+        "SOL_daily_bars": 365
+      },
+      "mark_timestamp_basis": "REST_REQUEST_START",
+      "provider_timestamp_available": false,
+      "record_id": "7ddaa3709c1e5b2afe925ed854ac6c176b3bf58a347b1278027d9d1cf866416d",
+      "local_test_data_path": "backend/data/personal_paper_public/hyperliquid_market.jsonl",
+      "budget_path": "backend/data/personal_paper_public/hyperliquid_request_budget.sqlite3",
+      "git_ignored_local_data": true
+    },
+    "dashboard_readback": {
+      "route": "GET /api/market-data/hyperliquid",
+      "http_status": 200,
+      "same_durable_record_id": true,
+      "freshness_basis": "LOCAL_RETRIEVAL_TIME_ONLY",
+      "provider_timestamp_available": false,
+      "older_snapshot_readback_status": "STALE_LOCAL_RETRIEVAL",
+      "post_method": 405,
+      "quality_dips_account_provenance": "TEST_DATA",
+      "quality_dips_account_record_count": 0
+    },
+    "no_websocket_started": true,
+    "private_account_accessed": false,
+    "order_endpoint_used": false,
+    "broker_order_created": false,
+    "simulated_account_mutated": false,
+    "discord_message_sent": false,
+    "genesis_accessed": false,
+    "paper_operational": false,
+    "genuine_forward_paper_accepted": false,
+    "operational_acceptance": false,
+    "production": "NO-GO",
+    "original_roadmap": "5/18",
+    "b1_c1_d1_e1_and_21_safety_decisions_changed": false,
+    "next_personal_paper_milestone": "Integrate public Hyperliquid observations only as read-only inputs to the existing research/strategy projection; keep financial accounting unmodified and forward PAPER blocked pending strategy, cost/funding, and activation prerequisites."
+  },
   "aip06_scoped_case_reader_context_source_20261105": {
   "base_commit": "b62764a154b293d1500d06d251bad6b2bd84613d",
   "status": "SCOPED_CONTEXT_CONTRACTS_OFFLINE_VALIDATED_PHYSICAL_CASE_READER_HOSTS_BLOCKED",
