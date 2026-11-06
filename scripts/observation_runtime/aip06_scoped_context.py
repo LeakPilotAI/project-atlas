@@ -652,7 +652,10 @@ class ReaderExecutionContext:
             need(type(raw) is dict and set(raw) >= {'native_acceptance', 'observer', 'cuts'}
                  and type(raw['cuts']) is list
                  and all(type(c) is dict and set(c) >=
-                         {'reader', 'started_ns', 'finished_ns'} for c in raw['cuts']),
+                         {'reader', 'started_ns', 'finished_ns'}
+                         and type(c['reader']) is str
+                         and type(c['started_ns']) is int
+                         and type(c['finished_ns']) is int for c in raw['cuts']),
                  'INDEPENDENT_RAW_CUT_ENVELOPE_REQUIRED')
             need(raw['native_acceptance'] is False and body(raw['observer']) == body(wire_identity(self.binding['child']))
                  and tuple(c['reader'] for c in raw['cuts']) == READERS
