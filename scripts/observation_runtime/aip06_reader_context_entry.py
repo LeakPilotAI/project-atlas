@@ -12,6 +12,10 @@ def verify_inherited_reader_source(guard):
     from scripts.observation_runtime.aip06_harness import need
     descriptor = guard.processes.runtime.descriptor
     pins = descriptor.get('source_pins')
+    argv = descriptor.get('argv')
+    need(type(argv) in (tuple, list) and len(argv) == 3
+         and argv[1] == '-B' and argv[2] == READER_ENTRY,
+         'PINNED_INHERITED_READER_COMMAND_REQUIRED')
     need(type(pins) is dict and type(pins.get(READER_ENTRY)) is str,
          'PINNED_INHERITED_READER_ENTRY_REQUIRED')
     receipt = guard.processes.runtime.verify_source(READER_ENTRY)
