@@ -1037,3 +1037,34 @@ def test_case_host_roster_requires_supervisor_role_and_original_binding(role, ac
                 runtime_handle='launch', ready=ready)
     assert roster.bindings['case_host'].request is request
     assert {row['pid'] for row in roster.verify()} == api.pids
+
+
+@pytest.mark.parametrize('damage', ['valid', 'wrong_birth', 'wrong_exit', 'wrong_role'])
+def test_case_host_abort_roster_transition_is_separate_from_normal_exit(damage):
+    s = resources()
+    api, request, ready = launch_fixture()
+    request = replace(request, role='acceptance_supervisor')
+    ready['role'] = request.role
+    roster = WorkerOwnership(s.ledger, all_members=lambda: api.pids.copy())
+    roster.prepare('case_host', request)
+    roster.bind('case_host', api=api, request=request,
+                parent_handle='parent', launch_handle='launch',
+                runtime_handle='launch', ready=ready)
+    bound = roster.bindings['case_host']
+    receipt = {'pid': bound.launch['pid'], 'created': bound.launch['created'],
+               'exited': True, 'exit_code': 1}
+    api.pids.clear()
+    api.lifecycle = lambda handle: {'pid': bound.launch['pid'],
+                                    'created': bound.launch['created'],
+                                    'exited': True, 'exit_code': 1}
+    if damage == 'wrong_birth': receipt['created'] += 1
+    if damage == 'wrong_exit': receipt['exit_code'] = True
+    if damage == 'wrong_role': bound.request = replace(bound.request, role='acceptance_worker')
+    if damage == 'valid':
+        assert roster.abort_exit('case_host', receipt) == {'verified_abort': True, 'normal_exit': False}
+        assert 'case_host' in roster.finished and bound.finished
+        assert roster.verify() == []
+    else:
+        with pytest.raises(ValueError):
+            roster.abort_exit('case_host', receipt)
+        assert 'case_host' not in roster.finished and not bound.finished
