@@ -84,8 +84,20 @@ class CaseHostCoordinator:
         need(self.host is not None and not self.handoff_attempted
              and not self.abort_attempted and not self.cleanup_verified,
              'BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED')
-        # Mark before invoking the guarded channel: partial I/O is never replayed.
+        # Mark before validation or I/O: an owner substitution must not be retried.
         self.handoff_attempted = True
+        port = getattr(self.case.guard.processes, 'port', self.case.guard.processes)
+        need(self.host.guard is self.case.guard
+             and self.host.child is self.original_child
+             and any(child is self.original_child for child in port.sessions)
+             and tuple(self.host.keys) == self.original_keys
+             and self.host.child.plan is self.host.plan
+             and self.host.child.name == 'case_host'
+             and self.host.child.closed is False
+             and self.host.closed is False
+             and self.case.factory.pending is self.case
+             and self.case.reservation is self.reservation,
+             'ORIGINAL_BOUND_HOST_HANDOFF_IDENTITY_CHANGED')
         return self.case.deliver_physical_host_handoff(self.host,
                                                        deadline_ns=deadline_ns)
 

@@ -73,7 +73,14 @@ def test_handoff_requires_original_bound_host(monkeypatch):
 def test_handoff_attempt_is_once_only_even_on_failure(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
-    coordinator.host = object()  # Isolate once-only transport behavior from native binding.
+    from types import SimpleNamespace
+    plan = {'name': 'case_host'}
+    child = SimpleNamespace(plan=plan, name='case_host', closed=False)
+    coordinator.host = SimpleNamespace(guard=case.guard, child=child,
+                                       plan=plan, keys=('original',), closed=False)
+    coordinator.original_child = child
+    coordinator.original_keys = ('original',)
+    case.guard.processes = SimpleNamespace(port=SimpleNamespace(sessions=[child]))
     def refuse(*args, **kwargs):
         raise OSError('transport failure')
     monkeypatch.setattr(type(case), 'deliver_physical_host_handoff', refuse)
@@ -336,3 +343,31 @@ def test_binding_attempt_is_consumed_before_host_type_validation(monkeypatch):
     assert coordinator.binding_attempted and coordinator.host is None
     with pytest.raises(ValueError, match='PREPARED_ONCE_ONLY_CASE_HOST_BINDING_REQUIRED'):
         coordinator.bind_existing_host(object())
+
+
+@pytest.mark.parametrize('mutation', ['child', 'keys', 'plan', 'scope', 'reservation', 'closed'])
+def test_handoff_rejects_post_binding_owner_mutation_without_replay(monkeypatch, mutation):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    plan = {'name': 'case_host'}
+    child = SimpleNamespace(plan=plan, name='case_host', closed=False)
+    host = SimpleNamespace(guard=case.guard, child=child, plan=plan,
+                           keys=('native', 'slot'), closed=False)
+    case.guard.processes = SimpleNamespace(port=SimpleNamespace(sessions=[child]))
+    coordinator.host, coordinator.original_child = host, child
+    coordinator.original_keys = ('native', 'slot')
+    if mutation == 'child': host.child = SimpleNamespace(plan=plan, name='case_host', closed=False)
+    if mutation == 'keys': host.keys = ('substituted', 'slot')
+    if mutation == 'plan': child.plan = {'name': 'case_host'}
+    if mutation == 'scope': case.factory.pending = None
+    if mutation == 'reservation': case.reservation = dict(case.reservation)
+    if mutation == 'closed': child.closed = True
+    sent = []
+    monkeypatch.setattr(type(case), 'deliver_physical_host_handoff',
+                        lambda *args, **kwargs: sent.append(True))
+    with pytest.raises(ValueError, match='ORIGINAL_BOUND_HOST_HANDOFF_IDENTITY_CHANGED'):
+        coordinator.deliver_handoff(deadline_ns=200)
+    assert not sent and coordinator.handoff_attempted
+    with pytest.raises(ValueError, match='BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED'):
+        coordinator.deliver_handoff(deadline_ns=200)
