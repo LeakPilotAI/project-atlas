@@ -34,6 +34,15 @@ def inspect_launch_intent(case, reservation, *, deadline_ns):
          'PINNED_NATIVE_CASE_HOST_TARGET_REQUIRED')
     need(type(plan.get('executable')) is str and plan['executable'],
          'ORIGINAL_CASE_HOST_INTERPRETER_REQUIRED')
+    # Pin membership is not a disk-integrity check. Reopen the two execution-
+    # critical sources through the original charged native-handle verifier
+    # before a guarded process can be allocated by the caller.
+    for path in (HOST_ENTRY, PREFLIGHT):
+        verified = controller.verify_source(path)
+        need(type(verified) is dict and verified.get('path') == path
+             and verified.get('sha256') == plan['source_pins'][path]
+             and verified.get('closed') is True,
+             'CLOSED_ORIGINAL_CASE_HOST_SOURCE_VERIFICATION_REQUIRED')
     handoff = case.physical_host_handoff(reservation, deadline_ns=deadline_ns)
     return {'schema': 'AIP06_CASE_HOST_LAUNCH_INTENT_V1',
             'argv': (plan['executable'], '-B', HOST_ENTRY),
