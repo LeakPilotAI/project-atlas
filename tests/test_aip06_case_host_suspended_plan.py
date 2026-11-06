@@ -64,3 +64,12 @@ def test_suspended_host_plan_rejects_unowned_or_unescrowed_creation(damage, monk
     if damage == 'wrong_launch_role': plan['request'].role = 'acceptance_supervisor'
     with pytest.raises(ValueError):
         verify_reserved_suspended_plan(guard, argv, plan)
+
+
+@pytest.mark.parametrize('argv', [None, 7, {}, 'python -B host',
+                                  (None, '-B', HOST_ENTRY),
+                                  (r'D:\reviewed\python.exe', '-B', HOST_ENTRY, 'extra')])
+def test_suspended_host_rejects_noncanonical_argv_before_plan_effects(argv, monkeypatch):
+    guard, _, plan = fixture(monkeypatch)
+    with pytest.raises(ValueError, match='EXACT_SUSPENDED_CASE_HOST_COMMAND'):
+        verify_reserved_suspended_plan(guard, argv, plan)

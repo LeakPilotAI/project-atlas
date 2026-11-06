@@ -62,7 +62,9 @@ def verify_reserved_suspended_plan(guard, argv, plan):
          and case.factory.pending is case and case.reservation is not None,
          'ORIGINAL_SCOPED_CASE_FOR_SUSPENDED_HOST_PLAN')
     executable = case.factory.plan['executable']
-    need(tuple(argv) == (executable, '-B', HOST_ENTRY)
+    need(type(argv) in (tuple, list) and len(argv) == 3
+         and all(type(arg) is str for arg in argv)
+         and tuple(argv) == (executable, '-B', HOST_ENTRY)
          and case.controller.profile['targets'].get('case_host') == HOST_ENTRY,
          'EXACT_SUSPENDED_CASE_HOST_COMMAND')
     need(type(plan) is dict and plan.get('parent_owner') == guard.owner
