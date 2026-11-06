@@ -286,6 +286,10 @@ def test_raw_concrete_bundle_keeps_socket_then_strict_process_order_and_cannot_g
     assert len(result['cuts'])==len(READERS) and not result['native_acceptance']
     assert x.order[-4:]==['CIM','IP_HELPER','NETSTAT','PROCESS']
     assert result['observer']==identity(x.reader.runtime)
+    previous_order = list(x.order)
+    with pytest.raises(ValueError,match='WINDOWS_READER_ONCE_ONLY_COLLECTION_REQUIRED'):
+        x.bundle.collect(x.request,deadline_ns=x.clock()+10**9)
+    assert x.order == previous_order and x.bundle.sequence == 1
     with pytest.raises(ValueError,match='NOT_QUALIFIED'): IndependentGrader.grade_native(None,result)
 
 

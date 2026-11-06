@@ -296,7 +296,8 @@ class WindowsReaderSet:
     def collect(self, request, *, deadline_ns):
         need(type(request) is dict and request.get('scope') == SCOPE_HASH and request.get('manifest') == self.pin
              and request.get('root') == ROOTS['E'], 'EXACT_WINDOWS_READER_REQUEST')
-        need(not self.failed, 'WINDOWS_READER_FAILURE_LATCHED')
+        need(not self.failed and self.sequence == 0,
+             'WINDOWS_READER_ONCE_ONLY_COLLECTION_REQUIRED')
         self.failed = True
         observer = self.processes.check_reader(deadline_ns=deadline_ns)
         rows = []
