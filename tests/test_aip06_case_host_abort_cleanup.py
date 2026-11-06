@@ -24,6 +24,7 @@ def fixture(damage=None, *, exit_code=1):
                 parent_handle='parent', launch_handle='launch',
                 runtime_handle='launch', ready=ready)
     bound = roster.bindings['case_host']
+    bound.api.job = 'job'
     slot = roster.prepared['case_host']['slots'][0]
     native_key = 'native-session-handle'
     s.ledger.reserve(s.controller, native_key, 'handle')
@@ -44,13 +45,19 @@ def fixture(damage=None, *, exit_code=1):
             return result
 
         def in_job(self, handle, job):
-            return handle == 'launch' and job == 'job'
+            return (damage != 'outside-original-job'
+                    and handle == 'launch' and job == 'job')
 
         def terminate_owned_job(self, job):
             events.append('terminate-job')
             api.exit_codes['launch'] = exit_code
             if damage != 'incomplete-job-drain':
                 api.pids.clear()
+
+        def terminate_created(self, handle, original):
+            events.append('terminate-process')
+            api.exit_codes['launch'] = exit_code
+            api.pids.clear()
 
         def wait(self, handle, deadline_ns):
             events.append('wait')
@@ -155,6 +162,34 @@ def test_abort_refuses_bad_terminal_or_ownership_evidence_without_closing(damage
     assert not f.host.closed
     assert not f.s.ledger.state['resources'][f.slot]['closed']
     assert f.events.count('protocol-close') == 0
+
+
+def test_owned_case_host_abort_refuses_outside_job_instead_of_terminating_only_root():
+    f = fixture('outside-original-job')
+
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_JOB_MEMBERSHIP_REQUIRED'):
+        f.host.abort_case_host(deadline_ns=1000)
+
+    assert 'terminate-job' not in f.events
+    assert 'terminate-process' not in f.events
+    assert 'wait' not in f.events
+    assert 'protocol-close' not in f.events
+    assert not f.host.closed
+    assert not f.s.ledger.state['resources'][f.slot]['closed']
+
+
+def test_owned_case_host_abort_refuses_substituted_original_job_handle():
+    f = fixture()
+    f.bound.api.job = 'substituted-job'
+
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_ABORT_OWNER_REQUIRED'):
+        f.host.abort_case_host(deadline_ns=1000)
+
+    assert 'terminate-job' not in f.events
+    assert 'terminate-process' not in f.events
+    assert 'wait' not in f.events
+    assert 'protocol-close' not in f.events
+    assert not f.host.closed
 
 
 @pytest.mark.parametrize('damage', ['incomplete-handle-close', 'ledger-conflict'])

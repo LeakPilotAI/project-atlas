@@ -408,6 +408,104 @@ def test_retained_remote_file_release_uses_original_peer_handle_not_pid_or_decla
         assert not x.calls.handles
 
 
+def test_failed_remote_handle_duplicate_is_latched_and_kept_in_unresolved_escrow():
+    x = fixture()
+    with x.guard.installed():
+        child = x.guard.spawn([EXE, "-B", x.targets["financial_worker"]])
+        binding = child.child.binding
+        owner = digest(binding.runtime)
+        key = "child-owned-file"
+        x.ledger.reserve(owner, key, "handle")
+        attempts = []
+        original_duplicate = x.calls.duplicate
+
+        def failed_duplicate(source, handle):
+            if source == binding.runtime_handle:
+                attempts.append((source, handle))
+                raise OSError("injected unresolved DuplicateHandle outcome")
+            return original_duplicate(source, handle)
+
+        x.calls.duplicate = failed_duplicate
+        peer = RetainedPeerHandles(
+            binding=binding,
+            resources=x.ledger,
+            calls=x.calls,
+            files=None,
+            allocations=x.alloc,
+            allowed_path=x.guard.locate,
+        )
+        wire = {"child": binding.runtime, "parent": binding.parent}
+
+        with pytest.raises(OSError, match="unresolved DuplicateHandle outcome"):
+            peer.bind_native_handle(wire, key, 400)
+
+        escrow = peer.uncertain[key]
+        assert escrow["remote"] == 400
+        assert escrow["state"] == "DUPLICATE_OUTCOME_UNRESOLVED"
+        assert escrow["ticket"] in x.alloc.live
+        assert peer.failed
+        assert not x.ledger.state["resources"][key]["closed"]
+
+        with pytest.raises(ValueError, match="REMOTE_WIRE_NATIVE_PEER_CONFLICT"):
+            peer.bind_native_handle(wire, key, 400)
+        assert attempts == [(binding.runtime_handle, 400)]
+
+        x.calls.finish(child.child)
+        with pytest.raises(
+            ValueError, match="REMOTE_DUPLICATE_FAILURE_ESCROW_UNRESOLVED"
+        ):
+            peer.dispose_after_exit(deadline_ns=x.now[0] + 10**9)
+        assert escrow["ticket"] in x.alloc.live
+        assert not x.ledger.state["resources"][key]["closed"]
+
+
+def test_failed_remote_allocation_reservation_latches_before_duplicate():
+    x = fixture()
+    with x.guard.installed():
+        child = x.guard.spawn([EXE, "-B", x.targets["financial_worker"]])
+        binding = child.child.binding
+        owner = digest(binding.runtime)
+        key = "child-owned-file"
+        x.ledger.reserve(owner, key, "handle")
+        peer = RetainedPeerHandles(
+            binding=binding,
+            resources=x.ledger,
+            calls=x.calls,
+            files=None,
+            allocations=x.alloc,
+            allowed_path=x.guard.locate,
+        )
+        wire = {"child": binding.runtime, "parent": binding.parent}
+        duplicate_attempts = []
+        original_duplicate = x.calls.duplicate
+        original_reserve = x.alloc.reserve
+
+        def fail_reserve(label, kind):
+            raise OSError("injected native-allocation reservation failure")
+
+        def observed_duplicate(source, handle):
+            duplicate_attempts.append((source, handle))
+            return original_duplicate(source, handle)
+
+        x.alloc.reserve = fail_reserve
+        x.calls.duplicate = observed_duplicate
+
+        with pytest.raises(OSError, match="native-allocation reservation failure"):
+            peer.bind_native_handle(wire, key, 400)
+
+        assert peer.failed
+        assert not peer.uncertain
+        assert key not in peer.live
+        assert duplicate_attempts == []
+
+        with pytest.raises(ValueError, match="REMOTE_WIRE_NATIVE_PEER_CONFLICT"):
+            peer.bind_native_handle(wire, key, 400)
+        assert duplicate_attempts == []
+
+        x.alloc.reserve = original_reserve
+        x.calls.finish(child.child)
+
+
 @pytest.mark.parametrize(
     "damage", ["unreserved", "foreign", "wrong-handle", "wrong-owner"]
 )

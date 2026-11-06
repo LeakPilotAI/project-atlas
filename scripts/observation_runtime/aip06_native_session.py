@@ -908,6 +908,7 @@ class WindowsSessionPort:
                  and child.binding is ownership.bindings.get('case_host')
                  and child.launch_handle is not None
                  and child.job is not None
+                 and getattr(child.binding.api, 'job', None) == child.job
                  and type(child.creation_native) is dict,
                  'ORIGINAL_CASE_HOST_ABORT_OWNER_REQUIRED')
         child.failed = True
@@ -921,9 +922,13 @@ class WindowsSessionPort:
                     "ABORT_ORIGINAL_PROCESS_BIRTH_MISMATCH",
                 )
             if not life["exited"]:
-                if child.job is not None and self.calls.in_job(
+                in_original_job = child.job is not None and self.calls.in_job(
                     child.launch_handle, child.job
-                ):
+                )
+                if ownership is not None:
+                    need(in_original_job,
+                         'ORIGINAL_CASE_HOST_JOB_MEMBERSHIP_REQUIRED')
+                if in_original_job:
                     self.calls.terminate_owned_job(child.job)
                 else:
                     need(

@@ -137,3 +137,40 @@ Adversarial injected tests cover wrong parent/process identity, malformed exit r
 The full configured Python 3.12 AIP-06 selection completed **1,397 passed, 0 failed, 0 skipped across 50 test modules**, exit code 0, in 620.66 seconds. This includes the previously separate joined-lifecycle selection and final replay/owner-guard regression. The tagged free-research pipeline test file, retained as a pre-existing worktree edit and not modified here, separately completed **48 passed**. These are source/injected regressions only, not physical Windows evidence.
 
 The AIP-06 milestone remains **5/18 (27.8%)**: there is still no reviewed native controller call site assembling the authorized physical host, independent reader, authenticated input, descendant roster, and Stop escrow; no durable independent Windows acceptance evidence or fresh native authorization exists. The `execute()` and case-host entry refusals remain unconditional. Daily PAPER remains blocked/not operational, B1/C1/D1/E1 and all 21 decisions remain unchanged, production remains NO-GO, and Genesis was untouched.
+
+## Native ownership contract resolution (2026-11-06)
+
+The source/API investigation is captured in
+[`AIP_06_NATIVE_OWNERSHIP_CONTRACT_2026-11-06.md`](AIP_06_NATIVE_OWNERSHIP_CONTRACT_2026-11-06.md).
+It distinguishes documented Win32 requirements from Atlas assumptions and
+provides preconditions, terminal evidence, failure behavior, and existing test
+coverage for process identity, peer duplication, reader providers, failure
+escrow, Job termination, Stop, exit verification, ledger closure, and physical
+acceptance.
+
+Two fail-closed source safeguards are now covered by injected tests:
+
+- The original case-host abort path verifies that its binding retains the
+  exact session Job and refuses to terminate only the root when a live host is
+  not in that Job, or when the retained binding's Job handle is substituted.
+- A failed peer `DuplicateHandle` attempt is recorded as unresolved escrow,
+  latches the peer against replay, and prevents complete cleanup from being
+  reported or the reserved ticket from being refunded. Allocation-reservation
+  failure also latches the peer before any duplication attempt.
+
+Validation is offline/injected only: the final focused AIP-06 selection passed
+**208 tests** across four modules (0 failed, 0 skipped; 29.85 seconds). The
+broader 50-module AIP-06 run passed **1,399 tests** (0 failed, 0 skipped;
+599.74 seconds) before the final two added adversarial tests; those two were
+included in the focused run. Pylance reported no errors in changed Python
+files. Ruff reports 20 existing findings in the checked files; none point to
+the new or changed lines, and no automatic fixes were applied.
+
+These are source/injected results only. The reader provider host remains
+unqualified; no case-host STOP/ACK/DRAIN contract exists; peer transfers still
+use `DUPLICATE_SAME_ACCESS`; exact least-rights masks, unresolved duplication
+reconciliation, supported Job nesting behavior, and physical acceptance need
+human security review. No native execution, PAPER startup, or safety-gate
+change occurred. The existing case-host execution refusals remain in force.
+Roadmap remains 5/18; daily PAPER not operational; production NO-GO; Genesis
+untouched.

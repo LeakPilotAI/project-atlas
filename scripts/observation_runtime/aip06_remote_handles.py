@@ -76,6 +76,7 @@ class RetainedPeerHandles:
         )
         self.owner = digest(binding.runtime)
         self.live = {}
+        self.uncertain = {}
         self.done = set()
         self.failed = False
         self.objects, self.descendants = objects, descendants
@@ -254,8 +255,21 @@ class RetainedPeerHandles:
         if key in self.live:
             need(self.live[key]["remote"] == handle, "REMOTE_HANDLE_REBIND")
             return
-        ticket = self.allocations.reserve("remote-retained:" + key, "handle")
-        duplicate = self.calls.duplicate(self.binding.runtime_handle, handle)
+        try:
+            ticket = self.allocations.reserve("remote-retained:" + key, "handle")
+        except BaseException:
+            self.failed = True
+            raise
+        try:
+            duplicate = self.calls.duplicate(self.binding.runtime_handle, handle)
+        except BaseException:
+            self.uncertain[key] = {
+                "remote": handle,
+                "ticket": ticket,
+                "state": "DUPLICATE_OUTCOME_UNRESOLVED",
+            }
+            self.failed = True
+            raise
         self.live[key] = {
             "remote": handle,
             "local": duplicate,
@@ -691,6 +705,7 @@ class RetainedPeerHandles:
             self.done.add(key)
             self.resources.close(self.owner, key, observer=self)
             self.deferred.remove(key)
+        need(not self.uncertain, 'REMOTE_DUPLICATE_FAILURE_ESCROW_UNRESOLVED')
         return {
             "peer": self.owner,
             "exit_code": life["exit_code"],
