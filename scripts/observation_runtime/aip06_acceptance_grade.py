@@ -36,6 +36,12 @@ class IndependentGrader:
         raise ValueError('NATIVE_READER_ATTESTATION_AND_RUNTIME_BINDING_NOT_QUALIFIED')
 
     @staticmethod
+    def inspect_scoped(context, request, *, deadline_ns):
+        from scripts.observation_runtime.aip06_scoped_context import ReaderContext, ReaderExecutionContext
+        need(type(context) in (ReaderContext, ReaderExecutionContext), 'CONCRETE_SCOPED_READER_CONTEXT_REQUIRED')
+        return context.collect(request, deadline_ns=deadline_ns)
+
+    @staticmethod
     def inspect_windows(adapters, request, *, plan, manifest_sha256, deadline_ns):
         """Collect raw concrete providers; never promote them to a native PASS.
 

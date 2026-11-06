@@ -251,6 +251,9 @@ class WindowsChildEndpoints:
             'targets':copy.deepcopy(port.controller.profile['targets']),
             'sid':getattr(port.io,'sid',None),
         }
+        case_scope = port.plans[child.plan['request'].nonce].get('case_scope')
+        if case_scope is not None:
+            descriptor['case_scope'] = copy.deepcopy(case_scope)
         raw = body(descriptor).encode()
         need(0 < len(raw) <= MAX_BOOTSTRAP, "INHERITED_DESCRIPTOR_CAPACITY")
         transport.verify_peer(wire)
@@ -481,7 +484,7 @@ class InheritedChannel:
                 "source_pins",
                 "images",
                 'lease','root_bindings','targets','sid',
-            }
+            } | ({'case_scope'} if 'case_scope' in value else set())
             and value["schema"] == DESCRIPTOR
             and value["handles"] == list(handles)
             and value["binding"]["nonce"] == nonce

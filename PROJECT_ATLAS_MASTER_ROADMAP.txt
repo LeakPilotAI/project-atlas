@@ -15520,7 +15520,8 @@ Boundary: all21decisions/B1C1D1E1 and sourcequalificationhistory preserved. No r
 Next action: STOP after scoped commit/nonforcepush/remoteSHA. Resolve these exact source contracts and producers before requesting native authorization;no AIP07/native or installed acceptance follows automatically. Completion stays5/18.
 
 === END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
-=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+=== ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+
 Milestone: AIP-06-CONTROLLER-BOOTSTRAP-CONTRACT-REPAIR (2026-11-05)
 Status: SOURCE CONTROLLER/BOOTSTRAP CONTRACT REPAIRED;NATIVE ASSEMBLY BLOCKED. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No native acceptance/financial workers or grant creation/request/consumption.
 Evidence: docs/AIP_06_NATIVE_EXECUTION_ASSEMBLY_MATRIX_2026-11-05.md;updated authorization packet;private controller-contract-result.json. 2111distinct completed Python pass,42Node pass,0finalfail/skip,5native-launch deselected,50new cases,2existing warnings,0currentcrash/timeout. Two early joined diagnostic failures preserved/corrected;old180s timeout preserved.
@@ -15528,6 +15529,15 @@ Implemented connected source: typed canonical intent and root-only controller ro
 Inventory: all10 independent readers,case host/race/fault/three Stop/COLD contexts,exact7producer rows with requirements/source/interfaces/Windows APIs/evidence/budgets/authority. F05 isrealized trading-session loss;oldsession-revocation wording superseded. F12 andownership components exist but native wrappers/contextconnections absent;F05/F06/F09/F11/bootstrap fault producers missing. Case/reader factories,target views and native result projection missing. No mock qualifies as physical/native proof.
 Integrity: candidate SHA256 35d5b799692626aacb10504e584b57ab427fa8d185e6c2151701f95d577854f4;101current source pins verified;all10 prospective native roots absent. Rootruntime/ACL/loaded origins/process/Job/socket/object/capacity/budget-fit/three complete8sStop proofs unaccepted. Public native start stillrefusal-only;successloader/redemption/backstop pending. Async socketpair fallback remainsblocked;privateapplicationpipes do notproveasyncwakecompatibility. NoWindowsconfig/provider/account/installed/Discord/PAPER/live/Genesis action. All21/B1C1D1E1 andunrelatedresearchedit/history preserved.
 Next action: STOP after scoped validated commit/nonforcepush/remoteSHA. Exact next SOURCE-ONLY execution AIP-06-SCOPED-CASE-AND-READER-CONTEXT-SOURCE-V1 frommatrix;no nativeacceptance or freshgrant request whileunready. Completion stays5/18.
+
+=== END ATLAS RETAINED CHECKPOINT HISTORY V1 ===
+=== ATLAS MANAGED CURRENT CHECKPOINT V1 ===
+Milestone: AIP-06-SCOPED-CASE-AND-READER-CONTEXT-SOURCE-V1 (2026-11-05)
+Status: SCOPED SOURCE CONTRACTS IMPLEMENTED/OFFLINE VALIDATED;PHYSICAL ASSEMBLY BLOCKED. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
+Evidence: docs/AIP_06_SCOPED_CASE_READER_CONTEXT_SOURCE_V1_2026-11-05.md;updated assembly matrix/authorization packet;private scoped-context-result.json.585 focus+1874 broader-282 overlaps=2177distinct Python pass;42Node pass;66new;0final failed/skip;5native-launch deselected;2existing warnings;0crash/timeout. Seven earlier unsuccessful commands retained,not relabelled.
+Connections: typed manifest/scenario/case/role/budget/schedule/root/evidence intent;original inherited controller and ownership graph;immutable original private descriptor views;serial shared reservations/create-new EvidenceOutput;parent retained reader lease and separate inherited reader execution;original guarded communication and correlated raw reply;three socket readers then strict process snapshot;original IO/accounting abort/release. No authority transfer,raw launcher,role/guard reset,network exception ornative PASS. Exact deadlines andUSD/USDC/account/source safeguards preserved.
+Native boundary: separately guarded historical case host and native reader-provider/local-object/NativeIO failed-open escrow assembly remain missing;explicit refusal prevents financial cases inside controller interpreter or default reader auto-load. Async Proactor/socketpair compatibility remains blocked. All7producer groups remain unbound for native PASS. Current runtime/ACL/Job/process/socket/object/capacity/Stop/outer-backstop/redemption/fresh grant evidence still missing;no new grant requested/created/consumed. Candidate SHA256 d2ee020a8433a6aac3adf4a5bd44c9e694f3288f8001de2bcc2af5e204ce0602;104current pins match;all10native roots absent. All21/B1C1D1E1,history/unrelatededit preserved.
+Next action: STOP after scoped validated commit/nonforcepush/independent remoteSHA. Next source-only host/reader/failed-open escrow closure for ONE existing OWNERSHIP-PROBES producer before expanding other six groups;no native/financial/installed/provider/account/Discord/PAPER/live/V6/browser/Windows/Genesis action. AIP06 remains BLOCKED;completion5/18.
 === END ATLAS MANAGED CURRENT CHECKPOINT V1 ===
 
 === ATLAS PHASE 2 RESEARCH MEMORY PACKAGING CHECKPOINT — 2026-10-22 ===

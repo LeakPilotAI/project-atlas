@@ -271,6 +271,16 @@ class WindowsSessionPort:
         )
         self.guard.check()
         need(self.aggregate is None or not self.aggregate.dormant, 'FRESH_SAMPLE_ENVELOPE_REQUIRED_BEFORE_LAUNCH')
+        scoped = getattr(self, 'scoped_case', None)
+        if scoped is not None:
+            scoped.admit(argv)
+        inherited = getattr(self, 'inherited_case_scope', None)
+        if inherited is not None:
+            from scripts.observation_runtime.aip06_scoped_context import verify_inherited_scope, forward_scope
+            inherited = forward_scope(inherited, self.guard)
+            verify_inherited_scope(inherited, {'binding':{'parent':self.resources.state['owners'][self.guard.owner]},
+                'source_pins':self.controller.profile['source_pins'], 'targets':self.controller.profile['targets'],
+                'argv':list(argv)})
         name = self._role(argv)
         need(
             set(options)
@@ -334,6 +344,7 @@ class WindowsSessionPort:
             "command": command,
             "options": copy.deepcopy(options),
             "parent": parent,
+            'case_scope':scoped.wire() if scoped is not None else copy.deepcopy(inherited),
         }
         self.current_plan_nonce = nonce
         return plan

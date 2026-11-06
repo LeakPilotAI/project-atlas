@@ -781,7 +781,7 @@ def test_legacy_output_does_not_manufacture_native_acceptance(damage):
     assert not output.records
 
 
-def bootstrap_fixture(damage=None, role='acceptance_worker', target_override=None, pins_override=None, controller_command=None, controller_targets=None):
+def bootstrap_fixture(damage=None, role='acceptance_worker', target_override=None, pins_override=None, controller_command=None, controller_targets=None, output_handler=None):
     x = channels()
     output = Output()
     events = []
@@ -805,7 +805,7 @@ def bootstrap_fixture(damage=None, role='acceptance_worker', target_override=Non
     observer = SimpleNamespace(
         job=300,
         parent=200,
-        members=lambda: {20},
+        members=lambda: {x.parent.binding['child']['pid']},
         observe=lambda h: copy.deepcopy(
             x.parent.binding["child" if h == 100 else "parent"]
         ),
@@ -854,6 +854,9 @@ def bootstrap_fixture(damage=None, role='acceptance_worker', target_override=Non
             x.parent.send("RELEASE", release, deadline_ns=x.s.now[0] + 6 * 10**9)
         elif incoming['kind']=='OUTPUT' and target_override is not None:
             value=incoming['payload']
+            if output_handler is not None:
+                output_handler(value)
+                return
             assert value['schema']=='AIP06_CONTROLLER_PREPARED_V1' and value['native_acceptance'] is False
             assert value['owner']==x.owner and value['manifest']==controller_command[8]
             output.append(value)

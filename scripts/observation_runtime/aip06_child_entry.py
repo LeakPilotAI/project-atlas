@@ -382,6 +382,10 @@ class ChildRuntime:
             allocations=allocations,
             protocol=protocol,
         )
+        if 'case_scope' in self.descriptor:
+            self.verify_source(ntpath.join(ntpath.dirname(__file__), 'aip06_scoped_context.py'))
+            from scripts.observation_runtime.aip06_scoped_context import verify_inherited_scope
+            port.inherited_case_scope = verify_inherited_scope(self.descriptor['case_scope'], self.descriptor)
         services = ChildServices(port, self)
         context.process_port = services
         self.identity.descendants = services.descendant_gateway.rows

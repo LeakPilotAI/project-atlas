@@ -155,6 +155,11 @@ class ControllerContext:
     root_owner: str
     nonce: str
 
+    def scoped_factory(self):
+        self.guard.processes.port.controller.verify_source(ntpath.join(ntpath.dirname(__file__), 'aip06_scoped_context.py'))
+        from scripts.observation_runtime.aip06_scoped_context import ScopedContextFactory
+        return ScopedContextFactory(self)
+
     def bind_dispatcher(self, dispatcher):
         from scripts.observation_runtime.aip06_acceptance_control import Dispatcher, GuardedScenarioBridge
         from scripts.observation_runtime.aip06_acceptance_grade import IndependentGrader

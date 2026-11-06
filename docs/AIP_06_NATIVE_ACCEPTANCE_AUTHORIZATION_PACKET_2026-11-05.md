@@ -1,3 +1,15 @@
+# CURRENT UPDATE — scoped case/reader source contracts (November 5, 2026)
+
+**SCOPED SOURCE CONTRACTS IMPLEMENTED; PHYSICAL ASSEMBLY BLOCKED.** Current report: `docs/AIP_06_SCOPED_CASE_READER_CONTEXT_SOURCE_V1_2026-11-05.md`. Typed case intents, original inherited controller/ownership graph, immutable descriptor scopes, serial shared reservations and original abort/release are connected. Parent reader lease and independent reader execution are separated; original framed source handoff and raw ten-provider/three-reader socket checks are offline-tested. Construction confers no native/financial authority.
+
+2177 distinct Python passes,42 Node passes,66 new cases,0 final failures/skips,5 native-launch deselected,2 existing warnings,0 current crashes/timeouts. Seven earlier unsuccessful diagnostic commands remain historical. Current candidate SHA256 `d2ee020a8433a6aac3adf4a5bd44c9e694f3288f8001de2bcc2af5e204ce0602`;104 source pins verified;all10 native roots absent. No native/financial/installed/provider/account/Discord/PAPER action or authorization consumption.
+
+The concrete declarations do NOT supply a separately guarded physical case host or native reader-provider/local-object/NativeIO failed-open escrow assembly. Both execution paths explicitly refuse that missing binding. Next source work: host/reader closure for one existing OWNERSHIP-PROBES producer before expanding other groups. Async Proactor/socketpair compatibility, native identity/ACL/Job/socket/object/capacity/Stop evidence, success-side outer owner/backstop/redemption and fresh single-use approval remain blocked. Seven-producer requirements unchanged; no network, safety, strategy or commissioning rule changed. AIP06 BLOCKED;5/18;PAPER NO;production NO-GO.
+
+Previous text below is unchanged historical evidence; this update supersedes only current source/readiness assessment.
+
+---
+
 # CURRENT UPDATE — controller/bootstrap contract repair (November 5, 2026)
 
 **SOURCE CONTRACT REPAIRED; NATIVE EXECUTION ASSEMBLY BLOCKED.** AIP06 BLOCKED;5/18;PAPER NO;production NO-GO. No grant created/requested/consumed, no native acceptance/financial workers, no installed/provider/account/Discord/PAPER/live action.

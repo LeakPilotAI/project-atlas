@@ -356,7 +356,8 @@ class FixtureGuard:
         )
         return None
 
-    def mkdir(self, path):
+    def mkdir(self, path, *, hold=False):
+        need(type(hold) is bool, 'EXPLICIT_DIRECTORY_RESERVATION_LIFETIME')
         intent = self.validate_path(path, create=True)
         key = self.key("directory")
         self.reserve(key, "directory", entries=1)
@@ -370,7 +371,9 @@ class FixtureGuard:
         self.file_identities[os.fspath(path)] = self.paths.port.inspect(
             os.fspath(path)
         )["id"]
-        self.release(key)
+        if not hold:
+            self.release(key)
+        return key
 
     def write(self, path, data):
         need(
