@@ -624,6 +624,25 @@ class WindowsSessionPort:
     def guard_receipt(self, child):
         return copy.deepcopy(child.receipt)
 
+    def verify_case_host_scope(self, child):
+        from scripts.observation_runtime.aip06_scoped_context import CaseContext
+        case = getattr(self, 'scoped_case', None)
+        need(type(case) is CaseContext and case.factory.pending is case
+             and case.guard is self.guard and not case.closed and not case.failed
+             and type(case.reservation) is dict
+             and case.reservation.get('held') is True
+             and case.reservation.get('stop_capacity_reserved') is True,
+             'ORIGINAL_HELD_CASE_HOST_SCOPE_REQUIRED')
+        nonce = child.plan['request'].nonce
+        recorded = self.plans.get(nonce)
+        need(child in self.sessions and not child.closed and not child.failed
+             and not child.suspended and not child.target_released
+             and recorded is not None and recorded['plan'] is child.plan
+             and recorded['argv'] == tuple(child.argv)
+             and recorded['case_scope'] == case.wire(),
+             'ORIGINAL_CASE_HOST_RELEASE_PLAN_REQUIRED')
+        return None
+
     def release_target(self, child):
         need(
             child.binding is not None
@@ -632,6 +651,8 @@ class WindowsSessionPort:
             "BOUND_TARGET_ONCE_ONLY",
         )
         child.binding.verify()
+        if child.name == 'case_host':
+            self.verify_case_host_scope(child)
         expected = {
             "scope": SCOPE_HASH,
             "nonce": child.plan["request"].nonce,
