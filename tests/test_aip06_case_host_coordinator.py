@@ -316,6 +316,23 @@ def test_binding_rejects_incomplete_or_substituted_original_resource_set(monkeyp
     with pytest.raises(ValueError, match='ORIGINAL_GUARDED_RELEASED_CASE_HOST_REQUIRED'):
         coordinator.bind_existing_host(host)
     assert coordinator.host is None and coordinator.original_child is None
+    assert coordinator.binding_attempted is True
     host.keys = ('native', 'slot')
-    assert coordinator.bind_existing_host(host) is host
-    assert coordinator.original_keys == ('native', 'slot')
+    with pytest.raises(ValueError, match='PREPARED_ONCE_ONLY_CASE_HOST_BINDING_REQUIRED'):
+        coordinator.bind_existing_host(host)
+    assert coordinator.host is None and coordinator.original_keys is None
+
+
+def test_binding_attempt_is_consumed_before_host_type_validation(monkeypatch):
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    monkeypatch.setattr('scripts.observation_runtime.aip06_case_host_coordinator.inspect_launch_intent',
+                        lambda *args, **kwargs: {'argv': ('python', '-B', 'host'),
+                                                 'native_acceptance': False,
+                                                 'execution_authorized': False})
+    coordinator.prepare(deadline_ns=200)
+    with pytest.raises(ValueError, match='ORIGINAL_GUARDED_RELEASED_CASE_HOST_REQUIRED'):
+        coordinator.bind_existing_host(object())
+    assert coordinator.binding_attempted and coordinator.host is None
+    with pytest.raises(ValueError, match='PREPARED_ONCE_ONLY_CASE_HOST_BINDING_REQUIRED'):
+        coordinator.bind_existing_host(object())

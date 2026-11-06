@@ -21,6 +21,7 @@ class CaseHostCoordinator:
         self.prepared = False
         self.intent = None
         self.host = None
+        self.binding_attempted = False
         self.handoff_attempted = False
         self.cleanup_verified = False
         self.abort_attempted = False
@@ -47,8 +48,10 @@ class CaseHostCoordinator:
     def bind_existing_host(self, process):
         """Retain the exact already-guarded host; no native actions performed."""
         from scripts.observation_runtime.aip06_fixture_guard import GuardedProcess
-        need(self.prepared and self.intent is not None and self.host is None,
+        need(self.prepared and self.intent is not None and self.host is None
+             and not self.binding_attempted,
              'PREPARED_ONCE_ONLY_CASE_HOST_BINDING_REQUIRED')
+        self.binding_attempted = True
         need(type(process) is GuardedProcess,
              'ORIGINAL_GUARDED_RELEASED_CASE_HOST_REQUIRED')
         case = self.case
