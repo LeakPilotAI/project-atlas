@@ -110,4 +110,15 @@ def verify_suspended_host_before_resume(session, job, guard):
          'INDEPENDENT_ORIGINAL_CASE_HOST_JOB_OBSERVATION_REQUIRED')
     need(session.plan['request'].nonce not in getattr(guard, 'retired_launch_nonces', set()),
          'RETIRED_CASE_HOST_LAUNCH_NONCE')
+    observed = session.observer.observe(session.launch_handle)
+    parent = session.observer.observe(session.parent_handle)
+    need(type(observed) is dict and type(parent) is dict
+         and observed['pid'] == native['pid']
+         and observed['created'] == native['created']
+         and observed['image'] == native['image']
+         and observed['parent_pid'] == parent['pid']
+         and parent['pid'] == guard.resources.state['owners'][guard.owner]['pid']
+         and observed['command_line'] == session.plan['request'].launch_command
+         and session.observer.members() == {native['pid']},
+         'INDEPENDENT_CASE_HOST_OBSERVATION_REQUIRED')
     return None

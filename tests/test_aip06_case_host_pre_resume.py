@@ -10,11 +10,17 @@ def setup():
     limits['kill_on_close'] = True
     session = SimpleNamespace(name='case_host', suspended=True, failed=False,
         creation_attempted=True, plan={'parent_owner': 'original',
-        'job_limits': limits, 'request': SimpleNamespace(nonce='a'*32)},
-        launch_handle=101, runtime_handle=101, thread=102, job=103,
-        creation_native={'pid': 555})
+        'job_limits': limits, 'request': SimpleNamespace(nonce='a'*32, launch_command='pinned-command')},
+        launch_handle=101, runtime_handle=101, parent_handle=100, thread=102, job=103,
+        creation_native={'pid': 555, 'created': 12345, 'image': 'pinned-image'})
     observed = {'limits': dict(limits), 'members': [555], 'suspended': True, 'handle': 103}
-    guard = SimpleNamespace(owner='original')
+    guard = SimpleNamespace(owner='original', resources=SimpleNamespace(
+        state={'owners': {'original': {'pid': 77}}}))
+    child = {'pid': 555, 'created': 12345, 'image': 'pinned-image',
+             'parent_pid': 77, 'command_line': 'pinned-command'}
+    parent = {'pid': 77}
+    session.observer = SimpleNamespace(observe=lambda handle: child if handle == 101 else parent,
+                                       members=lambda: {555})
     return session, observed, guard
 
 
@@ -26,7 +32,9 @@ def test_original_retained_suspended_receipts_are_data_only():
 @pytest.mark.parametrize('damage', ['resumed', 'failed', 'no_creation', 'foreign_parent',
     'foreign_handle', 'missing_thread', 'missing_job', 'missing_native', 'wrong_pid',
     'wrong_member', 'extra_member', 'wrong_job', 'wrong_limits', 'not_suspended',
-    'kill_on_close_disabled', 'retired_nonce'])
+    'kill_on_close_disabled', 'retired_nonce', 'observer_wrong_pid',
+    'observer_wrong_parent', 'observer_wrong_command', 'observer_extra_member',
+    'observer_wrong_creation', 'observer_wrong_image'])
 def test_case_host_refuses_invalid_pre_resume_receipt(damage):
     s, job, guard = setup()
     if damage == 'resumed': s.suspended = False
@@ -45,5 +53,15 @@ def test_case_host_refuses_invalid_pre_resume_receipt(damage):
     if damage == 'not_suspended': job['suspended'] = False
     if damage == 'kill_on_close_disabled': s.plan['job_limits']['kill_on_close'] = False
     if damage == 'retired_nonce': guard.retired_launch_nonces = {'a'*32}
+    if damage.startswith('observer_'):
+        child = dict(s.observer.observe(101))
+        if damage == 'observer_wrong_pid': child['pid'] = 556
+        if damage == 'observer_wrong_parent': child['parent_pid'] = 78
+        if damage == 'observer_wrong_command': child['command_line'] = 'other'
+        if damage == 'observer_wrong_creation': child['created'] = 12346
+        if damage == 'observer_wrong_image': child['image'] = 'other'
+        members = {555, 556} if damage == 'observer_extra_member' else {555}
+        s.observer.observe = lambda handle: child if handle == 101 else {'pid': 77}
+        s.observer.members = lambda: members
     with pytest.raises(ValueError):
         verify_suspended_host_before_resume(s, job, guard)
