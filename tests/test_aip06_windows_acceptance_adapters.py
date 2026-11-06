@@ -300,6 +300,21 @@ def test_raw_concrete_bundle_preserves_all_existing_cleanup_refusals(damage):
         x=bundle_fixture(damage);x.bundle.collect(x.request,deadline_ns=x.clock()+10**9)
 
 
+@pytest.mark.parametrize('cut', [None, [], {},
+    {'scope': SCOPE_HASH, 'survivors': None, 'unknown': False, 'started_ns': 1, 'at_ns': 1},
+    {'scope': SCOPE_HASH, 'survivors': [], 'unknown': 0, 'started_ns': 1, 'at_ns': 1},
+    {'scope': SCOPE_HASH, 'survivors': [], 'unknown': False, 'started_ns': True, 'at_ns': 1},
+    {'scope': SCOPE_HASH, 'survivors': [], 'unknown': False, 'started_ns': 1, 'at_ns': '1'},
+])
+def test_strict_process_provider_refuses_malformed_cut_without_emitting_process_evidence(cut):
+    x = bundle_fixture()
+    x.bundle.providers['PROCESS'].collect = lambda **kw: cut
+    with pytest.raises(ValueError, match='STRICT_PROCESS_CUT_FIELDS_REQUIRED'):
+        x.bundle.collect(x.request, deadline_ns=x.clock()+10**9)
+    assert x.bundle.failed and x.bundle.sequence == 0
+    assert all(row['reader'] != 'PROCESS' for row in x.output)
+
+
 def test_original_bootstrap_object_observer_checks_kernel_continuity_and_release_history():
     from test_aip06_bootstrap_objects import acquired
     from test_aip06_descendant_closure import exit_child

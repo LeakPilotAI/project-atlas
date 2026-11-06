@@ -324,6 +324,10 @@ class WindowsReaderSet:
         provider = bundle.providers['PROCESS']
         need(callable(getattr(provider, 'collect', None)), 'CONCRETE_STRICT_PROCESS_COLLECTOR_REQUIRED')
         cut = provider.collect(after_ns=socket_cut['at_ns'], deadline_ns=deadline_ns)
+        need(type(cut) is dict and set(cut) >= {'scope', 'survivors', 'unknown', 'started_ns', 'at_ns'}
+             and type(cut['survivors']) is list and type(cut['unknown']) is bool
+             and type(cut['started_ns']) is int and type(cut['at_ns']) is int,
+             'STRICT_PROCESS_CUT_FIELDS_REQUIRED')
         need(cut['scope'] == SCOPE_HASH and cut['survivors'] == [] and cut['unknown'] is False
              and socket_cut['at_ns'] <= cut['started_ns'] <= cut['at_ns'] <= self.clock() < deadline_ns,
              'STRICT_PROCESS_AFTER_SOCKET_CLEANUP_REQUIRED')
