@@ -54,3 +54,7 @@ This checkpoint includes retained native cleanup preflight checks and inherited 
 ## Post-reader-role verification regression (2026-11-06)
 
 The 47-module AIP-06 offline/injected regression excluding the separately verified joined-lifecycle module completed **1,275 passed, 0 failed**, exit code 0, in **117.65 seconds** after commits `4d40df4e` and `1ad8b42b`. This verifies source-level reader digest and inherited role-target checks, not physical native acceptance. AIP-06 remains incomplete; B1/C1/D1/E1, all 21 decisions, daily PAPER BLOCKED and production NO-GO remain unchanged. Genesis untouched.
+
+## Retained resource closure regression (2026-11-06)
+
+The 47-module offline/injected AIP-06 regression (excluding separately verified joined-lifecycle) completed **1,281 passed, 0 failed**, exit code 0, in **124.74 seconds** following commit `82caee8a`. Original retained-session resource closure proof now requires the exact complete resource and process-slot key set; six new adversarial/success cases were added. This is not physical Windows native acceptance. AIP-06 remains incomplete, daily PAPER BLOCKED, production NO-GO; B1/C1/D1/E1 and all 21 decisions unchanged. Genesis untouched.
