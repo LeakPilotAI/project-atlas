@@ -681,6 +681,59 @@ class WindowsSessionPort:
         )
         child.target_released = True
 
+    def deliver_case_host_input(self, child, handoff, *, deadline_ns):
+        """One owner-held, authenticated INPUT after the original guarded release.
+
+        This transports data only. It cannot authorize native case execution.
+        """
+        from scripts.observation_runtime.aip06_scoped_context import CaseContext
+        case = getattr(self, 'scoped_case', None)
+        need(type(case) is CaseContext and case.guard is self.guard
+             and case.factory.pending is case and not case.closed and not case.failed,
+             'ORIGINAL_CASE_HOST_INPUT_OWNER_REQUIRED')
+        need(child in self.sessions and child.name == 'case_host'
+             and child.target_released and not child.failed and not child.closed
+             and not child.suspended and child.binding is not None
+             and child.channel is not None,
+             'RELEASED_ORIGINAL_CASE_HOST_INPUT_CHILD_REQUIRED')
+        need(not getattr(child, 'case_host_input_sent', False),
+             'CASE_HOST_INPUT_REPLAY_REFUSED')
+        need(type(deadline_ns) is int and self.clock() < deadline_ns,
+             'CASE_HOST_INPUT_DEADLINE_EXPIRED')
+        self.verify_case_host_input_binding(child)
+        expected = case.physical_host_handoff(case.reservation, deadline_ns=deadline_ns)
+        need(type(handoff) is dict and handoff == expected,
+             'ORIGINAL_CASE_HOST_INPUT_PACKET_REQUIRED')
+        # Mark before I/O: a failed/partial send cannot be replayed.
+        child.case_host_input_sent = True
+        try:
+            self.protocol.send_case_host_input(child, handoff, deadline_ns=deadline_ns)
+        except BaseException:
+            child.failed = True
+            self.failed = True
+            raise
+        return None
+
+    def verify_case_host_input_binding(self, child):
+        self.verify_case_host_scope_after_release(child)
+
+    def verify_case_host_scope_after_release(self, child):
+        # Release verification already ran; retain its exact session/receipt
+        # identity without reusing its pre-release-only predicate.
+        case = self.scoped_case
+        nonce = child.plan['request'].nonce
+        recorded = self.plans.get(nonce)
+        need(recorded is not None and recorded['plan'] is child.plan
+             and recorded['argv'] == tuple(child.argv)
+             and recorded['case_scope'] == case.wire()
+             and recorded['parent'] == self.resources.state['owners'][self.guard.owner]
+             and child.binding is self.guard.ownership.bindings.get('case_host')
+             and child.binding.request is child.plan['request']
+             and child.receipt is not None and child.receipt.get('guarded') is True
+             and child.receipt.get('nonce') == nonce
+             and child.receipt.get('owner') == digest(child.binding.runtime),
+             'ORIGINAL_RELEASED_CASE_HOST_INPUT_BINDING_REQUIRED')
+
     def all_members(self):
         if self.aggregate is not None:
             if self.aggregate.dormant:
@@ -903,6 +956,16 @@ class ChannelSessionProtocol:
 
     def closed(self, owner, key):
         return self.endpoints.closed(owner,key)
+
+    def send_case_host_input(self, child, packet, *, deadline_ns):
+        """Original authenticated channel only; no secondary transport."""
+        from scripts.observation_runtime.aip06_ipc import MAX_IPC_NS
+        need(type(packet) is dict and packet.get('schema') ==
+             'AIP06_PHYSICAL_CASE_HOST_HANDOFF_V1',
+             'CASE_HOST_INPUT_SCHEMA_REQUIRED')
+        end = min(deadline_ns, self.clock() + MAX_IPC_NS)
+        need(self.clock() < end, 'CASE_HOST_INPUT_DEADLINE_EXPIRED')
+        child.channel.send('INPUT', packet, deadline_ns=end)
 
     def exchange_reader(self, child, value, *, deadline_ns):
         child.channel.send(
