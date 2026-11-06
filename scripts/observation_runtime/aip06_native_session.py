@@ -730,6 +730,10 @@ class WindowsSessionPort:
     def verify_case_host_scope_after_release(self, child):
         # Release verification already ran; retain its exact session/receipt
         # identity without reusing its pre-release-only predicate.
+        need(any(retained is child for retained in self.sessions)
+             and child.target_released is True and child.suspended is False
+             and child.closed is False and child.failed is False,
+             'ORIGINAL_RELEASED_CASE_HOST_SESSION_REQUIRED')
         case = self.scoped_case
         need(type(case.reservation) is dict
              and case.reservation.get('held') is True

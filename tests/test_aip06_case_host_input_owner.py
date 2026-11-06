@@ -19,6 +19,22 @@ def setup(monkeypatch):
     return port, child, case, packet, sent
 
 
+@pytest.mark.parametrize('damage', ['unretained_equal', 'unreleased', 'suspended', 'closed', 'failed'])
+def test_direct_post_release_binding_rejects_unretained_or_invalid_child(monkeypatch, damage):
+    from copy import copy
+    port, child, _, _, _ = setup(monkeypatch)
+    if damage == 'unretained_equal':
+        duplicate = copy(child)
+        assert duplicate == child and duplicate is not child
+        port.sessions[:] = [duplicate]
+    if damage == 'unreleased': child.target_released = False
+    if damage == 'suspended': child.suspended = True
+    if damage == 'closed': child.closed = True
+    if damage == 'failed': child.failed = True
+    with pytest.raises(ValueError, match='ORIGINAL_RELEASED_CASE_HOST_SESSION_REQUIRED'):
+        port.verify_case_host_scope_after_release(child)
+
+
 def test_one_shot_owner_send_and_replay_refused(monkeypatch):
     port, child, _, packet, sent = setup(monkeypatch)
     port.deliver_case_host_input(child, packet, deadline_ns=200)
