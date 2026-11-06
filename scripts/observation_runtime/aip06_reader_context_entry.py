@@ -6,6 +6,21 @@ absence is a refusal, never a fabricated clean socket/process observation.
 """
 
 
+def verify_inherited_reader_source(guard):
+    """Require the original closed reader-entry source receipt before INPUT."""
+    from scripts.observation_runtime.aip06_scoped_context import READER_ENTRY
+    from scripts.observation_runtime.aip06_harness import need
+    descriptor = guard.processes.runtime.descriptor
+    pins = descriptor.get('source_pins')
+    need(type(pins) is dict and type(pins.get(READER_ENTRY)) is str,
+         'PINNED_INHERITED_READER_ENTRY_REQUIRED')
+    receipt = guard.processes.runtime.verify_source(READER_ENTRY)
+    need(type(receipt) is dict and receipt.get('path') == READER_ENTRY
+         and receipt.get('sha256') == pins[READER_ENTRY]
+         and receipt.get('closed') is True,
+         'CLOSED_INHERITED_READER_SOURCE_RECEIPT_REQUIRED')
+
+
 def prepare_reader(adapters, acl_reader):
     from app.services.paper_financial_replay import strict
     from scripts.observation_runtime.aip06_fixture_guard import require_fixture
@@ -26,6 +41,8 @@ def prepare_reader_from_provider(provider):
     need(type(provider) is tuple and len(provider) == 2
          and type(provider[0]) is WindowsReaderSet and type(provider[1]) is PinnedWindowsRead,
          'EXACT_INDEPENDENT_READER_PROVIDER_HOST_PAIR_REQUIRED')
+    from scripts.observation_runtime.aip06_fixture_guard import require_fixture
+    verify_inherited_reader_source(require_fixture('independent-scoped-reader'))
     return prepare_reader(provider[0], provider[1])
 
 
