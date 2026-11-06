@@ -90,6 +90,7 @@ class FreeResearchBundle:
                 raise ResearchRefused('ALPACA_ASSET_IDENTITY_OR_ELIGIBILITY')
             # Asset eligibility is separate from quotes/ranking/accepted PAPER risk.
             history = []
+            history_receipts = []
             for adjustment in ('raw','all'):
                 query={'feed':'iex','timeframe':'1Day','adjustment':adjustment,'sort':'asc',
                     'start':(now-timedelta(days=5*366)).date().isoformat(),'end':now.date().isoformat(),'limit':1000}
@@ -97,7 +98,7 @@ class FreeResearchBundle:
                 for _ in range(3):
                     packet,receipt=self.client.get('https://data.alpaca.markets/v2/stocks/'+symbol+'/bars?'+urlencode(query),ttl=3600)
                     if packet.get('symbol')!=symbol or type(packet.get('bars')) is not list: raise ResearchRefused('ALPACA_HISTORY_SYMBOL')
-                    receipts.append(receipt);records.extend(packet['bars'])
+                    receipts.append(receipt);history_receipts.append(receipt);records.extend(packet['bars'])
                     token=packet.get('next_page_token')
                     if not token:break
                     if type(token) is not str or token in seen or len(token)>2048: raise ResearchRefused('ALPACA_PAGINATION_REFUSED')
@@ -108,7 +109,11 @@ class FreeResearchBundle:
             cal,receipt=self.client.get('https://paper-api.alpaca.markets/v2/calendar?'+urlencode({
                 'start':(now-timedelta(days=5*366)).date().isoformat(),'end':now.date().isoformat()}),ttl=86400)
             receipts.append(receipt)
-            bars=daily_bars(*history,now=utc(self.now()),retrieved_at=datetime.fromisoformat(receipt['retrieved_at']),calendar=calendar_sessions(cal))
+            bars_retrieved_at=min(
+                utc(datetime.fromisoformat(item['retrieved_at']))
+                for item in history_receipts
+            )
+            bars=daily_bars(*history,now=utc(self.now()),retrieved_at=bars_retrieved_at,calendar=calendar_sessions(cal))
             price=self.reference_price(symbol) if self.reference_price else MeasuredValue.unknown('ALPACA_IEX','NO_CURRENT_AUTHENTICATED_REFERENCE_PRICE')
             if self.reference_price is None and bars:
                 latest=bars[-1]
