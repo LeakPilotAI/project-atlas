@@ -8,6 +8,8 @@ from scripts.observation_runtime.aip06_launch_roles import launch_role
 from scripts.observation_runtime.aip06_fixture_guard import require_fixture
 from scripts.observation_runtime.aip06_child_entry import ChildServices
 
+VERIFIER = host.ntpath.join(host.ntpath.dirname(host.HOST_ENTRY), 'aip06_host_preflight.py')
+
 
 def test_case_host_inherited_bootstrap_refuses_after_guarded_release(monkeypatch):
     from test_aip06_windows_adapters import bootstrap_fixture
@@ -95,8 +97,8 @@ def test_case_host_main_never_promotes_failed_handoff(monkeypatch):
 def test_case_host_uses_original_child_services_private_stream(monkeypatch):
     descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
                   'targets': {'case_host': host.HOST_ENTRY},
-                  'source_pins': {host.HOST_ENTRY: 'a' * 64}}
-    runtime = SimpleNamespace(descriptor=descriptor)
+                  'source_pins': {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}}
+    runtime = SimpleNamespace(descriptor=descriptor, verify_source=lambda path: path == VERIFIER)
     services = ChildServices(SimpleNamespace(resources=None), runtime)
     reads = []
 
@@ -113,13 +115,33 @@ def test_case_host_uses_original_child_services_private_stream(monkeypatch):
     assert reads == [(65536, 6)]
 
 
+@pytest.mark.parametrize('missing_pin', [True, False])
+def test_case_host_refuses_unverified_preflight_before_input(monkeypatch, missing_pin):
+    pins = {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}
+    if missing_pin:
+        pins.pop(VERIFIER)
+    def reject_source(path):
+        assert path == VERIFIER
+        raise ValueError('CHILD_UNREVIEWED_SOURCE')
+    runtime = SimpleNamespace(
+        descriptor={'argv': ['python', '-B', host.HOST_ENTRY],
+                    'targets': {'case_host': host.HOST_ENTRY}, 'source_pins': pins},
+        verify_source=reject_source)
+    services = ChildServices(SimpleNamespace(resources=None), runtime)
+    services.streams = SimpleNamespace(read_input=lambda **kw: pytest.fail('input before source verification'))
+    monkeypatch.setattr(host, 'require_fixture', lambda name: SimpleNamespace(processes=services))
+    expected = 'PINNED_CASE_HOST_PREFLIGHT_SOURCE_REQUIRED' if missing_pin else 'CHILD_UNREVIEWED_SOURCE'
+    with pytest.raises(ValueError, match=expected):
+        host.inspect_inherited_handoff()
+
+
 def test_case_host_reads_bounded_private_handoff_and_calls_preflight(monkeypatch):
     observed = []
     descriptor = {'private': 'descriptor', 'argv': ['python', '-B', host.HOST_ENTRY],
                   'targets': {'case_host': host.HOST_ENTRY},
-                  'source_pins': {host.HOST_ENTRY: 'a' * 64}}
+                  'source_pins': {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}}
     packet = {'schema': 'packet'}
-    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor)))
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor, verify_source=lambda path: path == VERIFIER)))
     def read_input(*, maximum_bytes, timeout):
         observed.append((maximum_bytes, timeout))
         return b'{"schema":"packet"}'
@@ -134,9 +156,9 @@ def test_case_host_reads_bounded_private_handoff_and_calls_preflight(monkeypatch
 def test_case_host_refuses_unbound_launch_descriptor_before_read(monkeypatch, field):
     descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
                   'targets': {'case_host': host.HOST_ENTRY},
-                  'source_pins': {host.HOST_ENTRY: 'a' * 64}}
+                  'source_pins': {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}}
     descriptor.pop(field)
-    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor)),
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor, verify_source=lambda path: path == VERIFIER)),
                             read_input=lambda **kwargs: pytest.fail('read before launch verification'))
     monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
     with pytest.raises(ValueError, match='PINNED_INHERITED_CASE_HOST_COMMAND_REQUIRED'):
@@ -153,8 +175,8 @@ def test_case_host_rejects_unbounded_read_before_fixture_lookup(maximum_bytes, t
 def test_case_host_rejects_invalid_private_payload_before_preflight(monkeypatch):
     descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
                   'targets': {'case_host': host.HOST_ENTRY},
-                  'source_pins': {host.HOST_ENTRY: 'a' * 64}}
-    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor)),
+                  'source_pins': {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}}
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor, verify_source=lambda path: path == VERIFIER)),
                             read_input=lambda **kwargs: b'not-json')
     monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
     guard.processes.read_input = guard.read_input
