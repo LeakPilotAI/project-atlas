@@ -16309,7 +16309,6 @@ assembly, acceptance run, or PAPER startup is authorized. B1/C1/D1/E1 and all
 untouched.
 ======================================================================
 
-======================================================================
 PERMANENT PRODUCT DIRECTION - OWNER DECISION - 2026-11-06
 READ THIS SECTION BEFORE PLANNING ANY ATLAS WORK.
 ======================================================================
