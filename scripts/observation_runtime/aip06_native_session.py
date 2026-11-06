@@ -803,6 +803,8 @@ class WindowsSessionPort:
             self.closed_proofs.add((self.guard.owner, key))
 
     def close_owned_handles(self, child, keys):
+        need(any(retained is child for retained in self.sessions),
+             'ORIGINAL_RETAINED_CLOSE_SESSION_REQUIRED')
         need(
             child.binding is not None
             and child.binding.finished
