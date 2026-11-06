@@ -758,8 +758,10 @@ class WindowsSessionPort:
             return self.calls.members(self.aggregate.job) - {self.aggregate.controller['pid']}
         result = set()
         for s in self.sessions:
-            if s.job is not None and not s.closed:
+            if s.job is not None:
                 members = self.calls.members(s.job)
+                need(not s.closed or not members,
+                     'CLOSED_SESSION_JOB_STILL_HAS_DESCENDANTS')
                 need(not result.intersection(members), "SESSION_JOB_ALIAS")
                 result.update(members)
         return result
