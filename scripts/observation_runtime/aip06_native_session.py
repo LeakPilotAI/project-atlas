@@ -702,6 +702,8 @@ class WindowsSessionPort:
              'CASE_HOST_INPUT_DEADLINE_EXPIRED')
         self.verify_case_host_input_binding(child)
         expected = case.physical_host_handoff(case.reservation, deadline_ns=deadline_ns)
+        # Recheck original Stop reservation immediately before sending.
+        self.verify_case_host_input_binding(child)
         need(type(handoff) is dict and handoff == expected,
              'ORIGINAL_CASE_HOST_INPUT_PACKET_REQUIRED')
         # Mark before I/O: a failed/partial send cannot be replayed.
@@ -721,6 +723,12 @@ class WindowsSessionPort:
         # Release verification already ran; retain its exact session/receipt
         # identity without reusing its pre-release-only predicate.
         case = self.scoped_case
+        need(type(case.reservation) is dict
+             and case.reservation.get('held') is True
+             and case.reservation.get('stop_capacity_reserved') is True
+             and self.guard.ledger('read')['state']['resources'].get(case.reservation['key']) ==
+             {'owner': self.guard.owner, 'kind': 'directory', 'closed': False},
+             'ORIGINAL_CASE_HOST_INPUT_STOP_RESERVATION_REQUIRED')
         nonce = child.plan['request'].nonce
         recorded = self.plans.get(nonce)
         need(recorded is not None and recorded['plan'] is child.plan
