@@ -267,6 +267,9 @@ class CaseContext:
     def _close(self, deadline_ns):
         self.factory.verify(deadline_ns=deadline_ns, cleanup=True)
         need(self.baseline is not None and self.factory.pending is self, 'ORIGINAL_PARTIAL_CASE_CLEANUP')
+        port = getattr(self.guard.processes, 'port', self.guard.processes)
+        need(getattr(port, 'scoped_case', None) is self and self.factory.pending is self,
+             'ORIGINAL_SCOPED_CASE_RELEASE_ORDER')
         state = self.guard.ledger('read')['state']
         keys = set(state['resources']) - self.baseline
         # Files/metadata use NativeIO's original completion proofs. Process,

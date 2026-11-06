@@ -144,9 +144,17 @@ def test_release_order_conflict_keeps_case_open_until_original_marker_restored(m
     def check(t):
         case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
         ticket = case.reserve(deadline_ns=t.x.now[0]+10**9)
+        original_release = t.g.release
+        releases = []
+        def counted_release(key):
+            releases.append(key)
+            return original_release(key)
+        monkeypatch.setattr(t.g, 'release', counted_release)
+        before = copy.deepcopy(t.x.ledger.state['resources'])
         t.port.scoped_case = object()
         with pytest.raises(ValueError, match='ORIGINAL_SCOPED_CASE_RELEASE_ORDER'):
             case.abort(ticket, deadline_ns=t.x.now[0]+10**9)
+        assert releases == [] and t.x.ledger.state['resources'] == before
         assert not case.closed and t.factory.pending is case
         assert t.port.scoped_case is not case
         t.port.scoped_case = case
