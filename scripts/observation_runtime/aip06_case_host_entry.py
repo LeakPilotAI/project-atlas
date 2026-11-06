@@ -50,8 +50,10 @@ def inspect_inherited_handoff(*, maximum_bytes=65536, timeout=6):
          and host_source.get('closed') is True,
          'CLOSED_INHERITED_HOST_SOURCE_RECEIPT_REQUIRED')
     # ChildServices owns the authenticated input stream; FixtureGuard does not.
-    packet = strict(guard.processes.read_input(
-        maximum_bytes=maximum_bytes, timeout=timeout).decode('utf-8'))
+    raw = guard.processes.read_input(maximum_bytes=maximum_bytes, timeout=timeout)
+    need(type(raw) is bytes and 0 < len(raw) <= maximum_bytes,
+         'BOUNDED_ORIGINAL_CASE_HOST_INPUT_BYTES_REQUIRED')
+    packet = strict(raw.decode('utf-8'))
     return inspect(packet, descriptor, guard)
 
 
