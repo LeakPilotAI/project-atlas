@@ -812,6 +812,8 @@ class WindowsSessionPort:
              'ORIGINAL_RETAINED_CLOSE_SESSION_REQUIRED')
         need(all(key in keys for key in child.permit['slots']),
              'EXACT_RETAINED_PROCESS_SLOT')
+        need(all(key in child.native for key in child.keys),
+             'RETAINED_NATIVE_HANDLE_BEFORE_CLEANUP')
         need(
             child.binding is not None
             and child.binding.finished
