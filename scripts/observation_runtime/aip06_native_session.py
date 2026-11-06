@@ -856,6 +856,11 @@ class WindowsSessionPort:
     def resources_closed(self, child, keys):
         need(any(retained is child for retained in self.sessions),
              'ORIGINAL_RETAINED_RESOURCE_CLOSE_PROOF_REQUIRED')
+        expected = tuple(child.keys) + tuple(child.permit.get('slots', ()))
+        need(type(keys) in (tuple, list) and len(keys) == len(expected)
+             and len(keys) == len(set(keys)) and all(type(key) is str for key in keys)
+             and set(keys) == set(expected),
+             'EXACT_RETAINED_RESOURCE_CLOSE_PROOF_KEYS_REQUIRED')
         return child.closed and all(
             self.closed(self.resources.state["resources"][k]["owner"], k) for k in keys
         )
