@@ -491,6 +491,9 @@ def verify_inherited_scope(value, descriptor):
     allowed = tuple(tuple(cmd) for cmd in commands.values())
     if descriptor['targets'].get('readonly_reader') == READER_ENTRY:
         allowed += ((descriptor['argv'][0],'-B',READER_ENTRY),)
+    from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
+    if descriptor['targets'].get('case_host') == HOST_ENTRY and HOST_ENTRY in descriptor['source_pins']:
+        allowed += ((descriptor['argv'][0], '-B', HOST_ENTRY),)
     need(tuple(descriptor['argv']) in allowed, 'INHERITED_CASE_COMMAND_MISMATCH')
     return copy.deepcopy(value)
 

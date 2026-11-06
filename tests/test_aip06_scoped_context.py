@@ -626,6 +626,29 @@ def test_private_scope_forwarding_is_only_a_restriction_and_preserves_global_his
     in_controller(monkeypatch,check)
 
 
+@pytest.mark.parametrize('damage', ['', 'missing_target', 'missing_pin', 'wrong_command'])
+def test_inherited_case_host_requires_pinned_target(monkeypatch, damage):
+    from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
+    def check(t):
+        case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
+        scope = case.wire()
+        desc = {'binding': {'parent': t.factory.binding['child']},
+                'source_pins': dict(t.factory.plan['source_pins']),
+                'targets': dict(t.controller.profile['targets']),
+                'argv': [t.factory.plan['executable'], '-B', HOST_ENTRY]}
+        desc['source_pins'][HOST_ENTRY] = 'a'*64
+        desc['targets']['case_host'] = HOST_ENTRY
+        scope['source_pins'] = digest(desc['source_pins'])
+        if damage == 'missing_target': desc['targets'].pop('case_host')
+        if damage == 'missing_pin': desc['source_pins'].pop(HOST_ENTRY)
+        if damage == 'wrong_command': desc['argv'].append('extra')
+        if damage:
+            with pytest.raises(ValueError): verify_inherited_scope(scope, desc)
+        else:
+            assert verify_inherited_scope(scope, desc) == scope
+    in_controller(monkeypatch, check)
+
+
 def test_held_context_directory_uses_original_nativeio_reservation_and_close_proof():
     from test_aip06_windows_adapters import io_fixture
     x=io_fixture()
