@@ -32,3 +32,20 @@ def test_inherited_reader_source_refuses_wrong_child_command_before_receipt(argv
     with pytest.raises(ValueError, match='PINNED_INHERITED_READER_COMMAND_REQUIRED'):
         verify_inherited_reader_source(SimpleNamespace(processes=SimpleNamespace(runtime=runtime)))
     assert checks == []
+
+
+def test_provider_reader_reuses_single_original_guard_after_source_verification(monkeypatch):
+    from scripts.observation_runtime import aip06_reader_context_entry as entry
+    from scripts.observation_runtime import aip06_fixture_guard as fixture
+    from scripts.observation_runtime import aip06_windows_acceptance_adapters as adapters
+    from types import SimpleNamespace
+    calls = []
+    guard = object()
+    monkeypatch.setattr(fixture, 'require_fixture', lambda role: calls.append(('guard', role)) or guard)
+    monkeypatch.setattr(entry, 'verify_inherited_reader_source', lambda value: calls.append(('source', value)))
+    monkeypatch.setattr(entry, '_prepare_reader_with_guard',
+                        lambda value, a, b: calls.append(('prepare', value, a, b)) or 'context')
+    pair = (object.__new__(adapters.WindowsReaderSet), object.__new__(adapters.PinnedWindowsRead))
+    assert entry.prepare_reader_from_provider(pair) == 'context'
+    assert calls == [('guard', 'independent-scoped-reader'), ('source', guard),
+                     ('prepare', guard, pair[0], pair[1])]

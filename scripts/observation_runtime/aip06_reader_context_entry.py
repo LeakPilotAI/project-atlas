@@ -26,11 +26,14 @@ def verify_inherited_reader_source(guard):
 
 
 def prepare_reader(adapters, acl_reader):
-    from app.services.paper_financial_replay import strict
     from scripts.observation_runtime.aip06_fixture_guard import require_fixture
+    return _prepare_reader_with_guard(require_fixture('independent-scoped-reader'), adapters, acl_reader)
+
+
+def _prepare_reader_with_guard(guard, adapters, acl_reader):
+    from app.services.paper_financial_replay import strict
     from scripts.observation_runtime.aip06_scoped_context import ReaderExecutionContext
     from scripts.observation_runtime.aip06_harness import need
-    guard = require_fixture('independent-scoped-reader')
     raw = guard.read_input(maximum_bytes=65536, timeout=6)
     need(type(raw) is bytes and 0 < len(raw) <= 65536,
          'BOUNDED_INDEPENDENT_READER_INPUT_BYTES_REQUIRED')
@@ -46,8 +49,9 @@ def prepare_reader_from_provider(provider):
          and type(provider[0]) is WindowsReaderSet and type(provider[1]) is PinnedWindowsRead,
          'EXACT_INDEPENDENT_READER_PROVIDER_HOST_PAIR_REQUIRED')
     from scripts.observation_runtime.aip06_fixture_guard import require_fixture
-    verify_inherited_reader_source(require_fixture('independent-scoped-reader'))
-    return prepare_reader(provider[0], provider[1])
+    guard = require_fixture('independent-scoped-reader')
+    verify_inherited_reader_source(guard)
+    return _prepare_reader_with_guard(guard, provider[0], provider[1])
 
 
 def collect_reader_from_provider(provider, *, deadline_ns):
