@@ -39,8 +39,10 @@ class CaseHostCoordinator:
         need(type(intent) is dict and intent.get('native_acceptance') is False
              and intent.get('execution_authorized') is False,
              'CASE_HOST_COORDINATOR_DATA_ONLY_INTENT_REQUIRED')
-        self.intent = intent
-        return intent
+        # Never expose the retained authority-bearing handoff by reference.
+        import copy
+        self.intent = copy.deepcopy(intent)
+        return copy.deepcopy(intent)
 
     def bind_existing_host(self, process):
         """Retain the exact already-guarded host; no native actions performed."""

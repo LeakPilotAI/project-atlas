@@ -24,6 +24,19 @@ def test_preparation_once_only(monkeypatch):
         coordinator.prepare(deadline_ns=200)
 
 
+def test_preparation_does_not_expose_mutable_retained_handoff(monkeypatch):
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    source = {'argv': ('python', '-B', 'host'), 'handoff': {'reservation': {'held': True}},
+              'native_acceptance': False, 'execution_authorized': False}
+    monkeypatch.setattr('scripts.observation_runtime.aip06_case_host_coordinator.inspect_launch_intent',
+                        lambda *args, **kwargs: source)
+    returned = coordinator.prepare(deadline_ns=200)
+    returned['handoff']['reservation']['held'] = False
+    source['handoff']['reservation']['held'] = False
+    assert coordinator.intent['handoff']['reservation']['held'] is True
+
+
 def test_failed_preparation_cannot_retry(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
