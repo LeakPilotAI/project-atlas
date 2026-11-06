@@ -58,3 +58,7 @@ The 47-module AIP-06 offline/injected regression excluding the separately verifi
 ## Retained resource closure regression (2026-11-06)
 
 The 47-module offline/injected AIP-06 regression (excluding separately verified joined-lifecycle) completed **1,281 passed, 0 failed**, exit code 0, in **124.74 seconds** following commit `82caee8a`. Original retained-session resource closure proof now requires the exact complete resource and process-slot key set; six new adversarial/success cases were added. This is not physical Windows native acceptance. AIP-06 remains incomplete, daily PAPER BLOCKED, production NO-GO; B1/C1/D1/E1 and all 21 decisions unchanged. Genesis untouched.
+
+## Inherited case-host source digest regression (2026-11-06)
+
+The 47-module offline/injected AIP-06 regression (excluding separately verified joined-lifecycle) completed **1,291 passed, 0 failed**, exit code 0, in **120.12 seconds** following commit `226b2cdc`. Ten additional adversarial cases verify malformed case-host and preflight source digests are rejected before source receipts or private input. This is not physical native Windows acceptance. AIP-06 remains incomplete; daily PAPER BLOCKED and production NO-GO. B1/C1/D1/E1 and all 21 decisions unchanged. Genesis untouched.
