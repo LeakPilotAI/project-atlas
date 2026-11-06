@@ -110,3 +110,10 @@ Reviewed `GuardedProcess.close()` and `CaseContext._close()/abort()`. The coordi
 Static inspection confirms `FixtureGuard.spawn()` returns the retained `GuardedProcess`, `CaseFactory.reader()` creates the independent reader, and `CaseContext.deliver_physical_host_handoff()` is the guarded INPUT boundary. No production call site assembles these into the coordinator. No native Stop receipt API was found in the AIP-06 modules searched; existing Stop/escrow acceptance references are elsewhere and require an explicit reviewed adapter. This is a genuine integration blocker, not a reason to weaken current gates.
 
 The 47-module offline/injected regression after `048bfbed` remains **1,332 passed, 0 failed**. No source changes made in this audit. Roadmap 5/18, daily PAPER BLOCKED, production NO-GO, B1/C1/D1/E1 and all 21 decisions unchanged; Genesis untouched.
+
+
+## Post-coordinator full offline regression (2026-11-06)
+
+The 47-module AIP-06 selection excluding `test_aip06_joined_lifecycle.py` completed **1,360 passed, 0 failed**, exit code **0**, in **147.59 seconds**. This includes the retained-original-host binding, once-only handoff, abort owner checks, native closure proof, independent ledger cleanup checks, and final case-release revalidation through commit `076ac1c3`. This is injected/offline regression evidence, **not physical Windows acceptance**. The joined-lifecycle module was excluded and is not represented by this result.
+
+Remaining blocker: native abort closes native session handles but does not reconcile `GuardedProcess.closed`, the `WorkerOwnership` terminal binding, and the ledger. `RetainedLaunchBinding.verify_exit()` requires exact normal exit; arbitrary nonzero termination must not be admitted. A separate original-owner, independently observed abort terminal state is required before resource and case closure can be certified. B1/C1/D1/E1, all 21 decisions, daily PAPER BLOCKED, production NO-GO, and Genesis isolation remain unchanged. Roadmap 5/18 (27.8%).
