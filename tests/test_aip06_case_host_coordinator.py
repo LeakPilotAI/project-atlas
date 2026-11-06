@@ -168,6 +168,10 @@ def test_failed_abort_cannot_replay_or_send_input(monkeypatch):
     with pytest.raises(ValueError, match='BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED'):
         coordinator.deliver_handoff(deadline_ns=200)
     assert coordinator.cleanup_verified is False
+    assert coordinator.abort_attempted is True
+    assert coordinator.abort_completed is False
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_CLEANUP_CHECK_ONCE_ONLY'):
+        coordinator.verify_original_cleanup()
 
 
 def test_native_abort_closure_does_not_certify_wrapper_cleanup(monkeypatch):

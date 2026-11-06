@@ -117,7 +117,7 @@ class CaseHostCoordinator:
 
     def verify_original_cleanup(self):
         """Observe completed original-owner cleanup; never terminate by PID."""
-        need(self.host is not None and (self.handoff_attempted or self.abort_attempted)
+        need(self.host is not None and (self.handoff_attempted or self.abort_completed)
              and not self.cleanup_verified,
              'ORIGINAL_CASE_HOST_CLEANUP_CHECK_ONCE_ONLY')
         process = self.host
