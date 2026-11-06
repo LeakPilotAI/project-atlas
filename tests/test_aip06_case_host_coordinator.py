@@ -273,7 +273,14 @@ def test_case_scope_release_requires_original_owner_cleanup(monkeypatch):
     port.scoped_case = None
     with pytest.raises(ValueError, match='ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED'):
         coordinator.verify_case_released()
+    case.factory.pending = object()
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED'):
+        coordinator.verify_case_released()
     case.factory.pending = None
+    port.scoped_case = object()
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED'):
+        coordinator.verify_case_released()
+    port.scoped_case = None
     assert coordinator.verify_case_released() is True
 
 

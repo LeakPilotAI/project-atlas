@@ -175,8 +175,8 @@ class CaseHostCoordinator:
         """Check that the original case owner released its scope."""
         port = getattr(self.case.guard.processes, 'port', self.case.guard.processes)
         need(self.cleanup_verified and self.case.closed is True
-             and self.case.factory.pending is not self.case
-             and getattr(port, 'scoped_case', None) is not self.case,
+             and self.case.factory.pending is None
+             and getattr(port, 'scoped_case', None) is None,
              'ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED')
         return True
 
