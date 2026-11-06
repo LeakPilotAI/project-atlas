@@ -178,6 +178,14 @@ def test_native_abort_closure_does_not_certify_wrapper_cleanup(monkeypatch):
         coordinator.verify_original_cleanup()
 
 
+def test_reader_evidence_rejects_unbound_or_synthetic_result(monkeypatch):
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    with pytest.raises(ValueError, match='ORIGINAL_COMPLETED_INDEPENDENT_READER_EVIDENCE_REQUIRED'):
+        coordinator.attach_independent_reader_evidence(object(), deadline_ns=200)
+    assert coordinator.reader_evidence is None
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)

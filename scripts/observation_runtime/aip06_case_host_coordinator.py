@@ -27,6 +27,7 @@ class CaseHostCoordinator:
         self.abort_completed = False
         self.original_child = None
         self.original_keys = None
+        self.reader_evidence = None
 
     def prepare(self, *, deadline_ns):
         need(not self.prepared, 'CASE_HOST_COORDINATOR_REPLAY_REFUSED')
@@ -131,6 +132,24 @@ class CaseHostCoordinator:
              'ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED')
         self.cleanup_verified = True
         return True
+
+    def attach_independent_reader_evidence(self, reader, *, deadline_ns):
+        """Retain completed original reader evidence; never treat it as native acceptance."""
+        from scripts.observation_runtime.aip06_scoped_context import ReaderContext
+        from scripts.observation_runtime.aip06_harness import digest
+        need(self.prepared and self.host is not None
+             and self.reader_evidence is None and not self.abort_attempted
+             and not self.cleanup_verified and type(reader) is ReaderContext
+             and reader.case is self.case and self.case.reader is reader
+             and reader.result is not None and reader.failed is False
+             and reader.session.closed is True
+             and reader.result_hash == digest(reader.result)
+             and type(reader.result) is dict
+             and reader.result.get('native_acceptance') is False,
+             'ORIGINAL_COMPLETED_INDEPENDENT_READER_EVIDENCE_REQUIRED')
+        reader.verify(deadline_ns=deadline_ns)
+        self.reader_evidence = (reader, reader.result_hash)
+        return reader.result_hash
 
     def execute(self, *args, **kwargs):
         raise ValueError('INDEPENDENT_PHYSICAL_CASE_HOST_NOT_AUTHORIZED')
