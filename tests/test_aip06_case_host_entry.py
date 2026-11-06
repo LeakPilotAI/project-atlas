@@ -5,6 +5,34 @@ from types import SimpleNamespace
 
 from scripts.observation_runtime import aip06_case_host_entry as host
 from scripts.observation_runtime.aip06_launch_roles import launch_role
+from scripts.observation_runtime.aip06_fixture_guard import require_fixture
+
+
+def test_case_host_inherited_bootstrap_refuses_after_guarded_release(monkeypatch):
+    from test_aip06_windows_adapters import bootstrap_fixture
+    f = bootstrap_fixture(target_override=host.HOST_ENTRY)
+    assert launch_role(['python', '-B', host.HOST_ENTRY],
+                       {'case_host': host.HOST_ENTRY}) == 'acceptance_worker'
+    seen = []
+
+    def guarded_preflight():
+        assert require_fixture('independent-case-host-preflight') is f.boot.guard
+        seen.append('guarded')
+        return {'native_acceptance': False, 'execution_authorized': False}
+
+    monkeypatch.setattr(host, 'inspect_inherited_handoff', guarded_preflight)
+    f.boot.prepare()
+    assert f.boot.guard.launch_role == 'acceptance_worker'
+    with pytest.raises(ValueError, match='NATIVE_CASE_HOST_EXECUTION_NOT_YET_QUALIFIED'):
+        f.boot.run(lambda path: host.main())
+    assert seen == ['guarded']
+    assert f.events[:3] == ['HELLO', 'REQUEST', 'ACK']
+    assert 'EXIT' not in f.events
+    assert f.boot.failed and f.boot.state == 'RUNNING'
+    with pytest.raises(ValueError, match='BOUND_CHILD_TARGET_REQUIRED'):
+        f.boot.run(lambda path: pytest.fail('refused case host must not retry'))
+    with pytest.raises(ValueError):
+        require_fixture('independent-case-host-preflight')
 
 
 def test_case_host_launch_is_exact_inherited_worker_role():
