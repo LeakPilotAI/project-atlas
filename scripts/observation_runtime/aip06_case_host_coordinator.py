@@ -148,8 +148,26 @@ class CaseHostCoordinator:
              and reader.result.get('native_acceptance') is False,
              'ORIGINAL_COMPLETED_INDEPENDENT_READER_EVIDENCE_REQUIRED')
         reader.verify(deadline_ns=deadline_ns)
-        self.reader_evidence = (reader, reader.result_hash)
+        self.reader_evidence = (reader, reader.result_hash, reader.session,
+                                reader.session.child)
         return reader.result_hash
+
+    def verify_attached_reader_evidence(self, *, deadline_ns):
+        """Recheck original retained reader and result against substitution."""
+        from scripts.observation_runtime.aip06_harness import digest
+        need(self.reader_evidence is not None,
+             'ORIGINAL_READER_EVIDENCE_NOT_ATTACHED')
+        reader, result_hash, session, child = self.reader_evidence
+        need(reader.case is self.case and self.case.reader is reader
+             and reader.session is session and session.child is child
+             and reader.result_hash == result_hash
+             and type(reader.result) is dict
+             and reader.result.get('native_acceptance') is False
+             and digest(reader.result) == result_hash
+             and reader.failed is False and session.closed is True,
+             'ATTACHED_READER_EVIDENCE_IDENTITY_OR_DIGEST_CHANGED')
+        reader.verify(deadline_ns=deadline_ns)
+        return result_hash
 
     def execute(self, *args, **kwargs):
         raise ValueError('INDEPENDENT_PHYSICAL_CASE_HOST_NOT_AUTHORIZED')

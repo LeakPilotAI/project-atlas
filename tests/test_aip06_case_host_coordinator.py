@@ -186,6 +186,25 @@ def test_reader_evidence_rejects_unbound_or_synthetic_result(monkeypatch):
     assert coordinator.reader_evidence is None
 
 
+def test_attached_reader_evidence_rejects_substituted_result(monkeypatch):
+    from types import SimpleNamespace
+    from scripts.observation_runtime.aip06_harness import digest
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = object()
+    session = SimpleNamespace(child=child, closed=True)
+    result = {'native_acceptance': False, 'cuts': []}
+    reader = SimpleNamespace(case=case, session=session, result=result,
+                             result_hash=digest(result), failed=False,
+                             verify=lambda *, deadline_ns: None)
+    case.reader = reader
+    coordinator.reader_evidence = (reader, reader.result_hash, session, child)
+    assert coordinator.verify_attached_reader_evidence(deadline_ns=200) == reader.result_hash
+    reader.result = {'native_acceptance': False, 'cuts': ['substituted']}
+    with pytest.raises(ValueError, match='ATTACHED_READER_EVIDENCE_IDENTITY_OR_DIGEST_CHANGED'):
+        coordinator.verify_attached_reader_evidence(deadline_ns=200)
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
