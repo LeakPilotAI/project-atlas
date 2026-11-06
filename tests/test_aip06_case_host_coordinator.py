@@ -293,6 +293,14 @@ def test_case_scope_release_requires_original_owner_cleanup(monkeypatch):
     with pytest.raises(ValueError, match='ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED'):
         coordinator.verify_case_released()
     port.scoped_case = None
+    child = SimpleNamespace(closed=True)
+    coordinator.original_child = child
+    coordinator.original_keys = ('original',)
+    coordinator.host = SimpleNamespace(guard=case.guard, child=child,
+                                       keys=('original',), closed=True)
+    port.sessions = [child]
+    port.resources_closed = lambda original, keys: original is child and keys == ('original',)
+    case.guard.resources = SimpleNamespace(state={'resources': {'original': {'closed': True}}})
     assert coordinator.verify_case_released() is True
 
 
@@ -441,3 +449,26 @@ def test_original_cleanup_requires_independent_ledger_closure(monkeypatch, ledge
         with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED'):
             coordinator.verify_original_cleanup()
         assert not coordinator.cleanup_verified
+
+
+@pytest.mark.parametrize('mutation', ['keys', 'child', 'retention', 'ledger', 'wrapper'])
+def test_case_release_rechecks_original_native_and_ledger_evidence(monkeypatch, mutation):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = SimpleNamespace(closed=True)
+    host = SimpleNamespace(guard=case.guard, child=child, keys=('original',), closed=True)
+    port = SimpleNamespace(scoped_case=None, sessions=[child], resources_closed=lambda *args: True)
+    case.guard.processes = SimpleNamespace(port=port)
+    case.guard.resources = SimpleNamespace(state={'resources': {'original': {'closed': True}}})
+    coordinator.host, coordinator.original_child = host, child
+    coordinator.original_keys = ('original',)
+    coordinator.cleanup_verified = case.closed = True
+    case.factory.pending = None
+    if mutation == 'keys': host.keys = ('changed',)
+    if mutation == 'child': host.child = object()
+    if mutation == 'retention': port.sessions = []
+    if mutation == 'ledger': case.guard.resources.state['resources']['original']['closed'] = False
+    if mutation == 'wrapper': host.closed = False
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED'):
+        coordinator.verify_case_released()

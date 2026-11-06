@@ -207,7 +207,17 @@ class CaseHostCoordinator:
         port = getattr(self.case.guard.processes, 'port', self.case.guard.processes)
         need(self.cleanup_verified and self.case.closed is True
              and self.case.factory.pending is None
-             and getattr(port, 'scoped_case', None) is None,
+             and getattr(port, 'scoped_case', None) is None
+             and self.host is not None and self.host.guard is self.case.guard
+             and self.host.child is self.original_child
+             and type(self.host.keys) in (tuple, list)
+             and tuple(self.host.keys) == self.original_keys
+             and self.host.closed is True
+             and any(child is self.original_child for child in port.sessions)
+             and port.resources_closed(self.original_child, self.original_keys) is True
+             and all(key in self.case.guard.resources.state['resources']
+                     and self.case.guard.resources.state['resources'][key]['closed'] is True
+                     for key in self.original_keys),
              'ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED')
         return True
 
