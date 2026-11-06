@@ -25,6 +25,19 @@ def prepare_reader_from_provider(provider):
     return prepare_reader(provider[0], provider[1])
 
 
+def collect_reader_from_provider(provider, *, deadline_ns):
+    """One bounded child-side collection with explicitly injected native providers.
+
+    The guarded child bootstrap must already be installed. This is not an
+    automatic provider loader, process launcher, or native acceptance gate.
+    """
+    from scripts.observation_runtime.aip06_harness import need
+    need(type(deadline_ns) is int and deadline_ns > 0,
+         'EXPLICIT_BOUNDED_READER_COLLECTION_DEADLINE')
+    context = prepare_reader_from_provider(provider)
+    return context.collect(context.packet['request'], deadline_ns=deadline_ns)
+
+
 def main():
     raise ValueError('NATIVE_READER_PROVIDER_HOST_BINDING_NOT_YET_QUALIFIED')
 

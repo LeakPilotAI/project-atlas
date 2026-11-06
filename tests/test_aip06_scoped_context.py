@@ -385,6 +385,19 @@ def test_reader_provider_host_refuses_unqualified_pairs_before_guard_access(prov
         prepare_reader_from_provider(provider)
 
 
+@pytest.mark.parametrize('deadline', [None, False, 0, -1, 1.5, '100'])
+def test_reader_collection_requires_explicit_bounded_deadline_before_guard_access(deadline):
+    from scripts.observation_runtime.aip06_reader_context_entry import collect_reader_from_provider
+    with pytest.raises(ValueError, match='EXPLICIT_BOUNDED_READER_COLLECTION_DEADLINE'):
+        collect_reader_from_provider(None, deadline_ns=deadline)
+
+
+def test_reader_collection_refuses_missing_provider_before_guard_access():
+    from scripts.observation_runtime.aip06_reader_context_entry import collect_reader_from_provider
+    with pytest.raises(ValueError, match='EXACT_INDEPENDENT_READER_PROVIDER_HOST_PAIR_REQUIRED'):
+        collect_reader_from_provider(None, deadline_ns=10**9)
+
+
 def test_native_reader_entry_cannot_auto_load_a_provider_or_create_authority():
     from scripts.observation_runtime.aip06_reader_context_entry import main
     with pytest.raises(ValueError,match='NOT_YET_QUALIFIED'):main()
