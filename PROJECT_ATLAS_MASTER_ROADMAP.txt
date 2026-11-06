@@ -16372,3 +16372,68 @@ Preserve B1/C1/D1/E1, the existing 21 safety decisions, production NO-GO,
 and all prior evidence and historical milestones unless explicitly and
 properly reauthorized. Never touch Genesis.
 ======================================================================
+
+PERSONAL PAPER PHASE 1 PROGRESS — 2026-11-06
+======================================================================
+Completed vertical slice: standalone Quality Dips V3 PAPER lifecycle using
+fixed, labeled TEST DATA. This is a local integration/acceptance of the
+test-data path only; it is not genuine forward PAPER or operational acceptance.
+
+Implemented:
+- `backend/app/personal_paper.py` is an independent FastAPI entry point bound
+  only to 127.0.0.1. It does not import `app.main`, start its workers, schedule
+  Discord, contact a data provider, or connect an order adapter.
+- The test-data command calls the existing Quality Dips V3 entry evaluator,
+  append-only Quality Dips PAPER journal, and thesis-terminal exit policy.
+- Test-account cash, per-side fees, open/closed lots, net P&L, and reconciliation
+  are reconstructed from the same durable journal. Reports and read-only GET
+  dashboard/API views read those exact durable events.
+- TEST DATA identity is recorded and displayed throughout. Startup and
+  production authorization remain false. No historical or live records are
+  migrated into the isolated test journal.
+
+Validation:
+- Focused Quality Dips/PAPER selection: 74 passed, 0 failed, 0 skipped,
+  1 existing Starlette/httpx deprecation warning.
+- A real loopback acceptance test started the server, executed the explicit
+  offline TEST DATA entry/exit in a separate process, compared the dashboard
+  API's entry/exit records byte-for-field with the journal output, stopped the
+  server cleanly, restarted against the same journal, and verified recovered
+  transactions and reconciled cash.
+- Ruff passed for the new runtime/tests and changed engine import/symbol checks;
+  `git -c core.whitespace=cr-at-eol diff --check` passed while preserving CRLF.
+- A wider QD wildcard attempt was not a clean regression run: it included
+  native/disposable tests requiring `DISPOSABLE_ONLY` authorization and spawned
+  scripts with missing root import context. Those authorization variables were
+  not set. This did not change AIP-06 or production gates.
+
+Manual Windows operation (from the repository root):
+  Set-Location 'D:\Work\Project Atlas\backend'
+  & .\.venv\Scripts\python.exe -m app.personal_paper
+In a second PowerShell window, explicitly create the labeled offline lifecycle:
+  Set-Location 'D:\Work\Project Atlas\backend'
+  & .\.venv\Scripts\python.exe -m app.personal_paper --run-test-data
+Stop the foreground server with Ctrl+C in its launch window.
+Dashboard: http://127.0.0.1:8765/
+
+Personal release matrix (this milestone):
+- Quality Dips TEST DATA strategy/entry/exit: source YES; offline tests YES;
+  local test-data integration YES; genuine operational acceptance NO.
+- Durable test cash/fees/positions/history and restart reconciliation: YES for
+  the isolated TEST DATA journal; genuine forward-account acceptance NO.
+- Daily TEST DATA report and read-only TEST DATA dashboard: verified against
+  the same durable records; genuine forward-data integration NO.
+- Hyperliquid BTC/ETH/SOL, provider-connected Quality Dips, Discord delivery,
+  and genuine forward local operation: not accepted and not enabled.
+
+Original roadmap remains 5/18 (27.8%); no AIP-06 milestone was completed.
+Production remains NO-GO. B1/C1/D1/E1 and all 21 safety decisions are
+unchanged. Genesis was not accessed.
+
+Next executable Personal PAPER milestone: inspect and integrate the existing
+Hyperliquid PAPER engine into an independent local TEST DATA/read-only slice,
+without using native startup, live order adapters, provider connections, or
+the full main-application lifespan. Genuine forward data and activation remain
+separate later prerequisites; do not repeat the prior Alpaca probe without
+new explicit authorization.
+======================================================================
