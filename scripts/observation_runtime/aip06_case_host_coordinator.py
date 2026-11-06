@@ -111,6 +111,9 @@ class CaseHostCoordinator:
         need(process.guard is self.case.guard
              and process.child is self.original_child
              and any(retained is self.original_child for retained in port.sessions)
+             and type(process.keys) in (tuple, list)
+             and tuple(process.keys) == self.original_keys
+             and bool(self.original_keys)
              and type(deadline_ns) is int
              and self.case.controller.clock() < deadline_ns,
              'ORIGINAL_BOUNDED_CASE_HOST_ABORT_OWNER_REQUIRED')

@@ -143,13 +143,14 @@ def test_abort_delegates_once_to_original_owner(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
     child = object()
-    host = SimpleNamespace(guard=case.guard, child=child)
+    host = SimpleNamespace(guard=case.guard, child=child, keys=('original',))
     called = []
     port = SimpleNamespace(sessions=[child], abort=lambda original, *, deadline_ns:
                            called.append((original, deadline_ns)))
     case.guard.processes = SimpleNamespace(port=port)
     coordinator.host = host
     coordinator.original_child = child
+    coordinator.original_keys = ('original',)
     case.controller = SimpleNamespace(clock=lambda: 100)
     assert coordinator.abort_original_host(deadline_ns=200) is None
     assert called == [(child, 200)]
@@ -162,8 +163,10 @@ def test_failed_abort_cannot_replay_or_send_input(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
     child = object()
-    coordinator.host = SimpleNamespace(guard=case.guard, child=child)
+    coordinator.host = SimpleNamespace(guard=case.guard, child=child,
+                                       keys=('original',))
     coordinator.original_child = child
+    coordinator.original_keys = ('original',)
     def fail(original, *, deadline_ns):
         raise OSError('native abort unresolved')
     case.guard.processes = SimpleNamespace(port=SimpleNamespace(sessions=[child], abort=fail))
@@ -371,3 +374,24 @@ def test_handoff_rejects_post_binding_owner_mutation_without_replay(monkeypatch,
     assert not sent and coordinator.handoff_attempted
     with pytest.raises(ValueError, match='BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED'):
         coordinator.deliver_handoff(deadline_ns=200)
+
+
+@pytest.mark.parametrize('mutation', ['keys', 'child', 'retention'])
+def test_abort_refuses_substituted_original_owner_before_native_action(monkeypatch, mutation):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = object()
+    host = SimpleNamespace(guard=case.guard, child=child, keys=('original',))
+    invoked = []
+    port = SimpleNamespace(sessions=[child], abort=lambda *args, **kwargs: invoked.append(True))
+    case.guard.processes = SimpleNamespace(port=port)
+    case.controller = SimpleNamespace(clock=lambda: 100)
+    coordinator.host, coordinator.original_child = host, child
+    coordinator.original_keys = ('original',)
+    if mutation == 'keys': host.keys = ('substituted',)
+    if mutation == 'child': host.child = object()
+    if mutation == 'retention': port.sessions = []
+    with pytest.raises(ValueError, match='ORIGINAL_BOUNDED_CASE_HOST_ABORT_OWNER_REQUIRED'):
+        coordinator.abort_original_host(deadline_ns=200)
+    assert not invoked and coordinator.abort_attempted is False
