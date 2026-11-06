@@ -43,6 +43,8 @@ class OwnershipProbeDriver:
 
     def __init__(self):
         self.contract = next(c for c in contracts() if c.id == 'OWNERSHIP-PROBES')
+        self.attempted = False
+        self.failed = False
 
     def verify(self, context, *, deadline_ns):
         need(context.contract == self.contract and context.roles == self.contract.roles,
@@ -53,13 +55,19 @@ class OwnershipProbeDriver:
         self.verify(context, deadline_ns=deadline_ns)
         need(reservation == context.reservation and reservation.get('held') is True,
              'ORIGINAL_OWNERSHIP_PROBE_RESERVATION_REQUIRED')
-        context.require_execution()
-        need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_BEFORE_EFFECT')
-        supervisor = context.controller.probe_supervisor(deadline_ns=deadline_ns)
-        need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_BETWEEN_EFFECTS')
-        unexpected = context.controller.probe_unexpected_children(deadline_ns=deadline_ns)
-        need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_AFTER_EFFECT')
-        return {'supervisor': supervisor, 'unexpected_children': unexpected}
+        need(not self.attempted and not self.failed, 'ONCE_ONLY_OWNERSHIP_PROBE_DRIVER')
+        self.attempted = True
+        try:
+            context.require_execution()
+            need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_BEFORE_EFFECT')
+            supervisor = context.controller.probe_supervisor(deadline_ns=deadline_ns)
+            need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_BETWEEN_EFFECTS')
+            unexpected = context.controller.probe_unexpected_children(deadline_ns=deadline_ns)
+            need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_AFTER_EFFECT')
+            return {'supervisor': supervisor, 'unexpected_children': unexpected}
+        except BaseException:
+            self.failed = True
+            raise
 
 
 class NativeScenarioBinding:
