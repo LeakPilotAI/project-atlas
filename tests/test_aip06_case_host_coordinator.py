@@ -70,6 +70,25 @@ def test_handoff_attempt_is_once_only_even_on_failure(monkeypatch):
         coordinator.deliver_handoff(deadline_ns=200)
 
 
+def test_cleanup_requires_prior_handoff(monkeypatch):
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_CLEANUP_CHECK_ONCE_ONLY'):
+        coordinator.verify_original_cleanup()
+
+
+def test_cleanup_rejects_unclosed_original_host(monkeypatch):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    coordinator.host = SimpleNamespace(closed=False, child=SimpleNamespace(closed=False))
+    coordinator.handoff_attempted = True
+    case.guard.processes = SimpleNamespace(port=SimpleNamespace(sessions=[]))
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED'):
+        coordinator.verify_original_cleanup()
+    assert coordinator.cleanup_verified is False
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)

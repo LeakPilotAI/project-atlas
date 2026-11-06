@@ -21,6 +21,7 @@ class CaseHostCoordinator:
         self.intent = None
         self.host = None
         self.handoff_attempted = False
+        self.cleanup_verified = False
 
     def prepare(self, *, deadline_ns):
         need(not self.prepared, 'CASE_HOST_COORDINATOR_REPLAY_REFUSED')
@@ -66,6 +67,20 @@ class CaseHostCoordinator:
         self.handoff_attempted = True
         return self.case.deliver_physical_host_handoff(self.host,
                                                        deadline_ns=deadline_ns)
+
+    def verify_original_cleanup(self):
+        """Observe completed original-owner cleanup; never terminate by PID."""
+        need(self.host is not None and self.handoff_attempted
+             and not self.cleanup_verified,
+             'ORIGINAL_CASE_HOST_CLEANUP_CHECK_ONCE_ONLY')
+        process = self.host
+        port = getattr(self.case.guard.processes, 'port', self.case.guard.processes)
+        need(process.closed is True and process.child.closed is True
+             and any(retained is process.child for retained in port.sessions)
+             and port.resources_closed(process.child, process.keys) is True,
+             'ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED')
+        self.cleanup_verified = True
+        return True
 
     def execute(self, *args, **kwargs):
         raise ValueError('INDEPENDENT_PHYSICAL_CASE_HOST_NOT_AUTHORIZED')
