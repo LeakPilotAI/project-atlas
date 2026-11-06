@@ -277,7 +277,8 @@ class CaseContext:
         from scripts.observation_runtime.aip06_case_host_launch_intent import inspect_launch_intent
         need(type(process) is GuardedProcess and process.guard is self.guard
              and process.plan['name'] == 'case_host'
-             and process.child in getattr(self.guard.processes, 'sessions', ())
+             and any(session is process.child for session in
+                     getattr(self.guard.processes, 'sessions', ()))
              and not process.closed,
              'ORIGINAL_EXISTING_GUARDED_CASE_HOST_REQUIRED')
         intent = inspect_launch_intent(self, self.reservation, deadline_ns=deadline_ns)

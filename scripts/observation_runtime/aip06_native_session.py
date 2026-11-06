@@ -691,8 +691,8 @@ class WindowsSessionPort:
         need(type(case) is CaseContext and case.guard is self.guard
              and case.factory.pending is case and not case.closed and not case.failed,
              'ORIGINAL_CASE_HOST_INPUT_OWNER_REQUIRED')
-        need(child in self.sessions and child.name == 'case_host'
-             and child.target_released and not child.failed and not child.closed
+        need(any(session is child for session in self.sessions)
+             and child.name == 'case_host' and child.target_released and not child.failed and not child.closed
              and not child.suspended and child.binding is not None
              and child.channel is not None,
              'RELEASED_ORIGINAL_CASE_HOST_INPUT_CHILD_REQUIRED')
