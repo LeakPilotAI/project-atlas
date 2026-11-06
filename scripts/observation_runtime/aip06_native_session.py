@@ -890,6 +890,11 @@ class WindowsSessionPort:
                         child.launch_handle, child.creation_native
                     )
             self.calls.wait(child.launch_handle, deadline_ns)
+            after = self.calls.lifecycle(child.launch_handle)
+            need(after['exited'] is True and child.creation_native is not None
+                 and after['pid'] == child.creation_native['pid']
+                 and after['created'] == child.creation_native['created'],
+                 'ABORT_ORIGINAL_PROCESS_EXIT_NOT_INDEPENDENTLY_VERIFIED')
             need(not self.calls.members(child.job), "ABORT_JOB_NOT_EMPTY")
         self.protocol.close(child, deadline_ns=deadline_ns)
         for key in reversed(tuple(child.native)):
