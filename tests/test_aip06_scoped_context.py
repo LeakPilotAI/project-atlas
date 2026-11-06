@@ -242,6 +242,17 @@ def test_physical_host_handoff_requires_inherited_scope_integrity_and_original_l
         case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
         ticket = case.reserve(deadline_ns=t.x.now[0]+10**9)
         packet = case.physical_host_handoff(ticket, deadline_ns=t.x.now[0]+10**9)
+        original_ledger = t.g.ledger
+        def altered_ledger(operation, *args, **kwargs):
+            result = original_ledger(operation, *args, **kwargs)
+            if operation == 'read':
+                result = copy.deepcopy(result)
+                result['state']['resources'][ticket['key']]['closed'] = True
+            return result
+        with monkeypatch.context() as scoped:
+            scoped.setattr(t.g, 'ledger', altered_ledger)
+            with pytest.raises(ValueError, match='ORIGINAL_PHYSICAL_HANDOFF_RESERVATION_STILL_HELD'):
+                case.physical_host_handoff(ticket, deadline_ns=t.x.now[0]+10**9)
         descriptor = {'binding': {'parent': t.lease.binding.runtime},
                       'source_pins': t.factory.plan['source_pins'],
                       'targets': t.controller.profile['targets'],
