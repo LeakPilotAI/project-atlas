@@ -645,7 +645,13 @@ class WindowsSessionPort:
              and recorded is not None and recorded['plan'] is child.plan
              and recorded['argv'] == tuple(child.argv)
              and recorded['case_scope'] == case.wire()
-             and recorded['parent'] == self.resources.state['owners'][self.guard.owner],
+             and recorded['parent'] == self.resources.state['owners'][self.guard.owner]
+             and child.binding is self.guard.ownership.bindings.get('case_host')
+             and child.binding.request is child.plan['request']
+             and child.receipt is not None
+             and child.receipt.get('guarded') is True
+             and child.receipt.get('nonce') == nonce
+             and child.receipt.get('owner') == digest(child.binding.runtime),
              'ORIGINAL_CASE_HOST_RELEASE_PLAN_REQUIRED')
         return None
 
