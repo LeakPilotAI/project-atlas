@@ -28,16 +28,22 @@ def inspect_inherited_handoff(*, maximum_bytes=65536, timeout=6):
     guard = require_fixture('independent-case-host-preflight')
     descriptor = guard.processes.runtime.descriptor
     argv = descriptor.get('argv')
+    targets = descriptor.get('targets')
+    pins = descriptor.get('source_pins')
     need(type(argv) in (tuple, list) and len(argv) == 3
          and argv[1] == '-B' and argv[2] == HOST_ENTRY
-         and descriptor.get('targets', {}).get('case_host') == HOST_ENTRY
-         and HOST_ENTRY in descriptor.get('source_pins', {}),
+         and type(targets) is dict and targets.get('case_host') == HOST_ENTRY
+         and type(pins) is dict and HOST_ENTRY in pins,
          'PINNED_INHERITED_CASE_HOST_COMMAND_REQUIRED')
     # The handoff verifier is execution-critical. Check the retained native
     # source pin before any private INPUT frame can be consumed.
     verifier = ntpath.join(ntpath.dirname(HOST_ENTRY), 'aip06_host_preflight.py')
-    need(verifier in descriptor['source_pins'],
+    need(verifier in pins,
          'PINNED_CASE_HOST_PREFLIGHT_SOURCE_REQUIRED')
+    need(all(type(pins[path]) is str and len(pins[path]) == 64
+             and all(char in '0123456789abcdef' for char in pins[path])
+             for path in (HOST_ENTRY, verifier)),
+         'VALID_CASE_HOST_SOURCE_DIGESTS_REQUIRED')
     source = guard.processes.runtime.verify_source(verifier)
     need(type(source) is dict and source.get('path') == verifier
          and source.get('sha256') == descriptor['source_pins'][verifier]

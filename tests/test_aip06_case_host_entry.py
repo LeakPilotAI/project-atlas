@@ -231,3 +231,19 @@ def test_case_host_requires_original_guard(monkeypatch):
     monkeypatch.setattr(host, 'require_fixture', refuse)
     with pytest.raises(ValueError, match='ORIGINAL_GUARD_NOT_INSTALLED'):
         host.inspect_inherited_handoff()
+
+
+@pytest.mark.parametrize('bad', ['', 'a' * 63, 'Z' * 64, None, 1])
+@pytest.mark.parametrize('which', ['host', 'preflight'])
+def test_case_host_refuses_malformed_source_digest_before_private_input(monkeypatch, bad, which):
+    pins = {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}
+    pins[host.HOST_ENTRY if which == 'host' else VERIFIER] = bad
+    descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
+                  'targets': {'case_host': host.HOST_ENTRY}, 'source_pins': pins}
+    runtime = SimpleNamespace(descriptor=descriptor,
+                              verify_source=lambda path: pytest.fail('source receipt before digest validation'))
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=runtime,
+        read_input=lambda **kw: pytest.fail('input before digest validation')))
+    monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
+    with pytest.raises(ValueError, match='VALID_CASE_HOST_SOURCE_DIGESTS_REQUIRED'):
+        host.inspect_inherited_handoff()
