@@ -174,6 +174,22 @@ def test_dispatcher_requires_explicit_physical_host_gate_even_for_context_proxy(
     in_controller(monkeypatch, check)
 
 
+@pytest.mark.parametrize('damage', ['closed', 'foreign', 'failed'])
+def test_dispatcher_snapshot_refuses_unhealthy_or_foreign_case(monkeypatch, damage):
+    def check(t):
+        case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
+        if damage == 'closed':
+            case.closed = True
+        elif damage == 'foreign':
+            t.factory.cases['F01'] = object()
+        else:
+            t.factory.failed = True
+        with pytest.raises(ValueError, match='HEALTHY_ORIGINAL_SCOPED_BINDING_SNAPSHOT'):
+            t.factory.as_bindings()
+        assert t.factory.failed
+    in_controller(monkeypatch, check)
+
+
 def test_joined_bootstrap_case_bridge_reservation_raw_reader_and_release(monkeypatch):
     def check(t):
         from scripts.observation_runtime.aip06_acceptance_control import GuardedScenarioBridge,scenarios

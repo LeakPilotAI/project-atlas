@@ -141,7 +141,19 @@ class ScopedContextFactory:
             raise
 
     def as_bindings(self, *, fault_drivers=None):
-        return bindings(self.plan['source_pins'], contexts=dict(self.cases), fault_drivers=fault_drivers)
+        # A dispatcher snapshot must never publish a failed or foreign case.
+        # This does not grant physical execution authority.
+        try:
+            need(not self.failed and all(type(case) is CaseContext
+                 and case.factory is self and case.intent.scenario == scenario
+                 and case.intent.case in self.used and not case.closed
+                 for scenario, case in self.cases.items()),
+                 'HEALTHY_ORIGINAL_SCOPED_BINDING_SNAPSHOT')
+            self.verify(deadline_ns=self.controller.clock() + 10**9)
+            return bindings(self.plan['source_pins'], contexts=dict(self.cases), fault_drivers=fault_drivers)
+        except BaseException:
+            self.failed = True
+            raise
 
     def reader(self, case, intent, session, *, deadline_ns):
         result = None
