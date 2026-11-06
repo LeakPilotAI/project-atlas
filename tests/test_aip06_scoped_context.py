@@ -263,6 +263,15 @@ def test_physical_host_handoff_requires_inherited_scope_integrity_and_original_l
                       'targets': t.controller.profile['targets'],
                       'argv': list(dict(case.intent.commands)[case.roles[0]])}
         verified = verify_physical_host_handoff(packet, descriptor, t.g)
+        from scripts.observation_runtime.aip06_host_preflight import inspect, require_execution, MISSING_NATIVE_EVIDENCE
+        preflight = inspect(packet, descriptor, t.g)
+        assert preflight == {'schema': 'AIP06_HOST_PREFLIGHT_V1', 'scenario': case.contract.id,
+                             'native_acceptance': False, 'execution_authorized': False,
+                             'missing_native_evidence': MISSING_NATIVE_EVIDENCE}
+        with pytest.raises(ValueError, match='INDEPENDENT_PHYSICAL_CASE_HOST_NOT_IMPLEMENTED'):
+            require_execution(preflight)
+        with pytest.raises(ValueError, match='EXACT_AIP06_HOST_PREFLIGHT_REQUIRED'):
+            require_execution({'schema': 'untrusted'})
         assert verified == packet and verified is not packet
         with monkeypatch.context() as scoped:
             scoped.setattr(t.g, 'owner', 'foreign-owner')
