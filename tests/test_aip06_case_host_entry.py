@@ -44,6 +44,15 @@ def test_case_host_rejects_unbounded_read_before_fixture_lookup(maximum_bytes, t
         host.inspect_inherited_handoff(maximum_bytes=maximum_bytes, timeout=timeout)
 
 
+def test_case_host_rejects_invalid_private_payload_before_preflight(monkeypatch):
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor={})),
+                            read_input=lambda **kwargs: b'not-json')
+    monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
+    monkeypatch.setattr(host, 'inspect', lambda *args: pytest.fail('preflight must not run'))
+    with pytest.raises((ValueError, TypeError)):
+        host.inspect_inherited_handoff()
+
+
 def test_case_host_requires_original_guard(monkeypatch):
     def refuse(name):
         assert name == 'independent-case-host-preflight'
