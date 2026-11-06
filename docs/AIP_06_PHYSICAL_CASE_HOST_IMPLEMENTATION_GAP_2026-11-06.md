@@ -98,3 +98,7 @@ The 1,313-test broad regression is GREEN, but milestone status remains 5/18 (27.
 ## Broad coordinator regression checkpoint (2026-11-06)
 
 The current AIP-06 offline/injected pytest selection, excluding the independently verified joined-lifecycle module, completed **1,331 passed, 0 failed, exit code 0, 128.81 seconds** after coordinator integration and adversarial reader/abort lifecycle tests. The joined-lifecycle module was not rerun in this checkpoint (previously 5 passed). These results are not physical native Windows acceptance. No changes to B1/C1/D1/E1, 21 decisions, daily PAPER BLOCKED, production NO-GO or Genesis isolation.
+
+## Post-cleanup-scope hardening regression (2026-11-06)
+
+After commit `048bfbed`, the 47-module AIP-06 offline/injected selection excluding the separately verified joined-lifecycle module completed **1,332 passed, 0 failed, exit code 0, 130.56 seconds**. The latest coordinator requires both original factory pending-case and native port scoped-case references to be exactly `None` before case-scope release verification succeeds; replacement objects are rejected. This is source-level/injected regression, not physical native Windows acceptance. Static search still finds no production `CaseHostCoordinator` construction call site. The descendant gateway exists and should be reused by a future authorized owner-scoped orchestrator. Roadmap 5/18, daily PAPER BLOCKED, production NO-GO; B1/C1/D1/E1 and all 21 decisions unchanged; Genesis untouched.
