@@ -389,8 +389,13 @@ class ReaderContext:
                  and reply['owner'] == packet['owner'] and reply['native_acceptance'] is False,
                  'ORIGINAL_PRIVATE_READER_REPLY_CORRELATION')
             raw = reply['raw']
+            need(type(raw) is dict and raw.get('native_acceptance') is False
+                 and type(raw.get('cuts')) is list and len(raw['cuts']) == len(READERS)
+                 and all(type(c) is dict and type(c.get('reader')) is str
+                         and type(c.get('started_ns')) is int and type(c.get('finished_ns')) is int
+                         for c in raw['cuts']), 'CLOSED_TYPED_INDEPENDENT_READER_CUTS')
             now = case.controller.clock()
-            need(raw['native_acceptance'] is False and body(raw['observer']) == body(identity(self.session.child.binding.runtime))
+            need(body(raw.get('observer')) == body(identity(self.session.child.binding.runtime))
                  and tuple(c['reader'] for c in raw['cuts']) == READERS
                  and all(start <= c['started_ns'] <= c['finished_ns'] <= now < end
                          and c['finished_ns']-c['started_ns'] <= self.intent.freshness_ns

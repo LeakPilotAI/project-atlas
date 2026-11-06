@@ -411,7 +411,8 @@ def test_reader_lease_cannot_adopt_or_redeclare_a_native_identity(monkeypatch,da
 
 @pytest.mark.parametrize('damage',['', 'owner-collision','stale-identity','missing-job','missing-reader','acl-denied',
                                   'state-zero','pid-zero-listener','reader-error','survivor','stale-reply','wrong-reply','timeout',
-                                  'missing-ack','duplicate-ack','replay','result-tamper','wrong-private-scope','wrong-access'])
+                                  'missing-ack','duplicate-ack','replay','result-tamper','wrong-private-scope','wrong-access',
+                                  'raw-not-dict','raw-cuts-not-list','raw-cuts-short','raw-cut-time-string'])
 def test_separate_reader_context_private_frames_and_complete_parent_release(monkeypatch,damage):
     def start(t):
         case=t.factory.create(intent(t),deadline_ns=t.x.now[0]+10**9)
@@ -432,6 +433,10 @@ def test_separate_reader_context_private_frames_and_complete_parent_release(monk
                     r.run_reader(packet)
                     if damage=='stale-reply':r.frames[0]['payload']['raw']['cuts'][0]['started_ns']=0
                     if damage=='wrong-reply':r.frames[0]['payload']['request']='f'*64
+                    if damage=='raw-not-dict':r.frames[0]['payload']['raw']=None
+                    if damage=='raw-cuts-not-list':r.frames[0]['payload']['raw']['cuts']='bad'
+                    if damage=='raw-cuts-short':r.frames[0]['payload']['raw']['cuts'].pop()
+                    if damage=='raw-cut-time-string':r.frames[0]['payload']['raw']['cuts'][0]['started_ns']='bad'
                     if damage=='missing-ack':r.frames.clear();r.child.communicate=lambda *a,**kw:r.cleanup()
                     if damage=='duplicate-ack':r.frames.append(copy.deepcopy(r.frames[0]))
                     with t.g.installed():
