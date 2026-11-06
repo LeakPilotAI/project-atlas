@@ -81,3 +81,13 @@ def test_case_host_refuses_invalid_pre_resume_receipt(damage):
         s.observer.members = lambda: members
     with pytest.raises(ValueError):
         verify_suspended_host_before_resume(s, job, guard)
+
+
+def test_equal_but_unretained_session_cannot_authorize_resume():
+    from copy import copy
+    session, job, guard = setup()
+    substituted = copy(session)
+    assert substituted == session and substituted is not session
+    guard.processes.port.sessions[:] = [substituted]
+    with pytest.raises(ValueError, match="ORIGINAL_RETAINED_CASE_HOST_SESSION_REQUIRED"):
+        verify_suspended_host_before_resume(session, job, guard)
