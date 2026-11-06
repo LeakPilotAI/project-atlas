@@ -130,8 +130,11 @@ class CaseHostCoordinator:
              and not self.cleanup_verified,
              'COMPLETED_ORIGINAL_ABORT_REQUIRED_FOR_NATIVE_CLOSURE')
         port = getattr(self.case.guard.processes, 'port', self.case.guard.processes)
-        need(self.host.child is self.original_child
+        need(self.host.guard is self.case.guard
+             and self.host.child is self.original_child
              and any(retained is self.original_child for retained in port.sessions)
+             and type(self.host.keys) in (tuple, list)
+             and tuple(self.host.keys) == self.original_keys
              and self.original_child.closed is True
              and bool(self.original_keys)
              and port.resources_closed(self.original_child, self.original_keys) is True,

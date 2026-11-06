@@ -395,3 +395,25 @@ def test_abort_refuses_substituted_original_owner_before_native_action(monkeypat
     with pytest.raises(ValueError, match='ORIGINAL_BOUNDED_CASE_HOST_ABORT_OWNER_REQUIRED'):
         coordinator.abort_original_host(deadline_ns=200)
     assert not invoked and coordinator.abort_attempted is False
+
+
+@pytest.mark.parametrize('mutation', ['keys', 'child', 'retention', 'guard'])
+def test_native_abort_proof_rejects_post_abort_owner_substitution(monkeypatch, mutation):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = SimpleNamespace(closed=True)
+    host = SimpleNamespace(guard=case.guard, child=child, keys=('original',), closed=False)
+    calls = []
+    port = SimpleNamespace(sessions=[child], resources_closed=lambda *args: calls.append(True) or True)
+    case.guard.processes = SimpleNamespace(port=port)
+    coordinator.host, coordinator.original_child = host, child
+    coordinator.original_keys = ('original',)
+    coordinator.abort_attempted = coordinator.abort_completed = True
+    if mutation == 'keys': host.keys = ('different',)
+    if mutation == 'child': host.child = SimpleNamespace(closed=True)
+    if mutation == 'retention': port.sessions = []
+    if mutation == 'guard': host.guard = object()
+    with pytest.raises(ValueError, match='ABORTED_ORIGINAL_NATIVE_RESOURCES_NOT_CLOSED'):
+        coordinator.verify_aborted_native_closure()
+    assert not calls and not coordinator.cleanup_verified
