@@ -146,7 +146,7 @@ class ScopedContextFactory:
         try:
             need(not self.failed and all(type(case) is CaseContext
                  and case.factory is self and case.intent.scenario == scenario
-                 and case.intent.case in self.used and not case.closed
+                 and case.intent.case in self.used and not case.closed and not case.failed
                  for scenario, case in self.cases.items()),
                  'HEALTHY_ORIGINAL_SCOPED_BINDING_SNAPSHOT')
             self.verify(deadline_ns=self.controller.clock() + 10**9)
