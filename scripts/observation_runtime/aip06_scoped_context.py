@@ -250,6 +250,14 @@ class CaseContext:
         self.verify(deadline_ns=self.deadline)
         commands = dict(self.intent.commands)
         reader = (self.factory.plan['executable'], '-B', READER_ENTRY)
+        from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
+        host = (self.factory.plan['executable'], '-B', HOST_ENTRY)
+        if tuple(argv) == host:
+            # The original guarded spawn path invokes admit before any native
+            # allocation. This is validation only, never execution authority.
+            from scripts.observation_runtime.aip06_case_host_launch_intent import inspect_launch_intent
+            inspect_launch_intent(self, self.reservation, deadline_ns=self.deadline)
+            return
         need(tuple(argv) in tuple(commands.values()) or
              (tuple(argv) == reader and self.controller.profile['targets'].get('readonly_reader') == READER_ENTRY),
              'EXACT_SCOPED_COMMAND_BEFORE_GUARDED_CREATION')
