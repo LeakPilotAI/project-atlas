@@ -70,3 +70,7 @@ The 47-module offline/injected AIP-06 regression excluding separately tested joi
 ## Original-session identity regression (2026-11-06)
 
 The 47-module AIP-06 offline/injected regression excluding separately tested joined-lifecycle completed **1,300 passed, 0 failed**, exit code 0, in **132.84 seconds** after commits `3c0e888f`, `cea40850`, and `4fb0cfe0`. Suspended case-host argv validation is type-checked, and pre-resume retained-session membership uses object identity with an adversarial equal-but-unretained session regression. These checks do not constitute physical Windows native acceptance. AIP-06 incomplete, daily PAPER BLOCKED, production NO-GO; B1/C1/D1/E1 and all 21 decisions unchanged. Genesis untouched.
+
+## Owner source-pin and typed pre-resume receipt regression (2026-11-06)
+
+The 47-module offline/injected AIP-06 regression excluding the separately verified joined-lifecycle module completed **1,305 passed, 0 failed**, exit code 0, in **132.50 seconds** after commits `b36417e1` and `300b0a74`. Five additional adversarial tests reject malformed original owner case-host source digests and missing/malformed pre-resume session/Job receipts. These are source-level regressions, **not independent physical Windows native acceptance**. AIP-06 incomplete, daily PAPER BLOCKED, production NO-GO; B1/C1/D1/E1 and all 21 safety decisions unchanged. Genesis untouched.
