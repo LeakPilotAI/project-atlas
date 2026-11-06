@@ -44,3 +44,9 @@ The clean AIP-06 pytest selection excluding `test_aip06_joined_lifecycle.py` com
 ## Latest independent regression checkpoint (2026-11-06)
 
 The separately executed joined-lifecycle suite completed **5 passed, 0 failed**, exit code 0, in **379.49 seconds (6m19s)**. The current independent-reader/abort focused regression completed **102 passed, 0 failed** after commit `fab4793e`. The prior broad AIP-06 suite completed **1,244 passed, 0 failed**, before that reader-deadline change. These are offline/injected source regressions, not native Windows acceptance. AIP-06 remains incomplete; daily PAPER and production are not authorized. Preserve B1/C1/D1/E1 and all 21 safety decisions.
+
+## Full regression checkpoint (2026-11-06; latest)
+
+The complete 47-module offline/injected AIP-06 regression (excluding the separately tested joined-lifecycle module) completed with **1,264 passed, 0 failed, exit code 0**, in **163.22 seconds**. The separate joined-lifecycle module previously passed **5 tests** in 379.49 seconds.
+
+This checkpoint includes retained native cleanup preflight checks and inherited independent-reader command/source-receipt validation. These are regression results only; **physical Windows native acceptance is unverified**, daily PAPER is incomplete, and production remains NO-GO. All existing approval gates and unconditional native execution refusals remain in place.
