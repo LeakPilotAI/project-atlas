@@ -16145,6 +16145,7 @@ blocked and not operational. B1/C1/D1/E1, all 21 safety decisions, and the
 unconditional case-host execution refusals remain unchanged. Production
 NO-GO. Genesis untouched.
 
-Latest verified starting commit: c7338920 on chatgpt/atlas-rebuild-v1.
-This checkpoint's changes are pending scoped commit/push verification.
+Verified implementation/test commit: 5eb08f104214718d3fb5b4598407faf9771ae11e
+on chatgpt/atlas-rebuild-v1. Non-force push to origin succeeded; the remote
+branch SHA was verified against this commit.
 ======================================================================
