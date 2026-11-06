@@ -282,7 +282,9 @@ class CaseContext:
              and not process.closed,
              'ORIGINAL_EXISTING_GUARDED_CASE_HOST_REQUIRED')
         intent = inspect_launch_intent(self, self.reservation, deadline_ns=deadline_ns)
-        need(tuple(process.argv) == intent['argv']
+        need(type(process.argv) in (tuple, list) and len(process.argv) == 3
+             and all(type(arg) is str for arg in process.argv)
+             and tuple(process.argv) == intent['argv']
              and intent['native_acceptance'] is False
              and intent['execution_authorized'] is False,
              'EXACT_PINNED_CASE_HOST_HANDOFF_INTENT_REQUIRED')

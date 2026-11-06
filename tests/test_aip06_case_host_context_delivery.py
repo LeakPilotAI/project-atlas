@@ -34,7 +34,7 @@ def test_existing_original_host_routes_handoff(monkeypatch):
     assert len(sent) == 1 and sent[0][0] is process.child
 
 
-@pytest.mark.parametrize('damage', ['foreign_guard', 'unregistered', 'closed', 'wrong_role', 'wrong_argv', 'unauthorized_intent'])
+@pytest.mark.parametrize('damage', ['foreign_guard', 'unregistered', 'closed', 'wrong_role', 'wrong_argv', 'unauthorized_intent', 'malformed_argv', 'nonstring_argv'])
 def test_context_refuses_unowned_or_unqualified_handoff(monkeypatch, damage):
     case, process, port, sent = setup(monkeypatch)
     if damage == 'foreign_guard': process.guard = object()
@@ -46,6 +46,8 @@ def test_context_refuses_unowned_or_unqualified_handoff(monkeypatch, damage):
         monkeypatch.setattr(launch, 'inspect_launch_intent', lambda *a, **kw: {
             'argv': ('python', '-B', 'host'), 'handoff': {},
             'native_acceptance': False, 'execution_authorized': False})
+    if damage == 'malformed_argv': process.argv = None
+    if damage == 'nonstring_argv': process.argv = ('python', '-B', 42)
     if damage == 'unauthorized_intent':
         monkeypatch.setattr(launch, 'inspect_launch_intent', lambda *a, **kw: {
             'argv': process.argv, 'handoff': {}, 'native_acceptance': False,
