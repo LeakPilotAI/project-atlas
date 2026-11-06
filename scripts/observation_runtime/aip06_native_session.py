@@ -842,6 +842,8 @@ class WindowsSessionPort:
         return False
 
     def resources_closed(self, child, keys):
+        need(any(retained is child for retained in self.sessions),
+             'ORIGINAL_RETAINED_RESOURCE_CLOSE_PROOF_REQUIRED')
         return child.closed and all(
             self.closed(self.resources.state["resources"][k]["owner"], k) for k in keys
         )
