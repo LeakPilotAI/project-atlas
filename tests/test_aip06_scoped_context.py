@@ -303,10 +303,11 @@ def test_ownership_probe_driver_never_runs_inside_controller(monkeypatch):
             assert deadline_ns == 123
         def require_execution(self):
             raise ValueError('SEPARATELY_GUARDED_PHYSICAL_CASE_HOST_BINDING_REQUIRED')
+    context = Context()
     with pytest.raises(ValueError, match='SEPARATELY_GUARDED_PHYSICAL_CASE_HOST_BINDING_REQUIRED'):
-        driver.execute(Context(), {'held': True}, deadline_ns=123)
+        driver.execute(context, {'held': True}, deadline_ns=123)
     with pytest.raises(ValueError, match='ORIGINAL_OWNERSHIP_PROBE_RESERVATION_REQUIRED'):
-        driver.execute(Context(), {'held': False}, deadline_ns=123)
+        driver.execute(context, {'held': False}, deadline_ns=123)
 
 
 @pytest.mark.parametrize('cut', ['before', 'between', 'after'])
@@ -371,6 +372,22 @@ def test_ownership_probe_driver_latches_failure_and_refuses_retry():
     with pytest.raises(ValueError, match='ONCE_ONLY_OWNERSHIP_PROBE_DRIVER'):
         driver.execute(context, context.reservation, deadline_ns=100)
     assert calls == ['supervisor']
+
+
+def test_ownership_probe_driver_rejects_cross_context_rebinding():
+    from scripts.observation_runtime.aip06_native_scenario_bindings import OwnershipProbeDriver
+    driver = OwnershipProbeDriver()
+    class Context:
+        contract = driver.contract
+        roles = driver.contract.roles
+        def verify(self, *, deadline_ns):
+            pass
+    original, foreign = Context(), Context()
+    driver.verify(original, deadline_ns=100)
+    driver.verify(original, deadline_ns=100)
+    with pytest.raises(ValueError, match='ORIGINAL_OWNERSHIP_PROBE_CONTEXT_CONTINUITY'):
+        driver.verify(foreign, deadline_ns=100)
+    assert driver.bound_context is original
 
 
 def test_dispatcher_requires_explicit_physical_host_gate_even_for_context_proxy(monkeypatch):

@@ -45,11 +45,15 @@ class OwnershipProbeDriver:
         self.contract = next(c for c in contracts() if c.id == 'OWNERSHIP-PROBES')
         self.attempted = False
         self.failed = False
+        self.bound_context = None
 
     def verify(self, context, *, deadline_ns):
         need(context.contract == self.contract and context.roles == self.contract.roles,
              'EXACT_OWNERSHIP_PROBE_CONTEXT')
         context.verify(deadline_ns=deadline_ns)
+        if self.bound_context is None:
+            self.bound_context = context
+        need(self.bound_context is context, 'ORIGINAL_OWNERSHIP_PROBE_CONTEXT_CONTINUITY')
 
     def execute(self, context, reservation, *, deadline_ns):
         self.verify(context, deadline_ns=deadline_ns)
