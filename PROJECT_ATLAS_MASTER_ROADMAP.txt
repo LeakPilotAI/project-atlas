@@ -16149,3 +16149,64 @@ Verified implementation/test commit: 5eb08f104214718d3fb5b4598407faf9771ae11e
 on chatgpt/atlas-rebuild-v1. Non-force push to origin succeeded; the remote
 branch SHA was verified against this commit.
 ======================================================================
+
+PROJECT ATLAS CONTINUATION CHECKPOINT - 2026-11-06
+======================================================================
+
+Active milestone: AIP-06 native case-host and reader ownership contract
+Status: SOURCE CONTRACT REVIEWABLE; PHYSICAL ASSEMBLY BLOCKED FOR HUMAN
+SECURITY REVIEW AND INDEPENDENT WINDOWS ACCEPTANCE
+
+Completed in this checkpoint:
+- Investigated original process/Job ownership, duplicate-handle transfer,
+  reader/provider isolation, failed-open escrow, Stop versus abort, exit
+  verification, terminal resource-ledger reconciliation, and physical
+  acceptance evidence against the current source and documented Win32 APIs.
+- Added docs/AIP_06_NATIVE_OWNERSHIP_CONTRACT_2026-11-06.md. It separates
+  documented API behavior from Atlas assumptions and identifies the exact
+  unresolved review decisions; candidate access masks are explicitly not
+  approved.
+- Case-host abort now requires the retained binding's exact original Job and
+  current membership while live. It refuses root-only termination on mismatch.
+- Peer allocation/duplication failures latch the peer. Indeterminate
+  DuplicateHandle outcome stays in unresolved escrow, cannot be replayed, and
+  cannot be reported as complete release.
+- Added injected adversarial tests for Job-handle substitution, outside-Job
+  case-host refusal, allocation failure before duplication, and unresolved
+  duplicate failure/replay.
+- Updated the physical-gap report with the current findings and evidence.
+
+Verification:
+- Final focused AIP-06 selection: 4 modules, 208 passed, 0 failed,
+  0 skipped; 29.85 seconds.
+- Broader AIP-06 selection: 50 modules, 1,399 passed, 0 failed,
+  0 skipped; 599.74 seconds. It ran before the final two added adversarial
+  test cases; both final cases passed in the focused selection.
+- Changed Python files: Pylance reported no errors. Ruff reported 20 findings
+  in the checked files; inspection found none on newly changed lines, and no
+  automatic fixes were applied.
+- git diff --check passed. No native Windows calls or acceptance tests ran.
+- Source commit 7e60e550dbf5833b236ab6f460f44d43337e0a07 was pushed
+  non-force to chatgpt/atlas-rebuild-v1; the remote SHA matched.
+
+Open human security-review decisions:
+- Approve object-specific peer/reader access masks and the exact boundary
+  holding PROCESS_DUP_HANDLE.
+- Confirm supported Windows build, Job nesting/containment, and absence of
+  breakaway routes.
+- Decide whether a case-host graceful STOP/ACK/DRAIN protocol is required.
+- Define safe reconciliation for an indeterminate DuplicateHandle result.
+- Qualify exact reader-provider construction, pinning, rights, and freshness.
+- Approve the independent acceptance-evidence package and any later,
+  separately scoped one-time Windows authorization.
+
+Next executable engineering milestone after that review: implement only the
+approved per-object duplication rights and qualified reader-provider binding
+behind the unchanged execution refusals, then test forbidden rights, partial
+duplication, isolation, and replay. Until review is completed, no further
+native assembly or physical execution is safely executable.
+
+Roadmap progress remains 5/18 (27.8%). AIP-06 physical acceptance is blocked.
+Daily PAPER is not operational. B1/C1/D1/E1 and all 21 safety decisions remain
+unchanged. Production remains NO-GO. Genesis untouched.
+======================================================================

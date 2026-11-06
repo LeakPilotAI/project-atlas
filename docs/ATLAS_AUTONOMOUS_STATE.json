@@ -22858,5 +22858,68 @@
     "genesis_access": false,
     "preexisting_dirty_and_untracked_files_preserved": true,
     "next_action": "Wait for the reviewed exact original-handle/provider-transfer contract and separate explicit native authorization/evidence. No unblocked source-only milestone identified; do not launch native execution or claim PAPER operational."
+  },
+  "aip06_native_ownership_contract_20261106": {
+    "status": "SOURCE_CONTRACT_REVIEWABLE_HUMAN_SECURITY_REVIEW_BLOCKS_NATIVE_ASSEMBLY",
+    "reconciled_at": "2026-11-06",
+    "branch": "chatgpt/atlas-rebuild-v1",
+    "base_commit": "420e238996e4b4a5ed814b9a791efde7dc929156",
+    "latest_verified_source_commit": "7e60e550dbf5833b236ab6f460f44d43337e0a07",
+    "source_commit_pushed": true,
+    "remote_sha_verified": "7e60e550dbf5833b236ab6f460f44d43337e0a07",
+    "completed_milestones": "5/18",
+    "active_task": null,
+    "contract": {
+      "document": "docs/AIP_06_NATIVE_OWNERSHIP_CONTRACT_2026-11-06.md",
+      "status": "ENGINEERING_CONTRACT_FOR_REVIEW_NOT_NATIVE_AUTHORIZATION",
+      "windows_api_behavior_separated_from_atlas_assumptions": true,
+      "candidate_access_masks_approved": false,
+      "physical_acceptance": false
+    },
+    "source_changes": [
+      "Owned case-host abort checks the retained original Job identity and live membership; refuses root-only termination.",
+      "Peer allocation failure latches the peer before duplication.",
+      "Indeterminate DuplicateHandle failure remains unresolved escrow, blocks replay, and prevents complete release."
+    ],
+    "validation": {
+      "focused_final": {
+        "modules": 4,
+        "passed": 208,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 29.85
+      },
+      "broader_aip06": {
+        "modules": 50,
+        "passed": 1399,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 599.74,
+        "note": "The run preceded two final added adversarial tests; both are included in focused_final."
+      },
+      "python": "3.12.10",
+      "pylance_changed_python_files": "NO_ERRORS",
+      "ruff": "20 existing findings in checked files; none on changed lines; no auto-fixes",
+      "git_diff_check": "PASS",
+      "native_api_calls": 0,
+      "native_workers_launched": 0,
+      "native_acceptance": false
+    },
+    "human_security_review_required": [
+      "Approve exact object-specific duplicate/reader rights and PROCESS_DUP_HANDLE boundary.",
+      "Confirm Windows build, Job nesting/containment, and breakaway behavior.",
+      "Decide case-host graceful STOP/ACK/DRAIN semantics.",
+      "Define safe reconciliation for indeterminate DuplicateHandle outcomes.",
+      "Qualify reader-provider construction, pinning, rights, and freshness.",
+      "Approve independent physical evidence and any separately scoped native authorization."
+    ],
+    "next_source_milestone_after_review": "Implement only reviewed peer-handle rights and qualified reader-provider binding behind unchanged execution refusals; test forbidden rights, partial duplication, isolation, and replay.",
+    "no_unblocked_native_source_work_before_review": true,
+    "paper_operational": false,
+    "production": "NO-GO",
+    "approval_gates_unchanged": true,
+    "genesis_access": false,
+    "unrelated_research_test_staged": false,
+    "next_action": "Obtain human security review of the contract decisions. Until then, do not assemble or execute native case-host/reader flows, start PAPER, or alter approval gates."
   }
 }
