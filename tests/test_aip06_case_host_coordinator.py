@@ -216,6 +216,44 @@ def test_attached_reader_evidence_rejects_substituted_result(monkeypatch):
     reader.result = {'native_acceptance': False, 'cuts': ['substituted']}
     with pytest.raises(ValueError, match='ATTACHED_READER_EVIDENCE_IDENTITY_OR_DIGEST_CHANGED'):
         coordinator.verify_attached_reader_evidence(deadline_ns=200)
+    reader.result = result
+    reader.session = SimpleNamespace(child=child, closed=True)
+    with pytest.raises(ValueError, match='ATTACHED_READER_EVIDENCE_IDENTITY_OR_DIGEST_CHANGED'):
+        coordinator.verify_attached_reader_evidence(deadline_ns=200)
+    reader.session = session
+    session.child = object()
+    with pytest.raises(ValueError, match='ATTACHED_READER_EVIDENCE_IDENTITY_OR_DIGEST_CHANGED'):
+        coordinator.verify_attached_reader_evidence(deadline_ns=200)
+
+
+def test_coordinator_abort_lifecycle_retains_native_proof_without_false_case_cleanup(monkeypatch):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = SimpleNamespace(closed=False)
+    host = SimpleNamespace(guard=case.guard, child=child, closed=False,
+                           keys=('original-handle',))
+    calls = []
+    def abort(original, *, deadline_ns):
+        assert original is child
+        calls.append(deadline_ns)
+        child.closed = True
+    port = SimpleNamespace(sessions=[child], abort=abort,
+                           resources_closed=lambda original, keys:
+                           original is child and child.closed and keys == ('original-handle',))
+    case.guard.processes = SimpleNamespace(port=port)
+    case.controller = SimpleNamespace(clock=lambda: 100)
+    coordinator.host = host
+    coordinator.original_child = child
+    coordinator.original_keys = ('original-handle',)
+    assert coordinator.abort_original_host(deadline_ns=200) is None
+    assert calls == [200]
+    assert coordinator.verify_aborted_native_closure() is True
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED'):
+        coordinator.verify_original_cleanup()
+    with pytest.raises(ValueError, match='BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED'):
+        coordinator.deliver_handoff(deadline_ns=200)
+    assert coordinator.cleanup_verified is False
 
 
 def test_execution_remains_disabled(monkeypatch):
