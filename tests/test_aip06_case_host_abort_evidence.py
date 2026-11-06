@@ -16,7 +16,7 @@ def prepare(monkeypatch, failure):
     port.closed_proofs = set()
     port.protocol.close = lambda original, *, deadline_ns: events.append('channel-close')
     port.calls = SimpleNamespace(
-        lifecycle=lambda handle: {'pid': 44, 'created': 55, 'exited': False},
+        lifecycle=lambda handle: {'pid': 44, 'created': 55, 'exited': 'wait' in events},
         in_job=lambda handle, job: True,
         terminate_owned_job=lambda job: events.append('terminate'),
         wait=lambda handle, deadline: events.append('wait'),
