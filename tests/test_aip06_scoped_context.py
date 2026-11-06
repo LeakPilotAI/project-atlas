@@ -306,8 +306,11 @@ def test_ownership_probe_driver_never_runs_inside_controller(monkeypatch):
     context = Context()
     with pytest.raises(ValueError, match='SEPARATELY_GUARDED_PHYSICAL_CASE_HOST_BINDING_REQUIRED'):
         driver.execute(context, {'held': True}, deadline_ns=123)
+    assert driver.failed and driver.attempted
+    with pytest.raises(ValueError, match='ONCE_ONLY_OWNERSHIP_PROBE_DRIVER'):
+        driver.execute(context, {'held': True}, deadline_ns=123)
     with pytest.raises(ValueError, match='ORIGINAL_OWNERSHIP_PROBE_RESERVATION_REQUIRED'):
-        driver.execute(context, {'held': False}, deadline_ns=123)
+        OwnershipProbeDriver().execute(context, {'held': False}, deadline_ns=123)
 
 
 @pytest.mark.parametrize('cut', ['before', 'between', 'after'])

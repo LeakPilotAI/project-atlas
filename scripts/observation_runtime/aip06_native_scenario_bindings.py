@@ -56,12 +56,12 @@ class OwnershipProbeDriver:
         need(self.bound_context is context, 'ORIGINAL_OWNERSHIP_PROBE_CONTEXT_CONTINUITY')
 
     def execute(self, context, reservation, *, deadline_ns):
-        self.verify(context, deadline_ns=deadline_ns)
-        need(reservation == context.reservation and reservation.get('held') is True,
-             'ORIGINAL_OWNERSHIP_PROBE_RESERVATION_REQUIRED')
         need(not self.attempted and not self.failed, 'ONCE_ONLY_OWNERSHIP_PROBE_DRIVER')
         self.attempted = True
         try:
+            self.verify(context, deadline_ns=deadline_ns)
+            need(reservation == context.reservation and reservation.get('held') is True,
+                 'ORIGINAL_OWNERSHIP_PROBE_RESERVATION_REQUIRED')
             context.require_execution()
             need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_BEFORE_EFFECT')
             supervisor = context.controller.probe_supervisor(deadline_ns=deadline_ns)
