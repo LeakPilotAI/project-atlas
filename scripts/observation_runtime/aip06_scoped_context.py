@@ -493,11 +493,13 @@ def verify_physical_host_handoff(packet, descriptor, guard):
          'CLOSED_INTEGRITY_BOUND_PHYSICAL_HOST_HANDOFF')
     view = verify_inherited_scope(packet['case'], descriptor)
     ticket = packet['reservation']
-    need(type(ticket) is dict and ticket.get('scenario') == view['intent']['scenario']
+    contract = next((c for c in contracts() if c.id == view['intent']['scenario']), None)
+    need(type(ticket) is dict and contract is not None
+         and ticket.get('scenario') == view['intent']['scenario']
          and ticket.get('case') == view['intent']['case']
          and ticket.get('manifest') == view['intent']['manifest']
          and ticket.get('evidence') == view['intent']['evidence']
-         and ticket.get('roles') == next(c.roles for c in contracts() if c.id == ticket['scenario'])
+         and ticket.get('roles') == contract.roles
          and ticket.get('root') == ROOTS['E'] and ticket.get('held') is True
          and ticket.get('stop_capacity_reserved') is True,
          'EXACT_PHYSICAL_HOST_RESERVATION_SCOPE')
