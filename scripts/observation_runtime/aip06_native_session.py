@@ -860,6 +860,8 @@ class WindowsSessionPort:
 
     def abort(self, child, *, deadline_ns):
         """Retain unresolved handles if termination/close cannot be verified."""
+        need(any(retained is child for retained in self.sessions),
+             'ORIGINAL_RETAINED_ABORT_SESSION_REQUIRED')
         child.failed = True
         self.failed = True
         if child.launch_handle is not None:
