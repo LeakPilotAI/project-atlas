@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from scripts.observation_runtime.aip06_acceptance_control import scenarios
 from scripts.observation_runtime.aip06_acceptance_plan import schedule
 from scripts.observation_runtime.aip06_harness import LIMITS, ROOTS, need
-from scripts.observation_runtime.aip06_test_driver import run_reviewed_tests
 
 
 @dataclass(frozen=True)
@@ -127,11 +126,9 @@ class NativeScenarioBinding:
         if self.contract.source_case is None:
             result = self.fault_driver.execute(self.context, reservation, deadline_ns=deadline_ns)
         else:
-            module = self.contract.source_case.split('::')[0]
-            # Current guard must already be installed by the qualified physical
-            # child. This call cannot install a second guard or create a child.
-            result = run_reviewed_tests(modules=(module,), case_ids=(self.contract.source_case,),
-                junit_leaf='scenario-' + self.contract.id + '.xml')
+            # Reviewed fixture tests cannot install another guard in this interpreter.
+            # Native execution requires an independently guarded host and evidence.
+            raise ValueError('REVIEWED_SOURCE_REQUIRES_INDEPENDENT_PHYSICAL_HOST')
         need(controller.clock() < deadline_ns, 'NATIVE_SCENARIO_DEADLINE')
         return result  # Original source results never confer native PASS.
 

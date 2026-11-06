@@ -430,6 +430,18 @@ def test_dispatcher_snapshot_refuses_unhealthy_or_foreign_case(monkeypatch, dama
     in_controller(monkeypatch, check)
 
 
+def test_reviewed_source_never_executes_inside_controller(monkeypatch):
+    def check(t):
+        case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
+        ticket = case.reserve(deadline_ns=t.x.now[0]+10**9)
+        binding = t.factory.as_bindings()['F01']
+        monkeypatch.setattr(case, 'require_execution', lambda: None)
+        with pytest.raises(ValueError, match='REVIEWED_SOURCE_REQUIRES_INDEPENDENT_PHYSICAL_HOST'):
+            binding.execute(t.controller, t.g, ticket, deadline_ns=t.x.now[0]+10**9)
+        assert case.abort(ticket, deadline_ns=t.x.now[0]+10**9)
+    in_controller(monkeypatch, check)
+
+
 def test_joined_bootstrap_case_bridge_reservation_raw_reader_and_release(monkeypatch):
     def check(t):
         from scripts.observation_runtime.aip06_acceptance_control import GuardedScenarioBridge,scenarios
