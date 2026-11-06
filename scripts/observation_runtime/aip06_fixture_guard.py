@@ -1169,6 +1169,16 @@ class GuardedProcess:
     def returncode(self):
         return self.guard.processes.returncode(self.child)
 
+    def send_case_host_handoff(self, handoff, *, deadline_ns):
+        """Explicit owner-only case-host INPUT; no launch or execution grant."""
+        need(not self.closed and self.plan['name'] == 'case_host'
+             and self.guard.processes.guard is self.guard
+             and self.child.name == 'case_host'
+             and self.child.plan is self.plan,
+             'ORIGINAL_GUARDED_CASE_HOST_PROCESS_REQUIRED')
+        return self.guard.processes.deliver_case_host_input(
+            self.child, handoff, deadline_ns=deadline_ns)
+
     def communicate(self, input=None, timeout=12):
         need(
             type(timeout) in (int, float) and 0 < timeout <= 35,
