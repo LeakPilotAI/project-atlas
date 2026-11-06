@@ -140,6 +140,21 @@ def test_failed_initial_ledger_snapshot_clears_only_original_scope(monkeypatch):
     in_controller(monkeypatch, check)
 
 
+def test_release_order_conflict_keeps_case_open_until_original_marker_restored(monkeypatch):
+    def check(t):
+        case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
+        ticket = case.reserve(deadline_ns=t.x.now[0]+10**9)
+        t.port.scoped_case = object()
+        with pytest.raises(ValueError, match='ORIGINAL_SCOPED_CASE_RELEASE_ORDER'):
+            case.abort(ticket, deadline_ns=t.x.now[0]+10**9)
+        assert not case.closed and t.factory.pending is case
+        assert t.port.scoped_case is not case
+        t.port.scoped_case = case
+        assert case.abort(ticket, deadline_ns=t.x.now[0]+10**9)
+        assert case.closed and t.factory.pending is None and t.port.scoped_case is None
+    in_controller(monkeypatch, check)
+
+
 def test_joined_bootstrap_case_bridge_reservation_raw_reader_and_release(monkeypatch):
     def check(t):
         from scripts.observation_runtime.aip06_acceptance_control import GuardedScenarioBridge,scenarios

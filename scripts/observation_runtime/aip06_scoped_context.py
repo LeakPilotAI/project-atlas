@@ -270,11 +270,12 @@ class CaseContext:
                 self.guard.release(key)
         need(all(self.guard.ledger('read')['state']['resources'][k]['closed'] for k in keys)
              and self.controller.clock() < deadline_ns, 'AGGREGATE_CONTEXT_RELEASE_UNRESOLVED')
-        self.closed = True
         port = getattr(self.guard.processes, 'port', self.guard.processes)
-        need(getattr(port, 'scoped_case', None) is self, 'ORIGINAL_SCOPED_CASE_RELEASE_ORDER')
+        need(getattr(port, 'scoped_case', None) is self and self.factory.pending is self,
+             'ORIGINAL_SCOPED_CASE_RELEASE_ORDER')
         port.scoped_case = None
         self.factory.pending = None
+        self.closed = True
         return True
 
     def abort(self, reservation, *, deadline_ns):
