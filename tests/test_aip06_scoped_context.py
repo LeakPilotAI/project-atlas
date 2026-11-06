@@ -269,6 +269,11 @@ def test_physical_host_handoff_requires_inherited_scope_integrity_and_original_l
         with pytest.raises(ValueError, match='ORIGINAL_PHYSICAL_HOST_DIRECTORY_IDENTITY_STILL_BOUND'):
             verify_physical_host_handoff(packet, descriptor, t.g)
         t.g.file_identities[case.intent.root] = original_identity
+        original_inspect = t.g.paths.port.inspect
+        with monkeypatch.context() as scoped:
+            scoped.setattr(t.g.paths.port, 'inspect', lambda path: {'id': 'replaced'} if path == case.intent.root else original_inspect(path))
+            with pytest.raises(ValueError, match='ORIGINAL_PHYSICAL_HOST_DIRECTORY_IDENTITY_STILL_BOUND'):
+                verify_physical_host_handoff(packet, descriptor, t.g)
         for field, value in [('native_acceptance', True), ('integrity', '0'*64),
                              ('schema', 'OTHER')]:
             damaged = copy.deepcopy(packet)
