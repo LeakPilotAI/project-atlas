@@ -121,6 +121,25 @@ def test_case_factory_refuses_exact_contract_damage_before_any_context_allocatio
     in_controller(monkeypatch,check)
 
 
+@pytest.mark.parametrize('foreign', [None, object()])
+def test_reader_rejects_unowned_case_without_attempting_abort(monkeypatch, foreign):
+    def check(t):
+        from scripts.observation_runtime.aip06_scoped_context import CaseContext
+        aborts = []
+        original = CaseContext.abort
+        def observed_abort(self, *args, **kwargs):
+            aborts.append(self)
+            return original(self, *args, **kwargs)
+        monkeypatch.setattr(CaseContext, 'abort', observed_abort)
+        before = copy.deepcopy(t.x.ledger.state['resources'])
+        with pytest.raises(ValueError, match='ORIGINAL_RESERVED_CASE_FOR_READER'):
+            t.factory.reader(foreign, None, None, deadline_ns=t.x.now[0]+10**9)
+        assert t.factory.failed and aborts == []
+        assert t.x.ledger.state['resources'] == before
+        assert t.factory.cleanup_failure is None
+    in_controller(monkeypatch, check)
+
+
 def test_failed_initial_ledger_snapshot_clears_only_original_scope(monkeypatch):
     def check(t):
         case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)

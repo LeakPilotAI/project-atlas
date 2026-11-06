@@ -180,10 +180,11 @@ class ScopedContextFactory:
             self.failed = True
             # Borrowed handles are never closed or adopted on construction
             # failure; only this case's original guarded allocations release.
-            try:
-                case.abort(case.reservation, deadline_ns=deadline_ns)
-            except BaseException as exc:
-                self.cleanup_failure = str(exc)
+            if type(case) is CaseContext and case.factory is self and self.pending is case:
+                try:
+                    case.abort(case.reservation, deadline_ns=deadline_ns)
+                except BaseException as exc:
+                    self.cleanup_failure = str(exc)
             raise
 
 
