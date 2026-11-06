@@ -155,6 +155,25 @@ def test_release_order_conflict_keeps_case_open_until_original_marker_restored(m
     in_controller(monkeypatch, check)
 
 
+def test_dispatcher_requires_explicit_physical_host_gate_even_for_context_proxy(monkeypatch):
+    def check(t):
+        from scripts.observation_runtime.aip06_native_scenario_bindings import NativeScenarioBinding
+        case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
+        ticket = case.reserve(deadline_ns=t.x.now[0]+10**9)
+        binding = t.factory.as_bindings()['F01']
+        class Proxy:
+            def __getattr__(self, key):
+                if key == 'require_execution':
+                    raise AttributeError(key)
+                return getattr(case, key)
+        proxy = Proxy()
+        replaced = NativeScenarioBinding(binding.contract, source_pins=binding.source_pins, context=proxy)
+        with pytest.raises(ValueError, match='EXPLICIT_PHYSICAL_CASE_HOST_EXECUTION_GATE_REQUIRED'):
+            replaced.execute(t.controller, t.g, ticket, deadline_ns=t.x.now[0]+10**9)
+        assert case.abort(ticket, deadline_ns=t.x.now[0]+10**9)
+    in_controller(monkeypatch, check)
+
+
 def test_joined_bootstrap_case_bridge_reservation_raw_reader_and_release(monkeypatch):
     def check(t):
         from scripts.observation_runtime.aip06_acceptance_control import GuardedScenarioBridge,scenarios

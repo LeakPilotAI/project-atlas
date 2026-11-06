@@ -82,9 +82,12 @@ class NativeScenarioBinding:
         self.check(controller, guard, deadline_ns=deadline_ns)
         need(self.context.reservation == reservation and reservation['roles'] == self.roles,
              'EXACT_CASE_RESERVATION_BEFORE_EXECUTION')
-        from scripts.observation_runtime.aip06_scoped_context import CaseContext
-        if type(self.context) is CaseContext:
-            self.context.require_execution()
+        # Every physical host must explicitly qualify its own execution
+        # boundary. A duck-typed or subclassed context must not bypass the
+        # scoped controller's refusal merely by having a different type.
+        need(callable(getattr(self.context, 'require_execution', None)),
+             'EXPLICIT_PHYSICAL_CASE_HOST_EXECUTION_GATE_REQUIRED')
+        self.context.require_execution()
         if self.contract.source_case is None:
             result = self.fault_driver.execute(self.context, reservation, deadline_ns=deadline_ns)
         else:
