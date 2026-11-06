@@ -810,6 +810,9 @@ class WindowsSessionPort:
     def close_owned_handles(self, child, keys):
         need(any(retained is child for retained in self.sessions),
              'ORIGINAL_RETAINED_CLOSE_SESSION_REQUIRED')
+        need(type(keys) in (tuple, list) and len(keys) == len(set(keys))
+             and all(type(key) is str for key in keys),
+             'UNIQUE_TYPED_CLOSE_RESOURCE_KEYS_REQUIRED')
         need(all(key in keys for key in child.permit['slots']),
              'EXACT_RETAINED_PROCESS_SLOT')
         need(all(key in child.native for key in child.keys),
