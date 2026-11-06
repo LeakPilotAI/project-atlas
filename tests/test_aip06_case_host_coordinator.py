@@ -157,6 +157,27 @@ def test_failed_abort_cannot_replay_or_send_input(monkeypatch):
     assert coordinator.cleanup_verified is False
 
 
+def test_native_abort_closure_does_not_certify_wrapper_cleanup(monkeypatch):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = SimpleNamespace(closed=True)
+    host = SimpleNamespace(guard=case.guard, child=child, closed=False,
+                           keys=('original',))
+    port = SimpleNamespace(sessions=[child], resources_closed=lambda original, keys:
+                           original is child and keys == ('original',))
+    case.guard.processes = SimpleNamespace(port=port)
+    coordinator.host = host
+    coordinator.original_child = child
+    coordinator.original_keys = ('original',)
+    coordinator.abort_attempted = True
+    coordinator.abort_completed = True
+    assert coordinator.verify_aborted_native_closure() is True
+    assert coordinator.cleanup_verified is False
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED'):
+        coordinator.verify_original_cleanup()
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)

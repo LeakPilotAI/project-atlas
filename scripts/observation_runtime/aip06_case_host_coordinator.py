@@ -24,6 +24,7 @@ class CaseHostCoordinator:
         self.handoff_attempted = False
         self.cleanup_verified = False
         self.abort_attempted = False
+        self.abort_completed = False
         self.original_child = None
         self.original_keys = None
 
@@ -92,7 +93,24 @@ class CaseHostCoordinator:
         # The port owns termination, Job and process-handle closure. Never
         # issue a second termination or claim closure after an exception.
         port.abort(self.original_child, deadline_ns=deadline_ns)
+        self.abort_completed = True
         return None
+
+    def verify_aborted_native_closure(self):
+        """Verify native abort closure without claiming wrapper or case closure."""
+        need(self.abort_completed and self.original_child is not None
+             and not self.cleanup_verified,
+             'COMPLETED_ORIGINAL_ABORT_REQUIRED_FOR_NATIVE_CLOSURE')
+        port = getattr(self.case.guard.processes, 'port', self.case.guard.processes)
+        need(self.host.child is self.original_child
+             and any(retained is self.original_child for retained in port.sessions)
+             and self.original_child.closed is True
+             and bool(self.original_keys)
+             and port.resources_closed(self.original_child, self.original_keys) is True,
+             'ABORTED_ORIGINAL_NATIVE_RESOURCES_NOT_CLOSED')
+        # A native abort does not mark GuardedProcess.closed or CaseContext.closed.
+        # Leave the complete cleanup gate closed until separately proven.
+        return True
 
     def verify_original_cleanup(self):
         """Observe completed original-owner cleanup; never terminate by PID."""
