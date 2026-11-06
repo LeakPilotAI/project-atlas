@@ -329,6 +329,24 @@ def test_final_process_cut_refuses_changed_independent_reader_identity():
     assert all(row['reader'] != 'PROCESS' for row in x.output)
 
 
+def test_final_process_cut_refuses_stale_collection_window():
+    x = bundle_fixture()
+    original_clock = x.bundle.clock
+    advanced = [None]
+    def clock():
+        return advanced[0] if advanced[0] is not None else original_clock()
+    x.bundle.clock = clock
+    def stale_process(*, after_ns, deadline_ns):
+        advanced[0] = after_ns + 2 * 10**9 + 1
+        return {'scope': SCOPE_HASH, 'survivors': [], 'unknown': False,
+                'started_ns': after_ns, 'at_ns': advanced[0]}
+    x.bundle.providers['PROCESS'].collect = stale_process
+    with pytest.raises(ValueError, match='FINAL_PROCESS_CUT_FRESH_AND_SAME_INDEPENDENT_READER'):
+        x.bundle.collect(x.request, deadline_ns=x.clock()+4*10**9)
+    assert x.bundle.failed and x.bundle.sequence == 0
+    assert all(row['reader'] != 'PROCESS' for row in x.output)
+
+
 def test_original_bootstrap_object_observer_checks_kernel_continuity_and_release_history():
     from test_aip06_bootstrap_objects import acquired
     from test_aip06_descendant_closure import exit_child
