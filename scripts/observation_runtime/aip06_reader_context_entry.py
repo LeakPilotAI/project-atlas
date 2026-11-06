@@ -13,8 +13,10 @@ def verify_inherited_reader_source(guard):
     descriptor = guard.processes.runtime.descriptor
     pins = descriptor.get('source_pins')
     argv = descriptor.get('argv')
+    targets = descriptor.get('targets')
     need(type(argv) in (tuple, list) and len(argv) == 3
-         and argv[1] == '-B' and argv[2] == READER_ENTRY,
+         and argv[1] == '-B' and argv[2] == READER_ENTRY
+         and type(targets) is dict and targets.get('readonly_reader') == READER_ENTRY,
          'PINNED_INHERITED_READER_COMMAND_REQUIRED')
     pin = pins.get(READER_ENTRY) if type(pins) is dict else None
     need(type(pin) is str and len(pin) == 64
