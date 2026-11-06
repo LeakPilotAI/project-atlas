@@ -87,3 +87,27 @@ def verify_reserved_suspended_plan(guard, argv, plan):
          and planned.get('case_scope') == case.wire(),
          'ORIGINAL_SINGLE_USE_NATIVE_CASE_HOST_PLAN_BINDING')
     return None
+
+
+def verify_suspended_host_before_resume(session, job, guard):
+    """Check original suspended session receipts; not native acceptance authority."""
+    need(session.name == 'case_host' and session.suspended is True
+         and session.failed is False and session.creation_attempted is True
+         and session.plan['parent_owner'] == guard.owner
+         and session.launch_handle == session.runtime_handle
+         and type(session.launch_handle) is int and session.launch_handle > 0
+         and type(session.thread) is int and session.thread > 0
+         and type(session.job) is int and session.job > 0
+         and type(session.creation_native) is dict,
+         'RETAINED_SUSPENDED_CASE_HOST_CREATION_REQUIRED')
+    native = session.creation_native
+    need(type(native.get('pid')) is int and native['pid'] > 4
+         and type(job) is dict and job.get('suspended') is True
+         and job.get('handle') == session.job
+         and job.get('members') == [native['pid']]
+         and job.get('limits') == session.plan['job_limits']
+         and session.plan['job_limits']['kill_on_close'] is True,
+         'INDEPENDENT_ORIGINAL_CASE_HOST_JOB_OBSERVATION_REQUIRED')
+    need(session.plan['request'].nonce not in getattr(guard, 'retired_launch_nonces', set()),
+         'RETIRED_CASE_HOST_LAUNCH_NONCE')
+    return None

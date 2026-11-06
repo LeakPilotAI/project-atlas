@@ -701,6 +701,10 @@ class FixtureGuard:
             and job["handle"] > 0,
             "OBSERVED_SUSPENDED_JOB_LIMITS_REQUIRED",
         )
+        from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
+        if len(argv) == 3 and argv[2] == HOST_ENTRY:
+            from scripts.observation_runtime.aip06_case_host_launch_intent import verify_suspended_host_before_resume
+            verify_suspended_host_before_resume(child, job, self)
         with self.internal("process"):
             self.processes.resume(child)
         ready = self.processes.ready(child, timeout=8, maximum_bytes=65536)
