@@ -939,6 +939,17 @@ class WindowsSessionPort:
         if child.launch_handle is not None:
             self.calls.close(child.launch_handle)
             need(self.calls.closed(child.launch_handle), "ABORT_PROCESS_HANDLE_OPEN")
+        # Process-slot evidence is independent of wrapper/ledger completion.
+        # Never issue it for an unbound or mismatched original launch.
+        if exit_proof is not None and child.binding is not None:
+            bound = child.binding
+            need(bound.launch['pid'] == exit_proof['pid']
+                 and bound.launch['created'] == exit_proof['created']
+                 and bound.runtime['pid'] == exit_proof['pid']
+                 and bound.runtime['created'] == exit_proof['created'],
+                 'ABORT_BOUND_PROCESS_BIRTH_MISMATCH')
+            for key in child.permit['slots']:
+                self.closed_proofs.add((digest(bound.runtime), key))
         child.closed = True
         child.abort_exit_proof = exit_proof
 

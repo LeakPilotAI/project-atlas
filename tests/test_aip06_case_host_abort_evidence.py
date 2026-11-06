@@ -9,6 +9,11 @@ def prepare(monkeypatch, failure):
     events = []
     child.launch_handle = object()
     child.creation_native = {'pid': 44, 'created': 55}
+    child.binding.launch = {'pid': 44, 'created': 55}
+    child.binding.runtime = {'pid': 44, 'created': 55}
+    child.permit = {'slots': ['case_host:nonce:launch']}
+    from scripts.observation_runtime.aip06_native_session import digest
+    child.receipt['owner'] = digest(child.binding.runtime)
     child.job = object()
     child.native = {}
     child.released = set()
@@ -61,6 +66,8 @@ def test_verified_native_abort_retains_original_exit_evidence(monkeypatch):
                                       'exit_code': 1}
     assert events[:2] == ['terminate', 'wait']
     assert events[-1] == 'process-close'
+    from scripts.observation_runtime.aip06_native_session import digest
+    assert port.closed_proofs == {(digest(child.binding.runtime), 'case_host:nonce:launch')}
 
 
 @pytest.mark.parametrize('bad_exit', [None, True, '1'])
@@ -96,3 +103,28 @@ def test_abort_rejects_malformed_or_substituted_exit_receipt(monkeypatch, mutati
     assert 'process-close' not in events
     assert not child.closed
     assert not hasattr(child, 'abort_exit_proof')
+
+
+@pytest.mark.parametrize('mutation', ['valid', 'wrong_birth', 'wrong_runtime'])
+def test_abort_slot_proof_requires_original_bound_process(monkeypatch, mutation):
+    from scripts.observation_runtime.aip06_native_session import digest
+    port, child, _, events = prepare(monkeypatch, failure=None)
+    child.permit = {'slots': ['case_host:nonce:launch']}
+    launch = {'pid': 44, 'created': 55}
+    runtime = {'pid': 44, 'created': 55}
+    child.binding = SimpleNamespace(launch=launch, runtime=runtime)
+    if mutation == 'wrong_birth':
+        launch['created'] = 56
+    elif mutation == 'wrong_runtime':
+        runtime['pid'] = 45
+    if mutation == 'valid':
+        port.abort(child, deadline_ns=200)
+        assert port.closed_proofs == {(digest(runtime), 'case_host:nonce:launch')}
+        assert child.closed and child.abort_exit_proof['exit_code'] == 1
+    else:
+        with pytest.raises(ValueError, match='ABORT_BOUND_PROCESS_BIRTH_MISMATCH'):
+            port.abort(child, deadline_ns=200)
+        assert not port.closed_proofs
+        assert not child.closed
+        assert not hasattr(child, 'abort_exit_proof')
+    assert 'process-close' in events
