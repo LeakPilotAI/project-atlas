@@ -158,7 +158,10 @@ class CaseHostCoordinator:
              and bool(self.original_keys)
              and process.closed is True and process.child.closed is True
              and any(retained is self.original_child for retained in port.sessions)
-             and port.resources_closed(self.original_child, self.original_keys) is True,
+             and port.resources_closed(self.original_child, self.original_keys) is True
+             and all(key in self.case.guard.resources.state['resources']
+                     and self.case.guard.resources.state['resources'][key]['closed'] is True
+                     for key in self.original_keys),
              'ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED')
         self.cleanup_verified = True
         return True

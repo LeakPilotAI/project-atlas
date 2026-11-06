@@ -122,6 +122,8 @@ def test_cleanup_accepts_only_original_retained_resources(monkeypatch):
     coordinator.original_child = child
     coordinator.original_keys = ('original-key',)
     coordinator.handoff_attempted = True
+    case.guard.resources = SimpleNamespace(state={'resources': {
+        'original-key': {'closed': True}}})
     host.keys = ('substituted-key',)
     with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED'):
         coordinator.verify_original_cleanup()
@@ -417,3 +419,25 @@ def test_native_abort_proof_rejects_post_abort_owner_substitution(monkeypatch, m
     with pytest.raises(ValueError, match='ABORTED_ORIGINAL_NATIVE_RESOURCES_NOT_CLOSED'):
         coordinator.verify_aborted_native_closure()
     assert not calls and not coordinator.cleanup_verified
+
+
+@pytest.mark.parametrize('ledger', [None, {}, {'original': {'closed': False}},
+                                    {'original': {'closed': True}}])
+def test_original_cleanup_requires_independent_ledger_closure(monkeypatch, ledger):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = SimpleNamespace(closed=True)
+    host = SimpleNamespace(guard=case.guard, child=child, keys=('original',), closed=True)
+    case.guard.processes = SimpleNamespace(port=SimpleNamespace(
+        sessions=[child], resources_closed=lambda original, keys: True))
+    case.guard.resources = SimpleNamespace(state={'resources': ledger or {}})
+    coordinator.host, coordinator.original_child = host, child
+    coordinator.original_keys = ('original',)
+    coordinator.handoff_attempted = True
+    if ledger == {'original': {'closed': True}}:
+        assert coordinator.verify_original_cleanup() is True
+    else:
+        with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED'):
+            coordinator.verify_original_cleanup()
+        assert not coordinator.cleanup_verified
