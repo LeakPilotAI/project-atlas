@@ -41,6 +41,7 @@ def test_unverified_cleanup_never_reports_closed(monkeypatch, failure, expected)
     assert expected in port.case_host_input_cleanup_failure
     assert child.failed and port.failed and child.case_host_input_sent
     assert not child.closed
+    assert not hasattr(child, 'abort_exit_proof')
     assert events[:2] == ['terminate', 'wait']
     if failure == 'job-not-empty':
         assert 'process-close' not in events
@@ -49,3 +50,12 @@ def test_unverified_cleanup_never_reports_closed(monkeypatch, failure, expected)
         assert 'channel-close' in events and 'process-close' in events
     with pytest.raises(ValueError):
         port.deliver_case_host_input(child, packet, deadline_ns=200)
+
+
+def test_verified_native_abort_retains_original_exit_evidence(monkeypatch):
+    port, child, _, events = prepare(monkeypatch, failure=None)
+    port.abort(child, deadline_ns=200)
+    assert child.closed is True
+    assert child.abort_exit_proof == {'pid': 44, 'created': 55, 'exited': True}
+    assert events[:2] == ['terminate', 'wait']
+    assert events[-1] == 'process-close'

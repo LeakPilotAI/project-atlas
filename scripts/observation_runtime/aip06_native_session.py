@@ -922,6 +922,11 @@ class WindowsSessionPort:
                  and after['created'] == child.creation_native['created'],
                  'ABORT_ORIGINAL_PROCESS_EXIT_NOT_INDEPENDENTLY_VERIFIED')
             need(not self.calls.members(child.job), "ABORT_JOB_NOT_EMPTY")
+            # Preserve observed exit identity before closing the original
+            # process handle; this does not certify roster or ledger closure.
+            exit_proof = dict(after)
+        else:
+            exit_proof = None
         self.protocol.close(child, deadline_ns=deadline_ns)
         for key in reversed(tuple(child.native)):
             self._close(child, key)
@@ -929,6 +934,7 @@ class WindowsSessionPort:
             self.calls.close(child.launch_handle)
             need(self.calls.closed(child.launch_handle), "ABORT_PROCESS_HANDLE_OPEN")
         child.closed = True
+        child.abort_exit_proof = exit_proof
 
     def refuse_current_launch(self):
         self.failed = True
