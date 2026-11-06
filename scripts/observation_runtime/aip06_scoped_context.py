@@ -378,7 +378,8 @@ class ReaderContext:
         f.verify(deadline_ns=deadline_ns)
         port = getattr(f.guard.processes, 'port', f.guard.processes)
         need(not self.failed and type(self.session) is GuardedProcess and self.session.guard is f.guard
-             and type(self.session.child) is Session and self.session.child in port.sessions
+             and type(self.session.child) is Session
+             and any(retained is self.session.child for retained in port.sessions)
              and self.session.child.name == 'readonly_reader'
              and self.session.child.binding is f.guard.ownership.bindings.get('readonly_reader')
              and self.session.child.creation_attempted and self.session.child.target_released
