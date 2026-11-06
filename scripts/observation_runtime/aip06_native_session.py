@@ -755,7 +755,10 @@ class WindowsSessionPort:
                 self.aggregate.observe_closed(commit=False)
                 return set()
             self.aggregate._controller()
-            return self.calls.members(self.aggregate.job) - {self.aggregate.controller['pid']}
+            members = self.calls.members(self.aggregate.job)
+            need(self.aggregate.controller['pid'] in members,
+                 'AGGREGATE_CONTROLLER_MISSING_FROM_JOB_ROSTER')
+            return members - {self.aggregate.controller['pid']}
         result = set()
         for s in self.sessions:
             if s.job is not None:
