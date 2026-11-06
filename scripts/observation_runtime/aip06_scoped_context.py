@@ -494,7 +494,11 @@ def verify_physical_host_handoff(packet, descriptor, guard):
     view = verify_inherited_scope(packet['case'], descriptor)
     ticket = packet['reservation']
     contract = next((c for c in contracts() if c.id == view['intent']['scenario']), None)
-    need(type(ticket) is dict and contract is not None
+    need(type(ticket) is dict and set(ticket) ==
+         {'scenario', 'root', 'roles', 'held', 'stop_capacity_reserved', 'key',
+          'commands', 'controller_command', 'case', 'manifest', 'evidence'}
+         and contract is not None
+         and body(ticket['commands']) == body(dict(view['intent']['commands']))
          and ticket.get('scenario') == view['intent']['scenario']
          and ticket.get('case') == view['intent']['case']
          and ticket.get('manifest') == view['intent']['manifest']

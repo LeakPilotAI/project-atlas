@@ -259,6 +259,15 @@ def test_physical_host_handoff_requires_inherited_scope_integrity_and_original_l
         damaged['integrity'] = digest({k:v for k,v in damaged.items() if k != 'integrity'})
         with pytest.raises(ValueError, match='EXACT_PHYSICAL_HOST_RESERVATION_SCOPE'):
             verify_physical_host_handoff(damaged, descriptor, t.g)
+        for changed in ('commands', 'unexpected'):
+            damaged = copy.deepcopy(packet)
+            if changed == 'commands':
+                damaged['reservation']['commands'] = {}
+            else:
+                damaged['reservation']['unexpected'] = True
+            damaged['integrity'] = digest({k:v for k,v in damaged.items() if k != 'integrity'})
+            with pytest.raises(ValueError, match='EXACT_PHYSICAL_HOST_RESERVATION_SCOPE'):
+                verify_physical_host_handoff(damaged, descriptor, t.g)
         for changed in ('scenario', 'case', 'manifest', 'evidence', 'roles'):
             damaged = copy.deepcopy(packet)
             damaged['reservation'][changed] = 'untrusted' if changed != 'roles' else ()
