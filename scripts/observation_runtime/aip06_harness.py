@@ -974,33 +974,36 @@ class WorkerOwnership:
 
     def abort_exit(self, name, receipt):
         """Verify original case-host abort without treating it as normal exit."""
-        need(name == 'case_host' and name in self.bindings
-             and name not in self.finished and not self.refused,
-             'BOUND_CASE_HOST_ABORT_REQUIRED')
-        bound = self.bindings[name]
-        need(not bound.refused and not bound.finished
-             and bound.request.role == 'acceptance_supervisor'
-             and bound.request.topology == 'direct'
-             and bound.runtime_handle == bound.launch_handle
-             and bound.api.observe(bound.parent_handle) == bound.parent,
-             'ORIGINAL_ABORT_PARENT_BINDING_REQUIRED')
-        need(type(receipt) is dict
-             and set(receipt) == {'pid', 'created', 'exited', 'exit_code'}
-             and type(receipt['pid']) is int
-             and type(receipt['created']) is int
-             and receipt['exited'] is True
-             and type(receipt['exit_code']) is int
-             and receipt['pid'] == bound.launch['pid']
-             and receipt['created'] == bound.launch['created']
-             and bound.runtime == bound.launch
-             and bound.api.lifecycle(bound.launch_handle) == receipt
-             and bound.api.members() == set()
-             and self.all_members() == set(),
-             'ORIGINAL_ABORT_TERMINAL_EVIDENCE_REQUIRED')
-        bound.finished = True
-        self.finished.add(name)
-        self.verify()
-        return {'verified_abort': True, 'normal_exit': False}
+        try:
+            need(name == 'case_host' and name in self.bindings
+                 and name not in self.finished and not self.refused,
+                 'BOUND_CASE_HOST_ABORT_REQUIRED')
+            bound = self.bindings[name]
+            need(not bound.refused and not bound.finished
+                 and bound.request.role == 'acceptance_supervisor'
+                 and bound.request.topology == 'direct'
+                 and bound.runtime_handle == bound.launch_handle
+                 and bound.api.observe(bound.parent_handle) == bound.parent,
+                 'ORIGINAL_ABORT_PARENT_BINDING_REQUIRED')
+            need(type(receipt) is dict
+                 and set(receipt) == {'pid', 'created', 'exited', 'exit_code'}
+                 and type(receipt['pid']) is int
+                 and type(receipt['created']) is int
+                 and receipt['exited'] is True
+                 and type(receipt['exit_code']) is int
+                 and receipt['pid'] == bound.launch['pid']
+                 and receipt['created'] == bound.launch['created']
+                 and bound.runtime == bound.launch
+                 and bound.api.lifecycle(bound.launch_handle) == receipt
+                 and bound.api.members() == set(),
+                 'ORIGINAL_ABORT_TERMINAL_EVIDENCE_REQUIRED')
+            bound.finished = True
+            self.finished.add(name)
+            self.verify()
+            return {'verified_abort': True, 'normal_exit': False}
+        except BaseException:
+            self.refused = True
+            raise
 
     def exit(self, name):
         try:

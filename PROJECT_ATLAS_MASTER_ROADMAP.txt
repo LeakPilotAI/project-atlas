@@ -16109,3 +16109,42 @@ REPRODUCIBILITY, OR RECOVERY.
 ============================================================
 END PERMANENT CLEANUP POLICY
 ============================================================
+
+
+PROJECT ATLAS CONTINUATION CHECKPOINT — 2026-11-06
+======================================================================
+
+Active milestone: AIP-06 original-owner case-host abort cleanup integration
+Status: SOURCE / INJECTED VALIDATION PASS; PHYSICAL ACCEPTANCE BLOCKED
+
+Completed in this checkpoint:
+- Terminal WorkerOwnership abort transition is invoked before the original
+  process handle closes and remains distinct from normal successful exit.
+- Native process-slot closure evidence is reconciled with the original
+  resource ledger through the process-port observer.
+- GuardedProcess closes only the retained original case-host wrapper and
+  resource set after verified native/roster closure.
+- CaseHostCoordinator sequences abort, native and ledger checks, wrapper
+  cleanup, CaseContext.abort, and original case-scope release verification.
+- Adversarial coverage includes identity substitution, malformed receipts,
+  replay, incomplete Job/handle closure, ledger conflicts, and exit-code
+  separation. Existing execution refusal remains in place.
+
+Verification:
+- Full configured backend/.venv Python 3.12 AIP-06 selection: 50 modules,
+  1,397 passed, 0 failed, 0 skipped; exit code 0, 620.66 seconds.
+- Tagged pre-existing tests/test_free_research_pipeline.py: 48 passed.
+- All evidence is offline/injected source regression, not physical Windows
+  acceptance. No native case-host execution or PAPER startup was performed.
+
+Roadmap progress remains 5/18 (27.8%). AIP-06 still depends on a reviewed
+native controller assembly, independently guarded reader, authenticated input,
+native Stop escrow, durable independent Windows evidence, and separate native
+authorization. These are not available in this checkpoint. Daily PAPER is
+blocked and not operational. B1/C1/D1/E1, all 21 safety decisions, and the
+unconditional case-host execution refusals remain unchanged. Production
+NO-GO. Genesis untouched.
+
+Latest verified starting commit: c7338920 on chatgpt/atlas-rebuild-v1.
+This checkpoint's changes are pending scoped commit/push verification.
+======================================================================

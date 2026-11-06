@@ -140,25 +140,61 @@ def test_abort_requires_original_bound_host(monkeypatch):
         coordinator.abort_original_host(deadline_ns=200)
 
 
+def _guarded_abort_host(case, child, keys):
+    from types import SimpleNamespace
+
+    from scripts.observation_runtime.aip06_fixture_guard import GuardedProcess
+
+    plan = {'name': 'case_host'}
+    child.name = 'case_host'
+    child.plan = plan
+    child.closed = False
+    port = SimpleNamespace(
+        guard=case.guard,
+        sessions=[child],
+        scoped_case=case,
+        resources_closed=lambda original, resource_keys:
+        original is child and tuple(resource_keys) == tuple(keys) and child.closed,
+    )
+    case.guard.processes = SimpleNamespace(guard=case.guard, port=port)
+    case.guard.resources = SimpleNamespace(state={'resources': {
+        key: {'closed': True} for key in keys
+    }})
+    return GuardedProcess(case.guard, child, plan, keys, ()), port
+
+
+def _release_aborted_case(case, port, reservation, *, deadline_ns):
+    assert reservation is case.reservation and deadline_ns == 200
+    case.closed = True
+    port.scoped_case = None
+    case.factory.pending = None
+
+
 def test_abort_delegates_once_to_original_owner(monkeypatch):
     from types import SimpleNamespace
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
     child = SimpleNamespace(creation_native={'pid': 44, 'created': 55})
-    host = SimpleNamespace(guard=case.guard, child=child, keys=('original',))
+    host, port = _guarded_abort_host(case, child, ('original',))
+    receipt = {'pid': 44, 'created': 55, 'exited': True, 'exit_code': 1}
     called = []
-    def abort(original, *, deadline_ns):
-        called.append((original, deadline_ns))
-        original.abort_exit_proof = {'pid': 44, 'created': 55,
-                                    'exited': True, 'exit_code': 1}
-    port = SimpleNamespace(sessions=[child], abort=abort)
-    case.guard.processes = SimpleNamespace(port=port)
+
+    def abort(process, *, deadline_ns):
+        called.append((process.child, deadline_ns))
+        child.abort_exit_proof = dict(receipt)
+        child.closed = process.closed = True
+        return dict(receipt)
+
+    monkeypatch.setattr(type(host), 'abort_case_host', abort)
+    monkeypatch.setattr(case, 'abort', lambda reservation, *, deadline_ns:
+                        _release_aborted_case(case, port, reservation, deadline_ns=deadline_ns))
     coordinator.host = host
     coordinator.original_child = child
     coordinator.original_keys = ('original',)
     case.controller = SimpleNamespace(clock=lambda: 100)
     assert coordinator.abort_original_host(deadline_ns=200) is None
     assert called == [(child, 200)]
+    assert coordinator.verify_case_released() is True
     with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_ABORT_ONCE_ONLY'):
         coordinator.abort_original_host(deadline_ns=200)
 
@@ -167,14 +203,16 @@ def test_failed_abort_cannot_replay_or_send_input(monkeypatch):
     from types import SimpleNamespace
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
-    child = object()
-    coordinator.host = SimpleNamespace(guard=case.guard, child=child,
-                                       keys=('original',))
+    child = SimpleNamespace(creation_native={'pid': 44, 'created': 55})
+    host, port = _guarded_abort_host(case, child, ('original',))
+
+    def fail(process, *, deadline_ns):
+        raise OSError('native abort unresolved')
+
+    monkeypatch.setattr(type(host), 'abort_case_host', fail)
+    coordinator.host = host
     coordinator.original_child = child
     coordinator.original_keys = ('original',)
-    def fail(original, *, deadline_ns):
-        raise OSError('native abort unresolved')
-    case.guard.processes = SimpleNamespace(port=SimpleNamespace(sessions=[child], abort=fail))
     case.controller = SimpleNamespace(clock=lambda: 100)
     with pytest.raises(OSError, match='native abort unresolved'):
         coordinator.abort_original_host(deadline_ns=200)
@@ -185,6 +223,7 @@ def test_failed_abort_cannot_replay_or_send_input(monkeypatch):
     assert coordinator.cleanup_verified is False
     assert coordinator.abort_attempted is True
     assert coordinator.abort_completed is False
+    assert port.scoped_case is case
     with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_CLEANUP_CHECK_ONCE_ONLY'):
         coordinator.verify_original_cleanup()
 
@@ -248,36 +287,32 @@ def test_attached_reader_evidence_rejects_substituted_result(monkeypatch):
         coordinator.verify_attached_reader_evidence(deadline_ns=200)
 
 
-def test_coordinator_abort_lifecycle_retains_native_proof_without_false_case_cleanup(monkeypatch):
+def test_coordinator_abort_lifecycle_reconciles_wrapper_ledger_and_case_scope(monkeypatch):
     from types import SimpleNamespace
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
     child = SimpleNamespace(closed=False, creation_native={'pid': 44, 'created': 55})
-    host = SimpleNamespace(guard=case.guard, child=child, closed=False,
-                           keys=('original-handle',))
-    calls = []
-    def abort(original, *, deadline_ns):
-        assert original is child
-        calls.append(deadline_ns)
+    host, port = _guarded_abort_host(case, child, ('original-handle',))
+    receipt = {'pid': 44, 'created': 55, 'exited': True, 'exit_code': 1}
+
+    def abort(process, *, deadline_ns):
         child.closed = True
-        child.abort_exit_proof = {'pid': 44, 'created': 55,
-                                  'exited': True, 'exit_code': 1}
-    port = SimpleNamespace(sessions=[child], abort=abort,
-                           resources_closed=lambda original, keys:
-                           original is child and child.closed and keys == ('original-handle',))
-    case.guard.processes = SimpleNamespace(port=port)
+        process.closed = True
+        child.abort_exit_proof = dict(receipt)
+        return dict(receipt)
+
+    monkeypatch.setattr(type(host), 'abort_case_host', abort)
+    monkeypatch.setattr(case, 'abort', lambda reservation, *, deadline_ns:
+                        _release_aborted_case(case, port, reservation, deadline_ns=deadline_ns))
     case.controller = SimpleNamespace(clock=lambda: 100)
     coordinator.host = host
     coordinator.original_child = child
     coordinator.original_keys = ('original-handle',)
     assert coordinator.abort_original_host(deadline_ns=200) is None
-    assert calls == [200]
-    assert coordinator.verify_aborted_native_closure() is True
-    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED'):
-        coordinator.verify_original_cleanup()
+    assert coordinator.cleanup_verified is True
+    assert coordinator.verify_case_released() is True
     with pytest.raises(ValueError, match='BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED'):
         coordinator.deliver_handoff(deadline_ns=200)
-    assert coordinator.cleanup_verified is False
 
 
 def test_case_scope_release_requires_original_owner_cleanup(monkeypatch):

@@ -1179,6 +1179,52 @@ class GuardedProcess:
         return self.guard.processes.deliver_case_host_input(
             self.child, handoff, deadline_ns=deadline_ns)
 
+    def abort_case_host(self, *, deadline_ns):
+        """Abort and close the original case-host owner without normal-exit semantics."""
+        roster = self.guard.ownership
+        port = getattr(self.guard.processes, 'port', self.guard.processes)
+        need(not self.closed and self.plan['name'] == 'case_host'
+             and self.guard.processes.guard is self.guard
+             and port.guard is self.guard
+             and self.child.name == 'case_host'
+             and self.child.plan is self.plan
+             and self.child.binding is roster.bindings.get('case_host')
+             and any(retained is self.child for retained in port.sessions)
+             and type(self.keys) in (tuple, list)
+             and tuple(self.keys)
+                 == tuple(self.child.keys) + tuple(self.child.permit['slots'])
+             and bool(self.keys) and len(self.keys) == len(set(self.keys)),
+             'ORIGINAL_GUARDED_CASE_HOST_ABORT_REQUIRED')
+        with self.guard.internal("journal"):
+            port.abort(self.child, deadline_ns=deadline_ns, ownership=roster)
+            receipt = getattr(self.child, 'abort_exit_proof', None)
+            bound = roster.bindings['case_host']
+            need(type(receipt) is dict
+                 and set(receipt) == {'pid', 'created', 'exited', 'exit_code'}
+                 and type(receipt['pid']) is int
+                 and type(receipt['created']) is int
+                 and receipt['exited'] is True
+                 and type(receipt['exit_code']) is int
+                 and receipt['pid'] == bound.launch['pid']
+                 and receipt['created'] == bound.launch['created']
+                 and bound.runtime == bound.launch
+                 and bound.finished and 'case_host' in roster.finished
+                 and self.child.closed is True
+                 and port.resources_closed(self.child, self.keys) is True,
+                 'ORIGINAL_CASE_HOST_ABORT_CLOSE_EVIDENCE_REQUIRED')
+            for key in self.keys:
+                resource = self.guard.resources.state['resources'].get(key)
+                need(type(resource) is dict and resource['closed'] is False,
+                     'ORIGINAL_CASE_HOST_LEDGER_RESOURCE_REQUIRED')
+                self.guard.resources.close(
+                    resource['owner'], key, observer=port
+                )
+            need(all(self.guard.resources.state['resources'][key]['closed'] is True
+                     for key in self.keys),
+                 'ORIGINAL_CASE_HOST_LEDGER_CLOSE_REQUIRED')
+        self.closed = True
+        return dict(receipt)
+
     def communicate(self, input=None, timeout=12):
         need(
             type(timeout) in (int, float) and 0 < timeout <= 35,

@@ -103,13 +103,15 @@ class CaseHostCoordinator:
                                                        deadline_ns=deadline_ns)
 
     def abort_original_host(self, *, deadline_ns):
-        """One bounded abort through the original native session owner only."""
+        """Abort, reconcile and release the original case-host scope in owner order."""
         need(self.host is not None and self.original_child is not None
              and not self.abort_attempted and not self.cleanup_verified,
              'ORIGINAL_CASE_HOST_ABORT_ONCE_ONLY')
+        from scripts.observation_runtime.aip06_fixture_guard import GuardedProcess
         process = self.host
         port = getattr(self.case.guard.processes, 'port', self.case.guard.processes)
-        need(process.guard is self.case.guard
+        need(type(process) is GuardedProcess
+             and process.guard is self.case.guard
              and process.child is self.original_child
              and any(retained is self.original_child for retained in port.sessions)
              and type(process.keys) in (tuple, list)
@@ -119,10 +121,7 @@ class CaseHostCoordinator:
              and self.case.controller.clock() < deadline_ns,
              'ORIGINAL_BOUNDED_CASE_HOST_ABORT_OWNER_REQUIRED')
         self.abort_attempted = True
-        # The port owns termination, Job and process-handle closure. Never
-        # issue a second termination or claim closure after an exception.
-        port.abort(self.original_child, deadline_ns=deadline_ns)
-        receipt = getattr(self.original_child, 'abort_exit_proof', None)
+        receipt = process.abort_case_host(deadline_ns=deadline_ns)
         need(type(receipt) is dict
              and set(receipt) == {'pid', 'created', 'exited', 'exit_code'}
              and type(receipt['pid']) is int
@@ -131,11 +130,16 @@ class CaseHostCoordinator:
              and type(receipt['exit_code']) is int
              and type(self.original_child.creation_native) is dict
              and receipt['pid'] == self.original_child.creation_native['pid']
-             and receipt['created'] == self.original_child.creation_native['created'],
+             and receipt['created'] == self.original_child.creation_native['created']
+             and getattr(self.original_child, 'abort_exit_proof', None) == receipt
+             and process.closed is True,
              'ORIGINAL_ABORT_EXIT_RECEIPT_REQUIRED')
         self.abort_exit_receipt = dict(receipt)
         self.abort_completed = True
-        return None
+        self.verify_aborted_native_closure()
+        self.verify_original_cleanup()
+        self.case.abort(self.reservation, deadline_ns=deadline_ns)
+        self.verify_case_released()
 
     def verify_aborted_native_closure(self):
         """Verify native abort closure without claiming wrapper or case closure."""

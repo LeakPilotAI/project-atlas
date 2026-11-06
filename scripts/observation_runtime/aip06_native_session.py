@@ -19,10 +19,14 @@ from scripts.observation_runtime.aip06_harness import (
     LIMITS,
     ROOTS,
     SCOPE_HASH,
+    WorkerOwnership,
     need,
 )
 from scripts.observation_runtime.aip06_ipc import MAX_IPC_NS
-from scripts.observation_runtime.aip06_windows_process import NativeProcessObserver, SuspendedLaunchFailure
+from scripts.observation_runtime.aip06_windows_process import (
+    NativeProcessObserver,
+    SuspendedLaunchFailure,
+)
 from scripts.observation_runtime.launch_ownership import LaunchRequest
 
 
@@ -56,6 +60,7 @@ class Session:
     target_released: bool = False
     failed: bool = False
     closed: bool = False
+    abort_attempted: bool = False
     creation_native: dict | None = None
     creation_attempted: bool = False
 
@@ -888,10 +893,23 @@ class WindowsSessionPort:
         )
         self.protocol.ack_reader(reader.child, request, financial)
 
-    def abort(self, child, *, deadline_ns):
+    def abort(self, child, *, deadline_ns, ownership=None):
         """Retain unresolved handles if termination/close cannot be verified."""
         need(any(retained is child for retained in self.sessions),
              'ORIGINAL_RETAINED_ABORT_SESSION_REQUIRED')
+        need(getattr(child, 'abort_attempted', False) is False,
+             'ORIGINAL_SESSION_ABORT_REPLAY_REFUSED')
+        child.abort_attempted = True
+        if ownership is not None:
+            need(type(ownership) is WorkerOwnership
+                 and self.guard is not None
+                 and ownership is self.guard.ownership
+                 and child.name == 'case_host'
+                 and child.binding is ownership.bindings.get('case_host')
+                 and child.launch_handle is not None
+                 and child.job is not None
+                 and type(child.creation_native) is dict,
+                 'ORIGINAL_CASE_HOST_ABORT_OWNER_REQUIRED')
         child.failed = True
         self.failed = True
         if child.launch_handle is not None:
@@ -931,8 +949,15 @@ class WindowsSessionPort:
             # Preserve observed exit identity before closing the original
             # process handle; this does not certify roster or ledger closure.
             exit_proof = dict(after)
+            if ownership is not None:
+                transition = ownership.abort_exit('case_host', exit_proof)
+                need(transition == {'verified_abort': True, 'normal_exit': False},
+                     'ORIGINAL_CASE_HOST_ABORT_TRANSITION_REQUIRED')
         else:
             exit_proof = None
+        descendant_gateway = getattr(self, 'descendant_gateway', None)
+        if descendant_gateway is not None and ownership is not None:
+            descendant_gateway.release(child)
         self.protocol.close(child, deadline_ns=deadline_ns)
         for key in reversed(tuple(child.native)):
             self._close(child, key)
@@ -948,6 +973,8 @@ class WindowsSessionPort:
                  and bound.runtime['pid'] == exit_proof['pid']
                  and bound.runtime['created'] == exit_proof['created'],
                  'ABORT_BOUND_PROCESS_BIRTH_MISMATCH')
+            need(ownership is None or bound.finished,
+                 'ABORT_ROSTER_TRANSITION_REQUIRED_BEFORE_SLOT_CLOSURE')
             for key in child.permit['slots']:
                 self.closed_proofs.add((digest(bound.runtime), key))
         child.closed = True
