@@ -16,7 +16,9 @@ def verify_inherited_reader_source(guard):
     need(type(argv) in (tuple, list) and len(argv) == 3
          and argv[1] == '-B' and argv[2] == READER_ENTRY,
          'PINNED_INHERITED_READER_COMMAND_REQUIRED')
-    need(type(pins) is dict and type(pins.get(READER_ENTRY)) is str,
+    pin = pins.get(READER_ENTRY) if type(pins) is dict else None
+    need(type(pin) is str and len(pin) == 64
+         and all(char in '0123456789abcdef' for char in pin),
          'PINNED_INHERITED_READER_ENTRY_REQUIRED')
     receipt = guard.processes.runtime.verify_source(READER_ENTRY)
     need(type(receipt) is dict and receipt.get('path') == READER_ENTRY

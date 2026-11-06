@@ -49,3 +49,14 @@ def test_provider_reader_reuses_single_original_guard_after_source_verification(
     assert entry.prepare_reader_from_provider(pair) == 'context'
     assert calls == [('guard', 'independent-scoped-reader'), ('source', guard),
                      ('prepare', guard, pair[0], pair[1])]
+
+
+@pytest.mark.parametrize('pin', ['', 'a' * 63, 'A' * 64, 'z' * 64, 42, None])
+def test_inherited_reader_source_refuses_malformed_digest_before_receipt(pin):
+    checks = []
+    runtime = SimpleNamespace(
+        descriptor={'argv': ['python', '-B', READER_ENTRY], 'source_pins': {READER_ENTRY: pin}},
+        verify_source=lambda path: checks.append(path))
+    with pytest.raises(ValueError, match='PINNED_INHERITED_READER_ENTRY_REQUIRED'):
+        verify_inherited_reader_source(SimpleNamespace(processes=SimpleNamespace(runtime=runtime)))
+    assert checks == []
