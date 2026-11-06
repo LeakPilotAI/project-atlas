@@ -639,7 +639,8 @@ class WindowsSessionPort:
              and not child.suspended and not child.target_released
              and recorded is not None and recorded['plan'] is child.plan
              and recorded['argv'] == tuple(child.argv)
-             and recorded['case_scope'] == case.wire(),
+             and recorded['case_scope'] == case.wire()
+             and recorded['parent'] == self.resources.state['owners'][self.guard.owner],
              'ORIGINAL_CASE_HOST_RELEASE_PLAN_REQUIRED')
         return None
 

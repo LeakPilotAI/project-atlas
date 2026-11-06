@@ -20,7 +20,10 @@ def fixture(monkeypatch):
                             suspended=False, target_released=False)
     port = object.__new__(WindowsSessionPort)
     port.scoped_case, port.guard, port.sessions = case, guard, [child]
-    port.plans = {nonce: {'plan': plan, 'argv': argv, 'case_scope': case.wire()}}
+    port.resources = SimpleNamespace(state={'owners': {'original': {'pid': 77}}})
+    guard.owner = 'original'
+    port.plans = {nonce: {'plan': plan, 'argv': argv, 'case_scope': case.wire(),
+                          'parent': {'pid': 77}}}
     return port, child, case
 
 
@@ -31,7 +34,7 @@ def test_original_release_scope(monkeypatch):
 
 @pytest.mark.parametrize('damage', ['missing_case', 'foreign_case', 'closed_case', 'failed_case',
     'missing_reservation', 'missing_stop', 'foreign_plan', 'foreign_scope', 'foreign_argv',
-    'replayed_release', 'still_suspended', 'unregistered_child'])
+    'replayed_release', 'still_suspended', 'unregistered_child', 'foreign_parent'])
 def test_release_gate_rejects_damaged_scope(monkeypatch, damage):
     port, child, case = fixture(monkeypatch)
     if damage == 'missing_case': port.scoped_case = None
@@ -46,5 +49,6 @@ def test_release_gate_rejects_damaged_scope(monkeypatch, damage):
     if damage == 'replayed_release': child.target_released = True
     if damage == 'still_suspended': child.suspended = True
     if damage == 'unregistered_child': port.sessions.clear()
+    if damage == 'foreign_parent': port.plans['a'*32]['parent'] = {'pid': 88}
     with pytest.raises(ValueError):
         port.verify_case_host_scope(child)
