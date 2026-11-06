@@ -289,3 +289,33 @@ def test_execution_remains_disabled(monkeypatch):
     coordinator = CaseHostCoordinator(case, case.reservation)
     with pytest.raises(ValueError, match='INDEPENDENT_PHYSICAL_CASE_HOST_NOT_AUTHORIZED'):
         coordinator.execute()
+
+
+@pytest.mark.parametrize('keys', [(), ('native',), ('native', 'native'),
+                                  ('slot', 'native'), ('native', 'slot', 'extra')])
+def test_binding_rejects_incomplete_or_substituted_original_resource_set(monkeypatch, keys):
+    from types import SimpleNamespace
+    from scripts.observation_runtime.aip06_fixture_guard import GuardedProcess
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    monkeypatch.setattr('scripts.observation_runtime.aip06_case_host_coordinator.inspect_launch_intent',
+                        lambda *args, **kwargs: {'argv': ('python', '-B', 'host'),
+                                                 'native_acceptance': False,
+                                                 'execution_authorized': False})
+    coordinator.prepare(deadline_ns=200)
+    child = SimpleNamespace(keys=('native',), permit={'slots': ('slot',)},
+                            target_released=True, closed=False, failed=False)
+    port = SimpleNamespace(sessions=[child],
+                           verify_case_host_scope_after_release=lambda original: True)
+    case.guard.processes = SimpleNamespace(port=port)
+    plan = {'name': 'case_host'}
+    child.plan = plan
+    child.name = 'case_host'
+    host = GuardedProcess(case.guard, child, plan, keys,
+                          ('python', '-B', 'host'))
+    with pytest.raises(ValueError, match='ORIGINAL_GUARDED_RELEASED_CASE_HOST_REQUIRED'):
+        coordinator.bind_existing_host(host)
+    assert coordinator.host is None and coordinator.original_child is None
+    host.keys = ('native', 'slot')
+    assert coordinator.bind_existing_host(host) is host
+    assert coordinator.original_keys == ('native', 'slot')

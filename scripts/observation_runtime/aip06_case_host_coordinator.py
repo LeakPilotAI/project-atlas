@@ -56,11 +56,18 @@ class CaseHostCoordinator:
         need(process.guard is case.guard
              and not process.closed and type(process.plan) is dict
              and process.plan.get('name') == 'case_host'
+             and process.child.plan is process.plan
+             and process.child.name == 'case_host'
              and any(child is process.child for child in port.sessions)
              and process.child.target_released is True
              and process.child.closed is False and process.child.failed is False
              and type(process.argv) in (tuple, list)
              and tuple(process.argv) == self.intent['argv']
+             and type(process.keys) in (tuple, list)
+             and bool(process.keys) and len(process.keys) == len(set(process.keys))
+             and all(type(key) is str for key in process.keys)
+             and tuple(process.keys) == (tuple(process.child.keys)
+                                        + tuple(process.child.permit['slots']))
              and case.factory.pending is case and case.reservation is self.reservation,
              'ORIGINAL_GUARDED_RELEASED_CASE_HOST_REQUIRED')
         port.verify_case_host_scope_after_release(process.child)
