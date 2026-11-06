@@ -16,7 +16,8 @@ def prepare(monkeypatch, failure):
     port.closed_proofs = set()
     port.protocol.close = lambda original, *, deadline_ns: events.append('channel-close')
     port.calls = SimpleNamespace(
-        lifecycle=lambda handle: {'pid': 44, 'created': 55, 'exited': 'wait' in events},
+        lifecycle=lambda handle: {'pid': 44, 'created': 55, 'exited': 'wait' in events,
+                                  'exit_code': 1 if 'wait' in events else None},
         in_job=lambda handle, job: True,
         terminate_owned_job=lambda job: events.append('terminate'),
         wait=lambda handle, deadline: events.append('wait'),
@@ -56,6 +57,22 @@ def test_verified_native_abort_retains_original_exit_evidence(monkeypatch):
     port, child, _, events = prepare(monkeypatch, failure=None)
     port.abort(child, deadline_ns=200)
     assert child.closed is True
-    assert child.abort_exit_proof == {'pid': 44, 'created': 55, 'exited': True}
+    assert child.abort_exit_proof == {'pid': 44, 'created': 55, 'exited': True,
+                                      'exit_code': 1}
     assert events[:2] == ['terminate', 'wait']
     assert events[-1] == 'process-close'
+
+
+@pytest.mark.parametrize('bad_exit', [None, True, '1'])
+def test_abort_refuses_untyped_exit_code_before_handle_closure(monkeypatch, bad_exit):
+    port, child, _, events = prepare(monkeypatch, failure=None)
+    port.calls.lifecycle = lambda handle: {
+        'pid': 44, 'created': 55, 'exited': 'wait' in events,
+        'exit_code': bad_exit,
+    }
+    with pytest.raises(ValueError, match='ABORT_ORIGINAL_PROCESS_EXIT_NOT_INDEPENDENTLY_VERIFIED'):
+        port.abort(child, deadline_ns=200)
+    assert 'process-close' not in events
+    assert 'channel-close' not in events
+    assert not child.closed
+    assert not hasattr(child, 'abort_exit_proof')
