@@ -66,3 +66,7 @@ The 47-module offline/injected AIP-06 regression (excluding separately verified 
 ## Exact cleanup resource-set regression (2026-11-06)
 
 The 47-module offline/injected AIP-06 regression excluding separately tested joined-lifecycle completed **1,293 passed, 0 failed**, exit code 0, in **122.46 seconds** after commit `47368631`. Two additional adversarial cases require exact retained native-resource and process-slot keys before cleanup side effects. Physical Windows native acceptance remains unverified. AIP-06 incomplete, daily PAPER BLOCKED, production NO-GO; B1/C1/D1/E1 and all 21 decisions unchanged. Genesis untouched.
+
+## Original-session identity regression (2026-11-06)
+
+The 47-module AIP-06 offline/injected regression excluding separately tested joined-lifecycle completed **1,300 passed, 0 failed**, exit code 0, in **132.84 seconds** after commits `3c0e888f`, `cea40850`, and `4fb0cfe0`. Suspended case-host argv validation is type-checked, and pre-resume retained-session membership uses object identity with an adversarial equal-but-unretained session regression. These checks do not constitute physical Windows native acceptance. AIP-06 incomplete, daily PAPER BLOCKED, production NO-GO; B1/C1/D1/E1 and all 21 decisions unchanged. Genesis untouched.
