@@ -264,6 +264,10 @@ def test_physical_host_handoff_requires_inherited_scope_integrity_and_original_l
                       'argv': list(dict(case.intent.commands)[case.roles[0]])}
         verified = verify_physical_host_handoff(packet, descriptor, t.g)
         assert verified == packet and verified is not packet
+        with monkeypatch.context() as scoped:
+            scoped.setattr(t.g, 'owner', 'foreign-owner')
+            with pytest.raises(ValueError, match='ORIGINAL_PHYSICAL_HOST_GUARD_OWNER_REQUIRED'):
+                verify_physical_host_handoff(packet, descriptor, t.g)
         original_identity = t.g.file_identities[case.intent.root]
         t.g.file_identities[case.intent.root] = 'substituted-after-handoff'
         with pytest.raises(ValueError, match='ORIGINAL_PHYSICAL_HOST_DIRECTORY_IDENTITY_STILL_BOUND'):

@@ -515,6 +515,7 @@ def verify_physical_host_handoff(packet, descriptor, guard):
          and ticket.get('stop_capacity_reserved') is True
          and ticket.get('controller_command') == guard.resources.channel.binding['launch']['command'],
          'EXACT_PHYSICAL_HOST_RESERVATION_SCOPE')
+    need(guard.owner == view['owner'], 'ORIGINAL_PHYSICAL_HOST_GUARD_OWNER_REQUIRED')
     guard.check()
     state = guard.ledger('read')['state']
     need(state['resources'].get(ticket.get('key')) ==
