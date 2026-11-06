@@ -13,7 +13,12 @@ HOST_ENTRY = ntpath.join(ntpath.dirname(ntpath.dirname(BASE)), 'scripts',
                          'observation_runtime', 'aip06_case_host_entry.py')
 from scripts.observation_runtime.aip06_fixture_guard import require_fixture
 from scripts.observation_runtime.aip06_harness import need
-from scripts.observation_runtime.aip06_host_preflight import inspect
+
+
+def inspect(packet, descriptor, guard):
+    # Import only after the inherited runtime verifies the pinned source.
+    from scripts.observation_runtime.aip06_host_preflight import inspect as verified
+    return verified(packet, descriptor, guard)
 
 
 def inspect_inherited_handoff(*, maximum_bytes=65536, timeout=6):
