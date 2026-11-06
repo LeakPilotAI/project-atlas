@@ -4,7 +4,7 @@ import ntpath
 from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
 
 PREFLIGHT = ntpath.join(ntpath.dirname(HOST_ENTRY), 'aip06_host_preflight.py')
-from scripts.observation_runtime.aip06_harness import need
+from scripts.observation_runtime.aip06_harness import LIMITS, need
 from scripts.observation_runtime.aip06_scoped_context import CaseContext
 
 
@@ -48,3 +48,31 @@ def inspect_launch_intent(case, reservation, *, deadline_ns):
             'argv': (plan['executable'], '-B', HOST_ENTRY),
             'handoff': handoff, 'native_acceptance': False,
             'execution_authorized': False}
+
+
+def verify_reserved_suspended_plan(guard, argv, plan):
+    """Validate a case-host process plan before any ownership/handle allocation.
+
+    The original guard still owns all actual suspended creation, Job checks,
+    ledger reservations, Stop escrow and cleanup. This grants no authority.
+    """
+    port = getattr(guard.processes, 'port', guard.processes)
+    case = getattr(port, 'scoped_case', None)
+    need(type(case) is CaseContext and case.guard is guard
+         and case.factory.pending is case and case.reservation is not None,
+         'ORIGINAL_SCOPED_CASE_FOR_SUSPENDED_HOST_PLAN')
+    executable = case.factory.plan['executable']
+    need(tuple(argv) == (executable, '-B', HOST_ENTRY)
+         and case.controller.profile['targets'].get('case_host') == HOST_ENTRY,
+         'EXACT_SUSPENDED_CASE_HOST_COMMAND')
+    need(type(plan) is dict and plan.get('parent_owner') == guard.owner
+         and plan.get('name') == 'case_host'
+         and type(plan.get('resource_kinds')) is tuple
+         and {'job', 'thread', 'image', 'pipe'} <= set(plan['resource_kinds'])
+         and plan.get('job_limits') == {
+             'processes': LIMITS['processes'],
+             'private_bytes': LIMITS['private_bytes'],
+             'child_private_bytes': LIMITS['child_private_bytes'],
+             'cpu_ns': LIMITS['cpu_ns'], 'kill_on_close': True},
+         'ORIGINAL_OWNER_STOP_CAPACITY_AND_SUSPENDED_HOST_RESOURCES')
+    return None

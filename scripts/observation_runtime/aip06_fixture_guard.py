@@ -633,6 +633,10 @@ class FixtureGuard:
             type(plan) is dict and set(plan) == required,
             "EXACT_PRELAUNCH_PLAN_REQUIRED",
         )
+        from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
+        if len(argv) >= 3 and argv[2] == HOST_ENTRY:
+            from scripts.observation_runtime.aip06_case_host_launch_intent import verify_reserved_suspended_plan
+            verify_reserved_suspended_plan(self, argv, plan)
         need(plan["request"].nonce not in self.launch_nonces, "LAUNCH_NONCE_REPLAY")
         if plan["name"] == "query" and "query" in self.ownership.finished:
             old = self.ownership.prepared["query"]
