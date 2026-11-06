@@ -4,6 +4,29 @@ import pytest
 from types import SimpleNamespace
 
 from scripts.observation_runtime import aip06_case_host_entry as host
+from scripts.observation_runtime.aip06_launch_roles import launch_role
+
+
+def test_case_host_launch_is_exact_inherited_worker_role():
+    argv = ['python', '-B', host.HOST_ENTRY]
+    targets = {'case_host': host.HOST_ENTRY}
+    assert launch_role(argv, targets) == 'acceptance_worker'
+
+
+@pytest.mark.parametrize('damage', ['missing-target', 'wrong-target', 'extra-argument', 'no-bytecode'])
+def test_case_host_launch_role_refuses_noncanonical_commands(damage):
+    argv = ['python', '-B', host.HOST_ENTRY]
+    targets = {'case_host': host.HOST_ENTRY}
+    if damage == 'missing-target':
+        targets.clear()
+    elif damage == 'wrong-target':
+        targets['case_host'] = 'foreign.py'
+    elif damage == 'extra-argument':
+        argv.append('--role=acceptance_supervisor')
+    else:
+        argv[1] = '-c'
+    with pytest.raises(ValueError, match='EXACT_CASE_HOST_INHERITED_LAUNCH_REQUIRED'):
+        launch_role(argv, targets)
 
 
 def test_case_host_main_checks_handoff_then_refuses_native_execution(monkeypatch):

@@ -11,6 +11,13 @@ def launch_role(argv, targets):
         from scripts.observation_runtime.aip06_controller_contract import controller_argv
         controller_argv(argv, targets)
         return 'acceptance_supervisor'
+    from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
+    if len(argv) >= 3 and argv[2] == HOST_ENTRY:
+        need(len(argv) == 3 and argv[1] == '-B'
+             and targets.get('case_host') == HOST_ENTRY,
+             'EXACT_CASE_HOST_INHERITED_LAUNCH_REQUIRED')
+        # A case host is a guarded child, never a supervisor or authorization.
+        return 'acceptance_worker'
     legacy = ntpath.join(
         ntpath.dirname(ntpath.dirname(BASE)),
         "scripts",
