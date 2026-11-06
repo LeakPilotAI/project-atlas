@@ -331,6 +331,9 @@ class WindowsReaderSet:
         need(cut['scope'] == SCOPE_HASH and cut['survivors'] == [] and cut['unknown'] is False
              and socket_cut['at_ns'] <= cut['started_ns'] <= cut['at_ns'] <= self.clock() < deadline_ns,
              'STRICT_PROCESS_AFTER_SOCKET_CLEANUP_REQUIRED')
+        need(cut['at_ns'] - cut['started_ns'] <= 2 * 10**9
+             and self.processes.check_reader(deadline_ns=deadline_ns) == observer,
+             'FINAL_PROCESS_CUT_FRESH_AND_SAME_INDEPENDENT_READER')
         row = {'reader':'PROCESS','observer':observer,'request':digest(request),'started_ns':cut['started_ns'],
                'finished_ns':cut['at_ns'],'raw':cut,'domain':DOMAIN}
         rows.append(row);self.output.append(row)

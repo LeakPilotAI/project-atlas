@@ -315,6 +315,20 @@ def test_strict_process_provider_refuses_malformed_cut_without_emitting_process_
     assert all(row['reader'] != 'PROCESS' for row in x.output)
 
 
+def test_final_process_cut_refuses_changed_independent_reader_identity():
+    x = bundle_fixture()
+    original = x.evidence.check_reader
+    checks = [0]
+    def switching_reader(*, deadline_ns):
+        checks[0] += 1
+        return original(deadline_ns=deadline_ns) if checks[0] == 1 else ('SWAPPED_READER',)
+    x.evidence.check_reader = switching_reader
+    with pytest.raises(ValueError, match='FINAL_PROCESS_CUT_FRESH_AND_SAME_INDEPENDENT_READER'):
+        x.bundle.collect(x.request, deadline_ns=x.clock()+10**9)
+    assert checks[0] >= 2 and x.bundle.failed and x.bundle.sequence == 0
+    assert all(row['reader'] != 'PROCESS' for row in x.output)
+
+
 def test_original_bootstrap_object_observer_checks_kernel_continuity_and_release_history():
     from test_aip06_bootstrap_objects import acquired
     from test_aip06_descendant_closure import exit_child
