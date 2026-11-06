@@ -191,12 +191,12 @@ class CaseContext:
     def reserve(self, *, deadline_ns):
         self.verify(deadline_ns=deadline_ns)
         need(self.reservation is None and self.factory.pending is None, 'SERIAL_RESERVATION_ONCE_ONLY')
-        self.factory.pending = self  # Capture partial construction before IO.
         port = getattr(self.guard.processes, 'port', self.guard.processes)
         need(getattr(port, 'scoped_case', None) is None, 'NO_OVERLAPPING_CASE_AUTHORITY')
+        self.factory.pending = self  # Capture partial construction before IO.
         port.scoped_case = self
-        self.baseline = set(self.guard.ledger('read')['state']['resources'])
         try:
+            self.baseline = set(self.guard.ledger('read')['state']['resources'])
             key = self.guard.mkdir(self.intent.root, hold=True)
             self.output = EvidenceOutput(self.guard, directory=self.intent.root, producer={
                 'session': self.factory.context.nonce, 'owner': self.guard.owner,
@@ -283,6 +283,14 @@ class CaseContext:
         if self.closed:
             return True
         if self.baseline is None:
+            # Reservation failed before the resource snapshot. Release only
+            # the scope marker installed by this case; no resource keys can
+            # safely be inferred without the original ledger baseline.
+            port = getattr(self.guard.processes, 'port', self.guard.processes)
+            need(self.factory.pending is self and getattr(port, 'scoped_case', None) is self,
+                 'ORIGINAL_PARTIAL_SCOPE_OWNER_REQUIRED')
+            port.scoped_case = None
+            self.factory.pending = None
             self.closed = True
             return True
         return self._close(deadline_ns)

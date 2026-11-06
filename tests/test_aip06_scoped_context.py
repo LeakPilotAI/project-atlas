@@ -121,6 +121,25 @@ def test_case_factory_refuses_exact_contract_damage_before_any_context_allocatio
     in_controller(monkeypatch,check)
 
 
+def test_failed_initial_ledger_snapshot_clears_only_original_scope(monkeypatch):
+    def check(t):
+        case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
+        original = t.g.ledger
+        def interrupted(action, *args, **kwargs):
+            if action == 'read' and t.factory.pending is case:
+                raise ValueError('INJECTED_SNAPSHOT_FAILURE')
+            return original(action, *args, **kwargs)
+        monkeypatch.setattr(t.g, 'ledger', interrupted)
+        with pytest.raises(ValueError, match='INJECTED_SNAPSHOT_FAILURE'):
+            case.reserve(deadline_ns=t.x.now[0]+10**9)
+        assert case.closed and case.failed and t.factory.failed
+        assert t.factory.pending is None and t.port.scoped_case is None
+        assert case.baseline is None and case.reservation is None
+        assert not t.factory.cleanup_failure
+        monkeypatch.setattr(t.g, 'ledger', original)
+    in_controller(monkeypatch, check)
+
+
 def test_joined_bootstrap_case_bridge_reservation_raw_reader_and_release(monkeypatch):
     def check(t):
         from scripts.observation_runtime.aip06_acceptance_control import GuardedScenarioBridge,scenarios
