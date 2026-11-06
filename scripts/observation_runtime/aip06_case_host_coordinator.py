@@ -18,6 +18,8 @@ class CaseHostCoordinator:
         self.case = case
         self.reservation = reservation
         self.prepared = False
+        self.intent = None
+        self.host = None
 
     def prepare(self, *, deadline_ns):
         need(not self.prepared, 'CASE_HOST_COORDINATOR_REPLAY_REFUSED')
@@ -29,7 +31,31 @@ class CaseHostCoordinator:
         need(type(intent) is dict and intent.get('native_acceptance') is False
              and intent.get('execution_authorized') is False,
              'CASE_HOST_COORDINATOR_DATA_ONLY_INTENT_REQUIRED')
+        self.intent = intent
         return intent
+
+    def bind_existing_host(self, process):
+        """Retain the exact already-guarded host; no native actions performed."""
+        from scripts.observation_runtime.aip06_fixture_guard import GuardedProcess
+        need(self.prepared and self.intent is not None and self.host is None,
+             'PREPARED_ONCE_ONLY_CASE_HOST_BINDING_REQUIRED')
+        need(type(process) is GuardedProcess,
+             'ORIGINAL_GUARDED_RELEASED_CASE_HOST_REQUIRED')
+        case = self.case
+        port = getattr(case.guard.processes, 'port', case.guard.processes)
+        need(process.guard is case.guard
+             and not process.closed and type(process.plan) is dict
+             and process.plan.get('name') == 'case_host'
+             and any(child is process.child for child in port.sessions)
+             and process.child.target_released is True
+             and process.child.closed is False and process.child.failed is False
+             and type(process.argv) in (tuple, list)
+             and tuple(process.argv) == self.intent['argv']
+             and case.factory.pending is case and case.reservation is self.reservation,
+             'ORIGINAL_GUARDED_RELEASED_CASE_HOST_REQUIRED')
+        port.verify_case_host_scope_after_release(process.child)
+        self.host = process
+        return process
 
     def execute(self, *args, **kwargs):
         raise ValueError('INDEPENDENT_PHYSICAL_CASE_HOST_NOT_AUTHORIZED')

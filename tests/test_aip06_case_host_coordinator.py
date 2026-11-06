@@ -36,6 +36,20 @@ def test_failed_preparation_cannot_retry(monkeypatch):
         coordinator.prepare(deadline_ns=200)
 
 
+def test_binding_refuses_foreign_host(monkeypatch):
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    with pytest.raises(ValueError, match='PREPARED_ONCE_ONLY_CASE_HOST_BINDING_REQUIRED'):
+        coordinator.bind_existing_host(object())
+    monkeypatch.setattr('scripts.observation_runtime.aip06_case_host_coordinator.inspect_launch_intent',
+                        lambda *args, **kwargs: {'argv': ('python', '-B', 'host'),
+                                                 'native_acceptance': False, 'execution_authorized': False})
+    coordinator.prepare(deadline_ns=200)
+    with pytest.raises(ValueError, match='ORIGINAL_GUARDED_RELEASED_CASE_HOST_REQUIRED'):
+        coordinator.bind_existing_host(object())
+    assert coordinator.host is None
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
