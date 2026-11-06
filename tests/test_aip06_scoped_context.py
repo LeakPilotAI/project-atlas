@@ -264,6 +264,11 @@ def test_physical_host_handoff_requires_inherited_scope_integrity_and_original_l
                       'argv': list(dict(case.intent.commands)[case.roles[0]])}
         verified = verify_physical_host_handoff(packet, descriptor, t.g)
         assert verified == packet and verified is not packet
+        original_identity = t.g.file_identities[case.intent.root]
+        t.g.file_identities[case.intent.root] = 'substituted-after-handoff'
+        with pytest.raises(ValueError, match='ORIGINAL_PHYSICAL_HOST_DIRECTORY_IDENTITY_STILL_BOUND'):
+            verify_physical_host_handoff(packet, descriptor, t.g)
+        t.g.file_identities[case.intent.root] = original_identity
         for field, value in [('native_acceptance', True), ('integrity', '0'*64),
                              ('schema', 'OTHER')]:
             damaged = copy.deepcopy(packet)

@@ -520,6 +520,10 @@ def verify_physical_host_handoff(packet, descriptor, guard):
     need(state['resources'].get(ticket.get('key')) ==
          {'owner': view['owner'], 'kind': 'directory', 'closed': False},
          'ORIGINAL_PHYSICAL_HOST_RESERVATION_STILL_HELD')
+    path = view['intent']['root']
+    observed = guard.paths.port.inspect(path)
+    need(observed is not None and guard.file_identities.get(path) == observed['id'],
+         'ORIGINAL_PHYSICAL_HOST_DIRECTORY_IDENTITY_STILL_BOUND')
     return copy.deepcopy(packet)
 
 
