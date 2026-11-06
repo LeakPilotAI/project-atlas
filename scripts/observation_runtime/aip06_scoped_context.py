@@ -649,6 +649,11 @@ class ReaderExecutionContext:
             self.verify(deadline_ns=deadline_ns)
             start = self.guard.clock()
             raw = self.adapters.collect(request, deadline_ns=deadline_ns)
+            need(type(raw) is dict and set(raw) >= {'native_acceptance', 'observer', 'cuts'}
+                 and type(raw['cuts']) is list
+                 and all(type(c) is dict and set(c) >=
+                         {'reader', 'started_ns', 'finished_ns'} for c in raw['cuts']),
+                 'INDEPENDENT_RAW_CUT_ENVELOPE_REQUIRED')
             need(raw['native_acceptance'] is False and body(raw['observer']) == body(wire_identity(self.binding['child']))
                  and tuple(c['reader'] for c in raw['cuts']) == READERS
                  and all(start <= c['started_ns'] <= c['finished_ns'] <= self.guard.clock() < deadline_ns
