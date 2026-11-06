@@ -398,6 +398,33 @@ def test_reader_collection_refuses_missing_provider_before_guard_access():
         collect_reader_from_provider(None, deadline_ns=10**9)
 
 
+def test_reader_collection_passes_inherited_request_to_guarded_context_once(monkeypatch):
+    from scripts.observation_runtime import aip06_reader_context_entry as entry
+    calls = []
+    class Context:
+        packet = {'request': {'scope': 'inherited'}}
+        def collect(self, request, *, deadline_ns):
+            calls.append((request, deadline_ns))
+            return {'native_acceptance': False}
+    monkeypatch.setattr(entry, 'prepare_reader_from_provider', lambda provider: Context())
+    assert entry.collect_reader_from_provider(object(), deadline_ns=123) == {'native_acceptance': False}
+    assert calls == [({'scope': 'inherited'}, 123)]
+
+
+def test_reader_collection_propagates_guarded_refusal_without_retry(monkeypatch):
+    from scripts.observation_runtime import aip06_reader_context_entry as entry
+    calls = []
+    class Context:
+        packet = {'request': {'scope': 'inherited'}}
+        def collect(self, request, *, deadline_ns):
+            calls.append((request, deadline_ns))
+            raise ValueError('GUARDED_READER_REFUSAL')
+    monkeypatch.setattr(entry, 'prepare_reader_from_provider', lambda provider: Context())
+    with pytest.raises(ValueError, match='GUARDED_READER_REFUSAL'):
+        entry.collect_reader_from_provider(object(), deadline_ns=123)
+    assert calls == [({'scope': 'inherited'}, 123)]
+
+
 def test_native_reader_entry_cannot_auto_load_a_provider_or_create_authority():
     from scripts.observation_runtime.aip06_reader_context_entry import main
     with pytest.raises(ValueError,match='NOT_YET_QUALIFIED'):main()
