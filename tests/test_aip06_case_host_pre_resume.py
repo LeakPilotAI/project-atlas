@@ -23,6 +23,8 @@ def setup():
     parent = {'pid': 77}
     session.observer = SimpleNamespace(observe=lambda handle: child if handle == 101 else parent,
                                        members=lambda: {555})
+    session.observer.parent = session.parent_handle
+    session.observer.job = session.job
     session.plan['api'] = session.observer
     return session, observed, guard
 
@@ -37,7 +39,8 @@ def test_original_retained_suspended_receipts_are_data_only():
     'wrong_member', 'extra_member', 'wrong_job', 'wrong_limits', 'not_suspended',
     'kill_on_close_disabled', 'retired_nonce', 'observer_wrong_pid',
     'observer_wrong_parent', 'observer_wrong_command', 'observer_extra_member',
-    'observer_wrong_creation', 'observer_wrong_image', 'foreign_observer'])
+    'observer_wrong_creation', 'observer_wrong_image', 'foreign_observer',
+    'observer_foreign_parent_handle', 'observer_foreign_job_handle'])
 def test_case_host_refuses_invalid_pre_resume_receipt(damage):
     s, job, guard = setup()
     if damage == 'resumed': s.suspended = False
@@ -45,6 +48,8 @@ def test_case_host_refuses_invalid_pre_resume_receipt(damage):
     if damage == 'no_creation': s.creation_attempted = False
     if damage == 'foreign_parent': s.plan['parent_owner'] = 'foreign'
     if damage == 'foreign_observer': s.plan['api'] = object()
+    if damage == 'observer_foreign_parent_handle': s.observer.parent = 999
+    if damage == 'observer_foreign_job_handle': s.observer.job = 999
     if damage == 'foreign_handle': s.runtime_handle = 104
     if damage == 'missing_thread': s.thread = None
     if damage == 'missing_job': s.job = None

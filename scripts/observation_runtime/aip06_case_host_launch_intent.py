@@ -95,6 +95,8 @@ def verify_suspended_host_before_resume(session, job, guard):
          and session.failed is False and session.creation_attempted is True
          and session.plan['parent_owner'] == guard.owner
          and session.observer is session.plan['api']
+         and session.observer.parent == session.parent_handle
+         and session.observer.job == session.job
          and session.launch_handle == session.runtime_handle
          and type(session.launch_handle) is int and session.launch_handle > 0
          and type(session.thread) is int and session.thread > 0
