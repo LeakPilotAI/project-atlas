@@ -713,6 +713,12 @@ class WindowsSessionPort:
         except BaseException:
             child.failed = True
             self.failed = True
+            # The original retained child/Job handles are the only cleanup
+            # authority. Never rediscover a child by PID after INPUT failure.
+            try:
+                self.abort(child, deadline_ns=deadline_ns)
+            except BaseException as cleanup_error:
+                self.case_host_input_cleanup_failure = str(cleanup_error)
             raise
         return None
 
