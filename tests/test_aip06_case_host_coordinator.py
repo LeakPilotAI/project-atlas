@@ -260,6 +260,23 @@ def test_coordinator_abort_lifecycle_retains_native_proof_without_false_case_cle
     assert coordinator.cleanup_verified is False
 
 
+def test_case_scope_release_requires_original_owner_cleanup(monkeypatch):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    coordinator.cleanup_verified = True
+    case.closed = True
+    port = SimpleNamespace(scoped_case=case)
+    case.guard.processes = SimpleNamespace(port=port)
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED'):
+        coordinator.verify_case_released()
+    port.scoped_case = None
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED'):
+        coordinator.verify_case_released()
+    case.factory.pending = None
+    assert coordinator.verify_case_released() is True
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
