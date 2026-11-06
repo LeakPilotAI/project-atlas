@@ -50,3 +50,7 @@ The separately executed joined-lifecycle suite completed **5 passed, 0 failed**,
 The complete 47-module offline/injected AIP-06 regression (excluding the separately tested joined-lifecycle module) completed with **1,264 passed, 0 failed, exit code 0**, in **163.22 seconds**. The separate joined-lifecycle module previously passed **5 tests** in 379.49 seconds.
 
 This checkpoint includes retained native cleanup preflight checks and inherited independent-reader command/source-receipt validation. These are regression results only; **physical Windows native acceptance is unverified**, daily PAPER is incomplete, and production remains NO-GO. All existing approval gates and unconditional native execution refusals remain in place.
+
+## Post-reader-role verification regression (2026-11-06)
+
+The 47-module AIP-06 offline/injected regression excluding the separately verified joined-lifecycle module completed **1,275 passed, 0 failed**, exit code 0, in **117.65 seconds** after commits `4d40df4e` and `1ad8b42b`. This verifies source-level reader digest and inherited role-target checks, not physical native acceptance. AIP-06 remains incomplete; B1/C1/D1/E1, all 21 decisions, daily PAPER BLOCKED and production NO-GO remain unchanged. Genesis untouched.
