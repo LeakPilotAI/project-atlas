@@ -817,6 +817,10 @@ class WindowsSessionPort:
              'EXACT_RETAINED_PROCESS_SLOT')
         need(all(key in child.native for key in child.keys),
              'RETAINED_NATIVE_HANDLE_BEFORE_CLEANUP')
+        expected = tuple(child.keys) + tuple(child.permit['slots'])
+        need(len(keys) == len(expected) and len(expected) == len(set(expected))
+             and set(keys) == set(expected),
+             'EXACT_RETAINED_CLOSE_RESOURCE_SET_REQUIRED')
         need(
             child.binding is not None
             and child.binding.finished

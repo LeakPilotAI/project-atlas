@@ -69,3 +69,20 @@ def test_close_owned_handles_refuses_equal_value_foreign_session_without_side_ef
         port.close_owned_handles(foreign, ())
     assert calls == []
     assert not original.closed and not foreign.closed
+
+
+@pytest.mark.parametrize('keys', [('process-slot', 'foreign'), ('process-slot', 'native-key', 'foreign')])
+def test_close_owned_handles_rejects_extra_resource_keys_before_side_effects(keys):
+    original = Session(name='case_host', plan={}, permit={'slots': ('process-slot',)},
+                       keys=('native-key',), argv=(), options={}, observer=None)
+    original.native = {'native-key': {'handle': 5}}
+    original.binding = SimpleNamespace(finished=True)
+    port = object.__new__(WindowsSessionPort)
+    port.sessions = [original]
+    calls = []
+    port.calls = SimpleNamespace(members=lambda *args: calls.append('members'),
+                                 close=lambda *args: calls.append('close'))
+    port.protocol = SimpleNamespace(close=lambda *args, **kw: calls.append('protocol'))
+    with pytest.raises(ValueError, match='EXACT_RETAINED_CLOSE_RESOURCE_SET_REQUIRED'):
+        port.close_owned_handles(original, keys)
+    assert calls == []
