@@ -406,7 +406,7 @@ def test_dispatcher_requires_explicit_physical_host_gate_even_for_context_proxy(
                 return getattr(case, key)
         proxy = Proxy()
         replaced = NativeScenarioBinding(binding.contract, source_pins=binding.source_pins, context=proxy)
-        with pytest.raises(ValueError, match='EXPLICIT_PHYSICAL_CASE_HOST_EXECUTION_GATE_REQUIRED'):
+        with pytest.raises(ValueError, match='REVIEWED_SOURCE_REQUIRES_INDEPENDENT_PHYSICAL_HOST'):
             replaced.execute(t.controller, t.g, ticket, deadline_ns=t.x.now[0]+10**9)
         assert case.abort(ticket, deadline_ns=t.x.now[0]+10**9)
     in_controller(monkeypatch, check)
@@ -452,7 +452,7 @@ def test_joined_bootstrap_case_bridge_reservation_raw_reader_and_release(monkeyp
         ticket=bridge.reserve(scenario,deadline_ns=t.x.now[0]+10**9)
         assert ticket['key'] in t.x.ledger.state['resources'] and not t.x.ledger.state['resources'][ticket['key']]['closed']
         assert t.factory.pending is case and t.port.scoped_case is case
-        with pytest.raises(ValueError,match='PHYSICAL_CASE_HOST_BINDING_REQUIRED'):
+        with pytest.raises(ValueError,match='REVIEWED_SOURCE_REQUIRES_INDEPENDENT_PHYSICAL_HOST'):
             binding.execute(t.controller,t.g,ticket,deadline_ns=t.x.now[0]+10**9)
         descriptor={'binding':{'parent':t.factory.binding['child']},'source_pins':t.factory.plan['source_pins'],
                     'targets':t.controller.profile['targets'],'argv':list(ticket['commands']['financial_worker'])}

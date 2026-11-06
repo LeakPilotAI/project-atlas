@@ -117,18 +117,17 @@ class NativeScenarioBinding:
         self.check(controller, guard, deadline_ns=deadline_ns)
         need(self.context.reservation == reservation and reservation['roles'] == self.roles,
              'EXACT_CASE_RESERVATION_BEFORE_EXECUTION')
+        # Reviewed fixtures require an independent host; refuse before even
+        # consulting an execution gate supplied by an unqualified context.
+        if self.contract.source_case is not None:
+            raise ValueError('REVIEWED_SOURCE_REQUIRES_INDEPENDENT_PHYSICAL_HOST')
         # Every physical host must explicitly qualify its own execution
         # boundary. A duck-typed or subclassed context must not bypass the
         # scoped controller's refusal merely by having a different type.
         need(callable(getattr(self.context, 'require_execution', None)),
              'EXPLICIT_PHYSICAL_CASE_HOST_EXECUTION_GATE_REQUIRED')
         self.context.require_execution()
-        if self.contract.source_case is None:
-            result = self.fault_driver.execute(self.context, reservation, deadline_ns=deadline_ns)
-        else:
-            # Reviewed fixture tests cannot install another guard in this interpreter.
-            # Native execution requires an independently guarded host and evidence.
-            raise ValueError('REVIEWED_SOURCE_REQUIRES_INDEPENDENT_PHYSICAL_HOST')
+        result = self.fault_driver.execute(self.context, reservation, deadline_ns=deadline_ns)
         need(controller.clock() < deadline_ns, 'NATIVE_SCENARIO_DEADLINE')
         return result  # Original source results never confer native PASS.
 
