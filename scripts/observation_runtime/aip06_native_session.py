@@ -393,7 +393,8 @@ class WindowsSessionPort:
 
     def allocate(self, session, kinds, create):
         """Check all tickets before a Windows API may allocate even one handle."""
-        need(session in self.sessions and not session.failed, "KNOWN_NATIVE_SESSION")
+        need(any(retained is session for retained in self.sessions) and not session.failed,
+             "KNOWN_NATIVE_SESSION")
         for kind in set(kinds):
             need(
                 sum(
