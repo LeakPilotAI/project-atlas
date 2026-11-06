@@ -144,11 +144,14 @@ def test_abort_delegates_once_to_original_owner(monkeypatch):
     from types import SimpleNamespace
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
-    child = object()
+    child = SimpleNamespace(creation_native={'pid': 44, 'created': 55})
     host = SimpleNamespace(guard=case.guard, child=child, keys=('original',))
     called = []
-    port = SimpleNamespace(sessions=[child], abort=lambda original, *, deadline_ns:
-                           called.append((original, deadline_ns)))
+    def abort(original, *, deadline_ns):
+        called.append((original, deadline_ns))
+        original.abort_exit_proof = {'pid': 44, 'created': 55,
+                                    'exited': True, 'exit_code': 1}
+    port = SimpleNamespace(sessions=[child], abort=abort)
     case.guard.processes = SimpleNamespace(port=port)
     coordinator.host = host
     coordinator.original_child = child
@@ -190,7 +193,9 @@ def test_native_abort_closure_does_not_certify_wrapper_cleanup(monkeypatch):
     from types import SimpleNamespace
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
-    child = SimpleNamespace(closed=True)
+    receipt = {'pid': 44, 'created': 55, 'exited': True, 'exit_code': 1}
+    child = SimpleNamespace(closed=True, creation_native={'pid': 44, 'created': 55},
+                            abort_exit_proof=receipt)
     host = SimpleNamespace(guard=case.guard, child=child, closed=False,
                            keys=('original',))
     port = SimpleNamespace(sessions=[child], resources_closed=lambda original, keys:
@@ -201,6 +206,7 @@ def test_native_abort_closure_does_not_certify_wrapper_cleanup(monkeypatch):
     coordinator.original_keys = ('original',)
     coordinator.abort_attempted = True
     coordinator.abort_completed = True
+    coordinator.abort_exit_receipt = dict(receipt)
     assert coordinator.verify_aborted_native_closure() is True
     assert coordinator.cleanup_verified is False
     with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_NATIVE_CLOSURE_EVIDENCE_REQUIRED'):
@@ -246,7 +252,7 @@ def test_coordinator_abort_lifecycle_retains_native_proof_without_false_case_cle
     from types import SimpleNamespace
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
-    child = SimpleNamespace(closed=False)
+    child = SimpleNamespace(closed=False, creation_native={'pid': 44, 'created': 55})
     host = SimpleNamespace(guard=case.guard, child=child, closed=False,
                            keys=('original-handle',))
     calls = []
@@ -254,6 +260,8 @@ def test_coordinator_abort_lifecycle_retains_native_proof_without_false_case_cle
         assert original is child
         calls.append(deadline_ns)
         child.closed = True
+        child.abort_exit_proof = {'pid': 44, 'created': 55,
+                                  'exited': True, 'exit_code': 1}
     port = SimpleNamespace(sessions=[child], abort=abort,
                            resources_closed=lambda original, keys:
                            original is child and child.closed and keys == ('original-handle',))
@@ -472,3 +480,30 @@ def test_case_release_rechecks_original_native_and_ledger_evidence(monkeypatch, 
     if mutation == 'wrapper': host.closed = False
     with pytest.raises(ValueError, match='ORIGINAL_CASE_SCOPE_RELEASE_NOT_VERIFIED'):
         coordinator.verify_case_released()
+
+
+@pytest.mark.parametrize('mutation', ['receipt', 'birth', 'missing'])
+def test_abort_receipt_substitution_cannot_certify_native_closure(monkeypatch, mutation):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    receipt = {'pid': 44, 'created': 55, 'exited': True, 'exit_code': 1}
+    child = SimpleNamespace(closed=True, creation_native={'pid': 44, 'created': 55},
+                            abort_exit_proof=dict(receipt))
+    port = SimpleNamespace(sessions=[child], resources_closed=lambda original, keys: True)
+    case.guard.processes = SimpleNamespace(port=port)
+    coordinator.host = SimpleNamespace(guard=case.guard, child=child,
+                                       keys=('original',), closed=False)
+    coordinator.original_child = child
+    coordinator.original_keys = ('original',)
+    coordinator.abort_attempted = coordinator.abort_completed = True
+    coordinator.abort_exit_receipt = dict(receipt)
+    if mutation == 'receipt':
+        child.abort_exit_proof['exit_code'] = 0
+    elif mutation == 'birth':
+        child.creation_native['created'] = 56
+    else:
+        del child.abort_exit_proof
+    with pytest.raises(ValueError, match='ABORTED_ORIGINAL_NATIVE_RESOURCES_NOT_CLOSED'):
+        coordinator.verify_aborted_native_closure()
+    assert coordinator.cleanup_verified is False

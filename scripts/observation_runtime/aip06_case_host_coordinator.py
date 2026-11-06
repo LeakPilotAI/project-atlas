@@ -29,6 +29,7 @@ class CaseHostCoordinator:
         self.original_child = None
         self.original_keys = None
         self.reader_evidence = None
+        self.abort_exit_receipt = None
 
     def prepare(self, *, deadline_ns):
         need(not self.prepared, 'CASE_HOST_COORDINATOR_REPLAY_REFUSED')
@@ -121,6 +122,18 @@ class CaseHostCoordinator:
         # The port owns termination, Job and process-handle closure. Never
         # issue a second termination or claim closure after an exception.
         port.abort(self.original_child, deadline_ns=deadline_ns)
+        receipt = getattr(self.original_child, 'abort_exit_proof', None)
+        need(type(receipt) is dict
+             and set(receipt) == {'pid', 'created', 'exited', 'exit_code'}
+             and type(receipt['pid']) is int
+             and type(receipt['created']) is int
+             and receipt['exited'] is True
+             and type(receipt['exit_code']) is int
+             and type(self.original_child.creation_native) is dict
+             and receipt['pid'] == self.original_child.creation_native['pid']
+             and receipt['created'] == self.original_child.creation_native['created'],
+             'ORIGINAL_ABORT_EXIT_RECEIPT_REQUIRED')
+        self.abort_exit_receipt = dict(receipt)
         self.abort_completed = True
         return None
 
@@ -136,6 +149,14 @@ class CaseHostCoordinator:
              and type(self.host.keys) in (tuple, list)
              and tuple(self.host.keys) == self.original_keys
              and self.original_child.closed is True
+             and type(self.abort_exit_receipt) is dict
+             and getattr(self.original_child, 'abort_exit_proof', None)
+                 == self.abort_exit_receipt
+             and type(self.original_child.creation_native) is dict
+             and self.abort_exit_receipt['pid']
+                 == self.original_child.creation_native['pid']
+             and self.abort_exit_receipt['created']
+                 == self.original_child.creation_native['created']
              and bool(self.original_keys)
              and port.resources_closed(self.original_child, self.original_keys) is True,
              'ABORTED_ORIGINAL_NATIVE_RESOURCES_NOT_CLOSED')
