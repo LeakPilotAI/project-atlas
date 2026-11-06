@@ -98,7 +98,7 @@ def test_case_host_uses_original_child_services_private_stream(monkeypatch):
     descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
                   'targets': {'case_host': host.HOST_ENTRY},
                   'source_pins': {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}}
-    runtime = SimpleNamespace(descriptor=descriptor, verify_source=lambda path: {'path': path, 'sha256': 'b'*64, 'closed': True})
+    runtime = SimpleNamespace(descriptor=descriptor, verify_source=lambda path: {'path': path, 'sha256': ('a' if path == host.HOST_ENTRY else 'b')*64, 'closed': True})
     services = ChildServices(SimpleNamespace(resources=None), runtime)
     reads = []
 
@@ -153,13 +153,34 @@ def test_case_host_rejects_invalid_closed_source_receipt_before_input(monkeypatc
         host.inspect_inherited_handoff()
 
 
+@pytest.mark.parametrize('damage', ['missing', 'wrong_path', 'wrong_hash', 'unclosed'])
+def test_case_host_rejects_invalid_host_source_receipt_before_input(monkeypatch, damage):
+    pins = {host.HOST_ENTRY: 'a'*64, VERIFIER: 'b'*64}
+    descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
+                  'targets': {'case_host': host.HOST_ENTRY}, 'source_pins': pins}
+    def verify(path):
+        receipt = {'path': path, 'sha256': pins[path], 'closed': True}
+        if path == host.HOST_ENTRY:
+            if damage == 'missing': return None
+            if damage == 'wrong_path': receipt['path'] = 'foreign.py'
+            if damage == 'wrong_hash': receipt['sha256'] = 'c'*64
+            if damage == 'unclosed': receipt['closed'] = False
+        return receipt
+    runtime = SimpleNamespace(descriptor=descriptor, verify_source=verify)
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=runtime,
+        read_input=lambda **kw: pytest.fail('read before host source receipt')))
+    monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
+    with pytest.raises(ValueError, match='CLOSED_INHERITED_HOST_SOURCE_RECEIPT_REQUIRED'):
+        host.inspect_inherited_handoff()
+
+
 def test_case_host_reads_bounded_private_handoff_and_calls_preflight(monkeypatch):
     observed = []
     descriptor = {'private': 'descriptor', 'argv': ['python', '-B', host.HOST_ENTRY],
                   'targets': {'case_host': host.HOST_ENTRY},
                   'source_pins': {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}}
     packet = {'schema': 'packet'}
-    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor, verify_source=lambda path: {'path': path, 'sha256': 'b'*64, 'closed': True})))
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor, verify_source=lambda path: {'path': path, 'sha256': ('a' if path == host.HOST_ENTRY else 'b')*64, 'closed': True})))
     def read_input(*, maximum_bytes, timeout):
         observed.append((maximum_bytes, timeout))
         return b'{"schema":"packet"}'
@@ -176,7 +197,7 @@ def test_case_host_refuses_unbound_launch_descriptor_before_read(monkeypatch, fi
                   'targets': {'case_host': host.HOST_ENTRY},
                   'source_pins': {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}}
     descriptor.pop(field)
-    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor, verify_source=lambda path: {'path': path, 'sha256': 'b'*64, 'closed': True})),
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor, verify_source=lambda path: {'path': path, 'sha256': ('a' if path == host.HOST_ENTRY else 'b')*64, 'closed': True})),
                             read_input=lambda **kwargs: pytest.fail('read before launch verification'))
     monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
     with pytest.raises(ValueError, match='PINNED_INHERITED_CASE_HOST_COMMAND_REQUIRED'):
@@ -194,7 +215,7 @@ def test_case_host_rejects_invalid_private_payload_before_preflight(monkeypatch)
     descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
                   'targets': {'case_host': host.HOST_ENTRY},
                   'source_pins': {host.HOST_ENTRY: 'a' * 64, VERIFIER: 'b' * 64}}
-    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor, verify_source=lambda path: {'path': path, 'sha256': 'b'*64, 'closed': True})),
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor, verify_source=lambda path: {'path': path, 'sha256': ('a' if path == host.HOST_ENTRY else 'b')*64, 'closed': True})),
                             read_input=lambda **kwargs: b'not-json')
     monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
     guard.processes.read_input = guard.read_input

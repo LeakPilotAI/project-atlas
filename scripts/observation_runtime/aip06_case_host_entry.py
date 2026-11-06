@@ -43,6 +43,12 @@ def inspect_inherited_handoff(*, maximum_bytes=65536, timeout=6):
          and source.get('sha256') == descriptor['source_pins'][verifier]
          and source.get('closed') is True,
          'CLOSED_INHERITED_PREFLIGHT_SOURCE_RECEIPT_REQUIRED')
+    # The host entry itself must also retain a closed source receipt.
+    host_source = guard.processes.runtime.verify_source(HOST_ENTRY)
+    need(type(host_source) is dict and host_source.get('path') == HOST_ENTRY
+         and host_source.get('sha256') == descriptor['source_pins'][HOST_ENTRY]
+         and host_source.get('closed') is True,
+         'CLOSED_INHERITED_HOST_SOURCE_RECEIPT_REQUIRED')
     # ChildServices owns the authenticated input stream; FixtureGuard does not.
     packet = strict(guard.processes.read_input(
         maximum_bytes=maximum_bytes, timeout=timeout).decode('utf-8'))
