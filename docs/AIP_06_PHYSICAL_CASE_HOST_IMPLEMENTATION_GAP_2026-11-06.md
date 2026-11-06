@@ -122,3 +122,8 @@ Remaining blocker: native abort closes native session handles but does not recon
 ## Independent joined-lifecycle regression (2026-11-06)
 
 The previously excluded `tests/test_aip06_joined_lifecycle.py` completed **5 passed, 0 failed**, exit code **0**, in **322.37 seconds**. Together with the separately executed 47-module offline regression (1,360 passed), this is **1,365 passing cases across two independent invocations**; it is not a single unified run and does not constitute native physical Windows acceptance. The original-owner abort terminal-state reconciliation and physical case-host assembly remain unimplemented. No gate is lifted: roadmap 5/18; daily PAPER incomplete; production NO-GO; B1/C1/D1/E1 and 21 decisions preserved; Genesis untouched.
+
+
+### Offline regression checkpoint after exact native abort exit receipt hardening
+
+Full AIP-06 offline/injected regression excluding the separate joined-lifecycle module: **1,370 passed, 0 failed**, exit code 0, 130.20 seconds (2026-11-06). This validates injected behavior only; it does not prove physical Windows acceptance or original-owner abort roster/ledger reconciliation. The last independently completed joined-lifecycle run remains 5 passed. All production and native acceptance gates remain closed.
