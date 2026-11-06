@@ -538,6 +538,7 @@ def verify_physical_host_handoff(packet, descriptor, guard):
          {'scenario', 'root', 'roles', 'held', 'stop_capacity_reserved', 'key',
           'commands', 'controller_command', 'case', 'manifest', 'evidence'}
          and contract is not None
+         and type(ticket['commands']) is dict
          and body(ticket['commands']) == body(dict(view['intent']['commands']))
          and ticket.get('scenario') == view['intent']['scenario']
          and ticket.get('case') == view['intent']['case']
