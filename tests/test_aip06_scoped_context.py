@@ -182,6 +182,21 @@ def test_release_order_conflict_keeps_case_open_until_original_marker_restored(m
     in_controller(monkeypatch, check)
 
 
+@pytest.mark.parametrize('bad_map', [[], (), False, 'F01'])
+@pytest.mark.parametrize('field', ['contexts', 'fault_drivers'])
+def test_dispatcher_refuses_non_dictionary_binding_maps(bad_map, field):
+    from scripts.observation_runtime.aip06_native_scenario_bindings import bindings
+    with pytest.raises(ValueError, match='EXACT_NATIVE_BINDING_MAP_TYPES'):
+        bindings({}, **{field: bad_map})
+
+
+def test_dispatcher_refuses_fault_driver_for_reviewed_source_case():
+    from scripts.observation_runtime.aip06_native_scenario_bindings import bindings, contracts
+    reviewed = next(c.id for c in contracts() if c.source_case is not None)
+    with pytest.raises(ValueError, match='NO_FAULT_DRIVER_ON_REVIEWED_SOURCE_CASE'):
+        bindings({}, fault_drivers={reviewed: object()})
+
+
 def test_dispatcher_requires_explicit_physical_host_gate_even_for_context_proxy(monkeypatch):
     def check(t):
         from scripts.observation_runtime.aip06_native_scenario_bindings import NativeScenarioBinding

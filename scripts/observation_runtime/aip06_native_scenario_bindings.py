@@ -109,9 +109,14 @@ class NativeScenarioBinding:
 
 
 def bindings(source_pins, *, contexts=None, fault_drivers=None):
-    contexts, fault_drivers = contexts or {}, fault_drivers or {}
+    contexts = {} if contexts is None else contexts
+    fault_drivers = {} if fault_drivers is None else fault_drivers
+    need(type(contexts) is dict and type(fault_drivers) is dict,
+         'EXACT_NATIVE_BINDING_MAP_TYPES')
     ids = {c.id for c in contracts()}
     need(set(contexts) <= ids and set(fault_drivers) <= ids, 'NO_UNREVIEWED_NATIVE_SCENARIO')
+    need(all(c.source_case is None for c in contracts() if c.id in fault_drivers),
+         'NO_FAULT_DRIVER_ON_REVIEWED_SOURCE_CASE')
     need(max(c.max_children for c in contracts()) + 2 <= LIMITS['processes'], 'OWNER_AND_DESCENDANT_CAPACITY')
     return {c.id: NativeScenarioBinding(c, source_pins=source_pins, context=contexts.get(c.id),
              fault_driver=fault_drivers.get(c.id)) for c in contracts()}
