@@ -10,8 +10,12 @@ def prepare_reader(adapters, acl_reader):
     from app.services.paper_financial_replay import strict
     from scripts.observation_runtime.aip06_fixture_guard import require_fixture
     from scripts.observation_runtime.aip06_scoped_context import ReaderExecutionContext
+    from scripts.observation_runtime.aip06_harness import need
     guard = require_fixture('independent-scoped-reader')
-    packet = strict(guard.read_input(maximum_bytes=65536, timeout=6).decode('utf-8'))
+    raw = guard.read_input(maximum_bytes=65536, timeout=6)
+    need(type(raw) is bytes and 0 < len(raw) <= 65536,
+         'BOUNDED_INDEPENDENT_READER_INPUT_BYTES_REQUIRED')
+    packet = strict(raw.decode('utf-8'))
     return ReaderExecutionContext(guard, packet, adapters, acl_reader)
 
 
