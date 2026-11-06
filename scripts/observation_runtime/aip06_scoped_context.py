@@ -267,6 +267,10 @@ class CaseContext:
              and reservation.get('held') is True
              and reservation.get('stop_capacity_reserved') is True,
              'ORIGINAL_RESERVED_CASE_FOR_PHYSICAL_HOST_HANDOFF')
+        state = self.guard.ledger('read')['state']
+        need(state['resources'].get(self.reservation['key']) ==
+             {'owner': self.guard.owner, 'kind': 'directory', 'closed': False},
+             'ORIGINAL_PHYSICAL_HANDOFF_RESERVATION_STILL_HELD')
         packet = {'schema': 'AIP06_PHYSICAL_CASE_HOST_HANDOFF_V1',
                   'case': self.wire(), 'reservation': self.reservation,
                   'native_acceptance': False}
