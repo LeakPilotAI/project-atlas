@@ -1015,3 +1015,25 @@ def test_module_has_no_native_process_or_runtime_entrypoint():
         for m in modules
         if m
     )
+
+
+@pytest.mark.parametrize('role,accepted', [
+    ('acceptance_supervisor', True), ('acceptance_worker', False),
+])
+def test_case_host_roster_requires_supervisor_role_and_original_binding(role, accepted):
+    s = resources()
+    api, request, ready = launch_fixture()
+    request = replace(request, role=role)
+    ready['role'] = role
+    roster = WorkerOwnership(s.ledger, all_members=lambda: api.pids.copy())
+    if not accepted:
+        with pytest.raises(ValueError, match='DECLARED_PRELAUNCH_REQUIRED'):
+            roster.prepare('case_host', request)
+        assert 'case_host' not in roster.prepared
+        return
+    roster.prepare('case_host', request)
+    roster.bind('case_host', api=api, request=request,
+                parent_handle='parent', launch_handle='launch',
+                runtime_handle='launch', ready=ready)
+    assert roster.bindings['case_host'].request is request
+    assert {row['pid'] for row in roster.verify()} == api.pids

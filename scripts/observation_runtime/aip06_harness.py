@@ -845,10 +845,10 @@ class WorkerOwnership:
         need(
             not self.refused
             and name
-            in ("financial_worker", "readonly_reader", "race_one", "race_two", "query", "acceptance_controller")
+            in ("financial_worker", "readonly_reader", "race_one", "race_two", "query", "acceptance_controller", "case_host")
             and name not in self.prepared
-            and ((name != 'acceptance_controller' and request.role == "acceptance_worker") or
-                 (name in ('query','acceptance_controller') and request.role == 'acceptance_supervisor'))
+            and ((name not in ('acceptance_controller', 'case_host') and request.role == "acceptance_worker") or
+                 (name in ('query','acceptance_controller','case_host') and request.role == 'acceptance_supervisor'))
             and request.auxiliary_image is None,
             "DECLARED_PRELAUNCH_REQUIRED",
         )
@@ -899,13 +899,13 @@ class WorkerOwnership:
         need(
             not self.refused
             and name
-            in ("financial_worker", "readonly_reader", "race_one", "race_two", "query", "acceptance_controller")
+            in ("financial_worker", "readonly_reader", "race_one", "race_two", "query", "acceptance_controller", "case_host")
             and name not in self.bindings,
             "DECLARED_LAUNCH_ONCE_ONLY",
         )
         need(
-            ((name != 'acceptance_controller' and request.role == "acceptance_worker") or
-             (name in ('query','acceptance_controller') and request.role == 'acceptance_supervisor'))
+            ((name not in ('acceptance_controller', 'case_host') and request.role == "acceptance_worker") or
+             (name in ('query','acceptance_controller','case_host') and request.role == 'acceptance_supervisor'))
             and request.auxiliary_image is None,
             "EXACT_AIP06_WORKER_ROLE_REQUIRED",
         )
