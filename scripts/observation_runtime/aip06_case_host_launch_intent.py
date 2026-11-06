@@ -1,6 +1,9 @@
 """Owner-side case-host launch preflight; never creates or authorizes a process."""
 
+import ntpath
 from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
+
+PREFLIGHT = ntpath.join(ntpath.dirname(HOST_ENTRY), 'aip06_host_preflight.py')
 from scripts.observation_runtime.aip06_harness import need
 from scripts.observation_runtime.aip06_scoped_context import CaseContext
 
@@ -25,6 +28,7 @@ def inspect_launch_intent(case, reservation, *, deadline_ns):
     plan = case.factory.plan
     need(type(plan) is dict and type(plan.get('source_pins')) is dict
          and HOST_ENTRY in plan['source_pins']
+         and PREFLIGHT in plan['source_pins']
          and controller.profile['source_pins'] == plan['source_pins']
          and controller.profile['targets'].get('case_host') == HOST_ENTRY,
          'PINNED_NATIVE_CASE_HOST_TARGET_REQUIRED')

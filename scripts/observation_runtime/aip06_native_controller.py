@@ -218,6 +218,7 @@ class NativeController:
                     "race_two",
                     "query",
                     "acceptance_controller",
+                    "case_host",
                 )
                 and type(v) is str
                 and v in profile["source_pins"]
@@ -229,6 +230,10 @@ class NativeController:
             from scripts.observation_runtime.aip06_controller_contract import ENTRY
             need(profile['targets']['acceptance_controller'] == ENTRY,
                  'ONLY_PINNED_ACCEPTANCE_CONTROLLER_TARGET')
+        if 'case_host' in profile['targets']:
+            from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
+            need(profile['targets']['case_host'] == HOST_ENTRY,
+                 'ONLY_PINNED_CASE_HOST_TARGET')
         need(
             set(profile["accounts"]) <= {"QUALITY_DIPS", "HYPERLIQUID"}
             and all(
