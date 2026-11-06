@@ -267,6 +267,26 @@ class CaseContext:
                 'owners':[self.guard.owner], 'source_pins':digest(self.factory.plan['source_pins']),
                 'intent':copy.deepcopy(vars(self.intent))}
 
+    def deliver_physical_host_handoff(self, process, *, deadline_ns):
+        """Connect a pre-existing original guarded host to its pinned INPUT.
+
+        No process is created here, and this does not authorize execution.
+        """
+        self.verify(deadline_ns=deadline_ns)
+        from scripts.observation_runtime.aip06_fixture_guard import GuardedProcess
+        from scripts.observation_runtime.aip06_case_host_launch_intent import inspect_launch_intent
+        need(type(process) is GuardedProcess and process.guard is self.guard
+             and process.plan['name'] == 'case_host'
+             and process.child in getattr(self.guard.processes, 'sessions', ())
+             and not process.closed,
+             'ORIGINAL_EXISTING_GUARDED_CASE_HOST_REQUIRED')
+        intent = inspect_launch_intent(self, self.reservation, deadline_ns=deadline_ns)
+        need(tuple(process.argv) == intent['argv']
+             and intent['native_acceptance'] is False
+             and intent['execution_authorized'] is False,
+             'EXACT_PINNED_CASE_HOST_HANDOFF_INTENT_REQUIRED')
+        return process.send_case_host_handoff(intent['handoff'], deadline_ns=deadline_ns)
+
     def physical_host_handoff(self, reservation, *, deadline_ns):
         """Data-only handoff for a separately guarded case host; never authority."""
         self.verify(deadline_ns=deadline_ns)
