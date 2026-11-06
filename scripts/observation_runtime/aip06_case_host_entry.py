@@ -21,7 +21,9 @@ def inspect_inherited_handoff(*, maximum_bytes=65536, timeout=6):
 
 
 def main():
-    # The native owner/Job/reader/cleanup proofs are not yet assembled.
+    # Executed only after the original child bootstrap installs its guard.
+    # A successful data-only handoff is still not native execution authority.
+    inspect_inherited_handoff()
     raise ValueError('NATIVE_CASE_HOST_EXECUTION_NOT_YET_QUALIFIED')
 
 

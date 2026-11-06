@@ -1,13 +1,40 @@
 """Fail-closed tests for the dedicated case-host child entry."""
 
 import pytest
+from types import SimpleNamespace
 
 from scripts.observation_runtime import aip06_case_host_entry as host
 
 
-def test_case_host_main_cannot_run_without_native_qualification():
+def test_case_host_main_checks_handoff_then_refuses_native_execution(monkeypatch):
+    observed = []
+    monkeypatch.setattr(host, 'inspect_inherited_handoff', lambda: observed.append('checked'))
     with pytest.raises(ValueError, match='NATIVE_CASE_HOST_EXECUTION_NOT_YET_QUALIFIED'):
         host.main()
+    assert observed == ['checked']
+
+
+def test_case_host_main_never_promotes_failed_handoff(monkeypatch):
+    def reject():
+        raise ValueError('ORIGINAL_PHYSICAL_HOST_RESERVATION_STILL_HELD')
+    monkeypatch.setattr(host, 'inspect_inherited_handoff', reject)
+    with pytest.raises(ValueError, match='ORIGINAL_PHYSICAL_HOST_RESERVATION_STILL_HELD'):
+        host.main()
+
+
+def test_case_host_reads_bounded_private_handoff_and_calls_preflight(monkeypatch):
+    observed = []
+    descriptor = {'private': 'descriptor'}
+    packet = {'schema': 'packet'}
+    guard = SimpleNamespace(processes=SimpleNamespace(runtime=SimpleNamespace(descriptor=descriptor)))
+    def read_input(*, maximum_bytes, timeout):
+        observed.append((maximum_bytes, timeout))
+        return b'{"schema":"packet"}'
+    guard.read_input = read_input
+    monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
+    monkeypatch.setattr(host, 'inspect', lambda p, d, g: (p, d, g))
+    assert host.inspect_inherited_handoff() == (packet, descriptor, guard)
+    assert observed == [(65536, 6)]
 
 
 @pytest.mark.parametrize('maximum_bytes,timeout', [(0, 6), (65537, 6), (65536, 0), (65536, 7), (True, 6), (65536, True)])
