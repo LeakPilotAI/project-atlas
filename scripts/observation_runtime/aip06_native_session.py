@@ -917,10 +917,14 @@ class WindowsSessionPort:
                     )
             self.calls.wait(child.launch_handle, deadline_ns)
             after = self.calls.lifecycle(child.launch_handle)
-            need(type(after) is dict and after.get('exited') is True
+            need(type(after) is dict
+                 and set(after) == {'pid', 'created', 'exited', 'exit_code'}
+                 and type(after.get('pid')) is int
+                 and type(after.get('created')) is int
+                 and after.get('exited') is True
                  and child.creation_native is not None
-                 and after.get('pid') == child.creation_native['pid']
-                 and after.get('created') == child.creation_native['created']
+                 and after['pid'] == child.creation_native['pid']
+                 and after['created'] == child.creation_native['created']
                  and type(after.get('exit_code')) is int,
                  'ABORT_ORIGINAL_PROCESS_EXIT_NOT_INDEPENDENTLY_VERIFIED')
             need(not self.calls.members(child.job), "ABORT_JOB_NOT_EMPTY")

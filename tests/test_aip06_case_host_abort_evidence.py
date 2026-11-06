@@ -76,3 +76,23 @@ def test_abort_refuses_untyped_exit_code_before_handle_closure(monkeypatch, bad_
     assert 'channel-close' not in events
     assert not child.closed
     assert not hasattr(child, 'abort_exit_proof')
+
+
+@pytest.mark.parametrize('mutation', [
+    {'pid': True}, {'created': '55'}, {'unexpected': 'forged'},
+    {'exited': 1}, {'pid': 45}, {'created': 56},
+])
+def test_abort_rejects_malformed_or_substituted_exit_receipt(monkeypatch, mutation):
+    port, child, _, events = prepare(monkeypatch, failure=None)
+    def lifecycle(handle):
+        receipt = {'pid': 44, 'created': 55, 'exited': 'wait' in events,
+                   'exit_code': 1 if 'wait' in events else None}
+        if 'wait' in events:
+            receipt.update(mutation)
+        return receipt
+    port.calls.lifecycle = lifecycle
+    with pytest.raises(ValueError, match='ABORT_ORIGINAL_PROCESS_EXIT_NOT_INDEPENDENTLY_VERIFIED'):
+        port.abort(child, deadline_ns=200)
+    assert 'process-close' not in events
+    assert not child.closed
+    assert not hasattr(child, 'abort_exit_proof')
