@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from scripts.observation_runtime import aip06_case_host_entry as host
 from scripts.observation_runtime.aip06_launch_roles import launch_role
 from scripts.observation_runtime.aip06_fixture_guard import require_fixture
+from scripts.observation_runtime.aip06_child_entry import ChildServices
 
 
 def test_case_host_inherited_bootstrap_refuses_after_guarded_release(monkeypatch):
@@ -89,6 +90,27 @@ def test_case_host_main_never_promotes_failed_handoff(monkeypatch):
     monkeypatch.setattr(host, 'inspect_inherited_handoff', reject)
     with pytest.raises(ValueError, match='ORIGINAL_PHYSICAL_HOST_RESERVATION_STILL_HELD'):
         host.main()
+
+
+def test_case_host_uses_original_child_services_private_stream(monkeypatch):
+    descriptor = {'argv': ['python', '-B', host.HOST_ENTRY],
+                  'targets': {'case_host': host.HOST_ENTRY},
+                  'source_pins': {host.HOST_ENTRY: 'a' * 64}}
+    runtime = SimpleNamespace(descriptor=descriptor)
+    services = ChildServices(SimpleNamespace(resources=None), runtime)
+    reads = []
+
+    def read_input(*, maximum_bytes, timeout):
+        reads.append((maximum_bytes, timeout))
+        return b'{"schema":"packet"}'
+
+    services.streams = SimpleNamespace(read_input=read_input)
+    guard = SimpleNamespace(processes=services)
+    monkeypatch.setattr(host, 'require_fixture', lambda name: guard)
+    monkeypatch.setattr(host, 'inspect', lambda packet, desc, owner: (packet, desc, owner))
+    packet, desc, owner = host.inspect_inherited_handoff()
+    assert packet == {'schema': 'packet'} and desc is descriptor and owner is guard
+    assert reads == [(65536, 6)]
 
 
 def test_case_host_reads_bounded_private_handoff_and_calls_preflight(monkeypatch):
