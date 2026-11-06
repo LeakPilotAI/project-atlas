@@ -137,6 +137,26 @@ def test_abort_delegates_once_to_original_owner(monkeypatch):
         coordinator.abort_original_host(deadline_ns=200)
 
 
+def test_failed_abort_cannot_replay_or_send_input(monkeypatch):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = object()
+    coordinator.host = SimpleNamespace(guard=case.guard, child=child)
+    coordinator.original_child = child
+    def fail(original, *, deadline_ns):
+        raise OSError('native abort unresolved')
+    case.guard.processes = SimpleNamespace(port=SimpleNamespace(sessions=[child], abort=fail))
+    case.controller = SimpleNamespace(clock=lambda: 100)
+    with pytest.raises(OSError, match='native abort unresolved'):
+        coordinator.abort_original_host(deadline_ns=200)
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_ABORT_ONCE_ONLY'):
+        coordinator.abort_original_host(deadline_ns=200)
+    with pytest.raises(ValueError, match='BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED'):
+        coordinator.deliver_handoff(deadline_ns=200)
+    assert coordinator.cleanup_verified is False
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)

@@ -67,7 +67,8 @@ class CaseHostCoordinator:
 
     def deliver_handoff(self, *, deadline_ns):
         """Once-only original guarded INPUT; transport grants no execution authority."""
-        need(self.host is not None and not self.handoff_attempted,
+        need(self.host is not None and not self.handoff_attempted
+             and not self.abort_attempted and not self.cleanup_verified,
              'BOUND_ONCE_ONLY_CASE_HOST_HANDOFF_REQUIRED')
         # Mark before invoking the guarded channel: partial I/O is never replayed.
         self.handoff_attempted = True
@@ -95,7 +96,7 @@ class CaseHostCoordinator:
 
     def verify_original_cleanup(self):
         """Observe completed original-owner cleanup; never terminate by PID."""
-        need(self.host is not None and self.handoff_attempted
+        need(self.host is not None and (self.handoff_attempted or self.abort_attempted)
              and not self.cleanup_verified,
              'ORIGINAL_CASE_HOST_CLEANUP_CHECK_ONCE_ONLY')
         process = self.host
