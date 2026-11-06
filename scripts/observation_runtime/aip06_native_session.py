@@ -641,7 +641,8 @@ class WindowsSessionPort:
              'ORIGINAL_CASE_HOST_DIRECTORY_RESERVATION_STILL_HELD')
         nonce = child.plan['request'].nonce
         recorded = self.plans.get(nonce)
-        need(child in self.sessions and not child.closed and not child.failed
+        need(any(retained is child for retained in self.sessions)
+             and not child.closed and not child.failed
              and not child.suspended and not child.target_released
              and recorded is not None and recorded['plan'] is child.plan
              and recorded['argv'] == tuple(child.argv)

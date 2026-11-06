@@ -38,6 +38,16 @@ def test_original_release_scope(monkeypatch):
     assert port.verify_case_host_scope(child) is None
 
 
+def test_equal_but_unretained_host_cannot_release(monkeypatch):
+    from copy import copy
+    port, child, _ = fixture(monkeypatch)
+    substituted = copy(child)
+    assert substituted == child and substituted is not child
+    port.sessions[:] = [substituted]
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_RELEASE_PLAN_REQUIRED'):
+        port.verify_case_host_scope(child)
+
+
 @pytest.mark.parametrize('damage', ['missing_case', 'foreign_case', 'closed_case', 'failed_case',
     'missing_reservation', 'missing_stop', 'foreign_plan', 'foreign_scope', 'foreign_argv',
     'replayed_release', 'still_suspended', 'unregistered_child', 'foreign_parent',
