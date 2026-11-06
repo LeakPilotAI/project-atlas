@@ -242,6 +242,11 @@ def test_physical_host_handoff_requires_inherited_scope_integrity_and_original_l
         case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
         ticket = case.reserve(deadline_ns=t.x.now[0]+10**9)
         packet = case.physical_host_handoff(ticket, deadline_ns=t.x.now[0]+10**9)
+        original_identity = t.g.file_identities[case.intent.root]
+        t.g.file_identities[case.intent.root] = 'substituted'
+        with pytest.raises(ValueError, match='ORIGINAL_CASE_DIRECTORY_IDENTITY_REQUIRED'):
+            case.physical_host_handoff(ticket, deadline_ns=t.x.now[0]+10**9)
+        t.g.file_identities[case.intent.root] = original_identity
         original_ledger = t.g.ledger
         def altered_ledger(operation, *args, **kwargs):
             result = original_ledger(operation, *args, **kwargs)

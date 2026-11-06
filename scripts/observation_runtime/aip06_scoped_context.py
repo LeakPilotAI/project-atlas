@@ -271,6 +271,9 @@ class CaseContext:
         need(state['resources'].get(self.reservation['key']) ==
              {'owner': self.guard.owner, 'kind': 'directory', 'closed': False},
              'ORIGINAL_PHYSICAL_HANDOFF_RESERVATION_STILL_HELD')
+        observed = self.guard.paths.port.inspect(self.intent.root)
+        need(observed is not None and self.guard.file_identities.get(self.intent.root) == observed['id'],
+             'ORIGINAL_CASE_DIRECTORY_IDENTITY_REQUIRED')
         packet = {'schema': 'AIP06_PHYSICAL_CASE_HOST_HANDOFF_V1',
                   'case': self.wire(), 'reservation': self.reservation,
                   'native_acceptance': False}
