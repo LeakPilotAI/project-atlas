@@ -11,7 +11,9 @@ def fixture(monkeypatch):
     factory = SimpleNamespace(pending=case)
     case.factory, case.guard = factory, guard
     case.closed = case.failed = False
-    case.reservation = {'held': True, 'stop_capacity_reserved': True}
+    case.reservation = {'held': True, 'stop_capacity_reserved': True, 'key': 'directory-key'}
+    ledger = {'resources': {'directory-key': {'owner': 'original', 'kind': 'directory', 'closed': False}}}
+    guard.ledger = lambda mode: {'state': ledger}
     monkeypatch.setattr(CaseContext, 'wire', lambda self: {'case': 'original'})
     nonce = 'a' * 32
     plan = {'request': SimpleNamespace(nonce=nonce)}
@@ -34,7 +36,8 @@ def test_original_release_scope(monkeypatch):
 
 @pytest.mark.parametrize('damage', ['missing_case', 'foreign_case', 'closed_case', 'failed_case',
     'missing_reservation', 'missing_stop', 'foreign_plan', 'foreign_scope', 'foreign_argv',
-    'replayed_release', 'still_suspended', 'unregistered_child', 'foreign_parent'])
+    'replayed_release', 'still_suspended', 'unregistered_child', 'foreign_parent',
+    'closed_directory', 'foreign_directory', 'missing_directory'])
 def test_release_gate_rejects_damaged_scope(monkeypatch, damage):
     port, child, case = fixture(monkeypatch)
     if damage == 'missing_case': port.scoped_case = None
@@ -50,5 +53,8 @@ def test_release_gate_rejects_damaged_scope(monkeypatch, damage):
     if damage == 'still_suspended': child.suspended = True
     if damage == 'unregistered_child': port.sessions.clear()
     if damage == 'foreign_parent': port.plans['a'*32]['parent'] = {'pid': 88}
+    if damage == 'closed_directory': port.guard.ledger('read')['state']['resources']['directory-key']['closed'] = True
+    if damage == 'foreign_directory': port.guard.ledger('read')['state']['resources']['directory-key']['owner'] = 'foreign'
+    if damage == 'missing_directory': port.guard.ledger('read')['state']['resources'].clear()
     with pytest.raises(ValueError):
         port.verify_case_host_scope(child)

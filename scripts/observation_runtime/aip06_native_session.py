@@ -633,6 +633,11 @@ class WindowsSessionPort:
              and case.reservation.get('held') is True
              and case.reservation.get('stop_capacity_reserved') is True,
              'ORIGINAL_HELD_CASE_HOST_SCOPE_REQUIRED')
+        reservation = case.reservation
+        state = self.guard.ledger('read')['state']
+        need(state['resources'].get(reservation['key']) ==
+             {'owner': self.guard.owner, 'kind': 'directory', 'closed': False},
+             'ORIGINAL_CASE_HOST_DIRECTORY_RESERVATION_STILL_HELD')
         nonce = child.plan['request'].nonce
         recorded = self.plans.get(nonce)
         need(child in self.sessions and not child.closed and not child.failed
