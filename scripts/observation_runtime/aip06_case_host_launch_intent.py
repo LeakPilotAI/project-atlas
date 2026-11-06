@@ -75,4 +75,15 @@ def verify_reserved_suspended_plan(guard, argv, plan):
              'child_private_bytes': LIMITS['child_private_bytes'],
              'cpu_ns': LIMITS['cpu_ns'], 'kill_on_close': True},
          'ORIGINAL_OWNER_STOP_CAPACITY_AND_SUSPENDED_HOST_RESOURCES')
+    request = plan.get('request')
+    nonce = getattr(request, 'nonce', None)
+    planned = getattr(port, 'plans', {}).get(nonce)
+    need(type(nonce) is str and len(nonce) == 32
+         and getattr(request, 'role', None) == 'acceptance_worker'
+         and getattr(port, 'current_plan_nonce', None) == nonce
+         and type(planned) is dict and planned.get('plan') is plan
+         and planned.get('argv') == tuple(argv)
+         and planned.get('parent') == port.resources.state['owners'][guard.owner]
+         and planned.get('case_scope') == case.wire(),
+         'ORIGINAL_SINGLE_USE_NATIVE_CASE_HOST_PLAN_BINDING')
     return None
