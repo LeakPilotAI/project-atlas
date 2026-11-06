@@ -29,7 +29,7 @@ The owner-to-child data-only handoff path is now implemented: `CaseContext.deliv
 
 ## Verified regression checkpoint (2026-11-06)
 
-The broad offline/injected AIP-06 suite completed successfully: **1,191 passed, 0 failed, exit code 0**, in **573.41 seconds (9m33s)**. This run preceded the dedicated reader identity-spoof test added in commit `63b430f4`; that new test and its companion focused identity/context tests separately passed **10/10**. These are source-level regressions only, **not physical Windows native acceptance**, and do not satisfy the B1/C1/D1/E1 or 21-decision gates.
+The broad offline/injected AIP-06 suite completed successfully: **1,191 passed, 0 failed, exit code 0**, in **573.41 seconds (9m33s)**. This run preceded the dedicated reader identity-spoof test added in commit `63b430f4`; that new test and its companion focused identity/context tests separately passed **10/10**. The separately launched joined-lifecycle regression also completed **5 passed, 0 failed, exit code 0** in **425.74 seconds (7m05s)**, including the intentional account-scope refusal and bounded cleanup tests. Later focused case-host INPUT checks passed **46/46** (commit `d08efddc`), and malformed UTF-8 refusal checks passed **45/45** (commit `aa557c7b`); the 1,191-test full run predates these additions. These are source-level regressions only, **not physical Windows native acceptance**, and do not satisfy the B1/C1/D1/E1 or 21-decision gates.
 
 ## Next engineering slice
 
