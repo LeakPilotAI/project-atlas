@@ -38,6 +38,26 @@ def contracts():
         source[s.id]['max_children'], s.seconds, faults.get(s.id, 'original-reviewed-source-case')) for s in scenarios())
 
 
+class OwnershipProbeDriver:
+    """Exact ownership-probe producer; no authority to create a host."""
+
+    def __init__(self):
+        self.contract = next(c for c in contracts() if c.id == 'OWNERSHIP-PROBES')
+
+    def verify(self, context, *, deadline_ns):
+        need(context.contract == self.contract and context.roles == self.contract.roles,
+             'EXACT_OWNERSHIP_PROBE_CONTEXT')
+        context.verify(deadline_ns=deadline_ns)
+
+    def execute(self, context, reservation, *, deadline_ns):
+        self.verify(context, deadline_ns=deadline_ns)
+        need(reservation == context.reservation and reservation.get('held') is True,
+             'ORIGINAL_OWNERSHIP_PROBE_RESERVATION_REQUIRED')
+        context.require_execution()
+        return {'supervisor': context.controller.probe_supervisor(deadline_ns=deadline_ns),
+                'unexpected_children': context.controller.probe_unexpected_children(deadline_ns=deadline_ns)}
+
+
 class NativeScenarioBinding:
     """No mutation of global targets or reuse of a finished guard's role map.
 

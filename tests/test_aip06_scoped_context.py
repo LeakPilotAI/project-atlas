@@ -291,6 +291,24 @@ def test_physical_host_handoff_requires_inherited_scope_integrity_and_original_l
     in_controller(monkeypatch, check)
 
 
+def test_ownership_probe_driver_never_runs_inside_controller(monkeypatch):
+    from scripts.observation_runtime.aip06_native_scenario_bindings import OwnershipProbeDriver
+    driver = OwnershipProbeDriver()
+    assert driver.contract.id == 'OWNERSHIP-PROBES'
+    class Context:
+        contract = driver.contract
+        roles = driver.contract.roles
+        reservation = {'held': True}
+        def verify(self, *, deadline_ns):
+            assert deadline_ns == 123
+        def require_execution(self):
+            raise ValueError('SEPARATELY_GUARDED_PHYSICAL_CASE_HOST_BINDING_REQUIRED')
+    with pytest.raises(ValueError, match='SEPARATELY_GUARDED_PHYSICAL_CASE_HOST_BINDING_REQUIRED'):
+        driver.execute(Context(), {'held': True}, deadline_ns=123)
+    with pytest.raises(ValueError, match='ORIGINAL_OWNERSHIP_PROBE_RESERVATION_REQUIRED'):
+        driver.execute(Context(), {'held': False}, deadline_ns=123)
+
+
 def test_dispatcher_requires_explicit_physical_host_gate_even_for_context_proxy(monkeypatch):
     def check(t):
         from scripts.observation_runtime.aip06_native_scenario_bindings import NativeScenarioBinding
