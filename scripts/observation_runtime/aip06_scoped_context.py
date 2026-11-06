@@ -259,6 +259,20 @@ class CaseContext:
                 'owners':[self.guard.owner], 'source_pins':digest(self.factory.plan['source_pins']),
                 'intent':copy.deepcopy(vars(self.intent))}
 
+    def physical_host_handoff(self, reservation, *, deadline_ns):
+        """Data-only handoff for a separately guarded case host; never authority."""
+        self.verify(deadline_ns=deadline_ns)
+        need(self.factory.pending is self and self.reservation is not None
+             and type(reservation) is dict and reservation == self.reservation
+             and reservation.get('held') is True
+             and reservation.get('stop_capacity_reserved') is True,
+             'ORIGINAL_RESERVED_CASE_FOR_PHYSICAL_HOST_HANDOFF')
+        packet = {'schema': 'AIP06_PHYSICAL_CASE_HOST_HANDOFF_V1',
+                  'case': self.wire(), 'reservation': self.reservation,
+                  'native_acceptance': False}
+        packet['integrity'] = digest(packet)
+        return copy.deepcopy(packet)
+
     def require_execution(self):
         # Construction and an immutable view are NOT a physical case host.
         # The historical cases install their own guards/Stop lifetimes; they
@@ -464,6 +478,35 @@ def verify_inherited_scope(value, descriptor):
         allowed += ((descriptor['argv'][0],'-B',READER_ENTRY),)
     need(tuple(descriptor['argv']) in allowed, 'INHERITED_CASE_COMMAND_MISMATCH')
     return copy.deepcopy(value)
+
+
+def verify_physical_host_handoff(packet, descriptor, guard):
+    """Check private host handoff against inherited scope and original ledger.
+
+    A valid packet is only data: it cannot authorize execution or attest native IO.
+    """
+    need(type(packet) is dict and set(packet) ==
+         {'schema', 'case', 'reservation', 'native_acceptance', 'integrity'}
+         and packet['schema'] == 'AIP06_PHYSICAL_CASE_HOST_HANDOFF_V1'
+         and packet['native_acceptance'] is False
+         and packet['integrity'] == digest({k: v for k, v in packet.items() if k != 'integrity'}),
+         'CLOSED_INTEGRITY_BOUND_PHYSICAL_HOST_HANDOFF')
+    view = verify_inherited_scope(packet['case'], descriptor)
+    ticket = packet['reservation']
+    need(type(ticket) is dict and ticket.get('scenario') == view['intent']['scenario']
+         and ticket.get('case') == view['intent']['case']
+         and ticket.get('manifest') == view['intent']['manifest']
+         and ticket.get('evidence') == view['intent']['evidence']
+         and ticket.get('roles') == next(c.roles for c in contracts() if c.id == ticket['scenario'])
+         and ticket.get('root') == ROOTS['E'] and ticket.get('held') is True
+         and ticket.get('stop_capacity_reserved') is True,
+         'EXACT_PHYSICAL_HOST_RESERVATION_SCOPE')
+    guard.check()
+    state = guard.ledger('read')['state']
+    need(state['resources'].get(ticket.get('key')) ==
+         {'owner': view['owner'], 'kind': 'directory', 'closed': False},
+         'ORIGINAL_PHYSICAL_HOST_RESERVATION_STILL_HELD')
+    return copy.deepcopy(packet)
 
 
 def forward_scope(value, guard):

@@ -15,6 +15,16 @@ def prepare_reader(adapters, acl_reader):
     return ReaderExecutionContext(guard, packet, adapters, acl_reader)
 
 
+def prepare_reader_from_provider(provider):
+    """Require an explicit provider host; never discover native providers implicitly."""
+    from scripts.observation_runtime.aip06_harness import need
+    from scripts.observation_runtime.aip06_windows_acceptance_adapters import WindowsReaderSet, PinnedWindowsRead
+    need(type(provider) is tuple and len(provider) == 2
+         and type(provider[0]) is WindowsReaderSet and type(provider[1]) is PinnedWindowsRead,
+         'EXACT_INDEPENDENT_READER_PROVIDER_HOST_PAIR_REQUIRED')
+    return prepare_reader(provider[0], provider[1])
+
+
 def main():
     raise ValueError('NATIVE_READER_PROVIDER_HOST_BINDING_NOT_YET_QUALIFIED')
 

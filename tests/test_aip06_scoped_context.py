@@ -197,6 +197,74 @@ def test_dispatcher_refuses_fault_driver_for_reviewed_source_case():
         bindings({}, fault_drivers={reviewed: object()})
 
 
+def test_ownership_probes_cannot_reserve_without_reviewed_native_producer(monkeypatch):
+    def check(t):
+        from scripts.observation_runtime.aip06_native_scenario_bindings import contracts
+        contract = next(c for c in contracts() if c.id == 'OWNERSHIP-PROBES')
+        assert contract.source_case is None
+        case = t.factory.create(intent(t, scenario='OWNERSHIP-PROBES'),
+                                deadline_ns=t.x.now[0]+10**9)
+        before = copy.deepcopy(t.x.ledger.state['resources'])
+        binding = t.factory.as_bindings()['OWNERSHIP-PROBES']
+        with pytest.raises(ValueError, match='ACTUAL_NATIVE_FAULT_LOAD_PRODUCER_MISSING:OWNERSHIP-PROBES'):
+            binding.reserve(t.g, deadline_ns=t.x.now[0]+10**9)
+        assert case.reservation is None
+        assert t.factory.pending is None
+        assert t.x.ledger.state['resources'] == before
+    in_controller(monkeypatch, check)
+
+
+def test_physical_host_handoff_is_copy_only_and_cannot_grant_execution(monkeypatch):
+    def check(t):
+        case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
+        with pytest.raises(ValueError, match='ORIGINAL_RESERVED_CASE_FOR_PHYSICAL_HOST_HANDOFF'):
+            case.physical_host_handoff({}, deadline_ns=t.x.now[0]+10**9)
+        ticket = case.reserve(deadline_ns=t.x.now[0]+10**9)
+        with pytest.raises(ValueError, match='ORIGINAL_RESERVED_CASE_FOR_PHYSICAL_HOST_HANDOFF'):
+            case.physical_host_handoff({**ticket, 'held': False}, deadline_ns=t.x.now[0]+10**9)
+        handoff = case.physical_host_handoff(ticket, deadline_ns=t.x.now[0]+10**9)
+        assert handoff['native_acceptance'] is False
+        assert handoff['schema'] == 'AIP06_PHYSICAL_CASE_HOST_HANDOFF_V1'
+        assert handoff['case']['intent']['scenario'] == 'F01'
+        handoff['reservation']['held'] = False
+        handoff['case']['owners'].clear()
+        assert case.reservation['held'] is True
+        assert case.wire()['owners'] == [t.g.owner]
+        with pytest.raises(ValueError, match='SEPARATELY_GUARDED_PHYSICAL_CASE_HOST_BINDING_REQUIRED'):
+            case.require_execution()
+        assert case.abort(ticket, deadline_ns=t.x.now[0]+10**9)
+    in_controller(monkeypatch, check)
+
+
+def test_physical_host_handoff_requires_inherited_scope_integrity_and_original_ledger(monkeypatch):
+    def check(t):
+        from scripts.observation_runtime.aip06_scoped_context import verify_physical_host_handoff
+        case = t.factory.create(intent(t), deadline_ns=t.x.now[0]+10**9)
+        ticket = case.reserve(deadline_ns=t.x.now[0]+10**9)
+        packet = case.physical_host_handoff(ticket, deadline_ns=t.x.now[0]+10**9)
+        descriptor = {'binding': {'parent': t.lease.binding.runtime},
+                      'source_pins': t.factory.plan['source_pins'],
+                      'targets': t.controller.profile['targets'],
+                      'argv': list(dict(case.intent.commands)[case.roles[0]])}
+        verified = verify_physical_host_handoff(packet, descriptor, t.g)
+        assert verified == packet and verified is not packet
+        for field, value in [('native_acceptance', True), ('integrity', '0'*64),
+                             ('schema', 'OTHER')]:
+            damaged = copy.deepcopy(packet)
+            damaged[field] = value
+            with pytest.raises(ValueError, match='CLOSED_INTEGRITY_BOUND_PHYSICAL_HOST_HANDOFF'):
+                verify_physical_host_handoff(damaged, descriptor, t.g)
+        damaged = copy.deepcopy(packet)
+        damaged['reservation']['held'] = False
+        damaged['integrity'] = digest({k:v for k,v in damaged.items() if k != 'integrity'})
+        with pytest.raises(ValueError, match='EXACT_PHYSICAL_HOST_RESERVATION_SCOPE'):
+            verify_physical_host_handoff(damaged, descriptor, t.g)
+        assert case.abort(ticket, deadline_ns=t.x.now[0]+10**9)
+        with pytest.raises(ValueError, match='ORIGINAL_PHYSICAL_HOST_RESERVATION_STILL_HELD'):
+            verify_physical_host_handoff(packet, descriptor, t.g)
+    in_controller(monkeypatch, check)
+
+
 def test_dispatcher_requires_explicit_physical_host_gate_even_for_context_proxy(monkeypatch):
     def check(t):
         from scripts.observation_runtime.aip06_native_scenario_bindings import NativeScenarioBinding
@@ -301,6 +369,14 @@ def test_reader_parent_factory_refuses_missing_conflicting_or_unapproved_context
             t.factory.reader(case,value,None if damage!='owner-session' else t.lease,deadline_ns=t.x.now[0]+10**9)
         assert t.factory.failed and case.closed and t.factory.pending is None
     in_controller(monkeypatch,check)
+
+
+@pytest.mark.parametrize('provider', [None, (), [], (object(), object()), (object(),),
+                                     (object(), object(), object()), {'adapters': object()}])
+def test_reader_provider_host_refuses_unqualified_pairs_before_guard_access(provider):
+    from scripts.observation_runtime.aip06_reader_context_entry import prepare_reader_from_provider
+    with pytest.raises(ValueError, match='EXACT_INDEPENDENT_READER_PROVIDER_HOST_PAIR_REQUIRED'):
+        prepare_reader_from_provider(provider)
 
 
 def test_native_reader_entry_cannot_auto_load_a_provider_or_create_authority():

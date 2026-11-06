@@ -1,5 +1,9 @@
 # Full roadmap autonomous continuation - October 19, 2026
 
+## Latest AIP-06 source batch checkpoint — November 5, 2026
+
+Source-only progress, **not** native/PAPER completion: physical case-host handoff and independent reader-provider contracts now have explicit fail-closed verification. The handoff is a defensive data copy, with integrity digest, exact inherited case scope, original held reservation and shared-ledger ownership checks; it conveys no execution right. The native case and reader entries still refuse missing physical hosts. Focused scoped-context: **98 passed**; combined scoped-context/Windows adapters: **186 passed**. See `docs/AIP_06_SOURCE_BATCH_CHECKPOINT_2026-11-05.md` for implementation, limitations, tests and ordered blockers. **AIP-06 BLOCKED; roadmap 5/18; PAPER NO; production NO-GO.** No VPS, Genesis, native acceptance, live trading, autostart or authorization consumption. Prior roadmap and 21 decisions retained below.
+
 Assignment remains ongoing across the seven phases. Prior 405-case checkpoint and intended hashes verified; branch chatgpt/atlas-rebuild-v1, HEAD f9df47b4cd80dd647d85043aba617cf00c4e6dc0. Permanent autonomous protocol and all 21 release decisions retained. Production NO-GO, all ten official AFI milestones PENDING. No service/provider/Genesis/trading/Discord activation, Git mutation or protected-state access.
 
 ## Increment 1: Source archive binding and usable integration
