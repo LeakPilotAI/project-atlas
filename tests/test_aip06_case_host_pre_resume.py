@@ -26,6 +26,9 @@ def setup():
     session.observer.parent = session.parent_handle
     session.observer.job = session.job
     session.plan['api'] = session.observer
+    port = SimpleNamespace(sessions=[session], plans={'a'*32: {
+        'plan': session.plan, 'argv': tuple(session.argv)}})
+    guard.processes = SimpleNamespace(port=port)
     return session, observed, guard
 
 
@@ -40,7 +43,8 @@ def test_original_retained_suspended_receipts_are_data_only():
     'kill_on_close_disabled', 'retired_nonce', 'observer_wrong_pid',
     'observer_wrong_parent', 'observer_wrong_command', 'observer_extra_member',
     'observer_wrong_creation', 'observer_wrong_image', 'foreign_observer',
-    'observer_foreign_parent_handle', 'observer_foreign_job_handle'])
+    'observer_foreign_parent_handle', 'observer_foreign_job_handle',
+    'unregistered_session', 'foreign_plan', 'foreign_argv'])
 def test_case_host_refuses_invalid_pre_resume_receipt(damage):
     s, job, guard = setup()
     if damage == 'resumed': s.suspended = False
@@ -48,6 +52,9 @@ def test_case_host_refuses_invalid_pre_resume_receipt(damage):
     if damage == 'no_creation': s.creation_attempted = False
     if damage == 'foreign_parent': s.plan['parent_owner'] = 'foreign'
     if damage == 'foreign_observer': s.plan['api'] = object()
+    if damage == 'unregistered_session': guard.processes.port.sessions.clear()
+    if damage == 'foreign_plan': guard.processes.port.plans['a'*32]['plan'] = {}
+    if damage == 'foreign_argv': guard.processes.port.plans['a'*32]['argv'] = ('foreign',)
     if damage == 'observer_foreign_parent_handle': s.observer.parent = 999
     if damage == 'observer_foreign_job_handle': s.observer.job = 999
     if damage == 'foreign_handle': s.runtime_handle = 104

@@ -91,6 +91,12 @@ def verify_reserved_suspended_plan(guard, argv, plan):
 
 def verify_suspended_host_before_resume(session, job, guard):
     """Check original suspended session receipts; not native acceptance authority."""
+    port = getattr(guard.processes, 'port', guard.processes)
+    recorded = getattr(port, 'plans', {}).get(session.plan['request'].nonce)
+    need(session in port.sessions and recorded is not None
+         and recorded['plan'] is session.plan
+         and recorded['argv'] == tuple(session.argv),
+         'ORIGINAL_RETAINED_CASE_HOST_SESSION_REQUIRED')
     need(session.name == 'case_host' and session.suspended is True
          and session.failed is False and session.creation_attempted is True
          and session.plan['parent_owner'] == guard.owner
