@@ -23,6 +23,7 @@ class CaseHostCoordinator:
         self.host = None
         self.handoff_attempted = False
         self.cleanup_verified = False
+        self.abort_attempted = False
         self.original_child = None
         self.original_keys = None
 
@@ -72,6 +73,25 @@ class CaseHostCoordinator:
         self.handoff_attempted = True
         return self.case.deliver_physical_host_handoff(self.host,
                                                        deadline_ns=deadline_ns)
+
+    def abort_original_host(self, *, deadline_ns):
+        """One bounded abort through the original native session owner only."""
+        need(self.host is not None and self.original_child is not None
+             and not self.abort_attempted and not self.cleanup_verified,
+             'ORIGINAL_CASE_HOST_ABORT_ONCE_ONLY')
+        process = self.host
+        port = getattr(self.case.guard.processes, 'port', self.case.guard.processes)
+        need(process.guard is self.case.guard
+             and process.child is self.original_child
+             and any(retained is self.original_child for retained in port.sessions)
+             and type(deadline_ns) is int
+             and self.case.controller.clock() < deadline_ns,
+             'ORIGINAL_BOUNDED_CASE_HOST_ABORT_OWNER_REQUIRED')
+        self.abort_attempted = True
+        # The port owns termination, Job and process-handle closure. Never
+        # issue a second termination or claim closure after an exception.
+        port.abort(self.original_child, deadline_ns=deadline_ns)
+        return None
 
     def verify_original_cleanup(self):
         """Observe completed original-owner cleanup; never terminate by PID."""

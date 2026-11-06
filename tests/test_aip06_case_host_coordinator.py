@@ -111,6 +111,32 @@ def test_cleanup_accepts_only_original_retained_resources(monkeypatch):
         coordinator.verify_original_cleanup()
 
 
+def test_abort_requires_original_bound_host(monkeypatch):
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_ABORT_ONCE_ONLY'):
+        coordinator.abort_original_host(deadline_ns=200)
+
+
+def test_abort_delegates_once_to_original_owner(monkeypatch):
+    from types import SimpleNamespace
+    _, _, case = fixture(monkeypatch)
+    coordinator = CaseHostCoordinator(case, case.reservation)
+    child = object()
+    host = SimpleNamespace(guard=case.guard, child=child)
+    called = []
+    port = SimpleNamespace(sessions=[child], abort=lambda original, *, deadline_ns:
+                           called.append((original, deadline_ns)))
+    case.guard.processes = SimpleNamespace(port=port)
+    coordinator.host = host
+    coordinator.original_child = child
+    case.controller = SimpleNamespace(clock=lambda: 100)
+    assert coordinator.abort_original_host(deadline_ns=200) is None
+    assert called == [(child, 200)]
+    with pytest.raises(ValueError, match='ORIGINAL_CASE_HOST_ABORT_ONCE_ONLY'):
+        coordinator.abort_original_host(deadline_ns=200)
+
+
 def test_execution_remains_disabled(monkeypatch):
     _, _, case = fixture(monkeypatch)
     coordinator = CaseHostCoordinator(case, case.reservation)
