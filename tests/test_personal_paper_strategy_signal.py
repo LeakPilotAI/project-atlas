@@ -609,3 +609,56 @@ def test_bounded_session_refuses_replayed_quote_event(monkeypatch):
         run_bounded_readonly_paper_session(ticks=2, clock=lambda: next(stamps))
     with pytest.raises(ValueError, match="PAPER_SESSION_PROVIDER_EVENT_NOT_FRESH"):
         run_bounded_readonly_paper_session(ticks=1, clock=lambda: start + timedelta(seconds=16))
+
+
+def test_bounded_session_original_source_real_lease_feed_and_journal(tmp_path, monkeypatch):
+    """Multi-tick composition uses real installed ports, not a patched tick."""
+    from datetime import timedelta
+    from test_quality_dips_current_producer import fixture, STAMP
+    from test_personal_paper_runtime import installed
+    from app.investment.alpaca_iex import IEXFeed
+    from app.investment.quality_dips_paper import initialize_paper_account
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import run_bounded_readonly_paper_session
+    f = fixture(monkeypatch)
+    f.owner.publish_current()
+    start = datetime.fromtimestamp(STAMP, UTC)
+    feed = IEXFeed(["MSFT"], clock=lambda: now[0].timestamp())
+    feed.authenticated = feed.subscribed = True  # Synthetic test state only.
+    feed.connection = "CONNECTED"
+    now = [start]
+    path = tmp_path / "session.jsonl"
+    initialize_paper_account(account_id="session-test", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    operator = installed()
+    def clock():
+        stamp = start + timedelta(seconds=clock.count)
+        clock.count += 1
+        now[0] = stamp
+        feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "79.99", "ask": "80",
+                               "bid_lots": 5, "ask_lots": 5,
+                               "timestamp": stamp.isoformat(),
+                               "source_timestamp": stamp.timestamp(),
+                               "generation": feed.generation}
+        return stamp
+    clock.count = 0
+    kwargs = dict(installation=operator.i, request={"action": "AUTO_PAPER"},
+                  components={"port": operator.reader}, publication=f.owner.publication,
+                  provider=PersonalPaperIEXProvider(feed), symbol="MSFT",
+                  journal_path=path, account_id="session-test")
+    before = path.read_bytes()
+    result = run_bounded_readonly_paper_session(ticks=2, clock=clock, **kwargs)
+    assert result["completed"] == 2
+    assert result["ticks"][0]["plan"]["provider_timestamp"] != result["ticks"][1]["plan"]["provider_timestamp"]
+    assert result["ticks"][0]["plan"]["estimated_liquidation_equity"] == 1000
+    assert path.read_bytes() == before
+    def revoke_during_session():
+        stamp = clock()
+        if clock.count == 4:
+            operator.i.revoke()
+        return stamp
+    with pytest.raises(ValueError, match="ACTIVATION_REVOKED"):
+        run_bounded_readonly_paper_session(ticks=3, clock=revoke_during_session, **kwargs)
+    assert clock.count == 4  # Two accepted ticks, then refusal at tick two of next run.
+    assert path.read_bytes() == before
