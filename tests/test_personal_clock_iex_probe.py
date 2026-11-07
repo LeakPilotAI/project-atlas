@@ -81,7 +81,9 @@ def test_native_publication_path_binds_provider_quote(monkeypatch):
     class Published:
         def read_current(self):
             return {"schema": "QD_SCANNER_PUBLICATION_V1",
-                    "bundles": [{"instrument": {"symbol": "MSFT"}}]}
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION",
+                                                 "strategy_version": "QUALITY_DIPS_V3"}}]}
     class Provider:
         def __init__(self, feed):
             assert isinstance(feed, Feed)
@@ -117,7 +119,9 @@ def test_publication_quote_mismatch_refuses(monkeypatch):
     class Published:
         def read_current(self):
             return {"schema": "QD_SCANNER_PUBLICATION_V1",
-                    "bundles": [{"instrument": {"symbol": "MSFT"}}]}
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION",
+                                                 "strategy_version": "QUALITY_DIPS_V3"}}]}
     class Provider:
         def __init__(self, feed):
             pass
@@ -142,7 +146,9 @@ def test_same_timestamp_different_price_refused(monkeypatch):
     class Published:
         def read_current(self):
             return {"schema": "QD_SCANNER_PUBLICATION_V1",
-                    "bundles": [{"instrument": {"symbol": "MSFT"}}]}
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION",
+                                                 "strategy_version": "QUALITY_DIPS_V3"}}]}
     class Provider:
         def __init__(self, feed):
             pass
@@ -217,7 +223,9 @@ def test_same_timestamp_and_prices_different_quote_size_refused(monkeypatch):
     class Published:
         def read_current(self):
             return {"schema": "QD_SCANNER_PUBLICATION_V1",
-                    "bundles": [{"instrument": {"symbol": "MSFT"}}]}
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION",
+                                                 "strategy_version": "QUALITY_DIPS_V3"}}]}
     class Provider:
         def __init__(self, feed):
             pass
@@ -231,6 +239,29 @@ def test_same_timestamp_and_prices_different_quote_size_refused(monkeypatch):
     monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
     Clock.revoked = False
     with pytest.raises(ValueError, match="CLOCK_IEX_PUBLICATION_QUOTE_CHANGED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=Feed, publication=Published())
+    assert Clock.revoked
+
+
+@pytest.mark.parametrize("evidence_class,strategy_version", [
+    ("TEST_DATA", "QUALITY_DIPS_V3"),
+    ("FORWARD_COLLECTION", "QUALITY_DIPS_V2"),
+])
+def test_nonforward_or_nonv3_publication_refused_before_credentials(
+        monkeypatch, evidence_class, strategy_version):
+    import app.services.paper_source_publication as source_mod
+    class Published:
+        def read_current(self):
+            return {"schema": "QD_SCANNER_PUBLICATION_V1",
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": evidence_class,
+                                                 "strategy_version": strategy_version}}]}
+    monkeypatch.setattr(source_mod, "QualityDipsSourcePublication", Published)
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: pytest.fail("credential access"))
+    Clock.revoked = False
+    with pytest.raises(ValueError, match="CLOCK_IEX_FORWARD_V3_PUBLICATION_REQUIRED"):
         probe.bounded_clock_iex_observation(
             symbol="MSFT", seconds=3, credentials_path=Path("unused"),
             clock_factory=Clock, feed_factory=Feed, publication=Published())

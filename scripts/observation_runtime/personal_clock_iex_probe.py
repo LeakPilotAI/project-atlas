@@ -48,6 +48,15 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                                and bundle["instrument"].get("symbol") == symbol
                                for bundle in packet["bundles"])):
                 raise ValueError("CLOCK_IEX_PUBLISHED_SYMBOL_NOT_ENROLLED")
+            matching = [bundle for bundle in packet["bundles"]
+                        if type(bundle) is dict
+                        and type(bundle.get("instrument")) is dict
+                        and bundle["instrument"].get("symbol") == symbol]
+            if (len(matching) != 1 or type(matching[0].get("observation")) is not dict
+                    or matching[0]["observation"].get("symbol") != symbol
+                    or matching[0]["observation"].get("evidence_class") != "FORWARD_COLLECTION"
+                    or matching[0]["observation"].get("strategy_version") != "QUALITY_DIPS_V3"):
+                raise ValueError("CLOCK_IEX_FORWARD_V3_PUBLICATION_REQUIRED")
         accepted = []
         research_checked = []
         callback_count = 0
