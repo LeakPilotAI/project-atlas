@@ -1,0 +1,6 @@
+{
+  "synthetic_only": true,
+  "source": "logs\\diagnostics\\paired-comparison-20261020\\correction-temp\\test_actual_correction_chain_c0\\resolved.json",
+  "sha256": "88cbf5fa5f0e3f751f4acdb4c6dece372a626293ee2024210094656669d85bf4",
+  "purpose": "actual immutable two-configuration forecast/outcome correction chain exported by current backend"
+}

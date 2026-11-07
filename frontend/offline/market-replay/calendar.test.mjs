@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import api from './view.cjs';
+const raw=name=>fs.readFileSync(new URL('../../../tests/fixtures/market-replay-v1/'+name,import.meta.url),'utf8');
+test('all 10960 bounded policy boundary observations match Python calendar',()=>{const fixture=JSON.parse(raw('calendar-boundaries.json'));const source=fs.readFileSync(new URL('../../../backend/app/investment/market_hours.py',import.meta.url));assert.equal(createHash('sha256').update(source).digest('hex'),fixture.source_sha256);assert.equal(fixture.rows.length,10960);for(const [stamp,state] of fixture.rows)assert.equal(api.equitySession(stamp),state,stamp);});
+for(const stamp of ['2025-10-20T12:00:00+00:00','2029-10-20T12:00:00+00:00'])test(`unsupported calendar refuses ${stamp}`,()=>assert.throws(()=>api.equitySession(stamp)));
+test('wrong market-row session fails before display',()=>{const v=JSON.parse(raw('api.json'));v.rows.find(r=>r.timestamp).session='REGULAR';assert.throws(()=>api.parseExport(JSON.stringify(v)),/session/);});
+test('wrong current quality session refuses',()=>{const v=JSON.parse(raw('quality.json'));v.current_market_session='REGULAR';assert.throws(()=>api.parseQuality(JSON.stringify(v)),/session/);});
+test('wrong quality window session refuses',()=>{const v=JSON.parse(raw('quality.json'));v.windows[0].session='REGULAR';assert.throws(()=>api.parseQuality(JSON.stringify(v)),/session/);});
+test('minute boundaries retain microsecond precision',()=>{assert.equal(api.equitySession('2026-10-20T13:29:59.999999+00:00'),'PRE_MARKET');assert.equal(api.equitySession('2026-10-20T13:30:00.000001+00:00'),'REGULAR');});

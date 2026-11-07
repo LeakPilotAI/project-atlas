@@ -1,0 +1,35 @@
+# Source-archive to receipt-vintage bridge — October 20, 2026
+
+Third automatic offline increment this turn. Scoped technical acceptance; production NO-GO. Existing full Goal remains active/incomplete.
+
+## Working integration
+
+scripts/observation_runtime/source_vintages.py builds the existing BarVintageStore format from an explicit bounded ordered request of retained chart archive receipt/pin pairs. Original archive verification was factored through an internal reader-sharing helper; public return values and generated five-file bytes remain unchanged, as verified by fixture reproduction/regressions. The shared BundleReader keeps its50MB budget across all sources. Maximum32 sources and10000 normalized bars are explicit. All source archives reproduce their original diagnostic before in-memory SQLite ingestion.
+
+Sources must have exact pins, one canonical symbol, one asset class, strictly increasing canonical observation clocks and no future receipt beyond request asof. Duplicates, reordered/tied clocks, mixed symbol/asset, missing source, changed commitments or unreviewed metadata refuse. Validation completes before opening the temporary in-memory store. No runtime journal, storage path, provider or scheduler is used.
+
+Companion maps every disjoint derived receipt sequence range to its exact original source receipt SHA, source bytes SHA, observation clock, prior head and final head. Original BarVintageStore/source/archive formats and source files remain unchanged. Corrections become visible only at later receipt clocks; unchanged confirmations retain the first receipt for their value. Original source remains separately available even when adjusted/metadata-only differences do not change OHLCV.
+
+The companion contains the complete explicit request. Verification rebuilds the entire mapped archive from all retained source archives under a shared bounded reader, then compares exact canonical bytes. Changed/omitted mappings cannot hide behind a rehashed companion. This proves supplied-request consistency, not discovery of unknown omitted sources, independent history completeness, authentic arrival times, whole-machine rollback resistance or provider rights.
+
+export_source_vintages reuses the immutable publisher and requires output to remain alongside its explicitly selected source bundle; it will not claim a detached companion is portable without dependencies. It verifies complete source reproduction after publication before success. Failure preserves earlier files and any published companion without an EXPORTED acknowledgement. Publication and final verification each have their own bounded50MB pass; there is no unbounded input loop. No multi-file transaction/security-exclusion/hardware-durability claim.
+
+## Validation
+
+Final focused source suite13 passed. Final broader isolated selection509 Python passed,0 failed/skipped,22.06s.304 Node pass from the earlier final viewer run; JavaScript unchanged in this increment. Current targeted Ruff/compile and checkpoint-updater PowerShell parsing/diff checks recorded. Narrow new import formatting issues corrected; no behavior waiver. Existing native archive fixture/hard-link, source normalization, nine market response paths, provider budgets/deadlines, shutdown and durable PAPER checks remain selected. No full canonical suite or native browser/runtime acceptance claim.
+
+Original->correction->confirmation source pipeline yields3 physical source-linked receipts,1 value correction and1 unchanged confirmation; earlier projection is byte-identical before/after adding future sources. All values are deterministic synthetic fixture prices, not market performance. Actual retained archives->in-memory receipt history->three planned decision views->existing WebCrypto frontend consumer passes. Missing reference remains INSUFFICIENT_REFERENCE for all3 cases, never a zero error or forecast skill result. Frontend preserves correction/confirmation counts and denied authority.
+
+Also tested source work/read budget sharing, stale ordering/ties/identity, requested missing source, rehashed source-range omission, exact export retries, publication failure, final reproduction failure and refusal to export a detached dependency-less companion. Prior source files and mappings are preserved after failures; no cleanup/reset occurs.
+
+## Readiness and remaining gates
+
+Offline archive/diagnostic viewer and inert market API are usable for explicit fixtures. Full Atlas/dashboard startup remains locked and NOT authorized. No fresh process/Docker/server health census performed. Premarket/regular/after-hours, early close and DST fixture paths remain implemented/tested; actual live sessions and provider timestamp/adjustment semantics remain unverified. Strict real-response whitelist/retention review is still needed; no subscription, key or entitlement is assumed present or absent.
+
+Shortest live path remains: provider/exchange use/session/historical/storage/display rights and safe credential checks; actual internal transport budgets/deadlines/semantics; then explicit fixed observation-only runtime/admission integration and bounded lifecycle/data acceptance. Do not launch the repaired icon as if it already enforces observation-only mode. Canonical21 decisions unchanged,5 scoped PASS/13 BLOCKED/3 NOT_TESTED; production NO-GO. No protected services, real stores/volumes/backups/restores, Genesis, config/ACL/shortcut changes, PAPER/live/Discord or Git mutation.
+
+## Exact next automatic task
+
+Complete a single explicit offline source-backed research replay export using this bridge and the existing research_replay_export/export_replay. Reuse original retained source archives plus companion, supplied previous-close reference archive and exact decision clocks. Preflight complete source/reference/decision validity before publishing, then create existing legacy-compatible normalized receipt/replay artifacts and an additional source-binding sidecar linking the exact companion and existing replay manifest pins. Preserve existing formats/bytes and denied authority. Avoid manual intermediate extraction, a new storage engine or recovery framework. Require all source dependencies for stronger reproduction, distinguish it from browser BYTE_INTEGRITY_ONLY, and test partial publication, changed source, omitted mapping, future-correction invariance, exact retries and actual frontend consumption. Continue independent AFI/evidence reliability tasks afterward; no provider/startup activation.
+
+Full seven phases and cross-phase obligations remain verbatim in the master: core operational/provider/cash/lint/package/backup/restoration/Gaming reliability; Evidence Engine; bounded crypto PAPER; Cross-Market Intelligence; SaaS; institutional governance/security; commercial validation. AFI-1–10 PENDING. E136 consent/recovery/no-backfill, prediction exactly-once/predeadline/autoflat and PM-V2 no combo/stacking/averaging/opposing YES+NO remain. PAPER_ONLY/MANUAL_ONLY, project separation and no VPS are permanent.

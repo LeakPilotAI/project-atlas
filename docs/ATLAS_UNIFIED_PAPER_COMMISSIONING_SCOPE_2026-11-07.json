@@ -1,0 +1,42 @@
+{
+  "schema": "ATLAS_UNIFIED_PAPER_COMMISSIONING_SCOPE_V1",
+  "date": "2026-11-07",
+  "authority": "SOLE_LOCAL_OPERATOR",
+  "provenance": "User explicitly authorized local PAPER-only activation/custody records, separate simulated USD 1000 QD and USDC 1000 Hyperliquid account inception, and bounded supervised testing, conditional on passing technical checks; no live orders or unattended startup.",
+  "status": "OPERATOR_AUTHORIZED_BOUNDED_NATIVE_COMMISSIONING_TECHNICAL_ACCEPTANCE_PENDING",
+  "runtime_consumable": false,
+  "installed_activation_record_created": false,
+  "startup_authorized": false,
+  "provider_activation_authorized": false,
+  "financial_publication_authorized": false,
+  "scope": [
+    "EXISTING_QUALITY_DIPS_PAPER_COMMISSIONING",
+    "HYPERLIQUID_SIMULATED_ACCOUNT_INITIALIZATION_IF_TECHNICALLY_ELIGIBLE",
+    "SUPERVISED_UNIFIED_PAPER_TESTING_IF_TECHNICALLY_ACCEPTED",
+    "VERIFIED_OWNED_STOP_FLATTEN_RECONCILIATION",
+    "LOCAL_NATIVE_PAPER_ACTIVATION_RECORD_IF_TECHNICALLY_ELIGIBLE",
+    "CREATE_ONLY_NATIVE_CUSTODY_ENROLLMENT_IF_TECHNICALLY_ELIGIBLE",
+    "QUALITY_DIPS_SIMULATED_USD_1000_INCEPTION_IF_TECHNICALLY_ELIGIBLE",
+    "HYPERLIQUID_SIMULATED_USDC_1000_INCEPTION_IF_TECHNICALLY_ELIGIBLE"
+  ],
+  "conditions": [
+    "INDEPENDENT_NATIVE_OPERATOR_ACTIVATION",
+    "ACCEPTED_SOURCE_AND_PROVIDER_RIGHTS",
+    "VERIFIED_SEPARATE_ACCOUNT_INCEPTION_AND_WRITER_OWNERSHIP",
+    "TRUSTED_STORAGE_CLOCK_AND_FINANCIAL_DRAIN",
+    "SESSION_BOUND_DESKTOP_STOP_ACCEPTANCE",
+    "NO_START_UNTIL_ALL_TECHNICAL_GATES_PASS"
+  ],
+  "exclusions": [
+    "LIVE_ORDERS",
+    "REAL_CAPITAL",
+    "WALLET_SIGNING",
+    "PRODUCTION_STARTUP",
+    "GENESIS",
+    "VPS_CLOUD",
+    "TECHNICAL_GATE_OVERRIDE"
+  ],
+  "historical_gate_promotions": 0,
+  "note": "Operator has authorized bounded commissioning writes after real native/provider/clock/ownership preconditions pass. This scope record is NOT a native activation, provider-rights proof, account inception, or session grant. No default startup.",
+  "authorization_record": "EXPLICIT_OPERATOR_CHAT_APPROVAL_NON_SELF_EXECUTING"
+}

@@ -1,0 +1,71 @@
+"""Read-only desktop PAPER launch gate. Never grants trading authority."""
+from pathlib import Path
+import json
+import re
+import sys
+
+ROOT = Path(__file__).resolve().parents[2]
+CHECKS = (
+    ("desktop_start", "ATLAS.bat", "scripts/windows/Atlas-Launch.ps1"),
+    ("desktop_stop", "ATLAS-STOP.bat", "scripts/windows/Atlas-Stop.ps1"),
+)
+BLOCK = "ATLAS_LEGACY_LIFECYCLE_BLOCKED"
+# Merely mentioning the block marker in a comment or dead string is not an
+# executable safety guard. Only an active top-level refusal counts as blocked.
+ACTIVE_GUARD = re.compile(
+    r"^\s*(?:throw|Write-Error)\s+['\"]?ATLAS_LEGACY_LIFECYCLE_BLOCKED\b",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+# Explicit independent acceptance domains. This read-only probe does not
+# infer acceptance from source files, tests, or self-declared configuration.
+ACCEPTANCE_GATES = (
+    "B1_HISTORICAL_COMPLETENESS_OR_EPOCH",
+    "C1_OWNERSHIP_AND_FINANCIAL_DRAIN",
+    "D1_TRUSTED_STORAGE_AUTHORITY_CLOCK",
+    "E1_PROVIDER_RIGHTS_AND_SUPERVISED_SESSION",
+    "DESKTOP_OWNED_START_STOP",
+    "MARKET_AND_ACCOUNT_COVERAGE",
+    "RESTART_AND_RECONCILIATION",
+    "SUPERVISED_END_TO_END",
+    "EXTENDED_SOAK_ACCEPTANCE",
+)
+
+
+def inspect(root=ROOT):
+    results = {}
+    for name, batch_name, script_name in CHECKS:
+        batch = root / batch_name
+        script = root / script_name
+        try:
+            batch_text = batch.read_text(encoding="utf-8-sig")
+            script_text = script.read_text(encoding="utf-8-sig")
+        except (OSError, UnicodeError):
+            results[name] = "UNVERIFIED"
+            continue
+        if script_name.replace("/", "\\").lower() not in batch_text.lower():
+            results[name] = "UNVERIFIED"
+        elif ACTIVE_GUARD.search(script_text):
+            results[name] = "BLOCKED_LEGACY"
+        else:
+            # Absence of the guard is NOT proof of a certified implementation.
+            results[name] = "UNVERIFIED"
+    return {
+        "schema": "ATLAS_PAPER_DESKTOP_READINESS_V1",
+        "decision": "NO_GO",
+        "paper_startup_authorized": False,
+        "live_trading_authorized": False,
+        "desktop": results,
+        "acceptance": {gate: "NOT_INDEPENDENTLY_VERIFIED" for gate in ACCEPTANCE_GATES},
+        "unverified_gate_count": len(ACCEPTANCE_GATES),
+        "reason": "INDEPENDENT_PAPER_SESSION_AND_STOP_ACCEPTANCE_REQUIRED",
+    }
+
+
+def main():
+    print(json.dumps(inspect(), sort_keys=True))
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

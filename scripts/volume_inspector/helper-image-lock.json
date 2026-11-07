@@ -1,0 +1,18 @@
+{
+  "base_layers_included": true,
+  "runtime_verified": false,
+  "source_digest": "sha256:06d1ba89a7b89d0289ea0db87d5385797536eaa5033555822cb8f5d0325fe9a6",
+  "proposed_manifest_digest": "sha256:2ec3306c7d7e5714f49db15ea0db636622e01d061e87ceac27d0ec2bbd1b2574",
+  "base_platform_digest": "sha256:2ed6491b93cd49272ee6de2b5a38440c3448360322c089fc23e370722d74179d",
+  "artifact_complete": true,
+  "image_loaded": true,
+  "image_available_in_docker": true,
+  "synthetic_runtime_verified": true,
+  "real_volume_execution_approved": false,
+  "runtime_attestation": "docs/R7E46Z_SYNTHETIC_LINUX_RUNTIME_ACCEPTANCE.md",
+  "unverified_guarantees": [
+    "hard exit during uninterruptible kernel I/O",
+    "atomic exclusion of privileged volume replacement",
+    "effective production storage coverage/permissions"
+  ]
+}

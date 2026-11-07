@@ -109,9 +109,10 @@ class YFinanceClient:
 
     name = "yfinance"
 
-    def __init__(self, *, min_interval_sec: float = 0.25, timeout_sec: float = 20.0) -> None:
+    def __init__(self, *, min_interval_sec: float = 0.25, timeout_sec: float = 20.0, dispatcher=None) -> None:
         self.min_interval_sec = min_interval_sec
         self.timeout_sec = timeout_sec
+        self.dispatcher = dispatcher
         self._last_call = 0.0
 
     def _throttle(self) -> None:
@@ -164,10 +165,15 @@ class YFinanceClient:
         start: Optional[str] = None,
         end: Optional[str] = None,
         interval: str = "1d",
+        prepost: bool = False,
     ) -> Any:
         try:
             t = self._ticker(symbol)
-            kwargs: Dict[str, Any] = {"interval": interval, "auto_adjust": False}
+            kwargs: Dict[str, Any] = {
+                "interval": interval,
+                "auto_adjust": False,
+                "prepost": bool(prepost),
+            }
             if start or end:
                 kwargs["start"] = start
                 kwargs["end"] = end
@@ -194,6 +200,8 @@ class YFinanceClient:
 
     async def info(self, symbol: str) -> Dict[str, Any]:
         try:
+            if self.dispatcher is not None:
+                return await self.dispatcher.run(self.fetch_info, symbol, timeout=self.timeout_sec)
             return await asyncio.wait_for(
                 asyncio.to_thread(self.fetch_info, symbol),
                 timeout=self.timeout_sec,
@@ -211,6 +219,8 @@ class YFinanceClient:
 
     async def history(self, symbol: str, **kwargs: Any) -> Any:
         try:
+            if self.dispatcher is not None:
+                return await self.dispatcher.run(self.fetch_history, symbol, timeout=self.timeout_sec, **kwargs)
             return await asyncio.wait_for(
                 asyncio.to_thread(self.fetch_history, symbol, **kwargs),
                 timeout=self.timeout_sec,

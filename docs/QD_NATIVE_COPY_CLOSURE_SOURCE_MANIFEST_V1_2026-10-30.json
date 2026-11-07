@@ -1,0 +1,53 @@
+{
+  "schema": "QD_NATIVE_COPY_CLOSURE_SOURCE_MANIFEST_V1",
+  "status": "SOURCE_ONLY_NO_EXECUTION_AUTHORITY",
+  "base_commit": "5da418094ea58544b2abcb03f539a468519135a0",
+  "historical_v1_proposal_sha256": "888c645b055b016b165c2133a4f9bf69dabbe6f3d5c259a516a863586b7539f2",
+  "current_v2_proposal_sha256": "09e899b09916300aec70b69d743d4c7e2383f43ecb58cea4a032f4070988917e",
+  "application_archive_sha256": "0e65fae1891fc8d406f086a6aa711781053aa7d9a6b3cf1c9c7963f709c87677",
+  "full_native_copy_authorization_consumed": true,
+  "sources": [
+    {
+      "path": "scripts/install_verified_release.py",
+      "canonical_lf_sha256": "7e383d14b0404f5d23fcbca75408a612dbf4bb413fade116cba14b9f52764fc6"
+    },
+    {
+      "path": "scripts/native_install_candidate.py",
+      "canonical_lf_sha256": "d026b57b1fc91e4b4f245e1c01d3b543e3231c1a261c1e2f0ac823712b6df8f1"
+    },
+    {
+      "path": "scripts/native_install_plan.py",
+      "canonical_lf_sha256": "10bf8c2dd5d2ffdc3a92a576183a701e022c8e53bf5f948a6ad2fcaeb028263f"
+    },
+    {
+      "path": "scripts/native_install_adapter_acceptance.py",
+      "canonical_lf_sha256": "23ccf10ab55ff4fe5914ed7089778f228c7dc170edb3be61879afe2bc213c154"
+    },
+    {
+      "path": "scripts/native_copy_test_scope.py",
+      "canonical_lf_sha256": "afb7da3d354527704dad6a971a4686ed943bcc88f6f7d3ed0294b4d2a54631ad"
+    },
+    {
+      "path": "tests/native_copy_scope_plugin.py",
+      "canonical_lf_sha256": "193674fdd0728725e39f3ba9422043041839c77f30b4943bab9f14fbdbaa136f"
+    },
+    {
+      "path": "tests/run_native_copy_closure.py",
+      "canonical_lf_sha256": "e6837bd053edb9c748813a54d67fa7e92a6812a87b3a834e43dd99bdf9c7aa2d"
+    },
+    {
+      "path": "tests/test_native_copy_closure.py",
+      "canonical_lf_sha256": "375f5f5128520a43f683b60ba5edca5f368d3d97df8e38d4f6bc46efdfa50621"
+    },
+    {
+      "path": "tests/test_native_install_adapter_acceptance.py",
+      "canonical_lf_sha256": "1ba48a4107b0b9ad3d479249487a762f16e7e506e609f2b6ab4fbef87bbc8950"
+    },
+    {
+      "path": "tests/test_unselected_release_adapter.py",
+      "canonical_lf_sha256": "b5c8d1b85c9b73800155157535725b6271a27f8f62dd6998bb441d1ec6738ced"
+    }
+  ],
+  "financial_authority": false,
+  "installation_authority": false
+}

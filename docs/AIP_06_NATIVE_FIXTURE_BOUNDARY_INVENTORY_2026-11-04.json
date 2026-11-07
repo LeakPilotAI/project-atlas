@@ -1,0 +1,1312 @@
+{
+  "schema": "AIP06_FIXTURE_BOUNDARY_INVENTORY_V1",
+  "starting_commit": "4364d50d3d5c07f0f04211add9be2345dec3d56d",
+  "domain": "SOURCE_ONLY_OFFLINE_NO_NATIVE_PROOF",
+  "sources": [
+    {
+      "path": "backend/app/services/paper_epoch_fixture.py",
+      "sha256": "9a1dd565ad2da92c81b2a9fdbd7874e20d5b9894755f875615b35a372c1242d3",
+      "boundary_calls": [
+        {
+          "line": 33,
+          "call": "path.open"
+        },
+        {
+          "line": 36,
+          "call": "guarded.write_bytes"
+        },
+        {
+          "line": 37,
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 65,
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 71,
+          "call": "self.connect"
+        },
+        {
+          "line": 84,
+          "call": "self.connect"
+        }
+      ],
+      "git_blob_sha256": "165acd3d3dea19c1fdce69b25a045bfddb79d44879f202bf78964eb44a24ab10",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/paper_writer_fixture.py",
+      "sha256": "c99ac5fdcabbdc0318f6965c01e1b92409c8c274fb7789ec29afaa1c8dc54a97",
+      "boundary_calls": [
+        {
+          "line": 26,
+          "call": "sqlite_connect"
+        },
+        {
+          "line": 39,
+          "call": "sqlite_connect"
+        },
+        {
+          "line": 77,
+          "call": "sqlite_connect"
+        },
+        {
+          "line": 112,
+          "call": "candidate.open"
+        }
+      ],
+      "git_blob_sha256": "2c44df27867b6e5cc086cfa54d07f7b1f376bbef456b9f3a80d00d47d55f98a1",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/quality_dips_unified_writer.py",
+      "sha256": "b8824d095752727cf95bd202e0c34ca4ccd47abb1742e9d43368b51145f29b7c",
+      "boundary_calls": [
+        {
+          "line": 32,
+          "call": "r.runtime.engine.ledger.connect"
+        }
+      ],
+      "git_blob_sha256": "b8824d095752727cf95bd202e0c34ca4ccd47abb1742e9d43368b51145f29b7c",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/unified_native_writer.py",
+      "sha256": "b7d8058360d8121682ad98b27ef358726d3c33c062dcdca62ed5cf5c6255f3a6",
+      "boundary_calls": [],
+      "git_blob_sha256": "b7d8058360d8121682ad98b27ef358726d3c33c062dcdca62ed5cf5c6255f3a6",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/unified_paper_runtime.py",
+      "sha256": "7602589c37b65c0624f0dbfd23d02446f193443b7e34ce70fd8a8dda62d0d674",
+      "boundary_calls": [
+        {
+          "line": 455,
+          "call": "close"
+        },
+        {
+          "line": 456,
+          "call": "close"
+        }
+      ],
+      "git_blob_sha256": "7602589c37b65c0624f0dbfd23d02446f193443b7e34ce70fd8a8dda62d0d674",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/unified_portfolio_custody.py",
+      "sha256": "1fd0225496573651e72e3c696beb842b505108b4518d34d55d0d8fef8b4d0e73",
+      "boundary_calls": [],
+      "git_blob_sha256": "1fd0225496573651e72e3c696beb842b505108b4518d34d55d0d8fef8b4d0e73",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/unified_writer_roster.py",
+      "sha256": "e70ba05f7d297702bc14629fa458efee313573af7dba1687ff7fc22ba4c0a1c5",
+      "boundary_calls": [],
+      "git_blob_sha256": "e70ba05f7d297702bc14629fa458efee313573af7dba1687ff7fc22ba4c0a1c5",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_fixture_guard.py",
+      "sha256": "ccd009816c42ad55405780cecb2ffcd55718e33f61dbebb530f17d97db1e34a7",
+      "boundary_calls": [
+        {
+          "line": 347,
+          "call": "self.io.mkdir"
+        },
+        {
+          "line": 382,
+          "call": "self.key('rewrite').replace"
+        },
+        {
+          "line": 384,
+          "call": "self.replace"
+        },
+        {
+          "line": 725,
+          "call": "child.close"
+        },
+        {
+          "line": 751,
+          "call": "self.processes.read_input"
+        },
+        {
+          "line": 903,
+          "call": "unquote(parsed.path).lstrip('/').replace"
+        },
+        {
+          "line": 976,
+          "call": "db.close"
+        },
+        {
+          "line": 1054,
+          "call": "self.close"
+        },
+        {
+          "line": 1058,
+          "call": "self.db.close"
+        },
+        {
+          "line": 1127,
+          "call": "self.close"
+        },
+        {
+          "line": 1144,
+          "call": "self.close"
+        },
+        {
+          "line": 1206,
+          "call": "self.guard.resources.close"
+        },
+        {
+          "line": 1235,
+          "call": "require_fixture('mkdir').mkdir"
+        },
+        {
+          "line": 1235,
+          "call": "require_fixture"
+        },
+        {
+          "line": 1239,
+          "call": "require_fixture"
+        },
+        {
+          "line": 1244,
+          "call": "write_bytes"
+        },
+        {
+          "line": 1249,
+          "call": "require_fixture"
+        },
+        {
+          "line": 1253,
+          "call": "require_fixture"
+        },
+        {
+          "line": 1259,
+          "call": "require_fixture('replace').replace"
+        },
+        {
+          "line": 1259,
+          "call": "require_fixture"
+        },
+        {
+          "line": 1263,
+          "call": "require_fixture"
+        },
+        {
+          "line": 1267,
+          "call": "require_fixture('process-query').query"
+        },
+        {
+          "line": 1267,
+          "call": "require_fixture"
+        },
+        {
+          "line": 1271,
+          "call": "require_fixture('child-watchdog').watchdog"
+        },
+        {
+          "line": 1271,
+          "call": "require_fixture"
+        },
+        {
+          "line": 1279,
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 1283,
+          "call": "sqlite3.connect"
+        }
+      ],
+      "git_blob_sha256": "708ce7174a8286d72bdd0840fbc78c39adbb25e07af65d9738e82ac21e331acd",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_harness.py",
+      "sha256": "5c21cc26e7cd1de4afbfb48bd4982836cecc4e0b88233524ea0454d51ef37693",
+      "boundary_calls": [
+        {
+          "line": 895,
+          "call": "self._exit"
+        }
+      ],
+      "git_blob_sha256": "5c21cc26e7cd1de4afbfb48bd4982836cecc4e0b88233524ea0454d51ef37693",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/disposable_host_owner.py",
+      "sha256": "d5535d566f69ccba69b0ede4e18e99fb8011537cf70e930585665f516970e8d5",
+      "boundary_calls": [
+        {
+          "line": 34,
+          "call": "kernel.OpenProcess"
+        },
+        {
+          "line": 43,
+          "call": "kernel.CloseHandle"
+        },
+        {
+          "line": 68,
+          "call": "(Path(root) / 'host-errors.log').open"
+        },
+        {
+          "line": 69,
+          "call": "subprocess.Popen"
+        },
+        {
+          "line": 79,
+          "call": "self.process.stdin.close"
+        },
+        {
+          "line": 144,
+          "call": "self.process.stdin.close"
+        },
+        {
+          "line": 168,
+          "call": "owner.close"
+        }
+      ],
+      "git_blob_sha256": "d5535d566f69ccba69b0ede4e18e99fb8011537cf70e930585665f516970e8d5",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/launch_ownership.py",
+      "sha256": "83dca6bfe3a71b7cea5ed98d65cb69be63c117efaad68e8fe3127a5735bb572c",
+      "boundary_calls": [],
+      "git_blob_sha256": "83dca6bfe3a71b7cea5ed98d65cb69be63c117efaad68e8fe3127a5735bb572c",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/launch_ownership_windows.py",
+      "sha256": "e44c16d384924d9043a3fde6972ed4f04bbd4e48966c9cac7bbda3a8f9bdb4a4",
+      "boundary_calls": [
+        {
+          "line": 102,
+          "call": "guarded.image_open"
+        },
+        {
+          "line": 122,
+          "call": "self.close"
+        },
+        {
+          "line": 127,
+          "call": "guarded.image_close"
+        }
+      ],
+      "git_blob_sha256": "8d4dee9477c8b02850b76c95e35941b27621b9ebe371e912c0284607995d932a",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/native_fixture_budget.py",
+      "sha256": "5ada66b71081e12d90e0f46fb368a418c1821afc2a5ff219d726e3fb358cbd4d",
+      "boundary_calls": [
+        {
+          "line": 96,
+          "call": "self.lock.open"
+        },
+        {
+          "line": 143,
+          "call": "ledger.open"
+        },
+        {
+          "line": 150,
+          "call": "Path(path).mkdir"
+        },
+        {
+          "line": 159,
+          "call": "path.open"
+        },
+        {
+          "line": 181,
+          "call": "root.mkdir"
+        },
+        {
+          "line": 186,
+          "call": "(root / 'session-budget.json').open"
+        },
+        {
+          "line": 187,
+          "call": "(root / 'session-budget.lock').open"
+        },
+        {
+          "line": 188,
+          "call": "(root / 'session-reservations.json').open"
+        }
+      ],
+      "git_blob_sha256": "5ada66b71081e12d90e0f46fb368a418c1821afc2a5ff219d726e3fb358cbd4d",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/personal_native_job.py",
+      "sha256": "72f5ab065527c7d291ad1fa060c0ad2470c1c5d69b77a32675cc82d65b2ab829",
+      "boundary_calls": [
+        {
+          "line": 145,
+          "call": "cleanup.close"
+        }
+      ],
+      "git_blob_sha256": "0106001033d98b73e32691444a612708b11b13c6128a40de9419da5ee0ceaea4",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/financial_record_store.py",
+      "sha256": "2dd5f672aab4e030ad185947836808b4932f3ee4ad65a21481f5887061e11c79",
+      "boundary_calls": [
+        {
+          "line": 83,
+          "call": "self.close"
+        },
+        {
+          "line": 90,
+          "call": "self.output.close"
+        }
+      ],
+      "git_blob_sha256": "2dd5f672aab4e030ad185947836808b4932f3ee4ad65a21481f5887061e11c79",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/financial_reporting.py",
+      "sha256": "47cb9603f02ba1a4f5222c1f499fd01e36e74dcf410e3db1190bc64cdb22b63c",
+      "boundary_calls": [
+        {
+          "line": 30,
+          "call": "self.output.close"
+        },
+        {
+          "line": 39,
+          "call": "self.output.close"
+        },
+        {
+          "line": 116,
+          "call": "self.close"
+        }
+      ],
+      "git_blob_sha256": "47cb9603f02ba1a4f5222c1f499fd01e36e74dcf410e3db1190bc64cdb22b63c",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/operational_autonomous_store.py",
+      "sha256": "81b2b3d754f88be404990ff4e70611d01901bb46babadb8901f775f4554f7726",
+      "boundary_calls": [
+        {
+          "line": 93,
+          "call": "self.close"
+        },
+        {
+          "line": 97,
+          "call": "self.close"
+        }
+      ],
+      "git_blob_sha256": "81b2b3d754f88be404990ff4e70611d01901bb46babadb8901f775f4554f7726",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/resting_order_store.py",
+      "sha256": "5c0ca6c9a5da57b9f12caaeabb1b72652e27eeeb9cab1dd928c3737c23f778ba",
+      "boundary_calls": [
+        {
+          "line": 77,
+          "call": "self.close"
+        }
+      ],
+      "git_blob_sha256": "5c0ca6c9a5da57b9f12caaeabb1b72652e27eeeb9cab1dd928c3737c23f778ba",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/shared_fence.py",
+      "sha256": "ca4b2eeef33cce9e65375d2e13dbf46139d80d0ef9e953f83bf773f8e3e6c241",
+      "boundary_calls": [
+        {
+          "line": 176,
+          "call": "self.close"
+        },
+        {
+          "line": 195,
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 210,
+          "call": "db.close"
+        },
+        {
+          "line": 214,
+          "call": "out.close"
+        },
+        {
+          "line": 236,
+          "call": "self.output.close"
+        },
+        {
+          "line": 329,
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 352,
+          "call": "db.close"
+        }
+      ],
+      "git_blob_sha256": "ca4b2eeef33cce9e65375d2e13dbf46139d80d0ef9e953f83bf773f8e3e6c241",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/unified_portfolio_store.py",
+      "sha256": "186bcc9acc69780ed2f8be59ffe05955d3bf259509f7c7e2b9accb6db696d97e",
+      "boundary_calls": [],
+      "git_blob_sha256": "186bcc9acc69780ed2f8be59ffe05955d3bf259509f7c7e2b9accb6db696d97e",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/windows_output.py",
+      "sha256": "a5bf5a5205176abf603b03dcfd0de66e602f1bd855cdcbc4debf8d4c7e64a107",
+      "boundary_calls": [
+        {
+          "line": 278,
+          "call": "self.close"
+        },
+        {
+          "line": 321,
+          "call": "self.close"
+        }
+      ],
+      "git_blob_sha256": "a5bf5a5205176abf603b03dcfd0de66e602f1bd855cdcbc4debf8d4c7e64a107",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/launch_ownership_child.py",
+      "sha256": "954034279f5c01a1d794990f74cd1f58863651dedc079550819943f98492c5de",
+      "boundary_calls": [
+        {
+          "line": 17,
+          "call": "threading.Timer"
+        },
+        {
+          "line": 17,
+          "call": "os._exit"
+        },
+        {
+          "line": 23,
+          "call": "subprocess.Popen"
+        },
+        {
+          "line": 47,
+          "call": "child.stdin.close"
+        }
+      ],
+      "git_blob_sha256": "954034279f5c01a1d794990f74cd1f58863651dedc079550819943f98492c5de",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/perp_order_crash_child.py",
+      "sha256": "a0e30ffaaebc25d2d665e38e7e20e9f528ff2421a62830f41b9bc69d637fd729",
+      "boundary_calls": [
+        {
+          "line": 18,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 42,
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 48,
+          "call": "os._exit"
+        },
+        {
+          "line": 72,
+          "call": "os._exit"
+        },
+        {
+          "line": 74,
+          "call": "financial.close"
+        },
+        {
+          "line": 74,
+          "call": "target.close"
+        },
+        {
+          "line": 75,
+          "call": "store.close"
+        }
+      ],
+      "git_blob_sha256": "7aa22aa029142c23b647a713a0df2ad7abfffaa8cc0b047a68c6fe57710b2af4",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/perp_order_native_fixture.py",
+      "sha256": "4ce231e39b30a3c9dd9e717b1c022bc23e130765539bbd7153b6bec1f0ad2d40",
+      "boundary_calls": [
+        {
+          "line": 28,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 31,
+          "call": "guarded.write_bytes"
+        },
+        {
+          "line": 38,
+          "call": "guarded.write_bytes"
+        },
+        {
+          "line": 39,
+          "call": "guarded.replace"
+        },
+        {
+          "line": 76,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 134,
+          "call": "orders.close"
+        },
+        {
+          "line": 134,
+          "call": "store.close"
+        },
+        {
+          "line": 134,
+          "call": "projection.close"
+        },
+        {
+          "line": 134,
+          "call": "archive.close"
+        }
+      ],
+      "git_blob_sha256": "4ce231e39b30a3c9dd9e717b1c022bc23e130765539bbd7153b6bec1f0ad2d40",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_complete_native_stop_fixture.py",
+      "sha256": "d691347afe3749b3c4ede566c71155190a29dfc73115eab01fc508e99c9a0d82",
+      "boundary_calls": [],
+      "git_blob_sha256": "d691347afe3749b3c4ede566c71155190a29dfc73115eab01fc508e99c9a0d82",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_fixture_budget.py",
+      "sha256": "22421b4ad882cebcf04f6cb501bdc209491d674e67a1b90d2cee8aa56cc6c355",
+      "boundary_calls": [],
+      "git_blob_sha256": "22421b4ad882cebcf04f6cb501bdc209491d674e67a1b90d2cee8aa56cc6c355",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_fixture_sources.py",
+      "sha256": "f91f7a968680f521daaa3aca6ad37cf1610b54f5599b70597448efa23d086a35",
+      "boundary_calls": [
+        {
+          "line": 58,
+          "call": "scope_path.open"
+        }
+      ],
+      "git_blob_sha256": "f91f7a968680f521daaa3aca6ad37cf1610b54f5599b70597448efa23d086a35",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_owned_stop_child.py",
+      "sha256": "434b69140bfbbf401e315898396db1a590f1363ead30973605312e4e1a9092a9",
+      "boundary_calls": [
+        {
+          "line": 13,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 19,
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 20,
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 26,
+          "call": "guard.read_input"
+        },
+        {
+          "line": 28,
+          "call": "guard.verify_received_stop"
+        },
+        {
+          "line": 33,
+          "call": "guarded.watchdog"
+        }
+      ],
+      "git_blob_sha256": "434b69140bfbbf401e315898396db1a590f1363ead30973605312e4e1a9092a9",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_readonly_restart_child.py",
+      "sha256": "39403e2e4f60bb1342c7d1436bc4f6693489c430c44e847a42e200624fa6a705",
+      "boundary_calls": [
+        {
+          "line": 51,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 119,
+          "call": "item.close"
+        },
+        {
+          "line": 123,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 124,
+          "call": "guard.read_input"
+        },
+        {
+          "line": 131,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 132,
+          "call": "guarded.watchdog"
+        }
+      ],
+      "git_blob_sha256": "60e394bcdcf32973ebf4764fe0cd113fead7ef9e6648ddc81c8943682d643750",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/qd_autonomous_binding_fixture.py",
+      "sha256": "d4fc17168bb44719551eeb300481c234f1a8c143be6e185bb0277e2e685fe379",
+      "boundary_calls": [
+        {
+          "line": 24,
+          "call": "guarded.require_fixture"
+        }
+      ],
+      "git_blob_sha256": "d4fc17168bb44719551eeb300481c234f1a8c143be6e185bb0277e2e685fe379",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/qd_autonomous_native_fixture.py",
+      "sha256": "6be18c4ce8480c1e6d5c3f87e5a7424dbef7835bc5422db95119e044a0ef9a84",
+      "boundary_calls": [
+        {
+          "line": 42,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 90,
+          "call": "store.close"
+        },
+        {
+          "line": 91,
+          "call": "target.close"
+        },
+        {
+          "line": 92,
+          "call": "archive.close"
+        },
+        {
+          "line": 103,
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 119,
+          "call": "x.close"
+        },
+        {
+          "line": 121,
+          "call": "guarded.write_bytes"
+        }
+      ],
+      "git_blob_sha256": "f2ba83fde79b313595c9dcaa97e0c2d8865d8dcc2b2a1d7900a42bf5f1260b84",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/qd_autonomous_runtime_fixture.py",
+      "sha256": "d09cbcd69c55c12fda81f24aae67cb076e7dd3d7df1a69cddbdfd555ec85a68e",
+      "boundary_calls": [
+        {
+          "line": 15,
+          "call": "guarded.require_fixture"
+        }
+      ],
+      "git_blob_sha256": "d09cbcd69c55c12fda81f24aae67cb076e7dd3d7df1a69cddbdfd555ec85a68e",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/run_launch_ownership_native.py",
+      "sha256": "bcdb0c017b79b29ba4d72d6d73cb39ccf46393862f08cf0ff60f6b856ef2340e",
+      "boundary_calls": [
+        {
+          "line": 66,
+          "call": "replace"
+        },
+        {
+          "line": 70,
+          "call": "replace"
+        },
+        {
+          "line": 73,
+          "call": "replace"
+        },
+        {
+          "line": 75,
+          "call": "replace"
+        },
+        {
+          "line": 96,
+          "call": "native.k.OpenProcess"
+        },
+        {
+          "line": 97,
+          "call": "native.k.CloseHandle"
+        },
+        {
+          "line": 117,
+          "call": "case.mkdir"
+        },
+        {
+          "line": 126,
+          "call": "k.OpenProcess"
+        },
+        {
+          "line": 127,
+          "call": "k.CreateJobObjectW"
+        },
+        {
+          "line": 162,
+          "call": "(case / 'child-stderr.log').open"
+        },
+        {
+          "line": 177,
+          "call": "_winapi.CreateProcess"
+        },
+        {
+          "line": 188,
+          "call": "k.AssignProcessToJobObject"
+        },
+        {
+          "line": 191,
+          "call": "os.close"
+        },
+        {
+          "line": 192,
+          "call": "incoming.close"
+        },
+        {
+          "line": 231,
+          "call": "k.CloseHandle"
+        },
+        {
+          "line": 272,
+          "call": "k.OpenProcess"
+        },
+        {
+          "line": 277,
+          "call": "subprocess.run"
+        },
+        {
+          "line": 309,
+          "call": "k.CloseHandle"
+        },
+        {
+          "line": 318,
+          "call": "k.OpenProcess"
+        },
+        {
+          "line": 346,
+          "call": "outgoing.close"
+        },
+        {
+          "line": 390,
+          "call": "outgoing.close"
+        },
+        {
+          "line": 408,
+          "call": "stream.close"
+        },
+        {
+          "line": 420,
+          "call": "k.CloseHandle"
+        },
+        {
+          "line": 423,
+          "call": "(case / 'result.json').write_text"
+        },
+        {
+          "line": 447,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 476,
+          "call": "(root / 'native-claim.json').write_text"
+        },
+        {
+          "line": 541,
+          "call": "lease.close"
+        },
+        {
+          "line": 550,
+          "call": "(root / 'native-result.json').write_text"
+        }
+      ],
+      "git_blob_sha256": "bcdb0c017b79b29ba4d72d6d73cb39ccf46393862f08cf0ff60f6b856ef2340e",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_aip06_fixture_guard_integration.py",
+      "sha256": "fe9275df12b8b9e34a859e1ac6e72975b7f88e8750f30d5fc59997271161056c",
+      "boundary_calls": [
+        {
+          "line": 107,
+          "call": "value.split('?', 1)[0][5:].lstrip('/').replace"
+        },
+        {
+          "line": 117,
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 146,
+          "call": "replace"
+        },
+        {
+          "line": 345,
+          "call": "g.mkdir"
+        },
+        {
+          "line": 372,
+          "call": "g.write_bytes"
+        },
+        {
+          "line": 379,
+          "call": "g.mkdir"
+        },
+        {
+          "line": 387,
+          "call": "g.mkdir"
+        },
+        {
+          "line": 399,
+          "call": "g.write_bytes"
+        },
+        {
+          "line": 425,
+          "call": "open"
+        },
+        {
+          "line": 552,
+          "call": "child.close"
+        },
+        {
+          "line": 574,
+          "call": "g.popen"
+        },
+        {
+          "line": 596,
+          "call": "g.query"
+        },
+        {
+          "line": 608,
+          "call": "g.query"
+        },
+        {
+          "line": 624,
+          "call": "g.mkdir"
+        },
+        {
+          "line": 626,
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 636,
+          "call": "g.mkdir"
+        },
+        {
+          "line": 637,
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 910,
+          "call": "g.mkdir"
+        },
+        {
+          "line": 918,
+          "call": "x.guard.run_owned_stop_sample"
+        },
+        {
+          "line": 964,
+          "call": "f.guard.verify_received_stop"
+        },
+        {
+          "line": 978,
+          "call": "f.guard.verify_received_stop"
+        },
+        {
+          "line": 995,
+          "call": "x.guard.read_input"
+        },
+        {
+          "line": 1001,
+          "call": "g.mkdir"
+        },
+        {
+          "line": 1003,
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 1006,
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 1007,
+          "call": "path.replace"
+        },
+        {
+          "line": 1037,
+          "call": "g.watchdog"
+        },
+        {
+          "line": 1040,
+          "call": "g.watchdog"
+        },
+        {
+          "line": 1061,
+          "call": "g.mkdir"
+        },
+        {
+          "line": 1063,
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 1073,
+          "call": "g.mkdir"
+        },
+        {
+          "line": 1074,
+          "call": "g.write_bytes"
+        },
+        {
+          "line": 1075,
+          "call": "g.write_bytes"
+        },
+        {
+          "line": 1077,
+          "call": "g.replace"
+        },
+        {
+          "line": 1080,
+          "call": "g.replace"
+        },
+        {
+          "line": 1104,
+          "call": "g.image_open"
+        },
+        {
+          "line": 1108,
+          "call": "lease.close"
+        },
+        {
+          "line": 1111,
+          "call": "g.image_open"
+        },
+        {
+          "line": 1147,
+          "call": "g.mkdir"
+        }
+      ],
+      "git_blob_sha256": "fe9275df12b8b9e34a859e1ac6e72975b7f88e8750f30d5fc59997271161056c",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_perp_native_shutdown.py",
+      "sha256": "701054fe996fc48c51c8cbbd38eb4e68c0d962b4d2ac784a6a33dd3fe7fe76a1",
+      "boundary_calls": [
+        {
+          "line": 50,
+          "call": "archive.close"
+        }
+      ],
+      "git_blob_sha256": "701054fe996fc48c51c8cbbd38eb4e68c0d962b4d2ac784a6a33dd3fe7fe76a1",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_perp_order_crash_race_native.py",
+      "sha256": "348f19686fcdad0ce3878b68fa0c1b6d3fa79931c313e4d2567bb55c02ade272",
+      "boundary_calls": [
+        {
+          "line": 19,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 22,
+          "call": "guarded.popen"
+        },
+        {
+          "line": 37,
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 61,
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 67,
+          "call": "guarded.write_text"
+        }
+      ],
+      "git_blob_sha256": "50c1cb5774ee045a397927e960c2305f6b5f19ab481e968bf3d2781a79a54171",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_personal_native_pipeline_capacity.py",
+      "sha256": "bfdbc4e3d6a0f5536f4c3fabf92a5280601176bac4cea7aa329c9dcc9e4a18d3",
+      "boundary_calls": [
+        {
+          "line": 56,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 88,
+          "call": "s.ledger.db.close"
+        },
+        {
+          "line": 132,
+          "call": "ledger.connect"
+        },
+        {
+          "line": 189,
+          "call": "ledger.connect"
+        },
+        {
+          "line": 213,
+          "call": "ledger.connect"
+        },
+        {
+          "line": 218,
+          "call": "page.open"
+        },
+        {
+          "line": 227,
+          "call": "handle.close"
+        },
+        {
+          "line": 233,
+          "call": "again.connect"
+        },
+        {
+          "line": 238,
+          "call": "reopened.close"
+        },
+        {
+          "line": 243,
+          "call": "guarded.popen"
+        }
+      ],
+      "git_blob_sha256": "60bca3340f8c25243200067e52ea3df40652ec8b1257f03800befbde2b9b4f65",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_personal_owned_stop_timing.py",
+      "sha256": "527a2cf1bf0058754f1bc36aba6856200f07bba8854d9451934a9e3c5252081b",
+      "boundary_calls": [
+        {
+          "line": 19,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 27,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 30,
+          "call": "guard.run_owned_stop_sample"
+        }
+      ],
+      "git_blob_sha256": "a5504d1165902273851b0c2d4d514d43f463ab142a582d71dcfb88f4ab70ab21",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_qd_unified_shutdown.py",
+      "sha256": "45d1b064119d95d7521c56cac1eea9bc907074034baefcae61d705b2c177c51c",
+      "boundary_calls": [
+        {
+          "line": 24,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 34,
+          "call": "s.x.x.close"
+        },
+        {
+          "line": 55,
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 101,
+          "call": "guarded.sqlite_connect"
+        }
+      ],
+      "git_blob_sha256": "538ca0d9639986efb538e506a949f491316790820cc0d9ec9bb65aa2178ddcec",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_unified_actual_native_lanes.py",
+      "sha256": "bef27fefb812a89831c9d2b9a29a3f541d3a42fca98f206c64af7eaa4aa7be03",
+      "boundary_calls": [
+        {
+          "line": 19,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 28,
+          "call": "s.close"
+        },
+        {
+          "line": 84,
+          "call": "s.r.run"
+        },
+        {
+          "line": 122,
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 162,
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 171,
+          "call": "guarded.write_text"
+        }
+      ],
+      "git_blob_sha256": "bb8938ac92a860c95f19073ed113924455985470b59505c8067389521ebb3e82",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_unified_native_writer.py",
+      "sha256": "405d6487ed4cc9b9b30447929db91435371037e482c146710a6a2afce91177f3",
+      "boundary_calls": [
+        {
+          "line": 71,
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 75,
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 83,
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 91,
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 146,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 157,
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 172,
+          "call": "store.close"
+        },
+        {
+          "line": 172,
+          "call": "target.close"
+        },
+        {
+          "line": 172,
+          "call": "archive.close"
+        },
+        {
+          "line": 239,
+          "call": "guarded.sqlite_connect"
+        }
+      ],
+      "git_blob_sha256": "83c330bbfc6cdb7e67ce4faffa8930a0f98d0dfd2bfa0b0d3ebca7e804d7b42f",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_unified_source_capacity_native.py",
+      "sha256": "ed76230d759575a322c4581fb264f9fdf5d3197167cd183f56d7ef46ed000ac2",
+      "boundary_calls": [
+        {
+          "line": 38,
+          "call": "s.r.run"
+        },
+        {
+          "line": 67,
+          "call": "s.r.run"
+        }
+      ],
+      "git_blob_sha256": "ed76230d759575a322c4581fb264f9fdf5d3197167cd183f56d7ef46ed000ac2",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/unified_actual_lanes_fixture.py",
+      "sha256": "d67800b9fea5c7619555a7da52a4c40bd89e20f0fae95aeaa70d14a8d0c9e62d",
+      "boundary_calls": [
+        {
+          "line": 105,
+          "call": "guarded.require_fixture"
+        },
+        {
+          "line": 108,
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 111,
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 221,
+          "call": "datetime.fromtimestamp(at, UTC).isoformat().replace"
+        },
+        {
+          "line": 230,
+          "call": "journal.close"
+        },
+        {
+          "line": 230,
+          "call": "p.close"
+        },
+        {
+          "line": 232,
+          "call": "s.x.x.close"
+        }
+      ],
+      "git_blob_sha256": "d67800b9fea5c7619555a7da52a4c40bd89e20f0fae95aeaa70d14a8d0c9e62d",
+      "git_text_matches_working_source": true
+    }
+  ],
+  "changed_python_files": [
+    "backend/app/services/paper_epoch_fixture.py",
+    "backend/app/services/paper_writer_fixture.py",
+    "scripts/observation_runtime/aip06_harness.py",
+    "scripts/observation_runtime/launch_ownership_windows.py",
+    "scripts/volume_inspector/shared_fence.py",
+    "scripts/volume_inspector/windows_output.py",
+    "tests/perp_order_crash_child.py",
+    "tests/perp_order_native_fixture.py",
+    "tests/personal_owned_stop_child.py",
+    "tests/personal_readonly_restart_child.py",
+    "tests/qd_autonomous_binding_fixture.py",
+    "tests/qd_autonomous_native_fixture.py",
+    "tests/qd_autonomous_runtime_fixture.py",
+    "tests/run_launch_ownership_native.py",
+    "tests/test_perp_order_crash_race_native.py",
+    "tests/test_personal_native_pipeline_capacity.py",
+    "tests/test_personal_owned_stop_timing.py",
+    "tests/test_qd_unified_shutdown.py",
+    "tests/test_unified_actual_native_lanes.py",
+    "tests/test_unified_native_writer.py",
+    "tests/unified_actual_lanes_fixture.py",
+    "scripts/observation_runtime/aip06_fixture_guard.py",
+    "tests/test_aip06_fixture_guard_integration.py"
+  ],
+  "blocked": [
+    "Concrete retained-handle Windows filesystem/journal port and controller startup/cleanup are not selected or native-qualified.",
+    "Cross-process child bootstrap and shared parent resource-ledger IPC are not implemented; an attach_guards receipt interface/mock is not a concrete broker.",
+    "Legacy ownership probe main now refuses explicitly; its raw Job/pipe/negative-test helpers are not yet shared-port code.",
+    "Native pytest/temp/XML/stdout/stderr/cache producers need a pinned controller/output adapter, not blanket audit suppression.",
+    "Native fault/load/capacity/loss/inception matrix and exact executable command/import closure remain unproved; no fresh native authorization package yet."
+  ]
+}

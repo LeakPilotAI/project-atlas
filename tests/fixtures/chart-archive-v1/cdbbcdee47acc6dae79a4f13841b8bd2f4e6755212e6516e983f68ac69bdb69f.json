@@ -1,0 +1,11 @@
+{
+  "html_sha256": "774c9e3d78533579dfd5a9900e7853a92654a942904d915c0dcefd9cf56df949",
+  "network_authorized": false,
+  "recovery_authorized": false,
+  "report_sha256": "376642989bd866c73af473cd9d948c2b27e98a75b7055b73399a76b8776e843b",
+  "schema": "ATLAS_CHART_PROVENANCE_EXPORT_V1",
+  "source_authenticated": false,
+  "source_sha256": "d58a52fe329ea7b4935fd93201b8ac3b337fe8a09d82a3e53382b110107cc3cd",
+  "startup_authorized": false,
+  "trading_authorized": false
+}

@@ -1,0 +1,37 @@
+--- a/metadata_preflight.ps1
++++ b/metadata_preflight.ps1
+@@ -29,7 +29,21 @@
+     }
+     $filter="ExecutablePath LIKE 'D:\\AtlasRuntime\\%' OR ExecutablePath LIKE 'D:\\Work\\Project Atlas\\%' OR (Name='python.exe' AND CommandLine LIKE '%D:\\Work\\Project Atlas%')"
+     $processes=@(Get-CimInstance Win32_Process -Filter $filter)
+-    $claims=@($env:ATLAS_AUTH_HELPER_CLAIMS|ConvertFrom-Json)
++    # Windows PowerShell 5.1 emits a JSON array as one pipeline object.
++    # Deserialize first; enumerate the resulting array in a separate step.
++    $parsedClaims=ConvertFrom-Json -InputObject $env:ATLAS_AUTH_HELPER_CLAIMS
++    if($null -eq $parsedClaims -or $parsedClaims -isnot [System.Array]){throw 'DIAGNOSTIC_HELPER_CLAIMS_ARRAY_REQUIRED'}
++    $claims=@($parsedClaims)
++    if($claims.Count -eq 0){throw 'DIAGNOSTIC_HELPER_CLAIMS_EMPTY'}
++    foreach($identity in $claims){
++        if($null -eq $identity -or $identity -is [System.Array] -or
++            (($identity.PSObject.Properties.Name|Sort-Object)-join ',') -cne 'created,image,pid' -or
++            ($identity.pid -isnot [int] -and $identity.pid -isnot [long]) -or
++            $identity.pid -le 0 -or $identity.pid -gt [uint32]::MaxValue -or
++            ($identity.created -isnot [int] -and $identity.created -isnot [long]) -or
++            $identity.created -le 0 -or $identity.image -isnot [string] -or
++            [string]::IsNullOrWhiteSpace($identity.image)){throw 'DIAGNOSTIC_HELPER_CLAIM_FIELD_TYPE'}
++    }
+     $others=@()
+     foreach($candidate in $processes){
+         $claim=@($claims|Where-Object {$_.pid -eq $candidate.ProcessId})
+@@ -37,6 +51,11 @@
+             $live=[Diagnostics.Process]::GetProcessById($candidate.ProcessId)
+             try {
+                 foreach($identity in $claim){
++                    # Preserve scalar comparison evidence privately before any refusal.
++                    $observedCreated=$live.StartTime.ToUniversalTime().ToFileTimeUtc()
++                    $observedImage=$live.MainModule.FileName
++                    if(-not $result.Contains('helper_identity_comparisons')){$result.helper_identity_comparisons=@()}
++                    $result.helper_identity_comparisons+=@{expected_pid=$identity.pid;observed_pid=$live.Id;expected_created=$identity.created.ToString();observed_created=$observedCreated.ToString();expected_image=$identity.image;observed_image=$observedImage;pid_equal=($live.Id -eq $identity.pid);created_equal=($observedCreated -eq $identity.created);image_equal=($observedImage -ieq $identity.image)}
+                     if($live.StartTime.ToUniversalTime().ToFileTimeUtc() -ne $identity.created -or $live.MainModule.FileName -ine $identity.image){throw 'DIAGNOSTIC_HELPER_OWNERSHIP_MISMATCH'}
+                 }
+             } finally {$live.Dispose()}

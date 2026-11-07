@@ -1,0 +1,13 @@
+# Portable calendar-consistency continuation — 2026-10-21
+
+Confirmed defect: a SPY completed bar at2026-10-20T12:00:00UTC, originally PRE_MARKET, was accepted after relabelling REGULAR. Original executable reproduction retained in logs/diagnostics/calendar-consumer-20261021/pre-fix-reproduction.txt.
+
+Correction: portable market, quality current-clock/window and descriptive research consumers now compare session labels to the existing bounded2026–2028 policy. Generated inert constants come from backend/app/investment/market_hours.py, with source SHA and a check-mode generator. No provider request, scanner/calendar behavior change or independently invented holiday policy. New pure equitySession exposes the same classification to offline callers. Unsupported exchange-local years refuse. Unscheduled closures still need an operator calendar update; static policy is not live exchange truth.
+
+Validation:520 JavaScript tests passed, zero failures/skips, including7 new cases and10960 boundary observations across all1096 calendar days with DST, weekends, holidays, early closes and microsecond boundaries.56 focused Python packaging tests passed in5.91s. Targeted ESLint passed; new generator Ruff and compilation passed; generator source-drift check and git diff integrity passed. Initial Ruff import-order finding preserved and corrected narrowly. No PowerShell changes. Prior AFI/market Python counts not rerun or combined.
+
+Fresh static workspace built and explicitly verified: D:\Work\Project Atlas\logs\diagnostics\calendar-consumer-20261021\workspace. Manifest SHA256 d8948e14aa3135f807e28104f7c336bf9faa6650e89256951012d26b45bf354e. Older evidence/artifacts retained. Native browser acceptance NOT_ESTABLISHED due earlier file-URL policy rejection; no workaround attempted. Supplied-file verification is not provider authentication or operational startup acceptance.
+
+All21 decisions and startup lock unchanged; production NO-GO. No runtime census, provider/Atlas/Docker/Genesis operations, production state/config/ACL/shortcuts/volumes, trading/Discord, staging/commit/push/reset/cleanup. Official AFI1–10 PENDING; all seven phases remain in master checkpoint.
+
+Next: improve end-to-end offline artifact usability with an explicit schema/help guide mapping Python exporters to portable imports and add a deterministic integration path for calendar-rejected packets to visible refusal (never silently relabel). Continue forecasting accountability/reliability after that. Provider permissions/budgets, production release admission/lifecycle, backup+restoration, Gaming performance, cash scope, lint disposition, consent and PM V2 gates remain unresolved.

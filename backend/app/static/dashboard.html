@@ -38,7 +38,7 @@
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+  html, body { margin: 0; background: radial-gradient(circle at 12% -10%, #12283b 0, transparent 26%), var(--bg); color: var(--fg); font: 16px/1.55 var(--font); -webkit-font-smoothing: antialiased; }
   button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
   header {
     position: sticky; top: 0; z-index: 8;
@@ -55,15 +55,15 @@
     display: grid; place-items: center;
     font: 500 13px/1 var(--mono); letter-spacing: 0.06em; color: var(--accent);
   }
-  h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; }
+  h1 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.15; }
   .kicker { font: 500 10px/1 var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--subtle); }
-  .sub { color: var(--muted); font-size: 12.5px; }
+  .sub { color: var(--muted); font-size: 14px; }
   .ok { color: var(--long); } .bad { color: var(--short); } .muted { color: var(--muted); }
   .head-meta { text-align: right; font: 400 12px/1.45 var(--mono); color: var(--muted); }
   .live { display: inline-flex; align-items: center; gap: 8px; }
   .dot { width: 7px; height: 7px; border-radius: 99px; background: var(--short); }
   .dot.on { background: var(--long); box-shadow: 0 0 0 3px color-mix(in oklab, var(--long) 22%, transparent); }
-  main { max-width: 1240px; margin: 0 auto; padding: 22px 28px 80px; display: flex; flex-direction: column; gap: 18px; }
+  main { max-width: 1560px; margin: 0 auto; padding: 22px 28px 80px; display: flex; flex-direction: column; gap: 18px; }
   .pills { display: flex; flex-wrap: wrap; gap: 6px; }
   .pill {
     border: 1px solid var(--border); border-radius: 999px;
@@ -94,10 +94,14 @@
   .g3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
   .g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius-xl); padding: 18px;
+    background: linear-gradient(145deg,#121820,#0c1016); border: 1px solid var(--border);
+    border-radius: var(--radius-xl); padding: 20px;
+    transition: transform 180ms var(--ease), border-color 180ms var(--ease), box-shadow 180ms var(--ease);
   }
-  .card h3 { margin: 0 0 12px; font-size: 14px; font-weight: 600; letter-spacing: -0.02em; }
+  .card:hover { transform: translateY(-2px); border-color: #31566e; box-shadow: 0 18px 50px rgba(0,0,0,.24); }
+  .mark { animation: atlasPulse 3.4s ease-in-out infinite; }
+  @keyframes atlasPulse { 0%,100%{box-shadow:0 0 0 0 rgba(92,229,255,0)} 50%{box-shadow:0 0 22px rgba(92,229,255,.16)} }
+  .card h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
   .bar { height: 44px; display: flex; align-items: end; margin-bottom: 8px; }
   .bar > i { display: block; width: 100%; background: color-mix(in oklab, var(--accent) 55%, transparent); border-radius: 3px; }
   .n { font: 500 22px/1.1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; color: var(--fg); }
@@ -138,9 +142,35 @@
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
+body.embed header,body.embed #research-link,body.embed .tabs{display:none}body.embed main{padding-top:22px}
+/* ATLAS XENOFORM UI — presentation only */
+:root{--bg:#020405;--bg-2:#05080a;--surface:#07100f;--elevated:#0b1715;--fg:#e9fff8;--muted:#8aa79f;--subtle:#55766d;--border:#173b35;--border-strong:#2a675b;--accent:#5dffe0;--accent-fg:#00110d;--long:#52ffad;--short:#ff334f;--warn:#ffc766}
+html,body{background:
+radial-gradient(ellipse at 12% 0%,rgba(0,255,195,.09),transparent 28%),
+radial-gradient(ellipse at 92% 18%,rgba(255,20,55,.08),transparent 24%),
+repeating-linear-gradient(115deg,rgba(90,255,220,.018) 0 1px,transparent 1px 18px),#020405}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background:radial-gradient(circle at 30% 20%,transparent 0 3px,rgba(65,255,195,.05) 4px,transparent 6px);background-size:47px 43px;mix-blend-mode:screen}
+.card,.banner,.tabs{background:linear-gradient(145deg,rgba(8,20,18,.97),rgba(3,8,8,.98));border-color:#1b4c43;box-shadow:inset 0 1px rgba(126,255,225,.05),0 16px 44px rgba(0,0,0,.38)}
+.card{position:relative;overflow:hidden}.card:after{content:"";position:absolute;inset:auto -10% -35px 35%;height:52px;border-radius:50%;background:rgba(58,255,184,.035);filter:blur(12px);pointer-events:none}
+.tabs{border-radius:18px 7px 18px 7px}.tabs button.on{background:linear-gradient(135deg,#10251f,#07110f);color:#8ffff0;box-shadow:inset 0 0 18px rgba(70,255,210,.08)}
+.kicker{color:#63d9c3}.pill.on{box-shadow:0 0 14px rgba(82,255,173,.09)}table{font-family:var(--mono)}th{color:#638e83}tr:hover td{background:rgba(75,255,205,.035)}
+.accumulation-panel{border-color:#2c6b5b;box-shadow:inset 0 0 35px rgba(48,255,183,.025),0 22px 65px rgba(0,0,0,.42)}
+.inv-table-wrap{overflow-x:auto}.accumulation-table{min-width:1180px}.accumulation-table .inv-symbol{font-size:15px;font-weight:700;color:#eafff8}.accumulation-table .level{color:#5dffe0;font-weight:600}.accumulation-table .plan{min-width:245px;color:#86a99f;font-size:11px}.accumulation-table tr.inv-ACCUMULATE td,.accumulation-table tr.inv-SCALE_SMALL td{background:rgba(52,255,169,.025)}
+
+/* XENOFORM HUD PASS II */
+.action{position:relative;overflow:hidden;border:1px solid #245b50!important;background:rgba(5,15,13,.88)!important;color:#93b8ae!important;box-shadow:inset 0 0 12px rgba(90,255,215,.035);text-shadow:0 0 9px currentColor;border-radius:4px 12px 4px 12px!important}
+.action:after{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,currentColor,transparent);opacity:.55}
+.action.ACCUMULATE,.action.SCALE_SMALL{color:#65ffc1!important;border-color:#258a68!important;background:linear-gradient(135deg,rgba(18,77,58,.72),rgba(4,19,16,.92))!important;box-shadow:inset 0 0 16px rgba(65,255,176,.08),0 0 12px rgba(65,255,176,.05)}
+.action.PREPARE,.action.WAIT_CHEAPER{color:#e5b968!important;border-color:#70592f!important;background:linear-gradient(135deg,rgba(75,55,20,.58),rgba(18,13,6,.92))!important}
+.action.STAND_DOWN,.action.DO_NOT_BUY{color:#ff6072!important;border-color:#772638!important;background:linear-gradient(135deg,rgba(82,15,29,.65),rgba(19,5,9,.94))!important}
+.action.WATCH,.action.QUIET{color:#78b8ae!important;border-color:#234b45!important;background:linear-gradient(135deg,rgba(18,47,42,.52),rgba(5,13,12,.92))!important}
+.card,.banner{border-radius:18px 5px 18px 5px}.card:before,.banner:before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(115deg,rgba(89,255,218,.025),transparent 22%,transparent 78%,rgba(255,37,67,.018))}
+#tab-trading .card:nth-child(3n+1),#tab-research .card:nth-child(2n){border-top-color:#245e55}#statusbanner.warn{border-color:#6b2732!important;box-shadow:inset 0 0 30px rgba(255,35,62,.035)}
+.n{color:#dffff6;text-shadow:0 0 15px rgba(88,255,216,.08)}.bar>i{background:linear-gradient(180deg,#68ffe2,#17695b)!important;box-shadow:0 0 12px rgba(83,255,216,.13)}
 </style>
-</head>
+<link rel="stylesheet" href="/static/atlas_ui.css"/></head>
 <body>
+<div id="research-link" style="padding:13px 28px;background:#071019;border-bottom:1px solid #183246"><a href="/api/investments/prospective/view" target="_top" style="color:#72e7ff;font-size:14px;font-weight:600;text-decoration:none">Daily manual investment research · forward evidence →</a></div>
 <header>
   <div class="brand">
     <div class="mark" aria-hidden="true">AT</div>
@@ -161,7 +191,7 @@
   <div class="pills" id="pills"></div>
   <div class="tabs" role="tablist">
     <button class="on" data-tab="trading">Paper</button>
-    <button data-tab="dips">Quality dip</button>
+    <button class="quality-summary-tab" data-tab="dips">Quality dip</button>
     <button data-tab="invest">Investment</button>
     <button data-tab="research">Archive</button>
   </div>
@@ -207,26 +237,43 @@
   </section>
 
   <section id="tab-invest" class="hidden">
-    <div class="grid g2">
-      <div class="card">
-        <h3>Investment scan</h3>
-        <div id="invstatus" class="sub"></div>
-        <div id="invopps" style="margin-top:12px"></div>
-      </div>
-      <div class="card">
-        <h3>Equity majors</h3>
-        <div class="sub" id="eqhead"></div>
-        <div id="eqtape"></div>
-      </div>
+    <div class="banner investment-hero">
+      <div class="kicker">LONG-HORIZON CAPITAL INTELLIGENCE</div>
+      <div class="n" style="font-size:20px;margin-top:7px">Accumulation Pipeline</div>
+      <div class="sub" style="margin-top:5px">Atlas keeps the research funnel visible even when no name has reached an actionable accumulation state.</div>
+    </div>
+    <div class="grid g5 investment-pipeline">
+      <div class="card"><div class="kicker">WATCH</div><div class="n" id="pipeWatch">0</div><div class="note">Research universe under observation</div></div>
+      <div class="card"><div class="kicker">APPROACHING</div><div class="n" id="pipeApproaching">0</div><div class="note">Waiting cheaper / nearing research levels</div></div>
+      <div class="card"><div class="kicker">PREPARE</div><div class="n" id="pipePrepare">0</div><div class="note">Qualified for patient preparation</div></div>
+      <div class="card"><div class="kicker">ACCUMULATE</div><div class="n" id="pipeAccumulate">0</div><div class="note">Active research accumulation state</div></div>
+    </div>
+    <div class="card accumulation-panel">
+      <div class="kicker">LONG-HORIZON EQUITY RESEARCH // ACCUMULATION MATRIX</div>
+      <h3 style="font-size:21px;margin-top:7px">Investment Accumulation Plan</h3>
+      <div id="invstatus" class="sub"></div>
+      <div class="note" style="margin:8px 0 14px">ACCUMULATE / SCALE SMALL candidates appear first. Lower L-levels are Atlas research zones for adding only if price falls and the thesis remains intact. Manual execution only; these are not broker orders or guaranteed returns.</div>
+      <div id="invopps"></div>
+    </div>
+    <div class="card">
+      <h3>Equity Majors // Threat & Opportunity Tape</h3>
+      <div class="sub" id="eqhead"></div>
+      <div id="eqtape"></div>
     </div>
   </section>
 
   <section id="tab-research" class="hidden">
+    <div class="banner archive-hero">
+      <div class="kicker">DURABLE EVIDENCE // HISTORICAL RECORD</div>
+      <div class="n" style="font-size:20px;margin-top:7px">Atlas Archive</div>
+      <div class="sub" style="margin-top:5px">Historical PAPER outcomes and validation evidence live here. Nothing in Archive changes current execution gates.</div>
+    </div>
     <div class="banner">
       <h2>Archive — all-time journal</h2>
       <div class="n" style="font-size:16px;margin-top:8px">Not this session</div>
       <div class="sub">Research and edge use every PAPER close ever recorded. Session WR on Paper is the number to track now. Nothing here is a live-unlock.</div>
     </div>
+    <div class="card"><h3>Alpha / Catalyst · Read-only intelligence</h3><div class="note">Context only · external text is untrusted data · no order, PAPER-entry, strategy, membership, threshold, promotion, or live-capital authority.</div><div id="alphafeed" class="sub" style="margin-top:10px">Loading governed context...</div><div id="alphahealth" class="note" style="margin-top:10px">Delivery and cadence health loading...</div><div id="alphasources" class="sub" style="margin-top:10px">Source observability loading...</div></div>
     <div class="grid g2">
       <div class="card">
         <h3>Hyperliquid majors tape</h3>
@@ -244,6 +291,7 @@
     </div>
   </section>
 </main>
+<script>if(new URLSearchParams(location.search).get("embed")==="1")document.body.classList.add("embed");</script><script src="/static/runtime_poll.js"></script>
 <script>
 const FUNNEL = [
   ["markets","Markets"],["liquid","Liquid"],["evaluated","Evaluated"],
@@ -264,7 +312,7 @@ function actionBadge(a){
   const x = String(a||"QUIET");
   return `<span class="action ${x}">${x.replaceAll("_"," ")}</span>`;
 }
-function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({'&':'&','<':'<','>':'>','"':'"'}[c])); }
+function esc(s){ return String(s??"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 document.querySelectorAll(".tabs button").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("on"));
@@ -275,14 +323,37 @@ document.querySelectorAll(".tabs button").forEach(btn=>{
     });
   });
 });
+const requestedTab=new URLSearchParams(location.search).get("tab");
+if(requestedTab){const requestedButton=document.querySelector('.tabs button[data-tab="'+requestedTab+'"]');if(requestedButton)requestedButton.click();}
+let liveFailureStreak=0;
+let optionalUpdated=0;
+let reconnectEvents=0;
+async function fetchLiveWithRetry(){
+  let lastError=null;
+  for(let attempt=0;attempt<3;attempt++){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),6500);
+    try{
+      const r=await fetch("/api/live",{cache:"no-store",signal:controller.signal});
+      if(!r.ok) throw new Error("live "+r.status);
+      return await r.json();
+    }catch(e){
+      lastError=e;
+      if(attempt<2) await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+    }finally{clearTimeout(timer)}
+  }
+  throw lastError||new Error("live request failed");
+}
 async function load(){
+  let liveReceived=false;
   try{
-    const r = await fetch("/api/live");
-    if(!r.ok) throw new Error("live "+r.status);
-    const L = await r.json();
+    const L = await fetchLiveWithRetry();
+    liveReceived=true;
+    if(L.runtime_refresh?.state === "WARMING") throw Error("Dashboard warming");
+    liveFailureStreak=0;
     document.getElementById("err").innerHTML = "";
     document.getElementById("stamp").textContent = "refresh 8s · "+ago(L.updated_at);
-    document.getElementById("api").textContent = "API connected";
+    document.getElementById("api").textContent = L.runtime_refresh?.state === "STALE" ? "API connected · dashboard stale" : "API connected";
     document.getElementById("api").className = "ok";
     document.getElementById("dot").classList.add("on");
     const h = L.health||{};
@@ -333,7 +404,7 @@ async function load(){
       </div>`).join("") : '<div class="sub">No open paper trades in this session.</div>';
     const lc = L.paper_lifecycle||{};
     document.getElementById("lifecycle").innerHTML =
-      `Recovery: persisted ${n(lc.persisted_open)} · recovered ${n(lc.recovered)} · in-memory ${n(lc.currently_open)} · missing quotes ${n(lc.positions_missing_market_data)} · review ${n(lc.error_requires_review)} · malformed ${n(lc.malformed)}. OPEN ≠ hung. Only CLOSED counts.`;
+      `Micro recovery: persisted ${n(lc.persisted_open)} · startup-recovered ${n(lc.recovered_positions)} · micro managed ${n(lc.currently_open)} · other paper ${n(lc.foreign_open)} · missing quotes ${n(lc.positions_missing_market_data)} · review ${n(lc.error_requires_review)} · malformed ${n(lc.malformed)}. Other paper strategies are isolated. Only CLOSED counts.`;
     const a = L.activity||{};
     document.getElementById("act").innerHTML = [
       ["Last HL data", ago(a.last_market_data)],
@@ -395,13 +466,24 @@ async function load(){
     const cycle = inv.last_cycle||{};
     document.getElementById("invstatus").innerHTML =
       `Scan ${inv.enabled?"enabled":"off"} · running ${inv.running?"yes":"no"} · last cycle ${cycle.finished_at?ago(cycle.finished_at):"waiting"} · ${cycle.symbols_scanned||0} names`;
-    const iopps = (inv.opportunities||prep).filter(d => ["PREPARE","ACCUMULATE","STAND_DOWN","WATCH"].includes(d.action));
-    document.getElementById("invopps").innerHTML = iopps.length? `<table><tr><th></th><th>Symbol</th><th>Stance</th><th>Falling</th><th>T1</th><th>Off high</th></tr>${
-      iopps.slice(0,16).map(d=>{
-        const t1 = (d.ladder&&d.ladder[0]) ? ("$"+fmt(d.ladder[0].limit,2)) : "—";
-        return `<tr><td>${actionBadge(d.stance||d.action)}</td><td>${esc(d.symbol)}</td><td>${esc(d.stance||d.action||"")}</td><td>${d.bottom_risk==null?"—":d.bottom_risk}</td><td>${t1}</td><td>${fmt(d.pct_from_high,1)}%</td></tr>`;
+    const iopps = (inv.opportunities||prep).filter(d => ["PREPARE","ACCUMULATE","STAND_DOWN","WATCH","SCALE_SMALL","WAIT_CHEAPER"].includes(d.action)||["SCALE_SMALL","WAIT_CHEAPER"].includes(d.stance));
+    const invRank={ACCUMULATE:0,SCALE_SMALL:0,PREPARE:1,WAIT_CHEAPER:1,WATCH:2,STAND_DOWN:3};
+    iopps.sort((a,b)=>(invRank[a.stance||a.action]??9)-(invRank[b.stance||b.action]??9));
+    const pipeStates=iopps.map(d=>String(d.stance||d.action||"WATCH"));
+    document.getElementById("pipeWatch").textContent=pipeStates.filter(s=>s==="WATCH"||s==="STAND_DOWN").length;
+    document.getElementById("pipeApproaching").textContent=pipeStates.filter(s=>s==="WAIT_CHEAPER").length;
+    document.getElementById("pipePrepare").textContent=pipeStates.filter(s=>s==="PREPARE").length;
+    document.getElementById("pipeAccumulate").textContent=pipeStates.filter(s=>s==="ACCUMULATE"||s==="SCALE_SMALL").length;
+    document.getElementById("invopps").innerHTML = iopps.length? `<div class="inv-table-wrap"><table class="accumulation-table"><tr><th>Research state</th><th>Symbol</th><th>Current / Ref</th><th>Off high</th><th>Falling risk</th><th>L1</th><th>L2</th><th>L3</th><th>L4</th><th>Plan</th></tr>${
+      iopps.slice(0,24).map(d=>{
+        const levels=(d.ladder||[]).slice(0,4);
+        const lp=i=>levels[i]&&Number.isFinite(Number(levels[i].limit))?"$"+fmt(levels[i].limit,2):"—";
+        const px=d.price??d.current_price??d.last_price??d.quote_display_price;
+        const state=d.stance||d.action||"WATCH";
+        const plan=["ACCUMULATE","SCALE_SMALL"].includes(state)?"ACCUMULATION ACTIVE · scale small; deeper levels remain staged":(["PREPARE","WAIT_CHEAPER"].includes(state)?"WAIT FOR LOWER RESEARCH LEVELS":"MONITOR · thesis/evidence controls");
+        return `<tr class="inv-${esc(state)}"><td>${actionBadge(state)}</td><td class="inv-symbol">${esc(d.symbol)}</td><td>${px==null?"—":"$"+fmt(px,2)}</td><td>${fmt(d.pct_from_high,1)}%</td><td>${d.bottom_risk==null?"—":d.bottom_risk}</td><td class="level">${lp(0)}</td><td class="level">${lp(1)}</td><td class="level">${lp(2)}</td><td class="level">${lp(3)}</td><td class="plan">${plan}</td></tr>`;
       }).join("")
-    }</table>` : '<div class="sub">No investment opportunities on this scan. Alerts still DM when a quality name enters PREPARE.</div>';
+    }</table></div>` : '<div class="sub">No accumulation or prepare candidates on this scan. Atlas will surface them here when the research engine qualifies one.</div>';
 
     const tape = L.major_tape||{};
     const mkeys = Object.keys(tape);
@@ -443,8 +525,16 @@ async function load(){
         <span class="pill">Max ext ${fmt(g.max_extension_pct||3.5,1)}%</span>
       </div>
       <div class="note" style="margin-top:10px">Gates stay locked. Session WR is the score to watch. All-time archive is on the Archive tab.</div>`;
+    if(Date.now()-optionalUpdated < 60000) return;
+    optionalUpdated=Date.now();
     try {
-      const vr = await fetch("/api/validation/summary");
+      const ar=await atlasFetch("/api/validation/e38-alpha-view"); const A=await ar.json();
+      const rows=(A.items||[]).slice(0,6);
+      document.getElementById("alphafeed").innerHTML=rows.length?rows.map(e=>{const age=e.published_at?Math.max(0,Math.floor((Date.now()-Date.parse(e.published_at))/3600000)):null;const fresh=esc(e.freshness||"UNKNOWN");const support=(e.corroborators||[]).map(x=>esc(x.source_id||x.domain||"unknown")).join(", ")||"none";const ents=(e.entities||[]).map(esc).join(", ")||"none";const link=e.url?`<a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">official provenance</a>`:"provenance unavailable";return `<div class="kv"><span><b>${esc(e.event_type||"OTHER")}</b> · ${esc(e.source_id||"")} · ${esc(e.trust_tier||"UNKNOWN")} · ${fresh} · ${age===null?"age n/a":age+"h old"}</span><span>${esc(e.title||"")}</span></div><div class="note">Entities: ${ents} · Corroboration: ${support} · ${link}</div>`}).join("")+`<div class="note">Stored ${n(A.stored_event_count)} · context only; no execution authority.</div>`:"No current governed Alpha events.";
+      const gr=await atlasFetch("/api/validation/e42-alpha-governance"); if(gr.ok){const G=await gr.json();const H=G.cadence||{},C=G.current_cadence||{},lr=G.delivery&&G.delivery.last_result||{};const maturity=`historical ${n(H.observations)}/${n(H.policy&&H.policy.min_observations)} · current≤24h ${n(C.current_observations)}/${n(C.policy&&C.policy.min_current_observations)}`;const state=`threshold ${C.threshold_breach?"BREACH":"OK"} · drift ${C.drift_flag?"FLAG":"OK"} · split ${C.decouple_recommended?"RECOMMENDED":"NO"}`;document.getElementById("alphahealth").textContent=`Delivery: attempted ${n(lr.attempted)} · delivered ${n(lr.delivered)} · dedup ${n(G.delivery&&G.delivery.dedup_count)} · integrity ${G.history&&G.history.integrity_ok?"OK":"CHECK"} · ${maturity} · ${state}`;const obs=G.source_observability||{};document.getElementById("alphasources").innerHTML=Object.entries(obs).length?Object.entries(obs).map(([k,v])=>{const seen=v.last_observed_at?new Date(v.last_observed_at).toLocaleString():"never";const fetched=v.last_fetched_at?new Date(v.last_fetched_at).toLocaleString():"never";return `<div class="kv"><span><b>${esc(k)}</b> · ${esc(v.health||"UNKNOWN")} · ${esc(v.last_outcome||"UNKNOWN")}</span><span>observed ${esc(seen)} · fetched ${esc(fetched)} · HTTP ${esc(v.last_http_status==null?"n/a":v.last_http_status)}</span></div>`}).join(""):"No governed source observations yet.";}
+    } catch(e) { document.getElementById("alphafeed").textContent="Alpha context temporarily unavailable."; document.getElementById("alphahealth").textContent="Delivery health temporarily unavailable."; }
+    try {
+      const vr = await atlasFetch("/api/validation/summary");
       if (vr.ok) {
         const V = await vr.json();
         const ci = (V.uncertainty && V.uncertainty.winrate_ci95) || [null,null];
@@ -459,12 +549,10 @@ async function load(){
           `<div>Live capital: <b>no</b> · ${esc((V.milestone&&V.milestone.current_label)||"INSUFFICIENT SAMPLE")}</div>`+
           `<div class="muted">Archive only. Does not replace this session on Paper. Gates unchanged.</div>`;
       }
-    } catch (e) {}
+    } catch (e) { document.getElementById("valbody").textContent="Validation stale; retrying on next research refresh."; }
     try {
-      const er = await fetch("/api/validation/edge");
-      const etxt = await er.text();
-      let E = null;
-      try { E = JSON.parse(etxt); } catch (e) { E = null; }
+      const er = await atlasFetch("/api/validation/edge");
+      const E = await er.json();
       if (!er.ok || !E) {
         document.getElementById("edgebody").innerHTML =
           `<div class="err">Edge diagnostics HTTP ${er.status}. Response was not usable JSON. Journal not modified.</div>`;
@@ -500,14 +588,29 @@ async function load(){
       document.getElementById("edgebody").innerHTML = '<div class="err">Edge diagnostics request failed. Journal not modified.</div>';
     }
   } catch (e) {
-    document.getElementById("api").textContent = "API down";
-    document.getElementById("api").className = "bad";
-    document.getElementById("dot").classList.remove("on");
-    document.getElementById("err").innerHTML = '<div class="err">Cannot reach API. Keep the Atlas window open.</div>';
+    if(liveReceived){
+      document.getElementById("api").textContent="API connected · dashboard degraded";
+      document.getElementById("err").textContent="Dashboard update incomplete; last good data preserved.";
+      console.warn("Atlas dashboard render",e.name,e.message);return;
+    }
+    try{
+      await atlasFetch('/health',2000);
+      document.getElementById("api").textContent="API connected · dashboard stale";
+      document.getElementById("err").textContent="Dashboard refresh delayed; last good data preserved.";return;
+    }catch(transportError){}
+    liveFailureStreak++;
+    if(liveFailureStreak>=2){
+      const status=document.getElementById("api");
+      if(status.textContent!=="API reconnecting")reconnectEvents++;
+      status.dataset.reconnectEvents=String(reconnectEvents);
+      document.getElementById("api").textContent = "API reconnecting";
+      document.getElementById("api").className = "bad";
+      document.getElementById("dot").classList.remove("on");
+      document.getElementById("err").innerHTML = '<div class="err">Atlas API is temporarily unreachable. Retrying automatically; last good dashboard data is preserved.</div>';
+    }
   }
 }
-load();
-setInterval(load, 8000);
+atlasPoll(load,8000);
 </script>
 </body>
 </html>

@@ -6,13 +6,39 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from decimal import Decimal
+from functools import wraps
 from pathlib import Path
 from typing import Dict, List, Optional
 from uuid import uuid4
 
+from app.core.durable_io import sync_parent, write_flushed
 from app.investment.allocation import money
 from app.investment.models import AllocationPlan, PaperInvestmentAccount
-from app.investment.storage import LEDGER_PATH, PAPER_STATE_PATH, ensure_dirs
+from app.investment.storage import LEDGER_PATH, PAPER_STATE_PATH
+
+
+class PaperBookStateUnavailable(RuntimeError):
+    """Existing PAPER evidence could not be read; never initialize over it."""
+
+
+def _requires_available_state(method):
+    @wraps(method)
+    def checked(self, *args, **kwargs):
+        self._require_available_state()
+        return method(self, *args, **kwargs)
+    return checked
+
+
+def _persistence_boundary(method):
+    @wraps(method)
+    def checked(self, *args, **kwargs):
+        self._require_available_state()
+        try:
+            return method(self, *args, **kwargs)
+        except BaseException as error:
+            self._persistence_failure = error
+            raise
+    return checked
 
 
 def _now() -> datetime:
@@ -81,7 +107,13 @@ class PaperBook:
         self.benchmark = Benchmark(symbol=benchmark_symbol)
         self.state_path = state_path if state_path is not None else PAPER_STATE_PATH
         self.ledger_path = ledger_path if ledger_path is not None else LEDGER_PATH
+        self._persistence_failure: BaseException | None = None
 
+    def _require_available_state(self) -> None:
+        if self._persistence_failure is not None:
+            raise PaperBookStateUnavailable("PAPER book persistence requires independent reconciliation") from self._persistence_failure
+
+    @_requires_available_state
     def research_buy(
         self,
         symbol: str,
@@ -148,6 +180,7 @@ class PaperBook:
             return 0.0
         return min(0.0, eq / self.peak_equity - 1.0)
 
+    @_requires_available_state
     def seed_benchmark(self, price: float) -> None:
         if price <= 0 or self.benchmark.shares > 0:
             return
@@ -156,6 +189,7 @@ class PaperBook:
         self.benchmark.start_value = eq
         self.benchmark.shares = eq / float(price) if price else 0.0
 
+    @_requires_available_state
     def submit_from_plan(self, plan: AllocationPlan) -> List[PaperOrder]:
         created: List[PaperOrder] = []
         if not plan.is_actionable():
@@ -175,6 +209,7 @@ class PaperBook:
         self.save()
         return created
 
+    @_requires_available_state
     def cancel_open(self, symbol: str, *, reason: str = "") -> int:
         n = 0
         for o in self.orders:
@@ -186,6 +221,7 @@ class PaperBook:
             self.save()
         return n
 
+    @_requires_available_state
     def try_fill(self, symbol: str, market_price: float, *, session: str) -> List[dict]:
         """Fill open limits only while the cash session is open. Never invent weekend prints."""
         if session != "MARKET_OPEN":
@@ -228,6 +264,7 @@ class PaperBook:
             self.save()
         return filled
 
+    @_requires_available_state
     def mark(self, prices: Dict[str, float]) -> None:
         for sym, px in prices.items():
             if sym in self.positions and px and px > 0:
@@ -240,6 +277,7 @@ class PaperBook:
         if eq > self.peak_equity:
             self.peak_equity = eq
 
+    @_requires_available_state
     def snapshot(self, *, spy_price: Optional[float] = None) -> dict:
         bmv = self.benchmark.value(spy_price)
         return {
@@ -259,6 +297,7 @@ class PaperBook:
             "disclaimer": "Paper investment book. Not Hyperliquid paper. Not a live brokerage account. No alpha claim.",
         }
 
+    @_requires_available_state
     def as_legacy_account(self) -> PaperInvestmentAccount:
         return PaperInvestmentAccount(
             cash=self.cash,
@@ -272,19 +311,19 @@ class PaperBook:
             benchmark=self.benchmark.symbol,
         )
 
+    @_persistence_boundary
     def _ledger(self, kind: str, payload: dict) -> None:
         if self.ledger_path is None:
             return
-        ensure_dirs()
         self.ledger_path.parent.mkdir(parents=True, exist_ok=True)
         row = {"kind": kind, "at": _now().isoformat(), **payload}
         with self.ledger_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(row, default=str) + "\n")
+            write_flushed(f, json.dumps(row, default=str, allow_nan=False) + "\n")
 
+    @_persistence_boundary
     def save(self) -> None:
         if self.state_path is None:
             return
-        ensure_dirs()
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
         data = {
             "cash": self.cash,
@@ -295,7 +334,12 @@ class PaperBook:
             "fills": self.fills,
             "benchmark": self.benchmark.__dict__,
         }
-        self.state_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        text = json.dumps(data, indent=2, allow_nan=False)
+        temporary = self.state_path.with_name(self.state_path.name + "." + uuid4().hex + ".tmp")
+        with temporary.open("x", encoding="utf-8") as stream:
+            write_flushed(stream, text)
+        temporary.replace(self.state_path)
+        sync_parent(self.state_path)
 
     @classmethod
     def load(cls, path: Optional[Path] = None, **kwargs) -> "PaperBook":
@@ -305,8 +349,8 @@ class PaperBook:
             return book
         try:
             data = json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            return book
+        except (OSError, ValueError, RecursionError) as error:
+            raise PaperBookStateUnavailable("Existing PAPER investment state requires reconciliation") from error
         book.cash = float(data.get("cash") or 0)
         book.realized_pnl = float(data.get("realized_pnl") or 0)
         book.peak_equity = float(data.get("peak_equity") or book.cash)

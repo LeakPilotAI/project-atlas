@@ -1,0 +1,49 @@
+{
+  "schema": "ATLAS_WINDOWS_TIME_ADDITIONAL_SYNC_RESULT_V1",
+  "date": "2026-10-27",
+  "authorization": "Explicit operator reply Approve one additional resync",
+  "source": "time.windows.com,0x9",
+  "additional_resync_requests": 1,
+  "semantic_resync_success": true,
+  "command_exitcode": 0,
+  "source_and_startup_unchanged": true,
+  "service": "Running",
+  "startup": "Manual",
+  "last_reported_successful_sync_local": "10/27/2026 9:06:21 AM",
+  "clock_status": {
+    "leap_indicator": 0,
+    "stratum": 5,
+    "last_sync_error": 0,
+    "state_machine": "1_HOLD",
+    "root_dispersion_seconds": "7.8018211",
+    "root_delay_seconds": "0.0501914",
+    "advertised_root_distance_seconds": "7.8269168"
+  },
+  "post_sync_diagnostic_samples": {
+    "count": 3,
+    "server_leap": 0,
+    "server_stratum": 4,
+    "offset_ms": [
+      "27.1289",
+      "28.9544",
+      "27.8934"
+    ],
+    "roundtrip_ms": [
+      "33.6951",
+      "32.2018",
+      "33.8494"
+    ]
+  },
+  "observed_continuity": {
+    "elapsed_monotonic_seconds": 20.032,
+    "wall_monotonic_difference_seconds": 0.0024779491424560263,
+    "passes_existing_two_second_discontinuity_check": true
+  },
+  "accepted_atlas_clock_anchor_issued": false,
+  "existing_anchor_uncertainty_ceiling_ms": 1000,
+  "clock_validator_changed": false,
+  "uncertainty_bound_adequately_established": false,
+  "commissioning_resumed": false,
+  "pilot_consumed": false,
+  "further_resync_authorized": false
+}

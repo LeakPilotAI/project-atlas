@@ -1,0 +1,11 @@
+{
+  "evidence": "ACTUAL_SYNTHETIC_FORECAST_OUTCOME_CORRECTION_EXPORT",
+  "sha256": "7147090d8180f2ce1326238750a7cc3a31b8c77da6377d4307d5929aaad5f0a2",
+  "forecast_n": 1,
+  "correction_n": 1,
+  "source_report_sha256": "9bc21f5b530dcccbadb5aae1766a9b1d1f9370ee9c2ccfcc5ffdc84b6407a163",
+  "calibration_established": false,
+  "predictive_skill_established": false,
+  "production_approved": false,
+  "trading_authority": false
+}

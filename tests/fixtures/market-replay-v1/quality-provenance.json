@@ -1,0 +1,11 @@
+{
+  "schema": "ATLAS_SYNTHETIC_SESSION_QUALITY_FIXTURE_V1",
+  "api_response_sha256": "7993851fd752089918e455ebf151a150b5d3ce2ae1a11f0bffa1282eeff6f583",
+  "reviewed_quality_producer_sha256": "0f89f1c93b432b45bbcd32c7151fbab0ad372de62b699b2df576018710138c1a",
+  "reviewed_replay_factory_sha256": "a8c9f940cf75e8cc63334edd1c2bc01c51a00342587b001ea8f6ee7c54d63fb5",
+  "source": "Actual in-process quality API response; equality verified by test_actual_quality_api_matches_frontend_fixture",
+  "data_mode": "SYNTHETIC_REPLAY",
+  "real_market_evidence": false,
+  "source_authenticated": false,
+  "production_approved": false
+}

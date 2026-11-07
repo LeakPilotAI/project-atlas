@@ -16,6 +16,14 @@ class AdapterRegistry:
 
     def register(self, adapter: Any) -> None:
         name = getattr(adapter, "name", None) or adapter.__class__.__name__.lower()
+        if str(name).lower() == "hyperliquid":
+            try:
+                from app.services.runtime_hardening import install_runtime_hardening
+
+                install_runtime_hardening(adapter)
+                logger.info("Hyperliquid runtime hardening installed")
+            except Exception as exc:
+                logger.warning("Hyperliquid runtime hardening skipped", error=str(exc)[:180])
         self._adapters[str(name).lower()] = adapter
         logger.info("Adapter registered", name=name)
 
@@ -38,12 +46,15 @@ class AdapterRegistry:
                 logger.error("Adapter connect failed", name=name, error=str(e))
 
     async def close_all(self) -> None:
-        for name, adapter in self._adapters.items():
+        failures = []
+        for adapter in self._adapters.values():
             try:
                 if hasattr(adapter, "close"):
                     await adapter.close()
-            except Exception as e:
-                logger.warning("Adapter close failed", name=name, error=str(e))
+            except Exception as e:  # noqa: BLE001 - continue independent adapters
+                failures.append(e)
+        if failures:
+            raise ExceptionGroup("Adapter shutdown failed", failures)
 
 
 registry = AdapterRegistry()

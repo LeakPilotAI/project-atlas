@@ -1,0 +1,46 @@
+{
+  "chart": {
+    "error": null,
+    "result": [
+      {
+        "meta": {
+          "symbol": "SPY",
+          "currency": "USD",
+          "dataGranularity": "1m",
+          "exchangeDataDelayedBy": 15
+        },
+        "timestamp": [
+          1792504800
+        ],
+        "indicators": {
+          "quote": [
+            {
+              "open": [
+                100
+              ],
+              "high": [
+                102
+              ],
+              "low": [
+                99
+              ],
+              "close": [
+                101
+              ],
+              "volume": [
+                120
+              ]
+            }
+          ],
+          "adjclose": [
+            {
+              "adjclose": [
+                50.5
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

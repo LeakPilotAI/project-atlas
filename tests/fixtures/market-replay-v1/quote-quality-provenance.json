@@ -1,0 +1,11 @@
+{
+  "schema": "ATLAS_SYNTHETIC_QUOTE_QUALITY_FIXTURE_V1",
+  "api_response_sha256": "e017e6c8554287c4ba2ef8e8355c6f524720def6d13ca1610d51170bc7a9c5be",
+  "reviewed_quote_quality_source_sha256": "e3aaf1abc056ff4ea75c1e5fb4bf2663c107372f159b37e274ea42eea9db12b1",
+  "reviewed_replay_factory_sha256": "6291a529713bdebfd48145724953c2ec7ea50b2858e11c95bbe57597cade8105",
+  "source": "Actual in-process quote-quality API; equality verified by test_actual_quote_quality_api_and_html",
+  "data_mode": "SYNTHETIC_REPLAY",
+  "real_market_evidence": false,
+  "source_authenticated": false,
+  "production_approved": false
+}
