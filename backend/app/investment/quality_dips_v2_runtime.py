@@ -62,10 +62,15 @@ def _valuation_sources(row: dict[str, Any], *, allow_stored_evidence: bool = Tru
                 continue
         if value is not None:
             sources.append({"value": value, "provenance": "ANALYST_CONSENSUS", "as_of": as_of, "confidence": "EXTERNAL_CONSENSUS", "note": label + "; provider-supplied, not an Atlas guarantee"})
-    if current_only and len(sources) == 3:
+    if current_only:
+        # A partial current set cannot be completed from a different cached
+        # snapshot. Keep the current lane all-or-nothing and ordered.
+        if len(sources) != 3:
+            return []
         values = [source["value"] for source in sources]
         if values != sorted(values):
             return []  # Contradictory named low/mean/high fields are not scenarios.
+        return sources
     if len(sources) >= 3 or not allow_stored_evidence:
         return sources
     # Operational cache is populated by the API from the same explicit provider fields.

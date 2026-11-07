@@ -15,4 +15,8 @@ def test_current_targets_refuse_collection_time_as_publication_time():
     assert len(sources) == 3
     assert all(s["as_of"] == "2026-11-06" for s in sources)
     row["input_snapshot"]["valuation"]["target_low_price"]["original_target_as_of_verified"] = False
-    assert len(_valuation_sources(row, current_only=True, allow_stored_evidence=False)) == 2
+    assert _valuation_sources(row, current_only=True, allow_stored_evidence=False) == []
+    assert _valuation_sources(row, current_only=True, allow_stored_evidence=True) == []
+    row["input_snapshot"]["valuation"]["target_low_price"]["original_target_as_of_verified"] = True
+    row["input_snapshot"]["valuation"]["target_low_price"]["value"] = 700
+    assert _valuation_sources(row, current_only=True, allow_stored_evidence=True) == []
