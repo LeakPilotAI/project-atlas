@@ -268,3 +268,43 @@ def test_leased_published_journal_candidate_positive_replay_and_revocation(tmp_p
     with pytest.raises(ValueError, match="COMPONENTS_CHANGED"):
         signals.inspect_leased_published_iex_journal_candidate(**kwargs)
     assert path.read_bytes() == original
+
+
+def test_published_iex_v3_with_original_scanner_publication_and_revocation(tmp_path, monkeypatch):
+    """Exercise actual publication implementation with explicitly synthetic custody."""
+    import copy
+    from types import SimpleNamespace
+    from test_paper_source_publication import Archive, auth
+    from test_quality_dips_autonomous_paper import candidate, setup
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import evaluate_published_iex_v3_candidate
+    n = setup(tmp_path)
+    b = candidate(n)
+    authority = auth()
+    raw = {"board": b["board"],
+           "observations": {b["instrument"]["symbol"]: b["observation"]},
+           "instruments": [b["instrument"]],
+           "quotes": {b["instrument"]["symbol"]: b["quote"]},
+           "publication": b["publication"], "monitors": {}}
+    publication = QualityDipsSourcePublication(
+        research=SimpleNamespace(read_current=lambda: copy.deepcopy(raw)),
+        candidates=n.engine.candidates, source_id="SYNTHETIC_QD_ORIGINAL",
+        authority=authority, archive=Archive(), clock=lambda: n.now[0])
+    publication.publish_scanner(b["board"], datetime.fromtimestamp(n.now[0], UTC).isoformat())
+    provider = object.__new__(PersonalPaperIEXProvider)
+    symbol = b["instrument"]["symbol"]
+    monkeypatch.setattr(PersonalPaperIEXProvider, "read_iex_quote",
+                        lambda self, requested: {**quote(), "symbol": requested,
+                                                  "timestamp": datetime.fromtimestamp(n.now[0], UTC).isoformat()})
+    now = datetime.fromtimestamp(n.now[0], UTC)
+    # Original scanner fixture has only a frozen V3 plan, not the full
+    # decision_inputs needed to recompute against the current IEX ask.
+    # Refuse rather than reuse an old classification as fill authority.
+    with pytest.raises(ValueError, match="DECISION_INPUTS_REQUIRED"):
+        evaluate_published_iex_v3_candidate(
+            publication=publication, provider=provider, symbol=symbol, now=now)
+    authority.valid = False
+    with pytest.raises(ValueError):
+        evaluate_published_iex_v3_candidate(
+            publication=publication, provider=provider, symbol=symbol, now=now)
