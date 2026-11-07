@@ -44,3 +44,20 @@ def test_existing_feed_adapter_maps_fresh_snapshot_without_fill_authority():
     feed.generation += 1
     with pytest.raises(ValueError, match="IEX_QUOTE_NOT_FRESH"):
         adapter.read_iex_quote("MSFT")
+
+
+def test_combined_forward_session_requires_existing_provider_and_operator(tmp_path):
+    from app.services.personal_paper_price_evidence import (
+        PriceEvidenceRejected, inspect_forward_paper_session_under_lease,
+    )
+    feed, now = _feed()
+    with pytest.raises(PriceEvidenceRejected, match="FORWARD_SESSION_DEPENDENCIES_REQUIRED"):
+        inspect_forward_paper_session_under_lease(
+            installation=None, request={"action": "AUTO_PAPER"}, components=(),
+            provider=PersonalPaperIEXProvider(feed), symbol="MSFT", now=now,
+            journal_path=tmp_path / "missing.jsonl", account_id="forward")
+    with pytest.raises(PriceEvidenceRejected, match="FORWARD_SESSION_DEPENDENCIES_REQUIRED"):
+        inspect_forward_paper_session_under_lease(
+            installation=object(), request={"action": "READ_ONLY"}, components=(),
+            provider=PersonalPaperIEXProvider(feed), symbol="MSFT", now=now,
+            journal_path=tmp_path / "missing.jsonl", account_id="forward")

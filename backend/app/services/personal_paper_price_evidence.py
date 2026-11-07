@@ -321,3 +321,49 @@ def inspect_authenticated_forward_quote_under_lease(
     return {"schema": "ATLAS_PERSONAL_PAPER_LEASED_PROVIDER_QUOTE_DIAGNOSTIC_V1",
             "quote_evidence": evidence, "paper_fill_authorized": False,
             "live_order_authorized": False}
+
+
+def inspect_forward_paper_session_under_lease(
+    *, installation: Any, request: dict[str, Any], components: Any,
+    provider: Any, symbol: str, now: datetime, journal_path: Any,
+    account_id: str,
+) -> dict[str, Any]:
+    """One operator lease for real-feed cache admission and durable PAPER replay.
+
+    Read-only diagnostic. Neither this proof nor a provider cache authorizes fills.
+    """
+    from pathlib import Path
+    from app.investment.quality_dips_paper import accounting_snapshot, read_events
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_runtime import checked_personal_installation
+
+    if (installation is None or type(request) is not dict
+            or request.get("action") != "AUTO_PAPER"
+            or type(provider) is not PersonalPaperIEXProvider
+            or type(account_id) is not str or not account_id
+            or not isinstance(journal_path, (str, Path))):
+        raise PriceEvidenceRejected("FORWARD_SESSION_DEPENDENCIES_REQUIRED")
+    path = Path(journal_path)
+    if not path.is_file():
+        raise PriceEvidenceRejected("PAPER_JOURNAL_NOT_INITIALIZED")
+    try:
+        with installation.lease(request) as lease:
+            proof = checked_personal_installation(lease, request)
+            if lease.check_components(components) is not True:
+                raise PriceEvidenceRejected("PERSONAL_SESSION_COMPONENTS_CHANGED")
+            quote = provider.read_iex_quote(symbol)
+            evidence = validate_stock_iex_quote(quote, symbol=symbol, now=now)
+            snapshot = accounting_snapshot(read_events(path), account_id=account_id)
+            if snapshot is None or snapshot.get("data_provenance") != "FORWARD_COLLECTION":
+                raise PriceEvidenceRejected("FORWARD_PAPER_ACCOUNT_REQUIRED")
+            if lease.check(proof) is not True or lease.check_components(components) is not True:
+                raise PriceEvidenceRejected("PERSONAL_SESSION_LEASE_CHANGED")
+    except PriceEvidenceRejected:
+        raise
+    except (AttributeError, TypeError, ValueError, OSError, KeyError) as exc:
+        raise PriceEvidenceRejected("FORWARD_SESSION_ADMISSION_REFUSED") from exc
+    return {"schema": "ATLAS_PERSONAL_PAPER_COMBINED_SESSION_DIAGNOSTIC_V1",
+            "account_id": account_id, "quote_evidence": evidence,
+            "available_cash": snapshot["available_cash"],
+            "open_positions": snapshot["open_positions"],
+            "paper_fill_authorized": False, "live_order_authorized": False}
