@@ -50,7 +50,13 @@ function Invoke-AtlasAcceptedPaperStopHandoff([object]$Handoff = $null, [object]
         $AcceptedSession.session_id -cne $Handoff['session_id']) {
         throw 'PAPER_STOP_HANDOFF_SESSION_UNVERIFIED'
     }
-    $result = $AcceptedSession.request_stop($Handoff['mode'])
+    try {
+        $result = $AcceptedSession.request_stop($Handoff['mode'])
+    } catch {
+        # A failed dispatch might already have initiated flattening. Never
+        # retry automatically or report success without an accepted receipt.
+        throw 'PAPER_STOP_HANDOFF_DISPATCH_UNVERIFIED'
+    }
     if ($AcceptedSession.session_id -isnot [string] -or
         $AcceptedSession.session_id -cne $beforeId) {
         throw 'PAPER_STOP_HANDOFF_SESSION_CHANGED'
@@ -61,7 +67,8 @@ function Invoke-AtlasAcceptedPaperStopHandoff([object]$Handoff = $null, [object]
         $result.outcome.mode -cne $Handoff['mode'] -or
         $result.outcome.status -cne 'FLATTENED' -or
         $result.outcome.position_state -cne 'FLAT' -or
-        $result.outcome.process_shutdown -cne 'VERIFIED_EXIT') {
+        $result.outcome.process_shutdown -cne 'VERIFIED_EXIT' -or
+        $result.outcome.lanes -isnot [System.Collections.IDictionary]) {
         throw 'PAPER_STOP_HANDOFF_SHUTDOWN_UNVERIFIED'
     }
     return $result

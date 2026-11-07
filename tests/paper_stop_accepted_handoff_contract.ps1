@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference='Stop'
+$ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot '../scripts/windows/Atlas-Paper-Stop-Handoff.psm1') -Force
 $passed=0
 function Refuse($handoff,$session,$reason) {
@@ -18,7 +18,7 @@ function Session($id,$verified,$state='FLATTENED') {
             schema='QD_CONTROL_STOP_V1';phase='FINISHED';
             outcome=[pscustomobject]@{
                 schema='QD_AUTO_SHUTDOWN_V1';mode=$mode;status=$this.state;
-                position_state='FLAT';process_shutdown='VERIFIED_EXIT'
+                position_state='FLAT';process_shutdown='VERIFIED_EXIT';lanes=@{}
             }
         }
     }
@@ -55,7 +55,7 @@ $after | Add-Member ScriptMethod request_stop {
     param($mode)
     $this.calls++; $this.session_id='foreign'
     return [pscustomobject]@{schema='QD_CONTROL_STOP_V1';phase='FINISHED';outcome=[pscustomobject]@{
-        schema='QD_AUTO_SHUTDOWN_V1';mode=$mode;status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT'
+        schema='QD_AUTO_SHUTDOWN_V1';mode=$mode;status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT';lanes=@{}
     }}
 } -Force
 Refuse $h $after 'SESSION_CHANGED'
@@ -65,8 +65,27 @@ $spoof | Add-Member ScriptMethod request_stop {
     param($mode)
     $this.calls++
     return [pscustomobject]@{schema='QD_CONTROL_STOP_V1';phase='FINISHED';outcome=[pscustomobject]@{
-        schema='QD_AUTO_SHUTDOWN_V1';mode='EMERGENCY';status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT'
+        schema='QD_AUTO_SHUTDOWN_V1';mode='EMERGENCY';status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT';lanes=@{}
     }}
 } -Force
 Refuse $h $spoof 'SHUTDOWN_UNVERIFIED'
 Write-Host "Accepted PAPER handoff mutation regressions: 3 additional assertions passed."
+$throws=Session 'owner1' $true
+$throws | Add-Member ScriptMethod request_stop {
+    param($mode)
+    $this.calls++
+    throw 'synthetic transport failure after possible dispatch'
+} -Force
+Refuse $h $throws 'DISPATCH_UNVERIFIED'
+if($throws.calls -ne 1){throw 'Transport failure must not cause duplicate stop'}
+$missing=Session 'owner1' $true
+$missing | Add-Member ScriptMethod request_stop {
+    param($mode)
+    $this.calls++
+    return [pscustomobject]@{schema='QD_CONTROL_STOP_V1';phase='FINISHED';outcome=[pscustomobject]@{
+        schema='QD_AUTO_SHUTDOWN_V1';mode=$mode;status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT'
+    }}
+} -Force
+Refuse $h $missing 'SHUTDOWN_UNVERIFIED'
+if($missing.calls -ne 1){throw 'Missing lane evidence must not retry'}
+Write-Host "Accepted PAPER handoff transport/receipt regressions: 2 additional assertions passed."
