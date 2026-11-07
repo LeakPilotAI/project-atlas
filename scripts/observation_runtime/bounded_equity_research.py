@@ -15,8 +15,20 @@ def run_cycles(*, contact, cycles=3, batch_size=2, runner=score_authenticated_pr
     for _ in range(cycles):
         result = runner(contact=contact, limit=batch_size, finalize=True)
         if type(result) is not dict or result.get('status') != 'RESEARCH_FINALIZED' or result.get('cursor_advanced') is not True:
-            return {'status': 'BLOCKED', 'completed': completed, 'paper_execution_authorized': False,
-                    'live_order_authorized': False}
+            blocked = {'status': 'BLOCKED', 'completed': completed, 'paper_execution_authorized': False,
+                       'live_order_authorized': False}
+            if type(result) is dict and result.get('status') == 'BLOCKED' and result.get('cursor_advanced') is False:
+                rows = result.get('results')
+                if type(rows) is list and len(rows) == 1 and type(rows[0]) is dict:
+                    row = rows[0]
+                    symbol, reason = row.get('symbol'), row.get('reason')
+                    if (row.get('status') == 'RESEARCH_BLOCKED' and type(symbol) is str
+                            and 1 <= len(symbol) <= 16 and all(c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-' for c in symbol)
+                            and type(reason) is str and 1 <= len(reason) <= 80
+                            and all(c.isascii() and (c.isalnum() or c == '_') for c in reason)):
+                        blocked['blocked_symbol'] = symbol
+                        blocked['blocked_reason'] = reason
+            return blocked
         if (result.get('schema') != 'ATLAS_BROAD_RESEARCH_CYCLE_V1'
                 or type(result.get('completed')) is not int
                 or not 1 <= result['completed'] <= batch_size

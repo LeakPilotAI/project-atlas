@@ -54,3 +54,17 @@ def test_automatic_runner_keeps_only_prior_valid_batch_count():
                 'live_order_authorized': False}
     result = run_cycles(contact='contact', cycles=3, batch_size=2, runner=runner)
     assert result['status'] == 'BLOCKED' and result['completed'] == 2 and calls[0] == 2
+@pytest.mark.parametrize('symbol,reason,expected', [
+    ('AAAB', 'ResearchRefused', True), ('MSFT', 'TimeoutError', True),
+    ('../secret', 'ResearchRefused', False), ('AAAB', 'leaked:secret', False),
+    ('AAAB', '', False), ('AAAB', 'x'*81, False),
+])
+def test_blocked_research_reports_safe_symbol_without_cursor_skip(symbol, reason, expected):
+    def runner(**kwargs):
+        return {'status': 'BLOCKED', 'cursor_advanced': False,
+                'results': [{'symbol': symbol, 'status': 'RESEARCH_BLOCKED', 'reason': reason}]}
+    result = run_cycles(contact='contact', cycles=5, runner=runner)
+    assert result['status'] == 'BLOCKED' and result['completed'] == 0
+    assert ('blocked_symbol' in result) is expected
+    assert result['paper_execution_authorized'] is False
+    assert result['live_order_authorized'] is False
