@@ -198,6 +198,48 @@ def complete_research_batch(batch, results, cursor_path):
             "paper_execution_authorized": False, "live_order_authorized": False}
 
 
+def run_bounded_provider_research(*, contact, limit=1, provider=None):
+    """Explicit, non-autostart diagnostic research; no financial mutation.
+
+    Uses the existing authenticated SEC/Alpaca research bundle. A provider
+    failure refuses cursor advancement; no success is fabricated.
+    """
+    if type(limit) is not int or not 1 <= limit <= 2:
+        raise ValueError("RESEARCH_WORKER_BUDGET_REFUSED")
+    from scripts.observation_runtime.qd_free_research_acquisition import inspect_free_research
+    provider = inspect_free_research if provider is None else provider
+    root = REPO / "logs" / "research"
+    batch = next_research_batch(root / "alpaca_equity_inventory.json",
+                                root / "alpaca_equity_cursor.json", limit=limit)
+    plan = research_route_plan(batch)
+    outcomes = []
+    for route in plan["routes"]:
+        symbol = route["symbol"]
+        try:
+            result = provider(symbol=symbol, contact=contact,
+                              credentials_path=REPO / "config/alpaca.env")
+            if (type(result) is not dict or result.get("symbol") != symbol
+                    or result.get("paper_fill_authorized") is not False
+                    or result.get("live_order_authorized") is not False
+                    or result.get("provider_receipt_count", 0) < 1):
+                raise ValueError("RESEARCH_PROVIDER_RECEIPT_REFUSED")
+            outcomes.append({"symbol": symbol, "status": "RESEARCH_COMPLETE",
+                             "provider_receipt_count": result["provider_receipt_count"],
+                             "paper_eligible": False})
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            outcomes.append({"symbol": symbol, "status": "RESEARCH_BLOCKED",
+                             "reason": type(exc).__name__, "paper_eligible": False})
+            break
+    complete = len(outcomes) == len(batch["symbols"]) and all(
+        row["status"] == "RESEARCH_COMPLETE" for row in outcomes)
+    if complete:
+        complete_research_batch(batch, outcomes, root / "alpaca_equity_cursor.json")
+    return {"schema": "ATLAS_BROAD_PROVIDER_RESEARCH_DIAGNOSTIC_V1",
+            "outcomes": outcomes, "batch_complete": complete,
+            "cursor_advanced": complete, "strategy_scoring_complete": False,
+            "paper_execution_authorized": False, "live_order_authorized": False}
+
+
 def acquire_catalog(credentials_path, *, inventory_path=None):
     credentials = Credentials.load(credentials_path)
     request = Request(URL, headers={"APCA-API-KEY-ID": credentials.key,

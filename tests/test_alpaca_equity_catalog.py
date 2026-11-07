@@ -63,3 +63,9 @@ def test_completion_rejects_missing_receipts_without_cursor_write():
     cursor = REPO / "logs" / "research" / "alpaca_equity_cursor.json"
     with pytest.raises(ValueError, match="INCOMPLETE"):
         complete_research_batch(batch, [{"symbol": "A", "status": "RESEARCH_COMPLETE", "paper_eligible": False}], cursor)
+
+
+def test_bounded_provider_worker_rejects_large_batch():
+    from scripts.observation_runtime.alpaca_equity_catalog import run_bounded_provider_research
+    with pytest.raises(ValueError, match="BUDGET"):
+        run_bounded_provider_research(contact="not-configured", limit=9)
