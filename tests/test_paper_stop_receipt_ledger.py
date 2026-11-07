@@ -127,3 +127,13 @@ def test_fresh_intent_concurrent_claim_has_single_winner(tmp_path):
         outcomes = list(pool.map(claim, range(16)))
     assert outcomes.count("CLAIMED") == 1
     assert outcomes.count("BLOCKED") == 15
+def test_inspect_session_read_only_and_corrupt_mode_refused(tmp_path):
+    import sqlite3
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    assert ledger.inspect_session("absent") is None
+    ledger.reserve_fresh("emergency", "EMERGENCY")
+    assert ledger.inspect_session("emergency") == {"state":"PENDING","mode":"EMERGENCY","receipt":None}
+    with sqlite3.connect(ledger.path) as db:
+        db.execute("UPDATE stop_receipts SET mode='FORGED' WHERE session='emergency'")
+    with pytest.raises(StopReceiptConflict, match="CORRUPT"):
+        ledger.inspect_session("emergency")

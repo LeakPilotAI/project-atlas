@@ -64,6 +64,18 @@ class PaperStopReceiptLedger:
             db.execute("COMMIT")
         return {"state": "PENDING", "mode": mode, "receipt": None}
 
+    def inspect_session(self, session):
+        """Read-only cross-mode inspection; missing intent is not a stop claim."""
+        if not isinstance(session, str) or not session or len(session) > 256:
+            raise ValueError("STOP_INTENT_INVALID")
+        with self._connect() as db:
+            row = db.execute("SELECT mode FROM stop_receipts WHERE session=?", (session,)).fetchone()
+        if row is None:
+            return None
+        if row[0] not in ("SHUTDOWN_FLATTEN", "EMERGENCY"):
+            raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+        return self.reserve_existing(session, row[0])
+
     def recover(self, session, mode):
         """Read-only restart inspection: pending is NEVER proof of flat positions."""
         row = self.reserve_existing(session, mode)

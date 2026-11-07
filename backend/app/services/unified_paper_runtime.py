@@ -199,21 +199,8 @@ class UnifiedControlStopBridge:
                     self.runtime.entry_closed.set()
                     raise ValueError("UNIFIED_STOP_LEDGER_SESSION_REQUIRED")
                 try:
-                    existing = ledger.reserve_existing(grant["session_id"], "SHUTDOWN_FLATTEN")
-                except ValueError as exc:
-                    if str(exc) == "STOP_INTENT_UNVERIFIED":
-                        try:
-                            existing = ledger.reserve_existing(grant["session_id"], "EMERGENCY")
-                        except ValueError as second:
-                            if str(second) == "STOP_INTENT_UNVERIFIED":
-                                existing = None
-                            else:
-                                self.runtime.entry_closed.set()
-                                raise ValueError("UNIFIED_STOP_LEDGER_STATUS_UNVERIFIED") from None
-                    else:
-                        self.runtime.entry_closed.set()
-                        raise ValueError("UNIFIED_STOP_LEDGER_STATUS_UNVERIFIED") from None
-                except (OSError, TimeoutError, KeyError, TypeError):
+                    existing = ledger.inspect_session(grant["session_id"])
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError):
                     self.runtime.entry_closed.set()
                     raise ValueError("UNIFIED_STOP_LEDGER_STATUS_UNVERIFIED") from None
                 if existing is not None:
