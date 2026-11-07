@@ -67,3 +67,25 @@ async def test_report_headroom_is_read_only_and_triggers_existing_safe_stop(syst
     outcome=await s.r.run(seconds=.2,interval=.05)
     assert outcome['state']=='STOPPED' and s.journal.snapshot()['state']['finalized']
     assert s.q.writer._cut()['state']['revision']==0
+
+@pytest.mark.asyncio
+async def test_native_store_capacity_readbacks_are_consistent_without_mocked_headroom(system):
+    """Guarded native source check; F11 exhaustion remains separately pending."""
+    s = system
+    stores = {
+        'GLOBAL': s.journal.remaining_slots(),
+        'QUALITY_DIPS': s.writers['QUALITY_DIPS'].store.remaining_operations(),
+        'HYPERLIQUID': s.writers['HYPERLIQUID'].store.remaining_operations(),
+        'PERP_ORDERS': s.p.orders.remaining_slots(),
+        'REPORTS': s.qstop.reports.archive.remaining_reports(),
+    }
+    assert set(stores) == {'GLOBAL', 'QUALITY_DIPS', 'HYPERLIQUID', 'PERP_ORDERS', 'REPORTS'}
+    assert all(type(count) is int and 0 <= count <= 128 for count in stores.values())
+    assert stores == {
+        'GLOBAL': s.journal.remaining_slots(),
+        'QUALITY_DIPS': s.writers['QUALITY_DIPS'].store.remaining_operations(),
+        'HYPERLIQUID': s.writers['HYPERLIQUID'].store.remaining_operations(),
+        'PERP_ORDERS': s.p.orders.remaining_slots(),
+        'REPORTS': s.qstop.reports.archive.remaining_reports(),
+    }
+    assert not s.r.uncertain
