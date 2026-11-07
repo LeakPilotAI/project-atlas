@@ -70,6 +70,29 @@ def test_paginated_discovery_finds_fresh_listing_after_old_first_page(tmp_path, 
     assert result['unique_markets_screened'] == 2
 
 
+def test_fresh_low_activity_market_is_observed_but_not_entry_qualified(tmp_path, monkeypatch):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    fresh = market(now, 1)
+    fresh['activity'] = {'volume_24h_contracts': '0', 'open_interest_contracts': '0'}
+    async def markets(**kwargs):
+        return {'markets': [fresh]}
+    async def book(ticker, **kwargs):
+        return {'orderbook': {'yes': {'bids': [{'price_dollars': '0.40', 'quantity_contracts': '5'}],
+                                          'asks': [{'price_dollars': '0.42', 'quantity_contracts': '5'}]},
+                              'no': {'bids': [{'price_dollars': '0.58', 'quantity_contracts': '5'}],
+                                     'asks': [{'price_dollars': '0.60', 'quantity_contracts': '5'}]}}}
+    monkeypatch.setattr(observer.kalshi_public, 'get_markets', markets)
+    monkeypatch.setattr(observer.kalshi_public, 'get_orderbook', book)
+    path = tmp_path / 'quotes.jsonl'
+    result = asyncio.run(observer.collect(path=path, now=now))
+    assert result['records_written'] == 1
+    assert result['entry_gate_qualified_new_listings_seen'] == 0
+    row = json.loads(path.read_text().strip())
+    assert row['entry_gate_passed'] is False
+    assert 'INSUFFICIENT_24H_VOLUME' in row['entry_gate_reasons']
+    assert row['orders_placed'] == row['paper_trades_opened'] == 0
+
+
 def test_no_eligible_market_writes_nothing(tmp_path, monkeypatch):
     now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
     async def markets(**kwargs):

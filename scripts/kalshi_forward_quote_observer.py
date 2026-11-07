@@ -12,6 +12,11 @@ from app.prediction.paper_engine import walk_executable_depth
 from app.prediction.prediction_paper_automation import PredictionPaperAutomation
 
 DEFAULT_PATH = Path('logs/research/kalshi_new_listing_forward_quotes.jsonl')
+# Activity is an entry gate, not a prerequisite for observing new listings.
+# Never discard new-market research solely for having low initial volume/OI.
+OBSERVATION_ONLY_ACTIVITY_REASONS = frozenset({
+    'INSUFFICIENT_24H_VOLUME', 'INSUFFICIENT_OPEN_INTEREST',
+})
 
 
 async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
@@ -27,6 +32,7 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
     # Bounded pagination avoids depending on the provider's first page alone.
     # Deduplicate tickers before expensive orderbook reads; no account access.
     candidates = []
+    fully_qualified = 0
     seen = set()
     cursor = None
     pages_scanned = 0
@@ -43,15 +49,18 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             if not ticker or ticker in seen:
                 continue
             seen.add(ticker)
-            if not scanner._prefilter_reasons(market, observed):
-                candidates.append(market)
+            reasons = scanner._prefilter_reasons(market, observed)
+            if not reasons:
+                fully_qualified += 1
+            if not set(reasons) - OBSERVATION_ONLY_ACTIVITY_REASONS:
+                candidates.append((market, reasons))
         next_cursor = str(payload.get('cursor') or '').strip()
         if len(candidates) >= limit or not next_cursor or next_cursor == cursor:
             break
         cursor = next_cursor
     records = []
     errors = []
-    for market in candidates[:limit]:
+    for market, entry_gate_reasons in candidates[:limit]:
         ticker = market['ticker']
         try:
             book = (await asyncio.wait_for(kalshi_public.get_orderbook(ticker, depth=20), timeout=12))['orderbook']
@@ -82,6 +91,8 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
                             'open_time': market['timing']['open_time'],
                             'occurrence_datetime': market['timing'].get('occurrence_datetime'),
                             'quantity': str(quantity),
+                            'entry_gate_reasons': entry_gate_reasons,
+                            'entry_gate_passed': not entry_gate_reasons,
                             'sides': sides, 'orders_placed': 0, 'paper_trades_opened': 0})
         except Exception as exc:
             errors.append({'ticker': ticker, 'error_type': type(exc).__name__})
@@ -91,8 +102,10 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             for record in records:
                 output.write(json.dumps(record, sort_keys=True) + '\n')
             output.flush()
-    return {'status': 'OBSERVATIONS_RECORDED' if records else 'NO_ELIGIBLE_NEW_LISTINGS',
-            'eligible_new_listings_seen': len(candidates), 'pages_scanned': pages_scanned,
+    return {'status': 'OBSERVATIONS_RECORDED' if records else 'NO_OBSERVABLE_NEW_LISTINGS',
+            'observable_new_listings_seen': len(candidates),
+            'entry_gate_qualified_new_listings_seen': fully_qualified,
+            'pages_scanned': pages_scanned,
             'unique_markets_screened': len(seen), 'records_written': len(records),
             'provider_errors': errors, 'orders_placed': 0, 'paper_trades_opened': 0,
             'unattended_paper_authorized': False}
