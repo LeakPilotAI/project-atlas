@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 import pytest
 
 from app.investment.quality_dips_paper import (
-    accounting_snapshot, close_lot, initialize_paper_account, open_lot, read_events,
+    accounting_snapshot, close_lot, initialize_paper_account, mark_lot, open_lot, read_events,
 )
 from app.services.personal_paper_price_evidence import (
     PriceEvidenceRejected, preview_current_stock_order,
@@ -214,5 +214,57 @@ def test_exclusive_writer_refuses_second_process_and_recovers_after_exit(tmp_pat
     finally:
         proc.kill()
         proc.wait(timeout=5)
-    with _exclusive_journal_writer(path):
-        assert True  # OS lock is released on process termination
+    for attempt in range(50):
+        try:
+            with _exclusive_journal_writer(path):
+                break  # Windows may briefly delay lock release after termination
+        except ValueError:
+            if attempt == 49:
+                raise
+            time.sleep(0.02)
+
+
+def test_concurrent_account_initialization_has_one_durable_open(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    path = tmp_path / "account-init.jsonl"
+    barrier = Barrier(2)
+    def initialize(_):
+        barrier.wait(timeout=5)
+        return initialize_paper_account(account_id="forward", opening_cash=1000,
+                                        fee_bps_per_side=2, max_open_positions=1,
+                                        data_provenance="FORWARD_COLLECTION", path=path)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        records = list(pool.map(initialize, range(2)))
+    assert records[0] == records[1]
+    assert len([row for row in read_events(path) if row["event"] == "account_opened"]) == 1
+
+
+def test_concurrent_mark_and_close_preserves_journal_order(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    path = tmp_path / "mark-close.jsonl"
+    initialize_paper_account(account_id="forward", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="FORWARD_COLLECTION", path=path)
+    opened = open_lot({"observation_id": "obs", "symbol": "MSFT",
+                       "evidence_class": "FORWARD_COLLECTION"}, level="L1",
+                      paper_notional_dollars=50, fill_price=100,
+                      account_id="forward", fee_bps_per_side=2, path=path)
+    barrier = Barrier(2)
+    def act(action):
+        barrier.wait(timeout=5)
+        try:
+            if action == "mark":
+                mark_lot(opened["lot_id"], market_price=101, path=path)
+            else:
+                close_lot(opened["lot_id"], exit_price=102, reason="test", path=path)
+            return "ok"
+        except ValueError as exc:
+            return str(exc)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(act, ("mark", "close")))
+    assert outcomes[1] == "ok"
+    events = read_events(path)
+    close_idx = next(i for i, row in enumerate(events) if row["event"] == "close_lot")
+    assert all(row["event"] != "mark_lot" for row in events[close_idx + 1:])
+    assert accounting_snapshot(events, account_id="forward")["open_positions"] == 0

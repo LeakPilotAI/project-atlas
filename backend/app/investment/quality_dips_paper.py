@@ -128,6 +128,7 @@ def _event_id(*parts: Any) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
+@_serialized_paper_mutation
 def initialize_paper_account(
     *,
     account_id: str,
@@ -202,6 +203,7 @@ def initialize_test_account(
     )
 
 
+@_serialized_paper_mutation
 def record_decision(
     observation: Dict[str, Any],
     *,
@@ -543,6 +545,7 @@ def _lot_by_id(lot_id: str, events: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
     raise ValueError("unknown PAPER lot_id")
 
 
+@_serialized_paper_mutation
 def mark_lot(
     lot_id: str,
     *,
