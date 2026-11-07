@@ -47,6 +47,23 @@ class PaperStopReceiptLedger:
                     or receipt["outcome"].get("mode") != mode):
                 raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
             return {"state": "FINISHED", "mode": mode, "receipt": receipt}
+    def reserve_fresh(self, session, mode):
+        """Only a newly inserted intent grants this caller the stop attempt.
+
+        Existing pending intents (including crash leftovers) cannot be replayed.
+        """
+        if not isinstance(session, str) or not session or len(session) > 256 or mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY"):
+            raise ValueError("STOP_INTENT_INVALID")
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            existing = db.execute("SELECT mode,state FROM stop_receipts WHERE session=?", (session,)).fetchone()
+            if existing is not None:
+                db.execute("ROLLBACK")
+                raise StopReceiptConflict("STOP_INTENT_ALREADY_EXISTS")
+            db.execute("INSERT INTO stop_receipts VALUES (?,?,?,NULL)", (session, mode, "PENDING"))
+            db.execute("COMMIT")
+        return {"state": "PENDING", "mode": mode, "receipt": None}
+
     def recover(self, session, mode):
         """Read-only restart inspection: pending is NEVER proof of flat positions."""
         row = self.reserve_existing(session, mode)
@@ -88,6 +105,7 @@ class PaperStopReceiptLedger:
             db.execute("UPDATE stop_receipts SET state='FINISHED', receipt=? WHERE session=?", (serialized,session))
             db.execute("COMMIT")
         return json.loads(serialized)
+
 
 
 

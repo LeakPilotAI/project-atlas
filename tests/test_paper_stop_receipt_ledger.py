@@ -104,3 +104,26 @@ def test_reserve_rejects_semantically_forged_finished_receipt(tmp_path):
                    ('{"phase":"FINISHED","outcome":{"mode":"EMERGENCY","status":"FLATTENED"}}',))
     with pytest.raises(StopReceiptConflict, match="CORRUPT"):
         ledger.reserve("s", "SHUTDOWN_FLATTEN")
+def test_fresh_stop_intent_is_single_use_across_restarts(tmp_path):
+    path = tmp_path / "stop.sqlite"
+    ledger = PaperStopReceiptLedger(path)
+    assert ledger.reserve_fresh("session", "SHUTDOWN_FLATTEN")["state"] == "PENDING"
+    with pytest.raises(StopReceiptConflict, match="ALREADY_EXISTS"):
+        PaperStopReceiptLedger(path).reserve_fresh("session", "SHUTDOWN_FLATTEN")
+    with pytest.raises(StopReceiptConflict, match="ALREADY_EXISTS"):
+        PaperStopReceiptLedger(path).reserve_fresh("session", "EMERGENCY")
+    assert ledger.recover("session", "SHUTDOWN_FLATTEN")["state"] == "SHUTDOWN_UNVERIFIED"
+
+def test_fresh_intent_concurrent_claim_has_single_winner(tmp_path):
+    path = tmp_path / "stop.sqlite"
+    PaperStopReceiptLedger(path)
+    def claim(_):
+        try:
+            PaperStopReceiptLedger(path).reserve_fresh("same", "SHUTDOWN_FLATTEN")
+            return "CLAIMED"
+        except StopReceiptConflict:
+            return "BLOCKED"
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        outcomes = list(pool.map(claim, range(16)))
+    assert outcomes.count("CLAIMED") == 1
+    assert outcomes.count("BLOCKED") == 15
