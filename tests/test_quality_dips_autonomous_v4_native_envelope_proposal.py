@@ -61,3 +61,27 @@ def test_proposed_native_envelope_verification_preserves_inputs():
     original = copy.deepcopy(evidence)
     verify_proposed_v4_native_envelopes(*evidence)
     assert evidence == original
+@pytest.mark.parametrize('field', ['cash', 'gross', 'costs', 'net', 'quantity', 'entry'])
+def test_proposed_native_receipts_refuse_independent_arithmetic_disagreement(monkeypatch, field):
+    from app.services import quality_dips_autonomous_v4_native_envelope_proposal as target
+    original = target.audit_v4_fill_arithmetic_independently
+    def corrupted(events):
+        value = original(events)
+        if field in ('quantity', 'entry'):
+            if value['positions_units']:
+                symbol = next(iter(value['positions_units']))
+                value['positions_units'][symbol]['quantity_1e8' if field == 'quantity' else 'entry_1e4'] += 1
+            else:
+                value['cash_units'] += 1
+        else:
+            value[{'cash': 'cash_units', 'gross': 'gross_units',
+                   'costs': 'cost_units', 'net': 'net_units'}[field]] += 1
+        return value
+    monkeypatch.setattr(target, 'audit_v4_fill_arithmetic_independently', corrupted)
+    with pytest.raises(ValueError, match='INDEPENDENT_FINANCIAL_MISMATCH'):
+        verify_proposed_v4_native_envelopes(*sample())
+
+
+def test_proposed_native_envelope_prefixes_include_independent_arithmetic():
+    enrollment, envelopes, assertion = sample()
+    assert verify_proposed_v4_native_envelopes(enrollment, envelopes, assertion)['revision'] == 3

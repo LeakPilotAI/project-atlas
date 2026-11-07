@@ -3,9 +3,11 @@
 Pure in-memory contract. It neither writes native files nor grants operational
 publication, custody, quote rights, PAPER startup or live-order permissions.
 """
+from decimal import Decimal
 from app.services.paper_financial_replay import body, digest, strict
 from app.services.quality_dips_autonomous_v4_fill_proposal import replay_proposed_v4_fills
 from app.services.quality_dips_autonomous_v4_fill_audit_proposal import audit_proposed_v4_fills
+from app.services.quality_dips_autonomous_v4_integer_oracle_proposal import audit_v4_fill_arithmetic_independently, UNIT
 
 
 def verify_proposed_v4_native_envelopes(enrollment, envelopes, assertion):
@@ -33,6 +35,19 @@ def verify_proposed_v4_native_envelopes(enrollment, envelopes, assertion):
             raise ValueError('V4_ENVELOPE_PROPOSAL_INVALID')
         events.append(strict(body(envelope['record'])))
         current = replay_proposed_v4_fills(events)
+        independent = audit_v4_fill_arithmetic_independently(events)
+        state = current['state']
+        if (independent['revision'] != i
+                or any(int(Decimal(state[k]) * UNIT) != independent[other]
+                       for k, other in [('cash', 'cash_units'), ('gross', 'gross_units'),
+                                        ('costs', 'cost_units'), ('net', 'net_units')])
+                or set(state['positions']) != set(independent['positions_units'])
+                or any(int(Decimal(position['quantity']) * 10**8) !=
+                       independent['positions_units'][symbol]['quantity_1e8']
+                       or int(Decimal(position['entry']) * 10**4) !=
+                       independent['positions_units'][symbol]['entry_1e4']
+                       for symbol, position in state['positions'].items())):
+            raise ValueError('V4_ENVELOPE_PROPOSAL_INDEPENDENT_FINANCIAL_MISMATCH')
         if (envelope['receipt']['head'] != current['head']
                 or envelope['receipt']['state_digest'] != digest(current['state'])):
             raise ValueError('V4_ENVELOPE_PROPOSAL_RECEIPT_MISMATCH')
