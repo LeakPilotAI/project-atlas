@@ -33,6 +33,34 @@ class PaperStopReceiptLedger:
                 raise StopReceiptConflict("STOP_MODE_CHANGED")
             db.execute("COMMIT")
             return {"state":row[1],"mode":row[0],"receipt":json.loads(row[2]) if row[2] else None}
+    def recover(self, session, mode):
+        """Read-only restart inspection: pending is NEVER proof of flat positions."""
+        row = self.reserve_existing(session, mode)
+        if row["state"] == "PENDING":
+            return {"state": "SHUTDOWN_UNVERIFIED", "mode": mode, "receipt": None}
+        return {"state": "RECEIPT_RECORDED", "mode": mode, "receipt": row["receipt"]}
+
+    def reserve_existing(self, session, mode):
+        if not isinstance(session, str) or not session or len(session) > 256 or mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY"):
+            raise ValueError("STOP_INTENT_INVALID")
+        with self._connect() as db:
+            row = db.execute("SELECT mode,state,receipt FROM stop_receipts WHERE session=?", (session,)).fetchone()
+        if row is None or row[0] != mode:
+            raise StopReceiptConflict("STOP_INTENT_UNVERIFIED")
+        if row[1] == "PENDING" and row[2] is None:
+            return {"state": "PENDING", "mode": mode, "receipt": None}
+        if row[1] != "FINISHED" or row[2] is None:
+            raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+        try:
+            receipt = json.loads(row[2])
+        except (ValueError, TypeError) as exc:
+            raise StopReceiptConflict("STOP_LEDGER_CORRUPT") from exc
+        if (not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED"
+                or not isinstance(receipt.get("outcome"), dict)
+                or receipt["outcome"].get("mode") != mode):
+            raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+        return {"state": "FINISHED", "mode": mode, "receipt": receipt}
+
     def finish(self, session, mode, receipt):
         if not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED" or not isinstance(receipt.get("outcome"), dict) or receipt["outcome"].get("mode") != mode:
             raise ValueError("STOP_RECEIPT_INVALID")
@@ -46,3 +74,4 @@ class PaperStopReceiptLedger:
             db.execute("UPDATE stop_receipts SET state='FINISHED', receipt=? WHERE session=?", (serialized,session))
             db.execute("COMMIT")
         return json.loads(serialized)
+
