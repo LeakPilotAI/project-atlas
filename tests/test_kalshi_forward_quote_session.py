@@ -50,3 +50,26 @@ def test_eligibility_trend_does_not_infer_same_listing_turnover():
     assert result['listing_identity_overlap_not_measured'] is True
     assert result['qualification_change_cause_unverified'] is True
     assert result['orders_placed'] == result['paper_trades_opened'] == 0
+
+def test_identity_overlap_distinguishes_turnover_from_same_market_eligibility():
+    scans = iter([
+        {'scan_qualification_by_ticker': {'A': True, 'B': False, 'C': True},
+         'provider_errors': []},
+        {'scan_qualification_by_ticker': {'A': False, 'B': True, 'D': True},
+         'provider_errors': []},
+    ])
+    async def collector():
+        return next(scans)
+    async def sleep(_):
+        return None
+    result = asyncio.run(run(collector=collector, sleep=sleep, analyzer=lambda: {}))
+    assert result['listing_identity_overlap'] == [{
+        'from_cycle': 1, 'to_cycle': 2, 'shared_tickers': 2,
+        'prior_only_tickers': 1, 'current_only_tickers': 1,
+        'shared_remained_qualified': 0, 'shared_lost_qualification': 1,
+        'shared_gained_qualification': 1, 'shared_remained_unqualified': 0,
+    }]
+    assert result['listing_identity_overlap_not_measured'] is False
+    assert result['qualification_change_cause_unverified'] is True
+    assert all('scan_qualification_by_ticker' not in x for x in result['observations'])
+    assert result['orders_placed'] == result['paper_trades_opened'] == 0
