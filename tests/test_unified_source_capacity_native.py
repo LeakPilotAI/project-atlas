@@ -224,3 +224,63 @@ async def test_native_shutdown_consumes_real_reserved_slots_without_rollover(sys
         'PERP_ORDERS': s.p.orders.remaining_slots(),
         'REPORTS': s.qstop.reports.archive.remaining_reports(),
     }
+
+
+@pytest.mark.asyncio
+async def test_native_global_capacity_saturation_refuses_entry_and_preserves_stop(system):
+    """Guarded real-write saturation of a disposable control journal; not acceptance."""
+    from app.services.paper_financial_replay import digest
+
+    s = system
+    journal = s.journal
+    initial = journal.remaining_slots()
+    assert initial == 127
+
+    writes = 0
+    while journal.remaining_slots() > 3:
+        operation_id = f'f11-disposable-{writes:03d}'
+        request = {
+            'lane': 'QUALITY_DIPS',
+            'grant': s.r.grant,
+            'proposal': {'kind': 'ENTRY', 'operation_id': operation_id},
+        }
+        for kind, payload in (
+            ('RESERVE', request),
+            ('ACK', {'binding': digest(request), 'receipt': {'operation_id': operation_id}}),
+        ):
+            at = s.r.clock()
+            event = {'kind': kind, 'order_id': operation_id, 'at': at, 'payload': payload}
+            authorization = s.a.event_authorization(kind, payload, s.custody.components, at)
+            journal.apply(event, authorization)
+            writes += 1
+
+    assert writes == 124
+    assert journal.remaining_slots() == 3
+    assert journal.snapshot()['state']['revision'] == 125
+
+    await s.r.poll()
+    proposal = await s.r.lanes['QUALITY_DIPS'].next_proposal(
+        s.r.observations['QUALITY_DIPS']
+    )
+    assert proposal is not None
+    before = (
+        journal.snapshot(),
+        s.q.writer._cut(),
+        s.p.writer._cut(),
+        s.p.orders.snapshot(),
+    )
+    with pytest.raises(ValueError, match='CAPACITY'):
+        s.r.dispatch('QUALITY_DIPS', proposal)
+    assert (
+        journal.snapshot(),
+        s.q.writer._cut(),
+        s.p.writer._cut(),
+        s.p.orders.snapshot(),
+    ) == before
+    assert not s.r.uncertain
+
+    stopped = s.r.stop()
+    assert stopped['state'] == 'STOPPED'
+    assert journal.snapshot()['state']['finalized'] is not None
+    assert journal.remaining_slots() == 1
+    assert s.r.stop() == stopped

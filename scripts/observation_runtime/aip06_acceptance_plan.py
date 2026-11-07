@@ -41,6 +41,9 @@ def schedule():
             row['real_write_prerequisite_case'] = ('tests/test_unified_source_capacity_native.py::'
                 'test_native_capacity_changes_after_real_disposable_orders_and_stops')
             row['real_write_prerequisite_status'] = 'SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING'
+            row['saturation_source_case'] = ('tests/test_unified_source_capacity_native.py::'
+                'test_native_global_capacity_saturation_refuses_entry_and_preserves_stop')
+            row['saturation_source_status'] = 'SOURCE_IMPLEMENTED_GUARDED_NATIVE_EXECUTION_PENDING'
     rows+= [{'id':'BOOTSTRAP-IPC-FAULTS','source_case':None,'proof':'missing-or-conflicting-escrow-bootstrap-ACK-credit-and-drain',
              'status':'NATIVE_FAULT_INJECTOR_BINDING_PENDING','max_children':2},
             {'id':'OWNERSHIP-PROBES','source_case':None,'proof':'current-supervisor-complete-roster-contained-unexpected-child-refusal',
