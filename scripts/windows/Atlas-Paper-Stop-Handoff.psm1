@@ -38,6 +38,12 @@ function Invoke-AtlasAcceptedPaperStopHandoff([object]$Handoff = $null, [object]
     }
     if ($null -eq $AcceptedSession) { throw 'PAPER_STOP_HANDOFF_AUTHORITY_UNAVAILABLE' }
     # The session's own verification is the only authority; identity must match.
+    # Re-check the owner identity after verification: an object changing its
+    # session binding between checks must not receive a stop request.
+    $beforeId = $AcceptedSession.session_id
+    if ($beforeId -isnot [string] -or $beforeId -cne $Handoff['session_id']) {
+        throw 'PAPER_STOP_HANDOFF_SESSION_UNVERIFIED'
+    }
     $verified = $AcceptedSession.verify_session()
     if ($verified -isnot [bool] -or -not $verified -or
         $AcceptedSession.session_id -isnot [string] -or
@@ -45,6 +51,10 @@ function Invoke-AtlasAcceptedPaperStopHandoff([object]$Handoff = $null, [object]
         throw 'PAPER_STOP_HANDOFF_SESSION_UNVERIFIED'
     }
     $result = $AcceptedSession.request_stop($Handoff['mode'])
+    if ($AcceptedSession.session_id -isnot [string] -or
+        $AcceptedSession.session_id -cne $beforeId) {
+        throw 'PAPER_STOP_HANDOFF_SESSION_CHANGED'
+    }
     if ($null -eq $result -or $result.schema -cne 'QD_CONTROL_STOP_V1' -or
         $result.phase -cne 'FINISHED' -or $null -eq $result.outcome -or
         $result.outcome.schema -cne 'QD_AUTO_SHUTDOWN_V1' -or

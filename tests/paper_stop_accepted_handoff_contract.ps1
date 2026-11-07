@@ -43,3 +43,30 @@ $result=Invoke-AtlasAcceptedPaperStopHandoff $h $owner
 if($result.outcome.status -cne 'FLATTENED' -or $owner.calls -ne 1 -or $owner.checks -ne 1){throw 'Accepted session not dispatched exactly once'}
 $passed++
 Write-Host "Accepted PAPER handoff offline contract: $passed assertions passed."
+# Additional simulated owner-identity mutation tests.
+$changing=Session 'owner1' $true
+$changing | Add-Member ScriptMethod verify_session {
+    $this.checks++; $this.session_id='foreign'; return $true
+} -Force
+Refuse $h $changing 'SESSION_UNVERIFIED'
+if($changing.calls -ne 0){throw 'Mutated owner dispatched'}
+$after=Session 'owner1' $true
+$after | Add-Member ScriptMethod request_stop {
+    param($mode)
+    $this.calls++; $this.session_id='foreign'
+    return [pscustomobject]@{schema='QD_CONTROL_STOP_V1';phase='FINISHED';outcome=[pscustomobject]@{
+        schema='QD_AUTO_SHUTDOWN_V1';mode=$mode;status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT'
+    }}
+} -Force
+Refuse $h $after 'SESSION_CHANGED'
+if($after.calls -ne 1){throw 'Unexpected second dispatch'}
+$spoof=Session 'owner1' $true
+$spoof | Add-Member ScriptMethod request_stop {
+    param($mode)
+    $this.calls++
+    return [pscustomobject]@{schema='QD_CONTROL_STOP_V1';phase='FINISHED';outcome=[pscustomobject]@{
+        schema='QD_AUTO_SHUTDOWN_V1';mode='EMERGENCY';status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT'
+    }}
+} -Force
+Refuse $h $spoof 'SHUTDOWN_UNVERIFIED'
+Write-Host "Accepted PAPER handoff mutation regressions: 3 additional assertions passed."
