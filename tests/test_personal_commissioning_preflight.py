@@ -134,3 +134,50 @@ def test_native_qd_custody_directory_never_counts_as_operational_source(monkeypa
     assert report['quality_dips_custody_inventory']['ordinary_child_count'] == 1
     assert report['quality_dips_custody_inventory']['operational_publication_verified'] is False
     assert report['pilot_started'] is False
+
+
+def test_native_activation_requires_complete_independent_binding(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['preflight', '--activation-root',
+        r'D:\AtlasCustody\PersonalPaper\approved'])
+    with pytest.raises(SystemExit) as exc:
+        preflight.main()
+    assert exc.value.code == 2
+
+
+def test_native_activation_readback_is_separate_from_financial_authority(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_paper_activation as native_mod
+    class Reader:
+        def __init__(self, **kwargs):
+            assert kwargs['binding']['sha256'] == 'a'*64
+        def read(self):
+            return {'schema': 'ATLAS_PERSONAL_ACTIVATION_V1', 'origin': 'LOCAL_OPERATOR'}
+    monkeypatch.setattr(native_mod, 'NativePersonalActivationReader', Reader)
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
+        r'D:\AtlasCustody\PersonalPaper\approved', '--activation-native-root',
+        '1','2','3','--activation-binding-id','4','5','6',
+        '--activation-binding-sha256','a'*64])
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']:row['status'] for row in report['checks']}
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'PASS'
+    assert checks['FINANCIAL_INCEPTION'] == 'BLOCKED'
+    assert checks['RUNTIME_AUTHORIZATION'] == 'BLOCKED'
+    assert report['financial_mutations'] is False
+
+
+def test_native_activation_bad_readback_fails_closed(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_paper_activation as native_mod
+    class Reader:
+        def __init__(self, **kwargs): pass
+        def read(self): raise ValueError('bad digest')
+    monkeypatch.setattr(native_mod, 'NativePersonalActivationReader', Reader)
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
+        r'D:\AtlasCustody\PersonalPaper\approved', '--activation-native-root',
+        '1','2','3','--activation-binding-id','4','5','6',
+        '--activation-binding-sha256','a'*64])
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']:row['status'] for row in report['checks']}
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'

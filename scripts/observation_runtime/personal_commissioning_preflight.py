@@ -30,6 +30,12 @@ def main():
                         help="Perform a bounded read-only native clock probe; never grants runtime authority")
     parser.add_argument("--expected-source", help="Explicit reviewed 40-character source commit")
     parser.add_argument("--activation-root", help="Explicit existing personal activation child; never created")
+    parser.add_argument("--activation-native-root", nargs=3, type=int, metavar=("VOL", "HIGH", "LOW"),
+                        help="Independently recorded native root identity (3 integers)")
+    parser.add_argument("--activation-binding-id", nargs=3, type=int, metavar=("VOL", "HIGH", "LOW"),
+                        help="Independently recorded activation.json native file identity")
+    parser.add_argument("--activation-binding-sha256",
+                        help="Independently recorded SHA256 of bound activation.json")
     args = parser.parse_args()
     if args.expected_source is not None and not re.fullmatch('[0-9a-f]{40}', args.expected_source):
         parser.error('Expected source must be an explicit full commit SHA')
@@ -38,6 +44,12 @@ def main():
             or not ntpath.normcase(args.activation_root).startswith('d:\\atlascustody\\personalpaper\\')
             or any(c in args.activation_root[3:] for c in (':', '%', '\x00', '/'))):
         parser.error('Activation root must be an exact D: personal custody child')
+
+    supplied_binding = (args.activation_root, args.activation_native_root,
+                        args.activation_binding_id, args.activation_binding_sha256)
+    if any(value is not None for value in supplied_binding) and not all(
+            value is not None for value in supplied_binding):
+        parser.error("Native activation verification requires complete independent binding")
 
     root = Path(__file__).resolve().parents[2]
 
@@ -137,11 +149,27 @@ def main():
         "Existing-only activation record; presence is not verification",
     ))
 
+    native_activation_verified = False
+    activation_verification_reason = (
+        "Requires independently supplied native root/file identities and SHA256; "
+        "no fallback authorization")
+    if all(value is not None for value in supplied_binding):
+        from scripts.observation_runtime.personal_paper_activation import NativePersonalActivationReader
+        try:
+            reader = NativePersonalActivationReader(
+                root=args.activation_root, native_root=args.activation_native_root,
+                binding={"id": args.activation_binding_id,
+                         "sha256": args.activation_binding_sha256})
+            record = reader.read()  # Existing-only bound Windows read; no publication.
+            native_activation_verified = (record.get("schema") == "ATLAS_PERSONAL_ACTIVATION_V1"
+                                          and record.get("origin") == "LOCAL_OPERATOR")
+            activation_verification_reason = "Existing native-bound operator record read back"
+        except (ValueError, OSError, KeyError, TypeError):
+            activation_verification_reason = "Native-bound activation readback refused"
     results.append(check(
         "ACTIVATION_NATIVE_VERIFIED",
-        False,
-        "Requires NativePersonalActivationReader with verified root identity "
-        "and bound file digest; no fallback authorization",
+        native_activation_verified,
+        activation_verification_reason,
     ))
 
     results.append(check(
