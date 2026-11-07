@@ -97,5 +97,8 @@ class QualityDipsPublicationReader:
                 or body(self.writer._cut()) != body(cut)
                 or not authenticated):
             raise ValueError('QD_PUBLICATION_COMPLETION_CONTEXT_CHANGED')
+        # Detach the accepted command input from mutable source-owned packet data.
+        # Later producer edits must not rewrite an already accepted observation.
+        detached = strict(body(result)) if result is not None else None
         self._last = identity
-        return result
+        return detached

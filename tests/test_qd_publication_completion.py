@@ -144,3 +144,19 @@ def test_publication_refuses_packet_mutation_during_final_custody_check():
     with pytest.raises(ValueError, match='QD_PUBLICATION_COMPLETION_CONTEXT_CHANGED'):
         s.reader.read_request(.2)
     assert s.reader._last is None
+
+
+def test_accepted_position_monitor_is_detached_from_source_owned_packet():
+    s = fixture()
+    instrument = {'instrument_id': 'owned', 'symbol': 'MSFT', 'asset_class': 'STOCK',
+                  'currency': 'USD', 'units': 'SHARES'}
+    s.cut['state']['positions']['position-1'] = {
+        'remaining': '1', 'instrument': instrument, 'symbol': 'MSFT'}
+    monitor = {'instrument': copy.deepcopy(instrument), 'symbol': 'MSFT',
+               'observed_at': 100, 'current': {'price': '100'}}
+    s.packet['monitors']['owned'] = monitor
+    s.source.read_publication = lambda timeout: s.packet
+    accepted = s.reader.read_request(.2)
+    monitor['current']['price'] = '0'
+    assert accepted['observation']['current']['price'] == '100'
+    assert s.reader._last[0:2] == ('SYNTHETIC', 1)
