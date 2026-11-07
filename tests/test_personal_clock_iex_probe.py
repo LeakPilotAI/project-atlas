@@ -89,7 +89,7 @@ def test_native_publication_path_binds_provider_quote(monkeypatch):
         assert type(publication) is Published and type(provider) is Provider
         assert symbol == "MSFT"
         return {"candidate": True,
-                "quote_evidence": {"provider_timestamp": "2026-11-07T00:00:00+00:00"}}
+                "quote_evidence": {"provider_timestamp": "2026-11-07T00:00:00+00:00", "bid": "99.0", "ask": "100.00"}}
     monkeypatch.setattr(signal_mod, "evaluate_published_iex_v3_candidate", evaluate)
     monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
     result = probe.bounded_clock_iex_observation(
@@ -122,6 +122,30 @@ def test_publication_quote_mismatch_refuses(monkeypatch):
     monkeypatch.setattr(signal_mod, "evaluate_published_iex_v3_candidate",
                         lambda **kwargs: {"candidate": True,
                           "quote_evidence": {"provider_timestamp": "2026-11-06T23:59:59+00:00"}})
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
+    Clock.revoked = False
+    with pytest.raises(ValueError, match="CLOCK_IEX_PUBLICATION_QUOTE_CHANGED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=Feed, publication=Published())
+    assert Clock.revoked
+
+
+def test_same_timestamp_different_price_refused(monkeypatch):
+    import app.services.paper_source_publication as source_mod
+    import app.services.personal_paper_iex_provider as provider_mod
+    import app.services.personal_paper_strategy_signal as signal_mod
+    class Published:
+        pass
+    class Provider:
+        def __init__(self, feed):
+            pass
+    monkeypatch.setattr(source_mod, "QualityDipsSourcePublication", Published)
+    monkeypatch.setattr(provider_mod, "PersonalPaperIEXProvider", Provider)
+    monkeypatch.setattr(signal_mod, "evaluate_published_iex_v3_candidate",
+                        lambda **kwargs: {"candidate": True,
+                          "quote_evidence": {"provider_timestamp": "2026-11-07T00:00:00+00:00",
+                                             "bid": "98", "ask": "100"}})
     monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
     Clock.revoked = False
     with pytest.raises(ValueError, match="CLOCK_IEX_PUBLICATION_QUOTE_CHANGED"):

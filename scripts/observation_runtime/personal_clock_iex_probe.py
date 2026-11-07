@@ -59,7 +59,14 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                 candidate = evaluate_published_iex_v3_candidate(
                     publication=publication, provider=provider, symbol=symbol,
                     now=datetime.fromtimestamp(clock(), UTC))
-                if candidate["quote_evidence"]["provider_timestamp"] != evidence["provider_timestamp"]:
+                # The publication must be evaluated against the *same* quote,
+                # not a later quote sharing the source timestamp. Decimal
+                # normalization allows equivalent numeric wire representations.
+                from decimal import Decimal
+                joined = candidate["quote_evidence"]
+                if (joined["provider_timestamp"] != evidence["provider_timestamp"]
+                        or Decimal(str(joined["bid"])) != Decimal(evidence["bid"])
+                        or Decimal(str(joined["ask"])) != Decimal(evidence["ask"])):
                     raise ValueError("CLOCK_IEX_PUBLICATION_QUOTE_CHANGED")
                 research_checked.append(candidate["candidate"])
             accepted.append(evidence["provider_timestamp"])
