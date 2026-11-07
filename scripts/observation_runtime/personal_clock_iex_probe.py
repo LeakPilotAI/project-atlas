@@ -43,6 +43,7 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
         clock = clock_factory(expected_source="time.windows.com,0x9",
                               runtime_id="atlas-clock-iex-readonly-probe", lifetime=seconds + 30)
         clock.require_operational("atlas-clock-iex-readonly-probe")
+        initial_operational_revision = None
         if publication is not None:
             # Refuse missing/stale/unaccepted native research *before* loading
             # credentials or opening a network connection. The source must
@@ -56,6 +57,10 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                                and bundle["instrument"].get("symbol") == symbol
                                for bundle in packet["bundles"])):
                 raise ValueError("CLOCK_IEX_PUBLISHED_SYMBOL_NOT_ENROLLED")
+            if operational_producer is not None:
+                initial_operational_revision = packet.get("revision")
+                if type(initial_operational_revision) is not int or initial_operational_revision < 1:
+                    raise ValueError("CLOCK_IEX_OPERATIONAL_REVISION_REQUIRED")
             matching = [bundle for bundle in packet["bundles"]
                         if type(bundle) is dict
                         and type(bundle.get("instrument")) is dict
@@ -93,6 +98,9 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                     matching_now = [b for b in current.get("bundles", [])
                                     if type(b) is dict and type(b.get("instrument")) is dict
                                     and b["instrument"].get("symbol") == symbol]
+                    if (current.get("revision") != initial_operational_revision
+                            or type(current.get("revision")) is not int):
+                        raise ValueError("CLOCK_IEX_OPERATIONAL_REVISION_CHANGED")
                     if (len(matching_now) != 1
                             or matching_now[0].get("observation", {}).get("evidence_class") != "FORWARD_COLLECTION"
                             or matching_now[0].get("observation", {}).get("strategy_version") != "QUALITY_DIPS_V3"):
