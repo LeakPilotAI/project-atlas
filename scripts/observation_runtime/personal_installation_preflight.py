@@ -15,8 +15,14 @@ def inspect_native_personal_installation(*, custody_parent=CUSTODY_PARENT):
     """Report only filesystem prerequisites, never treat them as approval."""
     parent = Path(custody_parent)
     personal = parent / "PersonalPaper"
-    custody_present = parent.is_dir() and not parent.is_symlink()
-    personal_present = custody_present and personal.is_dir() and not personal.is_symlink()
+    # Windows junctions are not necessarily reported as symlinks. Native custody
+    # must not follow either kind of reparse-point redirect.
+    def ordinary_directory(path):
+        return (path.is_dir() and not path.is_symlink()
+                and not path.is_junction())
+
+    custody_present = ordinary_directory(parent)
+    personal_present = custody_present and ordinary_directory(personal)
     return {
         "schema": "ATLAS_NATIVE_PERSONAL_INSTALLATION_PREFLIGHT_V1",
         "custody_parent_exists": custody_present,
