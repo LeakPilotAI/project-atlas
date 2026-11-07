@@ -199,3 +199,47 @@ def test_rule_driven_disposable_session_stop_loss_and_end_flat(tmp_path):
         assert result["actions"][-1]["reason"] == ("SESSION_ALREADY_CLOSED" if name == "stop" else reason)
         assert result["open_positions"] == 0
         assert result["net_realized_pnl"] < 0
+
+
+def test_disposable_v3_strategy_recomputes_entries_from_quotes(tmp_path):
+    from datetime import UTC, datetime, timedelta
+    from app.services.personal_paper_fixture_executor import rehearse_disposable_v3_strategy_session as run
+    start = datetime(2026, 11, 7, tzinfo=UTC)
+    times = [start + timedelta(seconds=i) for i in range(4)]
+    def quote(t, bid, ask):
+        return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
+                "bid_lots": 5, "ask_lots": 5, "timestamp": t.isoformat(),
+                "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    quotes = [quote(times[0], 101, 101.1), quote(times[1], 79.9, 80),
+              quote(times[2], 80.9, 81), quote(times[3], 84, 84.1)]
+    research = {"symbol": "MSFT", "source_verified": True, "timestamp": start.isoformat(),
+                "normalization_value": {"conservative": 95, "base": 100, "optimistic": 105},
+                "quality_score": 80, "fundamentals_score": 80, "valuation_score": 70,
+                "drawdown_percentile": 80, "evidence_quality": "HIGH",
+                "thesis": "INTACT", "value_trap": False}
+    obs = {"observation_id": "v3-fixture", "symbol": "MSFT", "evidence_class": "TEST_DATA"}
+    path = tmp_path / "v3.jsonl"
+    initialize_paper_account(account_id="v3", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    args = dict(path=path, account_id="v3", observation=obs, research=research,
+                quotes=quotes, times=times)
+    result = run(**args)
+    assert result["v3_candidates"][0] is False
+    assert result["v3_candidates"][1] is True
+    assert [a["action"] for a in result["actions"]] == ["WAIT", "ENTER", "MARK", "EXIT"]
+    assert result["actions"][-1]["reason"] == "SYNTHETIC_TAKE_PROFIT"
+    assert result["cash_reconciled"] and result["open_positions"] == 0
+    assert result["net_realized_pnl"] > 0
+    assert result["research_provenance_attested"] is False
+    assert result["provider_authenticated"] is False
+    assert result["forward_trading_authorized"] is False
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="PROVENANCE_UNVERIFIED"):
+        run(**{**args, "research": {**research, "source_verified": False}})
+    assert path.read_bytes() == before
+    with pytest.raises(ValueError, match="TEST_DATA_REQUIRED"):
+        run(**{**args, "observation": {**obs, "evidence_class": "FORWARD_COLLECTION"}})
+    assert path.read_bytes() == before
+    with pytest.raises(ValueError, match="REPLAYED_QUOTE"):
+        run(**{**args, "quotes": [quotes[0], quotes[1], quotes[1], quotes[3]]})
+    assert path.read_bytes() == before

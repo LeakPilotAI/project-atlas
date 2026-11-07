@@ -233,3 +233,46 @@ def rehearse_disposable_rule_driven_session(*, path: Path, account_id: str,
                             "provider_authenticated": False,
                             "forward_trading_authorized": False,
                             "live_order_authorized": False}))
+
+
+def rehearse_disposable_v3_strategy_session(*, path: Path, account_id: str,
+                                           observation: dict[str, Any],
+                                           research: dict[str, Any],
+                                           quotes: list[dict[str, Any]],
+                                           times: list[Any],
+                                           stop_loss_pct: Any = 2,
+                                           take_profit_pct: Any = 3,
+                                           slippage_bps: Any = 2) -> dict[str, Any]:
+    """Recompute original Quality Dips V3 on each synthetic quote before writes.
+
+    This is an isolated TEST_DATA strategy rehearsal, not a native research
+    attestation or an authenticated IEX provider connection.
+    """
+    from app.services.personal_paper_strategy_signal import evaluate_iex_quality_dips_signal
+    if (type(observation) is not dict or observation.get("evidence_class") != "TEST_DATA"
+            or type(research) is not dict or type(quotes) is not list
+            or type(times) is not list or not 2 <= len(quotes) <= 30
+            or len(quotes) != len(times)
+            or observation.get("symbol") != research.get("symbol")):
+        raise ValueError("DISPOSABLE_V3_SESSION_TEST_DATA_REQUIRED")
+    signals = []
+    states = []
+    for quote, now in zip(quotes, times, strict=True):
+        result = evaluate_iex_quality_dips_signal(
+            quote=quote, symbol=observation["symbol"], now=now, research=research)
+        if result["paper_fill_authorized"] is not False or result["research_provenance_attested"] is not False:
+            raise ValueError("DISPOSABLE_V3_SESSION_UNEXPECTED_AUTHORITY")
+        signals.append(result["candidate"])
+        states.append(result["plan"]["patient_state"])
+    session = rehearse_disposable_rule_driven_session(
+        path=path, account_id=account_id, observation=observation,
+        quotes=quotes, times=times, entry_signals=signals,
+        stop_loss_pct=stop_loss_pct, take_profit_pct=take_profit_pct,
+        slippage_bps=slippage_bps)
+    return strict(body({**session, "schema": "ATLAS_DISPOSABLE_V3_STRATEGY_SESSION_V1",
+                        "strategy": "QUALITY_DIPS_V3", "v3_candidates": signals,
+                        "v3_patient_states": states,
+                        "research_provenance_attested": False,
+                        "provider_authenticated": False,
+                        "forward_trading_authorized": False,
+                        "live_order_authorized": False}))
