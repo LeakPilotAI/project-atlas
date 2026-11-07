@@ -187,6 +187,42 @@ def alpaca_asset_reference_metadata(asset, reference):
             "revision": 1}
 
 
+
+def acquire_reference_asset_cohort(batch, *, client, budget):
+    """Bounded real provider metadata bridge; never grants independent authority.
+
+    Existing FreeResearchClient owns the HTTPS allowlist, receipts and deadline.
+    Missing/mismatched assets remain excluded, not silently mapped.
+    """
+    if (type(batch) is not dict or type(batch.get("rows")) is not list
+            or type(batch.get("source_digest")) is not str
+            or re.fullmatch(r"[0-9a-f]{64}", batch["source_digest"]) is None
+            or type(budget) is not int or not 1 <= budget <= 10
+            or len(batch["rows"]) > budget or client is None
+            or getattr(client, "domain", None) != "TLS_PUBLIC_PROVIDER"):
+        raise ValueError("QD_ASSET_COHORT_BOUNDED_REAL_TRANSPORT_REQUIRED")
+    metadata, receipts, excluded = {}, [], []
+    for reference in batch["rows"]:
+        symbol = reference.get("symbol") if type(reference) is dict else None
+        if type(symbol) is not str or SYMBOL.fullmatch(symbol) is None:
+            raise ValueError("QD_ASSET_COHORT_INVALID_SYMBOL")
+        try:
+            asset, receipt = client.get("https://paper-api.alpaca.markets/v2/assets/" + symbol, ttl=3600)
+            mapped = alpaca_asset_reference_metadata(asset, reference)
+            if mapped is None or type(receipt) is not dict:
+                excluded.append({"symbol": symbol, "reason": "PROVIDER_ASSET_IDENTITY_UNVERIFIED"})
+            else:
+                metadata[symbol] = mapped
+                receipts.append({"symbol": symbol, "receipt_digest": digest(receipt)})
+        except (ValueError, OSError, TimeoutError):
+            excluded.append({"symbol": symbol, "reason": "PROVIDER_ASSET_UNAVAILABLE"})
+    return {"schema": "QD_PROVIDER_ASSET_RESEARCH_COHORT_V1",
+            "source_digest": batch["source_digest"], "metadata": metadata,
+            "receipt_digests": receipts, "excluded": excluded,
+            "independent_instrument_authority_verified": False,
+            "robinhood_eligibility_verified": False, "execution_authorized": False}
+
+
 def research_universe(batch, *, metadata, instrument_authority):
     """Use the actual InvestmentScanner's injected InvestmentUniverse interface.
 

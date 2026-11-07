@@ -284,3 +284,27 @@ def test_alpaca_asset_identity_normalization_is_not_broker_authority():
     assert alpaca_asset_reference_metadata(asset | {"tradable": False}, reference) is None
     assert alpaca_asset_reference_metadata(asset | {"id": ""}, reference) is None
     assert alpaca_asset_reference_metadata(asset | {"symbol": "AAPL"}, reference) is None
+
+
+def test_real_transport_cohort_bridge_rejects_mismatch_and_never_grants_authority():
+    from app.investment.quality_dips_market_roster import acquire_reference_asset_cohort
+    class Provider:
+        domain = "TLS_PUBLIC_PROVIDER"
+        def get(self, url, ttl):
+            symbol = url.rsplit("/", 1)[-1]
+            return ({"symbol": symbol, "class": "us_equity", "status": "active", "tradable": True,
+                     "fractionable": True, "id": "asset:" + symbol,
+                     "exchange": "NASDAQ" if symbol == "MSFT" else "NYSE"}, {"url": url, "status": 200})
+    batch = {"source_digest": "a" * 64, "rows": [
+        {"symbol": "MSFT", "exchange": "XNAS", "instrument_type": "EQUITY_REFERENCE"},
+        {"symbol": "SPY", "exchange": "ARCX", "instrument_type": "ETF"}]}
+    result = acquire_reference_asset_cohort(batch, client=Provider(), budget=2)
+    assert list(result["metadata"]) == ["MSFT"]
+    assert result["excluded"] == [{"symbol": "SPY", "reason": "PROVIDER_ASSET_IDENTITY_UNVERIFIED"}]
+    assert result["independent_instrument_authority_verified"] is False
+    assert result["execution_authorized"] is False
+    with pytest.raises(ValueError, match="BOUNDED_REAL"):
+        acquire_reference_asset_cohort(batch, client=Provider(), budget=1)
+    Provider.domain = "SYNTHETIC"
+    with pytest.raises(ValueError, match="BOUNDED_REAL"):
+        acquire_reference_asset_cohort(batch, client=Provider(), budget=2)
