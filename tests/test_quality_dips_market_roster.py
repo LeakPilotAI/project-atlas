@@ -238,3 +238,35 @@ def test_merge_refuses_partial_or_untrusted_source_snapshots():
         merge_reference_directories([])
     with pytest.raises(ValueError, match="TWO_SOURCE"):
         merge_reference_directories([{"source": "nasdaqlisted.txt"}, {"source": "nasdaqlisted.txt"}])
+
+
+def test_merged_reference_pages_connect_to_existing_scanner_universe_interface():
+    from app.investment.quality_dips_market_roster import merged_research_batch, merge_reference_directories
+    from types import SimpleNamespace
+    first = {"schema": "QD_REFERENCE_DIRECTORY_V1", "source": "nasdaqlisted.txt", "source_digest": "a" * 64,
+             "rows": [{"symbol": "MSFT", "name": "Microsoft", "exchange": "XNAS", "instrument_type": "EQUITY_REFERENCE"}]}
+    second = {"schema": "QD_REFERENCE_DIRECTORY_V1", "source": "otherlisted.txt", "source_digest": "b" * 64,
+              "rows": [{"symbol": "SPY", "name": "SPY ETF", "exchange": "ARCX", "instrument_type": "ETF"}]}
+    merged = merge_reference_directories([first, second])
+    page1 = merged_research_batch(merged, offset=0, budget=1)
+    page2 = merged_research_batch(merged, offset=1, budget=1)
+    assert page1["source_digest"] == page2["source_digest"]
+    assert page1["remaining"] == 1 and page2["remaining"] == 0
+    metadata = {"MSFT": {"symbol": "MSFT", "instrument_id": "broker:MSFT", "asset_class": "STOCK",
+                         "exchange": "XNAS", "currency": "USD", "status": "ACTIVE", "revision": 1}}
+    authority = SimpleNamespace(verify_instrument=lambda item, ref, digest: digest == page1["source_digest"])
+    admitted = research_universe(page1, metadata=metadata, instrument_authority=authority)
+    assert admitted["universe"].symbols() == ["MSFT"]
+    assert admitted["execution_authorized"] is False
+    excluded = research_universe(page2, metadata=metadata, instrument_authority=authority)
+    assert excluded["universe"].symbols() == [] and len(excluded["excluded"]) == 1
+
+
+def test_merged_pagination_refuses_missing_source_provenance_and_unbounded_budget():
+    from app.investment.quality_dips_market_roster import merged_research_batch
+    valid = {"schema": "QD_MERGED_REFERENCE_RESEARCH_V1", "source_digests": {
+        "nasdaqlisted.txt": "a" * 64, "otherlisted.txt": "b" * 64}, "rows": [], "reference_count": 0}
+    with pytest.raises(ValueError, match="MERGED_BOUNDED"):
+        merged_research_batch(valid, offset=0, budget=101)
+    with pytest.raises(ValueError, match="MERGED_BOUNDED"):
+        merged_research_batch(valid | {"source_digests": {}}, offset=0, budget=1)

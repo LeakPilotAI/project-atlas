@@ -135,6 +135,31 @@ def merge_reference_directories(snapshots):
             "execution_authorized": False}
 
 
+
+def merged_research_batch(merged, *, offset, budget):
+    """Page the merged directory into existing research_universe's input contract.
+
+    The digest binds both original source cuts. It does not attest broker metadata.
+    """
+    if (type(merged) is not dict or merged.get("schema") != "QD_MERGED_REFERENCE_RESEARCH_V1"
+            or type(merged.get("source_digests")) is not dict
+            or set(merged["source_digests"]) != SOURCES
+            or any(type(v) is not str or re.fullmatch(r"[0-9a-f]{64}", v) is None
+                   for v in merged["source_digests"].values())
+            or type(merged.get("rows")) is not list
+            or type(offset) is not int or offset < 0
+            or type(budget) is not int or not 1 <= budget <= 100):
+        raise ValueError("UNIVERSE_MERGED_BOUNDED_RESEARCH_REQUIRED")
+    rows = merged["rows"]
+    if len(rows) > 60000 or merged.get("reference_count") != len(rows):
+        raise ValueError("UNIVERSE_MERGED_REFERENCE_COUNT_MISMATCH")
+    return {"source_digest": digest(merged["source_digests"]),
+            "rows": rows[offset:offset + budget],
+            "next_offset": min(len(rows), offset + budget),
+            "remaining": max(0, len(rows) - offset - budget),
+            "execution_authorized": False}
+
+
 def research_universe(batch, *, metadata, instrument_authority):
     """Use the actual InvestmentScanner's injected InvestmentUniverse interface.
 
