@@ -143,7 +143,7 @@ def test_published_iex_candidate_recomputes_board_inputs_without_fill_authority(
                    "value_trap": False}}}
     bundle = {"instrument": {"symbol": "MSFT"}, "board": [row],
               "observation": {"symbol": "MSFT", "strategy_version": "QUALITY_DIPS_V3",
-                              "evidence_class": "FORWARD_COLLECTION"}}
+                              "evidence_class": "FORWARD_COLLECTION", "timestamp": NOW.isoformat()}}
     packet = {"schema": "QD_SCANNER_PUBLICATION_V1", "source_id": "fixture",
               "revision": 2, "bundles": [bundle, bundle]}
     monkeypatch.setattr(QualityDipsSourcePublication, "read_current", lambda self: packet)
@@ -308,3 +308,37 @@ def test_published_iex_v3_with_original_scanner_publication_and_revocation(tmp_p
     with pytest.raises(ValueError):
         evaluate_published_iex_v3_candidate(
             publication=publication, provider=provider, symbol=symbol, now=now)
+
+
+def test_real_explicit_projection_maps_to_iex_v3_using_observation_timestamp(monkeypatch):
+    """Real pure projection, synthetic publication reader and IEX quote."""
+    from app.services.quality_dips_research_only import project_explicit_research
+    from test_quality_dips_v2_board import _row
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import evaluate_published_iex_v3_candidate
+    source = _row()
+    source.update(symbol="MSFT", asset_type="STOCK", timestamp=NOW.isoformat())
+    source["trend"]["as_of"] = NOW.isoformat()
+    for valuation in source["valuation_sources"]:
+        valuation["as_of"] = NOW.isoformat()
+    board = project_explicit_research([source], now=NOW)
+    assert board[0]["timestamp"] == NOW.isoformat()
+    assert board[0]["quality_dips_v2"]["decision_inputs"]["symbol"] == "MSFT"
+    packet = {"schema": "QD_SCANNER_PUBLICATION_V1", "source_id": "fixture",
+              "revision": 1, "bundles": [{"instrument": {"symbol": "MSFT"},
+              "board": board, "observation": {"symbol": "MSFT",
+              "strategy_version": "QUALITY_DIPS_V3", "evidence_class": "FORWARD_COLLECTION",
+              "timestamp": NOW.isoformat()}}]}
+    publication = object.__new__(QualityDipsSourcePublication)
+    provider = object.__new__(PersonalPaperIEXProvider)
+    monkeypatch.setattr(QualityDipsSourcePublication, "read_current", lambda self: packet)
+    monkeypatch.setattr(PersonalPaperIEXProvider, "read_iex_quote", lambda self, symbol: quote())
+    result = evaluate_published_iex_v3_candidate(publication=publication,
+                                                 provider=provider, symbol="MSFT", now=NOW)
+    assert result["publication_read_verified"] is True
+    assert result["paper_fill_authorized"] is False
+    packet["bundles"][0]["observation"]["timestamp"] = (NOW - timedelta(hours=1)).isoformat()
+    with pytest.raises(ValueError, match="BOARD_OBSERVATION_TIME_MISMATCH"):
+        evaluate_published_iex_v3_candidate(publication=publication,
+                                            provider=provider, symbol="MSFT", now=NOW)

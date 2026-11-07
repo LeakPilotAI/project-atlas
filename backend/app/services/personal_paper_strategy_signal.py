@@ -147,6 +147,7 @@ def evaluate_published_iex_v3_candidate(
     if packet.get("schema") != "QD_SCANNER_PUBLICATION_V1" or type(packet.get("bundles")) is not list:
         raise ValueError("QD_PUBLISHED_IEX_PACKET_INVALID")
     rows = []
+    observation_stamps = []
     for bundle in packet["bundles"]:
         if type(bundle) is not dict or type(bundle.get("instrument")) is not dict:
             raise ValueError("QD_PUBLISHED_IEX_BUNDLE_INVALID")
@@ -157,6 +158,7 @@ def evaluate_published_iex_v3_candidate(
                 or observation.get("strategy_version") != "QUALITY_DIPS_V3"
                 or observation.get("evidence_class") != "FORWARD_COLLECTION"):
             raise ValueError("QD_PUBLISHED_IEX_OBSERVATION_INVALID")
+        observation_stamps.append(observation.get("timestamp"))
         board = bundle.get("board")
         if type(board) is not list:
             raise ValueError("QD_PUBLISHED_IEX_BOARD_INVALID")
@@ -172,7 +174,13 @@ def evaluate_published_iex_v3_candidate(
     inputs = projection.get("decision_inputs")
     if type(inputs) is not dict or inputs.get("symbol") != symbol:
         raise ValueError("QD_PUBLISHED_IEX_DECISION_INPUTS_REQUIRED")
-    stamp = _aware(row.get("timestamp"), "published research")
+    # Real explicit board projections omit timestamp; the separately bound
+    # original observation supplies its accepted point-in-time source stamp.
+    if len(set(observation_stamps)) != 1:
+        raise ValueError("QD_PUBLISHED_IEX_OBSERVATION_TIMES_CONFLICT")
+    stamp = _aware(observation_stamps[0], "published observation")
+    if row.get("timestamp") is not None and _aware(row["timestamp"], "published board") != stamp:
+        raise ValueError("QD_PUBLISHED_IEX_BOARD_OBSERVATION_TIME_MISMATCH")
     if not 0 <= (now - stamp).total_seconds() <= 600:
         raise ValueError("QD_PUBLISHED_IEX_RESEARCH_NOT_CURRENT")
     research = {"symbol": symbol, "source_verified": True,
