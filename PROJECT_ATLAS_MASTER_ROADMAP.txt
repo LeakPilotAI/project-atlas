@@ -17097,3 +17097,4 @@ NEXT: audit current tabs against these three lanes and distinguish already built
 2026-11-07 - Accepted unified PAPER stop route now rejects stale requests after runtime STOPPED even if endpoint remains registered. 94 Python passed/1 skipped. PAPER NO-GO; Genesis untouched.
 2026-11-07 - Session-bound PAPER Stop HTTP transport refuses unexpected dispatch exceptions without retry; 95 Python passed/1 skipped. PAPER NO-GO; Genesis untouched.
 2026-11-07 - Expanded fail-closed desktop readiness JSON with nine explicit independent acceptance gates; 99 Python passed/1 skipped. PAPER NO-GO; Genesis untouched.
+2026-11-07 - Hardened desktop NO_GO probe against comment-only guard marker false positives; real Start/Stop remain blocked. 100 Python passed/1 skipped. Genesis untouched.

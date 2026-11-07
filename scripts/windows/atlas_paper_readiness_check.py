@@ -1,6 +1,7 @@
 """Read-only desktop PAPER launch gate. Never grants trading authority."""
 from pathlib import Path
 import json
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -9,6 +10,12 @@ CHECKS = (
     ("desktop_stop", "ATLAS-STOP.bat", "scripts/windows/Atlas-Stop.ps1"),
 )
 BLOCK = "ATLAS_LEGACY_LIFECYCLE_BLOCKED"
+# Merely mentioning the block marker in a comment or dead string is not an
+# executable safety guard. Only an active top-level refusal counts as blocked.
+ACTIVE_GUARD = re.compile(
+    r"^\s*(?:throw|Write-Error)\s+['\"]?ATLAS_LEGACY_LIFECYCLE_BLOCKED\b",
+    re.IGNORECASE | re.MULTILINE,
+)
 
 # Explicit independent acceptance domains. This read-only probe does not
 # infer acceptance from source files, tests, or self-declared configuration.
@@ -38,7 +45,7 @@ def inspect(root=ROOT):
             continue
         if script_name.replace("/", "\\").lower() not in batch_text.lower():
             results[name] = "UNVERIFIED"
-        elif BLOCK in script_text:
+        elif ACTIVE_GUARD.search(script_text):
             results[name] = "BLOCKED_LEGACY"
         else:
             # Absence of the guard is NOT proof of a certified implementation.

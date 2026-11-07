@@ -57,3 +57,16 @@ def test_readiness_gate_matrix_is_explicit_and_never_promotes_from_shortcuts(tmp
     assert all(value == "NOT_INDEPENDENTLY_VERIFIED" for value in result["acceptance"].values())
     assert result["decision"] == "NO_GO"
     assert result["paper_startup_authorized"] is False
+
+
+def test_readiness_does_not_treat_comment_only_guard_as_active(tmp_path):
+    checker = load_checker()
+    (tmp_path / "scripts/windows").mkdir(parents=True)
+    for _, batch_name, script_name in checker.CHECKS:
+        (tmp_path / batch_name).write_text(script_name.replace("/", "\\"), encoding="utf-8")
+        (tmp_path / script_name).write_text(
+            "# ATLAS_LEGACY_LIFECYCLE_BLOCKED was removed\nWrite-Host 'unsafe placeholder'\n",
+            encoding="utf-8")
+    result = checker.inspect(tmp_path)
+    assert result["desktop"] == {"desktop_start": "UNVERIFIED", "desktop_stop": "UNVERIFIED"}
+    assert result["decision"] == "NO_GO"
