@@ -143,3 +143,93 @@ def rehearse_disposable_quote_lifecycle(*, path: Path, account_id: str,
                         "steps": results, "completed": len(results),
                         "forward_trading_authorized": False,
                         "live_order_authorized": False}))
+
+
+def rehearse_disposable_rule_driven_session(*, path: Path, account_id: str,
+                                           observation: dict[str, Any],
+                                           quotes: list[dict[str, Any]],
+                                           times: list[Any], entry_signals: list[bool],
+                                           stop_loss_pct: Any = 2,
+                                           take_profit_pct: Any = 3,
+                                           slippage_bps: Any = 2) -> dict[str, Any]:
+    """Rule-driven TEST_DATA journal rehearsal; never provider-authenticated.
+
+    Validate the entire synthetic sequence before mutation. Enter on the first
+    true signal, mark while held, exit at a bid-side stop/target or session end.
+    Never re-enter during the same rehearsal.
+    """
+    from app.services.personal_paper_observations import _aware
+    from app.services.personal_paper_price_evidence import validate_stock_iex_quote
+    if (type(observation) is not dict or observation.get("evidence_class") != "TEST_DATA"
+            or type(quotes) is not list or type(times) is not list
+            or type(entry_signals) is not list or not 2 <= len(quotes) <= 30
+            or len(quotes) != len(times) or len(quotes) != len(entry_signals)
+            or any(type(flag) is not bool for flag in entry_signals)):
+        raise ValueError("DISPOSABLE_RULE_SESSION_TEST_DATA_BOUNDED_REQUIRED")
+    try:
+        stop = Decimal(str(stop_loss_pct))
+        target = Decimal(str(take_profit_pct))
+        slip = Decimal(str(slippage_bps))
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError("DISPOSABLE_RULE_SESSION_RISK_INVALID") from exc
+    if (not stop.is_finite() or not target.is_finite() or not slip.is_finite()
+            or not 0 < stop <= 25 or not 0 < target <= 50
+            or not 0 <= slip <= 100):
+        raise ValueError("DISPOSABLE_RULE_SESSION_RISK_INVALID")
+    evidence = []
+    last = None
+    for quote, now in zip(quotes, times, strict=True):
+        item = validate_stock_iex_quote(quote, symbol=observation.get("symbol"), now=now)
+        stamp = _aware(item["provider_timestamp"], "disposable provider event")
+        if last is not None and stamp <= last:
+            raise ValueError("DISPOSABLE_RULE_SESSION_REPLAYED_QUOTE")
+        last = stamp
+        evidence.append(item)
+    # A rehearsal cannot mutate an account that is already holding a position.
+    with journal_mutation_transaction(path):
+        events = read_events(path)
+        account = accounting_snapshot(events, account_id=account_id)
+        if account is None or account.get("data_provenance") != "TEST_DATA" or not account.get("cash_reconciled"):
+            raise ValueError("DISPOSABLE_RULE_SESSION_REFUSES_FORWARD_ACCOUNT")
+        if open_lots(events):
+            raise ValueError("DISPOSABLE_RULE_SESSION_REQUIRES_FLAT_ACCOUNT")
+        actions = []
+        entry_price = None
+        closed = False
+        for i, item in enumerate(evidence):
+            action = "WAIT"
+            reason = "NO_ENTRY_SIGNAL"
+            if entry_price is None and not closed and entry_signals[i] and i < len(evidence)-1:
+                action, reason = "ENTER", "SYNTHETIC_SIGNAL"
+            elif entry_price is not None and not closed:
+                bid = Decimal(str(item["bid"])) * (1-slip/Decimal(10000))
+                if bid <= entry_price * (1-stop/Decimal(100)):
+                    action, reason = "EXIT", "SYNTHETIC_STOP_LOSS"
+                elif bid >= entry_price * (1+target/Decimal(100)):
+                    action, reason = "EXIT", "SYNTHETIC_TAKE_PROFIT"
+                elif i == len(evidence)-1:
+                    action, reason = "EXIT", "SYNTHETIC_SESSION_END"
+                else:
+                    action, reason = "MARK", "SYNTHETIC_HOLD"
+            elif closed:
+                reason = "SESSION_ALREADY_CLOSED"
+            if action == "WAIT":
+                actions.append({"action": action, "reason": reason})
+                continue
+            result = execute_disposable_validated_quote_step(
+                path=path, account_id=account_id, observation=observation,
+                action=action, quote=quotes[i], now=times[i], slippage_bps=slip)
+            actions.append({"action": action, "reason": reason, "event_id": result["event_id"]})
+            if action == "ENTER":
+                entry_price = Decimal(str(result["simulated_execution_price"]))
+            elif action == "EXIT":
+                closed = True
+        final = accounting_snapshot(read_events(path), account_id=account_id)
+        return strict(body({"schema": "ATLAS_DISPOSABLE_RULE_SESSION_V1",
+                            "actions": actions, "completed_ticks": len(actions),
+                            "open_positions": final["open_positions"],
+                            "net_realized_pnl": final["net_realized_pnl"],
+                            "cash_reconciled": final["cash_reconciled"],
+                            "provider_authenticated": False,
+                            "forward_trading_authorized": False,
+                            "live_order_authorized": False}))

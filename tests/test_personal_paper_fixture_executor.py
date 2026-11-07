@@ -137,3 +137,65 @@ def test_bounded_disposable_quote_lifecycle_validates_sequence_before_writes(tmp
     assert accounting_snapshot(read_events(path), account_id="life")["open_positions"] == 0
     assert len([r for r in read_events(path) if r["event"] == "open_lot"]) == 1
     assert len([r for r in read_events(path) if r["event"] == "close_lot"]) == 1
+
+
+def test_rule_driven_disposable_session_takes_profit_and_reconciles(tmp_path):
+    from datetime import UTC, datetime, timedelta
+    from app.services.personal_paper_fixture_executor import rehearse_disposable_rule_driven_session as run
+    start = datetime(2026, 11, 7, tzinfo=UTC)
+    times = [start + timedelta(seconds=i) for i in range(5)]
+    def q(t, bid, ask):
+        return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
+                "bid_lots": 5, "ask_lots": 5, "timestamp": t.isoformat(),
+                "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    quotes = [q(t, b, a) for t, b, a in zip(times,
+        (99.9, 99.9, 101, 104, 105), (100, 100, 101.1, 104.1, 105.1))]
+    path = tmp_path / "rules.jsonl"
+    initialize_paper_account(account_id="rules", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    obs = {"observation_id": "rules-1", "symbol": "MSFT", "evidence_class": "TEST_DATA"}
+    args = dict(path=path, account_id="rules", observation=obs, quotes=quotes,
+                times=times, entry_signals=[False, True, False, False, True])
+    result = run(**args)
+    assert [x["action"] for x in result["actions"]] == ["WAIT", "ENTER", "MARK", "EXIT", "WAIT"]
+    assert result["actions"][3]["reason"] == "SYNTHETIC_TAKE_PROFIT"
+    assert result["net_realized_pnl"] > 0
+    assert result["open_positions"] == 0 and result["cash_reconciled"]
+    assert result["forward_trading_authorized"] is False
+    assert len([e for e in read_events(path) if e["event"] == "open_lot"]) == 1
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="REPLAYED_QUOTE"):
+        run(**{**args, "quotes": [quotes[0], quotes[1], quotes[1], quotes[3], quotes[4]]})
+    assert path.read_bytes() == before
+    with pytest.raises(ValueError, match="TEST_DATA_BOUNDED_REQUIRED"):
+        run(**{**args, "entry_signals": [True]})
+    assert path.read_bytes() == before
+    forward = tmp_path / "forward-rules.jsonl"
+    initialize_paper_account(account_id="forward", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="FORWARD_COLLECTION", path=forward)
+    before_forward = forward.read_bytes()
+    with pytest.raises(ValueError, match="REFUSES_FORWARD_ACCOUNT"):
+        run(**{**args, "path": forward, "account_id": "forward"})
+    assert forward.read_bytes() == before_forward
+
+def test_rule_driven_disposable_session_stop_loss_and_end_flat(tmp_path):
+    from datetime import UTC, datetime, timedelta
+    from app.services.personal_paper_fixture_executor import rehearse_disposable_rule_driven_session as run
+    start = datetime(2026, 11, 7, tzinfo=UTC)
+    times = [start + timedelta(seconds=i) for i in range(3)]
+    def q(t, bid):
+        return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": bid+0.1,
+                "bid_lots": 5, "ask_lots": 5, "timestamp": t.isoformat(),
+                "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    obs = {"observation_id": "risk-1", "symbol": "MSFT", "evidence_class": "TEST_DATA"}
+    for name, prices, reason in (("stop", [100, 97, 96], "SYNTHETIC_STOP_LOSS"),
+                                 ("end", [100, 100, 100], "SYNTHETIC_SESSION_END")):
+        path = tmp_path / (name+".jsonl")
+        initialize_paper_account(account_id=name, opening_cash=1000,
+                                 fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+        result = run(path=path, account_id=name, observation=obs,
+                     quotes=[q(t, b) for t, b in zip(times, prices)], times=times,
+                     entry_signals=[True, False, False])
+        assert result["actions"][-1]["reason"] == ("SESSION_ALREADY_CLOSED" if name == "stop" else reason)
+        assert result["open_positions"] == 0
+        assert result["net_realized_pnl"] < 0
