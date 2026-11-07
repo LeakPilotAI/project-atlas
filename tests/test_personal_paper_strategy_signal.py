@@ -370,3 +370,55 @@ def test_original_current_producer_publication_to_iex_v3_and_authority_refusal(m
     with pytest.raises(ValueError):
         evaluate_published_iex_v3_candidate(
             publication=publication, provider=provider, symbol="MSFT", now=now)
+
+
+def test_original_producer_with_real_iex_feed_adapter_and_disposable_journal(tmp_path, monkeypatch):
+    """Original producer + feed snapshot adapter + journal, synthetic auth only."""
+    from contextlib import contextmanager
+    from test_quality_dips_current_producer import fixture, STAMP
+    from app.investment.alpaca_iex import IEXFeed
+    from app.investment.quality_dips_paper import initialize_paper_account
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import inspect_leased_published_iex_journal_candidate
+    f = fixture(monkeypatch)
+    f.owner.publish_current()
+    now = datetime.fromtimestamp(STAMP, UTC)
+    feed = IEXFeed(["MSFT"], clock=lambda: now.timestamp())
+    feed.authenticated = feed.subscribed = True  # Explicit synthetic fixture state
+    feed.connection = "CONNECTED"
+    feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "79.99", "ask": "80",
+                           "bid_lots": 2, "ask_lots": 2, "timestamp": now.isoformat(),
+                           "source_timestamp": now.timestamp(), "generation": feed.generation}
+    provider = PersonalPaperIEXProvider(feed)
+    path = tmp_path / "forward.jsonl"
+    initialize_paper_account(account_id="fixture-forward", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    original = path.read_bytes()
+    class Lease:
+        valid = True
+        def check(self, proof):
+            return self.valid
+        def check_components(self, components):
+            return self.valid
+    class Installation:
+        @contextmanager
+        def lease(self, request):
+            yield lease
+    lease = Lease()
+    monkeypatch.setattr("app.services.personal_paper_runtime.checked_personal_installation",
+                        lambda active, request: {"synthetic": True})
+    kwargs = dict(installation=Installation(), request={"action": "AUTO_PAPER"},
+                  components=(), publication=f.owner.publication, provider=provider,
+                  symbol="MSFT", now=now, journal_path=path,
+                  account_id="fixture-forward")
+    result = inspect_leased_published_iex_journal_candidate(**kwargs)
+    assert result["publication_read_verified"] is True
+    assert result["journal_cash_reconciled"] is True
+    assert result["journal_available_cash"] == 1000
+    assert result["paper_fill_authorized"] is False
+    assert path.read_bytes() == original
+    feed.connection = "DISCONNECTED"
+    with pytest.raises(ValueError, match="AUTHENTICATED_IEX_FEED_UNAVAILABLE"):
+        inspect_leased_published_iex_journal_candidate(**kwargs)
+    assert path.read_bytes() == original
