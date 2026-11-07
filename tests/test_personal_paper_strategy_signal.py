@@ -68,3 +68,18 @@ def test_leased_v3_refuses_fake_provider_and_missing_operator():
             installation=object(), request={"action": "READ_ONLY"}, components=(),
             provider=PersonalPaperIEXProvider(feed), symbol="MSFT", now=NOW,
             research=research())
+
+
+def test_published_research_rejects_untrusted_caller_source():
+    from app.services.personal_paper_strategy_signal import inspect_published_quality_dips_research
+    class FakePublication:
+        def read_current(self):
+            return {"schema": "QD_SCANNER_PUBLICATION_V1", "source_id": "forged",
+                    "revision": 1, "bundles": [{"instrument": {"symbol": "MSFT"},
+                                              "board": [research()]}]}
+    with pytest.raises(ValueError, match="QD_PUBLISHED_RESEARCH_DEPENDENCIES_REQUIRED"):
+        inspect_published_quality_dips_research(publication=FakePublication(),
+                                                symbol="MSFT", research=research())
+    with pytest.raises(ValueError, match="QD_PUBLISHED_RESEARCH_DEPENDENCIES_REQUIRED"):
+        inspect_published_quality_dips_research(publication=None,
+                                                symbol="MSFT", research=research())

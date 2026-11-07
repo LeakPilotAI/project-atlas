@@ -79,3 +79,38 @@ def inspect_leased_iex_v3_candidate(
                     "paper_fill_authorized": False, "live_order_authorized": False}
     except (AttributeError, TypeError, OSError) as exc:
         raise ValueError("LEASED_IEX_V3_ADMISSION_REFUSED") from exc
+
+
+def inspect_published_quality_dips_research(
+    *, publication: Any, symbol: str, research: dict[str, Any],
+) -> dict[str, Any]:
+    """Compare research to the existing custody-verified scanner publication.
+
+    A matching board row is provenance evidence, not permission to execute.
+    """
+    from app.services.paper_financial_replay import body, digest
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+
+    if (type(publication) is not QualityDipsSourcePublication
+            or type(symbol) is not str or not symbol
+            or type(research) is not dict or research.get("symbol") != symbol):
+        raise ValueError("QD_PUBLISHED_RESEARCH_DEPENDENCIES_REQUIRED")
+    packet = publication.read_current()  # Existing authority, archive and clock checks.
+    if (packet.get("schema") != "QD_SCANNER_PUBLICATION_V1"
+            or type(packet.get("bundles")) is not list):
+        raise ValueError("QD_PUBLISHED_RESEARCH_SOURCE_REFUSED")
+    matches = []
+    for bundle in packet["bundles"]:
+        if type(bundle) is not dict or type(bundle.get("board")) is not list:
+            raise ValueError("QD_PUBLISHED_RESEARCH_BOARD_INVALID")
+        if bundle.get("instrument", {}).get("symbol") != symbol:
+            continue
+        matches.extend(row for row in bundle["board"]
+                       if type(row) is dict and row.get("symbol") == symbol)
+    if len(matches) != 1 or body(matches[0]) != body(research):
+        raise ValueError("QD_PUBLISHED_RESEARCH_CONTENT_NOT_BOUND")
+    return {"schema": "ATLAS_PERSONAL_PAPER_PUBLISHED_RESEARCH_MATCH_V1",
+            "symbol": symbol, "source_id": packet["source_id"],
+            "revision": packet["revision"], "research_digest": digest(research),
+            "publication_read_verified": True, "paper_fill_authorized": False,
+            "live_order_authorized": False}
