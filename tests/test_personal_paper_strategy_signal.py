@@ -575,6 +575,7 @@ def test_bounded_readonly_session_refuses_invalid_clock_and_stops_on_failure(mon
         if len(calls) == 3:
             raise ValueError("AUTHENTICATED_IEX_FEED_UNAVAILABLE")
         return {"paper_fill_authorized": False, "live_order_authorized": False,
+                "provider_timestamp": now.isoformat(),
                 "decision_evidence_digest": str(len(calls))}
     monkeypatch.setattr(signals, "plan_leased_published_iex_paper_tick", tick)
     stamps = iter([now, now + timedelta(seconds=1), now + timedelta(seconds=2)])
@@ -592,3 +593,19 @@ def test_bounded_readonly_session_refuses_invalid_clock_and_stops_on_failure(mon
         run_bounded_readonly_paper_session(ticks=2, clock=lambda: now)
     with pytest.raises(ValueError, match="PAPER_SESSION_BOUNDED_EXPLICIT_CLOCK_REQUIRED"):
         run_bounded_readonly_paper_session(ticks=31, clock=lambda: now)
+
+
+def test_bounded_session_refuses_replayed_quote_event(monkeypatch):
+    from datetime import timedelta
+    import app.services.personal_paper_strategy_signal as signals
+    from app.services.personal_paper_strategy_signal import run_bounded_readonly_paper_session
+    start = datetime(2026, 11, 6, tzinfo=UTC)
+    def frozen(*, now, **kwargs):
+        return {"paper_fill_authorized": False, "live_order_authorized": False,
+                "provider_timestamp": start.isoformat()}
+    monkeypatch.setattr(signals, "plan_leased_published_iex_paper_tick", frozen)
+    stamps = iter([start, start + timedelta(seconds=1)])
+    with pytest.raises(ValueError, match="PAPER_SESSION_PROVIDER_EVENT_NOT_ADVANCING"):
+        run_bounded_readonly_paper_session(ticks=2, clock=lambda: next(stamps))
+    with pytest.raises(ValueError, match="PAPER_SESSION_PROVIDER_EVENT_NOT_FRESH"):
+        run_bounded_readonly_paper_session(ticks=1, clock=lambda: start + timedelta(seconds=16))

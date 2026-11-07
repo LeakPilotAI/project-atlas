@@ -392,7 +392,18 @@ def run_bounded_readonly_paper_session(*, ticks: int, clock: Any, **dependencies
         plan = plan_leased_published_iex_paper_tick(now=now, **dependencies)
         if plan["paper_fill_authorized"] is not False or plan["live_order_authorized"] is not False:
             raise ValueError("PAPER_SESSION_UNEXPECTED_AUTHORITY")
-        records.append({"_clock": now, "tick": index, "plan": plan})
+        # A bounded run is not forward market observation if every iteration
+        # reuses the same quote event. Refuse duplicate or regressing stamps.
+        if type(plan.get("provider_timestamp")) is not str:
+            raise ValueError("PAPER_SESSION_PROVIDER_TIMESTAMP_REQUIRED")
+        from app.services.personal_paper_observations import _aware
+        provider_stamp = _aware(plan["provider_timestamp"], "PAPER session provider event")
+        if provider_stamp > now or (now - provider_stamp).total_seconds() > 15:
+            raise ValueError("PAPER_SESSION_PROVIDER_EVENT_NOT_FRESH")
+        if records and provider_stamp <= records[-1]["_provider_stamp"]:
+            raise ValueError("PAPER_SESSION_PROVIDER_EVENT_NOT_ADVANCING")
+        records.append({"_clock": now, "_provider_stamp": provider_stamp,
+                        "tick": index, "plan": plan})
     return strict(body({"schema": "ATLAS_BOUNDED_READONLY_PAPER_SESSION_V1",
                         "ticks": [{"timestamp": r["_clock"].isoformat(),
                                    "index": r["tick"], "plan": r["plan"]} for r in records],
