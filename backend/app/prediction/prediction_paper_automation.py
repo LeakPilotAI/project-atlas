@@ -520,8 +520,20 @@ class PredictionPaperAutomation:
         # A market first seen by Atlas is not necessarily newly listed. Use
         # exchange-issued creation/open times, never local first-seen time.
         timing = market.get("timing") if isinstance(market.get("timing"), dict) else {}
-        created = _parse_dt(timing.get("created_time"))
-        opened = _parse_dt(timing.get("open_time"))
+        # Unlike legacy journal timestamps, listing evidence must have a timezone.
+        def exchange_time(value: Any) -> datetime | None:
+            if not isinstance(value, str) or not value.strip():
+                return None
+            try:
+                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                if parsed.tzinfo is None or parsed.utcoffset() is None:
+                    return None
+                return parsed.astimezone(timezone.utc)
+            except (ValueError, OverflowError):
+                return None
+
+        created = exchange_time(timing.get("created_time"))
+        opened = exchange_time(timing.get("open_time"))
         if created is None or opened is None or created > now or opened > now:
             reasons.append("NEW_MARKET_TIMING_UNVERIFIED")
         elif (now - created).total_seconds() > MAX_NEW_MARKET_AGE_HOURS * 3600 or (now - opened).total_seconds() > MAX_NEW_MARKET_AGE_HOURS * 3600:

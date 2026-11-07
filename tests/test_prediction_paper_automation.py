@@ -541,3 +541,9 @@ def test_new_listing_only_prefilter_rejects_old_or_missing_exchange_times():
     future = _market(now)
     future["timing"]["open_time"] = (now + timedelta(minutes=2)).isoformat()
     assert "NEW_MARKET_TIMING_UNVERIFIED" in service._prefilter_reasons(future, now)
+    naive = _market(now)
+    naive["timing"]["created_time"] = "2026-10-02T11:00:00"
+    assert "NEW_MARKET_TIMING_UNVERIFIED" in service._prefilter_reasons(naive, now)
+    malformed = _market(now)
+    malformed["timing"]["open_time"] = "not-a-time"
+    assert "NEW_MARKET_TIMING_UNVERIFIED" in service._prefilter_reasons(malformed, now)
