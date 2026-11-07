@@ -122,3 +122,24 @@ def preview_stock_execution_side(evidence: dict[str, Any], *, side: str, quantit
         "price_basis": "ASK_FOR_BUY_BID_FOR_SELL", "paper_fill_authorized": False,
         "live_order_authorized": False,
     }
+
+
+def preview_current_stock_order(
+    quote: dict[str, Any], *, symbol: str, now: datetime, side: str,
+    quantity: str, max_notional: str,
+) -> dict[str, Any]:
+    """Revalidate provider event at decision time and cap proposed PAPER notional.
+
+    No caller-supplied evidence object is trusted and no simulated fill is made.
+    """
+    evidence = validate_stock_iex_quote(quote, symbol=symbol, now=now)
+    proposal = preview_stock_execution_side(evidence, side=side, quantity=quantity)
+    try:
+        cap = Decimal(max_notional)
+    except (InvalidOperation, ValueError, TypeError) as exc:
+        raise PriceEvidenceRejected("PAPER_NOTIONAL_CAP_INVALID") from exc
+    if not cap.is_finite() or cap <= 0:
+        raise PriceEvidenceRejected("PAPER_NOTIONAL_CAP_INVALID")
+    if Decimal(proposal["reference_notional"]) > cap:
+        raise PriceEvidenceRejected("PAPER_NOTIONAL_CAP_EXCEEDED")
+    return {**proposal, "quote_evidence": evidence, "max_notional": str(cap)}

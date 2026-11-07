@@ -128,3 +128,31 @@ def test_stock_execution_side_refuses_invalid_requests(side, quantity):
     evidence = validate_stock_iex_quote(_quote(now), symbol="MSFT", now=now)
     with pytest.raises(PriceEvidenceRejected):
         preview_stock_execution_side(evidence, side=side, quantity=quantity)
+
+
+def test_current_stock_order_revalidates_quote_and_caps_notional():
+    from app.services.personal_paper_price_evidence import preview_current_stock_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    result = preview_current_stock_order(_quote(now), symbol="MSFT", now=now,
+                                         side="BUY", quantity="0.2", max_notional="100")
+    assert result["reference_notional"] == "80.002"
+    assert result["max_notional"] == "100"
+    assert result["quote_evidence"]["provider_timestamp"] == now.isoformat()
+    assert result["paper_fill_authorized"] is False
+
+
+@pytest.mark.parametrize("quantity,cap", [("1", "100"), ("0.2", "0"), ("0.2", "NaN"), ("0.2", "bad")])
+def test_current_stock_order_refuses_invalid_cap_or_oversized_proposal(quantity, cap):
+    from app.services.personal_paper_price_evidence import preview_current_stock_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    with pytest.raises(PriceEvidenceRejected):
+        preview_current_stock_order(_quote(now), symbol="MSFT", now=now,
+                                    side="BUY", quantity=quantity, max_notional=cap)
+
+
+def test_current_stock_order_refuses_stale_quote_at_decision_time():
+    from app.services.personal_paper_price_evidence import preview_current_stock_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    with pytest.raises(PriceEvidenceRejected, match="PROVIDER_QUOTE_STALE_OR_FUTURE"):
+        preview_current_stock_order(_quote(now - timedelta(seconds=16)), symbol="MSFT",
+                                    now=now, side="BUY", quantity="0.2", max_notional="100")
