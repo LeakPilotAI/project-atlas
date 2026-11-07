@@ -85,6 +85,18 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
             if accepted and evidence["provider_timestamp"] <= accepted[-1]:
                 raise ValueError("CLOCK_IEX_PROVIDER_REPLAY_REFUSED")
             if publication is not None:
+                if operational_producer is not None:
+                    # A current publication at connection time is not enough:
+                    # verify the accepted input authority and native archive
+                    # again at the exact callback before evaluating the quote.
+                    current = operational_producer.read_publication(0.2)
+                    matching_now = [b for b in current.get("bundles", [])
+                                    if type(b) is dict and type(b.get("instrument")) is dict
+                                    and b["instrument"].get("symbol") == symbol]
+                    if (len(matching_now) != 1
+                            or matching_now[0].get("observation", {}).get("evidence_class") != "FORWARD_COLLECTION"
+                            or matching_now[0].get("observation", {}).get("strategy_version") != "QUALITY_DIPS_V3"):
+                        raise ValueError("CLOCK_IEX_OPERATIONAL_SOURCE_CHANGED")
                 # This reads the accepted native source and the same connected
                 # provider snapshot; no synthetic research dict or fill route.
                 candidate = evaluate_published_iex_v3_candidate(
@@ -128,7 +140,8 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                 "native_publication_supplied": publication is not None,
                 "forward_research_observed": (operational_producer is not None
                                               and bool(accepted) and bool(research_checked)),
-                "operational_producer_verified": operational_producer is not None,
+                "operational_producer_verified": (operational_producer is not None
+                                                  and bool(accepted) and bool(research_checked)),
                 "forward_paper_session_qualified": False,
                 "forward_financial_write_authorized": False,
                 "live_order_authorized": False}

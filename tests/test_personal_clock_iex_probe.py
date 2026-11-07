@@ -307,3 +307,40 @@ def test_publication_without_operational_producer_not_forward_research(monkeypat
     assert result['published_research_checked_count'] == 1
     assert result['forward_research_observed'] is False
     assert result['operational_producer_verified'] is False
+
+
+def test_operational_source_revocation_on_quote_blocks_evaluation_and_revokes_clock(monkeypatch):
+    import app.services.quality_dips_current_producer as producer_mod
+    import app.services.paper_source_publication as source_mod
+    class Published:
+        pass
+    class Producer:
+        execution_domain = 'OPERATIONAL'
+        def __init__(self):
+            self.publication = Published()
+            self.calls = 0
+        def read_publication(self, timeout):
+            assert timeout == 0.2
+            self.calls += 1
+            if self.calls == 2:
+                raise ValueError('QD_CURRENT_AUTHORITY_REVOKED')
+            return {'schema': 'QD_SCANNER_PUBLICATION_V1',
+                    'bundles': [{'instrument': {'symbol': 'MSFT'},
+                                 'observation': {'symbol': 'MSFT', 'evidence_class': 'FORWARD_COLLECTION',
+                                                 'strategy_version': 'QUALITY_DIPS_V3'}}]}
+    import app.services.personal_paper_iex_provider as provider_mod
+    class Provider:
+        def __init__(self, feed): pass
+    monkeypatch.setattr(provider_mod, 'PersonalPaperIEXProvider', Provider)
+    monkeypatch.setattr(producer_mod, 'QualityDipsCurrentProducer', Producer)
+    monkeypatch.setattr(source_mod, 'QualityDipsSourcePublication', Published)
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: object())
+    owner = Producer()
+    Clock.revoked = False
+    with pytest.raises(ValueError, match='QD_CURRENT_AUTHORITY_REVOKED'):
+        probe.bounded_clock_iex_observation(
+            symbol='MSFT', seconds=3, credentials_path=Path('unused'),
+            clock_factory=Clock, feed_factory=Feed,
+            publication=owner.publication, operational_producer=owner)
+    assert owner.calls == 2
+    assert Clock.revoked
