@@ -39,6 +39,9 @@ def test_pairs_use_earlier_buy_later_sell_and_both_fees(tmp_path):
     assert result['pairs'][0]['elapsed_seconds'] == '300.0'
     assert result['pairs'][0]['required_exit_bid_to_break_even'] == '0.405'
     assert result['cohort_summary']['EXPLORATORY_NOT_ENTRY_QUALIFIED']['pairs'] == 1
+    assert result['cohort_summary']['EXPLORATORY_NOT_ENTRY_QUALIFIED']['pairs_at_least_60_seconds'] == 1
+    assert result['cohort_summary']['EXPLORATORY_NOT_ENTRY_QUALIFIED']['pairs_under_60_seconds'] == 0
+    assert result['cohort_summary']['EXPLORATORY_NOT_ENTRY_QUALIFIED']['longest_observation_gap_seconds'] == '300.0'
     assert result['cohort_summary']['ENTRY_PREFILTER_PASSED_BOTH']['pairs'] == 0
 
 

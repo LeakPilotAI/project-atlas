@@ -110,6 +110,10 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
             'zero': sum(v == 0 for v in values),
             'sum_hypothetical_net_dollars': str(sum(values, Decimal('0'))),
             'distinct_tickers': len({p['ticker'] for p in group}),
+            'pairs_under_60_seconds': sum(Decimal(p['elapsed_seconds']) < 60 for p in group),
+            'pairs_at_least_60_seconds': sum(Decimal(p['elapsed_seconds']) >= 60 for p in group),
+            'longest_observation_gap_seconds': str(max(
+                (Decimal(p['elapsed_seconds']) for p in group), default=Decimal('0'))),
             'not_realized_pnl': True,
         }
     return {'status': 'PAIRED' if pairs else 'INSUFFICIENT_MATCHED_FORWARD_QUOTES',
