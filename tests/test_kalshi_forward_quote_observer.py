@@ -42,6 +42,8 @@ def test_writes_only_new_listing_read_only_quote(tmp_path, monkeypatch):
     row = json.loads(path.read_text().strip())
     assert row['sides']['YES']['buy_vwap'] == '0.42'
     assert row['sides']['NO']['sell_vwap'] == '0.58'
+    assert Decimal(row['sides']['YES']['instant_roundtrip_net_dollars']) < 0
+    assert Decimal(row['sides']['NO']['instant_roundtrip_net_dollars']) < 0
     assert row['orders_placed'] == row['paper_trades_opened'] == 0
     assert result['unattended_paper_authorized'] is False
 

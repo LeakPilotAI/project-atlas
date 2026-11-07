@@ -80,10 +80,22 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             for side in ('YES', 'NO'):
                 buy = walk_executable_depth(book, side=side, action='BUY', quantity=quantity)
                 sell = walk_executable_depth(book, side=side, action='SELL', quantity=quantity)
-                sides[side] = {'buy_fillable': bool(buy.get('fillable')),
-                               'buy_vwap': buy.get('vwap_dollars') if buy.get('fillable') else None,
-                               'sell_fillable': bool(sell.get('fillable')),
-                               'sell_vwap': sell.get('vwap_dollars') if sell.get('fillable') else None,
+                buy_ok = bool(buy.get('fillable'))
+                sell_ok = bool(sell.get('fillable'))
+                # Same-snapshot executable round-trip is a spread/cost diagnostic,
+                # not a forward price forecast or a PAPER trade.
+                roundtrip = None
+                if buy_ok and sell_ok:
+                    buy_price = Decimal(str(buy['vwap_dollars']))
+                    sell_price = Decimal(str(sell['vwap_dollars']))
+                    entry_fee = Decimal(str(buy['estimated_taker_fee_dollars']))
+                    exit_fee = Decimal(str(sell['estimated_taker_fee_dollars']))
+                    roundtrip = str((sell_price - buy_price) * quantity - entry_fee - exit_fee)
+                sides[side] = {'buy_fillable': buy_ok,
+                               'sell_fillable': sell_ok,
+                               'instant_roundtrip_net_dollars': roundtrip,
+                               'buy_vwap': buy.get('vwap_dollars') if buy_ok else None,
+                               'sell_vwap': sell.get('vwap_dollars') if sell_ok else None,
                                'buy_fee': buy.get('estimated_taker_fee_dollars') if buy.get('fillable') else None,
                                'sell_fee': sell.get('estimated_taker_fee_dollars') if sell.get('fillable') else None}
             records.append({'schema': 'kalshi-forward-quote-v1', 'observed_at': book_observed.isoformat(),
