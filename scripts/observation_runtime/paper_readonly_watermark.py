@@ -203,7 +203,14 @@ class ReadonlyIEXEventConsumer:
             from datetime import UTC
             evidence_stamp = _aware(decision["quote_evidence"]["provider_timestamp"],
                                     "published IEX quote timestamp")
-            if evidence_stamp.astimezone(UTC) != stamp.astimezone(UTC):
+            from decimal import Decimal, InvalidOperation
+            evidence = decision["quote_evidence"]
+            try:
+                same_prices = (Decimal(str(event["bid"])) == Decimal(str(evidence["bid"]))
+                               and Decimal(str(event["ask"])) == Decimal(str(evidence["ask"])))
+            except (KeyError, ValueError, TypeError, InvalidOperation):
+                same_prices = False
+            if evidence_stamp.astimezone(UTC) != stamp.astimezone(UTC) or not same_prices:
                 raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_QUOTE_CHANGED")
             if decision.get("publication_read_verified") is not True:
                 raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_SOURCE_UNVERIFIED")

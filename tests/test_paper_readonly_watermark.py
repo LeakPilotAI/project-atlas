@@ -233,3 +233,47 @@ def test_iex_published_mode_refuses_fake_ports_before_watermark_advance(tmp_path
                                      "paper_fill_authorized": False, "live_order_authorized": False})
         assert consumer.accepted == 0
     assert read_watermark(path, symbol="MSFT") == previous
+
+
+def test_published_iex_callback_checks_full_quote_and_source_before_commit(tmp_path, monkeypatch):
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from scripts.observation_runtime.paper_readonly_watermark import ReadonlyIEXEventConsumer
+    now = datetime(2026, 11, 7, tzinfo=UTC)
+    path = tmp_path / "verified-event.json"
+    previous = (now - timedelta(seconds=2)).isoformat()
+    stamp = (now - timedelta(seconds=1)).isoformat()
+    advance_watermark(path, symbol="MSFT", provider_timestamp=previous)
+    research = {"symbol": "MSFT", "timestamp": now.isoformat(), "blockers": [],
+                "missing_critical": [], "quality_dips_v2": {"missing_v2_evidence": [],
+                "decision_inputs": {"symbol": "MSFT",
+                    "normalization_value": {"conservative": 95, "base": 100, "optimistic": 105},
+                    "quality_score": 80, "fundamentals_score": 80,
+                    "valuation_score": 70, "drawdown_percentile": 80,
+                    "evidence_quality": "HIGH", "thesis_intact": True, "value_trap": False}}}
+    packet = {"schema": "QD_SCANNER_PUBLICATION_V1", "source_id": "fixture-only",
+              "revision": 2, "bundles": [{"instrument": {"symbol": "MSFT"},
+              "observation": {"symbol": "MSFT", "strategy_version": "QUALITY_DIPS_V3",
+                              "evidence_class": "FORWARD_COLLECTION", "timestamp": now.isoformat()},
+              "board": [research]}]}
+    provider_quote = {"symbol": "MSFT", "state": "FRESH", "bid": "80", "ask": "80",
+                      "bid_lots": 2, "ask_lots": 2, "timestamp": stamp,
+                      "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    pub = object.__new__(QualityDipsSourcePublication)
+    provider = object.__new__(PersonalPaperIEXProvider)
+    monkeypatch.setattr(QualityDipsSourcePublication, "read_current", lambda self: packet)
+    monkeypatch.setattr(PersonalPaperIEXProvider, "read_iex_quote", lambda self, symbol: provider_quote)
+    event = {"symbol": "MSFT", "provider": "ALPACA_IEX", "timestamp": stamp,
+             "bid": "80", "ask": "80", "bid_lots": 2, "ask_lots": 2,
+             "paper_fill_authorized": False, "live_order_authorized": False}
+    with ReadonlyIEXEventConsumer(path=path, symbol="MSFT", publication=pub,
+                                  provider=provider, clock=lambda: now) as consumer:
+        with pytest.raises(ValueError, match="PUBLISHED_QUOTE_CHANGED"):
+            consumer.on_fresh_quote({**event, "ask": "81"})
+        assert consumer.accepted == 0
+        assert read_watermark(path, symbol="MSFT") == previous
+        consumer.on_fresh_quote(event)
+        assert consumer.accepted == 1
+        assert consumer.last_strategy["publication_read_verified"] is True
+        assert consumer.last_strategy["paper_fill_authorized"] is False
+    assert read_watermark(path, symbol="MSFT") == stamp
