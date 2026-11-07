@@ -214,3 +214,29 @@ def test_forward_account_capacity_refuses_missing_account():
                                                "side": "BUY", "paper_fill_authorized": False,
                                                "live_order_authorized": False, "reference_notional": "20"},
                                               journal_events=[], account_id="paper")
+
+
+def test_forward_capacity_combines_strategy_quote_and_account_without_mutation(tmp_path):
+    from app.investment.quality_dips_paper import initialize_paper_account, read_events
+    from app.services.personal_paper_price_evidence import preview_quality_dips_forward_capacity
+    path = tmp_path / "account.jsonl"
+    initialize_paper_account(account_id="forward", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    before = path.read_bytes()
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {"strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "obs-3",
+                   "blockers": [], "strategy_result": {"entry_ladder": {"ready": True}},
+                   "paper_execution_eligible": True}
+    diagnostic = preview_quality_dips_forward_capacity(
+        observation, _quote(now), now=now, quantity="0.2", max_notional="100",
+        journal_events=read_events(path), account_id="forward")
+    assert diagnostic["blockers"] == []
+    assert diagnostic["proposal"]["reference_notional"] == "80.002"
+    assert diagnostic["paper_fill_authorized"] is False
+    assert path.read_bytes() == before
+    observation["blockers"] = ["RESEARCH_STALE"]
+    with pytest.raises(PriceEvidenceRejected, match="QUALITY_DIPS_STRATEGY_BLOCKED"):
+        preview_quality_dips_forward_capacity(
+            observation, _quote(now), now=now, quantity="0.2", max_notional="100",
+            journal_events=read_events(path), account_id="forward")

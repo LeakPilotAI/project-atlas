@@ -202,3 +202,21 @@ def preview_quality_dips_account_capacity(
             "account_id": account_id, "blockers": blockers,
             "reference_notional": str(notional), "estimated_fee": str(fee),
             "paper_fill_authorized": False, "live_order_authorized": False}
+
+
+def preview_quality_dips_forward_capacity(
+    observation: dict[str, Any], quote: dict[str, Any], *, now: datetime,
+    quantity: str, max_notional: str, journal_events: list[dict[str, Any]],
+    account_id: str,
+) -> dict[str, Any]:
+    """Full read-only strategy/quote/account diagnostic, never an execution grant."""
+    proposal = preview_quality_dips_order(
+        observation, quote, now=now, quantity=quantity, max_notional=max_notional,
+    )
+    capacity = preview_quality_dips_account_capacity(
+        proposal, journal_events=journal_events, account_id=account_id,
+    )
+    return {"schema": "ATLAS_PERSONAL_PAPER_FORWARD_CAPACITY_DIAGNOSTIC_V1",
+            "proposal": proposal, "capacity": capacity,
+            "blockers": capacity["blockers"], "paper_fill_authorized": False,
+            "live_order_authorized": False}
