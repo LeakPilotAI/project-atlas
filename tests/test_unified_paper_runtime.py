@@ -1128,3 +1128,27 @@ def test_accepted_stop_registration_rejects_stopped_runtime_even_with_grant(tmp_
         register_accepted_unified_paper_stop_routes(app, bridge=b,
             origin='http://127.0.0.1:18799', token='synthetic-test-control-token-only-1234')
     assert not any(getattr(route, 'path', '') == '/_atlas/control/stop-session' for route in app.routes)
+
+
+@pytest.mark.asyncio
+async def test_accepted_stop_route_refuses_runtime_stopped_after_registration(tmp_path):
+    from fastapi import FastAPI
+    import httpx
+    from app.services.quality_dips_stop_bridge import register_accepted_unified_paper_stop_routes
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    r = runtime()
+    r.grant = {'session_id': 'synthetic-route-test'}
+    r.state = 'RUNNING'
+    b = UnifiedControlStopBridge(r, owned_close=object(),
+                                 stop_ledger=PaperStopReceiptLedger(tmp_path / 'stop.sqlite'))
+    app = FastAPI()
+    origin, token = 'http://127.0.0.1:18799', 'synthetic-test-control-token-only-1234'
+    register_accepted_unified_paper_stop_routes(app, bridge=b, origin=origin, token=token)
+    r.state = 'STOPPED'
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=origin) as client:
+        response = await client.post('/_atlas/control/stop-session',
+            headers={'origin': origin, 'x-atlas-control': token},
+            json={'session_id': 'synthetic-route-test', 'mode': 'SHUTDOWN_FLATTEN'})
+    assert response.status_code == 409
+    assert response.json()['status'] == 'REFUSED'
+    assert b.progress['phase'] == 'IDLE'

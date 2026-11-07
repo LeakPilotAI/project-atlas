@@ -197,6 +197,15 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False, r
             from starlette.concurrency import run_in_threadpool
 
             def verified_stop():
+                # A route installed while RUNNING must not remain an active
+                # financial-stop entry point after the runtime is stopped.
+                # Restrict this to accepted unified installations; legacy
+                # synthetic transport tests retain their explicit policy.
+                if require_durable_receipt:
+                    from app.services.unified_paper_runtime import UnifiedControlStopBridge
+                    if (type(bridge) is UnifiedControlStopBridge
+                            and bridge.runtime.state not in ("RUNNING", "PAUSED")):
+                        raise ValueError("CONTROL_RUNTIME_NOT_ACTIVE")
                 if (type(bridge.session_id) is not str
                         or bridge.session_id != payload["session_id"]
                         or bridge.verify_session() is not True):

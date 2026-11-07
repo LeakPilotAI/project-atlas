@@ -17094,3 +17094,4 @@ NEXT: audit current tabs against these three lanes and distinguish already built
 2026-11-07 - Hardened unified PAPER financial-stop exception boundary against unexpected RuntimeError; fail closed with incomplete stop receipt and closed entry admission. 90 Python passed/1 skipped. PAPER NO-GO; Genesis untouched.
 2026-11-07 - Fail closed on unexpected owned-process verification/close exceptions in unified PAPER stop bridge; 92 Python passed/1 skipped. PAPER NO-GO, Genesis untouched.
 2026-11-07 - Accepted unified PAPER stop transport registration requires runtime RUNNING/PAUSED; refuses stopped grant and leaves route unregistered. 93 Python passed/1 skipped. PAPER NO-GO; Genesis untouched.
+2026-11-07 - Accepted unified PAPER stop route now rejects stale requests after runtime STOPPED even if endpoint remains registered. 94 Python passed/1 skipped. PAPER NO-GO; Genesis untouched.
