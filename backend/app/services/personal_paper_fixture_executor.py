@@ -79,3 +79,31 @@ def execute_disposable_test_paper_step(*, path: Path, account_id: str,
                             "net_realized_pnl": updated["net_realized_pnl"],
                             "forward_trading_authorized": False,
                             "live_order_authorized": False}))
+
+
+def execute_disposable_validated_quote_step(*, path: Path, account_id: str,
+                                            observation: dict[str, Any],
+                                            action: str, quote: dict[str, Any],
+                                            now: Any, notional: Any = 50,
+                                            slippage_bps: Any = 2) -> dict[str, Any]:
+    """TEST_DATA-only quote-to-journal bridge; quote is caller-supplied.
+
+    Validating a quote does not attest provider authentication. This adapter
+    never accepts FORWARD_COLLECTION evidence or grants financial authority.
+    """
+    from app.services.personal_paper_price_evidence import validate_stock_iex_quote
+    if type(observation) is not dict or observation.get("evidence_class") != "TEST_DATA":
+        raise ValueError("DISPOSABLE_QUOTE_TEST_DATA_ONLY")
+    if action not in ("ENTER", "MARK", "EXIT"):
+        raise ValueError("DISPOSABLE_QUOTE_ACTION_INVALID")
+    evidence = validate_stock_iex_quote(quote, symbol=observation.get("symbol"), now=now)
+    if evidence.get("paper_fill_authorized") is not False:
+        raise ValueError("DISPOSABLE_QUOTE_UNEXPECTED_AUTHORITY")
+    side_price = evidence["ask"] if action == "ENTER" else evidence["bid"]
+    result = execute_disposable_test_paper_step(
+        path=path, account_id=account_id, observation=observation,
+        action=action, price=side_price, notional=notional,
+        slippage_bps=slippage_bps)
+    return strict(body({**result, "quote_evidence": evidence,
+                        "provider_authenticated": False,
+                        "forward_trading_authorized": False}))

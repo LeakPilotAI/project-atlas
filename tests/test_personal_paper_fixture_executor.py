@@ -63,3 +63,42 @@ def test_disposable_slippage_refuses_invalid_and_never_improves_execution(tmp_pa
     closed = step(**args, action="EXIT", price=100, slippage_bps=10)
     assert closed["simulated_execution_price"] == 99.9
     assert closed["net_realized_pnl"] < 0
+
+
+def test_disposable_validated_quote_to_journal_spread_slippage_and_restart(tmp_path):
+    from datetime import UTC, datetime, timedelta
+    from app.services.personal_paper_fixture_executor import execute_disposable_validated_quote_step
+    now = datetime(2026, 11, 7, tzinfo=UTC)
+    path = tmp_path / "quote-test.jsonl"
+    initialize_paper_account(account_id="quote", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    observation = {"observation_id": "quote-1", "symbol": "MSFT",
+                   "evidence_class": "TEST_DATA"}
+    args = dict(path=path, account_id="quote", observation=observation, now=now)
+    def quote(bid, ask, stamp=now):
+        return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
+                "bid_lots": 5, "ask_lots": 5, "timestamp": stamp.isoformat(),
+                "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="PROVIDER_QUOTE_STALE_OR_FUTURE"):
+        execute_disposable_validated_quote_step(**args, action="ENTER",
+            quote=quote("99.99", "100", now-timedelta(minutes=1)))
+    assert path.read_bytes() == before
+    entry = execute_disposable_validated_quote_step(**args, action="ENTER",
+        quote=quote("99.99", "100"), slippage_bps=10)
+    assert entry["simulated_execution_price"] == 100.1
+    assert entry["provider_authenticated"] is False
+    mark = execute_disposable_validated_quote_step(**args, action="MARK",
+        quote=quote("99.99", "100"), slippage_bps=10)
+    assert mark["simulated_execution_price"] == 99.89001
+    close = execute_disposable_validated_quote_step(**args, action="EXIT",
+        quote=quote("99.99", "100"), slippage_bps=10)
+    assert close["simulated_execution_price"] == 99.89001
+    assert close["net_realized_pnl"] < 0
+    assert accounting_snapshot(read_events(path), account_id="quote")["open_positions"] == 0
+    forward_observation = {**observation, "evidence_class": "FORWARD_COLLECTION"}
+    after = path.read_bytes()
+    with pytest.raises(ValueError, match="TEST_DATA_ONLY"):
+        execute_disposable_validated_quote_step(**{**args, "observation": forward_observation},
+            action="ENTER", quote=quote("99.99", "100"))
+    assert path.read_bytes() == after
