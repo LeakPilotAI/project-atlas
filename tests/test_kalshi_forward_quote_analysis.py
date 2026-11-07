@@ -74,6 +74,18 @@ def test_reused_ticker_different_listing_or_event_is_not_paired(tmp_path):
     assert analyze(path)['paired_count'] == 0
 
 
+def test_non_overlapping_snapshot_pair_count_does_not_reuse_middle_quote(tmp_path):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    path = tmp_path / 'quotes.jsonl'
+    write(path, [row(now), row(now + timedelta(minutes=1)),
+                 row(now + timedelta(minutes=2)), row(now + timedelta(minutes=3))])
+    result = analyze(path)
+    assert result['paired_count'] == 3
+    assert result['quote_pair_summary']['non_overlapping_snapshot_pairs'] == 2
+    assert result['cohort_summary']['EXPLORATORY_NOT_ENTRY_QUALIFIED']['non_overlapping_snapshot_pairs'] == 2
+    assert result['quote_pair_summary']['non_overlapping_is_not_independent_trades'] is True
+
+
 def test_missing_file_is_no_evidence(tmp_path):
     assert analyze(tmp_path / 'missing.jsonl')['status'] == 'NO_FORWARD_OBSERVATIONS'
 

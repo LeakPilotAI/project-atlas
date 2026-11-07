@@ -83,6 +83,9 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
                         cohort = ('ENTRY_PREFILTER_PASSED_BOTH' if entry_gate_passed and exit_gate_passed
                                   else 'EXPLORATORY_NOT_ENTRY_QUALIFIED')
                         pairs.append({'ticker': ticker, 'side': side, 'quantity': str(qty),
+                                      'listing_created_at': key[3].isoformat(),
+                                      'listing_open_at': key[4].isoformat(),
+                                      'event_occurrence_at': key[5].isoformat(),
                                       'cohort': cohort,
                                       'entry_observed_at': prior[0].isoformat(),
                                       'exit_observed_at': stamp.isoformat(),
@@ -100,12 +103,28 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
     positive = sum(value > 0 for value in nets)
     negative = sum(value < 0 for value in nets)
     zero = len(nets) - positive - negative
+    # Non-overlapping quote transitions: each snapshot may belong to at most
+    # one selected transition for a ticker/side/listing. This reduces repeated
+    # reuse of the same evidence; it still does NOT create independent trades.
+    disjoint_pairs = []
+    used_snapshots = set()
+    for pair in pairs:
+        identity = (pair['ticker'], pair['side'], pair['quantity'],
+                    pair['listing_created_at'], pair['listing_open_at'],
+                    pair['event_occurrence_at'])
+        first = (*identity, pair['entry_observed_at'])
+        last = (*identity, pair['exit_observed_at'])
+        if first not in used_snapshots and last not in used_snapshots:
+            disjoint_pairs.append(pair)
+            used_snapshots.update((first, last))
     cohorts = {}
     for name in ('ENTRY_PREFILTER_PASSED_BOTH', 'EXPLORATORY_NOT_ENTRY_QUALIFIED'):
         group = [p for p in pairs if p['cohort'] == name]
         values = [Decimal(p['net_dollars']) for p in group]
         cohorts[name] = {
-            'pairs': len(group), 'positive': sum(v > 0 for v in values),
+            'pairs': len(group),
+            'non_overlapping_snapshot_pairs': sum(p['cohort'] == name for p in disjoint_pairs),
+            'positive': sum(v > 0 for v in values),
             'negative': sum(v < 0 for v in values),
             'zero': sum(v == 0 for v in values),
             'sum_hypothetical_net_dollars': str(sum(values, Decimal('0'))),
@@ -123,6 +142,8 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
                 'positive_pairs': positive, 'negative_pairs': negative,
                 'zero_pairs': zero, 'sum_net_dollars': str(sum(nets, Decimal('0'))),
                 'overlapping_pairs_possible': True,
+                'non_overlapping_snapshot_pairs': len(disjoint_pairs),
+                'non_overlapping_is_not_independent_trades': True,
                 'not_realized_pnl': True,
                 'exploratory_pairs': sum(p['cohort'] == 'EXPLORATORY_NOT_ENTRY_QUALIFIED' for p in pairs),
                 'entry_prefilter_passed_pairs': sum(p['cohort'] == 'ENTRY_PREFILTER_PASSED_BOTH' for p in pairs),
