@@ -11,11 +11,13 @@ import pytest
 from app.services.paper_financial_replay import body, digest
 from app.services.quality_dips_autonomous_enrollment import publication_intent
 from app.services.quality_dips_autonomous_publication_port import BoundAutonomousFinancialPublication
+from app.services.quality_dips_autonomous_v4_inception_replay import V4InceptionFinancialReplay
+from test_quality_dips_autonomous_v4_inception_replay import inception_case
 from test_quality_dips_autonomous_publication_binding import sample
 
 
 @pytest.fixture
-def native_v4_publication():
+def native_v4_publication(request):
     value = os.environ.get('ATLAS_AUTO_ENROLLMENT_ROOT')
     if not value:
         pytest.skip('NOT EXECUTED: confined native enrollment root required')
@@ -29,7 +31,7 @@ def native_v4_publication():
         repo / 'scripts/volume_inspector/autonomous_enrollment_read.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    e, p, cut, docs = sample()
+    e, p, cut, docs = inception_case() if request.param == "inception" else sample()
     outputs = {}
     try:
         for role in e['resources']:
@@ -42,6 +44,10 @@ def native_v4_publication():
         for role in ('source', 'projection', 'report'):
             for doc in docs[role].values():
                 doc.update(common)
+        if request.param == 'inception':
+            head = digest(['QD_AUTO_NATIVE_INCEPTION_V4', digest(docs['source']['inception.json'])])
+            docs['report']['report.json']['head'] = head
+            p['event_head'] = head
         p['enrollment_digest'] = digest(e)
         p['inception_intent_digest'] = digest(publication_intent(e))
         p['projection_digest'] = digest(docs['projection']['projection.json']['state'])
@@ -76,7 +82,10 @@ def native_v4_publication():
 
         class Replay(Port):
             def verify(self, enrollment, publication, cut, documents, now, *, scope):
-                # This is a test stub, NOT a financial replay or accepted authority.
+                if request.param == "inception":
+                    return V4InceptionFinancialReplay().verify(
+                        enrollment, publication, cut, documents, now, scope=scope)
+                # Three-event financial replay is still an explicit test stub.
                 return True
 
         replay = Replay(cut, lambda snapshot, now: snapshot == cut)
@@ -89,6 +98,7 @@ def native_v4_publication():
             out.close()
 
 
+@pytest.mark.parametrize("native_v4_publication", ["inception", "three_event"], indirect=True)
 def test_v4_publication_adapter_is_called_from_real_native_readback(native_v4_publication):
     s = native_v4_publication
     before = {p: p.read_bytes() for p in s.root.rglob('*.json')}
@@ -96,11 +106,27 @@ def test_v4_publication_adapter_is_called_from_real_native_readback(native_v4_pu
     assert before == {p: p.read_bytes() for p in s.root.rglob('*.json')}
 
 
+@pytest.mark.parametrize('native_v4_publication', ['three_event'], indirect=True)
 @pytest.mark.parametrize('damage', ['event_bytes', 'publisher', 'ack', 'replay', 'scope'])
 def test_v4_native_publication_integration_refuses_tampering(damage, native_v4_publication):
     s = native_v4_publication
     if damage == 'event_bytes':
         (s.root / 'source/0002-event.json').write_bytes(b'{}')
+    if damage == 'publisher': s.publisher.check = lambda *a: False
+    if damage == 'ack': s.ack.check = lambda *a: False
+    if damage == 'replay': s.replay.verify = lambda *a, **kw: False
+    if damage == 'scope': s.current['scope'] = 'DISPOSABLE_TEST'
+    with pytest.raises((ValueError, OSError)):
+        s.reader.verify(s.e, s.current, 1000, scope='LOCAL_ENROLLED')
+
+@pytest.mark.parametrize('damage', ['inception_bytes', 'projection_bytes', 'report_bytes',
+    'publisher', 'ack', 'replay', 'scope'])
+@pytest.mark.parametrize('native_v4_publication', ['inception'], indirect=True)
+def test_real_native_v4_inception_financial_replay_refuses_tampering(damage, native_v4_publication):
+    s = native_v4_publication
+    if damage == 'inception_bytes': (s.root / 'source/inception.json').write_bytes(b'{}')
+    if damage == 'projection_bytes': (s.root / 'projection/projection.json').write_bytes(b'{}')
+    if damage == 'report_bytes': (s.root / 'report/report.json').write_bytes(b'{}')
     if damage == 'publisher': s.publisher.check = lambda *a: False
     if damage == 'ack': s.ack.check = lambda *a: False
     if damage == 'replay': s.replay.verify = lambda *a, **kw: False
