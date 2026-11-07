@@ -125,7 +125,7 @@ def test_recovery_accepts_equivalent_timezone_instants(tmp_path):
              "account_id": "demo"}, path)
     _append({"event": "v3_tick_completed", "event_id": "done-abc",
              "provider_timestamp": "2026-11-07T06:00:00-06:00",
-             "account_id": "demo"}, path)
+             "account_id": "demo", "action": "WAIT", "simulated_event_id": None}, path)
     report = inspect_incremental_test_v3_recovery(path=path, account_id="demo")
     assert report["recovery_status"] == "CLEAN"
     assert report["completed_ticks"] == 1
@@ -233,6 +233,9 @@ def test_incremental_refuses_completed_tick_without_matching_financial_write(tmp
              "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
              "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     before = path.read_bytes()
+    report = inspect_incremental_test_v3_recovery(path=path, account_id="demo")
+    assert "FINANCIAL_TICK_HISTORY_MISMATCH" in report["anomalies"]
+    assert report["recovery_status"] == "BLOCKED_MANUAL_REVIEW"
     with pytest.raises(ValueError, match="FINANCIAL_TICK_HISTORY_MISMATCH"):
         execute_incremental_test_v3_tick(path=path, account_id="demo",
             observation={"observation_id": "test", "symbol": "MSFT",
@@ -265,6 +268,9 @@ def test_incremental_refuses_orphan_financial_write_after_completed_tick(tmp_pat
              "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
              "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     before = path.read_bytes()
+    report = inspect_incremental_test_v3_recovery(path=path, account_id="demo")
+    assert "ACCOUNTING_REPLAY_REFUSED" in report["anomalies"]
+    assert report["recovery_status"] == "BLOCKED_MANUAL_REVIEW"
     with pytest.raises(ValueError, match="ORPHAN_FINANCIAL_EVENT"):
         execute_incremental_test_v3_tick(path=path, account_id="demo",
             observation={"observation_id": "test", "symbol": "MSFT",

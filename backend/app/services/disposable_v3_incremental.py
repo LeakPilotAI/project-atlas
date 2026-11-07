@@ -182,7 +182,18 @@ def inspect_incremental_test_v3_recovery(*, path: Path, account_id: str) -> dict
         raise ValueError("INCREMENTAL_V3_RECOVERY_ACCOUNT_REQUIRED")
     with journal_mutation_transaction(path):
         events = read_events(path)
-        account = accounting_snapshot(events, account_id=account_id)
+        try:
+            account = accounting_snapshot(events, account_id=account_id)
+        except (ValueError, KeyError, TypeError):
+            return {"schema": "ATLAS_INCREMENTAL_TEST_V3_RECOVERY_REPORT_V1",
+                    "account_id": account_id, "completed_ticks": 0,
+                    "pending_tick_count": 0,
+                    "anomalies": ["ACCOUNTING_REPLAY_REFUSED"],
+                    "recovery_status": "BLOCKED_MANUAL_REVIEW",
+                    "cash_reconciled": False, "open_positions": None,
+                    "net_realized_pnl": None, "journal_mutated": False,
+                    "automatic_recovery_authorized": False,
+                    "forward_trading_authorized": False, "live_order_authorized": False}
         if account is None or account.get("data_provenance") != "TEST_DATA":
             raise ValueError("INCREMENTAL_V3_RECOVERY_TEST_ACCOUNT_REQUIRED")
         starts = {}
@@ -225,6 +236,44 @@ def inspect_incremental_test_v3_recovery(*, path: Path, account_id: str) -> dict
         pending = [digest for digest in starts if digest not in completed]
         if pending:
             anomalies.append("INCOMPLETE_TICK")
+        # Recovery reports must not claim CLEAN when the execution gate would
+        # refuse orphan/mismatched financial mutations. Keep this read-only.
+        active = None
+        enrolled = False
+        expected = {"WAIT": None, "ENTER": "open_lot",
+                    "MARK": "mark_lot", "EXIT": "close_lot"}
+        for row in events:
+            kind = row.get("event")
+            if kind == "v3_tick_started":
+                enrolled = True
+                if active is not None:
+                    anomalies.append("OVERLAPPING_TICKS")
+                active = {"id": row.get("event_id"), "stamp": row.get("provider_timestamp"),
+                          "financial": []}
+            elif kind in ("open_lot", "mark_lot", "close_lot"):
+                if active is not None:
+                    active["financial"].append(row)
+                elif enrolled:
+                    anomalies.append("ORPHAN_FINANCIAL_EVENT")
+            elif kind == "v3_tick_completed":
+                enrolled = True
+                if active is None:
+                    anomalies.append("UNMATCHED_COMPLETION")
+                    continue
+                financial = active["financial"]
+                action = row.get("action")
+                if (type(active["id"]) is not str
+                        or row.get("event_id") != "done-" + active["id"][6:]
+                        or _provider_instant(row.get("provider_timestamp")) !=
+                        _provider_instant(active["stamp"])
+                        or action not in expected
+                        or len(financial) != (0 if action == "WAIT" else 1)
+                        or (financial and (financial[0].get("event") != expected[action]
+                             or financial[0].get("event_id") != row.get("simulated_event_id")
+                             or financial[0].get("account_id") != account_id))
+                        or (not financial and row.get("simulated_event_id") is not None)):
+                    anomalies.append("FINANCIAL_TICK_HISTORY_MISMATCH")
+                active = None
         if account["cash_reconciled"] is not True:
             anomalies.append("CASH_RECONCILIATION_FAILED")
         return {"schema": "ATLAS_INCREMENTAL_TEST_V3_RECOVERY_REPORT_V1",
