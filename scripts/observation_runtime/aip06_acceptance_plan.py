@@ -38,6 +38,9 @@ def schedule():
         if row['id'] == 'F11':
             row['prerequisite_case'] = 'tests/test_unified_source_capacity_native.py::test_native_store_capacity_readbacks_are_consistent_without_mocked_headroom'
             row['prerequisite_status'] = 'SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING'
+            row['real_write_prerequisite_case'] = ('tests/test_unified_source_capacity_native.py::'
+                'test_native_capacity_changes_after_real_disposable_orders_and_stops')
+            row['real_write_prerequisite_status'] = 'SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING'
     rows+= [{'id':'BOOTSTRAP-IPC-FAULTS','source_case':None,'proof':'missing-or-conflicting-escrow-bootstrap-ACK-credit-and-drain',
              'status':'NATIVE_FAULT_INJECTOR_BINDING_PENDING','max_children':2},
             {'id':'OWNERSHIP-PROBES','source_case':None,'proof':'current-supervisor-complete-roster-contained-unexpected-child-refusal',

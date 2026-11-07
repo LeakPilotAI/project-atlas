@@ -10,3 +10,11 @@ def test_f11_readback_prerequisite_is_selected_without_false_acceptance():
     assert row["prerequisite_status"] == "SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING"
     assert row["source_case"] is None
     assert row["status"] == "NATIVE_CASE_BINDING_PENDING"
+
+def test_f11_real_write_prerequisite_does_not_complete_saturation():
+    row = next(row for row in schedule() if row['id'] == 'F11')
+    assert row['real_write_prerequisite_case'] == (
+        'tests/test_unified_source_capacity_native.py::'
+        'test_native_capacity_changes_after_real_disposable_orders_and_stops')
+    assert row['real_write_prerequisite_status'] == 'SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING'
+    assert row['source_case'] is None
