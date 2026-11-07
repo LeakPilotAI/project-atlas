@@ -181,6 +181,18 @@ class UnifiedControlStopBridge:
                 self.runtime.entry_closed.set()
                 raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
             ledger = getattr(self, "stop_ledger", None)
+            if ledger is not None and self.progress["phase"] == "FINISHED":
+                grant = self.runtime.grant
+                if type(grant) is not dict or type(grant.get("session_id")) is not str or not grant["session_id"]:
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_LEDGER_SESSION_REQUIRED")
+                try:
+                    persisted = ledger.reserve_existing(grant["session_id"], self.progress["outcome"]["mode"])
+                    if persisted["state"] != "FINISHED" or persisted["receipt"] != self.progress:
+                        raise ValueError("STOP_RECEIPT_CHANGED")
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
             if ledger is not None and self.progress["phase"] == "IDLE":
                 grant = self.runtime.grant
                 if type(grant) is not dict or type(grant.get("session_id")) is not str or not grant["session_id"]:

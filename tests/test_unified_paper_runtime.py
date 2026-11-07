@@ -636,3 +636,25 @@ def test_fresh_session_status_remains_idle_without_creating_intent(tmp_path):
     assert b.status()["phase"] == "IDLE"
     with pytest.raises(StopReceiptConflict):
         ledger.reserve_existing("s", "SHUTDOWN_FLATTEN")
+def test_finished_stop_status_rechecks_durable_receipt(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    import sqlite3
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.owned_close = None
+    b._close_binding = None
+    b.stop_ledger = ledger
+    b.runtime = SimpleNamespace(stop=lambda **kw: {"state":"STOPPED","lanes":{}},
+                                entry_closed=Event(), uncertain=False, grant={"session_id":"s"})
+    receipt = b.request_stop("SHUTDOWN_FLATTEN")
+    assert b.status() == receipt
+    with sqlite3.connect(ledger.path) as db:
+        db.execute("UPDATE stop_receipts SET receipt='invalid-json' WHERE session='s'")
+    with pytest.raises(ValueError, match="RECEIPT_UNVERIFIED"):
+        b.status()
+    assert b.runtime.entry_closed.is_set()
