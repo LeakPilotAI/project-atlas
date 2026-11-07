@@ -58,6 +58,8 @@ def validate_stock_iex_quote(
         "age_seconds": round(age, 6),
         "bid": str(bid),
         "ask": str(ask),
+        "bid_lots": quote["bid_lots"],
+        "ask_lots": quote["ask_lots"],
         "spread_bps": float(spread_bps),
         "paper_fill_authorized": False,
         "live_order_authorized": False,
