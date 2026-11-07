@@ -504,3 +504,27 @@ def assess_forward_paper_activation_readiness(*, installation: Any,
                         "account_id": account_id, "blockers": blockers,
                         "ready": False, "paper_fill_authorized": False,
                         "live_order_authorized": False}))
+
+
+def check_local_iex_config_readiness(*, config_path: Any) -> dict[str, Any]:
+    """Validate local data-only Alpaca config without connecting or leaking keys.
+
+    This checks format and trading-disabled policy, not authentication,
+    operator approval, provider rights or permission to simulate fills.
+    """
+    from pathlib import Path
+    from app.investment.alpaca_iex import Credentials, IEXRefused
+    from app.services.paper_financial_replay import strict, body
+    if not isinstance(config_path, Path):
+        raise ValueError("IEX_PREFLIGHT_EXPLICIT_PATH_REQUIRED")
+    try:
+        Credentials.load(config_path)
+        status = "VALID_FORMAT_ONLY"
+    except IEXRefused:
+        status = "CONFIG_REJECTED"
+    return strict(body({"schema": "ATLAS_LOCAL_IEX_CONFIG_PREFLIGHT_V1",
+                        "status": status, "data_only_policy_checked": status == "VALID_FORMAT_ONLY",
+                        "provider_authenticated": False,
+                        "provider_activation_authorized": False,
+                        "paper_fill_authorized": False,
+                        "live_order_authorized": False}))

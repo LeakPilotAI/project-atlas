@@ -715,3 +715,20 @@ def test_forward_activation_preflight_never_promotes_structural_evidence(tmp_pat
     assert path.read_bytes() == before
     with pytest.raises(ValueError, match="INPUT_INVALID"):
         assess_forward_paper_activation_readiness(**{**args, "account_id": ""})
+
+
+def test_local_iex_config_preflight_never_authenticates_or_exposes_secrets(tmp_path):
+    from pathlib import Path
+    from app.services.personal_paper_strategy_signal import check_local_iex_config_readiness
+    p = tmp_path / "iex.env"
+    p.write_text("ALPACA_TRADING_ENABLED=false\nALPACA_DATA_FEED=iex\nALPACA_API_KEY=secretkey123\nALPACA_API_SECRET=secretvalue123\n", encoding="utf-8")
+    good = check_local_iex_config_readiness(config_path=p)
+    assert good["status"] == "VALID_FORMAT_ONLY"
+    assert good["provider_authenticated"] is False
+    assert good["paper_fill_authorized"] is False
+    assert "secret" not in repr(good).lower()
+    p.write_text(p.read_text(encoding="utf-8").replace("ALPACA_TRADING_ENABLED=false", "ALPACA_TRADING_ENABLED=true"), encoding="utf-8")
+    assert check_local_iex_config_readiness(config_path=p)["status"] == "CONFIG_REJECTED"
+    assert check_local_iex_config_readiness(config_path=tmp_path / "missing.env")["status"] == "CONFIG_REJECTED"
+    with pytest.raises(ValueError, match="EXPLICIT_PATH_REQUIRED"):
+        check_local_iex_config_readiness(config_path="iex.env")
