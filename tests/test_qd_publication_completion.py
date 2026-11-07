@@ -107,3 +107,14 @@ def test_open_position_monitor_rejects_non_mapping_publication(invalid):
     with pytest.raises(ValueError, match='QD_CURRENT_POSITION_MONITOR_UNAVAILABLE'):
         s.reader.read_request(.2)
     assert s.reader._last is None
+
+
+def test_publication_refuses_runtime_session_grant_swap_during_read():
+    s = fixture()
+    def replaced(timeout):
+        s.runtime.grant = {'new-session': True}
+        return copy.deepcopy(s.packet)
+    s.source.read_publication = replaced
+    with pytest.raises(ValueError, match='QD_PUBLICATION_COMPLETION_CONTEXT_CHANGED'):
+        s.reader.read_request(.2)
+    assert s.reader._last is None
