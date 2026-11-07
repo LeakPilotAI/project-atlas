@@ -349,6 +349,32 @@ def finalize_scored_research_receipt(receipt_path):
     return complete_research_batch(batch, receipts, root / "alpaca_equity_cursor.json")
 
 
+def execute_scored_research_cycle(*, limit=1, acquire, scorer=None):
+    """Explicit research-only acquire/score/publish/finalize transaction.
+
+    A failed or incomplete score never publishes or advances the cursor.
+    Existing identical receipts can be resumed after interrupted publication.
+    """
+    report = score_bounded_research_batch(limit=limit, acquire=acquire, scorer=scorer)
+    if not report["scoring_complete"]:
+        return {"schema": "ATLAS_BROAD_RESEARCH_CYCLE_V1", "status": "BLOCKED",
+                "results": report["results"], "cursor_advanced": False,
+                "paper_execution_authorized": False, "live_order_authorized": False}
+    canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    path = REPO / "logs" / "research" / ("alpaca-scored-" + digest + ".json")
+    try:
+        publish_scored_research_receipt(report, path)
+    except FileExistsError:
+        if path.read_bytes() != canonical.encode("utf-8"):
+            raise ValueError("BROAD_RESEARCH_CYCLE_EXISTING_RECEIPT_MISMATCH") from None
+    committed = finalize_scored_research_receipt(path)
+    return {"schema": "ATLAS_BROAD_RESEARCH_CYCLE_V1", "status": "RESEARCH_FINALIZED",
+            "receipt_sha256": digest, "completed": committed["completed"],
+            "cursor_advanced": True, "paper_execution_authorized": False,
+            "live_order_authorized": False}
+
+
 def score_authenticated_provider_batch(*, contact, limit=1):
     """Explicit authenticated Alpaca/SEC research and scoring, no financial IO.
 

@@ -193,3 +193,27 @@ def test_finalize_published_scored_receipt_advances_once(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="CURSOR_CHANGED"):
         mod.finalize_scored_research_receipt(receipt)
     assert not (root / "alpaca_equity_cursor.pending").exists()
+
+
+def test_scored_cycle_end_to_end_and_failure(tmp_path, monkeypatch):
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    inv = mod.inventory_snapshot([{"class": "us_equity", "symbol": s, "status": "active", "tradable": True}
+                                  for s in ("MSFT", "AVGO")], captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
+    def scorer(*, symbol, data):
+        return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+    def fail(symbol):
+        raise OSError("down")
+    blocked = mod.execute_scored_research_cycle(limit=2, acquire=fail, scorer=scorer)
+    assert blocked["status"] == "BLOCKED" and not blocked["cursor_advanced"]
+    assert not list(root.glob("alpaca-scored-*.json"))
+    ok = mod.execute_scored_research_cycle(limit=2, acquire=lambda symbol: {}, scorer=scorer)
+    assert ok["status"] == "RESEARCH_FINALIZED" and ok["completed"] == 2
+    assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 2
+    assert len(list(root.glob("alpaca-scored-*.json"))) == 1
+    assert not ok["paper_execution_authorized"]
