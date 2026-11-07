@@ -1049,3 +1049,35 @@ async def test_session_http_sqlite_receipt_roundtrip(tmp_path):
         second = await client.post('/_atlas/control/stop-session', headers=headers, json=payload)
         assert second.status_code == 200
         assert ledger.reserve_existing(session.session_id, 'SHUTDOWN_FLATTEN')['receipt'] == second.json()
+
+@pytest.mark.asyncio
+async def test_session_stop_sqlite_failure_refuses_without_false_success(tmp_path):
+    import httpx
+    from fastapi import FastAPI
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    from app.services.quality_dips_stop_bridge import register_stop_routes
+
+    ledger = PaperStopReceiptLedger(tmp_path / 'unavailable.sqlite')
+    class Session:
+        session_id = 'sqlite-unavailable-session'
+        stop_ledger = ledger
+        def verify_session(self):
+            return True
+        def request_stop(self, mode):
+            return {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'FINISHED',
+                    'outcome': {'schema': 'QD_AUTO_SHUTDOWN_V1', 'mode': mode,
+                                'status': 'FLATTENED', 'position_state': 'FLAT',
+                                'process_shutdown': 'VERIFIED_EXIT', 'lanes': {}}}
+
+    app = FastAPI()
+    origin, token = 'http://127.0.0.1:18799', 'synthetic-test-control-token-only-1234'
+    register_stop_routes(app, bridge=Session(), origin=origin, token=token,
+                         require_session=True, require_durable_receipt=True)
+    ledger.path.unlink()
+    ledger.path.mkdir()
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=origin) as client:
+        response = await client.post('/_atlas/control/stop-session',
+                                     headers={'origin': origin, 'x-atlas-control': token},
+                                     json={'session_id': 'sqlite-unavailable-session', 'mode': 'SHUTDOWN_FLATTEN'})
+        assert response.status_code == 409
+        assert response.json()['status'] == 'REFUSED'

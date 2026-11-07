@@ -127,6 +127,7 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False, r
     Not registered in app.main or the read-only host by default. The injected
     token is transport CSRF protection, never financial or startup authority.
     """
+    import sqlite3
     from fastapi import Request
     from fastapi.responses import JSONResponse
 
@@ -231,7 +232,7 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False, r
                 return result
 
             return JSONResponse(await run_in_threadpool(verified_stop))
-        except (ValueError, OSError, KeyError, TypeError, AttributeError):
+        except (ValueError, OSError, TimeoutError, KeyError, TypeError, AttributeError, sqlite3.Error):
             return JSONResponse({"status": "REFUSED"}, status_code=409)
 
     stop_session.__annotations__["request"] = Request
