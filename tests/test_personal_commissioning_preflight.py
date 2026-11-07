@@ -31,3 +31,29 @@ def test_unreviewed_aliases_and_foreign_activation_paths_refuse(monkeypatch, arg
     monkeypatch.setattr('sys.argv', ['preflight', *args])
     with pytest.raises(SystemExit) as result: preflight.main()
     assert result.value.code == 2
+
+
+def test_scope_claims_never_substitute_native_financial_or_runtime_proof(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--expected-source', 'a'*40])
+    def git(command, **kwargs):
+        tail = command[1:]
+        if tail == ['branch','--show-current']: return preflight.EXPECTED_BRANCH+'\n'
+        if tail == ['rev-parse','HEAD']: return 'a'*40+'\n'
+        if tail == ['status','--porcelain','--untracked-files=no']: return ''
+        pytest.fail('unexpected subprocess')
+    monkeypatch.setattr(preflight.subprocess, 'check_output', git)
+    original = preflight.json.loads
+    def injected_scope(text):
+        scope = original(text)
+        scope['financial_publication_attempted'] = True
+        scope['runtime_consumable'] = True
+        return scope
+    monkeypatch.setattr(preflight.json, 'loads', injected_scope)
+    assert preflight.main() == 2
+    report = original(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['SOURCE_CHECKPOINT'] == 'PASS'
+    assert checks['TRACKED_SOURCE_UNCHANGED'] == 'PASS'
+    assert checks['FINANCIAL_INCEPTION'] == 'BLOCKED'
+    assert checks['RUNTIME_AUTHORIZATION'] == 'BLOCKED'
+    assert report['pilot_started'] is False

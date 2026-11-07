@@ -117,14 +117,16 @@ def main():
 
     results.append(check(
         "FINANCIAL_INCEPTION",
-        scope.get("financial_publication_attempted") is True,
-        "Requires independent native financial readback",
+        False,
+        "Attempted/publication flags are not native financial readback; "
+        "requires independently verified native account state",
     ))
 
     results.append(check(
         "RUNTIME_AUTHORIZATION",
-        scope.get("runtime_consumable") is True,
-        "Requires accepted installed runtime dependencies",
+        False,
+        "Scope metadata is not an accepted runtime lease; "
+        "requires verified installed runtime dependencies and native grant",
     ))
 
     passed = all(item["status"] == "PASS" for item in results)
