@@ -401,7 +401,7 @@ def create_app(
             "provider_connections_used": False,
             "external_connections_used": False,
             "genesis_accessed": False,
-            "genuine_forward_paper": forward_account is not None,
+            "genuine_forward_paper": False,  # A forward account alone does not prove forward trading readiness.
             "operational_acceptance": False,
             "startup_authorized": False,
             "production_authorized": False,
