@@ -38,6 +38,14 @@ def _atlas_modules():
 
 
 class NativePersonalReleaseIdentity:
+    @staticmethod
+    def _require_readonly_interpreter():
+        # Environment-only protection is ignored by -I. Require the effective
+        # startup flag as well as its live setting; setting the latter after
+        # imports cannot prove startup was safe. Supported launchers use -B.
+        if sys.flags.dont_write_bytecode != 1 or sys.dont_write_bytecode is not True:
+            raise ValueError('PERSONAL_RELEASE_BYTECODE_WRITES_NOT_DISABLED_AT_STARTUP')
+
     def __init__(self, *, receipt=None, artifact_digest=None):
         if (type(receipt) is not dict or receipt.get('schema') != 'ATLAS_QD_D_RUNTIME_INSTALLATION_V1'
                 or receipt.get('stage') != 'D_RUNTIME_LAYOUT_VERIFIED'
@@ -51,6 +59,7 @@ class NativePersonalReleaseIdentity:
         expected = Path('D:/AtlasRuntime/releases')/receipt['source_commit']
         if self.root != expected or digest(receipt['files']) != artifact_digest:
             raise ValueError('PERSONAL_RELEASE_PATH_OR_ARTIFACT')
+        self._require_readonly_interpreter()
         self.artifact_digest, self.source_commit = artifact_digest, receipt['source_commit']
         self._config = body(self.receipt), self.root, artifact_digest
         self.native = native_primitives()
@@ -146,6 +155,7 @@ class NativePersonalReleaseIdentity:
         return str(Path(value))
 
     def verify(self, *, release_digest):
+        self._require_readonly_interpreter()
         if (self.closed or release_digest != self.artifact_digest
                 or (body(self.receipt), self.root, self.artifact_digest) != self._config
                 or (self.native, tuple(self.outputs.items()), tuple(self.handles.items())) != self._ports

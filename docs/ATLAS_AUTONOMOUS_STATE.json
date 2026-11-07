@@ -1,4 +1,30 @@
 {
+  "atlas_final_paper_commissioning_20261107": {
+  "task": "ATLAS_FINAL_END_TO_END_PAPER_COMMISSIONING",
+  "base_commit": "c090f99d5842dc24bcd55f250ee3192c42741645",
+  "status": "NATIVE_RELEASE_RECOVERY_IN_PROGRESS",
+  "accepted_gates": 0,
+  "completion_percent": 0,
+  "remaining_percent": 100,
+  "tests": {
+    "passed": 160,
+    "failed": 0,
+    "skipped": 0,
+    "new": 4,
+    "initial_restricted_context_failures": 24
+  },
+  "native_financial_startup": false,
+  "next": "Build and verify explicit create-only clean operational release, then native selector; do not clean old release",
+  "report": "docs\\ATLAS_FINAL_PAPER_COMMISSIONING_EXECUTION_2026-11-07.md",
+  "previous_current": {
+    "active_task": "AIP-06-SCOPED-CASE-AND-READER-CONTEXT-SOURCE-V1",
+    "last_verified_task": "SCOPED_CONTEXT_CONTRACTS_OFFLINE_VALIDATED_PHYSICAL_CASE_READER_HOSTS_BLOCKED",
+    "next_eligible_tasks": [
+      "STOP after scoped source validation/checkpoint and independent remote verification.",
+      "Next source-only work: connect separate physical case/reader hosts and original NativeIO/peer failed-open escrow/release for one existing OWNERSHIP-PROBES producer before expanding other six groups. Async transport remains separately blocked; no network exception or native approval is implied."
+    ]
+  }
+},
   "batch_2_offline_regression_20261107": {
     "status": "SOURCE_RECONCILED_OFFLINE_TESTS_PASS_OPERATIONAL_ACCEPTANCE_BLOCKED",
     "head": "053c38ba17d4e25891ec8d3baa98c4279bbddd56",
