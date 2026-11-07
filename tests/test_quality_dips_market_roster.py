@@ -333,3 +333,25 @@ def test_reviewed_cohort_requires_exact_source_receipts_and_independent_verifier
         with pytest.raises(ValueError):
             reviewed_asset_research_universe(batch, corrupt, instrument_authority=SimpleNamespace(
                 verify_instrument=lambda *args: True))
+
+
+def test_pinned_merged_cohort_uses_derived_source_digest_and_refuses_unknown_symbols():
+    from app.investment.quality_dips_market_roster import acquire_merged_asset_cohort, merge_reference_directories, merged_research_batch
+    first = {"schema": "QD_REFERENCE_DIRECTORY_V1", "source": "nasdaqlisted.txt", "source_digest": "a" * 64,
+             "rows": [{"symbol": "MSFT", "name": "Microsoft", "exchange": "XNAS", "instrument_type": "EQUITY_REFERENCE"}]}
+    second = {"schema": "QD_REFERENCE_DIRECTORY_V1", "source": "otherlisted.txt", "source_digest": "b" * 64,
+              "rows": [{"symbol": "SPY", "name": "SPY", "exchange": "ARCX", "instrument_type": "ETF"}]}
+    class Provider:
+        domain = "TLS_PUBLIC_PROVIDER"
+        def get(self, url, ttl):
+            symbol = url.rsplit("/", 1)[-1]
+            return ({"symbol": symbol, "class": "us_equity", "status": "active", "tradable": True,
+                     "fractionable": True, "id": "id:" + symbol,
+                     "exchange": "NASDAQ" if symbol == "MSFT" else "ARCA"}, {"status": 200})
+    merged = merge_reference_directories([first, second])
+    result = acquire_merged_asset_cohort(merged, symbols=["SPY", "MSFT"], client=Provider())
+    assert result["batch"]["source_digest"] == merged_research_batch(merged, offset=0, budget=1)["source_digest"]
+    assert set(result["cohort"]["metadata"]) == {"MSFT", "SPY"}
+    assert result["independent_source_custody_verified"] is False
+    with pytest.raises(ValueError, match="NOT_IN_SOURCE"):
+        acquire_merged_asset_cohort(merged, symbols=["FAKE"], client=Provider())

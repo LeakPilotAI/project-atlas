@@ -224,6 +224,29 @@ def acquire_reference_asset_cohort(batch, *, client, budget):
 
 
 
+
+def acquire_merged_asset_cohort(merged, *, symbols, client):
+    """Acquire a pinned source-bound provider cohort, never caller-authored digests.
+
+    Select from the exact merged snapshot, not a fabricated batch identity.
+    Independent source custody and broker authorization are still external.
+    """
+    if (type(symbols) is not list or not 1 <= len(symbols) <= 10
+            or any(type(symbol) is not str or SYMBOL.fullmatch(symbol) is None for symbol in symbols)
+            or len(set(symbols)) != len(symbols)):
+        raise ValueError("QD_PINNED_SOURCE_COHORT_REQUIRED")
+    batch = merged_research_batch(merged, offset=0, budget=1)
+    lookup = {row["symbol"]: row for row in merged["rows"]}
+    if any(symbol not in lookup for symbol in symbols):
+        raise ValueError("QD_COHORT_NOT_IN_SOURCE_DIRECTORY")
+    pinned = {"source_digest": batch["source_digest"],
+              "rows": [lookup[symbol] for symbol in symbols]}
+    cohort = acquire_reference_asset_cohort(pinned, client=client, budget=len(symbols))
+    return {"batch": pinned, "cohort": cohort,
+            "independent_source_custody_verified": False,
+            "execution_authorized": False}
+
+
 def reviewed_asset_research_universe(batch, cohort, *, instrument_authority):
     """Bind provider cohort to the exact directory page before authority review.
 
