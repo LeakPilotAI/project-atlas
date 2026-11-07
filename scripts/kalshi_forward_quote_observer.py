@@ -55,6 +55,18 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
         ticker = market['ticker']
         try:
             book = (await asyncio.wait_for(kalshi_public.get_orderbook(ticker, depth=20), timeout=12))['orderbook']
+            # Record when the book actually arrived, not the scan's start time.
+            # A test-supplied clock remains deterministic for fixture diagnostics.
+            book_observed = observed if now is not None else datetime.now(timezone.utc)
+            event_time = market.get('timing', {}).get('occurrence_datetime')
+            try:
+                event_dt = datetime.fromisoformat(event_time.replace('Z', '+00:00'))
+            except (AttributeError, ValueError, TypeError):
+                errors.append({'ticker': ticker, 'error_type': 'EVENT_TIME_UNVERIFIED'})
+                continue
+            if event_dt.tzinfo is None or event_dt.utcoffset() is None or book_observed >= event_dt:
+                errors.append({'ticker': ticker, 'error_type': 'EVENT_ALREADY_STARTED'})
+                continue
             sides = {}
             for side in ('YES', 'NO'):
                 buy = walk_executable_depth(book, side=side, action='BUY', quantity=quantity)
@@ -65,7 +77,7 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
                                'sell_vwap': sell.get('vwap_dollars') if sell.get('fillable') else None,
                                'buy_fee': buy.get('estimated_taker_fee_dollars') if buy.get('fillable') else None,
                                'sell_fee': sell.get('estimated_taker_fee_dollars') if sell.get('fillable') else None}
-            records.append({'schema': 'kalshi-forward-quote-v1', 'observed_at': observed.isoformat(),
+            records.append({'schema': 'kalshi-forward-quote-v1', 'observed_at': book_observed.isoformat(),
                             'ticker': ticker, 'created_time': market['timing']['created_time'],
                             'open_time': market['timing']['open_time'],
                             'occurrence_datetime': market['timing'].get('occurrence_datetime'),
