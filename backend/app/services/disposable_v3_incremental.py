@@ -48,22 +48,18 @@ def execute_incremental_test_v3_tick(*, path: Path, account_id: str,
             or not 0 < stop <= 25 or not 0 < target <= 50):
         raise ValueError("INCREMENTAL_V3_RISK_INVALID")
     evidence = validate_stock_iex_quote(quote, symbol=observation["symbol"], now=now)
-    decision = evaluate_iex_quality_dips_signal(
-        quote=quote, symbol=observation["symbol"], now=now, research=research)
-    if decision["paper_fill_authorized"] is not False:
-        raise ValueError("INCREMENTAL_V3_UNEXPECTED_AUTHORITY")
     # One journal OS lock covers replay admission, simulation and completion.
     # An interrupted tick is deliberately blocked for operator reconciliation.
     with journal_mutation_transaction(path):
         return _execute_locked(path=path, account_id=account_id,
                                observation=observation, research=research,
                                quote=quote, now=now, evidence=evidence,
-                               decision=decision, stop_loss_pct=stop_loss_pct,
+                               stop_loss_pct=stop_loss_pct,
                                take_profit_pct=take_profit_pct)
 
 
 def _execute_locked(*, path, account_id, observation, research, quote, now,
-                    evidence, decision, stop_loss_pct, take_profit_pct):
+                    evidence, stop_loss_pct, take_profit_pct):
     events = read_events(path)
     ticks = [e for e in events if e.get("event") in ("v3_tick_started", "v3_tick_completed")]
     pending = set()
@@ -96,6 +92,14 @@ def _execute_locked(*, path, account_id, observation, research, quote, now,
     positions = open_lots(events)
     if any(p.get("account_id") != account_id for p in positions) or len(positions) > 1:
         raise ValueError("INCREMENTAL_V3_FOREIGN_OR_MULTIPLE_POSITIONS")
+    # Risk exits must not be blocked by stale entry research. Entry evaluation
+    # is only relevant when the simulated account is flat.
+    decision = {"candidate": False}
+    if not positions:
+        decision = evaluate_iex_quality_dips_signal(
+            quote=quote, symbol=observation["symbol"], now=now, research=research)
+        if decision["paper_fill_authorized"] is not False:
+            raise ValueError("INCREMENTAL_V3_UNEXPECTED_AUTHORITY")
     if positions:
         entry = Decimal(str(positions[0]["fill_price"]))
         bid = Decimal(evidence["bid"]) * Decimal("0.9998")

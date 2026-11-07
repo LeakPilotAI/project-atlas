@@ -28,9 +28,12 @@ def test_incremental_v3_entry_mark_exit_restarts_from_journal(tmp_path):
         quote = {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
                  "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
                  "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+        # Once a position is open, risk management must continue even if
+        # the research input becomes stale or loses its entry provenance.
+        tick_research = research if i < 2 else {**research, "source_verified": False}
         result = execute_incremental_test_v3_tick(
             path=path, account_id="demo", observation=observation,
-            research=research, quote=quote, now=now)
+            research=tick_research, quote=quote, now=now)
         actions.append(result["action"])
         assert result["cash_reconciled"] is True
         assert result["forward_trading_authorized"] is False
@@ -142,3 +145,25 @@ def test_recovery_detects_nonmonotonic_timestamps_across_offsets(tmp_path):
     report = inspect_incremental_test_v3_recovery(path=path, account_id="demo")
     assert "DUPLICATE_OR_NONMONOTONIC_START" in report["anomalies"]
     assert report["recovery_status"] == "BLOCKED_MANUAL_REVIEW"
+
+
+def test_incremental_v3_refuses_entry_when_research_not_verified(tmp_path):
+    path = tmp_path / "unverified.jsonl"
+    initialize_paper_account(account_id="demo", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    now = datetime(2026, 11, 7, tzinfo=UTC)
+    research = {"symbol": "MSFT", "source_verified": False,
+                "timestamp": now.isoformat(),
+                "normalization_value": {"conservative": 95, "base": 100, "optimistic": 105},
+                "quality_score": 80, "fundamentals_score": 80,
+                "valuation_score": 70, "drawdown_percentile": 80,
+                "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
+    quote = {"symbol": "MSFT", "state": "FRESH", "bid": 79.9, "ask": 80,
+             "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+             "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    with pytest.raises(ValueError):
+        execute_incremental_test_v3_tick(path=path, account_id="demo",
+            observation={"observation_id": "test", "symbol": "MSFT",
+                         "evidence_class": "TEST_DATA"},
+            research=research, quote=quote, now=now)
+    assert inspect_incremental_test_v3_recovery(path=path, account_id="demo")["completed_ticks"] == 0
