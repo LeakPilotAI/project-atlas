@@ -63,7 +63,13 @@ class QualityDipsV2TargetCache:
     def sources(self, symbol: str) -> list[dict[str, Any]]:
         row = self.get(symbol)
         values = row.get("targets") if isinstance(row.get("targets"), dict) else {}
-        as_of = row.get("as_of")
+        # Retrieval timestamps are not original analyst target publication dates.
+        # Old cached as_of values were stamped at fetch time; do not admit them.
+        if row.get("original_target_as_of_verified") is not True:
+            return []
+        as_of = row.get("original_target_as_of")
+        if _dt(as_of) is None:
+            return []
         out = []
         for key, note in (("low", "analyst target low"), ("mean", "analyst target mean"), ("high", "analyst target high")):
             value = _float(values.get(key))
@@ -110,7 +116,7 @@ class QualityDipsV2TargetCache:
                     info = await self.client.info(symbol)
                     targets = {"low": _float(info.get("targetLowPrice")), "mean": _float(info.get("targetMeanPrice")), "high": _float(info.get("targetHighPrice"))}
                     valid = [v for v in targets.values() if v is not None]
-                    return symbol, {"targets": targets, "as_of": _now().isoformat(), "fetched_at": _now().isoformat(), "source": "yfinance_info", "complete": len(valid) >= 3}
+                    return symbol, {"targets": targets, "as_of": None, "fetched_at": _now().isoformat(), "source": "yfinance_info", "complete": len(valid) >= 3, "original_target_as_of_verified": False}
                 except Exception:
                     # Keep the last-known-good row. A transient provider failure must
                     # not erase usable normalization evidence from the cache.

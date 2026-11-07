@@ -84,6 +84,26 @@ def test_target_cache_transient_failure_preserves_last_good(monkeypatch):
         monkeypatch.setattr(cache, "_save", lambda: None)
         await cache.refresh_many(["MSFT"])
         assert cache.get("MSFT") == old
-        assert len(cache.sources("MSFT")) == 3
+        assert cache.sources("MSFT") == []  # Legacy retrieval-time as_of cannot establish target freshness.
 
+    asyncio.run(run())
+
+
+def test_target_cache_refresh_never_promotes_retrieval_time_to_analyst_publication(monkeypatch):
+    import asyncio
+    from app.investment.quality_dips_v2_target_cache import QualityDipsV2TargetCache
+
+    async def run():
+        cache = QualityDipsV2TargetCache()
+        cache._rows = {}
+        async def info(symbol):
+            return {'targetLowPrice': 100, 'targetMeanPrice': 120, 'targetHighPrice': 140}
+        monkeypatch.setattr(cache.client, 'info', info)
+        monkeypatch.setattr(cache, '_save', lambda: None)
+        await cache.refresh_many(['MSFT'])
+        row = cache.get('MSFT')
+        assert row['complete'] is True  # Display-only provider fields are present.
+        assert row['as_of'] is None
+        assert row['original_target_as_of_verified'] is False
+        assert cache.sources('MSFT') == []
     asyncio.run(run())
