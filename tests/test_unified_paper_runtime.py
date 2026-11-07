@@ -1152,3 +1152,29 @@ async def test_accepted_stop_route_refuses_runtime_stopped_after_registration(tm
     assert response.status_code == 409
     assert response.json()['status'] == 'REFUSED'
     assert b.progress['phase'] == 'IDLE'
+
+
+@pytest.mark.asyncio
+async def test_session_stop_unexpected_dispatch_exception_refuses_without_retry():
+    from fastapi import FastAPI
+    import httpx
+    from app.services.quality_dips_stop_bridge import register_stop_routes
+    class Session:
+        session_id = 'synthetic-runtime-error'
+        calls = 0
+        def verify_session(self):
+            return True
+        def request_stop(self, mode):
+            self.calls += 1
+            raise RuntimeError('synthetic unexpected failure after dispatch')
+    session = Session()
+    app = FastAPI()
+    origin, token = 'http://127.0.0.1:18799', 'synthetic-test-control-token-only-1234'
+    register_stop_routes(app, bridge=session, origin=origin, token=token, require_session=True)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=origin) as client:
+        response = await client.post('/_atlas/control/stop-session',
+            headers={'origin': origin, 'x-atlas-control': token},
+            json={'session_id': session.session_id, 'mode': 'SHUTDOWN_FLATTEN'})
+    assert response.status_code == 409
+    assert response.json()['status'] == 'REFUSED'
+    assert session.calls == 1

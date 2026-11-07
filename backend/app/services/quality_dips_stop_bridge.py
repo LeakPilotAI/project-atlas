@@ -241,7 +241,10 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False, r
                 return result
 
             return JSONResponse(await run_in_threadpool(verified_stop))
-        except (ValueError, OSError, TimeoutError, KeyError, TypeError, AttributeError, sqlite3.Error):
+        except Exception:
+            # Stop dispatch may have already affected financial state. An
+            # unexpected bridge or storage error must never become HTTP 200,
+            # and the transport must not retry the ambiguous command.
             return JSONResponse({"status": "REFUSED"}, status_code=409)
 
     stop_session.__annotations__["request"] = Request
