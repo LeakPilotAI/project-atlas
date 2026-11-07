@@ -5,6 +5,7 @@ real journal entry/mark/exit mechanics without any broker or provider adapter.
 """
 from __future__ import annotations
 
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -18,7 +19,8 @@ from app.services.paper_financial_replay import body, strict
 def execute_disposable_test_paper_step(*, path: Path, account_id: str,
                                        observation: dict[str, Any], action: str,
                                        price: Any, notional: Any = 50,
-                                       level: str = "L1", reason: str = "TEST_REHEARSAL") -> dict[str, Any]:
+                                       level: str = "L1", reason: str = "TEST_REHEARSAL",
+                                       slippage_bps: Any = 2) -> dict[str, Any]:
     """Explicit, one-step, replay-safe TEST_DATA-only simulation.
 
     Caller-supplied price is synthetic; this must not be used to claim real
@@ -28,6 +30,21 @@ def execute_disposable_test_paper_step(*, path: Path, account_id: str,
             or type(observation) is not dict or observation.get("evidence_class") != "TEST_DATA"
             or action not in ("ENTER", "MARK", "EXIT")):
         raise ValueError("DISPOSABLE_PAPER_TEST_ONLY_INPUT_REQUIRED")
+    # Conservative test fills: buys pay above the synthetic ask; sells
+    # receive below the synthetic bid. No fill may improve due to slippage.
+    try:
+        quoted = Decimal(str(price))
+        slip = Decimal(str(slippage_bps))
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError("DISPOSABLE_PAPER_SLIPPAGE_INVALID") from exc
+    if (not quoted.is_finite() or quoted <= 0 or not slip.is_finite()
+            or not Decimal(0) <= slip <= Decimal(100)):
+        raise ValueError("DISPOSABLE_PAPER_SLIPPAGE_INVALID")
+    factor = (Decimal(1) + slip / Decimal(10000) if action == "ENTER"
+              else Decimal(1) - slip / Decimal(10000))
+    execution_price = round(quoted * factor, 8)
+    if execution_price <= 0:
+        raise ValueError("DISPOSABLE_PAPER_SLIPPAGE_INVALID")
     with journal_mutation_transaction(path):
         events = read_events(path)
         account = accounting_snapshot(events, account_id=account_id)
@@ -41,19 +58,22 @@ def execute_disposable_test_paper_step(*, path: Path, account_id: str,
             if positions:
                 raise ValueError("DISPOSABLE_PAPER_POSITION_ALREADY_OPEN")
             event = open_lot(observation, level=level, paper_notional_dollars=notional,
-                             fill_price=price, account_id=account_id,
+                             fill_price=execution_price, account_id=account_id,
                              fee_bps_per_side=account["fee_bps_per_side"], path=path)
         else:
             if len(positions) != 1 or positions[0]["symbol"] != observation.get("symbol"):
                 raise ValueError("DISPOSABLE_PAPER_SINGLE_POSITION_REQUIRED")
             lot_id = positions[0]["lot_id"]
-            event = (mark_lot(lot_id, market_price=price, path=path) if action == "MARK"
-                     else close_lot(lot_id, exit_price=price, reason=reason, path=path))
+            event = (mark_lot(lot_id, market_price=execution_price, path=path) if action == "MARK"
+                     else close_lot(lot_id, exit_price=execution_price, reason=reason, path=path))
         updated = accounting_snapshot(read_events(path), account_id=account_id)
         if updated["cash_reconciled"] is not True:
             raise ValueError("DISPOSABLE_PAPER_ACCOUNT_RECONCILIATION_FAILED")
         return strict(body({"schema": "ATLAS_DISPOSABLE_TEST_PAPER_STEP_V1",
                             "action": action, "event_id": event["event_id"],
+                            "synthetic_quote_price": str(quoted),
+                            "simulated_execution_price": float(execution_price),
+                            "slippage_bps": float(slip),
                             "open_positions": updated["open_positions"],
                             "available_cash": updated["available_cash"],
                             "net_realized_pnl": updated["net_realized_pnl"],
