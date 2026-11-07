@@ -65,3 +65,67 @@ def test_disposable_transaction_rejects_stale_quote_before_journal_write(tmp_pat
             validate_stock_iex_quote(_quote(datetime(2026, 11, 6, 19, tzinfo=UTC),
                                             "99.99", "100"), symbol="MSFT", now=now)
         assert path.read_bytes() == before
+
+
+def test_full_disposable_producer_operator_iex_candidate_entry_exit_restart(tmp_path, monkeypatch):
+    """Test-only bridge from real read-only ports to isolated PAPER journal.
+
+    Explicit fixture writes are NOT a runtime execution grant.
+    """
+    from test_quality_dips_current_producer import fixture, STAMP
+    from test_personal_paper_runtime import installed
+    from app.investment.alpaca_iex import IEXFeed
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import inspect_leased_published_iex_journal_candidate
+    from app.investment.quality_dips_paper import open_lots
+    f = fixture(monkeypatch)
+    f.owner.publish_current()
+    now = datetime.fromtimestamp(STAMP, UTC)
+    feed = IEXFeed(["MSFT"], clock=lambda: now.timestamp())
+    feed.authenticated = feed.subscribed = True  # synthetic provider fixture
+    feed.connection = "CONNECTED"
+    def set_quote(bid, ask):
+        feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": bid, "ask": ask,
+                               "bid_lots": 5, "ask_lots": 5,
+                               "timestamp": now.isoformat(),
+                               "source_timestamp": now.timestamp(),
+                               "generation": feed.generation}
+    set_quote("79.99", "80")
+    provider = PersonalPaperIEXProvider(feed)
+    operator = installed()  # synthetic activation with real lease validator
+    path = tmp_path / "test-only-forward.jsonl"
+    initialize_paper_account(account_id="fixture-forward", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    kwargs = dict(installation=operator.i, request={"action": "AUTO_PAPER"},
+                  components={"port": operator.reader}, publication=f.owner.publication,
+                  provider=provider, symbol="MSFT", now=now,
+                  journal_path=path, account_id="fixture-forward")
+    inspection = inspect_leased_published_iex_journal_candidate(**kwargs)
+    assert inspection["publication_read_verified"] is True
+    assert inspection["paper_fill_authorized"] is False
+    observation = f.cut["observations"]["MSFT"]
+    with journal_mutation_transaction(path):
+        buy = validate_stock_iex_quote(provider.read_iex_quote("MSFT"), symbol="MSFT", now=now)
+        entry = open_lot(observation, level="L1", paper_notional_dollars=50,
+                         fill_price=buy["ask"], account_id="fixture-forward",
+                         fee_bps_per_side=2, path=path)
+    assert entry["broker_order_created"] is False
+    assert accounting_snapshot(read_events(path), account_id="fixture-forward")["open_positions"] == 1
+    # Recreate the adapter from the same data-only feed: simulated restart.
+    provider = PersonalPaperIEXProvider(feed)
+    assert len(open_lots(read_events(path))) == 1
+    set_quote("82", "82.01")
+    with journal_mutation_transaction(path):
+        sell = validate_stock_iex_quote(provider.read_iex_quote("MSFT"), symbol="MSFT", now=now)
+        mark_lot(entry["lot_id"], market_price=sell["bid"], path=path)
+        close = close_lot(entry["lot_id"], exit_price=sell["bid"],
+                          reason="TEST_ONLY_EXIT", path=path)
+    recovered = accounting_snapshot(read_events(path), account_id="fixture-forward")
+    assert recovered["cash_reconciled"] is True
+    assert recovered["open_positions"] == 0
+    assert recovered["net_realized_pnl"] > 0
+    with journal_mutation_transaction(path):
+        assert close_lot(entry["lot_id"], exit_price=sell["bid"],
+                         reason="TEST_ONLY_EXIT", path=path)["event_id"] == close["event_id"]
+    assert len([r for r in read_events(path) if r["event"] == "close_lot"]) == 1
