@@ -1,0 +1,51 @@
+﻿{
+    "schema":  "ATLAS_B1_RELEASE_RECONCILIATION_PROPOSAL_V1",
+    "status":  "EVIDENCE_ONLY_NOT_ACCEPTANCE",
+    "created_local":  "2026-11-07",
+    "source_packet":  "docs/PAPER_B1_AUTONOMOUS_ACCEPTANCE_PACKET_V4_2026-10-26.json",
+    "source_packet_status":  "PROPOSED_NOT_ACCEPTED",
+    "candidate":  {
+                      "release_id":  "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+                      "release_path":  "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+                      "artifact_digest":  "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+                      "receipt_path":  "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-2c039af29dfefd1df77e0caa3db3fdf5ed188118.json",
+                      "receipt_sha256":  "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+                      "receipt_stage":  "D_RUNTIME_LAYOUT_VERIFIED",
+                      "manifest_files":  10204,
+                      "manifest_directories":  903,
+                      "read_only_integrity_result":  "ALL_MANIFEST_FILES_AND_DIRECTORIES_MATCHED_2026-11-07",
+                      "currently_selected":  false,
+                      "operational_acceptance":  false
+                  },
+    "account_proposals":  [
+                              {
+                                  "lane":  "QUALITY_DIPS",
+                                  "currency":  "USD",
+                                  "opening_simulated_cash":  "1000",
+                                  "actual_epoch_binding":  null,
+                                  "resource_identity_bindings":  null
+                              },
+                              {
+                                  "lane":  "HYPERLIQUID",
+                                  "currency":  "USDC",
+                                  "opening_simulated_cash":  "1000",
+                                  "actual_epoch_binding":  null,
+                                  "resource_identity_bindings":  null
+                              }
+                          ],
+    "missing":  {
+                    "independent_scope_reviewer":  "UNASSIGNED",
+                    "historical_source_custodian":  "UNASSIGNED",
+                    "independent_scope_acceptance":  null,
+                    "historical_exclusion_acceptance":  null,
+                    "accepted_risk_policy_digests":  null,
+                    "actual_perp_epoch":  null,
+                    "actual_resource_bindings":  null,
+                    "release_selection_authority":  null,
+                    "perp_conversion_policy":  null
+                },
+    "startup_authorized":  false,
+    "financial_enrollment_authorized":  false,
+    "provider_activation_authorized":  false,
+    "note":  "This reconciles existing evidence to a candidate for human review only. It does not modify the B1 packet, acceptance matrix, selection records, accounts, runtime, or startup policy."
+}
