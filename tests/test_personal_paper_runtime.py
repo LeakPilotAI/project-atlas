@@ -217,3 +217,21 @@ def test_personal_stop_binding_rejects_disposable_runtime_without_side_effects(t
             origin='http://127.0.0.1:18811', token='synthetic-test-control-token-1234567890')
     assert not (tmp_path / 'stop.sqlite').exists()
     assert not any(route.path == '/_atlas/control/stop-session' for route in app.routes)
+
+
+def test_personal_stop_binding_refuses_changed_installation_before_ledger(tmp_path):
+    from fastapi import FastAPI
+    from app.services.personal_paper_runtime import bind_personal_unified_paper_stop
+    from app.services.unified_paper_runtime import UnifiedPaperRuntime
+    from test_unified_paper_runtime import runtime as disposable_runtime
+    r = disposable_runtime()
+    r.grant = {'session_id': 'synthetic-personal', 'test_only': False}
+    s = installed(accounts={'QUALITY_DIPS':'a'*64,'HYPERLIQUID':'b'*64})
+    r.installation = s.i
+    app = FastAPI()
+    with pytest.raises(ValueError, match='PERSONAL_UNIFIED_STOP_COMPONENTS_UNVERIFIED'):
+        bind_personal_unified_paper_stop(app, runtime=r, installation=s.i,
+            owned_close=lambda: True, ledger_path=tmp_path / 'stop.sqlite',
+            origin='http://127.0.0.1:18811', token='synthetic-test-control-token-1234567890')
+    assert not (tmp_path / 'stop.sqlite').exists()
+    assert not any(route.path == '/_atlas/control/stop-session' for route in app.routes)

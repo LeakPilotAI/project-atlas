@@ -251,5 +251,17 @@ def bind_personal_unified_paper_stop(app, *, runtime, installation, owned_close,
     validate_policy(installation.policy)
     if set(installation.accounts) != {'QUALITY_DIPS', 'HYPERLIQUID'}:
         raise ValueError('PERSONAL_COMPLETE_REAL_ACCOUNTS_REQUIRED')
-    return enroll_unified_paper_stop_transport(app, runtime=runtime,
-        owned_close=owned_close, ledger_path=ledger_path, origin=origin, token=token)
+    # Composition-time approval is not sufficient: the installation must
+    # still independently verify the exact live lane/custody/clock ports.
+    request = {'schema': 'ATLAS_PERSONAL_UNIFIED_COMPOSITION_V1', 'profile': PROFILE}
+    with installation.lease(request) as lease:
+        proof = checked_personal_installation(lease, request)
+        ports = {'lanes': runtime.lanes, 'portfolio': runtime.portfolio, 'clock': runtime.clock}
+        if lease.check_components(ports) is not True or lease.check(proof) is not True:
+            raise ValueError('PERSONAL_UNIFIED_STOP_COMPONENTS_UNVERIFIED')
+        bridge = enroll_unified_paper_stop_transport(app, runtime=runtime,
+            owned_close=owned_close, ledger_path=ledger_path, origin=origin, token=token)
+        if lease.check(proof) is not True:
+            runtime.entry_closed.set()
+            raise ValueError('PERSONAL_UNIFIED_STOP_ACTIVATION_CHANGED')
+        return bridge
