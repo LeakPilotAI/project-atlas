@@ -47,3 +47,35 @@ def evaluate_iex_quality_dips_signal(
             "candidate": bool(eligible), "research_provenance_attested": False,
             "paper_fill_authorized": False, "live_order_authorized": False,
             "quote_evidence": evidence}
+
+
+def inspect_leased_iex_v3_candidate(
+    *, installation: Any, request: dict[str, Any], components: Any,
+    provider: Any, symbol: str, now: datetime, research: dict[str, Any],
+) -> dict[str, Any]:
+    """Recompute a V3 candidate from the installed feed under one operator lease.
+
+    This does not attest caller-provided research or authorize journal mutation.
+    """
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_runtime import checked_personal_installation
+
+    if (installation is None or type(request) is not dict
+            or request.get("action") != "AUTO_PAPER"
+            or type(provider) is not PersonalPaperIEXProvider):
+        raise ValueError("LEASED_IEX_V3_DEPENDENCIES_REQUIRED")
+    try:
+        with installation.lease(request) as lease:
+            proof = checked_personal_installation(lease, request)
+            if lease.check_components(components) is not True:
+                raise ValueError("LEASED_IEX_V3_COMPONENTS_CHANGED")
+            quote = provider.read_iex_quote(symbol)
+            candidate = evaluate_iex_quality_dips_signal(
+                quote=quote, symbol=symbol, now=now, research=research)
+            if lease.check(proof) is not True or lease.check_components(components) is not True:
+                raise ValueError("LEASED_IEX_V3_LEASE_CHANGED")
+            return {**candidate, "operator_lease_checked": True,
+                    "research_provenance_attested": False,
+                    "paper_fill_authorized": False, "live_order_authorized": False}
+    except (AttributeError, TypeError, OSError) as exc:
+        raise ValueError("LEASED_IEX_V3_ADMISSION_REFUSED") from exc

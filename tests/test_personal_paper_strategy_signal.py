@@ -47,3 +47,24 @@ def test_recomputed_signal_not_candidate_when_ask_above_ladder():
                                                research=research())
     assert result["candidate"] is False
     assert result["paper_fill_authorized"] is False
+
+
+def test_leased_v3_refuses_fake_provider_and_missing_operator():
+    from app.investment.alpaca_iex import IEXFeed
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import inspect_leased_iex_v3_candidate
+    feed = IEXFeed(["MSFT"], clock=lambda: NOW.timestamp())
+    with pytest.raises(ValueError, match="LEASED_IEX_V3_DEPENDENCIES_REQUIRED"):
+        inspect_leased_iex_v3_candidate(
+            installation=object(), request={"action": "AUTO_PAPER"}, components=(),
+            provider=object(), symbol="MSFT", now=NOW, research=research())
+    with pytest.raises(ValueError, match="LEASED_IEX_V3_DEPENDENCIES_REQUIRED"):
+        inspect_leased_iex_v3_candidate(
+            installation=None, request={"action": "AUTO_PAPER"}, components=(),
+            provider=PersonalPaperIEXProvider(feed), symbol="MSFT", now=NOW,
+            research=research())
+    with pytest.raises(ValueError, match="LEASED_IEX_V3_DEPENDENCIES_REQUIRED"):
+        inspect_leased_iex_v3_candidate(
+            installation=object(), request={"action": "READ_ONLY"}, components=(),
+            provider=PersonalPaperIEXProvider(feed), symbol="MSFT", now=NOW,
+            research=research())
