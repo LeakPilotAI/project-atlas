@@ -91,7 +91,18 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
                         observed_tickers.add(ticker.upper())
     qualified = [pair for pair in candidates if not pair[1]]
     exploratory = [pair for pair in candidates if pair[1]]
-    selected = qualified[:limit]
+    # When the qualified pool exceeds the quote budget, reserve room for
+    # previously unseen qualified listings while retaining a repeat for
+    # longitudinal measurement. Never downgrade qualified entry gates.
+    qualified_repeated = [pair for pair in qualified if pair[0]['ticker'].upper() in observed_tickers]
+    qualified_new = [pair for pair in qualified if pair[0]['ticker'].upper() not in observed_tickers]
+    if len(qualified) > limit and qualified_new:
+        repeat_slots = min(len(qualified_repeated), 1 if limit > 1 else 0)
+        selected = qualified_repeated[:repeat_slots] + qualified_new[:limit - repeat_slots]
+        if len(selected) < limit:
+            selected.extend(qualified_repeated[repeat_slots:repeat_slots + limit - len(selected)])
+    else:
+        selected = qualified[:limit]
     remaining = limit - len(selected)
     if remaining:
         new = [pair for pair in exploratory if pair[0]['ticker'].upper() not in observed_tickers]
