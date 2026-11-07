@@ -159,3 +159,28 @@ def test_lease_held_forward_journal_refuses_revoked_or_missing_account(tmp_path,
             inspect_forward_paper_journal_under_lease(
                 installation=_DisposableInstallation(lease), request={"action": "AUTO_PAPER"},
                 components=(), journal_path=path, account_id=account)
+
+
+def test_concurrent_same_process_open_lot_cannot_oversubscribe_account(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    path = tmp_path / "concurrent.jsonl"
+    initialize_paper_account(account_id="forward", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    barrier = Barrier(2)
+    def attempt(index):
+        barrier.wait(timeout=5)
+        try:
+            open_lot({"observation_id": f"obs-{index}", "symbol": "MSFT",
+                      "evidence_class": "FORWARD_COLLECTION"},
+                     level="L1", paper_notional_dollars=50, fill_price=100,
+                     account_id="forward", fee_bps_per_side=2, path=path)
+            return "opened"
+        except ValueError as exc:
+            return str(exc)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(attempt, range(2)))
+    assert outcomes.count("opened") == 1
+    assert any("open-position limit" in outcome for outcome in outcomes)
+    assert accounting_snapshot(read_events(path), account_id="forward")["open_positions"] == 1

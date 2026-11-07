@@ -11,6 +11,7 @@ import json
 import math
 import os
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 from threading import RLock
 from typing import Any, Dict, Iterable, Optional
@@ -25,6 +26,18 @@ VALID_LEVELS = frozenset({"L1", "L2", "L3", "L4"})
 PAPER_NOTIONAL_BY_LEVEL = {"L1": 100.0, "L2": 100.0, "L3": 100.0, "L4": 100.0}
 ACTIONABLE_STATES = frozenset({"ACCUMULATION", "DEEP_VALUE", "GENERATIONAL"})
 _lock = RLock()
+
+
+def _serialized_paper_mutation(fn):
+    """Serialize replay/validation/append in this process, not across processes.
+
+    Cross-process writer ownership remains a separate mandatory runtime gate.
+    """
+    @wraps(fn)
+    def guarded(*args, **kwargs):
+        with _lock:
+            return fn(*args, **kwargs)
+    return guarded
 
 
 def _now() -> str:
@@ -196,6 +209,7 @@ def record_decision(
     return _append(row, Path(path))
 
 
+@_serialized_paper_mutation
 def open_lot(
     observation: Dict[str, Any],
     *,
@@ -533,6 +547,7 @@ def mark_lot(
     )
 
 
+@_serialized_paper_mutation
 def close_lot(
     lot_id: str,
     *,
