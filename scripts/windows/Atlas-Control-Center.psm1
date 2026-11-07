@@ -36,9 +36,21 @@ function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emerge
     if ($RequireSessionIdentity -and $AcceptedSession.session_id -cne $sessionId) {
         throw 'PAPER_STOP_SESSION_IDENTITY_CHANGED'
     }
-    $result = $AcceptedSession.request_stop($mode)
-    if ($RequireSessionIdentity -and $AcceptedSession.session_id -cne $sessionId) {
-        throw 'PAPER_STOP_SESSION_IDENTITY_CHANGED'
+    try { $result = $AcceptedSession.request_stop($mode) }
+    catch {
+        # Dispatch may already have started financial flattening. Do not
+        # retry or claim success when the outcome is ambiguous.
+        throw 'PAPER_STOP_DISPATCH_UNVERIFIED'
+    }
+    if ($RequireSessionIdentity) {
+        if ($AcceptedSession.session_id -cne $sessionId) {
+            throw 'PAPER_STOP_SESSION_IDENTITY_CHANGED'
+        }
+        try { $postVerified = $AcceptedSession.verify_session() }
+        catch { throw 'PAPER_STOP_SESSION_VERIFICATION_LOST' }
+        if ($postVerified -isnot [bool] -or -not $postVerified -or $AcceptedSession.session_id -cne $sessionId) {
+            throw 'PAPER_STOP_SESSION_VERIFICATION_LOST'
+        }
     }
     if ($result.schema -cne 'QD_CONTROL_STOP_V1' -or
         $result.phase -cnotin @('FINISHED', 'IN_PROGRESS')) {

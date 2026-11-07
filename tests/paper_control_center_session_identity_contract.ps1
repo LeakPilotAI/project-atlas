@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference='Stop'
+$ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot '../scripts/windows/Atlas-Control-Center.psm1') -Force
 $script:passed=0
 function Refuses([scriptblock]$Action,[string]$Reason) {
@@ -20,4 +20,15 @@ if ($s.calls -ne 1) { throw 'INVALID_ID_DISPATCHED' }; $script:passed++
 $s.session_id='synthetic-accepted'; $s.change=$true
 Refuses { Invoke-AtlasPaperStop $s -RequireSessionIdentity -RequireFinished } 'PAPER_STOP_SESSION_IDENTITY_CHANGED'
 if ($s.calls -ne 2) { throw 'MUTATION_RETRIED' }; $script:passed++
+$s.change=$false; $s.session_id='synthetic-accepted'; $s | Add-Member NoteProperty VerifiedCalls 0
+$s | Add-Member ScriptMethod verify_session {
+    $this.VerifiedCalls++
+    return ($this.VerifiedCalls -eq 1)
+} -Force
+Refuses { Invoke-AtlasPaperStop $s -RequireSessionIdentity -RequireFinished } 'PAPER_STOP_SESSION_VERIFICATION_LOST'
+if ($s.calls -ne 3 -or $s.VerifiedCalls -ne 2) { throw 'POST_DISPATCH_VERIFICATION_NOT_CHECKED' }; $script:passed++
+$s | Add-Member ScriptMethod request_stop { param($mode) $this.calls++; throw 'SYNTHETIC_DISPATCH_FAILURE' } -Force
+$s | Add-Member ScriptMethod verify_session { return $true } -Force
+Refuses { Invoke-AtlasPaperStop $s -RequireSessionIdentity -RequireFinished } 'PAPER_STOP_DISPATCH_UNVERIFIED'
+if ($s.calls -ne 4) { throw 'AMBIGUOUS_DISPATCH_RETRIED' }; $script:passed++
 Write-Output (@{passed=$script:passed;failed=0;financial_effects=0} | ConvertTo-Json -Compress)
