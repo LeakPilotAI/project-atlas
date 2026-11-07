@@ -144,6 +144,10 @@ def evaluate_published_iex_v3_candidate(
             or type(symbol) is not str or not symbol):
         raise ValueError("QD_PUBLISHED_IEX_BOUND_PORTS_REQUIRED")
     packet = publication.read_current()
+    # Freeze the first read: a mutable provider object must not hide a revision
+    # change by returning the same dictionary instance on the second read.
+    from app.services.paper_financial_replay import strict
+    packet = strict(body(packet))
     if packet.get("schema") != "QD_SCANNER_PUBLICATION_V1" or type(packet.get("bundles")) is not list:
         raise ValueError("QD_PUBLISHED_IEX_PACKET_INVALID")
     rows = []
@@ -166,16 +170,15 @@ def evaluate_published_iex_v3_candidate(
     if not rows or any(body(row) != body(rows[0]) for row in rows):
         raise ValueError("QD_PUBLISHED_IEX_RESEARCH_MISSING_OR_CONFLICTING")
     row = rows[0]
-    if row.get("blockers") or row.get("missing_critical"):
+    if row.get("blockers") != [] or row.get("missing_critical") != []:
         raise ValueError("QD_PUBLISHED_IEX_RESEARCH_BLOCKED")
     projection = row.get("quality_dips_v2")
-    if type(projection) is not dict or projection.get("missing_v2_evidence"):
+    if type(projection) is not dict or projection.get("missing_v2_evidence") != []:
         raise ValueError("QD_PUBLISHED_IEX_V3_EVIDENCE_INCOMPLETE")
     inputs = projection.get("decision_inputs")
     if type(inputs) is not dict or inputs.get("symbol") != symbol:
         raise ValueError("QD_PUBLISHED_IEX_DECISION_INPUTS_REQUIRED")
-    # Real explicit board projections omit timestamp; the separately bound
-    # original observation supplies its accepted point-in-time source stamp.
+    # The accepted observation supplies the point-in-time source stamp.
     if len(set(observation_stamps)) != 1:
         raise ValueError("QD_PUBLISHED_IEX_OBSERVATION_TIMES_CONFLICT")
     stamp = _aware(observation_stamps[0], "published observation")
@@ -195,7 +198,7 @@ def evaluate_published_iex_v3_candidate(
                 "value_trap": inputs.get("value_trap") is True}
     candidate = evaluate_iex_quality_dips_signal(
         quote=provider.read_iex_quote(symbol), symbol=symbol, now=now, research=research)
-    if publication.read_current() != packet:
+    if strict(body(publication.read_current())) != packet:
         raise ValueError("QD_PUBLISHED_IEX_SOURCE_CHANGED")
     return {**candidate, "published_source_id": packet["source_id"],
             "published_revision": packet["revision"],

@@ -301,7 +301,7 @@ def test_published_iex_v3_with_original_scanner_publication_and_revocation(tmp_p
     # Original scanner fixture has only a frozen V3 plan, not the full
     # decision_inputs needed to recompute against the current IEX ask.
     # Refuse rather than reuse an old classification as fill authority.
-    with pytest.raises(ValueError, match="DECISION_INPUTS_REQUIRED"):
+    with pytest.raises(ValueError, match="V3_EVIDENCE_INCOMPLETE"):
         evaluate_published_iex_v3_candidate(
             publication=publication, provider=provider, symbol=symbol, now=now)
     authority.valid = False
@@ -422,3 +422,38 @@ def test_original_producer_with_real_iex_feed_adapter_and_disposable_journal(tmp
     with pytest.raises(ValueError, match="AUTHENTICATED_IEX_FEED_UNAVAILABLE"):
         inspect_leased_published_iex_journal_candidate(**kwargs)
     assert path.read_bytes() == original
+
+
+def test_published_iex_v3_refuses_mutated_same_reference_and_missing_evidence(monkeypatch):
+    """A mutable reused publication object cannot conceal mid-quote changes."""
+    from app.services.quality_dips_research_only import project_explicit_research
+    from test_quality_dips_v2_board import _row
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import evaluate_published_iex_v3_candidate
+    row = _row()
+    row.update(symbol="MSFT", asset_type="STOCK", timestamp=NOW.isoformat())
+    row["trend"]["as_of"] = NOW.isoformat()
+    for valuation in row["valuation_sources"]:
+        valuation["as_of"] = NOW.isoformat()
+    board = project_explicit_research([row], now=NOW)
+    packet = {"schema": "QD_SCANNER_PUBLICATION_V1", "source_id": "fixture",
+              "revision": 1, "bundles": [{"instrument": {"symbol": "MSFT"},
+              "board": board, "observation": {"symbol": "MSFT",
+              "strategy_version": "QUALITY_DIPS_V3", "evidence_class": "FORWARD_COLLECTION",
+              "timestamp": NOW.isoformat()}}]}
+    publication = object.__new__(QualityDipsSourcePublication)
+    provider = object.__new__(PersonalPaperIEXProvider)
+    monkeypatch.setattr(QualityDipsSourcePublication, "read_current", lambda self: packet)
+    def mutate_on_quote(self, symbol):
+        packet["revision"] += 1
+        return quote()
+    monkeypatch.setattr(PersonalPaperIEXProvider, "read_iex_quote", mutate_on_quote)
+    with pytest.raises(ValueError, match="SOURCE_CHANGED"):
+        evaluate_published_iex_v3_candidate(publication=publication,
+                                            provider=provider, symbol="MSFT", now=NOW)
+    packet["revision"] = 1
+    packet["bundles"][0]["board"][0]["quality_dips_v2"].pop("missing_v2_evidence", None)
+    with pytest.raises(ValueError, match="V3_EVIDENCE_INCOMPLETE"):
+        evaluate_published_iex_v3_candidate(publication=publication,
+                                            provider=provider, symbol="MSFT", now=NOW)
