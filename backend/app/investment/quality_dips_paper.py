@@ -224,6 +224,12 @@ def record_decision(
     existing = read_events(path)
     for row in existing:
         if row.get("event_id") == eid:
+            if (row.get("account_id") != account_id
+                    or row.get("symbol") != symbol
+                    or row.get("decision") != decision
+                    or row.get("reason") != str(reason or "")
+                    or row.get("evidence_class") != observation.get("evidence_class")):
+                raise ValueError("conflicting retry for existing PAPER decision")
             return row
     row = {
         "schema_version": 1,

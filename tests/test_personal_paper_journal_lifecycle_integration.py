@@ -268,3 +268,23 @@ def test_concurrent_mark_and_close_preserves_journal_order(tmp_path):
     close_idx = next(i for i, row in enumerate(events) if row["event"] == "close_lot")
     assert all(row["event"] != "mark_lot" for row in events[close_idx + 1:])
     assert accounting_snapshot(events, account_id="forward")["open_positions"] == 0
+
+
+def test_decision_retry_rejects_conflicting_account_or_evidence(tmp_path):
+    from app.investment.quality_dips_paper import record_decision
+    path = tmp_path / "decisions.jsonl"
+    observation = {"observation_id": "same", "symbol": "MSFT",
+                   "evidence_class": "FORWARD_COLLECTION"}
+    first = record_decision(observation, decision="WAIT", reason="no setup",
+                            account_id="forward", path=path)
+    assert record_decision(observation, decision="WAIT", reason="no setup",
+                           account_id="forward", path=path) == first
+    before = path.read_bytes()
+    for kwargs in ({"account_id": "other"}, {"reason": "changed"}):
+        with pytest.raises(ValueError, match="conflicting retry"):
+            record_decision(observation, decision="WAIT", reason=kwargs.get("reason", "no setup"),
+                            account_id=kwargs.get("account_id", "forward"), path=path)
+    with pytest.raises(ValueError, match="conflicting retry"):
+        record_decision({**observation, "evidence_class": "TEST_DATA"},
+                        decision="WAIT", reason="no setup", account_id="forward", path=path)
+    assert path.read_bytes() == before
