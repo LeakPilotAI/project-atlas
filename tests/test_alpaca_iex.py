@@ -488,3 +488,24 @@ async def test_bounded_probe_records_fresh_quote_seen_before_disconnect():
     assert result["result"]["connection"] == "DISCONNECTED"
     assert result["result"]["quotes"][0]["state"] != "FRESH"
     assert "test-secret" not in repr(result)
+
+
+@pytest.mark.asyncio
+async def test_bounded_authenticated_feed_delivers_unique_readonly_quotes():
+    raw = json.dumps([message()])
+    wire = Wire(['[{"T":"success","msg":"authenticated"}]',
+                 '[{"T":"subscription","quotes":["MSFT"]}]', raw, raw])
+    @asynccontextmanager
+    async def connect(url, **kwargs):
+        yield wire
+    feed = IEXFeed(["MSFT"], clock=lambda: STAMP + 0.5)
+    delivered = []
+    result = await feed.run(Credentials("test-key", "test-secret"), seconds=1,
+                            connect=connect, max_reconnects=0,
+                            on_fresh_quote=delivered.append)
+    assert result["authenticated"] and result["subscribed"]
+    assert len(delivered) == 1
+    assert delivered[0]["symbol"] == "MSFT"
+    assert delivered[0]["paper_fill_authorized"] is False
+    assert delivered[0]["live_order_authorized"] is False
+    assert "test-secret" not in repr(delivered)

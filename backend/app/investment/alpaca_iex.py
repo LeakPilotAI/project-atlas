@@ -275,13 +275,15 @@ class IEXFeed:
                 "paper_startup_authorized": False,
             }
 
-    async def run(self, credentials, *, seconds=30, connect=None, max_reconnects=2, stop=None):
+    async def run(self, credentials, *, seconds=30, connect=None, max_reconnects=2, stop=None,
+                  on_fresh_quote=None):
         if (
             not isinstance(credentials, Credentials)
             or type(seconds) not in (int, float)
             or not 1 <= seconds <= 86400
             or type(max_reconnects) is not int
             or not 0 <= max_reconnects <= 3
+            or (on_fresh_quote is not None and not callable(on_fresh_quote))
         ):
             raise IEXRefused("IEX_BOUNDED_CONNECTION_REQUIRED")
         if self.run_lock.locked():
@@ -294,6 +296,7 @@ class IEXFeed:
         deadline, attempt = time.monotonic() + seconds, 0
         authenticated, subscribed = False, False
         fresh_quote_observed = False
+        delivered_events = set()
         async with self.run_lock:
             try:
                 while time.monotonic() < deadline and not (stop and stop.is_set()):
@@ -354,9 +357,24 @@ class IEXFeed:
                                     )
                                     self.receive(raw)
                                     if self.authenticated and self.subscribed:
-                                        fresh_quote_observed = fresh_quote_observed or any(
-                                            q["state"] == "FRESH" for q in self.snapshot()["quotes"]
-                                        )
+                                        view = self.snapshot()
+                                        fresh = [q for q in view["quotes"] if q["state"] == "FRESH"]
+                                        fresh_quote_observed = fresh_quote_observed or bool(fresh)
+                                        if on_fresh_quote is not None:
+                                            for q in fresh:
+                                                event_id = (q["symbol"], q["source_ns"])
+                                                if event_id not in delivered_events:
+                                                    delivered_events.add(event_id)
+                                                    # Read-only callback, no credentials or broker handles.
+                                                    # Fail closed if the consumer raises; never silently skip it.
+                                                    on_fresh_quote({"symbol": q["symbol"],
+                                                                    "bid": q["bid"], "ask": q["ask"],
+                                                                    "bid_lots": q["bid_lots"],
+                                                                    "ask_lots": q["ask_lots"],
+                                                                    "timestamp": q["timestamp"],
+                                                                    "provider": "ALPACA_IEX",
+                                                                    "paper_fill_authorized": False,
+                                                                    "live_order_authorized": False})
                                 except TimeoutError:
                                     pass  # RFC6455 transport pings continue independently.
                             if self.roster_revision != roster_revision:
