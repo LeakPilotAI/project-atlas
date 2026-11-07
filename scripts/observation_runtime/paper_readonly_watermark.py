@@ -64,15 +64,13 @@ def advance_watermark(path: Path, *, symbol: str, provider_timestamp: str) -> di
     # must inspect it; never silently discard potentially newer evidence.
     if temp.exists() or temp.is_symlink():
         raise ValueError("READONLY_WATERMARK_INTERRUPTED_WRITE")
-    try:
-        with temp.open("x", encoding="utf-8") as handle:
-            handle.write(body(packet) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temp, path)
-    finally:
-        if temp.exists():
-            temp.unlink()
+    # A failed exclusive create must not delete another writer's pending file.
+    # Retain an owned pending file after write/replace failure for inspection.
+    with temp.open("x", encoding="utf-8") as handle:
+        handle.write(body(packet) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temp, path)
     return packet
 
 
@@ -210,7 +208,11 @@ class ReadonlyIEXEventConsumer:
                                and Decimal(str(event["ask"])) == Decimal(str(evidence["ask"])))
             except (KeyError, ValueError, TypeError, InvalidOperation):
                 same_prices = False
-            if evidence_stamp.astimezone(UTC) != stamp.astimezone(UTC) or not same_prices:
+            if (evidence_stamp.astimezone(UTC) != stamp.astimezone(UTC)
+                    or not same_prices
+                    or type(event.get("bid_lots")) is not int
+                    or type(event.get("ask_lots")) is not int
+                    or event["bid_lots"] <= 0 or event["ask_lots"] <= 0):
                 raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_QUOTE_CHANGED")
             if decision.get("publication_read_verified") is not True:
                 raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_SOURCE_UNVERIFIED")

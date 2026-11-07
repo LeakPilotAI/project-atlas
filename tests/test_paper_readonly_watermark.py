@@ -272,8 +272,25 @@ def test_published_iex_callback_checks_full_quote_and_source_before_commit(tmp_p
             consumer.on_fresh_quote({**event, "ask": "81"})
         assert consumer.accepted == 0
         assert read_watermark(path, symbol="MSFT") == previous
+        with pytest.raises(ValueError, match="PUBLISHED_QUOTE_CHANGED"):
+            consumer.on_fresh_quote({**event, "bid_lots": 0})
         consumer.on_fresh_quote(event)
         assert consumer.accepted == 1
         assert consumer.last_strategy["publication_read_verified"] is True
         assert consumer.last_strategy["paper_fill_authorized"] is False
     assert read_watermark(path, symbol="MSFT") == stamp
+
+
+def test_failed_pending_replace_retains_crash_evidence(tmp_path, monkeypatch):
+    from scripts.observation_runtime import paper_readonly_watermark as watermark
+    path = tmp_path / "retain.json"
+    stamp = datetime(2026, 11, 7, tzinfo=UTC)
+    def refused_replace(src, dst):
+        raise OSError("injected disk failure")
+    monkeypatch.setattr(watermark.os, "replace", refused_replace)
+    with pytest.raises(OSError, match="injected disk failure"):
+        advance_watermark(path, symbol="MSFT", provider_timestamp=stamp.isoformat())
+    assert not path.exists()
+    assert (tmp_path / "retain.json.pending").is_file()
+    with pytest.raises(ValueError, match="INTERRUPTED_WRITE"):
+        advance_watermark(path, symbol="MSFT", provider_timestamp=(stamp + timedelta(seconds=1)).isoformat())
