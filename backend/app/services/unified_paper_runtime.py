@@ -1,5 +1,4 @@
-﻿import sqlite3
-"""Inert two-lane supervision over existing engines; no providers or startup hook.
+﻿"""Inert two-lane supervision over existing engines; no providers or startup hook.
 
 The injected installation lease authenticates actual lane objects. Portfolio
 custody owns durable reservations and cross-process exclusion, not this object's
@@ -7,6 +6,7 @@ thread lock. No default custodian, portfolio allocation or trading grant exists.
 """
 
 import asyncio
+import sqlite3
 from threading import Event, Lock
 
 from app.services.paper_financial_replay import (

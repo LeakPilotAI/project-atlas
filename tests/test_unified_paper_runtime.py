@@ -711,3 +711,42 @@ def test_sqlite_ledger_errors_fail_closed_without_second_financial_stop(tmp_path
         b.request_stop("SHUTDOWN_FLATTEN")
     assert b.runtime.entry_closed.is_set()
     assert len(calls) == 1
+def test_sqlite_error_on_fresh_stop_intent_blocks_financial_dispatch(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    import sqlite3
+    class FaultyLedger(PaperStopReceiptLedger):
+        def reserve_fresh(self, *args):
+            raise sqlite3.OperationalError("synthetic database locked")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.stop_ledger = FaultyLedger(tmp_path / "stop.sqlite")
+    calls = []
+    b.runtime = SimpleNamespace(stop=lambda **kw: calls.append(kw),
+                                entry_closed=Event(), grant={"session_id":"s"})
+    with pytest.raises(ValueError, match="INTENT_UNVERIFIED"):
+        b.request_stop("SHUTDOWN_FLATTEN")
+    assert b.runtime.entry_closed.is_set()
+    assert not calls
+
+
+def test_sqlite_error_on_idle_status_blocks_false_idle(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    import sqlite3
+    class FaultyLedger(PaperStopReceiptLedger):
+        def inspect_session(self, *args):
+            raise sqlite3.DatabaseError("synthetic damaged database")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.stop_ledger = FaultyLedger(tmp_path / "stop.sqlite")
+    b.runtime = SimpleNamespace(entry_closed=Event(), grant={"session_id":"s"})
+    with pytest.raises(ValueError, match="LEDGER_STATUS_UNVERIFIED"):
+        b.status()
+    assert b.runtime.entry_closed.is_set()
