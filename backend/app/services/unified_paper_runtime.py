@@ -181,7 +181,9 @@ class UnifiedControlStopBridge:
                             or self.owned_close.verify_exit(strict(body(roster))) is not True):
                         raise ValueError('UNIFIED_EXACT_OWNED_EXIT_UNACKNOWLEDGED')
                     process_state = 'VERIFIED_EXIT' if complete else 'VERIFIED_EXIT_WITH_UNRESOLVED_POSITIONS'
-            except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+            except Exception:
+                # Unexpected owned-process close errors cannot certify exit.
+                # Never retry a possibly partially executed close callback.
                 complete, process_state = False, 'INCOMPLETE'
         self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED", "outcome": {
             "schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,

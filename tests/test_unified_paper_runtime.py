@@ -411,6 +411,35 @@ def test_control_stop_bridge_does_not_claim_flat_or_exit_on_stop_failure(failure
     assert result['outcome']['reason'] == 'FINANCIAL_STOP_UNVERIFIED'
     assert result['outcome']['lanes'] == {}
     assert result['outcome']['cash'] is None
+@pytest.mark.parametrize('failure', [RuntimeError, AssertionError])
+def test_control_stop_unexpected_owned_exit_error_never_claims_success(failure):
+    from types import SimpleNamespace
+    from threading import Lock
+    bridge = object.__new__(UnifiedControlStopBridge)
+    bridge.stop_lock = Lock()
+    bridge.stop_ledger = None
+    bridge.owned_close = object()
+    bridge._close_binding = bridge.owned_close
+    bridge.verify_session = lambda: True
+    bridge.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'IDLE', 'outcome': None}
+    class Authority:
+        def verify_owned_shutdown(self, *args):
+            raise failure('synthetic ownership verification failure')
+    class Portfolio:
+        authority = Authority()
+        ownership = SimpleNamespace(owned_roster=lambda *args: {})
+        def verify_drain(self, *args):
+            return True
+        def lease(self, *args):
+            from contextlib import nullcontext
+            return nullcontext(SimpleNamespace(owner=SimpleNamespace(check=lambda: True)))
+    bridge.runtime = SimpleNamespace(
+        stop=lambda **kw: {'state': 'STOPPED', 'lanes': {}},
+        portfolio=Portfolio(), uncertain=False, grant={'session_id': 'synthetic'}, clock=lambda: 1)
+    result = bridge.request_stop('SHUTDOWN_FLATTEN')
+    assert result['outcome']['status'] == 'SHUTDOWN_INCOMPLETE'
+    assert result['outcome']['process_shutdown'] == 'INCOMPLETE'
+
 def test_control_stop_does_not_report_full_flatten_when_owned_exit_unverified():
     from types import SimpleNamespace
     bridge = object.__new__(UnifiedControlStopBridge)
