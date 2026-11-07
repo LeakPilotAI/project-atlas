@@ -85,3 +85,22 @@ def test_read_only_recovery_does_not_create_missing_intent(tmp_path):
     ledger.finish("s", "SHUTDOWN_FLATTEN", receipt)
     assert PaperStopReceiptLedger(ledger.path).recover("s", "SHUTDOWN_FLATTEN") == {
         "state":"RECEIPT_RECORDED","mode":"SHUTDOWN_FLATTEN","receipt":receipt}
+def test_stop_ledger_refuses_symlink_database(tmp_path):
+    real = tmp_path / "real.sqlite"
+    PaperStopReceiptLedger(real)
+    link = tmp_path / "alias.sqlite"
+    try:
+        link.symlink_to(real)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable on this Windows account")
+    with pytest.raises(ValueError, match="SYMLINK"):
+        PaperStopReceiptLedger(link)
+def test_reserve_rejects_semantically_forged_finished_receipt(tmp_path):
+    path = tmp_path / "stop.sqlite"
+    ledger = PaperStopReceiptLedger(path)
+    ledger.reserve("s", "SHUTDOWN_FLATTEN")
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE stop_receipts SET state='FINISHED', receipt=? WHERE session='s'",
+                   ('{"phase":"FINISHED","outcome":{"mode":"EMERGENCY","status":"FLATTENED"}}',))
+    with pytest.raises(StopReceiptConflict, match="CORRUPT"):
+        ledger.reserve("s", "SHUTDOWN_FLATTEN")

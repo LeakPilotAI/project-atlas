@@ -9,6 +9,8 @@ class StopReceiptConflict(ValueError):
 class PaperStopReceiptLedger:
     def __init__(self, path):
         self.path = Path(path)
+        if self.path.is_symlink():
+            raise ValueError("STOP_LEDGER_SYMLINK_FORBIDDEN")
         if not self.path.parent.is_dir():
             raise ValueError("STOP_LEDGER_PARENT_REQUIRED")
         with self._connect() as db:
@@ -32,7 +34,19 @@ class PaperStopReceiptLedger:
                 db.execute("ROLLBACK")
                 raise StopReceiptConflict("STOP_MODE_CHANGED")
             db.execute("COMMIT")
-            return {"state":row[1],"mode":row[0],"receipt":json.loads(row[2]) if row[2] else None}
+            if row[1] == "PENDING" and row[2] is None:
+                return {"state": "PENDING", "mode": mode, "receipt": None}
+            if row[1] != "FINISHED" or row[2] is None:
+                raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+            try:
+                receipt = json.loads(row[2])
+            except (ValueError, TypeError) as exc:
+                raise StopReceiptConflict("STOP_LEDGER_CORRUPT") from exc
+            if (not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED"
+                    or not isinstance(receipt.get("outcome"), dict)
+                    or receipt["outcome"].get("mode") != mode):
+                raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+            return {"state": "FINISHED", "mode": mode, "receipt": receipt}
     def recover(self, session, mode):
         """Read-only restart inspection: pending is NEVER proof of flat positions."""
         row = self.reserve_existing(session, mode)
@@ -74,4 +88,6 @@ class PaperStopReceiptLedger:
             db.execute("UPDATE stop_receipts SET state='FINISHED', receipt=? WHERE session=?", (serialized,session))
             db.execute("COMMIT")
         return json.loads(serialized)
+
+
 
