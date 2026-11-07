@@ -69,3 +69,41 @@ def test_bounded_provider_worker_rejects_large_batch():
     from scripts.observation_runtime.alpaca_equity_catalog import run_bounded_provider_research
     with pytest.raises(ValueError, match="BUDGET"):
         run_bounded_provider_research(contact="not-configured", limit=9)
+
+
+def test_worker_success_advances_only_research_cursor(tmp_path, monkeypatch):
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    snapshot = mod.inventory_snapshot([{"class": "us_equity", "symbol": s, "status": "active", "tradable": True}
+                                       for s in ("MSFT", "AVGO")], captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(snapshot), encoding="utf-8")
+    called = []
+    def provider(**kwargs):
+        called.append(kwargs["symbol"])
+        return {"symbol": kwargs["symbol"], "provider_receipt_count": 2,
+                "paper_fill_authorized": False, "live_order_authorized": False}
+    result = mod.run_bounded_provider_research(contact="test-contact", limit=2, provider=provider)
+    assert result["batch_complete"] and result["cursor_advanced"]
+    assert called == ["AVGO", "MSFT"]
+    assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 2
+    assert not result["paper_execution_authorized"]
+
+
+def test_worker_failed_provider_never_advances_cursor(tmp_path, monkeypatch):
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    snapshot = mod.inventory_snapshot([{"class": "us_equity", "symbol": "MSFT", "status": "active", "tradable": True}],
+                                      captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(snapshot), encoding="utf-8")
+    def provider(**kwargs):
+        raise ValueError("PROVIDER_DOWN")
+    result = mod.run_bounded_provider_research(contact="test-contact", limit=1, provider=provider)
+    assert not result["batch_complete"] and not result["cursor_advanced"]
+    assert result["outcomes"][0]["status"] == "RESEARCH_BLOCKED"
+    assert not (root / "alpaca_equity_cursor.json").exists()
