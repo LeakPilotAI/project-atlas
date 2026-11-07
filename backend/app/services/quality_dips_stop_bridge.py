@@ -121,7 +121,7 @@ class PaperStopBridge:
         return self.runner.control_status() if self.runner is not None else strict(body(self.progress))
 
 
-def register_stop_routes(app, *, bridge, origin, token):
+def register_stop_routes(app, *, bridge, origin, token, require_session=False):
     """Only an explicitly composed host registers this authenticated local route.
 
     Not registered in app.main or the read-only host by default. The injected
@@ -132,9 +132,15 @@ def register_stop_routes(app, *, bridge, origin, token):
 
     if not origin.startswith("http://127.0.0.1:") or type(token) is not str or len(token) < 32:
         raise ValueError("CONTROL_LOOPBACK_TRANSPORT_REQUIRED")
+    if type(require_session) is not bool:
+        raise ValueError("CONTROL_SESSION_POLICY_INVALID")
     host = origin.removeprefix("http://")
 
     async def stop(request: Request):
+        # In session-required installations the legacy mode-only endpoint
+        # cannot bypass the session-bound identity check.
+        if require_session:
+            return JSONResponse({"status": "REFUSED"}, status_code=409)
         if (
             request.client.host != "127.0.0.1"
             or request.headers.get("host") != host

@@ -827,3 +827,27 @@ async def test_opt_in_local_stop_session_transport_requires_runtime_bound_identi
                                                                "mode": "SHUTDOWN_FLATTEN"})
         assert result.status_code == 409
         assert all(p.stops == 0 for p in r.lanes.values())
+
+
+@pytest.mark.asyncio
+async def test_session_required_transport_disables_legacy_mode_only_stop():
+    import httpx
+    from fastapi import FastAPI
+    from app.services.quality_dips_stop_bridge import register_stop_routes
+
+    r = runtime()
+    await r.poll()
+    bridge = UnifiedControlStopBridge(r)
+    app = FastAPI()
+    origin, token = "http://127.0.0.1:18799", "synthetic-test-control-token-only-1234"
+    register_stop_routes(app, bridge=bridge, origin=origin, token=token, require_session=True)
+    headers = {"origin": origin, "x-atlas-control": token}
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=origin) as client:
+        result = await client.post("/_atlas/control/stop", headers=headers,
+                                   json={"mode": "SHUTDOWN_FLATTEN"})
+        assert result.status_code == 409
+        assert all(lane.stops == 0 for lane in r.lanes.values())
+        result = await client.post("/_atlas/control/stop-session", headers=headers,
+                                   json={"session_id": "foreign", "mode": "SHUTDOWN_FLATTEN"})
+        assert result.status_code == 409
+        assert all(lane.stops == 0 for lane in r.lanes.values())
