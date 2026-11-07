@@ -71,3 +71,38 @@ def test_disposable_journal_rejects_wrong_account_provenance(tmp_path):
                  level="L1", paper_notional_dollars=50, fill_price=100,
                  account_id="paper-a", fee_bps_per_side=2, path=path)
     assert accounting_snapshot(read_events(path), account_id="paper-a")["open_positions"] == 0
+
+
+@pytest.mark.parametrize("fault", ["wrong_account", "wrong_provenance", "duplicate_entry", "orphan_close"])
+def test_restarted_forward_account_rejects_corrupted_financial_journal(tmp_path, fault):
+    """Restart must refuse contradictory durable events, never silently recover."""
+    import json
+    path = tmp_path / "corrupt.jsonl"
+    initialize_paper_account(account_id="isolated-test", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    obs = {"observation_id": "obs", "symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION"}
+    entry = open_lot(obs, level="L1", paper_notional_dollars=50,
+                     fill_price=100, account_id="isolated-test", fee_bps_per_side=2, path=path)
+    if fault == "wrong_account":
+        entry = {**entry, "account_id": "another-account"}
+    elif fault == "wrong_provenance":
+        entry = {**entry, "data_provenance": "TEST_DATA"}
+    elif fault == "orphan_close":
+        entry = {"event": "close_lot", "lot_id": "missing-lot",
+                 "account_id": "isolated-test", "data_provenance": "FORWARD_COLLECTION"}
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(entry) + "\n")
+    with pytest.raises(ValueError):
+        accounting_snapshot(read_events(path), account_id="isolated-test")
+
+
+def test_restarted_forward_account_rejects_truncated_journal(tmp_path):
+    import json
+    path = tmp_path / "truncated.jsonl"
+    initialize_paper_account(account_id="isolated-test", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="FORWARD_COLLECTION", path=path)
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write('{"event": "open_lot", "lot_id":')
+    with pytest.raises(json.JSONDecodeError):
+        read_events(path)
