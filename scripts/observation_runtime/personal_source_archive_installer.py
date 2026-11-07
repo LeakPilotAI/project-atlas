@@ -29,11 +29,12 @@ def install_source_archive(*, root, enrollment, reader, policy, release_digest,
     images = NativePersonalCoordinationImages(root=root, native_root=actual_id,
                                               enrollment_digest=digest(enrollment))
     try:
+        image = initial_image(enrollment)
         authority = NativePersonalSourceInstallAuthority(
             reader=reader, policy=policy, release_digest=release_digest,
             accounts=accounts, clock=clock, runtime_id=runtime_id,
-            enrollment_digest=digest(enrollment), root_id=actual_id)
-        image = initial_image(enrollment)
+            enrollment_digest=digest(enrollment), root_id=actual_id,
+            initial_image=image)
         images.initialize(image, authorization=authority)
         with images.transaction(readonly=True) as tx:
             if tx.read() != image:

@@ -3,6 +3,7 @@
 Requires an already native-bound activation; cannot issue its own approval.
 No source or account creation occurs in this module.
 """
+import hashlib
 from contextlib import contextmanager
 
 from app.services.paper_financial_replay import body, digest
@@ -14,7 +15,7 @@ from scripts.volume_inspector.windows_output import current_sid
 
 class NativePersonalSourceInstallAuthority:
     def __init__(self, *, reader, policy, release_digest, accounts, clock, runtime_id,
-                 enrollment_digest, root_id):
+                 enrollment_digest, root_id, initial_image):
         if type(reader) is not NativePersonalActivationReader or type(clock) is not LocalWindowsClock:
             raise ValueError('SOURCE_INSTALL_NATIVE_ACTIVATION_AND_CLOCK_REQUIRED')
         clock.require_operational(runtime_id)
@@ -25,7 +26,10 @@ class NativePersonalSourceInstallAuthority:
             raise ValueError('SOURCE_INSTALL_NATIVE_ENROLLMENT_REQUIRED')
         self.reader, self.policy, self.release = reader, validate_policy(policy), release_digest
         self.accounts, self.clock, self.runtime_id = accounts, clock, runtime_id
+        if type(initial_image) is not bytes or not initial_image:
+            raise ValueError('SOURCE_INSTALL_EXACT_INITIAL_IMAGE_REQUIRED')
         self.enrollment_digest, self.root_id = enrollment_digest, list(root_id)
+        self.initial_image_digest = hashlib.sha256(initial_image).hexdigest()
         self.operator = current_sid()
         self.used = False
 
@@ -40,9 +44,7 @@ class NativePersonalSourceInstallAuthority:
         if (request.get('schema') != 'PERSONAL_COORDINATION_INSTALL_V1'
                 or request.get('root') != self.root_id
                 or request.get('enrollment') != self.enrollment_digest
-                or type(request.get('image_digest')) is not str
-                or len(request['image_digest']) != 64
-                or any(c not in '0123456789abcdef' for c in request['image_digest'])):
+                or request.get('image_digest') != self.initial_image_digest):
             raise ValueError('SOURCE_INSTALL_IMAGE_BINDING_REFUSED')
         return digest(record)
 
