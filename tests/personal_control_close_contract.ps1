@@ -1,4 +1,4 @@
-# Fake session contracts only;no UI,host,provider,financial store or native child.
+﻿# Fake session contracts only;no UI,host,provider,financial store or native child.
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot '../scripts/windows/Atlas-Control-Center.psm1') -Force
 $script:passed = 0
@@ -27,11 +27,12 @@ $progress=Invoke-AtlasPaperStop $busy
 if($progress.phase -cne 'IN_PROGRESS'){throw 'Ordinary Stop must preserve progress'}
 $script:passed++
 $finished=Fake-Session 'FINISHED'
-$result=Invoke-AtlasPaperStop $finished -RequireFinished
+$result=Invoke-AtlasPaperStop $finished
 if($result.outcome.position_state -cne 'POSITION_OPEN' -or $result.outcome.status -cne 'SHUTDOWN_INCOMPLETE'){
     throw 'Do not fabricate a flattened outcome for an unresolved position'
 }
 $script:passed++
+Refuses { Invoke-AtlasPaperStop $finished -RequireFinished } 'PAPER_STOP_NOT_VERIFIED_FLAT'
 Refuses { Invoke-AtlasPaperStop $null -RequireFinished } 'PAPER_STOP_NOT_ENROLLED'
 $foreign=Fake-Session 'FINISHED' $false
 Refuses { Invoke-AtlasPaperStop $foreign -RequireFinished } 'PAPER_STOP_NOT_ENROLLED'
@@ -42,4 +43,18 @@ Refuses { Invoke-AtlasPaperStop $bad -RequireFinished } 'PAPER_STOP_OUTCOME_UNVE
 $empty=Fake-Session 'FINISHED'
 $empty | Add-Member ScriptMethod request_stop {param($mode) return [pscustomobject]@{schema='QD_CONTROL_STOP_V1';phase='FINISHED';outcome=$null}} -Force
 Refuses {Invoke-AtlasPaperStop $empty -RequireFinished} 'PAPER_STOP_OUTCOME_UNVERIFIED'
+$flat=Fake-Session 'FINISHED'
+$flat | Add-Member ScriptMethod request_stop {
+    param($mode)
+    return [pscustomobject]@{
+        schema='QD_CONTROL_STOP_V1'; phase='FINISHED'
+        outcome=[pscustomobject]@{
+            schema='QD_AUTO_SHUTDOWN_V1'; mode=$mode; status='FLATTENED'
+            position_state='FLAT'; process_shutdown='VERIFIED_EXIT'
+        }
+    }
+} -Force
+$verified=Invoke-AtlasPaperStop $flat -RequireFinished
+if($verified.outcome.status -cne 'FLATTENED'){throw 'Verified flat stop rejected'}
+$script:passed++
 @{passed=$script:passed;failed=0;native_children=0;financial_effects=0} | ConvertTo-Json -Compress

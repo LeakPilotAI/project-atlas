@@ -1,4 +1,4 @@
-# Gate probe imports only the independent authorization module, never app.main.
+﻿# Gate probe imports only the independent authorization module, never app.main.
 function Get-AtlasFullStartupGate([string]$Root) {
     $python = Join-Path $Root 'backend\.venv\Scripts\python.exe'
     $gate = Join-Path $Root 'backend\app\core\production_startup_lock.py'
@@ -36,6 +36,12 @@ function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emerge
     if ($RequireFinished -and $null -eq $result.outcome) {
         throw 'PAPER_STOP_OUTCOME_UNVERIFIED: no finished outcome; ownership retained.'
     }
+    if ($RequireFinished -and ($result.outcome.schema -cne 'QD_AUTO_SHUTDOWN_V1' -or
+        $result.outcome.status -cne 'FLATTENED' -or
+        $result.outcome.position_state -cne 'FLAT' -or
+        $result.outcome.process_shutdown -cne 'VERIFIED_EXIT')) {
+        throw 'PAPER_STOP_NOT_VERIFIED_FLAT: retain Control Center ownership and reconcile shutdown.'
+    }
     return $result
 }
 function Format-AtlasIEXDataStatus([object]$Snapshot = $null) {
@@ -60,3 +66,4 @@ function Format-AtlasUnifiedPaperStatus([object]$Snapshot = $null) {
     return ($rows -join '; ') + '; separate accounts; startup authorization: NO'
 }
 Export-ModuleMember -Function Get-AtlasFullStartupGate, Get-AtlasFullFrontendDecision, Invoke-AtlasPaperStop, Format-AtlasIEXDataStatus, Format-AtlasUnifiedPaperStatus
+
