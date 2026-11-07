@@ -5,6 +5,7 @@ import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal
 import json
+from collections import Counter
 from pathlib import Path
 
 from app.prediction.kalshi_public import kalshi_public
@@ -33,6 +34,8 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
     # Deduplicate tickers before expensive orderbook reads; no account access.
     candidates = []
     fully_qualified = 0
+    rejection_counts = Counter()
+    rejection_combinations = Counter()
     seen = set()
     cursor = None
     pages_scanned = 0
@@ -50,6 +53,10 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
                 continue
             seen.add(ticker)
             reasons = scanner._prefilter_reasons(market, observed)
+            if reasons:
+                unique_reasons = tuple(sorted(set(reasons)))
+                rejection_counts.update(unique_reasons)
+                rejection_combinations[unique_reasons] += 1
             if not reasons:
                 fully_qualified += 1
             if not set(reasons) - OBSERVATION_ONLY_ACTIVITY_REASONS:
@@ -179,6 +186,12 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             'entry_gate_qualified_new_listings_seen': fully_qualified,
             'pages_scanned': pages_scanned,
             'unique_markets_screened': len(seen), 'records_written': len(records),
+            'rejection_reason_counts': dict(sorted(rejection_counts.items())),
+            'top_rejection_combinations': [
+                {'reasons': list(reasons), 'markets': count}
+                for reasons, count in sorted(rejection_combinations.items(),
+                    key=lambda item: (-item[1], item[0]))[:10]],
+            'rejection_counts_are_overlapping': True,
             'qualified_candidates_in_bounded_scan': len(qualified),
             'qualified_candidates_unseen_in_history': len(qualified_new),
             'qualified_orderbooks_selected': len(selected_qualified),

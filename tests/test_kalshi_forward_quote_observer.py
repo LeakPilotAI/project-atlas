@@ -70,6 +70,10 @@ def test_paginated_discovery_finds_fresh_listing_after_old_first_page(tmp_path, 
     assert result['pages_scanned'] == 2
     assert result['records_written'] == 1
     assert result['unique_markets_screened'] == 2
+    assert result['rejection_reason_counts']
+    assert sum(result['rejection_reason_counts'].values()) >= 1
+    assert result['top_rejection_combinations'][0]['markets'] >= 1
+    assert result['rejection_counts_are_overlapping'] is True
 
 
 def test_liquid_later_page_outranks_early_illiquid_market(tmp_path, monkeypatch):
