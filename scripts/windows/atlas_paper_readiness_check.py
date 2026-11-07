@@ -10,6 +10,20 @@ CHECKS = (
 )
 BLOCK = "ATLAS_LEGACY_LIFECYCLE_BLOCKED"
 
+# Explicit independent acceptance domains. This read-only probe does not
+# infer acceptance from source files, tests, or self-declared configuration.
+ACCEPTANCE_GATES = (
+    "B1_HISTORICAL_COMPLETENESS_OR_EPOCH",
+    "C1_OWNERSHIP_AND_FINANCIAL_DRAIN",
+    "D1_TRUSTED_STORAGE_AUTHORITY_CLOCK",
+    "E1_PROVIDER_RIGHTS_AND_SUPERVISED_SESSION",
+    "DESKTOP_OWNED_START_STOP",
+    "MARKET_AND_ACCOUNT_COVERAGE",
+    "RESTART_AND_RECONCILIATION",
+    "SUPERVISED_END_TO_END",
+    "EXTENDED_SOAK_ACCEPTANCE",
+)
+
 
 def inspect(root=ROOT):
     results = {}
@@ -35,6 +49,8 @@ def inspect(root=ROOT):
         "paper_startup_authorized": False,
         "live_trading_authorized": False,
         "desktop": results,
+        "acceptance": {gate: "NOT_INDEPENDENTLY_VERIFIED" for gate in ACCEPTANCE_GATES},
+        "unverified_gate_count": len(ACCEPTANCE_GATES),
         "reason": "INDEPENDENT_PAPER_SESSION_AND_STOP_ACCEPTANCE_REQUIRED",
     }
 
