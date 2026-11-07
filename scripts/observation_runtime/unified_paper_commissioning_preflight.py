@@ -13,14 +13,20 @@ def inspect(*, root=ROOT, qd_report=None):
     expected = {'EXISTING_QUALITY_DIPS_PAPER_COMMISSIONING',
                 'HYPERLIQUID_SIMULATED_ACCOUNT_INITIALIZATION_IF_TECHNICALLY_ELIGIBLE',
                 'SUPERVISED_UNIFIED_PAPER_TESTING_IF_TECHNICALLY_ACCEPTED',
-                'VERIFIED_OWNED_STOP_FLATTEN_RECONCILIATION'}
+                'VERIFIED_OWNED_STOP_FLATTEN_RECONCILIATION',
+                'LOCAL_NATIVE_PAPER_ACTIVATION_RECORD_IF_TECHNICALLY_ELIGIBLE',
+                'CREATE_ONLY_NATIVE_CUSTODY_ENROLLMENT_IF_TECHNICALLY_ELIGIBLE',
+                'QUALITY_DIPS_SIMULATED_USD_1000_INCEPTION_IF_TECHNICALLY_ELIGIBLE',
+                'HYPERLIQUID_SIMULATED_USDC_1000_INCEPTION_IF_TECHNICALLY_ELIGIBLE'}
     scope_ok = (scope.get('schema') == 'ATLAS_UNIFIED_PAPER_COMMISSIONING_SCOPE_V1'
-                and scope.get('status') == 'OPERATOR_SCOPE_APPROVED_TECHNICAL_ACCEPTANCE_PENDING'
+                and scope.get('status') == 'OPERATOR_AUTHORIZED_BOUNDED_NATIVE_COMMISSIONING_TECHNICAL_ACCEPTANCE_PENDING'
                 and scope.get('runtime_consumable') is False
                 and scope.get('startup_authorized') is False
                 and scope.get('financial_publication_authorized') is False
                 and scope.get('provider_activation_authorized') is False
                 and scope.get('historical_gate_promotions') == 0
+                and scope.get('authorization_record') == 'EXPLICIT_OPERATOR_CHAT_APPROVAL_NON_SELF_EXECUTING'
+                and scope.get('installed_activation_record_created') is False
                 and set(scope.get('scope', [])) == expected
                 and {'LIVE_ORDERS','REAL_CAPITAL','GENESIS','VPS_CLOUD','TECHNICAL_GATE_OVERRIDE'} <= set(scope.get('exclusions', [])))
     qd = qd_report or {}
