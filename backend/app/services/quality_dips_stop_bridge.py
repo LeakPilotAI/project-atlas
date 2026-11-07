@@ -201,6 +201,20 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False):
                 result = bridge.request_stop(payload["mode"])
                 if bridge.session_id != payload["session_id"]:
                     raise ValueError("CONTROL_SESSION_IDENTITY_CHANGED")
+                # An HTTP 200 is an affirmative shutdown receipt. Never
+                # acknowledge a merely dispatched, incomplete, or unverifiable
+                # financial stop as successfully flattened and exited.
+                outcome = result.get("outcome") if type(result) is dict else None
+                if (type(outcome) is not dict
+                        or result.get("schema") != "QD_CONTROL_STOP_V1"
+                        or result.get("phase") != "FINISHED"
+                        or outcome.get("schema") != "QD_AUTO_SHUTDOWN_V1"
+                        or outcome.get("mode") != payload["mode"]
+                        or outcome.get("status") != "FLATTENED"
+                        or outcome.get("position_state") != "FLAT"
+                        or outcome.get("process_shutdown") != "VERIFIED_EXIT"
+                        or type(outcome.get("lanes")) is not dict):
+                    raise ValueError("CONTROL_SESSION_SHUTDOWN_UNVERIFIED")
                 return result
 
             return JSONResponse(await run_in_threadpool(verified_stop))
