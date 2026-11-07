@@ -69,6 +69,9 @@ def test_paginated_discovery_finds_fresh_listing_after_old_first_page(tmp_path, 
     assert cursors == [None, 'next']
     assert result['pages_scanned'] == 2
     assert result['records_written'] == 1
+    assert result['scan_listing_metadata']['KXTEST-NEW']['page'] == 2
+    assert result['scan_listing_metadata']['KXTEST-NEW']['created_time'] == market(now, 1)['timing']['created_time']
+    assert result['scan_listing_metadata']['KXTEST-OLD']['page'] == 1
     assert result['unique_markets_screened'] == 2
     assert result['rejection_reason_counts']
     assert sum(result['rejection_reason_counts'].values()) >= 1

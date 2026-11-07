@@ -56,9 +56,13 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             seen.add(ticker)
             reasons = scanner._prefilter_reasons(market, observed)
             scan_qualification_by_ticker[ticker] = not bool(reasons)
+            # Normalized Kalshi markets carry exchange-issued timestamps in
+            # timing, not in the top-level provider payload.
+            timing = market.get('timing') if isinstance(market.get('timing'), dict) else {}
+            created_time = timing.get('created_time')
             scan_listing_metadata[ticker] = {
                 'page': pages_scanned,
-                'created_time': market.get('created_time') if isinstance(market.get('created_time'), str) else None,
+                'created_time': created_time if isinstance(created_time, str) else None,
             }
             if reasons:
                 unique_reasons = tuple(sorted(set(reasons)))
