@@ -14,7 +14,17 @@ def run_cycles(*, contact, cycles=3, batch_size=2, runner=score_authenticated_pr
     completed = 0
     for _ in range(cycles):
         result = runner(contact=contact, limit=batch_size, finalize=True)
-        if result.get('status') != 'RESEARCH_FINALIZED' or result.get('cursor_advanced') is not True:
+        if type(result) is not dict or result.get('status') != 'RESEARCH_FINALIZED' or result.get('cursor_advanced') is not True:
+            return {'status': 'BLOCKED', 'completed': completed, 'paper_execution_authorized': False,
+                    'live_order_authorized': False}
+        if (result.get('schema') != 'ATLAS_BROAD_RESEARCH_CYCLE_V1'
+                or type(result.get('completed')) is not int
+                or not 1 <= result['completed'] <= batch_size
+                or type(result.get('receipt_sha256')) is not str
+                or len(result['receipt_sha256']) != 64
+                or any(c not in '0123456789abcdef' for c in result['receipt_sha256'])
+                or result.get('paper_execution_authorized') is not False
+                or result.get('live_order_authorized') is not False):
             return {'status': 'BLOCKED', 'completed': completed, 'paper_execution_authorized': False,
                     'live_order_authorized': False}
         completed += result['completed']
