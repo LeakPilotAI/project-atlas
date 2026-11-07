@@ -586,7 +586,9 @@ class UnifiedPaperRuntime:
         for lane in LANES:
             try:
                 outcomes[lane] = self.lanes[lane].stop(emergency=emergency)
-            except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+            except Exception:
+                # A lane may have partially executed its financial drain.
+                # Do not retry or treat an unexpected failure as flat.
                 outcomes[lane] = {"state": "INCOMPLETE"}
         drain = getattr(self.portfolio, "verify_drain", None)
         try:

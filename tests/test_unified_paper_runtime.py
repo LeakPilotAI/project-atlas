@@ -1197,3 +1197,22 @@ def test_unified_stop_bridge_unexpected_session_read_failure_refuses_before_disp
         b.request_stop('SHUTDOWN_FLATTEN')
     assert not calls
     assert b.progress['phase'] == 'IDLE'
+
+
+@pytest.mark.parametrize('failure', [RuntimeError, AssertionError])
+def test_unified_runtime_unexpected_lane_stop_failure_preserves_other_lane(failure):
+    r = runtime()
+    calls = []
+    r.lanes['QUALITY_DIPS'].stop = lambda **kwargs: (_ for _ in ()).throw(failure('synthetic'))
+    original = r.lanes['HYPERLIQUID'].stop
+    def other_lane(**kwargs):
+        calls.append(kwargs)
+        return original(**kwargs)
+    r.lanes['HYPERLIQUID'].stop = other_lane
+    result = r.stop()
+    assert result['state'] == 'STOP_INCOMPLETE'
+    assert result['lanes']['QUALITY_DIPS'] == {'state': 'INCOMPLETE'}
+    assert len(calls) == 1
+    assert r.entry_closed.is_set()
+    assert r.stop() == result
+    assert len(calls) == 1
