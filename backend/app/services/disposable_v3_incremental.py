@@ -5,7 +5,7 @@ explicitly caller supplied; restart reconstructs position state from journal.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 import hashlib
 import json
 from decimal import Decimal
@@ -16,6 +16,18 @@ from app.investment.quality_dips_paper import (
 from app.services.personal_paper_fixture_executor import execute_disposable_validated_quote_step
 from app.services.personal_paper_price_evidence import validate_stock_iex_quote
 from app.services.personal_paper_strategy_signal import evaluate_iex_quality_dips_signal
+
+
+def _provider_instant(value: str) -> datetime:
+    if type(value) is not str:
+        raise ValueError("INCREMENTAL_V3_PROVIDER_TIMESTAMP_INVALID")
+    try:
+        instant = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("INCREMENTAL_V3_PROVIDER_TIMESTAMP_INVALID") from exc
+    if instant.tzinfo is None or instant.utcoffset() is None:
+        raise ValueError("INCREMENTAL_V3_PROVIDER_TIMESTAMP_INVALID")
+    return instant.astimezone(UTC)
 
 
 def execute_incremental_test_v3_tick(*, path: Path, account_id: str,
@@ -67,7 +79,10 @@ def _execute_locked(*, path, account_id, observation, research, quote, now,
         raise ValueError("INCREMENTAL_V3_INTERRUPTED_TICK_REQUIRES_RECONCILIATION")
     stamp = evidence["provider_timestamp"]
     completed = [e for e in ticks if e["event"] == "v3_tick_completed"]
-    if completed and stamp <= completed[-1]["provider_timestamp"]:
+    for prior, current in zip(completed, completed[1:]):
+        if _provider_instant(current["provider_timestamp"]) <= _provider_instant(prior["provider_timestamp"]):
+            raise ValueError("INCREMENTAL_V3_NONMONOTONIC_HISTORY")
+    if completed and _provider_instant(stamp) <= _provider_instant(completed[-1]["provider_timestamp"]):
         raise ValueError("INCREMENTAL_V3_REPLAYED_OR_OLDER_TICK")
     account = accounting_snapshot(events, account_id=account_id)
     if account is None or account.get("data_provenance") != "TEST_DATA" or not account["cash_reconciled"]:
@@ -148,12 +163,22 @@ def inspect_incremental_test_v3_recovery(*, path: Path, account_id: str) -> dict
                 continue
             digest = ident.split("-", 1)[1]
             if kind == "v3_tick_started":
-                if digest in starts or (last_stamp is not None and stamp <= last_stamp):
+                try:
+                    instant = _provider_instant(stamp)
+                except ValueError:
+                    anomalies.append("MALFORMED_PROVIDER_TIMESTAMP")
+                    continue
+                if digest in starts or (last_stamp is not None and instant <= last_stamp):
                     anomalies.append("DUPLICATE_OR_NONMONOTONIC_START")
-                starts[digest] = stamp
-                last_stamp = stamp
+                starts[digest] = instant
+                last_stamp = instant
             else:
-                if digest not in starts or digest in completed or starts[digest] != stamp:
+                try:
+                    instant = _provider_instant(stamp)
+                except ValueError:
+                    anomalies.append("MALFORMED_PROVIDER_TIMESTAMP")
+                    continue
+                if digest not in starts or digest in completed or starts[digest] != instant:
                     anomalies.append("UNMATCHED_COMPLETION")
                 completed.add(digest)
         pending = [digest for digest in starts if digest not in completed]

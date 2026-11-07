@@ -110,3 +110,35 @@ def test_recovery_report_detects_orphan_completion(tmp_path):
     report = inspect_incremental_test_v3_recovery(path=path, account_id="demo")
     assert "UNMATCHED_COMPLETION" in report["anomalies"]
     assert report["recovery_status"] == "BLOCKED_MANUAL_REVIEW"
+
+
+def test_recovery_accepts_equivalent_timezone_instants(tmp_path):
+    from app.investment.quality_dips_paper import _append
+    path = tmp_path / "timezone.jsonl"
+    initialize_paper_account(account_id="demo", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    _append({"event": "v3_tick_started", "event_id": "start-abc",
+             "provider_timestamp": "2026-11-07T12:00:00+00:00",
+             "account_id": "demo"}, path)
+    _append({"event": "v3_tick_completed", "event_id": "done-abc",
+             "provider_timestamp": "2026-11-07T06:00:00-06:00",
+             "account_id": "demo"}, path)
+    report = inspect_incremental_test_v3_recovery(path=path, account_id="demo")
+    assert report["recovery_status"] == "CLEAN"
+    assert report["completed_ticks"] == 1
+
+
+def test_recovery_detects_nonmonotonic_timestamps_across_offsets(tmp_path):
+    from app.investment.quality_dips_paper import _append
+    path = tmp_path / "order.jsonl"
+    initialize_paper_account(account_id="demo", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    for digest, stamp in (("a", "2026-11-07T12:00:00+00:00"),
+                          ("b", "2026-11-07T05:59:00-06:00")):
+        _append({"event": "v3_tick_started", "event_id": "start-" + digest,
+                 "provider_timestamp": stamp, "account_id": "demo"}, path)
+        _append({"event": "v3_tick_completed", "event_id": "done-" + digest,
+                 "provider_timestamp": stamp, "account_id": "demo"}, path)
+    report = inspect_incremental_test_v3_recovery(path=path, account_id="demo")
+    assert "DUPLICATE_OR_NONMONOTONIC_START" in report["anomalies"]
+    assert report["recovery_status"] == "BLOCKED_MANUAL_REVIEW"
