@@ -471,3 +471,34 @@ def test_concurrent_control_stop_requests_do_not_repeat_bridge_work():
     assert all(result == results[0] for result in results)
     assert len(calls) == 1
     assert results[0]['outcome']['status'] == 'FLATTENED'
+def test_control_status_waits_for_inflight_stop_result():
+    from threading import Event, Lock, Thread
+    from types import SimpleNamespace
+    bridge = object.__new__(UnifiedControlStopBridge)
+    bridge.stop_lock = Lock()
+    bridge.verify_session = lambda: True
+    bridge.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'IDLE', 'outcome': None}
+    bridge.owned_close = None
+    bridge._close_binding = None
+    entered, release, observed = Event(), Event(), Event()
+    def delayed_stop(**kwargs):
+        entered.set()
+        assert release.wait(2)
+        return {'state': 'STOPPED', 'lanes': {}}
+    bridge.runtime = SimpleNamespace(stop=delayed_stop, entry_closed=Event(), uncertain=False)
+    stop_thread = Thread(target=lambda: bridge.request_stop('SHUTDOWN_FLATTEN'))
+    stop_thread.start()
+    assert entered.wait(2)
+    results = []
+    def read_status():
+        results.append(bridge.status())
+        observed.set()
+    reader = Thread(target=read_status)
+    reader.start()
+    assert not observed.wait(.05)
+    release.set()
+    stop_thread.join(2)
+    reader.join(2)
+    assert not stop_thread.is_alive() and not reader.is_alive()
+    assert observed.is_set() and results[0]['phase'] == 'FINISHED'
+    assert results[0]['outcome']['status'] == 'FLATTENED'

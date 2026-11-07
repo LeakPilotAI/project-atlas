@@ -138,9 +138,12 @@ class UnifiedControlStopBridge:
         return strict(body(self.progress))
 
     def status(self):
-        if not self.verify_session():
-            raise ValueError("UNIFIED_CONTROL_SESSION_UNVERIFIED")
-        return strict(body(self.progress))
+        # Never expose an IDLE/stale snapshot while a financial Stop is in flight.
+        # Readers observe the result only after the serialized stop finishes.
+        with self.stop_lock:
+            if not self.verify_session():
+                raise ValueError("UNIFIED_CONTROL_SESSION_UNVERIFIED")
+            return strict(body(self.progress))
 
 
 class UnifiedPaperRuntime:
