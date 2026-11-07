@@ -193,6 +193,10 @@ def test_read_only_dashboard_api_uses_the_durable_journal(tmp_path: Path):
         assert status["data_provenance"] == "TEST_DATA"
         assert status["live_order_adapter_connected"] is False
         assert status["genuine_forward_paper"] is False
+        readiness = client.get('/api/paper/forward/readiness').json()
+        assert readiness['genuine_forward_paper'] is False
+        assert readiness['paper_execution_authorized'] is False
+        assert readiness['candidates'] == []
         assert status["operational_acceptance"] is False
         assert client.post("/api/paper/trades").status_code == 405
         assert client.get("/api/paper/report", params={"date": "tomorrow"}).status_code == 422

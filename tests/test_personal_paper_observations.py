@@ -239,6 +239,11 @@ def test_personal_paper_market_cycle_dashboard_restart_and_test_fixture(tmp_path
         assert client.get("/api/paper/forward/portfolio").json()["accounting"][
             "data_provenance"
         ] == "FORWARD_COLLECTION"
+        readiness = client.get('/api/paper/forward/readiness').json()
+        assert readiness['candidate_count'] == 4
+        assert readiness['paper_execution_authorized'] is False
+        assert all(not candidate['paper_execution_eligible'] for candidate in readiness['candidates'])
+        assert all('NO_VERIFIED_EXECUTABLE_PRICE' in candidate['blockers'] for candidate in readiness['candidates'])
         forward_report = client.get("/api/paper/forward/report").json()
         assert forward_report["genuine_forward_paper"] is False
         assert forward_report["current_available_cash"] == 1000.0

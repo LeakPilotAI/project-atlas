@@ -1,3 +1,8 @@
+PERSONAL PAPER COMMANDER CHECKPOINT - READINESS DIAGNOSTICS - 2026-11-06
+[verified] Added read-only /api/paper/forward/readiness endpoint with per-strategy/symbol blockers, snapshot age rechecked at request time, and explicit nonauthorization for simulated/live fills.
+[verified] Added endpoint coverage for empty and four-observation states; 36 focused regressions pass, 1 existing Starlette warning.
+[remaining] Real timestamped executable-price reference, fresh QD fundamentals, bounded forward execution cycle, and operational acceptance. No live orders or Genesis changes.
+
 PERSONAL PAPER COMMANDER CHECKPOINT - REPORT READINESS CORRECTION - 2026-11-06
 [verified] The forward daily report now correctly reports genuine_forward_paper=false while the account is observation-only; FORWARD_COLLECTION provenance alone is not proof of trade readiness.
 [verified] Regression assertions updated and 36 focused tests pass, 1 existing Starlette warning.

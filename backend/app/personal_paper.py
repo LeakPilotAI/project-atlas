@@ -474,6 +474,45 @@ def create_app(
             "paper_execution_authorized": False,
         }
 
+    @app.get("/api/paper/forward/readiness")
+    def forward_readiness() -> dict[str, Any]:
+        """Read-only, current-time assessment; persisted observations never authorize fills."""
+        rows = read_strategy_observations(strategy_path)
+        latest: dict[tuple[str, str], dict[str, Any]] = {}
+        for row in rows:
+            key = (row["strategy"], row["symbol"])
+            prior = latest.get(key)
+            if prior is None or row["source_snapshot_retrieved_at"] > prior["source_snapshot_retrieved_at"]:
+                latest[key] = row
+        now = _now()
+        candidates = []
+        for (strategy, symbol), row in sorted(latest.items()):
+            retrieved = datetime.fromisoformat(row["source_snapshot_retrieved_at"])
+            age = (now - retrieved.astimezone(TIMEZONE)).total_seconds()
+            blockers = list(row["blockers"])
+            if age < 0 or age > 15 * 60:
+                blockers.append("SOURCE_SNAPSHOT_NOT_CURRENT")
+            if not row["paper_execution_eligible"]:
+                blockers.append("NO_VERIFIED_EXECUTABLE_PRICE")
+            candidates.append({
+                "strategy": strategy,
+                "symbol": symbol,
+                "observation_id": row["observation_id"],
+                "source_snapshot_age_seconds": round(age, 3),
+                "blockers": list(dict.fromkeys(blockers)),
+                "paper_execution_eligible": False,
+            })
+        return {
+            "schema": "ATLAS_PERSONAL_PAPER_FORWARD_READINESS_V1",
+            "data_provenance": "PUBLIC_PROVIDER_DATA",
+            "observations_available": bool(rows),
+            "candidate_count": len(candidates),
+            "candidates": candidates,
+            "genuine_forward_paper": False,
+            "paper_execution_authorized": False,
+            "broker_order_created": False,
+            "live_capital_allowed": False,
+        }
     @app.get("/api/market-data/quality-dips")
     def public_market_data() -> dict[str, Any]:
         return market_data_read_model(public_data_path)
