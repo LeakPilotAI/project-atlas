@@ -637,12 +637,29 @@ class PredictionPaperAutomation:
         start_ts = end_ts - (
             max(5, min(int(self.config.history_minutes), 1000)) * 60
         )
+        # Never treat pre-listing quotes as evidence of a new market's repricing.
+        # Missing or ambiguous listing evidence cannot reach this stage safely.
+        timing = market.get("timing") if isinstance(market.get("timing"), dict) else {}
+        opened = timing.get("open_time")
+        created = timing.get("created_time")
+        if not isinstance(opened, str) or not isinstance(created, str):
+            raise PredictionPaperError("NEW_MARKET_TIMING_UNVERIFIED")
+        try:
+            open_dt = datetime.fromisoformat(opened.replace("Z", "+00:00"))
+            created_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+        except (ValueError, OverflowError) as exc:
+            raise PredictionPaperError("NEW_MARKET_TIMING_UNVERIFIED") from exc
+        if any(dt.tzinfo is None or dt.utcoffset() is None for dt in (open_dt, created_dt)):
+            raise PredictionPaperError("NEW_MARKET_TIMING_UNVERIFIED")
+        start_ts = max(start_ts, int(max(open_dt, created_dt).timestamp()))
+        if start_ts >= end_ts:
+            raise PredictionPaperError("NEW_MARKET_HISTORY_NOT_YET_AVAILABLE")
         candles_payload = await kalshi_public.get_candlesticks(
             ticker=ticker,
             start_ts=start_ts,
             end_ts=end_ts,
             period_interval=1,
-            include_latest_before_start=True,
+            include_latest_before_start=False,
         )
         orderbook = book_payload.get("orderbook") or {}
         candles = candles_payload.get("candlesticks") or []

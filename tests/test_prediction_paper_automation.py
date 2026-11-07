@@ -527,6 +527,27 @@ def test_terminal_unclosed_is_not_counted_as_active_or_closed_trade(tmp_path):
     assert snapshot["summary"]["net_pnl_dollars"] == "0"
 
 
+def test_new_listing_history_starts_at_exchange_listing(monkeypatch):
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    market = _market(now)
+    calls = []
+
+    async def book(*args, **kwargs):
+        return {"orderbook": _book()}
+
+    async def candles(*args, **kwargs):
+        calls.append(kwargs)
+        return {"candlesticks": _candles(now)}
+
+    monkeypatch.setattr(automation_module.kalshi_public, "get_orderbook", book)
+    monkeypatch.setattr(automation_module.kalshi_public, "get_candlesticks", candles)
+    service = PredictionPaperAutomation()
+    results = asyncio.run(service._evaluate_market(market, "cycle", now))
+    assert len(results) == 2
+    assert calls[0]["start_ts"] == int((now - timedelta(minutes=45)).timestamp())
+    assert calls[0]["include_latest_before_start"] is False
+
+
 def test_new_listing_only_prefilter_rejects_old_or_missing_exchange_times():
     now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
     service = PredictionPaperAutomation()
