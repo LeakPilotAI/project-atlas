@@ -97,3 +97,28 @@ def preview_quality_dips_execution(
         "paper_fill_authorized": False,
         "live_order_authorized": False,
     }
+
+def preview_stock_execution_side(evidence: dict[str, Any], *, side: str, quantity: str) -> dict[str, Any]:
+    """Pure conservative bid/ask reference for a proposed PAPER trade; never fills."""
+    if type(evidence) is not dict or evidence.get("schema") != "ATLAS_PERSONAL_PAPER_PRICE_EVIDENCE_V1":
+        raise PriceEvidenceRejected("VALIDATED_QUOTE_EVIDENCE_REQUIRED")
+    if evidence.get("paper_fill_authorized") is not False or evidence.get("live_order_authorized") is not False:
+        raise PriceEvidenceRejected("QUOTE_EVIDENCE_AUTHORITY_MISMATCH")
+    if side not in ("BUY", "SELL"):
+        raise PriceEvidenceRejected("EXECUTION_SIDE_UNSUPPORTED")
+    try:
+        qty = Decimal(quantity)
+        bid = Decimal(evidence["bid"])
+        ask = Decimal(evidence["ask"])
+    except (KeyError, TypeError, InvalidOperation, ValueError) as exc:
+        raise PriceEvidenceRejected("EXECUTION_PRICE_OR_QUANTITY_INVALID") from exc
+    if not qty.is_finite() or qty <= 0 or not bid.is_finite() or not ask.is_finite() or not 0 < bid <= ask:
+        raise PriceEvidenceRejected("EXECUTION_PRICE_OR_QUANTITY_INVALID")
+    reference = ask if side == "BUY" else bid
+    return {
+        "schema": "ATLAS_PERSONAL_PAPER_EXECUTION_SIDE_PREVIEW_V1",
+        "symbol": evidence.get("symbol"), "side": side, "quantity": str(qty),
+        "reference_price": str(reference), "reference_notional": str(qty * reference),
+        "price_basis": "ASK_FOR_BUY_BID_FOR_SELL", "paper_fill_authorized": False,
+        "live_order_authorized": False,
+    }

@@ -107,3 +107,24 @@ def test_preview_rejects_malformed_blockers(blockers):
     }
     with pytest.raises(PriceEvidenceRejected, match="INVALID_STRATEGY_BLOCKERS"):
         preview_quality_dips_execution(observation, _quote(now), now=now)
+
+
+def test_stock_execution_side_uses_adverse_quote_side_without_filling():
+    from app.services.personal_paper_price_evidence import preview_stock_execution_side
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    evidence = validate_stock_iex_quote(_quote(now), symbol="MSFT", now=now)
+    buy = preview_stock_execution_side(evidence, side="BUY", quantity="2")
+    sell = preview_stock_execution_side(evidence, side="SELL", quantity="2")
+    assert buy["reference_price"] == "400.01"
+    assert sell["reference_price"] == "399.99"
+    assert buy["reference_notional"] == "800.02"
+    assert not buy["paper_fill_authorized"] and not sell["live_order_authorized"]
+
+
+@pytest.mark.parametrize("side,quantity", [("SHORT", "1"), ("BUY", "0"), ("SELL", "NaN"), ("BUY", "Infinity"), ("BUY", "bad")])
+def test_stock_execution_side_refuses_invalid_requests(side, quantity):
+    from app.services.personal_paper_price_evidence import preview_stock_execution_side
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    evidence = validate_stock_iex_quote(_quote(now), symbol="MSFT", now=now)
+    with pytest.raises(PriceEvidenceRejected):
+        preview_stock_execution_side(evidence, side=side, quantity=quantity)
