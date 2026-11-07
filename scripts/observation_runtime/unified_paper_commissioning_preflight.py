@@ -25,19 +25,21 @@ def inspect(*, root=ROOT, qd_report=None):
                 and {'LIVE_ORDERS','REAL_CAPITAL','GENESIS','VPS_CLOUD','TECHNICAL_GATE_OVERRIDE'} <= set(scope.get('exclusions', [])))
     qd = qd_report or {}
     checks = {x.get('check'): x.get('status') for x in qd.get('checks', [])}
+    from scripts.observation_runtime.hyperliquid_native_preflight import inspect as inspect_hyperliquid
+    hl = inspect_hyperliquid()
     prerequisites = {
         'OPERATOR_SCOPE': 'APPROVED_NON_ACTIVATING' if scope_ok else 'BLOCKED',
         'QD_SOURCE_PUBLICATION': checks.get('OPERATIONAL_QD_SOURCE_PUBLICATION', 'BLOCKED'),
         'NATIVE_ACTIVATION': 'PASS' if checks.get('ACTIVATION_RECORD_PRESENT') == checks.get('ACTIVATION_NATIVE_VERIFIED') == 'PASS' else 'BLOCKED',
         'QD_FINANCIAL_INCEPTION': checks.get('FINANCIAL_INCEPTION', 'BLOCKED'),
         'QD_RUNTIME_AUTHORIZATION': checks.get('RUNTIME_AUTHORIZATION', 'BLOCKED'),
-        'HYPERLIQUID_NATIVE_ACCOUNT_INCEPTION': 'NOT_INDEPENDENTLY_VERIFIED',
-        'HYPERLIQUID_PROVIDER_RIGHTS_AND_DATA': 'NOT_INDEPENDENTLY_VERIFIED',
+        'HYPERLIQUID_NATIVE_ACCOUNT_INCEPTION': hl['hyperliquid_native_account_inception'],
+        'HYPERLIQUID_PROVIDER_RIGHTS_AND_DATA': hl['provider_rights_and_current_market_data'],
         'UNIFIED_OWNED_DESKTOP_STOP': 'NOT_INDEPENDENTLY_VERIFIED',
     }
     return {'schema':'ATLAS_UNIFIED_PAPER_COMMISSIONING_PREFLIGHT_V1',
             'decision':'NO_GO', 'startup_authorized':False, 'live_trading_authorized':False,
-            'prerequisites':prerequisites,
+            'prerequisites':prerequisites, 'hyperliquid_native_inventory':hl,
             'note':'QD source evidence is read from existing preflight; Hyperliquid evidence has no installed verifier yet. No permission is inferred from scope approval.'}
 
 

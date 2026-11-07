@@ -20,3 +20,12 @@ def test_unified_preflight_blocks_missing_qd_evidence():
     report = module.inspect(qd_report={'checks':[]})
     assert report['prerequisites']['QD_SOURCE_PUBLICATION'] == 'BLOCKED'
     assert report['prerequisites']['NATIVE_ACTIVATION'] == 'BLOCKED'
+
+
+def test_hyperliquid_inventory_cannot_authorize_from_directory_names(tmp_path):
+    from scripts.observation_runtime.hyperliquid_native_preflight import inspect
+    (tmp_path/'Hyperliquid').mkdir()
+    report = inspect(root=tmp_path)
+    assert 'Hyperliquid' in report['custody_child_names']
+    assert report['hyperliquid_native_account_inception'] == 'NOT_INDEPENDENTLY_VERIFIED'
+    assert report['paper_startup_authorized'] is False
