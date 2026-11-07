@@ -530,12 +530,17 @@ def test_leased_published_tick_planner_no_fill_and_existing_position(tmp_path, m
     assert result["paper_fill_authorized"] is False
     assert result["estimated_liquidation_equity"] == 1000
     assert result["estimated_total_return"] == 0
+    assert len(result["decision_evidence_digest"]) == 64
+    assert result["provider_timestamp"] == now.isoformat()
+    assert plan_leased_published_iex_paper_tick(**kwargs)["decision_evidence_digest"] == result["decision_evidence_digest"]
     assert path.read_bytes() == before
+    plan_before_digest = result["decision_evidence_digest"]
     open_lot(f.cut["observations"]["MSFT"], level="L1", paper_notional_dollars=50,
              fill_price=80, account_id="fixture-forward", fee_bps_per_side=2, path=path)
     before = path.read_bytes()
     result = plan_leased_published_iex_paper_tick(**kwargs)
     assert result["state"] == "WAIT_EXISTING_POSITION"
+    assert result["decision_evidence_digest"] != plan_before_digest
     assert result["open_positions"] == 1
     assert len(result["position_marks"]) == 1
     assert result["position_marks"][0]["bid"] == "79.99"
@@ -550,6 +555,7 @@ def test_leased_published_tick_planner_no_fill_and_existing_position(tmp_path, m
     before = path.read_bytes()
     closed = plan_leased_published_iex_paper_tick(**kwargs)
     assert closed["open_positions"] == 0
+    assert closed["decision_evidence_digest"] != result["decision_evidence_digest"]
     assert closed["estimated_liquidation_equity"] > 1000
     assert closed["estimated_total_return"] > 0
     assert path.read_bytes() == before

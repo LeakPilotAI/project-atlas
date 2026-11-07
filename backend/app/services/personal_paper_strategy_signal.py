@@ -330,7 +330,7 @@ def plan_leased_published_iex_paper_tick(
     a deterministic WAIT, BLOCKED, or CANDIDATE state for an eventual writer.
     No startup, broker route, or journal mutation is possible here.
     """
-    from app.services.paper_financial_replay import strict, body
+    from app.services.paper_financial_replay import strict, body, digest
 
     inspection = inspect_leased_published_iex_journal_candidate(
         installation=installation, request=request, components=components,
@@ -345,8 +345,23 @@ def plan_leased_published_iex_paper_tick(
     state = ("WAIT_EXISTING_POSITION" if positions else
              "CANDIDATE_UNAUTHORIZED" if inspection["candidate"] else
              "WAIT_NO_SIGNAL")
+    # A traceable decision identity is useful for later independent forward
+    # audit, but a digest is NOT proof of quote/provider authenticity.
+    evidence = {"account_id": account_id, "symbol": symbol,
+                "published_source_id": inspection["published_source_id"],
+                "published_revision": inspection["published_revision"],
+                "provider_timestamp": inspection["quote_evidence"]["provider_timestamp"],
+                "bid": inspection["quote_evidence"]["bid"],
+                "ask": inspection["quote_evidence"]["ask"],
+                "state": state, "candidate": inspection["candidate"],
+                "position_marks": inspection["journal_position_marks"],
+                "available_cash": inspection["journal_available_cash"],
+                "estimated_liquidation_equity": inspection["journal_estimated_liquidation_equity"]}
     return strict(body({"schema": "ATLAS_PERSONAL_PAPER_TICK_PLAN_V1",
                         "symbol": symbol, "account_id": account_id,
+                        "decision_evidence_digest": digest(evidence),
+                        "provider_timestamp": evidence["provider_timestamp"],
+                        "published_revision": evidence["published_revision"],
                         "state": state, "candidate": inspection["candidate"],
                         "open_positions": positions,
                         "position_marks": inspection["journal_position_marks"],
