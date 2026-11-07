@@ -135,3 +135,10 @@ def test_scored_pipeline_success_and_failure_keep_cursor(tmp_path, monkeypatch):
     blocked = mod.score_bounded_research_batch(limit=2, acquire=fail, scorer=scorer)
     assert not blocked["scoring_complete"] and blocked["results"][0]["status"] == "RESEARCH_BLOCKED"
     assert not (root / "alpaca_equity_cursor.json").exists()
+
+
+def test_authenticated_scoring_requires_real_sec_contact_before_io():
+    from scripts.observation_runtime.alpaca_equity_catalog import score_authenticated_provider_batch
+    for contact in (None, "", "ProjectAtlas/1.0 test@example.com", "bad-contact"):
+        with pytest.raises(ValueError, match="SEC_CONTACT"):
+            score_authenticated_provider_batch(contact=contact)

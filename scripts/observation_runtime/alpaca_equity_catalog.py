@@ -271,6 +271,31 @@ def score_bounded_research_batch(*, limit=1, acquire=None, scorer=None):
             "live_order_authorized": False}
 
 
+def score_authenticated_provider_batch(*, contact, limit=1):
+    """Explicit authenticated Alpaca/SEC research and scoring, no financial IO.
+
+    A real SEC contact is mandatory. This is manual diagnostics, not startup.
+    Does not commit the research cursor, regardless of score quality.
+    """
+    from app.investment.free_research_transport import FreeResearchClient
+    from app.investment.free_research_providers import FreeResearchBundle
+    if (type(contact) is not str or not re.fullmatch(
+            r"ProjectAtlas/1\.0 [A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", contact)
+            or contact.lower().endswith(('.invalid', '.test', '.example', '@example.com', '@example.org', '@example.net'))):
+        raise ValueError("BROAD_RESEARCH_REAL_SEC_CONTACT_REQUIRED")
+    if type(limit) is not int or not 1 <= limit <= 2:
+        raise ValueError("BROAD_RESEARCH_PROVIDER_BUDGET_REFUSED")
+    now = lambda: datetime.now(UTC)
+    client = FreeResearchClient(cache_root=REPO / "logs" / "research" / "broad-equity-provider",
+                                now=now, sec_user_agent=contact,
+                                credentials=Credentials.load(REPO / "config/alpaca.env"),
+                                max_attempts=12, seconds=60)
+    if client.domain != "TLS_PUBLIC_PROVIDER":
+        raise ValueError("BROAD_RESEARCH_REAL_TRANSPORT_REQUIRED")
+    bundle = FreeResearchBundle(client=client, now=now)
+    return score_bounded_research_batch(limit=limit, acquire=bundle.load)
+
+
 def run_bounded_provider_research(*, contact, limit=1, provider=None):
     """Explicit, non-autostart diagnostic research; no financial mutation.
 
