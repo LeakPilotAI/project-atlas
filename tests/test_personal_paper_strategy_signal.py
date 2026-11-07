@@ -342,3 +342,31 @@ def test_real_explicit_projection_maps_to_iex_v3_using_observation_timestamp(mon
     with pytest.raises(ValueError, match="BOARD_OBSERVATION_TIME_MISMATCH"):
         evaluate_published_iex_v3_candidate(publication=publication,
                                             provider=provider, symbol="MSFT", now=NOW)
+
+
+def test_original_current_producer_publication_to_iex_v3_and_authority_refusal(monkeypatch):
+    """Real source producer, native disposable archive and publication reader.
+
+    The IEX quote is a synthetic port; this is not live provider acceptance.
+    """
+    from test_quality_dips_current_producer import fixture, STAMP
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import evaluate_published_iex_v3_candidate
+    f = fixture(monkeypatch)
+    f.owner.publish_current()
+    publication = f.owner.publication
+    provider = object.__new__(PersonalPaperIEXProvider)
+    now = datetime.fromtimestamp(STAMP, UTC)
+    monkeypatch.setattr(PersonalPaperIEXProvider, "read_iex_quote",
+                        lambda self, symbol: {**quote(), "symbol": symbol,
+                                              "timestamp": now.isoformat()})
+    result = evaluate_published_iex_v3_candidate(
+        publication=publication, provider=provider, symbol="MSFT", now=now)
+    assert result["publication_read_verified"] is True
+    assert result["published_revision"] == 1
+    assert result["paper_fill_authorized"] is False
+    assert result["research_provenance_attested"] is False
+    f.s.auth.valid = False
+    with pytest.raises(ValueError):
+        evaluate_published_iex_v3_candidate(
+            publication=publication, provider=provider, symbol="MSFT", now=now)
