@@ -48,7 +48,22 @@ def _execute_locked(*, path, account_id, observation, research, quote, now,
                     evidence, decision, stop_loss_pct, take_profit_pct):
     events = read_events(path)
     ticks = [e for e in events if e.get("event") in ("v3_tick_started", "v3_tick_completed")]
-    if ticks and ticks[-1]["event"] != "v3_tick_completed":
+    pending = set()
+    for row in ticks:
+        ident = row.get("event_id")
+        if type(ident) is not str or not ident.startswith(
+                "start-" if row["event"] == "v3_tick_started" else "done-"):
+            raise ValueError("INCREMENTAL_V3_MALFORMED_TICK_HISTORY")
+        digest = ident.split("-", 1)[1]
+        if row["event"] == "v3_tick_started":
+            if pending:
+                raise ValueError("INCREMENTAL_V3_INTERRUPTED_TICK_REQUIRES_RECONCILIATION")
+            pending.add(digest)
+        elif digest not in pending:
+            raise ValueError("INCREMENTAL_V3_MALFORMED_TICK_HISTORY")
+        else:
+            pending.remove(digest)
+    if pending:
         raise ValueError("INCREMENTAL_V3_INTERRUPTED_TICK_REQUIRES_RECONCILIATION")
     stamp = evidence["provider_timestamp"]
     completed = [e for e in ticks if e["event"] == "v3_tick_completed"]
@@ -103,3 +118,56 @@ def _execute_locked(*, path, account_id, observation, research, quote, now,
             "evidence_class": "TEST_DATA", "provider_authenticated": False,
             "research_provenance_attested": False,
             "forward_trading_authorized": False, "live_order_authorized": False}
+
+
+def inspect_incremental_test_v3_recovery(*, path: Path, account_id: str) -> dict:
+    """Read-only operator recovery report; never repairs an ambiguous journal."""
+    if type(account_id) is not str or not account_id:
+        raise ValueError("INCREMENTAL_V3_RECOVERY_ACCOUNT_REQUIRED")
+    with journal_mutation_transaction(path):
+        events = read_events(path)
+        account = accounting_snapshot(events, account_id=account_id)
+        if account is None or account.get("data_provenance") != "TEST_DATA":
+            raise ValueError("INCREMENTAL_V3_RECOVERY_TEST_ACCOUNT_REQUIRED")
+        starts = {}
+        completed = set()
+        anomalies = []
+        last_stamp = None
+        for row in events:
+            kind = row.get("event")
+            if kind not in ("v3_tick_started", "v3_tick_completed"):
+                continue
+            if row.get("account_id") != account_id:
+                anomalies.append("FOREIGN_TICK_ACCOUNT")
+                continue
+            ident = row.get("event_id")
+            stamp = row.get("provider_timestamp")
+            if (type(ident) is not str or type(stamp) is not str
+                    or not ident.startswith("start-" if kind == "v3_tick_started" else "done-")):
+                anomalies.append("MALFORMED_TICK_EVENT")
+                continue
+            digest = ident.split("-", 1)[1]
+            if kind == "v3_tick_started":
+                if digest in starts or (last_stamp is not None and stamp <= last_stamp):
+                    anomalies.append("DUPLICATE_OR_NONMONOTONIC_START")
+                starts[digest] = stamp
+                last_stamp = stamp
+            else:
+                if digest not in starts or digest in completed or starts[digest] != stamp:
+                    anomalies.append("UNMATCHED_COMPLETION")
+                completed.add(digest)
+        pending = [digest for digest in starts if digest not in completed]
+        if pending:
+            anomalies.append("INCOMPLETE_TICK")
+        if account["cash_reconciled"] is not True:
+            anomalies.append("CASH_RECONCILIATION_FAILED")
+        return {"schema": "ATLAS_INCREMENTAL_TEST_V3_RECOVERY_REPORT_V1",
+                "account_id": account_id, "completed_ticks": len(completed),
+                "pending_tick_count": len(pending),
+                "anomalies": sorted(set(anomalies)),
+                "recovery_status": "BLOCKED_MANUAL_REVIEW" if anomalies else "CLEAN",
+                "cash_reconciled": account["cash_reconciled"],
+                "open_positions": account["open_positions"],
+                "net_realized_pnl": account["net_realized_pnl"],
+                "journal_mutated": False, "automatic_recovery_authorized": False,
+                "forward_trading_authorized": False, "live_order_authorized": False}
