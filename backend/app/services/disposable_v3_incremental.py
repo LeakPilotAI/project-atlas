@@ -69,18 +69,27 @@ def _execute_locked(*, path, account_id, observation, research, quote, now,
     ticks = [e for e in events if e.get("event") in ("v3_tick_started", "v3_tick_completed")]
     pending = None
     completed_stamps = []
+    has_incremental_history = False
     for row in events:
         kind = row.get("event")
         if kind == "v3_tick_started":
+            has_incremental_history = True
             ident = row.get("event_id")
             if (pending is not None or row.get("account_id") != account_id
                     or type(ident) is not str or not ident.startswith("start-")):
                 raise ValueError("INCREMENTAL_V3_MALFORMED_TICK_HISTORY")
             pending = {"digest": ident[6:], "stamp": row.get("provider_timestamp"),
                        "financial": []}
-        elif kind in ("open_lot", "mark_lot", "close_lot") and pending is not None:
-            pending["financial"].append(row)
+        elif kind in ("open_lot", "mark_lot", "close_lot"):
+            if pending is None:
+                # Legacy TEST_DATA accounts may predate incremental ticks,
+                # but once enrolled, no financial mutation may bypass a tick.
+                if has_incremental_history:
+                    raise ValueError("INCREMENTAL_V3_ORPHAN_FINANCIAL_EVENT")
+            else:
+                pending["financial"].append(row)
         elif kind == "v3_tick_completed":
+            has_incremental_history = True
             ident = row.get("event_id")
             if (pending is None or row.get("account_id") != account_id
                     or type(ident) is not str or ident != "done-" + pending["digest"]

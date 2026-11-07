@@ -239,3 +239,35 @@ def test_incremental_refuses_completed_tick_without_matching_financial_write(tmp
                          "evidence_class": "TEST_DATA"},
             research=research, quote=quote, now=now)
     assert path.read_bytes() == before
+
+
+def test_incremental_refuses_orphan_financial_write_after_completed_tick(tmp_path):
+    from app.investment.quality_dips_paper import _append
+    path = tmp_path / "orphan.jsonl"
+    initialize_paper_account(account_id="demo", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    start = datetime(2026, 11, 7, tzinfo=UTC)
+    _append({"event": "v3_tick_started", "event_id": "start-abc",
+             "provider_timestamp": start.isoformat(), "account_id": "demo"}, path)
+    _append({"event": "v3_tick_completed", "event_id": "done-abc",
+             "provider_timestamp": start.isoformat(), "account_id": "demo",
+             "action": "WAIT", "simulated_event_id": None}, path)
+    _append({"event": "mark_lot", "event_id": "orphan",
+             "account_id": "demo"}, path)
+    research = {"symbol": "MSFT", "source_verified": True,
+                "timestamp": start.isoformat(),
+                "normalization_value": {"conservative": 95, "base": 100, "optimistic": 105},
+                "quality_score": 80, "fundamentals_score": 80,
+                "valuation_score": 70, "drawdown_percentile": 80,
+                "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
+    now = start + timedelta(seconds=1)
+    quote = {"symbol": "MSFT", "state": "FRESH", "bid": 79.9, "ask": 80,
+             "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+             "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="ORPHAN_FINANCIAL_EVENT"):
+        execute_incremental_test_v3_tick(path=path, account_id="demo",
+            observation={"observation_id": "test", "symbol": "MSFT",
+                         "evidence_class": "TEST_DATA"},
+            research=research, quote=quote, now=now)
+    assert path.read_bytes() == before
