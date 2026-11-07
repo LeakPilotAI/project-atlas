@@ -171,3 +171,26 @@ def test_publication_refuses_in_place_financial_cut_mutation_even_if_lease_check
                                                 financial_replay=replay)
     with pytest.raises(ValueError, match='AUTO_PUBLICATION_FINANCIAL_CUT_MUTATED_DURING_AUDIT'):
         port.verify_cut(e, current, docs, 1000, scope='LOCAL_ENROLLED')
+
+
+@pytest.mark.parametrize('damage', ['ack_id', 'status', 'event_head', 'source_files'])
+def test_publication_refuses_mutable_envelope_after_audit_with_permissive_lease_checks(damage):
+    e, p, cut, docs, publication, ack, replay = setup()
+    current = {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)}
+    publication.check = lambda *args: True
+    ack.check = lambda *args: True
+    replay.check = lambda *args: True
+
+    def audit(*args, **kwargs):
+        envelope = args[1]
+        if damage == 'ack_id': envelope['ack_id'] = 'SWAPPED-ACK'
+        if damage == 'status': envelope['status'] = 'PENDING'
+        if damage == 'event_head': envelope['event_head'] = 'f' * 64
+        if damage == 'source_files': envelope['source_files'].append('EXTRA.json')
+        return True
+
+    replay.verify = audit
+    port = BoundAutonomousFinancialPublication(publication=publication, custody_ack=ack,
+                                                financial_replay=replay)
+    with pytest.raises(ValueError, match='AUTO_PUBLICATION_ENVELOPE_MUTATED_DURING_AUDIT'):
+        port.verify_cut(e, current, docs, 1000, scope='LOCAL_ENROLLED')

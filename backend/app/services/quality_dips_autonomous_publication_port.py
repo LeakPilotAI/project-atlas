@@ -25,6 +25,7 @@ class BoundAutonomousFinancialPublication:
         # inferred from the existence of a publication JSON document.
         with self.publication.lease(enrollment, current, now, scope=scope) as publication_lease:
             p = validate_financial_publication(enrollment, publication_lease.snapshot)
+            publication_digest = digest(p)
             if publication_lease.check(strict(body(p)), now) is not True:
                 raise ValueError('AUTO_PUBLICATION_LEASE_NOT_AUTHENTICATED')
             with self.custody_ack.lease(enrollment, p, now, scope=scope) as ack_lease:
@@ -45,6 +46,10 @@ class BoundAutonomousFinancialPublication:
                     if self.financial_replay.verify(enrollment, p, cut, documents, now,
                                                     scope=scope) is not True:
                         raise ValueError('AUTO_PUBLICATION_INDEPENDENT_REPLAY_REFUSED')
+                    # An auditor may mutate the publication envelope in place,
+                    # even when injected lease checks are permissive.
+                    if digest(p) != publication_digest:
+                        raise ValueError('AUTO_PUBLICATION_ENVELOPE_MUTATED_DURING_AUDIT')
                     # A permissive lease.check must not hide in-place cut mutation.
                     if digest(cut) != cut_digest:
                         raise ValueError('AUTO_PUBLICATION_FINANCIAL_CUT_MUTATED_DURING_AUDIT')
