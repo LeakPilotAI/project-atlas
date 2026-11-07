@@ -156,3 +156,28 @@ def test_current_stock_order_refuses_stale_quote_at_decision_time():
     with pytest.raises(PriceEvidenceRejected, match="PROVIDER_QUOTE_STALE_OR_FUTURE"):
         preview_current_stock_order(_quote(now - timedelta(seconds=16)), symbol="MSFT",
                                     now=now, side="BUY", quantity="0.2", max_notional="100")
+
+
+def test_quality_dips_order_joins_eligible_strategy_and_current_quote_without_fill():
+    from app.services.personal_paper_price_evidence import preview_quality_dips_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {"strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "obs-1",
+                   "blockers": [], "strategy_result": {"entry_ladder": {"ready": True}},
+                   "paper_execution_eligible": True}
+    proposal = preview_quality_dips_order(observation, _quote(now), now=now,
+                                          quantity="0.2", max_notional="100")
+    assert proposal["observation_id"] == "obs-1"
+    assert proposal["reference_notional"] == "80.002"
+    assert proposal["paper_fill_authorized"] is False
+
+
+@pytest.mark.parametrize("blockers,eligible", [(["RESEARCH_STALE"], True), ([], False)])
+def test_quality_dips_order_rejects_blocked_or_non_executable_strategy(blockers, eligible):
+    from app.services.personal_paper_price_evidence import preview_quality_dips_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {"strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "obs-2",
+                   "blockers": blockers, "strategy_result": {"entry_ladder": {"ready": True}},
+                   "paper_execution_eligible": eligible}
+    with pytest.raises(PriceEvidenceRejected, match="QUALITY_DIPS_STRATEGY_BLOCKED"):
+        preview_quality_dips_order(observation, _quote(now), now=now,
+                                   quantity="0.2", max_notional="100")

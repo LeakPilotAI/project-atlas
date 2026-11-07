@@ -143,3 +143,23 @@ def preview_current_stock_order(
     if Decimal(proposal["reference_notional"]) > cap:
         raise PriceEvidenceRejected("PAPER_NOTIONAL_CAP_EXCEEDED")
     return {**proposal, "quote_evidence": evidence, "max_notional": str(cap)}
+
+
+def preview_quality_dips_order(
+    observation: dict[str, Any], quote: dict[str, Any], *, now: datetime,
+    quantity: str, max_notional: str,
+) -> dict[str, Any]:
+    """Join strategy and decision-time BUY quote into one non-executable proposal."""
+    strategy = preview_quality_dips_execution(observation, quote, now=now)
+    if strategy["blockers"]:
+        raise PriceEvidenceRejected("QUALITY_DIPS_STRATEGY_BLOCKED:" + ",".join(strategy["blockers"]))
+    # Even a blocker-free observation is not an execution grant: the public
+    # observation pipeline currently does not produce executable observations.
+    if observation.get("paper_execution_eligible") is not True:
+        raise PriceEvidenceRejected("QUALITY_DIPS_EXECUTION_ELIGIBILITY_REQUIRED")
+    proposal = preview_current_stock_order(
+        quote, symbol=strategy["symbol"], now=now, side="BUY",
+        quantity=quantity, max_notional=max_notional,
+    )
+    return {**proposal, "observation_id": strategy["observation_id"],
+            "strategy": "QUALITY_DIPS_V3", "paper_fill_authorized": False}
