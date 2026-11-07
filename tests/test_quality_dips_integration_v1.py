@@ -386,7 +386,7 @@ def test_abrupt_subprocess_crash_preserves_unknown_and_never_replays(tmp_path, b
     from pathlib import Path
 
     root = Path(__file__).parents[1]
-    env = {**os.environ, "PYTHONPATH": str(root / "backend"), "PYTHONDONTWRITEBYTECODE": "1"}
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join((str(root), str(root / "backend"))), "PYTHONDONTWRITEBYTECODE": "1"}
     process = subprocess.Popen([sys.executable, "-B", str(root / "tests/qd_integration_crash_child.py"), str(tmp_path), boundary],
                                cwd=root, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, error = process.communicate(timeout=20)
