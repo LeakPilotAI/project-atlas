@@ -30,3 +30,10 @@ At the beginning of every new Atlas chat, use Desktop Commander to read THIS FIL
 
 ## Status
 BUILD NOT DONE; PAPER OPERATION NOT AUTHORIZED; REAL MONEY DISABLED.
+## 2026-11-07 Commander pipeline inspection — first concrete integration gap
+- Verified 20/20 targeted disposable journal transaction and lifecycle tests with Python -B and PYTHONDONTWRITEBYTECODE=1. These include fixture quote -> entry -> mark -> exit -> disk replay, but the fixture explicitly calls open_lot/close_lot; it is NOT a running autonomous decision-to-fill pipeline.
+- backend/app/services/personal_paper_strategy_signal.py: evaluate_iex_quality_dips_signal and inspect_leased_iex_v3_candidate produce research/quote decisions, explicitly return paper_fill_authorized=False. Research attestation is separate.
+- backend/app/services/quality_dips_autonomous_runtime.py: a bounded runtime accepts observation frames and calls engine.step(), but its operational start requires preexisting grants/admission.
+- backend/app/services/personal_paper_fixture_executor.py: disposable quote-to-journal executor expressly rejects FORWARD_COLLECTION accounts, so it must never be reused as a forward execution bridge.
+- tests/test_personal_paper_transaction_lifecycle.py: test_full_disposable_producer_operator_iex_candidate_entry_exit_restart explicitly invokes open_lot/close_lot after inspection; therefore this is the FIRST unverified connection: authenticated/provenanced observation + strategy decision -> risk-admitted automatic simulated fill through an authorized PAPER-only writer, then report/alert publication. Do not solve it by flipping paper_fill_authorized or treating fixtures as real provider authority.
+- Next source milestone: inspect existing QD unified native planner/writer and source publication ports to determine whether they already provide that exact authorized connection; add a disposable integrated test that exercises the actual automatic decision and writer without manual open_lot/close_lot calls, preserving native guards. If no authorized port exists, implement a narrowly scoped PAPER-only adapter under existing gates; never use real broker order paths.
