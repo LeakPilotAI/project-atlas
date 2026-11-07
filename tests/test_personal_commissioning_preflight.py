@@ -156,6 +156,10 @@ def test_native_activation_readback_is_separate_from_financial_authority(monkeyp
                     'accounts': {'QUALITY_DIPS': 'q'*64}, 'issued_at': 100,
                     'expires_at': 200, 'actions': ['READ_ONLY']}
     monkeypatch.setattr(native_mod, 'NativePersonalActivationReader', Reader)
+    # This fixture represents a real ordinary installed child and file.
+    original_is_dir, original_is_file = preflight.Path.is_dir, preflight.Path.is_file
+    monkeypatch.setattr(preflight.Path, 'is_dir', lambda p: True if str(p).endswith('approved') else original_is_dir(p))
+    monkeypatch.setattr(preflight.Path, 'is_file', lambda p: True if str(p).endswith('activation.json') else original_is_file(p))
     monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
     monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
         r'D:\AtlasCustody\PersonalPaper\approved', '--activation-native-root',
@@ -230,3 +234,33 @@ def test_preflight_distinguishes_legacy_manual_contract_from_personal_auto_pilot
     assert review['autonomous_pilot_native_acceptance_verified'] is False
     assert review['grants_authority'] is False
     assert report['pilot_started'] is False
+
+
+def test_reparse_activation_child_cannot_count_as_present(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
+                                    r'D:\AtlasCustody\PersonalPaper\approved',
+                                    '--activation-native-root', '1', '2', '3',
+                                    '--activation-binding-id', '4', '5', '6',
+                                    '--activation-binding-sha256', 'a'*64])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    original = preflight.Path
+    original_is_dir, original_is_file = original.is_dir, original.is_file
+    original_is_junction = original.is_junction
+    def is_dir(path):
+        if str(path).endswith('approved'): return True
+        return original_is_dir(path)
+    def is_file(path):
+        if str(path).endswith('activation.json'): return True
+        return original_is_file(path)
+    def is_junction(path):
+        if str(path).endswith('approved'): return True
+        return original_is_junction(path)
+    monkeypatch.setattr(original, 'is_dir', is_dir)
+    monkeypatch.setattr(original, 'is_file', is_file)
+    monkeypatch.setattr(original, 'is_junction', is_junction)
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {r['check']: r['status'] for r in report['checks']}
+    assert checks['ACTIVATION_RECORD_PRESENT'] == 'BLOCKED'
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
+    assert report['financial_mutations'] is False

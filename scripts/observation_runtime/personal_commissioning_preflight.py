@@ -141,19 +141,30 @@ def main():
         str(activation_root),
     ))
 
-    activation_record = Path(args.activation_root)/'activation.json' if args.activation_root else None
-
+    activation_child = Path(args.activation_root) if args.activation_root else None
+    activation_record = activation_child / 'activation.json' if activation_child else None
+    # Presence must not follow a junction/symlink masquerading as a native
+    # activation child or record. Native bound readback is still required.
+    activation_child_ordinary = (activation_child is not None
+                                 and activation_child.is_dir()
+                                 and not activation_child.is_symlink()
+                                 and not activation_child.is_junction())
+    activation_record_ordinary = (activation_child_ordinary
+                                  and activation_record.is_file()
+                                  and not activation_record.is_symlink()
+                                  and not activation_record.is_junction())
     results.append(check(
         "ACTIVATION_RECORD_PRESENT",
-        activation_record is not None and activation_record.is_file(),
-        "Existing-only activation record; presence is not verification",
+        activation_record_ordinary,
+        "Existing ordinary native activation child and file required; "
+        "presence is not verification",
     ))
 
     native_activation_verified = False
     activation_verification_reason = (
         "Requires independently supplied native root/file identities and SHA256; "
         "no fallback authorization")
-    if all(value is not None for value in supplied_binding):
+    if activation_record_ordinary and all(value is not None for value in supplied_binding):
         from scripts.observation_runtime.personal_paper_activation import NativePersonalActivationReader
         try:
             reader = NativePersonalActivationReader(
