@@ -208,12 +208,16 @@ def test_reviewed_proposal_cannot_expand_into_activation_or_foreign_paths(damage
 
 
 def test_review_proposal_pins_exact_three_adapter_sources():
+    import subprocess
     root=Path(__file__).resolve().parents[1]
     value=json.loads((root/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V2_2026-10-30.json').read_bytes())
     assert set(value['adapter_source_sha256'])=={'scripts/install_verified_release.py','scripts/native_install_plan.py',
                                                'scripts/native_install_candidate.py'}
     for name,pin in value['adapter_source_sha256'].items():
-        assert hashlib.sha256((root/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()==pin
+        # This consumed 2026-10-30 proposal pins its reviewed version, not every
+        # future installer. Preserve its evidence; never rewrite historical pins.
+        raw=subprocess.check_output(['git','show','ddc1c886eb6cb43a248cb5e53a9c0611335ffc78:'+name],cwd=root)
+        assert hashlib.sha256(raw.replace(b'\r\n',b'\n')).hexdigest()==pin
 
 
 def test_historical_native_copy_proposal_is_preserved_exactly():

@@ -23281,5 +23281,22 @@
     "unrelated_untracked_outputs_preserved": true,
     "next_executable_milestone": "AIP-01 current QD research/source-custody acceptance and installed producer readback, after the exact provider entitlement and installation/runtime scope are provided and authorized. AIP-06 native assembly separately remains blocked pending human security review.",
     "next_action": "Do not start PAPER, access provider/account data, enable notification sending, or assemble native case-host/reader flows. Obtain scoped provider/installation acceptance inputs for AIP-01 and human security review for AIP-06."
+  },
+  "atlas_native_selection_startup_recovery_20261107": {
+    "selected_release": "4fad7ac195fd0b36f1b81577fabf1b8f69932eb9",
+    "revision": 7,
+    "head": "1a339063cfad505cf9083191984c77cd67886932bea3b93e49d5e2486f5e4636",
+    "support_native_installed": true,
+    "isolated_installed_native_readback": true,
+    "startup_policy": "-I -B -S; explicit verified dependency directory; no site initialization",
+    "tests": {
+      "passed": 246,
+      "failed": 0,
+      "skipped": 0
+    },
+    "next": "Create-only updated support installation, independent persistent selection readback and owned nonfinancial installed lifecycle. No financial activation before prerequisites.",
+    "acceptance_gates": 0,
+    "paper_operational": false,
+    "production": "NO-GO"
   }
 }

@@ -75,7 +75,7 @@ function Open-AtlasInstalledNonfinancialDashboard {
     $info = New-Object System.Diagnostics.ProcessStartInfo
     $info.FileName = $python
     $execution = if ($Disposable) { '--execute-disposable-acceptance' } else { '--execute-approved-nonfinancial' }
-    $info.Arguments = '-I -B "'+$entry+'" '+$execution+' --release '+$Binding.release+
+    $info.Arguments = '-I -B -S "'+$entry+'" '+$execution+' --release '+$Binding.release+
         ' --expected-head '+$Binding.head+' --support-sha256 '+$Binding.support_sha256+
         ' --deployment-sha256 '+$Binding.deployment_sha256+' --support-receipt-sha256 '+$Binding.support_receipt_sha256+
         ' --native-root '+($Binding.native_root -join ' ')+' --seconds '+$Binding.seconds+' --requests '+$Binding.requests

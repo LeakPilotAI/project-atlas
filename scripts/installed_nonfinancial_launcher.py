@@ -123,9 +123,14 @@ def support_entry(argv):
             (found_dirs if name in dirs else found_files).add(relative)
     if found_files != allowed_files or found_dirs != allowed_dirs:
         raise ValueError("INSTALLED_SUPPORT_UNLISTED_NAMESPACE")
-    if any(not Path(p).resolve().is_relative_to(app) for p in sys.path if p):
+    if (not sys.flags.isolated or not sys.flags.no_site or not sys.flags.dont_write_bytecode
+            or not sys.dont_write_bytecode):
+        raise ValueError("INSTALLED_STARTUP_ISOLATION_REQUIRED")
+    if any(not Path(p).is_absolute() or not Path(p).resolve().is_relative_to(app) for p in sys.path if p):
         raise ValueError("INSTALLED_SUPPORT_FOREIGN_IMPORT_PATH")
-    sys.path[:0] = [str(support), str(app / "backend"), str(app)]
+    # Add the verified directory without site.addsitedir: .pth code, editable
+    # workspace finders and sitecustomize must never execute in this runtime.
+    sys.path[:0] = [str(support), str(app / "backend"), str(app), str(app / "python/Lib/site-packages")]
     return args
 
 
@@ -155,12 +160,14 @@ if (set(request)!={'reference','head','seconds','requests'}
  or Path(sys.executable)!=root/'python/python.exe'
  or Path(sys.base_prefix)!=root/'python' or sys.version_info[:2]!=(3,12)):
  raise ValueError('EXACT_INSTALLED_INTERPRETER_REQUIRED')
-if any(not Path(p).resolve().is_relative_to(root) for p in sys.path if p):
+if not sys.flags.isolated or not sys.flags.no_site or not sys.flags.dont_write_bytecode or not sys.dont_write_bytecode:
+ raise ValueError('INSTALLED_STARTUP_ISOLATION_REQUIRED')
+if any(not Path(p).is_absolute() or not Path(p).resolve().is_relative_to(root) for p in sys.path if p):
  raise ValueError('WORKSPACE_IMPORT_FALLBACK_REFUSED')
 if (type(request['seconds']) is not int or not 1<=request['seconds']<=120
  or type(request['requests']) is not int or not 1<=request['requests']<=96):
  raise ValueError('BOUNDED_NONFINANCIAL_LAUNCH_REQUIRED')
-sys.path[:0]=[str(root/'backend'),str(root)]
+sys.path[:0]=[str(root/'backend'),str(root),str(root/'python/Lib/site-packages')]
 sys.dont_write_bytecode=True
 def audit(event,args):
  if event in ('subprocess.Popen','os.system','os.startfile','os.kill','socket.connect','socket.sendto','socket.sendmsg'):
@@ -246,8 +253,9 @@ if (len(parts)!=2 or not parts[0].startswith('qd-selector-v1-native-') or spec['
  or set(request)!={'reference','head','seconds','requests'}
  or type(request['seconds']) is not int or not 1<=request['seconds']<=120
  or type(request['requests']) is not int or not 1<=request['requests']<=96):raise ValueError('DISPOSABLE_INSTALLED_INTERPRETER_REQUIRED')
-if any(not Path(p).resolve().is_relative_to(root) for p in sys.path if p):raise ValueError('DISPOSABLE_FOREIGN_IMPORT')
-sys.path[:0]=[str(root/'backend'),str(root)]
+if not sys.flags.isolated or not sys.flags.no_site or not sys.flags.dont_write_bytecode or not sys.dont_write_bytecode:raise ValueError('INSTALLED_STARTUP_ISOLATION_REQUIRED')
+if any(not Path(p).is_absolute() or not Path(p).resolve().is_relative_to(root) for p in sys.path if p):raise ValueError('DISPOSABLE_FOREIGN_IMPORT')
+sys.path[:0]=[str(root/'backend'),str(root),str(root/'python/Lib/site-packages')]
 supports=list((base/'launchers').iterdir())
 if len(supports)!=1:raise ValueError('DISPOSABLE_EXACT_SUPPORT_REQUIRED')
 support=supports[0];raw=(support/'support-manifest.json').read_bytes()
@@ -399,7 +407,7 @@ class InstalledNonfinancialLauncher:
             }
             env.update(PYTHONDONTWRITEBYTECODE="1", PYTHONNOUSERSITE="1")
             self.child = subprocess.Popen(
-                [str(executable), "-I", "-B", "-c", DISPOSABLE_CHILD if self._disposable else CHILD],
+                [str(executable), "-I", "-B", "-S", "-c", DISPOSABLE_CHILD if self._disposable else CHILD],
                 cwd=reference["root"],
                 env=env,
                 stdin=subprocess.PIPE,

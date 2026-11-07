@@ -97,7 +97,9 @@ def installed_readback(destination, receipt, artifact_digest, *, timeout):
 import json,sys,struct,sysconfig
 from pathlib import Path
 request=json.loads(sys.stdin.read());root=Path(request['receipt']['release_path'])
-sys.dont_write_bytecode=True;sys.path[:0]=[str(root/'backend'),str(root)]
+if not sys.flags.isolated or not sys.flags.no_site or not sys.flags.dont_write_bytecode or not sys.dont_write_bytecode:raise ValueError('INSTALLED_STARTUP_ISOLATION_REQUIRED')
+if any(not Path(p).is_absolute() or not Path(p).resolve().is_relative_to(root) for p in sys.path if p):raise ValueError('INSTALLED_EXTERNAL_IMPORT_PATH')
+sys.path[:0]=[str(root/'backend'),str(root),str(root/'python/Lib/site-packages')]
 layout=dict(executable=sys.executable,base=getattr(sys,'_base_executable',None),prefix=sys.prefix,
  base_prefix=sys.base_prefix,stdlib=sysconfig.get_path('stdlib'),bits=struct.calcsize('P')*8,version=list(sys.version_info[:2]))
 if layout['version']!=[3,12] or layout['bits']!=64:raise ValueError('INSTALLED_LAYOUT_VERSION')
@@ -113,7 +115,7 @@ print(json.dumps({'layout':layout,'native_proof':proof,'handles_after_close':len
     for name in ('PYTHONPATH','PYTHONHOME'):env.pop(name,None)
     env.update(PYTHONDONTWRITEBYTECODE='1',PYTHONNOUSERSITE='1')
     executable=destination/'python/python.exe'
-    with subprocess.Popen([str(executable),'-I','-B','-c',code],cwd=destination,env=env,
+    with subprocess.Popen([str(executable),'-I','-B','-S','-c',code],cwd=destination,env=env,
             stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
             creationflags=subprocess.CREATE_NO_WINDOW) as child:
         identity=observe_pid(child.pid)

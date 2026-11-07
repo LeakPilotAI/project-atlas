@@ -101,7 +101,7 @@ def setup(tmp_path, monkeypatch):
 
     def popen(args, **kwargs):
         starts.append((args, kwargs))
-        assert args[:3] == [str(root / "python/python.exe"), "-I", "-B"]
+        assert args[:4] == [str(root / "python/python.exe"), "-I", "-B", "-S"]
         assert kwargs["cwd"] == str(root)
         assert not {"PYTHONPATH", "PYTHONHOME"} & kwargs["env"].keys()
         return child
@@ -594,6 +594,8 @@ def test_installed_support_package_admission_has_no_workspace_fallback(
     monkeypatch.setattr(sys, "executable", str(app / "python/python.exe"))
     monkeypatch.setattr(sys, "base_prefix", str(app / "python"))
     monkeypatch.setattr(sys, "path", [str(app / "python/Lib")])
+    monkeypatch.setattr(sys, "flags", SimpleNamespace(isolated=1, no_site=1, dont_write_bytecode=1))
+    monkeypatch.setattr(sys, "dont_write_bytecode", True)
     if fault == "missing_sdk":
         (tool / "scripts/native_install_plan.py").unlink()
     elif fault == "hash":
