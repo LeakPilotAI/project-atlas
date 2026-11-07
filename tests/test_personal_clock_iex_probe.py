@@ -193,3 +193,18 @@ def test_publication_missing_symbol_refuses_before_credentials(monkeypatch):
             symbol="MSFT", seconds=3, credentials_path=Path("unused"),
             clock_factory=Clock, feed_factory=Feed, publication=OtherSymbol())
     assert Clock.revoked
+
+
+def test_authenticated_no_quote_is_not_forward_research_or_paper(monkeypatch):
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
+    class EmptyFeed(Feed):
+        async def run(self, credentials, *, seconds, max_reconnects, on_fresh_quote):
+            return {"authenticated": True, "subscribed": True,
+                    "result": {"connection": "DISCONNECTED"}}
+    result = probe.bounded_clock_iex_observation(
+        symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+        clock_factory=Clock, feed_factory=EmptyFeed)
+    assert result["fresh_validated_quote_count"] == 0
+    assert result["forward_research_observed"] is False
+    assert result["forward_paper_session_qualified"] is False
+    assert result["forward_financial_write_authorized"] is False

@@ -50,6 +50,7 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                 raise ValueError("CLOCK_IEX_PUBLISHED_SYMBOL_NOT_ENROLLED")
         accepted = []
         research_checked = []
+        callback_count = 0
         feed = feed_factory([symbol])
         if publication is not None:
             from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
@@ -57,6 +58,7 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
             provider = PersonalPaperIEXProvider(feed)
 
         def on_quote(event):
+            nonlocal callback_count
             # Callback is invoked only by the authenticated/subscribed IEX feed.
             clock.require_operational("atlas-clock-iex-readonly-probe")
             quote = {**event, "state": "FRESH",
@@ -82,6 +84,7 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                     raise ValueError("CLOCK_IEX_PUBLICATION_QUOTE_CHANGED")
                 research_checked.append(candidate["candidate"])
             accepted.append(evidence["provider_timestamp"])
+            callback_count += 1
 
         credentials = Credentials.load(credentials_path)
         result = asyncio.run(feed.run(
@@ -91,6 +94,10 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
             raise ValueError("CLOCK_IEX_PROVIDER_NOT_VERIFIED")
         if result["result"]["connection"] != "DISCONNECTED":
             raise ValueError("CLOCK_IEX_PROVIDER_NOT_DISCONNECTED")
+        # An authenticated stream is not evidence that it delivered any quote.
+        # Keep the no-quote result explicitly unqualified for forward research.
+        if callback_count != len(accepted):
+            raise ValueError("CLOCK_IEX_CALLBACK_ACCOUNTING_MISMATCH")
         return {"schema": "ATLAS_CLOCK_IEX_READONLY_OBSERVATION_V1",
                 "native_clock_verified": True,
                 "clock_uncertainty_ms": clock.evidence["bound_ms"],
@@ -100,6 +107,8 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                 "published_research_checked_count": len(research_checked),
                 "published_research_candidate_count": sum(x is True for x in research_checked),
                 "native_publication_supplied": publication is not None,
+                "forward_research_observed": bool(accepted) and bool(research_checked),
+                "forward_paper_session_qualified": False,
                 "forward_financial_write_authorized": False,
                 "live_order_authorized": False}
     finally:
