@@ -387,3 +387,26 @@ async def test_continuous_strategy_automatically_dispatches_entry_then_exit(mark
     assert all(row["state"] == "ACKNOWLEDGED" for row in r.portfolio.operations.values())
     assert result["state"] == "PAUSED"
     assert r.uncertain is False
+@pytest.mark.parametrize('failure', [ValueError, OSError, TimeoutError, KeyError, TypeError])
+def test_control_stop_bridge_does_not_claim_flat_or_exit_on_stop_failure(failure):
+    from threading import Event
+    from types import SimpleNamespace
+    bridge = object.__new__(UnifiedControlStopBridge)
+    entry_closed = Event()
+    calls = []
+    def failing_stop(**kwargs):
+        calls.append(kwargs)
+        raise failure('synthetic financial stop failure')
+    bridge.runtime = SimpleNamespace(stop=failing_stop, entry_closed=entry_closed)
+    bridge.owned_close = object()
+    bridge._close_binding = bridge.owned_close
+    bridge.verify_session = lambda: True
+    bridge.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'IDLE', 'outcome': None}
+    result = bridge.request_stop('SHUTDOWN_FLATTEN')
+    assert entry_closed.is_set() and len(calls) == 1
+    assert result['outcome']['status'] == 'SHUTDOWN_INCOMPLETE'
+    assert result['outcome']['position_state'] == 'UNKNOWN'
+    assert result['outcome']['process_shutdown'] == 'NOT_REQUESTED'
+    assert result['outcome']['reason'] == 'FINANCIAL_STOP_UNVERIFIED'
+    assert result['outcome']['lanes'] == {}
+    assert result['outcome']['cash'] is None

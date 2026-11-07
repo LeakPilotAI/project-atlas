@@ -65,7 +65,19 @@ class UnifiedControlStopBridge:
     def request_stop(self, mode):
         if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY") or not self.verify_session():
             raise ValueError("UNIFIED_CONTROL_SESSION_OR_MODE_UNVERIFIED")
-        outcome = self.runtime.stop(emergency=mode == "EMERGENCY", reason="UNKNOWN" if mode == "EMERGENCY" else "USER_SHUTDOWN")
+        try:
+            outcome = self.runtime.stop(emergency=mode == "EMERGENCY", reason="UNKNOWN" if mode == "EMERGENCY" else "USER_SHUTDOWN")
+        except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+            # The runtime closes entry admission before attempting financial
+            # drain. A thrown stop cannot certify flat positions or process
+            # exit, and must never be converted into a successful shortcut ACK.
+            self.runtime.entry_closed.set()
+            self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED", "outcome": {
+                "schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,
+                "status": "SHUTDOWN_INCOMPLETE", "position_state": "UNKNOWN",
+                "lanes": {}, "cash": None, "process_shutdown": "NOT_REQUESTED",
+                "reason": "FINANCIAL_STOP_UNVERIFIED"}}
+            return strict(body(self.progress))
         financial_flat = complete = outcome["state"] == "STOPPED"
         process_state = 'NOT_REQUESTED'
         if self.owned_close is not None:
