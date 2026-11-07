@@ -91,3 +91,20 @@ def test_native_writer_replays_chain_not_just_individual_pins(journal, attack):
     with pytest.raises((ValueError, OSError)):
         writer.commit() if attack == 'rebind_reservation' else writer.reserve(record(2))
     assert writer.fenced is True
+@pytest.mark.parametrize('stage', ['reserve_before_write', 'reserve_after_write',
+    'commit_before_write', 'commit_after_write'])
+def test_native_writer_fences_ambiguous_partial_write(stage, journal):
+    port, writer = journal
+    if stage.startswith('commit'): writer.reserve(record())
+    original = port.write_bound
+    def fail(name, raw):
+        if stage.endswith('after_write'): original(name, raw)
+        raise OSError('injected native write uncertainty')
+    port.write_bound = fail
+    with pytest.raises(OSError):
+        writer.reserve(record()) if stage.startswith('reserve') else writer.commit()
+    assert writer.fenced is True
+    assert writer.state['status'] == 'UNCERTAIN'
+    with pytest.raises(ValueError): writer.commit()
+    with pytest.raises(ValueError): writer.reserve(record(2))
+    with pytest.raises(ValueError): ConfinedNativeV4JournalProposal(port) if stage.endswith('after_write') else writer.commit()

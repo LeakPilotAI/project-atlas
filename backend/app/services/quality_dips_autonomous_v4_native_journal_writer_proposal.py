@@ -38,6 +38,10 @@ class ConfinedNativeV4JournalProposal:
             self._verify_all()
         except Exception:
             self.fenced = True
+            if state['status'] == 'RESERVED':
+                self.state = transition_publication_journal(state, 'RESTART')
+            elif self.state['status'] == 'RESERVED':
+                self.state = transition_publication_journal(self.state, 'RESTART')
             raise
         self.state = state
         return dict(pin)
