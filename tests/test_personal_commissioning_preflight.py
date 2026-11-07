@@ -202,3 +202,17 @@ def test_native_activation_schema_only_does_not_count_as_verified(monkeypatch, c
     assert preflight.main() == 2
     report = json.loads(capsys.readouterr().out)
     assert next(x for x in report['checks'] if x['check'] == 'ACTIVATION_NATIVE_VERIFIED')['status'] == 'BLOCKED'
+
+
+def test_preflight_reports_blocker_dependency_order_without_authorizing(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    order = report['blocked_dependency_order']
+    assert order == ['OPERATIONAL_QD_SOURCE_PUBLICATION', 'ACTIVATION_RECORD_PRESENT',
+                     'ACTIVATION_NATIVE_VERIFIED', 'FINANCIAL_INCEPTION',
+                     'RUNTIME_AUTHORIZATION']
+    assert set(report['blocked_dependency_actions']) == set(order)
+    assert report['financial_mutations'] is False
+    assert report['pilot_started'] is False

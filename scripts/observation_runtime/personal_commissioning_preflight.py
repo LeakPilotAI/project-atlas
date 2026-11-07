@@ -215,12 +215,28 @@ def main():
         ))
 
     passed = all(item["status"] == "PASS" for item in results)
+    # Dependencies are explanatory, never synthetic PASS states or permissions.
+    next_actions = {
+        "OPERATIONAL_QD_SOURCE_PUBLICATION":
+            "Independently enroll and authenticate current FORWARD_COLLECTION QD publication, including issuer, durable custody, writer ownership and accepted Stop controls",
+        "ACTIVATION_RECORD_PRESENT":
+            "Obtain operator-approved installed activation record under existing native PersonalPaper custody; do not generate from preflight",
+        "ACTIVATION_NATIVE_VERIFIED":
+            "Independently bind native activation root/file identities and SHA256; verify operator, policy, release, expiry and technical lease separately",
+        "FINANCIAL_INCEPTION":
+            "Only after source and activation acceptance, verify authorized once-only simulated $1000 account inception through native financial readback",
+        "RUNTIME_AUTHORIZATION":
+            "Verify accepted native runtime grant, market inputs, financial ownership, Control Center Stop and bounded 60-second pilot scope",
+    }
+    blocked = [item["check"] for item in results if item["status"] == "BLOCKED"]
 
     report = {
         "schema": "ATLAS_QD_COMMISSIONING_PREFLIGHT_V1",
         "profile": PROFILE,
         "status": "PASS" if passed else "BLOCKED",
         "checks": results,
+        "blocked_dependency_order": [name for name in next_actions if name in blocked],
+        "blocked_dependency_actions": {name: next_actions[name] for name in next_actions if name in blocked},
         "financial_mutations": False,
         "live_orders": False,
         "pilot_started": False,
