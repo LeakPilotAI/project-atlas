@@ -194,3 +194,32 @@ def evaluate_published_iex_v3_candidate(
             "publication_read_verified": True,
             "research_provenance_attested": False,
             "paper_fill_authorized": False, "live_order_authorized": False}
+
+
+def inspect_leased_published_iex_v3_candidate(
+    *, installation: Any, request: dict[str, Any], components: Any,
+    publication: Any, provider: Any, symbol: str, now: datetime,
+) -> dict[str, Any]:
+    """One operator lease for verified source read and fresh IEX candidate.
+
+    No account initialization, simulated fill, startup or broker route.
+    """
+    from app.services.personal_paper_runtime import checked_personal_installation
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+
+    if (installation is None or type(request) is not dict
+            or request.get("action") != "AUTO_PAPER"
+            or type(provider) is not PersonalPaperIEXProvider
+            or type(publication) is not QualityDipsSourcePublication):
+        raise ValueError("LEASED_PUBLISHED_IEX_DEPENDENCIES_REQUIRED")
+    with installation.lease(request) as lease:
+        proof = checked_personal_installation(lease, request)
+        if lease.check_components(components) is not True:
+            raise ValueError("LEASED_PUBLISHED_IEX_COMPONENTS_CHANGED")
+        candidate = evaluate_published_iex_v3_candidate(
+            publication=publication, provider=provider, symbol=symbol, now=now)
+        if lease.check(proof) is not True or lease.check_components(components) is not True:
+            raise ValueError("LEASED_PUBLISHED_IEX_LEASE_CHANGED")
+        return {**candidate, "operator_lease_checked": True,
+                "paper_fill_authorized": False, "live_order_authorized": False}

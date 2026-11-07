@@ -158,3 +158,45 @@ def test_published_iex_candidate_recomputes_board_inputs_without_fill_authority(
     with pytest.raises(ValueError, match="MISSING_OR_CONFLICTING"):
         evaluate_published_iex_v3_candidate(publication=pub, provider=provider,
                                             symbol="MSFT", now=NOW)
+
+
+def test_leased_published_iex_candidate_checks_lease_and_refuses_changed_components(monkeypatch):
+    """Synthetic operator lease and source are not real activation evidence."""
+    from contextlib import contextmanager
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services import personal_paper_strategy_signal as signals
+    publication = object.__new__(QualityDipsSourcePublication)
+    provider = object.__new__(PersonalPaperIEXProvider)
+    class Lease:
+        def __init__(self):
+            self.valid = True
+        def check_components(self, components):
+            return self.valid
+        def check(self, proof):
+            return self.valid
+    class Installation:
+        def __init__(self):
+            self.lease_obj = Lease()
+        @contextmanager
+        def lease(self, request):
+            yield self.lease_obj
+    installation = Installation()
+    monkeypatch.setattr("app.services.personal_paper_runtime.checked_personal_installation",
+                        lambda lease, request: {"fixture": True})
+    monkeypatch.setattr(signals, "evaluate_published_iex_v3_candidate",
+                        lambda **kwargs: {"candidate": True, "paper_fill_authorized": False})
+    result = signals.inspect_leased_published_iex_v3_candidate(
+        installation=installation, request={"action": "AUTO_PAPER"}, components=(),
+        publication=publication, provider=provider, symbol="MSFT", now=NOW)
+    assert result["operator_lease_checked"] is True
+    assert result["paper_fill_authorized"] is False
+    installation.lease_obj.valid = False
+    with pytest.raises(ValueError, match="COMPONENTS_CHANGED"):
+        signals.inspect_leased_published_iex_v3_candidate(
+            installation=installation, request={"action": "AUTO_PAPER"}, components=(),
+            publication=publication, provider=provider, symbol="MSFT", now=NOW)
+    with pytest.raises(ValueError, match="DEPENDENCIES_REQUIRED"):
+        signals.inspect_leased_published_iex_v3_candidate(
+            installation=installation, request={"action": "READ_ONLY"}, components=(),
+            publication=publication, provider=provider, symbol="MSFT", now=NOW)
