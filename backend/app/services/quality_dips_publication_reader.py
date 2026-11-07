@@ -31,6 +31,7 @@ class QualityDipsPublicationReader:
             raise ValueError('QD_PUBLICATION_SESSION_CLOSED')
         # A replaced non-None grant is a different session, not continuity.
         session_grant = runtime.grant
+        session_snapshot = digest(session_grant)
         packet = strict(body(self.source.read_publication(timeout=timeout)))
         now, cut = runtime._now(), self.writer._cut()
         if (type(now) is not int or now < 0 or type(packet) is not dict or set(packet) != {'schema', 'source_id', 'revision', 'observed_at', 'bundles', 'monitors'}
@@ -90,7 +91,8 @@ class QualityDipsPublicationReader:
         end = runtime._now()
         if (type(end) is not int or not 0 <= end-now <= 1
                 or not 0 <= end-packet['observed_at'] <= 30
-                or runtime.grant is not session_grant or runtime.stopped.is_set() or runtime.halted
+                or runtime.grant is not session_grant or digest(session_grant) != session_snapshot
+                or runtime.stopped.is_set() or runtime.halted
                 or body(self.writer._cut()) != body(cut)
                 or not authenticated):
             raise ValueError('QD_PUBLICATION_COMPLETION_CONTEXT_CHANGED')
