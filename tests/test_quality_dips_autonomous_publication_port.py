@@ -130,3 +130,25 @@ def test_publication_refuses_current_evidence_replacement_during_audit(damage):
                                                 financial_replay=replay)
     with pytest.raises(ValueError, match='AUTO_PUBLICATION_CURRENT_CONTINUITY_LOST'):
         port.verify_cut(e, current, docs, 1000, scope='LOCAL_ENROLLED')
+
+
+@pytest.mark.parametrize('damage', ['event_record', 'projection_cash', 'report_head',
+    'inception_cash', 'record_schema', 'missing_event'])
+def test_publication_refuses_financial_documents_changed_during_external_audit(damage):
+    e, p, cut, docs, publication, ack, replay = setup()
+
+    def audit(*args, **kwargs):
+        if damage == 'event_record': docs['source']['0002-event.json']['record']['sequence'] = 99
+        if damage == 'projection_cash': docs['projection']['projection.json']['state']['cash'] = '999'
+        if damage == 'report_head': docs['report']['report.json']['head'] = 'f' * 64
+        if damage == 'inception_cash': docs['source']['inception.json']['opening_cash'] = '999'
+        if damage == 'record_schema': docs['source']['0002-event.json']['schema'] = 'QD_OP_MANUAL_V1'
+        if damage == 'missing_event': docs['source'].pop('0002-event.json')
+        return True
+
+    replay.verify = audit
+    port = BoundAutonomousFinancialPublication(publication=publication, custody_ack=ack,
+                                                financial_replay=replay)
+    with pytest.raises(ValueError):
+        port.verify_cut(e, {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)},
+                        docs, 1000, scope='LOCAL_ENROLLED')

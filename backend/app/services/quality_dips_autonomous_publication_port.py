@@ -44,6 +44,10 @@ class BoundAutonomousFinancialPublication:
                     if self.financial_replay.verify(enrollment, p, cut, documents, now,
                                                     scope=scope) is not True:
                         raise ValueError('AUTO_PUBLICATION_INDEPENDENT_REPLAY_REFUSED')
+                    # The injected auditor can mutate supplied documents in place.
+                    # Rebind every financial document to its immutable cut pins.
+                    if bind_financial_publication_to_native_cut(enrollment, p, cut, documents) is not True:
+                        raise ValueError('AUTO_PUBLICATION_POST_AUDIT_FINANCIAL_BINDING_REFUSED')
                     # A caller may mutate the current evidence reference during replay.
                     # A valid lease cannot authorize a different current financial cut.
                     if (current.get('scope') != scope
