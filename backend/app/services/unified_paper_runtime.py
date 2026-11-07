@@ -75,11 +75,23 @@ class UnifiedControlStopBridge:
         if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY") or not self.verify_session():
             raise ValueError("UNIFIED_CONTROL_SESSION_OR_MODE_UNVERIFIED")
         if self.progress["phase"] == "FINISHED":
-            if getattr(self, "stop_ledger", None) is not None and not getattr(self, "_receipt_persisted", False):
-                self.runtime.entry_closed.set()
-                raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
             if self.progress["outcome"]["mode"] != mode:
                 raise ValueError("UNIFIED_CONTROL_STOP_MODE_CHANGED")
+            ledger = getattr(self, "stop_ledger", None)
+            if ledger is not None:
+                grant = self.runtime.grant
+                if (not getattr(self, "_receipt_persisted", False)
+                        or type(grant) is not dict or type(grant.get("session_id")) is not str
+                        or not grant["session_id"]):
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
+                try:
+                    existing = ledger.reserve_existing(grant["session_id"], mode)
+                    if existing["state"] != "FINISHED" or existing["receipt"] != self.progress:
+                        raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
             return strict(body(self.progress))
         ledger = getattr(self, "stop_ledger", None)
         session_id = None
