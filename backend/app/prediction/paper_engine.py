@@ -475,6 +475,15 @@ def evaluate_pre_event_repricing(
     entry_vwap = _d(fill.get("vwap_dollars")) if fill.get("fillable") else None
     entry_fee = _d(fill.get("estimated_taker_fee_dollars"))
     recent_reclaim_bid = max((bar["bid_high"] for bar in history), default=None)
+    # A historical high is not evidence that a fresh listing is still repricing
+    # upward. Require observed bid progression from the first valid quote to
+    # the current executable bid; never infer future profits from this trend.
+    initial_listing_bid = history[0]["bid_close"] if history else None
+    latest_history_bid = history[-1]["bid_close"] if history else None
+    if initial_listing_bid is None or bid is None or latest_history_bid is None:
+        reasons.append("NEW_LISTING_TREND_UNVERIFIED")
+    elif bid <= initial_listing_bid or latest_history_bid <= initial_listing_bid:
+        reasons.append("NO_NEW_LISTING_BID_PROGRESS")
 
     projected_exit_fee = None
     projected_gross = None
@@ -539,6 +548,9 @@ def evaluate_pre_event_repricing(
             "availability_verified": False,
             "usable_bars": len(history),
             "recent_reclaim_bid_dollars": _fixed(recent_reclaim_bid),
+            "initial_listing_bid_dollars": _fixed(initial_listing_bid),
+            "latest_history_bid_dollars": _fixed(latest_history_bid),
+            "current_executable_bid_dollars": _fixed(bid),
             "max_quote_jump_dollars": _fixed(max_jump),
         },
         "activity": {
