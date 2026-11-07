@@ -42,6 +42,8 @@ def main():
     if args.activation_root is not None and (
             ntpath.normpath(args.activation_root) != args.activation_root
             or not ntpath.normcase(args.activation_root).startswith('d:\\atlascustody\\personalpaper\\')
+            or ntpath.dirname(ntpath.normcase(args.activation_root)) != r'd:\atlascustody\personalpaper'
+            or not ntpath.basename(args.activation_root)
             or any(c in args.activation_root[3:] for c in (':', '%', '\x00', '/'))):
         parser.error('Activation root must be an exact D: personal custody child')
 

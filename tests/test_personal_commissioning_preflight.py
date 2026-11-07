@@ -264,3 +264,15 @@ def test_reparse_activation_child_cannot_count_as_present(monkeypatch, capsys, t
     assert checks['ACTIVATION_RECORD_PRESENT'] == 'BLOCKED'
     assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
     assert report['financial_mutations'] is False
+
+
+@pytest.mark.parametrize('path', [
+    r'D:\AtlasCustody\PersonalPaper\approved\nested',
+    r'D:\AtlasCustody\PersonalPaper\approved\nested\deeper',
+    'D:\\AtlasCustody\\PersonalPaper\\',
+])
+def test_activation_root_must_be_immediate_native_child(monkeypatch, path):
+    monkeypatch.setattr('sys.argv', ['preflight', '--activation-root', path])
+    with pytest.raises(SystemExit) as result:
+        preflight.main()
+    assert result.value.code == 2
