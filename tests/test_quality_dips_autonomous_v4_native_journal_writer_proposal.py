@@ -108,3 +108,37 @@ def test_native_writer_fences_ambiguous_partial_write(stage, journal):
     with pytest.raises(ValueError): writer.commit()
     with pytest.raises(ValueError): writer.reserve(record(2))
     with pytest.raises(ValueError): ConfinedNativeV4JournalProposal(port) if stage.endswith('after_write') else writer.commit()
+@pytest.mark.parametrize('stage', ['reserve', 'commit'])
+def test_native_writer_flush_failure_retains_uncertain_fence(stage, journal, monkeypatch):
+    port, writer = journal
+    if stage == 'commit': writer.reserve(record())
+    original_flush = port.module.s.w.flush
+    calls = [0]
+    def failed_flush(handle):
+        calls[0] += 1
+        raise OSError('injected FlushFileBuffers failure')
+    monkeypatch.setattr(port.module.s.w, 'flush', failed_flush)
+    try:
+        with pytest.raises(OSError):
+            writer.reserve(record()) if stage == 'reserve' else writer.commit()
+    finally:
+        monkeypatch.setattr(port.module.s.w, 'flush', original_flush)
+    assert calls[0] == 1
+    assert writer.fenced is True
+    assert writer.state['status'] == 'UNCERTAIN'
+    with pytest.raises(ValueError): writer.commit()
+    with pytest.raises(ValueError): writer.reserve(record(2))
+
+
+def test_native_writer_reopened_handle_inspection_of_flushed_commits(journal):
+    from app.services.quality_dips_autonomous_v4_native_journal_recovery_proposal import inspect_pinned_native_v4_journal
+    from test_quality_dips_autonomous_v4_native_proposal_readback import native_proposal
+    port, writer = journal
+    writer.reserve(record())
+    writer.commit()
+    pins = {key: dict(value) for key, value in writer.pins.items()}
+    port.journal.close()
+    port.journal = port.module.s.w.WindowsOutput(str(port.root / 'journal'))
+    result = inspect_pinned_native_v4_journal(port, pins)
+    assert result['status'] == 'IDLE' and result['snapshot_count'] == 2
+    assert result['restart_fenced'] is True
