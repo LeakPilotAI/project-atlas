@@ -562,3 +562,33 @@ def test_leased_published_tick_planner_no_fill_and_existing_position(tmp_path, m
     operator.i.revoke()
     with pytest.raises(ValueError, match="ACTIVATION_REVOKED"):
         plan_leased_published_iex_paper_tick(**kwargs)
+
+
+def test_bounded_readonly_session_refuses_invalid_clock_and_stops_on_failure(monkeypatch):
+    from datetime import timedelta
+    import app.services.personal_paper_strategy_signal as signals
+    from app.services.personal_paper_strategy_signal import run_bounded_readonly_paper_session
+    now = datetime(2026, 11, 6, tzinfo=UTC)
+    calls = []
+    def tick(*, now, **kwargs):
+        calls.append(now)
+        if len(calls) == 3:
+            raise ValueError("AUTHENTICATED_IEX_FEED_UNAVAILABLE")
+        return {"paper_fill_authorized": False, "live_order_authorized": False,
+                "decision_evidence_digest": str(len(calls))}
+    monkeypatch.setattr(signals, "plan_leased_published_iex_paper_tick", tick)
+    stamps = iter([now, now + timedelta(seconds=1), now + timedelta(seconds=2)])
+    with pytest.raises(ValueError, match="AUTHENTICATED_IEX_FEED_UNAVAILABLE"):
+        run_bounded_readonly_paper_session(ticks=3, clock=lambda: next(stamps))
+    assert len(calls) == 3
+    calls.clear()
+    stamps = iter([now, now + timedelta(seconds=1)])
+    result = run_bounded_readonly_paper_session(ticks=2, clock=lambda: next(stamps))
+    assert result["completed"] == 2
+    assert result["paper_fill_authorized"] is False
+    assert result["ticks"][0]["plan"]["decision_evidence_digest"] == "1"
+    calls.clear()
+    with pytest.raises(ValueError, match="PAPER_SESSION_NONMONOTONIC_CLOCK"):
+        run_bounded_readonly_paper_session(ticks=2, clock=lambda: now)
+    with pytest.raises(ValueError, match="PAPER_SESSION_BOUNDED_EXPLICIT_CLOCK_REQUIRED"):
+        run_bounded_readonly_paper_session(ticks=31, clock=lambda: now)

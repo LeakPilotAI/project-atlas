@@ -370,3 +370,31 @@ def plan_leased_published_iex_paper_tick(
                         "estimated_total_return": inspection["journal_estimated_total_return"],
                         "paper_fill_authorized": False,
                         "live_order_authorized": False}))
+
+
+def run_bounded_readonly_paper_session(*, ticks: int, clock: Any, **dependencies: Any) -> dict[str, Any]:
+    """Explicitly invoked, bounded forward diagnostic; never starts a service.
+
+    Stops on the first technical/provider/operator error. The caller must
+    supply the clock and live installed ports; this does not create them.
+    """
+    from app.services.paper_financial_replay import strict, body
+
+    if type(ticks) is not int or not 1 <= ticks <= 30 or not callable(clock):
+        raise ValueError("PAPER_SESSION_BOUNDED_EXPLICIT_CLOCK_REQUIRED")
+    records = []
+    for index in range(ticks):
+        now = clock()
+        if type(now) is not datetime or now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("PAPER_SESSION_AWARE_CLOCK_REQUIRED")
+        if records and now <= records[-1]["_clock"]:
+            raise ValueError("PAPER_SESSION_NONMONOTONIC_CLOCK")
+        plan = plan_leased_published_iex_paper_tick(now=now, **dependencies)
+        if plan["paper_fill_authorized"] is not False or plan["live_order_authorized"] is not False:
+            raise ValueError("PAPER_SESSION_UNEXPECTED_AUTHORITY")
+        records.append({"_clock": now, "tick": index, "plan": plan})
+    return strict(body({"schema": "ATLAS_BOUNDED_READONLY_PAPER_SESSION_V1",
+                        "ticks": [{"timestamp": r["_clock"].isoformat(),
+                                   "index": r["tick"], "plan": r["plan"]} for r in records],
+                        "completed": len(records), "paper_fill_authorized": False,
+                        "live_order_authorized": False}))
