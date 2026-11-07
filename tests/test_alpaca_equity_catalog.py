@@ -283,6 +283,12 @@ def test_actual_investment_scorer_integrates_with_bounded_research_cycle(tmp_pat
     assert scored["evidence_quality"] == "INSUFFICIENT"
     assert scored["research_lane"] == "FRONTIER_RESEARCH"
     assert scored["provider_receipt_count"] == 1
+    diagnostic = scored["evidence_diagnostics"]
+    assert diagnostic["historical_bar_count"] == 1
+    assert diagnostic["usable_valuation_fields"] == []
+    assert diagnostic["reference_price_quality"] == "MISSING"
+    assert diagnostic["has_current_execution_quote"] is False
+    assert diagnostic["has_accepted_analyst_normalization"] is False
     assert not (root / "alpaca_equity_cursor.json").exists()
     result = mod.execute_scored_research_cycle(limit=1, acquire=provider)
     assert result["status"] == "RESEARCH_FINALIZED"

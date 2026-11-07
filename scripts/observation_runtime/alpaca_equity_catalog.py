@@ -229,6 +229,17 @@ def score_research_bundle(*, symbol, data):
             "thesis": record.thesis.value,
             "opportunity_score": record.opportunity_score,
             "provider_receipt_count": len(data["receipts"]),
+            "evidence_diagnostics": {
+                "reference_price_quality": snap.price.quality.value,
+                "reference_price_source": snap.price.source,
+                "historical_bar_count": len(data["bars"]),
+                "usable_fundamental_fields": sorted(k for k, v in snap.fundamentals.items()
+                                                     if v.is_usable()),
+                "usable_valuation_fields": sorted(k for k, v in snap.valuation.items()
+                                                   if v.is_usable()),
+                "has_current_execution_quote": False,
+                "has_accepted_analyst_normalization": False,
+            },
             "paper_eligible": False, "live_order_authorized": False}
 
 
