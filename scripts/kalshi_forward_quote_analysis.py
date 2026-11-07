@@ -60,7 +60,10 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
                 continue
             quote = dict(raw_quote)
             quote['_entry_gate_passed'] = row.get('entry_gate_passed') is True
-            key = (ticker, side, qty)
+            # Require identical exchange-issued listing and event identity.
+            # A reused ticker or revised event date must never be paired.
+            key = (ticker, side, qty, _time(row['created_time']),
+                   _time(row['open_time']), _time(row['occurrence_datetime']))
             prior = previous.get(key)
             if prior is not None and stamp > prior[0]:
                 buy = prior[1]

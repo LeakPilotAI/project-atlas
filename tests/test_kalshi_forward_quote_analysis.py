@@ -7,9 +7,9 @@ from scripts.kalshi_forward_quote_analysis import analyze
 def row(time, *, ticker='KX-ONE', buy='0.40', sell='0.38', buy_fee='0.02', sell_fee='0.02', quantity='10', sell_ok=True):
     return {'schema': 'kalshi-forward-quote-v1', 'ticker': ticker,
             'observed_at': time.isoformat(),
-            'created_time': (time - timedelta(hours=1)).isoformat(),
-            'open_time': (time - timedelta(minutes=50)).isoformat(),
-            'occurrence_datetime': (time + timedelta(hours=3)).isoformat(),
+            'created_time': time.replace(hour=10, minute=0, second=0, microsecond=0).isoformat(),
+            'open_time': time.replace(hour=11, minute=0, second=0, microsecond=0).isoformat(),
+            'occurrence_datetime': time.replace(hour=16, minute=0, second=0, microsecond=0).isoformat(),
             'quantity': quantity,
             'sides': {'YES': {'buy_fillable': True, 'sell_fillable': sell_ok,
                               'buy_vwap': buy, 'sell_vwap': sell,
@@ -52,6 +52,18 @@ def test_rejects_post_event_quote_pairs(tmp_path):
     second = row(now + timedelta(minutes=5), sell='0.90')
     second['occurrence_datetime'] = (now + timedelta(minutes=3)).isoformat()
     write(path, [first, second])
+    assert analyze(path)['paired_count'] == 0
+
+
+def test_reused_ticker_different_listing_or_event_is_not_paired(tmp_path):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    path = tmp_path / 'quotes.jsonl'
+    initial = row(now)
+    changed_listing = row(now + timedelta(minutes=1), sell='0.90')
+    changed_listing['created_time'] = (now - timedelta(minutes=30)).isoformat()
+    changed_event = row(now + timedelta(minutes=2), sell='0.90')
+    changed_event['occurrence_datetime'] = (now + timedelta(hours=5)).isoformat()
+    write(path, [initial, changed_listing, changed_event])
     assert analyze(path)['paired_count'] == 0
 
 
