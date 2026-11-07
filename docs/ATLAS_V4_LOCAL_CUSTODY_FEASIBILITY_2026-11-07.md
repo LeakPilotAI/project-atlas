@@ -1,0 +1,20 @@
+# Atlas V4 local-only independent custody feasibility - 2026-11-07
+
+**Decision: source-level feasible in principle; no independently accepted publisher, custodian, trusted high-water mark, or operational nonzero replay exists.** No VPS or paid service is required by this design assessment. That does not mean a single Windows user/process can prove independence by writing two files.
+
+## Existing assets and exact gaps
+
+1. `scripts/volume_inspector/snapshot_store.py`: Windows native identity-bound snapshots, witness commits, and a caller-retained high-water pin. `SyntheticAuthority` has two in-process synthetic keys and is explicitly not an independent principal. A pin retained in the same mutable local authority domain cannot by itself prove rollback resistance. A separately governed, non-rollbackable high-water pin and approved issuer identity remain missing.
+2. `scripts/volume_inspector/autonomous_enrollment_read.py`: existing-only identity/SHA256 native readback with injected cut and financial authority. It consumes authority; it does not issue it.
+3. `backend/app/services/quality_dips_autonomous_publication_port.py`: V4 publication, custody-ack, financial replay lease interface. No accepted implementations have been installed.
+4. `backend/app/services/quality_dips_autonomous_v4_inception_replay.py`: zero-event native financial verification; nonzero revision explicitly refused. Proposed nonzero event/receipt modules are research-only and cannot be silently relabeled to the accepted V4 schema.
+5. `backend/app/services/quality_dips_autonomous_v4_witness_boundary_proposal.py`: distinct externally injected publisher and custodian check interfaces, double-checking and mutation refusals. Fake test implementations and self-issued acknowledgments are insufficient.
+
+## Required local-only authority design before integration
+
+- **Publisher:** explicitly versioned immutable V4 native event/receipt/cut publication with account, epoch, writer identity, durable reserve/commit semantics, independent cut lease, replay idempotence, crash recovery and revocation.
+- **Custodian:** separately governed principal, distinct authority lifecycle, independently retained monotonic publication high-water evidence, exact native committed digest acknowledgment, bounded clock/host identity and revocation. A second directory, process, key file, or test stub is not evidence of independence without separate control and acceptance.
+- **Financial audit:** accepted nonzero event schema, independent full-history replay, fee/slippage/fractional-share policy, cash/position/cost reconciliation, provider/fill provenance, no cross-epoch rollback or incomplete event windows.
+- **Acceptance:** documented independent owner/reviewer, native ownership/storage/clock evidence, provider-rights evidence, AIP06 single-use authorization where required, and B1/C1/D1/E1 approvals. No production or autonomous PAPER startup before these are genuinely accepted.
+
+**Next practical engineering action:** implement a source-only V4 native publisher reserve/commit/restart state-machine specification and fault tests, using existing native snapshot semantics without promoting `SyntheticAuthority` or altering startup. Review the external high-water mark custody model separately. The new `quality_dips_autonomous_v4_local_authority_feasibility.py` inventory always reports unaccepted status even if caller passes claimed approval flags.
