@@ -98,6 +98,34 @@ def test_liquid_later_page_outranks_early_illiquid_market(tmp_path, monkeypatch)
     assert result['entry_gate_qualified_new_listings_seen'] == 1
 
 
+def test_research_sampling_keeps_repeat_and_adds_unseen_listings(tmp_path, monkeypatch):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    markets_list = []
+    for name in ('OLD-A', 'OLD-B', 'NEW-C', 'NEW-D'):
+        item = market(now)
+        item['ticker'] = name
+        item['activity'] = {'volume_24h_contracts': '0', 'open_interest_contracts': '0'}
+        markets_list.append(item)
+    async def markets(**kwargs):
+        return {'markets': markets_list}
+    calls = []
+    async def book(ticker, **kwargs):
+        calls.append(ticker)
+        return {'orderbook': {'yes': {'bids': [{'price_dollars': '0.40', 'quantity_contracts': '5'}],
+                                          'asks': [{'price_dollars': '0.42', 'quantity_contracts': '5'}]},
+                              'no': {'bids': [{'price_dollars': '0.58', 'quantity_contracts': '5'}],
+                                     'asks': [{'price_dollars': '0.60', 'quantity_contracts': '5'}]}}}
+    monkeypatch.setattr(observer.kalshi_public, 'get_markets', markets)
+    monkeypatch.setattr(observer.kalshi_public, 'get_orderbook', book)
+    path = tmp_path / 'quotes.jsonl'
+    path.write_text(''.join(json.dumps({'schema': 'kalshi-forward-quote-v1', 'ticker': ticker}) + '\n'
+                            for ticker in ('OLD-A', 'OLD-B')), encoding='utf-8')
+    result = asyncio.run(observer.collect(path=path, now=now, limit=3))
+    assert calls == ['OLD-A', 'NEW-C', 'NEW-D']
+    assert result['records_written'] == 3
+    assert result['orders_placed'] == 0
+
+
 def test_fresh_low_activity_market_is_observed_but_not_entry_qualified(tmp_path, monkeypatch):
     now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
     fresh = market(now, 1)

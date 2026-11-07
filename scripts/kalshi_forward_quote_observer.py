@@ -74,9 +74,37 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
     candidates.sort(key=lambda pair: (not not pair[1],
                                        *(-value for value in activity(pair[0])),
                                        str(pair[0].get('ticker') or '')))
+    # Reserve a small portion of each bounded sample for previously unseen
+    # listings. Keep the remaining slots for repeat quotes needed to measure
+    # forward movement. Historical records are research data, never authority.
+    observed_tickers = set()
+    if path.exists():
+        with path.open(encoding='utf-8') as history:
+            for line in history:
+                try:
+                    prior = json.loads(line)
+                except (ValueError, TypeError):
+                    continue
+                if isinstance(prior, dict) and prior.get('schema') == 'kalshi-forward-quote-v1':
+                    ticker = prior.get('ticker')
+                    if isinstance(ticker, str):
+                        observed_tickers.add(ticker.upper())
+    qualified = [pair for pair in candidates if not pair[1]]
+    exploratory = [pair for pair in candidates if pair[1]]
+    selected = qualified[:limit]
+    remaining = limit - len(selected)
+    if remaining:
+        new = [pair for pair in exploratory if pair[0]['ticker'].upper() not in observed_tickers]
+        repeated = [pair for pair in exploratory if pair[0]['ticker'].upper() in observed_tickers]
+        # At least one repeat when available, to preserve longitudinal pairs.
+        repeat_slots = min(len(repeated), 1 if remaining > 1 else remaining)
+        selected.extend(repeated[:repeat_slots])
+        selected.extend(new[:remaining - repeat_slots])
+        if len(selected) < limit:
+            selected.extend(repeated[repeat_slots:repeat_slots + limit - len(selected)])
     records = []
     errors = []
-    for market, entry_gate_reasons in candidates[:limit]:
+    for market, entry_gate_reasons in selected:
         ticker = market['ticker']
         try:
             book = (await asyncio.wait_for(kalshi_public.get_orderbook(ticker, depth=20), timeout=12))['orderbook']
