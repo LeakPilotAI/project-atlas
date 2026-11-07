@@ -89,3 +89,23 @@ async def test_native_store_capacity_readbacks_are_consistent_without_mocked_hea
         'REPORTS': s.qstop.reports.archive.remaining_reports(),
     }
     assert not s.r.uncertain
+
+@pytest.mark.asyncio
+async def test_native_capacity_readback_is_side_effect_free_across_all_five_stores(system):
+    """Guarded native read-only check; not a saturation or shutdown proof."""
+    s = system
+    before = (s.journal.snapshot(), s.q.writer._cut(), s.p.writer._cut(),
+              s.p.orders.snapshot())
+    readers = (
+        s.journal.remaining_slots,
+        s.q.writer.store.remaining_operations,
+        s.p.writer.store.remaining_operations,
+        s.p.orders.remaining_slots,
+        s.qstop.reports.archive.remaining_reports,
+    )
+    first = tuple(reader() for reader in readers)
+    second = tuple(reader() for reader in readers)
+    assert first == second
+    assert all(type(value) is int and value >= 0 for value in first)
+    assert (s.journal.snapshot(), s.q.writer._cut(), s.p.writer._cut(),
+            s.p.orders.snapshot()) == before
