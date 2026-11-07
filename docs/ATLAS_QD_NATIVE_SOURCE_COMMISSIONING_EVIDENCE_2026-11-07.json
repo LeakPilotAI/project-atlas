@@ -1,0 +1,18 @@
+{
+  "schema": "ATLAS_QD_NATIVE_SOURCE_COMMISSIONING_EVIDENCE_V1",
+  "root": "D:\\AtlasCustody\\QualityDips\\qd-native-source-0a50578893fd7d85",
+  "native_root": [
+    4004218753,
+    2883584,
+    1430494
+  ],
+  "empty_native_root_verified": true,
+  "release_selection_revision": 6,
+  "release_selection_action": "ROLLBACK",
+  "selected_release": null,
+  "source_enrollment_created": false,
+  "activation_created": false,
+  "source_image_initialized": false,
+  "paper_startup_authorized": false,
+  "blocking_reason": "RELEASE_SELECTION_ROLLED_BACK_NO_ACCEPTED_RELEASE_DIGEST_OR_ACCOUNT_ENROLLMENTS"
+}
