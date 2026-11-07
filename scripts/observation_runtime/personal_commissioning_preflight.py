@@ -111,16 +111,14 @@ def main():
     # A pre-existing source directory is only a custody location, never an
     # accepted operational QD source publication. Native archive admission
     # requires the independently accepted enrollment/issuer/clock ports.
+    from scripts.observation_runtime.quality_dips_source_inventory import inspect as inspect_qd_source
     source_parent = Path("D:/AtlasCustody/QualityDips")
-    source_children = []
-    if source_parent.is_dir() and not source_parent.is_symlink() and not source_parent.is_junction():
-        source_children = [p.name for p in source_parent.iterdir()
-                           if p.is_dir() and not p.is_symlink() and not p.is_junction()]
+    source_inventory = inspect_qd_source()
     results.append(check(
         "OPERATIONAL_QD_SOURCE_PUBLICATION",
         False,
-        "Native Quality Dips custody alone is not an enrolled and independently "
-        "authenticated current FORWARD_COLLECTION source publication",
+        "Native QD custody inventory: " + str(source_inventory) +
+        "; independent current FORWARD_COLLECTION source authority still required",
     ))
 
     activation_root = Path("D:/AtlasCustody/PersonalPaper")
@@ -266,7 +264,7 @@ def main():
         "quality_dips_custody_inventory": {
             "native_parent_present": source_parent.is_dir()
             and not source_parent.is_symlink() and not source_parent.is_junction(),
-            "ordinary_child_count": len(source_children),
+            "ordinary_child_count": source_inventory['ordinary_child_count'],
             "operational_publication_verified": False,
         },
         "native_clock_probe": clock_probe,
