@@ -26,3 +26,7 @@ Executed `python -m scripts.observation_runtime.personal_commissioning_preflight
 4. Run bounded autonomous PAPER pilot, verify journal/cash/Stop/restart, then enable continuous PAPER only with valid authorization.
 
 No VPS, no Genesis changes, no live orders. Do not equate passing a test suite or collecting SEC/Alpaca data with these native gates.
+
+## 2026-11-07 tracked source blocker investigation
+
+The only tracked working-tree modification is `tests/test_free_research_pipeline.py`. `git diff --numstat` reports 1,001 added and 258 removed lines (original 373 lines, working tree 1,116). Python AST comparison proves the file is **not merely whitespace/line-ending formatting**: 14 existing test function bodies changed, including expansion of combined assertions into individual assertions; no top-level test function names were added or removed. The complete modified file's tests ran **48 passed, 0 failed**. Its contents were **not** reset, staged, committed or discarded. The clean-source preflight remains BLOCKED pending deliberate review/approval of the preexisting change.
