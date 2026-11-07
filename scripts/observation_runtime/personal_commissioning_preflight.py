@@ -94,6 +94,18 @@ def main():
 
     activation_root = Path("D:/AtlasCustody/PersonalPaper")
 
+    # Inventory the actual installed roots, without treating a directory,
+    # metadata flag, or unbound JSON file as operator authorization.
+    from scripts.observation_runtime.personal_installation_preflight import (
+        inspect_native_personal_installation,
+    )
+    native = inspect_native_personal_installation()
+    results.append(check(
+        "NATIVE_CUSTODY_PARENTS",
+        native["custody_parent_exists"] and native["personal_parent_exists"],
+        "Existing ordinary native custody directories required; no approval implied",
+    ))
+
     results.append(check(
         "ACTIVATION_ROOT",
         activation_root.is_dir(),
@@ -139,6 +151,12 @@ def main():
         "financial_mutations": False,
         "live_orders": False,
         "pilot_started": False,
+        "native_custody_inventory": native,
+        "operator_action_required": (
+            "Review source checkpoint and explicitly authorize native activation "
+            "only after independently accepted research, financial custody, "
+            "writer ownership, and Stop controls are verified"
+        ),
     }
 
     if args.json:

@@ -57,3 +57,23 @@ def test_scope_claims_never_substitute_native_financial_or_runtime_proof(monkeyp
     assert checks['FINANCIAL_INCEPTION'] == 'BLOCKED'
     assert checks['RUNTIME_AUTHORIZATION'] == 'BLOCKED'
     assert report['pilot_started'] is False
+
+
+def test_preflight_native_custody_inventory_does_not_authorize(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_installation_preflight as native_mod
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output',
+                        lambda command, **kwargs: {'branch': 'chatgpt/atlas-rebuild-v1'}.get('branch', '')
+                        if command[1:] == ['branch', '--show-current'] else '')
+    monkeypatch.setattr(native_mod, 'inspect_native_personal_installation', lambda: {
+        'custody_parent_exists': True, 'personal_parent_exists': True,
+        'native_activation_record_verified': False,
+        'operator_lease_verified': False,
+        'forward_financial_write_authorized': False})
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['NATIVE_CUSTODY_PARENTS'] == 'PASS'
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
+    assert report['native_custody_inventory']['forward_financial_write_authorized'] is False
+    assert report['pilot_started'] is False
