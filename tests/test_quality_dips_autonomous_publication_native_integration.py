@@ -82,11 +82,9 @@ def native_v4_publication(request):
 
         class Replay(Port):
             def verify(self, enrollment, publication, cut, documents, now, *, scope):
-                if request.param == "inception":
-                    return V4InceptionFinancialReplay().verify(
-                        enrollment, publication, cut, documents, now, scope=scope)
-                # Three-event financial replay is still an explicit test stub.
-                return True
+                # No fake financial replay success for nonzero operational cuts.
+                return V4InceptionFinancialReplay().verify(
+                    enrollment, publication, cut, documents, now, scope=scope)
 
         replay = Replay(cut, lambda snapshot, now: snapshot == cut)
         financial = BoundAutonomousFinancialPublication(
@@ -98,13 +96,19 @@ def native_v4_publication(request):
             out.close()
 
 
-@pytest.mark.parametrize("native_v4_publication", ["inception", "three_event"], indirect=True)
+@pytest.mark.parametrize("native_v4_publication", ["inception"], indirect=True)
 def test_v4_publication_adapter_is_called_from_real_native_readback(native_v4_publication):
     s = native_v4_publication
     before = {p: p.read_bytes() for p in s.root.rglob('*.json')}
     assert s.reader.verify(s.e, s.current, 1000, scope='LOCAL_ENROLLED') is True
     assert before == {p: p.read_bytes() for p in s.root.rglob('*.json')}
 
+
+@pytest.mark.parametrize('native_v4_publication', ['three_event'], indirect=True)
+def test_nonzero_native_v4_publication_fails_closed_without_event_replay_protocol(native_v4_publication):
+    s = native_v4_publication
+    with pytest.raises(ValueError, match='AUTO_V4_REPLAY_NONZERO_PROTOCOL_NOT_ACCEPTED'):
+        s.reader.verify(s.e, s.current, 1000, scope='LOCAL_ENROLLED')
 
 @pytest.mark.parametrize('native_v4_publication', ['three_event'], indirect=True)
 @pytest.mark.parametrize('damage', ['event_bytes', 'publisher', 'ack', 'replay', 'scope'])
