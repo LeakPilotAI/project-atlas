@@ -509,3 +509,28 @@ async def test_bounded_authenticated_feed_delivers_unique_readonly_quotes():
     assert delivered[0]["paper_fill_authorized"] is False
     assert delivered[0]["live_order_authorized"] is False
     assert "test-secret" not in repr(delivered)
+
+
+@pytest.mark.asyncio
+async def test_authenticated_iex_callback_bridges_to_durable_readonly_watermark(tmp_path):
+    from datetime import datetime, UTC, timedelta
+    from scripts.observation_runtime.paper_readonly_watermark import (
+        ReadonlyIEXEventConsumer, advance_watermark, read_watermark)
+    path = tmp_path / "iex-event.json"
+    start = datetime.fromtimestamp(STAMP, UTC) - timedelta(seconds=1)
+    advance_watermark(path, symbol="MSFT", provider_timestamp=start.isoformat())
+    wire = Wire(['[{"T":"success","msg":"authenticated"}]',
+                 '[{"T":"subscription","quotes":["MSFT"]}]',
+                 json.dumps([message()])])
+    @asynccontextmanager
+    async def connect(url, **kwargs):
+        yield wire
+    feed = IEXFeed(["MSFT"], clock=lambda: STAMP + 0.5)
+    with ReadonlyIEXEventConsumer(path=path, symbol="MSFT") as consumer:
+        result = await feed.run(Credentials("test-key", "test-secret"), seconds=1,
+                                connect=connect, max_reconnects=0,
+                                on_fresh_quote=consumer.on_fresh_quote)
+        assert result["authenticated"] and result["subscribed"]
+        assert consumer.accepted == 1
+    assert datetime.fromisoformat(read_watermark(path, symbol="MSFT")) > start
+    assert result["result"]["connection"] == "DISCONNECTED"

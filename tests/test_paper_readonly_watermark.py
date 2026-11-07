@@ -150,3 +150,40 @@ def test_interrupted_pending_write_fails_closed_without_overwriting(tmp_path):
                           provider_timestamp=(initial + timedelta(seconds=1)).isoformat())
     assert path.read_bytes() == original
     assert pending.read_text(encoding="utf-8") == "interrupted-newer-event"
+
+
+def test_iex_callback_consumer_persists_events_and_refuses_replay(tmp_path):
+    from scripts.observation_runtime.paper_readonly_watermark import ReadonlyIEXEventConsumer
+    path = tmp_path / "iex.json"
+    stamp = datetime(2026, 11, 7, tzinfo=UTC)
+    advance_watermark(path, symbol="MSFT", provider_timestamp=stamp.isoformat())
+    event = {"symbol": "MSFT", "provider": "ALPACA_IEX",
+             "timestamp": (stamp + timedelta(seconds=1)).isoformat(),
+             "paper_fill_authorized": False, "live_order_authorized": False}
+    with ReadonlyIEXEventConsumer(path=path, symbol="MSFT") as consumer:
+        consumer.on_fresh_quote(event)
+        assert consumer.accepted == 1
+        with pytest.raises(ValueError, match="REPLAY_REFUSED"):
+            consumer.on_fresh_quote(event)
+    assert read_watermark(path, symbol="MSFT") == event["timestamp"]
+    with ReadonlyIEXEventConsumer(path=path, symbol="MSFT") as consumer:
+        with pytest.raises(ValueError, match="REPLAY_REFUSED"):
+            consumer.on_fresh_quote(event)
+    with pytest.raises(ValueError, match="NOT_STARTED"):
+        consumer.on_fresh_quote(event)
+
+
+def test_iex_callback_consumer_refuses_uninitialized_and_wrong_authority(tmp_path):
+    from scripts.observation_runtime.paper_readonly_watermark import ReadonlyIEXEventConsumer
+    path = tmp_path / "iex.json"
+    with pytest.raises(ValueError, match="PRIOR_STATE_REQUIRED"):
+        with ReadonlyIEXEventConsumer(path=path, symbol="MSFT"):
+            pass
+    stamp = datetime(2026, 11, 7, tzinfo=UTC)
+    advance_watermark(path, symbol="MSFT", provider_timestamp=stamp.isoformat())
+    with ReadonlyIEXEventConsumer(path=path, symbol="MSFT") as consumer:
+        with pytest.raises(ValueError, match="EVENT_REFUSED"):
+            consumer.on_fresh_quote({"symbol": "MSFT", "provider": "ALPACA_IEX",
+                                     "timestamp": (stamp + timedelta(seconds=1)).isoformat(),
+                                     "paper_fill_authorized": True, "live_order_authorized": False})
+        assert consumer.accepted == 0

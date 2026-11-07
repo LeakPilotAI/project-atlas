@@ -138,3 +138,55 @@ def run_watermarked_readonly_paper_session(*, path: Path, symbol: str,
                         "completed": len(records), "ticks": records,
                         "last_provider_timestamp": previous,
                         "paper_fill_authorized": False, "live_order_authorized": False}))
+
+
+class ReadonlyIEXEventConsumer:
+    """Explicit, single-writer bridge for IEXFeed.run(on_fresh_quote=...).
+
+    This is a read-only provider event diagnostic, NOT an enrolled financial
+    session. The caller must independently establish provider authentication.
+    """
+
+    def __init__(self, *, path: Path, symbol: str):
+        if type(symbol) is not str or not symbol:
+            raise ValueError("READONLY_IEX_CONSUMER_SYMBOL_REQUIRED")
+        self.path, self.symbol = path, symbol
+        self._lock = None
+        self.last_event = None
+        self.accepted = 0
+
+    def __enter__(self):
+        if self._lock is not None:
+            raise ValueError("READONLY_IEX_CONSUMER_ALREADY_STARTED")
+        lock = readonly_watermark_writer(self.path)
+        lock.__enter__()
+        try:
+            previous = read_watermark(self.path, symbol=self.symbol)
+            if previous is None:
+                raise ValueError("READONLY_IEX_CONSUMER_PRIOR_STATE_REQUIRED")
+            self.last_event = previous
+            self._lock = lock
+            return self
+        except BaseException:
+            lock.__exit__(None, None, None)
+            raise
+
+    def on_fresh_quote(self, event: dict) -> None:
+        if self._lock is None:
+            raise ValueError("READONLY_IEX_CONSUMER_NOT_STARTED")
+        if (type(event) is not dict or event.get("symbol") != self.symbol
+                or event.get("provider") != "ALPACA_IEX"
+                or event.get("paper_fill_authorized") is not False
+                or event.get("live_order_authorized") is not False):
+            raise ValueError("READONLY_IEX_CONSUMER_EVENT_REFUSED")
+        stamp = _aware(event.get("timestamp"), "IEX callback timestamp")
+        if stamp <= _aware(self.last_event, "last IEX callback timestamp"):
+            raise ValueError("READONLY_IEX_CONSUMER_REPLAY_REFUSED")
+        advance_watermark(self.path, symbol=self.symbol, provider_timestamp=stamp.isoformat())
+        self.last_event = stamp.isoformat()
+        self.accepted += 1
+
+    def __exit__(self, exc_type, exc, tb):
+        lock, self._lock = self._lock, None
+        if lock is not None:
+            lock.__exit__(exc_type, exc, tb)
