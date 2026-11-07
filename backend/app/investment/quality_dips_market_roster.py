@@ -131,8 +131,8 @@ def merge_reference_directories(snapshots):
     return {"schema": "QD_MERGED_REFERENCE_RESEARCH_V1",
             "source_digests": {s["source"]: s["source_digest"] for s in snapshots},
             "rows": rows, "conflicted_symbols": sorted(conflicts),
-            "reference_count": len(rows), "broker_eligibility_verified": False,
-            "execution_authorized": False}
+            "reference_count": len(rows), "rows_digest": digest(rows),
+            "broker_eligibility_verified": False, "execution_authorized": False}
 
 
 
@@ -151,9 +151,13 @@ def merged_research_batch(merged, *, offset, budget):
             or type(budget) is not int or not 1 <= budget <= 100):
         raise ValueError("UNIVERSE_MERGED_BOUNDED_RESEARCH_REQUIRED")
     rows = merged["rows"]
-    if len(rows) > 60000 or merged.get("reference_count") != len(rows):
-        raise ValueError("UNIVERSE_MERGED_REFERENCE_COUNT_MISMATCH")
-    return {"source_digest": digest(merged["source_digests"]),
+    if (len(rows) > 60000 or merged.get("reference_count") != len(rows)
+            or merged.get("rows_digest") != digest(rows)
+            or merged.get("execution_authorized") is not False
+            or merged.get("broker_eligibility_verified") is not False):
+        raise ValueError("UNIVERSE_MERGED_REFERENCE_INTEGRITY_REQUIRED")
+    return {"source_digest": digest({"sources": merged["source_digests"],
+                                      "rows_digest": merged["rows_digest"]}),
             "rows": rows[offset:offset + budget],
             "next_offset": min(len(rows), offset + budget),
             "remaining": max(0, len(rows) - offset - budget),

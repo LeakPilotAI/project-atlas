@@ -264,8 +264,10 @@ def test_merged_reference_pages_connect_to_existing_scanner_universe_interface()
 
 def test_merged_pagination_refuses_missing_source_provenance_and_unbounded_budget():
     from app.investment.quality_dips_market_roster import merged_research_batch
+    from app.services.paper_financial_replay import digest
     valid = {"schema": "QD_MERGED_REFERENCE_RESEARCH_V1", "source_digests": {
-        "nasdaqlisted.txt": "a" * 64, "otherlisted.txt": "b" * 64}, "rows": [], "reference_count": 0}
+        "nasdaqlisted.txt": "a" * 64, "otherlisted.txt": "b" * 64}, "rows": [], "reference_count": 0,
+        "rows_digest": digest([]), "execution_authorized": False, "broker_eligibility_verified": False}
     with pytest.raises(ValueError, match="MERGED_BOUNDED"):
         merged_research_batch(valid, offset=0, budget=101)
     with pytest.raises(ValueError, match="MERGED_BOUNDED"):
@@ -355,3 +357,19 @@ def test_pinned_merged_cohort_uses_derived_source_digest_and_refuses_unknown_sym
     assert result["independent_source_custody_verified"] is False
     with pytest.raises(ValueError, match="NOT_IN_SOURCE"):
         acquire_merged_asset_cohort(merged, symbols=["FAKE"], client=Provider())
+
+
+def test_merged_roster_tampering_cannot_reuse_old_source_identity():
+    from app.investment.quality_dips_market_roster import merge_reference_directories, merged_research_batch, acquire_merged_asset_cohort
+    first = {"schema": "QD_REFERENCE_DIRECTORY_V1", "source": "nasdaqlisted.txt", "source_digest": "a" * 64,
+             "rows": [{"symbol": "MSFT", "name": "Microsoft", "exchange": "XNAS", "instrument_type": "EQUITY_REFERENCE"}]}
+    second = {"schema": "QD_REFERENCE_DIRECTORY_V1", "source": "otherlisted.txt", "source_digest": "b" * 64,
+              "rows": [{"symbol": "SPY", "name": "ETF", "exchange": "ARCX", "instrument_type": "ETF"}]}
+    merged = merge_reference_directories([first, second])
+    pinned = merged_research_batch(merged, offset=0, budget=2)
+    assert len(pinned["source_digest"]) == 64
+    merged["rows"][0]["exchange"] = "XNYS"
+    with pytest.raises(ValueError, match="INTEGRITY"):
+        merged_research_batch(merged, offset=0, budget=2)
+    with pytest.raises(ValueError, match="INTEGRITY"):
+        acquire_merged_asset_cohort(merged, symbols=["MSFT"], client=None)
