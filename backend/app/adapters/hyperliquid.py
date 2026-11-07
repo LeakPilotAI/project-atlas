@@ -83,9 +83,14 @@ def _paper_execution_observation(symbol, metadata, book, started, observed):
     if len(indices) != 1:
         raise ValueError("Selected instrument absent")
     instrument, context = universe[indices[0]], contexts[indices[0]]
-    if (instrument.get("isDelisted", False) is not False or type(instrument.get("maxLeverage")) is not int
-            or instrument["maxLeverage"] < 1 or type(instrument.get("szDecimals")) is not int
-            or not 0 <= instrument["szDecimals"] <= 18 or type(context) is not dict):
+    if (
+        instrument.get("isDelisted", False) is not False
+        or type(instrument.get("maxLeverage")) is not int
+        or instrument["maxLeverage"] < 1
+        or type(instrument.get("szDecimals")) is not int
+        or not 0 <= instrument["szDecimals"] <= 18
+        or type(context) is not dict
+    ):
         raise ValueError("Verified provider instrument definition required")
     for key in ("markPx", "oraclePx"): decimal(context.get(key), positive=True)
     decimal(context.get("funding"))
@@ -322,7 +327,11 @@ class HyperliquidAdapter:
         names: list[str] = []
         if isinstance(universe, list):
             for item in universe:
-                if isinstance(item, dict) and item.get("name"):
+                if (
+                    isinstance(item, dict)
+                    and item.get("name")
+                    and item.get("isDelisted", False) is False
+                ):
                     names.append(str(item["name"]))
         self._universe_names = names
         logger.info("Hyperliquid universe loaded", count=len(names))
@@ -405,6 +414,8 @@ class HyperliquidAdapter:
             if i >= len(ctxs):
                 break
             if not isinstance(asset, dict):
+                continue
+            if asset.get("isDelisted", False) is not False:
                 continue
             name = str(asset.get("name") or "")
             if not name:

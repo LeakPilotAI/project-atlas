@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 import math
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Lock
@@ -23,11 +24,15 @@ from app.adapters.hyperliquid_request_gate import (
 from app.core.durable_io import sync_parent, write_flushed
 
 SCHEMA = "ATLAS_HYPERLIQUID_PUBLIC_MARKET_DATA_V1"
-SYMBOLS = ("BTC", "ETH", "SOL")
+CORE_SYMBOLS = ("BTC", "ETH", "SOL")
+SYMBOLS = CORE_SYMBOLS
+MAX_ELIGIBLE_SYMBOLS = 10_000
+_SYMBOL_PATTERN = re.compile(r"[A-Za-z0-9._:-]{1,32}\Z")
 DAILY_CANDLE_LOOKBACK = 365
 MAX_RECORD_BYTES = 2 * 1024 * 1024
 MAX_STORE_BYTES = 16 * 1024 * 1024
 REQUEST_BUDGET = 12
+MAX_SYMBOLS_PER_REFRESH = REQUEST_BUDGET - 2
 MANUAL_REFRESH_COOLDOWN_SEC = 30
 RECENT_RETRIEVAL_MAX_AGE_SEC = 120
 _STORE_LOCK = Lock()
@@ -35,6 +40,64 @@ _STORE_LOCK = Lock()
 
 class HyperliquidPublicDataError(ValueError):
     pass
+
+
+def _validate_symbol(value: Any) -> str:
+    if type(value) is not str or _SYMBOL_PATTERN.fullmatch(value) is None:
+        raise HyperliquidPublicDataError("Invalid Hyperliquid perpetual symbol")
+    return value
+
+
+def _validate_selected_symbols(value: Any) -> tuple[str, ...]:
+    if type(value) not in (tuple, list):
+        raise HyperliquidPublicDataError("Invalid selected Hyperliquid perpetual symbols")
+    symbols = tuple(_validate_symbol(symbol) for symbol in value)
+    if (
+        not len(CORE_SYMBOLS) <= len(symbols) <= MAX_SYMBOLS_PER_REFRESH
+        or symbols[:len(CORE_SYMBOLS)] != CORE_SYMBOLS
+        or len(set(symbols)) != len(symbols)
+    ):
+        raise HyperliquidPublicDataError("Invalid selected Hyperliquid perpetual universe")
+    return symbols
+
+
+def select_perp_symbols(
+    tickers: list[Ticker],
+    *,
+    limit: int = MAX_SYMBOLS_PER_REFRESH,
+) -> tuple[str, ...]:
+    """Keep the core markets and select additional live perps by notional volume."""
+    if (
+        type(tickers) is not list
+        or len(tickers) > MAX_ELIGIBLE_SYMBOLS
+        or type(limit) is not int
+        or not len(CORE_SYMBOLS) <= limit <= MAX_SYMBOLS_PER_REFRESH
+    ):
+        raise HyperliquidPublicDataError("Invalid bounded Hyperliquid universe selection")
+    by_symbol: dict[str, Ticker] = {}
+    for ticker in tickers:
+        if not isinstance(ticker, Ticker):
+            raise HyperliquidPublicDataError("Malformed Hyperliquid perpetual ticker")
+        symbol = _validate_symbol(ticker.symbol)
+        if symbol in by_symbol:
+            raise HyperliquidPublicDataError("Duplicate Hyperliquid market symbol")
+        _finite_positive(ticker.price, f"{symbol} mark")
+        by_symbol[symbol] = ticker
+
+    ranked = []
+    for symbol, ticker in by_symbol.items():
+        if symbol in CORE_SYMBOLS:
+            continue
+        volume = ticker.volume_24h
+        if (
+            type(volume) not in (int, float)
+            or not math.isfinite(volume)
+            or volume < 0
+        ):
+            continue
+        ranked.append((-float(volume), symbol))
+    ranked.sort()
+    return (*CORE_SYMBOLS, *(symbol for _, symbol in ranked[:limit - len(CORE_SYMBOLS)]))
 
 
 def initialize_public_data_budget(path: Path) -> int:
@@ -138,6 +201,7 @@ def build_public_record(
     request_started_at: datetime,
     retrieved_at: datetime,
     request_budget_remaining: int,
+    symbols: tuple[str, ...] | list[str] | None = None,
 ) -> dict[str, Any]:
     started = _aware(request_started_at, "request start")
     retrieved = _aware(retrieved_at, "retrieval")
@@ -150,12 +214,28 @@ def build_public_record(
 
     if type(tickers) is not list or type(candles_by_symbol) is not dict:
         raise HyperliquidPublicDataError("Invalid Hyperliquid public observation")
-    by_symbol = {ticker.symbol: ticker for ticker in tickers}
-    if len(by_symbol) != len(tickers):
-        raise HyperliquidPublicDataError("Duplicate Hyperliquid market symbol")
+    if len(tickers) > MAX_ELIGIBLE_SYMBOLS:
+        raise HyperliquidPublicDataError("Hyperliquid perpetual universe exceeds its bound")
+    selected_symbols = _validate_selected_symbols(
+        select_perp_symbols(tickers) if symbols is None else symbols
+    )
+    by_symbol: dict[str, Ticker] = {}
+    for ticker in tickers:
+        if not isinstance(ticker, Ticker):
+            raise HyperliquidPublicDataError("Malformed Hyperliquid perpetual ticker")
+        symbol = _validate_symbol(ticker.symbol)
+        if symbol in by_symbol:
+            raise HyperliquidPublicDataError("Duplicate Hyperliquid market symbol")
+        _finite_positive(ticker.price, f"{symbol} mark")
+        by_symbol[symbol] = ticker
+    eligible_symbols = sorted(by_symbol)
+    if not set(selected_symbols).difference(CORE_SYMBOLS).issubset(by_symbol):
+        raise HyperliquidPublicDataError("Selected market is absent from the live perpetual universe")
+    if set(candles_by_symbol).difference(selected_symbols):
+        raise HyperliquidPublicDataError("Unexpected Hyperliquid candle symbols")
     current_marks: dict[str, dict[str, Any]] = {}
     errors = []
-    for symbol in SYMBOLS:
+    for symbol in selected_symbols:
         ticker = by_symbol.get(symbol)
         if ticker is None:
             errors.append(f"MISSING_MARK_{symbol}")
@@ -182,7 +262,7 @@ def build_public_record(
         }
 
     daily_bars = {}
-    for symbol in SYMBOLS:
+    for symbol in selected_symbols:
         raw = candles_by_symbol.get(symbol)
         if type(raw) is not list or not raw:
             errors.append(f"DAILY_CANDLES_UNAVAILABLE_{symbol}")
@@ -198,9 +278,15 @@ def build_public_record(
         "schema": SCHEMA,
         "provider": "hyperliquid",
         "provider_endpoint_kind": "PUBLIC_INFO_ONLY",
-        "symbols": list(SYMBOLS),
+        "symbols": list(selected_symbols),
+        "eligible_perp_symbols": eligible_symbols,
+        "omitted_perp_symbols": sorted(set(eligible_symbols).difference(selected_symbols)),
         "data_provenance": "PUBLIC_PROVIDER_DATA",
-        "refresh_status": "COMPLETE" if not errors else "PARTIAL",
+        "refresh_status": (
+            "COMPLETE"
+            if not errors and set(eligible_symbols).issubset(selected_symbols)
+            else "PARTIAL"
+        ),
         "provider_errors": errors,
         "request_started_at": started.isoformat(),
         "retrieved_at": retrieved.isoformat(),
@@ -237,13 +323,22 @@ async def fetch_public_record(
     try:
         tickers = await adapter.get_all_tickers()
         await asyncio.sleep(pause_seconds)
-        for index, symbol in enumerate(SYMBOLS):
+        candle_budget = request_budget.remaining()
+        if type(candle_budget) is not int or candle_budget < len(CORE_SYMBOLS):
+            raise HyperliquidPublicDataError(
+                "Insufficient request budget to refresh core perpetual markets"
+            )
+        symbols = select_perp_symbols(
+            tickers,
+            limit=min(MAX_SYMBOLS_PER_REFRESH, candle_budget),
+        )
+        for index, symbol in enumerate(symbols):
             candles[symbol] = await adapter.get_candles(
                 symbol,
                 interval="1d",
                 lookback=DAILY_CANDLE_LOOKBACK,
             )
-            if index < len(SYMBOLS) - 1:
+            if index < len(symbols) - 1:
                 await asyncio.sleep(pause_seconds)
         return build_public_record(
             tickers,
@@ -251,6 +346,7 @@ async def fetch_public_record(
             request_started_at=started,
             retrieved_at=datetime.now(UTC),
             request_budget_remaining=request_budget.remaining(),
+            symbols=symbols,
         )
     except httpx.TimeoutException as exc:
         raise HyperliquidPublicDataError("HYPERLIQUID_PUBLIC_HTTP_TIMEOUT") from exc
@@ -283,11 +379,14 @@ def _reject_constant(_value: str) -> None:
 def _validate_record(record: Any) -> dict[str, Any]:
     if type(record) is not dict or record.get("schema") != SCHEMA:
         raise HyperliquidPublicDataError("Unsupported Hyperliquid public-data record")
+    try:
+        symbols = _validate_selected_symbols(record.get("symbols"))
+    except HyperliquidPublicDataError as exc:
+        raise HyperliquidPublicDataError("Invalid Hyperliquid selected market universe") from exc
     if (
         record.get("provider") != "hyperliquid"
         or record.get("provider_endpoint_kind") != "PUBLIC_INFO_ONLY"
         or record.get("data_provenance") != "PUBLIC_PROVIDER_DATA"
-        or record.get("symbols") != list(SYMBOLS)
         or record.get("refresh_status") not in {"COMPLETE", "PARTIAL"}
         or record.get("daily_bar_interval") != "1d"
         or record.get("websocket_started") is not False
@@ -312,10 +411,32 @@ def _validate_record(record: Any) -> dict[str, Any]:
         raise HyperliquidPublicDataError("Invalid Hyperliquid provider errors")
     if type(record.get("current_marks")) is not dict or type(record.get("daily_bars")) is not dict:
         raise HyperliquidPublicDataError("Invalid Hyperliquid market-data maps")
-    if not set(record["current_marks"]).issubset(SYMBOLS):
+    if not set(record["current_marks"]).issubset(symbols):
         raise HyperliquidPublicDataError("Invalid Hyperliquid current-mark symbols")
-    if set(record["daily_bars"]) != set(SYMBOLS):
+    if set(record["daily_bars"]) != set(symbols):
         raise HyperliquidPublicDataError("Incomplete Hyperliquid daily-bar map")
+    has_coverage = (
+        "eligible_perp_symbols" in record or "omitted_perp_symbols" in record
+    )
+    eligible_symbols = record.get("eligible_perp_symbols")
+    omitted_symbols = record.get("omitted_perp_symbols")
+    if has_coverage:
+        if (
+            type(eligible_symbols) is not list
+            or type(omitted_symbols) is not list
+            or len(eligible_symbols) > MAX_ELIGIBLE_SYMBOLS
+            or len(omitted_symbols) > MAX_ELIGIBLE_SYMBOLS
+            or any(type(value) is not str for value in eligible_symbols + omitted_symbols)
+            or any(_SYMBOL_PATTERN.fullmatch(value) is None
+                   for value in eligible_symbols + omitted_symbols)
+            or eligible_symbols != sorted(set(eligible_symbols))
+            or omitted_symbols != sorted(set(omitted_symbols))
+            or set(omitted_symbols) != set(eligible_symbols).difference(symbols)
+        ):
+            raise HyperliquidPublicDataError("Invalid Hyperliquid universe coverage")
+    else:
+        eligible_symbols = list(symbols)
+        omitted_symbols = []
     for symbol, rows in record["daily_bars"].items():
         if type(rows) is not list or len(rows) > DAILY_CANDLE_LOOKBACK:
             raise HyperliquidPublicDataError("Invalid Hyperliquid daily-bar count")
@@ -362,7 +483,7 @@ def _validate_record(record: Any) -> dict[str, Any]:
                 raise HyperliquidPublicDataError(f"Invalid Hyperliquid {symbol} candle statistics")
             previous = stamp
     for symbol, mark in record["current_marks"].items():
-        if symbol not in SYMBOLS or type(mark) is not dict:
+        if symbol not in symbols or type(mark) is not dict:
             raise HyperliquidPublicDataError("Invalid Hyperliquid mark symbol")
         _finite_positive(mark.get("price"), f"{symbol} stored mark")
         mark_time = _timestamp(mark.get("request_timestamp"), f"{symbol} stored mark timestamp")
@@ -379,8 +500,9 @@ def _validate_record(record: Any) -> dict[str, Any]:
         ):
             raise HyperliquidPublicDataError(f"Invalid Hyperliquid {symbol} mark provenance")
     complete = (
-        set(record["current_marks"]) == set(SYMBOLS)
-        and all(record["daily_bars"][symbol] for symbol in SYMBOLS)
+        set(record["current_marks"]) == set(symbols)
+        and all(record["daily_bars"][symbol] for symbol in symbols)
+        and not omitted_symbols
         and not errors
     )
     if (record["refresh_status"] == "COMPLETE") != complete:

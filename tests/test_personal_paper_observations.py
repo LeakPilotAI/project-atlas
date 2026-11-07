@@ -33,7 +33,13 @@ from app.services.personal_public_market_data import (
 from fastapi.testclient import TestClient
 
 
-def _write_observations(tmp_path, now: datetime, *, include_open_candle: bool = False):
+def _write_observations(
+    tmp_path,
+    now: datetime,
+    *,
+    include_open_candle: bool = False,
+    hyperliquid_symbols=("BTC", "ETH", "SOL"),
+):
     market_path = tmp_path / "market.jsonl"
     hyperliquid_path = tmp_path / "hyperliquid.jsonl"
     daily = pd.DataFrame(
@@ -63,10 +69,10 @@ def _write_observations(tmp_path, now: datetime, *, include_open_candle: bool = 
     started = now - timedelta(seconds=2)
     tickers = [
         Ticker(symbol=symbol, price=100.0 + index, timestamp=started.isoformat())
-        for index, symbol in enumerate(("BTC", "ETH", "SOL"))
+        for index, symbol in enumerate(hyperliquid_symbols)
     ]
     bars = {}
-    for symbol in ("BTC", "ETH", "SOL"):
+    for symbol in hyperliquid_symbols:
         rows = []
         for offset in range(30, 0, -1):
             stamp = int((now - timedelta(days=offset)).timestamp() * 1000)
@@ -153,6 +159,29 @@ def test_real_public_observations_are_evaluated_but_not_filled(tmp_path):
     assert all(row["closed_candle_count"] == 30 for row in perp)
     assert all(row["price_kind"] == "HISTORICAL_CLOSED_DAILY_CANDLE_CLOSE" for row in perp)
     assert all(row["paper_execution_eligible"] is False for row in perp)
+
+
+def test_additional_perpetual_market_is_discovered_without_execution(tmp_path):
+    now = datetime.now(UTC)
+    market_path, hyperliquid_path = _write_observations(
+        tmp_path,
+        now,
+        hyperliquid_symbols=("BTC", "ETH", "SOL", "DOGE"),
+    )
+    observations, _ = evaluate_public_observations(
+        market_data_path=market_path,
+        hyperliquid_data_path=hyperliquid_path,
+        research_rows=_research(now),
+        now=now,
+    )
+    perp_rows = [
+        row for row in observations
+        if row["strategy"] == "HYPERLIQUID_PERP_DISCOVERY"
+    ]
+
+    assert {row["symbol"] for row in perp_rows} == {"BTC", "ETH", "SOL", "DOGE"}
+    assert all(row["paper_execution_eligible"] is False for row in perp_rows)
+    assert all(row["broker_order_created"] is False for row in perp_rows)
 
 
 def test_unclosed_hyperliquid_candles_and_stale_snapshots_cannot_drive_entries(tmp_path):

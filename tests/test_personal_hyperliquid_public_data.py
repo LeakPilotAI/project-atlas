@@ -6,8 +6,6 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.adapters import hyperliquid_gate_registry
 from app.adapters.hyperliquid import HyperliquidAdapter, Ticker
 from app.adapters.hyperliquid_request_gate import (
@@ -27,7 +25,9 @@ from app.services.personal_hyperliquid_public_data import (
     public_data_read_model,
     read_public_data,
     require_manual_refresh_spacing,
+    select_perp_symbols,
 )
+from fastapi.testclient import TestClient
 
 
 def _observations(now: datetime | None = None):
@@ -158,6 +158,53 @@ def test_hyperliquid_record_labels_public_marks_and_non_authority():
     assert record["operational_acceptance"] is False
 
 
+def test_perpetual_discovery_keeps_core_and_adds_top_liquid_markets_with_coverage(tmp_path):
+    started, retrieved, tickers, core_candles = _observations()
+    extra_symbols = [f"ASSET{index}" for index in range(1, 10)]
+    extras = [
+        Ticker(
+            symbol=symbol,
+            price=200.0 + index,
+            volume_24h=float(100 - index),
+            timestamp=started.isoformat(),
+        )
+        for index, symbol in enumerate(extra_symbols, 1)
+    ]
+    universe = tickers + extras
+    selected = select_perp_symbols(universe)
+
+    assert len(selected) == 10
+    assert selected[:3] == ("BTC", "ETH", "SOL")
+    assert selected[3:] == tuple(extra_symbols[:7])
+
+    candles = {symbol: core_candles["BTC"] for symbol in selected}
+    record = build_public_record(
+        universe,
+        candles,
+        request_started_at=started,
+        retrieved_at=retrieved,
+        request_budget_remaining=2,
+    )
+    assert record["symbols"] == list(selected)
+    assert record["eligible_perp_symbols"] == sorted(["BTC", "ETH", "SOL", *extra_symbols])
+    assert record["omitted_perp_symbols"] == extra_symbols[7:]
+    assert record["refresh_status"] == "PARTIAL"
+
+    path = tmp_path / "hyperliquid.jsonl"
+    append_public_data(path, record)
+    assert read_public_data(path) == [record]
+
+
+def test_perpetual_discovery_rejects_unbounded_universe():
+    tickers = [
+        Ticker(symbol=f"MARKET{index}", price=1.0)
+        for index in range(personal_hyperliquid_public_data.MAX_ELIGIBLE_SYMBOLS + 1)
+    ]
+
+    with pytest.raises(HyperliquidPublicDataError, match="bounded"):
+        select_perp_symbols(tickers)
+
+
 def test_record_builder_rejects_naive_times_future_candles_and_contradictions():
     started, retrieved, tickers, candles = _observations()
     with pytest.raises(HyperliquidPublicDataError, match="Timezone-aware"):
@@ -225,11 +272,12 @@ def test_fetch_uses_only_three_bounded_daily_requests_and_closes_http_client(
         stamp = datetime.now(UTC).isoformat()
         return [
             Ticker(symbol=symbol, price=100.0 + index, timestamp=stamp)
-            for index, symbol in enumerate(("BTC", "ETH", "SOL"))
+            for index, symbol in enumerate(("BTC", "ETH", "SOL", "DOGE"))
         ]
 
     adapter.connect_http_only = AsyncMock()
     adapter.get_all_tickers = AsyncMock(side_effect=current_tickers)
+    candles["DOGE"] = candles["BTC"]
     adapter.get_candles = AsyncMock(side_effect=lambda symbol, **kwargs: candles[symbol])
     adapter.close = AsyncMock()
 
@@ -238,7 +286,8 @@ def test_fetch_uses_only_three_bounded_daily_requests_and_closes_http_client(
     assert record["refresh_status"] == "COMPLETE"
     adapter.connect_http_only.assert_awaited_once()
     adapter.get_all_tickers.assert_awaited_once()
-    assert adapter.get_candles.await_count == 3
+    assert adapter.get_candles.await_count == 4
+    assert record["symbols"] == ["BTC", "ETH", "SOL", "DOGE"]
     assert all(call.kwargs == {"interval": "1d", "lookback": DAILY_CANDLE_LOOKBACK}
                for call in adapter.get_candles.await_args_list)
     adapter.close.assert_awaited_once()

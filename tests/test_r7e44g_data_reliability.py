@@ -117,6 +117,32 @@ def test_conflicting_rest_observations_same_timestamp_fail_closed(adapter_clock)
         asyncio.run(adapter.get_all_tickers())
 
 
+def test_delisted_perpetuals_are_excluded_from_discovery_universes(adapter_clock):
+    adapter = hl.HyperliquidAdapter()
+    universe = [
+        {"name": "BTC"},
+        {"name": "DOGE"},
+        {"name": "OLD", "isDelisted": True},
+    ]
+    contexts = [
+        {"markPx": "100", "dayNtlVlm": "10"},
+        {"markPx": "2", "dayNtlVlm": "20"},
+        {"markPx": "3", "dayNtlVlm": "30"},
+    ]
+
+    async def provider(body):
+        if body["type"] == "meta":
+            return {"universe": universe}
+        return [{"universe": universe}, contexts]
+
+    adapter._post = provider
+    assert asyncio.run(adapter.refresh_universe()) == ["BTC", "DOGE"]
+    assert {ticker.symbol for ticker in asyncio.run(adapter.get_all_tickers())} == {
+        "BTC",
+        "DOGE",
+    }
+
+
 @pytest.mark.asyncio
 async def test_concurrent_older_response_cannot_supersede_newer(adapter_clock):
     adapter = hl.HyperliquidAdapter()
