@@ -336,7 +336,9 @@ $stopButton.Add_Click({
                 }
                 Invoke-AtlasPaperStopWithHandoff $AcceptedPaperStopHandoff $AcceptedPaperSession
         } else {
-            Invoke-AtlasPaperStop $AcceptedPaperSession
+            # Normal Stop must never display an incomplete drain as a
+            # successful shutdown, even on the legacy accepted-session path.
+            Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished
         }
         $diagnostics.Text = ($result | ConvertTo-Json -Depth 12)
         Set-StatusMessage "$($result.phase): $($result.outcome.status) / $($result.outcome.position_state) $($result.outcome.reason)" ([System.Drawing.Color]::DarkSlateGray)

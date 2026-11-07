@@ -55,3 +55,11 @@ def test_form_closing_never_releases_financial_session_on_failed_stop():
     assert section.index("$script:KeepAtlasRunning = $false") < section.index("Invoke-AtlasPaperStopWithHandoff")
     assert section.index("Close-AtlasSelectedPaperDashboard") < section.index("} catch {")
     assert "$eventArgs.Cancel = $true" in section
+
+
+def test_normal_stop_requires_verified_finished_financial_shutdown():
+    from pathlib import Path
+    script = (Path(__file__).resolve().parents[1] / 'scripts/windows/Atlas-Background-Controls.ps1').read_text(encoding='utf-8-sig')
+    normal_stop = script.split('$stopButton.Add_Click({', 1)[1].split('$emergency', 1)[0]
+    assert 'Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished' in normal_stop
+    assert 'Invoke-AtlasPaperStopWithHandoff $AcceptedPaperStopHandoff $AcceptedPaperSession' in normal_stop
