@@ -191,3 +191,29 @@ def test_qualified_overflow_reserves_unseen_and_repeat(tmp_path, monkeypatch):
     assert result['entry_gate_qualified_new_listings_seen'] == 4
     assert result['records_written'] == 3
     assert all(json.loads(line)['entry_gate_passed'] for line in path.read_text().splitlines()[2:])
+
+def test_qualified_exact_capacity_still_includes_unseen(tmp_path, monkeypatch):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    items = []
+    for name in ('OLD-A', 'OLD-B', 'NEW-C'):
+        item = market(now)
+        item['ticker'] = name
+        items.append(item)
+    async def markets(**kwargs):
+        return {'markets': items}
+    calls = []
+    async def book(ticker, **kwargs):
+        calls.append(ticker)
+        return {'orderbook': {'yes': {'bids': [{'price_dollars': '0.40', 'quantity_contracts': '5'}],
+                                          'asks': [{'price_dollars': '0.42', 'quantity_contracts': '5'}]},
+                              'no': {'bids': [{'price_dollars': '0.58', 'quantity_contracts': '5'}],
+                                     'asks': [{'price_dollars': '0.60', 'quantity_contracts': '5'}]}}}
+    monkeypatch.setattr(observer.kalshi_public, 'get_markets', markets)
+    monkeypatch.setattr(observer.kalshi_public, 'get_orderbook', book)
+    path = tmp_path / 'quotes.jsonl'
+    path.write_text(''.join(json.dumps({'schema': 'kalshi-forward-quote-v1', 'ticker': ticker}) + '\n'
+                            for ticker in ('OLD-A', 'OLD-B')), encoding='utf-8')
+    result = asyncio.run(observer.collect(path=path, now=now, limit=3))
+    assert calls == ['OLD-A', 'NEW-C', 'OLD-B']
+    assert result['entry_gate_qualified_new_listings_seen'] == 3
+    assert result['records_written'] == 3

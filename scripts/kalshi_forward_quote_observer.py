@@ -96,7 +96,7 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
     # longitudinal measurement. Never downgrade qualified entry gates.
     qualified_repeated = [pair for pair in qualified if pair[0]['ticker'].upper() in observed_tickers]
     qualified_new = [pair for pair in qualified if pair[0]['ticker'].upper() not in observed_tickers]
-    if len(qualified) > limit and qualified_new:
+    if len(qualified) >= limit and qualified_new:
         repeat_slots = min(len(qualified_repeated), 1 if limit > 1 else 0)
         selected = qualified_repeated[:repeat_slots] + qualified_new[:limit - repeat_slots]
         if len(selected) < limit:
