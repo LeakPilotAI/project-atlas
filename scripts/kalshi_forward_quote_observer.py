@@ -24,8 +24,31 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
     if observed.tzinfo is None or observed.utcoffset() is None:
         raise ValueError('observation clock must be timezone aware')
     scanner = PredictionPaperAutomation()
-    payload = await asyncio.wait_for(kalshi_public.get_markets(status='open', limit=40), timeout=12)
-    candidates = [m for m in payload.get('markets', []) if not scanner._prefilter_reasons(m, observed)]
+    # Bounded pagination avoids depending on the provider's first page alone.
+    # Deduplicate tickers before expensive orderbook reads; no account access.
+    candidates = []
+    seen = set()
+    cursor = None
+    pages_scanned = 0
+    for _ in range(5):
+        payload = await asyncio.wait_for(
+            kalshi_public.get_markets(status='open', limit=100, cursor=cursor),
+            timeout=12,
+        )
+        pages_scanned += 1
+        for market in payload.get('markets', []):
+            if not isinstance(market, dict):
+                continue
+            ticker = str(market.get('ticker') or '').strip().upper()
+            if not ticker or ticker in seen:
+                continue
+            seen.add(ticker)
+            if not scanner._prefilter_reasons(market, observed):
+                candidates.append(market)
+        next_cursor = str(payload.get('cursor') or '').strip()
+        if len(candidates) >= limit or not next_cursor or next_cursor == cursor:
+            break
+        cursor = next_cursor
     records = []
     errors = []
     for market in candidates[:limit]:
@@ -55,7 +78,8 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
                 output.write(json.dumps(record, sort_keys=True) + '\n')
             output.flush()
     return {'status': 'OBSERVATIONS_RECORDED' if records else 'NO_ELIGIBLE_NEW_LISTINGS',
-            'eligible_new_listings_seen': len(candidates), 'records_written': len(records),
+            'eligible_new_listings_seen': len(candidates), 'pages_scanned': pages_scanned,
+            'unique_markets_screened': len(seen), 'records_written': len(records),
             'provider_errors': errors, 'orders_placed': 0, 'paper_trades_opened': 0,
             'unattended_paper_authorized': False}
 

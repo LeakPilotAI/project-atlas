@@ -46,6 +46,30 @@ def test_writes_only_new_listing_read_only_quote(tmp_path, monkeypatch):
     assert result['unattended_paper_authorized'] is False
 
 
+def test_paginated_discovery_finds_fresh_listing_after_old_first_page(tmp_path, monkeypatch):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    cursors = []
+    async def markets(**kwargs):
+        cursors.append(kwargs.get('cursor'))
+        if kwargs.get('cursor') is None:
+            old = market(now, 72)
+            old['ticker'] = 'KXTEST-OLD'
+            return {'markets': [old], 'cursor': 'next'}
+        return {'markets': [market(now, 1)], 'cursor': ''}
+    async def book(ticker, **kwargs):
+        return {'orderbook': {'yes': {'bids': [{'price_dollars': '0.40', 'quantity_contracts': '5'}],
+                                          'asks': [{'price_dollars': '0.42', 'quantity_contracts': '5'}]},
+                              'no': {'bids': [{'price_dollars': '0.58', 'quantity_contracts': '5'}],
+                                     'asks': [{'price_dollars': '0.60', 'quantity_contracts': '5'}]}}}
+    monkeypatch.setattr(observer.kalshi_public, 'get_markets', markets)
+    monkeypatch.setattr(observer.kalshi_public, 'get_orderbook', book)
+    result = asyncio.run(observer.collect(path=tmp_path / 'quotes.jsonl', now=now))
+    assert cursors == [None, 'next']
+    assert result['pages_scanned'] == 2
+    assert result['records_written'] == 1
+    assert result['unique_markets_screened'] == 2
+
+
 def test_no_eligible_market_writes_nothing(tmp_path, monkeypatch):
     now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
     async def markets(**kwargs):
