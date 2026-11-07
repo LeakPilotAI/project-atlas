@@ -150,7 +150,11 @@ def test_native_activation_readback_is_separate_from_financial_authority(monkeyp
         def __init__(self, **kwargs):
             assert kwargs['binding']['sha256'] == 'a'*64
         def read(self):
-            return {'schema': 'ATLAS_PERSONAL_ACTIVATION_V1', 'origin': 'LOCAL_OPERATOR'}
+            return {'schema': 'ATLAS_PERSONAL_ACTIVATION_V1', 'profile': 'PERSONAL_PAPER_ONLY_V1',
+                    'origin': 'LOCAL_OPERATOR', 'activation_id': 'native-1', 'operator_id': 'sid',
+                    'policy_digest': 'p'*64, 'release_digest': 'r'*64,
+                    'accounts': {'QUALITY_DIPS': 'q'*64}, 'issued_at': 100,
+                    'expires_at': 200, 'actions': ['READ_ONLY']}
     monkeypatch.setattr(native_mod, 'NativePersonalActivationReader', Reader)
     monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
     monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
@@ -181,3 +185,20 @@ def test_native_activation_bad_readback_fails_closed(monkeypatch, capsys):
     report = json.loads(capsys.readouterr().out)
     checks = {row['check']:row['status'] for row in report['checks']}
     assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
+
+
+def test_native_activation_schema_only_does_not_count_as_verified(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_paper_activation as native_mod
+    class Reader:
+        def __init__(self, **kwargs): pass
+        def read(self):
+            return {'schema': 'ATLAS_PERSONAL_ACTIVATION_V1', 'origin': 'LOCAL_OPERATOR'}
+    monkeypatch.setattr(native_mod, 'NativePersonalActivationReader', Reader)
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
+        r'D:\AtlasCustody\PersonalPaper\approved', '--activation-native-root',
+        '1','2','3','--activation-binding-id','4','5','6',
+        '--activation-binding-sha256','a'*64])
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    assert next(x for x in report['checks'] if x['check'] == 'ACTIVATION_NATIVE_VERIFIED')['status'] == 'BLOCKED'

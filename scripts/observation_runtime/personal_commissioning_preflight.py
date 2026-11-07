@@ -161,9 +161,25 @@ def main():
                 binding={"id": args.activation_binding_id,
                          "sha256": args.activation_binding_sha256})
             record = reader.read()  # Existing-only bound Windows read; no publication.
-            native_activation_verified = (record.get("schema") == "ATLAS_PERSONAL_ACTIVATION_V1"
-                                          and record.get("origin") == "LOCAL_OPERATOR")
-            activation_verification_reason = "Existing native-bound operator record read back"
+            # This verifies bound bytes only, not the separate operator SID,
+            # policy, expiry, release, account and technical lease requirements.
+            expected_fields = {"schema", "profile", "origin", "activation_id",
+                               "operator_id", "policy_digest", "release_digest",
+                               "accounts", "issued_at", "expires_at", "actions"}
+            native_activation_verified = (
+                type(record) is dict and set(record) == expected_fields
+                and record["schema"] == "ATLAS_PERSONAL_ACTIVATION_V1"
+                and record["profile"] == "PERSONAL_PAPER_ONLY_V1"
+                and record["origin"] == "LOCAL_OPERATOR"
+                and type(record["issued_at"]) is int
+                and type(record["expires_at"]) is int
+                and 0 < record["expires_at"] - record["issued_at"] <= 1800
+                and type(record["actions"]) is list
+                and "READ_ONLY" in record["actions"])
+            activation_verification_reason = (
+                "Native-bound record structure read back; operator, policy, expiry "
+                "and technical lease not independently accepted" if native_activation_verified
+                else "Native-bound record structure invalid")
         except (ValueError, OSError, KeyError, TypeError):
             activation_verification_reason = "Native-bound activation readback refused"
     results.append(check(
