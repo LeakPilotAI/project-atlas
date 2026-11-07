@@ -120,7 +120,7 @@ class UnifiedControlStopBridge:
                 complete, process_state = False, 'INCOMPLETE'
         self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED", "outcome": {
             "schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,
-            "status": "FLATTENED" if complete else "SHUTDOWN_INCOMPLETE",
+            "status": "FLATTENED" if complete and (self.owned_close is None or process_state == "VERIFIED_EXIT") else "SHUTDOWN_INCOMPLETE",
             "position_state": "FLAT" if financial_flat else "UNKNOWN" if self.runtime.uncertain else "POSITION_OPEN",
             "lanes": outcome["lanes"], "cash": None, "process_shutdown": process_state,
             "reason": "SEPARATE_ACKNOWLEDGED_LANE_OUTCOMES_REQUIRED"}}

@@ -410,3 +410,19 @@ def test_control_stop_bridge_does_not_claim_flat_or_exit_on_stop_failure(failure
     assert result['outcome']['reason'] == 'FINANCIAL_STOP_UNVERIFIED'
     assert result['outcome']['lanes'] == {}
     assert result['outcome']['cash'] is None
+def test_control_stop_does_not_report_full_flatten_when_owned_exit_unverified():
+    from types import SimpleNamespace
+    bridge = object.__new__(UnifiedControlStopBridge)
+    bridge.runtime = SimpleNamespace(
+        stop=lambda **_: {'state': 'STOPPED', 'lanes': {'QUALITY_DIPS': {'state': 'ACKNOWLEDGED_FLAT_AND_DRAINED'},
+                                                       'HYPERLIQUID': {'state': 'ACKNOWLEDGED_FLAT_AND_DRAINED'}}},
+        portfolio=SimpleNamespace(authority=None, ownership=None), uncertain=False, grant={})
+    bridge.owned_close = object()
+    bridge._close_binding = bridge.owned_close
+    bridge.verify_session = lambda: True
+    bridge.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'IDLE', 'outcome': None}
+    result = bridge.request_stop('SHUTDOWN_FLATTEN')
+    assert result['outcome']['status'] == 'SHUTDOWN_INCOMPLETE'
+    assert result['outcome']['position_state'] == 'FLAT'
+    assert result['outcome']['process_shutdown'] == 'INCOMPLETE'
+    assert result['outcome']['reason'] == 'SEPARATE_ACKNOWLEDGED_LANE_OUTCOMES_REQUIRED'
