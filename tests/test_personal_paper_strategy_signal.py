@@ -110,3 +110,51 @@ def test_published_research_matching_duplicate_board_copies_and_conflicts(monkey
     with pytest.raises(ValueError, match="OBSERVATION_MISMATCH"):
         inspect_published_quality_dips_research(publication=publication,
                                                 symbol="MSFT", research=row)
+
+
+def test_published_iex_candidate_refuses_forged_publication_and_provider():
+    from app.investment.alpaca_iex import IEXFeed
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import evaluate_published_iex_v3_candidate
+    feed = IEXFeed(["MSFT"], clock=lambda: NOW.timestamp())
+    provider = PersonalPaperIEXProvider(feed)
+    with pytest.raises(ValueError, match="QD_PUBLISHED_IEX_BOUND_PORTS_REQUIRED"):
+        evaluate_published_iex_v3_candidate(publication=object(), provider=provider,
+                                            symbol="MSFT", now=NOW)
+    with pytest.raises(ValueError, match="QD_PUBLISHED_IEX_BOUND_PORTS_REQUIRED"):
+        evaluate_published_iex_v3_candidate(publication=None, provider=object(),
+                                            symbol="MSFT", now=NOW)
+
+
+def test_published_iex_candidate_recomputes_board_inputs_without_fill_authority(monkeypatch):
+    """Synthetic adapter ports: this does not certify actual source or feed."""
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import evaluate_published_iex_v3_candidate
+    pub = object.__new__(QualityDipsSourcePublication)
+    provider = object.__new__(PersonalPaperIEXProvider)
+    row = {"symbol": "MSFT", "timestamp": NOW.isoformat(), "blockers": [],
+           "missing_critical": [], "quality_dips_v2": {
+               "missing_v2_evidence": [], "decision_inputs": {
+                   "symbol": "MSFT", "normalization_value": research()["normalization_value"],
+                   "quality_score": 80, "fundamentals_score": 80,
+                   "valuation_score": 70, "drawdown_percentile": 80,
+                   "evidence_quality": "HIGH", "thesis_intact": True,
+                   "value_trap": False}}}
+    bundle = {"instrument": {"symbol": "MSFT"}, "board": [row],
+              "observation": {"symbol": "MSFT", "strategy_version": "QUALITY_DIPS_V3",
+                              "evidence_class": "FORWARD_COLLECTION"}}
+    packet = {"schema": "QD_SCANNER_PUBLICATION_V1", "source_id": "fixture",
+              "revision": 2, "bundles": [bundle, bundle]}
+    monkeypatch.setattr(QualityDipsSourcePublication, "read_current", lambda self: packet)
+    monkeypatch.setattr(PersonalPaperIEXProvider, "read_iex_quote", lambda self, symbol: quote())
+    candidate = evaluate_published_iex_v3_candidate(publication=pub, provider=provider,
+                                                    symbol="MSFT", now=NOW)
+    assert candidate["candidate"] is True
+    assert candidate["paper_fill_authorized"] is False
+    assert candidate["research_provenance_attested"] is False
+    packet["bundles"] = [bundle, {**bundle, "board": [{**row, "timestamp":
+                                                          (NOW - timedelta(days=2)).isoformat()}]}]
+    with pytest.raises(ValueError, match="MISSING_OR_CONFLICTING"):
+        evaluate_published_iex_v3_candidate(publication=pub, provider=provider,
+                                            symbol="MSFT", now=NOW)

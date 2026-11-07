@@ -125,3 +125,72 @@ def inspect_published_quality_dips_research(
             "revision": packet["revision"], "research_digest": digest(research),
             "publication_read_verified": True, "paper_fill_authorized": False,
             "live_order_authorized": False}
+
+
+def evaluate_published_iex_v3_candidate(
+    *, publication: Any, provider: Any, symbol: str, now: datetime,
+) -> dict[str, Any]:
+    """Read accepted QD board, recompute V3 using current IEX ask; no fills.
+
+    This deliberately does not start providers, lease an operator or mutate cash.
+    """
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_observations import _aware
+    from app.services.paper_financial_replay import body
+
+    if (type(publication) is not QualityDipsSourcePublication
+            or type(provider) is not PersonalPaperIEXProvider
+            or type(symbol) is not str or not symbol):
+        raise ValueError("QD_PUBLISHED_IEX_BOUND_PORTS_REQUIRED")
+    packet = publication.read_current()
+    if packet.get("schema") != "QD_SCANNER_PUBLICATION_V1" or type(packet.get("bundles")) is not list:
+        raise ValueError("QD_PUBLISHED_IEX_PACKET_INVALID")
+    rows = []
+    for bundle in packet["bundles"]:
+        if type(bundle) is not dict or type(bundle.get("instrument")) is not dict:
+            raise ValueError("QD_PUBLISHED_IEX_BUNDLE_INVALID")
+        if bundle["instrument"].get("symbol") != symbol:
+            continue
+        observation = bundle.get("observation")
+        if (type(observation) is not dict or observation.get("symbol") != symbol
+                or observation.get("strategy_version") != "QUALITY_DIPS_V3"
+                or observation.get("evidence_class") != "FORWARD_COLLECTION"):
+            raise ValueError("QD_PUBLISHED_IEX_OBSERVATION_INVALID")
+        board = bundle.get("board")
+        if type(board) is not list:
+            raise ValueError("QD_PUBLISHED_IEX_BOARD_INVALID")
+        rows.extend(row for row in board if type(row) is dict and row.get("symbol") == symbol)
+    if not rows or any(body(row) != body(rows[0]) for row in rows):
+        raise ValueError("QD_PUBLISHED_IEX_RESEARCH_MISSING_OR_CONFLICTING")
+    row = rows[0]
+    if row.get("blockers") or row.get("missing_critical"):
+        raise ValueError("QD_PUBLISHED_IEX_RESEARCH_BLOCKED")
+    projection = row.get("quality_dips_v2")
+    if type(projection) is not dict or projection.get("missing_v2_evidence"):
+        raise ValueError("QD_PUBLISHED_IEX_V3_EVIDENCE_INCOMPLETE")
+    inputs = projection.get("decision_inputs")
+    if type(inputs) is not dict or inputs.get("symbol") != symbol:
+        raise ValueError("QD_PUBLISHED_IEX_DECISION_INPUTS_REQUIRED")
+    stamp = _aware(row.get("timestamp"), "published research")
+    if not 0 <= (now - stamp).total_seconds() <= 600:
+        raise ValueError("QD_PUBLISHED_IEX_RESEARCH_NOT_CURRENT")
+    research = {"symbol": symbol, "source_verified": True,
+                "timestamp": stamp.isoformat(),
+                "normalization_value": inputs.get("normalization_value"),
+                "quality_score": inputs.get("quality_score"),
+                "fundamentals_score": inputs.get("fundamentals_score"),
+                "valuation_score": inputs.get("valuation_score"),
+                "drawdown_percentile": inputs.get("drawdown_percentile"),
+                "evidence_quality": inputs.get("evidence_quality"),
+                "thesis": "INTACT" if inputs.get("thesis_intact") is True else "BLOCKED",
+                "value_trap": inputs.get("value_trap") is True}
+    candidate = evaluate_iex_quality_dips_signal(
+        quote=provider.read_iex_quote(symbol), symbol=symbol, now=now, research=research)
+    if publication.read_current() != packet:
+        raise ValueError("QD_PUBLISHED_IEX_SOURCE_CHANGED")
+    return {**candidate, "published_source_id": packet["source_id"],
+            "published_revision": packet["revision"],
+            "publication_read_verified": True,
+            "research_provenance_attested": False,
+            "paper_fill_authorized": False, "live_order_authorized": False}
