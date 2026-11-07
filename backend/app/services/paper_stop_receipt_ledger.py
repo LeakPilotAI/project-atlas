@@ -65,16 +65,29 @@ class PaperStopReceiptLedger:
         return {"state": "PENDING", "mode": mode, "receipt": None}
 
     def inspect_session(self, session):
-        """Read-only cross-mode inspection; missing intent is not a stop claim."""
+        """One-snapshot read-only cross-mode inspection; never claims a stop."""
         if not isinstance(session, str) or not session or len(session) > 256:
             raise ValueError("STOP_INTENT_INVALID")
         with self._connect() as db:
-            row = db.execute("SELECT mode FROM stop_receipts WHERE session=?", (session,)).fetchone()
+            row = db.execute("SELECT mode,state,receipt FROM stop_receipts WHERE session=?", (session,)).fetchone()
         if row is None:
             return None
-        if row[0] not in ("SHUTDOWN_FLATTEN", "EMERGENCY"):
+        mode, state, serialized = row
+        if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY"):
             raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
-        return self.reserve_existing(session, row[0])
+        if state == "PENDING" and serialized is None:
+            return {"state": "PENDING", "mode": mode, "receipt": None}
+        if state != "FINISHED" or serialized is None:
+            raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+        try:
+            receipt = json.loads(serialized)
+        except (ValueError, TypeError) as exc:
+            raise StopReceiptConflict("STOP_LEDGER_CORRUPT") from exc
+        if (not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED"
+                or not isinstance(receipt.get("outcome"), dict)
+                or receipt["outcome"].get("mode") != mode):
+            raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+        return {"state": "FINISHED", "mode": mode, "receipt": receipt}
 
     def recover(self, session, mode):
         """Read-only restart inspection: pending is NEVER proof of flat positions."""

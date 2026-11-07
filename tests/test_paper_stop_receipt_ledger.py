@@ -137,3 +137,20 @@ def test_inspect_session_read_only_and_corrupt_mode_refused(tmp_path):
         db.execute("UPDATE stop_receipts SET mode='FORGED' WHERE session='emergency'")
     with pytest.raises(StopReceiptConflict, match="CORRUPT"):
         ledger.inspect_session("emergency")
+def test_inspect_session_does_not_call_second_reader(tmp_path, monkeypatch):
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    ledger.reserve_fresh("s", "EMERGENCY")
+    def forbidden(*args):
+        raise AssertionError("second query is forbidden")
+    monkeypatch.setattr(ledger, "reserve_existing", forbidden)
+    assert ledger.inspect_session("s") == {"state":"PENDING","mode":"EMERGENCY","receipt":None}
+
+def test_inspect_session_rejects_forged_finished_receipt(tmp_path):
+    import sqlite3
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    ledger.reserve_fresh("s", "EMERGENCY")
+    with sqlite3.connect(ledger.path) as db:
+        db.execute("UPDATE stop_receipts SET state='FINISHED',receipt=? WHERE session='s'",
+                   ('{"phase":"FINISHED","outcome":{"mode":"SHUTDOWN_FLATTEN","status":"FLATTENED"}}',))
+    with pytest.raises(StopReceiptConflict, match="CORRUPT"):
+        ledger.inspect_session("s")
