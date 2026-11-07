@@ -126,7 +126,9 @@ def test_scored_pipeline_success_and_failure_keep_cursor(tmp_path, monkeypatch):
     (root / "alpaca_equity_inventory.json").write_text(json.dumps(snapshot), encoding="utf-8")
     def scorer(*, symbol, data):
         return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
-                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH",
+                "evidence_quality": "LOW", "thesis": "UNKNOWN", "opportunity_score": 20,
+                "provider_receipt_count": 1}
     ok = mod.score_bounded_research_batch(limit=2, acquire=lambda symbol: {"symbol": symbol}, scorer=scorer)
     assert ok["scoring_complete"] and len(ok["results"]) == 2
     assert not ok["cursor_advanced"] and not (root / "alpaca_equity_cursor.json").exists()
@@ -156,7 +158,9 @@ def test_publish_scored_receipt_checks_inventory_and_never_advances_cursor(tmp_p
     (root / "alpaca_equity_inventory.json").write_text(json.dumps(inventory), encoding="utf-8")
     def scorer(*, symbol, data):
         return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
-                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH",
+                "evidence_quality": "LOW", "thesis": "UNKNOWN", "opportunity_score": 20,
+                "provider_receipt_count": 1}
     report = mod.score_bounded_research_batch(limit=1, acquire=lambda symbol: {}, scorer=scorer)
     digest = hashlib.sha256(json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
     receipt = root / ("alpaca-scored-" + digest + ".json")
@@ -182,7 +186,9 @@ def test_finalize_published_scored_receipt_advances_once(tmp_path, monkeypatch):
     (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
     def scorer(*, symbol, data):
         return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
-                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH",
+                "evidence_quality": "LOW", "thesis": "UNKNOWN", "opportunity_score": 20,
+                "provider_receipt_count": 1}
     report = mod.score_bounded_research_batch(limit=1, acquire=lambda symbol: {}, scorer=scorer)
     canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False)
     digest = hashlib.sha256(canonical.encode()).hexdigest()
@@ -206,7 +212,9 @@ def test_scored_cycle_end_to_end_and_failure(tmp_path, monkeypatch):
     (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
     def scorer(*, symbol, data):
         return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
-                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH",
+                "evidence_quality": "LOW", "thesis": "UNKNOWN", "opportunity_score": 20,
+                "provider_receipt_count": 1}
     def fail(symbol):
         raise OSError("down")
     blocked = mod.execute_scored_research_cycle(limit=2, acquire=fail, scorer=scorer)
@@ -244,7 +252,9 @@ def test_authenticated_entry_point_wires_opt_in_finalization(tmp_path, monkeypat
     monkeypatch.setattr(sys.modules["app.investment.free_research_providers"], "FreeResearchBundle", FakeBundle)
     def scorer(*, symbol, data):
         return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
-                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH",
+                "evidence_quality": "LOW", "thesis": "UNKNOWN", "opportunity_score": 20,
+                "provider_receipt_count": 1}
     monkeypatch.setattr(mod, "score_research_bundle", scorer)
     contact = "ProjectAtlas/1.0 operator@real-domain.org"
     preview = mod.score_authenticated_provider_batch(contact=contact, limit=1)
@@ -309,7 +319,9 @@ def test_resume_published_research_without_provider_reacquisition(tmp_path, monk
     assert mod.resume_published_research(limit=1)["status"] == "NO_UNAMBIGUOUS_RECEIPT"
     def scorer(*, symbol, data):
         return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
-                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH",
+                "evidence_quality": "LOW", "thesis": "UNKNOWN", "opportunity_score": 20,
+                "provider_receipt_count": 1}
     report = mod.score_bounded_research_batch(limit=1, acquire=lambda symbol: {}, scorer=scorer)
     canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False)
     digest = hashlib.sha256(canonical.encode()).hexdigest()
@@ -335,7 +347,9 @@ def test_resume_research_refuses_ambiguous_published_receipts(tmp_path, monkeypa
     for lane in ("FRONTIER_RESEARCH", "EXCLUDED"):
         def scorer(*, symbol, data):
             return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
-                    "live_order_authorized": False, "research_lane": lane}
+                    "live_order_authorized": False, "research_lane": lane,
+                "evidence_quality": "LOW", "thesis": "UNKNOWN", "opportunity_score": 20,
+                "provider_receipt_count": 1}
         report = mod.score_bounded_research_batch(limit=1, acquire=lambda symbol: {}, scorer=scorer)
         canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False)
         digest = hashlib.sha256(canonical.encode()).hexdigest()
@@ -359,4 +373,31 @@ def test_provider_only_completion_cannot_advance_research_cursor(tmp_path, monke
     provider_only = [{"symbol": "MSFT", "status": "RESEARCH_COMPLETE", "paper_eligible": False}]
     with pytest.raises(ValueError, match="VERIFIED_SCORE_REQUIRED"):
         mod.complete_research_batch(batch, provider_only, root / "alpaca_equity_cursor.json")
+    assert not (root / "alpaca_equity_cursor.json").exists()
+
+
+def test_scored_receipt_refuses_missing_evidence_even_with_valid_digest(tmp_path, monkeypatch):
+    import hashlib
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    inv = mod.inventory_snapshot([{"class": "us_equity", "symbol": "MSFT", "status": "active", "tradable": True}],
+                                 captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
+    batch = mod.next_research_batch(root / "alpaca_equity_inventory.json",
+                                    root / "alpaca_equity_cursor.json", limit=1)
+    report = {"schema": "ATLAS_BROAD_SCORED_RESEARCH_V1", "batch": batch,
+              "results": [{"symbol": "MSFT", "status": "RESEARCH_SCORED",
+                           "paper_eligible": False, "live_order_authorized": False}],
+              "scoring_complete": True, "cursor_advanced": False,
+              "paper_execution_authorized": False, "live_order_authorized": False}
+    canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    path = root / ("alpaca-scored-" + hashlib.sha256(canonical.encode()).hexdigest() + ".json")
+    with pytest.raises(ValueError, match="INCOMPLETE"):
+        mod.publish_scored_research_receipt(report, path)
+    path.write_text(canonical, encoding="utf-8")
+    with pytest.raises(ValueError, match="INCOMPLETE"):
+        mod.finalize_scored_research_receipt(path)
     assert not (root / "alpaca_equity_cursor.json").exists()

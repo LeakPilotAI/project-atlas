@@ -286,6 +286,22 @@ def score_bounded_research_batch(*, limit=1, acquire=None, scorer=None):
             "live_order_authorized": False}
 
 
+def _valid_scored_research_evidence(row):
+    """Require scoring metadata, not just a status string; no PAPER authority."""
+    from app.investment.enums import EvidenceQuality, ThesisState
+    return (type(row) is dict
+            and row.get("evidence_quality") in {v.value for v in EvidenceQuality}
+            and row.get("thesis") in {v.value for v in ThesisState}
+            and type(row.get("opportunity_score")) in (int, float)
+            and 0 <= row["opportunity_score"] <= 100
+            and type(row.get("provider_receipt_count")) is int
+            and row["provider_receipt_count"] >= 1
+            and type(row.get("research_lane")) is str
+            and row["research_lane"] in {"FRONTIER_RESEARCH", "EXCLUDED",
+                                          "ESTABLISHED_COMPOUNDER", "QUALITY_DIPS",
+                                          "LONG_TERM_INVESTMENT", "DAY_TRADE_RESEARCH"})
+
+
 def publish_scored_research_receipt(report, receipt_path):
     """Persist one bounded research result with catalog identity, no cursor IO.
 
@@ -311,6 +327,7 @@ def publish_scored_research_receipt(report, receipt_path):
                    or row.get("status") != "RESEARCH_SCORED"
                    or row.get("paper_eligible") is not False
                    or row.get("live_order_authorized") is not False
+                   or not _valid_scored_research_evidence(row)
                    for row, symbol in zip(results, batch["symbols"], strict=True))):
         raise ValueError("BROAD_RESEARCH_RECEIPT_INCOMPLETE")
     inventory = json.loads((root / "alpaca_equity_inventory.json").read_text(encoding="utf-8"))
@@ -357,6 +374,7 @@ def finalize_scored_research_receipt(receipt_path):
                    or row.get("status") != "RESEARCH_SCORED"
                    or row.get("paper_eligible") is not False
                    or row.get("live_order_authorized") is not False
+                   or not _valid_scored_research_evidence(row)
                    for row, symbol in zip(scored, batch["symbols"], strict=True))):
         raise ValueError("BROAD_RESEARCH_FINALIZE_INCOMPLETE")
     receipts = [{"symbol": row["symbol"], "status": "RESEARCH_COMPLETE",
