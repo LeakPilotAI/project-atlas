@@ -357,10 +357,12 @@ def test_unified_control_incomplete_or_emergency_never_claims_flat(emergency):
 
 
 @pytest.mark.asyncio
-async def test_continuous_strategy_automatically_dispatches_entry_then_exit():
+@pytest.mark.parametrize("market_lane", ["QUALITY_DIPS", "HYPERLIQUID"])
+async def test_continuous_strategy_automatically_dispatches_entry_then_exit(market_lane):
     """Disposable auto-planner to custody to writer; no manual dispatch calls."""
     r = runtime()
-    lane = r.lanes["HYPERLIQUID"]
+    lane = r.lanes[market_lane]
+    lane.closed = False  # explicitly open synthetic market for this lane
     decisions = iter((
         {"operation_id": "auto-entry", "kind": "ENTRY"},
         {"operation_id": "auto-exit", "kind": "EXIT"},
