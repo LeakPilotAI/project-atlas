@@ -1,4 +1,4 @@
-﻿# Fake session contracts only;no UI,host,provider,financial store or native child.
+# Fake session contracts only;no UI,host,provider,financial store or native child.
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot '../scripts/windows/Atlas-Control-Center.psm1') -Force
 $script:passed = 0
@@ -50,7 +50,7 @@ $flat | Add-Member ScriptMethod request_stop {
         schema='QD_CONTROL_STOP_V1'; phase='FINISHED'
         outcome=[pscustomobject]@{
             schema='QD_AUTO_SHUTDOWN_V1'; mode=$mode; status='FLATTENED'
-            position_state='FLAT'; process_shutdown='VERIFIED_EXIT'
+            position_state='FLAT'; process_shutdown='VERIFIED_EXIT'; lanes=@{}
         }
     }
 } -Force

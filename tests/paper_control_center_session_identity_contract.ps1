@@ -11,7 +11,7 @@ $s | Add-Member ScriptMethod request_stop {
     param($mode)
     $this.calls++
     if ($this.change) { $this.session_id='foreign' }
-    return [pscustomobject]@{schema='QD_CONTROL_STOP_V1';phase='FINISHED';outcome=[pscustomobject]@{schema='QD_AUTO_SHUTDOWN_V1';mode=$mode;status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT'}}
+    return [pscustomobject]@{schema='QD_CONTROL_STOP_V1';phase='FINISHED';outcome=[pscustomobject]@{schema='QD_AUTO_SHUTDOWN_V1';mode=$mode;status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT';lanes=@{}}}
 }
 $result=Invoke-AtlasPaperStop $s -RequireSessionIdentity -RequireFinished
 if ($result.outcome.status -cne 'FLATTENED' -or $s.calls -ne 1) { throw 'VALID_SESSION_REJECTED' }; $script:passed++
@@ -31,4 +31,11 @@ $s | Add-Member ScriptMethod request_stop { param($mode) $this.calls++; throw 'S
 $s | Add-Member ScriptMethod verify_session { return $true } -Force
 Refuses { Invoke-AtlasPaperStop $s -RequireSessionIdentity -RequireFinished } 'PAPER_STOP_DISPATCH_UNVERIFIED'
 if ($s.calls -ne 4) { throw 'AMBIGUOUS_DISPATCH_RETRIED' }; $script:passed++
+$s | Add-Member ScriptMethod request_stop {
+    param($mode)
+    $this.calls++
+    return [pscustomobject]@{schema='QD_CONTROL_STOP_V1';phase='FINISHED';outcome=[pscustomobject]@{schema='QD_AUTO_SHUTDOWN_V1';mode=$mode;status='FLATTENED';position_state='FLAT';process_shutdown='VERIFIED_EXIT'}}
+} -Force
+Refuses { Invoke-AtlasPaperStop $s -RequireSessionIdentity -RequireFinished } 'PAPER_STOP_NOT_VERIFIED_FLAT'
+if ($s.calls -ne 5) { throw 'MISSING_LANE_RECEIPT_RETRIED' }; $script:passed++
 Write-Output (@{passed=$script:passed;failed=0;financial_effects=0} | ConvertTo-Json -Compress)

@@ -72,7 +72,8 @@ function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emerge
     if ($RequireFinished -and ($result.outcome.schema -cne 'QD_AUTO_SHUTDOWN_V1' -or
         $result.outcome.status -cne 'FLATTENED' -or
         $result.outcome.position_state -cne 'FLAT' -or
-        $result.outcome.process_shutdown -cne 'VERIFIED_EXIT')) {
+        $result.outcome.process_shutdown -cne 'VERIFIED_EXIT' -or
+        $result.outcome.lanes -isnot [System.Collections.IDictionary])) {
         throw 'PAPER_STOP_NOT_VERIFIED_FLAT: retain Control Center ownership and reconcile shutdown.'
     }
     return $result
