@@ -217,3 +217,24 @@ async def test_socket_rotation_closes_original_before_reconnect_and_exact_ack():
     assert events == ["opened", "closed", "opened", "closed"]
     assert sent == ["auth", "subscribe", "auth", "subscribe"]
     assert result["subscribed"] and result["reconnects"] == 0
+
+
+def test_merge_two_reference_sources_deduplicates_and_excludes_ambiguous_symbols():
+    from app.investment.quality_dips_market_roster import merge_reference_directories
+    first = {"schema": "QD_REFERENCE_DIRECTORY_V1", "source": "nasdaqlisted.txt", "source_digest": "a" * 64,
+             "rows": [{"symbol": "MSFT"}, {"symbol": "DUP"}]}
+    second = {"schema": "QD_REFERENCE_DIRECTORY_V1", "source": "otherlisted.txt", "source_digest": "b" * 64,
+              "rows": [{"symbol": "SPY"}, {"symbol": "DUP"}]}
+    merged = merge_reference_directories([first, second])
+    assert [r["symbol"] for r in merged["rows"]] == ["MSFT", "SPY"]
+    assert merged["conflicted_symbols"] == ["DUP"]
+    assert merged["broker_eligibility_verified"] is False
+    assert merged["execution_authorized"] is False
+
+
+def test_merge_refuses_partial_or_untrusted_source_snapshots():
+    from app.investment.quality_dips_market_roster import merge_reference_directories
+    with pytest.raises(ValueError, match="TWO_SOURCE"):
+        merge_reference_directories([])
+    with pytest.raises(ValueError, match="TWO_SOURCE"):
+        merge_reference_directories([{"source": "nasdaqlisted.txt"}, {"source": "nasdaqlisted.txt"}])

@@ -101,6 +101,40 @@ def research_batch(snapshot, *, offset, budget):
             "next_offset": min(len(ordered), offset + budget), "remaining": max(0, len(ordered) - offset - budget)}
 
 
+
+def merge_reference_directories(snapshots):
+    """Merge authenticated listing snapshots into one bounded research roster.
+
+    Duplicate symbols across exchanges are excluded rather than guessed into
+    broker instruments. The merge grants no broker or execution eligibility.
+    """
+    if (type(snapshots) is not list or len(snapshots) != 2
+            or {s.get("source") for s in snapshots if type(s) is dict} != SOURCES):
+        raise ValueError("UNIVERSE_TWO_SOURCE_SNAPSHOTS_REQUIRED")
+    seen, conflicts, rows = {}, set(), []
+    for snap in snapshots:
+        if (snap.get("schema") != "QD_REFERENCE_DIRECTORY_V1"
+                or type(snap.get("source_digest")) is not str
+                or not re.fullmatch(r"[0-9a-f]{64}", snap["source_digest"])
+                or type(snap.get("rows")) is not list
+                or len(snap["rows"]) > 30000):
+            raise ValueError("UNIVERSE_INVALID_REFERENCE_SNAPSHOT")
+        for row in snap["rows"]:
+            if type(row) is not dict or not SYMBOL.fullmatch(str(row.get("symbol", ""))):
+                raise ValueError("UNIVERSE_INVALID_REFERENCE_ROW")
+            symbol = row["symbol"]
+            if symbol in seen:
+                conflicts.add(symbol)
+            else:
+                seen[symbol] = row
+    rows = [seen[s] for s in sorted(seen) if s not in conflicts]
+    return {"schema": "QD_MERGED_REFERENCE_RESEARCH_V1",
+            "source_digests": {s["source"]: s["source_digest"] for s in snapshots},
+            "rows": rows, "conflicted_symbols": sorted(conflicts),
+            "reference_count": len(rows), "broker_eligibility_verified": False,
+            "execution_authorized": False}
+
+
 def research_universe(batch, *, metadata, instrument_authority):
     """Use the actual InvestmentScanner's injected InvestmentUniverse interface.
 
