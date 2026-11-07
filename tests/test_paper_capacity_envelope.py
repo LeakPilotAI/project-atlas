@@ -101,3 +101,20 @@ def test_observed_shortfall_preserves_shutdown_reserve():
     assert result["fits_declared_envelope"] is False
     assert result["stores"]["REPORTS"]["remaining"] == 115
     assert result["stores"]["REPORTS"]["required"] == 116
+
+@pytest.mark.parametrize('capacity', [4, 8, 16, 32, 128])
+@pytest.mark.parametrize('reserve', [1, 2, 3, 4])
+def test_every_bounded_capacity_threshold_preserves_stop_reserve(capacity, reserve):
+    """Exhaustively check arithmetic transition at each available slot count."""
+    if reserve > capacity:
+        pytest.skip('reserve exceeds synthetic store capacity')
+    for used in range(capacity + 1):
+        free = capacity - used
+        for planned in range(capacity + 1):
+            result = assess_bounded_capacity(capacity=capacity, used=used,
+                                             planned=planned, shutdown_reserve=reserve)
+            assert result['fits_declared_envelope'] is (planned + reserve <= free)
+            assert result['remaining'] == free
+            assert result['required'] == planned + reserve
+            assert result['operational_admission'] is False
+            assert result['native_load_verified'] is False
