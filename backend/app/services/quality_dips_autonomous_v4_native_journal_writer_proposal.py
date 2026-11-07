@@ -5,6 +5,7 @@ Never overwrites a snapshot, reuses a name, self-issues custody pins or
 resumes an uncertain reservation. Caller must provide trusted external pins.
 """
 from app.services.paper_financial_replay import body, strict
+from app.services.quality_dips_autonomous_v4_native_journal_recovery_proposal import inspect_pinned_native_v4_journal
 from app.services.quality_dips_autonomous_v4_publication_journal_proposal import (
     initial_publication_journal, transition_publication_journal)
 
@@ -33,6 +34,7 @@ class ConfinedNativeV4JournalProposal:
             self._verify_all()
             pin = self.native.write_bound(name, body(state).encode('utf-8'))
             self.pins[name] = pin
+            self.state = state
             self._verify_all()
         except Exception:
             self.fenced = True
@@ -53,6 +55,12 @@ class ConfinedNativeV4JournalProposal:
             transition_publication_journal(doc, 'RESTART')
         if set(self.native.list_names()) != set(self.pins):
             raise ValueError('V4_NATIVE_JOURNAL_POST_READ_ROSTER_CHANGED')
+        if self.pins:
+            inspected = inspect_pinned_native_v4_journal(self.native, self.pins)
+            if (inspected['revision'] != self.state['revision']
+                    or inspected['head'] != self.state['head']
+                    or inspected['status'] != ('UNCERTAIN' if self.state['status'] == 'RESERVED' else 'IDLE')):
+                raise ValueError('V4_NATIVE_JOURNAL_REPLAY_STATE_MISMATCH')
 
     def reserve(self, record):
         if self.fenced or self.state['status'] != 'IDLE':

@@ -69,3 +69,25 @@ def test_native_writer_fails_closed_after_mutation(journal, damage):
     with pytest.raises((ValueError, OSError)):
         writer.reserve(record(2)) if damage.startswith('commit') else writer.commit()
     assert writer.fenced is True
+@pytest.mark.parametrize('attack', ['rebind_reservation', 'rebind_commit'])
+def test_native_writer_replays_chain_not_just_individual_pins(journal, attack):
+    import hashlib
+    from app.services.paper_financial_replay import body, strict
+    port, writer = journal
+    writer.reserve(record())
+    if attack == 'rebind_commit': writer.commit()
+    name = '0001-reserved.json' if attack == 'rebind_reservation' else '0001-committed.json'
+    path = port.root / 'journal' / name
+    document = strict(path.read_text(encoding='utf-8'))
+    if attack == 'rebind_reservation':
+        document['pending']['record']['publication_id'] = 'ALTERED-PUB'
+    else:
+        document['head'] = 'f' * 64
+    raw = body(document).encode('utf-8')
+    path.write_bytes(raw)
+    # Simulates a compromised same-process pin registry that re-pins altered
+    # bytes. Native identity alone is not sufficient to prove chain continuity.
+    writer.pins[name]['sha256'] = hashlib.sha256(raw).hexdigest()
+    with pytest.raises((ValueError, OSError)):
+        writer.commit() if attack == 'rebind_reservation' else writer.reserve(record(2))
+    assert writer.fenced is True
