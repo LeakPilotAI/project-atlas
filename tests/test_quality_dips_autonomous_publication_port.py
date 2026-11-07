@@ -32,6 +32,7 @@ class Replay(Port):
 
 def setup():
     e, p, cut, docs = sample()
+    cut['scope'] = 'LOCAL_ENROLLED'
     publication = Port(p, lambda snapshot, now: snapshot == p)
     ack = Port(None, lambda ack_id, publication_digest, now:
                ack_id == p['ack_id'] and publication_digest == digest(p))
@@ -97,3 +98,15 @@ def test_publication_authority_continuity_refuses_mid_audit_revocation(damage):
     with pytest.raises(ValueError):
         port.verify_cut(e, {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)}, docs, 1000,
                         scope='LOCAL_ENROLLED')
+
+
+@pytest.mark.parametrize('foreign_scope', ['DISPOSABLE_TEST', 'OTHER', None])
+def test_operational_publication_refuses_disposable_or_foreign_cut(foreign_scope):
+    e, p, cut, docs, publication, ack, replay = setup()
+    cut['scope'] = foreign_scope
+    replay.snapshot = copy.deepcopy(cut)
+    current = {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)}
+    port = BoundAutonomousFinancialPublication(publication=publication, custody_ack=ack,
+                                                financial_replay=replay)
+    with pytest.raises(ValueError, match='AUTO_PUBLICATION_FINANCIAL_CUT_SCOPE_MISMATCH'):
+        port.verify_cut(e, current, docs, 1000, scope='LOCAL_ENROLLED')

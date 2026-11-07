@@ -32,6 +32,8 @@ class BoundAutonomousFinancialPublication:
                     raise ValueError('AUTO_PUBLICATION_ACK_NOT_AUTHENTICATED')
                 with self.financial_replay.lease(enrollment, p, now, scope=scope) as replay_lease:
                     cut = strict(body(replay_lease.snapshot))
+                    if (type(cut) is not dict or cut.get('scope') != scope):
+                        raise ValueError('AUTO_PUBLICATION_FINANCIAL_CUT_SCOPE_MISMATCH')
                     if (type(current.get('financial_digest')) is not str
                             or current['financial_digest'] != digest(cut)):
                         raise ValueError('AUTO_PUBLICATION_CURRENT_FINANCIAL_CUT_MISMATCH')
