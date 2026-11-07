@@ -775,3 +775,22 @@ def test_malformed_financial_stop_result_records_incomplete_not_flat(tmp_path, m
     assert b.runtime.entry_closed.is_set()
     assert b.status() == receipt
     assert len(calls) == 1
+
+
+def test_control_bridge_session_id_is_bound_to_runtime_grant():
+    from types import SimpleNamespace
+    bridge = object.__new__(UnifiedControlStopBridge)
+    bridge.runtime = SimpleNamespace(grant={"session_id": "accepted-1"},
+                                     read_snapshot=lambda: {"schema": "TEST"})
+    assert bridge.session_id == "accepted-1"
+    assert bridge.verify_session() is True
+    bridge.runtime.grant = {"session_id": ""}
+    assert bridge.session_id is None
+    assert bridge.verify_session() is True
+    bridge.runtime.grant = {"session_id": True}
+    assert bridge.session_id is None
+    bridge.runtime.grant = {"session_id": "x" * 129}
+    assert bridge.session_id is None
+    bridge.runtime.grant = None
+    assert bridge.session_id is None
+    assert bridge.verify_session() is True

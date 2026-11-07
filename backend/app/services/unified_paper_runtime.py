@@ -59,7 +59,19 @@ class UnifiedControlStopBridge:
         self.stop_lock = Lock()
         self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "IDLE", "outcome": None}
 
+    @property
+    def session_id(self):
+        # Identity comes from the installed runtime grant, never from a
+        # caller-supplied desktop handoff or a mutable bridge field.
+        grant = getattr(self.runtime, "grant", None)
+        if type(grant) is not dict or type(grant.get("session_id")) is not str:
+            return None
+        value = grant["session_id"]
+        return value if value and len(value) <= 128 else None
+
     def verify_session(self):
+        # Existing local stop transport retains its independently installed
+        # runtime read check. The new handoff additionally requires session_id.
         try:
             self.runtime.read_snapshot()
             return True
