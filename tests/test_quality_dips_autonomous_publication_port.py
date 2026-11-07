@@ -69,3 +69,29 @@ def test_publication_port_refuses_without_all_evidence(damage):
                                                 financial_replay=replay)
     with pytest.raises(ValueError):
         port.verify_cut(e, current, docs, now, scope=scope)
+
+@pytest.mark.parametrize('damage', ['publication_revoked', 'ack_revoked', 'cut_revoked',
+    'publication_replaced', 'cut_replaced'])
+def test_publication_authority_continuity_refuses_mid_audit_revocation(damage):
+    """Lease state changes during financial replay must never yield acceptance."""
+    e, p, cut, docs, publication, ack, replay = setup()
+    valid = {'publication': True, 'ack': True, 'cut': True}
+    publication.check = lambda snapshot, now: valid['publication'] and snapshot == p
+    ack.check = lambda ack_id, publication_digest, now: (
+        valid['ack'] and ack_id == p['ack_id'] and publication_digest == digest(p))
+    replay.check = lambda snapshot, now: valid['cut'] and snapshot == cut
+
+    def audit(*args, **kwargs):
+        if damage == 'publication_revoked': valid['publication'] = False
+        if damage == 'ack_revoked': valid['ack'] = False
+        if damage == 'cut_revoked': valid['cut'] = False
+        if damage == 'publication_replaced': p['ack_id'] = 'REPLACED'
+        if damage == 'cut_replaced': cut['scope'] = 'REPLACED'
+        return True
+
+    replay.verify = audit
+    port = BoundAutonomousFinancialPublication(publication=publication, custody_ack=ack,
+                                                financial_replay=replay)
+    with pytest.raises(ValueError):
+        port.verify_cut(e, {'scope': 'LOCAL_ENROLLED'}, docs, 1000,
+                        scope='LOCAL_ENROLLED')
