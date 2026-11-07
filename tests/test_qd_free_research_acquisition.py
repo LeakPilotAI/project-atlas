@@ -15,11 +15,14 @@ def test_real_data_diagnostic_does_not_promote_operational_authority(monkeypatch
         domain = "TLS_PUBLIC_PROVIDER"
         def __init__(self, **kwargs):
             assert kwargs["max_attempts"] == 12 and kwargs["seconds"] == 60
+    class Metric:
+        availability = False
     class Bundle:
         def __init__(self, **kwargs): pass
         def load(self, symbol):
             assert symbol == "MSFT"
             return {"paper_eligible": False, "receipts": [{"id": 1}], "bars": [1,2],
+                    "valuation": {k: Metric() for k in ("target_low_price", "target_mean_price", "target_high_price")},
                     "fundamentals": {"revenue": 1},
                     "refusals": ["NO_THREE_EXPLICIT_ACCEPTED_NORMALIZATION_ESTIMATES"]}
     result = probe.inspect_free_research(
@@ -27,6 +30,8 @@ def test_real_data_diagnostic_does_not_promote_operational_authority(monkeypatch
         credentials_path=Path("unused"), client_factory=Client, bundle_factory=Bundle)
     assert result["completed_daily_bar_count"] == 2
     assert result["normalization_estimates_accepted"] is False
+    assert result["normalization_source_count"] == 0
+    assert not any(result["explicit_target_availability"].values())
     assert result["operational_source_accepted"] is False
     assert result["paper_fill_authorized"] is False
 

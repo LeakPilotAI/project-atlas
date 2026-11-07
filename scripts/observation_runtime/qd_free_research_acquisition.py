@@ -16,6 +16,7 @@ sys.path.insert(0, str(REPO / "backend"))
 from app.investment.alpaca_iex import Credentials
 from app.investment.free_research_providers import FreeResearchBundle
 from app.investment.free_research_transport import FreeResearchClient, ResearchRefused
+from app.investment.quality_dips_v2_valuation import build_normalization_window
 
 
 def inspect_free_research(*, symbol, contact, credentials_path, client_factory=FreeResearchClient,
@@ -35,12 +36,25 @@ def inspect_free_research(*, symbol, contact, credentials_path, client_factory=F
     data = bundle_factory(client=client, now=now).load(symbol)
     if type(data) is not dict or data.get("paper_eligible") is not False:
         raise ResearchRefused("QD_RESEARCH_NOT_DIAGNOSTIC")
+    # Only explicit target estimates may satisfy the existing V2/V3 window.
+    # Derived ratios and daily closes are not independent fair-value targets.
+    targets = ("target_low_price", "target_mean_price", "target_high_price")
+    valuation = data["valuation"]
+    target_available = {name: bool(valuation[name].availability) for name in targets}
+    if any(target_available.values()):
+        # Acquisition alone never attests independent issuer/source custody.
+        raise ResearchRefused("QD_UNATTESTED_TARGET_PRICE_PRESENT")
+    window = build_normalization_window([], now=now())
+    if window["complete"] or window["source_count"] != 0:
+        raise ResearchRefused("QD_UNEXPECTED_NORMALIZATION_ESTIMATES")
     return {"schema": "ATLAS_QD_FREE_RESEARCH_ACQUISITION_V1",
             "symbol": symbol, "transport": "TLS_PUBLIC_PROVIDER",
             "provider_receipt_count": len(data["receipts"]),
             "completed_daily_bar_count": len(data["bars"]),
             "fundamental_metric_count": len(data["fundamentals"]),
             "normalization_estimates_accepted": False,
+            "explicit_target_availability": target_available,
+            "normalization_source_count": window["source_count"],
             "refusals": data["refusals"],
             "operational_source_accepted": False,
             "paper_fill_authorized": False, "live_order_authorized": False}
