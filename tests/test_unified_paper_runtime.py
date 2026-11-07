@@ -354,3 +354,34 @@ def test_unified_control_incomplete_or_emergency_never_claims_flat(emergency):
     assert result["outcome"]["status"] == "SHUTDOWN_INCOMPLETE"
     assert result["outcome"]["position_state"] == "POSITION_OPEN"
     assert all(p.stops == 1 for p in r.lanes.values())
+
+
+@pytest.mark.asyncio
+async def test_continuous_strategy_automatically_dispatches_entry_then_exit():
+    """Disposable auto-planner to custody to writer; no manual dispatch calls."""
+    r = runtime()
+    lane = r.lanes["HYPERLIQUID"]
+    decisions = iter((
+        {"operation_id": "auto-entry", "kind": "ENTRY"},
+        {"operation_id": "auto-exit", "kind": "EXIT"},
+    ))
+
+    async def next_proposal(observation):
+        if observation["connection"] != "CONNECTED":
+            return None
+        try:
+            proposal = next(decisions)
+        except StopIteration:
+            return None
+        if proposal["kind"] == "EXIT":
+            r.portfolio.before = with_perp()
+            r.portfolio.projected = accounts()
+        return proposal
+
+    lane.next_proposal = next_proposal
+    result = await r.run(seconds=.16, interval=.05)
+    assert [p["kind"] for p in lane.calls] == ["ENTRY", "EXIT"]
+    assert len(r.portfolio.operations) == 2
+    assert all(row["state"] == "ACKNOWLEDGED" for row in r.portfolio.operations.values())
+    assert result["state"] == "PAUSED"
+    assert r.uncertain is False
