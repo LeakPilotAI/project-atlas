@@ -392,6 +392,7 @@ def test_control_stop_bridge_does_not_claim_flat_or_exit_on_stop_failure(failure
     from threading import Event
     from types import SimpleNamespace
     bridge = object.__new__(UnifiedControlStopBridge)
+    bridge.stop_lock = __import__("threading").Lock()
     entry_closed = Event()
     calls = []
     def failing_stop(**kwargs):
@@ -413,6 +414,7 @@ def test_control_stop_bridge_does_not_claim_flat_or_exit_on_stop_failure(failure
 def test_control_stop_does_not_report_full_flatten_when_owned_exit_unverified():
     from types import SimpleNamespace
     bridge = object.__new__(UnifiedControlStopBridge)
+    bridge.stop_lock = __import__("threading").Lock()
     bridge.runtime = SimpleNamespace(
         stop=lambda **_: {'state': 'STOPPED', 'lanes': {'QUALITY_DIPS': {'state': 'ACKNOWLEDGED_FLAT_AND_DRAINED'},
                                                        'HYPERLIQUID': {'state': 'ACKNOWLEDGED_FLAT_AND_DRAINED'}}},
@@ -431,6 +433,7 @@ def test_failed_control_stop_retry_is_read_only_and_mode_locked(failure):
     from threading import Event
     from types import SimpleNamespace
     bridge = object.__new__(UnifiedControlStopBridge)
+    bridge.stop_lock = __import__("threading").Lock()
     calls = []
     def failing_stop(**kwargs):
         calls.append(kwargs)
@@ -447,3 +450,24 @@ def test_failed_control_stop_retry_is_read_only_and_mode_locked(failure):
     with pytest.raises(ValueError, match='MODE_CHANGED'):
         bridge.request_stop('EMERGENCY')
     assert len(calls) == 1
+def test_concurrent_control_stop_requests_do_not_repeat_bridge_work():
+    import time
+    from threading import Event
+    from types import SimpleNamespace
+    bridge = object.__new__(UnifiedControlStopBridge)
+    bridge.stop_lock = __import__('threading').Lock()
+    bridge.verify_session = lambda: True
+    bridge.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'IDLE', 'outcome': None}
+    bridge.owned_close = None
+    bridge._close_binding = None
+    calls = []
+    def slow_stop(**kwargs):
+        calls.append(kwargs)
+        time.sleep(.025)
+        return {'state': 'STOPPED', 'lanes': {}}
+    bridge.runtime = SimpleNamespace(stop=slow_stop, entry_closed=Event(), uncertain=False)
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(lambda _: bridge.request_stop('SHUTDOWN_FLATTEN'), range(16)))
+    assert all(result == results[0] for result in results)
+    assert len(calls) == 1
+    assert results[0]['outcome']['status'] == 'FLATTENED'

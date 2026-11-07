@@ -53,6 +53,7 @@ class UnifiedControlStopBridge:
         self.runtime = runtime
         self.owned_close = owned_close
         self._close_binding = owned_close
+        self.stop_lock = Lock()
         self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "IDLE", "outcome": None}
 
     def verify_session(self):
@@ -63,6 +64,12 @@ class UnifiedControlStopBridge:
             return False
 
     def request_stop(self, mode):
+        # Serialize the whole financial-stop plus owned-process-close sequence.
+        # Runtime.stop alone cannot protect the separate close callback.
+        with self.stop_lock:
+            return self._request_stop_locked(mode)
+
+    def _request_stop_locked(self, mode):
         if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY") or not self.verify_session():
             raise ValueError("UNIFIED_CONTROL_SESSION_OR_MODE_UNVERIFIED")
         if self.progress["phase"] == "FINISHED":
