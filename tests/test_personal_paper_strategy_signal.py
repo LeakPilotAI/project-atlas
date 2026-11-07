@@ -578,6 +578,8 @@ def test_bounded_readonly_session_refuses_invalid_clock_and_stops_on_failure(mon
                 "provider_timestamp": now.isoformat(),
                 "decision_evidence_digest": str(len(calls))}
     monkeypatch.setattr(signals, "plan_leased_published_iex_paper_tick", tick)
+    monkeypatch.setattr(signals, "propose_forward_paper_action",
+                        lambda *, plan: {"paper_fill_authorized": False, "action": "WAIT"})
     stamps = iter([now, now + timedelta(seconds=1), now + timedelta(seconds=2)])
     with pytest.raises(ValueError, match="AUTHENTICATED_IEX_FEED_UNAVAILABLE"):
         run_bounded_readonly_paper_session(ticks=3, clock=lambda: next(stamps))
@@ -604,6 +606,8 @@ def test_bounded_session_refuses_replayed_quote_event(monkeypatch):
         return {"paper_fill_authorized": False, "live_order_authorized": False,
                 "provider_timestamp": start.isoformat()}
     monkeypatch.setattr(signals, "plan_leased_published_iex_paper_tick", frozen)
+    monkeypatch.setattr(signals, "propose_forward_paper_action",
+                        lambda *, plan: {"paper_fill_authorized": False, "action": "WAIT"})
     stamps = iter([start, start + timedelta(seconds=1)])
     with pytest.raises(ValueError, match="PAPER_SESSION_PROVIDER_EVENT_NOT_ADVANCING"):
         run_bounded_readonly_paper_session(ticks=2, clock=lambda: next(stamps))
@@ -650,6 +654,8 @@ def test_bounded_session_original_source_real_lease_feed_and_journal(tmp_path, m
     before = path.read_bytes()
     result = run_bounded_readonly_paper_session(ticks=2, clock=clock, **kwargs)
     assert result["completed"] == 2
+    assert result["ticks"][0]["proposal"]["paper_fill_authorized"] is False
+    assert result["ticks"][0]["proposal"]["action"] in ("WAIT", "PROPOSE_ENTRY")
     assert result["ticks"][0]["plan"]["provider_timestamp"] != result["ticks"][1]["plan"]["provider_timestamp"]
     assert result["ticks"][0]["plan"]["estimated_liquidation_equity"] == 1000
     assert path.read_bytes() == before

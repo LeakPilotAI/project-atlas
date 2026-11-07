@@ -402,11 +402,17 @@ def run_bounded_readonly_paper_session(*, ticks: int, clock: Any, **dependencies
             raise ValueError("PAPER_SESSION_PROVIDER_EVENT_NOT_FRESH")
         if records and provider_stamp <= records[-1]["_provider_stamp"]:
             raise ValueError("PAPER_SESSION_PROVIDER_EVENT_NOT_ADVANCING")
+        # Proposals are advisory only. Recompute them from the inspected tick
+        # rather than allowing a caller to supply an action or authorization.
+        proposal = propose_forward_paper_action(plan=plan)
+        if proposal["paper_fill_authorized"] is not False:
+            raise ValueError("PAPER_SESSION_UNEXPECTED_PROPOSAL_AUTHORITY")
         records.append({"_clock": now, "_provider_stamp": provider_stamp,
-                        "tick": index, "plan": plan})
+                        "tick": index, "plan": plan, "proposal": proposal})
     return strict(body({"schema": "ATLAS_BOUNDED_READONLY_PAPER_SESSION_V1",
                         "ticks": [{"timestamp": r["_clock"].isoformat(),
-                                   "index": r["tick"], "plan": r["plan"]} for r in records],
+                                   "index": r["tick"], "plan": r["plan"],
+                                   "proposal": r["proposal"]} for r in records],
                         "completed": len(records), "paper_fill_authorized": False,
                         "live_order_authorized": False}))
 
