@@ -191,3 +191,36 @@ async def test_native_repeated_observations_do_not_spend_shutdown_reserve(system
     assert stopped['state'] == 'STOPPED'
     assert s.journal.snapshot()['state']['finalized'] is not None
     assert s.r.stop() == stopped
+
+@pytest.mark.asyncio
+async def test_native_shutdown_consumes_real_reserved_slots_without_rollover(system):
+    """Guarded native stop capacity accounting; full F11 saturation still pending."""
+    s = system
+    await native_fixtures.cycle(s)
+    before = {
+        'GLOBAL': s.journal.remaining_slots(),
+        'QUALITY_DIPS': s.q.writer.store.remaining_operations(),
+        'HYPERLIQUID': s.p.writer.store.remaining_operations(),
+        'PERP_ORDERS': s.p.orders.remaining_slots(),
+        'REPORTS': s.qstop.reports.archive.remaining_reports(),
+    }
+    stopped = s.r.stop()
+    assert stopped['state'] == 'STOPPED'
+    after = {
+        'GLOBAL': s.journal.remaining_slots(),
+        'QUALITY_DIPS': s.q.writer.store.remaining_operations(),
+        'HYPERLIQUID': s.p.writer.store.remaining_operations(),
+        'PERP_ORDERS': s.p.orders.remaining_slots(),
+        'REPORTS': s.qstop.reports.archive.remaining_reports(),
+    }
+    assert all(0 <= after[name] <= before[name] for name in before)
+    assert after['GLOBAL'] < before['GLOBAL']
+    assert s.journal.snapshot()['state']['finalized'] is not None
+    assert s.r.stop() == stopped
+    assert after == {
+        'GLOBAL': s.journal.remaining_slots(),
+        'QUALITY_DIPS': s.q.writer.store.remaining_operations(),
+        'HYPERLIQUID': s.p.writer.store.remaining_operations(),
+        'PERP_ORDERS': s.p.orders.remaining_slots(),
+        'REPORTS': s.qstop.reports.archive.remaining_reports(),
+    }
