@@ -36,6 +36,18 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
         clock = clock_factory(expected_source="time.windows.com,0x9",
                               runtime_id="atlas-clock-iex-readonly-probe", lifetime=seconds + 30)
         clock.require_operational("atlas-clock-iex-readonly-probe")
+        if publication is not None:
+            # Refuse missing/stale/unaccepted native research *before* loading
+            # credentials or opening a network connection. The source must
+            # remain valid on every callback via evaluate_published_iex_v3_candidate.
+            packet = publication.read_current()
+            if (type(packet) is not dict or packet.get("schema") != "QD_SCANNER_PUBLICATION_V1"
+                    or type(packet.get("bundles")) is not list
+                    or not any(type(bundle) is dict
+                               and type(bundle.get("instrument")) is dict
+                               and bundle["instrument"].get("symbol") == symbol
+                               for bundle in packet["bundles"])):
+                raise ValueError("CLOCK_IEX_PUBLISHED_SYMBOL_NOT_ENROLLED")
         accepted = []
         research_checked = []
         feed = feed_factory([symbol])
