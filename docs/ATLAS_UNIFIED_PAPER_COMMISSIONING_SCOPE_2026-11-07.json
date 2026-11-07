@@ -1,0 +1,37 @@
+{
+  "schema": "ATLAS_UNIFIED_PAPER_COMMISSIONING_SCOPE_V1",
+  "date": "2026-11-07",
+  "authority": "SOLE_LOCAL_OPERATOR",
+  "provenance": "User explicitly approved expanding existing PAPER-only commissioning to Hyperliquid simulated account initialization and supervised testing in current conversation.",
+  "status": "OPERATOR_SCOPE_APPROVED_TECHNICAL_ACCEPTANCE_PENDING",
+  "runtime_consumable": false,
+  "installed_activation_record_created": false,
+  "startup_authorized": false,
+  "provider_activation_authorized": false,
+  "financial_publication_authorized": false,
+  "scope": [
+    "EXISTING_QUALITY_DIPS_PAPER_COMMISSIONING",
+    "HYPERLIQUID_SIMULATED_ACCOUNT_INITIALIZATION_IF_TECHNICALLY_ELIGIBLE",
+    "SUPERVISED_UNIFIED_PAPER_TESTING_IF_TECHNICALLY_ACCEPTED",
+    "VERIFIED_OWNED_STOP_FLATTEN_RECONCILIATION"
+  ],
+  "conditions": [
+    "INDEPENDENT_NATIVE_OPERATOR_ACTIVATION",
+    "ACCEPTED_SOURCE_AND_PROVIDER_RIGHTS",
+    "VERIFIED_SEPARATE_ACCOUNT_INCEPTION_AND_WRITER_OWNERSHIP",
+    "TRUSTED_STORAGE_CLOCK_AND_FINANCIAL_DRAIN",
+    "SESSION_BOUND_DESKTOP_STOP_ACCEPTANCE",
+    "NO_START_UNTIL_ALL_TECHNICAL_GATES_PASS"
+  ],
+  "exclusions": [
+    "LIVE_ORDERS",
+    "REAL_CAPITAL",
+    "WALLET_SIGNING",
+    "PRODUCTION_STARTUP",
+    "GENESIS",
+    "VPS_CLOUD",
+    "TECHNICAL_GATE_OVERRIDE"
+  ],
+  "historical_gate_promotions": 0,
+  "note": "Scope consent only. Not an activation record, grant, source publication, or permission to bypass technical gates."
+}
