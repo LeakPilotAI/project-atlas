@@ -29,3 +29,17 @@ def test_hyperliquid_inventory_cannot_authorize_from_directory_names(tmp_path):
     assert 'Hyperliquid' in report['custody_child_names']
     assert report['hyperliquid_native_account_inception'] == 'NOT_INDEPENDENTLY_VERIFIED'
     assert report['paper_startup_authorized'] is False
+
+
+def test_hyperliquid_budget_inventory_is_read_only_and_non_authorizing(tmp_path):
+    import sqlite3
+    from scripts.observation_runtime.hyperliquid_native_preflight import inspect
+    budget = tmp_path/'budget.sqlite'
+    with sqlite3.connect(budget) as db:
+        db.execute('CREATE TABLE budget (id INTEGER, max_attempts INTEGER, attempted INTEGER)')
+        db.execute('INSERT INTO budget VALUES (1,12,2)')
+    before = budget.read_bytes()
+    result = inspect(root=tmp_path, budget_path=budget)
+    assert result['request_budget_inventory'] == 'EXISTING_LEDGER_STRUCTURE_VALID_NOT_AUTHORIZED'
+    assert result['provider_rights_and_current_market_data'] == 'NOT_INDEPENDENTLY_VERIFIED'
+    assert budget.read_bytes() == before
