@@ -220,3 +220,28 @@ def preview_quality_dips_forward_capacity(
             "proposal": proposal, "capacity": capacity,
             "blockers": capacity["blockers"], "paper_fill_authorized": False,
             "live_order_authorized": False}
+
+
+def check_forward_paper_write_authority(*, installation: Any, request: dict[str, Any],
+                                        components: Any) -> dict[str, Any]:
+    """Require the installed personal local-operator lease before any future writer.
+
+    Returns a diagnostic only. The actual writer must keep this lease open and
+    recheck it immediately before and after its durable mutation.
+    """
+    from app.services.personal_paper_runtime import checked_personal_installation
+
+    if installation is None or type(request) is not dict:
+        raise PriceEvidenceRejected("PERSONAL_OPERATOR_INSTALLATION_REQUIRED")
+    try:
+        with installation.lease(request) as lease:
+            checked_personal_installation(lease, request)
+            if lease.check_components(components) is not True:
+                raise PriceEvidenceRejected("PERSONAL_WRITER_COMPONENTS_CHANGED")
+    except PriceEvidenceRejected:
+        raise
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise PriceEvidenceRejected("PERSONAL_OPERATOR_LEASE_REFUSED") from exc
+    return {"schema": "ATLAS_PERSONAL_PAPER_WRITE_AUTHORITY_DIAGNOSTIC_V1",
+            "lease_checked": True, "paper_fill_authorized": False,
+            "live_order_authorized": False}

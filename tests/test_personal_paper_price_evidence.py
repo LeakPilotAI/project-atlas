@@ -240,3 +240,27 @@ def test_forward_capacity_combines_strategy_quote_and_account_without_mutation(t
         preview_quality_dips_forward_capacity(
             observation, _quote(now), now=now, quantity="0.2", max_notional="100",
             journal_events=read_events(path), account_id="forward")
+
+
+@pytest.mark.parametrize("installation,activation_request", [(None, {}), (object(), {}), (None, {"action": "AUTO_PAPER"})])
+def test_forward_write_authority_refuses_uninstalled_or_invalid_local_operator(installation, activation_request):
+    from app.services.personal_paper_price_evidence import check_forward_paper_write_authority
+    with pytest.raises(PriceEvidenceRejected):
+        check_forward_paper_write_authority(installation=installation, request=activation_request,
+                                            components=())
+
+
+def test_forward_write_authority_refuses_component_substitution():
+    from contextlib import contextmanager
+    from app.services.personal_paper_price_evidence import check_forward_paper_write_authority
+    class Lease:
+        snapshot = {}
+        def check_components(self, components):
+            return False
+    class Installation:
+        @contextmanager
+        def lease(self, request):
+            yield Lease()
+    with pytest.raises(PriceEvidenceRejected):
+        check_forward_paper_write_authority(installation=Installation(), request={},
+                                            components=())
