@@ -8,6 +8,30 @@ from app.services.paper_financial_replay import digest
 SCHEMA = 'QD_AUTO_V4_PUBLICATION_JOURNAL_PROPOSAL_V1'
 
 
+def _digest64(value):
+    return (type(value) is str and len(value) == 64
+            and all(char in '0123456789abcdef' for char in value))
+
+
+def _record_valid(value):
+    return (type(value) is dict
+            and set(value) == {'publication_digest', 'publication_id'}
+            and _digest64(value['publication_digest'])
+            and type(value['publication_id']) is str
+            and 1 <= len(value['publication_id']) <= 128)
+
+
+def _pending_valid(state):
+    pending = state['pending']
+    return (type(pending) is dict
+            and set(pending) == {'revision', 'previous', 'record'}
+            and type(pending['revision']) is int
+            and pending['revision'] == state['revision'] + 1
+            and pending['revision'] <= 128
+            and pending['previous'] == state['head']
+            and _record_valid(pending['record']))
+
+
 def initial_publication_journal():
     return {'schema': SCHEMA, 'revision': 0, 'head': None, 'pending': None,
             'status': 'IDLE'}
@@ -21,16 +45,13 @@ def transition_publication_journal(state, operation, record=None):
             or (state['status'] == 'IDLE' and state['pending'] is not None)
             or (state['status'] != 'IDLE' and type(state['pending']) is not dict)
             or (state['revision'] == 0 and state['head'] is not None)
-            or (state['revision'] > 0 and (type(state['head']) is not str or len(state['head']) != 64))):
+            or (state['revision'] > 0 and not _digest64(state['head']))
+            or (state['status'] != 'IDLE' and not _pending_valid(state))):
         raise ValueError('V4_JOURNAL_STATE_INVALID')
     if operation == 'RESERVE':
         if state['status'] != 'IDLE' or state['revision'] >= 128:
             raise ValueError('V4_JOURNAL_RESERVE_REFUSED')
-        if (type(record) is not dict or set(record) != {'publication_digest', 'publication_id'}
-                or type(record['publication_digest']) is not str
-                or len(record['publication_digest']) != 64
-                or type(record['publication_id']) is not str
-                or not 1 <= len(record['publication_id']) <= 128):
+        if not _record_valid(record):
             raise ValueError('V4_JOURNAL_RECORD_INVALID')
         pending = {'revision': state['revision'] + 1,
                    'previous': state['head'], 'record': dict(record)}
@@ -39,12 +60,7 @@ def transition_publication_journal(state, operation, record=None):
         if state['status'] != 'RESERVED' or record is not None:
             raise ValueError('V4_JOURNAL_COMMIT_REFUSED')
         pending = state['pending']
-        if (set(pending) != {'revision', 'previous', 'record'}
-                or type(pending['revision']) is not int
-                or pending['revision'] != state['revision'] + 1
-                or pending['previous'] != state['head']
-                or type(pending['record']) is not dict
-                or set(pending['record']) != {'publication_digest', 'publication_id'}):
+        if not _pending_valid(state):
             raise ValueError('V4_JOURNAL_PENDING_INVALID')
         return {**state, 'revision': pending['revision'],
                 'head': digest([SCHEMA, pending]), 'pending': None, 'status': 'IDLE'}

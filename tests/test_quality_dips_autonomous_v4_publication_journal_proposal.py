@@ -76,3 +76,34 @@ def test_revision_capacity_fails_closed():
         state = run(run(state, 'RESERVE', record(i)), 'COMMIT')
     assert state['revision'] == 128
     with pytest.raises(ValueError): run(state, 'RESERVE', record(129))
+@pytest.mark.parametrize('damage', ['digest_nonhex', 'digest_uppercase', 'pending_digest_short',
+    'pending_digest_nonhex', 'pending_id_empty', 'pending_id_extra', 'pending_record_extra',
+    'pending_record_missing', 'pending_revision_bool', 'pending_revision_over_capacity',
+    'pending_wrong_parent', 'committed_head_nonhex', 'uncertain_pending_invalid'])
+def test_malformed_persisted_journal_refuses_even_restart(damage):
+    state = run(initial_publication_journal(), 'RESERVE', record())
+    if damage == 'digest_nonhex':
+        with pytest.raises(ValueError): run(initial_publication_journal(), 'RESERVE',
+            {**record(), 'publication_digest': 'g'*64})
+        return
+    if damage == 'digest_uppercase':
+        with pytest.raises(ValueError): run(initial_publication_journal(), 'RESERVE',
+            {**record(), 'publication_digest': 'A'*64})
+        return
+    if damage == 'pending_digest_short': state['pending']['record']['publication_digest'] = 'short'
+    if damage == 'pending_digest_nonhex': state['pending']['record']['publication_digest'] = 'z'*64
+    if damage == 'pending_id_empty': state['pending']['record']['publication_id'] = ''
+    if damage == 'pending_id_extra': state['pending']['record']['publication_id'] = 'x'*129
+    if damage == 'pending_record_extra': state['pending']['record']['authorized'] = True
+    if damage == 'pending_record_missing': state['pending']['record'].pop('publication_id')
+    if damage == 'pending_revision_bool': state['pending']['revision'] = True
+    if damage == 'pending_revision_over_capacity': state['pending']['revision'] = 129
+    if damage == 'pending_wrong_parent': state['pending']['previous'] = 'f'*64
+    if damage == 'committed_head_nonhex':
+        state = run(state, 'COMMIT')
+        state['head'] = 'z'*64
+    if damage == 'uncertain_pending_invalid':
+        state['status'] = 'UNCERTAIN'
+        state['pending']['record']['publication_digest'] = 'z'*64
+    with pytest.raises(ValueError): run(state, 'RESTART')
+    with pytest.raises(ValueError): run(state, 'COMMIT')
