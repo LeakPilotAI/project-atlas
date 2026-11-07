@@ -142,3 +142,29 @@ def test_authenticated_scoring_requires_real_sec_contact_before_io():
     for contact in (None, "", "ProjectAtlas/1.0 test@example.com", "bad-contact"):
         with pytest.raises(ValueError, match="SEC_CONTACT"):
             score_authenticated_provider_batch(contact=contact)
+
+
+def test_publish_scored_receipt_checks_inventory_and_never_advances_cursor(tmp_path, monkeypatch):
+    import hashlib
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    inventory = mod.inventory_snapshot([{"class": "us_equity", "symbol": "MSFT", "status": "active", "tradable": True}],
+                                       captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(inventory), encoding="utf-8")
+    def scorer(*, symbol, data):
+        return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+    report = mod.score_bounded_research_batch(limit=1, acquire=lambda symbol: {}, scorer=scorer)
+    digest = hashlib.sha256(json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+    receipt = root / ("alpaca-scored-" + digest + ".json")
+    result = mod.publish_scored_research_receipt(report, receipt)
+    assert result["receipt_sha256"] == digest and receipt.exists()
+    assert not (root / "alpaca_equity_cursor.json").exists()
+    with pytest.raises(FileExistsError):
+        mod.publish_scored_research_receipt(report, receipt)
+    report["results"][0]["paper_eligible"] = True
+    with pytest.raises(ValueError, match="INCOMPLETE"):
+        mod.publish_scored_research_receipt(report, receipt)

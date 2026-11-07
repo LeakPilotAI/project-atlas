@@ -264,11 +264,53 @@ def score_bounded_research_batch(*, limit=1, acquire=None, scorer=None):
                             "reason": type(exc).__name__, "paper_eligible": False})
             break
     return {"schema": "ATLAS_BROAD_SCORED_RESEARCH_V1",
-            "results": results,
+            "batch": batch, "results": results,
             "scoring_complete": len(results) == len(routes) and all(
                 row["status"] == "RESEARCH_SCORED" for row in results),
             "cursor_advanced": False, "paper_execution_authorized": False,
             "live_order_authorized": False}
+
+
+def publish_scored_research_receipt(report, receipt_path):
+    """Persist one bounded research result with catalog identity, no cursor IO.
+
+    Refuse incomplete batches, forged financial permissions and arbitrary paths.
+    """
+    path = Path(receipt_path)
+    root = REPO / "logs" / "research"
+    if path.parent != root or not re.fullmatch(r"alpaca-scored-[0-9a-f]{64}\.json", path.name):
+        raise ValueError("BROAD_RESEARCH_RECEIPT_PATH_REFUSED")
+    if (type(report) is not dict or report.get("schema") != "ATLAS_BROAD_SCORED_RESEARCH_V1"
+            or report.get("scoring_complete") is not True
+            or report.get("cursor_advanced") is not False
+            or report.get("paper_execution_authorized") is not False
+            or report.get("live_order_authorized") is not False):
+        raise ValueError("BROAD_RESEARCH_RECEIPT_SCOPE_REFUSED")
+    batch, results = report.get("batch"), report.get("results")
+    if (type(batch) is not dict or batch.get("schema") != "ATLAS_ALPACA_RESEARCH_BATCH_V1"
+            or batch.get("paper_execution_authorized") is not False
+            or batch.get("hyperliquid_perpetuals_included") is not False
+            or type(results) is not list or len(results) != len(batch.get("symbols", []))
+            or not 1 <= len(results) <= 2
+            or any(type(row) is not dict or row.get("symbol") != symbol
+                   or row.get("status") != "RESEARCH_SCORED"
+                   or row.get("paper_eligible") is not False
+                   or row.get("live_order_authorized") is not False
+                   for row, symbol in zip(results, batch["symbols"], strict=True))):
+        raise ValueError("BROAD_RESEARCH_RECEIPT_INCOMPLETE")
+    inventory = json.loads((root / "alpaca_equity_inventory.json").read_text(encoding="utf-8"))
+    if (batch.get("inventory_sha256") != inventory.get("sha256")
+            or rotating_batch(inventory, offset=batch["offset"], limit=len(results)) != batch["symbols"]):
+        raise ValueError("BROAD_RESEARCH_RECEIPT_INVENTORY_CHANGED")
+    canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    if path.name != "alpaca-scored-" + digest + ".json":
+        raise ValueError("BROAD_RESEARCH_RECEIPT_DIGEST_REFUSED")
+    root.mkdir(parents=True, exist_ok=True)
+    with path.open("x", encoding="utf-8") as handle:
+        handle.write(canonical)
+    return {"receipt_sha256": digest, "cursor_advanced": False,
+            "paper_execution_authorized": False, "live_order_authorized": False}
 
 
 def score_authenticated_provider_batch(*, contact, limit=1):
