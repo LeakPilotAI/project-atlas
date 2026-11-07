@@ -55,9 +55,11 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
     for stamp, row, qty in rows:
         ticker = row['ticker']
         for side in ('YES', 'NO'):
-            quote = row['sides'].get(side)
-            if not isinstance(quote, dict):
+            raw_quote = row['sides'].get(side)
+            if not isinstance(raw_quote, dict):
                 continue
+            quote = dict(raw_quote)
+            quote['_entry_gate_passed'] = row.get('entry_gate_passed') is True
             key = (ticker, side, qty)
             prior = previous.get(key)
             if prior is not None and stamp > prior[0]:
@@ -71,7 +73,14 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
                         and 0 <= entry <= 1 and 0 <= exit_price <= 1
                         and entry_fee >= 0 and exit_fee >= 0):
                         gross = (exit_price - entry) * qty
+                        # Separate research-only low-activity markets from
+                        # markets meeting the unchanged entry prefilter.
+                        entry_gate_passed = buy.get('_entry_gate_passed') is True
+                        exit_gate_passed = quote.get('_entry_gate_passed') is True
+                        cohort = ('ENTRY_PREFILTER_PASSED_BOTH' if entry_gate_passed and exit_gate_passed
+                                  else 'EXPLORATORY_NOT_ENTRY_QUALIFIED')
                         pairs.append({'ticker': ticker, 'side': side, 'quantity': str(qty),
+                                      'cohort': cohort,
                                       'entry_observed_at': prior[0].isoformat(),
                                       'exit_observed_at': stamp.isoformat(),
                                       'entry_vwap': str(entry), 'exit_vwap': str(exit_price),
@@ -93,6 +102,8 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
                 'zero_pairs': zero, 'sum_net_dollars': str(sum(nets, Decimal('0'))),
                 'overlapping_pairs_possible': True,
                 'not_realized_pnl': True,
+                'exploratory_pairs': sum(p['cohort'] == 'EXPLORATORY_NOT_ENTRY_QUALIFIED' for p in pairs),
+                'entry_prefilter_passed_pairs': sum(p['cohort'] == 'ENTRY_PREFILTER_PASSED_BOTH' for p in pairs),
             },
             'orders_placed': 0, 'paper_trades_opened': 0,
             'forecast_or_execution_proven': False}

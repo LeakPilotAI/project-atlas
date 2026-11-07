@@ -34,6 +34,8 @@ def test_pairs_use_earlier_buy_later_sell_and_both_fees(tmp_path):
     assert result['quote_pair_summary']['positive_pairs'] == 1
     assert result['quote_pair_summary']['sum_net_dollars'] == '0.75'
     assert result['quote_pair_summary']['not_realized_pnl'] is True
+    assert result['quote_pair_summary']['exploratory_pairs'] == 1
+    assert result['quote_pair_summary']['entry_prefilter_passed_pairs'] == 0
 
 
 def test_no_same_timestamp_or_unfillable_exit(tmp_path):
