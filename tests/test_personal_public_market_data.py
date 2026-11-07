@@ -3,11 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import pytest
-from fastapi.testclient import TestClient
-
 from app.investment.yfinance_client import ProviderCallError
 from app.personal_paper import create_app
 from app.services.personal_public_market_data import (
@@ -19,6 +18,7 @@ from app.services.personal_public_market_data import (
     read_market_data,
     require_manual_refresh_spacing,
 )
+from fastapi.testclient import TestClient
 
 
 def _frames(now: datetime, *, quote_age: int = 30, future_quote: bool = False):
@@ -36,7 +36,9 @@ def _frames(now: datetime, *, quote_age: int = 30, future_quote: bool = False):
             "Adj Close": [100.5],
             "Volume": [10000],
         },
-        index=pd.DatetimeIndex([now.date()]),
+        index=pd.DatetimeIndex([
+            now.astimezone(ZoneInfo("America/New_York")).date()
+        ]),
     )
     return intraday, daily
 
@@ -187,7 +189,14 @@ def test_dashboard_reads_public_data_separately_and_remains_read_only(tmp_path):
     record = _record(datetime.now(UTC))
     append_market_data(market, record)
 
-    with TestClient(create_app(journal, market)) as client:
+    with TestClient(
+        create_app(
+            journal,
+            market,
+            forward_journal_path=tmp_path / "forward.jsonl",
+            strategy_observations_path=tmp_path / "strategy.jsonl",
+        )
+    ) as client:
         response = client.get("/api/market-data/quality-dips")
         assert response.status_code == 200
         assert response.json()["latest_by_symbol"][0] == record

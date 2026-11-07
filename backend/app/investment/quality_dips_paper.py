@@ -76,15 +76,16 @@ def _event_id(*parts: Any) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
-def initialize_test_account(
+def initialize_paper_account(
     *,
     account_id: str,
     opening_cash: Any,
     fee_bps_per_side: Any,
     max_open_positions: int = 1,
+    data_provenance: str = "TEST_DATA",
     path: Path = QUALITY_DIPS_PAPER_JOURNAL_PATH,
 ) -> Dict[str, Any]:
-    """Create one explicitly TEST_DATA account in an isolated PAPER journal."""
+    """Create one provenance-bound simulated account in an isolated PAPER journal."""
     ident = str(account_id or "").strip()
     cash = _positive_number(opening_cash, "opening_cash")
     fee_bps = _nonnegative_number(fee_bps_per_side, "fee_bps_per_side")
@@ -93,8 +94,9 @@ def initialize_test_account(
         or fee_bps > 1000
         or type(max_open_positions) is not int
         or max_open_positions < 1
+        or data_provenance not in {"TEST_DATA", "FORWARD_COLLECTION"}
     ):
-        raise ValueError("valid TEST_DATA account configuration required")
+        raise ValueError("valid simulated PAPER account configuration required")
     rows = read_events(path)
     existing = [row for row in rows if row.get("event") == "account_opened"]
     expected = {
@@ -103,14 +105,18 @@ def initialize_test_account(
         "currency": "SIMULATED_USD",
         "fee_bps_per_side": fee_bps,
         "max_open_positions": max_open_positions,
-        "data_provenance": "TEST_DATA",
+        "data_provenance": data_provenance,
     }
+    if data_provenance == "FORWARD_COLLECTION":
+        expected["max_entry_notional"] = 100.0
     if existing:
-        if len(existing) != 1 or any(existing[0].get(key) != value for key, value in expected.items()):
-            raise ValueError("TEST_DATA account configuration conflicts with durable journal")
+        if len(existing) != 1 or any(
+            existing[0].get(key) != value for key, value in expected.items()
+        ):
+            raise ValueError("PAPER account configuration conflicts with durable journal")
         return existing[0]
     if rows:
-        raise ValueError("TEST_DATA account must be initialized before journal transactions")
+        raise ValueError("PAPER account must be initialized before journal transactions")
     row = {
         "schema_version": 1,
         "event": "account_opened",
@@ -123,6 +129,25 @@ def initialize_test_account(
         "automatic_real_money_execution": False,
     }
     return _append(row, Path(path))
+
+
+def initialize_test_account(
+    *,
+    account_id: str,
+    opening_cash: Any,
+    fee_bps_per_side: Any,
+    max_open_positions: int = 1,
+    path: Path = QUALITY_DIPS_PAPER_JOURNAL_PATH,
+) -> Dict[str, Any]:
+    """Create one explicitly TEST_DATA account in an isolated PAPER journal."""
+    return initialize_paper_account(
+        account_id=account_id,
+        opening_cash=opening_cash,
+        fee_bps_per_side=fee_bps_per_side,
+        max_open_positions=max_open_positions,
+        data_provenance="TEST_DATA",
+        path=path,
+    )
 
 
 def record_decision(
@@ -219,10 +244,14 @@ def open_lot(
         account = accounting_snapshot(rows, account_id=account_id)
         if account is None:
             raise ValueError("initialized TEST_DATA account required")
-        if observation.get("evidence_class") != "TEST_DATA":
-            raise ValueError("TEST_DATA account refuses non-TEST_DATA observations")
+        provenance = account["data_provenance"]
+        if observation.get("evidence_class") != provenance:
+            raise ValueError(f"{provenance} account refuses mismatched observations")
         if fee_bps != account["fee_bps_per_side"]:
             raise ValueError("PAPER fee policy differs from initialized account")
+        max_entry_notional = account.get("max_entry_notional")
+        if max_entry_notional is not None and notional > float(max_entry_notional):
+            raise ValueError("PAPER account per-entry notional limit reached")
         if account["open_positions"] >= account["max_open_positions"]:
             raise ValueError("PAPER account open-position limit reached")
         if account["available_cash"] + 1e-8 < notional + entry_fee:
@@ -243,7 +272,11 @@ def open_lot(
         "account_id": account_id,
         "fee_bps_per_side": fee_bps,
         "entry_fee": entry_fee,
-        "data_provenance": "TEST_DATA" if account_id is not None else observation.get("evidence_class"),
+        "data_provenance": (
+            accounting_snapshot(read_events(path), account_id=account_id)["data_provenance"]
+            if account_id is not None
+            else observation.get("evidence_class")
+        ),
         "strategy_version": STRATEGY_VERSION,
         "policy_version": POLICY_VERSION,
         "paper_policy_version": PAPER_POLICY_VERSION,
@@ -278,13 +311,15 @@ def accounting_snapshot(
     *,
     account_id: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Reconstruct TEST_DATA cash and costs from the same append-only journal."""
+    """Reconstruct simulated cash and costs from the same append-only journal."""
     rows = list(events)
     accounts = [row for row in rows if row.get("event") == "account_opened"]
     if not accounts:
         return None
-    if len(accounts) != 1 or accounts[0].get("data_provenance") != "TEST_DATA":
-        raise ValueError("TEST_DATA account journal identity is ambiguous")
+    if len(accounts) != 1 or accounts[0].get("data_provenance") not in {
+        "TEST_DATA", "FORWARD_COLLECTION"
+    }:
+        raise ValueError("PAPER account journal identity is ambiguous")
     account = accounts[0]
     ident = account.get("account_id")
     if account_id is not None and account_id != ident:
@@ -292,12 +327,13 @@ def accounting_snapshot(
     financial_events = {"open_lot", "mark_lot", "close_lot"}
     if any(row.get("event") in financial_events and row.get("account_id") != ident for row in rows):
         raise ValueError("financial event account identity conflicts with journal")
+    provenance = account["data_provenance"]
     if any(
-        row.get("account_id") == ident and row.get("data_provenance") != "TEST_DATA"
+        row.get("account_id") == ident and row.get("data_provenance") != provenance
         for row in rows
         if row.get("event") in financial_events
     ):
-        raise ValueError("non-TEST_DATA event found in TEST_DATA account")
+        raise ValueError("PAPER event provenance conflicts with its account")
 
     opened = {
         row["lot_id"]: row
@@ -347,7 +383,7 @@ def accounting_snapshot(
     return {
         "account_id": ident,
         "currency": account["currency"],
-        "data_provenance": "TEST_DATA",
+        "data_provenance": provenance,
         "opening_cash": round(float(account["opening_cash"]), 8),
         "available_cash": round(cash, 8),
         "fees_paid": round(fees_paid, 8),
@@ -355,6 +391,7 @@ def accounting_snapshot(
         "net_realized_pnl": round(net_realized, 8),
         "fee_bps_per_side": float(account["fee_bps_per_side"]),
         "max_open_positions": int(account["max_open_positions"]),
+        "max_entry_notional": account.get("max_entry_notional"),
         "open_positions": open_count,
         "cash_reconciled": True,
         "cash_difference": 0.0,
@@ -389,6 +426,7 @@ def mirror_forward_observation(
     observation: Dict[str, Any],
     *,
     paper_notional_by_level: Optional[Dict[str, Any]] = None,
+    account_id: Optional[str] = None,
     path: Path = QUALITY_DIPS_PAPER_JOURNAL_PATH,
 ) -> Dict[str, Any]:
     """Mirror one frozen forward V3 observation into deterministic PAPER evidence.
@@ -410,6 +448,7 @@ def mirror_forward_observation(
             observation,
             decision="PAPER_NO_FILL",
             reason="V3 state not actionable or no frozen ladder level reached",
+            account_id=account_id,
             path=path,
         )
         return {"decision": row, "opened_lots": []}
@@ -421,6 +460,7 @@ def mirror_forward_observation(
         observation,
         decision="PAPER_OPEN_" + "_".join(reached),
         reason="Frozen V3 forward observation reached eligible long-only ladder level(s)",
+        account_id=account_id,
         path=path,
     )
     lots = [
@@ -429,6 +469,12 @@ def mirror_forward_observation(
             level=level,
             paper_notional_dollars=notionals[level],
             fill_price=observation.get("price"),
+            account_id=account_id,
+            fee_bps_per_side=(
+                accounting_snapshot(read_events(path), account_id=account_id)["fee_bps_per_side"]
+                if account_id is not None
+                else 0
+            ),
             path=path,
         )
         for level in reached

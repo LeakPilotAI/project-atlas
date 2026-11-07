@@ -26,6 +26,7 @@ from app.investment.quality_dips_paper import (
 )
 from app.investment.quality_dips_paper_exit_policy import evaluate_exit
 from app.investment.quality_dips_v3 import build_v3_entry_plan
+from app.investment.storage import OPPORTUNITIES_PATH
 from app.services.personal_hyperliquid_public_data import (
     HyperliquidPublicDataError,
     initialize_public_data_budget,
@@ -33,9 +34,27 @@ from app.services.personal_hyperliquid_public_data import (
     public_data_read_model,
     refresh_and_store_public_data,
 )
+from app.services.personal_paper_observations import (
+    FORWARD_ACCOUNT_ID,
+    process_public_observations,
+    read_strategy_observations,
+)
 from app.services.personal_public_market_data import (
     market_data_read_model,
     refresh_and_store_yahoo_public_data,
+)
+
+DEFAULT_FORWARD_JOURNAL = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "personal_paper_forward"
+    / "quality_dips_paper.jsonl"
+)
+DEFAULT_STRATEGY_OBSERVATIONS = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "personal_paper_forward"
+    / "strategy_observations.jsonl"
 )
 
 ACCOUNT_ID = "atlas-personal-qd-test-data-v1"
@@ -138,14 +157,16 @@ def _equity_drawdown(events: list[dict[str, Any]]) -> dict[str, float]:
 def build_daily_report(
     events: list[dict[str, Any]],
     report_day: date,
+    *,
+    account_id: str = ACCOUNT_ID,
 ) -> dict[str, Any]:
-    account = accounting_snapshot(events, account_id=ACCOUNT_ID)
+    account = accounting_snapshot(events, account_id=account_id)
     if account is None:
         return {
             "schema": "ATLAS_PERSONAL_PAPER_DAILY_REPORT_V1",
             "status": "UNAVAILABLE",
             "date": report_day.isoformat(),
-            "data_provenance": "TEST_DATA",
+            "data_provenance": "TEST_DATA" if account_id == ACCOUNT_ID else "FORWARD_COLLECTION",
             "reason": "TEST_DATA_ACCOUNT_NOT_INITIALIZED",
             "startup_authorized": False,
         }
@@ -167,13 +188,13 @@ def build_daily_report(
     opens = [
         row for row in events
         if row.get("event") == "open_lot"
-        and row.get("account_id") == ACCOUNT_ID
+        and row.get("account_id") == account_id
         and in_day(row, "timestamp")
     ]
     closes = [
         row for row in events
         if row.get("event") == "close_lot"
-        and row.get("account_id") == ACCOUNT_ID
+        and row.get("account_id") == account_id
         and in_day(row, "timestamp")
     ]
     wins = sum(float(row.get("net_realized_pnl") or 0) > 0 for row in closes)
@@ -184,13 +205,14 @@ def build_daily_report(
         float(row.get("exit_fee") or 0) for row in closes
     )
     portfolio = portfolio_snapshot(events)
+    provenance = account["data_provenance"]
     return {
         "schema": "ATLAS_PERSONAL_PAPER_DAILY_REPORT_V1",
         "status": "COMPLETE",
         "date": day_key,
         "strategy": "QUALITY_DIPS_V3",
-        "data_provenance": "TEST_DATA",
-        "source_fixture": TEST_FIXTURE_ID,
+        "data_provenance": provenance,
+        "source_fixture": TEST_FIXTURE_ID if provenance == "TEST_DATA" else None,
         "source_revision": len(events),
         "currency": "SIMULATED_USD",
         "closed_trades": len(closes),
@@ -209,7 +231,7 @@ def build_daily_report(
         "generated_at": _now().isoformat(),
         "startup_authorized": False,
         "production_authorized": False,
-        "genuine_forward_paper": False,
+        "genuine_forward_paper": provenance == "FORWARD_COLLECTION",
         "operational_acceptance": False,
     }
 
@@ -241,7 +263,10 @@ def run_test_data_session(path: Path = DEFAULT_JOURNAL) -> dict[str, Any]:
         for row in plan["entry_ladder"]["levels"]
         if row["reached"] is True
     ]
-    if plan["patient_state"] not in {"ACCUMULATION", "DEEP_VALUE", "GENERATIONAL"} or "L1" not in reached:
+    if (
+        plan["patient_state"] not in {"ACCUMULATION", "DEEP_VALUE", "GENERATIONAL"}
+        or "L1" not in reached
+    ):
         raise RuntimeError("fixed TEST_DATA no longer produces the expected V3 PAPER entry")
     observation = {
         "observation_id": f"{TEST_FIXTURE_ID}:entry",
@@ -309,25 +334,36 @@ def create_app(
     journal_path: Path = DEFAULT_JOURNAL,
     market_data_path: Path = DEFAULT_MARKET_DATA,
     hyperliquid_data_path: Path = DEFAULT_HYPERLIQUID_MARKET_DATA,
+    *,
+    forward_journal_path: Path = DEFAULT_FORWARD_JOURNAL,
+    strategy_observations_path: Path = DEFAULT_STRATEGY_OBSERVATIONS,
 ) -> FastAPI:
     path = Path(journal_path)
     public_data_path = Path(market_data_path)
     hyperliquid_data = Path(hyperliquid_data_path)
+    forward_path = Path(forward_journal_path)
+    strategy_path = Path(strategy_observations_path)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         events = read_events(path)
         portfolio_snapshot(events)
+        forward_events = read_events(forward_path)
+        portfolio_snapshot(forward_events)
         market_data_read_model(public_data_path)
         public_data_read_model(hyperliquid_data)
+        read_strategy_observations(strategy_path)
         yield
         events = read_events(path)
         portfolio_snapshot(events)
+        forward_events = read_events(forward_path)
+        portfolio_snapshot(forward_events)
         market_data_read_model(public_data_path)
         public_data_read_model(hyperliquid_data)
+        read_strategy_observations(strategy_path)
 
     app = FastAPI(
-        title="Atlas Personal Quality Dips PAPER — TEST DATA",
+        title="Atlas Personal PAPER — local simulation only",
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
@@ -341,18 +377,31 @@ def create_app(
     @app.get("/api/paper/status")
     def status() -> dict[str, Any]:
         events = read_events(path)
+        forward_events = read_events(forward_path)
+        forward_account = accounting_snapshot(forward_events, account_id=FORWARD_ACCOUNT_ID)
         return {
             "schema": "ATLAS_PERSONAL_PAPER_LOCAL_STATUS_V1",
             "runtime": "STANDALONE_LOOPBACK_QUALITY_DIPS_PAPER",
             "data_provenance": "TEST_DATA",
             "last_record_at": events[-1].get("timestamp") if events else None,
             "record_count": len(events),
+            "forward_paper": {
+                "account_id": FORWARD_ACCOUNT_ID,
+                "data_provenance": "FORWARD_COLLECTION",
+                "record_count": len(forward_events),
+                "cash_reconciled": (
+                    None if forward_account is None else forward_account["cash_reconciled"]
+                ),
+                "paper_positions": (
+                    0 if forward_account is None else forward_account["open_positions"]
+                ),
+            },
             "broker_order_created": False,
             "live_order_adapter_connected": False,
             "provider_connections_used": False,
             "external_connections_used": False,
             "genesis_accessed": False,
-            "genuine_forward_paper": False,
+            "genuine_forward_paper": forward_account is not None,
             "operational_acceptance": False,
             "startup_authorized": False,
             "production_authorized": False,
@@ -384,6 +433,47 @@ def create_app(
             raise HTTPException(status_code=422, detail=str(exc)) from exc
         return build_daily_report(read_events(path), parsed_day)
 
+    @app.get("/api/paper/forward/portfolio")
+    def forward_portfolio() -> dict[str, Any]:
+        return portfolio_snapshot(read_events(forward_path))
+
+    @app.get("/api/paper/forward/trades")
+    def forward_trades() -> dict[str, Any]:
+        events = read_events(forward_path)
+        return {
+            "schema": "ATLAS_PERSONAL_PAPER_TRADES_V1",
+            "data_provenance": "FORWARD_COLLECTION",
+            "source_revision": len(events),
+            "transactions": [
+                row for row in events
+                if row.get("event") in {"open_lot", "mark_lot", "close_lot"}
+            ],
+            "decisions": [row for row in events if row.get("event") == "decision"],
+        }
+
+    @app.get("/api/paper/forward/report")
+    def forward_report(day: str | None = Query(default=None, alias="date")) -> dict[str, Any]:
+        try:
+            parsed_day = _report_date(day)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return build_daily_report(
+            read_events(forward_path),
+            parsed_day,
+            account_id=FORWARD_ACCOUNT_ID,
+        )
+
+    @app.get("/api/strategy/observations")
+    def strategy_observations() -> dict[str, Any]:
+        rows = read_strategy_observations(strategy_path)
+        return {
+            "schema": "ATLAS_PERSONAL_PAPER_STRATEGY_OBSERVATIONS_READ_V1",
+            "data_provenance": "PUBLIC_PROVIDER_DATA",
+            "record_count": len(rows),
+            "observations": rows,
+            "paper_execution_authorized": False,
+        }
+
     @app.get("/api/market-data/quality-dips")
     def public_market_data() -> dict[str, Any]:
         return market_data_read_model(public_data_path)
@@ -400,9 +490,10 @@ _DASHBOARD_HTML = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Atlas Personal PAPER — TEST DATA</title>
+  <title>Atlas Personal PAPER — Local</title>
   <style>
-    body{font:16px system-ui,sans-serif;max-width:980px;margin:2rem auto;padding:0 1rem;color:#17212b}
+    body{font:16px system-ui,sans-serif;max-width:980px;margin:2rem auto;
+      padding:0 1rem;color:#17212b}
     .banner{padding:1rem;background:#fff2cc;border:1px solid #d6aa35;font-weight:700}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
     section{border:1px solid #ccd3da;border-radius:8px;padding:1rem;margin:1rem 0}
@@ -412,16 +503,25 @@ _DASHBOARD_HTML = """<!doctype html>
 </head>
 <body>
   <h1>Atlas Personal Quality Dips PAPER</h1>
-  <p class="banner">TEST DATA ONLY — offline deterministic demonstration, not genuine forward PAPER or market activity.</p>
+  <p class="banner">SIMULATED ONLY — TEST DATA ONLY applies to deterministic fixtures;
+    FORWARD_COLLECTION is separate and historical bars are never executable quotes.</p>
   <p id="freshness" class="muted">Loading local journal…</p>
   <p id="error" role="alert"></p>
   <div class="grid">
     <section><h2>Portfolio</h2><pre id="portfolio">Loading…</pre></section>
     <section><h2>Daily report</h2><pre id="report">Loading…</pre></section>
+    <section><h2>Forward PAPER portfolio</h2><pre id="forward-portfolio">Loading…</pre></section>
+    <section><h2>Forward PAPER daily report</h2><pre id="forward-report">Loading…</pre></section>
   </div>
   <section><h2>Durable simulated transactions</h2><pre id="trades">Loading…</pre></section>
-  <section><h2>Yahoo public market data — separate from the TEST DATA account</h2><pre id="market-data">Loading…</pre></section>
-  <section><h2>Hyperliquid public market data — BTC / ETH / SOL</h2><pre id="hyperliquid-data">Loading…</pre></section>
+  <section><h2>Forward PAPER decisions and transactions</h2>
+    <pre id="forward-trades">Loading…</pre></section>
+  <section><h2>Strategy decisions — timestamped public observations</h2>
+    <pre id="strategy-observations">Loading…</pre></section>
+  <section><h2>Yahoo public market data — separate from the TEST DATA account</h2>
+    <pre id="market-data">Loading…</pre></section>
+  <section><h2>Hyperliquid public market data — BTC / ETH / SOL</h2>
+    <pre id="hyperliquid-data">Loading…</pre></section>
   <script>
     async function readLocal(path) {
       const response = await fetch(path, {cache: "no-store"});
@@ -430,18 +530,32 @@ _DASHBOARD_HTML = """<!doctype html>
     }
     async function refresh() {
       try {
-        const [status, portfolio, report, trades, marketData, hyperliquidData] = await Promise.all([
+        const [
+          status, portfolio, report, trades, forwardPortfolio, forwardReport,
+          forwardTrades, strategyObservations, marketData, hyperliquidData
+        ] = await Promise.all([
           readLocal("/api/paper/status"), readLocal("/api/paper/portfolio"),
           readLocal("/api/paper/report"), readLocal("/api/paper/trades"),
+          readLocal("/api/paper/forward/portfolio"), readLocal("/api/paper/forward/report"),
+          readLocal("/api/paper/forward/trades"), readLocal("/api/strategy/observations"),
           readLocal("/api/market-data/quality-dips"),
           readLocal("/api/market-data/hyperliquid")
         ]);
         document.querySelector("#freshness").textContent =
-          "TEST DATA · journal records: " + status.record_count +
-          " · last local transaction: " + (status.last_record_at || "none");
+          "TEST DATA records: " + status.record_count +
+          " · FORWARD_COLLECTION records: " + status.forward_paper.record_count +
+          " · live orders disabled";
         document.querySelector("#portfolio").textContent = JSON.stringify(portfolio, null, 2);
         document.querySelector("#report").textContent = JSON.stringify(report, null, 2);
         document.querySelector("#trades").textContent = JSON.stringify(trades, null, 2);
+        document.querySelector("#forward-portfolio").textContent =
+          JSON.stringify(forwardPortfolio, null, 2);
+        document.querySelector("#forward-report").textContent =
+          JSON.stringify(forwardReport, null, 2);
+        document.querySelector("#forward-trades").textContent =
+          JSON.stringify(forwardTrades, null, 2);
+        document.querySelector("#strategy-observations").textContent =
+          JSON.stringify(strategyObservations, null, 2);
         document.querySelector("#market-data").textContent = marketData.record_count
           ? JSON.stringify(marketData.latest_by_symbol.map(record => ({
               symbol: record.symbol,
@@ -466,14 +580,16 @@ _DASHBOARD_HTML = """<!doctype html>
              request_budget_remaining: hyperliquidData.latest.request_budget_remaining,
              current_marks: hyperliquidData.latest.current_marks,
              daily_bar_counts: Object.fromEntries(
-               Object.entries(hyperliquidData.latest.daily_bars).map(([symbol, bars]) => [symbol, bars.length])
+               Object.entries(hyperliquidData.latest.daily_bars)
+                 .map(([symbol, bars]) => [symbol, bars.length])
              ),
              provider_errors: hyperliquidData.latest.provider_errors,
              websocket_started: hyperliquidData.latest.websocket_started,
              paper_entry_authorized: hyperliquidData.paper_entry_authorized,
              operational_acceptance: hyperliquidData.operational_acceptance
            }, null, 2)
-          : "No Hyperliquid public data loaded. Fetches require an explicit manual command and request budget.";
+          : "No Hyperliquid public data loaded. Fetches require an explicit manual command "
+            + "and request budget.";
         document.querySelector("#error").textContent = "";
       } catch (error) {
         document.querySelector("#freshness").textContent = "Local PAPER data unavailable.";
@@ -488,10 +604,16 @@ _DASHBOARD_HTML = """<!doctype html>
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Standalone loopback Quality Dips PAPER app using TEST DATA only."
+        description="Manually operated loopback Personal PAPER app; live execution is disabled."
     )
     parser.add_argument("--data-path", type=Path, default=DEFAULT_JOURNAL)
     parser.add_argument("--market-data-path", type=Path, default=DEFAULT_MARKET_DATA)
+    parser.add_argument("--forward-data-path", type=Path, default=DEFAULT_FORWARD_JOURNAL)
+    parser.add_argument(
+        "--strategy-observations-path",
+        type=Path,
+        default=DEFAULT_STRATEGY_OBSERVATIONS,
+    )
     parser.add_argument(
         "--hyperliquid-data-path",
         type=Path,
@@ -524,6 +646,11 @@ def main(argv: list[str] | None = None) -> None:
         help="manually fetch public BTC/ETH/SOL mark and bounded daily candle data",
     )
     parser.add_argument(
+        "--process-market-observations",
+        action="store_true",
+        help="evaluate persisted Yahoo and Hyperliquid data; no market-data request is made",
+    )
+    parser.add_argument(
         "--confirm-read-only-public-data",
         action="store_true",
         help="confirm this explicit command is authorized to request public market data",
@@ -534,6 +661,7 @@ def main(argv: list[str] | None = None) -> None:
         bool(args.fetch_yahoo_public_data),
         args.initialize_hyperliquid_public_data_budget,
         args.fetch_hyperliquid_public_data,
+        args.process_market_observations,
     ]
     if sum(modes) > 1:
         parser.error("Choose only one explicit data or TEST DATA command at a time")
@@ -620,6 +748,18 @@ def main(argv: list[str] | None = None) -> None:
             "hyperliquid_data_path": str(args.hyperliquid_data_path),
         }, indent=2, sort_keys=True))
         return
+    if args.process_market_observations:
+        from app.investment.latest_index import latest_index
+
+        result = process_public_observations(
+            market_data_path=args.market_data_path,
+            hyperliquid_data_path=args.hyperliquid_data_path,
+            forward_journal_path=args.forward_data_path,
+            strategy_observation_path=args.strategy_observations_path,
+            research_rows=latest_index.read(OPPORTUNITIES_PATH),
+        )
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
     if not 1024 <= args.port <= 65535:
         parser.error("--port must be between 1024 and 65535")
     import signal
@@ -634,7 +774,13 @@ def main(argv: list[str] | None = None) -> None:
 
     server = LocalPaperServer(
         uvicorn.Config(
-            create_app(args.data_path),
+            create_app(
+                args.data_path,
+                args.market_data_path,
+                args.hyperliquid_data_path,
+                forward_journal_path=args.forward_data_path,
+                strategy_observations_path=args.strategy_observations_path,
+            ),
             host="127.0.0.1",
             port=args.port,
             log_level="info",
@@ -651,10 +797,20 @@ def main(argv: list[str] | None = None) -> None:
 
 app = create_app(
     Path(os.environ.get("ATLAS_PERSONAL_PAPER_DATA_PATH", DEFAULT_JOURNAL)),
+    Path(os.environ.get("ATLAS_PERSONAL_PAPER_MARKET_DATA_PATH", DEFAULT_MARKET_DATA)),
     hyperliquid_data_path=Path(
         os.environ.get(
             "ATLAS_PERSONAL_HYPERLIQUID_DATA_PATH",
             DEFAULT_HYPERLIQUID_MARKET_DATA,
+        )
+    ),
+    forward_journal_path=Path(
+        os.environ.get("ATLAS_PERSONAL_PAPER_FORWARD_DATA_PATH", DEFAULT_FORWARD_JOURNAL)
+    ),
+    strategy_observations_path=Path(
+        os.environ.get(
+            "ATLAS_PERSONAL_PAPER_STRATEGY_DATA_PATH",
+            DEFAULT_STRATEGY_OBSERVATIONS,
         )
     ),
 )

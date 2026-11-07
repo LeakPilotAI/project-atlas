@@ -1,3 +1,53 @@
+PERSONAL PAPER RELEASE UPDATE - 2026-11-06 - MARKET OBSERVATION INTEGRATION
+Base: 3674ba0dd53a0c7ee0d9b3d961fff12693cc5f5d.
+This Personal PAPER checklist is independent of, and does not advance, AIP-06.
+
+PERSONAL PAPER COMPLETION CHECKLIST
+[x] Manually persisted Yahoo and Hyperliquid public market data feed the existing
+    Quality Dips V3 and BTC/ETH/SOL perp discovery evaluators.
+[x] Require timezone-aware provider candle timestamps, 15-minute source snapshot
+    and QD bar freshness, a 24-hour QD research window, and closed daily candles.
+[x] Yahoo intraday bar closes and Hyperliquid daily closes are research evidence
+    only; neither is represented as an executable current quote or paper fill.
+[x] Keep a distinct FORWARD_COLLECTION Quality Dips account/journal, bounded to
+    $1,000 simulated USD, $100 per entry, one open position, and 2 bps/side fees.
+[x] Persist no-trade decisions and expose forward account cash, positions, trades,
+    daily P&L, and strategy observations through read-only loopback endpoints.
+[x] Exercise fee/accounting/position persistence and restart reconciliation with
+    the existing explicitly labeled TEST_DATA fixture, never public data.
+[x] Keep public refresh and strategy evaluation manually invoked; no worker,
+    WebSocket, private-account, order, Genesis, or automatic execution path starts.
+[x] Complete a manual public refresh and persist four strategy observations plus
+    forward-account events; read back cash, P&L, and decisions through local APIs.
+[x] Pass loopback start, dashboard, TEST_DATA fixture execution, restart recovery,
+    and clean-stop acceptance without mixing fixture trades into forward data.
+[ ] Genuine forward PAPER entries remain blocked: current Yahoo data is an
+    intraday bar close, Hyperliquid marks have only REST-request-start timestamps,
+    and no existing provider supplies a timestamped executable current quote.
+[ ] Refresh and independently confirm fresh eligible Quality Dips fundamentals/
+    valuation evidence before claiming candidate-level forward readiness.
+
+Exact local workflow (run from backend with the existing Windows venv):
+1. `.\.venv\Scripts\python.exe -m app.personal_paper --fetch-yahoo-public-data MSFT --confirm-read-only-public-data`
+2. `.\.venv\Scripts\python.exe -m app.personal_paper --fetch-hyperliquid-public-data --confirm-read-only-public-data`
+3. `.\.venv\Scripts\python.exe -m app.personal_paper --process-market-observations`
+4. `.\.venv\Scripts\python.exe -m app.personal_paper --port 8765`
+5. Open `http://127.0.0.1:8765/`; stop the server with Ctrl+C.
+Run `--initialize-hyperliquid-public-data-budget` only if no prior budget exists;
+budget initialization does not reset consumed requests. Run `--run-test-data`
+separately for the deterministic offline simulated entry/exit.
+
+Validation at this checkpoint: focused Personal PAPER, public market-data,
+Hyperliquid, and Quality Dips lifecycle regressions pass. A manual public refresh,
+real-data no-trade processing, dashboard/report readback, and deterministic
+loopback restart acceptance are verified. Genuine forward PAPER entries remain
+blocked by the absence of an executable current quote and fresh research evidence.
+Financial execution remains disabled.
+AIP-06 remains at its historical 5/18 checkpoint and all native activation gates
+remain blocked.
+
+---
+
 PERSONAL PAPER RELEASE UPDATE - 2026-11-06
 This dated update supersedes only stale "CURRENT CHECKPOINT" summaries below.
 Historical roadmap evidence and original milestone count remain unchanged.
