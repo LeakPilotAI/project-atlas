@@ -293,6 +293,7 @@ class IEXFeed:
         logger.disabled = True
         deadline, attempt = time.monotonic() + seconds, 0
         authenticated, subscribed = False, False
+        fresh_quote_observed = False
         async with self.run_lock:
             try:
                 while time.monotonic() < deadline and not (stop and stop.is_set()):
@@ -352,6 +353,10 @@ class IEXFeed:
                                         ws.recv(), min(1, max(0.01, deadline - time.monotonic()))
                                     )
                                     self.receive(raw)
+                                    if self.authenticated and self.subscribed:
+                                        fresh_quote_observed = fresh_quote_observed or any(
+                                            q["state"] == "FRESH" for q in self.snapshot()["quotes"]
+                                        )
                                 except TimeoutError:
                                     pass  # RFC6455 transport pings continue independently.
                             if self.roster_revision != roster_revision:
@@ -383,6 +388,7 @@ class IEXFeed:
             "endpoint": URL,
             "feed": "IEX",
             "quote_count": self.observations,
+            "fresh_quote_observed_during_connection": fresh_quote_observed,
             "reconnects": attempt,
             "result": self.snapshot(),
         }

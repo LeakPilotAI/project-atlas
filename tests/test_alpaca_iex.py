@@ -468,3 +468,23 @@ async def test_readonly_router_shows_data_even_when_financial_source_unavailable
             )
         ).status_code == 403
     assert f.observations == 1
+
+
+@pytest.mark.asyncio
+async def test_bounded_probe_records_fresh_quote_seen_before_disconnect():
+    w = Wire(['[{"T":"success","msg":"authenticated"}]',
+              '[{"T":"subscription","quotes":["MSFT"]}]',
+              json.dumps([message()])])
+    @asynccontextmanager
+    async def connect(url, **kwargs):
+        yield w
+    f = IEXFeed(["MSFT"], clock=lambda: STAMP + 0.5)
+    result = await f.run(Credentials("test-key", "test-secret"),
+                         seconds=1, connect=connect, max_reconnects=0)
+    assert result["authenticated"] is True
+    assert result["subscribed"] is True
+    assert result["fresh_quote_observed_during_connection"] is True
+    assert result["quote_count"] == 1
+    assert result["result"]["connection"] == "DISCONNECTED"
+    assert result["result"]["quotes"][0]["state"] != "FRESH"
+    assert "test-secret" not in repr(result)
