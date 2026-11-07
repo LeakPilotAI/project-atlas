@@ -554,6 +554,8 @@ def test_prediction_paper_repricing_rejects_wide_spread():
     )
     assert result["eligible"] is False
     assert "SPREAD_TOO_WIDE" in result["rejection_reasons"]
+    assert "HISTORICAL_HIGH_NOT_FORWARD_EXIT_EVIDENCE" in result["rejection_reasons"]
+    assert result["projected"]["forward_exit_edge_verified"] is False
     assert result["live_capital_allowed"] is False
 
 

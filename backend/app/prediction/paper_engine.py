@@ -490,6 +490,10 @@ def evaluate_pre_event_repricing(
     projected_net = None
     net_edge_per_contract = None
     if entry_vwap is not None and entry_fee is not None and recent_reclaim_bid is not None:
+        # A past intrabar high is hindsight, not an executable future exit.
+        # Preserve it as research evidence, but never admit a PAPER candidate
+        # solely because that historical price would have been profitable.
+        reasons.append("HISTORICAL_HIGH_NOT_FORWARD_EXIT_EVIDENCE")
         projected_exit_fee = kalshi_general_taker_fee(quantity, recent_reclaim_bid)
         projected_gross = (recent_reclaim_bid - entry_vwap) * quantity
         projected_net = projected_gross - entry_fee - projected_exit_fee
@@ -563,6 +567,8 @@ def evaluate_pre_event_repricing(
             "exit_fee_dollars": _fixed(projected_exit_fee),
             "net_repricing_pnl_dollars": _fixed(projected_net),
             "net_edge_dollars_per_contract": _fixed(net_edge_per_contract),
+            "exit_target_basis": "HISTORICAL_INTRABAR_HIGH_NOT_FORWARD_EXECUTABLE",
+            "forward_exit_edge_verified": False,
             "fee_model": FEE_MODEL_VERSION,
         },
         "rejection_reasons": reasons,
