@@ -534,3 +534,23 @@ async def test_authenticated_iex_callback_bridges_to_durable_readonly_watermark(
         assert consumer.accepted == 1
     assert datetime.fromisoformat(read_watermark(path, symbol="MSFT")) > start
     assert result["result"]["connection"] == "DISCONNECTED"
+
+
+@pytest.mark.asyncio
+async def test_readonly_callback_refusal_stops_feed_without_retry():
+    wire = Wire(['[{"T":"success","msg":"authenticated"}]',
+                 '[{"T":"subscription","quotes":["MSFT"]}]',
+                 json.dumps([message()])])
+    connects = []
+    @asynccontextmanager
+    async def connect(url, **kwargs):
+        connects.append(url)
+        yield wire
+    feed = IEXFeed(["MSFT"], clock=lambda: STAMP + 0.5)
+    def refuse(event):
+        raise ValueError("sensitive private diagnostic")
+    with pytest.raises(IEXRefused, match="IEX_READONLY_CONSUMER_REFUSED"):
+        await feed.run(Credentials("test-key", "test-secret"), seconds=1,
+                       connect=connect, max_reconnects=2, on_fresh_quote=refuse)
+    assert len(connects) == 1
+    assert feed.snapshot()["connection"] == "DISCONNECTED"

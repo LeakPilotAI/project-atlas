@@ -297,6 +297,7 @@ class IEXFeed:
         authenticated, subscribed = False, False
         fresh_quote_observed = False
         delivered_events = set()
+        callback_failure = None
         async with self.run_lock:
             try:
                 while time.monotonic() < deadline and not (stop and stop.is_set()):
@@ -367,14 +368,18 @@ class IEXFeed:
                                                     delivered_events.add(event_id)
                                                     # Read-only callback, no credentials or broker handles.
                                                     # Fail closed if the consumer raises; never silently skip it.
-                                                    on_fresh_quote({"symbol": q["symbol"],
-                                                                    "bid": q["bid"], "ask": q["ask"],
-                                                                    "bid_lots": q["bid_lots"],
-                                                                    "ask_lots": q["ask_lots"],
-                                                                    "timestamp": q["timestamp"],
-                                                                    "provider": "ALPACA_IEX",
-                                                                    "paper_fill_authorized": False,
-                                                                    "live_order_authorized": False})
+                                                    try:
+                                                        on_fresh_quote({"symbol": q["symbol"],
+                                                                        "bid": q["bid"], "ask": q["ask"],
+                                                                        "bid_lots": q["bid_lots"],
+                                                                        "ask_lots": q["ask_lots"],
+                                                                        "timestamp": q["timestamp"],
+                                                                        "provider": "ALPACA_IEX",
+                                                                        "paper_fill_authorized": False,
+                                                                        "live_order_authorized": False})
+                                                    except Exception as exc:
+                                                        callback_failure = exc
+                                                        raise
                                 except TimeoutError:
                                     pass  # RFC6455 transport pings continue independently.
                             if self.roster_revision != roster_revision:
@@ -388,6 +393,9 @@ class IEXFeed:
                     except asyncio.CancelledError:
                         raise
                     except Exception:  # noqa: BLE001 - never forward third-party transport errors or headers
+                        if callback_failure is not None:
+                            self.disconnect("IEX_READONLY_CONSUMER_REFUSED")
+                            raise IEXRefused("IEX_READONLY_CONSUMER_REFUSED") from None
                         self.disconnect(
                             "IEX_TRANSPORT_UNAVAILABLE"
                         )  # Never echo exceptions/headers.
