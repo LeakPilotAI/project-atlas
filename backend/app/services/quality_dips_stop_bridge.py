@@ -273,3 +273,33 @@ def register_accepted_unified_paper_stop_routes(app, *, bridge, origin, token):
         raise ValueError("ACCEPTED_UNIFIED_PAPER_STOP_INSTALLATION_REQUIRED")
     register_stop_routes(app, bridge=bridge, origin=origin, token=token,
                          require_session=True, require_durable_receipt=True)
+
+
+def enroll_unified_paper_stop_transport(app, *, runtime, owned_close, ledger_path, origin, token):
+    """Bind an already accepted PAPER session to its durable Stop transport.
+
+    Never starts a runtime, creates a grant, or supplies owner authority. A
+    caller must have separately commissioned the runtime and owned shutdown.
+    """
+    from app.services.unified_paper_runtime import UnifiedControlStopBridge, UnifiedPaperRuntime
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    if (type(runtime) is not UnifiedPaperRuntime
+            or runtime.state not in ('RUNNING', 'PAUSED')
+            or type(runtime.grant) is not dict
+            or type(runtime.grant.get('session_id')) is not str
+            or not runtime.grant['session_id'] or len(runtime.grant['session_id']) > 128
+            or not callable(owned_close)):
+        raise ValueError('PAPER_ACCEPTED_RUNTIME_AND_OWNER_REQUIRED')
+    # Never create or expose an HTTP endpoint before independently checking
+    # the installed runtime and any earlier unfinished stop for this session.
+    bridge = UnifiedControlStopBridge(runtime, owned_close=owned_close)
+    if bridge.verify_session() is not True:
+        raise ValueError('PAPER_SESSION_LEASE_UNVERIFIED')
+    ledger = PaperStopReceiptLedger(ledger_path)
+    if ledger.inspect_session(bridge.session_id) is not None:
+        runtime.entry_closed.set()
+        raise ValueError('PAPER_PRIOR_STOP_RECONCILIATION_REQUIRED')
+    bridge.stop_ledger = ledger
+    bridge._receipt_persisted = False
+    register_accepted_unified_paper_stop_routes(app, bridge=bridge, origin=origin, token=token)
+    return bridge

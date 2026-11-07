@@ -1253,3 +1253,15 @@ def test_native_paper_admission_close_unexpected_failure_refuses_lane_drain(fail
     assert attempts == [True]
     assert r.stop() == result
     assert attempts == [True]
+
+
+def test_enroll_unified_paper_stop_transport_rejects_unaccepted_runtime(tmp_path):
+    from fastapi import FastAPI
+    from app.services.quality_dips_stop_bridge import enroll_unified_paper_stop_transport
+    app = FastAPI()
+    r = runtime()
+    with pytest.raises(ValueError, match='PAPER_ACCEPTED_RUNTIME_AND_OWNER_REQUIRED'):
+        enroll_unified_paper_stop_transport(app, runtime=r, owned_close=lambda: True,
+            ledger_path=tmp_path / 'stop.sqlite', origin='http://127.0.0.1:18800', token='test-token')
+    assert not any(route.path == '/_atlas/control/stop-session' for route in app.routes)
+    assert not (tmp_path / 'stop.sqlite').exists()
