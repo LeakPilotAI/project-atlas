@@ -430,7 +430,18 @@ $closeGui = New-Object System.Windows.Forms.Button
 $closeGui.Text = 'Close GUI - Keep Atlas Running'
 $closeGui.Location = New-Object System.Drawing.Point(238, 440)
 $closeGui.Size = New-Object System.Drawing.Size(227, 32)
-$closeGui.Add_Click({ $script:KeepAtlasRunning = $true; $form.Close() })
+$closeGui.Add_Click({
+    # Never silently orphan an enrolled financial PAPER session when the
+    # operator closes the GUI. Ordinary FormClosing owns verified flatten.
+    if ($null -ne $AcceptedPaperSession) {
+        $script:KeepAtlasRunning = $false
+        Set-StatusMessage 'PAPER session enrolled: closing requires verified flatten and owned exit.' ([System.Drawing.Color]::DarkRed)
+        $form.Close()
+        return
+    }
+    $script:KeepAtlasRunning = $true
+    $form.Close()
+})
 $form.Controls.Add($closeGui)
 # A request can always display the gate refusal without a recovery-capable Status call.
 $startButton.Enabled = $true

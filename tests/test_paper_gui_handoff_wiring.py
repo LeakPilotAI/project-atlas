@@ -24,3 +24,13 @@ def test_gui_still_has_no_automatic_enrollment():
     assert "[object]$AcceptedPaperSession = $null" in source
     assert "[object]$AcceptedPaperStopHandoff = $null" in source
     assert "$startButton.Enabled = $false" in source
+
+
+
+def test_keep_running_button_cannot_orphan_enrolled_paper_session():
+    source = GUI.read_text(encoding="utf-8-sig")
+    assert "if ($null -ne $AcceptedPaperSession) {" in source
+    assert "PAPER session enrolled: closing requires verified flatten" in source
+    assert "$script:KeepAtlasRunning = $false" in source
+    assert "$script:KeepAtlasRunning = $true" in source
+    assert "$form.Close()" in source
