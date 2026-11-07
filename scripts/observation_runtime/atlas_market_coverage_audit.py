@@ -17,11 +17,26 @@ def audit_coverage(universe, registry):
     configured = {str(x.get("symbol", "")).upper() for x in assets if type(x) is dict and x.get("active", True) and x.get("symbol")}
     configured_types = Counter(str(x.get("asset_type", "UNKNOWN")) for x in assets if type(x) is dict and x.get("active", True) and x.get("symbol"))
     lanes = Counter(str(x.get("research_lane", "UNCLASSIFIED")) for x in symbols.values() if type(x) is dict)
+    # Robinhood's RHJ catalog is a stock-token surface. A ticker collision
+    # cannot prove the corresponding US brokerage listing is covered.
+    token_sources = {"robinhood_official_rhj_assets"}
+    token_only = sum(1 for x in symbols.values() if type(x) is dict
+                     and x.get("source") in token_sources)
+    tradable = sum(1 for x in symbols.values() if type(x) is dict
+                   and x.get("listing_state") == "TRADABLE" and x.get("tradable") is True)
+    # No authenticated US brokerage catalog has been enrolled in this audit.
+    # Never route token symbols into an equity PAPER feed by name alone.
     return {"schema": "ATLAS_MARKET_COVERAGE_AUDIT_V1",
             "configured_active_symbol_count": len(configured),
             "configured_asset_types": dict(sorted(configured_types.items())),
             "robinhood_discovery_symbol_count": len(symbols),
             "robinhood_discovery_lanes": dict(sorted(lanes.items())),
+            "robinhood_discovery_tradable_records": tradable,
+            "robinhood_stock_token_source_records": token_only,
+            "verified_us_brokerage_listings": 0,
+            "verified_cross_catalog_symbol_matches": 0,
+            "cross_catalog_symbol_matching_authorized": False,
+            "configured_symbols_without_matching_token_ticker": len(configured - set(symbols)),
             "configured_symbols_missing_from_discovery": len(configured - set(symbols)),
             "robinhood_us_brokerage_universe_complete": False,
             "stock_token_catalog_is_us_brokerage_universe": False,
