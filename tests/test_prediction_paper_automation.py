@@ -21,6 +21,8 @@ def _market(now, *, volume="500", oi="300"):
         "no_ask_dollars": "0.60", "volume_fp": volume, "volume_24h_fp": volume,
         "open_interest_fp": oi, "occurrence_datetime": (now + timedelta(hours=3)).isoformat(),
         "is_provisional": False, "mve_collection_ticker": "", "mve_selected_legs": [],
+        "created_time": (now - timedelta(hours=1)).isoformat(),
+        "open_time": (now - timedelta(minutes=45)).isoformat(),
     })
 
 
@@ -523,3 +525,19 @@ def test_terminal_unclosed_is_not_counted_as_active_or_closed_trade(tmp_path):
     assert snapshot["summary"]["expired_unclosed_trades"] == 1
     assert snapshot["summary"]["closed_trades"] == 0
     assert snapshot["summary"]["net_pnl_dollars"] == "0"
+
+
+def test_new_listing_only_prefilter_rejects_old_or_missing_exchange_times():
+    now = datetime(2026, 10, 2, 12, 0, tzinfo=timezone.utc)
+    service = PredictionPaperAutomation()
+    fresh = _market(now)
+    assert "MARKET_NOT_NEW" not in service._prefilter_reasons(fresh, now)
+    old = _market(now)
+    old["timing"]["created_time"] = (now - timedelta(days=3)).isoformat()
+    assert "MARKET_NOT_NEW" in service._prefilter_reasons(old, now)
+    missing = _market(now)
+    missing["timing"]["created_time"] = None
+    assert "NEW_MARKET_TIMING_UNVERIFIED" in service._prefilter_reasons(missing, now)
+    future = _market(now)
+    future["timing"]["open_time"] = (now + timedelta(minutes=2)).isoformat()
+    assert "NEW_MARKET_TIMING_UNVERIFIED" in service._prefilter_reasons(future, now)

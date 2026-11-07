@@ -47,6 +47,8 @@ DEFAULT_MAX_CONCURRENCY = 4
 DEFAULT_ORDERBOOK_DEPTH = 20
 DEFAULT_HISTORY_MINUTES = 180
 DEFAULT_QUANTITY = Decimal("10")
+# Initial conservative PAPER-research freshness window; adjust only with evidence.
+MAX_NEW_MARKET_AGE_HOURS = 24
 
 
 def _now() -> datetime:
@@ -515,6 +517,15 @@ class PredictionPaperAutomation:
             reasons.append("MARKET_NOT_OPEN")
         if market.get("is_provisional") is True:
             reasons.append("PROVISIONAL_MARKET")
+        # A market first seen by Atlas is not necessarily newly listed. Use
+        # exchange-issued creation/open times, never local first-seen time.
+        timing = market.get("timing") if isinstance(market.get("timing"), dict) else {}
+        created = _parse_dt(timing.get("created_time"))
+        opened = _parse_dt(timing.get("open_time"))
+        if created is None or opened is None or created > now or opened > now:
+            reasons.append("NEW_MARKET_TIMING_UNVERIFIED")
+        elif (now - created).total_seconds() > MAX_NEW_MARKET_AGE_HOURS * 3600 or (now - opened).total_seconds() > MAX_NEW_MARKET_AGE_HOURS * 3600:
+            reasons.append("MARKET_NOT_NEW")
         occurrence, flat_deadline = _research_event_window(market, cfg.flat_buffer_minutes)
         if occurrence is None:
             reasons.append("MISSING_OCCURRENCE_DATETIME")
