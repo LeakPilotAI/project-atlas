@@ -55,9 +55,25 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             if not set(reasons) - OBSERVATION_ONLY_ACTIVITY_REASONS:
                 candidates.append((market, reasons))
         next_cursor = str(payload.get('cursor') or '').strip()
-        if len(candidates) >= limit or not next_cursor or next_cursor == cursor:
+        if not next_cursor or next_cursor == cursor:
             break
         cursor = next_cursor
+    # Provider pagination order is not a liquidity ranking. Review the entire
+    # bounded discovery pool, prioritizing entry-qualified markets, then the
+    # strongest observable activity; retain the original entry-gate reasons.
+    def activity(market):
+        values = market.get('activity') or {}
+        def safe(key):
+            try:
+                value = Decimal(str(values.get(key) or '0'))
+                return value if value.is_finite() and value >= 0 else Decimal('0')
+            except (ValueError, ArithmeticError):
+                return Decimal('0')
+        return (min(safe('volume_24h_contracts'), safe('open_interest_contracts')),
+                safe('volume_24h_contracts'), safe('open_interest_contracts'))
+    candidates.sort(key=lambda pair: (not not pair[1],
+                                       *(-value for value in activity(pair[0])),
+                                       str(pair[0].get('ticker') or '')))
     records = []
     errors = []
     for market, entry_gate_reasons in candidates[:limit]:
