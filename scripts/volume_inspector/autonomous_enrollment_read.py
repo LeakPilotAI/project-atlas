@@ -85,7 +85,8 @@ class BoundNativeEnrollmentEvidence:
                         )
                         value = strict(raw.decode("utf-8"))
                         if (
-                            body(value).encode() != raw
+                            type(value) is not dict
+                            or body(value).encode() != raw
                             or value.get("schema") != pin["record_schema"]
                         ):
                             raise ValueError("AUTO_NATIVE_CANONICAL_RECORD_REQUIRED")

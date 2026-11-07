@@ -118,3 +118,13 @@ def test_native_event_readback_refuses_post_audit_mutation(damage, native_event_
     s.port.financial = MutatingFinancial()
     with pytest.raises((ValueError, OSError)):
         s.port.verify(s.enrollment, s.current, 1000, scope='DISPOSABLE_TEST')
+
+
+@pytest.mark.parametrize('replacement', [b'[]', b'null', b'false', b'42'])
+def test_native_readback_rejects_canonical_non_object_financial_record(replacement, native_event_cut):
+    s = native_event_cut
+    target = s.root / 'source/0002-event.json'
+    target.write_bytes(replacement)
+    # Invalid native file bytes must be rejected, never parsed as a financial record.
+    with pytest.raises((ValueError, OSError)):
+        s.port.verify(s.enrollment, s.current, 1000, scope='DISPOSABLE_TEST')
