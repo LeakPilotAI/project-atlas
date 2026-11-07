@@ -93,3 +93,28 @@ def test_native_bound_event_cut_refuses(damage, native_event_cut):
         s.current['scope'] = 'LOCAL_ENROLLED'
     with pytest.raises((ValueError, OSError)):
         s.port.verify(s.enrollment, s.current, 1000, scope='DISPOSABLE_TEST')
+
+@pytest.mark.parametrize('damage', ['event_modified_during_audit', 'projection_modified_during_audit',
+    'report_modified_during_audit', 'cut_revoked_during_audit'])
+def test_native_event_readback_refuses_post_audit_mutation(damage, native_event_cut):
+    """External verifier cannot silently mutate bytes or revoke custody mid-read."""
+    s = native_event_cut
+    original = s.port.financial
+    cut = s.cut
+
+    class MutatingFinancial:
+        def verify_cut(self, enrollment, current, documents, now, *, scope):
+            assert original.verify_cut(enrollment, current, documents, now, scope=scope) is True
+            if damage == 'event_modified_during_audit':
+                (s.root / 'source/0002-event.json').write_bytes(b'{}')
+            if damage == 'projection_modified_during_audit':
+                (s.root / 'projection/projection.json').write_bytes(b'{}')
+            if damage == 'report_modified_during_audit':
+                (s.root / 'report/report.json').write_bytes(b'{}')
+            if damage == 'cut_revoked_during_audit':
+                cut['scope'] = 'REVOKED'
+            return True
+
+    s.port.financial = MutatingFinancial()
+    with pytest.raises((ValueError, OSError)):
+        s.port.verify(s.enrollment, s.current, 1000, scope='DISPOSABLE_TEST')
