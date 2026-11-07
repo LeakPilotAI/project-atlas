@@ -750,3 +750,28 @@ def test_sqlite_error_on_idle_status_blocks_false_idle(tmp_path):
     with pytest.raises(ValueError, match="LEDGER_STATUS_UNVERIFIED"):
         b.status()
     assert b.runtime.entry_closed.is_set()
+@pytest.mark.parametrize("malformed", [
+    None, {}, {"state":"STOPPED"}, {"state":"STOPPED","lanes":[]},
+    {"state":"UNRECOGNIZED","lanes":{}},
+])
+def test_malformed_financial_stop_result_records_incomplete_not_flat(tmp_path, malformed):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.owned_close = None
+    b._close_binding = None
+    b.stop_ledger = ledger
+    calls = []
+    b.runtime = SimpleNamespace(stop=lambda **kw: (calls.append(kw) or malformed),
+                                entry_closed=Event(), uncertain=False, grant={"session_id":"s"})
+    receipt = b.request_stop("SHUTDOWN_FLATTEN")
+    assert receipt["outcome"]["status"] == "SHUTDOWN_INCOMPLETE"
+    assert receipt["outcome"]["position_state"] == "UNKNOWN"
+    assert b.runtime.entry_closed.is_set()
+    assert b.status() == receipt
+    assert len(calls) == 1
