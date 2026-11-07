@@ -138,3 +138,31 @@ async def test_native_capacity_changes_after_real_disposable_orders_and_stops(sy
     assert s.journal.remaining_slots() < after['global']
     assert s.p.orders.remaining_slots() <= after['orders']
     assert s.r.stop() == stopped
+
+@pytest.mark.asyncio
+async def test_native_real_write_headroom_refuses_unfunded_followup_envelope(system):
+    """Guarded actual native write plus fail-closed workload forecast, not F11 saturation."""
+    from app.services.paper_capacity_envelope import assess_multi_store_envelope
+    s = system
+    await native_fixtures.cycle(s)
+    actual = {
+        'GLOBAL': s.journal.remaining_slots(),
+        'QUALITY_DIPS': s.q.writer.store.remaining_operations(),
+        'HYPERLIQUID': s.p.writer.store.remaining_operations(),
+        'PERP_ORDERS': s.p.orders.remaining_slots(),
+        'REPORTS': s.qstop.reports.archive.remaining_reports(),
+    }
+    assert all(0 <= count <= 128 for count in actual.values())
+    # Forecast a workload that exactly consumes the currently observed free
+    # slots of one store; the mandatory stop reserve must veto that forecast.
+    stores = {name: {'capacity': 128, 'used': 128 - count,
+                     'planned': 0, 'shutdown_reserve': 1}
+              for name, count in actual.items()}
+    stores['GLOBAL']['planned'] = actual['GLOBAL']
+    result = assess_multi_store_envelope(stores)
+    assert result['fits_declared_envelope'] is False
+    assert result['stores']['GLOBAL']['required'] > result['stores']['GLOBAL']['remaining']
+    assert result['operational_admission'] is False
+    stopped = s.r.stop()
+    assert stopped['state'] == 'STOPPED'
+    assert s.journal.snapshot()['state']['finalized'] is not None
