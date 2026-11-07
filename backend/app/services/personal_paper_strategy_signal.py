@@ -294,6 +294,15 @@ def inspect_leased_published_iex_journal_candidate(
                 marks.append({"lot_id": lot["lot_id"], "bid": str(bid),
                               "unrealized_net_pnl_estimate": float(round(
                                   (bid - entry) * quantity - entry_fee - exit_fee, 8))})
+            cash = Decimal(str(snapshot["available_cash"]))
+            liquidation_proceeds = sum(
+                (Decimal(str(mark["bid"])) * Decimal(str(lot["quantity_shares"]))
+                 * (Decimal(1) - Decimal(str(snapshot["fee_bps_per_side"])) / Decimal(10000)))
+                for mark, lot in zip(marks, positions, strict=True)
+            )
+            estimated_equity = round(cash + liquidation_proceeds, 8)
+            if not estimated_equity.is_finite() or estimated_equity < 0:
+                raise ValueError("LEASED_PUBLISHED_JOURNAL_EQUITY_INVALID")
             if lease.check(proof) is not True or lease.check_components(components) is not True:
                 raise ValueError("LEASED_PUBLISHED_JOURNAL_LEASE_CHANGED")
             return {**candidate, "account_id": account_id,
@@ -302,6 +311,9 @@ def inspect_leased_published_iex_journal_candidate(
                     "journal_open_lots": len(positions),
                     "journal_position_marks": marks,
                     "journal_available_cash": snapshot["available_cash"],
+                    "journal_estimated_liquidation_equity": float(estimated_equity),
+                    "journal_estimated_total_return": float(round(
+                        estimated_equity - Decimal(str(snapshot["opening_cash"])), 8)),
                     "journal_writer_lock_checked": True,
                     "operator_lease_checked": True,
                     "paper_fill_authorized": False, "live_order_authorized": False}
@@ -339,5 +351,7 @@ def plan_leased_published_iex_paper_tick(
                         "open_positions": positions,
                         "position_marks": inspection["journal_position_marks"],
                         "available_cash": inspection["journal_available_cash"],
+                        "estimated_liquidation_equity": inspection["journal_estimated_liquidation_equity"],
+                        "estimated_total_return": inspection["journal_estimated_total_return"],
                         "paper_fill_authorized": False,
                         "live_order_authorized": False}))
