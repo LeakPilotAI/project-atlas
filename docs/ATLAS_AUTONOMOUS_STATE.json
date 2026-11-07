@@ -1,4 +1,32 @@
 {
+  "batch_2_offline_regression_20261107": {
+    "status": "SOURCE_RECONCILED_OFFLINE_TESTS_PASS_OPERATIONAL_ACCEPTANCE_BLOCKED",
+    "head": "053c38ba17d4e25891ec8d3baa98c4279bbddd56",
+    "branch": "chatgpt/atlas-rebuild-v1",
+    "source_changes": 0,
+    "offline_regression": {
+      "passed": 330,
+      "failed": 0,
+      "skipped": 0,
+      "warnings": 2,
+      "suites": {
+        "runtime_accounting": "114 passed",
+        "research_perpetual_reporting": "128 passed",
+        "dashboard_reports_alerts": "88 passed"
+      }
+    },
+    "guarded_native_execution": false,
+    "provider_request_made": false,
+    "simulated_account_mutation": false,
+    "real_order_created": false,
+    "genesis_accessed": false,
+    "f11_accepted": false,
+    "acceptance_matrix": "18/18 BLOCKED",
+    "paper_operational": false,
+    "startup_authorized": false,
+    "production": "NO-GO",
+    "next_action": "Obtain independent AIP-06 review and exact case/resource decisions before binding or executing guarded native tests; provider entitlement and B1/C1/D1/E1 acceptance remain separate prerequisites."
+  },
   "aip06_f11_actual_global_store_saturation_source_20261107": {
     "base_commit": "8ecb1c3f7c7740c24e71845071aa01411bb54bd3",
     "status": "SOURCE_IMPLEMENTED_GUARDED_NATIVE_EXECUTION_PENDING",

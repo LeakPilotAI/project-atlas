@@ -1,5 +1,14 @@
 ﻿# Atlas session progress and commissioning checkpoint — 2026-11-07
 
+## Batch 2 reconciliation — 2026-11-07
+
+- Reconciled HEAD `053c38ba17d4e25891ec8d3baa98c4279bbddd56` on `chatgpt/atlas-rebuild-v1`; tracked worktree was clean. Existing untracked `.e*` paths and root file `'` were left untouched.
+- Offline regressions passed: 114 runtime/accounting tests (`test_unified_paper_runtime.py`, `test_personal_paper_runtime.py`, `test_quality_dips_autonomous_paper.py`); 128 research/perpetual/report tests (`test_free_research_pipeline.py`, `test_hyperliquid_current_producer.py`, `test_personal_hyperliquid_public_data.py`, `test_perp_session_report.py`); 88 dashboard/report/alert tests (`test_dashboard_read_models.py`, `test_bound_daily_report.py`, `test_e133_discord_lifecycle_outbox.py`, `test_perp_alert_delivery_v4.py`). Total: 330 passed. Two existing deprecation warnings were reported in the latter groups.
+- No source change was justified by these regressions. Provider eligibility/rights, accepted operational resource identities, and autonomous runtime activation remain unverified. These tests are isolated or deterministic offline evidence, not genuine forward-PAPER evidence.
+- F11 remains NOT ACCEPTED. The guarded global-journal saturation case was inspected but not executed; it does not establish aggregate saturation across all five stores. The native case remains unbound, with no independent review or fresh single-use authorization.
+- No provider request, runtime startup, simulated account mutation, real order, Project Genesis access, or guarded native test execution occurred. Acceptance matrix remains 18/18 BLOCKED; startup unauthorized; production NO-GO.
+- Next action: obtain independent AIP-06 review and exact case/resource decisions before binding or running guarded native tests. Provider entitlement and separate B1/C1/D1/E1 acceptance remain prerequisites for any supervised PAPER operation.
+
 ## Current update — Robinhood research recovery, bounded perp discovery, and F11 source
 
 - Current branch is `chatgpt/atlas-rebuild-v1`. F11 source milestone commit: `8ecb1c3f7c7740c24e71845071aa01411bb54bd3`; bounded Hyperliquid perpetual-discovery source commit: `2184013b`; Robinhood research failure-recovery commit: `2edef83b`.
