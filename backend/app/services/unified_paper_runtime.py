@@ -576,7 +576,9 @@ class UnifiedPaperRuntime:
             try:
                 closed = close is not None and (close(self.grant, stop_context=self.stop_context)
                     if hasattr(self.portfolio, "exit_classification") else close(self.grant)) is True
-            except (ValueError, OSError, TimeoutError):
+            except Exception:
+                # Unknown admission-close errors cannot certify that new
+                # entries are blocked at the underlying financial custodian.
                 closed = False
             if not closed:
                 self.uncertain = True

@@ -1234,3 +1234,22 @@ def test_unified_runtime_malformed_lane_stop_receipt_never_certifies_flat(malfor
     assert result['lanes']['HYPERLIQUID']['state'] == 'ACKNOWLEDGED_FLAT_AND_DRAINED'
     assert r.entry_closed.is_set()
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize('failure', [RuntimeError, AssertionError])
+def test_native_paper_admission_close_unexpected_failure_refuses_lane_drain(failure):
+    r = runtime()
+    r.lanes['QUALITY_DIPS'].requires_portfolio_drain = True
+    attempts = []
+    def failed_admission(*args, **kwargs):
+        attempts.append(True)
+        raise failure('synthetic custodian admission error')
+    r.portfolio.close_entry_admission = failed_admission
+    result = r.stop()
+    assert result['state'] == 'STOP_INCOMPLETE'
+    assert all(row['state'] == 'ADMISSION_UNVERIFIED' for row in result['lanes'].values())
+    assert r.entry_closed.is_set()
+    assert all(lane.stops == 0 for lane in r.lanes.values())
+    assert attempts == [True]
+    assert r.stop() == result
+    assert attempts == [True]
