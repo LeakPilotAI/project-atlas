@@ -732,3 +732,28 @@ def test_local_iex_config_preflight_never_authenticates_or_exposes_secrets(tmp_p
     assert check_local_iex_config_readiness(config_path=tmp_path / "missing.env")["status"] == "CONFIG_REJECTED"
     with pytest.raises(ValueError, match="EXPLICIT_PATH_REQUIRED"):
         check_local_iex_config_readiness(config_path="iex.env")
+
+
+def test_bounded_readonly_session_rejects_provider_replay_across_restarts(monkeypatch):
+    from datetime import UTC, datetime, timedelta
+    from app.services import personal_paper_strategy_signal as signals
+    stamp = datetime(2026, 11, 7, tzinfo=UTC)
+    seen = []
+    def plan(*, now, **_):
+        seen.append(now)
+        return {"provider_timestamp": stamp.isoformat(),
+                "paper_fill_authorized": False, "live_order_authorized": False}
+    monkeypatch.setattr(signals, "plan_leased_published_iex_paper_tick", plan)
+    monkeypatch.setattr(signals, "propose_forward_paper_action",
+                        lambda *, plan: {"paper_fill_authorized": False})
+    args = dict(ticks=1, clock=lambda: stamp + timedelta(seconds=1))
+    first = signals.run_bounded_readonly_paper_session(**args)
+    assert first["last_provider_timestamp"] == stamp.isoformat()
+    assert first["paper_fill_authorized"] is False
+    with pytest.raises(ValueError, match="PROVIDER_EVENT_NOT_ADVANCING"):
+        signals.run_bounded_readonly_paper_session(
+            **args, previous_provider_timestamp=first["last_provider_timestamp"])
+    assert len(seen) == 2
+    with pytest.raises(ValueError):
+        signals.run_bounded_readonly_paper_session(
+            **args, previous_provider_timestamp="not-a-timestamp")

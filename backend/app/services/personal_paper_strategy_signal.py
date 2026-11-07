@@ -382,6 +382,12 @@ def run_bounded_readonly_paper_session(*, ticks: int, clock: Any, **dependencies
 
     if type(ticks) is not int or not 1 <= ticks <= 30 or not callable(clock):
         raise ValueError("PAPER_SESSION_BOUNDED_EXPLICIT_CLOCK_REQUIRED")
+    # A caller resuming a supervised diagnostic can supply the previously
+    # accepted provider event. Refuse stale/replayed events across invocations.
+    from app.services.personal_paper_observations import _aware
+    previous_event = dependencies.pop("previous_provider_timestamp", None)
+    if previous_event is not None:
+        previous_event = _aware(previous_event, "previous PAPER provider event")
     records = []
     for index in range(ticks):
         now = clock()
@@ -400,7 +406,8 @@ def run_bounded_readonly_paper_session(*, ticks: int, clock: Any, **dependencies
         provider_stamp = _aware(plan["provider_timestamp"], "PAPER session provider event")
         if provider_stamp > now or (now - provider_stamp).total_seconds() > 15:
             raise ValueError("PAPER_SESSION_PROVIDER_EVENT_NOT_FRESH")
-        if records and provider_stamp <= records[-1]["_provider_stamp"]:
+        if ((records and provider_stamp <= records[-1]["_provider_stamp"])
+                or (previous_event is not None and provider_stamp <= previous_event)):
             raise ValueError("PAPER_SESSION_PROVIDER_EVENT_NOT_ADVANCING")
         # Proposals are advisory only. Recompute them from the inspected tick
         # rather than allowing a caller to supply an action or authorization.
@@ -413,7 +420,9 @@ def run_bounded_readonly_paper_session(*, ticks: int, clock: Any, **dependencies
                         "ticks": [{"timestamp": r["_clock"].isoformat(),
                                    "index": r["tick"], "plan": r["plan"],
                                    "proposal": r["proposal"]} for r in records],
-                        "completed": len(records), "paper_fill_authorized": False,
+                        "completed": len(records),
+                        "last_provider_timestamp": records[-1]["_provider_stamp"].isoformat(),
+                        "paper_fill_authorized": False,
                         "live_order_authorized": False}))
 
 
