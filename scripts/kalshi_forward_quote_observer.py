@@ -113,6 +113,11 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
         selected.extend(new[:remaining - repeat_slots])
         if len(selected) < limit:
             selected.extend(repeated[repeat_slots:repeat_slots + limit - len(selected)])
+    # Selection audit separates genuinely unseen qualified contracts from
+    # repeated longitudinal samples; neither count represents a trade.
+    selected_qualified = [pair for pair in selected if not pair[1]]
+    selected_unseen_qualified = sum(
+        pair[0]['ticker'].upper() not in observed_tickers for pair in selected_qualified)
     records = []
     errors = []
     for market, entry_gate_reasons in selected:
@@ -174,6 +179,10 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             'entry_gate_qualified_new_listings_seen': fully_qualified,
             'pages_scanned': pages_scanned,
             'unique_markets_screened': len(seen), 'records_written': len(records),
+            'qualified_candidates_in_bounded_scan': len(qualified),
+            'qualified_candidates_unseen_in_history': len(qualified_new),
+            'qualified_orderbooks_selected': len(selected_qualified),
+            'unseen_qualified_orderbooks_selected': selected_unseen_qualified,
             'provider_errors': errors, 'orders_placed': 0, 'paper_trades_opened': 0,
             'unattended_paper_authorized': False}
 

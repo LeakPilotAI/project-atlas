@@ -216,4 +216,7 @@ def test_qualified_exact_capacity_still_includes_unseen(tmp_path, monkeypatch):
     result = asyncio.run(observer.collect(path=path, now=now, limit=3))
     assert calls == ['OLD-A', 'NEW-C', 'OLD-B']
     assert result['entry_gate_qualified_new_listings_seen'] == 3
+    assert result['qualified_candidates_unseen_in_history'] == 1
+    assert result['qualified_orderbooks_selected'] == 3
+    assert result['unseen_qualified_orderbooks_selected'] == 1
     assert result['records_written'] == 3
