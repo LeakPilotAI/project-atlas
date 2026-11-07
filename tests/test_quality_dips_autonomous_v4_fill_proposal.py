@@ -1,11 +1,12 @@
 """Proposed V4 fill transition arithmetic; never an operational replay grant."""
 import copy
 import pytest
+from app.services.paper_financial_replay import digest
 from app.services.quality_dips_autonomous_v4_fill_proposal import replay_proposed_v4_fills
 
 
 def fills():
-    return [
+    rows = [
         {'schema': 'QD_AUTO_V4_FILL_PROPOSAL_V1', 'revision': 1,
          'operation_id': 'enter', 'kind': 'ENTRY', 'symbol': 'MSFT',
          'quantity': '2', 'price': '100', 'fee': '1'},
@@ -16,6 +17,11 @@ def fills():
          'operation_id': 'close', 'kind': 'EXIT', 'symbol': 'MSFT',
          'quantity': '1', 'price': '120', 'fee': '1'},
     ]
+    parent = digest(['QD_AUTO_V4_FILL_PROPOSAL_V1', '1000'])
+    for i, row in enumerate(rows):
+        row['parent'] = parent
+        parent = replay_proposed_v4_fills(rows[:i + 1])['head']
+    return rows
 
 
 def test_proposed_entry_partial_exit_and_full_exit_reconcile():
@@ -52,3 +58,27 @@ def test_proposed_replay_is_deterministic_and_does_not_mutate_inputs():
     before = copy.deepcopy(rows)
     assert replay_proposed_v4_fills(rows) == replay_proposed_v4_fills(rows)
     assert rows == before
+
+def test_proposed_v4_fractional_share_entry_and_partial_exit():
+    rows = fills()
+    rows[0]['quantity'] = '0.12345678'
+    rows[1]['quantity'] = '0.02345678'
+    rows[2]['quantity'] = '0.1'
+    parent = digest(['QD_AUTO_V4_FILL_PROPOSAL_V1', '1000'])
+    for i, row in enumerate(rows):
+        row['parent'] = parent
+        parent = replay_proposed_v4_fills(rows[:i + 1])['head']
+    result = replay_proposed_v4_fills(rows)
+    assert result['state']['positions'] == {}
+    assert result['state']['revision'] == 3
+    assert result['head'] == parent
+
+@pytest.mark.parametrize('damage', ['parent', 'fractional_precision', 'price_precision', 'fee_precision'])
+def test_proposed_v4_lineage_and_precision_refusals(damage):
+    rows = fills()
+    if damage == 'parent': rows[1]['parent'] = 'f' * 64
+    if damage == 'fractional_precision': rows[0]['quantity'] = '0.123456789'
+    if damage == 'price_precision': rows[0]['price'] = '100.00001'
+    if damage == 'fee_precision': rows[0]['fee'] = '0.00001'
+    with pytest.raises(ValueError):
+        replay_proposed_v4_fills(rows)
