@@ -125,6 +125,33 @@ def next_research_batch(inventory_path, cursor_path, *, limit=4, commit=False):
     return result
 
 
+def research_route_plan(batch, *, known_etf_symbols=()):
+    """Plan broad-market research without promoting any symbol to trading.
+
+    Equity/ETF ambiguity remains UNKNOWN unless an independently supplied ETF
+    classification exists. Hyperliquid is never part of this planner.
+    """
+    if (type(batch) is not dict or batch.get("schema") != "ATLAS_ALPACA_RESEARCH_BATCH_V1"
+            or batch.get("market") != "US_EQUITY"
+            or batch.get("paper_execution_authorized") is not False
+            or batch.get("hyperliquid_perpetuals_included") is not False):
+        raise ValueError("RESEARCH_ROUTE_SCOPE_REFUSED")
+    symbols = batch.get("symbols")
+    if type(symbols) is not list or len(symbols) > 8 or any(
+            type(s) is not str or re.fullmatch(r"[A-Z][A-Z0-9.-]{0,14}", s) is None
+            for s in symbols) or len(symbols) != len(set(symbols)):
+        raise ValueError("RESEARCH_ROUTE_SYMBOLS_REFUSED")
+    etfs = set(known_etf_symbols)
+    return {"schema": "ATLAS_BROAD_MARKET_RESEARCH_ROUTE_V1",
+            "source": "ALPACA_US_EQUITY_ASSETS", "market": "US_EQUITY",
+            "routes": [{"symbol": symbol, "asset_type": "ETF" if symbol in etfs else "UNCLASSIFIED_EQUITY",
+                        "research_lanes": ["QUALITY_DIPS", "LONG_TERM_INVESTMENT", "DAY_TRADE_RESEARCH"],
+                        "scoring_status": "NOT_EVALUATED", "paper_eligible": False}
+                       for symbol in symbols],
+            "hyperliquid_perpetuals_included": False,
+            "paper_execution_authorized": False, "live_order_authorized": False}
+
+
 def acquire_catalog(credentials_path, *, inventory_path=None):
     credentials = Credentials.load(credentials_path)
     request = Request(URL, headers={"APCA-API-KEY-ID": credentials.key,

@@ -34,3 +34,21 @@ def test_research_batch_rejects_arbitrary_paths():
     from scripts.observation_runtime.alpaca_equity_catalog import next_research_batch
     with pytest.raises(ValueError, match="PATH_REFUSED"):
         next_research_batch("somewhere.json", "cursor.json")
+
+
+def test_broad_market_routes_all_equity_strategies_not_perps():
+    from scripts.observation_runtime.alpaca_equity_catalog import research_route_plan
+    batch = {"schema": "ATLAS_ALPACA_RESEARCH_BATCH_V1", "market": "US_EQUITY",
+             "paper_execution_authorized": False, "hyperliquid_perpetuals_included": False,
+             "symbols": ["MSFT", "SPY"]}
+    plan = research_route_plan(batch, known_etf_symbols=("SPY",))
+    assert len(plan["routes"]) == 2
+    assert plan["routes"][0]["asset_type"] == "UNCLASSIFIED_EQUITY"
+    assert plan["routes"][1]["asset_type"] == "ETF"
+    assert "LONG_TERM_INVESTMENT" in plan["routes"][0]["research_lanes"]
+    assert "DAY_TRADE_RESEARCH" in plan["routes"][0]["research_lanes"]
+    assert not plan["hyperliquid_perpetuals_included"]
+    assert all(not r["paper_eligible"] for r in plan["routes"])
+    batch["hyperliquid_perpetuals_included"] = True
+    with pytest.raises(ValueError, match="SCOPE"):
+        research_route_plan(batch)
