@@ -1,4 +1,4 @@
-﻿"""Source-only synthetic contract checks; no native execution or acceptance."""
+"""Source-only synthetic contract checks; no native execution or acceptance."""
 import copy
 import pytest
 from app.services.paper_financial_replay import digest
@@ -50,3 +50,21 @@ def test_inconsistent_cut_refuses(damage):
     if damage == 'unknown_scope': current['scope'] = 'LOCAL_ENROLLED'
     with pytest.raises(ValueError):
         AutonomousInceptionFinancialVerifier().verify_cut(e, current, docs, 1000, scope='DISPOSABLE_TEST')
+
+
+@pytest.mark.parametrize('field', ['revision', 'acknowledged_revision', 'high_water'])
+def test_inception_cut_rejects_boolean_zero_equivalent(field):
+    e, current, docs = sample()
+    current[field] = False
+    with pytest.raises(ValueError, match='AUTO_FINANCIAL_INCEPTION_REVISION_REQUIRED'):
+        AutonomousInceptionFinancialVerifier().verify_cut(e, current, docs, 1000,
+                                                        scope='DISPOSABLE_TEST')
+
+
+@pytest.mark.parametrize('ack', ['', None, 0])
+def test_inception_cut_requires_nonempty_publication_ack(ack):
+    e, current, docs = sample()
+    current['publication_ack'] = ack
+    with pytest.raises(ValueError, match='AUTO_FINANCIAL_PUBLICATION_ACK_REQUIRED'):
+        AutonomousInceptionFinancialVerifier().verify_cut(e, current, docs, 1000,
+                                                        scope='DISPOSABLE_TEST')

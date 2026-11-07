@@ -1,4 +1,4 @@
-﻿"""Source-only V4 inception financial verifier; no custody, publisher or grant.
+"""Source-only V4 inception financial verifier; no custody, publisher or grant.
 
 Validates an already authenticated immutable native document cut. This is a
 narrow zero-revision inception verifier, NOT an operational replay adapter.
@@ -18,9 +18,10 @@ class AutonomousInceptionFinancialVerifier:
             raise ValueError('AUTO_FINANCIAL_COMPLETE_ROSTER_REQUIRED')
         if type(current) is not dict or current.get('scope') != scope:
             raise ValueError('AUTO_FINANCIAL_CURRENT_SCOPE_REFUSED')
-        if any(current.get(k) != 0 for k in ('revision', 'acknowledged_revision', 'high_water')):
+        if any(type(current.get(k)) is not int or current[k] != 0
+               for k in ('revision', 'acknowledged_revision', 'high_water')):
             raise ValueError('AUTO_FINANCIAL_INCEPTION_REVISION_REQUIRED')
-        if current.get('status') != 'ACKNOWLEDGED' or type(current.get('publication_ack')) is not str:
+        if current.get('status') != 'ACKNOWLEDGED' or type(current.get('publication_ack')) is not str or not current['publication_ack']:
             raise ValueError('AUTO_FINANCIAL_PUBLICATION_ACK_REQUIRED')
         intent = publication_intent(e)
         publication = current.get('publication')
