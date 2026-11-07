@@ -37,6 +37,7 @@ class BoundAutonomousFinancialPublication:
                     if (type(current.get('financial_digest')) is not str
                             or current['financial_digest'] != digest(cut)):
                         raise ValueError('AUTO_PUBLICATION_CURRENT_FINANCIAL_CUT_MISMATCH')
+                    cut_digest = digest(cut)
                     if replay_lease.check(strict(body(cut)), now) is not True:
                         raise ValueError('AUTO_PUBLICATION_FINANCIAL_CUT_NOT_AUTHENTICATED')
                     if bind_financial_publication_to_native_cut(enrollment, p, cut, documents) is not True:
@@ -44,6 +45,9 @@ class BoundAutonomousFinancialPublication:
                     if self.financial_replay.verify(enrollment, p, cut, documents, now,
                                                     scope=scope) is not True:
                         raise ValueError('AUTO_PUBLICATION_INDEPENDENT_REPLAY_REFUSED')
+                    # A permissive lease.check must not hide in-place cut mutation.
+                    if digest(cut) != cut_digest:
+                        raise ValueError('AUTO_PUBLICATION_FINANCIAL_CUT_MUTATED_DURING_AUDIT')
                     # The injected auditor can mutate supplied documents in place.
                     # Rebind every financial document to its immutable cut pins.
                     if bind_financial_publication_to_native_cut(enrollment, p, cut, documents) is not True:

@@ -152,3 +152,22 @@ def test_publication_refuses_financial_documents_changed_during_external_audit(d
     with pytest.raises(ValueError):
         port.verify_cut(e, {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)},
                         docs, 1000, scope='LOCAL_ENROLLED')
+
+
+@pytest.mark.parametrize('damage', ['cut_scope', 'cut_pin_hash', 'cut_pin_identity'])
+def test_publication_refuses_in_place_financial_cut_mutation_even_if_lease_check_is_permissive(damage):
+    e, p, cut, docs, publication, ack, replay = setup()
+    current = {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)}
+    replay.check = lambda *args: True
+
+    def audit(*args, **kwargs):
+        if damage == 'cut_scope': args[2]['scope'] = 'DISPOSABLE_TEST'
+        if damage == 'cut_pin_hash': args[2]['resources']['source']['0002-event.json']['sha256'] = 'f' * 64
+        if damage == 'cut_pin_identity': args[2]['resources']['source']['0002-event.json']['native_id'][0] += 1
+        return True
+
+    replay.verify = audit
+    port = BoundAutonomousFinancialPublication(publication=publication, custody_ack=ack,
+                                                financial_replay=replay)
+    with pytest.raises(ValueError, match='AUTO_PUBLICATION_FINANCIAL_CUT_MUTATED_DURING_AUDIT'):
+        port.verify_cut(e, current, docs, 1000, scope='LOCAL_ENROLLED')
