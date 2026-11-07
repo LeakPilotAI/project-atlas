@@ -266,3 +266,44 @@ def test_nonforward_or_nonv3_publication_refused_before_credentials(
             symbol="MSFT", seconds=3, credentials_path=Path("unused"),
             clock_factory=Clock, feed_factory=Feed, publication=Published())
     assert Clock.revoked
+
+
+def test_disposable_producer_refused_before_credentials(monkeypatch):
+    import app.services.quality_dips_current_producer as producer_mod
+    class Producer:
+        execution_domain = 'DISPOSABLE'
+        publication = None
+    monkeypatch.setattr(producer_mod, 'QualityDipsCurrentProducer', Producer)
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: pytest.fail('credentials accessed'))
+    with pytest.raises(ValueError, match='CLOCK_IEX_OPERATIONAL_PRODUCER_REQUIRED'):
+        probe.bounded_clock_iex_observation(
+            symbol='MSFT', seconds=3, credentials_path=Path('unused'),
+            clock_factory=Clock, feed_factory=Feed,
+            operational_producer=Producer())
+
+
+def test_publication_without_operational_producer_not_forward_research(monkeypatch):
+    import app.services.paper_source_publication as source_mod
+    import app.services.personal_paper_iex_provider as provider_mod
+    import app.services.personal_paper_strategy_signal as signal_mod
+    class Published:
+        def read_current(self):
+            return {'schema': 'QD_SCANNER_PUBLICATION_V1',
+                    'bundles': [{'instrument': {'symbol': 'MSFT'},
+                                 'observation': {'symbol': 'MSFT', 'evidence_class': 'FORWARD_COLLECTION',
+                                                 'strategy_version': 'QUALITY_DIPS_V3'}}]}
+    class Provider:
+        def __init__(self, feed): pass
+    monkeypatch.setattr(source_mod, 'QualityDipsSourcePublication', Published)
+    monkeypatch.setattr(provider_mod, 'PersonalPaperIEXProvider', Provider)
+    monkeypatch.setattr(signal_mod, 'evaluate_published_iex_v3_candidate',
+        lambda **kwargs: {'candidate': True, 'quote_evidence': {
+            'provider_timestamp': '2026-11-07T00:00:00+00:00',
+            'bid': '99', 'ask': '100', 'bid_lots': 2, 'ask_lots': 2}})
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: object())
+    result = probe.bounded_clock_iex_observation(
+        symbol='MSFT', seconds=3, credentials_path=Path('unused'),
+        clock_factory=Clock, feed_factory=Feed, publication=Published())
+    assert result['published_research_checked_count'] == 1
+    assert result['forward_research_observed'] is False
+    assert result['operational_producer_verified'] is False

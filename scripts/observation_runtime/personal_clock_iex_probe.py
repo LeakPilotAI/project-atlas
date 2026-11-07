@@ -21,11 +21,18 @@ from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 
 def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                                   clock_factory=LocalWindowsClock,
-                                  feed_factory=IEXFeed, publication=None):
+                                  feed_factory=IEXFeed, publication=None,
+                                  operational_producer=None):
     if (type(symbol) is not str or not symbol.isascii() or not symbol.isalpha()
             or not symbol.isupper() or not 1 <= len(symbol) <= 8
             or type(seconds) is not int or not 1 <= seconds <= 60):
         raise ValueError("CLOCK_IEX_PROBE_ARGUMENTS_REFUSED")
+    if operational_producer is not None:
+        from app.services.quality_dips_current_producer import QualityDipsCurrentProducer
+        if (type(operational_producer) is not QualityDipsCurrentProducer
+                or operational_producer.execution_domain != "OPERATIONAL"
+                or operational_producer.publication is not publication):
+            raise ValueError("CLOCK_IEX_OPERATIONAL_PRODUCER_REQUIRED")
     if publication is not None:
         from app.services.paper_source_publication import QualityDipsSourcePublication
         if type(publication) is not QualityDipsSourcePublication:
@@ -40,7 +47,8 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
             # Refuse missing/stale/unaccepted native research *before* loading
             # credentials or opening a network connection. The source must
             # remain valid on every callback via evaluate_published_iex_v3_candidate.
-            packet = publication.read_current()
+            packet = (operational_producer.read_publication(0.2)
+                      if operational_producer is not None else publication.read_current())
             if (type(packet) is not dict or packet.get("schema") != "QD_SCANNER_PUBLICATION_V1"
                     or type(packet.get("bundles")) is not list
                     or not any(type(bundle) is dict
@@ -118,7 +126,9 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                 "published_research_checked_count": len(research_checked),
                 "published_research_candidate_count": sum(x is True for x in research_checked),
                 "native_publication_supplied": publication is not None,
-                "forward_research_observed": bool(accepted) and bool(research_checked),
+                "forward_research_observed": (operational_producer is not None
+                                              and bool(accepted) and bool(research_checked)),
+                "operational_producer_verified": operational_producer is not None,
                 "forward_paper_session_qualified": False,
                 "forward_financial_write_authorized": False,
                 "live_order_authorized": False}
