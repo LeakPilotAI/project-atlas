@@ -102,3 +102,38 @@ def test_disposable_validated_quote_to_journal_spread_slippage_and_restart(tmp_p
         execute_disposable_validated_quote_step(**{**args, "observation": forward_observation},
             action="ENTER", quote=quote("99.99", "100"))
     assert path.read_bytes() == after
+
+
+def test_bounded_disposable_quote_lifecycle_validates_sequence_before_writes(tmp_path):
+    from datetime import UTC, datetime, timedelta
+    from app.services.personal_paper_fixture_executor import rehearse_disposable_quote_lifecycle
+    path = tmp_path / "lifecycle.jsonl"
+    initialize_paper_account(account_id="life", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    observation = {"observation_id": "life-1", "symbol": "MSFT",
+                   "evidence_class": "TEST_DATA"}
+    start = datetime(2026, 11, 7, tzinfo=UTC)
+    times = [start + timedelta(seconds=i) for i in range(3)]
+    def quote(stamp, bid, ask):
+        return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
+                "bid_lots": 5, "ask_lots": 5, "timestamp": stamp.isoformat(),
+                "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    quotes = [quote(times[0], "99.99", "100"),
+              quote(times[1], "100.99", "101"),
+              quote(times[2], "101.99", "102")]
+    args = dict(path=path, account_id="life", observation=observation,
+                times=times, slippage_bps=10)
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="REPLAYED_QUOTE"):
+        rehearse_disposable_quote_lifecycle(**args, quotes=[quotes[0], quotes[0], quotes[2]])
+    assert path.read_bytes() == before
+    with pytest.raises(ValueError, match="REPLAYED_QUOTE"):
+        rehearse_disposable_quote_lifecycle(**args, quotes=[quotes[0], quotes[1], quote(times[0], "101.99", "102")])
+    assert path.read_bytes() == before
+    result = rehearse_disposable_quote_lifecycle(**args, quotes=quotes)
+    assert result["completed"] == 3
+    assert [r["action"] for r in result["steps"]] == ["ENTER", "MARK", "EXIT"]
+    assert result["steps"][-1]["net_realized_pnl"] > 0
+    assert accounting_snapshot(read_events(path), account_id="life")["open_positions"] == 0
+    assert len([r for r in read_events(path) if r["event"] == "open_lot"]) == 1
+    assert len([r for r in read_events(path) if r["event"] == "close_lot"]) == 1

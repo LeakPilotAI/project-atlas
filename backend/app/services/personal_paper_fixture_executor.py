@@ -107,3 +107,39 @@ def execute_disposable_validated_quote_step(*, path: Path, account_id: str,
     return strict(body({**result, "quote_evidence": evidence,
                         "provider_authenticated": False,
                         "forward_trading_authorized": False}))
+
+
+def rehearse_disposable_quote_lifecycle(*, path: Path, account_id: str,
+                                       observation: dict[str, Any],
+                                       quotes: list[dict[str, Any]],
+                                       times: list[Any],
+                                       slippage_bps: Any = 2) -> dict[str, Any]:
+    """Explicit TEST_DATA-only entry, marks, exit across distinct quote events.
+
+    This is a fixed scripted lifecycle, NOT a strategy or autonomous runtime.
+    It deliberately cannot run on FORWARD_COLLECTION journals.
+    """
+    from app.services.personal_paper_observations import _aware
+    if (type(observation) is not dict or observation.get("evidence_class") != "TEST_DATA"
+            or type(quotes) is not list or type(times) is not list
+            or len(quotes) != len(times) or not 3 <= len(quotes) <= 30):
+        raise ValueError("DISPOSABLE_LIFECYCLE_TEST_DATA_BOUNDED_REQUIRED")
+    # Validate the entire supplied sequence before its first financial write.
+    from app.services.personal_paper_price_evidence import validate_stock_iex_quote
+    stamps = []
+    for quote, now in zip(quotes, times, strict=True):
+        evidence = validate_stock_iex_quote(quote, symbol=observation.get("symbol"), now=now)
+        stamp = _aware(evidence["provider_timestamp"], "disposable provider event")
+        if stamps and stamp <= stamps[-1]:
+            raise ValueError("DISPOSABLE_LIFECYCLE_REPLAYED_QUOTE")
+        stamps.append(stamp)
+    results = []
+    for index, (quote, now) in enumerate(zip(quotes, times, strict=True)):
+        action = "ENTER" if index == 0 else "EXIT" if index == len(quotes)-1 else "MARK"
+        results.append(execute_disposable_validated_quote_step(
+            path=path, account_id=account_id, observation=observation,
+            action=action, quote=quote, now=now, slippage_bps=slippage_bps))
+    return strict(body({"schema": "ATLAS_DISPOSABLE_QUOTE_LIFECYCLE_V1",
+                        "steps": results, "completed": len(results),
+                        "forward_trading_authorized": False,
+                        "live_order_authorized": False}))
