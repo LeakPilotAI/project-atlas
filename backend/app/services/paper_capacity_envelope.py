@@ -46,3 +46,34 @@ def assess_multi_store_envelope(stores):
         "operational_admission": False,
         "native_load_verified": False,
     }
+
+
+def assess_observed_store_envelope(observations, plans):
+    """Check a caller-supplied read-only snapshot against its declared workload.
+
+    The snapshot must be supplied by a separately verified native reader. No
+    storage is opened here; unverified or mismatched snapshots are rejected.
+    """
+    required = frozenset({"GLOBAL", "QUALITY_DIPS", "HYPERLIQUID", "PERP_ORDERS", "REPORTS"})
+    if type(observations) is not dict or set(observations) != required:
+        raise ValueError("CAPACITY_OBSERVATION_COMPLETE_STORE_SET_REQUIRED")
+    if type(plans) is not dict or set(plans) != required:
+        raise ValueError("CAPACITY_OBSERVATION_COMPLETE_PLAN_SET_REQUIRED")
+    stores = {}
+    for name in sorted(required):
+        observed, plan = observations[name], plans[name]
+        if (type(observed) is not dict or set(observed) != {"capacity", "used", "identity", "revision", "readback_verified"}
+                or type(plan) is not dict or set(plan) != {"identity", "revision", "planned", "shutdown_reserve"}):
+            raise ValueError("CAPACITY_OBSERVATION_EXACT_FIELDS_REQUIRED")
+        if (type(observed["identity"]) is not str or not observed["identity"]
+                or type(observed["revision"]) is not int or observed["revision"] < 0
+                or observed["readback_verified"] is not True
+                or plan["identity"] != observed["identity"]
+                or plan["revision"] != observed["revision"]):
+            raise ValueError("CAPACITY_OBSERVATION_IDENTITY_OR_READBACK_REQUIRED")
+        stores[name] = {"capacity": observed["capacity"], "used": observed["used"],
+                        "planned": plan["planned"], "shutdown_reserve": plan["shutdown_reserve"]}
+    result = assess_multi_store_envelope(stores)
+    return {"schema": "ATLAS_OBSERVED_CAPACITY_ARITHMETIC_V1", "stores": result["stores"],
+            "fits_declared_envelope": result["fits_declared_envelope"],
+            "operational_admission": False, "native_load_verified": False}

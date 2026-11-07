@@ -59,3 +59,45 @@ def test_incomplete_or_invalid_store_envelopes_refuse(damage):
     else: stores["GLOBAL"]["used"] = None
     with pytest.raises(ValueError, match="CAPACITY_ENVELOPE"):
         assess_multi_store_envelope(stores)
+
+from app.services.paper_capacity_envelope import assess_observed_store_envelope
+
+
+def observed_fixture():
+    observations = {name: {"capacity": 128, "used": 12, "identity": "synthetic-" + name,
+                           "revision": 3, "readback_verified": True}
+                    for name in complete_stores()}
+    plans = {name: {"identity": "synthetic-" + name, "revision": 3,
+                    "planned": 110, "shutdown_reserve": 6}
+             for name in complete_stores()}
+    return observations, plans
+
+
+def test_matching_readback_snapshot_still_cannot_authorize_native_run():
+    observations, plans = observed_fixture()
+    result = assess_observed_store_envelope(observations, plans)
+    assert result["fits_declared_envelope"] is True
+    assert result["operational_admission"] is False
+    assert result["native_load_verified"] is False
+
+
+@pytest.mark.parametrize("damage", ["missing", "identity", "revision", "readback", "negative", "plan_missing"])
+def test_untrusted_or_conflicting_observation_refused(damage):
+    observations, plans = observed_fixture()
+    if damage == "missing": del observations["REPORTS"]
+    elif damage == "identity": plans["GLOBAL"]["identity"] = "different"
+    elif damage == "revision": plans["GLOBAL"]["revision"] = 2
+    elif damage == "readback": observations["GLOBAL"]["readback_verified"] = False
+    elif damage == "negative": observations["GLOBAL"]["used"] = -1
+    else: del plans["PERP_ORDERS"]
+    with pytest.raises(ValueError, match="CAPACITY_"):
+        assess_observed_store_envelope(observations, plans)
+
+
+def test_observed_shortfall_preserves_shutdown_reserve():
+    observations, plans = observed_fixture()
+    observations["REPORTS"]["used"] = 13
+    result = assess_observed_store_envelope(observations, plans)
+    assert result["fits_declared_envelope"] is False
+    assert result["stores"]["REPORTS"]["remaining"] == 115
+    assert result["stores"]["REPORTS"]["required"] == 116
