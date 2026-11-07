@@ -167,3 +167,43 @@ def test_incremental_v3_refuses_entry_when_research_not_verified(tmp_path):
                          "evidence_class": "TEST_DATA"},
             research=research, quote=quote, now=now)
     assert inspect_incremental_test_v3_recovery(path=path, account_id="demo")["completed_ticks"] == 0
+
+
+def test_explicit_session_end_flattens_position_without_reentry(tmp_path):
+    from scripts.observation_runtime.disposable_v3_incremental_demo import run_incremental_demo
+    from app.investment.quality_dips_paper import read_events
+    path = tmp_path / "session_end.jsonl"
+    initialize_paper_account(account_id="demo", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    start = datetime(2026, 11, 7, tzinfo=UTC)
+    research = {"symbol": "MSFT", "source_verified": True,
+                "timestamp": start.isoformat(),
+                "normalization_value": {"conservative": 95, "base": 100, "optimistic": 105},
+                "quality_score": 80, "fundamentals_score": 80,
+                "valuation_score": 70, "drawdown_percentile": 80,
+                "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
+    observation = {"observation_id": "session-end", "symbol": "MSFT",
+                   "evidence_class": "TEST_DATA"}
+    actions = []
+    for index, (bid, ask) in enumerate([(79.9, 80), (80, 80.1), (80, 80.1)]):
+        now = start + timedelta(seconds=index)
+        quote = {"symbol": "MSFT", "state": "FRESH", "bid": bid,
+                 "ask": ask, "bid_lots": 5, "ask_lots": 5,
+                 "timestamp": now.isoformat(),
+                 "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+        result = execute_incremental_test_v3_tick(
+            path=path, account_id="demo", observation=observation,
+            research=research, quote=quote, now=now,
+            flatten_at_session_end=(index == 1))
+        actions.append(result["action"])
+    assert actions == ["ENTER", "EXIT", "WAIT"]
+    assert result["open_positions"] == 0
+    assert inspect_incremental_test_v3_recovery(path=path, account_id="demo")["recovery_status"] == "CLEAN"
+
+
+def test_session_end_flag_must_be_explicit_boolean(tmp_path):
+    with pytest.raises(ValueError, match="SESSION_END_FLAG_INVALID"):
+        execute_incremental_test_v3_tick(path=tmp_path / "none", account_id="demo",
+            observation={"symbol": "MSFT", "evidence_class": "TEST_DATA"},
+            research={"symbol": "MSFT"}, quote={}, now=datetime.now(UTC),
+            flatten_at_session_end="yes")

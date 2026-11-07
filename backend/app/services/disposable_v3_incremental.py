@@ -34,7 +34,8 @@ def execute_incremental_test_v3_tick(*, path: Path, account_id: str,
                                      observation: dict, research: dict,
                                      quote: dict, now: datetime,
                                      stop_loss_pct: float = 2,
-                                     take_profit_pct: float = 3) -> dict:
+                                     take_profit_pct: float = 3,
+                                     flatten_at_session_end: bool = False) -> dict:
     if (type(observation) is not dict or observation.get("evidence_class") != "TEST_DATA"
             or type(research) is not dict or observation.get("symbol") != research.get("symbol")
             or type(account_id) is not str or not account_id):
@@ -47,6 +48,8 @@ def execute_incremental_test_v3_tick(*, path: Path, account_id: str,
     if (not stop.is_finite() or not target.is_finite()
             or not 0 < stop <= 25 or not 0 < target <= 50):
         raise ValueError("INCREMENTAL_V3_RISK_INVALID")
+    if type(flatten_at_session_end) is not bool:
+        raise ValueError("INCREMENTAL_V3_SESSION_END_FLAG_INVALID")
     evidence = validate_stock_iex_quote(quote, symbol=observation["symbol"], now=now)
     # One journal OS lock covers replay admission, simulation and completion.
     # An interrupted tick is deliberately blocked for operator reconciliation.
@@ -55,11 +58,13 @@ def execute_incremental_test_v3_tick(*, path: Path, account_id: str,
                                observation=observation, research=research,
                                quote=quote, now=now, evidence=evidence,
                                stop_loss_pct=stop_loss_pct,
-                               take_profit_pct=take_profit_pct)
+                               take_profit_pct=take_profit_pct,
+                               flatten_at_session_end=flatten_at_session_end)
 
 
 def _execute_locked(*, path, account_id, observation, research, quote, now,
-                    evidence, stop_loss_pct, take_profit_pct):
+                    evidence, stop_loss_pct, take_profit_pct,
+                    flatten_at_session_end):
     events = read_events(path)
     ticks = [e for e in events if e.get("event") in ("v3_tick_started", "v3_tick_completed")]
     pending = set()
@@ -95,7 +100,7 @@ def _execute_locked(*, path, account_id, observation, research, quote, now,
     # Risk exits must not be blocked by stale entry research. Entry evaluation
     # is only relevant when the simulated account is flat.
     decision = {"candidate": False}
-    if not positions:
+    if not positions and not flatten_at_session_end:
         decision = evaluate_iex_quality_dips_signal(
             quote=quote, symbol=observation["symbol"], now=now, research=research)
         if decision["paper_fill_authorized"] is not False:
@@ -107,9 +112,11 @@ def _execute_locked(*, path, account_id, observation, research, quote, now,
             action, reason = "EXIT", "SYNTHETIC_STOP_LOSS"
         elif bid >= entry * (1+Decimal(str(take_profit_pct))/100):
             action, reason = "EXIT", "SYNTHETIC_TAKE_PROFIT"
+        elif flatten_at_session_end:
+            action, reason = "EXIT", "SYNTHETIC_EXPLICIT_SESSION_END"
         else:
             action, reason = "MARK", "SYNTHETIC_HOLD"
-    elif decision["candidate"] and not any(e.get("event") == "open_lot" for e in events):
+    elif not flatten_at_session_end and decision["candidate"] and not any(e.get("event") == "open_lot" for e in events):
         action, reason = "ENTER", "SYNTHETIC_V3_CANDIDATE"
     else:
         action, reason = "WAIT", "SYNTHETIC_NO_ENTRY"
