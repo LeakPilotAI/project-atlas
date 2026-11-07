@@ -1,4 +1,4 @@
-"""Inert two-lane supervision over existing engines; no providers or startup hook.
+﻿"""Inert two-lane supervision over existing engines; no providers or startup hook.
 
 The injected installation lease authenticates actual lane objects. Portfolio
 custody owns durable reservations and cross-process exclusion, not this object's
@@ -47,10 +47,12 @@ class UnifiedMarketReadCapability:
 class UnifiedControlStopBridge:
     """Existing Control Center stop/loopback transport contract, never startup."""
 
-    def __init__(self, runtime, *, owned_close=None):
+    def __init__(self, runtime, *, owned_close=None, stop_ledger=None):
         if type(runtime) is not UnifiedPaperRuntime:
             raise ValueError("UNIFIED_ACCEPTED_RUNTIME_REQUIRED")
         self.runtime = runtime
+        self.stop_ledger = stop_ledger
+        self._receipt_persisted = stop_ledger is None
         self.owned_close = owned_close
         self._close_binding = owned_close
         self.stop_lock = Lock()
@@ -73,9 +75,27 @@ class UnifiedControlStopBridge:
         if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY") or not self.verify_session():
             raise ValueError("UNIFIED_CONTROL_SESSION_OR_MODE_UNVERIFIED")
         if self.progress["phase"] == "FINISHED":
+            if getattr(self, "stop_ledger", None) is not None and not getattr(self, "_receipt_persisted", False):
+                self.runtime.entry_closed.set()
+                raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
             if self.progress["outcome"]["mode"] != mode:
                 raise ValueError("UNIFIED_CONTROL_STOP_MODE_CHANGED")
             return strict(body(self.progress))
+        ledger = getattr(self, "stop_ledger", None)
+        session_id = None
+        if ledger is not None:
+            grant = self.runtime.grant
+            if (type(grant) is not dict or type(grant.get("session_id")) is not str
+                    or not grant["session_id"]):
+                self.runtime.entry_closed.set()
+                raise ValueError("UNIFIED_STOP_LEDGER_SESSION_REQUIRED")
+            session_id = grant["session_id"]
+            try:
+                ledger.reserve_fresh(session_id, mode)
+                self._receipt_persisted = False
+            except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                self.runtime.entry_closed.set()
+                raise ValueError("UNIFIED_STOP_INTENT_UNVERIFIED") from None
         try:
             outcome = self.runtime.stop(emergency=mode == "EMERGENCY", reason="UNKNOWN" if mode == "EMERGENCY" else "USER_SHUTDOWN")
         except (ValueError, OSError, TimeoutError, KeyError, TypeError):
@@ -88,6 +108,12 @@ class UnifiedControlStopBridge:
                 "status": "SHUTDOWN_INCOMPLETE", "position_state": "UNKNOWN",
                 "lanes": {}, "cash": None, "process_shutdown": "NOT_REQUESTED",
                 "reason": "FINANCIAL_STOP_UNVERIFIED"}}
+            if ledger is not None:
+                try:
+                    ledger.finish(session_id, mode, self.progress)
+                    self._receipt_persisted = True
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                    raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
             return strict(body(self.progress))
         financial_flat = complete = outcome["state"] == "STOPPED"
         process_state = 'NOT_REQUESTED'
@@ -135,6 +161,13 @@ class UnifiedControlStopBridge:
             "position_state": "FLAT" if financial_flat else "UNKNOWN" if self.runtime.uncertain else "POSITION_OPEN",
             "lanes": outcome["lanes"], "cash": None, "process_shutdown": process_state,
             "reason": "SEPARATE_ACKNOWLEDGED_LANE_OUTCOMES_REQUIRED"}}
+        if ledger is not None:
+            try:
+                ledger.finish(session_id, mode, self.progress)
+                self._receipt_persisted = True
+            except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                self.runtime.entry_closed.set()
+                raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
         return strict(body(self.progress))
 
     def status(self):
@@ -143,6 +176,9 @@ class UnifiedControlStopBridge:
         with self.stop_lock:
             if not self.verify_session():
                 raise ValueError("UNIFIED_CONTROL_SESSION_UNVERIFIED")
+            if getattr(self, "stop_ledger", None) is not None and not getattr(self, "_receipt_persisted", False):
+                self.runtime.entry_closed.set()
+                raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
             return strict(body(self.progress))
 
 
@@ -525,3 +561,6 @@ class UnifiedPaperRuntime:
                     row.update(connection="STALE", signal=None)
             view["observed_at"] = self.clock()
             return view
+
+
+

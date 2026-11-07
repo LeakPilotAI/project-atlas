@@ -502,3 +502,91 @@ def test_control_status_waits_for_inflight_stop_result():
     assert not stop_thread.is_alive() and not reader.is_alive()
     assert observed.is_set() and results[0]['phase'] == 'FINISHED'
     assert results[0]['outcome']['status'] == 'FLATTENED'
+def test_bridge_persists_completed_stop_and_blocks_replay(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    path = tmp_path / "stop.sqlite"
+    calls = []
+    def make_bridge():
+        b = object.__new__(UnifiedControlStopBridge)
+        b.stop_lock = Lock()
+        b.verify_session = lambda: True
+        b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+        b.owned_close = None
+        b._close_binding = None
+        b.stop_ledger = PaperStopReceiptLedger(path)
+        def stop(**kwargs):
+            calls.append(kwargs)
+            return {"state":"STOPPED","lanes":{}}
+        b.runtime = SimpleNamespace(stop=stop, entry_closed=Event(), uncertain=False, grant={"session_id":"s"})
+        return b
+    first = make_bridge()
+    result = first.request_stop("SHUTDOWN_FLATTEN")
+    assert PaperStopReceiptLedger(path).recover("s", "SHUTDOWN_FLATTEN")["receipt"] == result
+    second = make_bridge()
+    with pytest.raises(ValueError, match="INTENT_UNVERIFIED"):
+        second.request_stop("SHUTDOWN_FLATTEN")
+    assert second.runtime.entry_closed.is_set()
+    assert len(calls) == 1
+def test_bridge_records_failed_financial_stop(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.owned_close = None
+    b._close_binding = None
+    b.stop_ledger = ledger
+    def fail(**kwargs):
+        raise TimeoutError("synthetic")
+    b.runtime = SimpleNamespace(stop=fail, entry_closed=Event(), grant={"session_id":"s"})
+    result = b.request_stop("SHUTDOWN_FLATTEN")
+    assert result["outcome"]["status"] == "SHUTDOWN_INCOMPLETE"
+    assert ledger.recover("s", "SHUTDOWN_FLATTEN")["receipt"] == result
+    assert b.runtime.entry_closed.is_set()
+def test_bridge_refuses_missing_durable_intent_without_financial_stop(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    ledger.reserve_fresh("s", "SHUTDOWN_FLATTEN")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.owned_close = None
+    b._close_binding = None
+    b.stop_ledger = ledger
+    calls = []
+    b.runtime = SimpleNamespace(stop=lambda **kwargs: calls.append(kwargs),
+                                entry_closed=Event(), grant={"session_id":"s"})
+    with pytest.raises(ValueError, match="INTENT_UNVERIFIED"):
+        b.request_stop("SHUTDOWN_FLATTEN")
+    assert not calls and b.runtime.entry_closed.is_set()
+def test_bridge_does_not_ack_when_receipt_write_fails(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    class BrokenLedger(PaperStopReceiptLedger):
+        def finish(self, *args):
+            raise OSError("synthetic disk error")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.owned_close = None
+    b._close_binding = None
+    b.stop_ledger = BrokenLedger(tmp_path / "stop.sqlite")
+    b.runtime = SimpleNamespace(stop=lambda **kw: {"state":"STOPPED","lanes":{}},
+                                entry_closed=Event(), uncertain=False, grant={"session_id":"s"})
+    with pytest.raises(ValueError, match="RECEIPT_UNVERIFIED"):
+        b.request_stop("SHUTDOWN_FLATTEN")
+    assert b.runtime.entry_closed.is_set()
+    with pytest.raises(ValueError, match="RECEIPT_UNVERIFIED"):
+        b.status()
+    with pytest.raises(ValueError, match="RECEIPT_UNVERIFIED"):
+        b.request_stop("SHUTDOWN_FLATTEN")
