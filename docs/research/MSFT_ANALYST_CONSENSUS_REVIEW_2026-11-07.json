@@ -7,21 +7,24 @@
       "provenance": "ANALYST_CONSENSUS",
       "as_of": "2026-11-06",
       "source_url": "https://stockanalysis.com/stocks/msft/forecast/",
-      "source_name": "StockAnalysis / S&P Global analyst poll"
+      "source_name": "StockAnalysis / S&P Global analyst poll",
+      "issuer_family": "UNVERIFIED_OVERLAPPING_ANALYST_CONSENSUS"
     },
     {
       "value": 609.54,
       "provenance": "ANALYST_CONSENSUS",
       "as_of": "2026-11-06",
       "source_url": "https://www.marketbeat.com/stocks/NASDAQ/MSFT/forecast/",
-      "source_name": "MarketBeat analyst poll"
+      "source_name": "MarketBeat analyst poll",
+      "issuer_family": "UNVERIFIED_OVERLAPPING_ANALYST_CONSENSUS"
     },
     {
       "value": 633.13,
       "provenance": "ANALYST_CONSENSUS",
       "as_of": "2026-11-06",
       "source_url": "https://www.investing.com/equities/microsoft-corp-consensus-estimates",
-      "source_name": "Investing.com analyst poll"
+      "source_name": "Investing.com analyst poll",
+      "issuer_family": "UNVERIFIED_OVERLAPPING_ANALYST_CONSENSUS"
     }
   ]
 }

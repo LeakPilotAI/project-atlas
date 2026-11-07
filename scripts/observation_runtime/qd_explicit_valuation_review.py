@@ -26,8 +26,11 @@ def review_estimates(document, *, now):
         raise ValueError("QD_VALUATION_REVIEW_SHAPE_REFUSED")
     estimates = document["estimates"]
     identities = set()
+    families = set()
     for item in estimates:
-        if type(item) is not dict or set(item) != {"value", "provenance", "as_of", "source_url", "source_name"}:
+        if (type(item) is not dict or
+                set(item) not in ({"value", "provenance", "as_of", "source_url", "source_name"},
+                                 {"value", "provenance", "as_of", "source_url", "source_name", "issuer_family"})):
             raise ValueError("QD_VALUATION_REVIEW_EVIDENCE_REQUIRED")
         url = item["source_url"]
         if type(url) is not str or len(url) > 2048:
@@ -41,9 +44,21 @@ def review_estimates(document, *, now):
         if identity in identities:
             raise ValueError("QD_VALUATION_REVIEW_DUPLICATE_ISSUER")
         identities.add(identity)
+        family = item.get("issuer_family")
+        if family is not None and (type(family) is not str or not family.strip() or len(family) > 128):
+            raise ValueError("QD_VALUATION_REVIEW_ISSUER_FAMILY_REFUSED")
+        # An aggregator is not an independently authenticated originating analyst.
+        # Missing family attribution cannot be treated as proof of independence.
+        families.add(family.strip().casefold() if family is not None else None)
     window = build_normalization_window(estimates, now=now)
+    independently_distinct = (None not in families and len(families) >= 3)
+    # Structural completeness does not imply three distinct originating issuers.
+    usable = bool(window["complete"] and independently_distinct)
     return {"schema": "ATLAS_QD_VALUATION_REVIEW_V1", "symbol": document["symbol"],
-            "source_count": window["source_count"], "window_complete": window["complete"],
+            "source_count": window["source_count"], "window_complete": usable,
+            "structural_window_complete": window["complete"],
+            "distinct_declared_issuer_families": len(families - {None}),
+            "issuer_independence_declared": independently_distinct,
             "conservative": window["conservative"], "base": window["base"],
             "optimistic": window["optimistic"],
             "independent_source_authentication": False,

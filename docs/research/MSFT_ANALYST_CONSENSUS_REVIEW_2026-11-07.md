@@ -6,4 +6,4 @@ Research-only candidate. Three publicly displayed consensus estimates collected 
 - MarketBeat: 2026-11-06 close context, $609.54 average. https://www.marketbeat.com/stocks/NASDAQ/MSFT/forecast/
 - Investing.com: current displayed analyst poll, $633.13 average. https://www.investing.com/equities/microsoft-corp-consensus-estimates
 
-The offline review CLI computes $609.54 conservative, $633.13 median, $634.14 optimistic, but its `window_complete=true` is **structural only**. `independent_source_authentication=false` and `operational_source_accepted=false` are decisive. Source aggregation overlap and publication timestamp/rights require independent verification. No trading authority.
+The offline review CLI computes $609.54 conservative, $633.13 median, $634.14 optimistic, but its `structural_window_complete=true` is **structural only**; `window_complete=false` because independent originating issuers have not been demonstrated. `independent_source_authentication=false` and `operational_source_accepted=false` are decisive. Source aggregation overlap and publication timestamp/rights require independent verification. No trading authority.
