@@ -140,6 +140,15 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
             'distinct_tickers': len({p['ticker'] for p in group}),
             'pairs_under_60_seconds': sum(Decimal(p['elapsed_seconds']) < 60 for p in group),
             'pairs_at_least_60_seconds': sum(Decimal(p['elapsed_seconds']) >= 60 for p in group),
+            'pairs_at_least_300_seconds': sum(Decimal(p['elapsed_seconds']) >= 300 for p in group),
+            'pairs_at_least_300_seconds_net_positive': sum(
+                Decimal(p['elapsed_seconds']) >= 300 and Decimal(p['net_dollars']) > 0
+                for p in group),
+            'pairs_exit_bid_met_fee_adjusted_break_even': sum(
+                Decimal(p['exit_vwap']) >= Decimal(p['required_exit_bid_to_break_even'])
+                for p in group),
+            'pairs_break_even_bid_above_contract_max': sum(
+                Decimal(p['required_exit_bid_to_break_even']) > 1 for p in group),
             'longest_observation_gap_seconds': str(max(
                 (Decimal(p['elapsed_seconds']) for p in group), default=Decimal('0'))),
             'not_realized_pnl': True,
