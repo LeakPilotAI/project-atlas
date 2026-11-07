@@ -220,6 +220,32 @@ def score_research_bundle(*, symbol, data):
             or not isinstance(data.get("fundamentals"), dict)
             or not isinstance(data.get("valuation"), dict)):
         raise ValueError("BROAD_RESEARCH_SCORE_INPUT_REFUSED")
+    # Provider receipts are transport/cache evidence, not signed provenance.
+    # Refuse malformed, off-domain or future-dated claims before scoring.
+    from urllib.parse import urlsplit
+    for receipt in data["receipts"]:
+        if type(receipt) is not dict or receipt.get("schema") != "FREE_RESEARCH_CACHE_V1":
+            raise ValueError("BROAD_RESEARCH_PROVIDER_RECEIPT_REFUSED")
+        url = receipt.get("url")
+        if type(url) is not str or not url.startswith("https://"):
+            raise ValueError("BROAD_RESEARCH_PROVIDER_RECEIPT_REFUSED")
+        host = urlsplit(url).hostname
+        provider = receipt.get("provider")
+        if (host not in {"www.sec.gov", "data.sec.gov", "paper-api.alpaca.markets",
+                         "data.alpaca.markets"}
+                or provider not in {"SEC_EDGAR", "ALPACA_BASIC_IEX"}
+                or (host.endswith("sec.gov") and provider != "SEC_EDGAR")
+                or (host.endswith("alpaca.markets") and provider != "ALPACA_BASIC_IEX")
+                or receipt.get("domain") != "TLS_PUBLIC_PROVIDER"
+                or type(receipt.get("sha256")) is not str
+                or re.fullmatch(r"[0-9a-f]{64}", receipt["sha256"]) is None):
+            raise ValueError("BROAD_RESEARCH_PROVIDER_RECEIPT_REFUSED")
+        try:
+            stamp = datetime.fromisoformat(receipt["retrieved_at"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("BROAD_RESEARCH_PROVIDER_RECEIPT_REFUSED") from exc
+        if stamp.tzinfo is None or stamp.astimezone(UTC) > datetime.now(UTC):
+            raise ValueError("BROAD_RESEARCH_PROVIDER_RECEIPT_REFUSED")
     entry = UniverseEntry(symbol=symbol, asset_type=AssetType.UNKNOWN,
                           groups=["alpaca_provider_scoped_research"])
     snap = snapshot_from_parts(entry, price=data["price"],

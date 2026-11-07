@@ -281,7 +281,10 @@ def test_actual_investment_scorer_integrates_with_bounded_research_cycle(tmp_pat
     now = datetime.now(UTC)
     def provider(symbol):
         return {"paper_eligible": False, "asset": {"symbol": symbol, "class": "us_equity"},
-                "receipts": [{"retrieved_at": now.isoformat()}],
+                "receipts": [{"schema": "FREE_RESEARCH_CACHE_V1", "retrieved_at": now.isoformat(),
+                              "url": "https://paper-api.alpaca.markets/v2/assets/" + symbol,
+                              "provider": "ALPACA_BASIC_IEX", "domain": "TLS_PUBLIC_PROVIDER",
+                              "sha256": "a" * 64}],
                 "price": MeasuredValue.unknown("ALPACA_IEX"),
                 "fundamentals": {}, "valuation": {},
                 "bars": [OhlcvBar(session_date="2026-11-06", open=100, high=101,
@@ -401,3 +404,19 @@ def test_scored_receipt_refuses_missing_evidence_even_with_valid_digest(tmp_path
     with pytest.raises(ValueError, match="INCOMPLETE"):
         mod.finalize_scored_research_receipt(path)
     assert not (root / "alpaca_equity_cursor.json").exists()
+
+
+def test_real_scorer_rejects_off_domain_provider_receipt():
+    from datetime import UTC, datetime
+    from app.investment.bars import OhlcvBar
+    from app.investment.models import MeasuredValue
+    from scripts.observation_runtime.alpaca_equity_catalog import score_research_bundle
+    now = datetime.now(UTC)
+    data = {"paper_eligible": False, "asset": {"symbol": "MSFT", "class": "us_equity"},
+            "receipts": [{"schema": "FREE_RESEARCH_CACHE_V1", "retrieved_at": now.isoformat(),
+                          "url": "https://example.org/fake", "provider": "SEC_EDGAR",
+                          "domain": "TLS_PUBLIC_PROVIDER", "sha256": "a" * 64}],
+            "price": MeasuredValue.unknown("ALPACA_IEX"), "fundamentals": {}, "valuation": {},
+            "bars": [OhlcvBar(session_date="2026-11-06", close=100)]}
+    with pytest.raises(ValueError, match="PROVIDER_RECEIPT_REFUSED"):
+        score_research_bundle(symbol="MSFT", data=data)
