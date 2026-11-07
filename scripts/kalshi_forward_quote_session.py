@@ -2,10 +2,21 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime
 import json
 
 from scripts.kalshi_forward_quote_observer import collect
 from scripts.kalshi_forward_quote_analysis import analyze
+
+
+def _aware_timestamp(value):
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        return parsed if parsed.tzinfo is not None and parsed.utcoffset() is not None else None
+    except ValueError:
+        return None
 
 
 async def run(*, cycles: int = 2, interval_seconds: float = 60.0,
@@ -17,6 +28,7 @@ async def run(*, cycles: int = 2, interval_seconds: float = 60.0,
     observations = []
     prior_qualification = None
     prior_metadata = None
+    prior_scan_started = None
     identity_overlap = []
     for index in range(cycles):
         if index:
@@ -24,6 +36,7 @@ async def run(*, cycles: int = 2, interval_seconds: float = 60.0,
         result = await collector()
         current = result.pop('scan_qualification_by_ticker', None)
         metadata = result.pop('scan_listing_metadata', None)
+        scan_started = result.get('scan_started_at')
         if isinstance(current, dict) and all(
             isinstance(k, str) and isinstance(v, bool) for k, v in current.items()
         ):
@@ -43,7 +56,29 @@ async def run(*, cycles: int = 2, interval_seconds: float = 60.0,
                     current_only_created_times_present = sum(
                         isinstance(metadata[t].get('created_time'), str)
                         for t in set(current) - set(prior_qualification))
+                creation_evidence = {'created_before_prior_scan': 0,
+                                     'created_between_scan_starts': 0,
+                                     'created_after_current_scan_start': 0,
+                                     'timestamp_unknown': len(set(current) - set(prior_qualification))}
+                prior_time = _aware_timestamp(prior_scan_started)
+                current_time = _aware_timestamp(scan_started)
+                if (isinstance(metadata, dict) and set(metadata) == set(current)
+                    and prior_time is not None and current_time is not None
+                    and current_time >= prior_time):
+                    creation_evidence['timestamp_unknown'] = 0
+                    for ticker in set(current) - set(prior_qualification):
+                        item = metadata.get(ticker)
+                        created = _aware_timestamp(item.get('created_time')) if isinstance(item, dict) else None
+                        if created is None:
+                            creation_evidence['timestamp_unknown'] += 1
+                        elif created <= prior_time:
+                            creation_evidence['created_before_prior_scan'] += 1
+                        elif created <= current_time:
+                            creation_evidence['created_between_scan_starts'] += 1
+                        else:
+                            creation_evidence['created_after_current_scan_start'] += 1
                 identity_overlap.append({
+                    'current_only_creation_evidence': creation_evidence,
                     'shared_moved_page': moved_pages,
                     'shared_same_page': same_page,
                     'current_only_with_created_time': current_only_created_times_present,
@@ -59,9 +94,11 @@ async def run(*, cycles: int = 2, interval_seconds: float = 60.0,
                 })
             prior_qualification = current
             prior_metadata = metadata
+            prior_scan_started = scan_started
         else:
             prior_qualification = None
             prior_metadata = None
+            prior_scan_started = None
         observations.append(result)
         if result.get('provider_errors'):
             break

@@ -64,6 +64,9 @@ def test_identity_overlap_distinguishes_turnover_from_same_market_eligibility():
         return None
     result = asyncio.run(run(collector=collector, sleep=sleep, analyzer=lambda: {}))
     assert result['listing_identity_overlap'] == [{
+        'current_only_creation_evidence': {'created_before_prior_scan': 0,
+            'created_between_scan_starts': 0, 'created_after_current_scan_start': 0,
+            'timestamp_unknown': 1},
         'shared_moved_page': None, 'shared_same_page': None,
         'current_only_with_created_time': None,
         'current_only_are_confirmed_new_listings': False,
@@ -99,3 +102,31 @@ def test_page_position_evidence_without_claiming_new_listings():
     assert overlap['current_only_with_created_time'] == 1
     assert overlap['current_only_are_confirmed_new_listings'] is False
     assert all('scan_listing_metadata' not in x for x in result['observations'])
+
+def test_creation_times_classify_current_only_without_conflating_discovery():
+    scans = iter([
+        {'scan_started_at': '2026-11-07T12:00:00Z',
+         'scan_qualification_by_ticker': {'A': True},
+         'scan_listing_metadata': {'A': {'page': 1, 'created_time': '2026-11-07T11:00:00Z'}},
+         'provider_errors': []},
+        {'scan_started_at': '2026-11-07T12:02:00Z',
+         'scan_qualification_by_ticker': {'A': True, 'OLD': False, 'NEW': False, 'FUTURE': False, 'BAD': False},
+         'scan_listing_metadata': {
+             'A': {'page': 1, 'created_time': '2026-11-07T11:00:00Z'},
+             'OLD': {'page': 2, 'created_time': '2026-11-07T11:00:00Z'},
+             'NEW': {'page': 2, 'created_time': '2026-11-07T12:01:00Z'},
+             'FUTURE': {'page': 3, 'created_time': '2026-11-07T12:03:00Z'},
+             'BAD': {'page': 3, 'created_time': 'invalid'}},
+         'provider_errors': []},
+    ])
+    async def collector():
+        return next(scans)
+    async def sleep(_):
+        return None
+    result = asyncio.run(run(collector=collector, sleep=sleep, analyzer=lambda: {}))
+    overlap = result['listing_identity_overlap'][0]
+    assert overlap['current_only_creation_evidence'] == {
+        'created_before_prior_scan': 1, 'created_between_scan_starts': 1,
+        'created_after_current_scan_start': 1, 'timestamp_unknown': 1}
+    assert overlap['current_only_are_confirmed_new_listings'] is False
+    assert result['orders_placed'] == result['paper_trades_opened'] == 0

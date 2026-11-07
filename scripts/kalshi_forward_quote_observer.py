@@ -199,6 +199,7 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             'unique_markets_screened': len(seen), 'records_written': len(records),
             'scan_qualification_by_ticker': scan_qualification_by_ticker,
             'scan_listing_metadata': scan_listing_metadata,
+            'scan_started_at': observed.isoformat(),
             'rejection_reason_counts': dict(sorted(rejection_counts.items())),
             'top_rejection_combinations': [
                 {'reasons': list(reasons), 'markets': count}
