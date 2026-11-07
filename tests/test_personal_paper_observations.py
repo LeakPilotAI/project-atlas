@@ -240,7 +240,7 @@ def test_personal_paper_market_cycle_dashboard_restart_and_test_fixture(tmp_path
             "data_provenance"
         ] == "FORWARD_COLLECTION"
         forward_report = client.get("/api/paper/forward/report").json()
-        assert forward_report["genuine_forward_paper"] is True
+        assert forward_report["genuine_forward_paper"] is False
         assert forward_report["current_available_cash"] == 1000.0
         assert forward_report["closed_trades"] == 0
         assert client.get("/api/strategy/observations").json()["record_count"] == 4

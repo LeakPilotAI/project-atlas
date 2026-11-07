@@ -317,7 +317,7 @@ def test_real_loopback_start_transaction_dashboard_restart_and_clean_stop(tmp_pa
         assert first_status["forward_paper"]["paper_positions"] == 0
         assert _get_json(base_url + "/api/strategy/observations")["record_count"] == 4
         forward_report = _get_json(base_url + "/api/paper/forward/report")
-        assert forward_report["genuine_forward_paper"] is True
+        assert forward_report["genuine_forward_paper"] is False
         assert forward_report["current_available_cash"] == 1000.0
         assert forward_report["closed_trades"] == 0
 

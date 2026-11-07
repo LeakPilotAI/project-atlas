@@ -231,7 +231,7 @@ def build_daily_report(
         "generated_at": _now().isoformat(),
         "startup_authorized": False,
         "production_authorized": False,
-        "genuine_forward_paper": provenance == "FORWARD_COLLECTION",
+        "genuine_forward_paper": False,  # Forward journal provenance is not proof of eligible execution.
         "operational_acceptance": False,
     }
 

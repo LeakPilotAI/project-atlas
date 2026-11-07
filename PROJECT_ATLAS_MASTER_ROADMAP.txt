@@ -1,3 +1,8 @@
+PERSONAL PAPER COMMANDER CHECKPOINT - REPORT READINESS CORRECTION - 2026-11-06
+[verified] The forward daily report now correctly reports genuine_forward_paper=false while the account is observation-only; FORWARD_COLLECTION provenance alone is not proof of trade readiness.
+[verified] Regression assertions updated and 36 focused tests pass, 1 existing Starlette warning.
+[remaining] Obtain defensible current executable-price evidence and refreshed QD research before enabling forward simulated entries; no real orders, autostart, or Genesis changes.
+
 PERSONAL PAPER COMMANDER CHECKPOINT - 2026-11-06
 [verified] Corrected status endpoint to keep genuine_forward_paper=false while only a FORWARD_COLLECTION account exists and executable-price eligibility remains blocked.
 [verified] Focused public-data, observation, local PAPER, and accounting regressions: 36 passed, 1 existing Starlette warning.
