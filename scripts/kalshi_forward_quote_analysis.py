@@ -50,6 +50,15 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
                 continue
             rows.append((stamp, row, qty))
     rows.sort(key=lambda item: item[0])
+    # Count distinct observed listing identities, including those without a
+    # second quote. A single quote is coverage, never a forward outcome.
+    listing_groups = {}
+    for stamp, row, qty in rows:
+        identity = (row['ticker'], _time(row['created_time']),
+                    _time(row['open_time']), _time(row['occurrence_datetime']))
+        group = listing_groups.setdefault(identity, {'snapshots': 0, 'qualified_snapshots': 0})
+        group['snapshots'] += 1
+        group['qualified_snapshots'] += row.get('entry_gate_passed') is True
     previous = {}
     pairs = []
     for stamp, row, qty in rows:
@@ -138,6 +147,18 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
     return {'status': 'PAIRED' if pairs else 'INSUFFICIENT_MATCHED_FORWARD_QUOTES',
             'pairs': pairs, 'paired_count': len(pairs),
             'cohort_summary': cohorts,
+            'listing_coverage': {
+                'distinct_observed_listings': len(listing_groups),
+                'distinct_listings_with_qualified_snapshot': sum(
+                    group['qualified_snapshots'] > 0 for group in listing_groups.values()),
+                'distinct_listings_with_multiple_snapshots': sum(
+                    group['snapshots'] >= 2 for group in listing_groups.values()),
+                'distinct_qualified_listings_with_multiple_snapshots': sum(
+                    group['qualified_snapshots'] >= 2 for group in listing_groups.values()),
+                'qualified_snapshot_count': sum(
+                    group['qualified_snapshots'] for group in listing_groups.values()),
+                'not_independent_trades': True,
+            },
             'quote_pair_summary': {
                 'positive_pairs': positive, 'negative_pairs': negative,
                 'zero_pairs': zero, 'sum_net_dollars': str(sum(nets, Decimal('0'))),

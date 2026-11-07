@@ -86,6 +86,20 @@ def test_non_overlapping_snapshot_pair_count_does_not_reuse_middle_quote(tmp_pat
     assert result['quote_pair_summary']['non_overlapping_is_not_independent_trades'] is True
 
 
+def test_listing_coverage_includes_single_snapshot_without_pair(tmp_path):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    path = tmp_path / 'quotes.jsonl'
+    qualified = row(now, ticker='KX-QUAL')
+    qualified['entry_gate_passed'] = True
+    write(path, [qualified, row(now, ticker='KX-EXP')])
+    result = analyze(path)
+    assert result['paired_count'] == 0
+    assert result['listing_coverage']['distinct_observed_listings'] == 2
+    assert result['listing_coverage']['distinct_listings_with_qualified_snapshot'] == 1
+    assert result['listing_coverage']['distinct_qualified_listings_with_multiple_snapshots'] == 0
+    assert result['listing_coverage']['qualified_snapshot_count'] == 1
+
+
 def test_missing_file_is_no_evidence(tmp_path):
     assert analyze(tmp_path / 'missing.jsonl')['status'] == 'NO_FORWARD_OBSERVATIONS'
 
