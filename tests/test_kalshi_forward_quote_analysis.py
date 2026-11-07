@@ -36,6 +36,10 @@ def test_pairs_use_earlier_buy_later_sell_and_both_fees(tmp_path):
     assert result['quote_pair_summary']['not_realized_pnl'] is True
     assert result['quote_pair_summary']['exploratory_pairs'] == 1
     assert result['quote_pair_summary']['entry_prefilter_passed_pairs'] == 0
+    assert result['pairs'][0]['elapsed_seconds'] == '300.0'
+    assert result['pairs'][0]['required_exit_bid_to_break_even'] == '0.405'
+    assert result['cohort_summary']['EXPLORATORY_NOT_ENTRY_QUALIFIED']['pairs'] == 1
+    assert result['cohort_summary']['ENTRY_PREFILTER_PASSED_BOTH']['pairs'] == 0
 
 
 def test_no_same_timestamp_or_unfillable_exit(tmp_path):

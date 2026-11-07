@@ -86,6 +86,8 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
                                       'cohort': cohort,
                                       'entry_observed_at': prior[0].isoformat(),
                                       'exit_observed_at': stamp.isoformat(),
+                                      'elapsed_seconds': str(Decimal(str((stamp - prior[0]).total_seconds()))),
+                                      'required_exit_bid_to_break_even': str(entry + (entry_fee + exit_fee) / qty),
                                       'entry_vwap': str(entry), 'exit_vwap': str(exit_price),
                                       'gross_dollars': str(gross),
                                       'total_fees_dollars': str(entry_fee + exit_fee),
@@ -98,8 +100,21 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
     positive = sum(value > 0 for value in nets)
     negative = sum(value < 0 for value in nets)
     zero = len(nets) - positive - negative
+    cohorts = {}
+    for name in ('ENTRY_PREFILTER_PASSED_BOTH', 'EXPLORATORY_NOT_ENTRY_QUALIFIED'):
+        group = [p for p in pairs if p['cohort'] == name]
+        values = [Decimal(p['net_dollars']) for p in group]
+        cohorts[name] = {
+            'pairs': len(group), 'positive': sum(v > 0 for v in values),
+            'negative': sum(v < 0 for v in values),
+            'zero': sum(v == 0 for v in values),
+            'sum_hypothetical_net_dollars': str(sum(values, Decimal('0'))),
+            'distinct_tickers': len({p['ticker'] for p in group}),
+            'not_realized_pnl': True,
+        }
     return {'status': 'PAIRED' if pairs else 'INSUFFICIENT_MATCHED_FORWARD_QUOTES',
             'pairs': pairs, 'paired_count': len(pairs),
+            'cohort_summary': cohorts,
             'quote_pair_summary': {
                 'positive_pairs': positive, 'negative_pairs': negative,
                 'zero_pairs': zero, 'sum_net_dollars': str(sum(nets, Decimal('0'))),
