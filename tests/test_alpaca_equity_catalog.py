@@ -217,3 +217,39 @@ def test_scored_cycle_end_to_end_and_failure(tmp_path, monkeypatch):
     assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 2
     assert len(list(root.glob("alpaca-scored-*.json"))) == 1
     assert not ok["paper_execution_authorized"]
+
+
+def test_authenticated_entry_point_wires_opt_in_finalization(tmp_path, monkeypatch):
+    import json
+    import sys
+    import types
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    inv = mod.inventory_snapshot([{"class": "us_equity", "symbol": "MSFT", "status": "active", "tradable": True}],
+                                 captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
+    class FakeClient:
+        domain = "TLS_PUBLIC_PROVIDER"
+        def __init__(self, **kwargs):
+            pass
+    class FakeBundle:
+        def __init__(self, **kwargs):
+            pass
+        def load(self, symbol):
+            return {"symbol": symbol}
+    monkeypatch.setattr(mod.Credentials, "load", lambda path: object())
+    monkeypatch.setattr(sys.modules["app.investment.free_research_transport"], "FreeResearchClient", FakeClient)
+    monkeypatch.setattr(sys.modules["app.investment.free_research_providers"], "FreeResearchBundle", FakeBundle)
+    def scorer(*, symbol, data):
+        return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+    monkeypatch.setattr(mod, "score_research_bundle", scorer)
+    contact = "ProjectAtlas/1.0 operator@real-domain.org"
+    preview = mod.score_authenticated_provider_batch(contact=contact, limit=1)
+    assert preview["scoring_complete"] and not preview["cursor_advanced"]
+    assert not (root / "alpaca_equity_cursor.json").exists()
+    result = mod.score_authenticated_provider_batch(contact=contact, limit=1, finalize=True)
+    assert result["status"] == "RESEARCH_FINALIZED" and result["cursor_advanced"]
+    assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 1
