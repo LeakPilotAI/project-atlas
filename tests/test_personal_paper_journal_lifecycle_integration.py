@@ -316,3 +316,27 @@ def test_writer_transaction_clears_ownership_after_exception(tmp_path):
             raise RuntimeError("intentional")
     with journal_mutation_transaction(path):
         assert True
+
+
+def test_public_yahoo_research_cannot_be_mirrored_into_simulated_fill(tmp_path):
+    from app.investment.quality_dips_paper import mirror_forward_observation
+    path = tmp_path / "public-research.jsonl"
+    initialize_paper_account(account_id="forward", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="FORWARD_COLLECTION", path=path)
+    observation = {"observation_id": "yahoo:public-record:MSFT", "symbol": "MSFT",
+                   "strategy_version": "QUALITY_DIPS_V3",
+                   "policy_version": "quality-dips-v3-mos-15-20-25-30-v1",
+                   "evidence_class": "FORWARD_COLLECTION", "classification": "ACCUMULATION",
+                   "price": 100, "prediction": {"entry_ladder": {"levels": [
+                       {"level": "L1", "reached": True}]}},
+                   "source_timestamp_basis": "YAHOO_INTRADAY_BAR_INDEX_TIME",
+                   "paper_execution_eligible": False}
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="PUBLIC_RESEARCH_OBSERVATION_NOT_EXECUTABLE"):
+        mirror_forward_observation(observation, account_id="forward", path=path)
+    assert path.read_bytes() == before
+    for change in ({"observation_id": "forged:public"},
+                   {"source_timestamp_basis": "OTHER", "paper_execution_eligible": True}):
+        with pytest.raises(ValueError, match="PUBLIC_RESEARCH_OBSERVATION_NOT_EXECUTABLE"):
+            mirror_forward_observation({**observation, **change}, account_id="forward", path=path)
+    assert path.read_bytes() == before

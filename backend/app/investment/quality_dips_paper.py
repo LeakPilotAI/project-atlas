@@ -524,6 +524,14 @@ def mirror_forward_observation(
         raise ValueError("observation policy_version does not match frozen V3 policy")
     if str(observation.get("evidence_class") or "").upper() != "FORWARD_COLLECTION":
         raise ValueError("only FORWARD_COLLECTION observations may create PAPER lots")
+    # The public Yahoo observation pipeline explicitly produces research-only
+    # bars. Its FORWARD_COLLECTION provenance means forward collection time,
+    # not permission to use a trade-bar close as a simulated execution price.
+    if (str(observation.get("observation_id") or "").startswith("yahoo:")
+            or observation.get("source_timestamp_basis") == "YAHOO_INTRADAY_BAR_INDEX_TIME"
+            or observation.get("execution_blocker") == "YAHOO_TRADE_BAR_CLOSE_IS_NOT_AN_EXECUTABLE_QUOTE"
+            or observation.get("paper_execution_eligible") is False):
+        raise ValueError("PUBLIC_RESEARCH_OBSERVATION_NOT_EXECUTABLE")
     state = str(observation.get("classification") or "").upper()
     reached = _reached_levels(observation)
     if state not in ACTIONABLE_STATES or not reached:
