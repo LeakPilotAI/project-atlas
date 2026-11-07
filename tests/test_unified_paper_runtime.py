@@ -794,3 +794,36 @@ def test_control_bridge_session_id_is_bound_to_runtime_grant():
     bridge.runtime.grant = None
     assert bridge.session_id is None
     assert bridge.verify_session() is True
+
+
+@pytest.mark.asyncio
+async def test_opt_in_local_stop_session_transport_requires_runtime_bound_identity():
+    import httpx
+    from fastapi import FastAPI
+    from app.services.quality_dips_stop_bridge import register_stop_routes
+
+    r = runtime()
+    await r.poll()
+    bridge = UnifiedControlStopBridge(r)
+    app = FastAPI()
+    origin = "http://127.0.0.1:18799"
+    token = "synthetic-test-control-token-only-1234"
+    register_stop_routes(app, bridge=bridge, origin=origin, token=token)
+    headers = {"origin": origin, "x-atlas-control": token}
+    url = "/_atlas/control/stop-session"
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=origin) as client:
+        assert (await client.post(url, json={"session_id": bridge.session_id,
+                                            "mode": "SHUTDOWN_FLATTEN"})).status_code == 403
+        assert (await client.post(url, headers=headers, json={"session_id": "foreign",
+                                            "mode": "SHUTDOWN_FLATTEN"})).status_code == 409
+        assert all(p.stops == 0 for p in r.lanes.values())
+        assert (await client.post(url, headers=headers, json={"session_id": bridge.session_id,
+                                            "mode": "SHUTDOWN_FLATTEN", "ownership_verified": True})).status_code == 409
+        assert all(p.stops == 0 for p in r.lanes.values())
+        # Disposable runtime fixture has no accepted session ID: even a
+        # correct local token must not upgrade it to financial authority.
+        assert bridge.session_id is None
+        result = await client.post(url, headers=headers, json={"session_id": "synthetic",
+                                                               "mode": "SHUTDOWN_FLATTEN"})
+        assert result.status_code == 409
+        assert all(p.stops == 0 for p in r.lanes.values())

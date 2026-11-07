@@ -162,3 +162,44 @@ def register_stop_routes(app, *, bridge, origin, token):
     # Explicit Request annotation resolves without exposing globals or FastAPI startup.
     stop.__annotations__["request"] = Request
     app.add_api_route("/_atlas/control/stop", stop, methods=["POST"])
+    async def stop_session(request: Request):
+        # Opt-in session-bound endpoint. The CSRF token authenticates the local
+        # transport only; bridge.verify_session authenticates the installed
+        # runtime. No discovery, startup, or self-asserted ownership flag.
+        if (
+            request.client.host != "127.0.0.1"
+            or request.headers.get("host") != host
+            or request.headers.get("origin") != origin
+            or not compare_digest(request.headers.get("x-atlas-control", ""), token)
+        ):
+            return JSONResponse({"status": "REFUSED"}, status_code=403)
+        try:
+            raw = b""
+            async for chunk in request.stream():
+                if len(raw) + len(chunk) > 256:
+                    raise ValueError("CONTROL_COMMAND_TOO_LARGE")
+                raw += chunk
+            payload = strict(raw.decode())
+            if (type(payload) is not dict or set(payload) != {"session_id", "mode"}
+                    or type(payload["session_id"]) is not str
+                    or not 0 < len(payload["session_id"]) <= 128
+                    or payload["mode"] not in ("SHUTDOWN_FLATTEN", "EMERGENCY")):
+                raise ValueError("CONTROL_SESSION_COMMAND_SCHEMA")
+            from starlette.concurrency import run_in_threadpool
+
+            def verified_stop():
+                if (type(bridge.session_id) is not str
+                        or bridge.session_id != payload["session_id"]
+                        or bridge.verify_session() is not True):
+                    raise ValueError("CONTROL_SESSION_IDENTITY_UNVERIFIED")
+                result = bridge.request_stop(payload["mode"])
+                if bridge.session_id != payload["session_id"]:
+                    raise ValueError("CONTROL_SESSION_IDENTITY_CHANGED")
+                return result
+
+            return JSONResponse(await run_in_threadpool(verified_stop))
+        except (ValueError, OSError, KeyError, TypeError, AttributeError):
+            return JSONResponse({"status": "REFUSED"}, status_code=409)
+
+    stop_session.__annotations__["request"] = Request
+    app.add_api_route("/_atlas/control/stop-session", stop_session, methods=["POST"])
