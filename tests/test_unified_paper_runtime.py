@@ -1008,3 +1008,44 @@ async def test_session_bound_transport_requires_durable_matching_receipt_before_
         bridge.stop_ledger.receipt = bridge.request_stop("SHUTDOWN_FLATTEN")
         assert (await client.post("/_atlas/control/stop-session", headers=headers,
                                   json=payload)).status_code == 200
+
+@pytest.mark.asyncio
+async def test_session_http_sqlite_receipt_roundtrip(tmp_path):
+    import httpx
+    from fastapi import FastAPI
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    from app.services.quality_dips_stop_bridge import register_stop_routes
+
+    ledger = PaperStopReceiptLedger(tmp_path / 'roundtrip.sqlite')
+
+    class Session:
+        session_id = 'test-sqlite-session'
+        persist = False
+        def verify_session(self):
+            return True
+        def request_stop(self, mode):
+            result = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'FINISHED',
+                      'outcome': {'schema': 'QD_AUTO_SHUTDOWN_V1', 'mode': mode,
+                                  'status': 'FLATTENED', 'position_state': 'FLAT',
+                                  'process_shutdown': 'VERIFIED_EXIT', 'lanes': {}}}
+            if self.persist:
+                ledger.reserve_fresh(self.session_id, mode)
+                ledger.finish(self.session_id, mode, result)
+            return result
+
+    session = Session()
+    session.stop_ledger = ledger
+    app = FastAPI()
+    origin = 'http://127.0.0.1:18799'
+    token = 'synthetic-test-control-token-only-1234'
+    register_stop_routes(app, bridge=session, origin=origin, token=token,
+                         require_session=True, require_durable_receipt=True)
+    headers = {'origin': origin, 'x-atlas-control': token}
+    payload = {'session_id': session.session_id, 'mode': 'SHUTDOWN_FLATTEN'}
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=origin) as client:
+        first = await client.post('/_atlas/control/stop-session', headers=headers, json=payload)
+        assert first.status_code == 409
+        session.persist = True
+        second = await client.post('/_atlas/control/stop-session', headers=headers, json=payload)
+        assert second.status_code == 200
+        assert ledger.reserve_existing(session.session_id, 'SHUTDOWN_FLATTEN')['receipt'] == second.json()
