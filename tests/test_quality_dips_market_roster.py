@@ -270,3 +270,17 @@ def test_merged_pagination_refuses_missing_source_provenance_and_unbounded_budge
         merged_research_batch(valid, offset=0, budget=101)
     with pytest.raises(ValueError, match="MERGED_BOUNDED"):
         merged_research_batch(valid | {"source_digests": {}}, offset=0, budget=1)
+
+
+def test_alpaca_asset_identity_normalization_is_not_broker_authority():
+    from app.investment.quality_dips_market_roster import alpaca_asset_reference_metadata
+    reference = {"symbol": "MSFT", "exchange": "XNAS", "instrument_type": "EQUITY_REFERENCE"}
+    asset = {"symbol": "MSFT", "class": "us_equity", "status": "active", "tradable": True,
+             "fractionable": True, "id": "provider-id", "exchange": "NASDAQ"}
+    assert alpaca_asset_reference_metadata(asset, reference) == {
+        "symbol": "MSFT", "instrument_id": "provider-id", "asset_class": "STOCK",
+        "exchange": "XNAS", "currency": "USD", "status": "ACTIVE", "revision": 1}
+    assert alpaca_asset_reference_metadata(asset | {"exchange": "NYSE"}, reference) is None
+    assert alpaca_asset_reference_metadata(asset | {"tradable": False}, reference) is None
+    assert alpaca_asset_reference_metadata(asset | {"id": ""}, reference) is None
+    assert alpaca_asset_reference_metadata(asset | {"symbol": "AAPL"}, reference) is None

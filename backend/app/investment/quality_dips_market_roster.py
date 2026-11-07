@@ -160,6 +160,33 @@ def merged_research_batch(merged, *, offset, budget):
             "execution_authorized": False}
 
 
+
+ALPACA_EXCHANGES = {"NASDAQ": "XNAS", "NYSE": "XNYS", "ARCA": "ARCX",
+                    "AMEX": "XASE", "BATS": "BATS", "NYSEARCA": "ARCX"}
+
+
+def alpaca_asset_reference_metadata(asset, reference):
+    """Normalize actual Alpaca asset identity for independent research review.
+
+    Alpaca tradable is not Robinhood eligibility; ETF type cannot be inferred
+    from Alpaca's generic us_equity class, and source authority is separate.
+    """
+    if (type(asset) is not dict or type(reference) is not dict
+            or type(reference.get("symbol")) is not str
+            or asset.get("symbol") != reference["symbol"]
+            or asset.get("class") != "us_equity"
+            or asset.get("status") != "active" or asset.get("tradable") is not True
+            or type(asset.get("id")) is not str or not asset["id"]
+            or type(asset.get("fractionable")) is not bool
+            or ALPACA_EXCHANGES.get(asset.get("exchange")) != reference.get("exchange")
+            or reference.get("instrument_type") not in ("ETF", "EQUITY_REFERENCE")):
+        return None
+    return {"symbol": reference["symbol"], "instrument_id": asset["id"],
+            "asset_class": "ETF" if reference["instrument_type"] == "ETF" else "STOCK",
+            "exchange": reference["exchange"], "currency": "USD", "status": "ACTIVE",
+            "revision": 1}
+
+
 def research_universe(batch, *, metadata, instrument_authority):
     """Use the actual InvestmentScanner's injected InvestmentUniverse interface.
 
