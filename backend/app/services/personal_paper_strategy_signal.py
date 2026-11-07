@@ -223,3 +223,53 @@ def inspect_leased_published_iex_v3_candidate(
             raise ValueError("LEASED_PUBLISHED_IEX_LEASE_CHANGED")
         return {**candidate, "operator_lease_checked": True,
                 "paper_fill_authorized": False, "live_order_authorized": False}
+
+
+def inspect_leased_published_iex_journal_candidate(
+    *, installation: Any, request: dict[str, Any], components: Any,
+    publication: Any, provider: Any, symbol: str, now: datetime,
+    journal_path: Any, account_id: str,
+) -> dict[str, Any]:
+    """Lease-held source, quote, and disk-replayed PAPER capacity; read only.
+
+    A positive result is NOT an entry permit or a journal writer grant.
+    """
+    from pathlib import Path
+    from app.investment.quality_dips_paper import (
+        accounting_snapshot, journal_mutation_transaction, read_events,
+    )
+    from app.services.personal_paper_runtime import checked_personal_installation
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+
+    if (installation is None or type(request) is not dict
+            or request.get("action") != "AUTO_PAPER"
+            or type(publication) is not QualityDipsSourcePublication
+            or type(provider) is not PersonalPaperIEXProvider
+            or not isinstance(journal_path, (str, Path))
+            or type(account_id) is not str or not account_id):
+        raise ValueError("LEASED_PUBLISHED_JOURNAL_DEPENDENCIES_REQUIRED")
+    path = Path(journal_path)
+    if not path.is_file():
+        raise ValueError("LEASED_PUBLISHED_JOURNAL_NOT_INITIALIZED")
+    with installation.lease(request) as lease:
+        proof = checked_personal_installation(lease, request)
+        if lease.check_components(components) is not True:
+            raise ValueError("LEASED_PUBLISHED_JOURNAL_COMPONENTS_CHANGED")
+        # Lock only the existing journal; do not open any simulated position.
+        with journal_mutation_transaction(path):
+            candidate = evaluate_published_iex_v3_candidate(
+                publication=publication, provider=provider, symbol=symbol, now=now)
+            snapshot = accounting_snapshot(read_events(path), account_id=account_id)
+            if (snapshot is None or snapshot.get("data_provenance") != "FORWARD_COLLECTION"
+                    or snapshot.get("cash_reconciled") is not True):
+                raise ValueError("LEASED_PUBLISHED_JOURNAL_ACCOUNT_INVALID")
+            if lease.check(proof) is not True or lease.check_components(components) is not True:
+                raise ValueError("LEASED_PUBLISHED_JOURNAL_LEASE_CHANGED")
+            return {**candidate, "account_id": account_id,
+                    "journal_cash_reconciled": True,
+                    "journal_open_positions": snapshot["open_positions"],
+                    "journal_available_cash": snapshot["available_cash"],
+                    "journal_writer_lock_checked": True,
+                    "operator_lease_checked": True,
+                    "paper_fill_authorized": False, "live_order_authorized": False}

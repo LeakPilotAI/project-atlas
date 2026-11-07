@@ -200,3 +200,22 @@ def test_leased_published_iex_candidate_checks_lease_and_refuses_changed_compone
         signals.inspect_leased_published_iex_v3_candidate(
             installation=installation, request={"action": "READ_ONLY"}, components=(),
             publication=publication, provider=provider, symbol="MSFT", now=NOW)
+
+
+def test_leased_published_journal_candidate_refuses_uninitialized_or_fake_ports(tmp_path):
+    from app.investment.alpaca_iex import IEXFeed
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_strategy_signal import inspect_leased_published_iex_journal_candidate
+    provider = PersonalPaperIEXProvider(IEXFeed(["MSFT"], clock=lambda: NOW.timestamp()))
+    publication = object.__new__(QualityDipsSourcePublication)
+    kwargs = dict(installation=object(), request={"action": "AUTO_PAPER"},
+                  components=(), publication=publication, provider=provider,
+                  symbol="MSFT", now=NOW, account_id="fixture",
+                  journal_path=tmp_path / "missing.jsonl")
+    with pytest.raises(ValueError, match="NOT_INITIALIZED"):
+        inspect_leased_published_iex_journal_candidate(**kwargs)
+    with pytest.raises(ValueError, match="DEPENDENCIES_REQUIRED"):
+        inspect_leased_published_iex_journal_candidate(**{**kwargs, "publication": object()})
+    with pytest.raises(ValueError, match="DEPENDENCIES_REQUIRED"):
+        inspect_leased_published_iex_journal_candidate(**{**kwargs, "request": {"action": "READ_ONLY"}})
