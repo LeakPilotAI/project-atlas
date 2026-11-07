@@ -1,5 +1,16 @@
 ﻿# Atlas session progress and commissioning checkpoint — 2026-11-07
 
+## Current update — Robinhood research recovery, bounded perp discovery, and F11 source
+
+- Current branch is `chatgpt/atlas-rebuild-v1`. F11 source milestone commit: `8ecb1c3f7c7740c24e71845071aa01411bb54bd3`; bounded Hyperliquid perpetual-discovery source commit: `2184013b`; Robinhood research failure-recovery commit: `2edef83b`.
+- Added a guarded scenario that performs actual disposable writes into the bounded native global-control journal, reaches three actual remaining slots, verifies a real entry refusal leaves journal/financial/order cuts unchanged, and verifies STOP/finalization consumes reserved slots without rollover.
+- Offline validation after the source change: 54 targeted F11 schedule, guarded-driver selection, and bounded-capacity tests passed; the changed modules compiled. The new native case was not executed.
+- Extended the manual public Hyperliquid research snapshot to retain BTC/ETH/SOL and select up to seven additional live non-delisted perps by 24-hour volume within the unchanged 12-request budget. Eligible and omitted symbols are persisted; truncation is explicitly PARTIAL. The data remains non-authoritative and non-executable. Focused Hyperliquid/PAPER regressions: 86 passed, 1 existing Starlette/httpx deprecation warning; source/test compile checks passed. No provider request was made.
+- Robinhood broad-universe research now rejects incomplete provider snapshots before scoring; failure status/codes are persisted without downgrading the previous evidence-derived lane, and a later successful result clears the failure. Focused Robinhood research/registry/discovery/service regressions: 15 passed; compile checks passed. No provider request was made.
+- F11 is NOT ACCEPTED: the source schedule leaves `source_case` unbound; this scenario covers the global control journal only, not aggregate saturation across all five bounded stores. No native evidence, case/resource binding, independent review, or fresh single-use authorization is present.
+- Current readiness: PAPER NO; operational startup unauthorized; production NO-GO. The 18-row acceptance matrix remains 18/18 BLOCKED. No provider connection, runtime startup, simulated financial mutation, real order, or Genesis activity occurred.
+- Next action: obtain independent AIP-06 review and required exact case/resource decisions before binding and running any native case; establish provider entitlement and separate acceptance before any supervised PAPER operation. Source-only work cannot substitute for these prerequisites.
+
 ## Scope and provenance
 
 Local Windows Project Atlas only. Session begins approximately 2026-11-06 21:30 CST, per operator. Verified from local Git history and read-only commissioning observations. No Project Genesis access, live orders, provider activation, or PAPER runtime startup occurred in this checkpoint investigation.

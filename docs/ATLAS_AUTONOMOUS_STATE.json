@@ -1,4 +1,68 @@
 {
+  "aip06_f11_actual_global_store_saturation_source_20261107": {
+    "base_commit": "8ecb1c3f7c7740c24e71845071aa01411bb54bd3",
+    "status": "SOURCE_IMPLEMENTED_GUARDED_NATIVE_EXECUTION_PENDING",
+    "scope": "Guarded F11 source case writes 124 actual RESERVE/ACK records into the disposable bounded global-control journal, refuses a real entry at three remaining slots without changing financial/order/global snapshots, then verifies durable stop/finalization uses reserved capacity without rollover.",
+    "source_implemented": true,
+    "offline_validation": {
+      "passed": 54,
+      "failed": 0,
+      "skipped": 0,
+      "warnings": 0,
+      "changed_modules_compile": true
+    },
+    "guarded_native_case_executed": false,
+    "aggregate_five_store_saturation_proven": false,
+    "native_case_bound": false,
+    "independent_review_complete": false,
+    "single_use_authorization_available": false,
+    "f11_accepted": false,
+    "paper_operational": false,
+    "startup_authorized": false,
+    "production": "NO-GO",
+    "next_action": "Obtain independent AIP-06 review and exact case/resource decisions; only then bind and execute the guarded native scenario."
+  },
+  "hyperliquid_bounded_perp_discovery_20261107": {
+    "source_commit": "2184013b",
+    "status": "SOURCE_IMPLEMENTED_BOUNDED_MANUAL_PUBLIC_RESEARCH_ONLY",
+    "scope": "Preserves BTC/ETH/SOL and selects up to seven additional non-delisted Hyperliquid perpetual markets by 24-hour volume within the existing 12-request budget. Persists eligible and omitted symbols and marks incomplete coverage PARTIAL. Discovery adds no order or entry authority.",
+    "source_implemented": true,
+    "max_symbols_per_refresh": 10,
+    "universe_bound": 10000,
+    "offline_validation": {
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "warnings": 1,
+      "warning": "Existing Starlette/httpx deprecation."
+    },
+    "changed_modules_compile": true,
+    "provider_request_made": false,
+    "financial_execution_authorized": false,
+    "paper_operational": false,
+    "startup_authorized": false,
+    "production": "NO-GO",
+    "next_action": "Obtain provider entitlement and all existing AIP-06/native and PAPER acceptance evidence before any supervised operational session."
+  },
+  "robinhood_research_failure_recovery_20261107": {
+    "source_commit": "2edef83b",
+    "status": "SOURCE_FIXED_AND_OFFLINE_VERIFIED_PROVIDER_OPERATION_NOT_AUTHORIZED",
+    "scope": "Incomplete Robinhood provider snapshots are rejected before scoring. Failed research attempts persist status and failure codes without changing the prior evidence-derived lane; successful lane updates clear the prior failure.",
+    "source_implemented": true,
+    "offline_validation": {
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "warnings": 0
+    },
+    "changed_modules_compile": true,
+    "provider_request_made": false,
+    "financial_execution_authorized": false,
+    "paper_operational": false,
+    "startup_authorized": false,
+    "production": "NO-GO",
+    "next_action": "Obtain provider entitlement and all existing AIP-06/native and PAPER acceptance evidence before any supervised operational session."
+  },
   "personal_paper_test_data_20261106": {
     "status": "STANDALONE_QUALITY_DIPS_TEST_DATA_ACCEPTANCE_PASSED_FORWARD_PAPER_NOT_OPERATIONAL",
     "scope": "Manual loopback-only Quality Dips V3 PAPER lifecycle using fixed offline TEST DATA. Reuses the existing strategy evaluator, append-only journal, and thesis-terminal exit policy. No provider, app.main, background worker, Discord sender, or order adapter was connected.",
