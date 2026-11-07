@@ -94,6 +94,21 @@ def main():
         str(release_root),
     ))
 
+    # A pre-existing source directory is only a custody location, never an
+    # accepted operational QD source publication. Native archive admission
+    # requires the independently accepted enrollment/issuer/clock ports.
+    source_parent = Path("D:/AtlasCustody/QualityDips")
+    source_children = []
+    if source_parent.is_dir() and not source_parent.is_symlink() and not source_parent.is_junction():
+        source_children = [p.name for p in source_parent.iterdir()
+                           if p.is_dir() and not p.is_symlink() and not p.is_junction()]
+    results.append(check(
+        "OPERATIONAL_QD_SOURCE_PUBLICATION",
+        False,
+        "Native Quality Dips custody alone is not an enrolled and independently "
+        "authenticated current FORWARD_COLLECTION source publication",
+    ))
+
     activation_root = Path("D:/AtlasCustody/PersonalPaper")
 
     # Inventory the actual installed roots, without treating a directory,
@@ -166,6 +181,12 @@ def main():
         "live_orders": False,
         "pilot_started": False,
         "native_custody_inventory": native,
+        "quality_dips_custody_inventory": {
+            "native_parent_present": source_parent.is_dir()
+            and not source_parent.is_symlink() and not source_parent.is_junction(),
+            "ordinary_child_count": len(source_children),
+            "operational_publication_verified": False,
+        },
         "native_clock_probe": clock_probe,
         "operator_action_required": (
             "Review source checkpoint and explicitly authorize native activation "

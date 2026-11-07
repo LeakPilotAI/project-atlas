@@ -108,3 +108,29 @@ def test_optional_failed_clock_probe_blocks(monkeypatch, capsys):
     checks = {row['check']: row['status'] for row in report['checks']}
     assert checks['NATIVE_CLOCK_PROBE'] == 'BLOCKED'
     assert report['native_clock_probe']['blocker'] == 'CLOCK_UNCERTAINTY_EXCEEDED'
+
+
+def test_native_qd_custody_directory_never_counts_as_operational_source(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    original_path = preflight.Path
+    # Use a real empty native-style custody root for the inventory check.
+    original_is_dir = original_path.is_dir
+    original_iterdir = original_path.iterdir
+    def is_dir(path):
+        if str(path).replace('\\', '/').endswith('AtlasCustody/QualityDips'):
+            return True
+        return original_is_dir(path)
+    def iterdir(path):
+        if str(path).replace('\\', '/').endswith('AtlasCustody/QualityDips'):
+            return iter([tmp_path])
+        return original_iterdir(path)
+    monkeypatch.setattr(original_path, 'is_dir', is_dir)
+    monkeypatch.setattr(original_path, 'iterdir', iterdir)
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['OPERATIONAL_QD_SOURCE_PUBLICATION'] == 'BLOCKED'
+    assert report['quality_dips_custody_inventory']['ordinary_child_count'] == 1
+    assert report['quality_dips_custody_inventory']['operational_publication_verified'] is False
+    assert report['pilot_started'] is False
