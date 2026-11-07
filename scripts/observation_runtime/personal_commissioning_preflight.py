@@ -26,6 +26,8 @@ def check(name, passed, detail):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--check-native-clock", action="store_true",
+                        help="Perform a bounded read-only native clock probe; never grants runtime authority")
     parser.add_argument("--expected-source", help="Explicit reviewed 40-character source commit")
     parser.add_argument("--activation-root", help="Explicit existing personal activation child; never created")
     args = parser.parse_args()
@@ -141,6 +143,18 @@ def main():
         "requires verified installed runtime dependencies and native grant",
     ))
 
+    clock_probe = None
+    if args.check_native_clock:
+        from scripts.observation_runtime.personal_clock_gate_probe import (
+            inspect_personal_clock_gate,
+        )
+        clock_probe = inspect_personal_clock_gate()
+        results.append(check(
+            "NATIVE_CLOCK_PROBE",
+            clock_probe["trusted_clock_verified_for_probe"] is True,
+            "One-time native Windows clock evidence only; does not authorize a lease",
+        ))
+
     passed = all(item["status"] == "PASS" for item in results)
 
     report = {
@@ -152,6 +166,7 @@ def main():
         "live_orders": False,
         "pilot_started": False,
         "native_custody_inventory": native,
+        "native_clock_probe": clock_probe,
         "operator_action_required": (
             "Review source checkpoint and explicitly authorize native activation "
             "only after independently accepted research, financial custody, "

@@ -77,3 +77,34 @@ def test_preflight_native_custody_inventory_does_not_authorize(monkeypatch, caps
     assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
     assert report['native_custody_inventory']['forward_financial_write_authorized'] is False
     assert report['pilot_started'] is False
+
+
+def test_optional_real_clock_probe_is_not_lease_or_financial_authority(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_clock_gate_probe as clock_mod
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--check-native-clock'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr(clock_mod, 'inspect_personal_clock_gate', lambda: {
+        'trusted_clock_verified_for_probe': True, 'uncertainty_ms': 350,
+        'native_activation_verified': False, 'operator_lease_verified': False,
+        'forward_financial_write_authorized': False, 'live_order_authorized': False})
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['NATIVE_CLOCK_PROBE'] == 'PASS'
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
+    assert checks['RUNTIME_AUTHORIZATION'] == 'BLOCKED'
+    assert report['native_clock_probe']['uncertainty_ms'] == 350
+    assert report['financial_mutations'] is False
+
+
+def test_optional_failed_clock_probe_blocks(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_clock_gate_probe as clock_mod
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--check-native-clock'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr(clock_mod, 'inspect_personal_clock_gate', lambda: {
+        'trusted_clock_verified_for_probe': False, 'blocker': 'CLOCK_UNCERTAINTY_EXCEEDED'})
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['NATIVE_CLOCK_PROBE'] == 'BLOCKED'
+    assert report['native_clock_probe']['blocker'] == 'CLOCK_UNCERTAINTY_EXCEEDED'
