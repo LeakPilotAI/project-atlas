@@ -52,6 +52,14 @@ def _valuation_sources(row: dict[str, Any], *, allow_stored_evidence: bool = Tru
                              or raw.get("quality", "FRESH") != "FRESH"):
             continue
         value, as_of = _measured_value(raw)
+        if current_only:
+            # Collection/retrieval timestamps are not analyst publication dates.
+            # The current-source lane requires a separately verified original date.
+            if not isinstance(raw, dict) or raw.get("original_target_as_of_verified") is not True:
+                continue
+            as_of = raw.get("original_target_as_of")
+            if not isinstance(as_of, str) or not as_of:
+                continue
         if value is not None:
             sources.append({"value": value, "provenance": "ANALYST_CONSENSUS", "as_of": as_of, "confidence": "EXTERNAL_CONSENSUS", "note": label + "; provider-supplied, not an Atlas guarantee"})
     if current_only and len(sources) == 3:
