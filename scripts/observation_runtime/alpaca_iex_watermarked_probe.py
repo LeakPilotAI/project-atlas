@@ -26,11 +26,17 @@ def bounded_observation(*, symbol: str, seconds: int, watermark: Path,
             or type(seconds) is not int or not 1 <= seconds <= 60):
         raise ValueError("IEX_WATERMARKED_PROBE_ARGUMENTS_REFUSED")
     # Read-only, explicit local path; enrollment must already exist.
-    credentials = Credentials.load(credentials_path)
     with ReadonlyIEXEventConsumer(path=watermark, symbol=symbol) as consumer:
+        # Acquire the durable single-writer lease and validate recovery state
+        # before accessing credentials or opening an external connection.
+        credentials = Credentials.load(credentials_path)
         result = asyncio.run(feed_factory([symbol]).run(
             credentials, seconds=seconds, max_reconnects=0,
             on_fresh_quote=consumer.on_fresh_quote))
+        if result["authenticated"] is not True or result["subscribed"] is not True:
+            raise IEXRefused("IEX_WATERMARKED_PROBE_PROVIDER_NOT_VERIFIED")
+        if result["result"]["connection"] != "DISCONNECTED":
+            raise IEXRefused("IEX_WATERMARKED_PROBE_CONNECTION_NOT_CLOSED")
         return {"schema": "ATLAS_IEX_WATERMARKED_READONLY_PROBE_V1",
                 "authenticated": result["authenticated"],
                 "subscribed": result["subscribed"],
