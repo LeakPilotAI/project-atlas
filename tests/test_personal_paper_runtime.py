@@ -204,3 +204,16 @@ def test_personal_policy_retains_isolation_and_instrument_boundaries(damage):
     elif damage=='fractional':p['accounts']['QUALITY_DIPS']['fractional']='ALWAYS'
     else:p['authority']['technical_refusals_not_overrideable_by_start']=False
     with pytest.raises(ValueError):validate_policy(p)
+
+
+def test_personal_stop_binding_rejects_disposable_runtime_without_side_effects(tmp_path):
+    from fastapi import FastAPI
+    from app.services.personal_paper_runtime import bind_personal_unified_paper_stop
+    from app.services.unified_paper_runtime import UnifiedPaperRuntime
+    app = FastAPI()
+    with pytest.raises(ValueError, match='PERSONAL_ACCEPTED_SESSION_REQUIRED'):
+        bind_personal_unified_paper_stop(app, runtime=object(), installation=object(),
+            owned_close=lambda: True, ledger_path=tmp_path / 'stop.sqlite',
+            origin='http://127.0.0.1:18811', token='synthetic-test-control-token-1234567890')
+    assert not (tmp_path / 'stop.sqlite').exists()
+    assert not any(route.path == '/_atlas/control/stop-session' for route in app.routes)

@@ -229,3 +229,27 @@ def compose_personal_unified(*,policy=None,lanes=None,portfolio=None,clock=None,
         checked_personal_installation(lease,{'schema':'ATLAS_PERSONAL_UNIFIED_COMPOSITION_V1','profile':PROFILE})
         if not lease.check_components(ports):raise ValueError('PERSONAL_UNIFIED_COMPONENT_SUBSTITUTION')
         return UnifiedPaperRuntime(lanes=lanes,portfolio=portfolio,clock=clock,installation=installation)
+
+
+def bind_personal_unified_paper_stop(app, *, runtime, installation, owned_close, ledger_path, origin, token):
+    """Connect a previously commissioned personal PAPER session to Stop.
+
+    This does not issue a grant, initialize accounts, or activate providers.
+    Only an installed, already-running personal unified runtime can bind.
+    """
+    from app.services.unified_paper_runtime import UnifiedPaperRuntime
+    from app.services.quality_dips_stop_bridge import enroll_unified_paper_stop_transport
+    if (type(runtime) is not UnifiedPaperRuntime
+            or type(installation) is not PersonalOperatorInstallation
+            or runtime.installation is not installation
+            or runtime.state not in ('RUNNING', 'PAUSED')
+            or type(runtime.grant) is not dict
+            or runtime.grant.get('test_only') is True):
+        raise ValueError('PERSONAL_ACCEPTED_SESSION_REQUIRED')
+    # The personal installation must remain bound to the original operator
+    # policy and both separate financial account enrollments.
+    validate_policy(installation.policy)
+    if set(installation.accounts) != {'QUALITY_DIPS', 'HYPERLIQUID'}:
+        raise ValueError('PERSONAL_COMPLETE_REAL_ACCOUNTS_REQUIRED')
+    return enroll_unified_paper_stop_transport(app, runtime=runtime,
+        owned_close=owned_close, ledger_path=ledger_path, origin=origin, token=token)
