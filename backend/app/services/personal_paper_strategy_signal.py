@@ -103,11 +103,22 @@ def inspect_published_quality_dips_research(
     for bundle in packet["bundles"]:
         if type(bundle) is not dict or type(bundle.get("board")) is not list:
             raise ValueError("QD_PUBLISHED_RESEARCH_BOARD_INVALID")
-        if bundle.get("instrument", {}).get("symbol") != symbol:
+        instrument = bundle.get("instrument")
+        if type(instrument) is not dict or instrument.get("symbol") != symbol:
             continue
-        matches.extend(row for row in bundle["board"]
-                       if type(row) is dict and row.get("symbol") == symbol)
-    if len(matches) != 1 or body(matches[0]) != body(research):
+        observation = bundle.get("observation")
+        if (type(observation) is not dict or observation.get("symbol") != symbol
+                or observation.get("strategy_version") != "QUALITY_DIPS_V3"
+                or observation.get("evidence_class") != "FORWARD_COLLECTION"):
+            raise ValueError("QD_PUBLISHED_RESEARCH_OBSERVATION_MISMATCH")
+        rows = [row for row in bundle["board"]
+                if type(row) is dict and row.get("symbol") == symbol]
+        if len(rows) != 1:
+            raise ValueError("QD_PUBLISHED_RESEARCH_BOARD_INVALID")
+        matches.extend(rows)
+    # The original scanner repeats the same complete board in each instrument
+    # bundle. Accept identical copies; refuse divergent revisions.
+    if not matches or any(body(row) != body(research) for row in matches):
         raise ValueError("QD_PUBLISHED_RESEARCH_CONTENT_NOT_BOUND")
     return {"schema": "ATLAS_PERSONAL_PAPER_PUBLISHED_RESEARCH_MATCH_V1",
             "symbol": symbol, "source_id": packet["source_id"],

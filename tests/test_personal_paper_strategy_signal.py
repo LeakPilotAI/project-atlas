@@ -83,3 +83,30 @@ def test_published_research_rejects_untrusted_caller_source():
     with pytest.raises(ValueError, match="QD_PUBLISHED_RESEARCH_DEPENDENCIES_REQUIRED"):
         inspect_published_quality_dips_research(publication=None,
                                                 symbol="MSFT", research=research())
+
+
+def test_published_research_matching_duplicate_board_copies_and_conflicts(monkeypatch):
+    """Synthetic packet shape only; patched reader is not source authentication."""
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_strategy_signal import inspect_published_quality_dips_research
+    publication = object.__new__(QualityDipsSourcePublication)
+    row = research()
+    observation = {"symbol": "MSFT", "strategy_version": "QUALITY_DIPS_V3",
+                   "evidence_class": "FORWARD_COLLECTION"}
+    bundle = {"instrument": {"symbol": "MSFT"}, "observation": observation,
+              "board": [row]}
+    packet = {"schema": "QD_SCANNER_PUBLICATION_V1", "source_id": "synthetic",
+              "revision": 3, "bundles": [bundle, bundle]}
+    monkeypatch.setattr(QualityDipsSourcePublication, "read_current", lambda self: packet)
+    matched = inspect_published_quality_dips_research(publication=publication,
+                                                       symbol="MSFT", research=row)
+    assert matched["publication_read_verified"] is True
+    assert matched["paper_fill_authorized"] is False
+    packet["bundles"] = [bundle, {**bundle, "board": [{**row, "quality_score": 1}]}]
+    with pytest.raises(ValueError, match="CONTENT_NOT_BOUND"):
+        inspect_published_quality_dips_research(publication=publication,
+                                                symbol="MSFT", research=row)
+    packet["bundles"] = [{**bundle, "observation": {**observation, "symbol": "AVGO"}}]
+    with pytest.raises(ValueError, match="OBSERVATION_MISMATCH"):
+        inspect_published_quality_dips_research(publication=publication,
+                                                symbol="MSFT", research=row)
