@@ -79,7 +79,9 @@ def validate_manifest(value):
     fields = {"schema", "domain", "status", "support_manifest_sha256", "archive_sha256",
               "destination", "control", "selection", "new_parents", "files", "directories",
               "application", "limits", "exclusions", "runtime", "receipt_schema"}
-    if (type(m) is not dict or set(m) != fields or m["schema"] != "QD_SUPPORT_DEPLOYMENT_V1"
+    recovery = m.get('schema') == 'QD_SUPPORT_DEPLOYMENT_V2'
+    if recovery: fields.add('accepted_parents')
+    if (type(m) is not dict or set(m) != fields or m["schema"] not in ("QD_SUPPORT_DEPLOYMENT_V1",'QD_SUPPORT_DEPLOYMENT_V2')
             or m["status"] != "REVIEW_INVENTORY_NOT_PERMISSION"
             or m["domain"] not in ("WINDOWS_LOCAL", "DISPOSABLE")
             or m["limits"] != LIMITS or m["exclusions"] != EXCLUSIONS
@@ -98,18 +100,29 @@ def validate_manifest(value):
     if m["new_parents"] != [str(base / "launchers"), str(base / "support-installations")]:
         raise ValueError("EXACT_NEW_SUPPORT_PARENTS_REQUIRED")
     a = m["application"]
+    app = a.get('release') if type(a) is dict else None
     if (type(a) is not dict or set(a) != {"release", "root", "receipt", "receipt_sha256", "artifact_digest"}
-            or a["release"] != APP or a["root"] != str(base / "releases" / APP)):
+            or type(app) is not str or not re.fullmatch('[0-9a-f]{40}',app)
+            or (not recovery and app != APP) or a["root"] != str(base / "releases" / app)):
         raise ValueError("EXACT_SUPPORT_APPLICATION_REQUIRED")
     pin(a["receipt_sha256"]); pin(a["artifact_digest"])
-    expected_receipt = (Path("D:/Work/Project Atlas/logs/diagnostics") / ("qd-unselected-release-" + APP + ".json")
+    expected_receipt = (Path("D:/Work/Project Atlas/logs/diagnostics") / ("qd-unselected-release-" + app + ".json")
                         if m["domain"] == "WINDOWS_LOCAL" else base / "application-receipt.json")
     if a["receipt"] != str(expected_receipt):
         raise ValueError("EXACT_SUPPORT_APPLICATION_RECEIPT_REQUIRED")
-    if m["runtime"] != {"python": str(base / "releases" / APP / "python/python.exe"),
+    if m["runtime"] != {"python": str(base / "releases" / app / "python/python.exe"),
                         "version": [3, 12], "bits": 64, "app_receipt_inventory": True,
                         "providers": False, "financial_writers": False, "workspace_fallback": False}:
         raise ValueError("EXACT_SUPPORT_RUNTIME_REQUIRED")
+    if recovery:
+        if m['domain']!='WINDOWS_LOCAL':raise ValueError('OPERATIONAL_RECOVERY_DOMAIN_REQUIRED')
+        parents=m['accepted_parents']
+        expected_parents={str(base/name) for name in ('launchers','support-installations','selection')}
+        if type(parents) is not dict or set(parents)!=expected_parents:
+            raise ValueError('EXACT_RECOVERY_PARENT_IDENTITIES_REQUIRED')
+        for row in parents.values():native_id(row)
+        if len({tuple(row) for row in parents.values()})!=3:
+            raise ValueError('RECOVERY_PARENT_IDENTITY_ALIAS')
     rows = m["files"]
     if type(rows) is not list or len(rows) != len(SOURCES) + 1:
         raise ValueError("EXACT_SUPPORT_FILE_INVENTORY_REQUIRED")
@@ -159,7 +172,7 @@ def prepare(manifest, archive, expected_manifest_sha256):
     package = strict(files["support-manifest.json"])
     if (sha(files["support-manifest.json"]) != m["support_manifest_sha256"]
             or package.get("schema") != "QD_NONFINANCIAL_LAUNCHER_SUPPORT_V2"
-            or package.get("application_release") != APP
+            or package.get("application_release") != m['application']['release']
             or package.get("support_sources") != [r for r in m["files"] if r["path"] != "support-manifest.json"]):
         raise ValueError("SUPPORT_PACKAGE_BINDING")
     return m, files
@@ -239,7 +252,8 @@ def _install(m, files, *, parent_identity, admission, interrupt_after=None):
     native_id(parent_identity)
     start = time.monotonic(); base = Path(m["selection"]).parent
     paths = [*[Path(p) for p in m["new_parents"]], Path(m["selection"]), Path(m["destination"]), Path(m["control"])]
-    _no_existing(paths)
+    recovery=m['schema']=='QD_SUPPORT_DEPLOYMENT_V2'
+    _no_existing([Path(m['destination']),Path(m['control'])] if recovery else paths)
     created, written = 0, 0
     def bound(extra=0):
         if (admission() is not True or time.monotonic() - start >= LIMITS["seconds"]
@@ -249,13 +263,27 @@ def _install(m, files, *, parent_identity, admission, interrupt_after=None):
         accepted_parent = stack.enter_context(held(w.WindowsOutput(str(base))))
         if identity(w, accepted_parent.root_handle) != parent_identity:
             raise ValueError("SUPPORT_ACCEPTED_PARENT_SUBSTITUTION")
-        # No parent ACL changes. A new child pins ancestors before any publication.
-        bound(); first = stack.enter_context(held(w.WindowsOutput.create_root(str(paths[0])))); created += 1
-        parent = first.handles[-2]
-        if identity(w, parent) != parent_identity:
-            raise ValueError("SUPPORT_ACCEPTED_PARENT_SUBSTITUTION_PRESERVE_PARTIAL")
-        outputs = {str(paths[0]): first}
-        for path in paths[1:]:
+        # V1 remains create-all. Recovery V2 reuses only independently bound,
+        # protected native parents and preserves the complete selector history.
+        outputs={};selection_before=None;selection_store=None
+        if recovery:
+            for path in paths[:3]:
+                bound();out=stack.enter_context(held(w.WindowsOutput(str(path))))
+                if identity(w,out.root_handle)!=m['accepted_parents'][str(path)]:
+                    raise ValueError('RECOVERY_PARENT_SUBSTITUTION')
+                outputs[str(path)]=out
+            from scripts.release_selection_store import NativeSelectionStore
+            selection_store=NativeSelectionStore(root=m['selection'],native_root=m['accepted_parents'][m['selection']])
+            stack.callback(selection_store.close)
+            stack.enter_context(selection_store.locked())
+            selection_before=selection_store.records()
+            new_paths=paths[3:]
+        else:
+            bound();first=stack.enter_context(held(w.WindowsOutput.create_root(str(paths[0]))));created+=1
+            if identity(w,first.handles[-2])!=parent_identity:
+                raise ValueError('SUPPORT_ACCEPTED_PARENT_SUBSTITUTION_PRESERVE_PARTIAL')
+            outputs[str(paths[0])]=first;new_paths=paths[1:]
+        for path in new_paths:
             bound(); outputs[str(path)] = stack.enter_context(held(w.WindowsOutput.create_root(str(path)))); created += 1
         control = outputs[m["control"]]
         def write(out, name, data):
@@ -275,8 +303,10 @@ def _install(m, files, *, parent_identity, admission, interrupt_after=None):
                 raise OSError("EXPLICIT_DISPOSABLE_SUPPORT_INTERRUPTION")
         proof = inventory(Path(m["destination"]), m["files"], m["directories"], bound)
         selection = outputs[m["selection"]]
-        if list(Path(m["selection"]).iterdir()):
+        if not recovery and list(Path(m["selection"]).iterdir()):
             raise ValueError("NEW_SELECTION_NOT_EMPTY")
+        if recovery and selection_store.records()!=selection_before:
+            raise ValueError('RECOVERY_SELECTION_HISTORY_CHANGED')
         receipt = {"schema": m["receipt_schema"], "domain": m["domain"], "deployment": m,
                    "deployment_sha256": sha(encoded(m)), "inventory": proof,
                    "selection_id": identity(w, selection.root_handle), "control_id": identity(w, control.root_handle),
@@ -288,6 +318,8 @@ def _install(m, files, *, parent_identity, admission, interrupt_after=None):
         write(control, "ack.json", encoded({"schema": "QD_SUPPORT_INSTALL_ACK_V1", "domain": m["domain"],
               "receipt_sha256": sha(encoded(receipt)), "deployment_sha256": sha(encoded(m))}))
         verify_deployment(m, expected_receipt_sha256=sha(encoded(receipt)))
+        if recovery and selection_store.records()!=selection_before:
+            raise ValueError('RECOVERY_SELECTION_HISTORY_CHANGED')
         bound()
     return {"receipt": receipt, "receipt_sha256": sha(encoded(receipt)), "independent_readback": proof,
             "seconds": round(time.monotonic() - start, 3), "created_entries": created, "written_bytes": written,
@@ -329,6 +361,11 @@ def verify_deployment(manifest, *, expected_receipt_sha256, acknowledged=True):
         with held(w.WindowsOutput(m["selection"])) as selection:
             if identity(w, selection.root_handle) != r["selection_id"]:
                 raise ValueError("SUPPORT_SELECTION_ROOT_SUBSTITUTION")
+        if m['schema']=='QD_SUPPORT_DEPLOYMENT_V2':
+            for path,expected_id in m['accepted_parents'].items():
+                with held(w.WindowsOutput(path)) as parent:
+                    if identity(w,parent.root_handle)!=expected_id:
+                        raise ValueError('RECOVERY_PARENT_SUBSTITUTION')
     return r
 
 
@@ -569,7 +606,7 @@ def select_release(*, approved=False, manifest=None, manifest_sha256=None, recei
             # a mutable binding file. Caller retains evidence in its approved log.
             result["desktop_binding"] = None if rollback_baseline else {
                 "schema": "QD_NONFINANCIAL_DESKTOP_BINDING_V2", "domain": "WINDOWS_LOCAL", "head": result["head"],
-                "native_root": r["selection_id"], "release": APP, "seconds": 120, "requests": 96,
+                "native_root": r["selection_id"], "release": m['application']['release'], "seconds": 120, "requests": 96,
                 "support_sha256": m["support_manifest_sha256"], "deployment_sha256": manifest_sha256,
                 "support_receipt_sha256": receipt_sha256}
             return result

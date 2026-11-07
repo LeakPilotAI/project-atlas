@@ -21,3 +21,20 @@ Next action: commit the validated startup safeguard; package a new explicit trac
 ## Gate definitions retained
 
 B1_HISTORICAL_COMPLETENESS_OR_EPOCH; C1_OWNERSHIP_AND_FINANCIAL_DRAIN; D1_TRUSTED_STORAGE_AUTHORITY_CLOCK; E1_PROVIDER_RIGHTS_AND_SUPERVISED_SESSION; DESKTOP_OWNED_START_STOP; MARKET_AND_ACCOUNT_COVERAGE; RESTART_AND_RECONCILIATION; SUPERVISED_END_TO_END; EXTENDED_SOAK_ACCEPTANCE. Existing checker does not infer any of these from test counts or configuration. Multi-day soak and eligible market-session evidence cannot be manufactured in a short run.
+
+
+## Genuine create-only native recovery completed
+
+Operational application release **4fad7ac195fd0b36f1b81577fabf1b8f69932eb9** was installed by the existing `install_unselected_release` into its exact new D:\AtlasRuntime\releases directory. Native copying, protected ACLs, file/directory identities, content hashes, complete namespace and installed-interpreter readback passed: **10,451 files / 913 directories / 262,931,167 payload bytes**, **167.453 seconds**. Artifact digest `1a22ed8d3df2736254eadc32012c23a7843e3544ab6d513ce4d22358399ef028`; durable installation receipt SHA256 `4618d828061558bf9ff21d16263a4b75332ca5a4c248558c3ef696e5e4e2b381`. Fresh install-bound clock was557ms. Capability revoked after completion.
+
+Exact source selection contains885 tracked files; it excludes custody, runtime data, private logs, caches and the autonomous recovery-state file. The original dependency receipt/hash was reused with full native input validation; no software or paid dependency was installed. All12 existing selector files and old release bytecode metadata were verified unchanged. Receipt, ACK journal and detailed preservation evidence are retained privately in logs/diagnostics/atlas-operational-recovery-4fad7ac1-20261107. This is an operational release, not a disposable fixture, and it remains UNSELECTED until support recovery/preflight completes.
+
+## Support recovery compatibility repair
+
+The legacy V1 support installer hardcodes the old2c039 release and refuses already-existing support/selector parents. V1 remains unchanged in authority and scope. Added explicit **QD_SUPPORT_DEPLOYMENT_V2**, requiring exact native IDs for the existing launchers, support-installations and selection parents, a fully pinned new application receipt, exact runtime path and unchanged exclusions/budgets. Only new hash-named support/control children may be created. The existing native selector is locked and its verified history is compared before/after installation; existing selection, receipts, journals, parent ACLs and payloads are never reset or recreated. Installed support readback and ACK remain mandatory.
+
+The source support builder binds the new release and required application-source hashes to its exact receipt; a package cannot substitute an unverified receipt, parent alias or application. Selection output now names the manifest's exact verified release rather than the legacy constant. Native installed application verification is still mandatory before support installation and selection.
+
+Validation: **179 tests passed,0 failed/skipped**, including17 recovery cases and unchanged V1 support, selector and installed-launcher coverage. Scoped no-cache Ruff checks passed. These are source/disposable results, not native V2 deployment acceptance. Next: package and execute the reviewed create-only V2 support installation under fresh genuine clock, then use the existing native selector to restore the exact new release and verify restart/readback. No financial or provider startup.
+
+Operational acceptance remains **0/9 (0% complete,100% remaining;0 percentage-point change)**. The corrupted-release blocker is resolved by genuine recovery, while support compatibility is the current dependency. No full readiness claim.

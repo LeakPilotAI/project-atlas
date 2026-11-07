@@ -1,4 +1,33 @@
 {
+  "atlas_native_release_recovery_20261107": {
+  "status": "NATIVE_CLEAN_RELEASE_INSTALLED_UNSELECTED_SUPPORT_RECOVERY_PENDING",
+  "release": {
+    "status": "CLEAN_NATIVE_OPERATIONAL_RELEASE_INSTALLED_UNSELECTED",
+    "source_commit": "4fad7ac195fd0b36f1b81577fabf1b8f69932eb9",
+    "root": "D:\\AtlasRuntime\\releases\\4fad7ac195fd0b36f1b81577fabf1b8f69932eb9",
+    "files": 10451,
+    "directories": 913,
+    "artifact_digest": "1a22ed8d3df2736254eadc32012c23a7843e3544ab6d513ce4d22358399ef028",
+    "receipt_sha256": "4618d828061558bf9ff21d16263a4b75332ca5a4c248558c3ef696e5e4e2b381",
+    "seconds": 167.453,
+    "selection_unchanged": true,
+    "old_release_preserved": true,
+    "financial_startup": false,
+    "providers_connected": false
+  },
+  "support_tests": {
+    "passed": 179,
+    "failed": 0,
+    "skipped": 0,
+    "new": 17
+  },
+  "accepted_gates": 0,
+  "completion_percent": 0,
+  "remaining_percent": 100,
+  "next": "Native V2 create-only support installation with exact existing parent identities, fresh clock and original selector history;then native SELECT",
+  "paper_startup": false,
+  "report": "docs/ATLAS_FINAL_PAPER_COMMISSIONING_EXECUTION_2026-11-07.md"
+},
   "atlas_final_paper_commissioning_20261107": {
   "task": "ATLAS_FINAL_END_TO_END_PAPER_COMMISSIONING",
   "base_commit": "c090f99d5842dc24bcd55f250ee3192c42741645",
