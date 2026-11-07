@@ -45,7 +45,8 @@ def test_distinct_declared_originating_issuer_families_can_complete_review_only(
     for i, estimate in enumerate(packet["estimates"]):
         estimate["issuer_family"] = f"issuer-{i}"
     result = review_estimates(packet, now=NOW)
-    assert result["window_complete"] and result["issuer_independence_declared"]
+    assert not result["window_complete"] and result["issuer_independence_declared"]
+    assert result["structural_window_complete"]
     assert not result["independent_source_authentication"]
     assert not result["paper_fill_authorized"]
 
@@ -58,3 +59,16 @@ def test_overlapping_aggregators_cannot_claim_three_independent_issuers():
     assert result["structural_window_complete"]
     assert not result["window_complete"]
     assert result["distinct_declared_issuer_families"] == 1
+
+
+@pytest.mark.parametrize("bad_url", [
+    "https://127.0.0.1/a", "https://[::1]/a", "https://localhost.localdomain/a",
+    "https://research.local/a", "https://research.org:443/a",
+    "https://research.org/a?token=x", "https://research.org/a#anchor",
+    "https://research.org:invalid/a", "https://user:pass@research.org/a",
+])
+def test_unsafe_or_noncanonical_source_urls_refused(bad_url):
+    packet = doc()
+    packet["estimates"][0]["source_url"] = bad_url
+    with pytest.raises(ValueError, match="SOURCE_URL_REFUSED"):
+        review_estimates(packet, now=NOW)

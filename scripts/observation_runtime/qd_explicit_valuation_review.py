@@ -10,6 +10,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlsplit
+from ipaddress import ip_address
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "backend"))
@@ -35,9 +36,23 @@ def review_estimates(document, *, now):
         url = item["source_url"]
         if type(url) is not str or len(url) > 2048:
             raise ValueError("QD_VALUATION_REVIEW_SOURCE_URL_REFUSED")
-        parsed = urlsplit(url)
-        if (parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password
-                or parsed.port or parsed.fragment or parsed.hostname in ("localhost", "127.0.0.1")
+        try:
+            parsed = urlsplit(url)
+            host = parsed.hostname
+            port = parsed.port
+        except ValueError as exc:
+            raise ValueError("QD_VALUATION_REVIEW_SOURCE_URL_REFUSED") from exc
+        try:
+            address = ip_address(host) if host is not None else None
+        except ValueError:
+            address = None
+        if (parsed.scheme != "https" or not host or parsed.username or parsed.password
+                or port or parsed.fragment or parsed.query or not parsed.path.startswith("/")
+                or not re.fullmatch(r"[a-z0-9.-]+", host.lower())
+                or host.lower() in ("localhost", "localhost.localdomain")
+                or host.lower().endswith((".localhost", ".local", ".internal", ".invalid", ".test"))
+                or address is not None or "." not in host or host.startswith(".")
+                or host.endswith(".") or ".." in host
                 or type(item["source_name"]) is not str or not item["source_name"].strip()):
             raise ValueError("QD_VALUATION_REVIEW_SOURCE_URL_REFUSED")
         identity = parsed.hostname.lower()
@@ -52,13 +67,16 @@ def review_estimates(document, *, now):
         families.add(family.strip().casefold() if family is not None else None)
     window = build_normalization_window(estimates, now=now)
     independently_distinct = (None not in families and len(families) >= 3)
-    # Structural completeness does not imply three distinct originating issuers.
-    usable = bool(window["complete"] and independently_distinct)
+    # User-supplied issuer labels are unverified assertions, never authentication.
+    # A complete numeric window and distinct declared issuers cannot grant
+    # accepted/current trading research authority.
+    usable = False
     return {"schema": "ATLAS_QD_VALUATION_REVIEW_V1", "symbol": document["symbol"],
             "source_count": window["source_count"], "window_complete": usable,
             "structural_window_complete": window["complete"],
             "distinct_declared_issuer_families": len(families - {None}),
             "issuer_independence_declared": independently_distinct,
+            "review_only_reason": "NO_INDEPENDENT_ISSUER_AUTHENTICATION",
             "conservative": window["conservative"], "base": window["base"],
             "optimistic": window["optimistic"],
             "independent_source_authentication": False,
