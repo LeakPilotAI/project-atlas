@@ -23298,5 +23298,35 @@
     "acceptance_gates": 0,
     "paper_operational": false,
     "production": "NO-GO"
+  },
+  "atlas_final_paper_native_recovery_checkpoint_20261107": {
+    "status": "RELEASE_RECOVERED_OPERATIONAL_ACCEPTANCE_BLOCKED",
+    "report": "docs/ATLAS_FINAL_PAPER_COMMISSIONING_EXECUTION_2026-11-07.md",
+    "result": "docs/ATLAS_NATIVE_RELEASE_RECOVERY_RESULT_2026-11-07.json",
+    "selected_release": "4fad7ac195fd0b36f1b81577fabf1b8f69932eb9",
+    "selection_revision": 7,
+    "selection_head": "1a339063cfad505cf9083191984c77cd67886932bea3b93e49d5e2486f5e4636",
+    "support_manifest_sha256": "f41920dbdbe473a32300f073419274aa203edc4e63af696773750465506ea08c",
+    "support_receipt_sha256": "687309e9e83ef4774e9e5df3549655553564428d8e5cc986abb76c2f58f1cc32",
+    "native_stop_seconds": 0.6088416999999999,
+    "native_terminal_cleanup_passed": true,
+    "persistent_post_host_readback_passed": true,
+    "distinct_passed_tests": 305,
+    "latest_test_counts": {
+      "passed": 246,
+      "failed": 0,
+      "skipped": 0
+    },
+    "external_blockers": [
+      "Approved trusted Windows Chrome tab/URL provider missing; IAB is not approved equivalent.",
+      "Active-listener three-reader agreement remains unresolved; State0 is not LISTENING.",
+      "Account-specific accepted provider/source rights/current publication absent; eligible equity session and actual elapsed soak required."
+    ],
+    "accounts_initialized": false,
+    "paper_running": false,
+    "operational_gates_verified": 0,
+    "percent_complete": 0,
+    "percent_remaining": 100,
+    "next_action": "Verify changed approved Chrome and active-listener capabilities, then continue actual source/account/financial acceptance under existing conditional authorization. Do not repeat unchanged failed experiments or infer gate acceptance."
   }
 }

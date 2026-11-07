@@ -5,7 +5,7 @@
 ## Percentage reporting contract
 - **Verified acceptance progress** = independently VERIFIED major readiness gates / 9, from `scripts/windows/atlas_paper_readiness_check.py`. This is an evidence-based completion metric, **not a percentage of coding effort**.
 - **Remaining acceptance** = 100% minus verified acceptance progress. Unverified and blocked gates remain incomplete even when component tests pass.
-- **Execution estimate** = 20-35 substantive batches from the dependency plan, not a guaranteed countdown. Do not subtract a batch unless it actually closes a defined milestone.
+- **Execution estimate:** the former 20-35-batch forecast is deprecated. No reliable batch countdown is available while external evidence and actual elapsed soak remain unproved.
 - Each execution report should show **verified % complete, % remaining, actual change in verified gates, the milestone advanced, and the next blocker**. If unchanged, say **0 percentage-point change**; never disguise a readiness check as a completed commissioning stage.
 - Multi-day/week soak and real provider-dependent waiting are calendar constraints outside the execution-count estimate.
 
@@ -46,3 +46,5 @@
 - 2026-11-07 final mission: GENUINE create-only operational release4fad7ac1 installed:10,451files/913dirs,262,931,167payload bytes,167.453s; full native identity/ACL/hash/installed readback and receipt passed. Old release and selector bytes preserved. V2 support recovery (existing parent IDs, new children only, locked history) validated179tests; not yet deployed. 0/9 operational gates;0pp delta. Next actual support recovery and selection.
 
 - 2026-11-07: genuine operational support installation and selected clean release revision7 completed. Independent startup found inventoried editable workspace hook; corrected isolated no-site startup,246tests and actual installed readback passed. Updated support/readback pending;0/9 accepted,0%complete,100%remaining,0pp change.
+
+- 2026-11-07 final mission: selected clean operational release revision7; corrected protected support installed; post-host full native integrity/readback passed. Actual installed nonfinancial Stop0.609s and unanimous three-reader terminal cleanup/strict process check passed. No browser ACK or financial lifecycle acceptance; trusted Chrome and active-listener prerequisites unresolved.305deduplicated passing tests, latest246/0/0.0/9accepted,0%complete,100%remaining,0pp change.
