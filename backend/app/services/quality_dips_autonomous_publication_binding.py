@@ -1,8 +1,11 @@
-﻿"""Pure binding of V4 publication metadata to an existing native resource cut.
+"""Pure binding of V4 publication metadata to an existing native resource cut.
 
 Native file bytes/identities and acknowledgment authority must be authenticated
 by independent ports. This module cannot create or accept such authority.
 """
+import hashlib
+
+from app.investment.quality_dips_operational_contract import hashed, native_id
 from app.services.paper_financial_replay import body, digest, strict
 from app.services.quality_dips_autonomous_enrollment import ROLES, validate_enrollment
 from app.services.quality_dips_autonomous_publication_contract import validate_financial_publication
@@ -34,10 +37,11 @@ def bind_financial_publication_to_native_cut(enrollment, publication, cut, docum
             doc = files[name]
             if (type(pin) is not dict or set(pin) != {'schema', 'native_id', 'sha256', 'record_schema'}
                     or pin['schema'] != 'QD_AUTO_NATIVE_FILE_V4'
-                    or type(pin['sha256']) is not str or len(pin['sha256']) != 64
-                    or pin['record_schema'] != doc.get('schema')):
+                    or type(doc) is not dict or type(doc.get('schema')) is not str
+                    or not doc['schema'] or pin['record_schema'] != doc['schema']):
                 raise ValueError('AUTO_PUBLICATION_NATIVE_PIN_INVALID')
-            import hashlib
+            native_id(pin['native_id'])
+            hashed(pin['sha256'])
             if hashlib.sha256(body(doc).encode('utf-8')).hexdigest() != pin['sha256']:
                 raise ValueError('AUTO_PUBLICATION_NATIVE_FILE_DIGEST_MISMATCH')
     projection = d['projection'][p['projection_file']]

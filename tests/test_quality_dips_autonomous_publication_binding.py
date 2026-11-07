@@ -1,4 +1,4 @@
-﻿"""Publication-to-native-cut shape tests; no accepted native custody or grants."""
+"""Publication-to-native-cut shape tests; no accepted native custody or grants."""
 import copy
 import hashlib
 import pytest
@@ -28,7 +28,7 @@ def sample():
     for role, files in docs.items():
         for name, doc in files.items():
             cut['resources'][role][name] = {'schema': 'QD_AUTO_NATIVE_FILE_V4',
-                'native_id': [10, 20], 'sha256': hashlib.sha256(body(doc).encode('utf-8')).hexdigest(),
+                'native_id': [10, 20, 30], 'sha256': hashlib.sha256(body(doc).encode('utf-8')).hexdigest(),
                 'record_schema': doc['schema']}
     return e, p, cut, docs
 
@@ -58,5 +58,28 @@ def test_native_cut_binding_refuses(damage):
     if damage == 'inception_digest': docs['source']['inception.json']['inception_digest'] = 'f' * 64
     if damage == 'wrong_publication': p['source_files'].pop()
     if damage == 'bool_revision': docs['projection']['projection.json']['revision'] = True
+    with pytest.raises(ValueError):
+        bind_financial_publication_to_native_cut(e, p, cut, docs)
+
+
+@pytest.mark.parametrize('bad_id', [None, 'fake', [10, 20], [10, 20, True], [-1, 20, 30], [10, 20, 30, 40]])
+def test_native_publication_binding_rejects_untrusted_file_identity_shape(bad_id):
+    e, p, cut, docs = sample()
+    cut['resources']['source']['0002-event.json']['native_id'] = bad_id
+    with pytest.raises(ValueError):
+        bind_financial_publication_to_native_cut(e, p, cut, docs)
+
+
+@pytest.mark.parametrize('bad_hash', ['F' * 64, 'g' * 64, 123, None])
+def test_native_publication_binding_rejects_invalid_digest_format(bad_hash):
+    e, p, cut, docs = sample()
+    cut['resources']['source']['0002-event.json']['sha256'] = bad_hash
+    with pytest.raises(ValueError):
+        bind_financial_publication_to_native_cut(e, p, cut, docs)
+
+
+def test_native_publication_binding_rejects_non_object_document():
+    e, p, cut, docs = sample()
+    docs['source']['0002-event.json'] = []
     with pytest.raises(ValueError):
         bind_financial_publication_to_native_cut(e, p, cut, docs)
