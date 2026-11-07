@@ -1178,3 +1178,22 @@ async def test_session_stop_unexpected_dispatch_exception_refuses_without_retry(
     assert response.status_code == 409
     assert response.json()['status'] == 'REFUSED'
     assert session.calls == 1
+
+
+@pytest.mark.parametrize('failure', [RuntimeError, AssertionError, TimeoutError])
+def test_unified_stop_bridge_unexpected_session_read_failure_refuses_before_dispatch(failure):
+    from threading import Event
+    from types import SimpleNamespace
+    from app.services.unified_paper_runtime import UnifiedControlStopBridge
+    r = runtime()
+    calls = []
+    def fail_snapshot():
+        raise failure('synthetic read failure')
+    r.read_snapshot = fail_snapshot
+    r.stop = lambda **kwargs: calls.append(kwargs)
+    b = UnifiedControlStopBridge(r)
+    assert b.verify_session() is False
+    with pytest.raises(ValueError, match='SESSION_OR_MODE_UNVERIFIED'):
+        b.request_stop('SHUTDOWN_FLATTEN')
+    assert not calls
+    assert b.progress['phase'] == 'IDLE'

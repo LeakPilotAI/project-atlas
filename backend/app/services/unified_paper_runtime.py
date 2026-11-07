@@ -75,7 +75,10 @@ class UnifiedControlStopBridge:
         try:
             self.runtime.read_snapshot()
             return True
-        except (ValueError, OSError):
+        except Exception:
+            # A read/lease failure of any ordinary kind cannot authenticate
+            # ownership. Keep the financial stop closed rather than raising
+            # from the ownership probe or granting an optimistic ACK.
             return False
 
     def request_stop(self, mode):
