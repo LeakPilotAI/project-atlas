@@ -113,3 +113,25 @@ def test_score_bundle_refuses_unverified_source():
     from scripts.observation_runtime.alpaca_equity_catalog import score_research_bundle
     with pytest.raises(ValueError, match="INPUT_REFUSED"):
         score_research_bundle(symbol="MSFT", data={"paper_eligible": True})
+
+
+def test_scored_pipeline_success_and_failure_keep_cursor(tmp_path, monkeypatch):
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    snapshot = mod.inventory_snapshot([{"class": "us_equity", "symbol": s, "status": "active", "tradable": True}
+                                       for s in ("MSFT", "AVGO")], captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(snapshot), encoding="utf-8")
+    def scorer(*, symbol, data):
+        return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+    ok = mod.score_bounded_research_batch(limit=2, acquire=lambda symbol: {"symbol": symbol}, scorer=scorer)
+    assert ok["scoring_complete"] and len(ok["results"]) == 2
+    assert not ok["cursor_advanced"] and not (root / "alpaca_equity_cursor.json").exists()
+    def fail(symbol):
+        raise OSError("provider down")
+    blocked = mod.score_bounded_research_batch(limit=2, acquire=fail, scorer=scorer)
+    assert not blocked["scoring_complete"] and blocked["results"][0]["status"] == "RESEARCH_BLOCKED"
+    assert not (root / "alpaca_equity_cursor.json").exists()

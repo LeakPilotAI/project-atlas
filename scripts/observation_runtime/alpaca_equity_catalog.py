@@ -232,6 +232,45 @@ def score_research_bundle(*, symbol, data):
             "paper_eligible": False, "live_order_authorized": False}
 
 
+def score_bounded_research_batch(*, limit=1, acquire=None, scorer=None):
+    """Explicit full-bundle -> in-memory score pipeline, no cursor advancement.
+
+    Provider callbacks are injectable for deterministic tests. Actual provider
+    wiring must supply authenticated FreeResearchBundle.load separately.
+    """
+    if type(limit) is not int or not 1 <= limit <= 2 or not callable(acquire):
+        raise ValueError("BROAD_SCORE_PIPELINE_POLICY_REFUSED")
+    scorer = score_research_bundle if scorer is None else scorer
+    if not callable(scorer):
+        raise ValueError("BROAD_SCORE_PIPELINE_SCORER_REFUSED")
+    root = REPO / "logs" / "research"
+    batch = next_research_batch(root / "alpaca_equity_inventory.json",
+                                root / "alpaca_equity_cursor.json", limit=limit)
+    routes = research_route_plan(batch)["routes"]
+    results = []
+    for route in routes:
+        symbol = route["symbol"]
+        try:
+            data = acquire(symbol)
+            scored = scorer(symbol=symbol, data=data)
+            if (type(scored) is not dict or scored.get("symbol") != symbol
+                    or scored.get("status") != "RESEARCH_SCORED"
+                    or scored.get("paper_eligible") is not False
+                    or scored.get("live_order_authorized") is not False):
+                raise ValueError("BROAD_SCORE_PIPELINE_RESULT_REFUSED")
+            results.append(scored)
+        except Exception as exc:
+            results.append({"symbol": symbol, "status": "RESEARCH_BLOCKED",
+                            "reason": type(exc).__name__, "paper_eligible": False})
+            break
+    return {"schema": "ATLAS_BROAD_SCORED_RESEARCH_V1",
+            "results": results,
+            "scoring_complete": len(results) == len(routes) and all(
+                row["status"] == "RESEARCH_SCORED" for row in results),
+            "cursor_advanced": False, "paper_execution_authorized": False,
+            "live_order_authorized": False}
+
+
 def run_bounded_provider_research(*, contact, limit=1, provider=None):
     """Explicit, non-autostart diagnostic research; no financial mutation.
 
