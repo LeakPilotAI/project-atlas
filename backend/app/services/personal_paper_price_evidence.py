@@ -286,3 +286,38 @@ def inspect_forward_paper_journal_under_lease(
             "open_positions": snapshot["open_positions"],
             "cash_reconciled": snapshot["cash_reconciled"],
             "paper_fill_authorized": False, "live_order_authorized": False}
+
+
+def inspect_authenticated_forward_quote_under_lease(
+    *, installation: Any, request: dict[str, Any], components: Any,
+    provider: Any, symbol: str, now: datetime,
+) -> dict[str, Any]:
+    """Read a provider-owned quote under local operator lease; never fill.
+
+    Requires an explicitly installed provider port. Caller-supplied quote
+    dictionaries, Yahoo bars and read-only previews are not provider authority.
+    """
+    from app.services.personal_paper_runtime import checked_personal_installation
+
+    if installation is None or provider is None or type(request) is not dict:
+        raise PriceEvidenceRejected("APPROVED_PROVIDER_AND_OPERATOR_REQUIRED")
+    if not callable(getattr(provider, "read_iex_quote", None)):
+        raise PriceEvidenceRejected("APPROVED_PROVIDER_PORT_REQUIRED")
+    try:
+        with installation.lease(request) as lease:
+            proof = checked_personal_installation(lease, request)
+            if lease.check_components(components) is not True:
+                raise PriceEvidenceRejected("PERSONAL_PROVIDER_COMPONENTS_CHANGED")
+            quote = provider.read_iex_quote(symbol)
+            if type(quote) is not dict or quote.get("source") != "ALPACA_IEX_PROVIDER_QUOTE":
+                raise PriceEvidenceRejected("APPROVED_PROVIDER_QUOTE_SOURCE_REQUIRED")
+            evidence = validate_stock_iex_quote(quote, symbol=symbol, now=now)
+            if lease.check(proof) is not True or lease.check_components(components) is not True:
+                raise PriceEvidenceRejected("PERSONAL_PROVIDER_LEASE_CHANGED")
+    except PriceEvidenceRejected:
+        raise
+    except (AttributeError, TypeError, ValueError, OSError) as exc:
+        raise PriceEvidenceRejected("APPROVED_PROVIDER_READ_REFUSED") from exc
+    return {"schema": "ATLAS_PERSONAL_PAPER_LEASED_PROVIDER_QUOTE_DIAGNOSTIC_V1",
+            "quote_evidence": evidence, "paper_fill_authorized": False,
+            "live_order_authorized": False}

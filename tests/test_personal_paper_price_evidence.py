@@ -264,3 +264,42 @@ def test_forward_write_authority_refuses_component_substitution():
     with pytest.raises(PriceEvidenceRejected):
         check_forward_paper_write_authority(installation=Installation(), request={},
                                             components=())
+
+
+def test_leased_provider_quote_rejects_uninstalled_provider_and_operator():
+    from app.services.personal_paper_price_evidence import inspect_authenticated_forward_quote_under_lease
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    for installation, provider in ((None, None), (object(), None), (None, object())):
+        with pytest.raises(PriceEvidenceRejected):
+            inspect_authenticated_forward_quote_under_lease(
+                installation=installation, request={"action": "AUTO_PAPER"},
+                components=(), provider=provider, symbol="MSFT", now=now)
+
+
+def test_leased_provider_quote_rejects_public_bar_and_untrusted_source(monkeypatch):
+    from contextlib import nullcontext
+    from app.services import personal_paper_runtime
+    from app.services.personal_paper_price_evidence import inspect_authenticated_forward_quote_under_lease
+    monkeypatch.setattr(personal_paper_runtime, "checked_personal_installation",
+                        lambda lease, request: lease.snapshot)
+    class Lease:
+        snapshot = {}
+        def check_components(self, components): return True
+        def check(self, proof): return True
+    class Installation:
+        def lease(self, activation_request): return nullcontext(Lease())
+    class Provider:
+        def __init__(self, payload): self.payload = payload
+        def read_iex_quote(self, symbol): return self.payload
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    for payload in ({"source": "YAHOO_TRADE_BAR_CLOSE"}, _quote(now)):
+        with pytest.raises(PriceEvidenceRejected, match="APPROVED_PROVIDER_QUOTE_SOURCE_REQUIRED"):
+            inspect_authenticated_forward_quote_under_lease(
+                installation=Installation(), request={"action": "AUTO_PAPER"},
+                components=(), provider=Provider(payload), symbol="MSFT", now=now)
+    diagnostic = inspect_authenticated_forward_quote_under_lease(
+        installation=Installation(), request={"action": "AUTO_PAPER"}, components=(),
+        provider=Provider({**_quote(now), "source": "ALPACA_IEX_PROVIDER_QUOTE"}),
+        symbol="MSFT", now=now)
+    assert diagnostic["paper_fill_authorized"] is False
+    assert diagnostic["quote_evidence"]["ask"] == "400.01"
