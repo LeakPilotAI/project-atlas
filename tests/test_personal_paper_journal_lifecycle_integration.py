@@ -288,3 +288,31 @@ def test_decision_retry_rejects_conflicting_account_or_evidence(tmp_path):
         record_decision({**observation, "evidence_class": "TEST_DATA"},
                         decision="WAIT", reason="no setup", account_id="forward", path=path)
     assert path.read_bytes() == before
+
+
+def test_nested_writer_transaction_preserves_single_lock_and_rejects_other_path(tmp_path):
+    from app.investment.quality_dips_paper import journal_mutation_transaction
+    path = tmp_path / "transaction.jsonl"
+    other = tmp_path / "other.jsonl"
+    with journal_mutation_transaction(path):
+        with journal_mutation_transaction(path):
+            initialize_paper_account(account_id="forward", opening_cash=1000,
+                                     fee_bps_per_side=2, data_provenance="FORWARD_COLLECTION",
+                                     path=path)
+        with pytest.raises(ValueError, match="PAPER_NESTED_WRITER_PATH_MISMATCH"):
+            with journal_mutation_transaction(other):
+                pass
+        assert not other.exists()
+    assert len([e for e in read_events(path) if e["event"] == "account_opened"]) == 1
+    with journal_mutation_transaction(other):
+        assert True  # lock state was cleared after the outer transaction
+
+
+def test_writer_transaction_clears_ownership_after_exception(tmp_path):
+    from app.investment.quality_dips_paper import journal_mutation_transaction
+    path = tmp_path / "transaction.jsonl"
+    with pytest.raises(RuntimeError, match="intentional"):
+        with journal_mutation_transaction(path):
+            raise RuntimeError("intentional")
+    with journal_mutation_transaction(path):
+        assert True

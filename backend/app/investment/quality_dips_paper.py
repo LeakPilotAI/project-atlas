@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
-from threading import RLock
+from threading import RLock, local
 from typing import Any, Dict, Iterable, Optional
 
 from app.investment.storage import QUALITY_DIPS_PAPER_JOURNAL_PATH
@@ -27,6 +27,7 @@ VALID_LEVELS = frozenset({"L1", "L2", "L3", "L4"})
 PAPER_NOTIONAL_BY_LEVEL = {"L1": 100.0, "L2": 100.0, "L3": 100.0, "L4": 100.0}
 ACTIONABLE_STATES = frozenset({"ACCUMULATION", "DEEP_VALUE", "GENERATIONAL"})
 _lock = RLock()
+_writer_state = local()
 
 
 @contextmanager
@@ -68,14 +69,35 @@ def _exclusive_journal_writer(path: Path):
                 fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
+@contextmanager
+def journal_mutation_transaction(path: Path):
+    """Single OS-owned transaction for nested journal operations on one path.
+
+    This only grants journal serialization, never strategy or fill authority.
+    """
+    resolved = Path(path).resolve(strict=False)
+    with _lock:
+        active = getattr(_writer_state, "path", None)
+        if active is not None:
+            if active != resolved:
+                raise ValueError("PAPER_NESTED_WRITER_PATH_MISMATCH")
+            yield
+            return
+        with _exclusive_journal_writer(resolved):
+            _writer_state.path = resolved
+            try:
+                yield
+            finally:
+                del _writer_state.path
+
+
 def _serialized_paper_mutation(fn):
     """Protect the entire journal replay/validate/append across processes."""
     @wraps(fn)
     def guarded(*args, **kwargs):
         path = Path(kwargs.get("path", QUALITY_DIPS_PAPER_JOURNAL_PATH))
-        with _lock:
-            with _exclusive_journal_writer(path):
-                return fn(*args, **kwargs)
+        with journal_mutation_transaction(path):
+            return fn(*args, **kwargs)
     return guarded
 
 
