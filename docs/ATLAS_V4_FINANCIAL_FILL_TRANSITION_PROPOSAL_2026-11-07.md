@@ -1,0 +1,11 @@
+# V4 Financial Fill Transition Proposal - Source Only (2026-11-07)
+
+Status: **RESEARCH PROPOSAL ONLY; NOT ACCEPTED AS THE OPERATIONAL V4 EVENT PROTOCOL**.
+
+The existing V4 publication and native resource-cut interfaces require exact `QD_AUTO_NATIVE_EVENT_V4` records, but the present nonzero fixtures contain only placeholder `record: {sequence: i}`. There is no independently accepted native event transition, issuer, durable acknowledgment, authority, provider-rights evidence, or complete financial audit protocol. `V4InceptionFinancialReplay` therefore correctly refuses nonzero revisions.
+
+`backend/app/services/quality_dips_autonomous_v4_fill_proposal.py` adds an isolated deterministic financial calculation for proposed long-only PAPER entry, partial exit, and full exit. It accepts only in-memory `QD_AUTO_V4_FILL_PROPOSAL_V1` records with exact fields `schema`, `revision`, `operation_id`, `kind`, `symbol`, `quantity`, `price`, `fee`. Revision is strictly contiguous, operation IDs unique, quantities/prices positive, fees nonnegative, and values at most two decimal places. Opening cash is exactly $1,000; cash, open positions, realized gross, fees, and net are reconciled without mutating caller records. Every result explicitly denies operational authority and execution. This **does not** assert market data validity, fill execution, or a settled fee model.
+
+Before any integration into `QD_AUTO_NATIVE_EVENT_V4` or `LOCAL_ENROLLED`, independently review and specify: accepted account/epoch/manifest linkage; immutable parent/head and receipt digest chain; native writer reserve/commit/ack and replay readback; instrument identity and tradability; fresh provider quote provenance/rights; fill source and simulated slippage/fees; position lots, fractional shares, cash constraints and corporate actions; timestamps and monotonic clocks; restart/replay idempotence; independent financial audit; authority revocation and B1/C1/D1/E1/AIP06 gate approvals. The proposed two-decimal quantity and single-symbol position model is deliberately **not** sufficient for full Robinhood-oriented market coverage.
+
+This proposal is not connected to `BoundAutonomousFinancialPublication`, does not change `V4InceptionFinancialReplay`, does not start Atlas, and does not touch Genesis or any live trading endpoint.
