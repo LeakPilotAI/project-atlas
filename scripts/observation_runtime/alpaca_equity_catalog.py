@@ -198,6 +198,40 @@ def complete_research_batch(batch, results, cursor_path):
             "paper_execution_authorized": False, "live_order_authorized": False}
 
 
+def score_research_bundle(*, symbol, data):
+    """Score genuine provider-shaped data in memory with existing Atlas engine.
+
+    No persisted snapshots, Robinhood token registry mutations or PAPER writes.
+    """
+    from app.investment.enums import AssetType
+    from app.investment.research import InvestmentResearch
+    from app.investment.snapshot import snapshot_from_parts
+    from app.investment.universe import UniverseEntry
+    from app.investment.robinhood_discovery_research import classify_lane
+    if (type(symbol) is not str or re.fullmatch(r"[A-Z][A-Z0-9.-]{0,14}", symbol) is None
+            or type(data) is not dict or data.get("paper_eligible") is not False
+            or type(data.get("asset")) is not dict or data["asset"].get("symbol") != symbol
+            or data["asset"].get("class") != "us_equity"
+            or not data.get("receipts") or not data.get("bars")
+            or not isinstance(data.get("fundamentals"), dict)
+            or not isinstance(data.get("valuation"), dict)):
+        raise ValueError("BROAD_RESEARCH_SCORE_INPUT_REFUSED")
+    entry = UniverseEntry(symbol=symbol, asset_type=AssetType.UNKNOWN,
+                          groups=["alpaca_provider_scoped_research"])
+    snap = snapshot_from_parts(entry, price=data["price"],
+                               fundamentals=data["fundamentals"],
+                               valuation=data["valuation"], latest_bar=data["bars"][-1])
+    record = InvestmentResearch().score_snapshot(snap, tuple(data["bars"]))
+    lane, reason = classify_lane(record)
+    return {"symbol": symbol, "status": "RESEARCH_SCORED",
+            "research_lane": lane, "reason": reason,
+            "evidence_quality": record.evidence_quality.value,
+            "thesis": record.thesis.value,
+            "opportunity_score": record.opportunity_score,
+            "provider_receipt_count": len(data["receipts"]),
+            "paper_eligible": False, "live_order_authorized": False}
+
+
 def run_bounded_provider_research(*, contact, limit=1, provider=None):
     """Explicit, non-autostart diagnostic research; no financial mutation.
 

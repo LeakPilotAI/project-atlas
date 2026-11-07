@@ -107,3 +107,9 @@ def test_worker_failed_provider_never_advances_cursor(tmp_path, monkeypatch):
     assert not result["batch_complete"] and not result["cursor_advanced"]
     assert result["outcomes"][0]["status"] == "RESEARCH_BLOCKED"
     assert not (root / "alpaca_equity_cursor.json").exists()
+
+
+def test_score_bundle_refuses_unverified_source():
+    from scripts.observation_runtime.alpaca_equity_catalog import score_research_bundle
+    with pytest.raises(ValueError, match="INPUT_REFUSED"):
+        score_research_bundle(symbol="MSFT", data={"paper_eligible": True})
