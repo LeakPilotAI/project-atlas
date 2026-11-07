@@ -1,0 +1,45 @@
+"""Incremental TEST_DATA execution against the actual durable journal."""
+from datetime import UTC, datetime, timedelta
+
+import pytest
+
+from app.investment.quality_dips_paper import initialize_paper_account
+from app.services.disposable_v3_incremental import execute_incremental_test_v3_tick
+
+
+def test_incremental_v3_entry_mark_exit_restarts_from_journal(tmp_path):
+    path = tmp_path / "paper.jsonl"
+    initialize_paper_account(account_id="demo", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="TEST_DATA", path=path)
+    start = datetime(2026, 11, 7, tzinfo=UTC)
+    research = {"symbol": "MSFT", "source_verified": True,
+                "timestamp": start.isoformat(),
+                "normalization_value": {"conservative": 95, "base": 100, "optimistic": 105},
+                "quality_score": 80, "fundamentals_score": 80,
+                "valuation_score": 70, "drawdown_percentile": 80,
+                "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
+    observation = {"observation_id": "incremental-test", "symbol": "MSFT",
+                   "evidence_class": "TEST_DATA"}
+    actions = []
+    for i, (bid, ask) in enumerate([(101, 101.1), (79.9, 80), (80.9, 81), (84, 84.1)]):
+        now = start + timedelta(seconds=i)
+        quote = {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
+                 "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+                 "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+        result = execute_incremental_test_v3_tick(
+            path=path, account_id="demo", observation=observation,
+            research=research, quote=quote, now=now)
+        actions.append(result["action"])
+        assert result["cash_reconciled"] is True
+        assert result["forward_trading_authorized"] is False
+    assert actions == ["WAIT", "ENTER", "MARK", "EXIT"]
+    assert result["open_positions"] == 0
+    assert result["net_realized_pnl"] > 0
+
+
+def test_incremental_v3_refuses_forward_evidence(tmp_path):
+    with pytest.raises(ValueError, match="TEST_DATA_ONLY"):
+        execute_incremental_test_v3_tick(path=tmp_path / "none", account_id="x",
+                                         observation={"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION"},
+                                         research={"symbol": "MSFT"}, quote={}, now=datetime.now(UTC))
