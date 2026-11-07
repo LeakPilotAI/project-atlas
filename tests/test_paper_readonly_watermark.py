@@ -107,3 +107,46 @@ def test_watermarked_session_releases_writer_after_provider_failure(tmp_path, mo
             path=path, symbol="MSFT", enrolled=True, ticks=1, clock=lambda: stamp)
     with readonly_watermark_writer(path):
         assert read_watermark(path, symbol="MSFT") == stamp.isoformat()
+
+
+def test_dangling_watermark_symlink_cannot_be_treated_as_fresh_state(tmp_path):
+    from scripts.observation_runtime.paper_readonly_watermark import readonly_watermark_writer
+    link = tmp_path / "watermark.json"
+    try:
+        link.symlink_to(tmp_path / "nonexistent.json")
+    except (OSError, NotImplementedError):
+        pytest.skip("Windows symlink creation requires permission")
+    with pytest.raises(ValueError, match="STORAGE_REFUSED"):
+        read_watermark(link, symbol="MSFT")
+    with pytest.raises(ValueError, match="STORAGE_REFUSED"):
+        advance_watermark(link, symbol="MSFT", provider_timestamp="2026-11-07T00:00:00+00:00")
+    with pytest.raises(ValueError, match="LOCK_PARENT_INVALID"):
+        with readonly_watermark_writer(link):
+            pass
+
+
+def test_writer_lock_path_symlink_is_refused(tmp_path):
+    from scripts.observation_runtime.paper_readonly_watermark import readonly_watermark_writer
+    path = tmp_path / "watermark.json"
+    link = tmp_path / "watermark.json.writer.lock"
+    try:
+        link.symlink_to(tmp_path / "not-there")
+    except (OSError, NotImplementedError):
+        pytest.skip("Windows symlink creation requires permission")
+    with pytest.raises(ValueError, match="LOCK_PATH_REFUSED"):
+        with readonly_watermark_writer(path):
+            pass
+
+
+def test_interrupted_pending_write_fails_closed_without_overwriting(tmp_path):
+    path = tmp_path / "events.json"
+    initial = datetime(2026, 11, 7, tzinfo=UTC)
+    advance_watermark(path, symbol="MSFT", provider_timestamp=initial.isoformat())
+    pending = tmp_path / "events.json.pending"
+    pending.write_text("interrupted-newer-event", encoding="utf-8")
+    original = path.read_bytes()
+    with pytest.raises(ValueError, match="INTERRUPTED_WRITE"):
+        advance_watermark(path, symbol="MSFT",
+                          provider_timestamp=(initial + timedelta(seconds=1)).isoformat())
+    assert path.read_bytes() == original
+    assert pending.read_text(encoding="utf-8") == "interrupted-newer-event"

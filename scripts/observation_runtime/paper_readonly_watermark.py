@@ -20,9 +20,12 @@ SCHEMA = "ATLAS_READONLY_IEX_WATERMARK_V1"
 def read_watermark(path: Path, *, symbol: str) -> str | None:
     if not isinstance(path, Path) or type(symbol) is not str or not symbol:
         raise ValueError("READONLY_WATERMARK_INPUT_INVALID")
+    # A dangling symlink is not a missing enrollment file. Never reset it.
+    if path.is_symlink():
+        raise ValueError("READONLY_WATERMARK_STORAGE_REFUSED")
     if not path.exists():
         return None
-    if path.is_symlink() or not path.is_file():
+    if not path.is_file():
         raise ValueError("READONLY_WATERMARK_STORAGE_REFUSED")
     try:
         raw = path.read_bytes()
@@ -52,11 +55,15 @@ def advance_watermark(path: Path, *, symbol: str, provider_timestamp: str) -> di
     old = read_watermark(path, symbol=symbol)
     if old is not None and stamp <= _aware(old, "stored IEX event"):
         raise ValueError("READONLY_WATERMARK_REPLAY_REFUSED")
-    if not path.parent.is_dir() or path.is_symlink():
+    if not path.parent.is_dir() or path.parent.is_symlink() or path.is_symlink():
         raise ValueError("READONLY_WATERMARK_PARENT_REFUSED")
     packet = {"schema": SCHEMA, "symbol": symbol, "provider_timestamp": stamp.isoformat(),
               "paper_fill_authorized": False, "live_order_authorized": False}
     temp = path.with_name(path.name + ".pending")
+    # A leftover pending file indicates an interrupted writer. The operator
+    # must inspect it; never silently discard potentially newer evidence.
+    if temp.exists() or temp.is_symlink():
+        raise ValueError("READONLY_WATERMARK_INTERRUPTED_WRITE")
     try:
         with temp.open("x", encoding="utf-8") as handle:
             handle.write(body(packet) + "\n")
@@ -78,10 +85,11 @@ def readonly_watermark_writer(path: Path):
     deleted-and-recreated lock path. Not an operator/financial writer lease.
     """
     import msvcrt
-    if not isinstance(path, Path) or not path.parent.is_dir():
+    if (not isinstance(path, Path) or not path.parent.is_dir()
+            or path.parent.is_symlink() or path.is_symlink()):
         raise ValueError("READONLY_WATERMARK_LOCK_PARENT_INVALID")
     lock_path = path.with_name(path.name + ".writer.lock")
-    if lock_path.is_symlink():
+    if lock_path.is_symlink() or (lock_path.exists() and not lock_path.is_file()):
         raise ValueError("READONLY_WATERMARK_LOCK_PATH_REFUSED")
     with lock_path.open("a+b") as handle:
         handle.seek(0)
