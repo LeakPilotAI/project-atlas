@@ -34,3 +34,14 @@ def test_keep_running_button_cannot_orphan_enrolled_paper_session():
     assert "$script:KeepAtlasRunning = $false" in source
     assert "$script:KeepAtlasRunning = $true" in source
     assert "$form.Close()" in source
+
+
+
+def test_form_closing_always_attempts_verified_shutdown_for_enrolled_session():
+    source = GUI.read_text(encoding="utf-8-sig")
+    section = source.split("$form.Add_FormClosing({", 1)[1].split("\n})", 1)[0]
+    assert "if ($null -ne $AcceptedPaperSession) {" in section
+    assert "-not $script:KeepAtlasRunning" not in section
+    assert "Invoke-AtlasPaperStopWithHandoff" in section
+    assert "Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished" in section
+    assert "$eventArgs.Cancel = $true" in section

@@ -90,7 +90,7 @@ $script:KeepAtlasRunning = $false
 $form.Add_FormClosing({
     param($sender, $eventArgs)
     try {
-        if (-not $script:KeepAtlasRunning -and $null -ne $AcceptedPaperSession) {
+        if ($null -ne $AcceptedPaperSession) {
             $result = if ($null -ne $AcceptedPaperStopHandoff) {
                 if ($AcceptedPaperStopHandoff -isnot [System.Collections.IDictionary] -or
                     $AcceptedPaperStopHandoff['mode'] -cne 'SHUTDOWN_FLATTEN') {
