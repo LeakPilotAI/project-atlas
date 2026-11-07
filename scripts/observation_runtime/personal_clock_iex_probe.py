@@ -1,0 +1,89 @@
+"""Explicit bounded native-clock + authenticated IEX quote acceptance probe.
+
+No startup, publication, account creation, watermark, or financial writer.
+"""
+from __future__ import annotations
+
+import argparse
+import asyncio
+import json
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "backend"))
+
+from app.investment.alpaca_iex import Credentials, IEXFeed, IEXRefused
+from app.services.personal_paper_price_evidence import validate_stock_iex_quote
+from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+
+
+def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
+                                  clock_factory=LocalWindowsClock,
+                                  feed_factory=IEXFeed):
+    if (type(symbol) is not str or not symbol.isascii() or not symbol.isalpha()
+            or not symbol.isupper() or not 1 <= len(symbol) <= 8
+            or type(seconds) is not int or not 1 <= seconds <= 60):
+        raise ValueError("CLOCK_IEX_PROBE_ARGUMENTS_REFUSED")
+    clock = None
+    try:
+        # The real clock gate precedes credential access and provider connection.
+        clock = clock_factory(expected_source="time.windows.com,0x9",
+                              runtime_id="atlas-clock-iex-readonly-probe", lifetime=seconds + 30)
+        clock.require_operational("atlas-clock-iex-readonly-probe")
+        accepted = []
+
+        def on_quote(event):
+            # Callback is invoked only by the authenticated/subscribed IEX feed.
+            clock.require_operational("atlas-clock-iex-readonly-probe")
+            quote = {**event, "state": "FRESH",
+                     "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+            evidence = validate_stock_iex_quote(
+                quote, symbol=symbol, now=datetime.fromtimestamp(clock(), UTC))
+            if accepted and evidence["provider_timestamp"] <= accepted[-1]:
+                raise ValueError("CLOCK_IEX_PROVIDER_REPLAY_REFUSED")
+            accepted.append(evidence["provider_timestamp"])
+
+        credentials = Credentials.load(credentials_path)
+        result = asyncio.run(feed_factory([symbol]).run(
+            credentials, seconds=seconds, max_reconnects=0,
+            on_fresh_quote=on_quote))
+        if result["authenticated"] is not True or result["subscribed"] is not True:
+            raise ValueError("CLOCK_IEX_PROVIDER_NOT_VERIFIED")
+        if result["result"]["connection"] != "DISCONNECTED":
+            raise ValueError("CLOCK_IEX_PROVIDER_NOT_DISCONNECTED")
+        return {"schema": "ATLAS_CLOCK_IEX_READONLY_OBSERVATION_V1",
+                "native_clock_verified": True,
+                "clock_uncertainty_ms": clock.evidence["bound_ms"],
+                "authenticated": True, "subscribed": True,
+                "connection_closed": True,
+                "fresh_validated_quote_count": len(accepted),
+                "forward_financial_write_authorized": False,
+                "live_order_authorized": False}
+    finally:
+        if clock is not None:
+            clock.revoke()
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--symbol", default="MSFT")
+    parser.add_argument("--seconds", type=int, default=10)
+    args = parser.parse_args(argv)
+    try:
+        report = bounded_clock_iex_observation(
+            symbol=args.symbol, seconds=args.seconds,
+            credentials_path=REPO / "config/alpaca.env")
+        print(json.dumps(report, sort_keys=True))
+        return 0
+    except (ValueError, IEXRefused, OSError):
+        print(json.dumps({"schema": "ATLAS_CLOCK_IEX_READONLY_OBSERVATION_V1",
+                          "status": "REFUSED", "reason": "CLOCK_OR_PROVIDER_GATE_REFUSED",
+                          "forward_financial_write_authorized": False,
+                          "live_order_authorized": False}, sort_keys=True))
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
