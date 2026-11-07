@@ -215,3 +215,21 @@ def test_iex_callback_recomputes_v3_before_committing_watermark(tmp_path):
         assert consumer.last_event == prior
         assert consumer.accepted == 1
     assert read_watermark(path, symbol="MSFT") == prior
+
+
+def test_iex_published_mode_refuses_fake_ports_before_watermark_advance(tmp_path):
+    from scripts.observation_runtime.paper_readonly_watermark import ReadonlyIEXEventConsumer
+    path = tmp_path / "published.json"
+    now = datetime(2026, 11, 7, tzinfo=UTC)
+    previous = (now - timedelta(seconds=2)).isoformat()
+    advance_watermark(path, symbol="MSFT", provider_timestamp=previous)
+    with pytest.raises(ValueError, match="PUBLISHED_PORTS_REQUIRED"):
+        ReadonlyIEXEventConsumer(path=path, symbol="MSFT", publication=object(), clock=lambda: now)
+    with ReadonlyIEXEventConsumer(path=path, symbol="MSFT", publication=object(),
+                                  provider=object(), clock=lambda: now) as consumer:
+        with pytest.raises(ValueError, match="QD_PUBLISHED_IEX_BOUND_PORTS_REQUIRED"):
+            consumer.on_fresh_quote({"symbol": "MSFT", "provider": "ALPACA_IEX",
+                                     "timestamp": (now - timedelta(seconds=1)).isoformat(),
+                                     "paper_fill_authorized": False, "live_order_authorized": False})
+        assert consumer.accepted == 0
+    assert read_watermark(path, symbol="MSFT") == previous

@@ -147,13 +147,21 @@ class ReadonlyIEXEventConsumer:
     session. The caller must independently establish provider authentication.
     """
 
-    def __init__(self, *, path: Path, symbol: str, research=None, clock=None):
+    def __init__(self, *, path: Path, symbol: str, research=None, clock=None,
+                 publication=None, provider=None):
         if type(symbol) is not str or not symbol:
             raise ValueError("READONLY_IEX_CONSUMER_SYMBOL_REQUIRED")
-        if (research is None) != (clock is None) or (clock is not None and not callable(clock)):
+        if clock is not None and not callable(clock):
+            raise ValueError("READONLY_IEX_CONSUMER_STRATEGY_DEPENDENCIES_REQUIRED")
+        if (publication is None) != (provider is None):
+            raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_PORTS_REQUIRED")
+        if publication is not None and (research is not None or clock is None):
+            raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_MODE_CONFLICT")
+        if publication is None and ((research is None) != (clock is None)):
             raise ValueError("READONLY_IEX_CONSUMER_STRATEGY_DEPENDENCIES_REQUIRED")
         self.path, self.symbol = path, symbol
         self.research, self.clock = research, clock
+        self.publication, self.provider = publication, provider
         self._lock = None
         self.last_event = None
         self.accepted = 0
@@ -187,7 +195,19 @@ class ReadonlyIEXEventConsumer:
         if stamp <= _aware(self.last_event, "last IEX callback timestamp"):
             raise ValueError("READONLY_IEX_CONSUMER_REPLAY_REFUSED")
         decision = None
-        if self.research is not None:
+        if self.publication is not None:
+            from app.services.personal_paper_strategy_signal import evaluate_published_iex_v3_candidate
+            decision = evaluate_published_iex_v3_candidate(
+                publication=self.publication, provider=self.provider,
+                symbol=self.symbol, now=self.clock())
+            from datetime import UTC
+            evidence_stamp = _aware(decision["quote_evidence"]["provider_timestamp"],
+                                    "published IEX quote timestamp")
+            if evidence_stamp.astimezone(UTC) != stamp.astimezone(UTC):
+                raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_QUOTE_CHANGED")
+            if decision.get("publication_read_verified") is not True:
+                raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_SOURCE_UNVERIFIED")
+        elif self.research is not None:
             from app.services.personal_paper_strategy_signal import evaluate_iex_quality_dips_signal
             now = self.clock()
             quote = {"symbol": self.symbol, "state": "FRESH",
@@ -201,6 +221,10 @@ class ReadonlyIEXEventConsumer:
                     or decision.get("live_order_authorized") is not False
                     or decision.get("research_provenance_attested") is not False):
                 raise ValueError("READONLY_IEX_CONSUMER_STRATEGY_AUTHORITY_REFUSED")
+        if decision is not None and (decision.get("paper_fill_authorized") is not False
+                                     or decision.get("live_order_authorized") is not False
+                                     or decision.get("research_provenance_attested") is not False):
+            raise ValueError("READONLY_IEX_CONSUMER_STRATEGY_AUTHORITY_REFUSED")
         advance_watermark(self.path, symbol=self.symbol, provider_timestamp=stamp.isoformat())
         self.last_event = stamp.isoformat()
         self.last_strategy = decision
