@@ -14,5 +14,12 @@
   "activation_created": false,
   "source_image_initialized": false,
   "paper_startup_authorized": false,
-  "blocking_reason": "RELEASE_SELECTION_ROLLED_BACK_NO_ACCEPTED_RELEASE_DIGEST_OR_ACCOUNT_ENROLLMENTS"
+  "blocking_reason": "VERIFIED_INSTALLED_RELEASE_CANDIDATE_AVAILABLE_BUT_CURRENT_SELECTION_ROLLED_BACK; NATIVE_SELECTION_LEASE_AND_ACCOUNT_ENROLLMENT_REQUIRED",
+  "previous_selected_release_native_verification": {
+    "source_commit": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "verified_by": "NativeInstalledReleaseVerifier.open",
+    "result": "PASSED",
+    "selected_now": false,
+    "selection_write_performed": false
+  }
 }
