@@ -1,4 +1,4 @@
-﻿"""Source-only synthetic native event-cut adapter tests."""
+"""Source-only synthetic native event-cut adapter tests."""
 import copy
 import pytest
 from app.services.paper_financial_replay import digest
@@ -6,13 +6,16 @@ from app.services.paper_financial_audit import audit_financial_events
 from app.services.quality_dips_autonomous_native_event_cut import DisposableNativeEventCutVerifier
 from test_quality_dips_autonomous_financial_cut import sample
 from test_quality_dips_autonomous_financial_reconciliation import case
+from test_fs1_financial_replay import GOLDEN
 
 
-def evidence():
+def evidence(*, full_snapshot=False):
     e, _, _ = sample()
     manifest, records, state, pins = case()
     # The retained golden fixture epoch is explicitly bound to the synthetic enrollment.
     e['epoch'] = manifest['epoch']
+    if full_snapshot:
+        state = copy.deepcopy(GOLDEN[0]["snapshot"])
     revision = len(records)
     common = {'account_id': e['account_id'], 'epoch': e['epoch'],
               'enrollment_digest': digest(e), 'revision': revision}
@@ -28,7 +31,7 @@ def evidence():
     audit = audit_financial_events(manifest, records, state)
     documents['report']['report.json'] = {
         'schema': 'QD_AUTO_NATIVE_DISPOSABLE_REPORT_V1', **common,
-        'head': pins['expected_head'], 'state_digest': digest(state),
+        'head': pins['expected_head'], 'state_digest': pins['expected_state_digest'],
         'audit_digest': digest(audit)}
     return e, {'scope': 'DISPOSABLE_TEST', 'revision': revision}, documents
 
@@ -59,3 +62,22 @@ def test_disposable_event_cut_refuses(damage):
     with pytest.raises((ValueError, KeyError)):
         DisposableNativeEventCutVerifier().verify_cut(e, current, documents, 1000,
                                                        scope='DISPOSABLE_TEST')
+
+
+def test_native_event_cut_accepts_full_fs1_financial_snapshot():
+    e, current, docs = evidence(full_snapshot=True)
+    assert len(docs['projection']['projection.json']['state']) > len(case()[2])
+    assert DisposableNativeEventCutVerifier().verify_cut(e, current, docs, 1000,
+                                                        scope='DISPOSABLE_TEST') is True
+
+
+@pytest.mark.parametrize('damage', ['clock', 'net_r', 'gross'])
+def test_native_event_cut_rejects_corrupted_full_fs1_snapshot(damage):
+    e, current, docs = evidence(full_snapshot=True)
+    snapshot = docs['projection']['projection.json']['state']
+    if damage == 'clock': snapshot['last_clock'] = -1
+    if damage == 'net_r': snapshot['net_r'] = '999'
+    if damage == 'gross': snapshot['gross'] = '999'
+    with pytest.raises((ValueError, KeyError, TypeError)):
+        DisposableNativeEventCutVerifier().verify_cut(e, current, docs, 1000,
+                                                      scope='DISPOSABLE_TEST')

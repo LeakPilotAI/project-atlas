@@ -1,4 +1,4 @@
-﻿"""Confined Windows bound-native readback of disposable QD event histories."""
+"""Confined Windows bound-native readback of disposable QD event histories."""
 import copy
 import importlib.util
 import os
@@ -28,7 +28,7 @@ def native_event_cut():
         repo / 'scripts/volume_inspector/autonomous_enrollment_read.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    enrollment, current, docs = evidence()
+    enrollment, current, docs = evidence(full_snapshot=True)
     outputs, resources = {}, {}
     try:
         for role in enrollment['resources']:
