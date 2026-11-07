@@ -88,6 +88,43 @@ def rotating_batch(snapshot, *, offset, limit=8):
     return [rows[(start + i) % len(rows)]["symbol"] for i in range(min(limit, len(rows)))]
 
 
+def next_research_batch(inventory_path, cursor_path, *, limit=4, commit=False):
+    """Read-only planning by default; explicit cursor-only progression on request.
+
+    No research providers or financial journals are invoked here. A changed
+    catalog digest resets the cursor rather than silently skipping instruments.
+    """
+    inventory_path, cursor_path = Path(inventory_path), Path(cursor_path)
+    if inventory_path != REPO / "logs" / "research" / "alpaca_equity_inventory.json":
+        raise ValueError("ALPACA_INVENTORY_PATH_REFUSED")
+    if cursor_path != REPO / "logs" / "research" / "alpaca_equity_cursor.json":
+        raise ValueError("ALPACA_CURSOR_PATH_REFUSED")
+    if type(commit) is not bool or type(limit) is not int or not 1 <= limit <= 8:
+        raise ValueError("ALPACA_BATCH_POLICY")
+    snapshot = json.loads(inventory_path.read_text(encoding="utf-8"))
+    prior = json.loads(cursor_path.read_text(encoding="utf-8")) if cursor_path.is_file() else {}
+    if type(prior) is not dict or prior.get("schema", "ATLAS_ALPACA_RESEARCH_CURSOR_V1") != "ATLAS_ALPACA_RESEARCH_CURSOR_V1":
+        raise ValueError("ALPACA_CURSOR_SCHEMA")
+    if prior.get("inventory_sha256") != snapshot.get("sha256"):
+        offset = 0
+    else:
+        offset = prior.get("offset", 0)
+    batch = rotating_batch(snapshot, offset=offset, limit=limit)
+    result = {"schema": "ATLAS_ALPACA_RESEARCH_BATCH_V1", "inventory_sha256": snapshot["sha256"],
+              "offset": offset, "symbols": batch, "next_offset": offset + len(batch),
+              "market": "US_EQUITY", "strategy_scope": "RESEARCH_CANDIDATES_ONLY",
+              "hyperliquid_perpetuals_included": False,
+              "paper_execution_authorized": False, "live_order_authorized": False}
+    if commit and batch:
+        cursor_path.parent.mkdir(parents=True, exist_ok=True)
+        temp = cursor_path.with_suffix(".pending")
+        with temp.open("x", encoding="utf-8") as handle:
+            json.dump({"schema": "ATLAS_ALPACA_RESEARCH_CURSOR_V1", "inventory_sha256": snapshot["sha256"],
+                       "offset": result["next_offset"]}, handle, sort_keys=True)
+        os.replace(temp, cursor_path)
+    return result
+
+
 def acquire_catalog(credentials_path, *, inventory_path=None):
     credentials = Credentials.load(credentials_path)
     request = Request(URL, headers={"APCA-API-KEY-ID": credentials.key,

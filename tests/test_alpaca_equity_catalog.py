@@ -28,3 +28,9 @@ def test_durable_provider_scope_and_rotating_batches():
     snapshot["rows"][0]["symbol"] = "FAKE"
     with pytest.raises(ValueError, match="DIGEST"):
         rotating_batch(snapshot, offset=0)
+
+
+def test_research_batch_rejects_arbitrary_paths():
+    from scripts.observation_runtime.alpaca_equity_catalog import next_research_batch
+    with pytest.raises(ValueError, match="PATH_REFUSED"):
+        next_research_batch("somewhere.json", "cursor.json")
