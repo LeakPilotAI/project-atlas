@@ -1,4 +1,4 @@
-﻿"""Retained FS1 event evidence only; no native custody or operational grant."""
+"""Retained FS1 event evidence only; no native custody or operational grant."""
 import copy
 import pytest
 from app.services.paper_financial_replay import digest, event_stream_record, replay_verified_events
@@ -45,3 +45,30 @@ def test_reconciliation_refuses_inconsistent_evidence(damage):
     if damage == 'missing_snapshot': state.pop('positions')
     with pytest.raises((ValueError, KeyError)):
         reconcile_authenticated_financial_cut(m, rows, state, **expected)
+
+
+def test_reconciles_actual_fs1_full_snapshot_with_additional_metadata():
+    golden = copy.deepcopy(GOLDEN[0])
+    rows = [event_stream_record(*r) for r in golden['sql_rows']]
+    state, head, _ = replay_verified_events(golden['manifest'], rows)
+    assert len(golden['snapshot']) > len(state)
+    result = reconcile_authenticated_financial_cut(golden['manifest'], rows,
+        golden['snapshot'], expected_epoch=golden['manifest']['epoch'],
+        expected_revision=len(rows), expected_head=head, expected_state_digest=digest(state))
+    assert result['revision'] == 3
+
+
+@pytest.mark.parametrize('damage', ['bool_revision', 'extra_cash', 'extra_position', 'extra_metadata'])
+def test_fs1_full_snapshot_refuses_corruption(damage):
+    golden = copy.deepcopy(GOLDEN[0])
+    rows = [event_stream_record(*r) for r in golden['sql_rows']]
+    state, head, _ = replay_verified_events(golden['manifest'], rows)
+    snapshot = golden['snapshot']
+    if damage == 'bool_revision': snapshot['revision'] = True
+    if damage == 'extra_cash': snapshot['cash'] = '999'
+    if damage == 'extra_position': snapshot['positions']['INJECTED'] = {}
+    if damage == 'extra_metadata': snapshot['last_clock'] = -1
+    with pytest.raises((ValueError, KeyError, TypeError)):
+        reconcile_authenticated_financial_cut(golden['manifest'], rows, snapshot,
+            expected_epoch=golden['manifest']['epoch'], expected_revision=len(rows),
+            expected_head=head, expected_state_digest=digest(state))

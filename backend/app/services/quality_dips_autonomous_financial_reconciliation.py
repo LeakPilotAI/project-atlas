@@ -1,4 +1,4 @@
-﻿"""Source-only financial replay/report reconciliation of an already authenticated cut.
+"""Source-only financial replay/report reconciliation of an already authenticated cut.
 
 This consumes FS1 event envelopes and the independent financial audit. It does
 not authenticate native custody, convert fixture events to V4 operational records,
@@ -20,11 +20,15 @@ def reconcile_authenticated_financial_cut(manifest, records, snapshot, *, expect
     validate_manifest(manifest)
     if manifest['strategy'] != 'QUALITY_DIPS' or manifest['epoch'] != expected_epoch:
         raise ValueError('AUTO_FINANCIAL_FOREIGN_EPOCH_OR_STRATEGY')
-    if len(records) != expected_revision or snapshot.get('revision') != expected_revision:
+    if (len(records) != expected_revision or type(snapshot.get('revision')) is not int
+            or snapshot['revision'] != expected_revision):
         raise ValueError('AUTO_FINANCIAL_INCOMPLETE_CUT')
     state, head, operations = replay_verified_events(manifest, records)
     if (head != expected_head or digest(state) != expected_state_digest
-            or body(snapshot) != body(state) or len(operations) != expected_revision):
+            or any(k not in snapshot or body(snapshot[k]) != body(v)
+                   or (k == 'revision' and type(snapshot[k]) is not int)
+                   for k, v in state.items())
+            or len(operations) != expected_revision):
         raise ValueError('AUTO_FINANCIAL_REPLAY_OR_PROJECTION_MISMATCH')
     audit = audit_financial_events(manifest, records, snapshot)
     if (type(audit) is not dict or audit.get('source_revision') != expected_revision
