@@ -168,3 +168,28 @@ def test_publish_scored_receipt_checks_inventory_and_never_advances_cursor(tmp_p
     report["results"][0]["paper_eligible"] = True
     with pytest.raises(ValueError, match="INCOMPLETE"):
         mod.publish_scored_research_receipt(report, receipt)
+
+
+def test_finalize_published_scored_receipt_advances_once(tmp_path, monkeypatch):
+    import hashlib
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    inv = mod.inventory_snapshot([{"class": "us_equity", "symbol": "MSFT", "status": "active", "tradable": True}],
+                                 captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
+    def scorer(*, symbol, data):
+        return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+    report = mod.score_bounded_research_batch(limit=1, acquire=lambda symbol: {}, scorer=scorer)
+    canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    digest = hashlib.sha256(canonical.encode()).hexdigest()
+    receipt = root / ("alpaca-scored-" + digest + ".json")
+    mod.publish_scored_research_receipt(report, receipt)
+    assert mod.finalize_scored_research_receipt(receipt)["completed"] == 1
+    assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 1
+    with pytest.raises(ValueError, match="CURSOR_CHANGED"):
+        mod.finalize_scored_research_receipt(receipt)
+    assert not (root / "alpaca_equity_cursor.pending").exists()

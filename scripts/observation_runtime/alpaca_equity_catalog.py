@@ -313,6 +313,42 @@ def publish_scored_research_receipt(report, receipt_path):
             "paper_execution_authorized": False, "live_order_authorized": False}
 
 
+def finalize_scored_research_receipt(receipt_path):
+    """Advance research cursor only after re-reading a durable scored receipt.
+
+    Research-only progress. Neither scoring nor cursor position authorizes PAPER.
+    """
+    path = Path(receipt_path)
+    root = REPO / "logs" / "research"
+    if path.parent != root or not re.fullmatch(r"alpaca-scored-[0-9a-f]{64}\.json", path.name):
+        raise ValueError("BROAD_RESEARCH_FINALIZE_PATH_REFUSED")
+    raw = path.read_bytes()
+    if len(raw) > 65536:
+        raise ValueError("BROAD_RESEARCH_FINALIZE_CAPACITY_REFUSED")
+    report = json.loads(raw)
+    canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+    if raw != canonical or path.name != "alpaca-scored-" + hashlib.sha256(raw).hexdigest() + ".json":
+        raise ValueError("BROAD_RESEARCH_FINALIZE_DIGEST_REFUSED")
+    if (type(report) is not dict or report.get("schema") != "ATLAS_BROAD_SCORED_RESEARCH_V1"
+            or report.get("scoring_complete") is not True
+            or report.get("cursor_advanced") is not False
+            or report.get("paper_execution_authorized") is not False
+            or report.get("live_order_authorized") is not False):
+        raise ValueError("BROAD_RESEARCH_FINALIZE_SCOPE_REFUSED")
+    batch, scored = report.get("batch"), report.get("results")
+    if (type(batch) is not dict or type(scored) is not list or not 1 <= len(scored) <= 2
+            or len(scored) != len(batch.get("symbols", []))
+            or any(type(row) is not dict or row.get("symbol") != symbol
+                   or row.get("status") != "RESEARCH_SCORED"
+                   or row.get("paper_eligible") is not False
+                   or row.get("live_order_authorized") is not False
+                   for row, symbol in zip(scored, batch["symbols"], strict=True))):
+        raise ValueError("BROAD_RESEARCH_FINALIZE_INCOMPLETE")
+    receipts = [{"symbol": row["symbol"], "status": "RESEARCH_COMPLETE",
+                 "paper_eligible": False} for row in scored]
+    return complete_research_batch(batch, receipts, root / "alpaca_equity_cursor.json")
+
+
 def score_authenticated_provider_batch(*, contact, limit=1):
     """Explicit authenticated Alpaca/SEC research and scoring, no financial IO.
 
