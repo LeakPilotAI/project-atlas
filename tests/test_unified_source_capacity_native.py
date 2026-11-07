@@ -109,3 +109,32 @@ async def test_native_capacity_readback_is_side_effect_free_across_all_five_stor
     assert all(type(value) is int and value >= 0 for value in first)
     assert (s.journal.snapshot(), s.q.writer._cut(), s.p.writer._cut(),
             s.p.orders.snapshot()) == before
+
+@pytest.mark.asyncio
+async def test_native_capacity_changes_after_real_disposable_orders_and_stops(system):
+    """Guarded native real-write capacity accounting, not full F11 saturation."""
+    s = system
+    before = {
+        'global': s.journal.remaining_slots(),
+        'qd': s.q.writer.store.remaining_operations(),
+        'perp': s.p.writer.store.remaining_operations(),
+        'orders': s.p.orders.remaining_slots(),
+    }
+    await native_fixtures.cycle(s)
+    after = {
+        'global': s.journal.remaining_slots(),
+        'qd': s.q.writer.store.remaining_operations(),
+        'perp': s.p.writer.store.remaining_operations(),
+        'orders': s.p.orders.remaining_slots(),
+    }
+    assert after['global'] < before['global']
+    assert after['qd'] < before['qd']
+    assert after['orders'] < before['orders']
+    assert after['perp'] == before['perp']
+    assert all(value >= 0 for value in after.values())
+    stopped = s.r.stop()
+    assert stopped['state'] == 'STOPPED'
+    assert s.journal.snapshot()['state']['finalized'] is not None
+    assert s.journal.remaining_slots() < after['global']
+    assert s.p.orders.remaining_slots() <= after['orders']
+    assert s.r.stop() == stopped
