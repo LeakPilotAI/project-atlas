@@ -288,3 +288,52 @@ def test_actual_investment_scorer_integrates_with_bounded_research_cycle(tmp_pat
     assert result["status"] == "RESEARCH_FINALIZED"
     assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 1
     assert not result["paper_execution_authorized"]
+
+
+def test_resume_published_research_without_provider_reacquisition(tmp_path, monkeypatch):
+    import hashlib
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    inv = mod.inventory_snapshot([{"class": "us_equity", "symbol": "MSFT", "status": "active", "tradable": True}],
+                                 captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
+    assert mod.resume_published_research(limit=1)["status"] == "NO_UNAMBIGUOUS_RECEIPT"
+    def scorer(*, symbol, data):
+        return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
+                "live_order_authorized": False, "research_lane": "FRONTIER_RESEARCH"}
+    report = mod.score_bounded_research_batch(limit=1, acquire=lambda symbol: {}, scorer=scorer)
+    canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    digest = hashlib.sha256(canonical.encode()).hexdigest()
+    receipt = root / ("alpaca-scored-" + digest + ".json")
+    mod.publish_scored_research_receipt(report, receipt)
+    assert not (root / "alpaca_equity_cursor.json").exists()
+    recovered = mod.resume_published_research(limit=1)
+    assert recovered["status"] == "RESEARCH_RECOVERED" and recovered["cursor_advanced"]
+    assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 1
+    assert mod.resume_published_research(limit=1)["status"] == "NO_UNAMBIGUOUS_RECEIPT"
+
+
+def test_resume_research_refuses_ambiguous_published_receipts(tmp_path, monkeypatch):
+    import hashlib
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    inv = mod.inventory_snapshot([{"class": "us_equity", "symbol": "MSFT", "status": "active", "tradable": True}],
+                                 captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
+    for lane in ("FRONTIER_RESEARCH", "EXCLUDED"):
+        def scorer(*, symbol, data):
+            return {"symbol": symbol, "status": "RESEARCH_SCORED", "paper_eligible": False,
+                    "live_order_authorized": False, "research_lane": lane}
+        report = mod.score_bounded_research_batch(limit=1, acquire=lambda symbol: {}, scorer=scorer)
+        canonical = json.dumps(report, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        digest = hashlib.sha256(canonical.encode()).hexdigest()
+        mod.publish_scored_research_receipt(report, root / ("alpaca-scored-" + digest + ".json"))
+    result = mod.resume_published_research(limit=1)
+    assert result["status"] == "NO_UNAMBIGUOUS_RECEIPT" and result["candidate_count"] == 2
+    assert not (root / "alpaca_equity_cursor.json").exists()

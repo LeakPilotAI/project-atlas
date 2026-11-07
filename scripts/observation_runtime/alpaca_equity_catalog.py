@@ -349,6 +349,38 @@ def finalize_scored_research_receipt(receipt_path):
     return complete_research_batch(batch, receipts, root / "alpaca_equity_cursor.json")
 
 
+def resume_published_research(*, limit=1):
+    """Recover one already-published research receipt without provider calls.
+
+    Refuse ambiguity; do not re-score, infer evidence or touch PAPER state.
+    """
+    if type(limit) is not int or not 1 <= limit <= 2:
+        raise ValueError("BROAD_RESEARCH_RESUME_BUDGET_REFUSED")
+    root = REPO / "logs" / "research"
+    batch = next_research_batch(root / "alpaca_equity_inventory.json",
+                                root / "alpaca_equity_cursor.json", limit=limit)
+    candidates = []
+    for path in root.glob("alpaca-scored-*.json"):
+        if not re.fullmatch(r"alpaca-scored-[0-9a-f]{64}\.json", path.name):
+            continue
+        raw = path.read_bytes()
+        if len(raw) > 65536:
+            raise ValueError("BROAD_RESEARCH_RESUME_RECEIPT_CAPACITY")
+        report = json.loads(raw)
+        if type(report) is dict and report.get("batch") == batch:
+            candidates.append(path)
+    if len(candidates) != 1:
+        return {"schema": "ATLAS_BROAD_RESEARCH_RECOVERY_V1",
+                "status": "NO_UNAMBIGUOUS_RECEIPT", "candidate_count": len(candidates),
+                "cursor_advanced": False, "paper_execution_authorized": False,
+                "live_order_authorized": False}
+    committed = finalize_scored_research_receipt(candidates[0])
+    return {"schema": "ATLAS_BROAD_RESEARCH_RECOVERY_V1",
+            "status": "RESEARCH_RECOVERED", "completed": committed["completed"],
+            "cursor_advanced": True, "paper_execution_authorized": False,
+            "live_order_authorized": False}
+
+
 def execute_scored_research_cycle(*, limit=1, acquire, scorer=None):
     """Explicit research-only acquire/score/publish/finalize transaction.
 
