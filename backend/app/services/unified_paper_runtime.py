@@ -1,4 +1,5 @@
-﻿"""Inert two-lane supervision over existing engines; no providers or startup hook.
+﻿import sqlite3
+"""Inert two-lane supervision over existing engines; no providers or startup hook.
 
 The injected installation lease authenticates actual lane objects. Portfolio
 custody owns durable reservations and cross-process exclusion, not this object's
@@ -89,7 +90,7 @@ class UnifiedControlStopBridge:
                     existing = ledger.reserve_existing(grant["session_id"], mode)
                     if existing["state"] != "FINISHED" or existing["receipt"] != self.progress:
                         raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
-                except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
                     self.runtime.entry_closed.set()
                     raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
             return strict(body(self.progress))
@@ -105,7 +106,7 @@ class UnifiedControlStopBridge:
             try:
                 ledger.reserve_fresh(session_id, mode)
                 self._receipt_persisted = False
-            except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+            except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
                 self.runtime.entry_closed.set()
                 raise ValueError("UNIFIED_STOP_INTENT_UNVERIFIED") from None
         try:
@@ -124,7 +125,7 @@ class UnifiedControlStopBridge:
                 try:
                     ledger.finish(session_id, mode, self.progress)
                     self._receipt_persisted = True
-                except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
                     raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
             return strict(body(self.progress))
         financial_flat = complete = outcome["state"] == "STOPPED"
@@ -177,7 +178,7 @@ class UnifiedControlStopBridge:
             try:
                 ledger.finish(session_id, mode, self.progress)
                 self._receipt_persisted = True
-            except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+            except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
                 self.runtime.entry_closed.set()
                 raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
         return strict(body(self.progress))
@@ -202,7 +203,7 @@ class UnifiedControlStopBridge:
                     persisted = ledger.reserve_existing(grant["session_id"], self.progress["outcome"]["mode"])
                     if persisted["state"] != "FINISHED" or persisted["receipt"] != self.progress:
                         raise ValueError("STOP_RECEIPT_CHANGED")
-                except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
                     self.runtime.entry_closed.set()
                     raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
             if ledger is not None and self.progress["phase"] == "IDLE":
@@ -212,7 +213,7 @@ class UnifiedControlStopBridge:
                     raise ValueError("UNIFIED_STOP_LEDGER_SESSION_REQUIRED")
                 try:
                     existing = ledger.inspect_session(grant["session_id"])
-                except (ValueError, OSError, TimeoutError, KeyError, TypeError):
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
                     self.runtime.entry_closed.set()
                     raise ValueError("UNIFIED_STOP_LEDGER_STATUS_UNVERIFIED") from None
                 if existing is not None:

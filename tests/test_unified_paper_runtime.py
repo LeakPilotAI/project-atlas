@@ -683,3 +683,31 @@ def test_repeated_stop_rechecks_durable_receipt_before_ack(tmp_path):
         b.request_stop("SHUTDOWN_FLATTEN")
     assert b.runtime.entry_closed.is_set()
     assert len(calls) == 1
+def test_sqlite_ledger_errors_fail_closed_without_second_financial_stop(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    import sqlite3
+    class FaultyLedger(PaperStopReceiptLedger):
+        fail = False
+        def reserve_existing(self, *args):
+            if self.fail:
+                raise sqlite3.DatabaseError("synthetic sqlite corruption")
+            return super().reserve_existing(*args)
+    ledger = FaultyLedger(tmp_path / "stop.sqlite")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.owned_close = None
+    b._close_binding = None
+    b.stop_ledger = ledger
+    calls = []
+    b.runtime = SimpleNamespace(stop=lambda **kw: (calls.append(kw) or {"state":"STOPPED","lanes":{}}),
+                                entry_closed=Event(), uncertain=False, grant={"session_id":"s"})
+    b.request_stop("SHUTDOWN_FLATTEN")
+    ledger.fail = True
+    with pytest.raises(ValueError, match="RECEIPT_UNVERIFIED"):
+        b.request_stop("SHUTDOWN_FLATTEN")
+    assert b.runtime.entry_closed.is_set()
+    assert len(calls) == 1
