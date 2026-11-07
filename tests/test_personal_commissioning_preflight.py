@@ -216,3 +216,15 @@ def test_preflight_reports_blocker_dependency_order_without_authorizing(monkeypa
     assert set(report['blocked_dependency_actions']) == set(order)
     assert report['financial_mutations'] is False
     assert report['pilot_started'] is False
+
+
+def test_preflight_flags_manual_only_contract_for_autonomous_pilot_review(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    review = report['source_enrollment_policy_review']
+    assert review['operational_contract_requires_manual_only'] is True
+    assert review['autonomous_pilot_policy_compatibility_verified'] is False
+    assert review['grants_authority'] is False
+    assert report['pilot_started'] is False

@@ -237,6 +237,13 @@ def main():
         "checks": results,
         "blocked_dependency_order": [name for name in next_actions if name in blocked],
         "blocked_dependency_actions": {name: next_actions[name] for name in next_actions if name in blocked},
+        "source_enrollment_policy_review": {
+            "schema": "ATLAS_QD_ENROLLMENT_POLICY_REVIEW_V1",
+            "operational_contract_requires_manual_only": True,
+            "autonomous_pilot_policy_compatibility_verified": False,
+            "next_action": "Independently review the manual_only operational contract against the intended bounded autonomous QD pilot; do not relabel or relax the accepted policy from preflight",
+            "grants_authority": False,
+        },
         "financial_mutations": False,
         "live_orders": False,
         "pilot_started": False,
