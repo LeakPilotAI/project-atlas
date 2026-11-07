@@ -18,8 +18,11 @@ function Get-AtlasFullFrontendDecision([string]$Root) {
     return (Get-AtlasFullStartupGate $Root) + ' Full frontend ownership/readiness is not established; read-only dashboard remains separate.'
 }
 function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emergency, [switch]$RequireFinished) {
-    if ($null -eq $AcceptedSession -or $AcceptedSession.verify_session() -isnot [bool] -or
-        -not $AcceptedSession.verify_session()) {
+    if ($null -eq $AcceptedSession) {
+        throw 'PAPER_STOP_NOT_ENROLLED: no accepted owned session; no legacy stop fallback.'
+    }
+    $sessionVerified = $AcceptedSession.verify_session()
+    if ($sessionVerified -isnot [bool] -or -not $sessionVerified) {
         throw 'PAPER_STOP_NOT_ENROLLED: no accepted owned session; no legacy stop fallback.'
     }
     $mode = if ($Emergency) { 'EMERGENCY' } else { 'SHUTDOWN_FLATTEN' }
@@ -27,6 +30,11 @@ function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emerge
     if ($result.schema -cne 'QD_CONTROL_STOP_V1' -or
         $result.phase -cnotin @('FINISHED', 'IN_PROGRESS')) {
         throw 'PAPER_STOP_OUTCOME_UNVERIFIED'
+    }
+    if ($result.phase -ceq 'FINISHED' -and ($null -eq $result.outcome -or
+        $result.outcome.schema -cne 'QD_AUTO_SHUTDOWN_V1' -or
+        $result.outcome.mode -cne $mode)) {
+        throw 'PAPER_STOP_OUTCOME_UNVERIFIED: finished outcome schema or mode mismatch.'
     }
     # Window close must not discard a pending financial drain. The normal Stop
     # button may still display IN_PROGRESS while the coordinator retains work.
