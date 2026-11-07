@@ -247,7 +247,7 @@ def inspect_leased_published_iex_journal_candidate(
     """
     from pathlib import Path
     from app.investment.quality_dips_paper import (
-        accounting_snapshot, journal_mutation_transaction, read_events,
+        accounting_snapshot, journal_mutation_transaction, read_events, open_lots,
     )
     from app.services.personal_paper_runtime import checked_personal_installation
     from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
@@ -271,7 +271,11 @@ def inspect_leased_published_iex_journal_candidate(
         with journal_mutation_transaction(path):
             candidate = evaluate_published_iex_v3_candidate(
                 publication=publication, provider=provider, symbol=symbol, now=now)
-            snapshot = accounting_snapshot(read_events(path), account_id=account_id)
+            events = read_events(path)
+            snapshot = accounting_snapshot(events, account_id=account_id)
+            positions = open_lots(events)
+            if any(lot.get("account_id") != account_id for lot in positions):
+                raise ValueError("LEASED_PUBLISHED_JOURNAL_FOREIGN_ACCOUNT_POSITION")
             if (snapshot is None or snapshot.get("data_provenance") != "FORWARD_COLLECTION"
                     or snapshot.get("cash_reconciled") is not True):
                 raise ValueError("LEASED_PUBLISHED_JOURNAL_ACCOUNT_INVALID")
@@ -280,7 +284,43 @@ def inspect_leased_published_iex_journal_candidate(
             return {**candidate, "account_id": account_id,
                     "journal_cash_reconciled": True,
                     "journal_open_positions": snapshot["open_positions"],
+                    "journal_open_lots": len(positions),
                     "journal_available_cash": snapshot["available_cash"],
                     "journal_writer_lock_checked": True,
                     "operator_lease_checked": True,
                     "paper_fill_authorized": False, "live_order_authorized": False}
+
+
+def plan_leased_published_iex_paper_tick(
+    *, installation: Any, request: dict[str, Any], components: Any,
+    publication: Any, provider: Any, symbol: str, now: datetime,
+    journal_path: Any, account_id: str,
+) -> dict[str, Any]:
+    """Bounded, read-only forward tick planner. Never grants fill authority.
+
+    Replays account under the original operator/source/quote lease and returns
+    a deterministic WAIT, BLOCKED, or CANDIDATE state for an eventual writer.
+    No startup, broker route, or journal mutation is possible here.
+    """
+    from app.services.paper_financial_replay import strict, body
+
+    inspection = inspect_leased_published_iex_journal_candidate(
+        installation=installation, request=request, components=components,
+        publication=publication, provider=provider, symbol=symbol, now=now,
+        journal_path=journal_path, account_id=account_id,
+    )
+    # The inspection already checks journal reconciliation and operator lease.
+    # Never expose a trade-ready state while custody attestation is absent.
+    if inspection.get("paper_fill_authorized") is not False:
+        raise ValueError("PAPER_TICK_UNEXPECTED_FILL_AUTHORITY")
+    positions = inspection["journal_open_lots"]
+    state = ("WAIT_EXISTING_POSITION" if positions else
+             "CANDIDATE_UNAUTHORIZED" if inspection["candidate"] else
+             "WAIT_NO_SIGNAL")
+    return strict(body({"schema": "ATLAS_PERSONAL_PAPER_TICK_PLAN_V1",
+                        "symbol": symbol, "account_id": account_id,
+                        "state": state, "candidate": inspection["candidate"],
+                        "open_positions": positions,
+                        "available_cash": inspection["journal_available_cash"],
+                        "paper_fill_authorized": False,
+                        "live_order_authorized": False}))

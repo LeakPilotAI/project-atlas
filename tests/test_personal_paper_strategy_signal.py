@@ -496,3 +496,46 @@ def test_original_producer_real_operator_installation_iex_adapter_and_journal(tm
     with pytest.raises(ValueError, match="ACTIVATION_REVOKED"):
         inspect_leased_published_iex_journal_candidate(**kwargs)
     assert path.read_bytes() == before
+
+
+def test_leased_published_tick_planner_no_fill_and_existing_position(tmp_path, monkeypatch):
+    """The new tick planner consumes the real integrated read-only lease path."""
+    from test_quality_dips_current_producer import fixture, STAMP
+    from test_personal_paper_runtime import installed
+    from app.investment.alpaca_iex import IEXFeed
+    from app.investment.quality_dips_paper import initialize_paper_account, open_lot
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import plan_leased_published_iex_paper_tick
+    f = fixture(monkeypatch)
+    f.owner.publish_current()
+    now = datetime.fromtimestamp(STAMP, UTC)
+    feed = IEXFeed(["MSFT"], clock=lambda: now.timestamp())
+    feed.authenticated = feed.subscribed = True
+    feed.connection = "CONNECTED"
+    feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "79.99", "ask": "80",
+                           "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+                           "source_timestamp": now.timestamp(), "generation": feed.generation}
+    path = tmp_path / "forward.jsonl"
+    initialize_paper_account(account_id="fixture-forward", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    operator = installed()
+    kwargs = dict(installation=operator.i, request={"action": "AUTO_PAPER"},
+                  components={"port": operator.reader}, publication=f.owner.publication,
+                  provider=PersonalPaperIEXProvider(feed), symbol="MSFT", now=now,
+                  journal_path=path, account_id="fixture-forward")
+    before = path.read_bytes()
+    result = plan_leased_published_iex_paper_tick(**kwargs)
+    assert result["state"] in {"WAIT_NO_SIGNAL", "CANDIDATE_UNAUTHORIZED"}
+    assert result["paper_fill_authorized"] is False
+    assert path.read_bytes() == before
+    open_lot(f.cut["observations"]["MSFT"], level="L1", paper_notional_dollars=50,
+             fill_price=80, account_id="fixture-forward", fee_bps_per_side=2, path=path)
+    before = path.read_bytes()
+    result = plan_leased_published_iex_paper_tick(**kwargs)
+    assert result["state"] == "WAIT_EXISTING_POSITION"
+    assert result["open_positions"] == 1
+    assert path.read_bytes() == before
+    operator.i.revoke()
+    with pytest.raises(ValueError, match="ACTIVATION_REVOKED"):
+        plan_leased_published_iex_paper_tick(**kwargs)
