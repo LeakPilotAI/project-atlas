@@ -308,3 +308,28 @@ def test_real_transport_cohort_bridge_rejects_mismatch_and_never_grants_authorit
     Provider.domain = "SYNTHETIC"
     with pytest.raises(ValueError, match="BOUNDED_REAL"):
         acquire_reference_asset_cohort(batch, client=Provider(), budget=2)
+
+
+def test_reviewed_cohort_requires_exact_source_receipts_and_independent_verifier():
+    from app.investment.quality_dips_market_roster import reviewed_asset_research_universe
+    from types import SimpleNamespace
+    batch = {"source_digest": "a" * 64, "rows": [{"symbol": "MSFT", "name": "Microsoft",
+             "exchange": "XNAS", "instrument_type": "EQUITY_REFERENCE"}]}
+    item = {"symbol": "MSFT", "instrument_id": "alpaca-id", "asset_class": "STOCK",
+            "exchange": "XNAS", "currency": "USD", "status": "ACTIVE", "revision": 1}
+    cohort = {"schema": "QD_PROVIDER_ASSET_RESEARCH_COHORT_V1", "source_digest": "a" * 64,
+              "metadata": {"MSFT": item}, "receipt_digests": [{"symbol": "MSFT", "receipt_digest": "b" * 64}],
+              "excluded": [], "execution_authorized": False,
+              "independent_instrument_authority_verified": False, "robinhood_eligibility_verified": False}
+    denied = reviewed_asset_research_universe(batch, cohort, instrument_authority=SimpleNamespace(
+        verify_instrument=lambda *args: False))
+    assert denied["universe"].symbols() == [] and not denied["execution_authorized"]
+    accepted = reviewed_asset_research_universe(batch, cohort, instrument_authority=SimpleNamespace(
+        verify_instrument=lambda item, reference, source: source == "a" * 64))
+    assert accepted["universe"].symbols() == ["MSFT"] and not accepted["execution_authorized"]
+    for corrupt in (cohort | {"source_digest": "c" * 64},
+                    cohort | {"receipt_digests": []},
+                    cohort | {"execution_authorized": True}):
+        with pytest.raises(ValueError):
+            reviewed_asset_research_universe(batch, corrupt, instrument_authority=SimpleNamespace(
+                verify_instrument=lambda *args: True))

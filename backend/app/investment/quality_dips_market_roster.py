@@ -223,6 +223,46 @@ def acquire_reference_asset_cohort(batch, *, client, budget):
             "robinhood_eligibility_verified": False, "execution_authorized": False}
 
 
+
+def reviewed_asset_research_universe(batch, cohort, *, instrument_authority):
+    """Bind provider cohort to the exact directory page before authority review.
+
+    This never promotes a provider receipt into independent instrument approval.
+    A separate verifier must explicitly attest each instrument and source cut.
+    """
+    if (type(batch) is not dict or type(cohort) is not dict
+            or cohort.get("schema") != "QD_PROVIDER_ASSET_RESEARCH_COHORT_V1"
+            or type(batch.get("source_digest")) is not str
+            or cohort.get("source_digest") != batch["source_digest"]
+            or type(batch.get("rows")) is not list
+            or type(cohort.get("metadata")) is not dict
+            or type(cohort.get("receipt_digests")) is not list
+            or type(cohort.get("excluded")) is not list
+            or cohort.get("execution_authorized") is not False
+            or cohort.get("independent_instrument_authority_verified") is not False
+            or cohort.get("robinhood_eligibility_verified") is not False):
+        raise ValueError("QD_PROVIDER_COHORT_SOURCE_BINDING_REQUIRED")
+    symbols = [r.get("symbol") for r in batch["rows"] if type(r) is dict]
+    receipt_symbols = [r.get("symbol") for r in cohort["receipt_digests"] if type(r) is dict]
+    excluded_symbols = [r.get("symbol") for r in cohort["excluded"] if type(r) is dict]
+    if (len(symbols) != len(batch["rows"]) or len(set(symbols)) != len(symbols)
+            or len(receipt_symbols) != len(cohort["receipt_digests"])
+            or len(excluded_symbols) != len(cohort["excluded"])
+            or set(receipt_symbols) != set(cohort["metadata"])
+            or len(set(receipt_symbols + excluded_symbols)) != len(symbols)
+            or set(receipt_symbols + excluded_symbols) != set(symbols)
+            or any(type(r.get("receipt_digest")) is not str
+                   or re.fullmatch(r"[0-9a-f]{64}", r["receipt_digest"]) is None
+                   for r in cohort["receipt_digests"])):
+        raise ValueError("QD_PROVIDER_COHORT_RECEIPT_COVERAGE_REQUIRED")
+    result = research_universe(batch, metadata=cohort["metadata"],
+                               instrument_authority=instrument_authority)
+    return {"universe": result["universe"], "excluded": result["excluded"],
+            "provider_excluded": cohort["excluded"],
+            "source_digest": batch["source_digest"],
+            "execution_authorized": False}
+
+
 def research_universe(batch, *, metadata, instrument_authority):
     """Use the actual InvestmentScanner's injected InvestmentUniverse interface.
 
