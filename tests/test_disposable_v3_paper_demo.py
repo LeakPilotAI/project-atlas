@@ -58,3 +58,23 @@ def test_cli_explicit_stop_loss_scenario():
     result = json.loads(process.stdout)
     assert result["scenario"] == "stop_loss"
     assert result["net_realized_pnl"] < 0
+
+
+def test_gap_down_exits_at_worse_bid_not_stop_threshold():
+    ordinary = run_demo(scenario="stop_loss")
+    gap = run_demo(scenario="gap_down")
+    assert gap["actions"] == ["WAIT", "ENTER", "EXIT", "WAIT"]
+    assert gap["net_realized_pnl"] < ordinary["net_realized_pnl"] < 0
+    assert gap["cash_reconciled"] is True
+    assert gap["forward_trading_authorized"] is False
+
+def test_gap_down_cli_reconciles_without_forward_authority():
+    env = {**os.environ, "PYTHONPATH": "backend;."}
+    process = subprocess.run(
+        [sys.executable, "-m", "scripts.observation_runtime.disposable_v3_paper_demo",
+         "--scenario", "gap_down"], capture_output=True, text=True, check=True,
+        env=env, timeout=15)
+    result = json.loads(process.stdout)
+    assert result["scenario"] == "gap_down"
+    assert result["net_realized_pnl"] < 0
+    assert result["live_order_authorized"] is False

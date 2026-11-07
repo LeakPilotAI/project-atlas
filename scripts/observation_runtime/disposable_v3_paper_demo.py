@@ -21,6 +21,7 @@ def run_demo(*, scenario: str = "take_profit") -> dict:
     scenarios = {
         "take_profit": [(101, 101.1), (79.9, 80), (80.9, 81), (84, 84.1)],
         "stop_loss": [(101, 101.1), (79.9, 80), (75, 75.1), (74, 74.1)],
+        "gap_down": [(101, 101.1), (79.9, 80), (60, 60.1), (59, 59.1)],
         "no_entry": [(111, 111.1), (110, 110.1), (109, 109.1), (108, 108.1)],
     }
     if scenario not in scenarios:
@@ -62,7 +63,7 @@ def run_demo(*, scenario: str = "take_profit") -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Isolated synthetic V3 PAPER scenarios; no forward execution")
-    parser.add_argument("--scenario", choices=("take_profit", "stop_loss", "no_entry"),
+    parser.add_argument("--scenario", choices=("take_profit", "stop_loss", "gap_down", "no_entry"),
                         default="take_profit")
     args = parser.parse_args()
     print(json.dumps(run_demo(scenario=args.scenario), sort_keys=True))
