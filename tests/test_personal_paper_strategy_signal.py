@@ -457,3 +457,42 @@ def test_published_iex_v3_refuses_mutated_same_reference_and_missing_evidence(mo
     with pytest.raises(ValueError, match="V3_EVIDENCE_INCOMPLETE"):
         evaluate_published_iex_v3_candidate(publication=publication,
                                             provider=provider, symbol="MSFT", now=NOW)
+
+
+def test_original_producer_real_operator_installation_iex_adapter_and_journal(tmp_path, monkeypatch):
+    """Use the real lease validator, not a duck-typed synthetic lease."""
+    from test_quality_dips_current_producer import fixture, STAMP
+    from test_personal_paper_runtime import installed
+    from app.investment.alpaca_iex import IEXFeed
+    from app.investment.quality_dips_paper import initialize_paper_account
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.personal_paper_strategy_signal import inspect_leased_published_iex_journal_candidate
+    f = fixture(monkeypatch)
+    f.owner.publish_current()
+    now = datetime.fromtimestamp(STAMP, UTC)
+    feed = IEXFeed(["MSFT"], clock=lambda: now.timestamp())
+    feed.authenticated = feed.subscribed = True  # Simulated socket status, not live auth
+    feed.connection = "CONNECTED"
+    feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "79.99", "ask": "80",
+                           "bid_lots": 2, "ask_lots": 2, "timestamp": now.isoformat(),
+                           "source_timestamp": now.timestamp(), "generation": feed.generation}
+    provider = PersonalPaperIEXProvider(feed)
+    path = tmp_path / "forward.jsonl"
+    initialize_paper_account(account_id="fixture-forward", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    before = path.read_bytes()
+    s = installed()
+    request = {"action": "AUTO_PAPER"}
+    kwargs = dict(installation=s.i, request=request, components={"port": s.reader},
+                  publication=f.owner.publication, provider=provider, symbol="MSFT",
+                  now=now, journal_path=path, account_id="fixture-forward")
+    result = inspect_leased_published_iex_journal_candidate(**kwargs)
+    assert result["operator_lease_checked"] is True
+    assert result["journal_cash_reconciled"] is True
+    assert result["paper_fill_authorized"] is False
+    assert path.read_bytes() == before
+    s.i.revoke()
+    with pytest.raises(ValueError, match="ACTIVATION_REVOKED"):
+        inspect_leased_published_iex_journal_candidate(**kwargs)
+    assert path.read_bytes() == before
