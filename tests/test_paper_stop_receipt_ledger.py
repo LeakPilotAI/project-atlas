@@ -154,3 +154,26 @@ def test_inspect_session_rejects_forged_finished_receipt(tmp_path):
                    ('{"phase":"FINISHED","outcome":{"mode":"SHUTDOWN_FLATTEN","status":"FLATTENED"}}',))
     with pytest.raises(StopReceiptConflict, match="CORRUPT"):
         ledger.inspect_session("s")
+def test_sqlite_connection_closed_after_normal_and_failed_ledger_operations(tmp_path, monkeypatch):
+    import sqlite3
+    from app.services import paper_stop_receipt_ledger as module
+    real_connect = sqlite3.connect
+    handles = []
+    class TrackedConnection(sqlite3.Connection):
+        def close(self):
+            handles.append(self)
+            super().close()
+    def tracked_connect(*args, **kwargs):
+        kwargs["factory"] = TrackedConnection
+        return real_connect(*args, **kwargs)
+    monkeypatch.setattr(module.sqlite3, "connect", tracked_connect)
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    ledger.reserve_fresh("s", "SHUTDOWN_FLATTEN")
+    assert ledger.inspect_session("s")["state"] == "PENDING"
+    with pytest.raises(StopReceiptConflict):
+        ledger.reserve_fresh("s", "SHUTDOWN_FLATTEN")
+    assert len(handles) == 4
+    for handle in handles:
+        with pytest.raises(sqlite3.ProgrammingError, match="closed"):
+            handle.execute("SELECT 1")
+

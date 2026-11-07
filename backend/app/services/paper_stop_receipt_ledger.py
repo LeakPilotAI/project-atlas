@@ -1,6 +1,7 @@
 ﻿"""Offline-only durable PAPER stop intent/receipt ledger; grants no runtime authority."""
 import json
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 
 class StopReceiptConflict(ValueError):
@@ -15,11 +16,17 @@ class PaperStopReceiptLedger:
             raise ValueError("STOP_LEDGER_PARENT_REQUIRED")
         with self._connect() as db:
             db.execute("CREATE TABLE IF NOT EXISTS stop_receipts (session TEXT PRIMARY KEY, mode TEXT NOT NULL, state TEXT NOT NULL, receipt TEXT)")
+    @contextmanager
     def _connect(self):
+        """Close each SQLite handle even on errors; preserve transaction rollback."""
         db = sqlite3.connect(str(self.path), timeout=5, isolation_level=None)
-        db.execute("PRAGMA synchronous=FULL")
-        db.execute("PRAGMA busy_timeout=5000")
-        return db
+        try:
+            db.execute("PRAGMA synchronous=FULL")
+            db.execute("PRAGMA busy_timeout=5000")
+            with db:
+                yield db
+        finally:
+            db.close()
     def reserve(self, session, mode):
         if not isinstance(session, str) or not session or len(session) > 256 or mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY"):
             raise ValueError("STOP_INTENT_INVALID")
