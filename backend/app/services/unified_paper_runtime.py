@@ -585,7 +585,13 @@ class UnifiedPaperRuntime:
         outcomes = {}
         for lane in LANES:
             try:
-                outcomes[lane] = self.lanes[lane].stop(emergency=emergency)
+                result = self.lanes[lane].stop(emergency=emergency)
+                # A malformed or forged lane receipt cannot certify a flat
+                # portfolio, even if the other lane stops successfully.
+                if (type(result) is not dict or type(result.get("state")) is not str
+                        or result["state"] not in ("ACKNOWLEDGED_FLAT_AND_DRAINED", "POSITION_OPEN", "INCOMPLETE")):
+                    raise ValueError("UNIFIED_LANE_STOP_RECEIPT_UNVERIFIED")
+                outcomes[lane] = result
             except Exception:
                 # A lane may have partially executed its financial drain.
                 # Do not retry or treat an unexpected failure as flat.

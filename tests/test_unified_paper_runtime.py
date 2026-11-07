@@ -1216,3 +1216,21 @@ def test_unified_runtime_unexpected_lane_stop_failure_preserves_other_lane(failu
     assert r.entry_closed.is_set()
     assert r.stop() == result
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize('malformed', [None, [], {'state': True}, {'state': 'FORGED_FLAT'}, {'missing': 'state'}])
+def test_unified_runtime_malformed_lane_stop_receipt_never_certifies_flat(malformed):
+    r = runtime()
+    calls = []
+    r.lanes['QUALITY_DIPS'].stop = lambda **kwargs: malformed
+    original = r.lanes['HYPERLIQUID'].stop
+    def other_lane(**kwargs):
+        calls.append(kwargs)
+        return original(**kwargs)
+    r.lanes['HYPERLIQUID'].stop = other_lane
+    result = r.stop()
+    assert result['state'] == 'STOP_INCOMPLETE'
+    assert result['lanes']['QUALITY_DIPS'] == {'state': 'INCOMPLETE'}
+    assert result['lanes']['HYPERLIQUID']['state'] == 'ACKNOWLEDGED_FLAT_AND_DRAINED'
+    assert r.entry_closed.is_set()
+    assert len(calls) == 1
