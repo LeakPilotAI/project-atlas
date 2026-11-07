@@ -71,7 +71,7 @@ def test_bounded_provider_worker_rejects_large_batch():
         run_bounded_provider_research(contact="not-configured", limit=9)
 
 
-def test_worker_success_advances_only_research_cursor(tmp_path, monkeypatch):
+def test_worker_success_does_not_advance_before_strategy_scoring(tmp_path, monkeypatch):
     import json
     from scripts.observation_runtime import alpaca_equity_catalog as mod
     monkeypatch.setattr(mod, "REPO", tmp_path)
@@ -86,9 +86,9 @@ def test_worker_success_advances_only_research_cursor(tmp_path, monkeypatch):
         return {"symbol": kwargs["symbol"], "provider_receipt_count": 2,
                 "paper_fill_authorized": False, "live_order_authorized": False}
     result = mod.run_bounded_provider_research(contact="test-contact", limit=2, provider=provider)
-    assert result["batch_complete"] and result["cursor_advanced"]
+    assert result["batch_complete"] and not result["cursor_advanced"]
     assert called == ["AVGO", "MSFT"]
-    assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 2
+    assert not (root / "alpaca_equity_cursor.json").exists()
     assert not result["paper_execution_authorized"]
 
 

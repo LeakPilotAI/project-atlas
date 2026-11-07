@@ -232,11 +232,12 @@ def run_bounded_provider_research(*, contact, limit=1, provider=None):
             break
     complete = len(outcomes) == len(batch["symbols"]) and all(
         row["status"] == "RESEARCH_COMPLETE" for row in outcomes)
-    if complete:
-        complete_research_batch(batch, outcomes, root / "alpaca_equity_cursor.json")
+    # Acquisition is not strategy scoring. Never skip a symbol just because
+    # provider diagnostics returned receipts: a later scoring stage must own
+    # the final research-completion and cursor-advance decision.
     return {"schema": "ATLAS_BROAD_PROVIDER_RESEARCH_DIAGNOSTIC_V1",
             "outcomes": outcomes, "batch_complete": complete,
-            "cursor_advanced": complete, "strategy_scoring_complete": False,
+            "cursor_advanced": False, "strategy_scoring_complete": False,
             "paper_execution_authorized": False, "live_order_authorized": False}
 
 
