@@ -61,3 +61,21 @@ def test_combined_forward_session_requires_existing_provider_and_operator(tmp_pa
             installation=object(), request={"action": "READ_ONLY"}, components=(),
             provider=PersonalPaperIEXProvider(feed), symbol="MSFT", now=now,
             journal_path=tmp_path / "missing.jsonl", account_id="forward")
+
+
+def test_feed_adapter_rejects_generation_rotation_during_snapshot():
+    feed, now = _feed()
+    feed.authenticated = True
+    feed.subscribed = True
+    feed.connection = "CONNECTED"
+    feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "399.99", "ask": "400.01",
+                           "bid_lots": 2, "ask_lots": 3, "timestamp": now.isoformat(),
+                           "source_timestamp": now.timestamp(), "generation": feed.generation}
+    original = feed.snapshot
+    def rotating_snapshot():
+        view = original()
+        feed.generation += 1
+        return view
+    feed.snapshot = rotating_snapshot
+    with pytest.raises(ValueError, match="IEX_QUOTE_GENERATION_INVALID"):
+        PersonalPaperIEXProvider(feed).read_iex_quote("MSFT")
