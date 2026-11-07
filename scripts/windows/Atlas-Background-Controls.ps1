@@ -1,6 +1,6 @@
 # Manual Windows Forms controls for normal and opt-in gaming background mode.
 #Requires -Version 5.1
-param([object]$AcceptedSelectedReadBridge = $null, [object]$AcceptedPaperSession = $null, [object]$IEXCacheReader = $null, [object]$UnifiedReadCapability = $null, [switch]$ObservationOnly, [switch]$BoundedDataOnlyObservation, [string]$ObservationBudget = '')
+param([object]$AcceptedSelectedReadBridge = $null, [object]$AcceptedPaperSession = $null, [object]$AcceptedPaperStopHandoff = $null, [object]$IEXCacheReader = $null, [object]$UnifiedReadCapability = $null, [switch]$ObservationOnly, [switch]$BoundedDataOnlyObservation, [string]$ObservationBudget = '')
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -91,7 +91,15 @@ $form.Add_FormClosing({
     param($sender, $eventArgs)
     try {
         if (-not $script:KeepAtlasRunning -and $null -ne $AcceptedPaperSession) {
-            $result = Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished
+            $result = if ($null -ne $AcceptedPaperStopHandoff) {
+                if ($AcceptedPaperStopHandoff -isnot [System.Collections.IDictionary] -or
+                    $AcceptedPaperStopHandoff['mode'] -cne 'SHUTDOWN_FLATTEN') {
+                    throw 'PAPER_STOP_HANDOFF_MODE_UNVERIFIED'
+                }
+                Invoke-AtlasPaperStopWithHandoff $AcceptedPaperStopHandoff $AcceptedPaperSession
+            } else {
+                Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished
+            }
             Set-StatusMessage "$($result.phase): $($result.outcome.status) / $($result.outcome.position_state)" ([System.Drawing.Color]::DarkSlateGray)
         }
         Close-AtlasSelectedPaperDashboard; Close-AtlasObservationDashboard; Close-AtlasReadOnlyDashboard
@@ -318,7 +326,15 @@ $stopButton.Add_Click({
     Invoke-AtlasBackgroundUiCallback {
         Set-StatusMessage 'Closing entry admission; validating PAPER exit and drain...' ([System.Drawing.Color]::DarkSlateGray)
         $status.Refresh()
-        $result = Invoke-AtlasPaperStop $AcceptedPaperSession
+        $result = if ($null -ne $AcceptedPaperStopHandoff) {
+            if ($AcceptedPaperStopHandoff -isnot [System.Collections.IDictionary] -or
+                    $AcceptedPaperStopHandoff['mode'] -cne 'SHUTDOWN_FLATTEN') {
+                    throw 'PAPER_STOP_HANDOFF_MODE_UNVERIFIED'
+                }
+                Invoke-AtlasPaperStopWithHandoff $AcceptedPaperStopHandoff $AcceptedPaperSession
+        } else {
+            Invoke-AtlasPaperStop $AcceptedPaperSession
+        }
         $diagnostics.Text = ($result | ConvertTo-Json -Depth 12)
         Set-StatusMessage "$($result.phase): $($result.outcome.status) / $($result.outcome.position_state) $($result.outcome.reason)" ([System.Drawing.Color]::DarkSlateGray)
     } {
@@ -382,7 +398,15 @@ $emergencyItem = $trayMenu.Items.Add('Emergency Stop PAPER (preserve positions)'
 $emergencyItem.Add_Click({
     try {
         $status.Refresh()
-        $result = Invoke-AtlasPaperStop $AcceptedPaperSession -Emergency
+        $result = if ($null -ne $AcceptedPaperStopHandoff) {
+            if ($AcceptedPaperStopHandoff -isnot [System.Collections.IDictionary] -or
+                $AcceptedPaperStopHandoff['mode'] -cne 'EMERGENCY') {
+                throw 'PAPER_STOP_HANDOFF_MODE_UNVERIFIED'
+            }
+            Invoke-AtlasPaperStopWithHandoff $AcceptedPaperStopHandoff $AcceptedPaperSession
+        } else {
+            Invoke-AtlasPaperStop $AcceptedPaperSession -Emergency
+        }
         $diagnostics.Text = ($result | ConvertTo-Json -Depth 12)
         Set-StatusMessage 'Emergency dispatch stopped; positions preserved, no flatten claimed.' ([System.Drawing.Color]::DarkRed)
     } catch { Set-StatusMessage $_.Exception.Message ([System.Drawing.Color]::DarkRed) }

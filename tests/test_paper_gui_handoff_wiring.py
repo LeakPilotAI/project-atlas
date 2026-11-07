@@ -1,0 +1,26 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+GUI = ROOT / "scripts/windows/Atlas-Background-Controls.ps1"
+
+
+def test_gui_opt_in_handoff_is_wired_to_all_three_stop_paths():
+    source = GUI.read_text(encoding="utf-8-sig")
+    assert "[object]$AcceptedPaperStopHandoff = $null" in source
+    assert source.count("Invoke-AtlasPaperStopWithHandoff $AcceptedPaperStopHandoff $AcceptedPaperSession") == 3
+    assert "Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished" in source
+    assert "Invoke-AtlasPaperStop $AcceptedPaperSession -Emergency" in source
+
+
+def test_gui_emergency_refuses_normal_handoff_mode():
+    source = GUI.read_text(encoding="utf-8-sig")
+    assert "$AcceptedPaperStopHandoff['mode'] -cne 'EMERGENCY'" in source
+    assert source.count("$AcceptedPaperStopHandoff['mode'] -cne 'SHUTDOWN_FLATTEN'") == 2
+    assert "PAPER_STOP_HANDOFF_MODE_UNVERIFIED" in source
+
+
+def test_gui_still_has_no_automatic_enrollment():
+    source = GUI.read_text(encoding="utf-8-sig")
+    assert "[object]$AcceptedPaperSession = $null" in source
+    assert "[object]$AcceptedPaperStopHandoff = $null" in source
+    assert "$startButton.Enabled = $false" in source
