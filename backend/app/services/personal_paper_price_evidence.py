@@ -245,3 +245,44 @@ def check_forward_paper_write_authority(*, installation: Any, request: dict[str,
     return {"schema": "ATLAS_PERSONAL_PAPER_WRITE_AUTHORITY_DIAGNOSTIC_V1",
             "lease_checked": True, "paper_fill_authorized": False,
             "live_order_authorized": False}
+
+
+def inspect_forward_paper_journal_under_lease(
+    *, installation: Any, request: dict[str, Any], components: Any,
+    journal_path: Any, account_id: str,
+) -> dict[str, Any]:
+    """Read/reconcile durable PAPER journal while holding local operator lease.
+
+    This is deliberately not a writer. A separate trusted provider admission
+    and exclusive writer ownership are required before financial mutation.
+    """
+    from pathlib import Path
+    from app.investment.quality_dips_paper import accounting_snapshot, read_events
+    from app.services.personal_paper_runtime import checked_personal_installation
+
+    if installation is None or type(request) is not dict or not account_id or type(account_id) is not str:
+        raise PriceEvidenceRejected("PERSONAL_OPERATOR_INSTALLATION_REQUIRED")
+    if not isinstance(journal_path, (str, Path)):
+        raise PriceEvidenceRejected("PAPER_JOURNAL_PATH_REQUIRED")
+    path = Path(journal_path)
+    if not path.is_file():
+        raise PriceEvidenceRejected("PAPER_JOURNAL_NOT_INITIALIZED")
+    try:
+        with installation.lease(request) as lease:
+            proof = checked_personal_installation(lease, request)
+            if lease.check_components(components) is not True:
+                raise PriceEvidenceRejected("PERSONAL_WRITER_COMPONENTS_CHANGED")
+            snapshot = accounting_snapshot(read_events(path), account_id=account_id)
+            if snapshot is None or snapshot.get("data_provenance") != "FORWARD_COLLECTION":
+                raise PriceEvidenceRejected("FORWARD_PAPER_ACCOUNT_REQUIRED")
+            if lease.check(proof) is not True or lease.check_components(components) is not True:
+                raise PriceEvidenceRejected("PERSONAL_OPERATOR_LEASE_CHANGED")
+    except PriceEvidenceRejected:
+        raise
+    except (AttributeError, TypeError, ValueError, OSError, KeyError) as exc:
+        raise PriceEvidenceRejected("PAPER_JOURNAL_OR_OPERATOR_REFUSED") from exc
+    return {"schema": "ATLAS_PERSONAL_PAPER_LEASED_JOURNAL_DIAGNOSTIC_V1",
+            "account_id": account_id, "available_cash": snapshot["available_cash"],
+            "open_positions": snapshot["open_positions"],
+            "cash_reconciled": snapshot["cash_reconciled"],
+            "paper_fill_authorized": False, "live_order_authorized": False}

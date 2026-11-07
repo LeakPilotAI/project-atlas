@@ -106,3 +106,56 @@ def test_restarted_forward_account_rejects_truncated_journal(tmp_path):
         stream.write('{"event": "open_lot", "lot_id":')
     with pytest.raises(json.JSONDecodeError):
         read_events(path)
+
+
+class _DisposableLease:
+    snapshot = {"test": "proof"}
+    def __init__(self, valid=True):
+        self.valid = valid
+    def check(self, proof):
+        return self.valid
+    def check_components(self, components):
+        return self.valid
+
+
+class _DisposableInstallation:
+    def __init__(self, lease):
+        self.test_lease = lease
+    def lease(self, request):
+        from contextlib import nullcontext
+        return nullcontext(self.test_lease)
+
+
+def test_lease_held_forward_journal_reconciliation_is_read_only(tmp_path, monkeypatch):
+    from app.services import personal_paper_runtime
+    from app.services.personal_paper_price_evidence import inspect_forward_paper_journal_under_lease
+    monkeypatch.setattr(personal_paper_runtime, "checked_personal_installation",
+                        lambda lease, request: lease.snapshot)
+    path = tmp_path / "forward.jsonl"
+    initialize_paper_account(account_id="forward", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="FORWARD_COLLECTION", path=path)
+    original = path.read_bytes()
+    result = inspect_forward_paper_journal_under_lease(
+        installation=_DisposableInstallation(_DisposableLease()), request={"action": "AUTO_PAPER"},
+        components=(), journal_path=path, account_id="forward")
+    assert result["available_cash"] == 1000
+    assert result["paper_fill_authorized"] is False
+    assert path.read_bytes() == original
+
+
+def test_lease_held_forward_journal_refuses_revoked_or_missing_account(tmp_path, monkeypatch):
+    from app.services import personal_paper_runtime
+    from app.services.personal_paper_price_evidence import (
+        PriceEvidenceRejected, inspect_forward_paper_journal_under_lease,
+    )
+    monkeypatch.setattr(personal_paper_runtime, "checked_personal_installation",
+                        lambda lease, request: lease.snapshot)
+    path = tmp_path / "forward.jsonl"
+    initialize_paper_account(account_id="forward", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="FORWARD_COLLECTION", path=path)
+    for lease, account in [(_DisposableLease(False), "forward"),
+                           (_DisposableLease(), "another")]:
+        with pytest.raises(PriceEvidenceRejected):
+            inspect_forward_paper_journal_under_lease(
+                installation=_DisposableInstallation(lease), request={"action": "AUTO_PAPER"},
+                components=(), journal_path=path, account_id=account)
