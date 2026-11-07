@@ -176,9 +176,37 @@ class UnifiedControlStopBridge:
         with self.stop_lock:
             if not self.verify_session():
                 raise ValueError("UNIFIED_CONTROL_SESSION_UNVERIFIED")
-            if getattr(self, "stop_ledger", None) is not None and not getattr(self, "_receipt_persisted", False):
+            if (self.progress["phase"] == "FINISHED" and getattr(self, "stop_ledger", None) is not None
+                    and not getattr(self, "_receipt_persisted", False)):
                 self.runtime.entry_closed.set()
                 raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
+            ledger = getattr(self, "stop_ledger", None)
+            if ledger is not None and self.progress["phase"] == "IDLE":
+                grant = self.runtime.grant
+                if type(grant) is not dict or type(grant.get("session_id")) is not str or not grant["session_id"]:
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_LEDGER_SESSION_REQUIRED")
+                try:
+                    existing = ledger.reserve_existing(grant["session_id"], "SHUTDOWN_FLATTEN")
+                except ValueError as exc:
+                    if str(exc) == "STOP_INTENT_UNVERIFIED":
+                        try:
+                            existing = ledger.reserve_existing(grant["session_id"], "EMERGENCY")
+                        except ValueError as second:
+                            if str(second) == "STOP_INTENT_UNVERIFIED":
+                                existing = None
+                            else:
+                                self.runtime.entry_closed.set()
+                                raise ValueError("UNIFIED_STOP_LEDGER_STATUS_UNVERIFIED") from None
+                    else:
+                        self.runtime.entry_closed.set()
+                        raise ValueError("UNIFIED_STOP_LEDGER_STATUS_UNVERIFIED") from None
+                except (OSError, TimeoutError, KeyError, TypeError):
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_LEDGER_STATUS_UNVERIFIED") from None
+                if existing is not None:
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_RESTART_RECONCILIATION_REQUIRED")
             return strict(body(self.progress))
 
 
@@ -561,6 +589,8 @@ class UnifiedPaperRuntime:
                     row.update(connection="STALE", signal=None)
             view["observed_at"] = self.clock()
             return view
+
+
 
 
 

@@ -590,3 +590,49 @@ def test_bridge_does_not_ack_when_receipt_write_fails(tmp_path):
         b.status()
     with pytest.raises(ValueError, match="RECEIPT_UNVERIFIED"):
         b.request_stop("SHUTDOWN_FLATTEN")
+def test_restart_status_blocks_pending_stop_instead_of_idle(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    ledger.reserve_fresh("s", "SHUTDOWN_FLATTEN")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.stop_ledger = ledger
+    b.runtime = SimpleNamespace(entry_closed=Event(), grant={"session_id":"s"})
+    with pytest.raises(ValueError, match="RECONCILIATION_REQUIRED"):
+        b.status()
+    assert b.runtime.entry_closed.is_set()
+
+def test_restart_status_blocks_recorded_emergency_stop(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    ledger.reserve_fresh("s", "EMERGENCY")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.stop_ledger = ledger
+    b.runtime = SimpleNamespace(entry_closed=Event(), grant={"session_id":"s"})
+    with pytest.raises(ValueError, match="RECONCILIATION_REQUIRED"):
+        b.status()
+    assert b.runtime.entry_closed.is_set()
+
+def test_fresh_session_status_remains_idle_without_creating_intent(tmp_path):
+    from threading import Event, Lock
+    from types import SimpleNamespace
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger, StopReceiptConflict
+    ledger = PaperStopReceiptLedger(tmp_path / "stop.sqlite")
+    b = object.__new__(UnifiedControlStopBridge)
+    b.stop_lock = Lock()
+    b.verify_session = lambda: True
+    b.progress = {"schema":"QD_CONTROL_STOP_V1","phase":"IDLE","outcome":None}
+    b.stop_ledger = ledger
+    b.runtime = SimpleNamespace(entry_closed=Event(), grant={"session_id":"s"})
+    assert b.status()["phase"] == "IDLE"
+    with pytest.raises(StopReceiptConflict):
+        ledger.reserve_existing("s", "SHUTDOWN_FLATTEN")
