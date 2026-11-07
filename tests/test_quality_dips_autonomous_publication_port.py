@@ -1,4 +1,4 @@
-﻿"""Injected authority-port contract tests, not operational acceptance."""
+"""Injected authority-port contract tests, not operational acceptance."""
 import copy
 from contextlib import contextmanager
 from types import SimpleNamespace
@@ -48,15 +48,15 @@ def test_synthetic_injected_lease_path_requires_all_checks():
     e, p, cut, docs, publication, ack, replay = setup()
     port = BoundAutonomousFinancialPublication(publication=publication, custody_ack=ack,
                                                 financial_replay=replay)
-    assert port.verify_cut(e, {'scope': 'LOCAL_ENROLLED'}, docs, 1000,
+    assert port.verify_cut(e, {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)}, docs, 1000,
                            scope='LOCAL_ENROLLED') is True
 
 
 @pytest.mark.parametrize('damage', ['disposable_scope', 'bad_clock', 'publisher_refusal',
-    'ack_refusal', 'cut_refusal', 'replay_refusal', 'financial_mismatch', 'current_scope'])
+    'ack_refusal', 'cut_refusal', 'replay_refusal', 'financial_mismatch', 'current_scope', 'missing_financial_digest', 'wrong_financial_digest'])
 def test_publication_port_refuses_without_all_evidence(damage):
     e, p, cut, docs, publication, ack, replay = setup()
-    scope, now, current = 'LOCAL_ENROLLED', 1000, {'scope': 'LOCAL_ENROLLED'}
+    scope, now, current = 'LOCAL_ENROLLED', 1000, {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)}
     if damage == 'disposable_scope': scope = 'DISPOSABLE_TEST'
     if damage == 'bad_clock': now = True
     if damage == 'publisher_refusal': publication.check = lambda *a: False
@@ -65,6 +65,8 @@ def test_publication_port_refuses_without_all_evidence(damage):
     if damage == 'replay_refusal': replay.verify = lambda *a, **k: False
     if damage == 'financial_mismatch': docs['projection']['projection.json']['state']['cash'] = '999'
     if damage == 'current_scope': current['scope'] = 'DISPOSABLE_TEST'
+    if damage == 'missing_financial_digest': current.pop('financial_digest')
+    if damage == 'wrong_financial_digest': current['financial_digest'] = 'f' * 64
     port = BoundAutonomousFinancialPublication(publication=publication, custody_ack=ack,
                                                 financial_replay=replay)
     with pytest.raises(ValueError):
@@ -93,5 +95,5 @@ def test_publication_authority_continuity_refuses_mid_audit_revocation(damage):
     port = BoundAutonomousFinancialPublication(publication=publication, custody_ack=ack,
                                                 financial_replay=replay)
     with pytest.raises(ValueError):
-        port.verify_cut(e, {'scope': 'LOCAL_ENROLLED'}, docs, 1000,
+        port.verify_cut(e, {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)}, docs, 1000,
                         scope='LOCAL_ENROLLED')

@@ -1,4 +1,4 @@
-﻿"""Fail-closed publication evidence adapter for existing-only native readback.
+"""Fail-closed publication evidence adapter for existing-only native readback.
 
 Requires separately injected custody acknowledgment and financial replay ports.
 No default grants, filesystem publication, or test-to-operational conversion.
@@ -32,6 +32,9 @@ class BoundAutonomousFinancialPublication:
                     raise ValueError('AUTO_PUBLICATION_ACK_NOT_AUTHENTICATED')
                 with self.financial_replay.lease(enrollment, p, now, scope=scope) as replay_lease:
                     cut = strict(body(replay_lease.snapshot))
+                    if (type(current.get('financial_digest')) is not str
+                            or current['financial_digest'] != digest(cut)):
+                        raise ValueError('AUTO_PUBLICATION_CURRENT_FINANCIAL_CUT_MISMATCH')
                     if replay_lease.check(strict(body(cut)), now) is not True:
                         raise ValueError('AUTO_PUBLICATION_FINANCIAL_CUT_NOT_AUTHENTICATED')
                     if bind_financial_publication_to_native_cut(enrollment, p, cut, documents) is not True:
