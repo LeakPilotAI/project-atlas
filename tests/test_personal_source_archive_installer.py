@@ -12,3 +12,15 @@ def test_source_archive_installer_refuses_unenrolled_root_before_native_access()
     with pytest.raises(ValueError, match='EXPLICIT_QD_SOURCE_ARCHIVE_ENROLLMENT_REQUIRED'):
         install_source_archive(root='D:\\AtlasCustody\\QualityDips\\example', enrollment={},
             reader=None, policy={}, release_digest='', accounts={}, clock=None, runtime_id='')
+
+@pytest.mark.parametrize('root', [
+    'D:\\AtlasCustody\\QualityDips\\..\\PersonalPaper\\test',
+    'D:\\AtlasCustody\\QualityDips\\test\\..\\another',
+    'D:\\AtlasCustody\\QualityDips\\test:stream',
+    'D:\\AtlasCustody\\QualityDips\\test\\',
+    'D:\\AtlasCustody\\QualityDips\\test/child',
+])
+def test_source_archive_installer_refuses_root_alias_before_native_access(root):
+    with pytest.raises(ValueError, match='QD_SOURCE_EXPLICIT_CUSTODY_ROOT_REQUIRED'):
+        install_source_archive(root=root, enrollment={}, reader=None,
+            policy={}, release_digest='', accounts={}, clock=None, runtime_id='')

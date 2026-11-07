@@ -3,6 +3,7 @@
 No automatic root creation, credentials, source fabrication or financial inception.
 An explicit already-created native root and activation reader are mandatory.
 """
+import ntpath
 from app.services.paper_financial_replay import digest
 from scripts.observation_runtime.personal_coordination_store import NativePersonalCoordinationImages
 from scripts.observation_runtime.personal_research_archive import initial_image, validate_enrollment
@@ -13,7 +14,10 @@ from scripts.observation_runtime.personal_paper_inception import native_primitiv
 def install_source_archive(*, root, enrollment, reader, policy, release_digest,
                            accounts, clock, runtime_id):
     """Install an empty, typed source image and verify native readback."""
-    if type(root) is not str or not root.startswith('D:\\AtlasCustody\\QualityDips\\'):
+    if (type(root) is not str or ntpath.normpath(root) != root
+            or not ntpath.normcase(root).startswith('d:\\atlascustody\\qualitydips\\')
+            or any(c in root[3:] for c in (':', '%', '\x00', '/'))
+            or any(part in ('', '.', '..') for part in root[3:].split('\\'))):
         raise ValueError('QD_SOURCE_EXPLICIT_CUSTODY_ROOT_REQUIRED')
     enrollment = validate_enrollment(enrollment)
     native = native_primitives()
