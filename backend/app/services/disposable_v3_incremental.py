@@ -67,29 +67,44 @@ def _execute_locked(*, path, account_id, observation, research, quote, now,
                     flatten_at_session_end):
     events = read_events(path)
     ticks = [e for e in events if e.get("event") in ("v3_tick_started", "v3_tick_completed")]
-    pending = set()
-    for row in ticks:
-        ident = row.get("event_id")
-        if type(ident) is not str or not ident.startswith(
-                "start-" if row["event"] == "v3_tick_started" else "done-"):
-            raise ValueError("INCREMENTAL_V3_MALFORMED_TICK_HISTORY")
-        digest = ident.split("-", 1)[1]
-        if row["event"] == "v3_tick_started":
-            if pending:
-                raise ValueError("INCREMENTAL_V3_INTERRUPTED_TICK_REQUIRES_RECONCILIATION")
-            pending.add(digest)
-        elif digest not in pending:
-            raise ValueError("INCREMENTAL_V3_MALFORMED_TICK_HISTORY")
-        else:
-            pending.remove(digest)
-    if pending:
+    pending = None
+    completed_stamps = []
+    for row in events:
+        kind = row.get("event")
+        if kind == "v3_tick_started":
+            ident = row.get("event_id")
+            if (pending is not None or row.get("account_id") != account_id
+                    or type(ident) is not str or not ident.startswith("start-")):
+                raise ValueError("INCREMENTAL_V3_MALFORMED_TICK_HISTORY")
+            pending = {"digest": ident[6:], "stamp": row.get("provider_timestamp"),
+                       "financial": []}
+        elif kind in ("open_lot", "mark_lot", "close_lot") and pending is not None:
+            pending["financial"].append(row)
+        elif kind == "v3_tick_completed":
+            ident = row.get("event_id")
+            if (pending is None or row.get("account_id") != account_id
+                    or type(ident) is not str or ident != "done-" + pending["digest"]
+                    or _provider_instant(row.get("provider_timestamp")) !=
+                    _provider_instant(pending["stamp"])):
+                raise ValueError("INCREMENTAL_V3_MALFORMED_TICK_HISTORY")
+            action = row.get("action")
+            expected = {"WAIT": None, "ENTER": "open_lot",
+                        "MARK": "mark_lot", "EXIT": "close_lot"}
+            financial = pending["financial"]
+            if (action not in expected or len(financial) != (0 if action == "WAIT" else 1)
+                    or (financial and (financial[0].get("event") != expected[action]
+                         or financial[0].get("account_id") != account_id
+                         or financial[0].get("event_id") != row.get("simulated_event_id")))
+                    or (not financial and row.get("simulated_event_id") is not None)):
+                raise ValueError("INCREMENTAL_V3_FINANCIAL_TICK_HISTORY_MISMATCH")
+            completed_stamps.append(_provider_instant(pending["stamp"]))
+            pending = None
+    if pending is not None:
         raise ValueError("INCREMENTAL_V3_INTERRUPTED_TICK_REQUIRES_RECONCILIATION")
+    if any(current <= prior for prior, current in zip(completed_stamps, completed_stamps[1:])):
+        raise ValueError("INCREMENTAL_V3_NONMONOTONIC_HISTORY")
     stamp = evidence["provider_timestamp"]
-    completed = [e for e in ticks if e["event"] == "v3_tick_completed"]
-    for prior, current in zip(completed, completed[1:]):
-        if _provider_instant(current["provider_timestamp"]) <= _provider_instant(prior["provider_timestamp"]):
-            raise ValueError("INCREMENTAL_V3_NONMONOTONIC_HISTORY")
-    if completed and _provider_instant(stamp) <= _provider_instant(completed[-1]["provider_timestamp"]):
+    if completed_stamps and _provider_instant(stamp) <= completed_stamps[-1]:
         raise ValueError("INCREMENTAL_V3_REPLAYED_OR_OLDER_TICK")
     account = accounting_snapshot(events, account_id=account_id)
     if account is None or account.get("data_provenance") != "TEST_DATA" or not account["cash_reconciled"]:

@@ -207,3 +207,35 @@ def test_session_end_flag_must_be_explicit_boolean(tmp_path):
             observation={"symbol": "MSFT", "evidence_class": "TEST_DATA"},
             research={"symbol": "MSFT"}, quote={}, now=datetime.now(UTC),
             flatten_at_session_end="yes")
+
+
+def test_incremental_refuses_completed_tick_without_matching_financial_write(tmp_path):
+    from app.investment.quality_dips_paper import _append
+    path = tmp_path / "tampered.jsonl"
+    initialize_paper_account(account_id="demo", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    start = datetime(2026, 11, 7, tzinfo=UTC)
+    for kind, ident in (("v3_tick_started", "start-abc"),
+                        ("v3_tick_completed", "done-abc")):
+        row = {"event": kind, "event_id": ident,
+               "provider_timestamp": start.isoformat(), "account_id": "demo"}
+        if kind == "v3_tick_completed":
+            row.update(action="ENTER", simulated_event_id="missing")
+        _append(row, path)
+    research = {"symbol": "MSFT", "source_verified": True,
+                "timestamp": start.isoformat(),
+                "normalization_value": {"conservative": 95, "base": 100, "optimistic": 105},
+                "quality_score": 80, "fundamentals_score": 80,
+                "valuation_score": 70, "drawdown_percentile": 80,
+                "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
+    now = start + timedelta(seconds=1)
+    quote = {"symbol": "MSFT", "state": "FRESH", "bid": 79.9, "ask": 80,
+             "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+             "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="FINANCIAL_TICK_HISTORY_MISMATCH"):
+        execute_incremental_test_v3_tick(path=path, account_id="demo",
+            observation={"observation_id": "test", "symbol": "MSFT",
+                         "evidence_class": "TEST_DATA"},
+            research=research, quote=quote, now=now)
+    assert path.read_bytes() == before
