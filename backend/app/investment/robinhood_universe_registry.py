@@ -230,6 +230,34 @@ def mark_researched(
     path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
 
 
+def mark_research_failed(
+    symbol: str,
+    error_type: str,
+    *,
+    researched_at: str | None = None,
+    path: Path = ROBINHOOD_UNIVERSE_PATH,
+) -> dict[str, Any]:
+    """Persist a failed attempt without changing the evidence-derived lane."""
+    if type(error_type) is not str or not error_type.strip():
+        raise ValueError("research failure type is required")
+    state = _load(path)
+    symbols = dict(state.get("symbols") or {})
+    key = str(symbol or "").upper().strip()
+    if not key or key not in symbols:
+        return {"updated": False, "reason": "symbol_not_found"}
+    row = dict(symbols[key])
+    at = researched_at or _now()
+    row["last_researched_at"] = at
+    row["last_research_status"] = "FAILED"
+    row["last_research_error"] = error_type.strip()[:100]
+    symbols[key] = row
+    state["symbols"] = symbols
+    state["updated_at"] = at
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")
+    return {"updated": True, "symbol": key, "status": "FAILED"}
+
+
 def set_research_lane(
     symbol: str,
     lane: str,
@@ -253,6 +281,8 @@ def set_research_lane(
     at = researched_at or _now()
     row["research_lane"] = lane_norm
     row["last_researched_at"] = at
+    row["last_research_status"] = "SUCCEEDED"
+    row.pop("last_research_error", None)
     row["research_lane_reason"] = str(reason or "")[:500]
     symbols[key] = row
     state["symbols"] = symbols

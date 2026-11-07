@@ -9,12 +9,25 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+from app.core.logging import get_logger
 from app.investment.enums import AssetType, EvidenceQuality, InvestmentAlertState, ThesisState
 from app.investment.history import load_bars
 from app.investment.ingest import InvestmentIngest
 from app.investment.research import InvestmentResearch
-from app.investment.robinhood_universe_registry import research_candidates, set_research_lane
+from app.investment.robinhood_universe_registry import (
+    mark_research_failed,
+    research_candidates,
+    set_research_lane,
+)
 from app.investment.universe import InvestmentUniverse, UniverseEntry
+
+log = get_logger("robinhood_discovery_research")
+
+
+class ProviderResearchDataError(RuntimeError):
+    def __init__(self, failure_codes: tuple[str, ...]) -> None:
+        self.failure_codes = failure_codes
+        super().__init__("Provider research data is incomplete")
 
 
 def classify_lane(rec: Any) -> tuple[str, str]:
@@ -78,9 +91,20 @@ async def research_batch(*, limit: int = 4) -> dict[str, Any]:
             active=True,
             groups=["robinhood_discovery"],
         )
-        ingest = InvestmentIngest(universe=InvestmentUniverse([entry]), persist=True)
         try:
+            ingest = InvestmentIngest(universe=InvestmentUniverse([entry]), persist=True)
             snap = await ingest.ingest_symbol(entry, history_period="5y")
+            if snap.failures:
+                failure_codes = tuple(
+                    sorted(
+                        {
+                            str(failure.get("code") or "UNKNOWN")
+                            for failure in snap.failures
+                            if isinstance(failure, dict)
+                        }
+                    )
+                )
+                raise ProviderResearchDataError(failure_codes or ("UNKNOWN",))
             bars = await asyncio.to_thread(load_bars, symbol)
             rec = await asyncio.to_thread(research.score_snapshot, snap, bars)
             lane, reason = classify_lane(rec)
@@ -88,19 +112,30 @@ async def research_batch(*, limit: int = 4) -> dict[str, Any]:
             results.append({
                 "symbol": symbol,
                 "research_lane": lane,
+                "research_status": "SUCCEEDED",
                 "classification": rec.classification.value,
                 "opportunity_score": rec.opportunity_score,
                 "evidence_quality": rec.evidence_quality.value,
                 "thesis": rec.thesis.value,
             })
         except Exception as exc:
-            await asyncio.to_thread(
-                set_research_lane,
-                symbol,
-                "FRONTIER_RESEARCH",
-                reason=f"research provider/runtime failure: {type(exc).__name__}",
+            error_type = (
+                f"ProviderDataUnavailable:{','.join(exc.failure_codes)}"
+                if isinstance(exc, ProviderResearchDataError)
+                else type(exc).__name__
             )
-            results.append({"symbol": symbol, "research_lane": "FRONTIER_RESEARCH", "error": type(exc).__name__})
+            await asyncio.to_thread(mark_research_failed, symbol, error_type)
+            log.warning(
+                "Robinhood universe research failed",
+                symbol=symbol,
+                error_type=error_type,
+            )
+            results.append({
+                "symbol": symbol,
+                "research_lane": str(row.get("research_lane") or "UNCLASSIFIED").upper(),
+                "research_status": "FAILED",
+                "error": error_type,
+            })
         await asyncio.sleep(0.75)
     return {
         "researched": len(results),
