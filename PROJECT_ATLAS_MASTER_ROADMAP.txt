@@ -1,3 +1,9 @@
+PERSONAL PAPER COMMANDER CHECKPOINT - STRATEGY PRICE PREVIEW - 2026-11-06
+[implemented] A pure Quality Dips V3 execution preview joins frozen strategy blockers and validated provider-event IEX bid/ask evidence without creating fills or orders.
+[implemented] Stock quote validation now requires explicit PROVIDER_EVENT_TIMESTAMP basis, refusing missing or request-start provenance.
+[verified] 49 focused regressions passed; Ruff passed; one pre-existing Starlette warning.
+[remaining] Real authorized current quote feed, refreshed Quality Dips research, forward PAPER execution engine wiring and operational acceptance. Genesis untouched.
+
 PERSONAL PAPER COMMANDER CHECKPOINT - EXECUTABLE PRICE CONTRACT - 2026-11-06
 [implemented] Pure fail-closed Alpaca IEX provider-event bid/ask evidence validator: symbol, source timestamp, age, bid/ask sanity, spread and quote sizes. Rejects historical closes, request-start marks, stale/future timestamps and invalid prices.
 [verified] New validator is not wired to forward execution and explicitly returns paper_fill_authorized=false. No credentials, provider requests, fills, or live orders. Focused tests: 22 passed, 1 pre-existing warning.

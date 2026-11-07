@@ -24,7 +24,7 @@ def validate_stock_iex_quote(
         raise PriceEvidenceRejected("QUOTE_SYMBOL_MISMATCH")
     if quote.get("state") != "FRESH":
         raise PriceEvidenceRejected("QUOTE_NOT_FRESH")
-    if quote.get("timestamp_basis") not in (None, "PROVIDER_EVENT_TIMESTAMP"):
+    if quote.get("timestamp_basis") != "PROVIDER_EVENT_TIMESTAMP":
         raise PriceEvidenceRejected("UNTRUSTED_TIMESTAMP_BASIS")
     raw_time = quote.get("timestamp")
     if not isinstance(raw_time, str):
@@ -59,6 +59,39 @@ def validate_stock_iex_quote(
         "bid": str(bid),
         "ask": str(ask),
         "spread_bps": float(spread_bps),
+        "paper_fill_authorized": False,
+        "live_order_authorized": False,
+    }
+
+def preview_quality_dips_execution(
+    observation: dict[str, Any], quote: dict[str, Any], *, now: datetime,
+) -> dict[str, Any]:
+    """Join frozen V3 research with quote evidence; never create a fill."""
+    if type(observation) is not dict or observation.get("strategy") != "QUALITY_DIPS_V3":
+        raise PriceEvidenceRejected("QUALITY_DIPS_OBSERVATION_REQUIRED")
+    symbol = observation.get("symbol")
+    if type(symbol) is not str or not symbol:
+        raise PriceEvidenceRejected("OBSERVATION_SYMBOL_MISSING")
+    blockers = list(observation.get("blockers") or [])
+    if any(type(blocker) is not str for blocker in blockers):
+        raise PriceEvidenceRejected("INVALID_STRATEGY_BLOCKERS")
+    evidence = None
+    try:
+        evidence = validate_stock_iex_quote(quote, symbol=symbol, now=now)
+    except PriceEvidenceRejected as exc:
+        blockers.append(str(exc))
+    plan = observation.get("strategy_result")
+    if type(plan) is not dict or not plan.get("entry_ladder", {}).get("ready"):
+        blockers.append("QUALITY_DIPS_ENTRY_LADDER_NOT_READY")
+    if not observation.get("paper_execution_eligible"):
+        blockers.append("STRATEGY_OBSERVATION_NOT_EXECUTION_ELIGIBLE")
+    return {
+        "schema": "ATLAS_PERSONAL_PAPER_QUALITY_DIPS_EXECUTION_PREVIEW_V1",
+        "symbol": symbol,
+        "observation_id": observation.get("observation_id"),
+        "quote_evidence": evidence,
+        "blockers": list(dict.fromkeys(blockers)),
+        "paper_execution_eligible": False,
         "paper_fill_authorized": False,
         "live_order_authorized": False,
     }

@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from app.services.personal_paper_price_evidence import (
     PriceEvidenceRejected,
+    preview_quality_dips_execution,
     validate_stock_iex_quote,
 )
 
@@ -47,3 +48,39 @@ def test_rejects_stale_future_and_wide_spread():
         quote.update(mutation)
         with pytest.raises(PriceEvidenceRejected):
             validate_stock_iex_quote(quote, symbol="MSFT", now=now)
+
+def test_missing_timestamp_basis_is_not_accepted():
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    quote = _quote(now)
+    quote.pop("timestamp_basis")
+    with pytest.raises(PriceEvidenceRejected, match="UNTRUSTED_TIMESTAMP_BASIS"):
+        validate_stock_iex_quote(quote, symbol="MSFT", now=now)
+
+
+def test_strategy_quote_preview_retains_strategy_blockers_even_with_fresh_quote():
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {
+        "strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "sample-1",
+        "blockers": ["QUALITY_DIPS_RESEARCH_STALE"],
+        "strategy_result": {"entry_ladder": {"ready": True}},
+        "paper_execution_eligible": False,
+    }
+    preview = preview_quality_dips_execution(observation, _quote(now), now=now)
+    assert preview["quote_evidence"]["ask"] == "400.01"
+    assert "QUALITY_DIPS_RESEARCH_STALE" in preview["blockers"]
+    assert preview["paper_fill_authorized"] is False
+
+
+def test_strategy_quote_preview_rejects_stale_quote_without_filling():
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {
+        "strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "sample-2",
+        "blockers": [], "strategy_result": {"entry_ladder": {"ready": True}},
+        "paper_execution_eligible": False,
+    }
+    quote = _quote(now)
+    quote["timestamp"] = (now - timedelta(seconds=30)).isoformat()
+    preview = preview_quality_dips_execution(observation, quote, now=now)
+    assert "PROVIDER_QUOTE_STALE_OR_FUTURE" in preview["blockers"]
+    assert preview["quote_evidence"] is None
+    assert preview["paper_execution_eligible"] is False
