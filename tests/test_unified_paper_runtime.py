@@ -948,3 +948,22 @@ async def test_session_bound_transport_refuses_owner_revocation_after_stop():
                                    headers={"origin": origin, "x-atlas-control": token},
                                    json={"session_id": bridge.session_id, "mode": "SHUTDOWN_FLATTEN"})
         assert result.status_code == 409
+
+
+def test_accepted_unified_transport_registration_rejects_unenrolled_runtime():
+    from fastapi import FastAPI
+    from app.services.quality_dips_stop_bridge import (
+        register_accepted_unified_paper_stop_routes,
+    )
+    r = runtime()
+    bridge = UnifiedControlStopBridge(r)
+    app = FastAPI()
+    with pytest.raises(ValueError, match="ACCEPTED_UNIFIED_PAPER_STOP_INSTALLATION_REQUIRED"):
+        register_accepted_unified_paper_stop_routes(
+            app, bridge=bridge, origin="http://127.0.0.1:18799",
+            token="synthetic-test-control-token-only-1234")
+    assert not any(route.path == "/_atlas/control/stop-session" for route in app.routes)
+    with pytest.raises(ValueError, match="ACCEPTED_UNIFIED_PAPER_STOP_INSTALLATION_REQUIRED"):
+        register_accepted_unified_paper_stop_routes(
+            app, bridge=object(), origin="http://127.0.0.1:18799",
+            token="synthetic-test-control-token-only-1234")

@@ -224,3 +224,26 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False):
 
     stop_session.__annotations__["request"] = Request
     app.add_api_route("/_atlas/control/stop-session", stop_session, methods=["POST"])
+
+
+def register_accepted_unified_paper_stop_routes(app, *, bridge, origin, token):
+    """Opt-in composition gate: require actual installed unified runtime and
+    durable stop receipts before exposing a session-bound control transport.
+
+    Does not create or enroll a runtime, grant financial authority, or start
+    any process. The caller must separately certify the installation.
+    """
+    from app.services.unified_paper_runtime import (
+        UnifiedControlStopBridge, UnifiedPaperRuntime,
+    )
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+
+    if (type(bridge) is not UnifiedControlStopBridge
+            or type(bridge.runtime) is not UnifiedPaperRuntime
+            or type(bridge.stop_ledger) is not PaperStopReceiptLedger
+            or bridge.owned_close is None
+            or bridge.session_id is None
+            or bridge.verify_session() is not True):
+        raise ValueError("ACCEPTED_UNIFIED_PAPER_STOP_INSTALLATION_REQUIRED")
+    register_stop_routes(app, bridge=bridge, origin=origin, token=token,
+                         require_session=True)
