@@ -33,3 +33,4 @@ This is a gap inventory, not an operational certification. Items marked unverifi
 - Genesis is separate and must remain untouched. VPS is not a dependency. Live trading is explicitly out of scope.
 
 Launch decision rule: READY only after every P0 and P1 item has independently accepted evidence and staged P2 duration acceptance meets operator-defined criteria. Until then: NO-GO.
+2026-11-07 follow-up: added read-only scripts/windows/atlas_paper_readiness_check.py for machine-readable desktop lifecycle blocker evidence. CLI exit 2 and NO_GO until independently accepted session and stop transport exist; it never grants startup even if guard is removed. 85 combined focused tests passed, 1 skipped. No operational startup.
