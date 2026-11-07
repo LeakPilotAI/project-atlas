@@ -229,7 +229,7 @@ def main():
     # Dependencies are explanatory, never synthetic PASS states or permissions.
     next_actions = {
         "OPERATIONAL_QD_SOURCE_PUBLICATION":
-            "Independently enroll and authenticate current FORWARD_COLLECTION QD publication, including issuer, durable custody, writer ownership and accepted Stop controls",
+            "Enroll and authenticate an operator-owned local current FORWARD_COLLECTION QD publisher, durable native custody, writer ownership and accepted Stop controls; personal policy does not require an external issuer",
         "ACTIVATION_RECORD_PRESENT":
             "Obtain operator-approved installed activation record under existing native PersonalPaper custody; do not generate from preflight",
         "ACTIVATION_NATIVE_VERIFIED":
@@ -254,7 +254,7 @@ def main():
             "personal_pilot_uses_distinct_auto_native_enrollment_v4": True,
             "manual_only_conflict_applies_to_personal_pilot": False,
             "autonomous_pilot_native_acceptance_verified": False,
-            "next_action": "Verify independently accepted QD_AUTO_NATIVE_ENROLLMENT_V4 source publication, custody, issuer, Stop and native activation; never translate legacy QD_OP_ENROLLMENT_V1 into autonomous authority",
+            "next_action": "Verify operator-owned locally accepted QD_AUTO_NATIVE_ENROLLMENT_V4 source publication, native custody, Stop and activation; no external issuer required by personal policy; never translate legacy QD_OP_ENROLLMENT_V1 into autonomous authority",
             "grants_authority": False,
         },
         "financial_mutations": False,
