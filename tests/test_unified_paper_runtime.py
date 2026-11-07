@@ -1265,3 +1265,18 @@ def test_enroll_unified_paper_stop_transport_rejects_unaccepted_runtime(tmp_path
             ledger_path=tmp_path / 'stop.sqlite', origin='http://127.0.0.1:18800', token='test-token')
     assert not any(route.path == '/_atlas/control/stop-session' for route in app.routes)
     assert not (tmp_path / 'stop.sqlite').exists()
+
+
+def test_enrollment_binder_registers_only_for_existing_synthetic_session(tmp_path):
+    from fastapi import FastAPI
+    from app.services.quality_dips_stop_bridge import enroll_unified_paper_stop_transport
+    r = runtime()
+    r.grant['session_id'] = 'synthetic-session-shape'
+    app = FastAPI()
+    bridge = enroll_unified_paper_stop_transport(app, runtime=r, owned_close=lambda: True,
+        ledger_path=tmp_path / 'stop.sqlite', origin='http://127.0.0.1:18811', token='synthetic-test-control-token-1234567890')
+    assert bridge.session_id == 'synthetic-session-shape'
+    assert bridge.status()['phase'] == 'IDLE'
+    assert any(route.path == '/_atlas/control/stop-session' for route in app.routes)
+    assert r.state == 'RUNNING'
+
