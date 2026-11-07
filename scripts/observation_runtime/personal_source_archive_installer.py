@@ -4,6 +4,7 @@ No automatic root creation, credentials, source fabrication or financial incepti
 An explicit already-created native root and activation reader are mandatory.
 """
 import ntpath
+import hashlib
 from app.services.paper_financial_replay import digest
 from scripts.observation_runtime.personal_coordination_store import NativePersonalCoordinationImages
 from scripts.observation_runtime.personal_research_archive import initial_image, validate_enrollment
@@ -39,7 +40,7 @@ def install_source_archive(*, root, enrollment, reader, policy, release_digest,
                 raise ValueError('QD_SOURCE_NATIVE_GENESIS_READBACK_MISMATCH')
         return {'schema': 'ATLAS_QD_NATIVE_SOURCE_GENESIS_ACK_V1',
                 'root': root, 'root_id': actual_id, 'enrollment_digest': digest(enrollment),
-                'initial_image_digest': digest(image.decode()),
+                'initial_image_digest': hashlib.sha256(image).hexdigest(),
                 'source_publication_accepted': False,
                 'financial_inception_authorized': False}
     finally:
