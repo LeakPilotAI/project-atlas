@@ -1,0 +1,38 @@
+﻿# Atlas session progress and commissioning checkpoint — 2026-11-07
+
+## Scope and provenance
+
+Local Windows Project Atlas only. Session begins approximately 2026-11-06 21:30 CST, per operator. Verified from local Git history and read-only commissioning observations. No Project Genesis access, live orders, provider activation, or PAPER runtime startup occurred in this checkpoint investigation.
+
+## Verified development progress
+
+- Branch: `chatgpt/atlas-rebuild-v1`; last development HEAD before this checkpoint: `e9666057` (2026-11-07 03:11:33 CST).
+- Git history since 2026-11-06 21:30 CST: **172 commits**; earliest matching commit `d7f4a423` at 21:47:49 CST, *Complete Personal PAPER observation integration*.
+- Diff from parent of first session commit to `e9666057`: **56 tracked files changed, 10,695 insertions, 842 deletions**. These are engineering changes, not operational acceptance.
+- Implemented or hardened forward PAPER observation, readiness reporting, QD quote/proposal simulation and custody, broader equity research scoring and receipts, crash and immutable-observation checks. Source tests and offline regression evidence do not imply an accepted operating session.
+
+## Verified installed candidate and selection state
+
+- Installed candidate `D:\AtlasRuntime\releases\2c039af29dfefd1df77e0caa3db3fdf5ed188118` exists.
+- Its selection-referenced installation receipt SHA-256 matched the recorded SHA-256.
+- Read-only manifest verification completed successfully: **10,204/10,204 files SHA-256 verified**, zero missing files, zero size mismatches, zero hash mismatches, zero unsafe manifest paths; **903/903 directories present**.
+- Selection records r0001–r0006 alternate SELECT/ROLLBACK; latest r0006 is ROLLBACK with no selected release. Each `.json` and matching `.pending` file is byte-identical; pending filenames alone do not prove an unfinished transaction.
+- Runtime root children `launchers`, `releases`, `selection`, `support-installations` are owned by `MADDOG\renal`, with protected ACLs, two ACEs each and no reparse-point attribute. This is not full child-resource enrollment verification.
+- Installation receipt reports `D_RUNTIME_LAYOUT_VERIFIED`, `selected:false`, `operational_acceptance:false`, `provider_connections:false`, `financial_effects:false`.
+
+## Commissioning blockers and operator intent
+
+- `POST_V2_PAPER_ACCEPTANCE_MATRIX_2026-10-26.json`: 18/18 rows BLOCKED; 0 independent acceptance records; 18 unassigned reviewers and 18 unassigned evidence owners. B1 account/policy, C1 native resources/process/drain, D1 authority/clock/recovery, E1 provider rights/release/trial remain distinct evidence gates.
+- `PAPER_B1_AUTONOMOUS_ACCEPTANCE_PACKET_V4_2026-10-26.json` is `PROPOSED_NOT_ACCEPTED`, `runtime_consumable:false`, `startup_authorized:false`. Operator scope is confirmed, `manual_per_trade_confirmation_required:false`, mode `AUTONOMOUS_WITHIN_EXPLICIT_OPERATOR_SESSION`, continuous target is repeated/long-running local sessions, not automatic reboot resume.
+- Proposed separate accounts: Quality Dips simulated USD 1,000 (existing eligible ranked stocks/ETFs, max $100 entry, max 1 position) and Hyperliquid simulated USDC 1,000 (BTC/ETH/SOL, stricter existing risk rules). These are proposals, not accepted live operational bindings. Broader market coverage and automatic operation remain desired goals, not demonstrated end-to-end acceptance.
+- B1 packet has no accepted release candidate binding, actual epoch/resource identities, independent acceptance or completed perp conversion policy. An installed and hash-verified candidate cannot substitute for these approvals.
+- AIP-06 native ownership checkpoint says human security review blocks native assembly. Do not bypass startup, custody, provider, or financial gates.
+
+## Next dependency-ordered work
+
+1. Reconcile B1 packet with exact candidate release and account/epoch/resource proposals; identify an authorized independent reviewer and evidence owner. Do not mark accepted without their actual records.
+2. Complete native C1 resource identity, writer ownership, process isolation and eight exclusion-boundary evidence; D1 clock/authority/recovery evidence.
+3. Establish provider entitlement and release/capacity evidence, then obtain explicit authorization for a supervised first PAPER session; collect E1 trial evidence only after a lawful start.
+4. Once accepted, validate unattended PAPER session behavior, reports, stop/recovery, and separate Hyperliquid perp lane. Never place real orders without separate authorization.
+
+**Checkpoint is documentation only.** No release selection, operational acceptance, account access, financial effects, automatic startup or production promotion is granted by this document.
