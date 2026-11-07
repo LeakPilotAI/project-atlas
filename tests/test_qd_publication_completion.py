@@ -94,3 +94,16 @@ def test_no_entry_monitor_preserves_scanner_revision_identity_across_polls():
     with pytest.raises(ValueError, match='QD_SCANNER_SOURCE_ROLLBACK_OR_CONFLICT'):
         s.reader.read_request(.2)
     assert s.reader._last[0:2] == ('SYNTHETIC', 1)
+
+
+@pytest.mark.parametrize('invalid', [None, [], 'malformed', 17])
+def test_open_position_monitor_rejects_non_mapping_publication(invalid):
+    s = fixture()
+    instrument = {'instrument_id': 'owned', 'symbol': 'MSFT', 'asset_class': 'STOCK',
+                  'currency': 'USD', 'units': 'SHARES'}
+    s.cut['state']['positions']['position-1'] = {
+        'remaining': '1', 'instrument': instrument, 'symbol': 'MSFT'}
+    s.packet['monitors']['owned'] = invalid
+    with pytest.raises(ValueError, match='QD_CURRENT_POSITION_MONITOR_UNAVAILABLE'):
+        s.reader.read_request(.2)
+    assert s.reader._last is None

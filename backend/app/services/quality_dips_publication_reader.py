@@ -52,7 +52,7 @@ class QualityDipsPublicationReader:
         if positions:
             p = positions[0]
             observation = packet['monitors'].get(p['instrument']['instrument_id'])
-            if (observation is None or observation.get('instrument') != p['instrument'] or observation.get('symbol') != p['symbol']
+            if (type(observation) is not dict or observation.get('instrument') != p['instrument'] or observation.get('symbol') != p['symbol']
                     or type(observation.get('observed_at')) is not int or not 0 <= now - observation['observed_at'] <= 30):
                 raise ValueError('QD_CURRENT_POSITION_MONITOR_UNAVAILABLE')
             result = {'instrument': p['instrument'], 'bundles': [], 'observation': observation}
