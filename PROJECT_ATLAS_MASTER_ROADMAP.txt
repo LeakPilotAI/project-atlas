@@ -1,3 +1,8 @@
+PERSONAL PAPER COMMANDER CHECKPOINT - EXECUTABLE PRICE CONTRACT - 2026-11-06
+[implemented] Pure fail-closed Alpaca IEX provider-event bid/ask evidence validator: symbol, source timestamp, age, bid/ask sanity, spread and quote sizes. Rejects historical closes, request-start marks, stale/future timestamps and invalid prices.
+[verified] New validator is not wired to forward execution and explicitly returns paper_fill_authorized=false. No credentials, provider requests, fills, or live orders. Focused tests: 22 passed, 1 pre-existing warning.
+[remaining] Validate actual available provider data with fresh authorization, connect only eligible quotes to existing simulated execution and strategy conditions, verify restart and manual run. Genesis untouched.
+
 PERSONAL PAPER COMMANDER CHECKPOINT - READINESS DIAGNOSTICS - 2026-11-06
 [verified] Added read-only /api/paper/forward/readiness endpoint with per-strategy/symbol blockers, snapshot age rechecked at request time, and explicit nonauthorization for simulated/live fills.
 [verified] Added endpoint coverage for empty and four-observation states; 36 focused regressions pass, 1 existing Starlette warning.
