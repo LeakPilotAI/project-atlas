@@ -168,7 +168,7 @@ def run_reviewed_tests(*, modules, junit_leaf, pytest_main=None, case_ids=None):
         "no:faulthandler",
         "--capture=sys",
     ] + list(modules if case_ids is None else case_ids)
-    if any(m in ("tests/test_unified_actual_native_lanes.py", "tests/test_unified_source_capacity_native.py") for m in modules):
+    if os.environ.get("PYTEST_DISABLE_PLUGIN_AUTOLOAD") == "1" and any(m in ("tests/test_unified_actual_native_lanes.py", "tests/test_unified_source_capacity_native.py") for m in modules):
         args[1:1] = ["-p", "pytest_asyncio.plugin"]
     code = pytest_main(args, plugins=[TempPlugin(), junit])
     need(junit.completed, "MISSING_DURABLE_GUARDED_JUNIT")
