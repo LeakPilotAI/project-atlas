@@ -31,3 +31,22 @@ def test_provider_error_stops_session():
 def test_unbounded_session_refused(cycles, interval):
     with pytest.raises(ValueError):
         asyncio.run(run(cycles=cycles, interval_seconds=interval))
+def test_eligibility_trend_does_not_infer_same_listing_turnover():
+    scans = iter([
+        {'unique_markets_screened': 500, 'entry_gate_qualified_new_listings_seen': 7,
+         'rejection_reason_counts': {'INSUFFICIENT_24H_VOLUME': 492,
+                                     'INSUFFICIENT_OPEN_INTEREST': 486}, 'provider_errors': []},
+        {'unique_markets_screened': 500, 'entry_gate_qualified_new_listings_seen': 0,
+         'rejection_reason_counts': {'INSUFFICIENT_24H_VOLUME': 500,
+                                     'INSUFFICIENT_OPEN_INTEREST': 500}, 'provider_errors': []},
+    ])
+    async def collector():
+        return next(scans)
+    async def sleep(_):
+        return None
+    result = asyncio.run(run(collector=collector, sleep=sleep, analyzer=lambda: {}))
+    assert [row['qualified'] for row in result['eligibility_trend']] == [7, 0]
+    assert [row['qualified_fraction'] for row in result['eligibility_trend']] == [0.014, 0.0]
+    assert result['listing_identity_overlap_not_measured'] is True
+    assert result['qualification_change_cause_unverified'] is True
+    assert result['orders_placed'] == result['paper_trades_opened'] == 0
