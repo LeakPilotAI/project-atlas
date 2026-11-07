@@ -184,3 +184,35 @@ def test_concurrent_same_process_open_lot_cannot_oversubscribe_account(tmp_path)
     assert outcomes.count("opened") == 1
     assert any("open-position limit" in outcome for outcome in outcomes)
     assert accounting_snapshot(read_events(path), account_id="forward")["open_positions"] == 1
+
+
+def test_exclusive_writer_refuses_second_process_and_recovers_after_exit(tmp_path):
+    import os
+    import subprocess
+    import sys
+    import time
+    from app.investment.quality_dips_paper import _exclusive_journal_writer
+    path = tmp_path / "multi-process.jsonl"
+    ready = tmp_path / "ready.flag"
+    child = ("from pathlib import Path; import time; "
+             "from app.investment.quality_dips_paper import _exclusive_journal_writer; "
+             f"p=Path({str(path)!r}); ready=Path({str(ready)!r}); "
+             "\nwith _exclusive_journal_writer(p):\n ready.write_text('locked')\n time.sleep(8)\n")
+    env = {**os.environ, "PYTHONPATH": str(__import__('pathlib').Path(__file__).resolve().parents[1] / 'backend')}
+    proc = subprocess.Popen([sys.executable, "-c", child], env=env)
+    try:
+        for _ in range(100):
+            if ready.exists():
+                break
+            if proc.poll() is not None:
+                pytest.fail("lock holder exited before ready")
+            time.sleep(0.03)
+        assert ready.exists(), "child failed to acquire writer lock"
+        with pytest.raises(ValueError, match="WRITER_OWNED_BY_ANOTHER_PROCESS"):
+            with _exclusive_journal_writer(path):
+                pass
+    finally:
+        proc.kill()
+        proc.wait(timeout=5)
+    with _exclusive_journal_writer(path):
+        assert True  # OS lock is released on process termination

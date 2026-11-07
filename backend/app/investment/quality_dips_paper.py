@@ -11,6 +11,7 @@ import json
 import math
 import os
 from datetime import datetime, timezone
+from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from threading import RLock
@@ -28,15 +29,53 @@ ACTIONABLE_STATES = frozenset({"ACCUMULATION", "DEEP_VALUE", "GENERATIONAL"})
 _lock = RLock()
 
 
-def _serialized_paper_mutation(fn):
-    """Serialize replay/validation/append in this process, not across processes.
+@contextmanager
+def _exclusive_journal_writer(path: Path):
+    """Nonblocking OS lock for one journal across processes; fail closed.
 
-    Cross-process writer ownership remains a separate mandatory runtime gate.
+    The lock file is persistent; its existence does not indicate ownership.
+    The OS releases the byte-range lock when a process exits or crashes.
     """
+    path = Path(path)
+    lock_path = path.with_name(path.name + ".writer.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+b") as handle:
+        handle.seek(0, os.SEEK_END)
+        if handle.tell() == 0:
+            handle.write(b"\0")
+            handle.flush()
+        handle.seek(0)
+        if os.name == "nt":
+            import msvcrt
+            try:
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            except OSError as exc:
+                raise ValueError("PAPER_JOURNAL_WRITER_OWNED_BY_ANOTHER_PROCESS") from exc
+            try:
+                yield
+            finally:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            try:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError as exc:
+                raise ValueError("PAPER_JOURNAL_WRITER_OWNED_BY_ANOTHER_PROCESS") from exc
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _serialized_paper_mutation(fn):
+    """Protect the entire journal replay/validate/append across processes."""
     @wraps(fn)
     def guarded(*args, **kwargs):
+        path = Path(kwargs.get("path", QUALITY_DIPS_PAPER_JOURNAL_PATH))
         with _lock:
-            return fn(*args, **kwargs)
+            with _exclusive_journal_writer(path):
+                return fn(*args, **kwargs)
     return guarded
 
 
