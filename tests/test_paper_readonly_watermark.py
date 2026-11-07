@@ -187,3 +187,31 @@ def test_iex_callback_consumer_refuses_uninitialized_and_wrong_authority(tmp_pat
                                      "timestamp": (stamp + timedelta(seconds=1)).isoformat(),
                                      "paper_fill_authorized": True, "live_order_authorized": False})
         assert consumer.accepted == 0
+
+
+def test_iex_callback_recomputes_v3_before_committing_watermark(tmp_path):
+    from scripts.observation_runtime.paper_readonly_watermark import ReadonlyIEXEventConsumer
+    path = tmp_path / "iex-v3.json"
+    now = datetime(2026, 11, 7, tzinfo=UTC)
+    advance_watermark(path, symbol="MSFT", provider_timestamp=(now - timedelta(seconds=2)).isoformat())
+    research = {"symbol": "MSFT", "source_verified": True, "timestamp": now.isoformat(),
+                "normalization_value": {"conservative": 95, "base": 100, "optimistic": 105},
+                "quality_score": 80, "fundamentals_score": 80,
+                "valuation_score": 70, "drawdown_percentile": 80,
+                "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
+    event = {"symbol": "MSFT", "provider": "ALPACA_IEX",
+             "timestamp": (now - timedelta(seconds=1)).isoformat(),
+             "bid": "80", "ask": "80", "bid_lots": 2, "ask_lots": 2,
+             "paper_fill_authorized": False, "live_order_authorized": False}
+    with ReadonlyIEXEventConsumer(path=path, symbol="MSFT",
+                                  research=research, clock=lambda: now) as consumer:
+        consumer.on_fresh_quote(event)
+        assert consumer.last_strategy["candidate"] is True
+        assert consumer.last_strategy["paper_fill_authorized"] is False
+        assert consumer.last_strategy["research_provenance_attested"] is False
+        prior = consumer.last_event
+        with pytest.raises(ValueError, match="BID_ASK_INVALID"):
+            consumer.on_fresh_quote({**event, "timestamp": now.isoformat(), "bid": "90", "ask": "80"})
+        assert consumer.last_event == prior
+        assert consumer.accepted == 1
+    assert read_watermark(path, symbol="MSFT") == prior

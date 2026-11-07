@@ -147,13 +147,17 @@ class ReadonlyIEXEventConsumer:
     session. The caller must independently establish provider authentication.
     """
 
-    def __init__(self, *, path: Path, symbol: str):
+    def __init__(self, *, path: Path, symbol: str, research=None, clock=None):
         if type(symbol) is not str or not symbol:
             raise ValueError("READONLY_IEX_CONSUMER_SYMBOL_REQUIRED")
+        if (research is None) != (clock is None) or (clock is not None and not callable(clock)):
+            raise ValueError("READONLY_IEX_CONSUMER_STRATEGY_DEPENDENCIES_REQUIRED")
         self.path, self.symbol = path, symbol
+        self.research, self.clock = research, clock
         self._lock = None
         self.last_event = None
         self.accepted = 0
+        self.last_strategy = None
 
     def __enter__(self):
         if self._lock is not None:
@@ -182,8 +186,24 @@ class ReadonlyIEXEventConsumer:
         stamp = _aware(event.get("timestamp"), "IEX callback timestamp")
         if stamp <= _aware(self.last_event, "last IEX callback timestamp"):
             raise ValueError("READONLY_IEX_CONSUMER_REPLAY_REFUSED")
+        decision = None
+        if self.research is not None:
+            from app.services.personal_paper_strategy_signal import evaluate_iex_quality_dips_signal
+            now = self.clock()
+            quote = {"symbol": self.symbol, "state": "FRESH",
+                     "bid": event.get("bid"), "ask": event.get("ask"),
+                     "bid_lots": event.get("bid_lots"), "ask_lots": event.get("ask_lots"),
+                     "timestamp": event["timestamp"],
+                     "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+            decision = evaluate_iex_quality_dips_signal(
+                quote=quote, symbol=self.symbol, now=now, research=self.research)
+            if (decision.get("paper_fill_authorized") is not False
+                    or decision.get("live_order_authorized") is not False
+                    or decision.get("research_provenance_attested") is not False):
+                raise ValueError("READONLY_IEX_CONSUMER_STRATEGY_AUTHORITY_REFUSED")
         advance_watermark(self.path, symbol=self.symbol, provider_timestamp=stamp.isoformat())
         self.last_event = stamp.isoformat()
+        self.last_strategy = decision
         self.accepted += 1
 
     def __exit__(self, exc_type, exc, tb):
