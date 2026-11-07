@@ -61,5 +61,12 @@ def test_normal_stop_requires_verified_finished_financial_shutdown():
     from pathlib import Path
     script = (Path(__file__).resolve().parents[1] / 'scripts/windows/Atlas-Background-Controls.ps1').read_text(encoding='utf-8-sig')
     normal_stop = script.split('$stopButton.Add_Click({', 1)[1].split('$emergency', 1)[0]
-    assert 'Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished' in normal_stop
+    assert 'Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished -RequireSessionIdentity' in normal_stop
     assert 'Invoke-AtlasPaperStopWithHandoff $AcceptedPaperStopHandoff $AcceptedPaperSession' in normal_stop
+
+
+def test_gui_accepted_session_fallback_requires_session_identity_for_all_stops():
+    from pathlib import Path
+    script = (Path(__file__).resolve().parents[1] / 'scripts/windows/Atlas-Background-Controls.ps1').read_text(encoding='utf-8-sig')
+    assert script.count('Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished -RequireSessionIdentity') == 2
+    assert 'Invoke-AtlasPaperStop $AcceptedPaperSession -Emergency -RequireSessionIdentity' in script

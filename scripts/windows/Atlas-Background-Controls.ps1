@@ -101,7 +101,7 @@ $form.Add_FormClosing({
                 }
                 Invoke-AtlasPaperStopWithHandoff $AcceptedPaperStopHandoff $AcceptedPaperSession
             } else {
-                Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished
+                Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished -RequireSessionIdentity
             }
             Set-StatusMessage "$($result.phase): $($result.outcome.status) / $($result.outcome.position_state)" ([System.Drawing.Color]::DarkSlateGray)
         }
@@ -338,7 +338,7 @@ $stopButton.Add_Click({
         } else {
             # Normal Stop must never display an incomplete drain as a
             # successful shutdown, even on the legacy accepted-session path.
-            Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished
+            Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished -RequireSessionIdentity
         }
         $diagnostics.Text = ($result | ConvertTo-Json -Depth 12)
         Set-StatusMessage "$($result.phase): $($result.outcome.status) / $($result.outcome.position_state) $($result.outcome.reason)" ([System.Drawing.Color]::DarkSlateGray)
@@ -410,7 +410,7 @@ $emergencyItem.Add_Click({
             }
             Invoke-AtlasPaperStopWithHandoff $AcceptedPaperStopHandoff $AcceptedPaperSession
         } else {
-            Invoke-AtlasPaperStop $AcceptedPaperSession -Emergency
+            Invoke-AtlasPaperStop $AcceptedPaperSession -Emergency -RequireSessionIdentity
         }
         $diagnostics.Text = ($result | ConvertTo-Json -Depth 12)
         Set-StatusMessage 'Emergency dispatch stopped; positions preserved, no flatten claimed.' ([System.Drawing.Color]::DarkRed)

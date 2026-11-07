@@ -17,16 +17,29 @@ function Get-AtlasFullStartupGate([string]$Root) {
 function Get-AtlasFullFrontendDecision([string]$Root) {
     return (Get-AtlasFullStartupGate $Root) + ' Full frontend ownership/readiness is not established; read-only dashboard remains separate.'
 }
-function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emergency, [switch]$RequireFinished) {
+function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emergency, [switch]$RequireFinished, [switch]$RequireSessionIdentity) {
     if ($null -eq $AcceptedSession) {
         throw 'PAPER_STOP_NOT_ENROLLED: no accepted owned session; no legacy stop fallback.'
+    }
+    $sessionId = $null
+    if ($RequireSessionIdentity) {
+        $sessionId = $AcceptedSession.session_id
+        if ($sessionId -isnot [string] -or [string]::IsNullOrWhiteSpace($sessionId) -or $sessionId.Length -gt 128) {
+            throw 'PAPER_STOP_SESSION_IDENTITY_UNVERIFIED'
+        }
     }
     $sessionVerified = $AcceptedSession.verify_session()
     if ($sessionVerified -isnot [bool] -or -not $sessionVerified) {
         throw 'PAPER_STOP_NOT_ENROLLED: no accepted owned session; no legacy stop fallback.'
     }
     $mode = if ($Emergency) { 'EMERGENCY' } else { 'SHUTDOWN_FLATTEN' }
+    if ($RequireSessionIdentity -and $AcceptedSession.session_id -cne $sessionId) {
+        throw 'PAPER_STOP_SESSION_IDENTITY_CHANGED'
+    }
     $result = $AcceptedSession.request_stop($mode)
+    if ($RequireSessionIdentity -and $AcceptedSession.session_id -cne $sessionId) {
+        throw 'PAPER_STOP_SESSION_IDENTITY_CHANGED'
+    }
     if ($result.schema -cne 'QD_CONTROL_STOP_V1' -or
         $result.phase -cnotin @('FINISHED', 'IN_PROGRESS')) {
         throw 'PAPER_STOP_OUTCOME_UNVERIFIED'
