@@ -79,3 +79,18 @@ def test_qd_completion_refuses_changed_source_context(damage):
     with pytest.raises(ValueError):
         s.reader.read_request(.2)
     assert s.reader._last is None
+
+
+def test_no_entry_monitor_preserves_scanner_revision_identity_across_polls():
+    s = fixture()
+    s.packet['monitors']['accepted-id'] = {
+        'instrument': {'instrument_id': 'accepted-id', 'symbol': 'MSFT',
+                       'asset_class': 'STOCK', 'currency': 'USD', 'units': 'SHARES'},
+        'symbol': 'MSFT', 'observed_at': 100}
+    assert s.reader.read_request(.2)['instrument']['symbol'] == 'MSFT'
+    assert s.reader._last[0:2] == ('SYNTHETIC', 1)
+    assert s.reader.read_request(.2)['instrument']['symbol'] == 'MSFT'
+    s.packet['monitors']['accepted-id']['symbol'] = 'OTHER'
+    with pytest.raises(ValueError, match='QD_SCANNER_SOURCE_ROLLBACK_OR_CONFLICT'):
+        s.reader.read_request(.2)
+    assert s.reader._last[0:2] == ('SYNTHETIC', 1)

@@ -61,10 +61,10 @@ class QualityDipsPublicationReader:
             # no eligible entry. Continue observing an authenticated instrument
             # without manufacturing a candidate or a position-management event.
             monitored = []
-            for identity, observation in packet['monitors'].items():
+            for instrument_id, observation in packet['monitors'].items():
                 instrument = observation.get('instrument') if type(observation) is dict else None
-                if (type(instrument) is not dict or instrument.get('instrument_id') != identity
-                        or type(identity) is not str or not identity
+                if (type(instrument) is not dict or instrument.get('instrument_id') != instrument_id
+                        or type(instrument_id) is not str or not instrument_id
                         or type(instrument.get('symbol')) is not str or not instrument['symbol']
                         or observation.get('symbol') != instrument['symbol']
                         or instrument.get('asset_class') not in ('STOCK', 'ETF')
@@ -72,7 +72,7 @@ class QualityDipsPublicationReader:
                         or type(observation.get('observed_at')) is not int
                         or not 0 <= now-observation['observed_at'] <= 30):
                     raise ValueError('QD_NO_ENTRY_MONITOR_UNVERIFIED')
-                monitored.append((identity, instrument))
+                monitored.append((instrument_id, instrument))
             result = ({'instrument': min(monitored, key=lambda row: row[0])[1],
                        'bundles': [], 'observation': None} if monitored else None)
         else:
