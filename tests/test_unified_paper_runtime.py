@@ -426,3 +426,24 @@ def test_control_stop_does_not_report_full_flatten_when_owned_exit_unverified():
     assert result['outcome']['position_state'] == 'FLAT'
     assert result['outcome']['process_shutdown'] == 'INCOMPLETE'
     assert result['outcome']['reason'] == 'SEPARATE_ACKNOWLEDGED_LANE_OUTCOMES_REQUIRED'
+@pytest.mark.parametrize('failure', [ValueError, TimeoutError])
+def test_failed_control_stop_retry_is_read_only_and_mode_locked(failure):
+    from threading import Event
+    from types import SimpleNamespace
+    bridge = object.__new__(UnifiedControlStopBridge)
+    calls = []
+    def failing_stop(**kwargs):
+        calls.append(kwargs)
+        raise failure('synthetic failed stop')
+    bridge.runtime = SimpleNamespace(stop=failing_stop, entry_closed=Event())
+    bridge.verify_session = lambda: True
+    bridge.progress = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'IDLE', 'outcome': None}
+    bridge.owned_close = None
+    bridge._close_binding = None
+    first = bridge.request_stop('SHUTDOWN_FLATTEN')
+    second = bridge.request_stop('SHUTDOWN_FLATTEN')
+    assert first == second and first['outcome']['status'] == 'SHUTDOWN_INCOMPLETE'
+    assert bridge.runtime.entry_closed.is_set() and len(calls) == 1
+    with pytest.raises(ValueError, match='MODE_CHANGED'):
+        bridge.request_stop('EMERGENCY')
+    assert len(calls) == 1

@@ -65,6 +65,10 @@ class UnifiedControlStopBridge:
     def request_stop(self, mode):
         if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY") or not self.verify_session():
             raise ValueError("UNIFIED_CONTROL_SESSION_OR_MODE_UNVERIFIED")
+        if self.progress["phase"] == "FINISHED":
+            if self.progress["outcome"]["mode"] != mode:
+                raise ValueError("UNIFIED_CONTROL_STOP_MODE_CHANGED")
+            return strict(body(self.progress))
         try:
             outcome = self.runtime.stop(emergency=mode == "EMERGENCY", reason="UNKNOWN" if mode == "EMERGENCY" else "USER_SHUTDOWN")
         except (ValueError, OSError, TimeoutError, KeyError, TypeError):
