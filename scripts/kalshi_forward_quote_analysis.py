@@ -59,6 +59,39 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
         group = listing_groups.setdefault(identity, {'snapshots': 0, 'qualified_snapshots': 0})
         group['snapshots'] += 1
         group['qualified_snapshots'] += row.get('entry_gate_passed') is True
+    # Compare earliest and latest qualified snapshots per immutable listing/side.
+    # Unlike adjacent pairs, this reveals longer horizons across separate
+    # operator-invoked sessions without inventing fills or future prices.
+    qualified_horizons = {}
+    for stamp, row, qty in rows:
+        if row.get('entry_gate_passed') is not True:
+            continue
+        for side in ('YES', 'NO'):
+            quote = row['sides'].get(side)
+            if not isinstance(quote, dict):
+                continue
+            identity = (row['ticker'], side, qty, _time(row['created_time']),
+                        _time(row['open_time']), _time(row['occurrence_datetime']))
+            qualified_horizons.setdefault(identity, []).append((stamp, quote))
+    horizon_results = []
+    for identity, observations in qualified_horizons.items():
+        first_stamp, first = observations[0]
+        last_stamp, last = observations[-1]
+        if last_stamp <= first_stamp or first.get('buy_fillable') is not True or last.get('sell_fillable') is not True:
+            continue
+        entry, exit_price = _decimal(first.get('buy_vwap')), _decimal(last.get('sell_vwap'))
+        entry_fee, exit_fee = _decimal(first.get('buy_fee')), _decimal(last.get('sell_fee'))
+        if (None in (entry, exit_price, entry_fee, exit_fee) or
+            not 0 <= entry <= 1 or not 0 <= exit_price <= 1 or
+            entry_fee < 0 or exit_fee < 0):
+            continue
+        net = (exit_price - entry) * identity[2] - entry_fee - exit_fee
+        horizon_results.append({
+            'ticker': identity[0], 'side': identity[1],
+            'elapsed_seconds': str(Decimal(str((last_stamp - first_stamp).total_seconds()))),
+            'net_dollars': str(net), 'fee_adjusted_break_even_met': net >= 0,
+            'classification': 'RETROSPECTIVE_QUALIFIED_QUOTE_HORIZON_NOT_TRADE',
+        })
     previous = {}
     pairs = []
     for stamp, row, qty in rows:
@@ -156,6 +189,13 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
     return {'status': 'PAIRED' if pairs else 'INSUFFICIENT_MATCHED_FORWARD_QUOTES',
             'pairs': pairs, 'paired_count': len(pairs),
             'cohort_summary': cohorts,
+            'qualified_first_to_last_horizons': {
+                'comparisons': horizon_results,
+                'count': len(horizon_results),
+                'at_least_300_seconds': sum(Decimal(p['elapsed_seconds']) >= 300 for p in horizon_results),
+                'fee_adjusted_break_even_met': sum(p['fee_adjusted_break_even_met'] for p in horizon_results),
+                'not_executed_trades': True,
+            },
             'listing_coverage': {
                 'distinct_observed_listings': len(listing_groups),
                 'distinct_listings_with_qualified_snapshot': sum(

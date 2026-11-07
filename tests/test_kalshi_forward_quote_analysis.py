@@ -104,6 +104,23 @@ def test_listing_coverage_includes_single_snapshot_without_pair(tmp_path):
     assert result['listing_coverage']['qualified_snapshot_count'] == 1
 
 
+def test_qualified_first_to_last_horizon_spans_multiple_intervals(tmp_path):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    path = tmp_path / 'quotes.jsonl'
+    observations = [row(now + timedelta(minutes=i), sell='0.55' if i == 6 else '0.38')
+                    for i in (0, 2, 6)]
+    for item in observations:
+        item['entry_gate_passed'] = True
+    write(path, observations)
+    result = analyze(path)
+    horizon = result['qualified_first_to_last_horizons']
+    assert horizon['count'] == 1
+    assert horizon['at_least_300_seconds'] == 1
+    assert horizon['fee_adjusted_break_even_met'] == 1
+    assert horizon['comparisons'][0]['elapsed_seconds'] == '360.0'
+    assert horizon['not_executed_trades'] is True
+
+
 def test_missing_file_is_no_evidence(tmp_path):
     assert analyze(tmp_path / 'missing.jsonl')['status'] == 'NO_FORWARD_OBSERVATIONS'
 
