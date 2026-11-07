@@ -1,4 +1,4 @@
-﻿# Atlas desktop observation-only launcher.
+# Atlas desktop observation-only launcher.
 # Does not start legacy Atlas, financial writers, Docker, or Genesis.
 #Requires -Version 5.1
 $ErrorActionPreference = "Stop"
@@ -30,16 +30,6 @@ try {
     # Clear any previously signaled request before starting.
     $stopEvent.Reset() | Out-Null
 
-    Import-Module (Join-Path $PSScriptRoot "Atlas-Observation-Dashboard.psm1") -Force
-
-    Write-Host "Starting Project Atlas observation-only dashboard..." -ForegroundColor Cyan
-
-    $ready = Open-AtlasObservationDashboard $root -BoundedDataOnly
-    $started = $true
-
-    Write-Host ""
-    Write-Host "ATLAS OBSERVATION ONLINE" -ForegroundColor Green
-    Write-Host "Dashboard: $($ready.url)"
     # Report actual native PAPER prerequisites at each shortcut launch. This is
     # read-only; never promote observation to PAPER or invent operator authority.
     $python = Join-Path $root "backend\.venv\Scripts\python.exe"
@@ -64,6 +54,17 @@ try {
     else {
         Write-Host "PAPER prerequisites: UNVERIFIED (Python environment missing)" -ForegroundColor Yellow
     }
+
+    Import-Module (Join-Path $PSScriptRoot "Atlas-Observation-Dashboard.psm1") -Force
+
+    Write-Host "Starting Project Atlas observation-only dashboard..." -ForegroundColor Cyan
+
+    $ready = Open-AtlasObservationDashboard $root -BoundedDataOnly
+    $started = $true
+
+    Write-Host ""
+    Write-Host "ATLAS OBSERVATION ONLINE" -ForegroundColor Green
+    Write-Host "Dashboard: $($ready.url)"
     Write-Host "PAPER trading: DISABLED (native operator authorization required)"
     Write-Host "Production trading: DISABLED"
     Write-Host ""
