@@ -662,3 +662,28 @@ def test_bounded_session_original_source_real_lease_feed_and_journal(tmp_path, m
         run_bounded_readonly_paper_session(ticks=3, clock=revoke_during_session, **kwargs)
     assert clock.count == 4  # Two accepted ticks, then refusal at tick two of next run.
     assert path.read_bytes() == before
+
+
+def test_forward_action_proposal_is_capacity_bounded_and_never_authorizes_fills():
+    from app.services.personal_paper_strategy_signal import propose_forward_paper_action
+    base = {"schema": "ATLAS_PERSONAL_PAPER_TICK_PLAN_V1", "symbol": "MSFT",
+            "account_id": "paper", "decision_evidence_digest": "a" * 64,
+            "paper_fill_authorized": False, "live_order_authorized": False,
+            "state": "CANDIDATE_UNAUTHORIZED", "candidate": True,
+            "open_positions": 0, "available_cash": 1000}
+    proposal = propose_forward_paper_action(plan=base)
+    assert proposal["action"] == "PROPOSE_ENTRY"
+    assert proposal["max_simulated_notional"] == 100
+    assert proposal["paper_fill_authorized"] is False
+    assert propose_forward_paper_action(plan={**base, "available_cash": 25})["max_simulated_notional"] < 25
+    assert propose_forward_paper_action(plan={**base, "available_cash": 0})["action"] == "WAIT"
+    assert propose_forward_paper_action(plan={**base, "state": "WAIT_NO_SIGNAL", "candidate": False})["action"] == "WAIT"
+    assert propose_forward_paper_action(plan={**base, "state": "WAIT_EXISTING_POSITION", "open_positions": 1})["action"] == "WAIT"
+    for invalid in ({"paper_fill_authorized": True}, {"live_order_authorized": True},
+                    {"decision_evidence_digest": "spoof"}, {"available_cash": -1},
+                    {"state": "CANDIDATE_UNAUTHORIZED", "candidate": False},
+                    {"state": "WAIT_EXISTING_POSITION", "open_positions": 0}):
+        with pytest.raises(ValueError):
+            propose_forward_paper_action(plan={**base, **invalid})
+    with pytest.raises(ValueError, match="CAPACITY_INVALID"):
+        propose_forward_paper_action(plan=base, max_notional=101)

@@ -409,3 +409,44 @@ def run_bounded_readonly_paper_session(*, ticks: int, clock: Any, **dependencies
                                    "index": r["tick"], "plan": r["plan"]} for r in records],
                         "completed": len(records), "paper_fill_authorized": False,
                         "live_order_authorized": False}))
+
+
+def propose_forward_paper_action(*, plan: dict[str, Any],
+                                 max_notional: float = 100.0) -> dict[str, Any]:
+    """Pure next-action proposal, NEVER a fill or financial-write permit.
+
+    Requires an internally generated read-only tick schema, conservative
+    account capacity and a reproducible decision digest. Caller-provided
+    dictionaries are not authentic provider/operator attestations.
+    """
+    from decimal import Decimal, InvalidOperation
+    from app.services.paper_financial_replay import strict, body
+    if (type(plan) is not dict or plan.get("schema") != "ATLAS_PERSONAL_PAPER_TICK_PLAN_V1"
+            or plan.get("paper_fill_authorized") is not False
+            or plan.get("live_order_authorized") is not False
+            or type(plan.get("decision_evidence_digest")) is not str
+            or len(plan["decision_evidence_digest"]) != 64):
+        raise ValueError("PAPER_ACTION_PROPOSAL_VERIFIED_READONLY_TICK_REQUIRED")
+    try:
+        cash = Decimal(str(plan["available_cash"]))
+        ceiling = Decimal(str(max_notional))
+    except (KeyError, ValueError, InvalidOperation) as exc:
+        raise ValueError("PAPER_ACTION_PROPOSAL_CAPACITY_INVALID") from exc
+    if not cash.is_finite() or cash < 0 or not ceiling.is_finite() or not 0 < ceiling <= 100:
+        raise ValueError("PAPER_ACTION_PROPOSAL_CAPACITY_INVALID")
+    state = plan.get("state")
+    positions = plan.get("open_positions")
+    if (type(positions) is not int or positions < 0
+            or state not in ("WAIT_EXISTING_POSITION", "WAIT_NO_SIGNAL", "CANDIDATE_UNAUTHORIZED")
+            or (state == "WAIT_EXISTING_POSITION") != (positions > 0)
+            or (state == "CANDIDATE_UNAUTHORIZED" and plan.get("candidate") is not True)):
+        raise ValueError("PAPER_ACTION_PROPOSAL_STATE_CONFLICT")
+    proposed = min(ceiling, cash / Decimal("1.001")) if state == "CANDIDATE_UNAUTHORIZED" else Decimal(0)
+    return strict(body({"schema": "ATLAS_FORWARD_PAPER_UNAUTHORIZED_ACTION_PROPOSAL_V1",
+                        "symbol": plan.get("symbol"), "account_id": plan.get("account_id"),
+                        "decision_evidence_digest": plan["decision_evidence_digest"],
+                        "action": "PROPOSE_ENTRY" if proposed > 0 else "WAIT",
+                        "reason": state if proposed > 0 or state != "CANDIDATE_UNAUTHORIZED" else "INSUFFICIENT_CASH",
+                        "max_simulated_notional": float(round(proposed, 8)),
+                        "paper_fill_authorized": False,
+                        "live_order_authorized": False}))
