@@ -456,3 +456,51 @@ def propose_forward_paper_action(*, plan: dict[str, Any],
                         "max_simulated_notional": float(round(proposed, 8)),
                         "paper_fill_authorized": False,
                         "live_order_authorized": False}))
+
+
+def assess_forward_paper_activation_readiness(*, installation: Any,
+                                              publication: Any,
+                                              provider: Any,
+                                              journal_path: Any,
+                                              account_id: str) -> dict[str, Any]:
+    """Non-mutating readiness inventory, not an activation or login attempt.
+
+    Refuses to infer provider authentication from mutable feed flags or
+    operator authorization from an installation object's mere existence.
+    """
+    from pathlib import Path
+    from app.investment.quality_dips_paper import accounting_snapshot, read_events
+    from app.services.paper_financial_replay import body, strict
+    from app.services.personal_paper_runtime import PersonalOperatorInstallation
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services.quality_dips_current_producer import QualityDipsSourcePublication
+    if (type(account_id) is not str or not account_id
+            or not isinstance(journal_path, Path)):
+        raise ValueError("PAPER_ACTIVATION_PREFLIGHT_INPUT_INVALID")
+    blockers = []
+    if type(installation) is not PersonalOperatorInstallation:
+        blockers.append("LOCAL_OPERATOR_INSTALLATION_NOT_VERIFIED")
+    if type(publication) is not QualityDipsSourcePublication:
+        blockers.append("NATIVE_SOURCE_PUBLICATION_NOT_VERIFIED")
+    if type(provider) is not PersonalPaperIEXProvider:
+        blockers.append("IEX_PROVIDER_PORT_NOT_VERIFIED")
+    if not journal_path.is_file():
+        blockers.append("PAPER_JOURNAL_NOT_INITIALIZED")
+    else:
+        try:
+            snapshot = accounting_snapshot(read_events(journal_path), account_id=account_id)
+            if (snapshot is None or snapshot.get("data_provenance") != "FORWARD_COLLECTION"
+                    or snapshot.get("cash_reconciled") is not True):
+                blockers.append("FORWARD_JOURNAL_RECONCILIATION_REQUIRED")
+        except (OSError, ValueError, KeyError, TypeError):
+            blockers.append("FORWARD_JOURNAL_REPLAY_REFUSED")
+    # These conditions must be proven by a supervised session and trusted
+    # custody path; a structural preflight must never mark them complete.
+    blockers.extend(("SUPERVISED_OPERATOR_LEASE_NOT_PROVEN",
+                     "AUTHENTICATED_IEX_SESSION_NOT_PROVEN",
+                     "NATIVE_FORWARD_PROVENANCE_NOT_ATTESTED",
+                     "FORWARD_FINANCIAL_WRITE_AUTHORITY_NOT_GRANTED"))
+    return strict(body({"schema": "ATLAS_FORWARD_PAPER_ACTIVATION_PREFLIGHT_V1",
+                        "account_id": account_id, "blockers": blockers,
+                        "ready": False, "paper_fill_authorized": False,
+                        "live_order_authorized": False}))

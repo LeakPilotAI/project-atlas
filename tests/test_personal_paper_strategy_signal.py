@@ -693,3 +693,25 @@ def test_forward_action_proposal_is_capacity_bounded_and_never_authorizes_fills(
             propose_forward_paper_action(plan={**base, **invalid})
     with pytest.raises(ValueError, match="CAPACITY_INVALID"):
         propose_forward_paper_action(plan=base, max_notional=101)
+
+
+def test_forward_activation_preflight_never_promotes_structural_evidence(tmp_path):
+    from app.services.personal_paper_strategy_signal import assess_forward_paper_activation_readiness
+    from app.investment.quality_dips_paper import initialize_paper_account
+    path = tmp_path / "forward.jsonl"
+    args = dict(installation=None, publication=None, provider=None,
+                journal_path=path, account_id="forward")
+    missing = assess_forward_paper_activation_readiness(**args)
+    assert "PAPER_JOURNAL_NOT_INITIALIZED" in missing["blockers"]
+    assert missing["ready"] is False
+    initialize_paper_account(account_id="forward", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="FORWARD_COLLECTION", path=path)
+    before = path.read_bytes()
+    accepted = assess_forward_paper_activation_readiness(**args)
+    assert "PAPER_JOURNAL_NOT_INITIALIZED" not in accepted["blockers"]
+    assert "AUTHENTICATED_IEX_SESSION_NOT_PROVEN" in accepted["blockers"]
+    assert "FORWARD_FINANCIAL_WRITE_AUTHORITY_NOT_GRANTED" in accepted["blockers"]
+    assert accepted["paper_fill_authorized"] is False
+    assert path.read_bytes() == before
+    with pytest.raises(ValueError, match="INPUT_INVALID"):
+        assess_forward_paper_activation_readiness(**{**args, "account_id": ""})
