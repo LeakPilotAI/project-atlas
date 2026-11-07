@@ -52,3 +52,14 @@ def test_broad_market_routes_all_equity_strategies_not_perps():
     batch["hyperliquid_perpetuals_included"] = True
     with pytest.raises(ValueError, match="SCOPE"):
         research_route_plan(batch)
+
+
+def test_completion_rejects_missing_receipts_without_cursor_write():
+    from scripts.observation_runtime.alpaca_equity_catalog import complete_research_batch
+    batch = {"schema": "ATLAS_ALPACA_RESEARCH_BATCH_V1", "offset": 0, "next_offset": 2,
+             "symbols": ["A", "AA"], "paper_execution_authorized": False,
+             "hyperliquid_perpetuals_included": False}
+    from scripts.observation_runtime.alpaca_equity_catalog import REPO
+    cursor = REPO / "logs" / "research" / "alpaca_equity_cursor.json"
+    with pytest.raises(ValueError, match="INCOMPLETE"):
+        complete_research_batch(batch, [{"symbol": "A", "status": "RESEARCH_COMPLETE", "paper_eligible": False}], cursor)

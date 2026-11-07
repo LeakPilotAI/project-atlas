@@ -152,6 +152,52 @@ def research_route_plan(batch, *, known_etf_symbols=()):
             "paper_execution_authorized": False, "live_order_authorized": False}
 
 
+def complete_research_batch(batch, results, cursor_path):
+    """Advance the research cursor only for a complete, successful batch.
+
+    Results are research receipts, never trading authorizations. Failed symbols
+    remain pending for the next attempt. An already advanced cursor is refused.
+    """
+    cursor_path = Path(cursor_path)
+    if cursor_path != REPO / "logs" / "research" / "alpaca_equity_cursor.json":
+        raise ValueError("RESEARCH_COMPLETION_CURSOR_PATH_REFUSED")
+    if (type(batch) is not dict or batch.get("schema") != "ATLAS_ALPACA_RESEARCH_BATCH_V1"
+            or batch.get("paper_execution_authorized") is not False
+            or batch.get("hyperliquid_perpetuals_included") is not False
+            or type(results) is not list):
+        raise ValueError("RESEARCH_COMPLETION_SCOPE_REFUSED")
+    symbols = batch.get("symbols")
+    if (type(symbols) is not list or not symbols or len(symbols) > 8
+            or len(symbols) != len(set(symbols))
+            or type(batch.get("offset")) is not int or batch["offset"] < 0
+            or batch.get("next_offset") != batch["offset"] + len(symbols)):
+        raise ValueError("RESEARCH_COMPLETION_BATCH_REFUSED")
+    if (len(results) != len(symbols)
+            or any(type(r) is not dict or r.get("symbol") != symbol
+                   or r.get("status") != "RESEARCH_COMPLETE"
+                   or r.get("paper_eligible") is not False
+                   for symbol, r in zip(symbols, results, strict=True))):
+        raise ValueError("RESEARCH_COMPLETION_INCOMPLETE")
+    inventory_path = REPO / "logs" / "research" / "alpaca_equity_inventory.json"
+    snapshot = json.loads(inventory_path.read_text(encoding="utf-8"))
+    expected = rotating_batch(snapshot, offset=batch["offset"], limit=len(symbols))
+    if snapshot.get("sha256") != batch.get("inventory_sha256") or expected != symbols:
+        raise ValueError("RESEARCH_COMPLETION_INVENTORY_CHANGED")
+    prior = json.loads(cursor_path.read_text(encoding="utf-8")) if cursor_path.is_file() else {}
+    if (type(prior) is not dict or prior.get("schema", "ATLAS_ALPACA_RESEARCH_CURSOR_V1") != "ATLAS_ALPACA_RESEARCH_CURSOR_V1"
+            or (prior.get("offset", 0) if prior.get("inventory_sha256") == batch["inventory_sha256"] else 0) != batch["offset"]):
+        raise ValueError("RESEARCH_COMPLETION_CURSOR_CHANGED")
+    cursor_path.parent.mkdir(parents=True, exist_ok=True)
+    temp = cursor_path.with_suffix(".pending")
+    with temp.open("x", encoding="utf-8") as handle:
+        json.dump({"schema": "ATLAS_ALPACA_RESEARCH_CURSOR_V1",
+                   "inventory_sha256": batch["inventory_sha256"],
+                   "offset": batch["next_offset"]}, handle, sort_keys=True)
+    os.replace(temp, cursor_path)
+    return {"completed": len(symbols), "next_offset": batch["next_offset"],
+            "paper_execution_authorized": False, "live_order_authorized": False}
+
+
 def acquire_catalog(credentials_path, *, inventory_path=None):
     credentials = Credentials.load(credentials_path)
     request = Request(URL, headers={"APCA-API-KEY-ID": credentials.key,
