@@ -16,18 +16,38 @@ async def run(*, cycles: int = 2, interval_seconds: float = 60.0,
         raise ValueError('interval must be between 1 and 300 seconds')
     observations = []
     prior_qualification = None
+    prior_metadata = None
     identity_overlap = []
     for index in range(cycles):
         if index:
             await sleep(interval_seconds)
         result = await collector()
         current = result.pop('scan_qualification_by_ticker', None)
+        metadata = result.pop('scan_listing_metadata', None)
         if isinstance(current, dict) and all(
             isinstance(k, str) and isinstance(v, bool) for k, v in current.items()
         ):
             if prior_qualification is not None:
                 shared = set(prior_qualification) & set(current)
+                moved_pages = None
+                same_page = None
+                current_only_created_times_present = None
+                if (isinstance(prior_metadata, dict) and isinstance(metadata, dict)
+                    and set(prior_metadata) == set(prior_qualification)
+                    and set(metadata) == set(current)
+                    and all(isinstance(v, dict) and type(v.get('page')) is int
+                            and 1 <= v['page'] <= 5 for v in
+                            list(prior_metadata.values()) + list(metadata.values()))):
+                    moved_pages = sum(prior_metadata[t]['page'] != metadata[t]['page'] for t in shared)
+                    same_page = len(shared) - moved_pages
+                    current_only_created_times_present = sum(
+                        isinstance(metadata[t].get('created_time'), str)
+                        for t in set(current) - set(prior_qualification))
                 identity_overlap.append({
+                    'shared_moved_page': moved_pages,
+                    'shared_same_page': same_page,
+                    'current_only_with_created_time': current_only_created_times_present,
+                    'current_only_are_confirmed_new_listings': False,
                     'from_cycle': index, 'to_cycle': index + 1,
                     'shared_tickers': len(shared),
                     'prior_only_tickers': len(set(prior_qualification) - set(current)),
@@ -38,8 +58,10 @@ async def run(*, cycles: int = 2, interval_seconds: float = 60.0,
                     'shared_remained_unqualified': sum(not prior_qualification[t] and not current[t] for t in shared),
                 })
             prior_qualification = current
+            prior_metadata = metadata
         else:
             prior_qualification = None
+            prior_metadata = None
         observations.append(result)
         if result.get('provider_errors'):
             break

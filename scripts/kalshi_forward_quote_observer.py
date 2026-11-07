@@ -37,6 +37,7 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
     rejection_counts = Counter()
     rejection_combinations = Counter()
     scan_qualification_by_ticker = {}
+    scan_listing_metadata = {}
     seen = set()
     cursor = None
     pages_scanned = 0
@@ -55,6 +56,10 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             seen.add(ticker)
             reasons = scanner._prefilter_reasons(market, observed)
             scan_qualification_by_ticker[ticker] = not bool(reasons)
+            scan_listing_metadata[ticker] = {
+                'page': pages_scanned,
+                'created_time': market.get('created_time') if isinstance(market.get('created_time'), str) else None,
+            }
             if reasons:
                 unique_reasons = tuple(sorted(set(reasons)))
                 rejection_counts.update(unique_reasons)
@@ -189,6 +194,7 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
             'pages_scanned': pages_scanned,
             'unique_markets_screened': len(seen), 'records_written': len(records),
             'scan_qualification_by_ticker': scan_qualification_by_ticker,
+            'scan_listing_metadata': scan_listing_metadata,
             'rejection_reason_counts': dict(sorted(rejection_counts.items())),
             'top_rejection_combinations': [
                 {'reasons': list(reasons), 'markets': count}

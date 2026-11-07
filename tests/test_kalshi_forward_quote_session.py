@@ -64,6 +64,9 @@ def test_identity_overlap_distinguishes_turnover_from_same_market_eligibility():
         return None
     result = asyncio.run(run(collector=collector, sleep=sleep, analyzer=lambda: {}))
     assert result['listing_identity_overlap'] == [{
+        'shared_moved_page': None, 'shared_same_page': None,
+        'current_only_with_created_time': None,
+        'current_only_are_confirmed_new_listings': False,
         'from_cycle': 1, 'to_cycle': 2, 'shared_tickers': 2,
         'prior_only_tickers': 1, 'current_only_tickers': 1,
         'shared_remained_qualified': 0, 'shared_lost_qualification': 1,
@@ -73,3 +76,26 @@ def test_identity_overlap_distinguishes_turnover_from_same_market_eligibility():
     assert result['qualification_change_cause_unverified'] is True
     assert all('scan_qualification_by_ticker' not in x for x in result['observations'])
     assert result['orders_placed'] == result['paper_trades_opened'] == 0
+
+def test_page_position_evidence_without_claiming_new_listings():
+    scans = iter([
+        {'scan_qualification_by_ticker': {'A': True, 'B': False},
+         'scan_listing_metadata': {'A': {'page': 1, 'created_time': '2026-11-07T10:00:00Z'},
+                                   'B': {'page': 2, 'created_time': None}},
+         'provider_errors': []},
+        {'scan_qualification_by_ticker': {'A': True, 'C': False},
+         'scan_listing_metadata': {'A': {'page': 3, 'created_time': '2026-11-07T10:00:00Z'},
+                                   'C': {'page': 1, 'created_time': '2026-11-06T10:00:00Z'}},
+         'provider_errors': []},
+    ])
+    async def collector():
+        return next(scans)
+    async def sleep(_):
+        return None
+    result = asyncio.run(run(collector=collector, sleep=sleep, analyzer=lambda: {}))
+    overlap = result['listing_identity_overlap'][0]
+    assert overlap['shared_moved_page'] == 1
+    assert overlap['shared_same_page'] == 0
+    assert overlap['current_only_with_created_time'] == 1
+    assert overlap['current_only_are_confirmed_new_listings'] is False
+    assert all('scan_listing_metadata' not in x for x in result['observations'])
