@@ -279,12 +279,28 @@ def inspect_leased_published_iex_journal_candidate(
             if (snapshot is None or snapshot.get("data_provenance") != "FORWARD_COLLECTION"
                     or snapshot.get("cash_reconciled") is not True):
                 raise ValueError("LEASED_PUBLISHED_JOURNAL_ACCOUNT_INVALID")
+            if snapshot["open_positions"] != len(positions):
+                raise ValueError("LEASED_PUBLISHED_JOURNAL_POSITION_COUNT_MISMATCH")
+            from decimal import Decimal
+            marks = []
+            for lot in positions:
+                if lot.get("symbol") != symbol:
+                    raise ValueError("LEASED_PUBLISHED_JOURNAL_OTHER_SYMBOL_POSITION")
+                bid = Decimal(candidate["quote_evidence"]["bid"])
+                quantity = Decimal(str(lot["quantity_shares"]))
+                entry = Decimal(str(lot["fill_price"]))
+                entry_fee = Decimal(str(lot["entry_fee"]))
+                exit_fee = bid * quantity * Decimal(str(snapshot["fee_bps_per_side"])) / Decimal(10000)
+                marks.append({"lot_id": lot["lot_id"], "bid": str(bid),
+                              "unrealized_net_pnl_estimate": float(round(
+                                  (bid - entry) * quantity - entry_fee - exit_fee, 8))})
             if lease.check(proof) is not True or lease.check_components(components) is not True:
                 raise ValueError("LEASED_PUBLISHED_JOURNAL_LEASE_CHANGED")
             return {**candidate, "account_id": account_id,
                     "journal_cash_reconciled": True,
                     "journal_open_positions": snapshot["open_positions"],
                     "journal_open_lots": len(positions),
+                    "journal_position_marks": marks,
                     "journal_available_cash": snapshot["available_cash"],
                     "journal_writer_lock_checked": True,
                     "operator_lease_checked": True,
@@ -321,6 +337,7 @@ def plan_leased_published_iex_paper_tick(
                         "symbol": symbol, "account_id": account_id,
                         "state": state, "candidate": inspection["candidate"],
                         "open_positions": positions,
+                        "position_marks": inspection["journal_position_marks"],
                         "available_cash": inspection["journal_available_cash"],
                         "paper_fill_authorized": False,
                         "live_order_authorized": False}))

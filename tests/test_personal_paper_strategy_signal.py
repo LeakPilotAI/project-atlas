@@ -535,6 +535,9 @@ def test_leased_published_tick_planner_no_fill_and_existing_position(tmp_path, m
     result = plan_leased_published_iex_paper_tick(**kwargs)
     assert result["state"] == "WAIT_EXISTING_POSITION"
     assert result["open_positions"] == 1
+    assert len(result["position_marks"]) == 1
+    assert result["position_marks"][0]["bid"] == "79.99"
+    assert result["position_marks"][0]["unrealized_net_pnl_estimate"] < 0
     assert path.read_bytes() == before
     operator.i.revoke()
     with pytest.raises(ValueError, match="ACTIVATION_REVOKED"):
