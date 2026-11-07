@@ -20,7 +20,8 @@ def _now() -> datetime:
 def _float(v: Any) -> float | None:
     try:
         x = float(v)
-        return x if x > 0 and x == x else None
+        from math import isfinite
+        return x if x > 0 and isfinite(x) else None
     except (TypeError, ValueError):
         return None
 
@@ -68,7 +69,13 @@ class QualityDipsV2TargetCache:
         if row.get("original_target_as_of_verified") is not True:
             return []
         as_of = row.get("original_target_as_of")
-        if _dt(as_of) is None:
+        original = _dt(as_of)
+        if original is None or original > _now():
+            return []
+        # One consensus snapshot must supply the entire ordered triple;
+        # missing or contradictory targets are not independent scenarios.
+        low, mean, high = (_float(values.get(key)) for key in ("low", "mean", "high"))
+        if any(value is None for value in (low, mean, high)) or not low <= mean <= high:
             return []
         out = []
         for key, note in (("low", "analyst target low"), ("mean", "analyst target mean"), ("high", "analyst target high")):
