@@ -1,4 +1,4 @@
-﻿# Gate probe imports only the independent authorization module, never app.main.
+# Gate probe imports only the independent authorization module, never app.main.
 function Get-AtlasFullStartupGate([string]$Root) {
     $python = Join-Path $Root 'backend\.venv\Scripts\python.exe'
     $gate = Join-Path $Root 'backend\app\core\production_startup_lock.py'
@@ -52,6 +52,12 @@ function Invoke-AtlasPaperStop([object]$AcceptedSession = $null, [switch]$Emerge
     }
     return $result
 }
+# In-process bridge for an independently accepted owner session. The legacy
+# desktop shortcuts remain blocked; no file/socket-provided authority is trusted.
+function Invoke-AtlasPaperStopWithHandoff([object]$Handoff = $null, [object]$AcceptedSession = $null) {
+    Import-Module (Join-Path $PSScriptRoot 'Atlas-Paper-Stop-Handoff.psm1') -Force -ErrorAction Stop
+    return Invoke-AtlasAcceptedPaperStopHandoff $Handoff $AcceptedSession
+}
 function Format-AtlasIEXDataStatus([object]$Snapshot = $null) {
     if ($null -eq $Snapshot -or $Snapshot.schema -cne 'ATLAS_ALPACA_IEX_VIEW_V1' -or
         $Snapshot.feed -cne 'IEX' -or $Snapshot.scope -cne 'SINGLE_EXCHANGE_NOT_NBBO' -or
@@ -73,5 +79,5 @@ function Format-AtlasUnifiedPaperStatus([object]$Snapshot = $null) {
     }
     return ($rows -join '; ') + '; separate accounts; startup authorization: NO'
 }
-Export-ModuleMember -Function Get-AtlasFullStartupGate, Get-AtlasFullFrontendDecision, Invoke-AtlasPaperStop, Format-AtlasIEXDataStatus, Format-AtlasUnifiedPaperStatus
+Export-ModuleMember -Function Get-AtlasFullStartupGate, Get-AtlasFullFrontendDecision, Invoke-AtlasPaperStop, Invoke-AtlasPaperStopWithHandoff, Format-AtlasIEXDataStatus, Format-AtlasUnifiedPaperStatus
 
