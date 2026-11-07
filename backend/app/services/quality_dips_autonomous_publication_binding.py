@@ -27,6 +27,12 @@ def bind_financial_publication_to_native_cut(enrollment, publication, cut, docum
     names = {'source': set(p['source_files']), 'projection': {p['projection_file']},
              'report': {p['report_file']}, 'control': set(),
              'coordination': set(), 'custody': set()}
+    expected_schemas = {'source': {'inception.json': 'QD_AUTO_NATIVE_INCEPTION_V4',
+                                    **{name: 'QD_AUTO_NATIVE_EVENT_V4'
+                                       for name in p['source_files'][1:]}},
+                        'projection': {p['projection_file']: 'QD_AUTO_NATIVE_PROJECTION_V4'},
+                        'report': {p['report_file']: 'QD_AUTO_NATIVE_REPORT_V4'},
+                        'control': {}, 'coordination': {}, 'custody': {}}
     for role in ROLES:
         pins, files = c['resources'][role], d[role]
         if (type(pins) is not dict or type(files) is not dict
@@ -38,7 +44,8 @@ def bind_financial_publication_to_native_cut(enrollment, publication, cut, docum
             if (type(pin) is not dict or set(pin) != {'schema', 'native_id', 'sha256', 'record_schema'}
                     or pin['schema'] != 'QD_AUTO_NATIVE_FILE_V4'
                     or type(doc) is not dict or type(doc.get('schema')) is not str
-                    or not doc['schema'] or pin['record_schema'] != doc['schema']):
+                    or doc['schema'] != expected_schemas[role][name]
+                    or pin['record_schema'] != doc['schema']):
                 raise ValueError('AUTO_PUBLICATION_NATIVE_PIN_INVALID')
             native_id(pin['native_id'])
             hashed(pin['sha256'])

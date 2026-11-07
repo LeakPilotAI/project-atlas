@@ -83,3 +83,17 @@ def test_native_publication_binding_rejects_non_object_document():
     docs['source']['0002-event.json'] = []
     with pytest.raises(ValueError):
         bind_financial_publication_to_native_cut(e, p, cut, docs)
+
+
+@pytest.mark.parametrize('role,name', [('source', 'inception.json'),
+    ('source', '0002-event.json'), ('projection', 'projection.json'),
+    ('report', 'report.json')])
+def test_publication_binding_rejects_non_v4_native_record_even_if_pin_matches(role, name):
+    e, p, cut, docs = sample()
+    doc = docs[role][name]
+    doc['schema'] = 'QD_OP_MANUAL_OR_DISPOSABLE_V1'
+    pin = cut['resources'][role][name]
+    pin['record_schema'] = doc['schema']
+    pin['sha256'] = hashlib.sha256(body(doc).encode('utf-8')).hexdigest()
+    with pytest.raises(ValueError, match='AUTO_PUBLICATION_NATIVE_PIN_INVALID'):
+        bind_financial_publication_to_native_cut(e, p, cut, docs)
