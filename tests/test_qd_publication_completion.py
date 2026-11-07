@@ -130,3 +130,17 @@ def test_publication_refuses_in_place_runtime_grant_mutation_during_read():
     with pytest.raises(ValueError, match='QD_PUBLICATION_COMPLETION_CONTEXT_CHANGED'):
         s.reader.read_request(.2)
     assert s.reader._last is None
+
+
+def test_publication_refuses_packet_mutation_during_final_custody_check():
+    s = fixture()
+    calls = [0]
+    def verify(*args):
+        calls[0] += 1
+        if calls[0] == 2:
+            args[1]['revision'] = 2
+        return True
+    s.authority.verify_scanner_publication = verify
+    with pytest.raises(ValueError, match='QD_PUBLICATION_COMPLETION_CONTEXT_CHANGED'):
+        s.reader.read_request(.2)
+    assert s.reader._last is None

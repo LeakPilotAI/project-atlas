@@ -92,6 +92,7 @@ class QualityDipsPublicationReader:
         if (type(end) is not int or not 0 <= end-now <= 1
                 or not 0 <= end-packet['observed_at'] <= 30
                 or runtime.grant is not session_grant or digest(session_grant) != session_snapshot
+                or digest(packet) != identity[2]
                 or runtime.stopped.is_set() or runtime.halted
                 or body(self.writer._cut()) != body(cut)
                 or not authenticated):
