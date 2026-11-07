@@ -166,3 +166,28 @@ async def test_native_real_write_headroom_refuses_unfunded_followup_envelope(sys
     stopped = s.r.stop()
     assert stopped['state'] == 'STOPPED'
     assert s.journal.snapshot()['state']['finalized'] is not None
+
+@pytest.mark.asyncio
+async def test_native_repeated_observations_do_not_spend_shutdown_reserve(system):
+    """Guarded native bounded observations, with real writers and no mock headroom."""
+    s = system
+    await native_fixtures.cycle(s)
+    initial = (s.journal.remaining_slots(),
+               s.q.writer.store.remaining_operations(),
+               s.p.writer.store.remaining_operations(),
+               s.p.orders.remaining_slots())
+    # Repeatedly observe unchanged synthetic market data; neither duplicate
+    # entry nor duplicate resting-order reservation may consume stop capacity.
+    for _ in range(12):
+        await native_fixtures.cycle(s)
+    final = (s.journal.remaining_slots(),
+             s.q.writer.store.remaining_operations(),
+             s.p.writer.store.remaining_operations(),
+             s.p.orders.remaining_slots())
+    assert final == initial
+    assert len(s.p.orders.snapshot()['state']['orders']) == 1
+    assert s.q.writer._cut()['state']['revision'] == 1
+    stopped = s.r.stop()
+    assert stopped['state'] == 'STOPPED'
+    assert s.journal.snapshot()['state']['finalized'] is not None
+    assert s.r.stop() == stopped
