@@ -1,4 +1,4 @@
-﻿"""Read-only Kalshi public-depth entry/exit feasibility diagnostic.
+"""Read-only Kalshi public-depth entry/exit feasibility diagnostic.
 
 No position is opened; no journal or broker operation is performed. Both
 hypothetical fills use ONE snapshot and do not prove future exit liquidity.
@@ -14,16 +14,16 @@ from app.prediction.paper_engine import walk_executable_depth
 
 
 async def probe(*, limit: int = 5, quantity: Decimal = Decimal("1")) -> dict:
-    if not 1 <= limit <= 5 or not Decimal("0") < quantity <= Decimal("10"):
+    if not 1 <= limit <= 5 or not quantity.is_finite() or not Decimal("0") < quantity <= Decimal("10"):
         raise ValueError("bounded read-only probe requires 1..5 markets and 0..10 contracts")
-    markets = await kalshi_public.get_markets(status="open", limit=limit)
+    markets = await asyncio.wait_for(kalshi_public.get_markets(status="open", limit=limit), timeout=12.0)
     results = []
     for market in markets.get("markets", []):
         ticker = str(market.get("ticker") or "")
         if not ticker:
             continue
         try:
-            book = (await kalshi_public.get_orderbook(ticker, depth=20))["orderbook"]
+            book = (await asyncio.wait_for(kalshi_public.get_orderbook(ticker, depth=20), timeout=12.0))["orderbook"]
             sides = {}
             for side in ("YES", "NO"):
                 entry = walk_executable_depth(book, side=side, action="BUY", quantity=quantity)
@@ -37,7 +37,7 @@ async def probe(*, limit: int = 5, quantity: Decimal = Decimal("1")) -> dict:
                     "exit_vwap": exit_.get("vwap_dollars"),
                 }
             results.append({"ticker": ticker, "sides": sides})
-        except Exception as exc:
+        except (Exception, asyncio.TimeoutError) as exc:
             results.append({"ticker": ticker, "error_type": type(exc).__name__})
     return {
         "mode": "READ_ONLY_ONE_SNAPSHOT_DEPTH_DIAGNOSTIC",
@@ -54,4 +54,3 @@ async def probe(*, limit: int = 5, quantity: Decimal = Decimal("1")) -> dict:
 
 if __name__ == "__main__":
     print(json.dumps(asyncio.run(probe()), sort_keys=True, indent=2))
-
