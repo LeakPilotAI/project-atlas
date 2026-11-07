@@ -33,6 +33,11 @@ def schedule():
            else 'SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING','max_children':2 if key=='F04' else 1,
            'ack':'exact-account-operation-revision-native-source-projection-report-global',
            'on_failure':'PRESERVE_FIRST_FAILURE_CLEAN_OWNED_ONLY_ABORT_NO_RETRY'} for key,(case,proof) in obligations.items()]
+    # F11 readback is a prerequisite only; it does not satisfy native load/exhaustion proof.
+    for row in rows:
+        if row['id'] == 'F11':
+            row['prerequisite_case'] = 'tests/test_unified_source_capacity_native.py::test_native_store_capacity_readbacks_are_consistent_without_mocked_headroom'
+            row['prerequisite_status'] = 'SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING'
     rows+= [{'id':'BOOTSTRAP-IPC-FAULTS','source_case':None,'proof':'missing-or-conflicting-escrow-bootstrap-ACK-credit-and-drain',
              'status':'NATIVE_FAULT_INJECTOR_BINDING_PENDING','max_children':2},
             {'id':'OWNERSHIP-PROBES','source_case':None,'proof':'current-supervisor-complete-roster-contained-unexpected-child-refusal',
