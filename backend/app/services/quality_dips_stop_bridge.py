@@ -199,7 +199,8 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False):
                         or bridge.verify_session() is not True):
                     raise ValueError("CONTROL_SESSION_IDENTITY_UNVERIFIED")
                 result = bridge.request_stop(payload["mode"])
-                if bridge.session_id != payload["session_id"]:
+                if (bridge.session_id != payload["session_id"]
+                        or bridge.verify_session() is not True):
                     raise ValueError("CONTROL_SESSION_IDENTITY_CHANGED")
                 # An HTTP 200 is an affirmative shutdown receipt. Never
                 # acknowledge a merely dispatched, incomplete, or unverifiable

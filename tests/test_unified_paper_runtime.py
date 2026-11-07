@@ -883,3 +883,68 @@ async def test_session_bound_transport_refuses_incomplete_financial_receipt():
                                    json={"session_id": bridge.session_id, "mode": "SHUTDOWN_FLATTEN"})
         assert result.status_code == 409
         assert bridge.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_session_bound_transport_accepts_only_exact_verified_shutdown_receipt():
+    import httpx
+    from fastapi import FastAPI
+    from app.services.quality_dips_stop_bridge import register_stop_routes
+
+    class SyntheticAcceptedSession:
+        session_id = "accepted-synthetic-only"
+        calls = 0
+
+        def verify_session(self):
+            return True
+
+        def request_stop(self, mode):
+            self.calls += 1
+            return {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED",
+                    "outcome": {"schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,
+                                "status": "FLATTENED", "position_state": "FLAT",
+                                "process_shutdown": "VERIFIED_EXIT",
+                                "lanes": {"QUALITY_DIPS": {}, "HYPERLIQUID": {}}}}
+
+    bridge = SyntheticAcceptedSession()
+    app = FastAPI()
+    origin, token = "http://127.0.0.1:18799", "synthetic-test-control-token-only-1234"
+    register_stop_routes(app, bridge=bridge, origin=origin, token=token, require_session=True)
+    headers = {"origin": origin, "x-atlas-control": token}
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=origin) as client:
+        result = await client.post("/_atlas/control/stop-session", headers=headers,
+                                   json={"session_id": bridge.session_id, "mode": "SHUTDOWN_FLATTEN"})
+        assert result.status_code == 200
+        assert result.json()["outcome"]["process_shutdown"] == "VERIFIED_EXIT"
+        assert bridge.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_session_bound_transport_refuses_owner_revocation_after_stop():
+    import httpx
+    from fastapi import FastAPI
+    from app.services.quality_dips_stop_bridge import register_stop_routes
+
+    class RevokedSession:
+        session_id = "revoked-synthetic-only"
+        active = True
+
+        def verify_session(self):
+            return self.active
+
+        def request_stop(self, mode):
+            self.active = False
+            return {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED",
+                    "outcome": {"schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,
+                                "status": "FLATTENED", "position_state": "FLAT",
+                                "process_shutdown": "VERIFIED_EXIT", "lanes": {}}}
+
+    bridge = RevokedSession()
+    app = FastAPI()
+    origin, token = "http://127.0.0.1:18799", "synthetic-test-control-token-only-1234"
+    register_stop_routes(app, bridge=bridge, origin=origin, token=token, require_session=True)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=origin) as client:
+        result = await client.post("/_atlas/control/stop-session",
+                                   headers={"origin": origin, "x-atlas-control": token},
+                                   json={"session_id": bridge.session_id, "mode": "SHUTDOWN_FLATTEN"})
+        assert result.status_code == 409
