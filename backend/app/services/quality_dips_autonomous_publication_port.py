@@ -44,6 +44,11 @@ class BoundAutonomousFinancialPublication:
                     if self.financial_replay.verify(enrollment, p, cut, documents, now,
                                                     scope=scope) is not True:
                         raise ValueError('AUTO_PUBLICATION_INDEPENDENT_REPLAY_REFUSED')
+                    # A caller may mutate the current evidence reference during replay.
+                    # A valid lease cannot authorize a different current financial cut.
+                    if (current.get('scope') != scope
+                            or current.get('financial_digest') != digest(cut)):
+                        raise ValueError('AUTO_PUBLICATION_CURRENT_CONTINUITY_LOST')
                     # Continuity must survive the external financial auditor.
                     if (replay_lease.check(strict(body(cut)), now) is not True
                             or ack_lease.check(p['ack_id'], digest(p), now) is not True

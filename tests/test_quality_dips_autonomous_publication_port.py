@@ -110,3 +110,23 @@ def test_operational_publication_refuses_disposable_or_foreign_cut(foreign_scope
                                                 financial_replay=replay)
     with pytest.raises(ValueError, match='AUTO_PUBLICATION_FINANCIAL_CUT_SCOPE_MISMATCH'):
         port.verify_cut(e, current, docs, 1000, scope='LOCAL_ENROLLED')
+
+
+@pytest.mark.parametrize('damage', ['financial_digest_replaced', 'financial_digest_removed',
+    'scope_replaced', 'scope_removed'])
+def test_publication_refuses_current_evidence_replacement_during_audit(damage):
+    e, p, cut, docs, publication, ack, replay = setup()
+    current = {'scope': 'LOCAL_ENROLLED', 'financial_digest': digest(cut)}
+
+    def audit(*args, **kwargs):
+        if damage == 'financial_digest_replaced': current['financial_digest'] = 'f' * 64
+        if damage == 'financial_digest_removed': current.pop('financial_digest')
+        if damage == 'scope_replaced': current['scope'] = 'DISPOSABLE_TEST'
+        if damage == 'scope_removed': current.pop('scope')
+        return True
+
+    replay.verify = audit
+    port = BoundAutonomousFinancialPublication(publication=publication, custody_ack=ack,
+                                                financial_replay=replay)
+    with pytest.raises(ValueError, match='AUTO_PUBLICATION_CURRENT_CONTINUITY_LOST'):
+        port.verify_cut(e, current, docs, 1000, scope='LOCAL_ENROLLED')
