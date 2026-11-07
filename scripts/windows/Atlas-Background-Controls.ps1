@@ -91,6 +91,9 @@ $form.Add_FormClosing({
     param($sender, $eventArgs)
     try {
         if ($null -ne $AcceptedPaperSession) {
+            # A failed financial stop must not release GUI ownership. In
+            # particular, a prior KeepRunning click cannot skip this path.
+            $script:KeepAtlasRunning = $false
             $result = if ($null -ne $AcceptedPaperStopHandoff) {
                 if ($AcceptedPaperStopHandoff -isnot [System.Collections.IDictionary] -or
                     $AcceptedPaperStopHandoff['mode'] -cne 'SHUTDOWN_FLATTEN') {

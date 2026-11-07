@@ -45,3 +45,13 @@ def test_form_closing_always_attempts_verified_shutdown_for_enrolled_session():
     assert "Invoke-AtlasPaperStopWithHandoff" in section
     assert "Invoke-AtlasPaperStop $AcceptedPaperSession -RequireFinished" in section
     assert "$eventArgs.Cancel = $true" in section
+
+
+
+def test_form_closing_never_releases_financial_session_on_failed_stop():
+    source = GUI.read_text(encoding="utf-8-sig")
+    section = source.split("$form.Add_FormClosing({", 1)[1].split("\n})", 1)[0]
+    assert "$script:KeepAtlasRunning = $false" in section
+    assert section.index("$script:KeepAtlasRunning = $false") < section.index("Invoke-AtlasPaperStopWithHandoff")
+    assert section.index("Close-AtlasSelectedPaperDashboard") < section.index("} catch {")
+    assert "$eventArgs.Cancel = $true" in section
