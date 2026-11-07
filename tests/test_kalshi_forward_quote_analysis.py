@@ -9,6 +9,7 @@ def row(time, *, ticker='KX-ONE', buy='0.40', sell='0.38', buy_fee='0.02', sell_
             'observed_at': time.isoformat(),
             'created_time': (time - timedelta(hours=1)).isoformat(),
             'open_time': (time - timedelta(minutes=50)).isoformat(),
+            'occurrence_datetime': (time + timedelta(hours=3)).isoformat(),
             'quantity': quantity,
             'sides': {'YES': {'buy_fillable': True, 'sell_fillable': sell_ok,
                               'buy_vwap': buy, 'sell_vwap': sell,
@@ -30,12 +31,25 @@ def test_pairs_use_earlier_buy_later_sell_and_both_fees(tmp_path):
     assert result['pairs'][0]['total_fees_dollars'] == '0.05'
     assert result['pairs'][0]['net_dollars'] == '0.75'
     assert result['forecast_or_execution_proven'] is False
+    assert result['quote_pair_summary']['positive_pairs'] == 1
+    assert result['quote_pair_summary']['sum_net_dollars'] == '0.75'
+    assert result['quote_pair_summary']['not_realized_pnl'] is True
 
 
 def test_no_same_timestamp_or_unfillable_exit(tmp_path):
     now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
     path = tmp_path / 'quotes.jsonl'
     write(path, [row(now), row(now), row(now + timedelta(minutes=1), sell_ok=False)])
+    assert analyze(path)['paired_count'] == 0
+
+
+def test_rejects_post_event_quote_pairs(tmp_path):
+    now = datetime(2026, 11, 7, 12, tzinfo=timezone.utc)
+    path = tmp_path / 'quotes.jsonl'
+    first = row(now)
+    second = row(now + timedelta(minutes=5), sell='0.90')
+    second['occurrence_datetime'] = (now + timedelta(minutes=3)).isoformat()
+    write(path, [first, second])
     assert analyze(path)['paired_count'] == 0
 
 

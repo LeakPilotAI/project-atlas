@@ -41,9 +41,11 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
             stamp = _time(row.get('observed_at'))
             listing = _time(row.get('open_time'))
             created = _time(row.get('created_time'))
+            occurrence = _time(row.get('occurrence_datetime'))
             qty = _decimal(row.get('quantity'))
-            if (stamp is None or listing is None or created is None or
-                stamp < max(listing, created) or qty is None or qty <= 0 or
+            if (stamp is None or listing is None or created is None or occurrence is None or
+                stamp < max(listing, created) or stamp >= occurrence or
+                qty is None or qty <= 0 or
                 not isinstance(row.get('sides'), dict) or not isinstance(row.get('ticker'), str)):
                 continue
             rows.append((stamp, row, qty))
@@ -78,8 +80,20 @@ def analyze(path: Path = DEFAULT_PATH) -> dict:
                                       'net_dollars': str(gross - entry_fee - exit_fee),
                                       'classification': 'RETROSPECTIVE_QUOTE_PAIR_NOT_TRADE'})
             previous[key] = (stamp, quote)
+    # Summarize ALL valid chronological quote transitions, including losses.
+    # These can overlap and are NOT independent executed trades or a backtest.
+    nets = [Decimal(pair['net_dollars']) for pair in pairs]
+    positive = sum(value > 0 for value in nets)
+    negative = sum(value < 0 for value in nets)
+    zero = len(nets) - positive - negative
     return {'status': 'PAIRED' if pairs else 'INSUFFICIENT_MATCHED_FORWARD_QUOTES',
             'pairs': pairs, 'paired_count': len(pairs),
+            'quote_pair_summary': {
+                'positive_pairs': positive, 'negative_pairs': negative,
+                'zero_pairs': zero, 'sum_net_dollars': str(sum(nets, Decimal('0'))),
+                'overlapping_pairs_possible': True,
+                'not_realized_pnl': True,
+            },
             'orders_placed': 0, 'paper_trades_opened': 0,
             'forecast_or_execution_proven': False}
 

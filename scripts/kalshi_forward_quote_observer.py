@@ -67,7 +67,9 @@ async def collect(*, path: Path = DEFAULT_PATH, limit: int = 5,
                                'sell_fee': sell.get('estimated_taker_fee_dollars') if sell.get('fillable') else None}
             records.append({'schema': 'kalshi-forward-quote-v1', 'observed_at': observed.isoformat(),
                             'ticker': ticker, 'created_time': market['timing']['created_time'],
-                            'open_time': market['timing']['open_time'], 'quantity': str(quantity),
+                            'open_time': market['timing']['open_time'],
+                            'occurrence_datetime': market['timing'].get('occurrence_datetime'),
+                            'quantity': str(quantity),
                             'sides': sides, 'orders_placed': 0, 'paper_trades_opened': 0})
         except Exception as exc:
             errors.append({'ticker': ticker, 'error_type': type(exc).__name__})
