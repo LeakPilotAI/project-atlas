@@ -78,3 +78,32 @@ def test_watermarked_session_requires_enrollment_and_prior_state(tmp_path, monke
     with pytest.raises(ValueError, match="PROVIDER_DOWN"):
         run_watermarked_readonly_paper_session(enrolled=True, **args)
     assert read_watermark(path, symbol="MSFT") == start.isoformat()
+
+
+def test_watermark_writer_refuses_second_owner(tmp_path):
+    from scripts.observation_runtime.paper_readonly_watermark import readonly_watermark_writer
+    path = tmp_path / "owned.json"
+    with readonly_watermark_writer(path):
+        with pytest.raises(ValueError, match="WRITER_ALREADY_OWNED"):
+            with readonly_watermark_writer(path):
+                pass
+    with readonly_watermark_writer(path):
+        pass
+    assert (tmp_path / "owned.json.writer.lock").is_file()
+
+
+def test_watermarked_session_releases_writer_after_provider_failure(tmp_path, monkeypatch):
+    from scripts.observation_runtime.paper_readonly_watermark import (
+        run_watermarked_readonly_paper_session, readonly_watermark_writer)
+    from app.services import personal_paper_strategy_signal as signals
+    path = tmp_path / "recovery.json"
+    stamp = datetime(2026, 11, 7, tzinfo=UTC)
+    advance_watermark(path, symbol="MSFT", provider_timestamp=stamp.isoformat())
+    def failed(**kwargs):
+        raise ValueError("PROVIDER_LOST")
+    monkeypatch.setattr(signals, "run_bounded_readonly_paper_session", failed)
+    with pytest.raises(ValueError, match="PROVIDER_LOST"):
+        run_watermarked_readonly_paper_session(
+            path=path, symbol="MSFT", enrolled=True, ticks=1, clock=lambda: stamp)
+    with readonly_watermark_writer(path):
+        assert read_watermark(path, symbol="MSFT") == stamp.isoformat()
