@@ -36,6 +36,13 @@ def test_incremental_v3_entry_mark_exit_restarts_from_journal(tmp_path):
     assert actions == ["WAIT", "ENTER", "MARK", "EXIT"]
     assert result["open_positions"] == 0
     assert result["net_realized_pnl"] > 0
+    from app.investment.quality_dips_paper import read_events
+    ticks = [e for e in read_events(path) if e.get("event") == "v3_tick_completed"]
+    assert len(ticks) == 4
+    with pytest.raises(ValueError, match="REPLAYED_OR_OLDER_TICK"):
+        execute_incremental_test_v3_tick(path=path, account_id="demo",
+            observation=observation, research=research, quote=quote, now=now)
+
 
 
 def test_incremental_v3_refuses_forward_evidence(tmp_path):
@@ -43,3 +50,28 @@ def test_incremental_v3_refuses_forward_evidence(tmp_path):
         execute_incremental_test_v3_tick(path=tmp_path / "none", account_id="x",
                                          observation={"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION"},
                                          research={"symbol": "MSFT"}, quote={}, now=datetime.now(UTC))
+
+
+def test_incremental_v3_interrupted_tick_blocks_unsafe_recovery(tmp_path):
+    from app.investment.quality_dips_paper import _append
+    path = tmp_path / "interrupted.jsonl"
+    initialize_paper_account(account_id="demo", opening_cash=1000,
+                             fee_bps_per_side=2, data_provenance="TEST_DATA", path=path)
+    start = datetime(2026, 11, 7, tzinfo=UTC)
+    _append({"event": "v3_tick_started", "event_id": "interrupted",
+             "provider_timestamp": start.isoformat(), "account_id": "demo"}, path)
+    research = {"symbol": "MSFT", "source_verified": True,
+                "timestamp": start.isoformat(),
+                "normalization_value": {"conservative": 95, "base": 100, "optimistic": 105},
+                "quality_score": 80, "fundamentals_score": 80,
+                "valuation_score": 70, "drawdown_percentile": 80,
+                "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
+    quote = {"symbol": "MSFT", "state": "FRESH", "bid": 101, "ask": 101.1,
+             "bid_lots": 5, "ask_lots": 5,
+             "timestamp": (start + timedelta(seconds=1)).isoformat(),
+             "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
+    with pytest.raises(ValueError, match="INTERRUPTED_TICK_REQUIRES_RECONCILIATION"):
+        execute_incremental_test_v3_tick(path=path, account_id="demo",
+            observation={"observation_id": "test", "symbol": "MSFT",
+                         "evidence_class": "TEST_DATA"},
+            research=research, quote=quote, now=start + timedelta(seconds=1))
