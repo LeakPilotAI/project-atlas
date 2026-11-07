@@ -163,3 +163,42 @@ def preview_quality_dips_order(
     )
     return {**proposal, "observation_id": strategy["observation_id"],
             "strategy": "QUALITY_DIPS_V3", "paper_fill_authorized": False}
+
+
+def preview_quality_dips_account_capacity(
+    proposal: dict[str, Any], *, journal_events: list[dict[str, Any]],
+    account_id: str,
+) -> dict[str, Any]:
+    """Check a simulated journal's cash/position limits without writing a fill.
+
+    This is a diagnostic only: caller-supplied proposals and journal events do
+    not establish authority or exclusive writer ownership.
+    """
+    from app.investment.quality_dips_paper import accounting_snapshot
+
+    if (type(proposal) is not dict or proposal.get("schema") != "ATLAS_PERSONAL_PAPER_EXECUTION_SIDE_PREVIEW_V1"
+            or proposal.get("side") != "BUY" or proposal.get("paper_fill_authorized") is not False
+            or proposal.get("live_order_authorized") is not False
+            or type(journal_events) is not list or type(account_id) is not str or not account_id):
+        raise PriceEvidenceRejected("PAPER_ACCOUNT_PREVIEW_INPUT_INVALID")
+    try:
+        snapshot = accounting_snapshot(journal_events, account_id=account_id)
+        notional = Decimal(proposal["reference_notional"])
+    except (ValueError, TypeError, KeyError, InvalidOperation) as exc:
+        raise PriceEvidenceRejected("PAPER_ACCOUNT_JOURNAL_INVALID") from exc
+    if snapshot is None or snapshot.get("data_provenance") != "FORWARD_COLLECTION":
+        raise PriceEvidenceRejected("FORWARD_PAPER_ACCOUNT_REQUIRED")
+    if not notional.is_finite() or notional <= 0:
+        raise PriceEvidenceRejected("PAPER_NOTIONAL_INVALID")
+    fee = notional * Decimal(str(snapshot["fee_bps_per_side"])) / Decimal("10000")
+    blockers = []
+    if notional > Decimal(str(snapshot.get("max_entry_notional", 0))):
+        blockers.append("PAPER_ENTRY_NOTIONAL_LIMIT")
+    if snapshot["open_positions"] >= snapshot["max_open_positions"]:
+        blockers.append("PAPER_POSITION_LIMIT")
+    if notional + fee > Decimal(str(snapshot["available_cash"])):
+        blockers.append("PAPER_INSUFFICIENT_SIMULATED_CASH")
+    return {"schema": "ATLAS_PERSONAL_PAPER_ACCOUNT_CAPACITY_PREVIEW_V1",
+            "account_id": account_id, "blockers": blockers,
+            "reference_notional": str(notional), "estimated_fee": str(fee),
+            "paper_fill_authorized": False, "live_order_authorized": False}

@@ -181,3 +181,36 @@ def test_quality_dips_order_rejects_blocked_or_non_executable_strategy(blockers,
     with pytest.raises(PriceEvidenceRejected, match="QUALITY_DIPS_STRATEGY_BLOCKED"):
         preview_quality_dips_order(observation, _quote(now), now=now,
                                    quantity="0.2", max_notional="100")
+
+
+def test_forward_account_capacity_preview_is_read_only(tmp_path):
+    from app.investment.quality_dips_paper import initialize_paper_account, read_events
+    from app.services.personal_paper_price_evidence import (
+        preview_current_stock_order, preview_quality_dips_account_capacity,
+    )
+    path = tmp_path / "forward.jsonl"
+    initialize_paper_account(account_id="paper", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    before = path.read_bytes()
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    proposal = preview_current_stock_order(_quote(now), symbol="MSFT", now=now,
+                                           side="BUY", quantity="0.2", max_notional="100")
+    result = preview_quality_dips_account_capacity(proposal, journal_events=read_events(path),
+                                                    account_id="paper")
+    assert result["blockers"] == []
+    assert result["paper_fill_authorized"] is False
+    assert path.read_bytes() == before
+    oversized = {**proposal, "reference_notional": "101"}
+    blocked = preview_quality_dips_account_capacity(oversized, journal_events=read_events(path),
+                                                     account_id="paper")
+    assert "PAPER_ENTRY_NOTIONAL_LIMIT" in blocked["blockers"]
+
+
+def test_forward_account_capacity_refuses_missing_account():
+    from app.services.personal_paper_price_evidence import preview_quality_dips_account_capacity
+    with pytest.raises(PriceEvidenceRejected):
+        preview_quality_dips_account_capacity({"schema": "ATLAS_PERSONAL_PAPER_EXECUTION_SIDE_PREVIEW_V1",
+                                               "side": "BUY", "paper_fill_authorized": False,
+                                               "live_order_authorized": False, "reference_notional": "20"},
+                                              journal_events=[], account_id="paper")
