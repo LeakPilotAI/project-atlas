@@ -343,3 +343,20 @@ def test_resume_research_refuses_ambiguous_published_receipts(tmp_path, monkeypa
     result = mod.resume_published_research(limit=1)
     assert result["status"] == "NO_UNAMBIGUOUS_RECEIPT" and result["candidate_count"] == 2
     assert not (root / "alpaca_equity_cursor.json").exists()
+
+
+def test_provider_only_completion_cannot_advance_research_cursor(tmp_path, monkeypatch):
+    import json
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    inv = mod.inventory_snapshot([{"class": "us_equity", "symbol": "MSFT", "status": "active", "tradable": True}],
+                                 captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
+    batch = mod.next_research_batch(root / "alpaca_equity_inventory.json",
+                                    root / "alpaca_equity_cursor.json", limit=1)
+    provider_only = [{"symbol": "MSFT", "status": "RESEARCH_COMPLETE", "paper_eligible": False}]
+    with pytest.raises(ValueError, match="VERIFIED_SCORE_REQUIRED"):
+        mod.complete_research_batch(batch, provider_only, root / "alpaca_equity_cursor.json")
+    assert not (root / "alpaca_equity_cursor.json").exists()

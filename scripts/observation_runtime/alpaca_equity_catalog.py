@@ -152,7 +152,7 @@ def research_route_plan(batch, *, known_etf_symbols=()):
             "paper_execution_authorized": False, "live_order_authorized": False}
 
 
-def complete_research_batch(batch, results, cursor_path):
+def complete_research_batch(batch, results, cursor_path, *, _verified_scored_receipt=False):
     """Advance the research cursor only for a complete, successful batch.
 
     Results are research receipts, never trading authorizations. Failed symbols
@@ -178,6 +178,10 @@ def complete_research_batch(batch, results, cursor_path):
                    or r.get("paper_eligible") is not False
                    for symbol, r in zip(symbols, results, strict=True))):
         raise ValueError("RESEARCH_COMPLETION_INCOMPLETE")
+    # Acquisition-only diagnostics are not strategy scoring. Only the
+    # canonical scored-receipt finalizer may authorize research cursor IO.
+    if _verified_scored_receipt is not True:
+        raise ValueError("RESEARCH_COMPLETION_VERIFIED_SCORE_REQUIRED")
     inventory_path = REPO / "logs" / "research" / "alpaca_equity_inventory.json"
     snapshot = json.loads(inventory_path.read_text(encoding="utf-8"))
     expected = rotating_batch(snapshot, offset=batch["offset"], limit=len(symbols))
@@ -357,7 +361,8 @@ def finalize_scored_research_receipt(receipt_path):
         raise ValueError("BROAD_RESEARCH_FINALIZE_INCOMPLETE")
     receipts = [{"symbol": row["symbol"], "status": "RESEARCH_COMPLETE",
                  "paper_eligible": False} for row in scored]
-    return complete_research_batch(batch, receipts, root / "alpaca_equity_cursor.json")
+    return complete_research_batch(batch, receipts, root / "alpaca_equity_cursor.json",
+                                   _verified_scored_receipt=True)
 
 
 def resume_published_research(*, limit=1):
