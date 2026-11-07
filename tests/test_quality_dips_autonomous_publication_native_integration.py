@@ -137,3 +137,22 @@ def test_real_native_v4_inception_financial_replay_refuses_tampering(damage, nat
     if damage == 'scope': s.current['scope'] = 'DISPOSABLE_TEST'
     with pytest.raises((ValueError, OSError)):
         s.reader.verify(s.e, s.current, 1000, scope='LOCAL_ENROLLED')
+
+
+@pytest.mark.parametrize('damage', ['inception_bytes', 'projection_bytes', 'report_bytes'])
+@pytest.mark.parametrize('native_v4_publication', ['inception'], indirect=True)
+def test_real_inception_replay_refuses_native_file_changed_after_financial_audit(damage, native_v4_publication):
+    s = native_v4_publication
+    original = s.replay.verify
+    targets = {'inception_bytes': 'source/inception.json',
+               'projection_bytes': 'projection/projection.json',
+               'report_bytes': 'report/report.json'}
+
+    def audit_then_mutate(*args, **kwargs):
+        assert original(*args, **kwargs) is True
+        (s.root / targets[damage]).write_bytes(b'{}')
+        return True
+
+    s.replay.verify = audit_then_mutate
+    with pytest.raises((ValueError, OSError)):
+        s.reader.verify(s.e, s.current, 1000, scope='LOCAL_ENROLLED')
