@@ -39,7 +39,13 @@ def execute_incremental_test_v3_tick(*, path: Path, account_id: str,
             or type(research) is not dict or observation.get("symbol") != research.get("symbol")
             or type(account_id) is not str or not account_id):
         raise ValueError("INCREMENTAL_V3_TEST_DATA_ONLY")
-    if not (0 < stop_loss_pct <= 25 and 0 < take_profit_pct <= 50):
+    try:
+        stop = Decimal(str(stop_loss_pct))
+        target = Decimal(str(take_profit_pct))
+    except (ValueError, ArithmeticError) as exc:
+        raise ValueError("INCREMENTAL_V3_RISK_INVALID") from exc
+    if (not stop.is_finite() or not target.is_finite()
+            or not 0 < stop <= 25 or not 0 < target <= 50):
         raise ValueError("INCREMENTAL_V3_RISK_INVALID")
     evidence = validate_stock_iex_quote(quote, symbol=observation["symbol"], now=now)
     decision = evaluate_iex_quality_dips_signal(
