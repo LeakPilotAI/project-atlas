@@ -126,7 +126,7 @@ class UnifiedControlStopBridge:
             if (type(outcome) is not dict or outcome.get("state") not in ("STOPPED", "STOP_INCOMPLETE")
                     or type(outcome.get("lanes")) is not dict):
                 raise ValueError("UNIFIED_FINANCIAL_STOP_OUTCOME_UNVERIFIED")
-        except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
+        except Exception:
             # The runtime closes entry admission before attempting financial
             # drain. A thrown stop cannot certify flat positions or process
             # exit, and must never be converted into a successful shortcut ACK.

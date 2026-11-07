@@ -387,7 +387,7 @@ async def test_continuous_strategy_automatically_dispatches_entry_then_exit(mark
     assert all(row["state"] == "ACKNOWLEDGED" for row in r.portfolio.operations.values())
     assert result["state"] == "PAUSED"
     assert r.uncertain is False
-@pytest.mark.parametrize('failure', [ValueError, OSError, TimeoutError, KeyError, TypeError])
+@pytest.mark.parametrize('failure', [ValueError, OSError, TimeoutError, KeyError, TypeError, RuntimeError])
 def test_control_stop_bridge_does_not_claim_flat_or_exit_on_stop_failure(failure):
     from threading import Event
     from types import SimpleNamespace
