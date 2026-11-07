@@ -1110,3 +1110,21 @@ async def test_session_stop_sqlite_failure_refuses_without_false_success(tmp_pat
                                      json={'session_id': 'sqlite-unavailable-session', 'mode': 'SHUTDOWN_FLATTEN'})
         assert response.status_code == 409
         assert response.json()['status'] == 'REFUSED'
+
+
+def test_accepted_stop_registration_rejects_stopped_runtime_even_with_grant(tmp_path):
+    from fastapi import FastAPI
+    from app.services.quality_dips_stop_bridge import register_accepted_unified_paper_stop_routes
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    r = runtime()
+    # Disposable test grant is not accepted authorization. A stopped runtime
+    # must not install an affirmative financial-stop HTTP transport.
+    r.grant = {'session_id': 'synthetic-not-enrolled'}
+    r.state = 'STOPPED'
+    b = UnifiedControlStopBridge(r, owned_close=object(),
+                                 stop_ledger=PaperStopReceiptLedger(tmp_path / 'stop.sqlite'))
+    app = FastAPI()
+    with pytest.raises(ValueError, match='ACCEPTED_UNIFIED_PAPER_STOP_INSTALLATION_REQUIRED'):
+        register_accepted_unified_paper_stop_routes(app, bridge=b,
+            origin='http://127.0.0.1:18799', token='synthetic-test-control-token-only-1234')
+    assert not any(getattr(route, 'path', '') == '/_atlas/control/stop-session' for route in app.routes)

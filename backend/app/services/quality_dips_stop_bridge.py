@@ -256,6 +256,7 @@ def register_accepted_unified_paper_stop_routes(app, *, bridge, origin, token):
             or type(bridge.stop_ledger) is not PaperStopReceiptLedger
             or bridge.owned_close is None
             or bridge.session_id is None
+            or bridge.runtime.state not in ("RUNNING", "PAUSED")
             or bridge.verify_session() is not True):
         raise ValueError("ACCEPTED_UNIFIED_PAPER_STOP_INSTALLATION_REQUIRED")
     register_stop_routes(app, bridge=bridge, origin=origin, token=token,
