@@ -121,7 +121,7 @@ class PaperStopBridge:
         return self.runner.control_status() if self.runner is not None else strict(body(self.progress))
 
 
-def register_stop_routes(app, *, bridge, origin, token, require_session=False):
+def register_stop_routes(app, *, bridge, origin, token, require_session=False, require_durable_receipt=False):
     """Only an explicitly composed host registers this authenticated local route.
 
     Not registered in app.main or the read-only host by default. The injected
@@ -134,6 +134,8 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False):
         raise ValueError("CONTROL_LOOPBACK_TRANSPORT_REQUIRED")
     if type(require_session) is not bool:
         raise ValueError("CONTROL_SESSION_POLICY_INVALID")
+    if type(require_durable_receipt) is not bool or (require_durable_receipt and not require_session):
+        raise ValueError("CONTROL_RECEIPT_POLICY_INVALID")
     host = origin.removeprefix("http://")
 
     async def stop(request: Request):
@@ -216,6 +218,16 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False):
                         or outcome.get("process_shutdown") != "VERIFIED_EXIT"
                         or type(outcome.get("lanes")) is not dict):
                     raise ValueError("CONTROL_SESSION_SHUTDOWN_UNVERIFIED")
+                if require_durable_receipt:
+                    # A finished in-memory response cannot certify a durable
+                    # receipt. The accepted route must read back the exact
+                    # session/mode receipt from SQLite before acknowledging.
+                    persisted = bridge.stop_ledger.reserve_existing(
+                        payload["session_id"], payload["mode"])
+                    if (type(persisted) is not dict
+                            or persisted.get("state") != "FINISHED"
+                            or persisted.get("receipt") != result):
+                        raise ValueError("CONTROL_DURABLE_STOP_RECEIPT_UNVERIFIED")
                 return result
 
             return JSONResponse(await run_in_threadpool(verified_stop))
@@ -246,4 +258,4 @@ def register_accepted_unified_paper_stop_routes(app, *, bridge, origin, token):
             or bridge.verify_session() is not True):
         raise ValueError("ACCEPTED_UNIFIED_PAPER_STOP_INSTALLATION_REQUIRED")
     register_stop_routes(app, bridge=bridge, origin=origin, token=token,
-                         require_session=True)
+                         require_session=True, require_durable_receipt=True)

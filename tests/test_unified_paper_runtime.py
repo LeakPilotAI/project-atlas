@@ -967,3 +967,44 @@ def test_accepted_unified_transport_registration_rejects_unenrolled_runtime():
         register_accepted_unified_paper_stop_routes(
             app, bridge=object(), origin="http://127.0.0.1:18799",
             token="synthetic-test-control-token-only-1234")
+
+
+@pytest.mark.asyncio
+async def test_session_bound_transport_requires_durable_matching_receipt_before_ack():
+    import httpx
+    from fastapi import FastAPI
+    from app.services.quality_dips_stop_bridge import register_stop_routes
+
+    class Ledger:
+        receipt = None
+
+        def reserve_existing(self, session_id, mode):
+            assert session_id == "synthetic-accepted" and mode == "SHUTDOWN_FLATTEN"
+            return {"state": "FINISHED", "receipt": self.receipt}
+
+    class Bridge:
+        session_id = "synthetic-accepted"
+        stop_ledger = Ledger()
+
+        def verify_session(self):
+            return True
+
+        def request_stop(self, mode):
+            return {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED",
+                    "outcome": {"schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,
+                                "status": "FLATTENED", "position_state": "FLAT",
+                                "process_shutdown": "VERIFIED_EXIT", "lanes": {}}}
+
+    bridge = Bridge()
+    app = FastAPI()
+    origin, token = "http://127.0.0.1:18799", "synthetic-test-control-token-only-1234"
+    register_stop_routes(app, bridge=bridge, origin=origin, token=token,
+                         require_session=True, require_durable_receipt=True)
+    headers = {"origin": origin, "x-atlas-control": token}
+    payload = {"session_id": bridge.session_id, "mode": "SHUTDOWN_FLATTEN"}
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=origin) as client:
+        assert (await client.post("/_atlas/control/stop-session", headers=headers,
+                                  json=payload)).status_code == 409
+        bridge.stop_ledger.receipt = bridge.request_stop("SHUTDOWN_FLATTEN")
+        assert (await client.post("/_atlas/control/stop-session", headers=headers,
+                                  json=payload)).status_code == 200
