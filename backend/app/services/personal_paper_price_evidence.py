@@ -72,18 +72,20 @@ def preview_quality_dips_execution(
     symbol = observation.get("symbol")
     if type(symbol) is not str or not symbol:
         raise PriceEvidenceRejected("OBSERVATION_SYMBOL_MISSING")
-    blockers = list(observation.get("blockers") or [])
-    if any(type(blocker) is not str for blocker in blockers):
+    raw_blockers = observation.get("blockers", [])
+    if type(raw_blockers) is not list or any(type(item) is not str or not item for item in raw_blockers):
         raise PriceEvidenceRejected("INVALID_STRATEGY_BLOCKERS")
+    blockers = list(raw_blockers)
     evidence = None
     try:
         evidence = validate_stock_iex_quote(quote, symbol=symbol, now=now)
     except PriceEvidenceRejected as exc:
         blockers.append(str(exc))
     plan = observation.get("strategy_result")
-    if type(plan) is not dict or not plan.get("entry_ladder", {}).get("ready"):
+    ladder = plan.get("entry_ladder") if type(plan) is dict else None
+    if type(ladder) is not dict or ladder.get("ready") is not True:
         blockers.append("QUALITY_DIPS_ENTRY_LADDER_NOT_READY")
-    if not observation.get("paper_execution_eligible"):
+    if observation.get("paper_execution_eligible") is not True:
         blockers.append("STRATEGY_OBSERVATION_NOT_EXECUTION_ELIGIBLE")
     return {
         "schema": "ATLAS_PERSONAL_PAPER_QUALITY_DIPS_EXECUTION_PREVIEW_V1",

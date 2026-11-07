@@ -84,3 +84,26 @@ def test_strategy_quote_preview_rejects_stale_quote_without_filling():
     assert "PROVIDER_QUOTE_STALE_OR_FUTURE" in preview["blockers"]
     assert preview["quote_evidence"] is None
     assert preview["paper_execution_eligible"] is False
+
+@pytest.mark.parametrize("ladder", [None, [], "ready", True, {"ready": 1}, {"ready": "yes"}])
+def test_preview_malformed_ladder_fails_closed_without_crash(ladder):
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {
+        "strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "blockers": [],
+        "strategy_result": {"entry_ladder": ladder}, "paper_execution_eligible": True,
+    }
+    result = preview_quality_dips_execution(observation, _quote(now), now=now)
+    assert "QUALITY_DIPS_ENTRY_LADDER_NOT_READY" in result["blockers"]
+    assert result["paper_fill_authorized"] is False
+
+
+@pytest.mark.parametrize("blockers", [None, "BLOCKED", {"x": True}, [None], [""], [1]])
+def test_preview_rejects_malformed_blockers(blockers):
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {
+        "strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "blockers": blockers,
+        "strategy_result": {"entry_ladder": {"ready": True}},
+        "paper_execution_eligible": True,
+    }
+    with pytest.raises(PriceEvidenceRejected, match="INVALID_STRATEGY_BLOCKERS"):
+        preview_quality_dips_execution(observation, _quote(now), now=now)
