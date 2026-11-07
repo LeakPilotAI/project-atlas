@@ -253,3 +253,38 @@ def test_authenticated_entry_point_wires_opt_in_finalization(tmp_path, monkeypat
     result = mod.score_authenticated_provider_batch(contact=contact, limit=1, finalize=True)
     assert result["status"] == "RESEARCH_FINALIZED" and result["cursor_advanced"]
     assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 1
+
+
+def test_actual_investment_scorer_integrates_with_bounded_research_cycle(tmp_path, monkeypatch):
+    """Real Atlas scoring code, injected provider-shaped values, no fake score."""
+    import json
+    from datetime import UTC, datetime
+    from app.investment.bars import OhlcvBar
+    from app.investment.models import MeasuredValue
+    from scripts.observation_runtime import alpaca_equity_catalog as mod
+    monkeypatch.setattr(mod, "REPO", tmp_path)
+    root = tmp_path / "logs" / "research"
+    root.mkdir(parents=True)
+    inv = mod.inventory_snapshot([{"class": "us_equity", "symbol": "MSFT", "status": "active", "tradable": True}],
+                                 captured_at="2026-11-07T00:00:00+00:00")
+    (root / "alpaca_equity_inventory.json").write_text(json.dumps(inv), encoding="utf-8")
+    now = datetime.now(UTC)
+    def provider(symbol):
+        return {"paper_eligible": False, "asset": {"symbol": symbol, "class": "us_equity"},
+                "receipts": [{"retrieved_at": now.isoformat()}],
+                "price": MeasuredValue.unknown("ALPACA_IEX"),
+                "fundamentals": {}, "valuation": {},
+                "bars": [OhlcvBar(session_date="2026-11-06", open=100, high=101,
+                                  low=99, close=100, volume=1000, source="ALPACA_IEX",
+                                  retrieved_at=now, effective_timestamp=now)]}
+    preview = mod.score_bounded_research_batch(limit=1, acquire=provider)
+    scored = preview["results"][0]
+    assert preview["scoring_complete"] and scored["status"] == "RESEARCH_SCORED"
+    assert scored["evidence_quality"] == "INSUFFICIENT"
+    assert scored["research_lane"] == "FRONTIER_RESEARCH"
+    assert scored["provider_receipt_count"] == 1
+    assert not (root / "alpaca_equity_cursor.json").exists()
+    result = mod.execute_scored_research_cycle(limit=1, acquire=provider)
+    assert result["status"] == "RESEARCH_FINALIZED"
+    assert json.loads((root / "alpaca_equity_cursor.json").read_text())["offset"] == 1
+    assert not result["paper_execution_authorized"]
