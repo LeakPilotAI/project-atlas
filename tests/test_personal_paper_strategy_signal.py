@@ -219,3 +219,52 @@ def test_leased_published_journal_candidate_refuses_uninitialized_or_fake_ports(
         inspect_leased_published_iex_journal_candidate(**{**kwargs, "publication": object()})
     with pytest.raises(ValueError, match="DEPENDENCIES_REQUIRED"):
         inspect_leased_published_iex_journal_candidate(**{**kwargs, "request": {"action": "READ_ONLY"}})
+
+
+def test_leased_published_journal_candidate_positive_replay_and_revocation(tmp_path, monkeypatch):
+    """Disposable positive composition, not operational source acceptance."""
+    from contextlib import contextmanager
+    from app.investment.quality_dips_paper import initialize_paper_account, read_events
+    from app.services.paper_source_publication import QualityDipsSourcePublication
+    from app.services.personal_paper_iex_provider import PersonalPaperIEXProvider
+    from app.services import personal_paper_strategy_signal as signals
+    path = tmp_path / "isolated-forward.jsonl"
+    initialize_paper_account(account_id="fixture-forward", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    original = path.read_bytes()
+    publication = object.__new__(QualityDipsSourcePublication)
+    provider = object.__new__(PersonalPaperIEXProvider)
+    class Lease:
+        valid = True
+        def check_components(self, components):
+            return self.valid
+        def check(self, proof):
+            return self.valid
+    class Installation:
+        def __init__(self):
+            self.active = Lease()
+        @contextmanager
+        def lease(self, request):
+            yield self.active
+    installation = Installation()
+    monkeypatch.setattr("app.services.personal_paper_runtime.checked_personal_installation",
+                        lambda lease, request: {"synthetic": True})
+    monkeypatch.setattr(signals, "evaluate_published_iex_v3_candidate",
+                        lambda **kwargs: {"candidate": True, "paper_fill_authorized": False})
+    kwargs = dict(installation=installation, request={"action": "AUTO_PAPER"},
+                  components=(), publication=publication, provider=provider,
+                  symbol="MSFT", now=NOW, journal_path=path,
+                  account_id="fixture-forward")
+    result = signals.inspect_leased_published_iex_journal_candidate(**kwargs)
+    assert result["journal_cash_reconciled"] is True
+    assert result["journal_open_positions"] == 0
+    assert result["journal_available_cash"] == 1000
+    assert result["journal_writer_lock_checked"] is True
+    assert result["paper_fill_authorized"] is False
+    assert path.read_bytes() == original
+    assert len(read_events(path)) == 1
+    installation.active.valid = False
+    with pytest.raises(ValueError, match="COMPONENTS_CHANGED"):
+        signals.inspect_leased_published_iex_journal_candidate(**kwargs)
+    assert path.read_bytes() == original
