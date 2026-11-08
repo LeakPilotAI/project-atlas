@@ -548,3 +548,46 @@ def test_native_restart_rejects_contradictory_qd_no_orders_attestation(tmp_path,
     assert ledger.inspect_session('s')['state'] == 'PENDING'
     snapshot['accounts']['QUALITY_DIPS']['resting_orders'].clear()
     assert ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})['startup_authorized'] is False
+
+
+def test_restart_observer_consumes_real_custody_projection_with_both_order_evidence_lanes(tmp_path, monkeypatch):
+    """Exercises custody.read_accounts and Stop adapter together, not a stubbed account snapshot."""
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    custody = object.__new__(UnifiedPortfolioCustody)
+    before = {'state': {'operations': {}}, 'revision': 1}
+    custody.journal = SimpleNamespace(snapshot=lambda: before)
+    @contextmanager
+    def lease(*args):
+        yield SimpleNamespace(check=lambda: True)
+    custody.ownership = SimpleNamespace(lease=lease)
+    custody.clock = lambda: 123
+    custody.authority = SimpleNamespace(verify_read_cuts=lambda *args: True)
+    custody.components = {}
+    monkeypatch.setattr(UnifiedPortfolioCustody, '_verify', lambda self: None)
+    cut = {'head': 'head', 'manifest': {'epoch': 'epoch', 'strategy': 'strategy', 'currency': 'USD', 'opening_cash': '1000'},
+           'state': {'revision': 1, 'cash': '1000', 'gross': '0', 'costs': '0', 'net': '0', 'positions': {}}}
+    orders = {'state': {'orders': {'pending': {'state': 'RESERVED', 'order': {
+        'symbol': 'BTC', 'side': 'LONG', 'quantity': '1', 'limit_price': '100',
+        'expires_at': 200, 'source_revision': 1}}}}}
+    custody.writers = {
+        'QUALITY_DIPS': SimpleNamespace(_cut=lambda: cut, attest_no_resting_orders=lambda evidence: evidence == cut),
+        'HYPERLIQUID': SimpleNamespace(_cut=lambda: cut, orders=SimpleNamespace(snapshot=lambda: orders))}
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'SHUTDOWN_FLATTEN')
+    accounts = custody.read_accounts({'session_id': 's'})
+    assert accounts['state'] == 'ACKNOWLEDGED'
+    assert accounts['accounts']['QUALITY_DIPS']['resting_order_evidence'] == 'ATTESTED_NO_ORDER_CAPABILITY'
+    assert accounts['accounts']['QUALITY_DIPS']['resting_orders'] == {}
+    assert len(accounts['accounts']['HYPERLIQUID']['resting_orders']) == 1
+    observation = PaperStopReceiptLedger(ledger.path).observe_native_account_restart(
+        's', custody=custody, grant={'session_id': 's'})
+    assert observation['exposure_observed'] is True
+    assert observation['startup_authorized'] is False
+    orders['state']['orders'].clear()
+    cleared = PaperStopReceiptLedger(ledger.path).observe_native_account_restart(
+        's', custody=custody, grant={'session_id': 's'})
+    assert cleared['exposure_observed'] is False
+    assert cleared['startup_authorized'] is False
+    assert ledger.inspect_session('s')['state'] == 'PENDING'
