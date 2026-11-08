@@ -13,7 +13,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "backend"))
-from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery
 from app.investment.alpaca_iex import Credentials
 from app.investment.free_research_providers import FreeResearchBundle
 from app.investment.free_research_transport import FreeResearchClient, ResearchRefused
@@ -208,12 +208,20 @@ def main(argv=None):
     parser.add_argument("--symbol", default="MSFT")
     parser.add_argument("--prices-only", action="store_true", help="Read-only price history without SEC fundamentals")
     parser.add_argument("--symbols", nargs="+", help="Up to eight distinct real symbols; diagnostic only")
+    parser.add_argument("--plan-diagnostic-recovery", type=Path, help="Read-only recovery plan for an interrupted journal")
     parser.add_argument("--inspect-diagnostic-journal", type=Path, help="Inspect existing read-only journal without contacting provider")
     parser.add_argument("--diagnostic-journal", type=Path, help="Append sanitized bounded price-only result to existing directory")
     parser.add_argument("--diagnostic-rounds", type=int, default=1, help="Finite 1-3 read-only rounds; requires --prices-only --symbols")
     parser.add_argument("--sec-contact", default=os.environ.get("ATLAS_SEC_CONTACT"))
     args = parser.parse_args(argv)
     try:
+        if args.plan_diagnostic_recovery is not None:
+            if (args.inspect_diagnostic_journal is not None or args.diagnostic_journal is not None
+                    or args.prices_only or args.symbols is not None or args.diagnostic_rounds != 1):
+                raise ResearchRefused('QD_RECOVERY_PLANNING_STANDALONE_REQUIRED')
+            result = plan_interrupted_journal_recovery(path=args.plan_diagnostic_recovery)
+            print(json.dumps(result,sort_keys=True))
+            return 0
         if args.inspect_diagnostic_journal is not None:
             if (args.diagnostic_journal is not None or args.prices_only or args.symbols is not None
                     or args.diagnostic_rounds != 1):

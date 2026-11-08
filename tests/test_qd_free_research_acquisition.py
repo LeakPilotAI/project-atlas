@@ -352,3 +352,30 @@ def test_cli_journal_inspection_refuses_corrupt_without_provider(tmp_path,monkey
 def test_cli_journal_inspection_refuses_mixed_acquisition(tmp_path,capsys):
     assert probe.main(['--inspect-diagnostic-journal',str(tmp_path/'none'),
                        '--prices-only','--symbols','SPY'])==1
+
+
+def test_cli_recovery_plan_trailing_fragment_without_provider(tmp_path,monkeypatch,capsys):
+    from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic
+    path=tmp_path/'journal.jsonl'
+    journal_diagnostic({'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':['SPY'],
+                        'refused_count':0,'operational_source_accepted':False,
+                        'paper_fill_authorized':False,'live_order_authorized':False},path=path)
+    path.write_bytes(path.read_bytes()+b'{"interrupted":')
+    original=path.read_bytes()
+    monkeypatch.setattr(probe.Credentials,'load',lambda _:pytest.fail('provider accessed'))
+    assert probe.main(['--plan-diagnostic-recovery',str(path)])==0
+    import json
+    report=json.loads(capsys.readouterr().out)
+    assert report['status']=='TRAILING_FRAGMENT_REQUIRES_OPERATOR_REVIEW'
+    assert report['recoverable_records']==1
+    assert path.read_bytes()==original
+
+def test_cli_recovery_plan_rejects_unrecoverable(tmp_path,capsys):
+    path=tmp_path/'journal.jsonl'
+    path.write_bytes(b'bad-completed-record\n{"interrupted":')
+    assert probe.main(['--plan-diagnostic-recovery',str(path)])==1
+    assert 'REFUSED' in capsys.readouterr().out
+
+def test_cli_recovery_plan_refuses_mixed_modes(tmp_path,capsys):
+    assert probe.main(['--plan-diagnostic-recovery',str(tmp_path/'journal'),
+                       '--prices-only','--symbols','SPY'])==1
