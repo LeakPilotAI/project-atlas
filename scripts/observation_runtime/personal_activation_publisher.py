@@ -131,26 +131,22 @@ def publish_personal_activation(
             "Empty activation authorization refused"
         )
 
-    native = _native_store()
-
-    # Native WindowsOutput.create_root() must enforce exclusive creation.
-    # No Python mkdir(), overwrite, or fallback path is permitted.
-    with native.w.WindowsOutput.create_root(root) as output:
-        native_root = native.native.file_identity(
-            output.root_handle
+    # Validate serialized size before create-only custody publication. A refused
+    # oversized record must never consume a once-only native activation root.
+    raw = json.dumps(
+        record,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    if len(raw) > 65536:
+        raise PersonalActivationPublicationRefused(
+            "Activation record exceeds native output bound"
         )
 
-        raw = json.dumps(
-            record,
-            sort_keys=True,
-            separators=(",", ":"),
-            ensure_ascii=False,
-        ).encode("utf-8")
-
-        if len(raw) > 65536:
-            raise PersonalActivationPublicationRefused(
-                "Activation record exceeds native output bound"
-            )
+    native = _native_store()
+    with native.w.WindowsOutput.create_root(root) as output:
+        native_root = native.native.file_identity(output.root_handle)
 
         binding = output.write_bound(
             "activation.json",
