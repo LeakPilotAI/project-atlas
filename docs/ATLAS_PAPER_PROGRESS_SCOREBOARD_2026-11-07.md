@@ -73,3 +73,5 @@
 - 2026-11-07: Added and executed reusable native QD cross-process exclusion diagnostic; real child blocked and 4 focused tests passed. No operational writer enrollment, 0/9 gates.
 - 2026-11-07: Actual LocalWindowsClock operational acquisition REFUSED CLOCK_UNCERTAINTY_EXCEEDED:1123ms against Windows NTP source (1000ms max). Trusted clock D1 remains blocked; 0/9 gates.
 - 2026-11-07: Live operational Windows clock validator PASSED at 885ms uncertainty (1000ms limit), producing a runtime-bound native clock sample. Clock sub-prerequisite demonstrated; full D1 gate still unaccepted, 0/9 gates.
+
+- 2026-11-07: added read-only CLI for retained Alpaca/Hyperliquid provider evidence audits, with sanitized fail-closed errors. Genuine closed 20-record capture validated; this remains research integrity, not independent current provider authority. Operational readiness 0/9, delta 0 percentage points.

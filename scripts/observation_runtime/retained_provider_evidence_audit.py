@@ -1,4 +1,6 @@
 """Classify a verified observation session without promoting research to trading evidence."""
+import argparse
+import json
 from pathlib import Path
 from scripts.observation_runtime.desktop_observation import Session, REPO
 
@@ -47,3 +49,22 @@ def audit_session(path):
         'financial_execution_authorized': False,
         'paper_startup_authorized': False,
     }
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Audit a closed local observation session; never authorize trading.")
+    parser.add_argument("--session", required=True, type=Path)
+    args = parser.parse_args(argv)
+    try:
+        report = audit_session(args.session)
+    except (ValueError, OSError, KeyError, TypeError):
+        print(json.dumps({"schema": "ATLAS_RETAINED_PROVIDER_EVIDENCE_AUDIT_V1",
+                          "status": "REFUSED", "reason": "SESSION_EVIDENCE_UNVERIFIED",
+                          "financial_execution_authorized": False,
+                          "paper_startup_authorized": False}, sort_keys=True))
+        return 2
+    print(json.dumps(report, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
