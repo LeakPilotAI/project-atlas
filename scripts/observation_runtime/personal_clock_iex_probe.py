@@ -23,10 +23,13 @@ from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                                   clock_factory=LocalWindowsClock,
                                   feed_factory=IEXFeed, publication=None,
-                                  operational_producer=None):
+                                  operational_producer=None,
+                                  expected_clock_source="time.windows.com,0x9"):
     if (type(symbol) is not str or not symbol.isascii() or not symbol.isalpha()
             or not symbol.isupper() or not 1 <= len(symbol) <= 8
-            or type(seconds) is not int or not 1 <= seconds <= 60):
+            or type(seconds) is not int or not 1 <= seconds <= 60
+            or type(expected_clock_source) is not str or not expected_clock_source
+            or len(expected_clock_source) > 1024):
         raise ValueError("CLOCK_IEX_PROBE_ARGUMENTS_REFUSED")
     if operational_producer is not None:
         from app.services.quality_dips_current_producer import QualityDipsCurrentProducer
@@ -41,7 +44,9 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
     clock = None
     try:
         # The real clock gate precedes credential access and provider connection.
-        clock = clock_factory(expected_source="time.windows.com,0x9",
+        # Explicit reviewed roster only. Never discover a new trust binding
+        # from current settings or bypass the real clock before provider IO.
+        clock = clock_factory(expected_source=expected_clock_source,
                               runtime_id="atlas-clock-iex-readonly-probe", lifetime=seconds + 30)
         clock.require_operational("atlas-clock-iex-readonly-probe")
         initial_operational_revision = None
@@ -147,6 +152,7 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                 "exchange_local_date": exchange_local.date().isoformat(),
                 "market_session_verified": False,
                 "native_clock_verified": True,
+                "clock_source_binding": expected_clock_source,
                 "clock_uncertainty_ms": clock.evidence["bound_ms"],
                 "authenticated": True, "subscribed": True,
                 "connection_closed": True,
@@ -170,11 +176,14 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="MSFT")
     parser.add_argument("--seconds", type=int, default=10)
+    parser.add_argument("--expected-clock-source", default="time.windows.com,0x9",
+                        help="Exact separately reviewed NTP peer roster; never changes Windows settings")
     args = parser.parse_args(argv)
     try:
         report = bounded_clock_iex_observation(
             symbol=args.symbol, seconds=args.seconds,
-            credentials_path=REPO / "config/alpaca.env")
+            credentials_path=REPO / "config/alpaca.env",
+            expected_clock_source=args.expected_clock_source)
         print(json.dumps(report, sort_keys=True))
         return 0
     except (ValueError, IEXRefused, OSError):

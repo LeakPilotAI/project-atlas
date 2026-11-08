@@ -32,6 +32,46 @@ class Feed:
                 "result": {"connection": "DISCONNECTED"}}
 
 
+@pytest.mark.parametrize('roster', ['time.windows.com,0x9',
+    'time.cloudflare.com,0x8 time.google.com,0x8'])
+def test_explicit_reviewed_clock_roster_forwarded_without_discovery(monkeypatch, roster):
+    seen = []
+    class BoundClock(Clock):
+        def __init__(self, **kwargs):
+            seen.append(kwargs['expected_source'])
+            super().__init__(**kwargs)
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: object())
+    result = probe.bounded_clock_iex_observation(symbol='MSFT', seconds=3,
+        credentials_path=Path('unused'), clock_factory=BoundClock, feed_factory=Feed,
+        expected_clock_source=roster)
+    assert seen == [roster] and result['clock_source_binding'] == roster
+    assert result['forward_financial_write_authorized'] is False
+
+
+def test_explicit_source_mismatch_still_blocks_credentials_and_provider(monkeypatch):
+    class RefusedClock:
+        def __init__(self, **kwargs):
+            assert kwargs['expected_source'] == 'time.windows.com,0x9'
+            raise ValueError('CLOCK_CONFIGURED_SOURCE_CHANGED')
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: pytest.fail('clock must precede credentials'))
+    with pytest.raises(ValueError, match='CLOCK_CONFIGURED_SOURCE_CHANGED'):
+        probe.bounded_clock_iex_observation(symbol='MSFT', seconds=3,
+            credentials_path=Path('unused'), clock_factory=RefusedClock, feed_factory=Feed,
+            expected_clock_source='time.windows.com,0x9')
+
+
+def test_cli_forwards_explicit_roster_without_loading_credentials(monkeypatch, capsys):
+    seen = []
+    def observe(**kwargs):
+        seen.append(kwargs)
+        return {'diagnostic_only': True}
+    monkeypatch.setattr(probe, 'bounded_clock_iex_observation', observe)
+    roster = 'time.cloudflare.com,0x8 time.google.com,0x8'
+    assert probe.main(['--seconds','10','--expected-clock-source',roster]) == 0
+    assert seen[0]['expected_clock_source'] == roster
+    assert 'diagnostic_only' in capsys.readouterr().out
+
+
 def test_bounded_native_clock_iex_accepts_fresh_callback_without_authority(monkeypatch):
     monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
     Clock.revoked = False
