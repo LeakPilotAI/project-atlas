@@ -410,3 +410,26 @@ def test_cli_export_diagnostic_recovery_refuses_existing_output(tmp_path,capsys)
     dst.write_text('preserve')
     assert probe.main(['--export-diagnostic-recovery',str(src),'--recovery-output',str(dst)])==1
     assert dst.read_text()=='preserve'
+
+
+def test_cli_verify_recovery_receipt_offline(tmp_path,monkeypatch,capsys):
+    import json
+    from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, export_recoverable_journal
+    src=tmp_path/'damaged.jsonl';dst=tmp_path/'recovered.jsonl';receipt_path=tmp_path/'receipt.json'
+    journal_diagnostic({'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':['SPY'],
+                        'refused_count':0,'operational_source_accepted':False,
+                        'paper_fill_authorized':False,'live_order_authorized':False},path=src)
+    src.write_bytes(src.read_bytes()+b'{"partial":')
+    receipt_path.write_text(json.dumps(export_recoverable_journal(source=src,destination=dst)))
+    monkeypatch.setattr(probe.Credentials,'load',lambda _:pytest.fail('provider accessed'))
+    args=['--verify-diagnostic-recovery',str(src),'--verify-recovery-output',str(dst),
+          '--recovery-receipt',str(receipt_path)]
+    assert probe.main(args)==0
+    assert json.loads(capsys.readouterr().out)['resume_authorized'] is False
+    dst.write_bytes(dst.read_bytes()+b'X')
+    assert probe.main(args)==1
+    assert 'REFUSED' in capsys.readouterr().out
+
+def test_cli_verify_recovery_refuses_missing_receipt(tmp_path,capsys):
+    assert probe.main(['--verify-diagnostic-recovery',str(tmp_path/'damaged'),
+                       '--verify-recovery-output',str(tmp_path/'recovered')])==1

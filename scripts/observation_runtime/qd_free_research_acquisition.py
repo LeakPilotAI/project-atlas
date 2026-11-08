@@ -13,7 +13,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "backend"))
-from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery, export_recoverable_journal
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery, export_recoverable_journal, verify_recovery_export
 from app.investment.alpaca_iex import Credentials
 from app.investment.free_research_providers import FreeResearchBundle
 from app.investment.free_research_transport import FreeResearchClient, ResearchRefused
@@ -208,6 +208,9 @@ def main(argv=None):
     parser.add_argument("--symbol", default="MSFT")
     parser.add_argument("--prices-only", action="store_true", help="Read-only price history without SEC fundamentals")
     parser.add_argument("--symbols", nargs="+", help="Up to eight distinct real symbols; diagnostic only")
+    parser.add_argument("--verify-diagnostic-recovery", type=Path, help="Damaged source for offline recovery receipt verification")
+    parser.add_argument("--verify-recovery-output", type=Path, help="Existing recovered journal to verify")
+    parser.add_argument("--recovery-receipt", type=Path, help="JSON receipt from prior export")
     parser.add_argument("--export-diagnostic-recovery", type=Path, help="Damaged journal source; requires --recovery-output")
     parser.add_argument("--recovery-output", type=Path, help="New exclusive verified-prefix export destination")
     parser.add_argument("--plan-diagnostic-recovery", type=Path, help="Read-only recovery plan for an interrupted journal")
@@ -217,6 +220,23 @@ def main(argv=None):
     parser.add_argument("--sec-contact", default=os.environ.get("ATLAS_SEC_CONTACT"))
     args = parser.parse_args(argv)
     try:
+        if (args.verify_diagnostic_recovery is not None or args.verify_recovery_output is not None
+                or args.recovery_receipt is not None):
+            if (args.verify_diagnostic_recovery is None or args.verify_recovery_output is None
+                    or args.recovery_receipt is None or args.export_diagnostic_recovery is not None
+                    or args.recovery_output is not None or args.plan_diagnostic_recovery is not None
+                    or args.inspect_diagnostic_journal is not None or args.diagnostic_journal is not None
+                    or args.prices_only or args.symbols is not None or args.diagnostic_rounds != 1):
+                raise ResearchRefused('QD_RECOVERY_VERIFY_STANDALONE_REQUIRED')
+            receipt_path=args.recovery_receipt
+            if (receipt_path.is_symlink() or not receipt_path.is_file()
+                    or receipt_path.stat().st_size>8192):
+                raise ResearchRefused('QD_RECOVERY_RECEIPT_FILE_REFUSED')
+            receipt=json.loads(receipt_path.read_text(encoding='utf-8'))
+            result=verify_recovery_export(source=args.verify_diagnostic_recovery,
+                                          destination=args.verify_recovery_output,receipt=receipt)
+            print(json.dumps(result,sort_keys=True))
+            return 0
         if args.export_diagnostic_recovery is not None or args.recovery_output is not None:
             if (args.export_diagnostic_recovery is None or args.recovery_output is None
                     or args.inspect_diagnostic_journal is not None
