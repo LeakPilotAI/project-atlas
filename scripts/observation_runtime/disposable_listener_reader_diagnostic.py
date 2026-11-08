@@ -34,6 +34,8 @@ def inspect(*, connected=False):
                              capture_output=True, text=True, timeout=8)
             net = subprocess.run(['netstat.exe', '-ano', '-p', 'tcp'],
                              capture_output=True, text=True, timeout=8)
+            default_net = subprocess.run(['netstat.exe', '-ano'],
+                                         capture_output=True, text=True, timeout=8)
             native = ip_helper(port=port)
             net_lines = [line.strip() for line in net.stdout.splitlines()
                      if str(port) in line]
@@ -43,6 +45,8 @@ def inspect(*, connected=False):
                              capture_output=True, text=True, timeout=8)
             result = {'schema': 'ATLAS_DISPOSABLE_LISTENER_READERS_V1',
                   'port': port, 'connected': connected, 'expected_pid': pid, 'so_acceptconn': socket_acceptconn,
+                  'netstat_default_exit': default_net.returncode,
+                  'netstat_default_scoped_raw': [line.strip() for line in default_net.stdout.splitlines() if str(port) in line],
                   'netstat_exit': net.returncode, 'netstat_scoped_raw': net_lines,
                   'netstat_stderr': net.stderr.strip()[:200],
                   'nettcp_exit': cmd.returncode, 'nettcp': cmd.stdout.strip(),

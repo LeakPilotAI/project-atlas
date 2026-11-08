@@ -19,6 +19,8 @@ def test_disposable_listener_comparison_remains_nonoperational():
     assert result['port'] > 0 and result['expected_pid'] > 0
     assert result['so_acceptconn'] == 1
     assert result['netstat_exit'] == 0
+    assert result['netstat_default_exit'] == 0
+    assert isinstance(result['netstat_default_scoped_raw'], list)
     assert isinstance(result['netstat_scoped_raw'], list)
     assert result['nettcp_exit'] == 0
 
@@ -31,4 +33,6 @@ def test_connected_disposable_listener_still_never_grants_authority():
     assert result['financial_authorized'] is False
     assert result['cim_exit'] == 0
     assert result['netstat_exit'] == 0
+    assert result['netstat_default_exit'] == 0
+    assert isinstance(result['netstat_default_scoped_raw'], list)
     assert result['ip_helper_error'] is None
