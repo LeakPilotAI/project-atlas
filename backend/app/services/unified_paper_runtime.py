@@ -203,6 +203,40 @@ class UnifiedControlStopBridge:
                 raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
         return strict(body(self.progress))
 
+    def verify_durable_stop_receipt(self, mode, receipt):
+        """Owner-side exact readback; a signal or memory result is never proof."""
+        if mode != 'SHUTDOWN_FLATTEN' or type(receipt) is not dict:
+            return False
+        with self.stop_lock:
+            ledger = self.stop_ledger
+            session = self.session_id
+            if (ledger is None or session is None or not self._receipt_persisted
+                    or receipt != self.progress):
+                return False
+            outcome = receipt.get('outcome')
+            if (receipt.get('schema') != 'QD_CONTROL_STOP_V1'
+                    or receipt.get('phase') != 'FINISHED'
+                    or type(outcome) is not dict
+                    or outcome.get('schema') != 'QD_AUTO_SHUTDOWN_V1'
+                    or outcome.get('mode') != mode
+                    or outcome.get('status') != 'FLATTENED'
+                    or outcome.get('position_state') != 'FLAT'
+                    or outcome.get('process_shutdown') != 'VERIFIED_EXIT'):
+                return False
+            lanes = outcome.get('lanes')
+            if (type(lanes) is not dict
+                    or set(lanes) != {'QUALITY_DIPS', 'HYPERLIQUID'}
+                    or any(type(lanes[lane]) is not dict
+                           or lanes[lane].get('state') != 'ACKNOWLEDGED_FLAT_AND_DRAINED'
+                           for lane in ('QUALITY_DIPS', 'HYPERLIQUID'))):
+                return False
+            try:
+                row = ledger.reserve_existing(session, mode)
+            except Exception:
+                return False
+            return (type(row) is dict and row.get('state') == 'FINISHED'
+                    and row.get('receipt') == receipt)
+
     def status(self):
         # Never expose an IDLE/stale snapshot while a financial Stop is in flight.
         # Readers observe the result only after the serialized stop finishes.
