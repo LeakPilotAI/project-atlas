@@ -267,3 +267,52 @@ def test_restart_observation_refuses_missing_or_malformed_lane_cuts(tmp_path):
             ledger.reconcile_restart_observation('s', lane_positions=bad)
     with pytest.raises(StopReceiptConflict, match='MISSING'):
         ledger.reconcile_restart_observation('missing', lane_positions=good)
+
+
+def test_native_restart_observation_requires_verified_custody_and_bound_session(tmp_path, monkeypatch):
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'SHUTDOWN_FLATTEN')
+    custody = object.__new__(UnifiedPortfolioCustody)
+    snapshot = {'state': 'ACKNOWLEDGED', 'accounts': {
+        k: {'positions': {}, 'resting_orders': {}, 'source_head': 'test-head'}
+        for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
+    monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshot)
+    result = ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
+    assert result['exposure_observed'] is False
+    assert result['reconciliation_required'] is True
+    assert result['startup_authorized'] is False
+    with pytest.raises(ValueError, match='SESSION_BINDING'):
+        ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 'other'})
+    with pytest.raises(ValueError, match='NATIVE_CUSTODY'):
+        ledger.observe_native_account_restart('s', custody=object(), grant={'session_id': 's'})
+
+
+def test_native_restart_observation_refuses_missing_orders_or_unknown_cuts(tmp_path, monkeypatch):
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'EMERGENCY')
+    custody = object.__new__(UnifiedPortfolioCustody)
+    snapshots = [
+        {'state': 'UNKNOWN', 'accounts': None},
+        {'state': 'ACKNOWLEDGED', 'accounts': {
+            k: {'positions': {}, 'source_head': 'test-head'}
+            for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}]
+    monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshots.pop(0))
+    for _ in range(2):
+        with pytest.raises(StopReceiptConflict, match='NATIVE_CUT_UNVERIFIED'):
+            ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
+
+
+def test_native_restart_observation_detects_positions_and_resting_orders(tmp_path, monkeypatch):
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'SHUTDOWN_FLATTEN')
+    custody = object.__new__(UnifiedPortfolioCustody)
+    monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: {
+        'state': 'ACKNOWLEDGED', 'accounts': {
+            'QUALITY_DIPS': {'positions': {'a': {}}, 'resting_orders': {}, 'source_head': 'head1'},
+            'HYPERLIQUID': {'positions': {}, 'resting_orders': {'b': {}}, 'source_head': 'head2'}}})
+    result = ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
+    assert result['exposure_observed'] is True
+    assert result['startup_authorized'] is False

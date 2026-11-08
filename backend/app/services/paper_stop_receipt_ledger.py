@@ -153,6 +153,38 @@ class PaperStopReceiptLedger:
                 'exposure_observed': bool(outstanding),
                 'reconciliation_required': True,
                 'startup_authorized': False, 'financial_authorized': False}
+    def observe_native_account_restart(self, session, *, custody, grant):
+        """Read existing custody-verified account cuts, never grant restart.
+
+        Does not call verify_restart (which mutates the session journal).
+        Missing resting-order evidence cannot be interpreted as zero orders.
+        """
+        from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+        if type(custody) is not UnifiedPortfolioCustody:
+            raise ValueError('STOP_RESTART_NATIVE_CUSTODY_REQUIRED')
+        if type(grant) is not dict or grant.get('session_id') != session:
+            raise ValueError('STOP_RESTART_SESSION_BINDING_REQUIRED')
+        row = self.inspect_session(session)
+        if row is None:
+            raise StopReceiptConflict('STOP_RESTART_INTENT_MISSING')
+        try:
+            snapshot = custody.read_accounts(grant)
+        except Exception as exc:
+            raise StopReceiptConflict('STOP_RESTART_NATIVE_CUT_UNVERIFIED') from exc
+        if (type(snapshot) is not dict or snapshot.get('state') != 'ACKNOWLEDGED'
+                or type(snapshot.get('accounts')) is not dict
+                or set(snapshot['accounts']) != {'QUALITY_DIPS', 'HYPERLIQUID'}):
+            raise StopReceiptConflict('STOP_RESTART_NATIVE_CUT_UNVERIFIED')
+        counts = {}
+        for lane, account in snapshot['accounts'].items():
+            if (type(account) is not dict or type(account.get('positions')) is not dict
+                    or type(account.get('resting_orders')) is not dict
+                    or not isinstance(account.get('source_head'), str)
+                    or not account['source_head']):
+                raise StopReceiptConflict('STOP_RESTART_NATIVE_CUT_UNVERIFIED')
+            counts[lane] = {'open_positions': len(account['positions']),
+                            'unsettled_orders': len(account['resting_orders'])}
+        return self.reconcile_restart_observation(session, lane_positions=counts)
     def recover(self, session, mode):
         """Read-only restart inspection: pending is NEVER proof of flat positions."""
         row = self.reserve_existing(session, mode)
