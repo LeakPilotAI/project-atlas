@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger, StopReceiptConflict
 
 def test_stop_intent_survives_reopen_and_cannot_change_mode(tmp_path):
@@ -187,6 +187,8 @@ def test_recovery_inventory_tracks_pending_and_recorded_without_flat_claim(tmp_p
     ledger.finish('b', 'EMERGENCY', {'phase': 'FINISHED', 'outcome': {'mode': 'EMERGENCY', 'status': 'SHUTDOWN_INCOMPLETE'}})
     expected = {'schema': 'ATLAS_PAPER_STOP_RECOVERY_INVENTORY_V1',
                 'pending_unverified': 1, 'receipts_recorded_not_flat_verified': 1,
+                'receipts_without_flatten_claim': 1,
+                'requires_independent_position_reconciliation': True,
                 'financial_authorized': False, 'startup_authorized': False}
     assert ledger.summarize_recovery() == expected
     assert PaperStopReceiptLedger(path).summarize_recovery() == expected
@@ -207,3 +209,21 @@ def test_recovery_inventory_empty_never_authorizes(tmp_path):
     assert result['pending_unverified'] == 0
     assert result['receipts_recorded_not_flat_verified'] == 0
     assert result['startup_authorized'] is False
+
+
+def test_recovery_inventory_finished_flatten_claim_still_needs_independent_reconciliation(tmp_path):
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'SHUTDOWN_FLATTEN')
+    ledger.finish('s', 'SHUTDOWN_FLATTEN', {'phase': 'FINISHED', 'outcome': {'mode': 'SHUTDOWN_FLATTEN', 'status': 'FLATTENED'}})
+    result = PaperStopReceiptLedger(ledger.path).summarize_recovery()
+    assert result['receipts_without_flatten_claim'] == 0
+    assert result['requires_independent_position_reconciliation'] is True
+    assert result['startup_authorized'] is False
+
+
+def test_recovery_inventory_missing_receipt_status_fails_closed(tmp_path):
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'EMERGENCY')
+    ledger.finish('s', 'EMERGENCY', {'phase': 'FINISHED', 'outcome': {'mode': 'EMERGENCY'}})
+    with pytest.raises(StopReceiptConflict, match='CORRUPT'):
+        PaperStopReceiptLedger(ledger.path).summarize_recovery()

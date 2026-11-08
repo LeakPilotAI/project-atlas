@@ -100,7 +100,7 @@ class PaperStopReceiptLedger:
         """Read-only all-session recovery inventory; never certifies positions flat."""
         with self._connect() as db:
             rows = db.execute("SELECT mode,state,receipt FROM stop_receipts").fetchall()
-        pending = finished = 0
+        pending = finished = incomplete = 0
         for mode, state, serialized in rows:
             if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY"):
                 raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
@@ -117,9 +117,16 @@ class PaperStopReceiptLedger:
                     or not isinstance(receipt.get("outcome"), dict)
                     or receipt["outcome"].get("mode") != mode):
                 raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+            status = receipt["outcome"].get("status")
+            if not isinstance(status, str) or not status:
+                raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+            if status != "FLATTENED":
+                incomplete += 1
             finished += 1
         return {"schema": "ATLAS_PAPER_STOP_RECOVERY_INVENTORY_V1",
                 "pending_unverified": pending, "receipts_recorded_not_flat_verified": finished,
+                "receipts_without_flatten_claim": incomplete,
+                "requires_independent_position_reconciliation": bool(pending or finished),
                 "financial_authorized": False, "startup_authorized": False}
     def recover(self, session, mode):
         """Read-only restart inspection: pending is NEVER proof of flat positions."""
