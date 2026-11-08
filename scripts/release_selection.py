@@ -147,7 +147,8 @@ class ReleaseSelector:
     without its atomic publication refuses all reads; no retry/repair/adoption.
     """
 
-    def __init__(self, *, store=None, verifier=None, clock=None):
+    def __init__(self, *, store=None, verifier=None, clock=None,
+                 clock_profile="WINDOWS_TIME_CODE_SELECTION_V1"):
         if store is None or verifier is None or store.domain != verifier.domain:
             raise ValueError("SELECTION_ACCEPTED_DEPENDENCIES_REQUIRED")
         self.domain = store.domain
@@ -156,21 +157,31 @@ class ReleaseSelector:
                 LocalWindowsClock,
             )
             from scripts.release_selection_store import NativeSelectionStore
+            from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
 
+            if clock_profile == "WINDOWS_TIME_CODE_SELECTION_V1":
+                accepted_clock = type(clock) is LocalWindowsClock
+            elif clock_profile == "INDEPENDENT_TWO_PEER_NTP_CODE_SELECTION_V1":
+                accepted_clock = type(clock) is IndependentNtpClock
+            else:
+                raise ValueError("UNREVIEWED_SELECTION_CLOCK_PROFILE")
             if (
                 type(store) is not NativeSelectionStore
                 or type(verifier) is not NativeInstalledReleaseVerifier
-                or type(clock) is not LocalWindowsClock
+                or not accepted_clock
             ):
                 raise ValueError("SELECTION_NATIVE_DEPENDENCIES_REQUIRED")
         elif self.domain != "DISPOSABLE":
             raise ValueError("SELECTION_DOMAIN_REQUIRED")
+        elif clock_profile != "WINDOWS_TIME_CODE_SELECTION_V1":
+            raise ValueError("DISPOSABLE_SELECTION_CLOCK_PROFILE_REQUIRED")
         self.store, self.verifier, self.clock = store, verifier, clock
-        self._ports = store, verifier, clock, self.domain
+        self.clock_profile = clock_profile
+        self._ports = store, verifier, clock, self.domain, clock_profile
         self._known = None
 
     def _history(self):
-        if (self.store, self.verifier, self.clock, self.domain) != self._ports:
+        if (self.store, self.verifier, self.clock, self.domain, self.clock_profile) != self._ports:
             raise ValueError("SELECTION_COMPONENT_SUBSTITUTION")
         rows = self.store.records()
         if len(rows) > MAX_RECORDS:
@@ -299,6 +310,10 @@ class ReleaseSelector:
             if len(rows) >= MAX_RECORDS:
                 raise ValueError("SELECTION_CAPACITY_NO_RESET")
             target = grant["target"]
+            if self.clock_profile == "INDEPENDENT_TWO_PEER_NTP_CODE_SELECTION_V1" and (
+                grant["action"] != "SELECT" or type(target) is not dict
+                or target.get("release") != "af96bec0484a8e43f9965610e071a907a0d316bf"):
+                raise ValueError("EXACT_V7_INDEPENDENT_NTP_SELECTION_REQUIRED")
             if grant["action"] == "SELECT":
                 validate_spec(target, self.domain)
                 if grant["restores"] is not None:

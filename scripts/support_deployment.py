@@ -27,6 +27,26 @@ if __name__ == "__main__":
 from scripts.release_selection import encoded, strict
 
 APP = "2c039af29dfefd1df77e0caa3db3fdf5ed188118"
+
+# The V7 independent NTP clock is restricted to this installed native artifact
+# for nonfinancial support deployment and selection. Never use it for V5/V6.
+V7_NTP_APP = "af96bec0484a8e43f9965610e071a907a0d316bf"
+V7_NTP_RECEIPT_SHA256 = "105c89ab10d20771474fe030489da7aabeb6900f22be57d25b745135bf28ac4d"
+V7_NTP_ARTIFACT_DIGEST = "94374eda7eea82ac1c44905b21ab56b524128bc49e4253f3522838d230961827"
+V7_NTP_CLOCK_PROFILE = "INDEPENDENT_TWO_PEER_NTP_CODE_SELECTION_V1"
+
+
+def support_clock_profile(manifest):
+    application = manifest.get("application") if type(manifest) is dict else None
+    if type(application) is not dict:
+        raise ValueError("REVIEWED_SUPPORT_APPLICATION_REQUIRED")
+    if application.get("release") == V7_NTP_APP:
+        if (application.get("receipt_sha256") != V7_NTP_RECEIPT_SHA256
+                or application.get("artifact_digest") != V7_NTP_ARTIFACT_DIGEST):
+            raise ValueError("V7_NTP_INSTALLED_APPLICATION_PIN_REQUIRED")
+        return V7_NTP_CLOCK_PROFILE
+    return "WINDOWS_TIME_CODE_SELECTION_V1"
+
 LIMITS = {"seconds": 600, "entries": 8192, "bytes": 64 * 1024**2}
 EXCLUSIONS = ["APPLICATION_PAYLOAD", "FINANCIAL_STATE", "PROVIDERS", "GENESIS",
               "DESKTOP_SHORTCUTS", "WINDOWS_CONFIGURATION", "AUTOMATIC_STARTUP"]
@@ -175,6 +195,15 @@ def prepare(manifest, archive, expected_manifest_sha256):
             or package.get("application_release") != m['application']['release']
             or package.get("support_sources") != [r for r in m["files"] if r["path"] != "support-manifest.json"]):
         raise ValueError("SUPPORT_PACKAGE_BINDING")
+    if support_clock_profile(m) == V7_NTP_CLOCK_PROFILE:
+        required_ntp = {"path":"scripts/observation_runtime/atlas_independent_ntp_clock.py",
+                        "sha256":"230a35d8b293be0d38ded533bb964d36bc5bf3c80d432a85656bc4c22650979c"}
+        if (package.get("clock") != {
+                "issuer":"ATLAS_INDEPENDENT_DUAL_NTP_V1_GOOGLE_CLOUDFLARE",
+                "maximum_evidence_age_seconds":120,
+                "maximum_uncertainty_ms":1000}
+                or required_ntp not in package.get("required_installed_application_sources", [])):
+            raise ValueError("SUPPORT_V7_TWO_PEER_NTP_CLOCK_BINDING_REQUIRED")
     return m, files
 
 
@@ -429,10 +458,15 @@ def install_operational(*, approved=False, manifest=None, archive=None, manifest
     if approved is not True:
         raise ValueError("SEPARATE_EXACT_SUPPORT_DEPLOYMENT_AUTHORIZATION_REQUIRED")
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+    from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
     from scripts.release_selection import NativeInstalledReleaseVerifier
-    if type(clock) is not LocalWindowsClock:
+    if type(clock) not in (LocalWindowsClock, IndependentNtpClock):
         raise ValueError("GENUINE_SUPPORT_CLOCK_REQUIRED")
     m, files = prepare(manifest, archive, manifest_sha256)
+    profile = support_clock_profile(m)
+    if (profile == V7_NTP_CLOCK_PROFILE and type(clock) is not IndependentNtpClock
+            or profile != V7_NTP_CLOCK_PROFILE and type(clock) is not LocalWindowsClock):
+        raise ValueError("GENUINE_REVIEWED_SUPPORT_CLOCK_PROFILE_REQUIRED")
     if m["domain"] != "WINDOWS_LOCAL" or Path(sys.executable) != Path(m["runtime"]["python"]):
         raise ValueError("OPERATIONAL_SUPPORT_DOMAIN_AND_D_INTERPRETER_REQUIRED")
     # Verify every deployed source against the separately reviewed local adapter,
@@ -559,7 +593,14 @@ def main():
     if sha(encoded(m)) != a.manifest_sha256:
         raise ValueError("APPROVED_SUPPORT_DEPLOYMENT_PIN_MISMATCH")
     runtime = "qd-support-deployment-" + a.manifest_sha256 if a.action == "install" else "qd-code-selection-" + str(a.operation)
-    clock = LocalWindowsClock(expected_source="time.cloudflare.com,0x8 time.google.com,0x8", runtime_id=runtime)
+    m = validate_manifest(m)
+    profile = support_clock_profile(m)
+    if profile == V7_NTP_CLOCK_PROFILE:
+        from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
+        clock = IndependentNtpClock(runtime_id=runtime)
+    else:
+        clock = LocalWindowsClock(expected_source="time.cloudflare.com,0x8 time.google.com,0x8",
+                                 runtime_id=runtime)
     try:
         if a.action == "install":
             result = install_operational(approved=a.execute_approved_support_deployment, manifest=m, archive=a.archive,
@@ -580,14 +621,19 @@ def select_release(*, approved=False, manifest=None, manifest_sha256=None, recei
     if approved is not True:
         raise ValueError("SEPARATE_EXACT_SELECTION_AUTHORIZATION_REQUIRED")
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+    from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
     from scripts.release_selection import (
         NativeInstalledReleaseVerifier,
         ReleaseSelector,
     )
     from scripts.release_selection_store import NativeSelectionStore
-    if type(clock) is not LocalWindowsClock:
+    if type(clock) not in (LocalWindowsClock, IndependentNtpClock):
         raise ValueError("GENUINE_SELECTION_CLOCK_REQUIRED")
     m = validate_manifest(manifest)
+    profile = support_clock_profile(m)
+    if (profile == V7_NTP_CLOCK_PROFILE and type(clock) is not IndependentNtpClock
+            or profile != V7_NTP_CLOCK_PROFILE and type(clock) is not LocalWindowsClock):
+        raise ValueError("GENUINE_REVIEWED_SELECTION_CLOCK_PROFILE_REQUIRED")
     if (m["domain"] != "WINDOWS_LOCAL" or sha(encoded(m)) != pin(manifest_sha256)
             or Path(sys.executable) != Path(m["runtime"]["python"])
             or type(operation) is not str or not re.fullmatch("[0-9a-f]{32}", operation)
@@ -597,7 +643,8 @@ def select_release(*, approved=False, manifest=None, manifest_sha256=None, recei
     with SupportLease(r):
         store = NativeSelectionStore(root=m["selection"], native_root=r["selection_id"])
         try:
-            selector = ReleaseSelector(store=store, verifier=NativeInstalledReleaseVerifier(), clock=clock)
+            selector = ReleaseSelector(store=store, verifier=NativeInstalledReleaseVerifier(),
+                                       clock=clock, clock_profile=profile)
             reference = {"schema": "QD_INSTALLED_RELEASE_REFERENCE_V1", "domain": "WINDOWS_LOCAL", **m["application"]}
             result = selector.change({"schema": "QD_CODE_SELECTION_AUTHORIZATION_V1", "domain": "WINDOWS_LOCAL",
                 "action": "ROLLBACK" if rollback_baseline else "SELECT", "operation": operation, "expected_head": expected_head,

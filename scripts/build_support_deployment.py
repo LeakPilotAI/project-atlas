@@ -45,6 +45,21 @@ def build(*, output, historical_manifest, application, domain="WINDOWS_LOCAL", f
         if any(r['path'] not in actual for r in required):
             raise ValueError('RECOVERY_INSTALLED_APPLICATION_DEPENDENCY_MISSING')
         package['required_installed_application_sources']=[{'path':r['path'],'sha256':actual[r['path']]} for r in required]
+        if app == 'af96bec0484a8e43f9965610e071a907a0d316bf':
+            # Do not retroactively relabel old V4/V5 windows-clock manifests.
+            from scripts.support_deployment import V7_NTP_RECEIPT_SHA256, V7_NTP_ARTIFACT_DIGEST
+            if (application['receipt_sha256'] != V7_NTP_RECEIPT_SHA256
+                    or application['artifact_digest'] != V7_NTP_ARTIFACT_DIGEST):
+                raise ValueError('EXACT_V7_INSTALLED_NTP_APP_REQUIRED')
+            source='scripts/observation_runtime/atlas_independent_ntp_clock.py'
+            if actual.get(source)!='230a35d8b293be0d38ded533bb964d36bc5bf3c80d432a85656bc4c22650979c':
+                raise ValueError('EXACT_INSTALLED_V7_NTP_SOURCE_REQUIRED')
+            package['required_installed_application_sources'].append({'path':source,'sha256':actual[source]})
+            package['clock']={
+                'issuer':'ATLAS_INDEPENDENT_DUAL_NTP_V1_GOOGLE_CLOUDFLARE',
+                'maximum_evidence_age_seconds':120,
+                'maximum_uncertainty_ms':1000,
+            }
         package['application_archive_sha256']=receipt['archive_sha256']
         package['missing_from_frozen_application']=sorted(n for n,data in payload.items() if actual.get(n)!=sha(data))
     # Historical source-only authority flags deliberately remain false.

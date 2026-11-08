@@ -652,6 +652,7 @@ def run_installed_entry(args, *, approved=False):
     if deployment["domain"] != ("DISPOSABLE" if disposable else "WINDOWS_LOCAL"):
         raise ValueError("SUPPORT_LAUNCH_DOMAIN_MISMATCH")
 
+    clock_profile = "WINDOWS_TIME_CODE_SELECTION_V1"
     if disposable:
         fixture_base(base)
         from scripts.support_deployment import DisposableInstalledReleaseVerifier
@@ -662,15 +663,28 @@ def run_installed_entry(args, *, approved=False):
             def revoke(self):
                 pass
         clock = DisposableClock()
+    elif args.release == "af96bec0484a8e43f9965610e071a907a0d316bf":
+        from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
+        from scripts.support_deployment import (
+            V7_NTP_RECEIPT_SHA256, V7_NTP_ARTIFACT_DIGEST, V7_NTP_CLOCK_PROFILE,
+        )
+        if (deployment["application"]["release"] != args.release
+                or deployment["application"]["receipt_sha256"] != V7_NTP_RECEIPT_SHA256
+                or deployment["application"]["artifact_digest"] != V7_NTP_ARTIFACT_DIGEST):
+            raise ValueError("V7_INSTALLED_NTP_LAUNCHER_PIN_REQUIRED")
+        clock = IndependentNtpClock(runtime_id="qd-installed-nonfinancial-" + args.expected_head)
+        clock_profile = V7_NTP_CLOCK_PROFILE
     else:
-        clock = LocalWindowsClock(expected_source="time.cloudflare.com,0x8 time.google.com,0x8", runtime_id="qd-installed-nonfinancial-" + args.expected_head)
+        clock = LocalWindowsClock(expected_source="time.cloudflare.com,0x8 time.google.com,0x8",
+                                 runtime_id="qd-installed-nonfinancial-" + args.expected_head)
     store = owner = support_lease = None
     try:
         support_lease = SupportLease(proof)
         store = (NativeSelectionStore.disposable(root=base / "selection", native_root=args.native_root)
                  if disposable else NativeSelectionStore(root="D:\\AtlasRuntime\\selection", native_root=args.native_root))
         selector = ReleaseSelector(
-            store=store, verifier=DisposableInstalledReleaseVerifier() if disposable else NativeInstalledReleaseVerifier(), clock=clock
+            store=store, verifier=DisposableInstalledReleaseVerifier() if disposable else NativeInstalledReleaseVerifier(),
+            clock=clock, clock_profile=clock_profile
         )
         owner = InstalledNonfinancialLauncher.disposable(selector=selector) if disposable else InstalledNonfinancialLauncher(selector=selector)
         ready = owner.open(
