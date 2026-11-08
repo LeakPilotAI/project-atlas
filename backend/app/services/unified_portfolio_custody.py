@@ -208,6 +208,7 @@ class UnifiedPortfolioCustody:
             # Order snapshots are collected after the first control-journal check.
             # A concurrent reservation/ACK during projection invalidates the cut.
             if (owner.check() is not True or body(before) != body(self.journal.snapshot())
+                    or any(body(cut) != body(self.writers[lane]._cut()) for lane, cut in cuts.items())
                     or any(body(control) != body(self.writers[lane].orders.snapshot())
                            for lane, control in order_cuts.items())):
                 return unavailable

@@ -497,3 +497,34 @@ def test_qd_no_resting_orders_capability_requires_explicit_authority(monkeypatch
     writer.orders = object()
     with pytest.raises(ValueError, match='NO_RESTING_ORDERS_AUTHORITY_REQUIRED'):
         writer.attest_no_resting_orders(cut)
+
+
+def test_native_account_read_refuses_financial_cut_change_after_qd_attestation(monkeypatch):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    custody = object.__new__(UnifiedPortfolioCustody)
+    before = {'state': {'operations': {}}, 'revision': 1}
+    custody.journal = SimpleNamespace(snapshot=lambda: before)
+    @contextmanager
+    def lease(*args):
+        yield SimpleNamespace(check=lambda: True)
+    custody.ownership = SimpleNamespace(lease=lease)
+    custody.clock = lambda: 123
+    custody.authority = SimpleNamespace(verify_read_cuts=lambda *args: True)
+    custody.components = {}
+    monkeypatch.setattr(UnifiedPortfolioCustody, '_verify', lambda self: None)
+    cut = {'head': 'head', 'manifest': {'epoch': 'e', 'strategy': 's', 'currency': 'USD', 'opening_cash': '1000'},
+           'state': {'revision': 1, 'cash': '1000', 'gross': '0', 'costs': '0', 'net': '0', 'positions': {}}}
+    changed = {'head': 'changed', **{k: v for k, v in cut.items() if k != 'head'}}
+    reads = []
+    def qd_cut():
+        reads.append(1)
+        return cut if len(reads) <= 1 else changed
+    custody.writers = {
+        'QUALITY_DIPS': SimpleNamespace(_cut=qd_cut, attest_no_resting_orders=lambda evidence: True),
+        'HYPERLIQUID': SimpleNamespace(_cut=lambda: cut, orders=SimpleNamespace(snapshot=lambda: {'state': {'orders': {}}}))}
+    result = custody.read_accounts({'session_id': 's'})
+    assert result['state'] == 'UNKNOWN'
+    assert result['startup_authorized'] is False
+    assert len(reads) == 2
