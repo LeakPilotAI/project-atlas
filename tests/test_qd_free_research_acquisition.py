@@ -232,3 +232,20 @@ def test_single_prices_only_rejects_empty_or_missing_evidence(monkeypatch,bars,r
     with pytest.raises(ValueError,match='QD_PRICE_ONLY_EVIDENCE_INCOMPLETE_OR_UNAUTHORIZED'):
         probe.inspect_prices_only(symbol='SPY',contact=None,credentials_path=Path('unused'),
                                   client_factory=Client,bundle_factory=Bundle)
+
+
+@pytest.mark.parametrize('error,category',[
+    (OSError('secret-bearing transport URL'),'PROVIDER_IO_FAILURE'),
+    (KeyError('secret-header'),'MALFORMED_PROVIDER_DATA'),
+    (TypeError('secret token'),'MALFORMED_PROVIDER_DATA'),
+    (ValueError('QD_PRICE_ONLY_EVIDENCE_INCOMPLETE_OR_UNAUTHORIZED'),'MISSING_RESEARCH_EVIDENCE'),
+    (ValueError('provider secret message'),'PROVIDER_REFUSED_OR_UNAVAILABLE'),
+])
+def test_bounded_prices_only_sanitizes_failure_category(error,category):
+    def inspect(**kwargs):
+        raise error
+    result=probe.inspect_bounded_prices_only(symbols=['SPY'],contact=None,
+                                              credentials_path=None,inspect=inspect)
+    assert result['refused_count']==1
+    assert result['results'][0]['failure_category']==category
+    assert 'secret' not in str(result)

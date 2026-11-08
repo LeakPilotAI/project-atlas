@@ -114,8 +114,20 @@ def inspect_bounded_prices_only(*, symbols, contact, credentials_path,
                     or result.get('live_order_authorized') is not False):
                 raise ResearchRefused('QD_PRICE_ONLY_RESULT_AUTHORITY_REFUSED')
             results.append(result)
-        except (ValueError,OSError,KeyError,TypeError):
-            results.append({'symbol':symbol,'status':'REFUSED',
+        except (ValueError,OSError,KeyError,TypeError) as exc:
+            # Stable categories only: never echo provider exception messages,
+            # which can include URLs, request headers, or credentials.
+            if isinstance(exc, OSError):
+                category='PROVIDER_IO_FAILURE'
+            elif isinstance(exc, (KeyError,TypeError)):
+                category='MALFORMED_PROVIDER_DATA'
+            elif str(exc)=='QD_PRICE_ONLY_RESULT_AUTHORITY_REFUSED':
+                category='INVALID_RESEARCH_AUTHORITY_OR_SCHEMA'
+            elif str(exc)=='QD_PRICE_ONLY_EVIDENCE_INCOMPLETE_OR_UNAUTHORIZED':
+                category='MISSING_RESEARCH_EVIDENCE'
+            else:
+                category='PROVIDER_REFUSED_OR_UNAVAILABLE'
+            results.append({'symbol':symbol,'status':'REFUSED','failure_category':category,
                             'operational_source_accepted':False,'paper_fill_authorized':False,
                             'live_order_authorized':False})
     refused=sum(row.get('status')=='REFUSED' for row in results)
