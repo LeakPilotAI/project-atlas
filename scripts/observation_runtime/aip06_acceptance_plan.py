@@ -27,7 +27,7 @@ def schedule():
         'F08':('tests/test_unified_actual_native_lanes.py::test_global_native_ack_loss_refuses_replay_and_restart','unknown-ack-never-reapply'),
         'F09':(None,'interrupted-native-once-only-inception-exact-cuts'),
         'F10':('tests/test_unified_actual_native_lanes.py::test_real_child_crash_after_native_fill_before_order_and_global_ack','declared-exit71-original-handle-recovery'),
-        'F11':(None,'actual-native-capacity-load-and-reserved-stop-not-mocked-headroom'),
+        'F11':('tests/test_unified_source_capacity_native.py::test_native_global_capacity_saturation_refuses_entry_and_preserves_stop','actual-native-capacity-load-and-reserved-stop-not-mocked-headroom'),
         'F12':(None,'current-native-source-binding-producer-continuation-read-model-committed-notification-contracts')}
     rows=[{'id':key,'source_case':case,'proof':proof,'status':'NATIVE_CASE_BINDING_PENDING' if case is None
            else 'SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING','max_children':2 if key=='F04' else 1,
@@ -35,6 +35,12 @@ def schedule():
            'on_failure':'PRESERVE_FIRST_FAILURE_CLEAN_OWNED_ONLY_ABORT_NO_RETRY'} for key,(case,proof) in obligations.items()]
     # F11 readback is a prerequisite only; it does not satisfy native load/exhaustion proof.
     for row in rows:
+        if row['id'] == 'F11':
+            # This binds only the real global-journal saturation subcase.
+            # The complete five-store capacity and load proof is still missing.
+            row['status'] = 'PARTIAL_NATIVE_CASE_BOUND_FULL_F11_PROOF_PENDING'
+            row['remaining_proof'] = ('independent-real-capacity-load-and-saturation-all-five-stores',
+                                      'reserved-stop-under-each-bottleneck')
         if row['id'] == 'F11':
             row['prerequisite_case'] = 'tests/test_unified_source_capacity_native.py::test_native_store_capacity_readbacks_are_consistent_without_mocked_headroom'
             row['prerequisite_status'] = 'SOURCE_CASE_IDENTIFIED_NATIVE_EXECUTION_PENDING'
