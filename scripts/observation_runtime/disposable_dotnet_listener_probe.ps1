@@ -1,7 +1,8 @@
 # Disposable .NET listener control; never starts an Atlas host or grants authority.
-param([ValidateRange(0,5)][int]$SettleSeconds=0)
+param([ValidateRange(0,5)][int]$SettleSeconds=0,[switch]$IPv6Loopback)
 $ErrorActionPreference='Stop'
-$listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0)
+$bindAddress=if($IPv6Loopback){[Net.IPAddress]::IPv6Loopback}else{[Net.IPAddress]::Loopback}
+$listener=[Net.Sockets.TcpListener]::new($bindAddress,0)
 try {
     $listener.Start()
     if($SettleSeconds -gt 0){Start-Sleep -Seconds $SettleSeconds}
@@ -14,6 +15,7 @@ try {
     [ordered]@{
         schema='ATLAS_DISPOSABLE_DOTNET_LISTENER_V1'
         port=$port
+        bind_address=$bindAddress.ToString()
         settle_seconds=$SettleSeconds
         expected_pid=$pidOwner
         cim=@($cim|ForEach-Object {@{pid=$_.OwningProcess;state=[int]$_.State;address=$_.LocalAddress}})
