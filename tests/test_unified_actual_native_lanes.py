@@ -124,6 +124,14 @@ async def test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdo
     assert verified['stop_record_state'] == 'FINISHED'
     assert verified['exposure_observed'] is False
     assert verified['startup_authorized'] is False
+    # No SQLite connection or rollback-journal may survive any Stop ledger read/write.
+    guard = guarded.require_fixture('f01-durable-stop-resource-accounting')
+    owned_path = str(stop_path)
+    assert owned_path in guard.databases
+    assert guard.databases[owned_path]['connections'] == 0
+    assert guard.paths.port.inspect(owned_path + '-journal') is None
+    assert guard.paths.port.inspect(owned_path + '-wal') is None
+    assert guard.paths.port.inspect(owned_path + '-shm') is None
 
 
 
