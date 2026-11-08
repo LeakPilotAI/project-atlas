@@ -335,3 +335,24 @@ def test_native_api_errors_sizes_and_bounded_growth_are_retained(monkeypatch, mo
             assert observed["calls"][-1]["code"] == 5
         if mode == "growth_limit":
             assert len(observed["calls"]) == 4
+
+def test_real_windows_disposable_listener_pattern_cannot_be_promoted():
+    """Listener-class state zero + netstat omission cannot become consensus."""
+    observed = bundle()
+    observed[0]['rows'] = [row(state=0)]  # CIM exact owner, unknown state
+    observed[1]['rows'] = [row(state=0)]  # IP Helper listener-only/ALL
+    observed[2]['rows'] = []              # netstat no LISTENING row
+    result = assess(observed)
+    assert result['agreed'] is False
+    assert result['cleanup_clear'] is False
+    assert 'SOURCE_STATE_OWNER_OR_ENDPOINT_UNVERIFIED' in result['reasons']
+
+
+def test_listener_only_iphelper_is_not_a_fourth_independent_reader():
+    """Duplicating an IP Helper observation cannot replace missing netstat."""
+    observed = bundle([row()])
+    observed[2]['source'] = 'IP_HELPER'
+    result = assess(observed)
+    assert result['agreed'] is False
+    assert result['cleanup_clear'] is False
+    assert 'THREE_DISTINCT_SOURCES_REQUIRED' in result['reasons']
