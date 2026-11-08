@@ -110,6 +110,10 @@ def main(argv=None):
         print(json.dumps(result, sort_keys=True))
         return 1
     print(json.dumps(result, sort_keys=True))
+    # Partial acquisition is observable but not a successful full-universe scan.
+    # Supervisors must never mistake refused symbols for a complete research cut.
+    if result.get("schema") == "ATLAS_QD_BOUNDED_RESEARCH_UNIVERSE_V1":
+        return 2 if result["refused_count"] else 0
     return 0
 
 if __name__ == "__main__":

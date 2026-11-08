@@ -76,3 +76,13 @@ def test_bounded_universe_rejects_cross_symbol_or_unverified_transport():
     assert result['refused_count'] == 1
     assert result['results'][0]['status'] == 'REFUSED'
     assert result['paper_fill_authorized'] is False
+
+
+def test_partial_bounded_scan_returns_nonzero_for_supervisor(monkeypatch, capsys):
+    monkeypatch.setattr(probe, 'inspect_bounded_universe', lambda **kwargs: {
+        'schema': 'ATLAS_QD_BOUNDED_RESEARCH_UNIVERSE_V1',
+        'refused_count': 1, 'results': [{'symbol': 'AVGO', 'status': 'REFUSED'}],
+        'paper_fill_authorized': False})
+    assert probe.main(['--symbols', 'AVGO', '--sec-contact', 'ProjectAtlas/1.0 operator@realmail.org']) == 2
+    import json
+    assert json.loads(capsys.readouterr().out)['refused_count'] == 1
