@@ -271,3 +271,24 @@ def test_observed_high_windows_dispersion_remains_rejected_after_latency_repair(
         uncertainty_ms(value, expected_source=SOURCE, duration_ns=1_200_000_000,
                        lifetime=60, observed_utc_ns=1_700_000_000*10**9,
                        wall_qpc_skew_ns=0)
+
+
+def test_explicit_peer_roster_accepts_only_configured_effective_member():
+    e = evidence()
+    roster = "time.cloudflare.com,0x8 time.google.com,0x8"
+    e["configured_source"] = roster
+    e["status"] = e["status"].replace(SOURCE, "time.google.com,0x8")
+    bound, _ = uncertainty_ms(e, expected_source=roster, duration_ns=10**6,
+                              lifetime=60, observed_utc_ns=1_700_000_000*10**9,
+                              wall_qpc_skew_ns=0)
+    assert bound < 1000
+    e["status"] = e["status"].replace("time.google.com,0x8", "foreign.invalid,0x8")
+    with pytest.raises(ValueError, match="CLOCK_EFFECTIVE_SOURCE_CONFLICT"):
+        uncertainty_ms(e, expected_source=roster, duration_ns=10**6,
+                       lifetime=60, observed_utc_ns=1_700_000_000*10**9,
+                       wall_qpc_skew_ns=0)
+    e["configured_source"] = "time.google.com,0x8 time.cloudflare.com,0x8"
+    with pytest.raises(ValueError, match="CLOCK_CONFIGURED_SOURCE_CHANGED"):
+        uncertainty_ms(e, expected_source=roster, duration_ns=10**6,
+                       lifetime=60, observed_utc_ns=1_700_000_000*10**9,
+                       wall_qpc_skew_ns=0)

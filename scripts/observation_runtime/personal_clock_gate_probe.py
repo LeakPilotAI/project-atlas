@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 
 
-def inspect_personal_clock_gate(*, source="time.windows.com,0x9") -> dict:
+def inspect_personal_clock_gate(*, source="time.cloudflare.com,0x8 time.google.com,0x8") -> dict:
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
     clock = None
     try:

@@ -7,7 +7,7 @@ def test_probe_never_grants_activation(monkeypatch):
     class FakeClock:
         revoked = False
         def __init__(self, **kwargs):
-            assert kwargs["expected_source"] == "time.windows.com,0x9"
+            assert kwargs["expected_source"] == "time.cloudflare.com,0x8 time.google.com,0x8"
             self.evidence = {"bound_ms": 349, "domain": "LOCAL_WINDOWS"}
         def revoke(self):
             FakeClock.revoked = True

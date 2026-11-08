@@ -80,6 +80,13 @@ def uncertainty_ms(evidence, *, expected_source, duration_ns, lifetime, observed
         raise ValueError("CLOCK_EVIDENCE_FIELD_TYPE")
     if evidence["native"] is not True or evidence["service"] != "Running":
         raise ValueError("CLOCK_SERVICE_OR_PROVENANCE")
+    # The expected peer roster is an explicit operator trust binding, not a
+    # discovery list. Require an exact roster and a member as effective source.
+    peers = expected_source.split(" ")
+    if (not 1 <= len(peers) <= 4 or any(not re.fullmatch(
+            r"[a-z0-9][a-z0-9.-]{0,252},0x[0-9a-f]+", peer, re.I) for peer in peers)
+            or len({peer.casefold() for peer in peers}) != len(peers)):
+        raise ValueError("CLOCK_EXPECTED_PEER_ROSTER_INVALID")
     if (evidence["configured_type"] != "NTP"
             or evidence["configured_source"].casefold() != expected_source.casefold()):
         raise ValueError("CLOCK_CONFIGURED_SOURCE_CHANGED")
@@ -87,7 +94,7 @@ def uncertainty_ms(evidence, *, expected_source, duration_ns, lifetime, observed
     if (s["leap"] != 0 or not 1 <= s["stratum"] <= 15 or s["last_error"] != 0
             or not s["last_sync"] or s["last_sync"].casefold() == "unspecified"):
         raise ValueError("CLOCK_UNSYNCHRONIZED")
-    if s["source"].casefold() != expected_source.casefold():
+    if s["source"].casefold() not in {peer.casefold() for peer in peers}:
         raise ValueError("CLOCK_EFFECTIVE_SOURCE_CONFLICT")
     age, disp, delay, offset = (Decimal(s[k]) for k in ("age", "dispersion", "delay", "offset"))
     if not all(x.is_finite() for x in (age, disp, delay, offset)):
