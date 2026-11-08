@@ -429,3 +429,45 @@ def test_native_account_read_refuses_order_store_change_during_projection(monkey
     assert result['state'] == 'UNKNOWN'
     assert result['startup_authorized'] is False
     assert len(order_reads) == 2
+
+
+def test_interrupted_stop_reopened_ledger_refuses_native_restart_with_surviving_order(tmp_path, monkeypatch):
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    path = tmp_path / 'stop.sqlite'
+    PaperStopReceiptLedger(path).reserve_fresh('interrupted', 'SHUTDOWN_FLATTEN')
+    reopened = PaperStopReceiptLedger(path)
+    assert reopened.recover('interrupted', 'SHUTDOWN_FLATTEN')['state'] == 'SHUTDOWN_UNVERIFIED'
+    custody = object.__new__(UnifiedPortfolioCustody)
+    snapshot = {'state': 'ACKNOWLEDGED', 'accounts': {
+        k: {'positions': {}, 'resting_orders': {}, 'resting_order_evidence': 'OBSERVED',
+            'source_head': 'head', 'source_revision': 2, 'observed_at': 124,
+            'epoch': 'epoch', 'strategy': 'strategy'} for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
+    snapshot['accounts']['HYPERLIQUID']['resting_orders']['pending'] = {'state': 'RESERVED'}
+    monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshot)
+    observation = reopened.observe_native_account_restart(
+        'interrupted', custody=custody, grant={'session_id': 'interrupted'})
+    assert observation['stop_record_state'] == 'PENDING'
+    assert observation['exposure_observed'] is True
+    assert observation['startup_authorized'] is False
+    assert reopened.inspect_session('interrupted')['state'] == 'PENDING'
+    snapshot['accounts']['HYPERLIQUID']['resting_orders'].clear()
+    snapshot['accounts']['QUALITY_DIPS']['positions']['open'] = {'remaining': '1'}
+    assert reopened.observe_native_account_restart(
+        'interrupted', custody=custody, grant={'session_id': 'interrupted'})['exposure_observed'] is True
+    snapshot['accounts']['QUALITY_DIPS']['positions'].clear()
+    assert reopened.observe_native_account_restart(
+        'interrupted', custody=custody, grant={'session_id': 'interrupted'})['startup_authorized'] is False
+    assert PaperStopReceiptLedger(path).recover('interrupted', 'SHUTDOWN_FLATTEN')['state'] == 'SHUTDOWN_UNVERIFIED'
+
+
+def test_interrupted_stop_reopened_ledger_refuses_unknown_custody_after_crash(tmp_path, monkeypatch):
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    path = tmp_path / 'stop.sqlite'
+    PaperStopReceiptLedger(path).reserve_fresh('crash', 'EMERGENCY')
+    reopened = PaperStopReceiptLedger(path)
+    custody = object.__new__(UnifiedPortfolioCustody)
+    monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: {
+        'state': 'UNKNOWN', 'accounts': None, 'startup_authorized': False})
+    with pytest.raises(StopReceiptConflict, match='NATIVE_CUT_UNVERIFIED'):
+        reopened.observe_native_account_restart('crash', custody=custody, grant={'session_id': 'crash'})
+    assert reopened.inspect_session('crash')['state'] == 'PENDING'
