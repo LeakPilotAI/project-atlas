@@ -171,7 +171,14 @@ class UnifiedPortfolioCustody:
         with self.ownership.lease(grant, self.writers, self.clock()) as owner:
             cuts = {lane: writer._cut() for lane, writer in self.writers.items()}
             verifier = getattr(self.authority, 'verify_read_cuts', None)
-            if (owner.check() is not True or verifier is None or verifier(grant, self.components, cuts, self.clock()) is not True
+            def accepted_read_cuts():
+                if not callable(verifier):
+                    return False
+                try:
+                    return verifier(grant, self.components, cuts, self.clock()) is True
+                except Exception:
+                    return False
+            if (owner.check() is not True or not accepted_read_cuts()
                     or body(before) != body(self.journal.snapshot())):
                 return unavailable
             accounts = {}
@@ -224,7 +231,7 @@ class UnifiedPortfolioCustody:
             # Order snapshots are collected after the first control-journal check.
             # A concurrent reservation/ACK during projection invalidates the cut.
             if (owner.check() is not True or body(before) != body(self.journal.snapshot())
-                    or verifier(grant, self.components, cuts, self.clock()) is not True
+                    or not accepted_read_cuts()
                     or any(body(cut) != body(self.writers[lane]._cut()) for lane, cut in cuts.items())
                     or any(body(control) != body(
                         self.writers[lane]._control()

@@ -801,3 +801,36 @@ def test_native_account_read_refuses_unexpected_qd_attestation_exception(monkeyp
     assert result['accounts'] is None
     assert result['startup_authorized'] is False
     assert len(calls) == 2
+
+
+@pytest.mark.parametrize('failure_call', [1, 2])
+def test_native_account_read_refuses_unexpected_read_cut_authority_exception(monkeypatch, failure_call):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    custody = object.__new__(UnifiedPortfolioCustody)
+    custody.journal = SimpleNamespace(snapshot=lambda: {'state': {'operations': {}}, 'revision': 1})
+    @contextmanager
+    def lease(*args):
+        yield SimpleNamespace(check=lambda: True)
+    custody.ownership = SimpleNamespace(lease=lease)
+    custody.clock = lambda: 123
+    calls = []
+    def verify(*args):
+        calls.append(1)
+        if len(calls) == failure_call:
+            raise RuntimeError('UNEXPECTED_AUTHORITY_FAILURE')
+        return True
+    custody.authority = SimpleNamespace(verify_read_cuts=verify)
+    custody.components = {}
+    monkeypatch.setattr(UnifiedPortfolioCustody, '_verify', lambda self: None)
+    cut = {'head': 'head', 'manifest': {'epoch': 'epoch', 'strategy': 'strategy', 'currency': 'USD', 'opening_cash': '1000'},
+           'state': {'revision': 1, 'cash': '1000', 'gross': '0', 'costs': '0', 'net': '0', 'positions': {}}}
+    custody.writers = {
+        'QUALITY_DIPS': SimpleNamespace(_cut=lambda: cut, attest_no_resting_orders=lambda evidence: True),
+        'HYPERLIQUID': SimpleNamespace(_cut=lambda: cut, orders=SimpleNamespace(snapshot=lambda: {'state': {'orders': {}}}))}
+    result = custody.read_accounts({'session_id': 's'})
+    assert result['state'] == 'UNKNOWN'
+    assert result['accounts'] is None
+    assert result['startup_authorized'] is False
+    assert len(calls) == failure_call
