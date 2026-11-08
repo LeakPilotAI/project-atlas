@@ -34,7 +34,9 @@ async def collect(session,seconds,*,operator_data_only_approved=False):
   try:
    result=await feed.run(Credentials.load(REPO/'config/alpaca.env'),seconds=seconds,max_reconnects=0,stop=session.stop)
    session.update('iex_session_result',result);session.append('ALPACA_IEX_SESSION_RESULT',result)
-  except (OSError,ValueError,TimeoutError):session.update('iex_error','DATA_UNAVAILABLE_OR_REFUSED')
+  except (OSError,ValueError,TimeoutError):
+   session.update('iex_error','DATA_UNAVAILABLE_OR_REFUSED')
+   session.append('ALPACA_IEX_REFUSED',{'reason':'DATA_UNAVAILABLE_OR_REFUSED','financial_execution_authorized':False})
  async def perp():
   original=adapter._post;metadata=[None]
   async def observed_post(request):

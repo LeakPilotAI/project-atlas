@@ -25,13 +25,17 @@ def audit_session(path):
         raise ValueError('OBSERVATION_SESSION_INCOMPLETE')
     iex = [row['value'] for row in records if row['kind'] == 'ALPACA_IEX_SESSION_RESULT']
     perps = [row['value'] for row in records if row['kind'] == 'HYPERLIQUID_RESEARCH']
-    if len(iex) != 1 or len(perps) != 1:
+    iex_refused = [row['value'] for row in records if row['kind'] == 'ALPACA_IEX_REFUSED']
+    perp_refused = [row['value'] for row in records if row['kind'] == 'HYPERLIQUID_REFUSED']
+    if (len(iex) + len(iex_refused) != 1 or len(perps) + len(perp_refused) != 1
+            or any(row.get('financial_execution_authorized') is not False for row in iex_refused)
+            or any(row.get('financial_execution_authorized') is True for row in perp_refused)):
         raise ValueError('OBSERVATION_PROVIDER_RESULT_AMBIGUOUS')
-    equity = iex[0]
-    perp = perps[0]
+    equity = iex[0] if iex else {}
+    perp = perps[0] if perps else {}
     if (type(equity) is not dict or type(perp) is not dict
-            or perp.get('financial_execution_authorized') is not False
-            or sorted(perp.get('books', {})) != ['BTC', 'ETH', 'SOL']
+            or (perps and (perp.get('financial_execution_authorized') is not False
+                           or sorted(perp.get('books', {})) != ['BTC', 'ETH', 'SOL']))
             or records[-2]['value'].get('financial_writers') is not False
             or records[-1]['value'].get('financial_writers') is not False):
         raise ValueError('OBSERVATION_PROVIDER_EVIDENCE_INCOMPLETE_OR_UNSAFE')
@@ -39,6 +43,8 @@ def audit_session(path):
         'schema': 'ATLAS_RETAINED_PROVIDER_EVIDENCE_AUDIT_V1',
         'session_status': 'CLOSED',
         'archive_integrity': 'VERIFIED_LOCAL_HASH_CHAIN_NOT_PROVIDER_AUTHORITY',
+        'alpaca_provider_result': 'REFUSED' if iex_refused else 'RETAINED',
+        'hyperliquid_provider_result': 'REFUSED' if perp_refused else 'RETAINED',
         'alpaca_authenticated': equity.get('authenticated') is True,
         'alpaca_subscribed': equity.get('subscribed') is True,
         'alpaca_fresh_quote_received': equity.get('fresh_quote_observed_during_connection') is True,

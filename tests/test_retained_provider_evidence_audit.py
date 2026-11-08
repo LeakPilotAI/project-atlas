@@ -74,3 +74,16 @@ def test_cli_reports_closed_capture(capsys):
     output = json.loads(capsys.readouterr().out)
     assert output['financial_execution_authorized'] is False
     assert output['hyperliquid_research_retained'] is True
+
+def test_explicit_provider_refusals_are_reported_not_accepted():
+    root = REPO / 'logs/observation-only' / ('session-test-' + uuid.uuid4().hex)
+    s = Session(root, test=True)
+    s.append('ALPACA_IEX_REFUSED', {'reason': 'DATA_UNAVAILABLE_OR_REFUSED', 'financial_execution_authorized': False})
+    s.append('HYPERLIQUID_REFUSED', {'reason': 'RuntimeError'})
+    s.append('DATA_COLLECTION_STOP', {'financial_writers': False})
+    s.append('SESSION_STOP', {'financial_writers': False})
+    result = audit_session(root)
+    assert result['alpaca_provider_result'] == 'REFUSED'
+    assert result['hyperliquid_provider_result'] == 'REFUSED'
+    assert result['hyperliquid_research_retained'] is False
+    assert result['financial_execution_authorized'] is False
