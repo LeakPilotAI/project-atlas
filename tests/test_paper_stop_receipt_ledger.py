@@ -227,3 +227,43 @@ def test_recovery_inventory_missing_receipt_status_fails_closed(tmp_path):
     ledger.finish('s', 'EMERGENCY', {'phase': 'FINISHED', 'outcome': {'mode': 'EMERGENCY'}})
     with pytest.raises(StopReceiptConflict, match='CORRUPT'):
         PaperStopReceiptLedger(ledger.path).summarize_recovery()
+
+
+def test_restart_observation_compares_both_lanes_without_authorizing(tmp_path):
+    path = tmp_path / 'stop.sqlite'
+    ledger = PaperStopReceiptLedger(path)
+    ledger.reserve_fresh('session', 'SHUTDOWN_FLATTEN')
+    cuts = {'QUALITY_DIPS': {'open_positions': 1, 'unsettled_orders': 0},
+            'HYPERLIQUID': {'open_positions': 0, 'unsettled_orders': 0}}
+    result = PaperStopReceiptLedger(path).reconcile_restart_observation('session', lane_positions=cuts)
+    assert result['stop_record_state'] == 'PENDING'
+    assert result['exposure_observed'] is True
+    assert result['reconciliation_required'] is True
+    assert result['startup_authorized'] is False
+    assert 'session' not in str(result)
+    cuts['QUALITY_DIPS']['open_positions'] = 0
+    assert ledger.reconcile_restart_observation('session', lane_positions=cuts)['startup_authorized'] is False
+
+
+def test_restart_observation_finished_receipt_not_proof_of_flat(tmp_path):
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'SHUTDOWN_FLATTEN')
+    ledger.finish('s', 'SHUTDOWN_FLATTEN', {'phase': 'FINISHED', 'outcome': {'mode': 'SHUTDOWN_FLATTEN', 'status': 'FLATTENED'}})
+    cuts = {k: {'open_positions': 0, 'unsettled_orders': 0} for k in ('QUALITY_DIPS', 'HYPERLIQUID')}
+    result = ledger.reconcile_restart_observation('s', lane_positions=cuts)
+    assert result['stop_record_state'] == 'FINISHED'
+    assert result['reconciliation_required'] is True
+    assert result['startup_authorized'] is False
+
+
+def test_restart_observation_refuses_missing_or_malformed_lane_cuts(tmp_path):
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'EMERGENCY')
+    good = {k: {'open_positions': 0, 'unsettled_orders': 0} for k in ('QUALITY_DIPS', 'HYPERLIQUID')}
+    for bad in ({}, {'QUALITY_DIPS': good['QUALITY_DIPS']},
+                {**good, 'HYPERLIQUID': {'open_positions': True, 'unsettled_orders': 0}},
+                {**good, 'HYPERLIQUID': {'open_positions': -1, 'unsettled_orders': 0}}):
+        with pytest.raises(ValueError, match='LANE'):
+            ledger.reconcile_restart_observation('s', lane_positions=bad)
+    with pytest.raises(StopReceiptConflict, match='MISSING'):
+        ledger.reconcile_restart_observation('missing', lane_positions=good)

@@ -128,6 +128,31 @@ class PaperStopReceiptLedger:
                 "receipts_without_flatten_claim": incomplete,
                 "requires_independent_position_reconciliation": bool(pending or finished),
                 "financial_authorized": False, "startup_authorized": False}
+    def reconcile_restart_observation(self, session, *, lane_positions):
+        """Compare durable Stop evidence to independently supplied read-only lane cuts.
+
+        Caller-provided cuts are observations, not authenticated custody or an
+        authorization to restart. Unknown/malformed cuts fail closed.
+        """
+        if type(lane_positions) is not dict or set(lane_positions) != {'QUALITY_DIPS', 'HYPERLIQUID'}:
+            raise ValueError('STOP_RESTART_LANE_CUTS_REQUIRED')
+        row = self.inspect_session(session)
+        if row is None:
+            raise StopReceiptConflict('STOP_RESTART_INTENT_MISSING')
+        positions = {}
+        for lane, cut in lane_positions.items():
+            if type(cut) is not dict or set(cut) != {'open_positions', 'unsettled_orders'}:
+                raise ValueError('STOP_RESTART_LANE_CUT_INVALID')
+            if any(type(cut[k]) is not int or cut[k] < 0 for k in ('open_positions', 'unsettled_orders')):
+                raise ValueError('STOP_RESTART_LANE_CUT_INVALID')
+            positions[lane] = {'open_positions': cut['open_positions'],
+                               'unsettled_orders': cut['unsettled_orders']}
+        outstanding = any(x['open_positions'] or x['unsettled_orders'] for x in positions.values())
+        return {'schema': 'ATLAS_PAPER_STOP_RESTART_OBSERVATION_V1',
+                'stop_record_state': row['state'],
+                'exposure_observed': bool(outstanding),
+                'reconciliation_required': True,
+                'startup_authorized': False, 'financial_authorized': False}
     def recover(self, session, mode):
         """Read-only restart inspection: pending is NEVER proof of flat positions."""
         row = self.reserve_existing(session, mode)
