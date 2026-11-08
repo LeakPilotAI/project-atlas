@@ -129,3 +129,19 @@ def bind_personal_installed_gui_stop_owner(app, *, runtime, installation, owned_
         connection_factory=connection_factory,
     )
     return PersonalInstalledPaperStopOwner(bridge=bridge, installation=installation)
+
+
+def open_personal_installed_python_stop_signal(*, owner, offline_test_id=""):
+    """Create the one native per-user event for an already accepted owner.
+
+    The owning financial process must call ``poll(0)`` on its owning thread
+    during its existing run loop and ``close()`` during its final teardown.
+    Neither this source entry point nor its import starts Atlas, creates a
+    background process, grants account rights, or installs desktop shortcuts.
+    """
+    if type(owner) is not PersonalInstalledPaperStopOwner or owner.verify_session() is not True:
+        raise ValueError("PERSONAL_INSTALLED_STOP_ACCEPTED_OWNER_REQUIRED")
+    from scripts.observation_runtime.personal_paper_python_stop_signal import (
+        InstalledPythonPaperStopSignal,
+    )
+    return InstalledPythonPaperStopSignal(owner=owner, offline_test_id=offline_test_id)
