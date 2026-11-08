@@ -39,7 +39,7 @@ def probe(*, chrome=CHROME):
         with tempfile.TemporaryDirectory(prefix='atlas-disposable-chrome-', ignore_cleanup_errors=True) as profile:
             process = subprocess.Popen([str(chrome), '--headless=new', '--no-first-run',
                 '--no-default-browser-check', '--remote-debugging-port=0',
-                '--remote-allow-origins=*', '--user-data-dir=' + profile, 'about:blank'],
+                '--user-data-dir=' + profile, 'about:blank'],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             port_file = Path(profile) / 'DevToolsActivePort'
             deadline = time.monotonic() + 12
@@ -83,8 +83,8 @@ def probe(*, chrome=CHROME):
                         break
                 if 'NO TRADING' not in message.get('result', {}).get('result', {}).get('value', ''):
                     raise ValueError('ISOLATED_CHROME_RENDER_MISMATCH')
-            print(json.dumps({'diagnostic': inspect_candidate(expected_url=url, observations=observations), 'observations': observations}), flush=True)
-            return inspect_candidate(expected_url=url, observations=observations)
+            result = inspect_candidate(expected_url=url, observations=observations)
+            evidence = {'diagnostic': result, 'observations': observations}
     finally:
         if process is not None:
             process.terminate()
@@ -96,6 +96,11 @@ def probe(*, chrome=CHROME):
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+        if thread.is_alive() or server.fileno() != -1 or (process is not None and process.poll() is None):
+            raise RuntimeError('ISOLATED_BROWSER_CLEANUP_UNVERIFIED')
+    evidence['cleanup'] = {'chrome_parent_exited': True, 'server_thread_exited': True, 'server_socket_closed': True}
+    print(json.dumps(evidence), flush=True)
+    return evidence
 
 
 if __name__ == '__main__':
