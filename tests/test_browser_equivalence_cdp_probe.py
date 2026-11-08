@@ -7,6 +7,7 @@ from scripts.observation_runtime.browser_equivalence_cdp_probe import CHROME, pr
 @pytest.mark.skipif(not CHROME.is_file(), reason='Windows Chrome not installed')
 def test_isolated_chrome_observes_target_and_cleans_up():
     evidence = probe()
+    assert evidence['post_navigation_target_rechecked'] is True
     assert evidence['preview_csp_enforced'] is True
     assert evidence['non_root_route_refused'] is True
     assert evidence['diagnostic']['target_continuity_observed'] is True
@@ -27,6 +28,7 @@ def test_installed_release_static_preview_is_never_operational():
         pytest.skip('Installed release not available')
     evidence = probe(installed_static_preview=path)
     assert len(evidence['installed_static_preview_sha256']) == 64
+    assert evidence['post_navigation_target_rechecked'] is True
     assert evidence['installed_static_dom_rendered'] is True
     assert evidence['operational_dashboard_verified'] is False
     assert evidence['diagnostic']['operational_browser_acceptance'] is False

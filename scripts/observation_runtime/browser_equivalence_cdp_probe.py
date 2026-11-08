@@ -135,8 +135,14 @@ def probe(*, chrome=CHROME, installed_static_preview=None):
                         raise ValueError('INSTALLED_STATIC_DOM_NOT_RENDERED')
                 if static_bytes is None and 'NO TRADING' not in rendered_text:
                     raise ValueError('ISOLATED_CHROME_RENDER_MISMATCH')
+            with urllib.request.urlopen(f'http://127.0.0.1:{port}/json/list', timeout=3) as response:
+                after_targets = json.load(response)
+            after_pages = [t for t in after_targets if t.get('type') == 'page']
+            if (len(after_pages) != 1 or after_pages[0].get('id') != target['id']
+                    or after_pages[0].get('url') != url):
+                raise ValueError('ISOLATED_CHROME_POST_NAV_TARGET_MISMATCH')
             result = inspect_candidate(expected_url=url, observations=observations)
-            evidence = {'diagnostic': result, 'observations': observations, 'installed_static_preview_sha256': static_digest, 'operational_dashboard_verified': False, 'preview_csp_enforced': True, 'non_root_route_refused': True, 'installed_static_dom_rendered': static_bytes is not None}
+            evidence = {'diagnostic': result, 'observations': observations, 'installed_static_preview_sha256': static_digest, 'operational_dashboard_verified': False, 'post_navigation_target_rechecked': True, 'preview_csp_enforced': True, 'non_root_route_refused': True, 'installed_static_dom_rendered': static_bytes is not None}
     finally:
         if process is not None:
             process.terminate()
