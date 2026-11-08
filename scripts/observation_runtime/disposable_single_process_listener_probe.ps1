@@ -13,7 +13,7 @@ try {
         $raw=@(& netstat.exe -ano -p tcp)
         $netstatMatches=@($raw|Where-Object {$_ -match (':'+$port+'\s')})
         $samples+=,[pscustomobject]@{
-            cim_states=@($cim|Where-Object {$_.OwningProcess -eq $ownerPid}|ForEach-Object {[int]$_.State})
+            cim_states=@($cim|Where-Object {$_.OwningProcess -eq $ownerPid}|ForEach-Object {if($null -eq $_.State){$null}else{[int]$_.State}})
             cmdlet_states=@($tcp|Where-Object {$_.OwningProcess -eq $ownerPid}|ForEach-Object {if($null -eq $_.State){$null}else{[string]$_.State}})
             netstat_listener_present=[bool](@($netstatMatches|Where-Object {$_ -match 'LISTENING'}).Count -gt 0)
             socket_accepting=$listener.Server.IsBound

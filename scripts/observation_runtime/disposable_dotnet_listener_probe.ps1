@@ -18,7 +18,7 @@ try {
         bind_address=$bindAddress.ToString()
         settle_seconds=$SettleSeconds
         expected_pid=$pidOwner
-        cim=@($cim|ForEach-Object {@{pid=$_.OwningProcess;state=[int]$_.State;address=$_.LocalAddress}})
+        cim=@($cim|ForEach-Object {@{pid=$_.OwningProcess;state=if($null -eq $_.State){$null}else{[int]$_.State};address=$_.LocalAddress}})
         nettcp=@($tcp|ForEach-Object {@{pid=$_.OwningProcess;state=if($null -eq $_.State){$null}else{[string]$_.State};address=$_.LocalAddress}})
         netstat_scoped=@($matches)
         operational_listener_accepted=$false
