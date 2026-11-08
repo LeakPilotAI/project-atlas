@@ -78,8 +78,10 @@ def inspect_prices_only(*, symbol, contact, credentials_path, client_factory=Fre
     if client.domain!='TLS_PUBLIC_PROVIDER':
         raise ResearchRefused('QD_REAL_PROVIDER_TRANSPORT_REQUIRED')
     data=bundle_factory(client=client,now=now).load(symbol,prices_only=True)
-    if type(data) is not dict or data.get('paper_eligible') is not False or type(data.get('bars')) is not list:
-        raise ResearchRefused('QD_PRICE_ONLY_AUTHORITY_REFUSED')
+    if (type(data) is not dict or data.get('paper_eligible') is not False
+            or type(data.get('bars')) is not list or not data['bars']
+            or type(data.get('receipts')) is not list or not data['receipts']):
+        raise ResearchRefused('QD_PRICE_ONLY_EVIDENCE_INCOMPLETE_OR_UNAUTHORIZED')
     return {'schema':'ATLAS_QD_PRICE_ONLY_RESEARCH_V1','symbol':symbol,
             'completed_daily_bar_count':len(data['bars']),
             'provider_receipt_count':len(data['receipts']),

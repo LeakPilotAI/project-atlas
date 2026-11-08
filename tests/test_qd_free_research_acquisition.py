@@ -115,7 +115,7 @@ def test_prices_only_refuses_paper_eligible_data(monkeypatch):
         def __init__(self,**kwargs): pass
         def load(self,symbol,*,prices_only=False):
             return {'paper_eligible':True,'bars':[],'receipts':[]}
-    with pytest.raises(ValueError,match='QD_PRICE_ONLY_AUTHORITY_REFUSED'):
+    with pytest.raises(ValueError,match='QD_PRICE_ONLY_EVIDENCE_INCOMPLETE_OR_UNAUTHORIZED'):
         probe.inspect_prices_only(symbol='SPY',contact='ProjectAtlas/1.0 operator@realmail.org',
                                   credentials_path=Path('unused'),client_factory=Client,bundle_factory=Bundle)
 
@@ -163,7 +163,7 @@ def test_prices_only_does_not_require_sec_contact(monkeypatch):
         def __init__(self,**kwargs): pass
         def load(self,symbol,*,prices_only=False):
             assert symbol=='SPY' and prices_only
-            return {'paper_eligible':False,'bars':[],'receipts':[]}
+            return {'paper_eligible':False,'bars':[1],'receipts':[{'id':1}]}
     result=probe.inspect_prices_only(symbol='SPY',contact=None,credentials_path=Path('unused'),
                                      client_factory=Client,bundle_factory=Bundle)
     assert result['operational_source_accepted'] is False
@@ -217,3 +217,18 @@ def test_bounded_prices_only_empty_or_missing_evidence_is_refused(bars,receipts)
     result=probe.inspect_bounded_prices_only(symbols=['SPY'],contact=None,
                                               credentials_path=None,inspect=inspect)
     assert result['acquired_count']==0 and result['refused_count']==1
+
+
+@pytest.mark.parametrize('bars,receipts', [([], [{'id':1}]), ([1], []), ([1], None)])
+def test_single_prices_only_rejects_empty_or_missing_evidence(monkeypatch,bars,receipts):
+    monkeypatch.setattr(probe.Credentials,'load',lambda _:object())
+    class Client:
+        domain='TLS_PUBLIC_PROVIDER'
+        def __init__(self,**kwargs): pass
+    class Bundle:
+        def __init__(self,**kwargs): pass
+        def load(self,symbol,*,prices_only=False):
+            return {'paper_eligible':False,'bars':bars,'receipts':receipts}
+    with pytest.raises(ValueError,match='QD_PRICE_ONLY_EVIDENCE_INCOMPLETE_OR_UNAUTHORIZED'):
+        probe.inspect_prices_only(symbol='SPY',contact=None,credentials_path=Path('unused'),
+                                  client_factory=Client,bundle_factory=Bundle)
