@@ -126,3 +126,43 @@ def plan_interrupted_journal_recovery(*, path):
             'trailing_fragment_bytes':len(fragment),
             'mutation_authorized':False,'paper_fill_authorized':False,
             'live_order_authorized':False}
+
+
+def export_recoverable_journal(*, source, destination):
+    """Explicit, exclusive export of verified prefix; damaged original stays untouched."""
+    src=Path(source)
+    dst=Path(destination)
+    if src.is_symlink() or not src.is_file() or dst.is_symlink() or not dst.parent.is_dir():
+        raise ValueError('QD_RECOVERY_EXPORT_PATH_REFUSED')
+    if src.resolve()==dst.resolve() or dst.exists():
+        raise ValueError('QD_RECOVERY_EXPORT_OVERWRITE_REFUSED')
+    plan=plan_interrupted_journal_recovery(path=src)
+    if plan['status']!='TRAILING_FRAGMENT_REQUIRES_OPERATOR_REVIEW':
+        raise ValueError('QD_RECOVERY_EXPORT_FRAGMENT_REQUIRED')
+    raw=src.read_bytes()
+    prefix, separator, fragment=raw.rpartition(b'\n')
+    if not separator or len(fragment)!=plan['trailing_fragment_bytes']:
+        raise ValueError('QD_RECOVERY_EXPORT_SOURCE_CHANGED')
+    # Validate exact bytes to be exported, not merely a previous inspection.
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory() as directory:
+        candidate=Path(directory)/'verified.jsonl'
+        candidate.write_bytes(prefix+b'\n')
+        verified=inspect_diagnostic_journal(path=candidate)
+    if verified['completed_records']!=plan['recoverable_records']:
+        raise ValueError('QD_RECOVERY_EXPORT_COUNT_CHANGED')
+    descriptor=os.open(dst,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+    try:
+        with os.fdopen(descriptor,'wb') as output:
+            output.write(prefix+b'\n')
+            output.flush()
+            os.fsync(output.fileno())
+        inspect_diagnostic_journal(path=dst)
+    except BaseException:
+        dst.unlink(missing_ok=True)
+        raise
+    return {'schema':'ATLAS_QD_RECOVERY_EXPORT_V1',
+            'status':'VERIFIED_PREFIX_EXPORTED_FOR_OPERATOR_REVIEW',
+            'completed_records':verified['completed_records'],
+            'original_preserved':True,'resume_authorized':False,
+            'paper_fill_authorized':False,'live_order_authorized':False}

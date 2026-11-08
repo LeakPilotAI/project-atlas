@@ -1,6 +1,6 @@
 import json
 import pytest
-from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery, export_recoverable_journal
 
 def sample():
     return {"schema":"ATLAS_QD_REPEATED_PRICES_ONLY_V1", "symbols":["MSFT","SPY"],
@@ -87,3 +87,36 @@ def test_recovery_plan_refuses_nonrecoverable_history(tmp_path,corrupt):
     original=path.read_bytes()
     with pytest.raises(ValueError): plan_interrupted_journal_recovery(path=path)
     assert path.read_bytes()==original
+
+
+def test_export_verified_prefix_preserves_damaged_source(tmp_path):
+    src=tmp_path/'damaged.jsonl'; dst=tmp_path/'recovered.jsonl'
+    journal_diagnostic(sample(),path=src)
+    valid=src.read_bytes()
+    src.write_bytes(valid+b'{"partial":')
+    damaged=src.read_bytes()
+    result=export_recoverable_journal(source=src,destination=dst)
+    assert result['completed_records']==1
+    assert result['resume_authorized'] is False
+    assert src.read_bytes()==damaged and dst.read_bytes()==valid
+    assert inspect_diagnostic_journal(path=dst)['completed_records']==1
+
+def test_export_refuses_existing_destination(tmp_path):
+    src=tmp_path/'damaged.jsonl';dst=tmp_path/'existing.jsonl'
+    journal_diagnostic(sample(),path=src)
+    src.write_bytes(src.read_bytes()+b'{"partial":')
+    dst.write_text('preserve')
+    with pytest.raises(ValueError): export_recoverable_journal(source=src,destination=dst)
+    assert dst.read_text()=='preserve'
+
+def test_export_refuses_corrupt_completed_prefix(tmp_path):
+    src=tmp_path/'damaged.jsonl';dst=tmp_path/'export.jsonl'
+    src.write_bytes(b'bad-json\n{"partial":')
+    with pytest.raises(ValueError): export_recoverable_journal(source=src,destination=dst)
+    assert not dst.exists()
+
+def test_export_refuses_complete_source(tmp_path):
+    src=tmp_path/'complete.jsonl';dst=tmp_path/'export.jsonl'
+    journal_diagnostic(sample(),path=src)
+    with pytest.raises(ValueError): export_recoverable_journal(source=src,destination=dst)
+    assert not dst.exists()
