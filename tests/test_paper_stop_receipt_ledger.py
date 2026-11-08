@@ -275,7 +275,7 @@ def test_native_restart_observation_requires_verified_custody_and_bound_session(
     ledger.reserve_fresh('s', 'SHUTDOWN_FLATTEN')
     custody = object.__new__(UnifiedPortfolioCustody)
     snapshot = {'state': 'ACKNOWLEDGED', 'accounts': {
-        k: {'positions': {}, 'resting_orders': {}, 'source_head': 'test-head'}
+        k: {'positions': {}, 'resting_orders': {}, 'source_head': 'test-head', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'}
         for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshot)
     result = ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
@@ -296,7 +296,7 @@ def test_native_restart_observation_refuses_missing_orders_or_unknown_cuts(tmp_p
     snapshots = [
         {'state': 'UNKNOWN', 'accounts': None},
         {'state': 'ACKNOWLEDGED', 'accounts': {
-            k: {'positions': {}, 'source_head': 'test-head'}
+            k: {'positions': {}, 'source_head': 'test-head', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'}
             for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}]
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshots.pop(0))
     for _ in range(2):
@@ -311,8 +311,8 @@ def test_native_restart_observation_detects_positions_and_resting_orders(tmp_pat
     custody = object.__new__(UnifiedPortfolioCustody)
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: {
         'state': 'ACKNOWLEDGED', 'accounts': {
-            'QUALITY_DIPS': {'positions': {'a': {}}, 'resting_orders': {}, 'source_head': 'head1'},
-            'HYPERLIQUID': {'positions': {}, 'resting_orders': {'b': {}}, 'source_head': 'head2'}}})
+            'QUALITY_DIPS': {'positions': {'a': {}}, 'resting_orders': {}, 'source_head': 'head1', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'},
+            'HYPERLIQUID': {'positions': {}, 'resting_orders': {'b': {}}, 'source_head': 'head2', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'}}})
     result = ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
     assert result['exposure_observed'] is True
     assert result['startup_authorized'] is False
@@ -327,9 +327,30 @@ def test_native_restart_observation_rejects_stop_record_changed_during_custody_r
         PaperStopReceiptLedger(ledger.path).finish('s', 'SHUTDOWN_FLATTEN', {
             'phase': 'FINISHED', 'outcome': {'mode': 'SHUTDOWN_FLATTEN', 'status': 'SHUTDOWN_INCOMPLETE'}})
         return {'state': 'ACKNOWLEDGED', 'accounts': {
-            k: {'positions': {}, 'resting_orders': {}, 'source_head': 'head'}
+            k: {'positions': {}, 'resting_orders': {}, 'source_head': 'head', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'}
             for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', read_with_concurrent_stop_finish)
     with pytest.raises(StopReceiptConflict, match='RECORD_CHANGED'):
         ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
     assert ledger.inspect_session('s')['state'] == 'FINISHED'
+
+
+def test_native_restart_observation_rejects_unattributed_custody_cut(tmp_path, monkeypatch):
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'SHUTDOWN_FLATTEN')
+    custody = object.__new__(UnifiedPortfolioCustody)
+    account = {'positions': {}, 'resting_orders': {}, 'source_head': 'head',
+               'source_revision': 1, 'observed_at': 123,
+               'epoch': 'test-epoch', 'strategy': 'test-strategy'}
+    snapshot = {'state': 'ACKNOWLEDGED', 'accounts': {
+        k: dict(account) for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
+    monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshot)
+    for field, invalid in (('source_revision', True), ('source_revision', -1),
+                           ('observed_at', None), ('epoch', ''),
+                           ('strategy', None), ('source_head', '')):
+        previous = snapshot['accounts']['HYPERLIQUID'][field]
+        snapshot['accounts']['HYPERLIQUID'][field] = invalid
+        with pytest.raises(StopReceiptConflict, match='NATIVE_CUT_UNVERIFIED'):
+            ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
+        snapshot['accounts']['HYPERLIQUID'][field] = previous

@@ -180,7 +180,13 @@ class PaperStopReceiptLedger:
             if (type(account) is not dict or type(account.get('positions')) is not dict
                     or type(account.get('resting_orders')) is not dict
                     or not isinstance(account.get('source_head'), str)
-                    or not account['source_head']):
+                    or not account['source_head']
+                    or type(account.get('source_revision')) is not int
+                    or account['source_revision'] < 0
+                    or type(account.get('observed_at')) is not int
+                    or account['observed_at'] < 0
+                    or not isinstance(account.get('epoch'), str) or not account['epoch']
+                    or not isinstance(account.get('strategy'), str) or not account['strategy']):
                 raise StopReceiptConflict('STOP_RESTART_NATIVE_CUT_UNVERIFIED')
             counts[lane] = {'open_positions': len(account['positions']),
                             'unsettled_orders': len(account['resting_orders'])}
