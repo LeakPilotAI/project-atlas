@@ -989,3 +989,46 @@ def test_stop_ledger_supports_owned_sqlite_connection_factory_without_forbidden_
     assert PaperStopReceiptLedger(path, connection_factory=factory).recover('owned-session', 'SHUTDOWN_FLATTEN')['state'] == 'RECEIPT_RECORDED'
     assert len(opened) == len(closed)
     assert len(opened) >= 5
+
+
+def test_owned_stop_sqlite_rolls_back_failed_finish_and_releases_connection(tmp_path):
+    import sqlite3
+    path = tmp_path / 'owned-rollback.sqlite'
+    handles = []
+
+    class AutoClosingOwnedConnection:
+        def __init__(self, db):
+            self.db = db
+            self.closed = False
+            self.close_calls = 0
+        def execute(self, sql, params=()):
+            assert not sql.startswith('PRAGMA busy_timeout')
+            return self.db.execute(sql, params)
+        def __enter__(self):
+            self.db.__enter__()
+            return self
+        def __exit__(self, *exc):
+            try:
+                return self.db.__exit__(*exc)
+            finally:
+                self.close()
+        def close(self):
+            self.close_calls += 1
+            if not self.closed:
+                self.db.close()
+                self.closed = True
+
+    def factory(name, **kwargs):
+        handle = AutoClosingOwnedConnection(sqlite3.connect(name, **kwargs))
+        handles.append(handle)
+        return handle
+
+    ledger = PaperStopReceiptLedger(path, connection_factory=factory)
+    ledger.reserve_fresh('session', 'SHUTDOWN_FLATTEN')
+    with pytest.raises(ValueError, match='STOP_RECEIPT_INVALID'):
+        ledger.finish('session', 'SHUTDOWN_FLATTEN',
+                      {'phase': 'FINISHED', 'outcome': {'mode': 'SHUTDOWN_FLATTEN', 'status': ''}})
+    reopened = PaperStopReceiptLedger(path, connection_factory=factory)
+    assert reopened.inspect_session('session')['state'] == 'PENDING'
+    assert all(h.closed for h in handles)
+    assert all(h.close_calls >= 1 for h in handles)
