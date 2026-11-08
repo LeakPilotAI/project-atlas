@@ -1,7 +1,8 @@
 # Disposable .NET listener control; never starts an Atlas host or grants authority.
-param([ValidateRange(0,5)][int]$SettleSeconds=0,[switch]$IPv6Loopback)
+param([ValidateRange(0,5)][int]$SettleSeconds=0,[switch]$IPv6Loopback,[switch]$IPv4Wildcard)
+if($IPv6Loopback -and $IPv4Wildcard){throw 'BIND_MODES_MUTUALLY_EXCLUSIVE'}
 $ErrorActionPreference='Stop'
-$bindAddress=if($IPv6Loopback){[Net.IPAddress]::IPv6Loopback}else{[Net.IPAddress]::Loopback}
+$bindAddress=if($IPv6Loopback){[Net.IPAddress]::IPv6Loopback}elseif($IPv4Wildcard){[Net.IPAddress]::Any}else{[Net.IPAddress]::Loopback}
 $listener=[Net.Sockets.TcpListener]::new($bindAddress,0)
 try {
     $listener.Start()
