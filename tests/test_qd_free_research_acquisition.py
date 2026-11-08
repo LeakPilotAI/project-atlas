@@ -119,10 +119,38 @@ def test_prices_only_refuses_paper_eligible_data(monkeypatch):
         probe.inspect_prices_only(symbol='SPY',contact='ProjectAtlas/1.0 operator@realmail.org',
                                   credentials_path=Path('unused'),client_factory=Client,bundle_factory=Bundle)
 
-def test_prices_only_cli_rejects_mixed_universe(monkeypatch,capsys):
+def test_prices_only_cli_rejects_duplicate_universe_before_credentials(monkeypatch,capsys):
     monkeypatch.setattr(probe.Credentials,'load',lambda _:pytest.fail('credentials accessed'))
-    assert probe.main(['--prices-only','--symbols','SPY'])==1
+    assert probe.main(['--prices-only','--symbols','SPY','SPY'])==1
     assert 'REFUSED' in capsys.readouterr().out
+
+
+def test_bounded_prices_only_partial_failure_is_not_success():
+    from app.investment.free_research_transport import ResearchRefused
+    def inspect(*,symbol,**kwargs):
+        if symbol=='IWM':
+            raise ResearchRefused('UNAVAILABLE')
+        return {'schema':'ATLAS_QD_PRICE_ONLY_RESEARCH_V1','symbol':symbol,
+                'completed_daily_bar_count':3,'provider_receipt_count':2,
+                'fundamentals_available':False,'independent_analyst_targets_verified':False,
+                'operational_source_accepted':False,'paper_fill_authorized':False,
+                'live_order_authorized':False}
+    result=probe.inspect_bounded_prices_only(symbols=['SPY','IWM'],contact=None,
+                                              credentials_path=None,inspect=inspect)
+    assert result['acquired_count']==1 and result['refused_count']==1
+    assert result['paper_fill_authorized'] is False
+
+
+def test_bounded_prices_only_refuses_authority_promotion():
+    def inspect(*,symbol,**kwargs):
+        return {'schema':'ATLAS_QD_PRICE_ONLY_RESEARCH_V1','symbol':symbol,
+                'completed_daily_bar_count':3,'provider_receipt_count':2,
+                'fundamentals_available':False,'independent_analyst_targets_verified':False,
+                'operational_source_accepted':True,'paper_fill_authorized':False,
+                'live_order_authorized':False}
+    result=probe.inspect_bounded_prices_only(symbols=['SPY'],contact=None,
+                                              credentials_path=None,inspect=inspect)
+    assert result['refused_count']==1
 
 
 def test_prices_only_does_not_require_sec_contact(monkeypatch):

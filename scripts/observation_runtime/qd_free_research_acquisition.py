@@ -87,6 +87,42 @@ def inspect_prices_only(*, symbol, contact, credentials_path, client_factory=Fre
             'operational_source_accepted':False,'paper_fill_authorized':False,'live_order_authorized':False}
 
 
+
+def inspect_bounded_prices_only(*, symbols, contact, credentials_path,
+                                inspect=inspect_prices_only):
+    """Bounded independent price-history checks; partial failure is never success."""
+    if (type(symbols) is not list or not 1 <= len(symbols) <= 8
+            or any(type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}",symbol) is None
+                   for symbol in symbols) or len(set(symbols))!=len(symbols)):
+        raise ResearchRefused('QD_BOUNDED_UNIQUE_SYMBOLS_REQUIRED')
+    results=[]
+    for symbol in symbols:
+        try:
+            result=inspect(symbol=symbol,contact=contact,credentials_path=credentials_path)
+            if (type(result) is not dict or result.get('schema')!='ATLAS_QD_PRICE_ONLY_RESEARCH_V1'
+                    or result.get('symbol')!=symbol
+                    or type(result.get('completed_daily_bar_count')) is not int
+                    or result['completed_daily_bar_count']<0
+                    or type(result.get('provider_receipt_count')) is not int
+                    or result['provider_receipt_count']<0
+                    or result.get('fundamentals_available') is not False
+                    or result.get('independent_analyst_targets_verified') is not False
+                    or result.get('operational_source_accepted') is not False
+                    or result.get('paper_fill_authorized') is not False
+                    or result.get('live_order_authorized') is not False):
+                raise ResearchRefused('QD_PRICE_ONLY_RESULT_AUTHORITY_REFUSED')
+            results.append(result)
+        except (ValueError,OSError,KeyError,TypeError):
+            results.append({'symbol':symbol,'status':'REFUSED',
+                            'operational_source_accepted':False,'paper_fill_authorized':False,
+                            'live_order_authorized':False})
+    refused=sum(row.get('status')=='REFUSED' for row in results)
+    return {'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':symbols,'results':results,
+            'acquired_count':len(results)-refused,'refused_count':refused,
+            'operational_source_accepted':False,'paper_fill_authorized':False,
+            'live_order_authorized':False}
+
+
 def inspect_bounded_universe(*, symbols, contact, credentials_path,
                              inspect=inspect_free_research):
     """Bounded multi-symbol genuine research; never converts research to fills."""
@@ -126,8 +162,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.prices_only and args.symbols is not None:
-            raise ResearchRefused("QD_PRICE_ONLY_SINGLE_SYMBOL_REQUIRED")
-        if args.prices_only:
+            result = inspect_bounded_prices_only(symbols=args.symbols, contact=args.sec_contact,
+                                                 credentials_path=REPO / "config/alpaca.env")
+        elif args.prices_only:
             result = inspect_prices_only(symbol=args.symbol, contact=args.sec_contact,
                                          credentials_path=REPO / "config/alpaca.env")
         elif args.symbols is not None:
@@ -145,7 +182,7 @@ def main(argv=None):
     print(json.dumps(result, sort_keys=True))
     # Partial acquisition is observable but not a successful full-universe scan.
     # Supervisors must never mistake refused symbols for a complete research cut.
-    if result.get("schema") == "ATLAS_QD_BOUNDED_RESEARCH_UNIVERSE_V1":
+    if result.get("schema") in ("ATLAS_QD_BOUNDED_RESEARCH_UNIVERSE_V1", "ATLAS_QD_BOUNDED_PRICES_ONLY_V1"):
         return 2 if result["refused_count"] else 0
     return 0
 
