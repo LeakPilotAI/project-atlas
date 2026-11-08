@@ -71,3 +71,4 @@
 - 2026-11-07: Actual QD native control mutex acquired/released successfully using verified native root identity. This is OS synchronization only, not enrolled writer ownership; 0/9 operational gates.
 - 2026-11-07: Real QD cross-process native mutex contention verified: child WAIT_TIMEOUT 258 while parent held mutex; released successfully. Writer ownership not enrolled; 0/9 gates.
 - 2026-11-07: Added and executed reusable native QD cross-process exclusion diagnostic; real child blocked and 4 focused tests passed. No operational writer enrollment, 0/9 gates.
+- 2026-11-07: Actual LocalWindowsClock operational acquisition REFUSED CLOCK_UNCERTAINTY_EXCEEDED:1123ms against Windows NTP source (1000ms max). Trusted clock D1 remains blocked; 0/9 gates.
