@@ -34,3 +34,20 @@ def test_invalid_rows_fail_closed():
     result=probe(environ={'FMP_API_KEY':'redacted'},fetch=lambda: b'[null]')
     assert result['reason']=='FMP_REQUEST_OR_RESPONSE_REFUSED'
     assert result['operational_source_accepted'] is False
+
+
+def test_cross_symbol_feed_is_explicitly_rejected():
+    sample=[{'symbol':'AVGO','analystName':'A','publishedDate':'2026-11-07'},
+            {'symbol':'AAPL','analystName':'B','publishedDate':'2026-11-07'}]
+    result=probe(environ={'FMP_API_KEY':'redacted'},fetch=lambda: json.dumps(sample).encode())
+    assert result['reason']=='FMP_SYMBOL_FILTER_NOT_RESPECTED'
+    assert result['metadata_review']['nonmatching_symbol_count']==2
+    assert result['metadata_review']['matching_symbol_count']==0
+    assert result['operational_source_accepted'] is False
+
+def test_mixed_symbol_feed_is_explicitly_rejected():
+    sample=[{'symbol':'MSFT'},{'symbol':'AAPL'}]
+    result=probe(environ={'FMP_API_KEY':'redacted'},fetch=lambda: json.dumps(sample).encode())
+    assert result['reason']=='FMP_SYMBOL_FILTER_NOT_RESPECTED'
+    assert result['metadata_review']['matching_symbol_count']==1
+    assert result['paper_fill_authorized'] is False

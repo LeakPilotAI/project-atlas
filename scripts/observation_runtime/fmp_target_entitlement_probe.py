@@ -43,6 +43,8 @@ def probe(*, environ=None, fetch=None):
         else:
             result['returned_record_count']=min(len(payload),1000)
             result['metadata_review']=review_target_news(payload, symbol='MSFT')
+            if not result['metadata_review']['requested_symbol_filter_respected']:
+                result['reason']='FMP_SYMBOL_FILTER_NOT_RESPECTED'
     except (HTTPError,URLError,TimeoutError,OSError,ValueError,TypeError,UnicodeError):
         result['reason']='FMP_REQUEST_OR_RESPONSE_REFUSED'
     return result
