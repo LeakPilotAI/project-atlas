@@ -1,0 +1,265 @@
+{
+  "account_inception_authorized": false,
+  "accounts": {
+    "HYPERLIQUID": {
+      "enrollment_schema_validated": false,
+      "identity_requirements_pending": [
+        "ACTUAL_WRITER_PID_AND_CREATION_FILETIME",
+        "ACCEPTANCE_ID",
+        "E1_PROVIDER_SOURCE_ENTITLEMENT",
+        "OPERATOR_FINANCIAL_INCEPTION_AUTHORIZATION"
+      ],
+      "native_enrollment_draft": {
+        "acceptance_id": null,
+        "account_id": "atlas-personal-hyperliquid",
+        "clock_source": "time.cloudflare.com,0x8 time.google.com,0x8",
+        "epoch": "hl-paper-20261108-de437abe-v1",
+        "inception_digest": "ffeec57946a1497fdbfc3ff14b9d11f7958160b8ed31b7f11cef69658846690e",
+        "policy_digest": "70efaed1f51150623104fe974eca85bc887d8b417ff8cd799d8c29f105f979a6",
+        "profile": "AUTONOMOUS_PAPER_ONLY_V1",
+        "release_digest": "d7724787ef6f459d3a130f915dc7823ccc3de9c3d8337af4b948879e211ee5b5",
+        "resources": {
+          "control": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597465
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\control",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "coordination": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597466
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\coordination",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "custody": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597461
+            ],
+            "path": "D:\\AtlasCustody\\Hyperliquid\\hl-paper-20261108-de437abe-v1",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "projection": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597463
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\projection",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "report": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597464
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\report",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "source": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597462
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\source",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          }
+        },
+        "schema": "PERP_AUTO_NATIVE_ENROLLMENT_V1",
+        "writers": null
+      },
+      "native_financial_inception_published": false,
+      "parameters": {
+        "cost_policy": "PERP_QUOTE_PLUS_CASH_COST_V2",
+        "currency": "USDC",
+        "epoch": "hl-paper-20261108-de437abe-v1",
+        "initial_net_r": "0",
+        "opened_at": 1794132467,
+        "opening_cash": "1000",
+        "perp_policy": {
+          "fee_schedule_id": "PENDING_E1_VERIFIED_FEE_SCHEDULE",
+          "funding_source": "PENDING_E1_VERIFIED_FUNDING_SOURCE",
+          "instrument_cut": "PENDING_E1_VERIFIED_INSTRUMENT_CUT",
+          "maintenance_rate": "0.05",
+          "maker_bps": "1",
+          "market_source": "PENDING_E1_VERIFIED_BOOK_SOURCE",
+          "max_leverage": "2",
+          "max_notional": "100",
+          "max_positions": 3,
+          "participation": "0.1",
+          "risk_limit": "1",
+          "session_stop": "-3",
+          "slippage_bps": "2",
+          "symbols": [
+            "BTC",
+            "ETH",
+            "SOL"
+          ],
+          "taker_bps": "2"
+        },
+        "provenance": "ACCEPTED_PERP_PAPER_PARAMETERS_V1",
+        "release": "d7724787ef6f459d3a130f915dc7823ccc3de9c3d8337af4b948879e211ee5b5",
+        "schema": "PAPER_EPOCH_PERP_OPERATIONAL_V1",
+        "strategy": "HYPERLIQUID_PAPER",
+        "timezone": "UTC"
+      },
+      "parameters_digest": "ffeec57946a1497fdbfc3ff14b9d11f7958160b8ed31b7f11cef69658846690e",
+      "parameters_schema_validated": true,
+      "report_scope_draft": {
+        "account_id": "atlas-personal-hyperliquid",
+        "epoch": "hl-paper-20261108-de437abe-v1",
+        "funding_reporting_policy": "POSTED_CASH_AND_SETTLEMENT_ACCRUAL_V1",
+        "policy_digest": "ffeec57946a1497fdbfc3ff14b9d11f7958160b8ed31b7f11cef69658846690e",
+        "schema": "FS3_PERP_REPORT_SCOPE_V3",
+        "session_reporting_policy": "ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1",
+        "timezone": "UTC"
+      },
+      "report_scope_validated_against_manifest": true
+    },
+    "QUALITY_DIPS": {
+      "enrollment_schema_validated": false,
+      "identity_requirements_pending": [
+        "ACTUAL_WRITER_PID_AND_CREATION_FILETIME",
+        "ACCEPTANCE_ID",
+        "E1_PROVIDER_SOURCE_ENTITLEMENT",
+        "OPERATOR_FINANCIAL_INCEPTION_AUTHORIZATION"
+      ],
+      "native_enrollment_draft": {
+        "acceptance_id": null,
+        "account_id": "atlas-personal-quality-dips",
+        "clock_source": "time.cloudflare.com,0x8 time.google.com,0x8",
+        "epoch": "qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+        "inception_digest": "a80bd28f4320e2596319119f81427f6f702bd5161f914f71282e388040fd338a",
+        "policy_digest": "21d7b375bc71c83b3bbb63687bc65f59f1636d6ff526b8fc737c9a25deef2840",
+        "profile": "AUTONOMOUS_PAPER_ONLY_V1",
+        "release_digest": "d7724787ef6f459d3a130f915dc7823ccc3de9c3d8337af4b948879e211ee5b5",
+        "resources": {
+          "control": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113779
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\control",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "coordination": {
+            "native_id": [
+              4004218753,
+              589824,
+              439232
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\coordination",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "custody": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113782
+            ],
+            "path": "D:\\AtlasCustody\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "projection": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113777
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\projection",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "report": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113778
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\report",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "source": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113776
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\source",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          }
+        },
+        "schema": "QD_AUTO_NATIVE_ENROLLMENT_V4",
+        "writers": null
+      },
+      "native_financial_inception_published": false,
+      "parameters": {
+        "autonomous_policy": {
+          "max_session_seconds": 3600,
+          "max_spread_bps": "50",
+          "partial_fraction": "0.4",
+          "participation": "0.5",
+          "quantity_step": "0.001",
+          "quote_age_seconds": 5,
+          "schema": "QD_AUTO_RISK_PARTIAL_THESIS_V1"
+        },
+        "cost_policy": "SIDE_NOTIONAL_FEE_SLIPPAGE_V1",
+        "currency": "USD",
+        "epoch": "qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+        "fees_bps": "2",
+        "initial_net_r": "0",
+        "opened_at": 1794132467,
+        "opening_cash": "1000",
+        "provenance": "ACCEPTED_AUTONOMOUS_PAPER_PARAMETERS_V1",
+        "release": "d7724787ef6f459d3a130f915dc7823ccc3de9c3d8337af4b948879e211ee5b5",
+        "schema": "PAPER_EPOCH_AUTONOMOUS_QD_V1",
+        "slippage_bps": "2",
+        "strategy": "QUALITY_DIPS",
+        "timezone": "America/Chicago"
+      },
+      "parameters_digest": "a80bd28f4320e2596319119f81427f6f702bd5161f914f71282e388040fd338a",
+      "parameters_schema_validated": true,
+      "report_scope_draft": {
+        "account_id": "atlas-personal-quality-dips",
+        "epoch": "qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+        "policy_digest": "a80bd28f4320e2596319119f81427f6f702bd5161f914f71282e388040fd338a",
+        "schema": "FS3_QD_REPORT_SCOPE_V2",
+        "session_reporting_policy": "ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1",
+        "timezone": "America/Chicago"
+      },
+      "report_scope_validated_against_manifest": true
+    }
+  },
+  "creation_authorized": false,
+  "enrollment_accepted": false,
+  "generated_utc": "2026-11-08T13:33:10.624659+00:00",
+  "hl_directory_receipt_sha256": "56f4c9c89a44b34d3899dc6893715baebfd77499ccf487c4455458b33d59c40d",
+  "installed_receipt_sha256": "2b282dc6ee1dc84e9742f672b972e7ebd5809ba3fda073e7073be5f25d7eadd7",
+  "live_order_authorized": false,
+  "paper_start_authorized": false,
+  "policy_digest": "099e873af77d3db977c39d3af8a679d4b9680b7e894e61f0f83a1ff1a4dbbdb7",
+  "profile": "PERSONAL_PAPER_ONLY_V1",
+  "provider_check_authorized": false,
+  "provisional_values": [
+    "opened_at (not the actual future inception time)",
+    "QD autonomous_policy trading-parameter defaults (from offline fixtures, not operator-accepted source rights)",
+    "HL fee/margin/market-source assumptions (not E1 verified)",
+    "V4 release-binding is source-only; r8 draft preserved intact",
+    "Historical QD/HL epoch directory names and empty native roles retained as proposals; ownership/epoch adoption requires explicit commissioning",
+    "Real writer PID/creation FILETIME, acceptance IDs, true inception time and E1 provider source rights are absent"
+  ],
+  "schema": "ATLAS_PERSONAL_TWO_ACCOUNT_OFFLINE_DRAFT_BUNDLE_V1",
+  "selected_release_artifact_digest": "d7724787ef6f459d3a130f915dc7823ccc3de9c3d8337af4b948879e211ee5b5",
+  "selected_release_commit": "fc07ba532f9b88a2b6d281a4f5c60ef2b72deaed",
+  "selected_selector_head": "fc0d8eccac057b1b23f872a1b01da7cd614a44cfb763fc2594a171da1f1cfd55",
+  "status": "V4_REBIND_REVIEW_ONLY_NOT_ACCEPTED_OR_AUTHORIZED"
+}
