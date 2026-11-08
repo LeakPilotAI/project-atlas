@@ -81,7 +81,7 @@ def test_hourly_funding_history_never_supplies_missing_oracle_or_zero(damage):
     elif damage == "duplicate": rows[1] = rows[0]
     elif damage == "wrong-symbol": rows[0]["coin"] = "ETH"
     elif damage == "nonfinite": rows[0]["fundingRate"] = "NaN"
-    elif damage == "wrong-interval": rows[1]["time"] += 1000
+    elif damage == "wrong-interval": rows[1]["time"] += 30001  # Outside bounded 30-second publication window
     elif damage == "future": observed = 1
     if damage:
         with pytest.raises(ValueError): _paper_funding_observation("BTC", rows, 3600000, 10800000, observed, observed)

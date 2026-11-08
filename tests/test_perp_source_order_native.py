@@ -57,7 +57,7 @@ async def test_actual_funding_mark_exit_are_source_bound_and_reconcile(system):
     s.advance(7201)
     with pytest.raises(ValueError, match='HISTORICAL_ORACLE'): await s.planner.next_proposal(None, s.writer._cut())
     s.packet['funding']['BTC'] = _paper_funding_observation('BTC', [{'coin': 'BTC', 'fundingRate': '-0.001',
-        'premium': '0', 'time': 7200000}], 7200000, 10800000, 7201000, 7201000)
+        'premium': '0', 'time': 7200076}], 7200000, 10800000, 7201000, 7201000)
     s.packet['revision'] += 1
     with pytest.raises(ValueError, match='HISTORICAL_ORACLE'): await s.planner.next_proposal(None, s.writer._cut())
     s.packet['oracles']['BTC:7200'] = {'symbol': 'BTC', 'settlement_at': 7200, 'price': '100',

@@ -27,6 +27,9 @@ logger = get_logger("hyperliquid")
 
 INFO_URL = "https://api.hyperliquid.xyz/info"
 WS_URL = "wss://api.hyperliquid.xyz/ws"
+# Provider hourly funding event timestamps may follow UTC cuts by milliseconds.
+# Keep the 30-second PAPER settlement/recovery window unchanged.
+MAX_FUNDING_PUBLICATION_LAG_MS = 30_000
 
 
 def _paper_funding_observation(symbol, rows, start, end, started, observed):
@@ -39,14 +42,21 @@ def _paper_funding_observation(symbol, rows, start, end, started, observed):
         raise ValueError("Complete bounded hourly funding history required")
     output = []
     for index, row in enumerate(rows):
+        expected_hour = start + index * 3600000
         if (type(row) is not dict or set(row) != {"coin", "fundingRate", "premium", "time"}
-                or row["coin"] != symbol or type(row["time"]) is not int or row["time"] != start + index * 3600000
+                or row["coin"] != symbol or type(row["time"]) is not int
+                or not expected_hour <= row["time"] <= expected_hour + MAX_FUNDING_PUBLICATION_LAG_MS
+                or row["time"] > observed
                 or type(row["fundingRate"]) is not str or type(row["premium"]) is not str):
-            raise ValueError("Missing, conflicting or unordered funding interval")
+            raise ValueError("Missing, late, future, conflicting or unordered funding interval")
         rate, premium = Decimal(row["fundingRate"]), Decimal(row["premium"])
         if not rate.is_finite() or not premium.is_finite() or abs(rate) > Decimal("0.04"):
             raise ValueError("Finite bounded hourly funding rate required")
-        output.append({"settlement_at_ms": row["time"], "hourly_rate": row["fundingRate"],
+        # Preserve UTC hour for planner accounting and the exact public event
+        # timestamp for audit; never manufacture an historical oracle.
+        output.append({"settlement_at_ms": expected_hour, "provider_event_at_ms": row["time"],
+                       "publication_delay_ms": row["time"] - expected_hour,
+                       "hourly_rate": row["fundingRate"],
                        "premium": row["premium"], "settlement_oracle": None})
     return {"schema": "ATLAS_HYPERLIQUID_FUNDING_HISTORY_V1", "symbol": symbol, "provider": INFO_URL,
             "start_inclusive_ms": start, "end_exclusive_ms": end, "observed_at_ms": observed,
