@@ -228,6 +228,15 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False, r
                         or type(outcome.get("lanes")) is not dict):
                     raise ValueError("CONTROL_SESSION_SHUTDOWN_UNVERIFIED")
                 if require_durable_receipt:
+                    # Only the actual accepted unified endpoint can affirm a
+                    # completed *two-account* Stop. A forged global FLATTENED
+                    # status is insufficient if either lane did not drain.
+                    lanes = outcome['lanes']
+                    if (set(lanes) != {'QUALITY_DIPS', 'HYPERLIQUID'}
+                            or any(type(lanes[name]) is not dict
+                                   or lanes[name].get('state') != 'ACKNOWLEDGED_FLAT_AND_DRAINED'
+                                   for name in ('QUALITY_DIPS', 'HYPERLIQUID'))):
+                        raise ValueError('CONTROL_BOTH_LANES_FLAT_RECEIPTS_REQUIRED')
                     # A finished in-memory response cannot certify a durable
                     # receipt. The accepted route must read back the exact
                     # session/mode receipt from SQLite before acknowledging.

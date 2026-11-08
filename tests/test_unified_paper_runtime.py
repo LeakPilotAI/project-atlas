@@ -1022,7 +1022,7 @@ async def test_session_bound_transport_requires_durable_matching_receipt_before_
             return {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED",
                     "outcome": {"schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,
                                 "status": "FLATTENED", "position_state": "FLAT",
-                                "process_shutdown": "VERIFIED_EXIT", "lanes": {}}}
+                                "process_shutdown": "VERIFIED_EXIT", "lanes": {"QUALITY_DIPS": {"state": "ACKNOWLEDGED_FLAT_AND_DRAINED"}, "HYPERLIQUID": {"state": "ACKNOWLEDGED_FLAT_AND_DRAINED"}}}}
 
     bridge = Bridge()
     app = FastAPI()
@@ -1056,7 +1056,7 @@ async def test_session_http_sqlite_receipt_roundtrip(tmp_path):
             result = {'schema': 'QD_CONTROL_STOP_V1', 'phase': 'FINISHED',
                       'outcome': {'schema': 'QD_AUTO_SHUTDOWN_V1', 'mode': mode,
                                   'status': 'FLATTENED', 'position_state': 'FLAT',
-                                  'process_shutdown': 'VERIFIED_EXIT', 'lanes': {}}}
+                                  'process_shutdown': 'VERIFIED_EXIT', 'lanes': {"QUALITY_DIPS": {"state": "ACKNOWLEDGED_FLAT_AND_DRAINED"}, "HYPERLIQUID": {"state": "ACKNOWLEDGED_FLAT_AND_DRAINED"}}}}
             if self.persist:
                 ledger.reserve_fresh(self.session_id, mode)
                 ledger.finish(self.session_id, mode, result)
