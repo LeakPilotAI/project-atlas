@@ -69,3 +69,4 @@
 - 2026-11-07: Actual installed release Python separate-process launch/alive/path/stop verified on Windows. Process control prerequisite only; no persistent enrolled writer or graceful drain; 0/9 operational gates.
 - 2026-11-07: Native installed writer self-binding probe verified real process executable, PID and creation time; 2 tests passed. No enrolled writer or authority, 0/9 operational gates.
 - 2026-11-07: Actual QD native control mutex acquired/released successfully using verified native root identity. This is OS synchronization only, not enrolled writer ownership; 0/9 operational gates.
+- 2026-11-07: Real QD cross-process native mutex contention verified: child WAIT_TIMEOUT 258 while parent held mutex; released successfully. Writer ownership not enrolled; 0/9 gates.
