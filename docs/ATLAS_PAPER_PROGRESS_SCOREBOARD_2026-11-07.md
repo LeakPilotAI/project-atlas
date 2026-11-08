@@ -65,3 +65,4 @@
 - 2026-11-07: Added native-handle identity verification for both six-role account enrollments before activation publication. 8 focused tests passed; no enrollment issued and 0/9 operational gates accepted.
 - 2026-11-07: Existing QD epoch native resources 5/6 verified; coordination absent. Read-only evidence and 2 tests added. Operational gates remain 0/9.
 - 2026-11-07: Native QD coordination root created and verified, existing epoch resources now 6/6. Enrollment and writer authority not accepted; operational gates 0/9.
+- 2026-11-07: Verified installed D:\ release Python executes and reports native D-only process identity; C:\ development venv cannot meet writer-image requirement. No persistent writer roster, authority or lease; 0/9 operational gates.
