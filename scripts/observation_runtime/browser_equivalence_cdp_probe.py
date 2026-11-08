@@ -22,6 +22,12 @@ def probe(*, chrome=CHROME, installed_static_preview=None):
     static_digest = None
     if installed_static_preview is not None:
         static_path = Path(installed_static_preview)
+        release_root = Path(r'D:\AtlasRuntime\releases').resolve()
+        resolved = static_path.resolve()
+        if (len(resolved.parents) < 6 or resolved.parents[4] != release_root
+                or resolved.parent.name != 'static' or resolved.parents[1].name != 'app'
+                or resolved.parents[2].name != 'backend'):
+            raise ValueError('INSTALLED_RELEASE_ROOT_REQUIRED')
         if (static_path.is_symlink() or not static_path.is_file()
                 or static_path.name != 'dashboard.html'
                 or static_path.stat().st_size > 2_000_000):
