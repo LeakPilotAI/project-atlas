@@ -60,6 +60,31 @@ def inspect_free_research(*, symbol, contact, credentials_path, client_factory=F
             "paper_fill_authorized": False, "live_order_authorized": False}
 
 
+
+def inspect_prices_only(*, symbol, contact, credentials_path, client_factory=FreeResearchClient,
+                        bundle_factory=FreeResearchBundle):
+    """ETF-compatible read-only price history, without claiming SEC fundamentals."""
+    if (type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}", symbol) is None
+            or type(contact) is not str
+            or re.fullmatch(r"ProjectAtlas/1\.0 [A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", contact) is None
+            or contact.lower().endswith(('.invalid','.test','.example','@example.com','@example.org','@example.net'))):
+        raise ResearchRefused('QD_REAL_SYMBOL_AND_SEC_CONTACT_REQUIRED')
+    credentials=Credentials.load(credentials_path)
+    now=lambda: datetime.now(UTC)
+    client=client_factory(cache_root=REPO/'logs'/'diagnostics'/'qd-free-research-acquisition',
+                          now=now,sec_user_agent=contact,credentials=credentials,max_attempts=12,seconds=60)
+    if client.domain!='TLS_PUBLIC_PROVIDER':
+        raise ResearchRefused('QD_REAL_PROVIDER_TRANSPORT_REQUIRED')
+    data=bundle_factory(client=client,now=now).load(symbol,prices_only=True)
+    if type(data) is not dict or data.get('paper_eligible') is not False or type(data.get('bars')) is not list:
+        raise ResearchRefused('QD_PRICE_ONLY_AUTHORITY_REFUSED')
+    return {'schema':'ATLAS_QD_PRICE_ONLY_RESEARCH_V1','symbol':symbol,
+            'completed_daily_bar_count':len(data['bars']),
+            'provider_receipt_count':len(data['receipts']),
+            'fundamentals_available':False,'independent_analyst_targets_verified':False,
+            'operational_source_accepted':False,'paper_fill_authorized':False,'live_order_authorized':False}
+
+
 def inspect_bounded_universe(*, symbols, contact, credentials_path,
                              inspect=inspect_free_research):
     """Bounded multi-symbol genuine research; never converts research to fills."""
@@ -93,11 +118,17 @@ def inspect_bounded_universe(*, symbols, contact, credentials_path,
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="MSFT")
+    parser.add_argument("--prices-only", action="store_true", help="Read-only price history without SEC fundamentals")
     parser.add_argument("--symbols", nargs="+", help="Up to eight distinct real symbols; diagnostic only")
     parser.add_argument("--sec-contact", default=os.environ.get("ATLAS_SEC_CONTACT"))
     args = parser.parse_args(argv)
     try:
-        if args.symbols is not None:
+        if args.prices_only and args.symbols is not None:
+            raise ResearchRefused("QD_PRICE_ONLY_SINGLE_SYMBOL_REQUIRED")
+        if args.prices_only:
+            result = inspect_prices_only(symbol=args.symbol, contact=args.sec_contact,
+                                         credentials_path=REPO / "config/alpaca.env")
+        elif args.symbols is not None:
             result = inspect_bounded_universe(symbols=args.symbols, contact=args.sec_contact,
                                                credentials_path=REPO / "config/alpaca.env")
         else:
