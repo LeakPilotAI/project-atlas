@@ -10,8 +10,9 @@ from scripts.observation_runtime import personal_windows_clock, atlas_independen
 CODE = "a"*40
 
 
-def test_independent_profile_is_unconditionally_denied_until_source_frozen(monkeypatch):
-    assert installer.INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT is None
+def test_independent_profile_denies_every_other_source_commit(monkeypatch):
+    assert installer.INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT == (
+        "af96bec0484a8e43f9965610e071a907a0d316bf")
 
     class OfflineClock:
         def require_operational(self, runtime_id):
@@ -80,7 +81,7 @@ def test_frozen_commit_and_exact_independent_authority_must_both_match(monkeypat
 def test_financial_and_legacy_installer_entry_remains_unmodified():
     p = Path(installer.__file__)
     src = p.read_text(encoding="utf-8")
-    assert "INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT = None" in src
+    assert "INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT = 'af96bec0484a8e43f9965610e071a907a0d316bf'" in src
     assert "if approved_execution is not True" in src
     assert "type(clock) is not LocalWindowsClock" in src
     assert "type(clock) is not IndependentNtpClock" in src
@@ -91,7 +92,9 @@ def test_financial_and_legacy_installer_entry_remains_unmodified():
     # The command line still constructs only the legacy clock: no V7 URL,
     # no silent installer approval, no selected release modified.
     assert "clock=LocalWindowsClock(expected_source=clock_source" in src
-    assert "candidate_v7=" not in src
+    assert "candidate_v7=" in src
+    assert "EXACT_V7_DUAL_NTP_SELECTED_SOURCE_PIN_REQUIRED" in src
+    assert "clock=IndependentNtpClock(runtime_id=runtime_id)" in src
 
 
 def test_missing_approval_denies_new_profile_before_probe_even_if_pinned(monkeypatch):

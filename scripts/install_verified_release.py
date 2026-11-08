@@ -20,7 +20,7 @@ from scripts.native_install_plan import prepare_install_inputs
 # Independent two-peer UTC authority has a distinct code-install profile.
 # Keep it disabled until an immutable new release source commit is separately
 # frozen and pinned. Never infer permission from a caller-selected proposal.
-INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT = None
+INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT = 'af96bec0484a8e43f9965610e071a907a0d316bf'
 INDEPENDENT_NTP_CODE_ONLY_PROFILE = 'INDEPENDENT_TWO_PEER_NTP_CODE_INSTALL_V1'
 LEGACY_WINDOWS_CODE_ONLY_PROFILE = 'WINDOWS_TIME_CODE_INSTALL_V1'
 
@@ -248,7 +248,8 @@ def main(argv=None):
     candidate_v4=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V4_2026-11-08.json'
     candidate_v5=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V5_R1_2026-11-08.json'
     candidate_v6=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V6_R1_2026-11-08.json'
-    if Path(args.proposal).absolute() not in (expected,candidate,candidate_v4,candidate_v5,candidate_v6):
+    candidate_v7=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V7_R1_2026-11-08.json'
+    if Path(args.proposal).absolute() not in (expected,candidate,candidate_v4,candidate_v5,candidate_v6,candidate_v7):
         raise ValueError('EXACT_INSTALL_PROPOSAL_REQUIRED')
     expected=Path(args.proposal).absolute()
     raw=source_bytes(repo,str(expected.relative_to(repo)).replace('\\','/'),maximum_bytes=65536)
@@ -271,22 +272,34 @@ def main(argv=None):
             or proposal['archive_sha256']!='a5bcdb78a4ab4d84839c56df8908ff86570b510be3504f711b61b381a360e99f'
             or proposal['inventory_sha256']!='1eb406f598a5154337762a660ac79c565132b7081ded5d4d73210ed4e49d35fa'):
         raise ValueError('EXACT_V6_SELECTED_SOURCE_PIN_REQUIRED')
+    if expected == candidate_v7 and (
+            proposal['source_commit']!='af96bec0484a8e43f9965610e071a907a0d316bf'
+            or proposal['archive_sha256']!='253798f88386efedc41453169da402c4d09ce24e567687422a7a9c26dae5b631'
+            or proposal['inventory_sha256']!='e57514a84927ae7087302a111683342ef23b162208382a442dada09b9ee364f1'):
+        raise ValueError('EXACT_V7_DUAL_NTP_SELECTED_SOURCE_PIN_REQUIRED')
     if set(proposal['adapter_source_sha256'])!={'scripts/install_verified_release.py','scripts/native_install_candidate.py','scripts/native_install_plan.py'}:
         raise ValueError('EXACT_INSTALL_ADAPTER_SOURCE_SET_REQUIRED')
     for name,pin in proposal['adapter_source_sha256'].items():
         actual=source_bytes(repo,name,maximum_bytes=65536).replace(b'\r\n',b'\n')
         if hashlib.sha256(actual).hexdigest()!=pin:raise ValueError('INSTALL_ADAPTER_SOURCE_CHANGED')
-    clock_source=('time.cloudflare.com,0x8 time.google.com,0x8'
-                  if expected in (candidate,candidate_v4,candidate_v5,candidate_v6) else 'time.windows.com,0x9')
-    clock=LocalWindowsClock(expected_source=clock_source,
-        runtime_id='qd-unselected-code-install-'+proposal['source_commit'])
+    runtime_id='qd-unselected-code-install-'+proposal['source_commit']
+    if expected == candidate_v7:
+        from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
+        clock=IndependentNtpClock(runtime_id=runtime_id)
+        clock_profile=INDEPENDENT_NTP_CODE_ONLY_PROFILE
+    else:
+        clock_source=('time.cloudflare.com,0x8 time.google.com,0x8'
+                      if expected in (candidate,candidate_v4,candidate_v5,candidate_v6) else 'time.windows.com,0x9')
+        clock=LocalWindowsClock(expected_source=clock_source,runtime_id=runtime_id)
+        clock_profile=LEGACY_WINDOWS_CODE_ONLY_PROFILE
     try:
         dependency=json.loads(source_bytes(repo,str(Path(proposal['dependency_receipt']).relative_to(repo)).replace('\\','/'),
             maximum_bytes=16*1024**2),object_pairs_hook=unique)
         return install_unselected_release(approved_execution=True,archive=proposal['archive'],
             archive_sha256=proposal['archive_sha256'],source_commit=proposal['source_commit'],
             inventory_digest=proposal['inventory_sha256'],dependency_receipt=dependency,
-            dependency_digest=proposal['dependency_sha256'],receipt_path=proposal['receipt_path'],clock=clock)
+            dependency_digest=proposal['dependency_sha256'],receipt_path=proposal['receipt_path'],
+            clock=clock,clock_profile=clock_profile)
     finally:clock.revoke()
 
 
