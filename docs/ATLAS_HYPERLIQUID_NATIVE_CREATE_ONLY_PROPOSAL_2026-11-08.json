@@ -1,0 +1,174 @@
+{
+  "account_plan": {
+    "currency": "SIMULATED_USDC",
+    "future_native_role_ids": "PENDING_CREATION_AND_HANDLE_READBACK",
+    "future_writer_process_ids": "REQUIRE_NATIVE_PROCESS_EVIDENCE_AT_COMMISSIONING",
+    "inception_manifest_schema": "PAPER_EPOCH_PERP_OPERATIONAL_V1",
+    "lane": "HYPERLIQUID",
+    "native_enrollment_schema": "PERP_AUTO_NATIVE_ENROLLMENT_V1",
+    "opening_balance": "1000",
+    "proposed_epoch": "hl-paper-20261108-de437abe-v1",
+    "report_scope_schema": "FS3_PERP_REPORT_SCOPE_V3",
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ]
+  },
+  "create_only_order": [
+    {
+      "parent": "D:\\AtlasPaper",
+      "path": "D:\\AtlasPaper\\Hyperliquid"
+    },
+    {
+      "parent": "D:\\AtlasCustody",
+      "path": "D:\\AtlasCustody\\Hyperliquid"
+    },
+    {
+      "parent": "D:\\AtlasPaper\\Hyperliquid",
+      "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1"
+    },
+    {
+      "parent": "D:\\AtlasCustody\\Hyperliquid",
+      "path": "D:\\AtlasCustody\\Hyperliquid\\hl-paper-20261108-de437abe-v1"
+    },
+    {
+      "parent": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1",
+      "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\source"
+    },
+    {
+      "parent": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1",
+      "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\projection"
+    },
+    {
+      "parent": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1",
+      "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\report"
+    },
+    {
+      "parent": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1",
+      "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\control"
+    },
+    {
+      "parent": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1",
+      "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\coordination"
+    }
+  ],
+  "creation_authorized": false,
+  "dependent_future_steps": [
+    "MINT_REAL_NATIVE_IDS_BEFORE_FINAL_NATIVE_ENROLLMENT",
+    "BIND_SELECTED_RELEASE_AND_POLICY_DIGEST",
+    "VERIFY_WRITER_PROCESS_IDENTITY_AT_COMMISSIONING",
+    "VALIDATE_BOTH_ACCOUNT_ENROLLMENTS",
+    "PUBLISH_FINANCIAL_INCEPTION_ONLY_UNDER_SEPARATE_APPROVAL",
+    "FINAL_LAUNCH_ONLY_RUNTIME_TESTS"
+  ],
+  "existing_qd_account": {
+    "currency": "SIMULATED_USD",
+    "enrollment_accepted": false,
+    "enrollment_schema": "QD_AUTO_NATIVE_ENROLLMENT_V4",
+    "epoch": "qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+    "inception_manifest_schema": "PAPER_EPOCH_AUTONOMOUS_QD_V1",
+    "native_resources": {
+      "control": {
+        "native_id": [
+          4004218753,
+          65536,
+          1113779
+        ],
+        "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\control",
+        "verified": true
+      },
+      "coordination": {
+        "native_id": [
+          4004218753,
+          589824,
+          439232
+        ],
+        "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\coordination",
+        "verified": true
+      },
+      "custody": {
+        "native_id": [
+          4004218753,
+          65536,
+          1113782
+        ],
+        "path": "D:\\AtlasCustody\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+        "verified": true
+      },
+      "projection": {
+        "native_id": [
+          4004218753,
+          65536,
+          1113777
+        ],
+        "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\projection",
+        "verified": true
+      },
+      "report": {
+        "native_id": [
+          4004218753,
+          65536,
+          1113778
+        ],
+        "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\report",
+        "verified": true
+      },
+      "source": {
+        "native_id": [
+          4004218753,
+          65536,
+          1113776
+        ],
+        "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\source",
+        "verified": true
+      }
+    },
+    "opening_balance": "1000"
+  },
+  "financial_inception_authorized": false,
+  "live_order_authorized": false,
+  "paper_start_authorized": false,
+  "planned_hyperliquid_role_paths": {
+    "control": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\control",
+    "coordination": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\coordination",
+    "custody": "D:\\AtlasCustody\\Hyperliquid\\hl-paper-20261108-de437abe-v1",
+    "projection": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\projection",
+    "report": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\report",
+    "source": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\source"
+  },
+  "policy_digest": "099e873af77d3db977c39d3af8a679d4b9680b7e894e61f0f83a1ff1a4dbbdb7",
+  "preflight_constraints": [
+    "ALL_NEW_PATHS_ABSENT_AT_EXECUTION",
+    "REAL_PARENT_NATIVE_IDS_MATCH_PROPOSAL",
+    "CREATE_ONLY_NTFS_OPERATIONS_NO_OVERWRITE",
+    "EACH_NEW_ROOT_NATIVE_HANDLE_ID_INDEPENDENTLY_READ_BACK",
+    "NO_FINANCIAL_FILES_OR_ACTIVATION",
+    "EXPLICIT_OPERATOR_AUTHORIZATION_REQUIRED_FOR_CREATION"
+  ],
+  "provider_check_authorized": false,
+  "release_receipt_sha256": "dad571fb1df2c2e4db273064d2faa6bb856d4e1653fa74ae04e8403d9319f9e9",
+  "schema": "ATLAS_HL_NATIVE_ACCOUNT_CREATE_ONLY_PROPOSAL_V1",
+  "selected_head": "b72191583451f42f01fb4a44388b5f0211fd75f95c9f70bb029449d258db614a",
+  "selected_release_artifact_digest": "241a1650b65bec8f2127e14d8a7f7f17caba2cbf6049788759d65e702b4d23bf",
+  "source_commit": "de437abe888a2d20746762a39402ae421417c1f6",
+  "status": "PROPOSAL_NOT_PERMISSION",
+  "trusted_existing_parents": {
+    "custody": {
+      "native_id": [
+        4004218753,
+        65536,
+        1113780
+      ],
+      "path": "D:\\AtlasCustody"
+    },
+    "paper": {
+      "native_id": [
+        4004218753,
+        65536,
+        1113773
+      ],
+      "path": "D:\\AtlasPaper"
+    }
+  }
+}
