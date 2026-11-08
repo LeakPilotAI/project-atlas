@@ -1,5 +1,6 @@
 """Append-only, non-authoritative JSONL diagnostic journal. Not a financial ledger."""
 import json
+import hashlib
 import os
 from datetime import UTC, datetime
 from pathlib import Path
@@ -164,5 +165,41 @@ def export_recoverable_journal(*, source, destination):
     return {'schema':'ATLAS_QD_RECOVERY_EXPORT_V1',
             'status':'VERIFIED_PREFIX_EXPORTED_FOR_OPERATOR_REVIEW',
             'completed_records':verified['completed_records'],
-            'original_preserved':True,'resume_authorized':False,
+            'original_preserved':True,
+            'source_sha256':hashlib.sha256(raw).hexdigest(),
+            'export_sha256':hashlib.sha256(prefix+b'\n').hexdigest(),
+            'resume_authorized':False,
             'paper_fill_authorized':False,'live_order_authorized':False}
+
+
+def verify_recovery_export(*, source, destination, receipt):
+    """Compare a prior export receipt with actual files, without authorizing resumption."""
+    if (type(receipt) is not dict or receipt.get('schema')!='ATLAS_QD_RECOVERY_EXPORT_V1'
+            or receipt.get('status')!='VERIFIED_PREFIX_EXPORTED_FOR_OPERATOR_REVIEW'
+            or receipt.get('original_preserved') is not True
+            or receipt.get('resume_authorized') is not False
+            or receipt.get('paper_fill_authorized') is not False
+            or receipt.get('live_order_authorized') is not False):
+        raise ValueError('QD_RECOVERY_RECEIPT_REFUSED')
+    src=Path(source);dst=Path(destination)
+    if src.is_symlink() or dst.is_symlink() or not src.is_file() or not dst.is_file():
+        raise ValueError('QD_RECOVERY_VERIFY_PATH_REFUSED')
+    raw=src.read_bytes(); exported=dst.read_bytes()
+    if len(raw)>2_000_000 or len(exported)>2_000_000:
+        raise ValueError('QD_RECOVERY_VERIFY_SIZE_REFUSED')
+    if (receipt.get('source_sha256')!=hashlib.sha256(raw).hexdigest()
+            or receipt.get('export_sha256')!=hashlib.sha256(exported).hexdigest()):
+        raise ValueError('QD_RECOVERY_VERIFY_DIGEST_MISMATCH')
+    plan=plan_interrupted_journal_recovery(path=src)
+    verified=inspect_diagnostic_journal(path=dst)
+    prefix,_,fragment=raw.rpartition(b'\n')
+    if (plan['status']!='TRAILING_FRAGMENT_REQUIRES_OPERATOR_REVIEW'
+            or exported!=prefix+b'\n' or not fragment
+            or type(receipt.get('completed_records')) is not int
+            or receipt['completed_records']!=verified['completed_records']):
+        raise ValueError('QD_RECOVERY_VERIFY_CONTENT_MISMATCH')
+    return {'schema':'ATLAS_QD_RECOVERY_EXPORT_VERIFICATION_V1',
+            'status':'VERIFIED_FOR_OPERATOR_REVIEW',
+            'completed_records':verified['completed_records'],
+            'resume_authorized':False,'paper_fill_authorized':False,
+            'live_order_authorized':False}

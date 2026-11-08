@@ -1,6 +1,6 @@
 import json
 import pytest
-from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery, export_recoverable_journal
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery, export_recoverable_journal, verify_recovery_export
 
 def sample():
     return {"schema":"ATLAS_QD_REPEATED_PRICES_ONLY_V1", "symbols":["MSFT","SPY"],
@@ -120,3 +120,24 @@ def test_export_refuses_complete_source(tmp_path):
     journal_diagnostic(sample(),path=src)
     with pytest.raises(ValueError): export_recoverable_journal(source=src,destination=dst)
     assert not dst.exists()
+
+
+def test_recovery_receipt_verifies_exact_export(tmp_path):
+    src=tmp_path/'damaged.jsonl';dst=tmp_path/'export.jsonl'
+    journal_diagnostic(sample(),path=src)
+    src.write_bytes(src.read_bytes()+b'{"partial":')
+    receipt=export_recoverable_journal(source=src,destination=dst)
+    verified=verify_recovery_export(source=src,destination=dst,receipt=receipt)
+    assert verified['status']=='VERIFIED_FOR_OPERATOR_REVIEW'
+    assert verified['resume_authorized'] is False
+
+@pytest.mark.parametrize('mutate',['source','destination','receipt'])
+def test_recovery_receipt_refuses_tampering(tmp_path,mutate):
+    src=tmp_path/'damaged.jsonl';dst=tmp_path/'export.jsonl'
+    journal_diagnostic(sample(),path=src)
+    src.write_bytes(src.read_bytes()+b'{"partial":')
+    receipt=export_recoverable_journal(source=src,destination=dst)
+    if mutate=='source': src.write_bytes(src.read_bytes()+b'X')
+    elif mutate=='destination': dst.write_bytes(dst.read_bytes()+b'X')
+    else: receipt['export_sha256']='0'*64
+    with pytest.raises(ValueError): verify_recovery_export(source=src,destination=dst,receipt=receipt)
