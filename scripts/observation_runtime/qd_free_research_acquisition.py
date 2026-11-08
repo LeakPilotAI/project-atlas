@@ -208,11 +208,19 @@ def main(argv=None):
     parser.add_argument("--symbol", default="MSFT")
     parser.add_argument("--prices-only", action="store_true", help="Read-only price history without SEC fundamentals")
     parser.add_argument("--symbols", nargs="+", help="Up to eight distinct real symbols; diagnostic only")
+    parser.add_argument("--inspect-diagnostic-journal", type=Path, help="Inspect existing read-only journal without contacting provider")
     parser.add_argument("--diagnostic-journal", type=Path, help="Append sanitized bounded price-only result to existing directory")
     parser.add_argument("--diagnostic-rounds", type=int, default=1, help="Finite 1-3 read-only rounds; requires --prices-only --symbols")
     parser.add_argument("--sec-contact", default=os.environ.get("ATLAS_SEC_CONTACT"))
     args = parser.parse_args(argv)
     try:
+        if args.inspect_diagnostic_journal is not None:
+            if (args.diagnostic_journal is not None or args.prices_only or args.symbols is not None
+                    or args.diagnostic_rounds != 1):
+                raise ResearchRefused('QD_JOURNAL_INSPECTION_STANDALONE_REQUIRED')
+            result = inspect_diagnostic_journal(path=args.inspect_diagnostic_journal)
+            print(json.dumps(result,sort_keys=True))
+            return 0
         if args.diagnostic_journal is not None and not (args.prices_only and args.symbols is not None):
             raise ResearchRefused('QD_JOURNAL_BOUNDED_PRICES_ONLY_REQUIRED')
         # Refuse corrupted or interrupted journals before any provider acquisition.
