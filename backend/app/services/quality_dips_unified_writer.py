@@ -41,6 +41,18 @@ class EnrolledQualityDipsWriter:
                 raise ValueError('UNIFIED_QD_NATIVE_COORDINATION_SOURCE_MISMATCH')
             return cut
 
+    def attest_no_resting_orders(self, cut):
+        """Explicit independently authorized QD no-resting-orders capability.
+
+        Never infer zero orders merely because this writer has no order store.
+        The accepted authority must attest the exact verified financial cut.
+        """
+        verifier = getattr(self.authority, 'verify_no_resting_orders', None)
+        if (hasattr(self, 'orders') or verifier is None
+                or body(self._cut()) != body(cut)
+                or verifier(self.binding, cut) is not True):
+            raise ValueError('UNIFIED_QD_NO_RESTING_ORDERS_AUTHORITY_REQUIRED')
+        return True
     def propose(self, frame, observation):
         """The actual QD planner; the accepted caller supplies source-bound inputs."""
         cut = self._cut()

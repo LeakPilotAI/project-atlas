@@ -177,7 +177,9 @@ class PaperStopReceiptLedger:
             raise StopReceiptConflict('STOP_RESTART_NATIVE_CUT_UNVERIFIED')
         counts = {}
         for lane, account in snapshot['accounts'].items():
-            if (type(account) is not dict or account.get('resting_order_evidence') != 'OBSERVED'
+            if (type(account) is not dict or account.get('resting_order_evidence') not in (
+                        ('ATTESTED_NO_ORDER_CAPABILITY',) if lane == 'QUALITY_DIPS'
+                        else ('OBSERVED',))
                     or type(account.get('positions')) is not dict
                     or type(account.get('resting_orders')) is not dict
                     or not isinstance(account.get('source_head'), str)

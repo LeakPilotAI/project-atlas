@@ -186,6 +186,14 @@ class UnifiedPortfolioCustody:
                     'positions': {key: p for key, p in state['positions'].items() if number(p['remaining']) > 0},
                     'valuation': None, 'valuation_status': 'UNAVAILABLE',
                     'resting_order_evidence': 'UNAVAILABLE'}
+                if (lane == 'QUALITY_DIPS' and not hasattr(self.writers[lane], 'orders')
+                        and callable(getattr(self.writers[lane], 'attest_no_resting_orders', None))):
+                    try:
+                        if self.writers[lane].attest_no_resting_orders(cut) is True:
+                            accounts[lane]['resting_orders'] = {}
+                            accounts[lane]['resting_order_evidence'] = 'ATTESTED_NO_ORDER_CAPABILITY'
+                    except Exception:
+                        pass  # An unaccepted capability must remain UNAVAILABLE.
                 if hasattr(self.writers[lane], 'orders'):
                     control = self.writers[lane].orders.snapshot()
                     order_cuts[lane] = control

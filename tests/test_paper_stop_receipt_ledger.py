@@ -277,6 +277,7 @@ def test_native_restart_observation_requires_verified_custody_and_bound_session(
     snapshot = {'state': 'ACKNOWLEDGED', 'accounts': {
         k: {'positions': {}, 'resting_orders': {}, 'resting_order_evidence': 'OBSERVED', 'source_head': 'test-head', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'}
         for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
+    snapshot['accounts']['QUALITY_DIPS']['resting_order_evidence'] = 'ATTESTED_NO_ORDER_CAPABILITY'
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshot)
     result = ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
     assert result['exposure_observed'] is False
@@ -311,7 +312,7 @@ def test_native_restart_observation_detects_positions_and_resting_orders(tmp_pat
     custody = object.__new__(UnifiedPortfolioCustody)
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: {
         'state': 'ACKNOWLEDGED', 'accounts': {
-            'QUALITY_DIPS': {'positions': {'a': {}}, 'resting_orders': {}, 'resting_order_evidence': 'OBSERVED', 'source_head': 'head1', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'},
+            'QUALITY_DIPS': {'positions': {'a': {}}, 'resting_orders': {}, 'resting_order_evidence': 'ATTESTED_NO_ORDER_CAPABILITY', 'source_head': 'head1', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'},
             'HYPERLIQUID': {'positions': {}, 'resting_orders': {'b': {}}, 'resting_order_evidence': 'OBSERVED', 'source_head': 'head2', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'}}})
     result = ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
     assert result['exposure_observed'] is True
@@ -327,7 +328,7 @@ def test_native_restart_observation_rejects_stop_record_changed_during_custody_r
         PaperStopReceiptLedger(ledger.path).finish('s', 'SHUTDOWN_FLATTEN', {
             'phase': 'FINISHED', 'outcome': {'mode': 'SHUTDOWN_FLATTEN', 'status': 'SHUTDOWN_INCOMPLETE'}})
         return {'state': 'ACKNOWLEDGED', 'accounts': {
-            k: {'positions': {}, 'resting_orders': {}, 'resting_order_evidence': 'OBSERVED', 'source_head': 'head', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'}
+            k: {'positions': {}, 'resting_orders': {}, 'resting_order_evidence': ('ATTESTED_NO_ORDER_CAPABILITY' if k == 'QUALITY_DIPS' else 'OBSERVED'), 'source_head': 'head', 'source_revision': 1, 'observed_at': 123, 'epoch': 'test-epoch', 'strategy': 'test-strategy'}
             for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', read_with_concurrent_stop_finish)
     with pytest.raises(StopReceiptConflict, match='RECORD_CHANGED'):
@@ -345,6 +346,7 @@ def test_native_restart_observation_rejects_unattributed_custody_cut(tmp_path, m
                'epoch': 'test-epoch', 'strategy': 'test-strategy'}
     snapshot = {'state': 'ACKNOWLEDGED', 'accounts': {
         k: dict(account) for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
+    snapshot['accounts']['QUALITY_DIPS']['resting_order_evidence'] = 'ATTESTED_NO_ORDER_CAPABILITY'
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshot)
     for field, invalid in (('source_revision', True), ('source_revision', -1),
                            ('observed_at', None), ('epoch', ''),
@@ -393,11 +395,12 @@ def test_native_restart_observation_rejects_order_evidence_not_observed(tmp_path
         k: {'positions': {}, 'resting_orders': {}, 'resting_order_evidence': 'OBSERVED',
             'source_head': 'head', 'source_revision': 1, 'observed_at': 123,
             'epoch': 'e', 'strategy': 's'} for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
+    snapshot['accounts']['QUALITY_DIPS']['resting_order_evidence'] = 'ATTESTED_NO_ORDER_CAPABILITY'
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshot)
     snapshot['accounts']['QUALITY_DIPS']['resting_order_evidence'] = 'UNAVAILABLE'
     with pytest.raises(StopReceiptConflict, match='NATIVE_CUT_UNVERIFIED'):
         ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
-    snapshot['accounts']['QUALITY_DIPS']['resting_order_evidence'] = 'OBSERVED'
+    snapshot['accounts']['QUALITY_DIPS']['resting_order_evidence'] = 'ATTESTED_NO_ORDER_CAPABILITY'
     assert ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})['startup_authorized'] is False
 
 
@@ -443,6 +446,7 @@ def test_interrupted_stop_reopened_ledger_refuses_native_restart_with_surviving_
             'source_head': 'head', 'source_revision': 2, 'observed_at': 124,
             'epoch': 'epoch', 'strategy': 'strategy'} for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
     snapshot['accounts']['HYPERLIQUID']['resting_orders']['pending'] = {'state': 'RESERVED'}
+    snapshot['accounts']['QUALITY_DIPS']['resting_order_evidence'] = 'ATTESTED_NO_ORDER_CAPABILITY'
     monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshot)
     observation = reopened.observe_native_account_restart(
         'interrupted', custody=custody, grant={'session_id': 'interrupted'})
@@ -471,3 +475,25 @@ def test_interrupted_stop_reopened_ledger_refuses_unknown_custody_after_crash(tm
     with pytest.raises(StopReceiptConflict, match='NATIVE_CUT_UNVERIFIED'):
         reopened.observe_native_account_restart('crash', custody=custody, grant={'session_id': 'crash'})
     assert reopened.inspect_session('crash')['state'] == 'PENDING'
+
+
+def test_qd_no_resting_orders_capability_requires_explicit_authority(monkeypatch):
+    from types import SimpleNamespace
+    from app.services.quality_dips_unified_writer import EnrolledQualityDipsWriter
+    writer = object.__new__(EnrolledQualityDipsWriter)
+    writer.binding = {'binding': 'test'}
+    cut = {'head': 'verified-test-head'}
+    monkeypatch.setattr(EnrolledQualityDipsWriter, '_cut', lambda self: cut)
+    writer.authority = SimpleNamespace()
+    with pytest.raises(ValueError, match='NO_RESTING_ORDERS_AUTHORITY_REQUIRED'):
+        writer.attest_no_resting_orders(cut)
+    writer.authority = SimpleNamespace(verify_no_resting_orders=lambda binding, evidence: False)
+    with pytest.raises(ValueError, match='NO_RESTING_ORDERS_AUTHORITY_REQUIRED'):
+        writer.attest_no_resting_orders(cut)
+    writer.authority = SimpleNamespace(verify_no_resting_orders=lambda binding, evidence: evidence == cut)
+    assert writer.attest_no_resting_orders(cut) is True
+    with pytest.raises(ValueError, match='NO_RESTING_ORDERS_AUTHORITY_REQUIRED'):
+        writer.attest_no_resting_orders({'head': 'different'})
+    writer.orders = object()
+    with pytest.raises(ValueError, match='NO_RESTING_ORDERS_AUTHORITY_REQUIRED'):
+        writer.attest_no_resting_orders(cut)
