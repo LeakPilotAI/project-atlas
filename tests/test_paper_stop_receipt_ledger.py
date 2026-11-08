@@ -715,3 +715,36 @@ def test_native_account_read_refuses_revoked_qd_no_orders_attestation_after_proj
     assert result['accounts'] is None
     assert result['startup_authorized'] is False
     assert len(calls) == 2
+
+
+def test_native_account_read_returns_unknown_when_qd_authority_raises_on_recheck(monkeypatch):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    custody = object.__new__(UnifiedPortfolioCustody)
+    journal = {'state': {'operations': {}}, 'revision': 1}
+    custody.journal = SimpleNamespace(snapshot=lambda: journal)
+    @contextmanager
+    def lease(*args):
+        yield SimpleNamespace(check=lambda: True)
+    custody.ownership = SimpleNamespace(lease=lease)
+    custody.clock = lambda: 123
+    custody.authority = SimpleNamespace(verify_read_cuts=lambda *args: True)
+    custody.components = {}
+    monkeypatch.setattr(UnifiedPortfolioCustody, '_verify', lambda self: None)
+    cut = {'head': 'head', 'manifest': {'epoch': 'epoch', 'strategy': 'strategy', 'currency': 'USD', 'opening_cash': '1000'},
+           'state': {'revision': 1, 'cash': '1000', 'gross': '0', 'costs': '0', 'net': '0', 'positions': {}}}
+    calls = []
+    def attest(evidence):
+        calls.append(1)
+        if len(calls) > 1:
+            raise ValueError('UNIFIED_QD_NO_RESTING_ORDERS_AUTHORITY_REQUIRED')
+        return True
+    custody.writers = {
+        'QUALITY_DIPS': SimpleNamespace(_cut=lambda: cut, attest_no_resting_orders=attest),
+        'HYPERLIQUID': SimpleNamespace(_cut=lambda: cut, orders=SimpleNamespace(snapshot=lambda: {'state': {'orders': {}}}))}
+    result = custody.read_accounts({'session_id': 's'})
+    assert result['state'] == 'UNKNOWN'
+    assert result['accounts'] is None
+    assert result['startup_authorized'] is False
+    assert len(calls) == 2
