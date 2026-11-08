@@ -85,3 +85,30 @@ def test_v4_account_native_ids_are_distinct_draft_only():
     ]
     assert len(ids) == len(set(ids)) == 12
     assert all(len(fid) == 3 and all(type(n) is int and n >= 0 for n in fid) for fid in ids)
+
+
+@pytest.mark.parametrize("lane,folder", [
+    ("QUALITY_DIPS", "QualityDips"),
+    ("HYPERLIQUID", "Hyperliquid"),
+])
+def test_v4_rebind_preserves_unaccepted_epoch_roots_without_silent_migration(lane, folder):
+    """Existing epoch strings are labels, never V4 authority or a new epoch."""
+    old, new = _load()
+    initial = old["accounts"][lane]
+    current = new["accounts"][lane]
+    e = current["native_enrollment_draft"]
+    original = initial["native_enrollment_draft"]
+    epoch = e["epoch"]
+    assert epoch == original["epoch"]
+    assert e["resources"] == original["resources"]
+    assert current["native_financial_inception_published"] is False
+    assert new["account_inception_authorized"] is False
+    assert new["enrollment_accepted"] is False
+    for role, resource in e["resources"].items():
+        base = rf"D:\AtlasCustody\{folder}" if role == "custody" else rf"D:\AtlasPaper\{folder}"
+        expected = base + "\\" + epoch + ("" if role == "custody" else "\\" + role)
+        assert resource["path"] == expected
+    if lane == "HYPERLIQUID":
+        assert "de437abe" in epoch  # Historical directory label is not active V4.
+        assert V4_RELEASE[:8] not in epoch
+        assert e["release_digest"] == V4_ARTIFACT
