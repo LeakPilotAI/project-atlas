@@ -97,15 +97,30 @@ def main():
         scope.get("status"),
     ))
 
-    release_root = Path(
-        "D:/AtlasRuntime/releases/"
-        "fca29cfe7760a28d2569b8b4b91ed1ea99804c3c"
-    )
-
+    # The earlier fixed release path predates the native recovery. Read the
+    # recovery inventory as a *candidate locator*, never as selection authority.
+    recovery_path = root / "docs" / "ATLAS_NATIVE_RELEASE_RECOVERY_RESULT_2026-11-07.json"
+    try:
+        recovery = json.loads(recovery_path.read_text(encoding="utf-8-sig"))
+        selected = recovery["selection"]["selected"]
+        candidate_root = selected["root"]
+        candidate_release = selected["release"]
+        expected_root = str(Path("D:/AtlasRuntime/releases") / candidate_release)
+        candidate_valid = (
+            recovery["schema"] == "ATLAS_NATIVE_RELEASE_RECOVERY_RESULT_V1"
+            and re.fullmatch(r"[0-9a-f]{40}", candidate_release) is not None
+            and ntpath.normcase(ntpath.normpath(candidate_root)) == ntpath.normcase(ntpath.normpath(expected_root))
+            and ntpath.normcase(candidate_root).startswith("d:\\atlasruntime\\releases\\")
+        )
+    except (OSError, ValueError, KeyError, TypeError):
+        candidate_valid, candidate_root = False, "Recovery inventory unavailable or invalid"
+    release_root = Path(candidate_root) if candidate_valid else None
+    release_present = bool(release_root and release_root.is_dir()
+                           and not release_root.is_symlink() and not release_root.is_junction())
     results.append(check(
-        "EXISTING_IMMUTABLE_RELEASE",
-        release_root.is_dir(),
-        str(release_root),
+        "RECOVERED_RELEASE_DIRECTORY_PRESENT",
+        release_present,
+        str(candidate_root) + "; inventory-only, independent native release/selection verification still required",
     ))
 
     # A pre-existing source directory is only a custody location, never an
