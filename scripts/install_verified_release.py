@@ -17,6 +17,14 @@ from pathlib import Path
 from scripts.native_install_candidate import _copy_prepared_code
 from scripts.native_install_plan import prepare_install_inputs
 
+# Independent two-peer UTC authority has a distinct code-install profile.
+# Keep it disabled until an immutable new release source commit is separately
+# frozen and pinned. Never infer permission from a caller-selected proposal.
+INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT = None
+INDEPENDENT_NTP_CODE_ONLY_PROFILE = 'INDEPENDENT_TWO_PEER_NTP_CODE_INSTALL_V1'
+LEGACY_WINDOWS_CODE_ONLY_PROFILE = 'WINDOWS_TIME_CODE_INSTALL_V1'
+
+
 
 def bounded_child_diagnostic(raw):
     """Retain the terminal refusal and a digest, without unbounded trace output."""
@@ -136,13 +144,24 @@ print(json.dumps({'layout':layout,'native_proof':proof,'handles_after_close':len
 
 def install_unselected_release(*, approved_execution=False, archive=None, archive_sha256=None,
         source_commit=None, inventory_digest=None, dependency_receipt=None, dependency_digest=None,
-        receipt_path=None, clock=None):
+        receipt_path=None, clock=None,
+        clock_profile=LEGACY_WINDOWS_CODE_ONLY_PROFILE):
     if approved_execution is not True:raise ValueError('SEPARATE_CODE_INSTALL_AUTHORIZATION_REQUIRED')
     # This invocation flag is not financial/session authority. Never default a
     # clock or manufacture an issuer; the operator supplies a live native clock.
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+    from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
 
-    if type(clock) is not LocalWindowsClock:raise ValueError('GENUINE_INSTALL_CLOCK_REQUIRED')
+    if clock_profile == LEGACY_WINDOWS_CODE_ONLY_PROFILE:
+        if type(clock) is not LocalWindowsClock:
+            raise ValueError('GENUINE_INSTALL_CLOCK_REQUIRED')
+    elif clock_profile == INDEPENDENT_NTP_CODE_ONLY_PROFILE:
+        if (INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT is None
+                or source_commit != INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT
+                or type(clock) is not IndependentNtpClock):
+            raise ValueError('REVIEWED_INDEPENDENT_NTP_INSTALL_PIN_REQUIRED')
+    else:
+        raise ValueError('UNREVIEWED_INSTALL_CLOCK_PROFILE')
     prepared=prepare_install_inputs(archive=archive,archive_sha256=archive_sha256,source_commit=source_commit,
         inventory_digest=inventory_digest,dependency_receipt=dependency_receipt,dependency_digest=dependency_digest,
         require_tracked=True)

@@ -38,15 +38,22 @@ def test_v6_r1_is_nonactivating_and_original_proposal_unchanged():
     assert p["destination"] == "D:\\AtlasRuntime\\releases\\" + COMMIT
 
 
-def test_v6_r1_pins_exact_three_reviewed_adapters():
+def test_v6_r1_historical_three_adapter_pins_preserved_and_current_changed():
+    import subprocess
     p = load()
     assert set(p["adapter_source_sha256"]) == {
         "scripts/install_verified_release.py", "scripts/native_install_candidate.py",
-        "scripts/native_install_plan.py"
+        "scripts/native_install_plan.py",
     }
-    for name, sha in p["adapter_source_sha256"].items():
-        raw = source_bytes(ROOT, name, maximum_bytes=65536).replace(b"\r\n", b"\n")
-        assert hashlib.sha256(raw).hexdigest() == sha
+    for name, pinned_hash in p["adapter_source_sha256"].items():
+        historic = subprocess.check_output(
+            ["git", "show", "398d4a00:" + name], cwd=ROOT)
+        assert hashlib.sha256(historic.replace(b"\r\n", b"\n")).hexdigest() == pinned_hash
+    current = source_bytes(ROOT, "scripts/install_verified_release.py",
+                           maximum_bytes=65536)
+    assert hashlib.sha256(current.replace(b"\r\n", b"\n")).hexdigest() != (
+        p["adapter_source_sha256"]["scripts/install_verified_release.py"])
+
 
 
 def test_v6_requires_explicit_approved_entrypoint():
@@ -64,28 +71,15 @@ def test_wrong_install_proposal_hash_refused_before_clock_or_copy(monkeypatch):
                         "--proposal-sha256", "0" * 64])
 
 
-def test_v6_route_is_separate_clock_bound_no_copy(monkeypatch):
-    events = []
-    class Clock:
-        def __init__(self, **kwargs):
-            events.append(("clock", kwargs))
-        def revoke(self):
-            events.append(("revoke", None))
-    monkeypatch.setattr(personal_windows_clock, "LocalWindowsClock", Clock)
-    def capture(**kw):
-        events.append(("invocation", kw))
-        return {"schema": "TEST_ONLY_NO_INSTALL"}
-    monkeypatch.setattr(installer, "install_unselected_release", capture)
-    assert installer.main(["--execute-approved-unselected", "--proposal", str(PROPOSAL),
-                           "--proposal-sha256", PIN]) == {"schema": "TEST_ONLY_NO_INSTALL"}
-    assert [event[0] for event in events] == ["clock", "invocation", "revoke"]
-    args = events[1][1]
-    assert args["approved_execution"] is True
-    assert args["source_commit"] == COMMIT and args["inventory_digest"] == INVENTORY
-    assert args["archive_sha256"] == ARCHIVE
-    assert args["clock"] is not None
-    assert events[0][1]["expected_source"] == "time.cloudflare.com,0x8 time.google.com,0x8"
-    assert args["dependency_digest"] == "93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91"
+def test_historical_v6_cannot_silently_rebind_to_new_clock_installer(monkeypatch):
+    def refuse(**kw):
+        pytest.fail("historical proposal reached clock or installation")
+    monkeypatch.setattr(personal_windows_clock, "LocalWindowsClock", refuse)
+    monkeypatch.setattr(installer, "install_unselected_release", refuse)
+    with pytest.raises(ValueError, match="INSTALL_ADAPTER_SOURCE_CHANGED"):
+        installer.main(["--execute-approved-unselected", "--proposal", str(PROPOSAL),
+                        "--proposal-sha256", PIN])
+
 
 
 def test_unsupported_filename_cannot_override_allowlist(monkeypatch, tmp_path):
