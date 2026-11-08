@@ -1,8 +1,10 @@
 # Disposable .NET listener control; never starts an Atlas host or grants authority.
+param([ValidateRange(0,5)][int]$SettleSeconds=0)
 $ErrorActionPreference='Stop'
 $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0)
 try {
     $listener.Start()
+    if($SettleSeconds -gt 0){Start-Sleep -Seconds $SettleSeconds}
     $port=$listener.LocalEndpoint.Port
     $pidOwner=$PID
     $cim=@(Get-CimInstance -Namespace root/StandardCimv2 -ClassName MSFT_NetTCPConnection -Filter "LocalPort=$port")
@@ -12,6 +14,7 @@ try {
     [ordered]@{
         schema='ATLAS_DISPOSABLE_DOTNET_LISTENER_V1'
         port=$port
+        settle_seconds=$SettleSeconds
         expected_pid=$pidOwner
         cim=@($cim|ForEach-Object {@{pid=$_.OwningProcess;state=[int]$_.State;address=$_.LocalAddress}})
         nettcp=@($tcp|ForEach-Object {@{pid=$_.OwningProcess;state=if($null -eq $_.State){$null}else{[string]$_.State};address=$_.LocalAddress}})
