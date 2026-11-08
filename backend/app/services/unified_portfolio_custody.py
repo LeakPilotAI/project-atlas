@@ -205,13 +205,18 @@ class UnifiedPortfolioCustody:
                         pass  # An unaccepted capability must remain UNAVAILABLE.
                 if hasattr(self.writers[lane], 'orders'):
                     writer = self.writers[lane]
-                    control = (writer._control() if callable(getattr(writer, '_control', None))
-                               else writer.orders.snapshot())
-                    order_cuts[lane] = control
-                    if any(type(row) is not dict or row.get('state') not in
-                           ('RESERVED', 'FILL_PENDING', 'ACKNOWLEDGED', 'CANCELLED')
-                           for row in control['state']['orders'].values()):
+                    try:
+                        control = (writer._control() if callable(getattr(writer, '_control', None))
+                                   else writer.orders.snapshot())
+                        if (type(control) is not dict or type(control.get('state')) is not dict
+                                or type(control['state'].get('orders')) is not dict
+                                or any(type(row) is not dict or row.get('state') not in
+                                       ('RESERVED', 'FILL_PENDING', 'ACKNOWLEDGED', 'CANCELLED')
+                                       for row in control['state']['orders'].values())):
+                            return unavailable
+                    except Exception:
                         return unavailable
+                    order_cuts[lane] = control
                     accounts[lane]['resting_orders'] = {key: {'state': row['state'], **{k: row['order'][k] for k in
                         ('symbol', 'side', 'quantity', 'limit_price', 'expires_at', 'source_revision')}}
                         for key, row in control['state']['orders'].items() if row['state'] in ('RESERVED', 'FILL_PENDING')}
