@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -46,10 +47,20 @@ def test_proposal_archive_and_dependency_are_independently_verifiable_without_co
         dependency_receipt=dep, dependency_digest=p["dependency_sha256"], require_tracked=True,
     )
     assert len(prepared["names"]) == 10482
-    destination, receipt = installation_target(p["source_commit"], p["receipt_path"])
-    assert destination == Path(p["destination"])
-    assert receipt == Path(p["receipt_path"])
-    assert not destination.exists() and not receipt.exists()
+    # The same reviewed proposal remains testable before and after its one-time
+    # create-only installation. Once installed, the guard must refuse a retry.
+    destination = Path(p["destination"])
+    receipt = Path(p["receipt_path"])
+    journal = receipt.with_suffix(".pending.jsonl")
+    if any(os.path.lexists(path) for path in (destination, receipt, journal)):
+        with pytest.raises(ValueError, match="INSTALLATION_ALREADY_EXISTS_PRESERVE_NO_RETRY"):
+            installation_target(p["source_commit"], p["receipt_path"])
+    else:
+        planned_destination, planned_receipt = installation_target(
+            p["source_commit"], p["receipt_path"]
+        )
+        assert planned_destination == destination
+        assert planned_receipt == receipt
 
 
 def test_adapter_code_pins_exact_reviewed_sources():
