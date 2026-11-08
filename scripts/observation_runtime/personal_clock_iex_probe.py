@@ -10,6 +10,7 @@ import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "backend"))
@@ -137,7 +138,14 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
         # Keep the no-quote result explicitly unqualified for forward research.
         if callback_count != len(accepted):
             raise ValueError("CLOCK_IEX_CALLBACK_ACCOUNTING_MISMATCH")
+        exchange_local = datetime.fromtimestamp(clock(), UTC).astimezone(ZoneInfo("America/New_York"))
+        # Calendar context is explanatory only, never a market-open authority.
+        calendar_context = ("WEEKEND" if exchange_local.weekday() >= 5
+                            else "WEEKDAY_HOURS_OR_HOLIDAY_UNVERIFIED")
         return {"schema": "ATLAS_CLOCK_IEX_READONLY_OBSERVATION_V1",
+                "exchange_calendar_context": calendar_context,
+                "exchange_local_date": exchange_local.date().isoformat(),
+                "market_session_verified": False,
                 "native_clock_verified": True,
                 "clock_uncertainty_ms": clock.evidence["bound_ms"],
                 "authenticated": True, "subscribed": True,
