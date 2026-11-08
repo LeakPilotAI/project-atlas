@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 import pytest
 from scripts.observation_runtime.retained_provider_evidence_audit import audit_session
 from scripts.observation_runtime.desktop_observation import Session, REPO
@@ -9,7 +9,7 @@ def test_closed_local_session_is_never_promoted():
     root = REPO / 'logs/observation-only' / ('session-test-' + uuid.uuid4().hex)
     s = Session(root, test=True)
     s.append('ALPACA_IEX_SESSION_RESULT', {'authenticated': True, 'subscribed': True, 'fresh_quote_observed_during_connection': True})
-    s.append('HYPERLIQUID_RESEARCH', {'books': {'BTC': {}, 'ETH': {}, 'SOL': {}}})
+    s.append('HYPERLIQUID_RESEARCH', {'books': {'BTC': {}, 'ETH': {}, 'SOL': {}}, 'financial_execution_authorized': False})
     s.append('DATA_COLLECTION_STOP', {'financial_writers': False})
     s.append('SESSION_STOP', {'financial_writers': False})
     result = audit_session(root)
@@ -26,3 +26,27 @@ def test_incomplete_session_refused():
     with pytest.raises(ValueError, match='OBSERVATION_SESSION_NOT_CLOSED'):
         audit_session(root)
 
+
+def test_missing_provider_result_refused():
+    root = REPO / 'logs/observation-only' / ('session-test-' + uuid.uuid4().hex)
+    s = Session(root, test=True)
+    s.append('DATA_COLLECTION_STOP', {'financial_writers': False})
+    s.append('SESSION_STOP', {'financial_writers': False})
+    with pytest.raises(ValueError, match='OBSERVATION_PROVIDER_RESULT_AMBIGUOUS'):
+        audit_session(root)
+
+
+def test_foreign_root_refused(tmp_path):
+    with pytest.raises(ValueError, match='OBSERVATION_SESSION_ROOT_REFUSED'):
+        audit_session(tmp_path)
+
+
+def test_financially_unsafe_provider_result_refused():
+    root = REPO / 'logs/observation-only' / ('session-test-' + uuid.uuid4().hex)
+    s = Session(root, test=True)
+    s.append('ALPACA_IEX_SESSION_RESULT', {'authenticated': True})
+    s.append('HYPERLIQUID_RESEARCH', {'books': {'BTC': {}, 'ETH': {}, 'SOL': {}}, 'financial_execution_authorized': True})
+    s.append('DATA_COLLECTION_STOP', {'financial_writers': False})
+    s.append('SESSION_STOP', {'financial_writers': False})
+    with pytest.raises(ValueError, match='OBSERVATION_PROVIDER_EVIDENCE_INCOMPLETE_OR_UNSAFE'):
+        audit_session(root)

@@ -1,8 +1,13 @@
-﻿"""Classify a verified observation session without promoting research to trading evidence."""
-from scripts.observation_runtime.desktop_observation import Session
+"""Classify a verified observation session without promoting research to trading evidence."""
+from pathlib import Path
+from scripts.observation_runtime.desktop_observation import Session, REPO
 
 
 def audit_session(path):
+    path = Path(path).absolute()
+    if (path.parent != REPO / "logs/observation-only" or not path.name.startswith("session-")
+            or any(part.is_symlink() or part.is_junction() for part in (path, *path.parents))):
+        raise ValueError("OBSERVATION_SESSION_ROOT_REFUSED")
     session = Session.__new__(Session)
     session.root = path
     session.test = True
@@ -11,14 +16,23 @@ def audit_session(path):
         raise ValueError('OBSERVATION_SESSION_NOT_CLOSED')
     records = history['sessions'][0]['records']
     kinds = [row['kind'] for row in records]
-    if kinds.count('SESSION_START') != 1 or kinds.count('SESSION_STOP') != 1 or kinds.count('DATA_COLLECTION_STOP') != 1:
+    if (not records or kinds[0] != 'SESSION_START' or kinds[-1] != 'SESSION_STOP'
+            or kinds.count('SESSION_START') != 1 or kinds.count('SESSION_STOP') != 1
+            or kinds.count('DATA_COLLECTION_STOP') != 1
+            or kinds.index('DATA_COLLECTION_STOP') != len(kinds) - 2):
         raise ValueError('OBSERVATION_SESSION_INCOMPLETE')
     iex = [row['value'] for row in records if row['kind'] == 'ALPACA_IEX_SESSION_RESULT']
     perps = [row['value'] for row in records if row['kind'] == 'HYPERLIQUID_RESEARCH']
-    if len(iex) > 1 or len(perps) > 1:
+    if len(iex) != 1 or len(perps) != 1:
         raise ValueError('OBSERVATION_PROVIDER_RESULT_AMBIGUOUS')
-    equity = iex[0] if iex else {}
-    perp = perps[0] if perps else {}
+    equity = iex[0]
+    perp = perps[0]
+    if (type(equity) is not dict or type(perp) is not dict
+            or perp.get('financial_execution_authorized') is not False
+            or sorted(perp.get('books', {})) != ['BTC', 'ETH', 'SOL']
+            or records[-2]['value'].get('financial_writers') is not False
+            or records[-1]['value'].get('financial_writers') is not False):
+        raise ValueError('OBSERVATION_PROVIDER_EVIDENCE_INCOMPLETE_OR_UNSAFE')
     return {
         'schema': 'ATLAS_RETAINED_PROVIDER_EVIDENCE_AUDIT_V1',
         'session_status': 'CLOSED',
@@ -33,4 +47,3 @@ def audit_session(path):
         'financial_execution_authorized': False,
         'paper_startup_authorized': False,
     }
-
