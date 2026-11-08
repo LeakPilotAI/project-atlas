@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from app.adapters.hyperliquid import _paper_funding_observation
 from app.services.paper_financial_replay import number
+from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
 from app.services.unified_paper_runtime import UnifiedPaperRuntime
 from test_perp_order_crash_race_native import start
 from unified_actual_lanes_fixture import build
@@ -71,6 +72,10 @@ async def test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdo
     assert number(qcut['state']['cash']) == number('1015.9136')
     assert number(pcut['state']['cash']) == number('1000') + number(pcut['state']['net'])
     assert s.r.snapshot()['total_cash'] is None and s.r.snapshot()['total_equity'] is None
+    # All durable Stop database handles belong to the active AIP06 fixture.
+    stop_path = s.root / 'f01-durable-stop.sqlite'
+    stop_ledger = PaperStopReceiptLedger(stop_path, connection_factory=guarded.sqlite_connect)
+    assert stop_ledger.reserve_fresh('synthetic-unified-session', 'SHUTDOWN_FLATTEN')['state'] == 'PENDING'
     outcome = s.r.stop()
     assert outcome['state'] == 'STOPPED', outcome
     assert s.journal.snapshot()['state']['finalized']['outcomes'] == outcome['lanes']
@@ -99,6 +104,26 @@ async def test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdo
         for field in ('cash', 'gross', 'net'):
             assert number(account[field]) == number(financial['state'][field])
     assert accounts['startup_authorized'] is False
+    # Reopened, guard-owned durable Stop intent is read against both native financial writers.
+    reopened = PaperStopReceiptLedger(stop_path, connection_factory=guarded.sqlite_connect)
+    observation = reopened.observe_native_account_restart(
+        'synthetic-unified-session', custody=s.custody,
+        grant={'session_id': 'synthetic-unified-session'})
+    assert observation['stop_record_state'] == 'PENDING'
+    assert observation['exposure_observed'] is False
+    assert observation['reconciliation_required'] is True
+    assert observation['startup_authorized'] is False
+    assert observation['financial_authorized'] is False
+    receipt = {'phase': 'FINISHED', 'outcome': {'mode': 'SHUTDOWN_FLATTEN', 'status': 'STOPPED'}}
+    stop_ledger.finish('synthetic-unified-session', 'SHUTDOWN_FLATTEN', receipt)
+    cold = PaperStopReceiptLedger(stop_path, connection_factory=guarded.sqlite_connect)
+    assert cold.recover('synthetic-unified-session', 'SHUTDOWN_FLATTEN')['state'] == 'RECEIPT_RECORDED'
+    verified = cold.observe_native_account_restart(
+        'synthetic-unified-session', custody=s.custody,
+        grant={'session_id': 'synthetic-unified-session'})
+    assert verified['stop_record_state'] == 'FINISHED'
+    assert verified['exposure_observed'] is False
+    assert verified['startup_authorized'] is False
 
 
 
