@@ -7,11 +7,13 @@ from urllib.parse import urlsplit
 
 def inspect_candidate(*, expected_url, observations):
     """Validate target continuity and origin without issuing any acceptance."""
+    if type(expected_url) is not str:
+        raise ValueError('CANDIDATE_EXACT_LOOPBACK_URL_REQUIRED')
     expected = urlsplit(expected_url)
     if (expected.scheme != 'http' or expected.hostname != '127.0.0.1'
             or expected.port is None or expected.username is not None
             or expected.password is not None or expected.query or expected.fragment
-            or expected.path not in ('', '/')):
+            or expected.path not in ('', '/') or expected_url != f'http://127.0.0.1:{expected.port}/'):
         raise ValueError('CANDIDATE_EXACT_LOOPBACK_URL_REQUIRED')
     if type(observations) is not list or len(observations) != 3:
         raise ValueError('CANDIDATE_THREE_OBSERVATIONS_REQUIRED')
@@ -28,7 +30,7 @@ def inspect_candidate(*, expected_url, observations):
         if item['target_id'] != target_id:
             raise ValueError('CANDIDATE_TARGET_REPLACED')
         actual = urlsplit(item['url']) if type(item['url']) is str else None
-        if (actual is None or actual.scheme != expected.scheme
+        if (actual is None or item['url'] != expected_url or actual.scheme != expected.scheme
                 or actual.hostname != expected.hostname or actual.port != expected.port
                 or actual.path.rstrip('/') != expected.path.rstrip('/')
                 or actual.username is not None or actual.password is not None

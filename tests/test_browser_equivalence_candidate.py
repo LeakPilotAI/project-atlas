@@ -65,3 +65,27 @@ def test_refuse_missing_browser_stage():
 def test_refuse_extra_browser_stage():
     with pytest.raises(ValueError):
         inspect_candidate(expected_url=URL, observations=observations() + [observations()[-1]])
+
+@pytest.mark.parametrize('alias', [
+    'http://127.0.0.1:8765',
+    'http://127.0.0.1:08765/',
+    'http://127.0.0.1:8765//',
+    'http://127.0.0.1:8765/./',
+    'http://127.0.0.1:8765/%2f',
+    'http://127.0.0.1:8765/../',
+    'http://127.0.0.1:8765/?',
+    'http://127.0.0.1:8765/#',
+])
+def test_refuse_noncanonical_observed_url(alias):
+    items = observations()
+    items[1]['url'] = alias
+    with pytest.raises(ValueError):
+        inspect_candidate(expected_url=URL, observations=items)
+
+
+@pytest.mark.parametrize('invalid', [None, 8765, 'http://127.0.0.1:08765/',
+                                      'http://127.0.0.1:8765',
+                                      'http://127.0.0.1:8765//'])
+def test_refuse_noncanonical_expected_url(invalid):
+    with pytest.raises(ValueError):
+        inspect_candidate(expected_url=invalid, observations=observations())
