@@ -748,3 +748,23 @@ def test_native_account_read_returns_unknown_when_qd_authority_raises_on_recheck
     assert result['accounts'] is None
     assert result['startup_authorized'] is False
     assert len(calls) == 2
+
+@pytest.mark.parametrize('invalid_status', [None, '', 0, [], {}])
+def test_corrupt_finished_receipt_status_rejected_by_every_recovery_reader(tmp_path, invalid_status):
+    import json
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('corrupt-status', 'SHUTDOWN_FLATTEN')
+    forged = {'phase': 'FINISHED', 'outcome': {'mode': 'SHUTDOWN_FLATTEN', 'status': invalid_status}}
+    with sqlite3.connect(ledger.path) as db:
+        db.execute("UPDATE stop_receipts SET state='FINISHED', receipt=? WHERE session=?",
+                   (json.dumps(forged), 'corrupt-status'))
+    reopened = PaperStopReceiptLedger(ledger.path)
+    for reader in (
+        lambda: reopened.reserve('corrupt-status', 'SHUTDOWN_FLATTEN'),
+        lambda: reopened.reserve_existing('corrupt-status', 'SHUTDOWN_FLATTEN'),
+        lambda: reopened.inspect_session('corrupt-status'),
+        lambda: reopened.summarize_recovery(),
+        lambda: reopened.recover('corrupt-status', 'SHUTDOWN_FLATTEN'),
+    ):
+        with pytest.raises(StopReceiptConflict, match='STOP_LEDGER_CORRUPT'):
+            reader()
