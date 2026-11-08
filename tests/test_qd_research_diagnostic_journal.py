@@ -1,6 +1,6 @@
 import json
 import pytest
-from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery
 
 def sample():
     return {"schema":"ATLAS_QD_REPEATED_PRICES_ONLY_V1", "symbols":["MSFT","SPY"],
@@ -56,3 +56,34 @@ def test_journal_inspection_refuses_corruption(tmp_path,damage):
         record=json.loads(path.read_text());record['paper_fill_authorized']=True
         path.write_text(json.dumps(record)+'\n')
     with pytest.raises(ValueError): inspect_diagnostic_journal(path=path)
+
+
+def test_recovery_plan_preserves_complete_journal(tmp_path):
+    path=tmp_path/'journal.jsonl'
+    journal_diagnostic(sample(),path=path)
+    original=path.read_bytes()
+    plan=plan_interrupted_journal_recovery(path=path)
+    assert plan['status']=='ALREADY_COMPLETE'
+    assert path.read_bytes()==original
+
+def test_recovery_plan_isolates_trailing_fragment_without_mutation(tmp_path):
+    path=tmp_path/'journal.jsonl'
+    journal_diagnostic(sample(),path=path)
+    path.write_bytes(path.read_bytes()+b'{"interrupted":')
+    original=path.read_bytes()
+    plan=plan_interrupted_journal_recovery(path=path)
+    assert plan['status']=='TRAILING_FRAGMENT_REQUIRES_OPERATOR_REVIEW'
+    assert plan['recoverable_records']==1
+    assert plan['trailing_fragment_bytes']==len(b'{"interrupted":')
+    assert plan['mutation_authorized'] is False
+    assert path.read_bytes()==original
+
+@pytest.mark.parametrize('corrupt', ['no_complete_record','malformed_complete_line','complete_corrupt_prefix'])
+def test_recovery_plan_refuses_nonrecoverable_history(tmp_path,corrupt):
+    path=tmp_path/'journal.jsonl'
+    if corrupt=='no_complete_record': path.write_bytes(b'{"unfinished":')
+    elif corrupt=='malformed_complete_line': path.write_bytes(b'not-json\n')
+    else: path.write_bytes(b'not-json\n{"unfinished":')
+    original=path.read_bytes()
+    with pytest.raises(ValueError): plan_interrupted_journal_recovery(path=path)
+    assert path.read_bytes()==original

@@ -89,3 +89,40 @@ def inspect_diagnostic_journal(*, path):
             'completed_records':len(lines),'last_record_refused_count':record['refused_count'],
             'operational_source_accepted':False,'paper_fill_authorized':False,
             'live_order_authorized':False}
+
+
+def plan_interrupted_journal_recovery(*, path):
+    """Read-only recovery plan; never truncates, rewrites, or blesses a journal."""
+    target=Path(path)
+    if target.is_symlink() or not target.is_file():
+        raise ValueError('QD_RECOVERY_SOURCE_REFUSED')
+    raw=target.read_bytes()
+    if not raw or len(raw)>2_000_000:
+        raise ValueError('QD_RECOVERY_SIZE_REFUSED')
+    try:
+        inspect_diagnostic_journal(path=target)
+    except ValueError:
+        pass
+    else:
+        return {'schema':'ATLAS_QD_JOURNAL_RECOVERY_PLAN_V1',
+                'status':'ALREADY_COMPLETE','recoverable_records':len(raw.splitlines()),
+                'mutation_authorized':False,'paper_fill_authorized':False,
+                'live_order_authorized':False}
+    # Only a non-newline-terminated suffix is a candidate for isolation.
+    # A malformed *completed* line or a malformed prefix remains nonrecoverable.
+    if raw.endswith(b'\n') or b'\n' not in raw:
+        raise ValueError('QD_RECOVERY_NOT_TRAILING_FRAGMENT')
+    prefix, _, fragment = raw.rpartition(b'\n')
+    if not fragment or not prefix:
+        raise ValueError('QD_RECOVERY_NO_COMPLETE_PREFIX')
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory() as directory:
+        candidate=Path(directory)/'candidate.jsonl'
+        candidate.write_bytes(prefix+b'\n')
+        validated=inspect_diagnostic_journal(path=candidate)
+    return {'schema':'ATLAS_QD_JOURNAL_RECOVERY_PLAN_V1',
+            'status':'TRAILING_FRAGMENT_REQUIRES_OPERATOR_REVIEW',
+            'recoverable_records':validated['completed_records'],
+            'trailing_fragment_bytes':len(fragment),
+            'mutation_authorized':False,'paper_fill_authorized':False,
+            'live_order_authorized':False}
