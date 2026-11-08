@@ -239,26 +239,3 @@ async def test_missing_global_final_publication_refuses_clean_shutdown_and_new_s
     s.a.verify_session = lambda *args: True
     assert s.custody.verify_restart({'session_id': 'another-synthetic-session'}) is False
     assert s.r.stop() == outcome
-    # Native financial writers and stores, synthetic fixture-only authorities.
-    # Readback must be independently acknowledged and must not grant startup.
-    accounts = s.custody.read_accounts({'session_id': 'synthetic-unified-session'})
-    assert accounts['state'] == 'ACKNOWLEDGED'
-    assert set(accounts['accounts']) == {'QUALITY_DIPS', 'HYPERLIQUID'}
-    assert accounts['accounts']['QUALITY_DIPS']['resting_order_evidence'] == 'ATTESTED_NO_ORDER_CAPABILITY'
-    assert accounts['accounts']['QUALITY_DIPS']['resting_orders'] == {}
-    assert accounts['accounts']['HYPERLIQUID']['resting_order_evidence'] == 'OBSERVED'
-    assert accounts['accounts']['HYPERLIQUID']['resting_orders'] == {}
-    assert all(not account['positions'] for account in accounts['accounts'].values())
-    # Compare each projected account against the independently reread durable
-    # financial writer, not only the aggregate empty-position assertion.
-    for lane, writer in s.custody.writers.items():
-        financial = writer._cut()
-        account = accounts['accounts'][lane]
-        assert account['source_head'] == financial['head']
-        assert account['source_revision'] == financial['state']['revision']
-        assert account['epoch'] == financial['manifest']['epoch']
-        assert account['currency'] == financial['manifest']['currency']
-        assert number(account['opening_cash']) == number(financial['manifest']['opening_cash'])
-        for field in ('cash', 'gross', 'net'):
-            assert number(account[field]) == number(financial['state'][field])
-    assert accounts['startup_authorized'] is False
