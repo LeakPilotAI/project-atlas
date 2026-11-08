@@ -46,6 +46,21 @@ async def test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdo
     assert s.p.store.verified_cut()['state']['revision'] == 0
     orders = s.p.orders.snapshot()['state']['orders']
     assert len(orders) == 1
+    # All durable Stop database handles belong to the active AIP06 fixture.
+    stop_path = s.root / 'f01-durable-stop.sqlite'
+    stop_ledger = PaperStopReceiptLedger(stop_path, connection_factory=guarded.sqlite_connect)
+    assert stop_ledger.reserve_fresh('synthetic-unified-session', 'SHUTDOWN_FLATTEN')['state'] == 'PENDING'
+    # A crash immediately after intent persistence must expose outstanding
+    # QD positions and HL resting orders rather than treating PENDING as flat.
+    pre_stop = PaperStopReceiptLedger(stop_path, connection_factory=guarded.sqlite_connect)
+    outstanding = pre_stop.observe_native_account_restart(
+        'synthetic-unified-session', custody=s.custody,
+        grant={'session_id': 'synthetic-unified-session'})
+    assert outstanding['stop_record_state'] == 'PENDING'
+    assert outstanding['exposure_observed'] is True
+    assert outstanding['reconciliation_required'] is True
+    assert outstanding['startup_authorized'] is False
+    assert outstanding['financial_authorized'] is False
     order = next(iter(orders.values()))['order']
     s.tick(s.clock() + 1)
     s.p.packet['maker_fills'][order['order_id']] = s.p.fill_proof(order, quantity='0.6')
@@ -72,10 +87,6 @@ async def test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdo
     assert number(qcut['state']['cash']) == number('1015.9136')
     assert number(pcut['state']['cash']) == number('1000') + number(pcut['state']['net'])
     assert s.r.snapshot()['total_cash'] is None and s.r.snapshot()['total_equity'] is None
-    # All durable Stop database handles belong to the active AIP06 fixture.
-    stop_path = s.root / 'f01-durable-stop.sqlite'
-    stop_ledger = PaperStopReceiptLedger(stop_path, connection_factory=guarded.sqlite_connect)
-    assert stop_ledger.reserve_fresh('synthetic-unified-session', 'SHUTDOWN_FLATTEN')['state'] == 'PENDING'
     outcome = s.r.stop()
     assert outcome['state'] == 'STOPPED', outcome
     assert s.journal.snapshot()['state']['finalized']['outcomes'] == outcome['lanes']
