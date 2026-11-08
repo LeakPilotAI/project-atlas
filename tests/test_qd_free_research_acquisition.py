@@ -204,3 +204,16 @@ def test_bounded_prices_only_bad_provider_count_refused():
     result=probe.inspect_bounded_prices_only(symbols=['SPY'],contact=None,
                                               credentials_path=None,inspect=inspect)
     assert result['refused_count']==1
+
+
+@pytest.mark.parametrize('bars,receipts',[(0,2),(3,0),(-1,2),(3,-1)])
+def test_bounded_prices_only_empty_or_missing_evidence_is_refused(bars,receipts):
+    def inspect(*,symbol,**kwargs):
+        return {'schema':'ATLAS_QD_PRICE_ONLY_RESEARCH_V1','symbol':symbol,
+                'completed_daily_bar_count':bars,'provider_receipt_count':receipts,
+                'fundamentals_available':False,'independent_analyst_targets_verified':False,
+                'operational_source_accepted':False,'paper_fill_authorized':False,
+                'live_order_authorized':False}
+    result=probe.inspect_bounded_prices_only(symbols=['SPY'],contact=None,
+                                              credentials_path=None,inspect=inspect)
+    assert result['acquired_count']==0 and result['refused_count']==1

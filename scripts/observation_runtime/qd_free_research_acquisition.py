@@ -102,9 +102,9 @@ def inspect_bounded_prices_only(*, symbols, contact, credentials_path,
             if (type(result) is not dict or result.get('schema')!='ATLAS_QD_PRICE_ONLY_RESEARCH_V1'
                     or result.get('symbol')!=symbol
                     or type(result.get('completed_daily_bar_count')) is not int
-                    or result['completed_daily_bar_count']<0
+                    or result['completed_daily_bar_count']<=0
                     or type(result.get('provider_receipt_count')) is not int
-                    or result['provider_receipt_count']<0
+                    or result['provider_receipt_count']<=0
                     or result.get('fundamentals_available') is not False
                     or result.get('independent_analyst_targets_verified') is not False
                     or result.get('operational_source_accepted') is not False
