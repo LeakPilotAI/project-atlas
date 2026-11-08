@@ -284,3 +284,35 @@ async def test_native_global_capacity_saturation_refuses_entry_and_preserves_sto
     assert journal.snapshot()['state']['finalized'] is not None
     assert journal.remaining_slots() == 1
     assert s.r.stop() == stopped
+
+@pytest.mark.asyncio
+async def test_native_five_store_capacity_arithmetic_vetoes_each_bottleneck_before_stop(system):
+    """Guarded real account reads plus arithmetic veto; not five-store saturation."""
+    from app.services.paper_capacity_envelope import assess_multi_store_envelope
+
+    s = system
+    await native_fixtures.cycle(s)
+    observations = {
+        'GLOBAL': s.journal.remaining_slots(),
+        'QUALITY_DIPS': s.q.writer.store.remaining_operations(),
+        'HYPERLIQUID': s.p.writer.store.remaining_operations(),
+        'PERP_ORDERS': s.p.orders.remaining_slots(),
+        'REPORTS': s.qstop.reports.archive.remaining_reports(),
+    }
+    assert all(type(count) is int and 0 < count <= 128 for count in observations.values())
+    baseline = (s.journal.snapshot(), s.q.writer._cut(), s.p.writer._cut(),
+                s.p.orders.snapshot())
+    for bottleneck in observations:
+        plans = {name: {'capacity': 128, 'used': 128 - count,
+                        'planned': 0, 'shutdown_reserve': 1}
+                 for name, count in observations.items()}
+        plans[bottleneck]['planned'] = observations[bottleneck]
+        verdict = assess_multi_store_envelope(plans)
+        assert verdict['fits_declared_envelope'] is False
+        assert verdict['operational_admission'] is False
+        assert verdict['native_load_verified'] is False
+        assert verdict['stores'][bottleneck]['fits_declared_envelope'] is False
+    assert (s.journal.snapshot(), s.q.writer._cut(), s.p.writer._cut(),
+            s.p.orders.snapshot()) == baseline
+    assert s.r.stop()['state'] == 'STOPPED'
+    assert s.journal.snapshot()['state']['finalized'] is not None
