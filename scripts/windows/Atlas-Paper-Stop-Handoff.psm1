@@ -71,6 +71,20 @@ function Invoke-AtlasAcceptedPaperStopHandoff([object]$Handoff = $null, [object]
         $result.outcome.lanes -isnot [System.Collections.IDictionary]) {
         throw 'PAPER_STOP_HANDOFF_SHUTDOWN_UNVERIFIED'
     }
+    # Final desktop Stop has two distinct PAPER accounts. An overall
+    # FLATTENED label is insufficient unless both lane receipts explicitly
+    # acknowledge flat positions and financial drain. No single-lane or
+    # caller-supplied success indicator can replace these receipts.
+    $lanes = $result.outcome.lanes
+    if ($lanes.Count -ne 2 -or
+        -not $lanes.Contains('QUALITY_DIPS') -or
+        -not $lanes.Contains('HYPERLIQUID') -or
+        $null -eq $lanes['QUALITY_DIPS'] -or
+        $null -eq $lanes['HYPERLIQUID'] -or
+        $lanes['QUALITY_DIPS'].state -cne 'ACKNOWLEDGED_FLAT_AND_DRAINED' -or
+        $lanes['HYPERLIQUID'].state -cne 'ACKNOWLEDGED_FLAT_AND_DRAINED') {
+        throw 'PAPER_STOP_HANDOFF_TWO_ACCOUNT_FLATNESS_UNVERIFIED'
+    }
     return $result
 }
 Export-ModuleMember -Function Test-AtlasPaperStopHandoff, Invoke-AtlasAcceptedPaperStopHandoff
