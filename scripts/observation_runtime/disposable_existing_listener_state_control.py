@@ -1,4 +1,4 @@
-"""Read-only state comparison of existing Windows TCP listeners, without endpoint disclosure."""
+"""Read-only Windows listener state comparison with redacted endpoint/process identities."""
 import ipaddress
 import json
 import os
@@ -18,20 +18,39 @@ def inspect():
     rows = decoded if isinstance(decoded, list) else [decoded]
     address_classes = {'loopback': 0, 'wildcard': 0, 'interface': 0}
     owner_classes = {'pid_zero': 0, 'pid_nonzero': 0}
-    for item in rows:
+
+    def address_class(item):
         address = ipaddress.ip_address(item['LocalAddress'].split('%')[0])
-        category = 'loopback' if address.is_loopback else ('wildcard' if address.is_unspecified else 'interface')
-        address_classes[category] += 1
+        return 'loopback' if address.is_loopback else ('wildcard' if address.is_unspecified else 'interface')
+
+    for item in rows:
+        address_classes[address_class(item)] += 1
         owner_classes['pid_zero' if item['OwningProcess'] == 0 else 'pid_nonzero'] += 1
+
+    ids = sorted(set(int(item['OwningProcess']) for item in rows[:10] if item['OwningProcess'] > 0))
+    owner_map = {}
+    if ids:
+        owner_ps = ("$ids=@(" + ','.join(map(str, ids)) + "); "
+                    "$ids | ForEach-Object { $proc=Get-Process -Id $_ -ErrorAction SilentlyContinue; "
+                    "[pscustomobject]@{pid=$_;category=if($null -eq $proc){'unavailable'}"
+                    "elseif($proc.ProcessName -match '^(python|powershell|pwsh)$'){'interpreter'}"
+                    "else{'other'}} } | ConvertTo-Json -Compress")
+        owner_result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', owner_ps],
+                                      capture_output=True, text=True, timeout=10, check=True)
+        owner_decoded = json.loads(owner_result.stdout) if owner_result.stdout.strip() else []
+        owner_items = owner_decoded if isinstance(owner_decoded, list) else [owner_decoded]
+        owner_map = {int(item['pid']): item['category'] for item in owner_items}
+
     sampled = []
     for item in rows[:10]:
         port = int(item['LocalPort'])
         native = ip_helper(port=port)
-        matching = [r for t in native['tables'] for r in t['rows']
+        matching = [r for table in native['tables'] for r in table['rows']
                     if r['local_port'] == port and r['local_address'] == item['LocalAddress']
                     and r['owner_pid'] == item['OwningProcess']]
-        sampled.append({'address_class': ('loopback' if ipaddress.ip_address(item['LocalAddress'].split('%')[0]).is_loopback else ('wildcard' if ipaddress.ip_address(item['LocalAddress'].split('%')[0]).is_unspecified else 'interface')),
+        sampled.append({'address_class': address_class(item),
                         'owner_class': 'pid_zero' if item['OwningProcess'] == 0 else 'pid_nonzero',
+                        'process_class': owner_map.get(item['OwningProcess'], 'pid_zero'),
                         'nettcp_state': item['State'],
                         'native_error': native['error'],
                         'native_states': sorted(set(r['state'] for r in matching)),

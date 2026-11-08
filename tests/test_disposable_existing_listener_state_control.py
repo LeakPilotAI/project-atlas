@@ -18,4 +18,4 @@ def test_existing_listener_control_redacts_endpoints_and_authority():
     assert sum(result['address_classes'].values()) == result['listener_count']
     assert sum(result['owner_classes'].values()) == result['listener_count']
     for item in result['samples']:
-        assert set(item) == {'address_class', 'owner_class', 'nettcp_state', 'native_error', 'native_states', 'owner_match'}
+        assert set(item) == {'address_class', 'owner_class', 'process_class', 'nettcp_state', 'native_error', 'native_states', 'owner_match'}
