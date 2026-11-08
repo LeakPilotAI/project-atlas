@@ -1,4 +1,4 @@
-﻿import json
+import json
 from scripts.observation_runtime.fmp_target_entitlement_probe import probe
 
 def test_no_key_never_calls_network():
@@ -17,3 +17,20 @@ def test_plan_refusal():
 
 def test_invalid_json_refused():
     assert probe(environ={'FMP_API_KEY':'secret'},fetch=lambda: b'no')['reason']=='FMP_REQUEST_OR_RESPONSE_REFUSED'
+
+
+def test_realistic_metadata_is_integrated_without_promoting_authority():
+    sample=[{'symbol':'MSFT','analystName':'Analyst A','analystCompany':'Firm A',
+             'publishedDate':'2026-11-07','priceTarget':500.0}]
+    result=probe(environ={'FMP_API_KEY':'redacted'},fetch=lambda: json.dumps(sample).encode())
+    assert result['metadata_review']['matching_symbol_count']==1
+    assert result['metadata_review']['attribution_field_present'] is True
+    assert result['metadata_review']['independent_originating_analysts_authenticated']==0
+    assert result['free_tier_entitlement_verified'] is False
+    assert result['operational_source_accepted'] is False
+    assert 'Analyst A' not in str(result)
+
+def test_invalid_rows_fail_closed():
+    result=probe(environ={'FMP_API_KEY':'redacted'},fetch=lambda: b'[null]')
+    assert result['reason']=='FMP_REQUEST_OR_RESPONSE_REFUSED'
+    assert result['operational_source_accepted'] is False

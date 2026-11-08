@@ -1,10 +1,11 @@
-﻿"""Bounded FMP analyst-target entitlement probe; never promotes market authority."""
+"""Bounded FMP analyst-target entitlement probe; never promotes market authority."""
 import json
 import os
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 from scripts.observation_runtime.fmp_candidate_access import KEY_NAMES
+from scripts.observation_runtime.fmp_target_news_review import review_target_news
 
 class _NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
@@ -41,6 +42,7 @@ def probe(*, environ=None, fetch=None):
             result['reason']='FMP_UNEXPECTED_RESPONSE'
         else:
             result['returned_record_count']=min(len(payload),1000)
+            result['metadata_review']=review_target_news(payload, symbol='MSFT')
     except (HTTPError,URLError,TimeoutError,OSError,ValueError,TypeError,UnicodeError):
         result['reason']='FMP_REQUEST_OR_RESPONSE_REFUSED'
     return result
