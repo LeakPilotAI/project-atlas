@@ -31,3 +31,10 @@ Canonical gate status: 0/9 accepted as of this preparation. Runtime-only gate te
 - Native host identity and resource-count evidence saved locally (ignored diagnostics, not committed) at `logs/diagnostics/final-launch-commissioning-20261108/two-account-native-storage-readonly-inventory.json`.
 - 28 focused offline inception/activation boundary tests passed with no failure; tests do not substitute for enrollment, financial inception or launch acceptance.
 - Next preparation: exact create-only Hyperliquid account-resource proposal and both account enrollment/manifest binding, with QD existing resources preserved. Runtime Start/Stop and browser/listener remain FINAL LAUNCH ONLY.
+
+## Approved native HL directory creation — independently verified 2026-11-08
+- Operator approved the pinned create-only Hyperliquid directory proposal `docs/ATLAS_HYPERLIQUID_NATIVE_CREATE_ONLY_PROPOSAL_2026-11-08.json` (SHA256 `ea0ac1c16da8994b1f32bce3ab72ba4ad8651a0c76d019c121539bf0ec5f6c4c`).
+- Nine exact directories were created using native Windows create-only operations, with separately verified native identities. All six final HL account roles are empty and were independently reread in a separate process. Existing QD six native account roles were independently reread as distinct and empty.
+- Host-only durable receipt: `logs/diagnostics/final-launch-commissioning-20261108/hl-native-create-20261108.json`, SHA256 `56f4c9c89a44b34d3899dc6893715baebfd77499ccf487c4455458b33d59c40d`. Journal preserved at adjacent `.pending.jsonl` path. No financial account data, native inception, activation, provider traffic or Atlas Start/Stop occurred.
+- All 104 focused offline account/inception/policy/perp tests passed after native directory creation; no failures.
+- Next: prepare both account-specific manifest/enrollment/report-scope bundles using observed real native root IDs and selected release bindings. Any required writer-process identities, source rights, inception publication and activation still need their own genuine authority/evidence. Runtime-dependent acceptance remains FINAL-LAUNCH DEFERRED, not waived.
