@@ -173,3 +173,34 @@ def test_prices_only_rejects_bad_symbol_before_credentials(monkeypatch,symbol):
     monkeypatch.setattr(probe.Credentials,'load',lambda _:pytest.fail('credentials accessed'))
     with pytest.raises(ValueError,match='QD_REAL_SYMBOL_REQUIRED'):
         probe.inspect_prices_only(symbol=symbol,contact=None,credentials_path=Path('unused'))
+
+
+def test_bounded_prices_only_cli_partial_failure_exit_two(monkeypatch,capsys):
+    monkeypatch.setattr(probe,'inspect_bounded_prices_only',lambda **kwargs:{
+        'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','refused_count':1,
+        'results':[{'symbol':'IWM','status':'REFUSED'}],
+        'paper_fill_authorized':False})
+    assert probe.main(['--prices-only','--symbols','SPY','IWM'])==2
+    import json
+    assert json.loads(capsys.readouterr().out)['refused_count']==1
+
+
+def test_bounded_prices_only_cli_all_success_exit_zero(monkeypatch,capsys):
+    monkeypatch.setattr(probe,'inspect_bounded_prices_only',lambda **kwargs:{
+        'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','refused_count':0,
+        'results':[{'symbol':'SPY'}],'paper_fill_authorized':False})
+    assert probe.main(['--prices-only','--symbols','SPY'])==0
+    import json
+    assert json.loads(capsys.readouterr().out)['refused_count']==0
+
+
+def test_bounded_prices_only_bad_provider_count_refused():
+    def inspect(*,symbol,**kwargs):
+        return {'schema':'ATLAS_QD_PRICE_ONLY_RESEARCH_V1','symbol':symbol,
+                'completed_daily_bar_count':True,'provider_receipt_count':2,
+                'fundamentals_available':False,'independent_analyst_targets_verified':False,
+                'operational_source_accepted':False,'paper_fill_authorized':False,
+                'live_order_authorized':False}
+    result=probe.inspect_bounded_prices_only(symbols=['SPY'],contact=None,
+                                              credentials_path=None,inspect=inspect)
+    assert result['refused_count']==1
