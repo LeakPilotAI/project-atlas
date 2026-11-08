@@ -13,7 +13,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "backend"))
-from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery, export_recoverable_journal
 from app.investment.alpaca_iex import Credentials
 from app.investment.free_research_providers import FreeResearchBundle
 from app.investment.free_research_transport import FreeResearchClient, ResearchRefused
@@ -208,6 +208,8 @@ def main(argv=None):
     parser.add_argument("--symbol", default="MSFT")
     parser.add_argument("--prices-only", action="store_true", help="Read-only price history without SEC fundamentals")
     parser.add_argument("--symbols", nargs="+", help="Up to eight distinct real symbols; diagnostic only")
+    parser.add_argument("--export-diagnostic-recovery", type=Path, help="Damaged journal source; requires --recovery-output")
+    parser.add_argument("--recovery-output", type=Path, help="New exclusive verified-prefix export destination")
     parser.add_argument("--plan-diagnostic-recovery", type=Path, help="Read-only recovery plan for an interrupted journal")
     parser.add_argument("--inspect-diagnostic-journal", type=Path, help="Inspect existing read-only journal without contacting provider")
     parser.add_argument("--diagnostic-journal", type=Path, help="Append sanitized bounded price-only result to existing directory")
@@ -215,6 +217,16 @@ def main(argv=None):
     parser.add_argument("--sec-contact", default=os.environ.get("ATLAS_SEC_CONTACT"))
     args = parser.parse_args(argv)
     try:
+        if args.export_diagnostic_recovery is not None or args.recovery_output is not None:
+            if (args.export_diagnostic_recovery is None or args.recovery_output is None
+                    or args.inspect_diagnostic_journal is not None
+                    or args.plan_diagnostic_recovery is not None or args.diagnostic_journal is not None
+                    or args.prices_only or args.symbols is not None or args.diagnostic_rounds != 1):
+                raise ResearchRefused('QD_RECOVERY_EXPORT_STANDALONE_REQUIRED')
+            result=export_recoverable_journal(source=args.export_diagnostic_recovery,
+                                              destination=args.recovery_output)
+            print(json.dumps(result,sort_keys=True))
+            return 0
         if args.plan_diagnostic_recovery is not None:
             if (args.inspect_diagnostic_journal is not None or args.diagnostic_journal is not None
                     or args.prices_only or args.symbols is not None or args.diagnostic_rounds != 1):

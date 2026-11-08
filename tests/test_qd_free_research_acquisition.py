@@ -379,3 +379,34 @@ def test_cli_recovery_plan_rejects_unrecoverable(tmp_path,capsys):
 def test_cli_recovery_plan_refuses_mixed_modes(tmp_path,capsys):
     assert probe.main(['--plan-diagnostic-recovery',str(tmp_path/'journal'),
                        '--prices-only','--symbols','SPY'])==1
+
+
+def test_cli_export_diagnostic_recovery_preserves_original(tmp_path,monkeypatch,capsys):
+    from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic
+    src=tmp_path/'damaged.jsonl';dst=tmp_path/'recovered.jsonl'
+    journal_diagnostic({'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':['SPY'],
+                        'refused_count':0,'operational_source_accepted':False,
+                        'paper_fill_authorized':False,'live_order_authorized':False},path=src)
+    valid=src.read_bytes()
+    src.write_bytes(valid+b'{"interrupted":')
+    original=src.read_bytes()
+    monkeypatch.setattr(probe.Credentials,'load',lambda _:pytest.fail('provider accessed'))
+    assert probe.main(['--export-diagnostic-recovery',str(src),'--recovery-output',str(dst)])==0
+    import json
+    assert json.loads(capsys.readouterr().out)['resume_authorized'] is False
+    assert src.read_bytes()==original and dst.read_bytes()==valid
+
+def test_cli_export_diagnostic_recovery_requires_both_paths(tmp_path,capsys):
+    assert probe.main(['--export-diagnostic-recovery',str(tmp_path/'damaged')])==1
+    assert 'REFUSED' in capsys.readouterr().out
+
+def test_cli_export_diagnostic_recovery_refuses_existing_output(tmp_path,capsys):
+    from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic
+    src=tmp_path/'damaged.jsonl';dst=tmp_path/'recovered.jsonl'
+    journal_diagnostic({'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':['SPY'],
+                        'refused_count':0,'operational_source_accepted':False,
+                        'paper_fill_authorized':False,'live_order_authorized':False},path=src)
+    src.write_bytes(src.read_bytes()+b'{"interrupted":')
+    dst.write_text('preserve')
+    assert probe.main(['--export-diagnostic-recovery',str(src),'--recovery-output',str(dst)])==1
+    assert dst.read_text()=='preserve'
