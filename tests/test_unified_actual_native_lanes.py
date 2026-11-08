@@ -99,6 +99,22 @@ async def test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdo
         for field in ('cash', 'gross', 'net'):
             assert number(account[field]) == number(financial['state'][field])
     assert accounts['startup_authorized'] is False
+    # Reopen a synthetic Stop intent as a fresh reader and reconcile it with
+    # actual disposable two-lane custody cuts; no desktop Stop authority.
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    stop_path = Path(os.environ['ATLAS_PERP_ORDER_TEST_ROOT']) / 'f01-stop-intent.sqlite'
+    stop_ledger = PaperStopReceiptLedger(stop_path)
+    stop_ledger.reserve_fresh('synthetic-unified-session', 'SHUTDOWN_FLATTEN')
+    recovered = PaperStopReceiptLedger(stop_path)
+    observed = recovered.observe_native_account_restart(
+        'synthetic-unified-session', custody=s.custody,
+        grant={'session_id': 'synthetic-unified-session'})
+    assert observed['stop_record_state'] == 'PENDING'
+    assert observed['exposure_observed'] is False
+    assert observed['reconciliation_required'] is True
+    assert observed['startup_authorized'] is False
+    assert observed['financial_authorized'] is False
+    assert recovered.recover('synthetic-unified-session', 'SHUTDOWN_FLATTEN')['state'] == 'SHUTDOWN_UNVERIFIED'
 
 
 @pytest.mark.asyncio
@@ -261,3 +277,19 @@ async def test_missing_global_final_publication_refuses_clean_shutdown_and_new_s
         for field in ('cash', 'gross', 'net'):
             assert number(account[field]) == number(financial['state'][field])
     assert accounts['startup_authorized'] is False
+    # Reopen a synthetic Stop intent as a fresh reader and reconcile it with
+    # actual disposable two-lane custody cuts; no desktop Stop authority.
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    stop_path = Path(os.environ['ATLAS_PERP_ORDER_TEST_ROOT']) / 'f01-stop-intent.sqlite'
+    stop_ledger = PaperStopReceiptLedger(stop_path)
+    stop_ledger.reserve_fresh('synthetic-unified-session', 'SHUTDOWN_FLATTEN')
+    recovered = PaperStopReceiptLedger(stop_path)
+    observed = recovered.observe_native_account_restart(
+        'synthetic-unified-session', custody=s.custody,
+        grant={'session_id': 'synthetic-unified-session'})
+    assert observed['stop_record_state'] == 'PENDING'
+    assert observed['exposure_observed'] is False
+    assert observed['reconciliation_required'] is True
+    assert observed['startup_authorized'] is False
+    assert observed['financial_authorized'] is False
+    assert recovered.recover('synthetic-unified-session', 'SHUTDOWN_FLATTEN')['state'] == 'SHUTDOWN_UNVERIFIED'
