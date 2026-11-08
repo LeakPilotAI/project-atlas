@@ -1,4 +1,4 @@
-﻿"""Offline-only durable PAPER stop intent/receipt ledger; grants no runtime authority."""
+"""Offline-only durable PAPER stop intent/receipt ledger; grants no runtime authority."""
 import json
 import sqlite3
 from contextlib import contextmanager
@@ -96,6 +96,31 @@ class PaperStopReceiptLedger:
             raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
         return {"state": "FINISHED", "mode": mode, "receipt": receipt}
 
+    def summarize_recovery(self):
+        """Read-only all-session recovery inventory; never certifies positions flat."""
+        with self._connect() as db:
+            rows = db.execute("SELECT mode,state,receipt FROM stop_receipts").fetchall()
+        pending = finished = 0
+        for mode, state, serialized in rows:
+            if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY"):
+                raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+            if state == "PENDING" and serialized is None:
+                pending += 1
+                continue
+            if state != "FINISHED" or serialized is None:
+                raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+            try:
+                receipt = json.loads(serialized)
+            except (ValueError, TypeError) as exc:
+                raise StopReceiptConflict("STOP_LEDGER_CORRUPT") from exc
+            if (not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED"
+                    or not isinstance(receipt.get("outcome"), dict)
+                    or receipt["outcome"].get("mode") != mode):
+                raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
+            finished += 1
+        return {"schema": "ATLAS_PAPER_STOP_RECOVERY_INVENTORY_V1",
+                "pending_unverified": pending, "receipts_recorded_not_flat_verified": finished,
+                "financial_authorized": False, "startup_authorized": False}
     def recover(self, session, mode):
         """Read-only restart inspection: pending is NEVER proof of flat positions."""
         row = self.reserve_existing(session, mode)

@@ -177,3 +177,33 @@ def test_sqlite_connection_closed_after_normal_and_failed_ledger_operations(tmp_
         with pytest.raises(sqlite3.ProgrammingError, match="closed"):
             handle.execute("SELECT 1")
 
+
+
+def test_recovery_inventory_tracks_pending_and_recorded_without_flat_claim(tmp_path):
+    path = tmp_path / 'stop.sqlite'
+    ledger = PaperStopReceiptLedger(path)
+    ledger.reserve_fresh('a', 'SHUTDOWN_FLATTEN')
+    ledger.reserve_fresh('b', 'EMERGENCY')
+    ledger.finish('b', 'EMERGENCY', {'phase': 'FINISHED', 'outcome': {'mode': 'EMERGENCY', 'status': 'SHUTDOWN_INCOMPLETE'}})
+    expected = {'schema': 'ATLAS_PAPER_STOP_RECOVERY_INVENTORY_V1',
+                'pending_unverified': 1, 'receipts_recorded_not_flat_verified': 1,
+                'financial_authorized': False, 'startup_authorized': False}
+    assert ledger.summarize_recovery() == expected
+    assert PaperStopReceiptLedger(path).summarize_recovery() == expected
+
+
+def test_recovery_inventory_fails_closed_on_corrupt_row(tmp_path):
+    path = tmp_path / 'stop.sqlite'
+    ledger = PaperStopReceiptLedger(path)
+    ledger.reserve_fresh('a', 'SHUTDOWN_FLATTEN')
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE stop_receipts SET state='FINISHED',receipt='{}' WHERE session='a'")
+    with pytest.raises(StopReceiptConflict, match='CORRUPT'):
+        ledger.summarize_recovery()
+
+
+def test_recovery_inventory_empty_never_authorizes(tmp_path):
+    result = PaperStopReceiptLedger(tmp_path / 'stop.sqlite').summarize_recovery()
+    assert result['pending_unverified'] == 0
+    assert result['receipts_recorded_not_flat_verified'] == 0
+    assert result['startup_authorized'] is False
