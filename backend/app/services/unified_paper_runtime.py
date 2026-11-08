@@ -358,24 +358,81 @@ class UnifiedPaperRuntime:
             self.observations = dict(zip(LANES, results, strict=True))
             return self.snapshot()
 
-    async def run(self, *, seconds, interval=1, stop=None):
-        """Bounded continuous supervision; accepted lane strategies own decisions.
+    async def run(self, *, seconds, interval=1, stop=None, stop_signal=None):
+        """Bounded supervision; explicitly injected owner-only desktop Stop.
 
-        No signals or unknown decisions cause no trade. A failed lane's proposal
-        does not stop the other scanner. Financial UNKNOWN closes global admission.
-        Expiry ends monitoring in PAUSED; it never silently renews a session.
+        The optional Windows event does not create a financial owner or grant.
+        It must already belong to this exact personal installed runtime. A
+        confirmed signal returns the durable two-account Stop receipt; an
+        ambiguous signal raises without replay. Ordinary runs retain the
+        historical read-only snapshot result and are never auto-activated.
         """
         if (type(seconds) not in (int, float) or not 0 < seconds <= 86400
                 or type(interval) not in (int, float) or not .05 <= interval <= 5
                 or self.run_lock.locked()):
             raise ValueError("UNIFIED_BOUNDED_SINGLE_RUN_REQUIRED")
+        if stop_signal is not None:
+            from threading import get_ident
+            from scripts.observation_runtime.personal_paper_python_stop_signal import (
+                InstalledPythonPaperStopSignal,
+            )
+            from app.services.personal_installed_stop_owner import PersonalInstalledPaperStopOwner
+            owner = getattr(stop_signal, '_owner', None)
+            if (type(stop_signal) is not InstalledPythonPaperStopSignal
+                    or type(owner) is not PersonalInstalledPaperStopOwner
+                    or owner._runtime is not self
+                    or stop_signal._session_id != owner.session_id
+                    or type(self.grant) is not dict
+                    or self.grant.get('session_id') != stop_signal._session_id
+                    or stop_signal._creator_thread != get_ident()
+                    or stop_signal._used or stop_signal._closed
+                    or self.state not in ('RUNNING', 'PAUSED')
+                    or owner.verify_session() is not True):
+                raise ValueError('UNIFIED_ACCEPTED_OWNER_STOP_SIGNAL_REQUIRED')
+        def stop_request():
+            if stop_signal is None:
+                return None
+            # Native nonblocking check stays on the same Python owner thread.
+            # It either returns NO_STOP_SIGNAL or independently verifies an
+            # exact FINISHED/FLATTENED two-lane durable SQLite receipt.
+            try:
+                result = stop_signal.poll(0)
+                if type(result) is not dict:
+                    raise ValueError('UNIFIED_OWNER_STOP_RECEIPT_UNVERIFIED')
+                if result.get('status') == 'NO_STOP_SIGNAL':
+                    return None
+                if (result.get('schema') != 'QD_CONTROL_STOP_V1'
+                        or result.get('phase') != 'FINISHED'):
+                    raise ValueError('UNIFIED_OWNER_STOP_RECEIPT_UNVERIFIED')
+            except BaseException:
+                # Even an uncertain/lost response may follow a partial stop;
+                # never admit another entry or resume a scan in that state.
+                self.entry_closed.set()
+                self.uncertain = True
+                if self.state in ('RUNNING', 'PAUSED'):
+                    self.state = 'STOP_INCOMPLETE'
+                raise
+            self.entry_closed.set()
+            return result
+
         async with self.run_lock:
             deadline = asyncio.get_running_loop().time() + seconds
             try:
                 while (asyncio.get_running_loop().time() < deadline
                        and not (stop and stop.is_set()) and self.state in ("RUNNING", "PAUSED")):
+                    receipt = stop_request()
+                    if receipt is not None:
+                        return receipt
                     await self.poll()
+                    # A user may request shutdown while awaiting two sources;
+                    # do not invoke planners or dispatch another trade afterward.
+                    receipt = stop_request()
+                    if receipt is not None:
+                        return receipt
                     for lane in LANES:
+                        receipt = stop_request()
+                        if receipt is not None:
+                            return receipt
                         row = self.observations[lane]
                         planner = getattr(self.lanes[lane], "next_proposal", None)
                         if planner is None or row["connection"] != "CONNECTED" or row["session"] != "OPEN":
@@ -392,6 +449,11 @@ class UnifiedPaperRuntime:
                         except Exception:  # noqa: BLE001 - isolate read-only strategy planning; never echo provider errors
                             self.observations[lane] = {**row, "signal": None, "connection": "UNAVAILABLE"}
                             continue
+                        # Recheck after any awaited planner, before admitting
+                        # its proposed financial action. Stop always wins.
+                        receipt = stop_request()
+                        if receipt is not None:
+                            return receipt
                         if proposal is not None:
                             try:
                                 if proposal.get('kind') == 'RESTING_ORDER':
@@ -406,9 +468,12 @@ class UnifiedPaperRuntime:
                             except ValueError:
                                 if self.uncertain:
                                     break
-                    await asyncio.sleep(min(interval, max(0, deadline - asyncio.get_running_loop().time())))
+                    # An active stop owner must be checked frequently even if
+                    # the normal strategy scan interval is long.
+                    await asyncio.sleep(min(interval if stop_signal is None else min(interval, .2),
+                                            max(0, deadline - asyncio.get_running_loop().time())))
             finally:
-                self.pause()  # No automatic resumption after the bounded run ends.
+                self.pause()  # Never resume automatically after a bounded run.
         return self.read_snapshot()
 
     def dispatch(self, lane, proposal):
