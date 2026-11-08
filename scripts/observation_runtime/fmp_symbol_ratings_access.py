@@ -43,7 +43,7 @@ def probe(*, environ=None, fetch=None, symbol='MSFT'):
             result['reason']=('FMP_ORIGIN_AND_LICENSE_REVIEW_REQUIRED' if result['metadata_review']['symbol_filter_respected'] else 'FMP_SYMBOL_FILTER_OR_EMPTY_RESULT_REFUSED')
     except HTTPError as exc:
         status=exc.code
-        result['reason']=('FMP_HTTP_'+str(status) if status in (400,401,403,404,408,422,429,500,502,503,504) else 'FMP_HTTP_OTHER')
+        result['reason']=('FMP_HTTP_'+str(status) if isinstance(status,int) and 100<=status<=599 else 'FMP_HTTP_INVALID_STATUS')
     except TimeoutError:
         result['reason']='FMP_TIMEOUT'
     except URLError:

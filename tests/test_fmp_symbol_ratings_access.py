@@ -1,4 +1,4 @@
-﻿import json
+import json
 from scripts.observation_runtime.fmp_symbol_ratings_access import probe
 
 
@@ -36,7 +36,7 @@ def test_oversized_response_refused():
 from urllib.error import HTTPError, URLError
 import pytest
 
-@pytest.mark.parametrize('status,reason',[(401,'FMP_HTTP_401'),(403,'FMP_HTTP_403'),(404,'FMP_HTTP_404'),(429,'FMP_HTTP_429'),(418,'FMP_HTTP_OTHER')])
+@pytest.mark.parametrize('status,reason',[(401,'FMP_HTTP_401'),(403,'FMP_HTTP_403'),(404,'FMP_HTTP_404'),(429,'FMP_HTTP_429'),(418,'FMP_HTTP_418'),(402,'FMP_HTTP_402'),(410,'FMP_HTTP_410')])
 def test_http_error_category_no_secret_leak(status,reason):
     def failed():
         raise HTTPError('https://redacted.invalid/?apikey=secret',status,'secret',None,None)
