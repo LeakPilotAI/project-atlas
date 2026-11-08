@@ -50,8 +50,8 @@ if ($signature.Status -ne 'Valid' -or
 $oldPythonPath = $env:PYTHONPATH
 try {
     $env:PYTHONPATH = (Join-Path $root 'backend') + ';' + $root
-    $runtime = 'atlas-v4-time-qualification-only'
-    $qualityScript = 'from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock; c=LocalWindowsClock(expected_source="time.cloudflare.com,0x8 time.google.com,0x8",runtime_id="atlas-v4-time-qualification-only",lifetime=240); c.require_operational("atlas-v4-time-qualification-only"); print("NATIVE_CLOCK_QUALITY_ACCEPTED:"+str(c.evidence["bound_ms"])+"ms")'
+    # Run the checked-in, read-only module by name. Passing Python -c as a
+    # PowerShell native argument on Windows can strip the nested quotes.
     for ($index = 0; $index -lt $Samples; $index++) {
         if ($index -ne 0) { Start-Sleep -Seconds $IntervalSeconds }
         Assert-AtlasTrustedTimeSource
@@ -60,7 +60,7 @@ try {
             throw ('ATLAS_V4_TIME_SERVICE_RESYNC_REFUSED:' + $LASTEXITCODE)
         }
         Assert-AtlasTrustedTimeSource
-        & $python -B -c $qualityScript
+        & $python -B -m scripts.observation_runtime.atlas_v4_time_quality_probe
         if ($LASTEXITCODE -ne 0) {
             throw ('ATLAS_V4_TIME_NATIVE_QUALITY_REFUSED:' + $LASTEXITCODE)
         }

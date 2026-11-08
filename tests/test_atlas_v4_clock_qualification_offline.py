@@ -50,7 +50,9 @@ def test_clock_maintenance_never_mutates_trusted_peers_or_atlas_installation():
     assert s.index("IsInRole(") < s.index("& $w32tm '/resync' '/rediscover'")
     assert "time.cloudflare.com,0x8 time.google.com,0x8" in s
     assert "Get-AuthenticodeSignature -LiteralPath $w32tm" in s
-    assert "LocalWindowsClock(expected_source=" in s
+    assert "& $python -B -m scripts.observation_runtime.atlas_v4_time_quality_probe" in s
+    assert "& $python -B -c" not in s
+    assert "$qualityScript" not in s
     for forbidden in ("Set-ItemProperty", "New-ItemProperty", "Set-Service", "sc.exe",
                       "schtasks", "Install-DesktopShortcut", "--execute-approved-unselected",
                       "Atlas-Launch.ps1", "Atlas-Stop.ps1", "taskkill", "Stop-Process",
@@ -75,3 +77,61 @@ def test_existing_installer_clock_authority_not_replaced_by_maintenance_script()
     assert "clock.require_operational(runtime)" in installer
     assert "SEPARATE_CODE_INSTALL_AUTHORIZATION_REQUIRED" in installer
     assert "Atlas-V4-Windows-Time-Qualification" not in installer
+
+
+def test_qualified_clock_python_module_preserves_genuine_authority_and_revokes(monkeypatch, capsys):
+    from scripts.observation_runtime import atlas_v4_time_quality_probe as probe
+
+    observed = []
+
+    class SyntheticClock:
+        def __init__(self, *, expected_source, runtime_id, lifetime):
+            observed.append((expected_source, runtime_id, lifetime))
+            self.evidence = {"bound_ms": 175}
+
+        def require_operational(self, runtime_id):
+            observed.append(("require_operational", runtime_id))
+
+        def revoke(self):
+            observed.append(("revoke",))
+
+    monkeypatch.setattr(probe, "LocalWindowsClock", SyntheticClock)
+    probe.main()
+    assert observed == [
+        (probe.EXPECTED_PEERS, probe.RUNTIME_ID, 240),
+        ("require_operational", probe.RUNTIME_ID),
+        ("revoke",),
+    ]
+    assert capsys.readouterr().out.strip() == "NATIVE_CLOCK_QUALITY_ACCEPTED:175ms"
+
+
+def test_qualified_clock_python_module_revokes_even_on_quality_refusal(monkeypatch):
+    from scripts.observation_runtime import atlas_v4_time_quality_probe as probe
+
+    closed = []
+
+    class RefusingClock:
+        def __init__(self, **kwargs):
+            pass
+
+        def require_operational(self, runtime_id):
+            raise ValueError("OFFLINE_SIMULATED_CLOCK_REFUSAL")
+
+        def revoke(self):
+            closed.append(True)
+
+    monkeypatch.setattr(probe, "LocalWindowsClock", RefusingClock)
+    with pytest.raises(ValueError, match="OFFLINE_SIMULATED_CLOCK_REFUSAL"):
+        probe.main()
+    assert closed == [True]
+
+
+def test_qualification_probe_is_read_only_and_never_mutates_time_or_installs():
+    s = (ROOT / "scripts/observation_runtime/atlas_v4_time_quality_probe.py").read_text(encoding="utf-8-sig")
+    assert 'from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock' in s
+    assert "clock.require_operational(RUNTIME_ID)" in s
+    assert "clock.revoke()" in s
+    assert "time.cloudflare.com,0x8 time.google.com,0x8" in s
+    for forbidden in ("subprocess.run", "w32tm", "Set-ItemProperty", "install_verified_release",
+                      "PAPER_START", "--execute-approved-unselected", "os.system", "Start-Process"):
+        assert forbidden not in s
