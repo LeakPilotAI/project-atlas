@@ -1,0 +1,217 @@
+# Project Atlas — final PAPER production readiness audit
+
+**November 8, 2026 — America/Chicago.** Repository: `D:\Work\Project Atlas`. Branch: `chatgpt/atlas-rebuild-v1`. Audited starting HEAD: **4832931c39221591bb3f4862ea2d1014d3b45272**. This audit and the narrow Stop-binding repair are committed together; the resulting commit is reported by Git, not invented inside its own contents.
+
+## 1. Executive readiness verdict and authority
+
+**NOT READY — SPECIFIC EXTERNAL BLOCKERS REMAIN.** Independently accepted operational gates: **0/9; 0% complete, 100% remaining**. This is not a coding percentage. Atlas already contains both strategy engines, research producers, accounting, unified supervision, portfolio custody, durable Stop receipts, once-only inception, dashboard contracts and notification recovery. Replacing these would duplicate working code.
+
+There are real integration and long-run operating gaps too. This is not merely a browser problem: accepted native ports/accounts/sources are absent, current desktop shortcuts are observation-only, newer source changes are not installed, and short-lived authority/finite journals do not demonstrate a months-long service. The source repair here closes two existing Stop-port mismatches; it does not certify the complete system.
+
+The recorded sole-operator conditional PAPER commissioning authority remains valid. No outside issuer/custodian/committee or equivalent general approval is requested again. Technical prerequisites still apply. Pursuing independent review of a browser/listener equivalent is authorized; self-approving or implementing an unaccepted replacement is not. All 21 historical decisions and B1/C1/D1/E1 remain unpromoted. AIP-01–05 retain their source/disposable completion (5/18); AIP-06 native acceptance remains blocked.
+
+This is the current reconciliation document. Older reports, successful tests, failures and consumed grants remain historical evidence. Later implementation supersedes an old assertion that code is missing; it never supersedes missing operational proof.
+
+## 2. Audit coverage and limitations
+
+Inventoried **2,856 tracked files** and read **2,832 relevant text/source/configuration/test/deployment/documentation files**, **27,025,871 bytes**: backend 525, scripts 338, frontend 76, tests 1,197, docs 682, plus root/configuration assets. Generated caches, environments, Git internals, binary assets and unrelated projects were excluded; relevant dependency manifests were inspected. Tracked Python definitions/imports parsed without syntax errors. Critical paths were then traced through source bodies, imports, callers, configuration, tests and native evidence. This is a complete content/index scan plus focused semantic tracing, not a line-by-line security certification or a claim that every test ran.
+
+Relevant untracked source/prototypes were inventoried separately. Existing backups, `paper_segmented_history.py`, the observation Stop helper and untracked native/offline tests are preserved. They were not silently adopted into a release or committed. The entry tracked working tree was clean. Private source hashes, call graph, test XML and raw native records are in `logs/diagnostics/final-repository-audit-20261108/`; generated evidence and secrets are not committed.
+
+## 3. Current Windows evidence and source/install reconciliation
+
+| Item | Observation from this execution | Consequence |
+|---|---|---|
+| Selection | Locked native read matched revision **7** and its exact prior receipt/head; selected application **4fad7ac195fd0b36f1b81577fabf1b8f69932eb9** | Metadata selection is not current payload acceptance. No selection/rollback performed. |
+| Support | Protected package **2bd578c209d2cc046bd9de7cf4cc51049081f6649ea48e660efcf94d9ca34f1d**, receipt SHA256 **687309e9e83ef4774e9e5df3549655553564428d8e5cc986abb76c2f58f1cc32**, passed existing support verification before payload inspection | Preserved; not reinstalled. |
+| Actual application verifier | **REFUSED PERSONAL_RELEASE_UNLISTED_NAMESPACE**, 72.781 s | November 7 successful readback is historical, not current clearance. No application launch attempted. |
+| Namespace | **10,451 listed / 10,751 observed files; 300 unlisted .pyc files; 40 unlisted directories; 0 missing listed files; 0 reparse entries** | Do not delete the caches inside the frozen image. Need legitimate create-only recovery after preflight passes. |
+| Added-file timestamps | UTC 2026-11-08 03:40:19.531089–03:40:23.552016, approximately November 7 21:40 Central | Consistent with later bytecode writing. Responsible PID/command is **not established**. No OS-defect or culprit claim. |
+| Source/install difference | **40 tracked backend/observation/Windows paths differ from installed source 4fad7ac to audited HEAD 4832931**, before this execution's changes | Recent Stop/account-readback repairs are source work, not installed functionality. |
+| Windows Time | **Running, Automatic**; effective source **time.google.com,0x8**; configured NTP peers **time.cloudflare.com,0x8 time.google.com,0x8** | Differs from earlier time.windows.com,0x9 binding. This execution changed nothing. Restricted registry read refused; normal read-only query succeeded. |
+| Time quality | Leap 0; stratum 2; last error 0; delay **0.0274215 s**, dispersion **0.0527832 s**, phase offset **0.0258107 s**, sync age **827.886 s** | Atlas refused **CLOCK_STALE_OR_NEGATIVE_QUALITY**. No qualifying current uncertainty/capability issued. Keep 1,000 ms / 120 s requirements; low offset is not acceptance. |
+| Browser inventory | Approved interface exposes IAB and MCP Apps; **no trusted Windows Chrome tab provider** | Open Chrome windows do not establish the provider. No navigation, CDP execution, profile change or browser witness attempted. |
+| Actual desktop shortcuts | Project Atlas.lnk invokes **Atlas-Observation-Shortcut.ps1**; Stop Atlas.lnk invokes **Atlas-Observation-Shortcut-Stop.ps1** | Observation-only. Read via WScript.Shell without Save/invocation. Root ATLAS.bat/ATLAS-STOP.bat instead reach blocked legacy financial scripts. |
+| Custody inventory | PersonalPaper has no activation child; QD has two ordinary children with no direct publication files; no verified HL inception | Directory presence is not account or source authority. No balance inferred. |
+
+The prior genuine nonfinancial Stop **0.6088417 s**, HTTP 200 and three-reader terminal cleanup remain historical diagnostics. They do not cure today's namespace refusal, prove browser rendering, certify financial flattening or establish two-cycle acceptance. Native readback closed through its failure path and its diagnostic process exited. No operational runtime was started or left running.
+
+## 4. Complete capability inventory
+
+**A** implemented/accepted in its explicitly stated domain; **B** implemented/tested, operational acceptance incomplete; **C** implemented but not connected to the commissioned path; **D** concrete partial implementation; **E** required feature wholly absent; **F** external/native evidence blocked; **G** outside this approved activation scope. Test references are coverage/evidence locations, not a claim every module ran today. Paths are repository-relative to the root above. No complete current financial strategy is A.
+
+| Capability | Class | Implementation | Tests/evidence | Runtime/native status, remaining action and dependency |
+|---|---|---|---|---|
+| QD V1/V2 patient-capital research, V3 ranking/margins | B | backend/app/investment/quality_dips_v2.py; quality_dips_v3.py | tests/test_quality_dips_v3_validation.py and V2/V3 families | Existing strategy retained; current eligible valuation/source evidence required. No replacement strategy needed. |
+| Original SEC filings/quarterly earnings exhibits | B | backend/app/investment/sec_edgar_research.py; historical earnings method | docs/QD_HIST_EPS_EXHIBIT_V1_2026-10-29.md; earnings tests | Real historical research exists; not current executable authority. No annual/YTD subtraction as quarterly EPS. |
+| Non-analyst valuation/share-basis controls | B | backend/app/investment/quality_dips_v2_valuation.py; historical method modules | Historical valuation/filing/share evidence tests | Preserve weighted diluted vs outstanding shares, splits, accounting basis and explicit non-analyst labeling. |
+| Analyst target provenance/freshness | B | backend/app/investment/quality_dips_v2_target_cache.py; research contracts | Current valuation/provenance suites | Retrieved targets are not original publication dates. Exclude unverified evidence; no fabricated fallback. |
+| Broad stocks/ETF discovery and pagination | B | quality_dips_market_roster.py; robinhood_discovery_research.py; robinhood_universe_research.py | Market-roster/cohort suites; retained two-directory data | Historical 12,742-reference roster exists. Alpaca active/tradable does not prove Robinhood eligibility. Not a Microsoft-only engine. |
+| Bounded SEC/Alpaca research acquisition | B | free_research_transport.py; free_research_providers.py | Transport/provider tests and genuine retained receipts | Data-only clients exist; rights and installed accepted source owner still needed. |
+| IEX authentication/executable quotes/calendar | B | backend/app/investment/alpaca_iex.py; services/quality_dips_iex_input.py | IEX suites; historical authenticated closed-market probe | Need actual entitlement, fresh quotes, session/halt and native price authority. No Sunday quote experiment repeated. |
+| QD current producer -> ranking -> typed archive | C | quality_dips_current_producer.py; paper_source_publication.py; personal_research_archive.py | test_quality_dips_current_producer.py; test_paper_source_publication.py | Joined source/disposable pipeline exists. Needs actual input/publication owner, current evidence, custody and installed producer/readback. |
+| HL BTC/ETH/SOL public acquisition/cache | B | backend/app/adapters/hyperliquid.py; services/personal_hyperliquid_public_data.py | Adapter/request-gate suites | Requires actual provider rights, durable request budget and accepted current data; no trading/signing necessary for data component. |
+| HL normalization/maker/funding/source publication | C | hyperliquid_current_producer.py; paper_source_publication.py; perp_source_planner.py | test_hyperliquid_current_producer.py; test_unified_research_sources.py | Deterministic source flow exists. Preserve maker-fill and funding-history requirements; native source/order/settlement bindings missing. |
+| Unified QD/HL research continuity | B | backend/app/services/unified_research_sources.py | test_unified_research_sources.py | Existing coexistence/account/domain isolation. Real current archive enrollments/readbacks needed. |
+| QD autonomous entry/exit/partial/thesis logic | B | quality_dips_autonomous_paper.py; quality_dips_unified_planner.py | Autonomous/planner/unified-writer suites | Existing engine; requires real eligible ranking and fresh IEX execution evidence. |
+| HL perpetual strategy planning | B | perp_source_planner.py; unified_native_writer.py | Perp/planner/writer suites | Existing BTC/ETH/SOL semantics; accepted current source/fees/maker/funding inputs needed. |
+| Simulated execution, fills/partials/slippage | B | paper_execution_model.py; paper_partial_accounting.py; financial transitions | test_paper_execution_model.py; test_paper_partial_accounting.py | Pure/disposable integration exists. Genuine evidence must justify simulated fill; no invented prices. |
+| Perp fees/funding/margin/liquidation | B | paper_perp_transition.py; paper_perp_session_report.py; perp_resting_writer.py | test_perp_financial_v2.py; funding suites | Independent USDC accounting exists; missing settlement history refuses. No account initialized by tests. |
+| Separate USD/USDC account and portfolio risk | B | paper_portfolio_risk.py; unified_portfolio_custody.py | Financial/unified/account-isolation suites | Never net cash or assume dollar parity. Native account manifests and writer leases missing. |
+| Position sizing/loss/position limits/Stop reserve | B | paper_risk.py; paper_portfolio_risk.py; paper_capacity_envelope.py | Risk/capacity/unified suites | QD $100/one-position and approved HL limits preserved. Need actual risk/capacity cuts, not guessed headroom. |
+| Reservations/native financial writers | C | unified_portfolio_custody.py; unified_writer_roster.py; quality_dips_unified_writer.py; unified_native_writer.py | Actual-lane disposable custody suites | Lane adapters exist; production authority/process roster/stores must be bound. |
+| Resting orders/cancel/exposure proof | B | perp_resting_order.py; perp_resting_writer.py; UnifiedPortfolioCustody.read_accounts | Resting/Stop/account-readback suites | QD no-order capability explicit; HL actual order inventory required. Missing fields cannot become zero. |
+| Unified autonomous supervisor/market polling | C | backend/app/services/unified_paper_runtime.py | test_unified_paper_runtime.py | start/poll/run/dispatch/stop exist. Production bootstrap does not currently instantiate the commissioned graph. |
+| Personal/native QD/unified composition | C | personal_paper_runtime.py; personal_paper_activation.py | Personal policy/runtime/authority suites | Exact supplied ports verified; none minted. Actual installed unified caller and accepted bindings absent. |
+| Admission closure/cancel/flatten/drain/finalization | B | quality_dips_shutdown.py; unified_paper_runtime.py; unified_native_writer.py | Shutdown and actual-lane suites | Partial/unknown-price outcomes handled. Native financial drain and real owned-close roster/authority missing. |
+| Durable Stop intent/receipt and serialization | B | paper_stop_receipt_ledger.py; UnifiedControlStopBridge | test_paper_stop_receipt_ledger.py; unified suite | Existing PENDING/FINISHED recovery never implies flatness alone. Financial cold restart not accepted. |
+| Stop owner/guarded SQLite binder connection | B | quality_dips_stop_bridge.py; personal binder | Eight new tests plus existing suite | Fixed here: actual method owner accepted, bare callback refused; guarded connection factory forwarded. Not installed/native-authorized. |
+| Account/readback/Stop restart exposure reconciliation | B | UnifiedPortfolioCustody.read_accounts; Stop native observer | Stop ledger/account suites | Before/after cut checks exist; pending/UNKNOWN orders forbid restart. No blanket restart authority. |
+| Once-only separate account inception | C | PersonalInceptionPublisher; QD one-time publisher; perp contracts | Memory and guarded native inception fixtures | Publisher exists. Actual production caller/enrollments/current writer cohort missing. Never initialize twice. |
+| Activation CLI/local operator SID/native root checks | C | personal_activation_commission.py; personal_activation_publisher.py; personal_local_authority.py | Activation commission/publisher suites | Existing CLI requires both enrollments, six role roots, exact account/release/SID/clock. Scope JSON is not activation. |
+| Native filesystem identities/ACL/receipts/selector | F | personal_release_identity.py; release_selection.py; install/support primitives | Native receipts; fresh refusal today | Current selected payload inadmissible. Preserve and recover create-only after prerequisites; no cache deletion. |
+| Installed no-site/no-bytecode startup | B | install_verified_release.py; installed_nonfinancial_launcher.py; installed support | November 7 source/native isolation results | Supported path uses -I -B -S. Ad-hoc bare interpreter use can still mutate an owner-writable tree; same-user tamper resistance is not claimed. |
+| Clock/time/boot continuity | F | personal_windows_clock.py; continuity adapters | Clock suites; fresh stale-evidence refusal | Need current trusted source binding/freshness. No forcing sync or weakening 1,000 ms/120 s limits. |
+| Retained launch handles/Job/descendant ownership | B | launch_ownership.py; aip06_windows_process.py; descendant gateway/native adapters | Existing ownership/guarded suites | Source/disposable evidence exists; full financial roster/Job/object lifecycle and required native samples remain unaccepted. |
+| AIP-06 outer owner/case/reader/grader | D | aip06_acceptance_*.py; aip06_scoped_context.py; native scenario bindings | Source context/driver suites; authorization packet | Physical reader/fault/load producers remain partial; F01/F11 preparations are not full native qualification. Do not expand scaffolding to simulate acceptance. |
+| Native capacity/load/complete financial Stop | F | AIP-06 plan/owned IO/Job/Stop interfaces | Retained disposable samples and source cases | Actual independent financial/restart/load evidence missing. No workers launched by this audit. |
+| Versioned read-only dashboard models | B | backend/app/services/dashboard_read_models.py | test_dashboard_read_models.py; current Node profile | Existing stale/unavailable/UNKNOWN/account separation. Requires real read authority and accepted current cuts. |
+| Original hub/QD/perp/account/history UI | C | backend/app/static/*; quality_dips_selected_paper.js; read hosts | 79 standalone Node cases; historical HTTP diagnostic | Preserve UI. Installed browser rendering/ACK and financial synchronization pending; no demo balances as actual state. |
+| Next.js shell/offline research/replay viewers | B | frontend/app; frontend/offline | Existing offline Node suites | Development/research surfaces, not certified financial runtime. No replacement dashboard required. |
+| Existing observation desktop shortcuts | B | Atlas-Observation-Shortcut*.ps1; observation host/control | Metadata reread now; retained observation lifecycle | Manually invoked, observation-only; untracked Stop helper preserved. Not financial Start/Stop. |
+| Installed financial desktop bootstrap/session handoff | D | Atlas-Background-Controls.ps1; Atlas-Control-Center.psm1; existing composition/Stop binders | Desktop/handoff/fail-closed suites | Accepted installed composition, current session and native owned-close handoff missing. Legacy guards stay active. |
+| Authenticated financial Stop HTTP/desktop transport | C | quality_dips_stop_bridge.py; Windows control/handoff modules | Stop session/route/ledger suites | Need real origin/token/session, owned-close capability, guarded ledger and connection to accepted shortcuts. |
+| Trusted browser/CDP-equivalence candidate | F | installed_acceptance_handoff.py; browser_equivalence_candidate.py; CDP proposal | Candidate validators; provider inventory now | Candidate/static preview not an accepted witness. Section 7 is the single review packet; no self-approval. |
+| Three-reader socket/process cleanup | F | socket_evidence.py; native/CIM/netstat capture; strict process audit | Historical active failures/terminal cleanup success | State 0/null/1 is not LISTENING. No reader replacement, no repeated unchanged probes. |
+| Daily reports/financial exit history/reconciliation | B | paper_daily_report.py; bound/perp reports; paper_exit_history.py | Financial/report/exit-history suites | Calculations/ACK protocols exist. Need native current account/report chains and real restart/shutdown proofs. |
+| Committed Discord recovery/outbox/consent | B | discord_lifecycle_outbox.py; consent services; committed_notification_recovery.py | AIP-05 retained selection; fresh recovery tests | Durable simulated recovery exists; UNKNOWN sends not exactly-once. Not operational delivery. |
+| Real Discord delivery | F | backend/app/alerts/discord.py; consent delivery adapters | Delivery/consent suites | Actual configured recipient/consent and scoped transport acceptance needed. No message sent. Explicit notifications-disabled pilot is a separate recorded option. |
+| Corruption/UNKNOWN/duplicate-event protection | B | Financial replay; coordination/custody; source archives; Stop ledger | Existing corrupt/race/recovery suites; current profile | Already implemented. Need installed whole-system failure/restart proof, not a competing ledger. |
+| Storage successor routing/continuation | D | continuation_routing.py; native_continuation_contract.py; native successor/image interfaces | AIP-03 source/disposable and historical native V2 | Operational switching/retention/counter continuity not installed. Untracked segmented-history verifier is not operational rollover authority. |
+| Continuous authority/clock/session lifecycle | D | Personal activation/clock; unified bounded run; continuation interfaces | Expiry/refusal suites; inspected source limits | Activation <=1,800 s; clock acquisition <=240 s; run <=86,400 s. Accepted continuous renewal/segment lifecycle for months not demonstrated. Do not lengthen limits. |
+| Manual recovery after Windows boot | C | Native current/epoch/readback checks and manual launch interfaces | Disposable cold restart/continuation suites | Fresh identity/clock/activation/account reconciliation needed. No automatic startup allowed. |
+| Weekend/stale/disconnect/provider-budget safety | B | Adapters; market observers; unified supervisor/source contracts | Freshness/disconnect/recovery suites | Existing local behavior; actual provider rights/current evidence and real soak pending. |
+| Extended unattended reliability | F | Bounded supervision/storage/resource controls | No accepted operational elapsed soak | Requires admitted renewal/rollover policy and actual time under accepted operation. Short tests cannot prove months. |
+| Legacy day-trade assistant/equity mirror | G | day_trade_assistant.py; equity_daytrade_paper_mirror.py | Existing legacy research/mirror suites | Built research/legacy simulation, not an approved third account/native lane. Do not silently activate. |
+| Long-term/ETF/benchmark research | B | InvestmentResearch; ETF/benchmark/daily research; V2 patient capital | Existing investment/offline suites | Existing research retained; QD financial promotion still requires eligibility/provenance/risk. No new allocation invented. |
+| Prospective QD crypto/prediction/shadow experiments | G | Crypto evidence stores; prediction/shadow research/pages | Existing research/fixture suites | QD personal scope is stocks/ETFs; approved HL crypto BTC/ETH/SOL. No extra live or simulated lane added. |
+| Live orders/signing/transfers/real capital | G | Excluded by release policy/scope | Fail-closed policy suites | Never activate dormant live routes or submit orders. No financial/provider actions here. |
+| VPS/cloud/Docker/Genesis/autorun migration | G | Historical deployment assets only | Startup locks | Not required. No infrastructure expansion, Genesis access, unrelated process termination or automatic startup. |
+
+**A/E reconciliation:** historical native installation and bounded diagnostics have accepted results within their limited domain; no complete current financial capability is A. No required new strategy/accounting/notification engine is proven wholly absent (E). Actual unfinished implementation is the explicit C/D wiring and operating lifecycle above. F is not used to hide those source gaps.
+
+## 5. Real end-to-end source architecture and exact repair
+
+**Current manual shortcut path:** observation shortcut -> same-user observation owner -> source observation host/Control Center -> read-only/unavailable financial views. Observation Stop signals that owner. The root batch entry points instead reach active legacy refusal guards. `app.main` has an independent production-startup lock before its old service lifespan. Removing these guards is not production integration.
+
+**Existing financial source graph, not yet a commissioned desktop execution:**
+
+| Required stage | Concrete existing path | Remaining connection/evidence |
+|---|---|---|
+| Start authority | Installed selector/support/verifier + PersonalOperatorInstallation | Current admissible release and exact operator/account/clock/native proof |
+| Separate account opening | Explicit activation commission -> PersonalInceptionPublisher -> original native publisher/readback | Two actual distinct enrollments and writer/resource cohorts; never reincept existing accounts |
+| Acquisition/research | Accepted SEC/Alpaca/HL input -> current QD/HL producers -> typed native archive -> UnifiedResearchSources | Rights/budgets/eligibility/original dates/current publication/readback |
+| Signal/risk | Existing QD/HL planners -> canonical lane adapters -> portfolio risk and durable reservation | Exact source/writer/account/policy binding; research marks do not become executable fills |
+| PAPER execution | UnifiedPaperRuntime.run -> next_proposal -> dispatch/admit_resting/cancel_resting -> UnifiedPortfolioCustody -> native lane writer -> verify/ACK | Accepted session/custody/financial authority and stores; USD/USDC remain separate |
+| Views/reporting/events | Read capability -> account/source read models -> original dashboard; canonical committed events -> reports/outbox | Native current cuts/read authority and scoped notification transport |
+| Stop | Session-bound control -> durable fresh intent -> close entry admission -> both lane cancel/exit/drain -> report/account reconciliation -> verified owned close -> durable receipt | Actual native roster/authority/price/ACK evidence; unresolved prices must leave explicit open positions |
+| Cold reopen | Original intent/current/ACK + Stop ledger readback + verify_restart under authority | No blind replay of pending inception/Stop; real financial reconciliation/lease reacquisition |
+| Continued manual-start operation | Bounded runtime + fresh authority/clock + admitted storage successor | Accepted renewal/rollover policy, installed wiring and actual elapsed soak |
+
+**Verified defect 1:** `enroll_unified_paper_stop_transport` required `callable(owned_close)`, while the runtime calls `close_verified(roster)` and `verify_exit(roster)` on that object. Its only positive binder test used a lambda that could not satisfy either method. The binder now requires the exact callable methods and accepts a non-`__call__` owner object. Bare callbacks/missing methods refuse before SQLite or route registration. Later native roster, account binding, drain, authority and verified-exit checks are unchanged.
+
+**Verified defect 2:** the existing Stop ledger already accepts a guarded `connection_factory`, including owned SQLite, but both unified and personal enrollment binders dropped that port and opened ordinary SQLite instead. Both binders now forward it. A guarded open refusal propagates; no plain SQLite retry occurs. The port grants no ownership or financial authority.
+
+Changed source: `backend/app/services/quality_dips_stop_bridge.py`, `backend/app/services/personal_paper_runtime.py`. Existing positive binder coverage now supplies the actual method contract; `tests/test_unified_stop_binding_contract.py` adds eight targeted cases: correct forwarding/closure, four unusable owner shapes, denied guarded open, prior-pending intent non-replay and personal lease/component forwarding. Three unused imports in edited files were removed after scoped lint inspection. No strategy, risk, account model, deadline, allowlist or acceptance predicate was weakened. No new runtime, ledger or architecture was created.
+
+## 6. Native commissioning preflight and exact input contracts
+
+Existing read-only preflights ran: canonical desktop checker NO_GO; QD/unified preflights expected blocked exit 2. The initial TRACKED_SOURCE_UNCHANGED refusal correctly reflects the audit's pending repair; it is not an external authorization problem. Source publication, native activation, inception, current executable prices, HL account/rights and owned unified desktop Stop remain unverified. Inventory functions do not discover or self-certify arbitrary JSON as authority.
+
+The existing activation CLI requires: exact custody child, operator record, policy, release digest, account-digest mapping, **both** QD/perp enrollment files, expected clock source and runtime ID. It verifies six native role roots in each enrollment. Each lane must bind distinct account/epoch/currency, accepted policy/release, source/projection/report/control/coordination/custody identities, current writer process/creation/image/retained ownership, source rights/current publication and Stop reserves. Scope approval, an empty root or a transient PID cannot substitute for this cohort. Personal policy does not require an external issuer.
+
+No inception was attempted because the actual release and clock already refuse. Next native work is a consistent intended accepted source binding and genuinely fresh time, then one create-only release recovery from validated source/dependencies. Preserve old payloads, receipts and selection history. Use supported startup `-I -B -S` and explicit verified dependency paths. Do not delete 300 caches or reuse old time capabilities. Any needed Windows synchronization/settings action needs its own exact permission; no such action was performed here.
+
+## 7. Single decision-ready browser/listener equivalence review packet
+
+**Review ID: BROWSER-LISTENER-EQUIVALENCE-20261108. Ready for a design decision; NOT approved and NOT ready for operational execution.** This consolidates the existing November 8 proposal in one place; it does not implement or self-approve a replacement. No unchanged listener experiment/CDP preview was rerun.
+
+### Baseline and scope
+
+Retain the original `installed_acceptance_handoff.py`, `installed_acceptance_sequence.py`, `installed_acceptance_cleanup.py`, `socket_evidence.py` and Windows audit. Required: genuine browser ACK <=45 s, complete Stop <=8 s, fresh exact process/creation/image/retained handles/Job evidence where required, owned loopback identity, independent readers and strict final process verification. Historical grants remain consumed. The old installed browser tickets pin **2c039af…**; they cannot authorize 4fad7ac or a future recovery. A new reviewed exact release/support/session binding is required, not a silent edit to the old validator.
+
+**Candidate actually present:** `browser_equivalence_cdp_probe.py` plus pure `inspect_candidate`. Separate temporary profile/ephemeral debug port; created/navigated/rendered target observations and final target/origin recheck; optional restricted installed static HTML preview. All returned flags explicitly deny operational acceptance. Preview CSP blocks normal scripts: title/document completion is not financial dashboard synchronization. Cleanup proves parent exit/thread/socket, not all Chrome descendants/Jobs/handles. Do not attach the normal personal Chrome profile. Generic CDP transport is not an approved browser-policy bypass.
+
+| Requirement | Evidence available | Missing before acceptance |
+|---|---|---|
+| Exact application/release/support | Existing native selector/receipt/support primitives and historical diagnostic | Clean current image, independent readback and new exact witness pins |
+| Owned supervisor/child provenance | Retained-handle/creation/ancestry/Job source and tests | Actual independently observed current launch/complete roster/lifetime |
+| Owned loopback endpoint | Raw CIM/native/listener/handshake/connection diagnostics | Original active-listener unanimity absent. HTTP, SO_ACCEPTCONN or class-3 table membership alone is insufficient |
+| Three independent sources | CIM, IP_HELPER and NETSTAT baseline identities | Supported original exact owned-endpoint cut, or separately reviewed demonstrably independent equivalent; multiple IP Helper views are one provider |
+| Actual browser identity/origin | Diagnostic CDP target continuity/current URL | Approved independent observer, exact Chrome image/process/profile/debug endpoint identity and same-machine origin binding |
+| Rendered dashboard ACK | Witness/timing validators and static preview | Actual installed dashboard/current unavailable-or-financial state, nonce/session/release binding, trusted rendering witness within unchanged deadline |
+| Graceful Stop/resource release | Historical nonfinancial Stop/terminal cleanup; shutdown interfaces | Current two-cycle EOF/client closure, entire owned process/resource tree, no unrelated termination, financial drain separately |
+| Restart/financial authority | Existing custody/Stop/readback models | Actual accepted account/restart proofs; browser witness must grant no financial authority |
+
+### Decision and independent authority required
+
+The sole operator may commission an independent design/evidence review without introducing a committee or letting this implementing assistant approve its own proposal. The reviewer must explicitly **accept or reject CDP as the browser-witness substitute**, define independent identity/origin/render evidence and failure handling, and state whether listener requirements stay unchanged. The current candidate is **insufficient for full browser/listener equivalence**. No qualified independent three-source listener replacement is currently implemented or proven.
+
+If changing listener evidence is proposed, independent review must specify evidence sources and demonstrate equivalent ownership/lifetime/freshness/refusal guarantees *before* implementation/acceptance. Approving state 0/null/1, successful HTTP/handshake, or two views of one provider is forbidden. This packet identifies available and missing proof; it does not invent an alternative and call it ready.
+
+**Recommended path:** preserve original listener requirements, review the isolated browser-witness candidate once, and obtain a supported observation environment that supplies the original owned active-listener cut. If that cannot be supplied, stop Gate 1 work pending a separately justified/approved equivalent design. Do not request another Chrome installation/setup just to repeat an unreviewed preview. A supplied trusted Chrome provider can solve the original browser side, but cannot by itself solve listener evidence.
+
+Future test envelope, subject to that approval: pin exact clean application/support/source/context; approved disposable local profile/evidence root only; prohibit providers/accounts/trading/unrelated processes; preserve the reviewed **600 s / 8,192 entries / 64 MiB** maximum unless stricter; close all owned resources. Negative proofs must cover wrong origin/target/release/process creation, stale/replayed ACK, PID reuse, unknown descendant, missing/conflicting readers, state 0/null/1, late ACK, slow Stop, incomplete exit and profile/process leaks. These are review criteria, **not a grant to execute a fixture now**.
+
+Baseline/candidate/scope SHA256 pins are retained in private `review-source-pins.json` and the content inventory; earlier raw failure evidence remains untouched. No causal Windows defect is asserted. Historical “Gate 1” here means the installed browser/listener prerequisite, **not** a renaming of canonical B1. Once this package exists, do not resume the same socket investigation without a materially changed environment or approved contract.
+
+## 8. All nine canonical commissioning gates
+
+| Gate | Status | Existing capability | Still required |
+|---|---|---|---|
+| B1_HISTORICAL_COMPLETENESS_OR_EPOCH | PARTIAL | Isolated personal-account policy/legacy exclusions/once-only publisher | Two actual native enrollment/inception/readback chains; no migration or reset inferred |
+| C1_OWNERSHIP_AND_FINANCIAL_DRAIN | PARTIAL | Strong source/disposable ownership/reservation/drain/Stop | Current native roster/resources, actual cancel/flatten/drain/reconcile and required Stop samples |
+| D1_TRUSTED_STORAGE_AUTHORITY_CLOCK | BLOCKED | Native IDs/ACL/custody/release/clock implementations | Current admissible image, fresh time/source binding, actual activation/account custody/recovery |
+| E1_PROVIDER_RIGHTS_AND_SUPERVISED_SESSION | BLOCKED | Genuine historical data/connectivity; bounded adapters | Actual accepted rights/entitlements, current source/executable evidence and supervised trial |
+| DESKTOP_OWNED_START_STOP | BLOCKED | Observation shortcuts, original controls, repaired source Stop binder | Browser/listener acceptance, installed financial composition/session/owned close and actual manual Start/Stop |
+| MARKET_AND_ACCOUNT_COVERAGE | PARTIAL | Broad research; QD stocks/ETFs; HL BTC/ETH/SOL | Eligible source coverage and two initialized native accounts; no synthetic/research promotion |
+| RESTART_AND_RECONCILIATION | PARTIAL | Durable intent/current/ACK, Stop exposure observer and fixture continuation | Actual account/report/Stop cold reopen, lease reacquisition and admitted storage continuation |
+| SUPERVISED_END_TO_END | NOT STARTED | Bounded drivers/runtime and test harnesses | All prerequisites plus genuine data-backed two-account execution/Stop/reconciliation |
+| EXTENDED_SOAK_ACCEPTANCE | NOT STARTED | Existing bounded monitoring/fail-closed components | Approved operating renewal/rollover/recovery and actual elapsed operational evidence |
+
+PARTIAL is not ACCEPTED. Checker unchanged: **0/9**. It is presently a fail-closed inventory/refusal checker, not a general accepted-evidence importer. Any future gate-proof reader must verify genuine evidence; flipping constants for a percentage is forbidden.
+
+## 9. Test evidence and limits
+
+- Focused connection repair: **8 passed, 0 failed, 0 skipped**.
+- Initial relevant combined selection: **407 passed, 0 failed, 1 skipped**, 16.12 s.
+- Final expanded profile: **529 passed, 0 failed, 1 skipped**, 41.42 s. Runtime/Stop/personal composition, QD/HL producers, unified research, activation/preflight refusal, browser candidate validators, dashboard contracts, committed notification recovery and simulated perp accounting. Profiles overlap; **do not add 8+407+529**.
+- Skip: `test_stop_ledger_refuses_symlink_database`: symlinks unavailable on this Windows account. That security case remains unproved, not waived.
+- One existing Starlette/httpx TestClient deprecation warning. No package update/install needed.
+- Standalone original-UI Node profile: **79 passed, 0 failed/skipped/cancelled**, six files, 175.806 ms runner duration. VM/source tests are not Chrome rendering. Subprocess harness checks inside Python are already counted there.
+- Scoped no-cache Ruff F checks passed on edited Python. No final regression crash/timeout. Five historical native financial-launch cases were **not selected/executed**, not counted as passing or as pytest deselections. No claim all 1,197 test files ran.
+- Native activity here: read-only inventory/clock/preflight/immutable verification only. Current full readback refused. No financial worker, installed application, provider, Discord delivery, account inception or acceptance session launched.
+
+## 10. Shortest dependency-ordered completion path
+
+These are finish steps, not new architecture projects. Parallelize only independent work; retain exact gates.
+
+1. **Resolve current native blockers:** reconcile intended accepted clock binding with current peers and obtain fresh qualifying time, with separate permission for any necessary Windows action. Preserve contaminated payloads. Build one create-only release from validated final source/dependencies (including existing -I -B -S bootstrap and this Stop repair); require original native receipts/ACK/support/selector/readback before use. Do not repeat copying while time/source preflight refuses.
+2. **Decide Gate 1 through section 7:** independent browser-equivalence review plus approved observer and original three-reader active-listener proof, or a separately approved fully evidenced equivalent. Freeze unchanged failed experiments.
+3. **Bind real data/source inputs:** actual provider rights/budgets, eligible stocks/ETFs and HL BTC/ETH/SOL, current valuation/ranking/funding/maker/quote provenance; existing producers -> native publication -> independent readback. No quote-only or historical-data promotion.
+4. **Commission separate accounts/existing composition:** exact native roots/operator/writers/release/account digests; activation and once-only USD 1,000/USDC 1,000 publication/readback; existing lane writers, portfolio/session authority, source readers, guarded SQLite and retained owned-close capability. Reopen/reconcile any existing account; never reset/reincept.
+5. **Complete installed manual desktop handoff:** exact commissioned composition -> existing Control Center/session-bound Stop/read models/original UI. Verify two-cycle browser/ownership/Stop/cleanup and durable receipts. Only after acceptance, point manual shortcuts at the accepted installation. No automatic startup or Genesis access.
+6. **Supervised PAPER/cold restart acceptance:** both approved lanes, no-signal/closed/stale/disconnect/partial-fill cases, evidence-backed simulated entries/exits where eligible, cancel/flatten/reconcile/Stop receipts and reopen. Missing closing price stays unresolved. Discord requires real recipient/consent/transport acceptance, or an explicitly recorded notifications-disabled pilot.
+7. **Long-run operating closure and actual soak:** admitted native storage continuation/retention/capacity, fresh authority/clock renewal and session boundaries within existing limits, provider budget/reconnect and recovery. Then real elapsed stability evidence. Do not extend tokens/counters or imply a short pilot proves months.
+
+## 11. Do not rebuild or retest without a concrete cause
+
+Do not replace QD V3, HL planners, either accounting engine, UnifiedPaperRuntime, UnifiedPortfolioCustody, PaperStopReceiptLedger, research producers, inception publisher, dashboard or committed-event framework. Do not add strategies/accounts/exchanges/infrastructure/synthetic gate scaffolding. Do not repeat passed component suites for counts or unchanged socket bind/API variants. Do not rerun the unapproved CDP preview, conflate current source with installed code, or revive old clock/native success after today's refusal.
+
+A reproducible source defect justifies the narrow repair/tests performed here. Otherwise use the exact accepted inputs named above. All historical failures, private evidence, untracked work and backups remain. No additional wholly absent strategy is a justified development project.
+
+## 12. Final recommendation and recovery
+
+Continue with the existing implementation and finite path above. **No accepted financial runtime can start today.** Current release namespace, clock freshness/source binding, browser/listener evidence, provider/source rights/publication, native account enrollment and commissioned desktop ownership remain blockers. Concrete C/D composition and renewal/continuation work remains too; it must not be hidden behind browser terminology or described as deployed.
+
+General sole-operator commissioning permission is already recorded. No repeat of it is needed. The next external decision is independent review of section 7 and a supported clock/source/observation environment; it is not approval to weaken gates. Safe identified source repairs and offline/read-only evidence are checkpointed. Production **NO-GO**; PAPER is not running.

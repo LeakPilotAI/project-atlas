@@ -127,7 +127,6 @@ def register_stop_routes(app, *, bridge, origin, token, require_session=False, r
     Not registered in app.main or the read-only host by default. The injected
     token is transport CSRF protection, never financial or startup authority.
     """
-    import sqlite3
     from fastapi import Request
     from fastapi.responses import JSONResponse
 
@@ -275,7 +274,8 @@ def register_accepted_unified_paper_stop_routes(app, *, bridge, origin, token):
                          require_session=True, require_durable_receipt=True)
 
 
-def enroll_unified_paper_stop_transport(app, *, runtime, owned_close, ledger_path, origin, token):
+def enroll_unified_paper_stop_transport(app, *, runtime, owned_close, ledger_path, origin, token,
+                                      connection_factory=None):
     """Bind an already accepted PAPER session to its durable Stop transport.
 
     Never starts a runtime, creates a grant, or supplies owner authority. A
@@ -288,14 +288,18 @@ def enroll_unified_paper_stop_transport(app, *, runtime, owned_close, ledger_pat
             or type(runtime.grant) is not dict
             or type(runtime.grant.get('session_id')) is not str
             or not runtime.grant['session_id'] or len(runtime.grant['session_id']) > 128
-            or not callable(owned_close)):
+            or not callable(getattr(owned_close, 'close_verified', None))
+            or not callable(getattr(owned_close, 'verify_exit', None))
+            or connection_factory is not None and not callable(connection_factory)):
         raise ValueError('PAPER_ACCEPTED_RUNTIME_AND_OWNER_REQUIRED')
     # Never create or expose an HTTP endpoint before independently checking
     # the installed runtime and any earlier unfinished stop for this session.
     bridge = UnifiedControlStopBridge(runtime, owned_close=owned_close)
     if bridge.verify_session() is not True:
         raise ValueError('PAPER_SESSION_LEASE_UNVERIFIED')
-    ledger = PaperStopReceiptLedger(ledger_path)
+    # Forward the existing guarded SQLite owner instead of silently opening an
+    # unaccounted connection in native compositions. This port grants no lease.
+    ledger = PaperStopReceiptLedger(ledger_path, connection_factory=connection_factory)
     if ledger.inspect_session(bridge.session_id) is not None:
         runtime.entry_closed.set()
         raise ValueError('PAPER_PRIOR_STOP_RECONCILIATION_REQUIRED')

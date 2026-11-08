@@ -1182,8 +1182,6 @@ async def test_session_stop_unexpected_dispatch_exception_refuses_without_retry(
 
 @pytest.mark.parametrize('failure', [RuntimeError, AssertionError, TimeoutError])
 def test_unified_stop_bridge_unexpected_session_read_failure_refuses_before_dispatch(failure):
-    from threading import Event
-    from types import SimpleNamespace
     from app.services.unified_paper_runtime import UnifiedControlStopBridge
     r = runtime()
     calls = []
@@ -1273,7 +1271,12 @@ def test_enrollment_binder_registers_only_for_existing_synthetic_session(tmp_pat
     r = runtime()
     r.grant['session_id'] = 'synthetic-session-shape'
     app = FastAPI()
-    bridge = enroll_unified_paper_stop_transport(app, runtime=r, owned_close=lambda: True,
+    class OwnedClose:
+        def close_verified(self, roster):
+            pytest.fail('Binding must not invoke owned shutdown')
+        def verify_exit(self, roster):
+            pytest.fail('Binding must not fabricate exit evidence')
+    bridge = enroll_unified_paper_stop_transport(app, runtime=r, owned_close=OwnedClose(),
         ledger_path=tmp_path / 'stop.sqlite', origin='http://127.0.0.1:18811', token='synthetic-test-control-token-1234567890')
     assert bridge.session_id == 'synthetic-session-shape'
     assert bridge.status()['phase'] == 'IDLE'

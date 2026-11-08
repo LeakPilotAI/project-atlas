@@ -231,7 +231,8 @@ def compose_personal_unified(*,policy=None,lanes=None,portfolio=None,clock=None,
         return UnifiedPaperRuntime(lanes=lanes,portfolio=portfolio,clock=clock,installation=installation)
 
 
-def bind_personal_unified_paper_stop(app, *, runtime, installation, owned_close, ledger_path, origin, token):
+def bind_personal_unified_paper_stop(app, *, runtime, installation, owned_close, ledger_path, origin, token,
+                                   connection_factory=None):
     """Connect a previously commissioned personal PAPER session to Stop.
 
     This does not issue a grant, initialize accounts, or activate providers.
@@ -260,7 +261,8 @@ def bind_personal_unified_paper_stop(app, *, runtime, installation, owned_close,
         if lease.check_components(ports) is not True or lease.check(proof) is not True:
             raise ValueError('PERSONAL_UNIFIED_STOP_COMPONENTS_UNVERIFIED')
         bridge = enroll_unified_paper_stop_transport(app, runtime=runtime,
-            owned_close=owned_close, ledger_path=ledger_path, origin=origin, token=token)
+            owned_close=owned_close, ledger_path=ledger_path, origin=origin, token=token,
+            connection_factory=connection_factory)
         if lease.check(proof) is not True:
             runtime.entry_closed.set()
             raise ValueError('PERSONAL_UNIFIED_STOP_ACTIVATION_CHANGED')
