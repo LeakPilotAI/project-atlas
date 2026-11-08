@@ -1,6 +1,7 @@
 """Disposable, data-only isolated Chrome CDP candidate; never operational approval."""
 import argparse
 import http.server
+import hashlib
 import json
 import subprocess
 import tempfile
@@ -14,12 +15,22 @@ from scripts.observation_runtime.browser_equivalence_candidate import inspect_ca
 CHROME = Path(r'C:\Program Files\Google\Chrome\Application\chrome.exe')
 
 
-def probe(*, chrome=CHROME):
+def probe(*, chrome=CHROME, installed_static_preview=None):
     if not chrome.is_file():
         raise ValueError('ISOLATED_CHROME_BINARY_REQUIRED')
+    static_bytes = None
+    static_digest = None
+    if installed_static_preview is not None:
+        static_path = Path(installed_static_preview)
+        if (static_path.is_symlink() or not static_path.is_file()
+                or static_path.name != 'dashboard.html'
+                or static_path.stat().st_size > 2_000_000):
+            raise ValueError('INSTALLED_STATIC_DASHBOARD_REQUIRED')
+        static_bytes = static_path.read_bytes()
+        static_digest = hashlib.sha256(static_bytes).hexdigest()
     class Handler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
-            payload = b'<html><title>ATLAS DISPOSABLE CDP</title><body>NO TRADING</body></html>'
+            payload = static_bytes if static_bytes is not None else b'<html><title>ATLAS DISPOSABLE CDP</title><body>NO TRADING</body></html>'
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
             self.send_header('Content-Length', str(len(payload)))
@@ -81,10 +92,10 @@ def probe(*, chrome=CHROME):
                     message = json.loads(ws.recv(timeout=5))
                     if message.get('id') == 3:
                         break
-                if 'NO TRADING' not in message.get('result', {}).get('result', {}).get('value', ''):
+                if static_bytes is None and 'NO TRADING' not in message.get('result', {}).get('result', {}).get('value', ''):
                     raise ValueError('ISOLATED_CHROME_RENDER_MISMATCH')
             result = inspect_candidate(expected_url=url, observations=observations)
-            evidence = {'diagnostic': result, 'observations': observations}
+            evidence = {'diagnostic': result, 'observations': observations, 'installed_static_preview_sha256': static_digest, 'operational_dashboard_verified': False}
     finally:
         if process is not None:
             process.terminate()
@@ -106,5 +117,6 @@ def probe(*, chrome=CHROME):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--disposable-only', action='store_true', required=True)
-    parser.parse_args()
-    probe()
+    parser.add_argument('--installed-static-preview', type=Path)
+    args = parser.parse_args()
+    probe(installed_static_preview=args.installed_static_preview)
