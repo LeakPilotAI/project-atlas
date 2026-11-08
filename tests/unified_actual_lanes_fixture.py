@@ -125,6 +125,11 @@ def build(root, confinement, qd_confinement, *, publication_factory=None):
     reader = QualityDipsPublicationReader(writer=q.writer, source=q_source)
     q.a.verify_planner_components = lambda binding, actual: actual == {'writer': q.writer, 'observer': q.observer, 'quotes': q.quotes, 'reader': reader}
     q.a.verify_decision_source = lambda binding, request, observation, cut: q.a.valid and q.observer.verify_observation(observation)
+    # Fixture-only authority: no resting-order store exists in the enrolled QD writer.
+    # This does not install or assert an operational authority issuer.
+    q.a.verify_no_resting_orders = lambda binding, cut: (
+        q.a.valid and binding == q.writer.binding and cut == q.writer._cut()
+        and not hasattr(q.writer, 'orders'))
     qp = QualityDipsUnifiedPlanner(writer=q.writer, observer=q.observer, quotes=q.quotes, reader=reader)
     writers = {'QUALITY_DIPS': q.writer, 'HYPERLIQUID': p.writer}
     risk = ActualSourceRisk(q, p, clock)
