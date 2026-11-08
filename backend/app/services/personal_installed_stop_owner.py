@@ -8,11 +8,14 @@ A future audited process bridge must preserve this boundary.
 from app.services.paper_financial_replay import body, strict
 from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
 from app.services.personal_paper_runtime import (
-    PROFILE, PersonalOperatorInstallation, checked_personal_installation,
+    PROFILE,
+    PersonalOperatorInstallation,
+    checked_personal_installation,
     validate_policy,
 )
 from app.services.unified_paper_runtime import (
-    UnifiedControlStopBridge, UnifiedPaperRuntime,
+    UnifiedControlStopBridge,
+    UnifiedPaperRuntime,
 )
 
 LANES = frozenset(("QUALITY_DIPS", "HYPERLIQUID"))

@@ -373,9 +373,11 @@ class UnifiedPaperRuntime:
             raise ValueError("UNIFIED_BOUNDED_SINGLE_RUN_REQUIRED")
         if stop_signal is not None:
             from threading import get_ident
+
             from scripts.observation_runtime.personal_paper_python_stop_signal import (
                 InstalledPythonPaperStopSignal,
             )
+
             from app.services.personal_installed_stop_owner import PersonalInstalledPaperStopOwner
             owner = getattr(stop_signal, '_owner', None)
             if (type(stop_signal) is not InstalledPythonPaperStopSignal

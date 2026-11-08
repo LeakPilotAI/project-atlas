@@ -11,12 +11,11 @@ import uuid
 from pathlib import Path
 
 import pytest
-
 from app.services.personal_installed_stop_owner import (
-    PersonalInstalledPaperStopOwner, open_personal_installed_python_stop_signal,
+    PersonalInstalledPaperStopOwner,
+    open_personal_installed_python_stop_signal,
 )
 from test_personal_installed_stop_owner_offline import accepted, stop_result
-
 
 PS_MODULE = (Path(__file__).resolve().parents[1] /
              "scripts/windows/Atlas-Paper-Owned-Stop-Signal.psm1")
@@ -112,7 +111,7 @@ async def test_stop_delivered_inside_awaited_strategy_prevents_financial_dispatc
 @pytest.mark.asyncio
 async def test_no_signal_preserves_original_bounded_run_and_scan(tmp_path):
     r, port, calls, _ = setup(tmp_path)
-    name, event = signal(port)
+    _, event = signal(port)
     with event:
         result = await r.run(seconds=.12, interval=.05, stop_signal=event)
     assert result["schema"] == "ATLAS_UNIFIED_PAPER_VIEW_V1"
@@ -122,14 +121,13 @@ async def test_no_signal_preserves_original_bounded_run_and_scan(tmp_path):
 
 @pytest.mark.asyncio
 async def test_foreign_owner_signal_refused_before_loop(tmp_path):
-    r, port, calls, _ = setup(tmp_path)
+    r, _, calls, _ = setup(tmp_path)
     foreign_path = tmp_path / "foreign"
     foreign_path.mkdir()
-    other, other_port, _, _ = setup(foreign_path)
-    name, event = signal(other_port)
-    with event:
-        with pytest.raises(ValueError, match="UNIFIED_ACCEPTED_OWNER_STOP_SIGNAL_REQUIRED"):
-            await r.run(seconds=.1, interval=.05, stop_signal=event)
+    _, other_port, _, _ = setup(foreign_path)
+    _, event = signal(other_port)
+    with event, pytest.raises(ValueError, match="UNIFIED_ACCEPTED_OWNER_STOP_SIGNAL_REQUIRED"):
+        await r.run(seconds=.1, interval=.05, stop_signal=event)
     assert calls == [] and r.state == "RUNNING"
 
 

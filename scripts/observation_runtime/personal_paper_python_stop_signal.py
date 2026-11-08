@@ -14,7 +14,6 @@ from threading import get_ident
 
 from app.services.personal_installed_stop_owner import PersonalInstalledPaperStopOwner
 
-
 ERROR_ALREADY_EXISTS = 183
 WAIT_TIMEOUT = 258
 WAIT_OBJECT_0 = 0

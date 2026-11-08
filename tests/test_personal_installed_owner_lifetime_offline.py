@@ -5,10 +5,15 @@ import uuid
 from threading import Event
 
 import pytest
-
-from app.services.personal_installed_stop_owner import run_personal_installed_owner_session
-from test_personal_python_run_stop_signal_offline import setup, request_signal, stop_result
+from app.services.personal_installed_stop_owner import (
+    run_personal_installed_owner_session,
+)
 from test_personal_paper_python_stop_signal_offline import send
+from test_personal_python_run_stop_signal_offline import (
+    request_signal,
+    setup,
+    stop_result,
+)
 
 
 def harness(tmp_path):
@@ -64,7 +69,7 @@ async def test_bounded_expiry_automatically_uses_same_durable_stop_once(tmp_path
 
 @pytest.mark.asyncio
 async def test_explicit_bounded_cancellation_also_verifies_stop(tmp_path):
-    runtime, owner, calls, _ = harness(tmp_path)
+    _, owner, calls, _ = harness(tmp_path)
     cancel = Event()
     cancel.set()
     result = await run_personal_installed_owner_session(
@@ -138,7 +143,7 @@ async def test_invalid_owner_rejected_without_opening_any_event():
 
 @pytest.mark.asyncio
 async def test_one_owner_session_cannot_run_again_after_verified_stop(tmp_path):
-    runtime, owner, calls, _ = harness(tmp_path)
+    _, owner, calls, _ = harness(tmp_path)
     await run_personal_installed_owner_session(
         owner=owner, seconds=.1, interval=.05, offline_test_id=identity())
     with pytest.raises(ValueError, match='ACTIVE_SESSION_REQUIRED'):
