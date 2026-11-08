@@ -6,6 +6,7 @@ is inferred from commissioning scope or diagnostic data.
 """
 import argparse
 import json
+import ntpath
 from pathlib import Path
 
 from scripts.observation_runtime.personal_activation_publisher import publish_personal_activation
@@ -21,6 +22,11 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
         raise ValueError('EXPLICIT_ACTIVATION_INPUTS_REQUIRED')
     if len(release_digest) != 64 or any(c not in '0123456789abcdef' for c in release_digest):
         raise ValueError('EXPLICIT_RELEASE_DIGEST_REQUIRED')
+    if (ntpath.normpath(root) != root
+            or not ntpath.normcase(root).startswith('d:\\atlascustody\\personalpaper\\')
+            or any(c in root[3:] for c in (':', '%', '\x00', '/'))
+            or any(part in ('', '.', '..') for part in root[3:].split('\\'))):
+        raise ValueError('EXPLICIT_NATIVE_ACTIVATION_ROOT_REQUIRED')
     record = json.loads(Path(record_path).read_text(encoding='utf-8'))
     policy = json.loads(Path(policy_path).read_text(encoding='utf-8'))
     accounts = json.loads(Path(accounts_path).read_text(encoding='utf-8'))
@@ -32,6 +38,17 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             or record.get('accounts') != accounts
             or record.get('release_digest') != release_digest):
         raise ValueError('ACTIVATION_ACCOUNTS_OR_RELEASE_MISMATCH')
+    # Check the full static activation contract before acquiring a short-lived
+    # trusted-clock capability or entering native create-only custody.
+    from app.services.personal_paper_runtime import validate_policy
+    from app.services.paper_financial_replay import digest
+    validated_policy = validate_policy(policy)
+    if (record.get('policy_digest') != digest(validated_policy)
+            or record.get('origin') != 'LOCAL_OPERATOR'
+            or record.get('schema') != 'ATLAS_PERSONAL_ACTIVATION_V1'
+            or not isinstance(record.get('actions'), list)
+            or not record['actions']):
+        raise ValueError('ACTIVATION_POLICY_OR_ACTION_BINDING_REQUIRED')
     clock = LocalWindowsClock(expected_source=expected_clock_source, runtime_id=runtime_id)
     try:
         return publish_personal_activation(root=root, record=record, policy=policy,

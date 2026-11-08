@@ -29,10 +29,15 @@ def test_activation_refuses_account_mismatch_before_clock_or_native(tmp_path, mo
 
 def test_valid_account_digest_mapping_reaches_clock_and_publisher(tmp_path, monkeypatch):
     import json
+    from app.services.paper_financial_replay import digest
     accounts = {'QUALITY_DIPS': 'b'*64, 'HYPERLIQUID': 'c'*64}
-    record = {'accounts': accounts, 'release_digest': 'a'*64}
+    from app.services.personal_paper_runtime import validate_policy
+    import json as _json
+    from pathlib import Path as _Path
+    policy = _json.loads((_Path(__file__).resolve().parents[1] / 'docs/ATLAS_PERSONAL_PAPER_RELEASE_POLICY.json').read_text())
+    record = {'accounts': accounts, 'release_digest': 'a'*64, 'policy_digest': digest(validate_policy(policy)), 'origin': 'LOCAL_OPERATOR', 'schema': 'ATLAS_PERSONAL_ACTIVATION_V1', 'actions': ['READ_ONLY']}
     paths = []
-    for name, value in [('record', record), ('policy', {}), ('accounts', accounts)]:
+    for name, value in [('record', record), ('policy', policy), ('accounts', accounts)]:
         path = tmp_path / name
         path.write_text(json.dumps(value))
         paths.append(str(path))
@@ -53,3 +58,10 @@ def test_valid_account_digest_mapping_reaches_clock_and_publisher(tmp_path, monk
         accounts_path=paths[2], expected_clock_source='source', runtime_id='runtime')
     assert result['status'] == 'NATIVE_VERIFIED'
     assert events == ['clock', 'publish', 'revoke']
+
+
+def test_invalid_native_root_refused_before_reading_activation_files():
+    with pytest.raises(ValueError, match='EXPLICIT_NATIVE_ACTIVATION_ROOT_REQUIRED'):
+        entry.commission(root='C:\\Temp\\activation', record_path='missing', policy_path='missing',
+                         release_digest='a'*64, accounts_path='missing',
+                         expected_clock_source='source', runtime_id='runtime')
