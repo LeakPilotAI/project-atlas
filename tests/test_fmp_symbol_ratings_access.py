@@ -30,4 +30,32 @@ def test_provider_error_refused():
 
 def test_oversized_response_refused():
     result=probe(environ={'FMP_API_KEY':'redacted'},fetch=lambda:b' '*65537)
-    assert result['reason']=='FMP_REQUEST_OR_RESPONSE_REFUSED'
+    assert result['reason']=='FMP_RESPONSE_TOO_LARGE'
+
+
+from urllib.error import HTTPError, URLError
+import pytest
+
+@pytest.mark.parametrize('status,reason',[(401,'FMP_HTTP_401'),(403,'FMP_HTTP_403'),(404,'FMP_HTTP_404'),(429,'FMP_HTTP_429'),(418,'FMP_HTTP_OTHER')])
+def test_http_error_category_no_secret_leak(status,reason):
+    def failed():
+        raise HTTPError('https://redacted.invalid/?apikey=secret',status,'secret',None,None)
+    result=probe(environ={'FMP_API_KEY':'redacted'},fetch=failed)
+    assert result['reason']==reason
+    assert 'secret' not in str(result)
+
+def test_timeout_category():
+    def failed():
+        raise TimeoutError('private')
+    assert probe(environ={'FMP_API_KEY':'redacted'},fetch=failed)['reason']=='FMP_TIMEOUT'
+
+def test_network_category():
+    def failed():
+        raise URLError('private')
+    assert probe(environ={'FMP_API_KEY':'redacted'},fetch=failed)['reason']=='FMP_NETWORK_OR_TLS_FAILURE'
+
+def test_redirect_category():
+    def failed():
+        raise ValueError('FMP_REDIRECT_REFUSED')
+    assert probe(environ={'FMP_API_KEY':'redacted'},fetch=failed)['reason']=='FMP_REDIRECT_REFUSED'
+

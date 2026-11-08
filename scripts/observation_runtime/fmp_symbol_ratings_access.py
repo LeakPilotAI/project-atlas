@@ -1,4 +1,4 @@
-﻿"""Bounded read-only FMP symbol ratings access probe; no trading authority."""
+"""Bounded read-only FMP symbol ratings access probe; no trading authority."""
 import json
 import os
 from urllib.error import HTTPError, URLError
@@ -41,8 +41,20 @@ def probe(*, environ=None, fetch=None, symbol='MSFT'):
         else:
             result['metadata_review']=assess_records(payload,symbol=symbol)
             result['reason']=('FMP_ORIGIN_AND_LICENSE_REVIEW_REQUIRED' if result['metadata_review']['symbol_filter_respected'] else 'FMP_SYMBOL_FILTER_OR_EMPTY_RESULT_REFUSED')
-    except (HTTPError,URLError,TimeoutError,OSError,ValueError,TypeError,UnicodeError):
-        result['reason']='FMP_REQUEST_OR_RESPONSE_REFUSED'
+    except HTTPError as exc:
+        status=exc.code
+        result['reason']=('FMP_HTTP_'+str(status) if status in (400,401,403,404,408,422,429,500,502,503,504) else 'FMP_HTTP_OTHER')
+    except TimeoutError:
+        result['reason']='FMP_TIMEOUT'
+    except URLError:
+        result['reason']='FMP_NETWORK_OR_TLS_FAILURE'
+    except (OSError,ValueError,TypeError,UnicodeError) as exc:
+        if isinstance(exc,ValueError) and str(exc)=='FMP_REDIRECT_REFUSED':
+            result['reason']='FMP_REDIRECT_REFUSED'
+        elif isinstance(exc,ValueError) and str(exc)=='FMP_RESPONSE_TOO_LARGE':
+            result['reason']='FMP_RESPONSE_TOO_LARGE'
+        else:
+            result['reason']='FMP_REQUEST_OR_RESPONSE_REFUSED'
     return result
 
 if __name__=='__main__':
