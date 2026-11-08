@@ -123,3 +123,25 @@ def test_prices_only_cli_rejects_mixed_universe(monkeypatch,capsys):
     monkeypatch.setattr(probe.Credentials,'load',lambda _:pytest.fail('credentials accessed'))
     assert probe.main(['--prices-only','--symbols','SPY'])==1
     assert 'REFUSED' in capsys.readouterr().out
+
+
+def test_prices_only_does_not_require_sec_contact(monkeypatch):
+    monkeypatch.setattr(probe.Credentials,'load',lambda _:object())
+    class Client:
+        domain='TLS_PUBLIC_PROVIDER'
+        def __init__(self,**kwargs):
+            assert kwargs['sec_user_agent']=='ProjectAtlas/1.0 prices-only-no-sec'
+    class Bundle:
+        def __init__(self,**kwargs): pass
+        def load(self,symbol,*,prices_only=False):
+            assert symbol=='SPY' and prices_only
+            return {'paper_eligible':False,'bars':[],'receipts':[]}
+    result=probe.inspect_prices_only(symbol='SPY',contact=None,credentials_path=Path('unused'),
+                                     client_factory=Client,bundle_factory=Bundle)
+    assert result['operational_source_accepted'] is False
+
+@pytest.mark.parametrize('symbol',['SPY\n','',None,'SPY/US'])
+def test_prices_only_rejects_bad_symbol_before_credentials(monkeypatch,symbol):
+    monkeypatch.setattr(probe.Credentials,'load',lambda _:pytest.fail('credentials accessed'))
+    with pytest.raises(ValueError,match='QD_REAL_SYMBOL_REQUIRED'):
+        probe.inspect_prices_only(symbol=symbol,contact=None,credentials_path=Path('unused'))

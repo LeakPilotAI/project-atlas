@@ -64,15 +64,17 @@ def inspect_free_research(*, symbol, contact, credentials_path, client_factory=F
 def inspect_prices_only(*, symbol, contact, credentials_path, client_factory=FreeResearchClient,
                         bundle_factory=FreeResearchBundle):
     """ETF-compatible read-only price history, without claiming SEC fundamentals."""
-    if (type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}", symbol) is None
-            or type(contact) is not str
-            or re.fullmatch(r"ProjectAtlas/1\.0 [A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", contact) is None
-            or contact.lower().endswith(('.invalid','.test','.example','@example.com','@example.org','@example.net'))):
-        raise ResearchRefused('QD_REAL_SYMBOL_AND_SEC_CONTACT_REQUIRED')
+    if type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}",symbol) is None:
+        raise ResearchRefused('QD_REAL_SYMBOL_REQUIRED')
+    # Price-only Alpaca acquisition makes no SEC request; SEC contact is optional.
+    # Never accept arbitrary contact strings as a request header.
+    if contact is not None and (type(contact) is not str or
+            re.fullmatch(r"ProjectAtlas/1\.0 [A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",contact) is None):
+        raise ResearchRefused('QD_SEC_CONTACT_FORMAT_REFUSED')
     credentials=Credentials.load(credentials_path)
     now=lambda: datetime.now(UTC)
     client=client_factory(cache_root=REPO/'logs'/'diagnostics'/'qd-free-research-acquisition',
-                          now=now,sec_user_agent=contact,credentials=credentials,max_attempts=12,seconds=60)
+                          now=now,sec_user_agent=contact or "ProjectAtlas/1.0 prices-only-no-sec",credentials=credentials,max_attempts=12,seconds=60)
     if client.domain!='TLS_PUBLIC_PROVIDER':
         raise ResearchRefused('QD_REAL_PROVIDER_TRANSPORT_REQUIRED')
     data=bundle_factory(client=client,now=now).load(symbol,prices_only=True)
