@@ -13,7 +13,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "backend"))
-from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal
 from app.investment.alpaca_iex import Credentials
 from app.investment.free_research_providers import FreeResearchBundle
 from app.investment.free_research_transport import FreeResearchClient, ResearchRefused
@@ -215,6 +215,9 @@ def main(argv=None):
     try:
         if args.diagnostic_journal is not None and not (args.prices_only and args.symbols is not None):
             raise ResearchRefused('QD_JOURNAL_BOUNDED_PRICES_ONLY_REQUIRED')
+        # Refuse corrupted or interrupted journals before any provider acquisition.
+        if args.diagnostic_journal is not None and args.diagnostic_journal.exists():
+            inspect_diagnostic_journal(path=args.diagnostic_journal)
         if args.diagnostic_rounds != 1 and not (args.prices_only and args.symbols is not None):
             raise ResearchRefused('QD_REPEATED_DIAGNOSTIC_PRICES_ONLY_UNIVERSE_REQUIRED')
         if args.prices_only and args.symbols is not None and args.diagnostic_rounds != 1:

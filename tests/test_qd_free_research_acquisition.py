@@ -307,3 +307,25 @@ def test_cli_journal_write_failure_is_nonzero(tmp_path,monkeypatch,capsys):
 
 def test_cli_journal_requires_bounded_prices_only(tmp_path,capsys):
     assert probe.main(['--symbol','SPY','--diagnostic-journal',str(tmp_path/'journal')])==1
+
+
+def test_cli_preflight_rejects_interrupted_journal_before_provider(tmp_path,monkeypatch,capsys):
+    path=tmp_path/'research.jsonl'
+    path.write_bytes(b'{"incomplete":')
+    monkeypatch.setattr(probe,'inspect_bounded_prices_only',
+                        lambda **kwargs:pytest.fail('provider must not be called'))
+    assert probe.main(['--prices-only','--symbols','SPY','--diagnostic-journal',str(path)])==1
+    assert path.read_bytes()==b'{"incomplete":'
+    assert 'REFUSED' in capsys.readouterr().out
+
+def test_cli_preflight_accepts_valid_existing_journal(tmp_path,monkeypatch):
+    from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic
+    path=tmp_path/'research.jsonl'
+    result={'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':['SPY'],
+            'results':[{'symbol':'SPY'}],'acquired_count':1,'refused_count':0,
+            'operational_source_accepted':False,'paper_fill_authorized':False,
+            'live_order_authorized':False}
+    journal_diagnostic(result,path=path)
+    monkeypatch.setattr(probe,'inspect_bounded_prices_only',lambda **kwargs:result)
+    assert probe.main(['--prices-only','--symbols','SPY','--diagnostic-journal',str(path)])==0
+    assert len(path.read_text().splitlines())==2
