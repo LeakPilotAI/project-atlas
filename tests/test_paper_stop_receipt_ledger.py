@@ -528,3 +528,23 @@ def test_native_account_read_refuses_financial_cut_change_after_qd_attestation(m
     assert result['state'] == 'UNKNOWN'
     assert result['startup_authorized'] is False
     assert len(reads) == 2
+
+
+def test_native_restart_rejects_contradictory_qd_no_orders_attestation(tmp_path, monkeypatch):
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'SHUTDOWN_FLATTEN')
+    custody = object.__new__(UnifiedPortfolioCustody)
+    snapshot = {'state': 'ACKNOWLEDGED', 'accounts': {
+        lane: {'positions': {}, 'resting_orders': {},
+               'resting_order_evidence': ('ATTESTED_NO_ORDER_CAPABILITY' if lane == 'QUALITY_DIPS' else 'OBSERVED'),
+               'source_head': 'head', 'source_revision': 1, 'observed_at': 123,
+               'epoch': 'epoch', 'strategy': 'strategy'}
+        for lane in ('QUALITY_DIPS', 'HYPERLIQUID')}}
+    monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', lambda self, grant: snapshot)
+    snapshot['accounts']['QUALITY_DIPS']['resting_orders']['pending'] = {'state': 'RESERVED'}
+    with pytest.raises(StopReceiptConflict, match='NATIVE_CUT_UNVERIFIED'):
+        ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
+    assert ledger.inspect_session('s')['state'] == 'PENDING'
+    snapshot['accounts']['QUALITY_DIPS']['resting_orders'].clear()
+    assert ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})['startup_authorized'] is False

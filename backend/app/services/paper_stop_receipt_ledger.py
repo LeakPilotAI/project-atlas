@@ -182,6 +182,7 @@ class PaperStopReceiptLedger:
                         else ('OBSERVED',))
                     or type(account.get('positions')) is not dict
                     or type(account.get('resting_orders')) is not dict
+                    or (lane == 'QUALITY_DIPS' and account['resting_orders'] != {})
                     or not isinstance(account.get('source_head'), str)
                     or not account['source_head']
                     or type(account.get('source_revision')) is not int
