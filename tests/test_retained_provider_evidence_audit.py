@@ -87,3 +87,14 @@ def test_explicit_provider_refusals_are_reported_not_accepted():
     assert result['hyperliquid_provider_result'] == 'REFUSED'
     assert result['hyperliquid_research_retained'] is False
     assert result['financial_execution_authorized'] is False
+
+def test_unexpected_financial_event_kind_is_refused():
+    root = REPO / 'logs/observation-only' / ('session-test-' + uuid.uuid4().hex)
+    s = Session(root, test=True)
+    s.append('ALPACA_IEX_SESSION_RESULT', {'authenticated': True})
+    s.append('HYPERLIQUID_RESEARCH', {'books': {'BTC': {}, 'ETH': {}, 'SOL': {}}, 'financial_execution_authorized': False})
+    s.append('FINANCIAL_ORDER_SUBMITTED', {'symbol': 'BTC'})
+    s.append('DATA_COLLECTION_STOP', {'financial_writers': False})
+    s.append('SESSION_STOP', {'financial_writers': False})
+    with pytest.raises(ValueError, match='OBSERVATION_UNEXPECTED_EVENT_KIND'):
+        audit_session(root)

@@ -18,6 +18,16 @@ def audit_session(path):
         raise ValueError('OBSERVATION_SESSION_NOT_CLOSED')
     records = history['sessions'][0]['records']
     kinds = [row['kind'] for row in records]
+    allowed = {'SESSION_START', 'SESSION_STOP', 'DATA_ONLY_AUTHORIZATION',
+               'ALPACA_IEX_STATE_CHANGE', 'ALPACA_IEX_SESSION_RESULT',
+               'ALPACA_IEX_REFUSED', 'HYPERLIQUID_PUBLIC_RESPONSE',
+               'HYPERLIQUID_RESEARCH', 'HYPERLIQUID_REFUSED',
+               'DATA_COLLECTION_STOP'}
+    if any(kind not in allowed for kind in kinds):
+        raise ValueError('OBSERVATION_UNEXPECTED_EVENT_KIND')
+    if (records and records[0]['value'].get('scope') != 'DISPOSABLE_TEST'
+            and kinds.count('DATA_ONLY_AUTHORIZATION') != 1):
+        raise ValueError('OBSERVATION_DATA_ONLY_SCOPE_UNVERIFIED')
     if (not records or kinds[0] != 'SESSION_START' or kinds[-1] != 'SESSION_STOP'
             or kinds.count('SESSION_START') != 1 or kinds.count('SESSION_STOP') != 1
             or kinds.count('DATA_COLLECTION_STOP') != 1
