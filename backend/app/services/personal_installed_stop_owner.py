@@ -145,3 +145,57 @@ def open_personal_installed_python_stop_signal(*, owner, offline_test_id=""):
         InstalledPythonPaperStopSignal,
     )
     return InstalledPythonPaperStopSignal(owner=owner, offline_test_id=offline_test_id)
+
+
+async def run_personal_installed_owner_session(*, owner, seconds, interval=1,
+                                               stop=None, offline_test_id=""):
+    """Supervise an accepted PAPER session with a temporary desktop Stop event.
+
+    This does not construct or start a session. Only an approved existing owner
+    can create the event; it is closed after bounded supervision or failure.
+    """
+    if (type(owner) is not PersonalInstalledPaperStopOwner
+            or owner._runtime.state != 'RUNNING' or owner._used
+            or owner.verify_session() is not True
+            or type(seconds) not in (int, float) or not 0 < seconds <= 86400
+            or type(interval) not in (int, float) or not .05 <= interval <= 5):
+        raise ValueError('PERSONAL_INSTALLED_OWNER_ACTIVE_SESSION_REQUIRED')
+    runtime = owner._runtime
+
+    def refuse_unverified():
+        runtime.entry_closed.set()
+        runtime.uncertain = True
+        if runtime.state in ('RUNNING', 'PAUSED'):
+            runtime.state = 'STOP_INCOMPLETE'
+
+    try:
+        with open_personal_installed_python_stop_signal(
+                owner=owner, offline_test_id=offline_test_id) as signal:
+            result = await runtime.run(seconds=seconds, interval=interval,
+                                       stop=stop, stop_signal=signal)
+            if signal._used:
+                if (type(result) is not dict or result.get('schema') != 'QD_CONTROL_STOP_V1'
+                        or result.get('phase') != 'FINISHED'
+                        or runtime.state != 'STOPPED'
+                        or not runtime.entry_closed.is_set()
+                        or owner.verify_durable_stop_receipt('SHUTDOWN_FLATTEN', result) is not True):
+                    raise ValueError('PERSONAL_INSTALLED_STOP_DURABLE_RECEIPT_UNVERIFIED')
+                return result
+            # Bounded expiry or an ordinary cancellation cannot silently
+            # abandon open PAPER positions when the event is released.
+            if (type(result) is not dict
+                    or result.get('schema') != 'ATLAS_UNIFIED_PAPER_VIEW_V1'
+                    or runtime.state != 'PAUSED' or owner.verify_session() is not True):
+                raise ValueError('PERSONAL_INSTALLED_STOP_EXPIRY_OWNER_UNVERIFIED')
+            runtime.entry_closed.set()
+            receipt = owner.request_stop('SHUTDOWN_FLATTEN')
+            if (runtime.state != 'STOPPED' or not runtime.entry_closed.is_set()):
+                raise ValueError('PERSONAL_INSTALLED_STOP_EXPIRY_FLATNESS_UNVERIFIED')
+            if owner.verify_durable_stop_receipt('SHUTDOWN_FLATTEN', receipt) is not True:
+                raise ValueError('PERSONAL_INSTALLED_STOP_EXPIRY_RECEIPT_UNVERIFIED')
+            return receipt
+    except BaseException:
+        # No replay if a Stop may already have been dispatched. Preserve
+        # unresolved state for independent native reconciliation.
+        refuse_unverified()
+        raise
