@@ -46,3 +46,22 @@ def test_refuse_inconsistent_candidate(mutate):
 def test_refuse_invalid_expected_origin(url):
     with pytest.raises(ValueError):
         inspect_candidate(expected_url=url, observations=observations())
+
+@pytest.mark.parametrize('bad', [None, '', 7, [], {}, 'http://127.0.0.1:8765/other',
+                                  'http://127.0.0.1:8765/#fragment',
+                                  'http://127.0.0.1:8765/?q=1'])
+def test_refuse_bad_browser_url_observation(bad):
+    items = observations()
+    items[2]['url'] = bad
+    with pytest.raises(ValueError):
+        inspect_candidate(expected_url=URL, observations=items)
+
+
+def test_refuse_missing_browser_stage():
+    with pytest.raises(ValueError):
+        inspect_candidate(expected_url=URL, observations=observations()[:-1])
+
+
+def test_refuse_extra_browser_stage():
+    with pytest.raises(ValueError):
+        inspect_candidate(expected_url=URL, observations=observations() + [observations()[-1]])
