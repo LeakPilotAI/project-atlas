@@ -52,6 +52,10 @@ def inspect(*, root=ROOT, qd_report=None, observation_session=None):
         except (ValueError, OSError, KeyError, TypeError):
             observation = {'status': 'REFUSED', 'reason': 'RETAINED_OBSERVATION_UNVERIFIED',
                            'financial_execution_authorized': False}
+    prerequisites['RETAINED_PROVIDER_RESEARCH'] = (
+        'VERIFIED_HISTORICAL_ONLY' if observation.get('archive_integrity') == 'VERIFIED_LOCAL_HASH_CHAIN_NOT_PROVIDER_AUTHORITY'
+        else 'NOT_VERIFIED')
+    prerequisites['CURRENT_EXECUTABLE_MARKET_PRICES'] = 'NOT_INDEPENDENTLY_VERIFIED'
     return {'schema':'ATLAS_UNIFIED_PAPER_COMMISSIONING_PREFLIGHT_V1',
             'decision':'NO_GO', 'startup_authorized':False, 'live_trading_authorized':False,
             'prerequisites':prerequisites, 'retained_provider_observation':observation, 'hyperliquid_native_inventory':hl,

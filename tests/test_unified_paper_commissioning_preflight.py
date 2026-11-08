@@ -55,3 +55,21 @@ def test_unified_preflight_no_observation_is_not_authority():
     result = module.inspect(qd_report={'checks': []})
     assert result['retained_provider_observation']['status'] == 'NOT_SUPPLIED'
     assert result['retained_provider_observation']['financial_execution_authorized'] is False
+
+def test_closed_provider_research_cannot_satisfy_current_prices():
+    import uuid
+    from scripts.observation_runtime.desktop_observation import Session, REPO
+    root = REPO / 'logs/observation-only' / ('session-test-' + uuid.uuid4().hex)
+    session = Session(root, test=True)
+    session.append('ALPACA_IEX_SESSION_RESULT', {'authenticated': True, 'subscribed': True,
+                                                  'fresh_quote_observed_during_connection': True})
+    session.append('HYPERLIQUID_RESEARCH', {'books': {'BTC': {}, 'ETH': {}, 'SOL': {}},
+                                           'financial_execution_authorized': False})
+    session.append('DATA_COLLECTION_STOP', {'financial_writers': False})
+    session.append('SESSION_STOP', {'financial_writers': False})
+    result = module.inspect(qd_report={'checks': []}, observation_session=root)
+    assert result['prerequisites']['RETAINED_PROVIDER_RESEARCH'] == 'VERIFIED_HISTORICAL_ONLY'
+    assert result['prerequisites']['CURRENT_EXECUTABLE_MARKET_PRICES'] == 'NOT_INDEPENDENTLY_VERIFIED'
+    assert result['retained_provider_observation']['alpaca_fresh_quote_received'] is True
+    assert result['decision'] == 'NO_GO'
+    assert result['startup_authorized'] is False
