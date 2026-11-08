@@ -86,6 +86,18 @@ async def test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdo
     assert accounts['accounts']['HYPERLIQUID']['resting_order_evidence'] == 'OBSERVED'
     assert accounts['accounts']['HYPERLIQUID']['resting_orders'] == {}
     assert all(not account['positions'] for account in accounts['accounts'].values())
+    # Compare each projected account against the independently reread durable
+    # financial writer, not only the aggregate empty-position assertion.
+    for lane, writer in s.custody.writers.items():
+        financial = writer._cut()
+        account = accounts['accounts'][lane]
+        assert account['source_head'] == financial['head']
+        assert account['source_revision'] == financial['state']['revision']
+        assert account['epoch'] == financial['manifest']['epoch']
+        assert account['currency'] == financial['manifest']['currency']
+        assert number(account['opening_cash']) == number(financial['manifest']['opening_cash'])
+        for field in ('cash', 'gross', 'net'):
+            assert number(account[field]) == number(financial['state'][field])
     assert accounts['startup_authorized'] is False
 
 
@@ -236,4 +248,16 @@ async def test_missing_global_final_publication_refuses_clean_shutdown_and_new_s
     assert accounts['accounts']['HYPERLIQUID']['resting_order_evidence'] == 'OBSERVED'
     assert accounts['accounts']['HYPERLIQUID']['resting_orders'] == {}
     assert all(not account['positions'] for account in accounts['accounts'].values())
+    # Compare each projected account against the independently reread durable
+    # financial writer, not only the aggregate empty-position assertion.
+    for lane, writer in s.custody.writers.items():
+        financial = writer._cut()
+        account = accounts['accounts'][lane]
+        assert account['source_head'] == financial['head']
+        assert account['source_revision'] == financial['state']['revision']
+        assert account['epoch'] == financial['manifest']['epoch']
+        assert account['currency'] == financial['manifest']['currency']
+        assert number(account['opening_cash']) == number(financial['manifest']['opening_cash'])
+        for field in ('cash', 'gross', 'net'):
+            assert number(account[field]) == number(financial['state'][field])
     assert accounts['startup_authorized'] is False
