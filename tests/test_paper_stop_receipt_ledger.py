@@ -399,3 +399,33 @@ def test_native_restart_observation_rejects_order_evidence_not_observed(tmp_path
         ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
     snapshot['accounts']['QUALITY_DIPS']['resting_order_evidence'] = 'OBSERVED'
     assert ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})['startup_authorized'] is False
+
+
+def test_native_account_read_refuses_order_store_change_during_projection(monkeypatch):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    custody = object.__new__(UnifiedPortfolioCustody)
+    before = {'state': {'operations': {}}, 'revision': 1}
+    custody.journal = SimpleNamespace(snapshot=lambda: before)
+    @contextmanager
+    def lease(*args):
+        yield SimpleNamespace(check=lambda: True)
+    custody.ownership = SimpleNamespace(lease=lease)
+    custody.clock = lambda: 123
+    custody.authority = SimpleNamespace(verify_read_cuts=lambda *args: True)
+    custody.components = {}
+    monkeypatch.setattr(UnifiedPortfolioCustody, '_verify', lambda self: None)
+    cut = {'head': 'head', 'manifest': {'epoch': 'e', 'strategy': 's', 'currency': 'USD', 'opening_cash': '1000'},
+           'state': {'revision': 1, 'cash': '1000', 'gross': '0', 'costs': '0', 'net': '0', 'positions': {}}}
+    order_reads = []
+    def orders_snapshot():
+        order_reads.append(1)
+        return {'state': {'orders': {}, 'revision': len(order_reads)}}
+    custody.writers = {
+        'QUALITY_DIPS': SimpleNamespace(_cut=lambda: cut),
+        'HYPERLIQUID': SimpleNamespace(_cut=lambda: cut, orders=SimpleNamespace(snapshot=orders_snapshot))}
+    result = custody.read_accounts({'session_id': 's'})
+    assert result['state'] == 'UNKNOWN'
+    assert result['startup_authorized'] is False
+    assert len(order_reads) == 2

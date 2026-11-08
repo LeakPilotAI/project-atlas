@@ -175,6 +175,7 @@ class UnifiedPortfolioCustody:
                     or body(before) != body(self.journal.snapshot())):
                 return unavailable
             accounts = {}
+            order_cuts = {}
             for lane, cut in cuts.items():
                 state, manifest = cut['state'], cut['manifest']
                 accounts[lane] = {'epoch': manifest['epoch'], 'strategy': manifest['strategy'], 'currency': manifest['currency'],
@@ -187,6 +188,7 @@ class UnifiedPortfolioCustody:
                     'resting_order_evidence': 'UNAVAILABLE'}
                 if hasattr(self.writers[lane], 'orders'):
                     control = self.writers[lane].orders.snapshot()
+                    order_cuts[lane] = control
                     accounts[lane]['resting_orders'] = {key: {'state': row['state'], **{k: row['order'][k] for k in
                         ('symbol', 'side', 'quantity', 'limit_price', 'expires_at', 'source_revision')}}
                         for key, row in control['state']['orders'].items() if row['state'] in ('RESERVED', 'FILL_PENDING')}
@@ -197,7 +199,9 @@ class UnifiedPortfolioCustody:
                         accounts[lane]['available_cash'] = None
             # Order snapshots are collected after the first control-journal check.
             # A concurrent reservation/ACK during projection invalidates the cut.
-            if owner.check() is not True or body(before) != body(self.journal.snapshot()):
+            if (owner.check() is not True or body(before) != body(self.journal.snapshot())
+                    or any(body(control) != body(self.writers[lane].orders.snapshot())
+                           for lane, control in order_cuts.items())):
                 return unavailable
             return {**unavailable, 'state': 'ACKNOWLEDGED', 'accounts': strict(body(accounts))}
 
