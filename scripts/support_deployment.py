@@ -559,7 +559,7 @@ def main():
     if sha(encoded(m)) != a.manifest_sha256:
         raise ValueError("APPROVED_SUPPORT_DEPLOYMENT_PIN_MISMATCH")
     runtime = "qd-support-deployment-" + a.manifest_sha256 if a.action == "install" else "qd-code-selection-" + str(a.operation)
-    clock = LocalWindowsClock(expected_source="time.windows.com,0x9", runtime_id=runtime)
+    clock = LocalWindowsClock(expected_source="time.cloudflare.com,0x8 time.google.com,0x8", runtime_id=runtime)
     try:
         if a.action == "install":
             result = install_operational(approved=a.execute_approved_support_deployment, manifest=m, archive=a.archive,

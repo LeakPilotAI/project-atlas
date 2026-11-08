@@ -663,7 +663,7 @@ def run_installed_entry(args, *, approved=False):
                 pass
         clock = DisposableClock()
     else:
-        clock = LocalWindowsClock(expected_source="time.windows.com,0x9", runtime_id="qd-installed-nonfinancial-" + args.expected_head)
+        clock = LocalWindowsClock(expected_source="time.cloudflare.com,0x8 time.google.com,0x8", runtime_id="qd-installed-nonfinancial-" + args.expected_head)
     store = owner = support_lease = None
     try:
         support_lease = SupportLease(proof)
