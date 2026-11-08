@@ -105,3 +105,21 @@ def test_unified_scope_requires_live_and_unattended_exclusions(tmp_path):
     report = module.inspect(root=tmp_path, qd_report={'checks': []})
     assert report['prerequisites']['OPERATOR_SCOPE'] == 'BLOCKED'
     assert report['decision'] == 'NO_GO'
+
+
+def test_unified_scope_rejects_malformed_or_duplicate_lists(tmp_path):
+    import json
+    source = ROOT / 'docs/ATLAS_UNIFIED_PAPER_COMMISSIONING_SCOPE_2026-11-07.json'
+    folder = tmp_path / 'docs'
+    folder.mkdir()
+    original = json.loads(source.read_text(encoding='utf-8'))
+    for field, value in (('scope', None), ('scope', [None]),
+                         ('scope', original['scope'] + [original['scope'][0]]),
+                         ('exclusions', {'PRODUCTION_STARTUP': True}),
+                         ('exclusions', original['exclusions'] + [original['exclusions'][0]])):
+        scope = dict(original)
+        scope[field] = value
+        (folder / source.name).write_text(json.dumps(scope), encoding='utf-8')
+        report = module.inspect(root=tmp_path, qd_report={'checks': []})
+        assert report['prerequisites']['OPERATOR_SCOPE'] == 'BLOCKED'
+        assert report['startup_authorized'] is False

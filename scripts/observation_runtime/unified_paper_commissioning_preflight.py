@@ -19,7 +19,13 @@ def inspect(*, root=ROOT, qd_report=None, observation_session=None):
                 'CREATE_ONLY_NATIVE_CUSTODY_ENROLLMENT_IF_TECHNICALLY_ELIGIBLE',
                 'QUALITY_DIPS_SIMULATED_USD_1000_INCEPTION_IF_TECHNICALLY_ELIGIBLE',
                 'HYPERLIQUID_SIMULATED_USDC_1000_INCEPTION_IF_TECHNICALLY_ELIGIBLE'}
-    scope_ok = (scope.get('schema') == 'ATLAS_UNIFIED_PAPER_COMMISSIONING_SCOPE_V1'
+    scope_items = scope.get('scope')
+    excluded_items = scope.get('exclusions')
+    scope_shape_ok = (isinstance(scope_items, list) and isinstance(excluded_items, list)
+                      and all(isinstance(x, str) for x in scope_items + excluded_items)
+                      and len(scope_items) == len(set(scope_items))
+                      and len(excluded_items) == len(set(excluded_items)))
+    scope_ok = (scope_shape_ok and scope.get('schema') == 'ATLAS_UNIFIED_PAPER_COMMISSIONING_SCOPE_V1'
                 and scope.get('status') == 'OPERATOR_AUTHORIZED_BOUNDED_NATIVE_COMMISSIONING_TECHNICAL_ACCEPTANCE_PENDING'
                 and scope.get('runtime_consumable') is False
                 and scope.get('startup_authorized') is False
@@ -28,8 +34,8 @@ def inspect(*, root=ROOT, qd_report=None, observation_session=None):
                 and scope.get('historical_gate_promotions') == 0
                 and scope.get('authorization_record') == 'EXPLICIT_OPERATOR_CHAT_APPROVAL_NON_SELF_EXECUTING'
                 and scope.get('installed_activation_record_created') is False
-                and set(scope.get('scope', [])) == expected
-                and {'LIVE_ORDERS','REAL_CAPITAL','WALLET_SIGNING','PRODUCTION_STARTUP','GENESIS','VPS_CLOUD','TECHNICAL_GATE_OVERRIDE'} <= set(scope.get('exclusions', [])))
+                and set(scope_items) == expected
+                and {'LIVE_ORDERS','REAL_CAPITAL','WALLET_SIGNING','PRODUCTION_STARTUP','GENESIS','VPS_CLOUD','TECHNICAL_GATE_OVERRIDE'} <= set(excluded_items))
     qd = qd_report or {}
     entries = qd.get('checks', [])
     valid_entries = (isinstance(entries, list) and all(isinstance(x, dict) and isinstance(x.get('check'), str) and isinstance(x.get('status'), str) for x in entries))
