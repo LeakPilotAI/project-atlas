@@ -24,8 +24,11 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
     record = json.loads(Path(record_path).read_text(encoding='utf-8'))
     policy = json.loads(Path(policy_path).read_text(encoding='utf-8'))
     accounts = json.loads(Path(accounts_path).read_text(encoding='utf-8'))
-    if (type(record) is not dict or type(accounts) is not list
-            or sorted(accounts) != ['HYPERLIQUID', 'QUALITY_DIPS']
+    if (type(record) is not dict or type(accounts) is not dict
+            or set(accounts) != {'HYPERLIQUID', 'QUALITY_DIPS'}
+            or any(type(v) is not str or len(v) != 64
+                   or any(c not in '0123456789abcdef' for c in v)
+                   for v in accounts.values())
             or record.get('accounts') != accounts
             or record.get('release_digest') != release_digest):
         raise ValueError('ACTIVATION_ACCOUNTS_OR_RELEASE_MISMATCH')
