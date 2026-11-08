@@ -223,6 +223,10 @@ class UnifiedPortfolioCustody:
                             for key, row in control['state']['orders'].items() if row['state'] in ('RESERVED', 'FILL_PENDING')}
                     except (KeyError, TypeError, AttributeError):
                         return unavailable  # Missing native order fields are not evidence of a drained account.
+                    if any(not isinstance(value, (str, int)) or isinstance(value, bool) or value == ''
+                           for order in accounts[lane]['resting_orders'].values()
+                           for field, value in order.items() if field != 'state'):
+                        return unavailable  # Null/empty order fields cannot support exposure reconciliation.
                     accounts[lane]['resting_order_evidence'] = 'OBSERVED'
                     if accounts[lane]['resting_orders']:
                         # Financial cash is proven, but pending-order spendable cash

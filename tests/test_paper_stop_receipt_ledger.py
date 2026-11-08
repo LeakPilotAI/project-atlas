@@ -924,3 +924,32 @@ def test_native_account_read_refuses_incomplete_active_order_payload(monkeypatch
     assert result['state'] == 'UNKNOWN'
     assert result['accounts'] is None
     assert result['startup_authorized'] is False
+
+
+@pytest.mark.parametrize('bad_field,bad_value', [('symbol', None), ('side', ''), ('quantity', None), ('limit_price', ''), ('expires_at', None), ('source_revision', True)])
+def test_native_account_read_refuses_null_or_empty_active_order_fields(monkeypatch, bad_field, bad_value):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    custody = object.__new__(UnifiedPortfolioCustody)
+    custody.journal = SimpleNamespace(snapshot=lambda: {'state': {'operations': {}}, 'revision': 1})
+    @contextmanager
+    def lease(*args):
+        yield SimpleNamespace(check=lambda: True)
+    custody.ownership = SimpleNamespace(lease=lease)
+    custody.clock = lambda: 123
+    custody.authority = SimpleNamespace(verify_read_cuts=lambda *args: True)
+    custody.components = {}
+    monkeypatch.setattr(UnifiedPortfolioCustody, '_verify', lambda self: None)
+    cut = {'head': 'head', 'manifest': {'epoch': 'epoch', 'strategy': 'strategy', 'currency': 'USD', 'opening_cash': '1000'},
+           'state': {'revision': 1, 'cash': '1000', 'gross': '0', 'costs': '0', 'net': '0', 'positions': {}}}
+    order = {'symbol': 'BTC', 'side': 'BUY', 'quantity': '1', 'limit_price': '100', 'expires_at': 123, 'source_revision': 1}
+    order[bad_field] = bad_value
+    control = {'state': {'orders': {'active': {'state': 'RESERVED', 'order': order}}}}
+    custody.writers = {
+        'QUALITY_DIPS': SimpleNamespace(_cut=lambda: cut, attest_no_resting_orders=lambda evidence: True),
+        'HYPERLIQUID': SimpleNamespace(_cut=lambda: cut, orders=SimpleNamespace(snapshot=lambda: control))}
+    result = custody.read_accounts({'session_id': 's'})
+    assert result['state'] == 'UNKNOWN'
+    assert result['accounts'] is None
+    assert result['startup_authorized'] is False

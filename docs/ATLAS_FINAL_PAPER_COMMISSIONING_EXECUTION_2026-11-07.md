@@ -191,3 +191,6 @@ Reviewed `tests/test_unified_actual_native_lanes.py` and found the F01 post-Stop
 
 ## 2026-11-08 malformed active Hyperliquid orders refuse account publication
 `UnifiedPortfolioCustody.read_accounts` now returns UNKNOWN when a RESERVED/FILL_PENDING native order row lacks a valid order object or any required symbol/side/quantity/limit_price/expires_at/source_revision field. Four parametrized synthetic regressions cover absent and partial order payloads. Related offline suite: 197 passed, 1 skipped, 0 failed. Guarded AIP06 SQLite inspection confirms journal/PRAGMA/ownership restrictions remain unresolved for durable Stop ledger integration; no guard bypass or native F01 execution. Gate 1 blocked; 0/9 accepted; full PAPER production NO-GO.
+
+## 2026-11-08 null/empty active-order fields fail closed
+`UnifiedPortfolioCustody.read_accounts` now refuses active Hyperliquid PAPER orders with null/empty/non-string-or-integer values or booleans in the required symbol/side/quantity/limit_price/expires_at/source_revision projection. Six parametrized offline regressions verify no accepted accounts and no startup authority. Related suite: 203 passed, 1 skipped, 0 failed. This does not supply native execution or accepted issuer evidence; Gate 1 blocked; 0/9 accepted; PAPER production NO-GO.
