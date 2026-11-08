@@ -1,0 +1,27 @@
+{
+  "adapter_source_sha256": {
+    "scripts/install_verified_release.py": "81f890b9424eb282ad7d1c5d5d2a135b0b8e87690f8e28467118c5b6ace4cba8",
+    "scripts/native_install_candidate.py": "d026b57b1fc91e4b4f245e1c01d3b543e3231c1a261c1e2f0ac823712b6df8f1",
+    "scripts/native_install_plan.py": "10bf8c2dd5d2ffdc3a92a576183a701e022c8e53bf5f948a6ad2fcaeb028263f"
+  },
+  "archive": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-funding-v5-source-candidate-20261108\\atlas-source.zip",
+  "archive_sha256": "35c5b6b623f197f085cbe40bc0ff9e0d16672d5b5c3557ad48eb47e4bc20b437",
+  "dependency_receipt": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-d-runtime-coordination-installation-20261028.json",
+  "dependency_sha256": "93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91",
+  "destination": "D:\\AtlasRuntime\\releases\\247a4f4e1d78594cdb55ef55f185ef37921bf535",
+  "financial_enrollment": false,
+  "inventory_sha256": "ff8635bd4f246f49234036b8aad56d9483147bb5cbba28f20f7970aebc47985c",
+  "limits": {
+    "bytes": 1073741824,
+    "entries": 40000,
+    "seconds": 600
+  },
+  "paper_startup": false,
+  "promotion": false,
+  "provider_activation": false,
+  "receipt_path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-247a4f4e1d78594cdb55ef55f185ef37921bf535.json",
+  "schema": "QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V1",
+  "selected": false,
+  "source_commit": "247a4f4e1d78594cdb55ef55f185ef37921bf535",
+  "status": "PROPOSAL_NOT_PERMISSION"
+}
