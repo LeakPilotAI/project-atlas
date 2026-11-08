@@ -31,13 +31,17 @@ async def collect(session,seconds,*,operator_data_only_approved=False):
  session.append('DATA_ONLY_AUTHORIZATION',{'scope':'OPERATOR_BOUNDED_OBSERVATION_NOT_E1_OR_FINANCIAL_AUTHORITY','seconds':seconds,
   'hyperliquid_max_logical_attempts':18,'symbols':['BTC','ETH','SOL'],'iex_symbols':['MSFT','SPY']})
  async def stock():
+  recorded=False
   try:
    result=await feed.run(Credentials.load(REPO/'config/alpaca.env'),seconds=seconds,max_reconnects=0,stop=session.stop)
-   session.update('iex_session_result',result);session.append('ALPACA_IEX_SESSION_RESULT',result)
+   session.update('iex_session_result',result);session.append('ALPACA_IEX_SESSION_RESULT',result);recorded=True
   except (OSError,ValueError,TimeoutError):
    session.update('iex_error','DATA_UNAVAILABLE_OR_REFUSED')
-   session.append('ALPACA_IEX_REFUSED',{'reason':'DATA_UNAVAILABLE_OR_REFUSED','financial_execution_authorized':False})
+  finally:
+   if not recorded:
+    session.append('ALPACA_IEX_REFUSED',{'reason':'DATA_UNAVAILABLE_OR_REFUSED_OR_INTERRUPTED','financial_execution_authorized':False})
  async def perp():
+  recorded=False
   original=adapter._post;metadata=[None]
   async def observed_post(request):
    if request.get('type') not in ('meta','metaAndAssetCtxs','l2Book','candleSnapshot','fundingHistory'):
@@ -69,10 +73,13 @@ async def collect(session,seconds,*,operator_data_only_approved=False):
     value={'scope':['BTC','ETH','SOL'],'scanner':'RESEARCH_COMPLETED','markets':markets,'books':books,'candles':candles,
      'funding':funding,'signals':plans,'observed_at':int(time.time()),'financial_execution_authorized':False,
      'limitations':['PUBLIC_RESEARCH_NOT_FILL_OR_QUEUE_AUTHORITY','SETTLEMENT_ORACLE_NOT_ACCEPTED']}
-    session.update('perpetuals',value);session.append('HYPERLIQUID_RESEARCH',value)
+    session.update('perpetuals',value);session.append('HYPERLIQUID_RESEARCH',value);recorded=True
   except (OSError,ValueError,RuntimeError,TimeoutError,httpx.HTTPError) as error:
-   session.update('perp_error',type(error).__name__);session.append('HYPERLIQUID_REFUSED',{'reason':type(error).__name__})
-  finally:await adapter.close()
+   session.update('perp_error',type(error).__name__)
+  finally:
+   if not recorded:
+    session.append('HYPERLIQUID_REFUSED',{'reason':'DATA_UNAVAILABLE_OR_REFUSED_OR_INTERRUPTED','financial_execution_authorized':False})
+   await adapter.close()
  jobs=[asyncio.create_task(stock()),asyncio.create_task(perp())]
  try:
   session.update('status','BOUNDED_DATA_COLLECTION')
