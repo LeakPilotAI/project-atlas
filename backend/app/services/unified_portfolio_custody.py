@@ -219,8 +219,8 @@ class UnifiedPortfolioCustody:
                 if any(self.writers[lane].attest_no_resting_orders(cut) is not True
                        for lane, cut in qd_attested.items()):
                     return unavailable
-            except (ValueError, OSError, KeyError, TypeError):
-                return unavailable
+            except Exception:
+                return unavailable  # An unexpected verifier failure is not accepted authority.
             # Order snapshots are collected after the first control-journal check.
             # A concurrent reservation/ACK during projection invalidates the cut.
             if (owner.check() is not True or body(before) != body(self.journal.snapshot())
