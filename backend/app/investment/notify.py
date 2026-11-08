@@ -169,6 +169,8 @@ async def deliver_investment_alert(
     title: str = "ATLAS INVESTMENT",
 ) -> bool:
     """DM via the existing Discord client. Does not add slash commands or mix /paper stats."""
+    # A23-D3: automated outbound Discord delivery denied
+    return False
     try:
         import discord
 

@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import api from './view.cjs';
+const raw=name=>fs.readFileSync(new URL('../../../tests/fixtures/market-replay-v1/'+name,import.meta.url),'utf8');
+for(const key of ['network_authorized','net\\u0077ork_authorized'])test(`conflicting duplicate authority ${key} refuses`,()=>{assert.throws(()=>api.parseExport(raw('api.json').replace('{','{"'+key+'":true,')),/Duplicate/);});
+test('identical duplicate keys still refuse',()=>{assert.throws(()=>api.parseQuality(raw('quality.json').replace('{','{"symbol":"SPY",')),/Duplicate/);});
+test('nested duplicate fields refuse',()=>{const text=raw('quality.json').replace('"authenticated":false','"authenticated":true,"authenticated":false');assert.throws(()=>api.parseQuality(text),/Duplicate/);});
+test('key names inside string values are inert',()=>{const v=JSON.parse(raw('research.json'));v.analysis.reference_source='literal {"symbol":1,"symbol":2}, [escaped] \\ "quoted"';assert.equal(api.parseRetainedResearch(JSON.stringify(v)).analysis.reference_source,v.analysis.reference_source);});
+test('same field names across sibling objects remain valid',()=>{assert.equal(api.parseExport(raw('api.json')).rows.length,2);});
+test('whitespace and pretty formatting stay valid',()=>{const v=JSON.parse(raw('quality.json'));assert.equal(api.parseQuality(JSON.stringify(v,null,4)).symbol,'SPY');});
+test('hashed inner report duplicate cannot be hidden by a matching outer digest',async()=>{const v=JSON.parse(raw('research-replay.json'));v.report_json=v.report_json.replace('{','{"network_authorized":true,');v.payload_sha256=createHash('sha256').update(v.report_json).digest('hex');await assert.rejects(()=>api.verifyResearchReplay(JSON.stringify(v)),/Duplicate/);});

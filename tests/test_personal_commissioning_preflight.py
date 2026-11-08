@@ -1,0 +1,290 @@
+"""Diagnostic source-pin refusals; never enroll or initialize an account."""
+import json
+
+import pytest
+
+from scripts.observation_runtime import personal_commissioning_preflight as preflight
+
+
+@pytest.mark.parametrize('expected,changed,accepted', [(None,False,False),('a'*40,False,True),('b'*40,False,False),('a'*40,True,True)])
+def test_explicit_reviewed_source_and_dirty_tree_are_separate_checks(monkeypatch, capsys, expected, changed, accepted):
+    args = ['preflight','--json']+(['--expected-source',expected] if expected else [])
+    monkeypatch.setattr('sys.argv', args)
+    def git(command, **kwargs):
+        tail = command[1:]
+        if tail == ['branch','--show-current']: return preflight.EXPECTED_BRANCH+'\n'
+        if tail == ['rev-parse','HEAD']: return 'a'*40+'\n'
+        if tail == ['status','--porcelain','--untracked-files=no']: return ' M source.py\n' if changed else ''
+        pytest.fail('unexpected subprocess')
+    monkeypatch.setattr(preflight.subprocess, 'check_output', git)
+    assert preflight.main() == 2  # No native activation is supplied by a source pin.
+    report = json.loads(capsys.readouterr().out)
+    checks = {item['check']:item['status'] for item in report['checks']}
+    assert checks['SOURCE_CHECKPOINT'] == ('PASS' if accepted else 'BLOCKED')
+    assert checks['TRACKED_SOURCE_UNCHANGED'] == ('BLOCKED' if changed else 'PASS')
+    assert report['financial_mutations'] is report['pilot_started'] is False
+
+
+@pytest.mark.parametrize('args', [['--expected-source','HEAD'], ['--activation-root',r'C:\other'],
+                                ['--activation-root',r'D:\AtlasCustody\PersonalPaper\..\foreign']])
+def test_unreviewed_aliases_and_foreign_activation_paths_refuse(monkeypatch, args):
+    monkeypatch.setattr('sys.argv', ['preflight', *args])
+    with pytest.raises(SystemExit) as result: preflight.main()
+    assert result.value.code == 2
+
+
+def test_scope_claims_never_substitute_native_financial_or_runtime_proof(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--expected-source', 'a'*40])
+    def git(command, **kwargs):
+        tail = command[1:]
+        if tail == ['branch','--show-current']: return preflight.EXPECTED_BRANCH+'\n'
+        if tail == ['rev-parse','HEAD']: return 'a'*40+'\n'
+        if tail == ['status','--porcelain','--untracked-files=no']: return ''
+        pytest.fail('unexpected subprocess')
+    monkeypatch.setattr(preflight.subprocess, 'check_output', git)
+    original = preflight.json.loads
+    def injected_scope(text):
+        scope = original(text)
+        scope['financial_publication_attempted'] = True
+        scope['runtime_consumable'] = True
+        return scope
+    monkeypatch.setattr(preflight.json, 'loads', injected_scope)
+    assert preflight.main() == 2
+    report = original(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['SOURCE_CHECKPOINT'] == 'PASS'
+    assert checks['TRACKED_SOURCE_UNCHANGED'] == 'PASS'
+    assert checks['FINANCIAL_INCEPTION'] == 'BLOCKED'
+    assert checks['RUNTIME_AUTHORIZATION'] == 'BLOCKED'
+    assert report['pilot_started'] is False
+
+
+def test_preflight_native_custody_inventory_does_not_authorize(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_installation_preflight as native_mod
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output',
+                        lambda command, **kwargs: {'branch': 'chatgpt/atlas-rebuild-v1'}.get('branch', '')
+                        if command[1:] == ['branch', '--show-current'] else '')
+    monkeypatch.setattr(native_mod, 'inspect_native_personal_installation', lambda: {
+        'custody_parent_exists': True, 'personal_parent_exists': True,
+        'native_activation_record_verified': False,
+        'operator_lease_verified': False,
+        'forward_financial_write_authorized': False})
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['NATIVE_CUSTODY_PARENTS'] == 'PASS'
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
+    assert report['native_custody_inventory']['forward_financial_write_authorized'] is False
+    assert report['pilot_started'] is False
+
+
+def test_optional_real_clock_probe_is_not_lease_or_financial_authority(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_clock_gate_probe as clock_mod
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--check-native-clock'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr(clock_mod, 'inspect_personal_clock_gate', lambda: {
+        'trusted_clock_verified_for_probe': True, 'uncertainty_ms': 350,
+        'native_activation_verified': False, 'operator_lease_verified': False,
+        'forward_financial_write_authorized': False, 'live_order_authorized': False})
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['NATIVE_CLOCK_PROBE'] == 'PASS'
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
+    assert checks['RUNTIME_AUTHORIZATION'] == 'BLOCKED'
+    assert report['native_clock_probe']['uncertainty_ms'] == 350
+    assert report['financial_mutations'] is False
+
+
+def test_optional_failed_clock_probe_blocks(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_clock_gate_probe as clock_mod
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--check-native-clock'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr(clock_mod, 'inspect_personal_clock_gate', lambda: {
+        'trusted_clock_verified_for_probe': False, 'blocker': 'CLOCK_UNCERTAINTY_EXCEEDED'})
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['NATIVE_CLOCK_PROBE'] == 'BLOCKED'
+    assert report['native_clock_probe']['blocker'] == 'CLOCK_UNCERTAINTY_EXCEEDED'
+
+
+def test_native_qd_custody_directory_never_counts_as_operational_source(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    original_path = preflight.Path
+    # Use a real empty native-style custody root for the inventory check.
+    original_is_dir = original_path.is_dir
+    original_iterdir = original_path.iterdir
+    def is_dir(path):
+        if str(path).replace('\\', '/').endswith('AtlasCustody/QualityDips'):
+            return True
+        return original_is_dir(path)
+    def iterdir(path):
+        if str(path).replace('\\', '/').endswith('AtlasCustody/QualityDips'):
+            return iter([tmp_path])
+        return original_iterdir(path)
+    monkeypatch.setattr(original_path, 'is_dir', is_dir)
+    monkeypatch.setattr(original_path, 'iterdir', iterdir)
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row['status'] for row in report['checks']}
+    assert checks['OPERATIONAL_QD_SOURCE_PUBLICATION'] == 'BLOCKED'
+    assert report['quality_dips_custody_inventory']['ordinary_child_count'] == 1
+    assert report['quality_dips_custody_inventory']['operational_publication_verified'] is False
+    assert report['pilot_started'] is False
+
+
+def test_native_activation_requires_complete_independent_binding(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['preflight', '--activation-root',
+        r'D:\AtlasCustody\PersonalPaper\approved'])
+    with pytest.raises(SystemExit) as exc:
+        preflight.main()
+    assert exc.value.code == 2
+
+
+def test_native_activation_readback_is_separate_from_financial_authority(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_paper_activation as native_mod
+    class Reader:
+        def __init__(self, **kwargs):
+            assert kwargs['binding']['sha256'] == 'a'*64
+        def read(self):
+            return {'schema': 'ATLAS_PERSONAL_ACTIVATION_V1', 'profile': 'PERSONAL_PAPER_ONLY_V1',
+                    'origin': 'LOCAL_OPERATOR', 'activation_id': 'native-1', 'operator_id': 'sid',
+                    'policy_digest': 'p'*64, 'release_digest': 'r'*64,
+                    'accounts': {'QUALITY_DIPS': 'q'*64}, 'issued_at': 100,
+                    'expires_at': 200, 'actions': ['READ_ONLY']}
+    monkeypatch.setattr(native_mod, 'NativePersonalActivationReader', Reader)
+    # This fixture represents a real ordinary installed child and file.
+    original_is_dir, original_is_file = preflight.Path.is_dir, preflight.Path.is_file
+    monkeypatch.setattr(preflight.Path, 'is_dir', lambda p: True if str(p).endswith('approved') else original_is_dir(p))
+    monkeypatch.setattr(preflight.Path, 'is_file', lambda p: True if str(p).endswith('activation.json') else original_is_file(p))
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
+        r'D:\AtlasCustody\PersonalPaper\approved', '--activation-native-root',
+        '1','2','3','--activation-binding-id','4','5','6',
+        '--activation-binding-sha256','a'*64])
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']:row['status'] for row in report['checks']}
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'PASS'
+    assert checks['FINANCIAL_INCEPTION'] == 'BLOCKED'
+    assert checks['RUNTIME_AUTHORIZATION'] == 'BLOCKED'
+    assert report['financial_mutations'] is False
+
+
+def test_native_activation_bad_readback_fails_closed(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_paper_activation as native_mod
+    class Reader:
+        def __init__(self, **kwargs): pass
+        def read(self): raise ValueError('bad digest')
+    monkeypatch.setattr(native_mod, 'NativePersonalActivationReader', Reader)
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
+        r'D:\AtlasCustody\PersonalPaper\approved', '--activation-native-root',
+        '1','2','3','--activation-binding-id','4','5','6',
+        '--activation-binding-sha256','a'*64])
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']:row['status'] for row in report['checks']}
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
+
+
+def test_native_activation_schema_only_does_not_count_as_verified(monkeypatch, capsys):
+    import scripts.observation_runtime.personal_paper_activation as native_mod
+    class Reader:
+        def __init__(self, **kwargs): pass
+        def read(self):
+            return {'schema': 'ATLAS_PERSONAL_ACTIVATION_V1', 'origin': 'LOCAL_OPERATOR'}
+    monkeypatch.setattr(native_mod, 'NativePersonalActivationReader', Reader)
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
+        r'D:\AtlasCustody\PersonalPaper\approved', '--activation-native-root',
+        '1','2','3','--activation-binding-id','4','5','6',
+        '--activation-binding-sha256','a'*64])
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    assert next(x for x in report['checks'] if x['check'] == 'ACTIVATION_NATIVE_VERIFIED')['status'] == 'BLOCKED'
+
+
+def test_preflight_reports_blocker_dependency_order_without_authorizing(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    order = report['blocked_dependency_order']
+    assert order == ['OPERATIONAL_QD_SOURCE_PUBLICATION', 'ACTIVATION_RECORD_PRESENT',
+                     'ACTIVATION_NATIVE_VERIFIED', 'FINANCIAL_INCEPTION',
+                     'RUNTIME_AUTHORIZATION']
+    assert set(report['blocked_dependency_actions']) == set(order)
+    assert report['financial_mutations'] is False
+    assert report['pilot_started'] is False
+
+
+def test_preflight_distinguishes_legacy_manual_contract_from_personal_auto_pilot(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    review = report['source_enrollment_policy_review']
+    assert review['legacy_qd_op_contract_requires_manual_only'] is True
+    assert review['personal_pilot_uses_distinct_auto_native_enrollment_v4'] is True
+    assert review['manual_only_conflict_applies_to_personal_pilot'] is False
+    assert review['autonomous_pilot_native_acceptance_verified'] is False
+    assert review['grants_authority'] is False
+    assert report['pilot_started'] is False
+
+
+def test_reparse_activation_child_cannot_count_as_present(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json', '--activation-root',
+                                    r'D:\AtlasCustody\PersonalPaper\approved',
+                                    '--activation-native-root', '1', '2', '3',
+                                    '--activation-binding-id', '4', '5', '6',
+                                    '--activation-binding-sha256', 'a'*64])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    original = preflight.Path
+    original_is_dir, original_is_file = original.is_dir, original.is_file
+    original_is_junction = original.is_junction
+    def is_dir(path):
+        if str(path).endswith('approved'): return True
+        return original_is_dir(path)
+    def is_file(path):
+        if str(path).endswith('activation.json'): return True
+        return original_is_file(path)
+    def is_junction(path):
+        if str(path).endswith('approved'): return True
+        return original_is_junction(path)
+    monkeypatch.setattr(original, 'is_dir', is_dir)
+    monkeypatch.setattr(original, 'is_file', is_file)
+    monkeypatch.setattr(original, 'is_junction', is_junction)
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {r['check']: r['status'] for r in report['checks']}
+    assert checks['ACTIVATION_RECORD_PRESENT'] == 'BLOCKED'
+    assert checks['ACTIVATION_NATIVE_VERIFIED'] == 'BLOCKED'
+    assert report['financial_mutations'] is False
+
+
+@pytest.mark.parametrize('path', [
+    r'D:\AtlasCustody\PersonalPaper\approved\nested',
+    r'D:\AtlasCustody\PersonalPaper\approved\nested\deeper',
+    'D:\\AtlasCustody\\PersonalPaper\\',
+])
+def test_activation_root_must_be_immediate_native_child(monkeypatch, path):
+    monkeypatch.setattr('sys.argv', ['preflight', '--activation-root', path])
+    with pytest.raises(SystemExit) as result:
+        preflight.main()
+    assert result.value.code == 2
+
+def test_recovered_release_inventory_is_only_directory_evidence(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row for row in report['checks']}
+    release = checks['RECOVERED_RELEASE_DIRECTORY_PRESENT']
+    assert 'independent native release/selection verification still required' in release['detail']
+    assert checks['FINANCIAL_INCEPTION']['status'] == 'BLOCKED'
+    assert checks['RUNTIME_AUTHORIZATION']['status'] == 'BLOCKED'
+    assert report['pilot_started'] is False

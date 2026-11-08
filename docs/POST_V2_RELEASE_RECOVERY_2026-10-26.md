@@ -1,0 +1,4 @@
+Milestone: Post-V2 operational release boundary
+Status: VERIFIED source-only review;BLOCKED_WAIT at independent decision/authorization boundary
+Evidence:18-row B1/C1/D1/E1matrix;exact operational storage file-levelA/B/Cscope;current token symlink privilege not listed/DeveloperModeopt-in absent;no new native/link/root tests.8new pre-effect scope cases/47pure passes. docs/POST_V2_OPERATIONAL_RELEASE_BOUNDARY_2026-10-26.md. V1/V2counts/evidence preserved,not rerun.
+Next action: designate independent reviewers/owners;review profile,integration and bounded capacity;separately authorize operational SOURCE changes and subsequent bounded native compatibility/real enrollment/release. New fixture scope guard needs native revalidation under a new grant;no consumed grant reused. B1/C1/D1/E1/all21decisions/seven phases/UI/Genesis/history preserved. PAPER NO;production NO-GO.

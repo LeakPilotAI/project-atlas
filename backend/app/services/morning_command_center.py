@@ -316,6 +316,8 @@ class MorningCommandCenter:
         await redis.set(CC_KEY, day, ex=36 * 3600)
 
     async def _send(self) -> None:
+        # A23-D3: automated outbound Discord delivery denied
+        return
         logger.info("Building morning command center")
         names: list[NameSnap] = []
         for sym in _rh_watchlist():

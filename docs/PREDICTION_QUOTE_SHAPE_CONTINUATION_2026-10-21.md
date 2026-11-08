@@ -1,0 +1,9 @@
+# Prediction quote geometry continuation — 2026-10-21
+
+Ten pre-correction cases failed:crossed historicalYESquotes,high above1,high belowclose,negative low,low aboveclose were accepted as usable history for bothYES/NO. Now originalYESclose geometry and supplied non-null extrema are validated beforeNO complement;invalid bars do not count toward minimum history. Valid missing optional extrema retain prior close fallback. No cross-time bid-high/ask-low comparison is imposed;they need not occur simultaneously.
+
+Files:backend/app/prediction/paper_engine.py;tests/test_prediction_quote_shape.py. Source diff and original failing evidence retained in logs/diagnostics/prediction-quote-shape-20261021. Initial relative test path found no tests;corrected absolute run preserved10fail. First broader run37passed/18setup errors due omitted explicit temporary root;corrected guarded regression210passed,2inherited warnings,0fail/skip. After lint-only equivalent condition consolidation37focused passed,1warning. Full module Ruff26inherited unchanged,no new findings;new tests lint corrected;compilation/diff checks performed.
+
+Limitations:invalid bars are excluded under existing usable-history contract,not full-source rejection. No publication/receipt/freshness proof,provider entitlement,live collection or performance claim. NativebrowserNOT_ESTABLISHED. ProductionNO-GO;21gate/startuplock unchanged;no fresh runtime census,services/providers/Genesis/protected-state/trading/Discord/Git changes.
+
+Next inspect actual executable depth geometry across simulate_depth_fill and orderbook normalization. Synthetic helper currently supplies crossed books despite spread field .02;determine explicit contradictions before changing valid contracts. Preserve risklimits and all real execution denial. Continue other sevenphaseoffline tasks rather than retry blockednativebrowser.

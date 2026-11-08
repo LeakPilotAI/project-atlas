@@ -1,0 +1,33 @@
+# Usable offline chart archive viewer — October 20, 2026
+
+Second automatic increment in this turn; existing Goal active/incomplete. Production NO-GO.
+
+## Working frontend
+
+frontend/offline/market-replay/chart-archive.html is a standalone local-file viewer, with chart-archive.cjs and chart-archive-mount.js alongside it. Select exactly the five content-addressed .json/.html archive files (not selection.json), enter the separately retained lowercase receipt SHA-256, and click Verify supplied bytes. This does not start Atlas or any server. It has no fetch, provider/client, storage, service, trading or recovery hooks. CSP denies all connections and disallows executing imported archive HTML. No production Next page was modified; local installed Next use-client guidance was read under frontend/AGENTS.md.
+
+Native WebCrypto verifies receipt, source, diagnostic, HTML and provenance bytes. Strict bounded inventory, names, references, denied flags and report/receipt/provenance consistency are checked. Canonical receipt checks reject duplicates/BOM; structured report decoding also rejects duplicate/unsafe keys and bounds depth/work. Reports preserve unknown delay as null, unverified delay units, unknown adjustment basis, absence of adjusted series, event ordering/completion and explicit bar/adjusted-price separation. Inputs are copied before asynchronous hashing, preventing caller mutation from changing the selected snapshot. Returned model/rows are frozen.
+
+The visible result is BYTE_INTEGRITY_ONLY. python_reproduction_verified is always false, as are source/network/startup/recovery/trading flags. This is not independent source authentication, calendar verification, live freshness, licensing or Python reproduction. A newly supplied/rehashed report under a different caller pin can satisfy byte consistency without matching source semantics; the Python verifier is explicitly required for that stronger claim. The archived HTML is hashed, never executed. Complete raw source metadata is not displayed.
+
+The mounted UI displays only the first100 rows with a visible total to bound DOM work; full validated report remains bounded at10000 bars. Changing file selection/pin, clearing, replacement refusal or late superseded work cannot restore prior evidence. File read and cryptographic failures clear model/rows with constant notices. Original render/refusal-render failures are preserved by the controller; a broken renderer/DOM is not an independently protected display boundary or an OS sandbox. File API timeouts/cancellation and real browser visual acceptance remain unproven.
+
+## Actual source and acceptance
+
+Six checked-in fixture files under tests/fixtures/chart-archive-v1 comprise the actual five-file Python export and explicit developer selection metadata. The source is synthetic SPY minute OHLCV, delay15 with unknown units and optional reported adjusted close50.5 versus chart close101. These are software assertions, not market data or returns. Python tests regenerate all five outputs byte-for-byte and consume a fresh actual export with the new Node verifier. A separate test replays retained source through SQLite/in-process API and the existing dashboard consumer.
+
+Final selected Python496 passed,0 failed/skipped,22.06s.28 archive cases include26 earlier plus2 new actual fixture/consumer integrations. Final Node304 passed,0 failed/skipped/cancelled, including33 new chart archive cases and271 existing market/forecast cases. Counts are successive suites, not additive. Targeted Ruff, Python compilation, Node syntax and configured frontend ESLint pass. PowerShell parser/diff verification recorded. Initial ESLint attempt from repository root could not locate frontend configuration; corrected working directory passed, no policy waiver. Earlier sandbox hard-link failure remains preserved alongside native success.
+
+Node includes actual WebCrypto, missing/duplicate/tampered/oversized inputs, malformed pointers/pins, rehashed authority/live/basis/delay/count/time/price contradictions, duplicate report keys, null metadata, byte-copy protection, superseded loads, dual renderer errors, mounted file-reader failure/pin-edit races and browser-global VM mounting. Mounted tests use a disposable fake DOM and VM; they are not native Windows browser rendering or all-browser local-file/CSP acceptance.
+
+## Runtime and release decision
+
+The inert offline factory/dashboard/exporter/viewer are technically testable without Atlas. Complete Atlas startup remains locked and NOT authorized, with no fresh runtime/Docker census or real server health test. Premarket/regular/after-hours and calendar fixture paths pass; actual live feed/session coverage remains unverified. Existing real-response field coverage and licensing/retention must be reviewed before broadening the deliberately narrow archive whitelist; do not silently copy arbitrary response/private fields.
+
+Actual live collection still requires provider/exchange automated-use, U.S. equity/ETF session and real-time/delay entitlements, historical/storage/display rights, safe credential validation, actual transport budgets/deadlines and vendor timestamp/adjustment acceptance, then explicit observation-only fixed-runtime/admission integration and bounded runtime acceptance. A subscription/key is neither assumed present nor absent. The repaired launcher does not already enforce this profile. No provider connection, services, Docker, Genesis, protected state/config/ACL/shortcut, real volumes/backup/restoration, PAPER/live/Discord or Git mutation occurred.
+
+Canonical21 decisions and startup denial remain byte-identical. Production NO-GO. AFI-1–10 PENDING. All seven phases and E136/prediction/PM-V2/Gaming obligations remain in the master and are not promoted by isolated tests.
+
+## Exact next automatic execution
+
+Inspect the existing BarVintageStore receipt format and source archive contracts. Implement the smallest explicit offline bridge from a bounded ordered list of verified chart archive receipts into an in-memory receipt-vintage replay, with a source-companion mapping for each derived receipt. Preserve original formats and files. Reuse one bounded reader budget, refuse duplicate/reordered/tied observations, changed source/hash, mixed symbols/assets and unreviewed fields. Do not infer storage completeness or source authenticity. Prove future corrections cannot alter earlier decision views and that source-companion reproduction catches omitted/changed receipts, using actual archived payloads. Avoid another storage engine or recovery-security redesign. Continue independent AFI/evidence reliability work afterward; no production integration.

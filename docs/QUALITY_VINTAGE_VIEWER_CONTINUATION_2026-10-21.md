@@ -1,0 +1,13 @@
+# Offline quality and vintage viewer acceptance — 2026-10-21
+
+Working functionality: session-quality imports explicitly display empty-evidence refusal-of-inference, truncated retained-window warnings, source cutoff, report state, interior gaps and past-session rows. Added the existing strict receipt-vintage verifier to the same portable viewer; all planned decisions, correction counts and unchanged confirmations remain visible. No new engine or rescore semantics. Vintage arrival/source authenticity remains unproven.
+
+Seven added viewer tests cover empty/truncated/past-session evidence, count contradictions, verified vintage rendering, tampering and cross-mode late-result supersession. Full offline JavaScript: 513 passed, zero failed/skipped. Focused Python release packaging:56 passed in5.32s. Targeted ESLint and diff integrity passed. Original510-test intermediate run is preserved separately. No backend/PowerShell changes requiring new compilation/parser checks; prior results retained without relabeling.
+
+Fresh workspace build+explicit pinned verification passed: logs/diagnostics/quality-empty-20261021/workspace. Manifest6096f34c8fce139eb8d19e7841d0d0de0676820840e69b0ecb1b62093b658a45. Old workspaces/artifacts remain unchanged. Native browser visual/security enforcement NOT_ESTABLISHED due prior file-URL policy block; no workaround attempted. Static supplied-byte verification and fake-DOM/native crypto tests are not native-browser acceptance.
+
+Prior session-quality pin set verified before edits. Branch chatgpt/atlas-rebuild-v1; no Git mutations. All21 release decisions and production startup denial unchanged. Production NO-GO. No protected services/provider/Genesis/lifecycle/trading/Discord/volume/config/shortcut operations or current-runtime-health inference. Official AFI milestones PENDING.
+
+Next executable task: inspect calendar/session classification validation across portable quality and market consumers against the existing bounded exchange-calendar source. Reproduce contradictory session labels with caller-supplied synthetic reports before making any correction; reuse calendar policy rather than inventing browser-only market hours. Independently continue integrated offline market/forecast work. Native browser, provider rights/budgets, fixed release admission/lifecycle, backups/restoration, Gaming resources, cash scope, lint and consent/PM V2 remain external gates.
+
+All seven phases retained in the managed checkpoint: core operations; Evidence Engine; bounded crypto PAPER; Cross-Market Intelligence; SaaS; institutional governance; commercial validation. No phase completion or new activation authority claimed.

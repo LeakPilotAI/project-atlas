@@ -1,0 +1,165 @@
+{
+  "schema": "ATLAS_PERSONAL_PAPER_RELEASE_PROPOSAL_V1",
+  "profile_id": "PERSONAL_PAPER_ONLY_V1",
+  "status": "PROPOSED_NOT_APPLIED",
+  "runtime_consumable": false,
+  "policy_approved": false,
+  "startup_authorized": false,
+  "financial_publication_authorized": false,
+  "provider_activation_authorized": false,
+  "historical_gate_promotions": 0,
+  "operator_model": "SOLE_LOCAL_OPERATOR",
+  "deployment": "D_ONLY_EXISTING_WINDOWS_ACCOUNT",
+  "vps_cloud_new_windows_account_allowed": false,
+  "preserve_original_frontend": true,
+  "genesis_access_allowed": false,
+  "approval_effect": "Only after explicit operator approval:apply personal-profile policy/applicability and source integration. No account,credential,resource,provider or runtime activation from policy approval.",
+  "authority": {
+    "release_decision": "SOLE_OPERATOR",
+    "external_reviewer_required": false,
+    "external_issuer_required": false,
+    "independent_custodian_required": false,
+    "per_trade_confirmation": false,
+    "session_authorization": "ONE_OPERATOR_START_FOR_EXACT_BOUNDED_SESSION",
+    "ordinary_bugfixes_and_offline_tests": "CONTINUE_WITHIN_ACCEPTED_SOURCE_SCOPE_NO_REPEATED_PROMPTS",
+    "technical_refusals_not_overrideable_by_start": true
+  },
+  "prohibited_capabilities": [
+    "REAL_ORDER_EXECUTION",
+    "REAL_CAPITAL_ENROLLMENT",
+    "WITHDRAWAL",
+    "TRANSFER",
+    "WALLET_SIGNING",
+    "PAPER_TO_LIVE_PROMOTION",
+    "LIVE_TOGGLE",
+    "LIVE_ORDER_SDK_OR_DORMANT_ROUTE"
+  ],
+  "accounts": {
+    "QUALITY_DIPS": {
+      "currency": "SIMULATED_USD",
+      "opening_balance": "1000",
+      "max_entry_notional": "100",
+      "max_open_positions": 1,
+      "universe": "ELIGIBLE_EXISTING_QD_RANKED_STOCKS_ETFS",
+      "long_only": true,
+      "scale_in": false,
+      "fractional": "ONLY_WHEN_SUPPORTED",
+      "fee_bps_per_side": "2",
+      "slippage_bps_per_side": "2"
+    },
+    "HYPERLIQUID": {
+      "currency": "SIMULATED_USDC",
+      "opening_balance": "1000",
+      "max_risk_per_trade": "1",
+      "max_open_positions": 3,
+      "session_stop_R": "-3",
+      "universe": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "other_limits": "PRESERVE_EXISTING_STRICTER_LEVERAGE_MARGIN_FEE_FUNDING_NOTIONAL_AND_EXECUTION_LIMITS"
+    }
+  },
+  "account_separation": {
+    "transfers": false,
+    "cash_netting": false,
+    "assume_usdc_equals_usd": false,
+    "synthetic_counterpart_for_uninitialized_lane": false,
+    "legacy_adoption": false,
+    "historical_positions_assumed_closed": false
+  },
+  "personal_gate_replacement_proposal": {
+    "P-B1": {
+      "authority": "OPERATOR",
+      "requirement": "Confirm exact isolated simulated accounts,limits,cost assumptions and legacy exclusions;no historical migration/completeness certification required for excluded legacy stores."
+    },
+    "P-C1": {
+      "authority": "OPERATOR_PLUS_AUTOMATED_CHECKS",
+      "requirement": "Exact Atlas-owned process/resource map;cooperative writer lease,admission/drain and safe owned shutdown. Existing15roles remain implementation inventory,not15reviewers."
+    },
+    "P-D1": {
+      "authority": "OPERATOR_PLUS_AUTOMATED_CHECKS",
+      "requirement": "Native identities/protected child ACLs,no reparse,append-only evidence,local revision/current tracking,OSUTC/monotonic/boot checks,corruption/UNKNOWN refusal;explicit same-user/drive/rollback limitations."
+    },
+    "P-E1": {
+      "authority": "OPERATOR_PLUS_AUTOMATED_CHECKS",
+      "requirement": "Provider rights/data-only access,source provenance/freshness,risk/capacity checks,exact release and bounded session. No committee signoff or per-trade prompts."
+    }
+  },
+  "retain_technical_controls": [
+    "NO_REAL_FINANCIAL_CAPABILITIES",
+    "ISOLATED_USD_USDC_ACCOUNTS",
+    "ONCE_ONLY_SIMULATED_INCEPTION",
+    "EXACT_DECIMAL_CASH_QUANTITY_COST_FUNDING_RECONCILIATION",
+    "RISK_POSITION_AND_CASH_LIMITS",
+    "DURABLE_OPERATION_IDS_INTENT_COMMIT_ACK",
+    "NO_REPLAY_OF_UNKNOWN_EFFECT",
+    "NATIVE_RESOURCE_IDENTITY_ACL_AND_LINK_REFUSAL",
+    "ACTUAL_CURRENT_DATA_OR_NO_FILL",
+    "SOURCE_TIMESTAMPS_FRESHNESS_AND_SIMULATED_LABELS",
+    "LOCAL_CLOCK_BOOT_AND_DISCONTINUITY_REFUSAL",
+    "COMPLETE_COOPERATING_WRITER_ADMISSION_AND_DRAIN",
+    "OWNED_PROCESS_START_STOP_ONLY",
+    "READ_ONLY_DASHBOARD_GETS",
+    "BOUND_OPERATION_CAPACITY_WITH_STOP_HEADROOM",
+    "NO_AUTOMATIC_REBOOT_RESUME",
+    "PRESERVE_ALL_HISTORY"
+  ],
+  "remove_from_personal_launch_prerequisites": [
+    "MANDATORY_EXTERNAL_REVIEWER_ASSIGNMENTS",
+    "SEPARATE_INDEPENDENT_ISSUER_HIGH_WATER_CLOCK_CUSTODIAN_ROLES",
+    "ENTERPRISE_SIGNATURE_OR_PKI_ENROLLMENT",
+    "CRYPTOGRAPHIC_UTC_AUTHORITY",
+    "HOSTILE_SAME_USER_ADMIN_ISOLATION_CERTIFICATION",
+    "INDEPENDENT_OFFSITE_BACKUP_CUSTODIAN",
+    "LEGACY_ARCHIVE_COMPLETENESS_FOR_NONADOPTED_NEW_ACCOUNTS",
+    "REPEATED_SOURCE_NATIVE_READONLY_INCEPTION_START_APPROVAL_CHAINS",
+    "SEVEN_DAYS_OR_30_60_SESSIONS_BEFORE_FIRST_PILOT",
+    "TRUE_SYMLINK_PRIVILEGE_CHANGE_AS_MANDATORY_PILOT_PREREQUISITE"
+  ],
+  "residual_risks_to_acknowledge": [
+    "SAME_USER_CODE_OR_ADMIN_CAN_TAMPER_WITH_LOCAL_APPROVALS_AND_HISTORY",
+    "LOCAL_HASHES_PINS_AND_SAME_DRIVE_BACKUPS_DO_NOT_PROVE_INDEPENDENT_ANTI_ROLLBACK",
+    "EXTERNAL_D_DRIVE_DISCONNECT_OR_FAILURE_CAN_INTERRUPT_OR_LOSE_SIMULATED_HISTORY",
+    "OSUTC_IS_NOT_CRYPTOGRAPHIC_TIME_AUTHORITY",
+    "TRUE_SYMLINK_TEST_REMAINS_NOT_EXECUTED_1314_GENERIC_REPARSE_REFUSAL_RETAINED",
+    "NO_PHYSICAL_POWER_LOSS_DURABILITY_CERTIFICATION"
+  ],
+  "lifecycle": {
+    "normal_stop": "CLOSE_ENTRIES_CANCEL_KNOWN_UNFILLED_ENTRIES_FRESH_PRICE_FLATTEN_ACK_RECONCILE_DRAIN_OWNED_CLOSE",
+    "unfillable_or_unknown_stop": "PRESERVE_OPEN_OR_UNKNOWN_POSITION_SHOW_SHUTDOWN_INCOMPLETE_ALLOW_ONLY_SAFE_OWNED_CLOSE",
+    "emergency_stop": "CLOSE_DISPATCH_PRESERVE_RECORDS",
+    "pause": "BLOCK_ENTRIES_KEEP_ONLY_AUTHORIZED_PROTECTIVE_MANAGEMENT",
+    "restart": "VERIFY_ALL_PREVIOUS_HISTORY_FRESH_QUOTES_NEW_OPERATOR_SESSION_NO_BLIND_REPLAY"
+  },
+  "pilot": {
+    "proposed_duration_minutes": 30,
+    "proposed_duration_approved": false,
+    "financial_operations": "EXACT_COUNT_BUDGET_MUST_FIT_EXISTING_PER_STORE_128_WITH_STOP_REPORT_FUNDING_FINAL_RESERVES",
+    "continuation": "NOT_REQUIRED_FOR_FIRST_PILOT_IF_ACCEPTED_BUDGET_FITS;REQUIRED_BEFORE_EXHAUSTION_FOR_LONG_RUNNING_USE;NO_RESET",
+    "data": "AUTHORIZED_CURRENT_DATA_ONLY_NO_FEED_CONNECTION_FROM_THIS_PROPOSAL",
+    "no_signal": "HEALTHY_IDLE_SCAN_NO_FORCED_TRADES",
+    "lane_scope": "OPERATOR_SELECTS_READY_LANES;DISABLED_LANE_IS_NOT_FAKE_FUNDED_OR_SILENTLY_CONSOLIDATED;CURRENT_COMBINED_RISK_CHECKS_MUST_NOT_BE_BYPASSED",
+    "trial_evidence": "SEVEN_THEN_30_60_AUTHORIZED_SESSIONS_AFTER_FIRST_RELEASE_NOT_BEFORE"
+  },
+  "approval_workflow": {
+    "now": "APPROVE_OR_REJECT_THIS_PERSONAL_POLICY_ONLY",
+    "later": "ONE_CONCRETE_ACTIVATION_BUNDLE_NAMING_RELEASE_RESOURCES_ACCOUNTS_CASH_DATA_SCOPE_SESSION_LIMITS_AND_ACTIONS_AFTER_TECHNICAL_CHECKS",
+    "per_trade_approvals": false,
+    "native_test_extra_scope": "Only if genuinely needed by changed native behavior;must be explicitly bounded,may be included in the same reviewed bundle;consumedV1V2grants not reused."
+  },
+  "history": {
+    "strict_profile_preserved": true,
+    "existing21decisions_marked_accepted": false,
+    "personal_applicability_change": "EXPLICIT_PROPOSAL_ONLY;afterapprovalrecordnewprofile-scopeddecisionwithoutrewritingoldBLOCKEDasPASS",
+    "prior_file_sha256": {
+      "docs/ATLAS_PAPER_RELEASE_POLICY.json": "264b387c8afcd9563749f03d9322fc0763450f46113f0f784431aacc92ba7b9b",
+      "docs/ATLAS_DEPLOYMENT_POLICY.json": "4940c1ba667007cbdfa2c6b616f4873fc05bf71ab854e84fcbbdcf7c36e63d0c",
+      "docs/PAPER_B1_AUTONOMOUS_ACCEPTANCE_PACKET_V4_2026-10-26.json": "e5ffa7bef546bd8a3d91a426c9e94805d72bf2d4518a5693136ef160b542fd3c",
+      "docs/PAPER_C1_STATIC_ROSTER_ACCEPTANCE_V1_2026-10-26.json": "98451a6323a15905076bd468694af3b6bdd48b324177785d48c4c0d73b22df95",
+      "docs/PAPER_D1_DEPENDENCY_ENROLLMENT_MANIFEST_V1_2026-10-26.json": "55b886ca0975a22d7b7908f8f353b75d43a27d5dee3ed85ad4121f59d37f7bde",
+      "docs/PAPER_E1_PROVIDER_READINESS_MANIFEST_V1_2026-10-26.json": "7df2e4e714e9a4b7f20f3349be97e9a1852b6575363cbe26faeaae26a3e29ba6"
+    }
+  }
+}

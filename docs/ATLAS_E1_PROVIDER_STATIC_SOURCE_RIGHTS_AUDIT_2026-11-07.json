@@ -1,0 +1,93 @@
+﻿{
+    "schema":  "ATLAS_E1_PROVIDER_STATIC_SOURCE_AND_RIGHTS_GAP_V1",
+    "status":  "STATIC_SOURCE_AUDIT_NOT_PROVIDER_ACCEPTANCE",
+    "observed_at_local":  "2026-11-07T03:33:42.5408626-06:00",
+    "source_manifest":  "docs/PAPER_E1_PROVIDER_READINESS_MANIFEST_V1_2026-10-26.json",
+    "providers":  [
+                      {
+                          "id":  "ALPACA_IEX",
+                          "status":  "UNACCEPTED_NOT_CONNECTED",
+                          "source_files":  [
+                                               {
+                                                   "path":  "backend/app/investment/alpaca_iex.py",
+                                                   "exists":  true
+                                               },
+                                               {
+                                                   "path":  "backend/app/services/quality_dips_iex_input.py",
+                                                   "exists":  true
+                                               }
+                                           ],
+                          "source_present_count":  2,
+                          "source_expected_count":  2,
+                          "connection_authorized":  false,
+                          "rights_evidence_present":  false,
+                          "request_budget_present":  false,
+                          "reviewer":  "UNASSIGNED",
+                          "evidence_owner":  "UNASSIGNED"
+                      },
+                      {
+                          "id":  "HYPERLIQUID_PUBLIC",
+                          "status":  "UNACCEPTED_NOT_CONNECTED",
+                          "source_files":  [
+                                               {
+                                                   "path":  "backend/app/adapters/hyperliquid.py",
+                                                   "exists":  true
+                                               },
+                                               {
+                                                   "path":  "backend/app/services/paper_source_publication.py",
+                                                   "exists":  true
+                                               },
+                                               {
+                                                   "path":  "backend/app/services/perp_source_planner.py",
+                                                   "exists":  true
+                                               }
+                                           ],
+                          "source_present_count":  3,
+                          "source_expected_count":  3,
+                          "connection_authorized":  false,
+                          "rights_evidence_present":  false,
+                          "request_budget_present":  false,
+                          "reviewer":  "UNASSIGNED",
+                          "evidence_owner":  "UNASSIGNED"
+                      },
+                      {
+                          "id":  "QUALITY_DIPS_RESEARCH_PUBLICATION",
+                          "status":  "UNACCEPTED_NOT_CONNECTED",
+                          "source_files":  [
+                                               {
+                                                   "path":  "backend/app/services/quality_dip_scanner.py",
+                                                   "exists":  true
+                                               },
+                                               {
+                                                   "path":  "backend/app/investment/engine.py",
+                                                   "exists":  true
+                                               },
+                                               {
+                                                   "path":  "backend/app/investment/research.py",
+                                                   "exists":  true
+                                               },
+                                               {
+                                                   "path":  "backend/app/services/quality_dips_publication_reader.py",
+                                                   "exists":  true
+                                               }
+                                           ],
+                          "source_present_count":  4,
+                          "source_expected_count":  4,
+                          "connection_authorized":  false,
+                          "rights_evidence_present":  false,
+                          "request_budget_present":  false,
+                          "reviewer":  "UNASSIGNED",
+                          "evidence_owner":  "UNASSIGNED"
+                      }
+                  ],
+    "provider_count":  3,
+    "source_expected_count":  9,
+    "source_present_count":  9,
+    "connection_authorized_count":  0,
+    "rights_evidence_count":  0,
+    "request_budget_count":  0,
+    "no_provider_requests_performed":  true,
+    "runtime_consumable":  false,
+    "startup_authorized":  false,
+    "next_action":  "Obtain current provider/derived-source rights, approved budgets and independent review before separately authorized data-only observation; do not infer Robinhood/Yahoo fallback rights."
+}

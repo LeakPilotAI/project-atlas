@@ -1,95 +1,168 @@
-# Windows: clean GitHub copy + one desktop shortcut
+# Windows operation and recovery
 
-One shortcut. It starts Docker, the API, and the **frontend dashboard**,
-then opens the browser. **Close that Atlas window** to force-stop the bot
-and Docker Desktop.
+This document describes the current tracked Windows operator contract. It is intentionally scoped to Project Atlas resources: Atlas startup and shutdown must not terminate Docker Desktop, Genesis, unrelated Python/Node processes, unrelated containers, or other projects.
 
-There is no separate Start / Stop desktop icon.
+## Prerequisites
 
-## Save secrets before deleting the old folder
+Install:
 
-GitHub does **not** contain `.env`, the Python venv, or `backend/data`.
-Copy these somewhere safe first:
+- Git
+- Python 3.12+
+- Node.js LTS
+- Docker Desktop
 
-```
+Atlas secrets and local data are not restored by Git. Keep backups of the local environment files and any durable data you need to preserve.
+
+Typical backup targets:
+
+```text
 D:\Work\atlas-backup\
-    .env                  ← copy of backend\.env  (Discord token, DB password)
-    data\                 ← optional: paper journal / investment files
+    root.env
+    backend.env
+    data\
 ```
 
-In PowerShell:
+Never commit secrets.
+
+## Clean GitHub copy
+
+Open PowerShell outside the existing Project Atlas directory.
+
+Before replacing an existing installation, use the tracked Atlas stop path rather than killing generic Python or Node processes:
+
+```powershell
+cd "D:\Work\Project Atlas"
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\Atlas-Stop.ps1
+```
+
+Back up local state before deleting/replacing the folder:
 
 ```powershell
 New-Item -ItemType Directory -Force D:\Work\atlas-backup | Out-Null
-Copy-Item "D:\Work\Project Atlas\backend\.env" D:\Work\atlas-backup\.env -ErrorAction SilentlyContinue
 Copy-Item "D:\Work\Project Atlas\.env" D:\Work\atlas-backup\root.env -ErrorAction SilentlyContinue
+Copy-Item "D:\Work\Project Atlas\backend\.env" D:\Work\atlas-backup\backend.env -ErrorAction SilentlyContinue
 Copy-Item "D:\Work\Project Atlas\backend\data" D:\Work\atlas-backup\data -Recurse -ErrorAction SilentlyContinue
 ```
 
-## Replace the folder with GitHub
-
-Open a **new** PowerShell whose prompt is `PS D:\Work>` — not inside `Project Atlas`.
-Windows will not delete a folder that is the current directory of that window.
-
+Then clone a clean copy:
 
 ```powershell
-# stop leftover python/node if needed
-Get-Process python, node -ErrorAction SilentlyContinue | Stop-Process -Force
-
+cd D:\Work
 Remove-Item -Recurse -Force "D:\Work\Project Atlas"
-
 git clone https://github.com/LeakPilotAI/project-atlas.git "D:\Work\Project Atlas"
-
-Copy-Item D:\Work\atlas-backup\.env "D:\Work\Project Atlas\backend\.env"
-Copy-Item D:\Work\atlas-backup\.env "D:\Work\Project Atlas\.env"
-# optional paper/investment history:
-# Copy-Item D:\Work\atlas-backup\data "D:\Work\Project Atlas\backend\data" -Recurse
+cd "D:\Work\Project Atlas"
 ```
 
-Need: Git, **Python 3.12+**, **Node.js LTS**, **Docker Desktop**.
-
-## First-time setup (venv + frontend + shortcut)
+Restore only the local files you intentionally backed up. Keep root and backend environment backups distinct instead of copying one environment file over both locations blindly:
 
 ```powershell
-cd "D:\Work\Project Atlas"
+Copy-Item D:\Work\atlas-backup\root.env .\.env -ErrorAction SilentlyContinue
+Copy-Item D:\Work\atlas-backup\backend.env .\backend\.env -ErrorAction SilentlyContinue
+# Optional durable local history:
+# Copy-Item D:\Work\atlas-backup\data .\backend\data -Recurse
+```
+
+Review `.env.example` when creating or reconciling environment configuration. Do not infer or invent missing credentials.
+
+## First-time setup
+
+From the repository root:
+
+```powershell
 powershell -ExecutionPolicy Bypass -File scripts\windows\Fresh-Setup.ps1
 ```
 
-That creates **one** desktop icon named **Project Atlas** and deletes old
-Start/Stop Atlas icons.
+The setup installs the tracked desktop shortcuts:
 
-## Every day
+- **Project Atlas** -> `ATLAS.bat`
+- **Stop Atlas** -> `ATLAS-STOP.bat`
 
-1. Double-click **Project Atlas** on the desktop.
-2. A console window stays open. The dashboard opens at
-   [http://127.0.0.1:8000/dashboard](http://127.0.0.1:8000/dashboard).
-3. Close that console (or Ctrl+C) when you are done. That:
-   - kills the API
-   - kills the frontend
-   - `docker compose down`
-   - force-quits Docker Desktop
+The launcher uses the existing local Docker dependencies, starts Atlas, waits for the established readiness gate, and opens the API-served dashboard only after readiness succeeds.
 
-Do not use the old Start / Stop shortcuts.
+Dashboard:
 
-## Later updates (overwrite code, keep .env and paper data)
-
-Close the Atlas window first.
-
-```powershell
-cd "D:\Work\Project Atlas"
-git fetch origin
-git reset --hard origin/main
-powershell -ExecutionPolicy Bypass -File scripts\windows\Pull-And-Ready.ps1
+```text
+http://127.0.0.1:8000/dashboard
 ```
 
-That:
-- overwrites every **tracked** file to match GitHub `main`
-- keeps `backend\.env` and `backend\data` (journal, secrets)
-- sets `PERP_MICRO_MAX_OPEN=0` (unlimited paper, 80 safety cap in code)
-- recreates the **Project Atlas** desktop shortcut
+## Daily operation
 
-Then double-click **Project Atlas** on the desktop. Do not keep the old
-window running — that process still has old code.
+1. Double-click **Project Atlas**.
+2. Keep the Atlas console available while the local runtime is operating.
+3. Use **Stop Atlas** for predictable graceful shutdown.
+4. Closing the Atlas console also invokes the tracked Atlas teardown path.
 
-`.env` and `backend\data` stay on disk. Re-run `Fresh-Setup.ps1` only if
-Python packages or the frontend install break.
+Shutdown is scoped to Atlas-owned resources. Docker Desktop and other projects such as Genesis stay running.
+
+The legacy interactive stop path first requests graceful API shutdown and may force only verified Atlas process trees after its established timeout. It does not use generic Python/Node termination as part of normal operation. The separate background mode never force-terminates the API on timeout.
+
+## Optional background mode
+
+Background mode is a separate, manual operator choice. It does not replace or modify **Project Atlas** (`ATLAS.bat`) or **Stop Atlas** (`ATLAS-STOP.bat`), and it does not install a Windows auto-start entry.
+
+Install only its additional desktop control:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\windows\Install-AtlasBackgroundShortcut.ps1
+```
+
+Open **Atlas Background** for these three controls:
+
+- **Start Atlas Background** starts the API hidden, waits for the same HTTP/operator readiness gate, and does not open a browser or terminal.
+- **Atlas Status** reports the verified background run or explicitly reports ambiguity.
+- **Stop Atlas Background** sends the API's run-ID shutdown request and waits up to 30 seconds for graceful exit. On timeout it does not terminate the API: it retains runtime ownership, reports that operator intervention is required, and leaves Atlas's Postgres/Redis containers running.
+
+The mode requires Docker Desktop's engine to already be available. Startup may start only the exact `atlas-postgres` and `atlas-redis` containers whose Docker inspection JSON proves the expected container name, service, Atlas Compose project, repository working directory, and `docker-compose.yml` path. Existing Compose project labels `atlas` and `projectatlas` are accepted only with that exact repository path and root; missing/malformed labels or mismatched identities are rejected. It also refuses partial container state, an occupied API port, stale runtime manifests, or uncertain process ownership. It never starts/stops Docker Desktop, shuts down WSL, or targets Genesis or its containers. Do not run the interactive and background Atlas modes at the same time.
+
+When the verified background mode is running, do not use **Stop Atlas**, `ATLAS-STOP.bat`, or `scripts\windows\Atlas-Stop.ps1` to stop it. That legacy interactive path has a forced process-tree fallback and stops the Atlas Postgres/Redis containers; it is not the background manager's graceful-only lifecycle. Use **Atlas Status** to confirm the background owner, then use **Stop Atlas Background** only during an operator-approved maintenance window. A normal graceful shutdown can cancel pending mirror limits, persist open-position marks, and append non-performance `INTERRUPTED` records. If the background stop times out, leave the process and ownership metadata intact, inspect logs and PAPER reconciliation, and require operator resolution; do not fall back to the legacy stop path.
+
+If Status reports that a previous ownership check failed but no process was signalled, that text is retained historical evidence. The manager reports `RUNNING` only after it independently verifies the current owner/runtime run IDs, process and launcher identities, creation times, parent relationship, and sole port-8000 listener. It does not clear the persisted warning. If any current identity check fails, or a lifecycle lock/foreign listener is present, the result remains `AMBIGUOUS` and no process is touched.
+
+This launcher does not create or edit `.env`, journal files, or existing shortcuts. The API needs an existing `backend\.env` or root `.env`; root `.env` is required if Docker Compose must create the Atlas dependency containers. The run-ID manifest records the actual API PID (`os.getpid()`), which can differ from the PID returned by Windows `Start-Process` when the venv Python launcher creates its interpreter child. Ownership verifies the manifest PID against the exact venv executable, Atlas Uvicorn command line, process creation time, run ID, port listener, and—when still present—the launcher's process identity and parent/child relationship. PID reuse and mismatched or incomplete manifests remain ambiguous and block control actions.
+
+When owner and runtime records have the same valid run ID but all recorded PIDs are confirmed absent, the Atlas API process query succeeds with no matching process, port 8000 is free, and no start/stop lifecycle lock exists, Status archives the stale owner and runtime files under `logs\runtime\stale-sessions\<run-id>-<timestamp>-<nonce>`. Recovery uses an exclusive lock and repeats process, listener, and metadata checks before moving those files. A live or reused PID, matching API process, listener, failed query, lock, malformed record, or run-ID mismatch prevents recovery. `stop.json` is retained and only its exact run ID can request shutdown.
+
+The API's existing graceful-shutdown reconciliation has PAPER side effects: it cancels pending paper-mirror limits with the `ATLAS_SHUTDOWN` reason, persists marks for open PAPER positions, and appends non-performance `INTERRUPTED` close events for unfinished PAPER trades. Completed historical journal rows are left intact; these are append/reconciliation actions, not a rewrite of prior records. If the 30-second graceful shutdown times out, reconciliation completion is not guaranteed. Review the PAPER journal and shutdown diagnostics, and resolve the retained Atlas process only after operator inspection. An existing `stop.json` request only applies when its run ID exactly matches the live runtime run ID; an old run's request cannot signal a new run. A verified old GUID request is replaced only when an operator explicitly stops the currently verified run.
+
+During API shutdown, Atlas cancels its boot task and stops background services before performing final PAPER reconciliation. If any shutdown service fails, Atlas skips that final reconciliation and retains open journal rows for operator recovery rather than risk racing a still-running PAPER writer. Inspect service-stop logs and reconcile the retained rows during an approved maintenance window.
+
+Installing the control does not start the Atlas API. **Start Atlas Background** remains an explicit manual activation.
+
+## Readiness and diagnostics
+
+Startup requires the established readiness checks before the browser opens. A failed readiness gate is a failed startup, not permission to bypass the gate.
+
+Useful tracked diagnostics include:
+
+```text
+logs/diagnostics/launcher-ready.json
+logs/diagnostics/stop-latest.json
+```
+
+For the permanent desktop integration smoke diagnostic:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\windows\Atlas-Desktop-Smoke.ps1
+```
+
+See `docs/ATLAS_OPERATOR_GUIDE.md` for the current operator contract and diagnostic interpretation.
+
+## Updating an existing copy
+
+Do not update a live Atlas process and assume it has adopted new code. Updating either interactive or background mode requires an operator-approved maintenance window. For background mode, first verify ownership through **Atlas Status** and use only its graceful **Stop Atlas Background** control. Never use the legacy interactive stop path as a fallback for a background stop timeout.
+
+Use the repository's tracked update workflow only after backing up local secrets/data and reviewing the branch/ref it will install. The operator must not assume that an arbitrary local development branch is the release branch. `Pull-And-Ready.ps1` is not a read-only Git pull: in addition to a fast-forward merge, it may rewrite selected keys in root/backend `.env` files, install the editable backend package, and reinstall the original desktop shortcuts. Review those effects and confirm the desired configuration before running it.
+
+If using `scripts\windows\Pull-And-Ready.ps1`, inspect its target ref and effects before execution. It is a destructive tracked-file refresh workflow and is not a substitute for preserving local secrets/data.
+
+After updating, reinstall/reconcile dependencies as required and recreate shortcuts with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\windows\Install-DesktopShortcut.ps1
+```
+
+Then start Atlas normally and require the readiness gate to pass.
+
+## Safety boundary
+
+These Windows procedures are operational packaging/recovery instructions only. They do not alter strategy selection, evidence requirements, PAPER/execution authority, promotion gates, Discord lifecycle gating, schedulers, or live-capital permissions.

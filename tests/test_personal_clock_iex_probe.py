@@ -1,0 +1,418 @@
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest
+
+import scripts.observation_runtime.personal_clock_iex_probe as probe
+
+
+class Clock:
+    revoked = False
+    def __init__(self, **kwargs):
+        self.evidence = {"bound_ms": 388}
+    def require_operational(self, runtime_id):
+        return self
+    def __call__(self):
+        return datetime(2026, 11, 7, tzinfo=UTC).timestamp()
+    def revoke(self):
+        Clock.revoked = True
+
+
+class Feed:
+    called = False
+    def __init__(self, symbols):
+        assert symbols == ["MSFT"]
+    async def run(self, credentials, *, seconds, max_reconnects, on_fresh_quote):
+        Feed.called = True
+        assert seconds == 3 and max_reconnects == 0
+        on_fresh_quote({"symbol": "MSFT", "bid": 99, "ask": 100,
+                        "bid_lots": 2, "ask_lots": 2,
+                        "timestamp": "2026-11-07T00:00:00+00:00"})
+        return {"authenticated": True, "subscribed": True,
+                "result": {"connection": "DISCONNECTED"}}
+
+
+@pytest.mark.parametrize('roster', ['time.windows.com,0x9',
+    'time.cloudflare.com,0x8 time.google.com,0x8'])
+def test_explicit_reviewed_clock_roster_forwarded_without_discovery(monkeypatch, roster):
+    seen = []
+    class BoundClock(Clock):
+        def __init__(self, **kwargs):
+            seen.append(kwargs['expected_source'])
+            super().__init__(**kwargs)
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: object())
+    result = probe.bounded_clock_iex_observation(symbol='MSFT', seconds=3,
+        credentials_path=Path('unused'), clock_factory=BoundClock, feed_factory=Feed,
+        expected_clock_source=roster)
+    assert seen == [roster] and result['clock_source_binding'] == roster
+    assert result['forward_financial_write_authorized'] is False
+
+
+def test_explicit_source_mismatch_still_blocks_credentials_and_provider(monkeypatch):
+    class RefusedClock:
+        def __init__(self, **kwargs):
+            assert kwargs['expected_source'] == 'time.windows.com,0x9'
+            raise ValueError('CLOCK_CONFIGURED_SOURCE_CHANGED')
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: pytest.fail('clock must precede credentials'))
+    with pytest.raises(ValueError, match='CLOCK_CONFIGURED_SOURCE_CHANGED'):
+        probe.bounded_clock_iex_observation(symbol='MSFT', seconds=3,
+            credentials_path=Path('unused'), clock_factory=RefusedClock, feed_factory=Feed,
+            expected_clock_source='time.windows.com,0x9')
+
+
+def test_cli_forwards_explicit_roster_without_loading_credentials(monkeypatch, capsys):
+    seen = []
+    def observe(**kwargs):
+        seen.append(kwargs)
+        return {'diagnostic_only': True}
+    monkeypatch.setattr(probe, 'bounded_clock_iex_observation', observe)
+    roster = 'time.cloudflare.com,0x8 time.google.com,0x8'
+    assert probe.main(['--seconds','10','--expected-clock-source',roster]) == 0
+    assert seen[0]['expected_clock_source'] == roster
+    assert 'diagnostic_only' in capsys.readouterr().out
+
+
+def test_bounded_native_clock_iex_accepts_fresh_callback_without_authority(monkeypatch):
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
+    Clock.revoked = False
+    result = probe.bounded_clock_iex_observation(
+        symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+        clock_factory=Clock, feed_factory=Feed)
+    assert result["fresh_validated_quote_count"] == 1
+    assert result["forward_financial_write_authorized"] is False
+    assert result["live_order_authorized"] is False
+    assert Clock.revoked
+
+
+def test_clock_failure_blocks_credential_read_and_feed(monkeypatch):
+    def no_credentials(_):
+        pytest.fail("credentials must not be read before clock gate")
+    monkeypatch.setattr(probe.Credentials, "load", no_credentials)
+    class RefusedClock:
+        def __init__(self, **kwargs):
+            raise ValueError("CLOCK_UNCERTAINTY_EXCEEDED")
+    with pytest.raises(ValueError, match="CLOCK_UNCERTAINTY_EXCEEDED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=RefusedClock, feed_factory=Feed)
+
+
+def test_quote_replay_refuses_and_revokes_clock(monkeypatch):
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
+    class ReplayingFeed(Feed):
+        async def run(self, credentials, *, seconds, max_reconnects, on_fresh_quote):
+            quote = {"symbol": "MSFT", "bid": 99, "ask": 100,
+                     "bid_lots": 2, "ask_lots": 2,
+                     "timestamp": "2026-11-07T00:00:00+00:00"}
+            on_fresh_quote(quote)
+            on_fresh_quote(quote)
+    Clock.revoked = False
+    with pytest.raises(ValueError, match="CLOCK_IEX_PROVIDER_REPLAY_REFUSED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=ReplayingFeed)
+    assert Clock.revoked
+
+
+def test_native_publication_path_binds_provider_quote(monkeypatch):
+    import app.services.paper_source_publication as source_mod
+    import app.services.personal_paper_iex_provider as provider_mod
+    import app.services.personal_paper_strategy_signal as signal_mod
+    class Published:
+        def read_current(self):
+            return {"schema": "QD_SCANNER_PUBLICATION_V1",
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION",
+                                                 "strategy_version": "QUALITY_DIPS_V3"}}]}
+    class Provider:
+        def __init__(self, feed):
+            assert isinstance(feed, Feed)
+    monkeypatch.setattr(source_mod, "QualityDipsSourcePublication", Published)
+    monkeypatch.setattr(provider_mod, "PersonalPaperIEXProvider", Provider)
+    def evaluate(*, publication, provider, symbol, now):
+        assert type(publication) is Published and type(provider) is Provider
+        assert symbol == "MSFT"
+        return {"candidate": True,
+                "quote_evidence": {"provider_timestamp": "2026-11-07T00:00:00+00:00", "bid": "99.0", "ask": "100.00", "bid_lots": 2, "ask_lots": 2}}
+    monkeypatch.setattr(signal_mod, "evaluate_published_iex_v3_candidate", evaluate)
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
+    result = probe.bounded_clock_iex_observation(
+        symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+        clock_factory=Clock, feed_factory=Feed, publication=Published())
+    assert result["published_research_checked_count"] == 1
+    assert result["published_research_candidate_count"] == 1
+    assert result["forward_financial_write_authorized"] is False
+
+
+def test_publication_requires_native_type_before_clock_or_credentials(monkeypatch):
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: pytest.fail("no credential access"))
+    with pytest.raises(ValueError, match="CLOCK_IEX_NATIVE_PUBLICATION_REQUIRED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=Feed, publication={"source_verified": True})
+
+
+def test_publication_quote_mismatch_refuses(monkeypatch):
+    import app.services.paper_source_publication as source_mod
+    import app.services.personal_paper_iex_provider as provider_mod
+    import app.services.personal_paper_strategy_signal as signal_mod
+    class Published:
+        def read_current(self):
+            return {"schema": "QD_SCANNER_PUBLICATION_V1",
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION",
+                                                 "strategy_version": "QUALITY_DIPS_V3"}}]}
+    class Provider:
+        def __init__(self, feed):
+            pass
+    monkeypatch.setattr(source_mod, "QualityDipsSourcePublication", Published)
+    monkeypatch.setattr(provider_mod, "PersonalPaperIEXProvider", Provider)
+    monkeypatch.setattr(signal_mod, "evaluate_published_iex_v3_candidate",
+                        lambda **kwargs: {"candidate": True,
+                          "quote_evidence": {"provider_timestamp": "2026-11-06T23:59:59+00:00"}})
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
+    Clock.revoked = False
+    with pytest.raises(ValueError, match="CLOCK_IEX_PUBLICATION_QUOTE_CHANGED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=Feed, publication=Published())
+    assert Clock.revoked
+
+
+def test_same_timestamp_different_price_refused(monkeypatch):
+    import app.services.paper_source_publication as source_mod
+    import app.services.personal_paper_iex_provider as provider_mod
+    import app.services.personal_paper_strategy_signal as signal_mod
+    class Published:
+        def read_current(self):
+            return {"schema": "QD_SCANNER_PUBLICATION_V1",
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION",
+                                                 "strategy_version": "QUALITY_DIPS_V3"}}]}
+    class Provider:
+        def __init__(self, feed):
+            pass
+    monkeypatch.setattr(source_mod, "QualityDipsSourcePublication", Published)
+    monkeypatch.setattr(provider_mod, "PersonalPaperIEXProvider", Provider)
+    monkeypatch.setattr(signal_mod, "evaluate_published_iex_v3_candidate",
+                        lambda **kwargs: {"candidate": True,
+                          "quote_evidence": {"provider_timestamp": "2026-11-07T00:00:00+00:00",
+                                             "bid": "98", "ask": "100"}})
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
+    Clock.revoked = False
+    with pytest.raises(ValueError, match="CLOCK_IEX_PUBLICATION_QUOTE_CHANGED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=Feed, publication=Published())
+    assert Clock.revoked
+
+
+def test_stale_native_publication_refuses_before_credentials_or_socket(monkeypatch):
+    import app.services.paper_source_publication as source_mod
+    class StalePublication:
+        def read_current(self):
+            raise ValueError("SOURCE_CURRENT_CUSTODY_ROLLBACK_OR_FRESHNESS_REFUSED")
+    monkeypatch.setattr(source_mod, "QualityDipsSourcePublication", StalePublication)
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: pytest.fail("credentials accessed"))
+    class NoFeed:
+        def __init__(self, symbols):
+            pytest.fail("provider connection assembled")
+    Clock.revoked = False
+    with pytest.raises(ValueError, match="SOURCE_CURRENT_CUSTODY_ROLLBACK_OR_FRESHNESS_REFUSED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=NoFeed, publication=StalePublication())
+    assert Clock.revoked
+
+
+def test_publication_missing_symbol_refuses_before_credentials(monkeypatch):
+    import app.services.paper_source_publication as source_mod
+    class OtherSymbol:
+        def read_current(self):
+            return {"schema": "QD_SCANNER_PUBLICATION_V1",
+                    "bundles": [{"instrument": {"symbol": "AVGO"}}]}
+    monkeypatch.setattr(source_mod, "QualityDipsSourcePublication", OtherSymbol)
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: pytest.fail("credentials accessed"))
+    Clock.revoked = False
+    with pytest.raises(ValueError, match="CLOCK_IEX_PUBLISHED_SYMBOL_NOT_ENROLLED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=Feed, publication=OtherSymbol())
+    assert Clock.revoked
+
+
+def test_authenticated_no_quote_is_not_forward_research_or_paper(monkeypatch):
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
+    class EmptyFeed(Feed):
+        async def run(self, credentials, *, seconds, max_reconnects, on_fresh_quote):
+            return {"authenticated": True, "subscribed": True,
+                    "result": {"connection": "DISCONNECTED"}}
+    result = probe.bounded_clock_iex_observation(
+        symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+        clock_factory=Clock, feed_factory=EmptyFeed)
+    assert result["fresh_validated_quote_count"] == 0
+    assert result["forward_research_observed"] is False
+    assert result["forward_paper_session_qualified"] is False
+    assert result["forward_financial_write_authorized"] is False
+
+
+def test_same_timestamp_and_prices_different_quote_size_refused(monkeypatch):
+    import app.services.paper_source_publication as source_mod
+    import app.services.personal_paper_iex_provider as provider_mod
+    import app.services.personal_paper_strategy_signal as signal_mod
+    class Published:
+        def read_current(self):
+            return {"schema": "QD_SCANNER_PUBLICATION_V1",
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": "FORWARD_COLLECTION",
+                                                 "strategy_version": "QUALITY_DIPS_V3"}}]}
+    class Provider:
+        def __init__(self, feed):
+            pass
+    monkeypatch.setattr(source_mod, "QualityDipsSourcePublication", Published)
+    monkeypatch.setattr(provider_mod, "PersonalPaperIEXProvider", Provider)
+    monkeypatch.setattr(signal_mod, "evaluate_published_iex_v3_candidate",
+                        lambda **kwargs: {"candidate": True,
+                          "quote_evidence": {"provider_timestamp": "2026-11-07T00:00:00+00:00",
+                                             "bid": "99", "ask": "100",
+                                             "bid_lots": 1, "ask_lots": 2}})
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
+    Clock.revoked = False
+    with pytest.raises(ValueError, match="CLOCK_IEX_PUBLICATION_QUOTE_CHANGED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=Feed, publication=Published())
+    assert Clock.revoked
+
+
+@pytest.mark.parametrize("evidence_class,strategy_version", [
+    ("TEST_DATA", "QUALITY_DIPS_V3"),
+    ("FORWARD_COLLECTION", "QUALITY_DIPS_V2"),
+])
+def test_nonforward_or_nonv3_publication_refused_before_credentials(
+        monkeypatch, evidence_class, strategy_version):
+    import app.services.paper_source_publication as source_mod
+    class Published:
+        def read_current(self):
+            return {"schema": "QD_SCANNER_PUBLICATION_V1",
+                    "bundles": [{"instrument": {"symbol": "MSFT"},
+                                 "observation": {"symbol": "MSFT", "evidence_class": evidence_class,
+                                                 "strategy_version": strategy_version}}]}
+    monkeypatch.setattr(source_mod, "QualityDipsSourcePublication", Published)
+    monkeypatch.setattr(probe.Credentials, "load", lambda _: pytest.fail("credential access"))
+    Clock.revoked = False
+    with pytest.raises(ValueError, match="CLOCK_IEX_FORWARD_V3_PUBLICATION_REQUIRED"):
+        probe.bounded_clock_iex_observation(
+            symbol="MSFT", seconds=3, credentials_path=Path("unused"),
+            clock_factory=Clock, feed_factory=Feed, publication=Published())
+    assert Clock.revoked
+
+
+def test_disposable_producer_refused_before_credentials(monkeypatch):
+    import app.services.quality_dips_current_producer as producer_mod
+    class Producer:
+        execution_domain = 'DISPOSABLE'
+        publication = None
+    monkeypatch.setattr(producer_mod, 'QualityDipsCurrentProducer', Producer)
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: pytest.fail('credentials accessed'))
+    with pytest.raises(ValueError, match='CLOCK_IEX_OPERATIONAL_PRODUCER_REQUIRED'):
+        probe.bounded_clock_iex_observation(
+            symbol='MSFT', seconds=3, credentials_path=Path('unused'),
+            clock_factory=Clock, feed_factory=Feed,
+            operational_producer=Producer())
+
+
+def test_publication_without_operational_producer_not_forward_research(monkeypatch):
+    import app.services.paper_source_publication as source_mod
+    import app.services.personal_paper_iex_provider as provider_mod
+    import app.services.personal_paper_strategy_signal as signal_mod
+    class Published:
+        def read_current(self):
+            return {'schema': 'QD_SCANNER_PUBLICATION_V1',
+                    'bundles': [{'instrument': {'symbol': 'MSFT'},
+                                 'observation': {'symbol': 'MSFT', 'evidence_class': 'FORWARD_COLLECTION',
+                                                 'strategy_version': 'QUALITY_DIPS_V3'}}]}
+    class Provider:
+        def __init__(self, feed): pass
+    monkeypatch.setattr(source_mod, 'QualityDipsSourcePublication', Published)
+    monkeypatch.setattr(provider_mod, 'PersonalPaperIEXProvider', Provider)
+    monkeypatch.setattr(signal_mod, 'evaluate_published_iex_v3_candidate',
+        lambda **kwargs: {'candidate': True, 'quote_evidence': {
+            'provider_timestamp': '2026-11-07T00:00:00+00:00',
+            'bid': '99', 'ask': '100', 'bid_lots': 2, 'ask_lots': 2}})
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: object())
+    result = probe.bounded_clock_iex_observation(
+        symbol='MSFT', seconds=3, credentials_path=Path('unused'),
+        clock_factory=Clock, feed_factory=Feed, publication=Published())
+    assert result['published_research_checked_count'] == 1
+    assert result['forward_research_observed'] is False
+    assert result['operational_producer_verified'] is False
+
+
+def test_operational_source_revocation_on_quote_blocks_evaluation_and_revokes_clock(monkeypatch):
+    import app.services.quality_dips_current_producer as producer_mod
+    import app.services.paper_source_publication as source_mod
+    class Published:
+        pass
+    class Producer:
+        execution_domain = 'OPERATIONAL'
+        def __init__(self):
+            self.publication = Published()
+            self.calls = 0
+        def read_publication(self, timeout):
+            assert timeout == 0.2
+            self.calls += 1
+            if self.calls == 2:
+                raise ValueError('QD_CURRENT_AUTHORITY_REVOKED')
+            return {'schema': 'QD_SCANNER_PUBLICATION_V1', 'revision': 1,
+                    'bundles': [{'instrument': {'symbol': 'MSFT'},
+                                 'observation': {'symbol': 'MSFT', 'evidence_class': 'FORWARD_COLLECTION',
+                                                 'strategy_version': 'QUALITY_DIPS_V3'}}]}
+    import app.services.personal_paper_iex_provider as provider_mod
+    class Provider:
+        def __init__(self, feed): pass
+    monkeypatch.setattr(provider_mod, 'PersonalPaperIEXProvider', Provider)
+    monkeypatch.setattr(producer_mod, 'QualityDipsCurrentProducer', Producer)
+    monkeypatch.setattr(source_mod, 'QualityDipsSourcePublication', Published)
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: object())
+    owner = Producer()
+    Clock.revoked = False
+    with pytest.raises(ValueError, match='QD_CURRENT_AUTHORITY_REVOKED'):
+        probe.bounded_clock_iex_observation(
+            symbol='MSFT', seconds=3, credentials_path=Path('unused'),
+            clock_factory=Clock, feed_factory=Feed,
+            publication=owner.publication, operational_producer=owner)
+    assert owner.calls == 2
+    assert Clock.revoked
+
+
+def test_operational_revision_change_on_quote_fails_closed(monkeypatch):
+    import app.services.quality_dips_current_producer as producer_mod
+    import app.services.paper_source_publication as source_mod
+    import app.services.personal_paper_iex_provider as provider_mod
+    class Published: pass
+    class Producer:
+        execution_domain = 'OPERATIONAL'
+        def __init__(self):
+            self.publication = Published()
+            self.calls = 0
+        def read_publication(self, timeout):
+            self.calls += 1
+            return {'schema': 'QD_SCANNER_PUBLICATION_V1', 'revision': self.calls,
+                    'bundles': [{'instrument': {'symbol': 'MSFT'},
+                                 'observation': {'symbol': 'MSFT', 'evidence_class': 'FORWARD_COLLECTION',
+                                                 'strategy_version': 'QUALITY_DIPS_V3'}}]}
+    class Provider:
+        def __init__(self, feed): pass
+    monkeypatch.setattr(producer_mod, 'QualityDipsCurrentProducer', Producer)
+    monkeypatch.setattr(source_mod, 'QualityDipsSourcePublication', Published)
+    monkeypatch.setattr(provider_mod, 'PersonalPaperIEXProvider', Provider)
+    monkeypatch.setattr(probe.Credentials, 'load', lambda _: object())
+    owner = Producer()
+    Clock.revoked = False
+    with pytest.raises(ValueError, match='CLOCK_IEX_OPERATIONAL_REVISION_CHANGED'):
+        probe.bounded_clock_iex_observation(
+            symbol='MSFT', seconds=3, credentials_path=Path('unused'),
+            clock_factory=Clock, feed_factory=Feed,
+            publication=owner.publication, operational_producer=owner)
+    assert owner.calls == 2 and Clock.revoked

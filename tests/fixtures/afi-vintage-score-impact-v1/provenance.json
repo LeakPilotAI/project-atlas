@@ -1,0 +1,12 @@
+{
+  "scope": "OFFLINE_SYNTHETIC_SCORE_CHANGE_TESTS",
+  "producer_cases": 6,
+  "declared_boundary_cases": 9,
+  "boundary_warning": "Declared extremes are not Laplace-publisher histories, calibration or market performance.",
+  "test_source_sha256": "b0e35e2acf1676c411a89e4a6694fe41ceaa40349f3b7d13c7834e6f6c513af2",
+  "files": {
+    "reports.json": "d17d192514750298b4c39a3e659b3455991147709eeaefe9896ff883b1e43c29",
+    "declared-boundaries.json": "eb7246859c1352202931d3f74be85ff4215bd81d0fe49b316ffd06f825804aaa"
+  },
+  "production_approved": false
+}

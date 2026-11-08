@@ -1,6 +1,7 @@
 """Instrumented _try_symbol. Observability + 1.8R geometry. No threshold changes."""
 
 from __future__ import annotations
+import math
 
 from datetime import datetime, timezone
 from typing import Optional
@@ -26,7 +27,7 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
     if price <= 0:
         paper_pipeline.inc_reject("NO_PRICE")
         return False
-    closes = await self._fetch_closes(symbol, 48)
+    closes = await self._fetch_closes(symbol, 50)
     if len(closes) < 25:
         paper_pipeline.inc("candle_fail")
         return False
@@ -326,7 +327,7 @@ async def instrumented_try_symbol(self, symbol: str, price: float) -> bool:
         paper_pipeline.inc_reject("ZERO_RISK")
         return False
     rr = abs(tp1 - price) / risk
-    if rr < min_rr:
+    if rr < min_rr and not math.isclose(rr, min_rr, rel_tol=1e-12, abs_tol=0.0):
         paper_pipeline.inc("rejected_rr")
         paper_pipeline.inc_reject("RISK_REWARD")
         await paper_journal.log_candidate(

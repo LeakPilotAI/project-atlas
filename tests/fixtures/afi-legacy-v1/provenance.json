@@ -1,0 +1,10 @@
+{
+  "scope": "SYNTHETIC_ONLY_LEGACY_V1",
+  "original_evidence_root": "logs/diagnostics/autonomous-continuation-20261019/offline-demo",
+  "created_before_current_source_binding_changes": true,
+  "hashes": {
+    "manifest.json": "c32108a131b69840aa24954226aabaeaf1f088e11b9ee7d45665babc0d0ad298",
+    "records.json": "31dd80e1a761dccddbd772eb2a4b1d54bf4fc10baf085a27f4b9697249dc7bca",
+    "fd49e1070d6ed3fcbe7fc521e72fbecabf6c53b9d6ea5ab840166cd66329acba.json": "df25746e5105561eee9db87eb6acfaa52d40ea9e004af75f3b4e3825a363ef60"
+  }
+}

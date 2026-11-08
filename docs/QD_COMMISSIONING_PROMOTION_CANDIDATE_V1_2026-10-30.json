@@ -1,0 +1,93 @@
+{
+  "schema": "ATLAS_QD_PROMOTION_PREPARATION_V1",
+  "status": "REVIEWABLE_NOT_AUTHORIZATION",
+  "source_commit": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+  "source_files": 638,
+  "source_bytes": 7720188,
+  "inventory_sha256": "8a19ec246e3055c105a5b6a59523dba05dfad3d439bfaf3cceb892c831a384bd",
+  "archive_sha256": "0e65fae1891fc8d406f086a6aa711781053aa7d9a6b3cf1c9c7963f709c87677",
+  "archive_consistency": {
+    "schema": "ATLAS_SOURCE_CANDIDATE_VERIFICATION_V1",
+    "archive_sha256": "0e65fae1891fc8d406f086a6aa711781053aa7d9a6b3cf1c9c7963f709c87677",
+    "source_files": 638,
+    "supplied_bytes_consistent": true,
+    "source_authenticated": false,
+    "installation_verified": false,
+    "activation_approved": false
+  },
+  "runtime_delta_from_tested_candidate": [
+    {
+      "path": "scripts/observation_runtime/personal_research_archive.py",
+      "bytes": 8505,
+      "sha256": "f72912dbc6d91431da7ed77b3f05f0a53deae5a8a22b0cf777d9dbbe982d3878"
+    },
+    {
+      "path": "backend/app/services/quality_dips_iex_input.py",
+      "bytes": 12431,
+      "sha256": "c5d502ee7d27fe702109e4d4ae7f141c032899638285f111740d839a61d902e3"
+    }
+  ],
+  "tested_candidate_source_commit": "2b9ba32a683b62933f29d3b52777a21753e50631",
+  "active_release_unchanged": "fca29cfe7760a28d2569b8b4b91ed1ea99804c3c",
+  "proposed_new_release": "D:/AtlasRuntime/releases/2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+  "proposed_source_root": "D:/AtlasCustody/QualityDips/<existing-private-epoch>/research-source",
+  "required_source_enrollment_schema": "PERSONAL_QD_SOURCE_ARCHIVE_V1",
+  "required_real_observations": [
+    "NEW_NATIVE_SOURCE_ROOT_ID_OWNER_SYSTEM_ACL",
+    "EXACT_ACCOUNT_EPOCH_SOURCE_RELEASE_BINDING",
+    "ACCEPTED_SCANNER_RESEARCH_ENVELOPE_AND_SOURCE_PROVENANCE",
+    "SOURCE_CURRENT_HEAD_AND_PUBLICATION_LEASE",
+    "FRESH_LOCAL_CLOCK_AT_MOST_1000MS",
+    "ENTITLED_FRESH_EXECUTABLE_IEX_SESSION_AND_INSTRUMENT_EVIDENCE",
+    "ACTUAL_INSTALLED_CONTROL_CENTER_STOP_ACK_DRAIN_AND_RESTART"
+  ],
+  "source_capacity": {
+    "native_images": 128,
+    "initial_images": 1,
+    "maximum_source_publications": 127,
+    "reset_allowed": false
+  },
+  "installer_limits": {
+    "seconds": 600,
+    "entries": 40000,
+    "bytes": 1073741824
+  },
+  "on_failure": "PRESERVE_PARTIAL_AND_CURRENT_RELEASE;NO_REPAIR_ADOPTION_OR_FINANCIAL_REPLAY",
+  "promotion_authorized": false,
+  "source_root_creation_authorized": false,
+  "active_installation_changed": false,
+  "provider_activation_authorized": false,
+  "financial_publication_authorized": false,
+  "paper_startup_authorized": false,
+  "automatic_startup": false,
+  "real_order_execution": false,
+  "genesis_access": false,
+  "packet_resources": {
+    "entries": 5,
+    "bytes": 4133284,
+    "seconds": 5.781
+  },
+  "dependency_source_release_inventory_sha256": "93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91",
+  "proposal_revision": 3,
+  "python_dependency_files": 9566,
+  "python_dependency_bytes": 252648893,
+  "python_dependency_inventory_sha256": "a337e2b5bbd0faddfeaaeb4c2b5b30fe1a440c4f682a3c94fbca18427ab44745",
+  "planned_installed_files": 10204,
+  "planned_payload_bytes": 260369081,
+  "proposed_interpreter": "D:/AtlasRuntime/releases/2c039af29dfefd1df77e0caa3db3fdf5ed188118/python/python.exe",
+  "new_native_release_digest": null,
+  "new_native_resource_identities": null,
+  "new_native_release_digest_required_after_readback": true,
+  "supersedes_for_future_review": "docs/QD_PROMOTION_PREPARATION_V1_2026-10-30.json",
+  "prior_archive_preserved_sha256": "624681e1876b4492a1f1242df64f0025b160f29d9cba9e929444127799af0b6b",
+  "procedure": "docs/QD_COMMISSIONING_PROMOTION_PROCEDURE_V1_2026-10-30.md",
+  "runtime_delta_from_prior_preparation": [
+    {
+      "path": "backend/app/services/quality_dips_iex_input.py",
+      "bytes": 12431,
+      "sha256": "c5d502ee7d27fe702109e4d4ae7f141c032899638285f111740d839a61d902e3"
+    }
+  ],
+  "exact_execution_runner_review_required": true,
+  "operational_enrollment_executed": false
+}

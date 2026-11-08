@@ -1,0 +1,3 @@
+# Exact recovery point
+
+Read NATIVE_CONTINUATION_INTERFACE_BOUNDARY_2026-10-26.md.22source-only fixture export/contract/catch-up tests pass;no actual native constructors/provisioning/writers exercised.61302b46offline continuation unchanged. NewFinancialRecordStore.export_continuation_fixture is strictlyFS2_TEST and refuses operational codecs;pure bridge/delta replays/audits all prefixes and rejects rollback/joint128overflow. No ACTIVE task;BLOCKED_WAIT on proposed P-ATLAS-NATIVE-CONTINUATION-DISPOSABLE-V1 (not granted) before native owner/SYSTEM directory/file publication and successor integration tests. No protected runtime hookup or financial activation. B1/C1/D1/E1remainblocked;all21decisions preserved;PAPERNO;productionNO-GO.

@@ -32,6 +32,11 @@ VALUATION_KEYS = {
     "ps": ("priceToSalesTrailing12Months",),
     "pb": ("priceToBook",),
     "ev_ebitda": ("enterpriseToEbitda",),
+    # Explicit provider-supplied analyst targets. Quality Dips V2 may use these as
+    # provenance-backed normalization evidence; they are never invented by Atlas.
+    "target_low_price": ("targetLowPrice",),
+    "target_mean_price": ("targetMeanPrice",),
+    "target_high_price": ("targetHighPrice",),
 }
 
 HARD_ISSUE_CODES = {"NEGATIVE_VALUE", "INVALID_SHARES", "NEGATIVE_PRICE", "INCONSISTENT_SHARES"}
@@ -79,23 +84,11 @@ class YahooFundamentalProvider:
             self.last_failure = e.failure
             return {k: MeasuredValue.unknown(self.name, e.failure.message) for k in FUNDAMENTAL_KEYS}
         except Exception as e:
-            self.last_failure = ProviderFailure(
-                code="PROVIDER_ERROR",
-                message=str(e)[:200],
-                source=self.name,
-                symbol=symbol,
-                retryable=True,
-            )
+            self.last_failure = ProviderFailure(code="PROVIDER_ERROR", message=str(e)[:200], source=self.name, symbol=symbol, retryable=True)
             return {k: MeasuredValue.unknown(self.name, str(e)[:200]) for k in FUNDAMENTAL_KEYS}
 
         if not info:
-            self.last_failure = ProviderFailure(
-                code="EMPTY",
-                message="empty info payload",
-                source=self.name,
-                symbol=symbol,
-                retryable=True,
-            )
+            self.last_failure = ProviderFailure(code="EMPTY", message="empty info payload", source=self.name, symbol=symbol, retryable=True)
             return {k: MeasuredValue.unknown(self.name, "empty info payload") for k in FUNDAMENTAL_KEYS}
 
         out: Dict[str, MeasuredValue] = {}
@@ -114,22 +107,9 @@ class YahooFundamentalProvider:
                 out[name] = MeasuredValue.unknown(self.name, f"{name} not in provider payload")
                 continue
             quality = _quality_from_issues(issues, kind="fundamental", ts=retrieved)
-            out[name] = MeasuredValue(
-                value=raw,
-                source=self.name,
-                timestamp=retrieved,
-                retrieved_at=retrieved,
-                effective_timestamp=retrieved,
-                quality=quality,
-                availability=True,
-                notes=",".join(i.code for i in issues),
-            )
+            out[name] = MeasuredValue(value=raw, source=self.name, timestamp=retrieved, retrieved_at=retrieved, effective_timestamp=retrieved, quality=quality, availability=True, notes=",".join(i.code for i in issues))
 
-        share_issues = validate_share_consistency(
-            shares=raw_map.get("shares_outstanding"),
-            market_cap=raw_map.get("market_cap"),
-            price=_num(info.get("regularMarketPrice") or info.get("currentPrice")),
-        )
+        share_issues = validate_share_consistency(shares=raw_map.get("shares_outstanding"), market_cap=raw_map.get("market_cap"), price=_num(info.get("regularMarketPrice") or info.get("currentPrice")))
         if share_issues and "shares_outstanding" in out and out["shares_outstanding"].availability:
             mv = out["shares_outstanding"]
             codes = [i.code for i in share_issues]
@@ -162,19 +142,8 @@ class YahooValuationProvider:
             missing["price_to_fcf"] = MeasuredValue.unknown(self.name, e.failure.message)
             return missing
         except Exception as e:
-            self.last_failure = ProviderFailure(
-                code="PROVIDER_ERROR",
-                message=str(e)[:200],
-                source=self.name,
-                symbol=symbol,
-                retryable=True,
-            )
-            return {
-                **{k: MeasuredValue.unknown(self.name, str(e)[:200]) for k in VALUATION_KEYS},
-                "fcf_yield": MeasuredValue.unknown(self.name, str(e)[:200]),
-                "earnings_yield": MeasuredValue.unknown(self.name, str(e)[:200]),
-                "price_to_fcf": MeasuredValue.unknown(self.name, str(e)[:200]),
-            }
+            self.last_failure = ProviderFailure(code="PROVIDER_ERROR", message=str(e)[:200], source=self.name, symbol=symbol, retryable=True)
+            return {**{k: MeasuredValue.unknown(self.name, str(e)[:200]) for k in VALUATION_KEYS}, "fcf_yield": MeasuredValue.unknown(self.name, str(e)[:200]), "earnings_yield": MeasuredValue.unknown(self.name, str(e)[:200]), "price_to_fcf": MeasuredValue.unknown(self.name, str(e)[:200])}
 
         quality = classify_freshness(retrieved, kind="valuation")
         out: Dict[str, MeasuredValue] = {}
@@ -188,62 +157,25 @@ class YahooValuationProvider:
                 out[name] = MeasuredValue.unknown(self.name, f"{name} not provided")
             else:
                 issues = validate_non_negative(name, raw)
-                out[name] = MeasuredValue(
-                    value=raw,
-                    source=self.name,
-                    timestamp=retrieved,
-                    retrieved_at=retrieved,
-                    effective_timestamp=retrieved,
-                    quality=_quality_from_issues(issues, kind="valuation", ts=retrieved) if issues else quality,
-                    availability=True,
-                    notes=",".join(i.code for i in issues),
-                )
+                out[name] = MeasuredValue(value=raw, source=self.name, timestamp=retrieved, retrieved_at=retrieved, effective_timestamp=retrieved, quality=_quality_from_issues(issues, kind="valuation", ts=retrieved) if issues else quality, availability=True, notes=",".join(i.code for i in issues))
 
-        # Derived only when both inputs exist. Never fake a yield from one side.
         price = _num(info.get("regularMarketPrice") or info.get("currentPrice"))
         fcf = _num(info.get("freeCashflow"))
         earnings = _num(info.get("netIncomeToCommon") or info.get("netIncome"))
         mcap = _num(info.get("marketCap"))
 
         if mcap is not None and mcap > 0 and fcf is not None:
-            out["fcf_yield"] = MeasuredValue(
-                value=fcf / mcap,
-                source=self.name + "+derived",
-                timestamp=retrieved,
-                retrieved_at=retrieved,
-                effective_timestamp=retrieved,
-                quality=quality,
-                availability=True,
-                notes="fcf / market_cap",
-            )
+            out["fcf_yield"] = MeasuredValue(value=fcf / mcap, source=self.name + "+derived", timestamp=retrieved, retrieved_at=retrieved, effective_timestamp=retrieved, quality=quality, availability=True, notes="fcf / market_cap")
             if fcf == 0:
                 out["price_to_fcf"] = MeasuredValue.unknown(self.name, "fcf is zero; ratio not invented")
             else:
-                out["price_to_fcf"] = MeasuredValue(
-                    value=mcap / fcf,
-                    source=self.name + "+derived",
-                    timestamp=retrieved,
-                    retrieved_at=retrieved,
-                    effective_timestamp=retrieved,
-                    quality=quality,
-                    availability=True,
-                    notes="market_cap / fcf",
-                )
+                out["price_to_fcf"] = MeasuredValue(value=mcap / fcf, source=self.name + "+derived", timestamp=retrieved, retrieved_at=retrieved, effective_timestamp=retrieved, quality=quality, availability=True, notes="market_cap / fcf")
         else:
             out["fcf_yield"] = MeasuredValue.unknown(self.name, "need market_cap and fcf")
             out["price_to_fcf"] = MeasuredValue.unknown(self.name, "need market_cap and fcf")
 
         if earnings is not None and mcap is not None and mcap > 0:
-            out["earnings_yield"] = MeasuredValue(
-                value=earnings / mcap,
-                source=self.name + "+derived",
-                timestamp=retrieved,
-                retrieved_at=retrieved,
-                effective_timestamp=retrieved,
-                quality=quality,
-                availability=True,
-                notes="earnings / market_cap",
-            )
+            out["earnings_yield"] = MeasuredValue(value=earnings / mcap, source=self.name + "+derived", timestamp=retrieved, retrieved_at=retrieved, effective_timestamp=retrieved, quality=quality, availability=True, notes="earnings / market_cap")
         else:
             out["earnings_yield"] = MeasuredValue.unknown(self.name, "need earnings and market_cap")
         return out

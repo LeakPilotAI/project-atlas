@@ -289,6 +289,7 @@ class DayTradeAssistant:
         if not symbols:
             return
 
+        plans: list[DayPlan] = []
         prepares: list[DayPlan] = []
         triggers: list[DayPlan] = []
         for symbol in symbols:
@@ -297,12 +298,25 @@ class DayTradeAssistant:
                 if float(snap.get("price") or 0) <= 0:
                     continue
                 plan = _build_plan(snap, phase)
+                plans.append(plan)
                 if plan.action == "PREPARE":
                     prepares.append(plan)
                 elif plan.action == "TRIGGER":
                     triggers.append(plan)
             except Exception as e:
                 logger.warning("Day trade symbol error", symbol=symbol, error=str(e))
+
+        # Mirror the exact manual L1 instructions into an isolated PAPER
+        # lifecycle before alert cooldown/delivery.  This never places a broker
+        # order; a newly armed limit cannot fill until a later scan observes a
+        # touch.  MIDDAY cancels unfilled PAPER limits in parity with the UI.
+        try:
+            from app.services.equity_daytrade_paper_mirror import equity_daytrade_paper_mirror
+
+            paper_result = await equity_daytrade_paper_mirror.sync(plans, phase=phase)
+            logger.info("Equity day-trade PAPER mirror", **paper_result)
+        except Exception as e:
+            logger.warning("Equity day-trade PAPER mirror failed", error=str(e))
 
         day = datetime.now(ET).strftime("%Y-%m-%d")
         if prepares and phase in ("PREMARKET", "OPEN"):

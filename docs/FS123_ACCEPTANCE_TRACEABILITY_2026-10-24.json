@@ -1,0 +1,192 @@
+{
+  "schema": "FS123_ACCEPTANCE_TRACEABILITY_V1",
+  "review_commit": "9c59d4c631f5d5f9babf8cd2dac829741f758ed6",
+  "review_type": "OFFLINE_CODE_AND_RETAINED_EVIDENCE_NOT_OPERATIONAL_ACCEPTANCE",
+  "properties": [
+    {
+      "property": "handle_identity",
+      "disposition": "SCOPED_DEMONSTRATED",
+      "test_reference": "test_creation_identity_from_original_handle",
+      "retained_suite": "FS2",
+      "matched_cases": 1,
+      "operationally_accepted": false,
+      "scope_or_limit": "Original creation handle identity; not a trusted resource enrollment"
+    },
+    {
+      "property": "identity_before_payload",
+      "disposition": "SCOPED_DEMONSTRATED",
+      "test_reference": "test_substitution_refused_before_payload_read",
+      "retained_suite": "FS2",
+      "matched_cases": 4,
+      "operationally_accepted": false,
+      "scope_or_limit": "Expected native file IDs before reads and digest before decode; scoped handles"
+    },
+    {
+      "property": "event_receipt_commit",
+      "disposition": "SCOPED_DEMONSTRATED",
+      "test_reference": "test_publication_failure_refuses_retry_and_restart",
+      "retained_suite": "FS2",
+      "matched_cases": 8,
+      "operationally_accepted": false,
+      "scope_or_limit": "Logical event/receipt commit with explicit stages; not multi-file filesystem transaction"
+    },
+    {
+      "property": "idempotence",
+      "disposition": "SCOPED_DEMONSTRATED",
+      "test_reference": "test_duplicate_idempotence_conflict_and_concurrent_retry",
+      "retained_suite": "FS2",
+      "matched_cases": 1,
+      "operationally_accepted": false,
+      "scope_or_limit": "Acknowledged exact retries only; UNKNOWN never reapplied"
+    },
+    {
+      "property": "independent_daily_arithmetic",
+      "disposition": "SCOPED_DEMONSTRATED",
+      "test_reference": "test_independent_auditor_does_not_call_replay_or_builder",
+      "retained_suite": "FS3",
+      "matched_cases": 1,
+      "operationally_accepted": false,
+      "scope_or_limit": "Separate arithmetic implementation, not independent issuer/reviewer"
+    },
+    {
+      "property": "projection_ack",
+      "disposition": "SCOPED_DEMONSTRATED",
+      "test_reference": "test_projection_failure_is_unknown_and_not_retried",
+      "retained_suite": "FS3",
+      "matched_cases": 3,
+      "operationally_accepted": false,
+      "scope_or_limit": "Disposable native view only; actual QualityDips dispatch not integrated"
+    },
+    {
+      "property": "overnight_holdings",
+      "disposition": "SCOPED_DEMONSTRATED",
+      "test_reference": "test_open_overnight_not_falsely_liquidated_or_lifecycle_complete",
+      "retained_suite": "FS3",
+      "matched_cases": 1,
+      "operationally_accepted": false,
+      "scope_or_limit": "Unvalued holdings preserved; lifecycle NOT_EVALUATED"
+    },
+    {
+      "property": "ny_cutoff_dst",
+      "disposition": "SCOPED_DEMONSTRATED",
+      "test_reference": "test_ny_dst_boundaries_and_midnight_partial_fill_attribution",
+      "retained_suite": "FS3",
+      "matched_cases": 2,
+      "operationally_accepted": false,
+      "scope_or_limit": "Calendar accounting, not exchange schedule/feed entitlement"
+    },
+    {
+      "property": "root_type_fix",
+      "disposition": "SCOPED_DEMONSTRATED",
+      "test_reference": "test_fs2_review_typed_root_identity_refused",
+      "retained_suite": "FS3",
+      "matched_cases": 1,
+      "operationally_accepted": false,
+      "scope_or_limit": "Float/integer identity ambiguity fixed; no operational race acceptance"
+    },
+    {
+      "property": "current_pin_custody",
+      "disposition": "NOT_DEMONSTRATED",
+      "test_reference": null,
+      "retained_suite": null,
+      "matched_cases": 0,
+      "operationally_accepted": false,
+      "scope_or_limit": "Injected test pin/provider; independent high-water custody/enrollment absent"
+    },
+    {
+      "property": "issuer_and_clock_authenticity",
+      "disposition": "NOT_DEMONSTRATED",
+      "test_reference": null,
+      "retained_suite": null,
+      "matched_cases": 0,
+      "operationally_accepted": false,
+      "scope_or_limit": "Injected clocks and caller-supplied fixture authority are not accepted issuers"
+    },
+    {
+      "property": "coherent_rollback",
+      "disposition": "LIMITATION_DEMONSTRATED",
+      "test_reference": "test_coherent_test_pin_rollback_is_explicitly_not_independent_authority",
+      "retained_suite": "FS3",
+      "matched_cases": 1,
+      "operationally_accepted": false,
+      "scope_or_limit": "Coherent records+pin rollback can appear consistent; no independent anchor supplied"
+    },
+    {
+      "property": "complete_namespace_protection",
+      "disposition": "PARTIAL_NOT_ACCEPTED",
+      "test_reference": "test_namespace_corruption_and_pin_uncertainty",
+      "retained_suite": "FS2",
+      "matched_cases": 7,
+      "operationally_accepted": false,
+      "scope_or_limit": "Checks known roots/expected names and rejects extras; not universal directory/external-writer exclusion"
+    },
+    {
+      "property": "nonparticipating_writers",
+      "disposition": "NOT_DEMONSTRATED",
+      "test_reference": null,
+      "retained_suite": null,
+      "matched_cases": 0,
+      "operationally_accepted": false,
+      "scope_or_limit": "Cooperative mutex/leases do not exclude all same-user/admin/external writers"
+    },
+    {
+      "property": "abandoned_writer_recovery",
+      "disposition": "REFUSAL_ONLY",
+      "test_reference": "test_abrupt_report_process_restart_never_falsely_clean",
+      "retained_suite": "FS3",
+      "matched_cases": 4,
+      "operationally_accepted": false,
+      "scope_or_limit": "Retained uncertainty/refusal; no accepted recovery/clearing procedure"
+    },
+    {
+      "property": "financial_backup_restore",
+      "disposition": "NOT_DEMONSTRATED",
+      "test_reference": null,
+      "retained_suite": null,
+      "matched_cases": 0,
+      "operationally_accepted": false,
+      "scope_or_limit": "Roadmap backups are not financial backup/isolated restoration acceptance"
+    },
+    {
+      "property": "true_symlink",
+      "disposition": "NOT_EXECUTED",
+      "test_reference": "test_directory_retained_and_symlink_capability",
+      "retained_suite": "FS3",
+      "matched_cases": 1,
+      "operationally_accepted": false,
+      "scope_or_limit": "Windows1314 missing privilege; no waiver"
+    }
+  ],
+  "retained_results": {
+    "FS1": {
+      "passed": 100,
+      "failed": 0,
+      "skipped": 0,
+      "rerun": false
+    },
+    "FS2": {
+      "passed": 59,
+      "failed": 0,
+      "not_executed": 1,
+      "rerun": false
+    },
+    "FS3": {
+      "passed": 120,
+      "failed": 0,
+      "not_executed": 1,
+      "includes_FS2": true,
+      "rerun": false
+    },
+    "FS3_neighbor": {
+      "passed": 100,
+      "failed": 0,
+      "skipped": 0,
+      "overlaps_FS1": true,
+      "rerun": false
+    }
+  },
+  "new_test_cases_executed": 0,
+  "all_21_decisions_unchanged": true,
+  "startup_authorized": false,
+  "production_release": "NO-GO"
+}

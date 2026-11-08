@@ -1,0 +1,10 @@
+{
+  "scope": "ACTUAL_SYNTHETIC_TWO_MODEL_CORRECTION_EXPORT",
+  "sha256": "5e04f8b4c4552355dc67614c6a527ec299166ece294f96e6477b80bc7e5f687e",
+  "forecast_n": 2,
+  "correction_n": 2,
+  "probability_paired_n": 1,
+  "winner_established": false,
+  "calibration_established": false,
+  "production_approved": false
+}

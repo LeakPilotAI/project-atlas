@@ -1,0 +1,305 @@
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from app.services.personal_paper_price_evidence import (
+    PriceEvidenceRejected,
+    preview_quality_dips_execution,
+    validate_stock_iex_quote,
+)
+
+
+def _quote(now):
+    return {
+        "symbol": "MSFT", "state": "FRESH", "bid": "399.99", "ask": "400.01",
+        "bid_lots": 2, "ask_lots": 3, "timestamp": now.isoformat(),
+        "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP",
+    }
+
+
+def test_fresh_provider_bid_ask_validates_without_authorizing_execution():
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    result = validate_stock_iex_quote(_quote(now), symbol="MSFT", now=now)
+    assert result["ask"] == "400.01"
+    assert result["paper_fill_authorized"] is False
+    assert result["live_order_authorized"] is False
+
+
+@pytest.mark.parametrize("mutation", [
+    {"state": "STALE"}, {"symbol": "SPY"}, {"bid": "NaN"},
+    {"ask": "390"}, {"bid_lots": 0}, {"timestamp_basis": "REST_REQUEST_START"},
+    {"timestamp": "2026-11-06T20:00:00"}, {"timestamp": "not a timestamp"},
+])
+def test_rejects_bad_evidence(mutation):
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    quote = _quote(now)
+    quote.update(mutation)
+    with pytest.raises(PriceEvidenceRejected):
+        validate_stock_iex_quote(quote, symbol="MSFT", now=now)
+
+
+def test_rejects_stale_future_and_wide_spread():
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    for mutation in (
+        {"timestamp": (now - timedelta(seconds=16)).isoformat()},
+        {"timestamp": (now + timedelta(seconds=1)).isoformat()},
+        {"bid": "390"},
+    ):
+        quote = _quote(now)
+        quote.update(mutation)
+        with pytest.raises(PriceEvidenceRejected):
+            validate_stock_iex_quote(quote, symbol="MSFT", now=now)
+
+def test_missing_timestamp_basis_is_not_accepted():
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    quote = _quote(now)
+    quote.pop("timestamp_basis")
+    with pytest.raises(PriceEvidenceRejected, match="UNTRUSTED_TIMESTAMP_BASIS"):
+        validate_stock_iex_quote(quote, symbol="MSFT", now=now)
+
+
+def test_strategy_quote_preview_retains_strategy_blockers_even_with_fresh_quote():
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {
+        "strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "sample-1",
+        "blockers": ["QUALITY_DIPS_RESEARCH_STALE"],
+        "strategy_result": {"entry_ladder": {"ready": True}},
+        "paper_execution_eligible": False,
+    }
+    preview = preview_quality_dips_execution(observation, _quote(now), now=now)
+    assert preview["quote_evidence"]["ask"] == "400.01"
+    assert "QUALITY_DIPS_RESEARCH_STALE" in preview["blockers"]
+    assert preview["paper_fill_authorized"] is False
+
+
+def test_strategy_quote_preview_rejects_stale_quote_without_filling():
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {
+        "strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "sample-2",
+        "blockers": [], "strategy_result": {"entry_ladder": {"ready": True}},
+        "paper_execution_eligible": False,
+    }
+    quote = _quote(now)
+    quote["timestamp"] = (now - timedelta(seconds=30)).isoformat()
+    preview = preview_quality_dips_execution(observation, quote, now=now)
+    assert "PROVIDER_QUOTE_STALE_OR_FUTURE" in preview["blockers"]
+    assert preview["quote_evidence"] is None
+    assert preview["paper_execution_eligible"] is False
+
+@pytest.mark.parametrize("ladder", [None, [], "ready", True, {"ready": 1}, {"ready": "yes"}])
+def test_preview_malformed_ladder_fails_closed_without_crash(ladder):
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {
+        "strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "blockers": [],
+        "strategy_result": {"entry_ladder": ladder}, "paper_execution_eligible": True,
+    }
+    result = preview_quality_dips_execution(observation, _quote(now), now=now)
+    assert "QUALITY_DIPS_ENTRY_LADDER_NOT_READY" in result["blockers"]
+    assert result["paper_fill_authorized"] is False
+
+
+@pytest.mark.parametrize("blockers", [None, "BLOCKED", {"x": True}, [None], [""], [1]])
+def test_preview_rejects_malformed_blockers(blockers):
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {
+        "strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "blockers": blockers,
+        "strategy_result": {"entry_ladder": {"ready": True}},
+        "paper_execution_eligible": True,
+    }
+    with pytest.raises(PriceEvidenceRejected, match="INVALID_STRATEGY_BLOCKERS"):
+        preview_quality_dips_execution(observation, _quote(now), now=now)
+
+
+def test_stock_execution_side_uses_adverse_quote_side_without_filling():
+    from app.services.personal_paper_price_evidence import preview_stock_execution_side
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    evidence = validate_stock_iex_quote(_quote(now), symbol="MSFT", now=now)
+    buy = preview_stock_execution_side(evidence, side="BUY", quantity="2")
+    sell = preview_stock_execution_side(evidence, side="SELL", quantity="2")
+    assert buy["reference_price"] == "400.01"
+    assert sell["reference_price"] == "399.99"
+    assert buy["reference_notional"] == "800.02"
+    assert not buy["paper_fill_authorized"] and not sell["live_order_authorized"]
+
+
+@pytest.mark.parametrize("side,quantity", [("SHORT", "1"), ("BUY", "0"), ("SELL", "NaN"), ("BUY", "Infinity"), ("BUY", "bad")])
+def test_stock_execution_side_refuses_invalid_requests(side, quantity):
+    from app.services.personal_paper_price_evidence import preview_stock_execution_side
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    evidence = validate_stock_iex_quote(_quote(now), symbol="MSFT", now=now)
+    with pytest.raises(PriceEvidenceRejected):
+        preview_stock_execution_side(evidence, side=side, quantity=quantity)
+
+
+def test_current_stock_order_revalidates_quote_and_caps_notional():
+    from app.services.personal_paper_price_evidence import preview_current_stock_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    result = preview_current_stock_order(_quote(now), symbol="MSFT", now=now,
+                                         side="BUY", quantity="0.2", max_notional="100")
+    assert result["reference_notional"] == "80.002"
+    assert result["max_notional"] == "100"
+    assert result["quote_evidence"]["provider_timestamp"] == now.isoformat()
+    assert result["paper_fill_authorized"] is False
+
+
+@pytest.mark.parametrize("quantity,cap", [("1", "100"), ("0.2", "0"), ("0.2", "NaN"), ("0.2", "bad")])
+def test_current_stock_order_refuses_invalid_cap_or_oversized_proposal(quantity, cap):
+    from app.services.personal_paper_price_evidence import preview_current_stock_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    with pytest.raises(PriceEvidenceRejected):
+        preview_current_stock_order(_quote(now), symbol="MSFT", now=now,
+                                    side="BUY", quantity=quantity, max_notional=cap)
+
+
+def test_current_stock_order_refuses_stale_quote_at_decision_time():
+    from app.services.personal_paper_price_evidence import preview_current_stock_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    with pytest.raises(PriceEvidenceRejected, match="PROVIDER_QUOTE_STALE_OR_FUTURE"):
+        preview_current_stock_order(_quote(now - timedelta(seconds=16)), symbol="MSFT",
+                                    now=now, side="BUY", quantity="0.2", max_notional="100")
+
+
+def test_quality_dips_order_joins_eligible_strategy_and_current_quote_without_fill():
+    from app.services.personal_paper_price_evidence import preview_quality_dips_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {"strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "obs-1",
+                   "blockers": [], "strategy_result": {"entry_ladder": {"ready": True}},
+                   "paper_execution_eligible": True}
+    proposal = preview_quality_dips_order(observation, _quote(now), now=now,
+                                          quantity="0.2", max_notional="100")
+    assert proposal["observation_id"] == "obs-1"
+    assert proposal["reference_notional"] == "80.002"
+    assert proposal["paper_fill_authorized"] is False
+
+
+@pytest.mark.parametrize("blockers,eligible", [(["RESEARCH_STALE"], True), ([], False)])
+def test_quality_dips_order_rejects_blocked_or_non_executable_strategy(blockers, eligible):
+    from app.services.personal_paper_price_evidence import preview_quality_dips_order
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {"strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "obs-2",
+                   "blockers": blockers, "strategy_result": {"entry_ladder": {"ready": True}},
+                   "paper_execution_eligible": eligible}
+    with pytest.raises(PriceEvidenceRejected, match="QUALITY_DIPS_STRATEGY_BLOCKED"):
+        preview_quality_dips_order(observation, _quote(now), now=now,
+                                   quantity="0.2", max_notional="100")
+
+
+def test_forward_account_capacity_preview_is_read_only(tmp_path):
+    from app.investment.quality_dips_paper import initialize_paper_account, read_events
+    from app.services.personal_paper_price_evidence import (
+        preview_current_stock_order, preview_quality_dips_account_capacity,
+    )
+    path = tmp_path / "forward.jsonl"
+    initialize_paper_account(account_id="paper", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    before = path.read_bytes()
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    proposal = preview_current_stock_order(_quote(now), symbol="MSFT", now=now,
+                                           side="BUY", quantity="0.2", max_notional="100")
+    result = preview_quality_dips_account_capacity(proposal, journal_events=read_events(path),
+                                                    account_id="paper")
+    assert result["blockers"] == []
+    assert result["paper_fill_authorized"] is False
+    assert path.read_bytes() == before
+    oversized = {**proposal, "reference_notional": "101"}
+    blocked = preview_quality_dips_account_capacity(oversized, journal_events=read_events(path),
+                                                     account_id="paper")
+    assert "PAPER_ENTRY_NOTIONAL_LIMIT" in blocked["blockers"]
+
+
+def test_forward_account_capacity_refuses_missing_account():
+    from app.services.personal_paper_price_evidence import preview_quality_dips_account_capacity
+    with pytest.raises(PriceEvidenceRejected):
+        preview_quality_dips_account_capacity({"schema": "ATLAS_PERSONAL_PAPER_EXECUTION_SIDE_PREVIEW_V1",
+                                               "side": "BUY", "paper_fill_authorized": False,
+                                               "live_order_authorized": False, "reference_notional": "20"},
+                                              journal_events=[], account_id="paper")
+
+
+def test_forward_capacity_combines_strategy_quote_and_account_without_mutation(tmp_path):
+    from app.investment.quality_dips_paper import initialize_paper_account, read_events
+    from app.services.personal_paper_price_evidence import preview_quality_dips_forward_capacity
+    path = tmp_path / "account.jsonl"
+    initialize_paper_account(account_id="forward", opening_cash=1000,
+                             fee_bps_per_side=2, max_open_positions=1,
+                             data_provenance="FORWARD_COLLECTION", path=path)
+    before = path.read_bytes()
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    observation = {"strategy": "QUALITY_DIPS_V3", "symbol": "MSFT", "observation_id": "obs-3",
+                   "blockers": [], "strategy_result": {"entry_ladder": {"ready": True}},
+                   "paper_execution_eligible": True}
+    diagnostic = preview_quality_dips_forward_capacity(
+        observation, _quote(now), now=now, quantity="0.2", max_notional="100",
+        journal_events=read_events(path), account_id="forward")
+    assert diagnostic["blockers"] == []
+    assert diagnostic["proposal"]["reference_notional"] == "80.002"
+    assert diagnostic["paper_fill_authorized"] is False
+    assert path.read_bytes() == before
+    observation["blockers"] = ["RESEARCH_STALE"]
+    with pytest.raises(PriceEvidenceRejected, match="QUALITY_DIPS_STRATEGY_BLOCKED"):
+        preview_quality_dips_forward_capacity(
+            observation, _quote(now), now=now, quantity="0.2", max_notional="100",
+            journal_events=read_events(path), account_id="forward")
+
+
+@pytest.mark.parametrize("installation,activation_request", [(None, {}), (object(), {}), (None, {"action": "AUTO_PAPER"})])
+def test_forward_write_authority_refuses_uninstalled_or_invalid_local_operator(installation, activation_request):
+    from app.services.personal_paper_price_evidence import check_forward_paper_write_authority
+    with pytest.raises(PriceEvidenceRejected):
+        check_forward_paper_write_authority(installation=installation, request=activation_request,
+                                            components=())
+
+
+def test_forward_write_authority_refuses_component_substitution():
+    from contextlib import contextmanager
+    from app.services.personal_paper_price_evidence import check_forward_paper_write_authority
+    class Lease:
+        snapshot = {}
+        def check_components(self, components):
+            return False
+    class Installation:
+        @contextmanager
+        def lease(self, request):
+            yield Lease()
+    with pytest.raises(PriceEvidenceRejected):
+        check_forward_paper_write_authority(installation=Installation(), request={},
+                                            components=())
+
+
+def test_leased_provider_quote_rejects_uninstalled_provider_and_operator():
+    from app.services.personal_paper_price_evidence import inspect_authenticated_forward_quote_under_lease
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    for installation, provider in ((None, None), (object(), None), (None, object())):
+        with pytest.raises(PriceEvidenceRejected):
+            inspect_authenticated_forward_quote_under_lease(
+                installation=installation, request={"action": "AUTO_PAPER"},
+                components=(), provider=provider, symbol="MSFT", now=now)
+
+
+def test_leased_provider_quote_rejects_public_bar_and_untrusted_source(monkeypatch):
+    from contextlib import nullcontext
+    from app.services import personal_paper_runtime
+    from app.services.personal_paper_price_evidence import inspect_authenticated_forward_quote_under_lease
+    monkeypatch.setattr(personal_paper_runtime, "checked_personal_installation",
+                        lambda lease, request: lease.snapshot)
+    class Lease:
+        snapshot = {}
+        def check_components(self, components): return True
+        def check(self, proof): return True
+    class Installation:
+        def lease(self, activation_request): return nullcontext(Lease())
+    class Provider:
+        def __init__(self, payload): self.payload = payload
+        def read_iex_quote(self, symbol): return self.payload
+    now = datetime(2026, 11, 6, 20, tzinfo=UTC)
+    for payload in ({"source": "YAHOO_TRADE_BAR_CLOSE"}, _quote(now)):
+        with pytest.raises(PriceEvidenceRejected, match="APPROVED_PROVIDER_QUOTE_SOURCE_REQUIRED"):
+            inspect_authenticated_forward_quote_under_lease(
+                installation=Installation(), request={"action": "AUTO_PAPER"},
+                components=(), provider=Provider(payload), symbol="MSFT", now=now)
+    diagnostic = inspect_authenticated_forward_quote_under_lease(
+        installation=Installation(), request={"action": "AUTO_PAPER"}, components=(),
+        provider=Provider({**_quote(now), "source": "ALPACA_IEX_PROVIDER_QUOTE"}),
+        symbol="MSFT", now=now)
+    assert diagnostic["paper_fill_authorized"] is False
+    assert diagnostic["quote_evidence"]["ask"] == "400.01"

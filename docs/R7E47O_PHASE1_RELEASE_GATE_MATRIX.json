@@ -1,0 +1,351 @@
+{
+  "milestone": "R7E47O",
+  "production_release": "NO-GO",
+  "basis": "Offline source, retained evidence and isolated tests only. PASS is scoped, never production activation authority.",
+  "gates": [
+    {
+      "id": "normal_admission",
+      "owner": "Lifecycle maintainer and operator",
+      "status": "BLOCKED",
+      "scope": "Production all-entry admission",
+      "evidence": [
+        "R7E47H_MINIMAL_INTEGRATION_PLAN.md",
+        "R7E47N_NONCLEARING_QUARANTINE_CONTRACT.md"
+      ],
+      "dependencies": [
+        "Explicit production integration authorization",
+        "Exact resource/instance provisioning policy"
+      ],
+      "minimum_acceptance": "Durable parent intent and independent worker admission before side effects; manager/GUI/legacy/API/standalone coverage; uncertain/corrupt state refuses; no external-writer exclusion claim."
+    },
+    {
+      "id": "nonclearing_quarantine",
+      "owner": "Recovery maintainer",
+      "status": "PASS",
+      "scope": "N isolated pinned-host-subset only",
+      "evidence": [
+        "R7E47N_NONCLEARING_QUARANTINE_CONTRACT.md"
+      ],
+      "dependencies": [
+        "Separate protected output and exact input pins"
+      ],
+      "minimum_acceptance": "Source bytes/namespace unchanged; complete bounded audit; every startup/recovery/exit-proof flag false; no production deployment inferred."
+    },
+    {
+      "id": "full_recovery",
+      "owner": "Recovery maintainer and operator",
+      "status": "BLOCKED",
+      "scope": "Uncertain-state clearing",
+      "evidence": [
+        "R7E47L_MANUAL_PROOF_POLICY_DECISION.md",
+        "R7E47M_WRITER_EXCLUSION_FEASIBILITY.md"
+      ],
+      "dependencies": [
+        "Independent exact-helper quiescence",
+        "Held all-relevant-writer exclusion",
+        "Revision-bound authority"
+      ],
+      "minimum_acceptance": "No clearing on EXITED/missing/Yes/timeout/stable Engine alone. Do not require solving this gate to do unrelated offline work."
+    },
+    {
+      "id": "backend_current_runtime",
+      "owner": "Lifecycle maintainer and operator",
+      "status": "BLOCKED",
+      "scope": "Current candidate startup and graceful shutdown",
+      "evidence": [
+        "R7E44E_CONTROLLED_RUNTIME_ACCEPTANCE.md",
+        "R7E46R_PROVIDER_PACING_DRAIN_CONTRACTS.md",
+        "R7E47Q_SHUTDOWN_OUTCOME_DRAIN_ADJUDICATION.md",
+        "logs/diagnostics/r7e47q-20261018/focused-accepted.txt",
+        "logs/diagnostics/r7e47q-20261018/lifecycle-final.txt",
+        "logs/diagnostics/r7e47q-20261018/paper-final.txt",
+        "R7E47R_DURABLE_PERSISTENCE_ACKNOWLEDGEMENTS.md"
+      ],
+      "dependencies": [
+        "Fresh exact ownership/resource preflight",
+        "Stuck-worker disposition",
+        "Separate runtime authorization"
+      ],
+      "minimum_acceptance": "One owned run ready and reconciled; actual settings observed; graceful exit and no orphans; no forced cleanup or uncertainty bypass. Q isolated outcome aggregation passes; shared20s teardown budget replaces sequential20s+20s grants; no timeout increase. ASGI/Windows whole-process30s proof, synchronous blocking/off-loop work ownership and real acceptance remain unproven. No isolated-to-production promotion.",
+      "r7e47r_scope": "Isolated strict PAPER/manual persistence tests only; no runtime, backup, container or power-loss acceptance. Separate PAPER stores remain blocked."
+    },
+    {
+      "id": "complete_shutdown_contract",
+      "owner": "Lifecycle maintainer",
+      "status": "PASS",
+      "scope": "Isolated S/T/V contracts",
+      "evidence": [
+        "R7E46S_COMPLETE_SHUTDOWN_WORKFLOW.md",
+        "O lifecycle-tests.txt:82 passed",
+        "R7E47Q_SHUTDOWN_OUTCOME_DRAIN_ADJUDICATION.md",
+        "logs/diagnostics/r7e47q-20261018/focused-accepted.txt",
+        "logs/diagnostics/r7e47q-20261018/lifecycle-final.txt",
+        "logs/diagnostics/r7e47q-20261018/paper-final.txt",
+        "R7E47R_DURABLE_PERSISTENCE_ACKNOWLEDGEMENTS.md"
+      ],
+      "dependencies": [
+        "Exact Compose/root/config/service/container identities"
+      ],
+      "minimum_acceptance": "Backend exit before dependencies; retained intent on uncertainty; no unrelated stop, delete or volume loss. Q isolated outcome aggregation passes; shared20s teardown budget replaces sequential20s+20s grants; no timeout increase. ASGI/Windows whole-process30s proof, synchronous blocking/off-loop work ownership and real acceptance remain unproven. No isolated-to-production promotion.",
+      "r7e47r_scope": "Isolated strict PAPER/manual persistence tests only; no runtime, backup, container or power-loss acceptance. Separate PAPER stores remain blocked."
+    },
+    {
+      "id": "complete_shutdown_real",
+      "owner": "Operator and lifecycle maintainer",
+      "status": "NOT_TESTED",
+      "scope": "Real Atlas Docker stop/restore acceptance",
+      "evidence": [
+        "R7E46T ownership and acceptance documents",
+        "R7E46V inspection compatibility evidence"
+      ],
+      "dependencies": [
+        "Fresh read-only exact ownership",
+        "Usable backup/restore readiness",
+        "Explicit container lifecycle approval"
+      ],
+      "minimum_acceptance": "Graceful exact-ID stops, preservation and verified dependency restoration; no Engine/Desktop or unrelated resource changes."
+    },
+    {
+      "id": "shortcut_workflow",
+      "owner": "Operator and Windows maintainer",
+      "status": "BLOCKED",
+      "scope": "Legacy shortcut/setup migration",
+      "evidence": [
+        "R7E46S_COMPLETE_SHUTDOWN_WORKFLOW.md",
+        "scripts/windows/Fresh-Setup.ps1",
+        "DESKTOP_LAUNCHER_REPAIR_2026-10-19.md",
+        "logs/diagnostics/desktop-launcher-repair-20261019/shortcut-repair.json"
+      ],
+      "dependencies": [
+        "Explicit shortcut migration approval",
+        "Fresh shortcut target review"
+      ],
+      "minimum_acceptance": "Truthful manager delegation, distinct backend-only/complete stop, no misleading legacy success; no shortcut edits now. October19 authorized familiar Project Atlas shortcut redirect verified with original byte backup/icon preserved; Atlas Background unchanged. Full workflow still BLOCKED: legacy Stop Atlas link/description guidance and Complete Shutdown real acceptance remain unresolved. No startup executed."
+    },
+    {
+      "id": "backup_restore",
+      "owner": "Operator and storage maintainer",
+      "status": "BLOCKED",
+      "scope": "PostgreSQL/Redis plus host evidence recovery",
+      "evidence": [
+        "R7E46U_RETRY_BACKUP_CREATION_RESTORE_PLAN.md",
+        "R7E46W_COLD_BACKUP_AND_ISOLATED_RESTORE_PROCEDURE.md",
+        "R7E47M_WRITER_EXCLUSION_FEASIBILITY.md"
+      ],
+      "dependencies": [
+        "Effective storage coverage",
+        "Fresh quiescence and exact ownership",
+        "Capacity/destination/key recovery",
+        "Explicit backup and scratch-restore authorization"
+      ],
+      "minimum_acceptance": "Complete verified source mapping, hashes/provenance and isolated restoration. No production source writes/startup; quarantine is not volume quiescence."
+    },
+    {
+      "id": "provider_logical_budget",
+      "owner": "Provider maintainer",
+      "status": "PASS",
+      "scope": "Default quote singleton in one event loop/process",
+      "evidence": [
+        "R7E46R_PROVIDER_PACING_DRAIN_CONTRACTS.md",
+        "O focused-tests.txt:136 passed (combined scope)"
+      ],
+      "dependencies": [
+        "Current source matches guarded snapshot"
+      ],
+      "minimum_acceptance": "3 workers/provider,6 combined;5 starts/s/provider;64 queued/provider;64 symbols/6 quote slots;30s quote acceptance;zero dispatcher retries; bounded cooldown/cancellation ownership."
+    },
+    {
+      "id": "provider_actual_http_budget",
+      "owner": "Provider maintainer",
+      "status": "BLOCKED",
+      "scope": "Actual provider/account-wide requests",
+      "evidence": [
+        "R7E46S_PROVIDER_ACCEPTANCE.md",
+        "O yfinance-transport-review.json"
+      ],
+      "dependencies": [
+        "Pinned/reviewed transport",
+        "Every consumer/process inventoried",
+        "Provider allowance evidence"
+      ],
+      "minimum_acceptance": "Count redirects,cookie/crumb,auth,fallback/internal retries and all consumers; actual aggregate limits and timeout/drain behavior verified without inferring HTTP budget from logical calls."
+    },
+    {
+      "id": "provider_rights",
+      "owner": "Operator/data-license owner",
+      "status": "BLOCKED",
+      "scope": "Automated use,display,storage and redistribution",
+      "evidence": [
+        "R7E46S_PROVIDER_ACCEPTANCE.md",
+        "O dependency-licenses.json",
+        "O provider-host-source-inventory.json"
+      ],
+      "dependencies": [
+        "Applicable current vendor/endpoint/account rights records"
+      ],
+      "minimum_acceptance": "Resolve RHJ/classic,Yahoo and other active data sources per intended research/commercial use. Cached terms and software licenses do not confer data rights."
+    },
+    {
+      "id": "cash_scope",
+      "owner": "Operator and cash-scanner maintainer",
+      "status": "BLOCKED",
+      "scope": "C1-C4 combined-release acceptance",
+      "evidence": [
+        "R7E46S_CASH_SCOPE_DECISION.md",
+        "tests/test_r7e44g_data_reliability.py"
+      ],
+      "dependencies": [
+        "Explicit C1-C4 scope decision",
+        "Provider budget and future runtime window"
+      ],
+      "minimum_acceptance": "Accept/reject each existing repair with regression evidence; no inferred approval, silent reversal or flag activation. Source repairs are not disabled."
+    },
+    {
+      "id": "stuck_worker",
+      "owner": "Provider/lifecycle maintainer and operator",
+      "status": "BLOCKED",
+      "scope": "Operational nonterminating blocking-call policy",
+      "evidence": [
+        "R7E46R_PROVIDER_PACING_DRAIN_CONTRACTS.md",
+        "O provider/shutdown isolated tests",
+        "R7E47Q_SHUTDOWN_OUTCOME_DRAIN_ADJUDICATION.md",
+        "logs/diagnostics/r7e47q-20261018/focused-accepted.txt",
+        "logs/diagnostics/r7e47q-20261018/lifecycle-final.txt",
+        "logs/diagnostics/r7e47q-20261018/paper-final.txt"
+      ],
+      "dependencies": [
+        "Explicit fail-closed operational policy or separately approved cancellable design",
+        "Whole-lifecycle budget agreement"
+      ],
+      "minimum_acceptance": "Actual live thread remains owned; no late result reuse/false drain; timeout cannot trigger forced kill/restart. Establish whole-process30s acceptance despite synchronous/off-loop and pre-lifespan work; Q already removed sequential application budget renewal. Q isolated outcome aggregation passes; shared20s teardown budget replaces sequential20s+20s grants; no timeout increase. ASGI/Windows whole-process30s proof, synchronous blocking/off-loop work ownership and real acceptance remain unproven. No isolated-to-production promotion."
+    },
+    {
+      "id": "ruff_disposition",
+      "owner": "Code-quality maintainer and operator",
+      "status": "BLOCKED",
+      "scope": "Whole-source release quality",
+      "evidence": [
+        "O lint-current/summary.json",
+        "R7E46S_RUFF_DISPOSITION.md",
+        "R7E47P_BOUNDED_RUNTIME_LINT_ADJUDICATION.md",
+        "logs/diagnostics/r7e47p-20261018/adjudication.json",
+        "logs/diagnostics/r7e47p-20261018/lint-verified/summary.json"
+      ],
+      "dependencies": [
+        "Reviewed rule/file disposition or targeted remediation approval"
+      ],
+      "minimum_acceptance": "3995 findings remain after P:12 findings adjudicated,two source defects corrected,BLE001/S110 resolved(2 diagnostics),0new versus O. Remaining warnings not waived; further bounded remediation or explicit reviewed disposition required. Gate BLOCKED."
+    },
+    {
+      "id": "source_artifact",
+      "owner": "Release maintainer",
+      "status": "PASS",
+      "scope": "Isolated source inventory,reproducibility and clean extraction only",
+      "evidence": [
+        "O artifact-validation.json",
+        "scripts/build_release_candidate.py"
+      ],
+      "dependencies": [
+        "Final paired archive hashes and manifest verification"
+      ],
+      "minimum_acceptance": "All manifest files/hash checks and required runtime/fixture/vendor-license sources present; safe extraction and compilation. Final result cannot complete unless artifact validation passes."
+    },
+    {
+      "id": "clean_machine",
+      "owner": "Windows/release maintainer and operator",
+      "status": "NOT_TESTED",
+      "scope": "Fresh Windows installation and distribution clearance",
+      "evidence": [
+        "backend/pyproject.toml",
+        "frontend/package-lock.json",
+        "scripts/windows/Fresh-Setup.ps1",
+        "O dependency-licenses.json"
+      ],
+      "dependencies": [
+        "Locked Python/runtime inputs and full license/notice review",
+        "Approved truthful shortcut/setup path",
+        "Fresh disposable Windows environment authorization"
+      ],
+      "minimum_acceptance": "Python>=3.12,PS5.1/NTFS/native APIs,required Windows timezone data and provider libraries install; no protected config/legacy shortcut surprise. Source ZIP and pip check do not certify this."
+    },
+    {
+      "id": "gaming_configuration",
+      "owner": "Lifecycle/strategy maintainer",
+      "status": "PASS",
+      "scope": "Source/isolated inheritance and historical E short runtime",
+      "evidence": [
+        "ATLAS_GAMING_WORKFLOW.md",
+        "R7E44E_CONTROLLED_RUNTIME_ACCEPTANCE.md",
+        "O focused-tests.txt"
+      ],
+      "dependencies": [
+        "Existing settings/flag contracts unchanged"
+      ],
+      "minimum_acceptance": "Explicit gaming opt-in; discovery>=180s or slower configured value; normal PAPER8s default; extended-hours disabled unless separately opted in."
+    },
+    {
+      "id": "gaming_performance",
+      "owner": "Operator and performance maintainer",
+      "status": "NOT_TESTED",
+      "scope": "Sustained CPU/RAM/cadence and gaming contention",
+      "evidence": [
+        "R7E44E_CONTROLLED_RUNTIME_ACCEPTANCE.md",
+        "O consolidated report acceptance plan"
+      ],
+      "dependencies": [
+        "Separate normal/Gaming runtime authorization",
+        "Provider rights/budgets",
+        "Approved resource thresholds"
+      ],
+      "minimum_acceptance": "Matched warmed idle/active windows,verified Atlas PID-family sampling,actual cadence/queue/drain metrics and operator gaming observations.2.046730s historical sample proves no sustained saving."
+    },
+    {
+      "id": "e136_recovery",
+      "owner": "Consent/security maintainer",
+      "status": "BLOCKED",
+      "scope": "Rollback and atomic recovery correctness",
+      "evidence": [
+        "O consent-tests.txt:1 passed,3 expected failures"
+      ],
+      "dependencies": [
+        "Independent rollback witness",
+        "Dual-store rollback/consent resurrection protection",
+        "Atomic recovery assessment"
+      ],
+      "minimum_acceptance": "Resolve three strict expected failures without weakening consent/revocation or counting xfails as passes."
+    },
+    {
+      "id": "discord_delivery",
+      "owner": "Consent/notification maintainer and operator",
+      "status": "BLOCKED",
+      "scope": "Production lifecycle notifications",
+      "evidence": [
+        "backend/app/alerts/discord.py",
+        "backend/app/investment/notify.py",
+        "E132-E136 reports"
+      ],
+      "dependencies": [
+        "E136 recovery and recipient delivery contracts",
+        "Explicit operator activation",
+        "Durable no-backfill watermark"
+      ],
+      "minimum_acceptance": "Keep both central automated senders denied; no real subscriptions/outbox mutation or test messages; uncertain delivery never automatically retried."
+    },
+    {
+      "id": "extended_hours_activation",
+      "owner": "Research/lifecycle maintainer and operator",
+      "status": "BLOCKED",
+      "scope": "Production feature activation",
+      "evidence": [
+        "R7E46M activation/rollback contract",
+        "R7E46S_RELEASE_CONSOLIDATION.md"
+      ],
+      "dependencies": [
+        "Cash/provider/lint/packaging/runtime gates",
+        "Explicit activation/rollback approval"
+      ],
+      "minimum_acceptance": "Remain disabled by default; Gaming cannot opt in; isolated journal integrity/drain passes do not approve live collection or migration."
+    }
+  ],
+  "latest_review": "R7E47R"
+}

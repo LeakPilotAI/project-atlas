@@ -49,6 +49,8 @@ class WeeklySummaryService:
                 await asyncio.sleep(60)
 
     async def _send_weekly_report(self) -> None:
+        # A23-D3: automated outbound Discord delivery denied
+        return
         logger.info("Generating weekly performance report")
 
         now = datetime.now(timezone.utc)

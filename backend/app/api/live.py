@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -44,8 +45,7 @@ def _open_row(row: Dict[str, Any], coach: Optional[Dict[str, Any]] = None) -> Di
     }
 
 
-@router.get("/live")
-async def live() -> Dict[str, Any]:
+async def _build_live() -> Dict[str, Any]:
     from app.services.opportunity_tracker import opportunity_tracker
     from app.services.paper_journal import paper_journal
     from app.services.paper_pipeline import paper_pipeline
@@ -58,7 +58,7 @@ async def live() -> Dict[str, Any]:
     settings = get_settings()
     paper: Dict[str, Any] = {}
     try:
-        paper = paper_pipeline.as_json()
+        paper = await asyncio.to_thread(paper_pipeline.as_json)
     except Exception as e:
         paper = {"error": str(e)[:200]}
 
@@ -93,7 +93,7 @@ async def live() -> Dict[str, Any]:
         inv = {
             "enabled": bool(getattr(settings, "investment_scan_enabled", False)),
             "running": bool(getattr(investment_scanner, "running", False)),
-            "last_cycle": load_last_cycle() or {},
+            "last_cycle": await asyncio.to_thread(load_last_cycle) or {},
             "opportunities": [
                 r
                 for r in (getattr(quality_dip_scanner, "last_snapshot", []) or [])
@@ -121,7 +121,7 @@ async def live() -> Dict[str, Any]:
     try:
         from app.investment.paper_book import PaperBook
 
-        dip_paper = PaperBook.load().snapshot()
+        dip_paper = await asyncio.to_thread(lambda: PaperBook.load().snapshot())
     except Exception:
         dip_paper = {}
 
@@ -211,3 +211,12 @@ async def live() -> Dict[str, Any]:
     except Exception as e:
         payload["paper_lifecycle"] = {"error": str(e)[:160]}
     return payload
+
+
+from app.services.runtime_snapshot import RuntimeSnapshot
+_live_snapshot = RuntimeSnapshot(ttl=2)
+
+
+@router.get("/live")
+async def live() -> Dict[str, Any]:
+    return await _live_snapshot.get(_build_live, {"live_capital_allowed": False}, budget=1)
