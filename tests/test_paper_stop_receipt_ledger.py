@@ -591,3 +591,32 @@ def test_restart_observer_consumes_real_custody_projection_with_both_order_evide
     assert cleared['exposure_observed'] is False
     assert cleared['startup_authorized'] is False
     assert ledger.inspect_session('s')['state'] == 'PENDING'
+
+
+def test_native_account_read_refuses_unrecognized_resting_order_state(monkeypatch):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    custody = object.__new__(UnifiedPortfolioCustody)
+    journal = {'state': {'operations': {}}, 'revision': 1}
+    custody.journal = SimpleNamespace(snapshot=lambda: journal)
+    @contextmanager
+    def lease(*args):
+        yield SimpleNamespace(check=lambda: True)
+    custody.ownership = SimpleNamespace(lease=lease)
+    custody.clock = lambda: 123
+    custody.authority = SimpleNamespace(verify_read_cuts=lambda *args: True)
+    custody.components = {}
+    monkeypatch.setattr(UnifiedPortfolioCustody, '_verify', lambda self: None)
+    cut = {'head': 'head', 'manifest': {'epoch': 'epoch', 'strategy': 'strategy', 'currency': 'USD', 'opening_cash': '1000'},
+           'state': {'revision': 1, 'cash': '1000', 'gross': '0', 'costs': '0', 'net': '0', 'positions': {}}}
+    order = {'state': {'orders': {'unknown': {'state': 'RETRY_PENDING', 'order': {}}}}}
+    custody.writers = {
+        'QUALITY_DIPS': SimpleNamespace(_cut=lambda: cut, attest_no_resting_orders=lambda evidence: True),
+        'HYPERLIQUID': SimpleNamespace(_cut=lambda: cut, orders=SimpleNamespace(snapshot=lambda: order))}
+    result = custody.read_accounts({'session_id': 's'})
+    assert result['state'] == 'UNKNOWN'
+    assert result['accounts'] is None
+    assert result['startup_authorized'] is False
+    order['state']['orders']['unknown']['state'] = 'CANCELLED'
+    assert custody.read_accounts({'session_id': 's'})['state'] == 'ACKNOWLEDGED'

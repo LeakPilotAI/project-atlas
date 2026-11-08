@@ -197,6 +197,10 @@ class UnifiedPortfolioCustody:
                 if hasattr(self.writers[lane], 'orders'):
                     control = self.writers[lane].orders.snapshot()
                     order_cuts[lane] = control
+                    if any(type(row) is not dict or row.get('state') not in
+                           ('RESERVED', 'FILL_PENDING', 'ACKNOWLEDGED', 'CANCELLED')
+                           for row in control['state']['orders'].values()):
+                        return unavailable
                     accounts[lane]['resting_orders'] = {key: {'state': row['state'], **{k: row['order'][k] for k in
                         ('symbol', 'side', 'quantity', 'limit_price', 'expires_at', 'source_revision')}}
                         for key, row in control['state']['orders'].items() if row['state'] in ('RESERVED', 'FILL_PENDING')}
