@@ -276,3 +276,15 @@ def test_activation_root_must_be_immediate_native_child(monkeypatch, path):
     with pytest.raises(SystemExit) as result:
         preflight.main()
     assert result.value.code == 2
+
+def test_recovered_release_inventory_is_only_directory_evidence(monkeypatch, capsys):
+    monkeypatch.setattr('sys.argv', ['preflight', '--json'])
+    monkeypatch.setattr(preflight.subprocess, 'check_output', lambda command, **kwargs: '')
+    assert preflight.main() == 2
+    report = json.loads(capsys.readouterr().out)
+    checks = {row['check']: row for row in report['checks']}
+    release = checks['RECOVERED_RELEASE_DIRECTORY_PRESENT']
+    assert 'independent native release/selection verification still required' in release['detail']
+    assert checks['FINANCIAL_INCEPTION']['status'] == 'BLOCKED'
+    assert checks['RUNTIME_AUTHORIZATION']['status'] == 'BLOCKED'
+    assert report['pilot_started'] is False
