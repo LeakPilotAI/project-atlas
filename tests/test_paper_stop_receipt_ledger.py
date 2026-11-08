@@ -224,9 +224,9 @@ def test_recovery_inventory_finished_flatten_claim_still_needs_independent_recon
 def test_recovery_inventory_missing_receipt_status_fails_closed(tmp_path):
     ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
     ledger.reserve_fresh('s', 'EMERGENCY')
-    ledger.finish('s', 'EMERGENCY', {'phase': 'FINISHED', 'outcome': {'mode': 'EMERGENCY'}})
-    with pytest.raises(StopReceiptConflict, match='CORRUPT'):
-        PaperStopReceiptLedger(ledger.path).summarize_recovery()
+    with pytest.raises(ValueError, match='STOP_RECEIPT_INVALID'):
+        ledger.finish('s', 'EMERGENCY', {'phase': 'FINISHED', 'outcome': {'mode': 'EMERGENCY'}})
+    assert ledger.inspect_session('s')['state'] == 'PENDING'
 
 
 def test_restart_observation_compares_both_lanes_without_authorizing(tmp_path):

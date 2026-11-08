@@ -51,7 +51,9 @@ class PaperStopReceiptLedger:
                 raise StopReceiptConflict("STOP_LEDGER_CORRUPT") from exc
             if (not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED"
                     or not isinstance(receipt.get("outcome"), dict)
-                    or receipt["outcome"].get("mode") != mode):
+                    or receipt["outcome"].get("mode") != mode
+                or not isinstance(receipt["outcome"].get("status"), str)
+                or not receipt["outcome"]["status"]):
                 raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
             return {"state": "FINISHED", "mode": mode, "receipt": receipt}
     def reserve_fresh(self, session, mode):
@@ -92,7 +94,9 @@ class PaperStopReceiptLedger:
             raise StopReceiptConflict("STOP_LEDGER_CORRUPT") from exc
         if (not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED"
                 or not isinstance(receipt.get("outcome"), dict)
-                or receipt["outcome"].get("mode") != mode):
+                or receipt["outcome"].get("mode") != mode
+                or not isinstance(receipt["outcome"].get("status"), str)
+                or not receipt["outcome"]["status"]):
             raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
         return {"state": "FINISHED", "mode": mode, "receipt": receipt}
 
@@ -115,7 +119,9 @@ class PaperStopReceiptLedger:
                 raise StopReceiptConflict("STOP_LEDGER_CORRUPT") from exc
             if (not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED"
                     or not isinstance(receipt.get("outcome"), dict)
-                    or receipt["outcome"].get("mode") != mode):
+                    or receipt["outcome"].get("mode") != mode
+                or not isinstance(receipt["outcome"].get("status"), str)
+                or not receipt["outcome"]["status"]):
                 raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
             status = receipt["outcome"].get("status")
             if not isinstance(status, str) or not status:
@@ -222,12 +228,14 @@ class PaperStopReceiptLedger:
             raise StopReceiptConflict("STOP_LEDGER_CORRUPT") from exc
         if (not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED"
                 or not isinstance(receipt.get("outcome"), dict)
-                or receipt["outcome"].get("mode") != mode):
+                or receipt["outcome"].get("mode") != mode
+                or not isinstance(receipt["outcome"].get("status"), str)
+                or not receipt["outcome"]["status"]):
             raise StopReceiptConflict("STOP_LEDGER_CORRUPT")
         return {"state": "FINISHED", "mode": mode, "receipt": receipt}
 
     def finish(self, session, mode, receipt):
-        if not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED" or not isinstance(receipt.get("outcome"), dict) or receipt["outcome"].get("mode") != mode:
+        if not isinstance(receipt, dict) or receipt.get("phase") != "FINISHED" or not isinstance(receipt.get("outcome"), dict) or receipt["outcome"].get("mode") != mode or not isinstance(receipt["outcome"].get("status"), str) or not receipt["outcome"]["status"]:
             raise ValueError("STOP_RECEIPT_INVALID")
         serialized = json.dumps(receipt, sort_keys=True, separators=(",",":"), allow_nan=False)
         with self._connect() as db:
