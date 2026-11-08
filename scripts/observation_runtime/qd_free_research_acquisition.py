@@ -13,6 +13,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "backend"))
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic
 from app.investment.alpaca_iex import Credentials
 from app.investment.free_research_providers import FreeResearchBundle
 from app.investment.free_research_transport import FreeResearchClient, ResearchRefused
@@ -207,10 +208,13 @@ def main(argv=None):
     parser.add_argument("--symbol", default="MSFT")
     parser.add_argument("--prices-only", action="store_true", help="Read-only price history without SEC fundamentals")
     parser.add_argument("--symbols", nargs="+", help="Up to eight distinct real symbols; diagnostic only")
+    parser.add_argument("--diagnostic-journal", type=Path, help="Append sanitized bounded price-only result to existing directory")
     parser.add_argument("--diagnostic-rounds", type=int, default=1, help="Finite 1-3 read-only rounds; requires --prices-only --symbols")
     parser.add_argument("--sec-contact", default=os.environ.get("ATLAS_SEC_CONTACT"))
     args = parser.parse_args(argv)
     try:
+        if args.diagnostic_journal is not None and not (args.prices_only and args.symbols is not None):
+            raise ResearchRefused('QD_JOURNAL_BOUNDED_PRICES_ONLY_REQUIRED')
         if args.diagnostic_rounds != 1 and not (args.prices_only and args.symbols is not None):
             raise ResearchRefused('QD_REPEATED_DIAGNOSTIC_PRICES_ONLY_UNIVERSE_REQUIRED')
         if args.prices_only and args.symbols is not None and args.diagnostic_rounds != 1:
@@ -234,6 +238,14 @@ def main(argv=None):
                   "live_order_authorized": False}
         print(json.dumps(result, sort_keys=True))
         return 1
+    if args.diagnostic_journal is not None:
+        try:
+            journal_diagnostic(result,path=args.diagnostic_journal)
+        except (ValueError,OSError,KeyError,TypeError):
+            print(json.dumps({'schema':'ATLAS_QD_JOURNAL_FAILURE_V1','status':'REFUSED',
+                              'operational_source_accepted':False,'paper_fill_authorized':False,
+                              'live_order_authorized':False},sort_keys=True))
+            return 3
     print(json.dumps(result, sort_keys=True))
     # Partial acquisition is observable but not a successful full-universe scan.
     # Supervisors must never mistake refused symbols for a complete research cut.

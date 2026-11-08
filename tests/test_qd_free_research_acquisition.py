@@ -280,3 +280,30 @@ def test_repeated_prices_only_cli_partial_exit_two(monkeypatch,capsys):
     monkeypatch.setattr(probe,'inspect_repeated_prices_only',lambda **kwargs:{
         'schema':'ATLAS_QD_REPEATED_PRICES_ONLY_V1','refused_count':1})
     assert probe.main(['--prices-only','--symbols','SPY','--diagnostic-rounds','2'])==2
+
+
+def test_cli_bounded_price_journal_append(tmp_path,monkeypatch,capsys):
+    monkeypatch.setattr(probe,'inspect_bounded_prices_only',lambda **kwargs:{
+        'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':['SPY'],
+        'results':[{'symbol':'SPY','provider_secret':'do-not-save'}],
+        'acquired_count':1,'refused_count':0,
+        'operational_source_accepted':False,'paper_fill_authorized':False,
+        'live_order_authorized':False})
+    journal=tmp_path/'diagnostic.jsonl'
+    assert probe.main(['--prices-only','--symbols','SPY','--diagnostic-journal',str(journal)])==0
+    import json
+    assert json.loads(journal.read_text().splitlines()[0])['symbols']==['SPY']
+    assert 'do-not-save' not in journal.read_text()
+
+def test_cli_journal_write_failure_is_nonzero(tmp_path,monkeypatch,capsys):
+    monkeypatch.setattr(probe,'inspect_bounded_prices_only',lambda **kwargs:{
+        'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':['SPY'],
+        'results':[{'symbol':'SPY'}], 'acquired_count':1,'refused_count':0,
+        'operational_source_accepted':False,'paper_fill_authorized':False,
+        'live_order_authorized':False})
+    assert probe.main(['--prices-only','--symbols','SPY','--diagnostic-journal',
+                       str(tmp_path/'missing'/'journal.jsonl')])==3
+    assert 'ATLAS_QD_JOURNAL_FAILURE_V1' in capsys.readouterr().out
+
+def test_cli_journal_requires_bounded_prices_only(tmp_path,capsys):
+    assert probe.main(['--symbol','SPY','--diagnostic-journal',str(tmp_path/'journal')])==1
