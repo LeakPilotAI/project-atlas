@@ -19,9 +19,10 @@ def test_repeated_control_redacts_endpoints_and_never_authorizes():
     assert result['operational_listener_accepted'] is False
     assert result['financial_authorized'] is False
     assert result['rounds'] == 2
+    assert result['schema'] == 'ATLAS_REPEATED_NATIVE_LISTENER_CONTROL_V2'
     assert result['sample_count'] == len(result['samples'])
     for sample in result['samples']:
         assert set(sample) == {'cmdlet_initial_state', 'history'}
         assert len(sample['history']) == 2
         for observation in sample['history']:
-            assert set(observation) == {'states', 'native_error'}
+            assert set(observation) == {'states', 'native_error', 'cmdlet_post_present', 'cmdlet_post_state'}
