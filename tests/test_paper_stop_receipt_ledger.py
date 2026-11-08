@@ -620,3 +620,36 @@ def test_native_account_read_refuses_unrecognized_resting_order_state(monkeypatc
     assert result['startup_authorized'] is False
     order['state']['orders']['unknown']['state'] = 'CANCELLED'
     assert custody.read_accounts({'session_id': 's'})['state'] == 'ACKNOWLEDGED'
+
+
+def test_native_account_read_rechecks_resting_writer_authorized_control(monkeypatch):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    custody = object.__new__(UnifiedPortfolioCustody)
+    journal = {'state': {'operations': {}}, 'revision': 1}
+    custody.journal = SimpleNamespace(snapshot=lambda: journal)
+    @contextmanager
+    def lease(*args):
+        yield SimpleNamespace(check=lambda: True)
+    custody.ownership = SimpleNamespace(lease=lease)
+    custody.clock = lambda: 123
+    custody.authority = SimpleNamespace(verify_read_cuts=lambda *args: True)
+    custody.components = {}
+    monkeypatch.setattr(UnifiedPortfolioCustody, '_verify', lambda self: None)
+    cut = {'head': 'head', 'manifest': {'epoch': 'epoch', 'strategy': 'strategy', 'currency': 'USD', 'opening_cash': '1000'},
+           'state': {'revision': 1, 'cash': '1000', 'gross': '0', 'costs': '0', 'net': '0', 'positions': {}}}
+    control = {'state': {'orders': {}}}
+    calls = []
+    def authorized_control():
+        calls.append(1)
+        if len(calls) == 2:
+            raise ValueError('RESTING_COMPONENT_AUTHORITY_REQUIRED')
+        return control
+    custody.writers = {
+        'QUALITY_DIPS': SimpleNamespace(_cut=lambda: cut, attest_no_resting_orders=lambda evidence: True),
+        'HYPERLIQUID': SimpleNamespace(_cut=lambda: cut, _control=authorized_control,
+                                     orders=SimpleNamespace(snapshot=lambda: control))}
+    with pytest.raises(ValueError, match='RESTING_COMPONENT_AUTHORITY_REQUIRED'):
+        custody.read_accounts({'session_id': 's'})
+    assert len(calls) == 2

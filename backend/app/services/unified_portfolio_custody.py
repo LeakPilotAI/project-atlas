@@ -195,7 +195,9 @@ class UnifiedPortfolioCustody:
                     except Exception:
                         pass  # An unaccepted capability must remain UNAVAILABLE.
                 if hasattr(self.writers[lane], 'orders'):
-                    control = self.writers[lane].orders.snapshot()
+                    writer = self.writers[lane]
+                    control = (writer._control() if callable(getattr(writer, '_control', None))
+                               else writer.orders.snapshot())
                     order_cuts[lane] = control
                     if any(type(row) is not dict or row.get('state') not in
                            ('RESERVED', 'FILL_PENDING', 'ACKNOWLEDGED', 'CANCELLED')
@@ -213,7 +215,10 @@ class UnifiedPortfolioCustody:
             # A concurrent reservation/ACK during projection invalidates the cut.
             if (owner.check() is not True or body(before) != body(self.journal.snapshot())
                     or any(body(cut) != body(self.writers[lane]._cut()) for lane, cut in cuts.items())
-                    or any(body(control) != body(self.writers[lane].orders.snapshot())
+                    or any(body(control) != body(
+                        self.writers[lane]._control()
+                        if callable(getattr(self.writers[lane], '_control', None))
+                        else self.writers[lane].orders.snapshot())
                            for lane, control in order_cuts.items())):
                 return unavailable
             return {**unavailable, 'state': 'ACKNOWLEDGED', 'accounts': strict(body(accounts))}
