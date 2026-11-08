@@ -86,3 +86,40 @@ def test_partial_bounded_scan_returns_nonzero_for_supervisor(monkeypatch, capsys
     assert probe.main(['--symbols', 'AVGO', '--sec-contact', 'ProjectAtlas/1.0 operator@realmail.org']) == 2
     import json
     assert json.loads(capsys.readouterr().out)['refused_count'] == 1
+
+
+def test_prices_only_etf_diagnostic_never_requires_sec_companyfacts(monkeypatch):
+    monkeypatch.setattr(probe.Credentials,'load',lambda _:object())
+    class Client:
+        domain='TLS_PUBLIC_PROVIDER'
+        def __init__(self,**kwargs):
+            assert kwargs['max_attempts']==12
+    class Bundle:
+        def __init__(self,**kwargs): pass
+        def load(self,symbol,*,prices_only=False):
+            assert symbol=='SPY' and prices_only is True
+            return {'paper_eligible':False,'bars':[1,2,3],'receipts':[{'id':1}]}
+    result=probe.inspect_prices_only(symbol='SPY',contact='ProjectAtlas/1.0 operator@realmail.org',
+                                     credentials_path=Path('unused'),client_factory=Client,bundle_factory=Bundle)
+    assert result['completed_daily_bar_count']==3
+    assert result['fundamentals_available'] is False
+    assert result['independent_analyst_targets_verified'] is False
+    assert result['paper_fill_authorized'] is False
+
+def test_prices_only_refuses_paper_eligible_data(monkeypatch):
+    monkeypatch.setattr(probe.Credentials,'load',lambda _:object())
+    class Client:
+        domain='TLS_PUBLIC_PROVIDER'
+        def __init__(self,**kwargs): pass
+    class Bundle:
+        def __init__(self,**kwargs): pass
+        def load(self,symbol,*,prices_only=False):
+            return {'paper_eligible':True,'bars':[],'receipts':[]}
+    with pytest.raises(ValueError,match='QD_PRICE_ONLY_AUTHORITY_REFUSED'):
+        probe.inspect_prices_only(symbol='SPY',contact='ProjectAtlas/1.0 operator@realmail.org',
+                                  credentials_path=Path('unused'),client_factory=Client,bundle_factory=Bundle)
+
+def test_prices_only_cli_rejects_mixed_universe(monkeypatch,capsys):
+    monkeypatch.setattr(probe.Credentials,'load',lambda _:pytest.fail('credentials accessed'))
+    assert probe.main(['--prices-only','--symbols','SPY'])==1
+    assert 'REFUSED' in capsys.readouterr().out
