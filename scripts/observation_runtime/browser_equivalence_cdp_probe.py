@@ -98,10 +98,29 @@ def probe(*, chrome=CHROME, installed_static_preview=None):
                     message = json.loads(ws.recv(timeout=5))
                     if message.get('id') == 3:
                         break
-                if static_bytes is None and 'NO TRADING' not in message.get('result', {}).get('result', {}).get('value', ''):
+                rendered_text = message.get('result', {}).get('result', {}).get('value', '')
+                if static_bytes is not None:
+                    ws.send(json.dumps({'id': 4, 'method': 'Runtime.evaluate',
+                        'params': {'expression': 'JSON.stringify({title:document.title,ready:document.readyState,body:document.body!==null})'}}))
+                    while True:
+                        document_message = json.loads(ws.recv(timeout=5))
+                        if document_message.get('id') == 4:
+                            break
+                    document = json.loads(document_message.get('result', {}).get('result', {}).get('value', '{}'))
+                    if document.get('ready') != 'complete':
+                        time.sleep(.5)
+                        ws.send(json.dumps({'id': 5, 'method': 'Runtime.evaluate', 'params': {'expression': 'document.readyState'}}))
+                        while True:
+                            state_message = json.loads(ws.recv(timeout=5))
+                            if state_message.get('id') == 5:
+                                break
+                        document['ready'] = state_message.get('result', {}).get('result', {}).get('value')
+                    if document.get('title') != 'Atlas Command' or document.get('ready') != 'complete' or document.get('body') is not True:
+                        raise ValueError('INSTALLED_STATIC_DOM_NOT_RENDERED')
+                if static_bytes is None and 'NO TRADING' not in rendered_text:
                     raise ValueError('ISOLATED_CHROME_RENDER_MISMATCH')
             result = inspect_candidate(expected_url=url, observations=observations)
-            evidence = {'diagnostic': result, 'observations': observations, 'installed_static_preview_sha256': static_digest, 'operational_dashboard_verified': False}
+            evidence = {'diagnostic': result, 'observations': observations, 'installed_static_preview_sha256': static_digest, 'operational_dashboard_verified': False, 'installed_static_dom_rendered': static_bytes is not None}
     finally:
         if process is not None:
             process.terminate()

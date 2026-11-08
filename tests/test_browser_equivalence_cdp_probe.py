@@ -25,6 +25,7 @@ def test_installed_release_static_preview_is_never_operational():
         pytest.skip('Installed release not available')
     evidence = probe(installed_static_preview=path)
     assert len(evidence['installed_static_preview_sha256']) == 64
+    assert evidence['installed_static_dom_rendered'] is True
     assert evidence['operational_dashboard_verified'] is False
     assert evidence['diagnostic']['operational_browser_acceptance'] is False
     assert evidence['cleanup']['chrome_parent_exited'] is True
