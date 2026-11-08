@@ -1,4 +1,5 @@
 """Read-only combined QD/Hyperliquid commissioning scope and evidence gate."""
+import argparse
 import json
 import subprocess
 import sys
@@ -8,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCOPE = ROOT / 'docs/ATLAS_UNIFIED_PAPER_COMMISSIONING_SCOPE_2026-11-07.json'
 
 
-def inspect(*, root=ROOT, qd_report=None):
+def inspect(*, root=ROOT, qd_report=None, observation_session=None):
     scope = json.loads((root / 'docs/ATLAS_UNIFIED_PAPER_COMMISSIONING_SCOPE_2026-11-07.json').read_text(encoding='utf-8'))
     expected = {'EXISTING_QUALITY_DIPS_PAPER_COMMISSIONING',
                 'HYPERLIQUID_SIMULATED_ACCOUNT_INITIALIZATION_IF_TECHNICALLY_ELIGIBLE',
@@ -43,20 +44,31 @@ def inspect(*, root=ROOT, qd_report=None):
         'HYPERLIQUID_PROVIDER_RIGHTS_AND_DATA': hl['provider_rights_and_current_market_data'],
         'UNIFIED_OWNED_DESKTOP_STOP': 'NOT_INDEPENDENTLY_VERIFIED',
     }
+    observation = {'status': 'NOT_SUPPLIED', 'financial_execution_authorized': False}
+    if observation_session is not None:
+        from scripts.observation_runtime.retained_provider_evidence_audit import audit_session
+        try:
+            observation = audit_session(observation_session)
+        except (ValueError, OSError, KeyError, TypeError):
+            observation = {'status': 'REFUSED', 'reason': 'RETAINED_OBSERVATION_UNVERIFIED',
+                           'financial_execution_authorized': False}
     return {'schema':'ATLAS_UNIFIED_PAPER_COMMISSIONING_PREFLIGHT_V1',
             'decision':'NO_GO', 'startup_authorized':False, 'live_trading_authorized':False,
-            'prerequisites':prerequisites, 'hyperliquid_native_inventory':hl,
+            'prerequisites':prerequisites, 'retained_provider_observation':observation, 'hyperliquid_native_inventory':hl,
             'note':'QD source evidence is read from existing preflight; Hyperliquid evidence has no installed verifier yet. No permission is inferred from scope approval.'}
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--observation-session', type=Path, help='Existing closed local observation directory (read-only)')
+    args = parser.parse_args()
     sha = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     run = subprocess.run([sys.executable,'-m','scripts.observation_runtime.personal_commissioning_preflight',
                           '--json','--expected-source',sha,'--check-native-clock'],
                          cwd=ROOT,capture_output=True,text=True,check=False)
     if run.returncode not in (0,2):
         raise RuntimeError('QD_COMMISSIONING_PREFLIGHT_FAILED')
-    print(json.dumps(inspect(qd_report=json.loads(run.stdout)),indent=2,sort_keys=True))
+    print(json.dumps(inspect(qd_report=json.loads(run.stdout), observation_session=args.observation_session),indent=2,sort_keys=True))
     return 2
 
 if __name__ == '__main__':

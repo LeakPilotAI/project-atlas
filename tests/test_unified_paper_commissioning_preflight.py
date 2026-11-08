@@ -43,3 +43,15 @@ def test_hyperliquid_budget_inventory_is_read_only_and_non_authorizing(tmp_path)
     assert result['request_budget_inventory'] == 'EXISTING_LEDGER_STRUCTURE_VALID_NOT_AUTHORIZED'
     assert result['provider_rights_and_current_market_data'] == 'NOT_INDEPENDENTLY_VERIFIED'
     assert budget.read_bytes() == before
+
+def test_unified_preflight_refuses_foreign_observation(tmp_path):
+    result = module.inspect(qd_report={'checks': []}, observation_session=tmp_path)
+    assert result['retained_provider_observation']['status'] == 'REFUSED'
+    assert result['decision'] == 'NO_GO'
+    assert result['startup_authorized'] is False
+
+
+def test_unified_preflight_no_observation_is_not_authority():
+    result = module.inspect(qd_report={'checks': []})
+    assert result['retained_provider_observation']['status'] == 'NOT_SUPPLIED'
+    assert result['retained_provider_observation']['financial_execution_authorized'] is False
