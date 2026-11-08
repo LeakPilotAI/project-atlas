@@ -225,7 +225,10 @@ def main(argv=None):
 
     repo=Path(__file__).resolve().parents[1]
     expected=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V2_2026-10-30.json'
-    if Path(args.proposal).absolute()!=expected:raise ValueError('EXACT_INSTALL_PROPOSAL_REQUIRED')
+    candidate=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V3_2026-11-08.json'
+    if Path(args.proposal).absolute() not in (expected,candidate):
+        raise ValueError('EXACT_INSTALL_PROPOSAL_REQUIRED')
+    expected=Path(args.proposal).absolute()
     raw=source_bytes(repo,str(expected.relative_to(repo)).replace('\\','/'),maximum_bytes=65536)
     if hashlib.sha256(raw.replace(b'\r\n',b'\n')).hexdigest()!=args.proposal_sha256:
         raise ValueError('APPROVED_INSTALL_PROPOSAL_HASH_MISMATCH')
@@ -241,7 +244,9 @@ def main(argv=None):
     for name,pin in proposal['adapter_source_sha256'].items():
         actual=source_bytes(repo,name,maximum_bytes=65536).replace(b'\r\n',b'\n')
         if hashlib.sha256(actual).hexdigest()!=pin:raise ValueError('INSTALL_ADAPTER_SOURCE_CHANGED')
-    clock=LocalWindowsClock(expected_source='time.windows.com,0x9',
+    clock_source=('time.cloudflare.com,0x8 time.google.com,0x8'
+                  if expected==candidate else 'time.windows.com,0x9')
+    clock=LocalWindowsClock(expected_source=clock_source,
         runtime_id='qd-unselected-code-install-'+proposal['source_commit'])
     try:
         dependency=json.loads(source_bytes(repo,str(Path(proposal['dependency_receipt']).relative_to(repo)).replace('\\','/'),
