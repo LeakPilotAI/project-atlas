@@ -14,6 +14,21 @@ from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 from scripts.volume_inspector.windows_output import current_sid
 
 
+
+def verify_enrollment_native_roots(enrollment):
+    """Existing-only Windows handle verification; JSON identities never suffice."""
+    from scripts.observation_runtime.personal_paper_inception import native_primitives
+    native = native_primitives()
+    for role, resource in enrollment['resources'].items():
+        try:
+            with native.w.WindowsOutput(resource['path']) as output:
+                observed = native.native.file_identity(output.root_handle)
+        except (OSError, ValueError) as exc:
+            raise ValueError('ACTIVATION_NATIVE_RESOURCE_UNVERIFIED:' + role) from exc
+        if observed != resource['native_id']:
+            raise ValueError('ACTIVATION_NATIVE_RESOURCE_IDENTITY_MISMATCH:' + role)
+
+
 def commission(*, root, record_path, policy_path, release_digest, accounts_path,
                expected_clock_source, runtime_id, qd_enrollment_path=None,
                perp_enrollment_path=None):
@@ -55,6 +70,8 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             or perp['release_digest'] != release_digest
             or qd['account_id'] == perp['account_id']):
         raise ValueError('ACTIVATION_ENROLLMENT_DIGEST_OR_RELEASE_CONFLICT')
+    verify_enrollment_native_roots(qd)
+    verify_enrollment_native_roots(perp)
     # Check the full static activation contract before acquiring a short-lived
     # trusted-clock capability or entering native create-only custody.
     from app.services.personal_paper_runtime import validate_policy

@@ -82,3 +82,36 @@ def test_cli_requires_both_enrollment_paths():
                     '--release-digest', 'a'*64, '--accounts-path', 'accounts',
                     '--expected-clock-source', 'source', '--runtime-id', 'runtime'])
     assert exc.value.code == 2
+
+
+def test_native_enrollment_resource_identity_mismatch_refused(monkeypatch):
+    class Output:
+        root_handle = object()
+        def __init__(self, path): self.path = path
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+    class Windows:
+        WindowsOutput = Output
+    class Native:
+        @staticmethod
+        def file_identity(handle): return [1, 2, 3]
+    from types import SimpleNamespace
+    from scripts.observation_runtime import personal_paper_inception
+    monkeypatch.setattr(personal_paper_inception, 'native_primitives',
+                        lambda: SimpleNamespace(w=Windows, native=Native))
+    with pytest.raises(ValueError, match='ACTIVATION_NATIVE_RESOURCE_IDENTITY_MISMATCH:source'):
+        entry.verify_enrollment_native_roots({'resources': {'source': {
+            'path': r'D:\AtlasPaper\QualityDips\source', 'native_id': [9, 8, 7]}}})
+
+
+def test_native_enrollment_missing_resource_refused(monkeypatch):
+    from scripts.observation_runtime import personal_paper_inception
+    class Windows:
+        @staticmethod
+        def WindowsOutput(path): raise FileNotFoundError(path)
+    from types import SimpleNamespace
+    monkeypatch.setattr(personal_paper_inception, 'native_primitives',
+                        lambda: SimpleNamespace(w=Windows))
+    with pytest.raises(ValueError, match='ACTIVATION_NATIVE_RESOURCE_UNVERIFIED:source'):
+        entry.verify_enrollment_native_roots({'resources': {'source': {
+            'path': r'D:\AtlasPaper\QualityDips\source', 'native_id': [1, 2, 3]}}})
