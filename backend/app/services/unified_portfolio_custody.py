@@ -176,6 +176,7 @@ class UnifiedPortfolioCustody:
                 return unavailable
             accounts = {}
             order_cuts = {}
+            qd_attested = {}
             for lane, cut in cuts.items():
                 state, manifest = cut['state'], cut['manifest']
                 accounts[lane] = {'epoch': manifest['epoch'], 'strategy': manifest['strategy'], 'currency': manifest['currency'],
@@ -192,6 +193,7 @@ class UnifiedPortfolioCustody:
                         if self.writers[lane].attest_no_resting_orders(cut) is True:
                             accounts[lane]['resting_orders'] = {}
                             accounts[lane]['resting_order_evidence'] = 'ATTESTED_NO_ORDER_CAPABILITY'
+                            qd_attested[lane] = cut
                     except Exception:
                         pass  # An unaccepted capability must remain UNAVAILABLE.
                 if hasattr(self.writers[lane], 'orders'):
@@ -215,6 +217,8 @@ class UnifiedPortfolioCustody:
             # A concurrent reservation/ACK during projection invalidates the cut.
             if (owner.check() is not True or body(before) != body(self.journal.snapshot())
                     or verifier(grant, self.components, cuts, self.clock()) is not True
+                    or any(self.writers[lane].attest_no_resting_orders(cut) is not True
+                           for lane, cut in qd_attested.items())
                     or any(body(cut) != body(self.writers[lane]._cut()) for lane, cut in cuts.items())
                     or any(body(control) != body(
                         self.writers[lane]._control()
