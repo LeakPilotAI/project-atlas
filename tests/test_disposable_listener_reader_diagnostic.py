@@ -21,3 +21,14 @@ def test_disposable_listener_comparison_remains_nonoperational():
     assert result['netstat_exit'] == 0
     assert isinstance(result['netstat_scoped_raw'], list)
     assert result['nettcp_exit'] == 0
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows TCP reader diagnostic')
+def test_connected_disposable_listener_still_never_grants_authority():
+    result = inspect(connected=True)
+    assert result['connected'] is True
+    assert result['so_acceptconn'] == 1
+    assert result['operational_listener_accepted'] is False
+    assert result['financial_authorized'] is False
+    assert result['cim_exit'] == 0
+    assert result['netstat_exit'] == 0
+    assert result['ip_helper_error'] is None
