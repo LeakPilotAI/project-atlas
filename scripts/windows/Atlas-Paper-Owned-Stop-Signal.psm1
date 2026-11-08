@@ -27,6 +27,12 @@ function New-AtlasAcceptedPaperStopSignalOwner {
         $AcceptedSession.session_id.Length -gt 128) {
         throw 'PAPER_STOP_SIGNAL_ACCEPTED_OWNER_REQUIRED'
     }
+    $methods = @($AcceptedSession.PSObject.Methods.Name)
+    if (-not ($methods -ccontains 'verify_session') -or
+        -not ($methods -ccontains 'request_stop') -or
+        -not ($methods -ccontains 'verify_durable_stop_receipt')) {
+        throw 'PAPER_STOP_SIGNAL_ACCEPTED_OWNER_REQUIRED'
+    }
     $pinnedSession = $AcceptedSession.session_id
     try { $verified = $AcceptedSession.verify_session() }
     catch { throw 'PAPER_STOP_SIGNAL_ACCEPTED_OWNER_REQUIRED' }

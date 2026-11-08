@@ -9,6 +9,21 @@ Import-Module (Join-Path $PSScriptRoot "Atlas-ReadOnly-Dashboard.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-Observation-Dashboard.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-Control-Center.psm1") -Force
 Import-Module (Join-Path $PSScriptRoot "Atlas-SelectedPaper-ReadOnly.psm1") -Force
+# The opt-in PAPER Stop listener holds no financial authority of its own.
+# Only an already-accepted in-process session can create its event owner.
+$script:paperStopSignalOwner = $null
+$script:paperStopSignalError = $null
+$script:paperStopSignalVerifiedReceipt = $null
+if ($null -ne $AcceptedPaperSession) {
+    try {
+        Import-Module (Join-Path $PSScriptRoot 'Atlas-Paper-Owned-Stop-Signal.psm1') -Force -ErrorAction Stop
+        $script:paperStopSignalOwner = New-AtlasAcceptedPaperStopSignalOwner -AcceptedSession $AcceptedPaperSession
+    } catch {
+        # Failure to install the desktop signal must not abandon an already
+        # running financial session. GUI Stop and FormClosing remain available.
+        $script:paperStopSignalError = $_.Exception.Message
+    }
+}
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $Manager = Join-Path $PSScriptRoot "Atlas-Background.ps1"
@@ -94,7 +109,12 @@ $form.Add_FormClosing({
             # A failed financial stop must not release GUI ownership. In
             # particular, a prior KeepRunning click cannot skip this path.
             $script:KeepAtlasRunning = $false
-            $result = if ($null -ne $AcceptedPaperStopHandoff) {
+            # A previously signaled Stop has already gone through both-lane
+            # verification AND exact durable readback. Never dispatch twice on
+            # FormClosing merely because the verified owner is now STOPPED.
+            $result = if ($null -ne $script:paperStopSignalVerifiedReceipt) {
+                $script:paperStopSignalVerifiedReceipt
+            } elseif ($null -ne $AcceptedPaperStopHandoff) {
                 if ($AcceptedPaperStopHandoff -isnot [System.Collections.IDictionary] -or
                     $AcceptedPaperStopHandoff['mode'] -cne 'SHUTDOWN_FLATTEN') {
                     throw 'PAPER_STOP_HANDOFF_MODE_UNVERIFIED'
@@ -459,6 +479,29 @@ $script:activeManager = $null
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 250
 $timer.Add_Tick({
+    # Runs on the UI thread, preserving the exact accepted owner reference.
+    # A separate Stop Atlas shortcut may only signal the Windows event; this
+    # callback alone can invoke the accepted financial Stop with real custody.
+    if ($null -ne $script:paperStopSignalOwner -and
+        $script:paperStopSignalOwner.used -eq $false) {
+        try {
+            $stopReceipt = Wait-AtlasOwnedPaperStopSignal -Ownership $script:paperStopSignalOwner -TimeoutMilliseconds 0
+            if ($stopReceipt.schema -ceq 'QD_CONTROL_STOP_V1' -and
+                $stopReceipt.phase -ceq 'FINISHED') {
+                $script:paperStopSignalVerifiedReceipt = $stopReceipt
+                $diagnostics.Text = ($stopReceipt | ConvertTo-Json -Depth 12)
+                Set-StatusMessage 'Desktop PAPER Stop: both accounts flattened, durable receipt verified.' ([System.Drawing.Color]::DarkGreen)
+                $stopButton.Enabled = $false
+            }
+        } catch {
+            # A dispatched financial Stop may have unknown completion state;
+            # retain the owner, window and evidence for manual reconciliation.
+            $script:paperStopSignalError = $_.Exception.Message
+            Set-StatusMessage ('Desktop PAPER Stop UNVERIFIED: ' + $script:paperStopSignalError) ([System.Drawing.Color]::DarkRed)
+            $diagnostics.Text = 'Stop attempt requires independent financial reconciliation. No automatic retry or forced kill.'
+            $stopButton.Enabled = $false
+        }
+    }
     Invoke-AtlasBackgroundUiCallback { Poll-BackgroundManager } {
         param($callbackError)
         try {
@@ -474,6 +517,21 @@ $timer.Add_Tick({
     } | Out-Null
 })
 $timer.Start()
+if ($null -ne $script:paperStopSignalError) {
+    Set-StatusMessage ('Desktop PAPER Stop signal unavailable: ' + $script:paperStopSignalError) ([System.Drawing.Color]::DarkRed)
+}
+# A cancelled FormClosing leaves the accepted financial owner alive. Release
+# the request-only Windows event solely after the GUI really closes.
+$form.Add_FormClosed({
+    if ($null -ne $script:paperStopSignalOwner) {
+        try {
+            Close-AtlasPaperStopSignalOwner -Ownership $script:paperStopSignalOwner
+            $script:paperStopSignalOwner = $null
+        } catch {
+            [System.Diagnostics.Trace]::WriteLine('PAPER Stop owner event close unverified: ' + $_.Exception.Message)
+        }
+    }
+})
 
 if ($ObservationOnly) {
     $form.Add_Shown({
