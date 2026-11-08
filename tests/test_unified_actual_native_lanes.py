@@ -61,6 +61,17 @@ async def test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdo
     assert outstanding['reconciliation_required'] is True
     assert outstanding['startup_authorized'] is False
     assert outstanding['financial_authorized'] is False
+    # A single exposure flag is insufficient: prove both distinct native lanes
+    # were represented in the authenticated pre-Stop account projection.
+    pre_accounts = s.custody.read_accounts({'session_id': 'synthetic-unified-session'})
+    assert pre_accounts['state'] == 'ACKNOWLEDGED'
+    assert set(pre_accounts['accounts']) == {'QUALITY_DIPS', 'HYPERLIQUID'}
+    assert pre_accounts['accounts']['QUALITY_DIPS']['resting_order_evidence'] == 'ATTESTED_NO_ORDER_CAPABILITY'
+    assert pre_accounts['accounts']['QUALITY_DIPS']['resting_orders'] == {}
+    assert pre_accounts['accounts']['QUALITY_DIPS']['positions']
+    assert pre_accounts['accounts']['HYPERLIQUID']['resting_order_evidence'] == 'OBSERVED'
+    assert pre_accounts['accounts']['HYPERLIQUID']['resting_orders']
+    assert pre_accounts['startup_authorized'] is False
     order = next(iter(orders.values()))['order']
     s.tick(s.clock() + 1)
     s.p.packet['maker_fills'][order['order_id']] = s.p.fill_proof(order, quantity='0.6')
