@@ -21,7 +21,7 @@ def test_activation_refuses_account_mismatch_before_clock_or_native(tmp_path, mo
         path.write_text(json.dumps(data))
         files.append(str(path))
     monkeypatch.setattr(entry, 'LocalWindowsClock', lambda **kwargs: pytest.fail('clock acquired'))
-    with pytest.raises(ValueError, match='ACTIVATION_ACCOUNTS_OR_RELEASE_MISMATCH'):
+    with pytest.raises(ValueError, match='BOTH_NATIVE_ACCOUNT_ENROLLMENTS_REQUIRED'):
         entry.commission(root='D:\\AtlasCustody\\PersonalPaper\\new', record_path=files[0],
                          policy_path=files[1], release_digest='a'*64, accounts_path=files[2],
                          expected_clock_source='source', runtime_id='runtime')
@@ -53,11 +53,11 @@ def test_valid_account_digest_mapping_reaches_clock_and_publisher(tmp_path, monk
         assert kwargs['operator_id'] == 'WINDOWS_OPERATOR'
         return {'status': 'NATIVE_VERIFIED'}
     monkeypatch.setattr(entry, 'publish_personal_activation', publish)
-    result = entry.commission(root='D:\\AtlasCustody\\PersonalPaper\\new',
+    with pytest.raises(ValueError, match='BOTH_NATIVE_ACCOUNT_ENROLLMENTS_REQUIRED'):
+        entry.commission(root='D:\\AtlasCustody\\PersonalPaper\\new',
         record_path=paths[0], policy_path=paths[1], release_digest='a'*64,
         accounts_path=paths[2], expected_clock_source='source', runtime_id='runtime')
-    assert result['status'] == 'NATIVE_VERIFIED'
-    assert events == ['clock', 'publish', 'revoke']
+    assert events == []
 
 
 def test_invalid_native_root_refused_before_reading_activation_files():
@@ -73,3 +73,12 @@ def test_enrollment_pair_must_be_supplied_together():
             record_path='missing', policy_path='missing', release_digest='a'*64,
             accounts_path='missing', expected_clock_source='source', runtime_id='runtime',
             qd_enrollment_path='missing')
+
+
+def test_cli_requires_both_enrollment_paths():
+    with pytest.raises(SystemExit) as exc:
+        entry.main(['--root', 'D:\\AtlasCustody\\PersonalPaper\\new',
+                    '--record-path', 'record', '--policy-path', 'policy',
+                    '--release-digest', 'a'*64, '--accounts-path', 'accounts',
+                    '--expected-clock-source', 'source', '--runtime-id', 'runtime'])
+    assert exc.value.code == 2
