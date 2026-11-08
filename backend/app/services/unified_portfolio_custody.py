@@ -183,12 +183,14 @@ class UnifiedPortfolioCustody:
                     'gross': state['gross'], 'realized_costs': state['costs'], 'net': state['net'],
                     'fees': state.get('fees'), 'slippage': state.get('slippage'), 'funding': state.get('funding'),
                     'positions': {key: p for key, p in state['positions'].items() if number(p['remaining']) > 0},
-                    'valuation': None, 'valuation_status': 'UNAVAILABLE'}
+                    'valuation': None, 'valuation_status': 'UNAVAILABLE',
+                    'resting_order_evidence': 'UNAVAILABLE'}
                 if hasattr(self.writers[lane], 'orders'):
                     control = self.writers[lane].orders.snapshot()
                     accounts[lane]['resting_orders'] = {key: {'state': row['state'], **{k: row['order'][k] for k in
                         ('symbol', 'side', 'quantity', 'limit_price', 'expires_at', 'source_revision')}}
                         for key, row in control['state']['orders'].items() if row['state'] in ('RESERVED', 'FILL_PENDING')}
+                    accounts[lane]['resting_order_evidence'] = 'OBSERVED'
                     if accounts[lane]['resting_orders']:
                         # Financial cash is proven, but pending-order spendable cash
                         # requires a separate accepted risk-reservation projection.
