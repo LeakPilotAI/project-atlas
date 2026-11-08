@@ -15,7 +15,8 @@ from scripts.volume_inspector.windows_output import current_sid
 
 
 def commission(*, root, record_path, policy_path, release_digest, accounts_path,
-               expected_clock_source, runtime_id):
+               expected_clock_source, runtime_id, qd_enrollment_path=None,
+               perp_enrollment_path=None):
     if not all(type(v) is str and v for v in (root, record_path, policy_path,
                                               release_digest, accounts_path,
                                               expected_clock_source, runtime_id)):
@@ -27,6 +28,8 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             or any(c in root[3:] for c in (':', '%', '\x00', '/'))
             or any(part in ('', '.', '..') for part in root[3:].split('\\'))):
         raise ValueError('EXPLICIT_NATIVE_ACTIVATION_ROOT_REQUIRED')
+    if (qd_enrollment_path is None) != (perp_enrollment_path is None):
+        raise ValueError('BOTH_NATIVE_ACCOUNT_ENROLLMENTS_REQUIRED')
     record = json.loads(Path(record_path).read_text(encoding='utf-8'))
     policy = json.loads(Path(policy_path).read_text(encoding='utf-8'))
     accounts = json.loads(Path(accounts_path).read_text(encoding='utf-8'))
@@ -38,6 +41,20 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             or record.get('accounts') != accounts
             or record.get('release_digest') != release_digest):
         raise ValueError('ACTIVATION_ACCOUNTS_OR_RELEASE_MISMATCH')
+    # Enrollment JSON alone is not native proof. Require exact structural and
+    # digest binding if independently supplied; never mint account digests here.
+    if qd_enrollment_path is not None:
+        from app.services.quality_dips_autonomous_enrollment import validate_enrollment as qd_validate
+        from app.services.perp_operational_contract import validate_enrollment as perp_validate
+        from app.services.paper_financial_replay import digest as enrollment_digest
+        qd = qd_validate(json.loads(Path(qd_enrollment_path).read_text(encoding='utf-8')))
+        perp = perp_validate(json.loads(Path(perp_enrollment_path).read_text(encoding='utf-8')))
+        if (accounts != {'QUALITY_DIPS': enrollment_digest(qd),
+                         'HYPERLIQUID': enrollment_digest(perp)}
+                or qd['release_digest'] != release_digest
+                or perp['release_digest'] != release_digest
+                or qd['account_id'] == perp['account_id']):
+            raise ValueError('ACTIVATION_ENROLLMENT_DIGEST_OR_RELEASE_CONFLICT')
     # Check the full static activation contract before acquiring a short-lived
     # trusted-clock capability or entering native create-only custody.
     from app.services.personal_paper_runtime import validate_policy
@@ -63,6 +80,8 @@ def main(argv=None):
     for name in ('root', 'record-path', 'policy-path', 'release-digest',
                  'accounts-path', 'expected-clock-source', 'runtime-id'):
         parser.add_argument('--' + name, required=True)
+    parser.add_argument('--qd-enrollment-path')
+    parser.add_argument('--perp-enrollment-path')
     args = vars(parser.parse_args(argv))
     result = commission(**{k.replace('-', '_'): v for k, v in args.items()})
     print(json.dumps(result, sort_keys=True))

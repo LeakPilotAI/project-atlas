@@ -65,3 +65,11 @@ def test_invalid_native_root_refused_before_reading_activation_files():
         entry.commission(root='C:\\Temp\\activation', record_path='missing', policy_path='missing',
                          release_digest='a'*64, accounts_path='missing',
                          expected_clock_source='source', runtime_id='runtime')
+
+
+def test_enrollment_pair_must_be_supplied_together():
+    with pytest.raises(ValueError, match='BOTH_NATIVE_ACCOUNT_ENROLLMENTS_REQUIRED'):
+        entry.commission(root='D:\\AtlasCustody\\PersonalPaper\\new',
+            record_path='missing', policy_path='missing', release_digest='a'*64,
+            accounts_path='missing', expected_clock_source='source', runtime_id='runtime',
+            qd_enrollment_path='missing')
