@@ -20,3 +20,6 @@ Native Quality Dips and Hyperliquid enrollment, accepted provider rights and cur
 
 ## Operator burden
 No additional Chrome installation or user setup should be requested before this candidate is reviewed against the original contract. The existing VS Code Desktop Commander terminal connection is not a trusted Chrome tab provider.
+
+## 2026-11-08 native disposable listener recheck (not accepted)
+Executed opt-in `tests/test_acceptance_socket_native_disposable.py` on Windows using an ephemeral owned loopback child (no installed Atlas host and no financial operations). The test FAILED at the `listening` collection: the resource audit exited 2 with `APP_PROCESS_NOT_RELEASED`; CIM returned a scoped TCP row for the disposable port with `state: 0` rather than an independently accepted LISTENING observation. This does not establish three-reader agreement. Do not promote browser CDP preview success into Gate 1 acceptance. The current native resource audit/reader disagreement requires diagnosis under unchanged validators before retrying genuine installed-host browser commissioning.
