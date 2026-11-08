@@ -316,3 +316,20 @@ def test_native_restart_observation_detects_positions_and_resting_orders(tmp_pat
     result = ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
     assert result['exposure_observed'] is True
     assert result['startup_authorized'] is False
+
+
+def test_native_restart_observation_rejects_stop_record_changed_during_custody_read(tmp_path, monkeypatch):
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    ledger = PaperStopReceiptLedger(tmp_path / 'stop.sqlite')
+    ledger.reserve_fresh('s', 'SHUTDOWN_FLATTEN')
+    custody = object.__new__(UnifiedPortfolioCustody)
+    def read_with_concurrent_stop_finish(self, grant):
+        PaperStopReceiptLedger(ledger.path).finish('s', 'SHUTDOWN_FLATTEN', {
+            'phase': 'FINISHED', 'outcome': {'mode': 'SHUTDOWN_FLATTEN', 'status': 'SHUTDOWN_INCOMPLETE'}})
+        return {'state': 'ACKNOWLEDGED', 'accounts': {
+            k: {'positions': {}, 'resting_orders': {}, 'source_head': 'head'}
+            for k in ('QUALITY_DIPS', 'HYPERLIQUID')}}
+    monkeypatch.setattr(UnifiedPortfolioCustody, 'read_accounts', read_with_concurrent_stop_finish)
+    with pytest.raises(StopReceiptConflict, match='RECORD_CHANGED'):
+        ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
+    assert ledger.inspect_session('s')['state'] == 'FINISHED'

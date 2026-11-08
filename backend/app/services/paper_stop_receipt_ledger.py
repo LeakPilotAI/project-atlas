@@ -184,6 +184,9 @@ class PaperStopReceiptLedger:
                 raise StopReceiptConflict('STOP_RESTART_NATIVE_CUT_UNVERIFIED')
             counts[lane] = {'open_positions': len(account['positions']),
                             'unsettled_orders': len(account['resting_orders'])}
+        # Refuse a Stop intent/receipt that changed while native custody was read.
+        if self.inspect_session(session) != row:
+            raise StopReceiptConflict('STOP_RESTART_RECORD_CHANGED')
         return self.reconcile_restart_observation(session, lane_positions=counts)
     def recover(self, session, mode):
         """Read-only restart inspection: pending is NEVER proof of flat positions."""
