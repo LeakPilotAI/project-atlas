@@ -953,3 +953,39 @@ def test_native_account_read_refuses_null_or_empty_active_order_fields(monkeypat
     assert result['state'] == 'UNKNOWN'
     assert result['accounts'] is None
     assert result['startup_authorized'] is False
+
+
+def test_stop_ledger_supports_owned_sqlite_connection_factory_without_forbidden_pragma(tmp_path):
+    import sqlite3
+    path = tmp_path / 'guard-owned-stop.sqlite'
+    opened, closed = [], []
+
+    class OwnedConnection:
+        def __init__(self, db):
+            self.db = db
+        def execute(self, sql, params=()):
+            assert not sql.startswith('PRAGMA busy_timeout'), 'GUARDED_PRAGMA_FORBIDDEN'
+            return self.db.execute(sql, params)
+        def __enter__(self):
+            self.db.__enter__()
+            return self
+        def __exit__(self, *args):
+            return self.db.__exit__(*args)
+        def close(self):
+            self.db.close()
+            closed.append(True)
+
+    def factory(name, **kwargs):
+        assert name == str(path)
+        assert kwargs == {'timeout': 5, 'isolation_level': None}
+        opened.append(True)
+        return OwnedConnection(sqlite3.connect(name, **kwargs))
+
+    ledger = PaperStopReceiptLedger(path, connection_factory=factory)
+    ledger.reserve_fresh('owned-session', 'SHUTDOWN_FLATTEN')
+    assert PaperStopReceiptLedger(path, connection_factory=factory).inspect_session('owned-session')['state'] == 'PENDING'
+    receipt = {'phase': 'FINISHED', 'outcome': {'mode': 'SHUTDOWN_FLATTEN', 'status': 'SHUTDOWN_INCOMPLETE'}}
+    ledger.finish('owned-session', 'SHUTDOWN_FLATTEN', receipt)
+    assert PaperStopReceiptLedger(path, connection_factory=factory).recover('owned-session', 'SHUTDOWN_FLATTEN')['state'] == 'RECEIPT_RECORDED'
+    assert len(opened) == len(closed)
+    assert len(opened) >= 5

@@ -8,8 +8,9 @@ class StopReceiptConflict(ValueError):
     pass
 
 class PaperStopReceiptLedger:
-    def __init__(self, path):
+    def __init__(self, path, *, connection_factory=None):
         self.path = Path(path)
+        self._connection_factory = connection_factory
         if self.path.is_symlink():
             raise ValueError("STOP_LEDGER_SYMLINK_FORBIDDEN")
         if not self.path.parent.is_dir():
@@ -19,10 +20,15 @@ class PaperStopReceiptLedger:
     @contextmanager
     def _connect(self):
         """Close each SQLite handle even on errors; preserve transaction rollback."""
-        db = sqlite3.connect(str(self.path), timeout=5, isolation_level=None)
+        db = (sqlite3.connect(str(self.path), timeout=5, isolation_level=None)
+              if self._connection_factory is None
+              else self._connection_factory(str(self.path), timeout=5, isolation_level=None))
         try:
             db.execute("PRAGMA synchronous=FULL")
-            db.execute("PRAGMA busy_timeout=5000")
+            if self._connection_factory is None:
+                db.execute("PRAGMA busy_timeout=5000")
+            # An externally owned connection sets timeout at open; its authority
+            # may forbid mutable PRAGMA busy_timeout (e.g. AIP06 OwnedSqlite).
             with db:
                 yield db
         finally:
