@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import time
 import urllib.request
+import urllib.error
 from pathlib import Path
 
 from websockets.sync.client import connect
@@ -36,9 +37,13 @@ def probe(*, chrome=CHROME, installed_static_preview=None):
         static_digest = hashlib.sha256(static_bytes).hexdigest()
     class Handler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
+            if self.path != '/':
+                self.send_error(404, 'DISPOSABLE_PREVIEW_ROOT_ONLY')
+                return
             payload = static_bytes if static_bytes is not None else b'<html><title>ATLAS DISPOSABLE CDP</title><body>NO TRADING</body></html>'
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
+            self.send_header('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'")
             self.send_header('Content-Length', str(len(payload)))
             self.end_headers()
             self.wfile.write(payload)
@@ -53,6 +58,17 @@ def probe(*, chrome=CHROME, installed_static_preview=None):
     url = f'http://127.0.0.1:{server.server_port}/'
     process = None
     try:
+        with urllib.request.urlopen(url, timeout=3) as preview_response:
+            csp = preview_response.headers.get('Content-Security-Policy', '')
+            if "default-src 'none'" not in csp:
+                raise ValueError('DISPOSABLE_PREVIEW_CSP_REQUIRED')
+        try:
+            urllib.request.urlopen(url + 'api/financial', timeout=3)
+        except urllib.error.HTTPError as error:
+            if error.code != 404:
+                raise ValueError('DISPOSABLE_PREVIEW_ROUTE_NOT_REFUSED') from error
+        else:
+            raise ValueError('DISPOSABLE_PREVIEW_ROUTE_NOT_REFUSED')
         with tempfile.TemporaryDirectory(prefix='atlas-disposable-chrome-', ignore_cleanup_errors=True) as profile:
             process = subprocess.Popen([str(chrome), '--headless=new', '--no-first-run',
                 '--no-default-browser-check', '--remote-debugging-port=0',
@@ -120,7 +136,7 @@ def probe(*, chrome=CHROME, installed_static_preview=None):
                 if static_bytes is None and 'NO TRADING' not in rendered_text:
                     raise ValueError('ISOLATED_CHROME_RENDER_MISMATCH')
             result = inspect_candidate(expected_url=url, observations=observations)
-            evidence = {'diagnostic': result, 'observations': observations, 'installed_static_preview_sha256': static_digest, 'operational_dashboard_verified': False, 'installed_static_dom_rendered': static_bytes is not None}
+            evidence = {'diagnostic': result, 'observations': observations, 'installed_static_preview_sha256': static_digest, 'operational_dashboard_verified': False, 'preview_csp_enforced': True, 'non_root_route_refused': True, 'installed_static_dom_rendered': static_bytes is not None}
     finally:
         if process is not None:
             process.terminate()
