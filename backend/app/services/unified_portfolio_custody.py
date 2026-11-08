@@ -233,16 +233,23 @@ class UnifiedPortfolioCustody:
                     return unavailable
             except Exception:
                 return unavailable  # An unexpected verifier failure is not accepted authority.
+            def stable_order_controls():
+                try:
+                    for lane, original in order_cuts.items():
+                        writer = self.writers[lane]
+                        current = (writer._control() if callable(getattr(writer, '_control', None))
+                                   else writer.orders.snapshot())
+                        if body(original) != body(current):
+                            return False
+                    return True
+                except Exception:
+                    return False
             # Order snapshots are collected after the first control-journal check.
             # A concurrent reservation/ACK during projection invalidates the cut.
             if (owner.check() is not True or body(before) != body(self.journal.snapshot())
                     or not accepted_read_cuts()
                     or any(body(cut) != body(self.writers[lane]._cut()) for lane, cut in cuts.items())
-                    or any(body(control) != body(
-                        self.writers[lane]._control()
-                        if callable(getattr(self.writers[lane], '_control', None))
-                        else self.writers[lane].orders.snapshot())
-                           for lane, control in order_cuts.items())):
+                    or not stable_order_controls()):
                 return unavailable
             return {**unavailable, 'state': 'ACKNOWLEDGED', 'accounts': strict(body(accounts))}
 
