@@ -217,9 +217,12 @@ class UnifiedPortfolioCustody:
                     except Exception:
                         return unavailable
                     order_cuts[lane] = control
-                    accounts[lane]['resting_orders'] = {key: {'state': row['state'], **{k: row['order'][k] for k in
-                        ('symbol', 'side', 'quantity', 'limit_price', 'expires_at', 'source_revision')}}
-                        for key, row in control['state']['orders'].items() if row['state'] in ('RESERVED', 'FILL_PENDING')}
+                    try:
+                        accounts[lane]['resting_orders'] = {key: {'state': row['state'], **{k: row['order'][k] for k in
+                            ('symbol', 'side', 'quantity', 'limit_price', 'expires_at', 'source_revision')}}
+                            for key, row in control['state']['orders'].items() if row['state'] in ('RESERVED', 'FILL_PENDING')}
+                    except (KeyError, TypeError, AttributeError):
+                        return unavailable  # Missing native order fields are not evidence of a drained account.
                     accounts[lane]['resting_order_evidence'] = 'OBSERVED'
                     if accounts[lane]['resting_orders']:
                         # Financial cash is proven, but pending-order spendable cash
