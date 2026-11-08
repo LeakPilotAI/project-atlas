@@ -57,9 +57,22 @@ def test_bounded_universe_deduplicates_and_never_promotes():
         calls.append(symbol)
         if symbol == 'AVGO':
             raise ResearchRefused('SOURCE_UNAVAILABLE')
-        return {'symbol': symbol, 'operational_source_accepted': False, 'paper_fill_authorized': False}
+        return {'schema': 'ATLAS_QD_FREE_RESEARCH_ACQUISITION_V1', 'symbol': symbol, 'transport': 'TLS_PUBLIC_PROVIDER', 'operational_source_accepted': False, 'paper_fill_authorized': False, 'live_order_authorized': False}
     result = probe.inspect_bounded_universe(symbols=['MSFT', 'AVGO'], contact='unused',
                                             credentials_path=None, inspect=inspect)
     assert calls == ['MSFT', 'AVGO']
     assert result['results'][1]['status'] == 'REFUSED'
     assert result['operational_source_accepted'] is result['paper_fill_authorized'] is False
+
+
+def test_bounded_universe_rejects_cross_symbol_or_unverified_transport():
+    def impostor(*, symbol, **kwargs):
+        return {'schema': 'ATLAS_QD_FREE_RESEARCH_ACQUISITION_V1', 'symbol': 'OTHER',
+                'transport': 'SYNTHETIC', 'operational_source_accepted': False,
+                'paper_fill_authorized': False, 'live_order_authorized': False}
+    result = probe.inspect_bounded_universe(symbols=['MSFT'], contact='unused',
+                                            credentials_path=None, inspect=impostor)
+    assert result['acquired_count'] == 0
+    assert result['refused_count'] == 1
+    assert result['results'][0]['status'] == 'REFUSED'
+    assert result['paper_fill_authorized'] is False

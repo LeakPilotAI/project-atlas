@@ -72,14 +72,21 @@ def inspect_bounded_universe(*, symbols, contact, credentials_path,
     for symbol in symbols:
         try:
             result = inspect(symbol=symbol, contact=contact, credentials_path=credentials_path)
-            if result.get("operational_source_accepted") is not False or result.get("paper_fill_authorized") is not False:
+            if (type(result) is not dict or result.get("symbol") != symbol
+                    or result.get("schema") != "ATLAS_QD_FREE_RESEARCH_ACQUISITION_V1"
+                    or result.get("transport") != "TLS_PUBLIC_PROVIDER"
+                    or result.get("operational_source_accepted") is not False
+                    or result.get("paper_fill_authorized") is not False
+                    or result.get("live_order_authorized") is not False):
                 raise ResearchRefused("QD_DIAGNOSTIC_AUTHORITY_PROMOTION_REFUSED")
             results.append(result)
         except (ValueError, OSError, KeyError, TypeError) as exc:
             results.append({"symbol": symbol, "status": "REFUSED", "reason": type(exc).__name__,
                             "operational_source_accepted": False, "paper_fill_authorized": False})
     return {"schema": "ATLAS_QD_BOUNDED_RESEARCH_UNIVERSE_V1", "symbols": symbols,
-            "results": results, "operational_source_accepted": False,
+            "results": results, "acquired_count": sum("status" not in row for row in results),
+            "refused_count": sum(row.get("status") == "REFUSED" for row in results),
+            "operational_source_accepted": False,
             "paper_fill_authorized": False, "live_order_authorized": False}
 
 
