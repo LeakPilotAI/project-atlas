@@ -23,3 +23,11 @@ Status: PREPARATION ONLY. No financial PAPER Start/Stop, provider calls, activat
 - Never enable live orders, modify Genesis, or automatically start on Windows boot.
 
 Canonical gate status: 0/9 accepted as of this preparation. Runtime-only gate tests are deferred, never waived.
+
+## Read-only native host inventory — 2026-11-08
+- Existing QD epoch has all six distinct real Windows native resource identities validated: `source`, `projection`, `report`, `control`, `coordination`, `custody`. Every corresponding directory is currently empty; this is NOT an initialized/incepted PAPER account.
+- `D:\AtlasPaper\Hyperliquid` and `D:\AtlasCustody\Hyperliquid` do not exist at the inspected paths. Hyperliquid's exact new epoch/resource namespace remains to be approved and prepared; do not infer existence or create financial files from the QD state.
+- Existing `D:\AtlasCustody\PersonalPaper` has zero child entries, therefore no native activation publication was found there.
+- Native host identity and resource-count evidence saved locally (ignored diagnostics, not committed) at `logs/diagnostics/final-launch-commissioning-20261108/two-account-native-storage-readonly-inventory.json`.
+- 28 focused offline inception/activation boundary tests passed with no failure; tests do not substitute for enrollment, financial inception or launch acceptance.
+- Next preparation: exact create-only Hyperliquid account-resource proposal and both account enrollment/manifest binding, with QD existing resources preserved. Runtime Start/Stop and browser/listener remain FINAL LAUNCH ONLY.
