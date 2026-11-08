@@ -5,7 +5,9 @@
 param(
     [switch]$ExecuteApproved,
     [ValidateRange(5, 10)][int]$Samples = 6,
-    [ValidateRange(30, 60)][int]$IntervalSeconds = 40
+    [ValidateRange(30, 60)][int]$IntervalSeconds = 40,
+    [ValidateRange(3, 12)][int]$StabilizationChecks = 10,
+    [ValidateRange(10, 60)][int]$StabilizationIntervalSeconds = 30
 )
 $ErrorActionPreference = 'Stop'
 
@@ -45,26 +47,68 @@ if ($signature.Status -ne 'Valid' -or
     throw 'ATLAS_V4_TIME_WINDOWS_TOOL_SIGNATURE_REFUSED'
 }
 
-# Preserve the system-installed peer roster and existing poll configuration.
-# Repeated ordinary W32Time resync is the only privileged service action.
+# A successful /resync /rediscover is not proof of clock quality and may
+# discard W32Time accumulated error statistics. This qualification performs
+# NO resync. Let the existing trusted NTP client converge naturally.
 $oldPythonPath = $env:PYTHONPATH
 try {
     $env:PYTHONPATH = (Join-Path $root 'backend') + ';' + $root
-    # Run the checked-in, read-only module by name. Passing Python -c as a
-    # PowerShell native argument on Windows can strip the nested quotes.
-    for ($index = 0; $index -lt $Samples; $index++) {
-        if ($index -ne 0) { Start-Sleep -Seconds $IntervalSeconds }
+
+    function Test-AtlasGenuineClockQuality {
         Assert-AtlasTrustedTimeSource
-        & $w32tm '/resync' '/rediscover'
-        if ($LASTEXITCODE -ne 0) {
-            throw ('ATLAS_V4_TIME_SERVICE_RESYNC_REFUSED:' + $LASTEXITCODE)
+        # PowerShell 5.1 can wrap stderr from native Python as ErrorRecords.
+        # Capture it only to classify a *transient native quality refusal*;
+        # unknown errors and all output mismatches remain hard failures.
+        $savedPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            $lines = @(& $python -B -m scripts.observation_runtime.atlas_v4_time_quality_probe 2>&1)
+            $nativeExit = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $savedPreference
         }
-        Assert-AtlasTrustedTimeSource
-        & $python -B -m scripts.observation_runtime.atlas_v4_time_quality_probe
-        if ($LASTEXITCODE -ne 0) {
-            throw ('ATLAS_V4_TIME_NATIVE_QUALITY_REFUSED:' + $LASTEXITCODE)
+        $message = (($lines | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim()
+        if ($nativeExit -eq 0) {
+            if ($message -cnotmatch '^NATIVE_CLOCK_QUALITY_ACCEPTED:[0-9]+ms$') {
+                throw 'ATLAS_V4_TIME_NATIVE_QUALITY_OUTPUT_UNVERIFIED'
+            }
+            Assert-AtlasTrustedTimeSource
+            return @{Accepted=$true; Reason=$message}
         }
-        Write-Output ('ATLAS_V4_CLOCK_QUALITY_SAMPLE=' + ($index + 1) + '/' + $Samples)
+        if ($message -match '(NATIVE_CLOCK_QUALITY_REFUSED:CLOCK_UNCERTAINTY_EXCEEDED:[0-9]+ms|NATIVE_CLOCK_QUALITY_REFUSED:CLOCK_STALE_OR_NEGATIVE_QUALITY)') {
+            return @{Accepted=$false;Reason=$Matches[1]}
+        }
+        throw ('ATLAS_V4_TIME_NATIVE_QUALITY_REFUSED:' + $nativeExit + ':' + $message)
+    }
+
+    # A bounded warmup is NOT a passed quality sample. It permits existing
+    # Windows NTP to stabilize without resetting its filter every check.
+    $qualified = $null
+    for ($check = 1; $check -le $StabilizationChecks; $check++) {
+        $quality = Test-AtlasGenuineClockQuality
+        if ($quality.Accepted -eq $true) {
+            $qualified = $quality
+            break
+        }
+        Write-Output ('ATLAS_V4_CLOCK_STABILIZING=' + $check + '/' + $StabilizationChecks + ':' + $quality.Reason)
+        if ($check -eq $StabilizationChecks) {
+            throw ('ATLAS_V4_TIME_STABILIZATION_FAILED:' + $quality.Reason)
+        }
+        Start-Sleep -Seconds $StabilizationIntervalSeconds
+    }
+    if ($null -eq $qualified) { throw 'ATLAS_V4_TIME_STABILIZATION_UNVERIFIED' }
+
+    # The FIRST sample is the first genuinely passing Atlas clock result.
+    # Every later sample must also pass; any failure invalidates this whole
+    # qualification, never replaces it with a synthetic or averaged result.
+    Write-Output ('ATLAS_V4_CLOCK_QUALITY_SAMPLE=1/' + $Samples + ':' + $qualified.Reason)
+    for ($index = 2; $index -le $Samples; $index++) {
+        Start-Sleep -Seconds $IntervalSeconds
+        $quality = Test-AtlasGenuineClockQuality
+        if ($quality.Accepted -ne $true) {
+            throw ('ATLAS_V4_TIME_SUSTAINED_QUALITY_FAILED:' + $quality.Reason)
+        }
+        Write-Output ('ATLAS_V4_CLOCK_QUALITY_SAMPLE=' + $index + '/' + $Samples + ':' + $quality.Reason)
     }
     Write-Output 'ATLAS_V4_CLOCK_WINDOW_SAMPLED_WITH_TRUSTED_NTP_NO_INSTALL_PERFORMED'
 }
