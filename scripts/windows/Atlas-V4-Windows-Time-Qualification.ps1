@@ -110,7 +110,27 @@ try {
         }
         Write-Output ('ATLAS_V4_CLOCK_QUALITY_SAMPLE=' + $index + '/' + $Samples + ':' + $quality.Reason)
     }
-    Write-Output 'ATLAS_V4_CLOCK_WINDOW_SAMPLED_WITH_TRUSTED_NTP_NO_INSTALL_PERFORMED'
+    # The real code copier keeps ONE LocalWindowsClock across its native
+    # creation and readback. Independent 40-second snapshots cannot prove
+    # that lease survives the observed 153-second copy horizon. Qualify one
+    # single real native capability for 180 seconds before claiming readiness.
+    $savedPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $leaseOutput = @(& $python -B -m scripts.observation_runtime.atlas_v4_installer_clock_lease_preflight 2>&1)
+        $leaseExit = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $savedPreference
+    }
+    $leaseText = (($leaseOutput | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim()
+    if ($leaseExit -ne 0) {
+        throw ('ATLAS_V4_TIME_PERSISTENT_LEASE_REFUSED:' + $leaseExit + ':' + $leaseText)
+    }
+    if ($leaseText -notmatch '(?m)^CONTINUOUS_NATIVE_LEASE_PREFLIGHT_PASSED_NOT_INSTALLATION_AUTHORITY$' -or
+        $leaseText -notmatch '(?m)^ATLAS_V4_INSTALL_CLOCK_PREFLIGHT_SAMPLES=[0-9]+$') {
+        throw 'ATLAS_V4_TIME_PERSISTENT_LEASE_OUTPUT_UNVERIFIED'
+    }
+    Write-Output 'ATLAS_V4_CLOCK_WINDOW_AND_SINGLE_LEASE_QUALIFIED_NO_INSTALL_PERFORMED'
 }
 finally {
     $env:PYTHONPATH = $oldPythonPath

@@ -164,7 +164,10 @@ def test_quality_warmup_never_counts_as_a_sustained_pass():
     assert s.index("ATLAS_V4_CLOCK_QUALITY_SAMPLE=1/") < s.index("for ($index = 2;")
     assert "if ($quality.Accepted -ne $true)" in s
     assert "throw ('ATLAS_V4_TIME_SUSTAINED_QUALITY_FAILED:'" in s
-    assert "ATLAS_V4_CLOCK_WINDOW_SAMPLED_WITH_TRUSTED_NTP_NO_INSTALL_PERFORMED" in s
+    assert "ATLAS_V4_CLOCK_WINDOW_AND_SINGLE_LEASE_QUALIFIED_NO_INSTALL_PERFORMED" in s
+    assert "& $python -B -m scripts.observation_runtime.atlas_v4_installer_clock_lease_preflight" in s
+    assert "ATLAS_V4_TIME_PERSISTENT_LEASE_REFUSED" in s
+    assert "ATLAS_V4_TIME_PERSISTENT_LEASE_OUTPUT_UNVERIFIED" in s
 
 
 @pytest.mark.skipif(os.name != "nt", reason="PowerShell 5.1 native invocation contract")
@@ -210,3 +213,14 @@ def test_native_quality_classifier_is_fail_closed_without_contacting_ntp(mode, a
     else:
         assert process.returncode == 0, process.stderr
         assert f"ACCEPTED={str(accepted)};REASON={reason}" in process.stdout
+
+
+def test_independent_npt_samples_cannot_claim_code_install_without_a_single_lease():
+    s = SCRIPT.read_text(encoding="utf-8-sig")
+    assert s.index("for ($index = 2; $index -le $Samples; $index++)") < s.index(
+        "& $python -B -m scripts.observation_runtime.atlas_v4_installer_clock_lease_preflight")
+    assert s.index("ATLAS_V4_TIME_PERSISTENT_LEASE_REFUSED") < s.index(
+        "ATLAS_V4_CLOCK_WINDOW_AND_SINGLE_LEASE_QUALIFIED_NO_INSTALL_PERFORMED")
+    assert "CONTINUOUS_NATIVE_LEASE_PREFLIGHT_PASSED_NOT_INSTALLATION_AUTHORITY" in s
+    assert "ATLAS_V4_INSTALL_CLOCK_PREFLIGHT_SAMPLES=[0-9]+" in s
+    assert "ATLAS_V4_CLOCK_WINDOW_SAMPLED_WITH_TRUSTED_NTP_NO_INSTALL_PERFORMED" not in s
