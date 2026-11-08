@@ -1,6 +1,6 @@
 import json
 import pytest
-from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal
 
 def sample():
     return {"schema":"ATLAS_QD_REPEATED_PRICES_ONLY_V1", "symbols":["MSFT","SPY"],
@@ -35,3 +35,24 @@ def test_refuse_symlink(tmp_path):
     except OSError: pytest.skip("symlinks unavailable")
     with pytest.raises(ValueError): journal_diagnostic(sample(),path=link)
     assert destination.read_text()=="preserve"
+
+
+def test_journal_inspection_detects_complete_append(tmp_path):
+    path=tmp_path/'journal.jsonl'
+    journal_diagnostic(sample(),path=path)
+    journal_diagnostic(sample(),path=path)
+    report=inspect_diagnostic_journal(path=path)
+    assert report['completed_records']==2
+    assert report['paper_fill_authorized'] is False
+
+@pytest.mark.parametrize('damage',['truncated','invalid_json','authority','empty'])
+def test_journal_inspection_refuses_corruption(tmp_path,damage):
+    path=tmp_path/'journal.jsonl'
+    journal_diagnostic(sample(),path=path)
+    if damage=='truncated': path.write_bytes(path.read_bytes()[:-1])
+    elif damage=='invalid_json': path.write_bytes(path.read_bytes()+b'not-json\n')
+    elif damage=='empty': path.write_bytes(b'')
+    else:
+        record=json.loads(path.read_text());record['paper_fill_authorized']=True
+        path.write_text(json.dumps(record)+'\n')
+    with pytest.raises(ValueError): inspect_diagnostic_journal(path=path)
