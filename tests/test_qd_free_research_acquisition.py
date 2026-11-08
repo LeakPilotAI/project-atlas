@@ -249,3 +249,34 @@ def test_bounded_prices_only_sanitizes_failure_category(error,category):
     assert result['refused_count']==1
     assert result['results'][0]['failure_category']==category
     assert 'secret' not in str(result)
+
+
+def test_repeated_prices_only_finite_partial_failure():
+    calls=[]
+    def batch(**kwargs):
+        calls.append(1)
+        failed=len(calls)==2
+        return {'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':['SPY'],
+                'results':[{'symbol':'SPY','status':'REFUSED'} if failed else {'symbol':'SPY'}],
+                'acquired_count':0 if failed else 1,'refused_count':1 if failed else 0,
+                'operational_source_accepted':False,'paper_fill_authorized':False,
+                'live_order_authorized':False}
+    result=probe.inspect_repeated_prices_only(symbols=['SPY'],rounds=3,contact=None,
+                                               credentials_path=None,inspect_batch=batch)
+    assert len(calls)==3 and result['refused_count']==1
+    assert result['rounds_completed']==3 and result['paper_fill_authorized'] is False
+
+@pytest.mark.parametrize('rounds',[0,4,True,-1])
+def test_repeated_prices_only_refuses_unbounded_rounds(rounds):
+    with pytest.raises(ValueError,match='QD_DIAGNOSTIC_ROUNDS_BOUNDED_REQUIRED'):
+        probe.inspect_repeated_prices_only(symbols=['SPY'],rounds=rounds,contact=None,
+                                           credentials_path=None,inspect_batch=lambda **kwargs:pytest.fail('called'))
+
+def test_repeated_prices_only_cli_requires_research_universe(capsys):
+    assert probe.main(['--diagnostic-rounds','2','--symbol','SPY'])==1
+    assert 'REFUSED' in capsys.readouterr().out
+
+def test_repeated_prices_only_cli_partial_exit_two(monkeypatch,capsys):
+    monkeypatch.setattr(probe,'inspect_repeated_prices_only',lambda **kwargs:{
+        'schema':'ATLAS_QD_REPEATED_PRICES_ONLY_V1','refused_count':1})
+    assert probe.main(['--prices-only','--symbols','SPY','--diagnostic-rounds','2'])==2

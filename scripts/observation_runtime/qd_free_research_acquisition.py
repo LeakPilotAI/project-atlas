@@ -137,6 +137,41 @@ def inspect_bounded_prices_only(*, symbols, contact, credentials_path,
             'live_order_authorized':False}
 
 
+
+def inspect_repeated_prices_only(*, symbols, rounds, contact, credentials_path,
+                                 inspect_batch=inspect_bounded_prices_only):
+    """Finite diagnostic repetitions; never a daemon, trade loop, or authority grant."""
+    if type(rounds) is not int or not 1 <= rounds <= 3:
+        raise ResearchRefused('QD_DIAGNOSTIC_ROUNDS_BOUNDED_REQUIRED')
+    # Validate universe before initiating any provider calls.
+    if (type(symbols) is not list or not 1 <= len(symbols) <= 8
+            or any(type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}",symbol) is None
+                   for symbol in symbols) or len(set(symbols)) != len(symbols)):
+        raise ResearchRefused('QD_BOUNDED_UNIQUE_SYMBOLS_REQUIRED')
+    reports=[]
+    for index in range(rounds):
+        report=inspect_batch(symbols=symbols,contact=contact,credentials_path=credentials_path)
+        if (type(report) is not dict or report.get('schema')!='ATLAS_QD_BOUNDED_PRICES_ONLY_V1'
+                or report.get('symbols')!=symbols
+                or type(report.get('refused_count')) is not int
+                or type(report.get('acquired_count')) is not int
+                or report['refused_count']<0 or report['acquired_count']<0
+                or report['refused_count']+report['acquired_count']!=len(symbols)
+                or type(report.get('results')) is not list
+                or len(report['results'])!=len(symbols)
+                or report.get('operational_source_accepted') is not False
+                or report.get('paper_fill_authorized') is not False
+                or report.get('live_order_authorized') is not False):
+            raise ResearchRefused('QD_REPEATED_DIAGNOSTIC_RESULT_REFUSED')
+        reports.append({'round':index+1,'acquired_count':report['acquired_count'],
+                        'refused_count':report['refused_count'], 'results':report['results']})
+    return {'schema':'ATLAS_QD_REPEATED_PRICES_ONLY_V1','symbols':symbols,
+            'rounds_requested':rounds,'rounds_completed':len(reports),
+            'refused_count':sum(row['refused_count'] for row in reports),
+            'rounds':reports,'operational_source_accepted':False,
+            'paper_fill_authorized':False,'live_order_authorized':False}
+
+
 def inspect_bounded_universe(*, symbols, contact, credentials_path,
                              inspect=inspect_free_research):
     """Bounded multi-symbol genuine research; never converts research to fills."""
@@ -172,10 +207,16 @@ def main(argv=None):
     parser.add_argument("--symbol", default="MSFT")
     parser.add_argument("--prices-only", action="store_true", help="Read-only price history without SEC fundamentals")
     parser.add_argument("--symbols", nargs="+", help="Up to eight distinct real symbols; diagnostic only")
+    parser.add_argument("--diagnostic-rounds", type=int, default=1, help="Finite 1-3 read-only rounds; requires --prices-only --symbols")
     parser.add_argument("--sec-contact", default=os.environ.get("ATLAS_SEC_CONTACT"))
     args = parser.parse_args(argv)
     try:
-        if args.prices_only and args.symbols is not None:
+        if args.diagnostic_rounds != 1 and not (args.prices_only and args.symbols is not None):
+            raise ResearchRefused('QD_REPEATED_DIAGNOSTIC_PRICES_ONLY_UNIVERSE_REQUIRED')
+        if args.prices_only and args.symbols is not None and args.diagnostic_rounds != 1:
+            result = inspect_repeated_prices_only(symbols=args.symbols,rounds=args.diagnostic_rounds,
+                                                  contact=args.sec_contact,credentials_path=REPO / "config/alpaca.env")
+        elif args.prices_only and args.symbols is not None:
             result = inspect_bounded_prices_only(symbols=args.symbols, contact=args.sec_contact,
                                                  credentials_path=REPO / "config/alpaca.env")
         elif args.prices_only:
@@ -196,6 +237,8 @@ def main(argv=None):
     print(json.dumps(result, sort_keys=True))
     # Partial acquisition is observable but not a successful full-universe scan.
     # Supervisors must never mistake refused symbols for a complete research cut.
+    if result.get("schema") == "ATLAS_QD_REPEATED_PRICES_ONLY_V1":
+        return 2 if result['refused_count'] else 0
     if result.get("schema") in ("ATLAS_QD_BOUNDED_RESEARCH_UNIVERSE_V1", "ATLAS_QD_BOUNDED_PRICES_ONLY_V1"):
         return 2 if result["refused_count"] else 0
     return 0
