@@ -63,3 +63,4 @@
 - 2026-11-07: Closed activation commissioning bypass: previously both native account enrollment files could be omitted, allowing digest-only record path. Now both QD V4 and HL V1 enrollment documents mandatory before clock/native publication. 6 focused tests pass. No activation, 0/9.
 - 2026-11-07: IEX read-only observation now reports New York exchange-local date and weekend versus unverified weekday/holiday context; no market-open or operational authority implied. 19 targeted tests pass. 0/9.
 - 2026-11-07: Added native-handle identity verification for both six-role account enrollments before activation publication. 8 focused tests passed; no enrollment issued and 0/9 operational gates accepted.
+- 2026-11-07: Existing QD epoch native resources 5/6 verified; coordination absent. Read-only evidence and 2 tests added. Operational gates remain 0/9.
