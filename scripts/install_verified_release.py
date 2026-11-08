@@ -228,7 +228,8 @@ def main(argv=None):
     candidate=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V3_2026-11-08.json'
     candidate_v4=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V4_2026-11-08.json'
     candidate_v5=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V5_R1_2026-11-08.json'
-    if Path(args.proposal).absolute() not in (expected,candidate,candidate_v4,candidate_v5):
+    candidate_v6=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V6_R1_2026-11-08.json'
+    if Path(args.proposal).absolute() not in (expected,candidate,candidate_v4,candidate_v5,candidate_v6):
         raise ValueError('EXACT_INSTALL_PROPOSAL_REQUIRED')
     expected=Path(args.proposal).absolute()
     raw=source_bytes(repo,str(expected.relative_to(repo)).replace('\\','/'),maximum_bytes=65536)
@@ -246,13 +247,18 @@ def main(argv=None):
             or proposal['archive_sha256']!='35c5b6b623f197f085cbe40bc0ff9e0d16672d5b5c3557ad48eb47e4bc20b437'
             or proposal['inventory_sha256']!='ff8635bd4f246f49234036b8aad56d9483147bb5cbba28f20f7970aebc47985c'):
         raise ValueError('EXACT_V5_SELECTED_SOURCE_PIN_REQUIRED')
+    if expected == candidate_v6 and (
+            proposal['source_commit']!='d95b350fa585c2218614c9e5eb459c6edfc91807'
+            or proposal['archive_sha256']!='a5bcdb78a4ab4d84839c56df8908ff86570b510be3504f711b61b381a360e99f'
+            or proposal['inventory_sha256']!='1eb406f598a5154337762a660ac79c565132b7081ded5d4d73210ed4e49d35fa'):
+        raise ValueError('EXACT_V6_SELECTED_SOURCE_PIN_REQUIRED')
     if set(proposal['adapter_source_sha256'])!={'scripts/install_verified_release.py','scripts/native_install_candidate.py','scripts/native_install_plan.py'}:
         raise ValueError('EXACT_INSTALL_ADAPTER_SOURCE_SET_REQUIRED')
     for name,pin in proposal['adapter_source_sha256'].items():
         actual=source_bytes(repo,name,maximum_bytes=65536).replace(b'\r\n',b'\n')
         if hashlib.sha256(actual).hexdigest()!=pin:raise ValueError('INSTALL_ADAPTER_SOURCE_CHANGED')
     clock_source=('time.cloudflare.com,0x8 time.google.com,0x8'
-                  if expected in (candidate,candidate_v4,candidate_v5) else 'time.windows.com,0x9')
+                  if expected in (candidate,candidate_v4,candidate_v5,candidate_v6) else 'time.windows.com,0x9')
     clock=LocalWindowsClock(expected_source=clock_source,
         runtime_id='qd-unselected-code-install-'+proposal['source_commit'])
     try:

@@ -1,0 +1,27 @@
+{
+  "adapter_source_sha256": {
+    "scripts/install_verified_release.py": "07632cdd331b066eebeba884e1d5f7a357d25e030251e46872e040cc5b416652",
+    "scripts/native_install_candidate.py": "d026b57b1fc91e4b4f245e1c01d3b543e3231c1a261c1e2f0ac823712b6df8f1",
+    "scripts/native_install_plan.py": "10bf8c2dd5d2ffdc3a92a576183a701e022c8e53bf5f948a6ad2fcaeb028263f"
+  },
+  "archive": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-v6-hl-book-reasons-source-candidate-20261108\\atlas-source.zip",
+  "archive_sha256": "a5bcdb78a4ab4d84839c56df8908ff86570b510be3504f711b61b381a360e99f",
+  "dependency_receipt": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-d-runtime-coordination-installation-20261028.json",
+  "dependency_sha256": "93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91",
+  "destination": "D:\\AtlasRuntime\\releases\\d95b350fa585c2218614c9e5eb459c6edfc91807",
+  "financial_enrollment": false,
+  "inventory_sha256": "1eb406f598a5154337762a660ac79c565132b7081ded5d4d73210ed4e49d35fa",
+  "limits": {
+    "bytes": 1073741824,
+    "entries": 40000,
+    "seconds": 600
+  },
+  "paper_startup": false,
+  "promotion": false,
+  "provider_activation": false,
+  "receipt_path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-d95b350fa585c2218614c9e5eb459c6edfc91807.json",
+  "schema": "QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V1",
+  "selected": false,
+  "source_commit": "d95b350fa585c2218614c9e5eb459c6edfc91807",
+  "status": "PROPOSAL_NOT_PERMISSION"
+}
