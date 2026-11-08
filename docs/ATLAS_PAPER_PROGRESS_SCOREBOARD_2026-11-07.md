@@ -67,3 +67,4 @@
 - 2026-11-07: Native QD coordination root created and verified, existing epoch resources now 6/6. Enrollment and writer authority not accepted; operational gates 0/9.
 - 2026-11-07: Verified installed D:\ release Python executes and reports native D-only process identity; C:\ development venv cannot meet writer-image requirement. No persistent writer roster, authority or lease; 0/9 operational gates.
 - 2026-11-07: Actual installed release Python separate-process launch/alive/path/stop verified on Windows. Process control prerequisite only; no persistent enrolled writer or graceful drain; 0/9 operational gates.
+- 2026-11-07: Native installed writer self-binding probe verified real process executable, PID and creation time; 2 tests passed. No enrolled writer or authority, 0/9 operational gates.
