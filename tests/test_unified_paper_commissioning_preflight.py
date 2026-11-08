@@ -73,3 +73,35 @@ def test_closed_provider_research_cannot_satisfy_current_prices():
     assert result['retained_provider_observation']['alpaca_fresh_quote_received'] is True
     assert result['decision'] == 'NO_GO'
     assert result['startup_authorized'] is False
+
+
+def test_unified_preflight_refuses_duplicate_qd_evidence():
+    report = module.inspect(qd_report={'checks': [
+        {'check': 'ACTIVATION_RECORD_PRESENT', 'status': 'BLOCKED'},
+        {'check': 'ACTIVATION_RECORD_PRESENT', 'status': 'PASS'},
+        {'check': 'ACTIVATION_NATIVE_VERIFIED', 'status': 'PASS'},
+        {'check': 'FINANCIAL_INCEPTION', 'status': 'PASS'}]})
+    assert report['prerequisites']['NATIVE_ACTIVATION'] == 'BLOCKED'
+    assert report['prerequisites']['QD_FINANCIAL_INCEPTION'] == 'BLOCKED'
+    assert report['decision'] == 'NO_GO'
+
+
+def test_unified_preflight_refuses_malformed_qd_evidence():
+    for checks in (None, {}, [None], [{'check': 'FINANCIAL_INCEPTION', 'status': True}]):
+        report = module.inspect(qd_report={'checks': checks})
+        assert report['prerequisites']['QD_FINANCIAL_INCEPTION'] == 'BLOCKED'
+        assert report['startup_authorized'] is False
+
+
+def test_unified_scope_requires_live_and_unattended_exclusions(tmp_path):
+    import json
+    import shutil
+    source = ROOT / 'docs/ATLAS_UNIFIED_PAPER_COMMISSIONING_SCOPE_2026-11-07.json'
+    target = tmp_path / 'docs'
+    target.mkdir()
+    scope = json.loads(source.read_text(encoding='utf-8'))
+    scope['exclusions'].remove('PRODUCTION_STARTUP')
+    (target / source.name).write_text(json.dumps(scope), encoding='utf-8')
+    report = module.inspect(root=tmp_path, qd_report={'checks': []})
+    assert report['prerequisites']['OPERATOR_SCOPE'] == 'BLOCKED'
+    assert report['decision'] == 'NO_GO'

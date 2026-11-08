@@ -29,9 +29,12 @@ def inspect(*, root=ROOT, qd_report=None, observation_session=None):
                 and scope.get('authorization_record') == 'EXPLICIT_OPERATOR_CHAT_APPROVAL_NON_SELF_EXECUTING'
                 and scope.get('installed_activation_record_created') is False
                 and set(scope.get('scope', [])) == expected
-                and {'LIVE_ORDERS','REAL_CAPITAL','GENESIS','VPS_CLOUD','TECHNICAL_GATE_OVERRIDE'} <= set(scope.get('exclusions', [])))
+                and {'LIVE_ORDERS','REAL_CAPITAL','WALLET_SIGNING','PRODUCTION_STARTUP','GENESIS','VPS_CLOUD','TECHNICAL_GATE_OVERRIDE'} <= set(scope.get('exclusions', [])))
     qd = qd_report or {}
-    checks = {x.get('check'): x.get('status') for x in qd.get('checks', [])}
+    entries = qd.get('checks', [])
+    valid_entries = (isinstance(entries, list) and all(isinstance(x, dict) and isinstance(x.get('check'), str) and isinstance(x.get('status'), str) for x in entries))
+    unique_entries = valid_entries and len({x['check'] for x in entries}) == len(entries)
+    checks = {x['check']: x['status'] for x in entries} if unique_entries else {}
     from scripts.observation_runtime.hyperliquid_native_preflight import inspect as inspect_hyperliquid
     hl = inspect_hyperliquid()
     prerequisites = {
