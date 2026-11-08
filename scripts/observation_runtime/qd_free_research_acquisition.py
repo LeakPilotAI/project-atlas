@@ -60,14 +60,42 @@ def inspect_free_research(*, symbol, contact, credentials_path, client_factory=F
             "paper_fill_authorized": False, "live_order_authorized": False}
 
 
+def inspect_bounded_universe(*, symbols, contact, credentials_path,
+                             inspect=inspect_free_research):
+    """Bounded multi-symbol genuine research; never converts research to fills."""
+    if (type(symbols) is not list or not 1 <= len(symbols) <= 8
+            or any(type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}", symbol) is None
+                   for symbol in symbols)
+            or len(set(symbols)) != len(symbols)):
+        raise ResearchRefused("QD_BOUNDED_UNIQUE_SYMBOLS_REQUIRED")
+    results = []
+    for symbol in symbols:
+        try:
+            result = inspect(symbol=symbol, contact=contact, credentials_path=credentials_path)
+            if result.get("operational_source_accepted") is not False or result.get("paper_fill_authorized") is not False:
+                raise ResearchRefused("QD_DIAGNOSTIC_AUTHORITY_PROMOTION_REFUSED")
+            results.append(result)
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            results.append({"symbol": symbol, "status": "REFUSED", "reason": type(exc).__name__,
+                            "operational_source_accepted": False, "paper_fill_authorized": False})
+    return {"schema": "ATLAS_QD_BOUNDED_RESEARCH_UNIVERSE_V1", "symbols": symbols,
+            "results": results, "operational_source_accepted": False,
+            "paper_fill_authorized": False, "live_order_authorized": False}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", default="MSFT")
+    parser.add_argument("--symbols", nargs="+", help="Up to eight distinct real symbols; diagnostic only")
     parser.add_argument("--sec-contact", default=os.environ.get("ATLAS_SEC_CONTACT"))
     args = parser.parse_args(argv)
     try:
-        result = inspect_free_research(symbol=args.symbol, contact=args.sec_contact,
-                                       credentials_path=REPO / "config/alpaca.env")
+        if args.symbols is not None:
+            result = inspect_bounded_universe(symbols=args.symbols, contact=args.sec_contact,
+                                               credentials_path=REPO / "config/alpaca.env")
+        else:
+            result = inspect_free_research(symbol=args.symbol, contact=args.sec_contact,
+                                           credentials_path=REPO / "config/alpaca.env")
     except (ValueError, OSError, KeyError, TypeError):
         result = {"schema": "ATLAS_QD_FREE_RESEARCH_ACQUISITION_V1", "status": "REFUSED",
                   "operational_source_accepted": False, "paper_fill_authorized": False,

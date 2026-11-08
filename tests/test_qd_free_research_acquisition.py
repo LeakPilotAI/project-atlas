@@ -45,3 +45,21 @@ def test_synthetic_transport_cannot_pass_as_real(monkeypatch):
         probe.inspect_free_research(
             symbol="MSFT", contact="ProjectAtlas/1.0 operator@realmail.org",
             credentials_path=Path("unused"), client_factory=Client)
+
+def test_bounded_universe_deduplicates_and_never_promotes():
+    from app.investment.free_research_transport import ResearchRefused
+    with pytest.raises(ResearchRefused):
+        probe.inspect_bounded_universe(symbols=['MSFT', 'MSFT'], contact='unused', credentials_path=None)
+    with pytest.raises(ResearchRefused):
+        probe.inspect_bounded_universe(symbols=['MSFT'] * 9, contact='unused', credentials_path=None)
+    calls = []
+    def inspect(*, symbol, **kwargs):
+        calls.append(symbol)
+        if symbol == 'AVGO':
+            raise ResearchRefused('SOURCE_UNAVAILABLE')
+        return {'symbol': symbol, 'operational_source_accepted': False, 'paper_fill_authorized': False}
+    result = probe.inspect_bounded_universe(symbols=['MSFT', 'AVGO'], contact='unused',
+                                            credentials_path=None, inspect=inspect)
+    assert calls == ['MSFT', 'AVGO']
+    assert result['results'][1]['status'] == 'REFUSED'
+    assert result['operational_source_accepted'] is result['paper_fill_authorized'] is False
