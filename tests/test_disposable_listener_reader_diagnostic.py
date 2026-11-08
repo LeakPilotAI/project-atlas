@@ -17,3 +17,7 @@ def test_disposable_listener_comparison_remains_nonoperational():
     assert isinstance(result['netstat'], list)
     assert isinstance(result['ip_helper_rows'], list)
     assert result['port'] > 0 and result['expected_pid'] > 0
+    assert result['so_acceptconn'] == 1
+    assert result['netstat_exit'] == 0
+    assert isinstance(result['netstat_scoped_raw'], list)
+    assert result['nettcp_exit'] == 0

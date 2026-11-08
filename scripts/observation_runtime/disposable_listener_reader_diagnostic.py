@@ -16,6 +16,7 @@ def inspect():
         listener.listen(1)
         port = listener.getsockname()[1]
         pid = os.getpid()
+        socket_acceptconn = listener.getsockopt(socket.SOL_SOCKET, socket.SO_ACCEPTCONN)
         ps = ("$rows=@(Get-CimInstance -Namespace root/StandardCimv2 "
               "-ClassName MSFT_NetTCPConnection -Filter 'LocalPort=" + str(port) + "'); "
               "$rows | ForEach-Object { [pscustomobject]@{"
@@ -28,8 +29,17 @@ def inspect():
         net = subprocess.run(['netstat.exe', '-ano', '-p', 'tcp'],
                              capture_output=True, text=True, timeout=8)
         native = ip_helper(port=port)
+        net_lines = [line.strip() for line in net.stdout.splitlines()
+                     if str(port) in line]
+        cmd = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command',
+                              'Get-NetTCPConnection -LocalPort ' + str(port) +
+                              ' -ErrorAction SilentlyContinue | Select-Object LocalAddress,LocalPort,State,OwningProcess | ConvertTo-Json -Compress'],
+                             capture_output=True, text=True, timeout=8)
         result = {'schema': 'ATLAS_DISPOSABLE_LISTENER_READERS_V1',
-                  'port': port, 'expected_pid': pid,
+                  'port': port, 'expected_pid': pid, 'so_acceptconn': socket_acceptconn,
+                  'netstat_exit': net.returncode, 'netstat_scoped_raw': net_lines,
+                  'netstat_stderr': net.stderr.strip()[:200],
+                  'nettcp_exit': cmd.returncode, 'nettcp': cmd.stdout.strip(),
                   'cim_exit': cim.returncode, 'cim': cim.stdout.strip(),
                   'cim_error': cim.stderr.strip()[:500],
                   'netstat': netstat_rows(net.stdout, port=port)['rows'] if net.returncode == 0 else None,
