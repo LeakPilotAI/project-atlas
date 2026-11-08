@@ -354,3 +354,31 @@ def test_native_restart_observation_rejects_unattributed_custody_cut(tmp_path, m
         with pytest.raises(StopReceiptConflict, match='NATIVE_CUT_UNVERIFIED'):
             ledger.observe_native_account_restart('s', custody=custody, grant={'session_id': 's'})
         snapshot['accounts']['HYPERLIQUID'][field] = previous
+
+
+def test_native_account_read_refuses_control_journal_change_during_projection(monkeypatch):
+    from contextlib import contextmanager
+    from types import SimpleNamespace
+    from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+    custody = object.__new__(UnifiedPortfolioCustody)
+    before = {'state': {'operations': {}}, 'revision': 1}
+    reads = []
+    def snapshot():
+        reads.append(1)
+        return before if len(reads) <= 2 else {'state': {'operations': {}}, 'revision': 2}
+    custody.journal = SimpleNamespace(snapshot=snapshot)
+    @contextmanager
+    def lease(*args):
+        yield SimpleNamespace(check=lambda: True)
+    custody.ownership = SimpleNamespace(lease=lease)
+    custody.clock = lambda: 123
+    custody.authority = SimpleNamespace(verify_read_cuts=lambda *args: True)
+    custody.components = {}
+    monkeypatch.setattr(UnifiedPortfolioCustody, '_verify', lambda self: None)
+    cut = {'head': 'head', 'manifest': {'epoch': 'e', 'strategy': 's', 'currency': 'USD', 'opening_cash': '1000'},
+           'state': {'revision': 1, 'cash': '1000', 'gross': '0', 'costs': '0', 'net': '0', 'positions': {}}}
+    custody.writers = {k: SimpleNamespace(_cut=lambda: cut) for k in ('QUALITY_DIPS', 'HYPERLIQUID')}
+    result = custody.read_accounts({'session_id': 's'})
+    assert result['state'] == 'UNKNOWN'
+    assert result['startup_authorized'] is False
+    assert len(reads) == 3

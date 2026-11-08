@@ -193,6 +193,10 @@ class UnifiedPortfolioCustody:
                         # Financial cash is proven, but pending-order spendable cash
                         # requires a separate accepted risk-reservation projection.
                         accounts[lane]['available_cash'] = None
+            # Order snapshots are collected after the first control-journal check.
+            # A concurrent reservation/ACK during projection invalidates the cut.
+            if owner.check() is not True or body(before) != body(self.journal.snapshot()):
+                return unavailable
             return {**unavailable, 'state': 'ACKNOWLEDGED', 'accounts': strict(body(accounts))}
 
     def exit_classification(self, lane, proposal, grant, stop_context=None):
