@@ -65,6 +65,45 @@ def _paper_funding_observation(symbol, rows, start, end, started, observed):
             "startup_authorized": False}
 
 
+class HyperliquidPublicBookAdmissionRefused(ValueError):
+    """Fixed nonsecret reason code, while retaining original error text."""
+
+    def __init__(self, reason_code):
+        super().__init__("Fresh exact Hyperliquid book/metadata evidence required")
+        self.reason_code = reason_code
+
+
+def _paper_book_admission_reason(symbol, metadata, book, started, observed):
+    """Report exactly which existing first-gate condition refused.
+
+    Returns only a fixed safe token, never raw provider payloads, timestamps,
+    credentials, URLs, or mutable financial authority. No external IO.
+    """
+    if symbol not in ("BTC", "ETH", "SOL"):
+        return "SYMBOL_NOT_ALLOWLISTED"
+    if type(started) is not int or type(observed) is not int:
+        return "OBSERVATION_CLOCK_TYPE"
+    if observed < started:
+        return "OBSERVATION_CLOCK_REVERSED"
+    if observed - started > 10000:
+        return "OBSERVATION_DURATION_EXCEEDED"
+    if type(metadata) is not list or len(metadata) != 2:
+        return "METADATA_ENVELOPE"
+    if type(metadata[0]) is not dict or type(metadata[1]) is not list:
+        return "METADATA_PART_TYPES"
+    if type(book) is not dict or set(book) != {"coin", "time", "levels"}:
+        return "BOOK_ENVELOPE"
+    if book["coin"] != symbol:
+        return "BOOK_COIN_MISMATCH"
+    if type(book["time"]) is not int:
+        return "BOOK_TIMESTAMP_TYPE"
+    if book["time"] > observed:
+        return "BOOK_TIMESTAMP_FUTURE"
+    if observed - book["time"] > 5000:
+        return "BOOK_TIMESTAMP_STALE"
+    return None
+
+
 def _paper_execution_observation(symbol, metadata, book, started, observed):
     """Strict Decimal-preserving public evidence parser, not a fill decision."""
     from decimal import Decimal
@@ -77,13 +116,9 @@ def _paper_execution_observation(symbol, metadata, book, started, observed):
             raise ValueError("Finite provider quantity required")
         return parsed
 
-    if (symbol not in ("BTC", "ETH", "SOL") or type(started) is not int or type(observed) is not int
-            or not 0 <= observed - started <= 10000 or type(metadata) is not list or len(metadata) != 2
-            or type(metadata[0]) is not dict or type(metadata[1]) is not list
-            or type(book) is not dict or set(book) != {"coin", "time", "levels"}
-            or book["coin"] != symbol or type(book["time"]) is not int
-            or not 0 <= observed - book["time"] <= 5000):
-        raise ValueError("Fresh exact Hyperliquid book/metadata evidence required")
+    admission_refusal = _paper_book_admission_reason(symbol, metadata, book, started, observed)
+    if admission_refusal is not None:
+        raise HyperliquidPublicBookAdmissionRefused(admission_refusal)
     universe, contexts = metadata[0].get("universe"), metadata[1]
     if (type(universe) is not list or len(universe) != len(contexts)
             or any(type(x) is not dict or type(x.get("name")) is not str for x in universe)
