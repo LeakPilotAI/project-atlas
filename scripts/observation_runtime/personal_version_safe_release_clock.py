@@ -2,11 +2,15 @@
 
 A future installed application can derive its release identity from its own native
 module path and the verified selector rather than embed its own later-created
-receipt SHA in source (which would be self-referential). No V8 r12 selection
-or PAPER clock construction is authorized by this module.
+receipt SHA in source (which would be self-referential). This module cannot
+select a release, authorize financial PAPER operations, or construct a clock
+from the unselected workspace source.
 """
+import os
 import re
 from pathlib import Path
+
+from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock, SOURCE
 
 V7_R11_HEAD = "933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997"
 V7_RELEASE = "af96bec0484a8e43f9965610e071a907a0d316bf"
@@ -79,3 +83,100 @@ def require_native_version_safe_clock_source(*, deep=True):
         return head
     finally:
         store.close()
+
+
+# This capability is a source-only prerequisite for a FUTURE immutable release.
+# It is not wired into PAPER activation and is not a financial authorization.
+PROFILE = "VERSION_SAFE_INDEPENDENT_NTP_OPERATOR_CLOCK_V1"
+
+
+class NativeVersionSafePaperOperatorClock:
+    """Own-release, own-selection independent UTC; no financial writer/grant.
+
+    Selection and installed-image evidence precede network access. The same
+    selected head, process, runtime ID and genuine NTP object are required on
+    every sample and verification. Any failure permanently revokes this clock.
+    """
+
+    def __init__(self, *, runtime_id):
+        if type(runtime_id) is not str or not runtime_id or len(runtime_id) > 256:
+            raise ValueError("VERSION_SAFE_CLOCK_RUNTIME_ID_REQUIRED")
+        selected_head = require_native_version_safe_clock_source(deep=True)
+        self._pid = os.getpid()
+        self._runtime_id = runtime_id
+        self._selected_head = selected_head
+        self._revoked = False
+        self._clock = IndependentNtpClock(runtime_id=runtime_id)
+        self._bound_clock = self._clock
+        try:
+            self.require_operational(runtime_id)
+        except (OSError, TypeError, ValueError, KeyError):
+            self.revoke()
+            raise
+
+    def revoke(self):
+        self._revoked = True
+        bound = getattr(self, "_bound_clock", None)
+        if type(bound) is IndependentNtpClock:
+            bound.revoke()
+
+    def require_operational(self, runtime_id):
+        if (type(self) is not NativeVersionSafePaperOperatorClock
+                or self._revoked or self._pid != os.getpid()
+                or type(runtime_id) is not str or runtime_id != self._runtime_id
+                or type(self._clock) is not IndependentNtpClock
+                or self._clock is not self._bound_clock):
+            self.revoke()
+            raise ValueError("VERSION_SAFE_CLOCK_OWNER_OR_IDENTITY_CHANGED")
+        try:
+            if require_native_version_safe_clock_source(deep=False) != self._selected_head:
+                raise ValueError("VERSION_SAFE_CLOCK_NATIVE_SELECTION_CHANGED")
+            self._clock.require_operational(runtime_id)
+            evidence = self._clock.evidence
+            if (type(evidence) is not dict
+                    or evidence.get("source") != SOURCE
+                    or evidence.get("domain") != "TWO_PUBLIC_UNAUTHENTICATED_NTP_PEERS"
+                    or evidence.get("financial_authority") is not False
+                    or type(evidence.get("bound_ms")) is not int
+                    or not 0 <= evidence["bound_ms"] <= 1000):
+                raise ValueError("VERSION_SAFE_CLOCK_NTP_SOURCE_REFUSED")
+        except (OSError, ValueError, TypeError, KeyError):
+            self.revoke()
+            raise ValueError("VERSION_SAFE_CLOCK_NATIVE_OR_NTP_REVOKED") from None
+        return self
+
+    def sample(self):
+        self.require_operational(self._runtime_id)
+        return self._clock.sample()
+
+    def __call__(self):
+        return self.sample()["utc"]
+
+    def verify(self, sample):
+        try:
+            self.require_operational(self._runtime_id)
+            return self._clock.verify(sample)
+        except ValueError:
+            return False
+
+    def runtime_sample(self):
+        self.require_operational(self._runtime_id)
+        return self._clock.runtime_sample()
+
+    def verify_runtime_sample(self, sample):
+        try:
+            self.require_operational(self._runtime_id)
+            return self._clock.verify_runtime_sample(sample)
+        except ValueError:
+            return False
+
+    def runtime_clock(self):
+        owner = self
+        class RuntimeClock:
+            def sample(self):
+                return owner.runtime_sample()
+            def verify(self, sample):
+                return owner.verify_runtime_sample(sample)
+            def __call__(self):
+                return owner()
+        return RuntimeClock()
