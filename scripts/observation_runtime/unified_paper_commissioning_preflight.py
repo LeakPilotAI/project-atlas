@@ -65,9 +65,21 @@ def inspect(*, root=ROOT, qd_report=None, observation_session=None):
         'VERIFIED_HISTORICAL_ONLY' if observation.get('archive_integrity') == 'VERIFIED_LOCAL_HASH_CHAIN_NOT_PROVIDER_AUTHORITY'
         else 'NOT_VERIFIED')
     prerequisites['CURRENT_EXECUTABLE_MARKET_PRICES'] = 'NOT_INDEPENDENTLY_VERIFIED'
+    # Informative readiness only: a read-only clock acquisition cannot prove
+    # writer custody, forward data source, or continuous financial authority.
+    ntp = qd.get('independent_ntp_clock_probe') if type(qd) is dict else None
+    ntp_diagnostic = ('V7_DUAL_NTP_READONLY_OBSERVED_NOT_FINANCIAL_AUTHORITY'
+                      if type(ntp) is dict
+                      and ntp.get('trusted_clock_verified_for_probe') is True
+                      and ntp.get('selected_release') == 'af96bec0484a8e43f9965610e071a907a0d316bf'
+                      and ntp.get('financial_clock_authorized') is False
+                      and ntp.get('public_ntp_authenticated') is False
+                      and ntp.get('continuous_financial_clock_lease_verified') is False
+                      else 'NOT_VERIFIED')
     return {'schema':'ATLAS_UNIFIED_PAPER_COMMISSIONING_PREFLIGHT_V1',
             'decision':'NO_GO', 'startup_authorized':False, 'live_trading_authorized':False,
             'prerequisites':prerequisites, 'retained_provider_observation':observation, 'hyperliquid_native_inventory':hl,
+            'independent_ntp_clock_readonly_diagnostic':ntp_diagnostic,
             'note':'QD source evidence is read from existing preflight; Hyperliquid evidence has no installed verifier yet. No permission is inferred from scope approval.'}
 
 
@@ -77,7 +89,7 @@ def main():
     args = parser.parse_args()
     sha = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     run = subprocess.run([sys.executable,'-m','scripts.observation_runtime.personal_commissioning_preflight',
-                          '--json','--expected-source',sha,'--check-native-clock'],
+                          '--json','--expected-source',sha,'--check-independent-ntp-clock'],
                          cwd=ROOT,capture_output=True,text=True,check=False)
     if run.returncode not in (0,2):
         raise RuntimeError('QD_COMMISSIONING_PREFLIGHT_FAILED')

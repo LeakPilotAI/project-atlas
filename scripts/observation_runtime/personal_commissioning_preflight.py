@@ -26,8 +26,11 @@ def check(name, passed, detail):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--json", action="store_true")
-    parser.add_argument("--check-native-clock", action="store_true",
-                        help="Perform a bounded read-only native clock probe; never grants runtime authority")
+    clock_flags = parser.add_mutually_exclusive_group()
+    clock_flags.add_argument("--check-native-clock", action="store_true",
+                             help="Legacy bounded Windows Time probe, never runtime authority")
+    clock_flags.add_argument("--check-independent-ntp-clock", action="store_true",
+                             help="Bounded V7 selected-release and two-peer NTP diagnostic; nonfinancial only")
     parser.add_argument("--expected-source", help="Explicit reviewed 40-character source commit")
     parser.add_argument("--activation-root", help="Explicit existing personal activation child; never created")
     parser.add_argument("--activation-native-root", nargs=3, type=int, metavar=("VOL", "HIGH", "LOW"),
@@ -229,6 +232,7 @@ def main():
     ))
 
     clock_probe = None
+    independent_probe = None
     if args.check_native_clock:
         from scripts.observation_runtime.personal_clock_gate_probe import (
             inspect_personal_clock_gate,
@@ -238,6 +242,17 @@ def main():
             "NATIVE_CLOCK_PROBE",
             clock_probe["trusted_clock_verified_for_probe"] is True,
             "One-time native Windows clock evidence only; does not authorize a lease",
+        ))
+    if args.check_independent_ntp_clock:
+        from scripts.observation_runtime.atlas_v7_commissioning_ntp_probe import (
+            inspect_v7_independent_ntp_clock,
+        )
+        independent_probe = inspect_v7_independent_ntp_clock()
+        results.append(check(
+            "INDEPENDENT_NTP_CLOCK_PROBE",
+            independent_probe["trusted_clock_verified_for_probe"] is True,
+            "Selected V7 native history and two public unauthenticated NTP peers; "
+            "single diagnostic only, NOT financial clock authority or a continuous runtime lease",
         ))
 
     passed = all(item["status"] == "PASS" for item in results)
@@ -283,6 +298,7 @@ def main():
             "operational_publication_verified": False,
         },
         "native_clock_probe": clock_probe,
+        "independent_ntp_clock_probe": independent_probe,
         "operator_action_required": (
             "Review source checkpoint and explicitly authorize native activation "
             "only after independently accepted research, financial custody, "
