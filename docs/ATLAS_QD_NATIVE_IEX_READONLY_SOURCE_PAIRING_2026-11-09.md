@@ -1,0 +1,25 @@
+# Atlas native Quality Dips -> Alpaca IEX read-only pairing — 2026-11-09
+
+**Outcome: IMPLEMENTED AND OFFLINE VERIFIED, DEVELOPMENT SOURCE ONLY. NOT an operational source, native release, broker permission or PAPER trading activation.**
+
+## Existing real plumbing and the remaining gap
+
+Atlas already had `QualityDipsCurrentProducer.read_publication` (native custody replay and independent source input verification) and `NativePersonalMarketInputs.preflight` (financial-session-dependent linking of an enrolled scanner publication to executable IEX quotes). The latter cannot legitimately start without independent operator activation, native scanner issuer, live quote entitlement/clock and separate QD USD PAPER account. A previous one-time user-approved 20-second live Alpaca IEX data-only session confirmed SPY fresh quotes but no accepted MSFT callback; it did NOT establish the operational QD scanner or financial quote admission.
+
+## New deliberately NON-ACTIVATING source handoff
+
+Added `scripts/observation_runtime/atlas_qd_native_iex_readonly_pairing.py`: `inspect(source=<QualityDipsCurrentProducer>,feed=<IEXFeed>)` takes **only externally constructed ports**, never creates a source, feed, clock, network connection or financial account. It requires identity-equal source/feed clock port, exact existing publisher and feed types and explicit source domain. It rereads the real source publication through `source.read_publication(.2)`, requiring the original producer to validate native archive custody/provenance/revision; validates the exact scanner schema, recent publication timestamp, bounded current V3 forward-collection ranking bundles/position monitors, US-stock/ETF instrument identities, and unique symbol/ID scope.
+
+The inspected IEX feed must already be authenticated, subscribed, connected and single-venue IEX with requested symbols in the roster. The method checks each required symbol's fresh accepted quote identity/age and rereads BOTH native publication and quote snapshot within a one-second same-clock interval. Any revision/content swap, quote sequence/generation/source timestamp change, missing symbol subscription, disconnected feed, revoked source, future/stale publication, changed clock port or malformed instrument **refuses** rather than manufacturing an accepted source. A subscribed but unavailable/stale individual symbol is explicitly reported as missing; no candidate or trade is created. The report contains only symbolic coverage, native source digest/revision, and nonfinancial flags; it does not disclose prices, secrets or account information.
+
+For valid current synthetic source + IEX pairs: `DATA_ONLY_CURRENT_PAIRING_NOT_FINANCIAL_AUTHORITY`. For missing or stale symbol quotes: `DATA_ONLY_REQUIRED_QUOTE_MISSING_NO_FINANCIAL_AUTHORITY`. **Regardless of report status**, source issuer independently accepted=false, data entitlement accepted=false, financial clock qualified=false, continuous quote delivery proven=false, native financial publisher=false, accounts/orders/startup authorized=false. A `DISPOSABLE` test fixture with generation zero is expressly permitted for nonfinancial inspection, not financial quote admission. There is no CLI/provider or installed runtime startup route.
+
+## Tests
+
+New `tests/test_atlas_qd_native_iex_readonly_pairing.py` uses the existing disposable native archive/source owner and injected IEX protocol frames. Cases verify two-symbol fresh pairing, missing symbol quote, rejected quote condition, unsubscribed needed symbol, expiration, disconnect, clock port substitution, publisher revision swap, quote sequence substitution, revoked publisher input acceptance and no implicit/default ports. Existing `test_quality_dips_current_producer.py`, `test_personal_market_inputs.py`, `test_quality_dips_source_inventory.py`, `test_alpaca_iex.py`, `test_alpaca_iex_per_symbol_diagnostics.py`, `test_qd_publication_completion.py` included. **159 passed, zero failures/skips** in final expanded precommit test after one diagnostic-only generation-zero fixture fix; earlier 5 failures from overstrict generation check were fixed without weakening trading source approval or quote freshness.
+
+## Next actual operating prerequisites
+
+A **genuinely independently enrolled native QD scanner publisher** and its authoritative forward research/valuation provenance must exist before any real source-to-quote pairing can be observed. Current direct source inventory does not accept any operational publication. Separate real authenticated continuous per-symbol IEX, rights/quote eligibility, correctly calibrated independent financial clock, native writer/account custody, reviewed code-only release update, and actual supervised Start/Stop and soak evidence remain required. Current selected native R12 is frozen and financial operating workstreams **0/9 accepted**, so no autonomous PAPER Start.
+
+No additional Alpaca or other provider session, private account, simulated/live trade, native release installation/selection, Windows startup/clock/shortcut, Project Genesis change, or GitHub push occurred in this milestone.
