@@ -9,6 +9,12 @@ from __future__ import annotations
 from typing import Any
 
 POLICY_VERSION = "prediction-single-market-pre-event-v1"
+# The user's exclusive future Kalshi PAPER strategy replaces the legacy
+# general pre-event-reclaim ENTRY model. Old research/exit safety may remain,
+# but no legacy PAPER entry is an approved operational strategy.
+TARGET_PAPER_STRATEGY = "NEWLY_LISTED_SINGLE_YES_NO_PRICE_DISCOVERY_V1"
+LEGACY_REPRICING_PAPER_ENTRY_ENABLED = False
+TARGET_NEW_LISTING_PAPER_ENTRY_COMMISSIONED = False
 
 MAX_CONCURRENT_PREDICTION_POSITIONS = 1
 SINGLE_MARKET_ONLY = True
@@ -39,6 +45,14 @@ def is_multivariate_market(row: dict[str, Any]) -> bool:
 def policy_snapshot() -> dict[str, Any]:
     return {
         "version": POLICY_VERSION,
+        "target_paper_strategy": TARGET_PAPER_STRATEGY,
+        "legacy_repricing_paper_entry_enabled": LEGACY_REPRICING_PAPER_ENTRY_ENABLED,
+        "target_new_listing_paper_entry_commissioned": TARGET_NEW_LISTING_PAPER_ENTRY_COMMISSIONED,
+        "verified_new_listing_required_for_future_paper_entry": True,
+        "yes_no_single_leg_only": True,
+        "early_price_discovery_repricing_only": True,
+        "short_term_net_gain_objective_not_guaranteed": True,
+        "existing_general_pre_event_reclaim_signal_research_only": True,
         "single_market_only": SINGLE_MARKET_ONLY,
         "max_concurrent_prediction_positions": MAX_CONCURRENT_PREDICTION_POSITIONS,
         "combos_allowed": COMBOS_ALLOWED,

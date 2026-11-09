@@ -240,39 +240,10 @@ async def prediction_paper_open(
     depth: int = Query(20, ge=1, le=100),
     history_minutes: int = Query(180, ge=5, le=1000),
 ) -> Dict[str, Any]:
-    clean = _ticker(ticker, required=True)
-    assert clean is not None
-    try:
-        evaluation = await _build_prediction_paper_evaluation(
-            ticker=clean,
-            side=side,
-            quantity=_paper_quantity(quantity),
-            depth=depth,
-            history_minutes=history_minutes,
-        )
-        candidate = prediction_paper_journal.log_candidate(evaluation)
-        if not evaluation.get("eligible"):
-            return {
-                "execution": "PAPER_ONLY",
-                "live_capital_allowed": False,
-                "automatic_real_money_execution": False,
-                "opened": False,
-                "candidate": candidate,
-                "rejection_reasons": evaluation.get("rejection_reasons") or [],
-            }
-        opened = prediction_paper_journal.open_from_evaluation(evaluation)
-        return {
-            "execution": "PAPER_ONLY",
-            "live_capital_allowed": False,
-            "automatic_real_money_execution": False,
-            "opened": True,
-            "candidate": candidate,
-            "trade": opened,
-        }
-    except PredictionPaperError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-    except PredictionProviderError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    # Superseded general pre-event PAPER entry is permanently retired.
+    # Keep public Kalshi research and the existing PAPER close endpoint.
+    raise HTTPException(status_code=409,
+                        detail="KALSHI_LEGACY_PAPER_ENTRY_RETIRED_NEW_LISTING_ONLY")
 
 
 @router.post("/paper/close")
