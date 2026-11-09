@@ -12,6 +12,9 @@ from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 from scripts.observation_runtime.personal_v7_operator_clock import (
     NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
 )
+from scripts.observation_runtime.personal_v8_operator_clock import (
+    NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
+)
 from scripts.observation_runtime.personal_paper_activation import NativePersonalActivationReader
 from scripts.volume_inspector.windows_output import current_sid
 
@@ -23,6 +26,7 @@ class NativePersonalSourceInstallAuthority:
         valid_clock = (
             clock_profile == "WINDOWS_TIME_OPERATOR_CLOCK_V4" and type(clock) is LocalWindowsClock
             or clock_profile == V7_NTP_PROFILE and type(clock) is NativeV7PaperOperatorClock
+            or clock_profile == V8_NTP_PROFILE and type(clock) is NativeV8PaperOperatorClock
         )
         if type(reader) is not NativePersonalActivationReader or not valid_clock:
             raise ValueError('SOURCE_INSTALL_NATIVE_ACTIVATION_AND_CLOCK_REQUIRED')

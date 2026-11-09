@@ -188,6 +188,6 @@ def test_v7_commission_cli_profile_defaults_legacy_and_rejects_foreign():
     from pathlib import Path
     code = Path(commission.__file__).read_text(encoding="utf-8-sig")
     assert "default='WINDOWS_TIME_OPERATOR_CLOCK_V4'" in code
-    assert "choices=['WINDOWS_TIME_OPERATOR_CLOCK_V4', V7_NTP_PROFILE]" in code
+    assert "choices=['WINDOWS_TIME_OPERATOR_CLOCK_V4', V7_NTP_PROFILE, V8_NTP_PROFILE]" in code
     assert "EXACT_V7_NATIVE_RELEASE_AND_NTP_SOURCE_REQUIRED" in code
     assert "clock.revoke()" in code

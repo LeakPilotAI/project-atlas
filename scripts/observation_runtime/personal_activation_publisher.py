@@ -95,6 +95,10 @@ def publish_personal_activation(
     from scripts.observation_runtime.atlas_v7_commissioning_ntp_probe import (
         V7_ARTIFACT,
     )
+    from scripts.observation_runtime.personal_v8_operator_clock import (
+        NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
+        ARTIFACT as V8_ARTIFACT,
+    )
     from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
     from scripts.volume_inspector.windows_output import current_sid
 
@@ -113,6 +117,11 @@ def publish_personal_activation(
             raise PersonalActivationPublicationRefused(
                 "Selected V7 native release and independent clock required"
             )
+    elif clock_profile == V8_NTP_PROFILE:
+        if type(clock) is not NativeV8PaperOperatorClock or release_digest != V8_ARTIFACT:
+            raise PersonalActivationPublicationRefused(
+                "Selected V8 native release and independent clock required"
+            )
     else:
         raise PersonalActivationPublicationRefused(
             "Unreviewed activation clock profile"
@@ -126,7 +135,7 @@ def publish_personal_activation(
         raise PersonalActivationPublicationRefused(
             "Trusted selected clock verification failed"
         )
-    if clock_profile == V7_NTP_PROFILE and (
+    if clock_profile in (V7_NTP_PROFILE, V8_NTP_PROFILE) and (
         type(sample) is not dict or sample.get("source_id") != SOURCE
         or type(sample.get("uncertainty_ms")) is not int
         or not 0 <= sample["uncertainty_ms"] <= 1000

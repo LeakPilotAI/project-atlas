@@ -15,6 +15,10 @@ from scripts.observation_runtime.personal_v7_operator_clock import (
     NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
 )
 from scripts.observation_runtime.atlas_v7_commissioning_ntp_probe import V7_ARTIFACT
+from scripts.observation_runtime.personal_v8_operator_clock import (
+    NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
+    ARTIFACT as V8_ARTIFACT,
+)
 from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
 from scripts.volume_inspector.windows_output import current_sid
 
@@ -54,6 +58,9 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
     if clock_profile == V7_NTP_PROFILE:
         if release_digest != V7_ARTIFACT or expected_clock_source != SOURCE:
             raise ValueError('EXACT_V7_NATIVE_RELEASE_AND_NTP_SOURCE_REQUIRED')
+    elif clock_profile == V8_NTP_PROFILE:
+        if release_digest != V8_ARTIFACT or expected_clock_source != SOURCE:
+            raise ValueError('EXACT_V8_NATIVE_RELEASE_AND_NTP_SOURCE_REQUIRED')
     elif clock_profile != "WINDOWS_TIME_OPERATOR_CLOCK_V4":
         raise ValueError('UNREVIEWED_ACTIVATION_CLOCK_PROFILE')
     record = json.loads(Path(record_path).read_text(encoding='utf-8'))
@@ -95,6 +102,8 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
         raise ValueError('ACTIVATION_POLICY_OR_ACTION_BINDING_REQUIRED')
     if clock_profile == V7_NTP_PROFILE:
         clock = NativeV7PaperOperatorClock(runtime_id=runtime_id)
+    elif clock_profile == V8_NTP_PROFILE:
+        clock = NativeV8PaperOperatorClock(runtime_id=runtime_id)
     else:
         clock = LocalWindowsClock(expected_source=expected_clock_source, runtime_id=runtime_id)
     try:
@@ -114,7 +123,7 @@ def main(argv=None):
     parser.add_argument('--qd-enrollment-path', required=True)
     parser.add_argument('--perp-enrollment-path', required=True)
     parser.add_argument('--clock-profile', default='WINDOWS_TIME_OPERATOR_CLOCK_V4',
-                        choices=['WINDOWS_TIME_OPERATOR_CLOCK_V4', V7_NTP_PROFILE])
+                        choices=['WINDOWS_TIME_OPERATOR_CLOCK_V4', V7_NTP_PROFILE, V8_NTP_PROFILE])
     args = vars(parser.parse_args(argv))
     result = commission(**{k.replace('-', '_'): v for k, v in args.items()})
     print(json.dumps(result, sort_keys=True))

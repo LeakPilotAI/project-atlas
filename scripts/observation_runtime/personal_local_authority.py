@@ -22,9 +22,13 @@ class NativePersonalOperatorAuthority:
             NativeV7PaperOperatorClock, PROFILE,
         )
 
+        from scripts.observation_runtime.personal_v8_operator_clock import (
+            NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
+        )
         allowed_clock = (
             clock_profile == "WINDOWS_TIME_OPERATOR_CLOCK_V4" and type(clock) is LocalWindowsClock
             or clock_profile == PROFILE and type(clock) is NativeV7PaperOperatorClock
+            or clock_profile == V8_NTP_PROFILE and type(clock) is NativeV8PaperOperatorClock
         )
         if (any(x is None for x in (policy, enrollment, reader, clock, runtime_id))
                 or type(reader) is not NativePersonalActivationReader or not allowed_clock):
