@@ -967,6 +967,11 @@ class PredictionPaperJournal:
 
     @_serialized_paper_operation
     def open_from_evaluation(self, evaluation: dict[str, Any], *, now: datetime | None = None) -> dict[str, Any]:
+        # Never allow the application-owned legacy pre-event journal to open a
+        # position. Its replacement needs a separately commissioned new-listing
+        # writer; disposable injected journals remain available for regression.
+        if self is prediction_paper_journal:
+            raise PredictionPaperError("KALSHI_LEGACY_PAPER_JOURNAL_ENTRY_RETIRED")
         if evaluation.get("eligible") is not True:
             raise PredictionPaperError("candidate is not eligible for PAPER entry")
         if MAX_CONCURRENT_PREDICTION_POSITIONS != 1:

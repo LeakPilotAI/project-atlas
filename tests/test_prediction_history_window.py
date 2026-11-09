@@ -1,6 +1,6 @@
 """Requested-window context must not inflate synthetic reclaim eligibility."""
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
@@ -53,7 +53,11 @@ def test_pre_window_peak_cannot_make_candidate_eligible(monkeypatch, caller):
     assert result['eligible'] is False
     assert result['history']['context_bars_excluded'] == 1
     assert result['history']['usable_bars'] == 6
-    assert result['history']['requested_start_ts'] == int(NOW.timestamp())-180*60
+    # Scanner history is bounded to the verified opening/creation window;
+    # the older research API retains its explicit requested window.
+    expected_start = (int((NOW - timedelta(minutes=45)).timestamp())
+                      if caller == 'scanner' else int(NOW.timestamp()) - 180*60)
+    assert result['history']['requested_start_ts'] == expected_start
     assert result['history']['requested_end_ts'] == int(NOW.timestamp())
     assert result['history']['availability_verified'] is False
 
@@ -91,7 +95,9 @@ def test_invalid_requested_window_cannot_fall_back_to_full_history(fault):
 def test_requested_window_has_explicit_inclusive_endpoints():
     rows = valid_rows()
     result = scoped(rows, rows[0]['end_period_ts'], rows[-1]['end_period_ts'])
-    assert result['eligible'] is True
+    # Historical intrabar peaks are hindsight, never forward exit evidence.
+    assert result['eligible'] is False
+    assert 'HISTORICAL_HIGH_NOT_FORWARD_EXIT_EVIDENCE' in result['rejection_reasons']
     assert result['history']['usable_bars'] == 6
     assert result['history']['context_bars_excluded'] == 0
     assert result['history']['window_status'] == 'APPLIED'

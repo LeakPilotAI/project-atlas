@@ -203,7 +203,6 @@ async def lifespan(app: FastAPI):
             ("perp_alert_delivery", perp_alert_delivery_service.start),
             ("daily_paper_recap", daily_paper_recap.start),
             ("micro_heartbeat", micro_heartbeat.start),
-            ("prediction_paper_automation", prediction_paper_automation.start),
         ]:
             try:
                 await starter()
