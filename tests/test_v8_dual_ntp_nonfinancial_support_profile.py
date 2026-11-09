@@ -107,8 +107,18 @@ def test_v8_parent_resource_ids_bound_to_existing_installed_v7_support():
 
 def test_v8_support_is_deliberately_not_selected_or_financial():
     m = manifest()
-    assert not Path(m["destination"]).exists()
-    assert not Path(m["control"]).exists()
+    destination, control = Path(m["destination"]), Path(m["control"])
+    if destination.exists() or control.exists():
+        # After the authorized code-only install, retain native exact receipt
+        # verification; never count a partial directory as an acceptance.
+        assert destination.is_dir() and control.is_dir()
+        receipt_bytes = (control / "receipt.json").read_bytes()
+        receipt = support.verify_deployment(
+            m, expected_receipt_sha256=hashlib.sha256(receipt_bytes).hexdigest())
+        assert receipt["selected"] is False
+        assert receipt["financial_actions"] == 0
+    else:
+        assert not destination.exists() and not control.exists()
     assert not Path(r"D:\AtlasRuntime\selection\r0012.json").exists()
     from scripts.release_selection import digest
     current = json.loads(Path(r"D:\AtlasRuntime\selection\r0011.json").read_bytes())["record"]

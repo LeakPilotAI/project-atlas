@@ -1,0 +1,40 @@
+{
+  "allow_install": true,
+  "allow_selection": false,
+  "application_artifact_digest": "65c4b4661ec6aef7359e9dae716a416327379f5082a5b309ccdb5a148a569c95",
+  "application_receipt_sha256": "ecb94e00e262e371caea494b1cc552352c892fa437a3b5f4946b54f7f863ae34",
+  "archive_sha256": "77ed856d98f0fec39cc45280c35299c38147014aae933adbf6e5f7f3e0dae76d",
+  "bootstrap_sha256": "c929bbdf9849a5259c0dbe38b013dde2e2c8a62bd8b6e47d81f4876d1719fede",
+  "financial_authority": false,
+  "manifest_sha256": "13fbcf6b90cf1c2e6f5aa74aa60a057f6865d52097916db4d6e03669275eab86",
+  "native_base_id": [
+    4004218753,
+    65536,
+    1113770
+  ],
+  "native_parents": {
+    "D:\\AtlasRuntime\\launchers": [
+      4004218753,
+      327680,
+      1532783
+    ],
+    "D:\\AtlasRuntime\\selection": [
+      4004218753,
+      65536,
+      1532785
+    ],
+    "D:\\AtlasRuntime\\support-installations": [
+      4004218753,
+      327680,
+      1532784
+    ]
+  },
+  "paper_startup": false,
+  "provider_connections": false,
+  "schema": "ATLAS_V8_NONFINANCIAL_SUPPORT_BOOTSTRAP_R1",
+  "selected": false,
+  "selected_head": "933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997",
+  "selected_release": "af96bec0484a8e43f9965610e071a907a0d316bf",
+  "support_source_sha256": "808a7994ec644f596aa7214c281c557862d10b1ad571a6632d3c0c67d426ede8",
+  "target_release": "c8cc4846508b29483d10a0b4c4353f8a26f1fc9c"
+}
