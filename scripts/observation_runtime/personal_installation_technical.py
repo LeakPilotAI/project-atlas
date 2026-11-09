@@ -26,15 +26,23 @@ from scripts.observation_runtime.personal_paper_inception import (
 from scripts.observation_runtime.personal_release_identity import NativePersonalReleaseIdentity
 from scripts.observation_runtime.personal_runtime_current import PersonalRuntimeCurrent
 from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+from scripts.observation_runtime.personal_v7_operator_clock import (
+    NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
+)
 from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
 
 
 class NativePersonalTechnicalChecks:
     def __init__(self, *, bootstrap=None, release=None, clock=None, runtime_id=None,
-                 ownership=None, ledger=None, files=None, current=None, engine=None):
+                 ownership=None, ledger=None, files=None, current=None, engine=None,
+                 clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4"):
+        valid_clock = (
+            clock_profile == "WINDOWS_TIME_OPERATOR_CLOCK_V4" and type(clock) is LocalWindowsClock
+            or clock_profile == V7_NTP_PROFILE and type(clock) is NativeV7PaperOperatorClock
+        )
         if (type(bootstrap) is not PersonalInceptionBootstrap
                 or type(release) is not NativePersonalReleaseIdentity
-                or type(clock) is not LocalWindowsClock or type(runtime_id) is not str or not runtime_id
+                or not valid_clock or type(runtime_id) is not str or not runtime_id
                 or type(ownership) is not NativePersonalWriterOwnership
                 or type(ledger) is not PersonalNativeCoordination
                 or type(ledger.images) is not NativePersonalCoordinationImages
@@ -66,7 +74,8 @@ class NativePersonalTechnicalChecks:
         self.bootstrap, self.release, self.clock, self.runtime_id = bootstrap, release, clock, runtime_id
         self.ownership, self.ledger, self.files, self.current, self.engine = ownership, ledger, files, current, engine
         self._ports = bootstrap, release, clock, ownership, ledger, files, current, engine
-        self._scope = body(bootstrap.enrollment), runtime_id
+        self.clock_profile = clock_profile
+        self._scope = body(bootstrap.enrollment), runtime_id, clock_profile
         self.last_failure = None
 
     def _inception(self, request):
@@ -95,7 +104,7 @@ class NativePersonalTechnicalChecks:
         try:
             if (any(a is not b for a, b in zip((self.bootstrap,self.release,self.clock,self.ownership,
                     self.ledger,self.files,self.current,self.engine), self._ports, strict=True))
-                    or (body(self.bootstrap.enrollment),self.runtime_id) != self._scope):
+                    or (body(self.bootstrap.enrollment),self.runtime_id,self.clock_profile) != self._scope):
                 raise ValueError('PERSONAL_TECHNICAL_COMPONENT_CHANGED')
             lane, enrollment, manifest = validate_personal_inception(self.bootstrap.enrollment)
             validate_autonomous_manifest(manifest)

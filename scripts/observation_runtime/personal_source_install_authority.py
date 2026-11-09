@@ -9,14 +9,22 @@ from contextlib import contextmanager
 from app.services.paper_financial_replay import body, digest
 from app.services.personal_paper_runtime import validate_activation_record, validate_policy
 from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+from scripts.observation_runtime.personal_v7_operator_clock import (
+    NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
+)
 from scripts.observation_runtime.personal_paper_activation import NativePersonalActivationReader
 from scripts.volume_inspector.windows_output import current_sid
 
 
 class NativePersonalSourceInstallAuthority:
     def __init__(self, *, reader, policy, release_digest, accounts, clock, runtime_id,
-                 enrollment_digest, root_id, initial_image):
-        if type(reader) is not NativePersonalActivationReader or type(clock) is not LocalWindowsClock:
+                 enrollment_digest, root_id, initial_image,
+                 clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4"):
+        valid_clock = (
+            clock_profile == "WINDOWS_TIME_OPERATOR_CLOCK_V4" and type(clock) is LocalWindowsClock
+            or clock_profile == V7_NTP_PROFILE and type(clock) is NativeV7PaperOperatorClock
+        )
+        if type(reader) is not NativePersonalActivationReader or not valid_clock:
             raise ValueError('SOURCE_INSTALL_NATIVE_ACTIVATION_AND_CLOCK_REQUIRED')
         clock.require_operational(runtime_id)
         if (type(enrollment_digest) is not str or len(enrollment_digest) != 64
@@ -31,10 +39,15 @@ class NativePersonalSourceInstallAuthority:
         self.enrollment_digest, self.root_id = enrollment_digest, list(root_id)
         self.initial_image_digest = hashlib.sha256(initial_image).hexdigest()
         self.operator = current_sid()
+        self.clock_profile = clock_profile
+        self._bound_clock = clock
+        self._bound_clock_profile = clock_profile
         self.used = False
 
     def _check(self, request):
-        if self.used or current_sid() != self.operator:
+        if (self.used or current_sid() != self.operator
+                or self.clock is not self._bound_clock
+                or self.clock_profile != self._bound_clock_profile):
             raise ValueError('SOURCE_INSTALL_OPERATOR_OR_ONCE_ONLY_REFUSED')
         self.clock.require_operational(self.runtime_id)
         now = self.clock()
