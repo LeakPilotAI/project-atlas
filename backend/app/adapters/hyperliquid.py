@@ -343,8 +343,21 @@ class HyperliquidAdapter:
             raise ValueError("Existing read client, explicit clock and selected instrument required")
         hyperliquid_gate_registry.require_gate()
         started = clock_ms()
-        metadata = await self._post({"type": "metaAndAssetCtxs"})
-        book = await self._post({"type": "l2Book", "coin": symbol})
+        # Independent public metadata/book replies belong to one 10-second cut.
+        # Concurrent HTTP reduces avoidable serial latency. Each _post still
+        # consumes its OWN durable attempt before any network operation.
+        tasks = (
+            asyncio.create_task(self._post({"type": "metaAndAssetCtxs"})),
+            asyncio.create_task(self._post({"type": "l2Book", "coin": symbol})),
+        )
+        try:
+            metadata, book = await asyncio.gather(*tasks)
+        finally:
+            # Plain gather leaves a pending sibling alive after a failure.
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
         value = _paper_execution_observation(symbol, metadata, book, started, clock_ms())
         self._cache_paper('books', symbol, {'parsed': value, 'metadata': metadata, 'book': book})
         return value
