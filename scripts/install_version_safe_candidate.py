@@ -5,10 +5,12 @@ No native installation is possible without a SEPARATE exact operator approval
 record not present in this source milestone. Never select a release, authorize
 financial PAPER, initialize accounts, connect providers, or launch a service.
 """
+import argparse
 import hashlib
 import json
 import os
 import re
+import sys
 import time
 from pathlib import Path
 
@@ -37,6 +39,12 @@ CLOCK_SOURCE = 'ATLAS_NTP_V1:time.cloudflare.com+time.google.com'
 # Deliberately absent, require an independent future create-only operator decision.
 APPROVAL = ROOT / 'docs/ATLAS_VERSION_SAFE_CODE_INSTALL_APPROVED_R1.json'
 APPROVAL_SCHEMA = 'ATLAS_VERSION_SAFE_CODE_INSTALL_APPROVAL_V1'
+# No pinned operator consent exists yet. An unreviewed local file/CLI hash
+# cannot manufacture approval. Set only after a SEPARATE reviewed decision.
+APPROVAL_PIN = None
+APPROVAL_SCOPE = 'ONE_SHOT_UNSELECTED_CODE_COPY_ONLY'
+APPROVAL_DECISION = 'APPROVE_EXACT_VERSION_SAFE_CODE_INSTALL_ONLY'
+APPROVAL_CONFIRMATION = 'NO_PAPER_START_NO_FINANCIAL_ACCESS_NO_SELECTION'
 
 
 def strict(raw):
@@ -168,14 +176,52 @@ def prepare_reviewed_code():
             'destination':destination,'audit':audit}
 
 
+def validate_operator_decision(decision, *, operator_sid):
+    """Pure strict one-shot *nonfinancial* operator consent contract.
+
+    A matching JSON object is not itself authenticated: production also needs
+    its separately reviewed SHA-256 pin, live Windows SID and native preflight.
+    """
+    expected = {'schema','decision','scope','operator_sid','source_commit',
+                'archive_sha256','inventory_sha256','dependency_sha256',
+                'review_sha256','predecessor_head','destination','receipt_path',
+                'confirmation','one_shot','selection_allowed','financial_authority',
+                'paper_account_inception','provider_access','live_orders'}
+    if (type(decision) is not dict or set(decision) != expected
+            or type(operator_sid) is not str or not operator_sid
+            or not operator_sid.startswith('S-1-')
+            or decision.get('schema') != APPROVAL_SCHEMA
+            or decision.get('decision') != APPROVAL_DECISION
+            or decision.get('scope') != APPROVAL_SCOPE
+            or decision.get('confirmation') != APPROVAL_CONFIRMATION
+            or decision.get('operator_sid') != operator_sid
+            or decision.get('source_commit') != SOURCE
+            or decision.get('archive_sha256') != ARCHIVE
+            or decision.get('inventory_sha256') != INVENTORY
+            or decision.get('dependency_sha256') != DEPENDENCY
+            or decision.get('review_sha256') != REVIEW_SHA
+            or decision.get('predecessor_head') != V7_HEAD
+            or decision.get('destination') != str(Path('D:/AtlasRuntime/releases')/SOURCE)
+            or decision.get('receipt_path') != str(ROOT/'logs/diagnostics'/('qd-unselected-release-'+SOURCE+'.json'))
+            or decision.get('one_shot') is not True
+            or any(decision.get(key) is not False for key in (
+                'selection_allowed','financial_authority','paper_account_inception',
+                'provider_access','live_orders'))):
+        raise ValueError('VERSION_SAFE_INSTALL_EXACT_OPERATOR_DECISION_REQUIRED')
+    return decision
+
+
 def require_separate_operator_approval():
-    """R1 is deliberately not authorized; a future exact approval is mandatory."""
+    """Read only exact, independently reviewed local decision; NEVER mint it."""
     if not APPROVAL.is_file():
         raise ValueError('VERSION_SAFE_INSTALL_SEPARATE_OPERATOR_APPROVAL_ABSENT')
-    # A future approval schema requires a separately pinned approved receipt.
-    # This source milestone intentionally cannot establish that pin, so even
-    # creating an unreviewed local file at this path cannot enable installation.
-    raise ValueError('VERSION_SAFE_INSTALL_APPROVAL_NOT_YET_REVIEWED')
+    if (type(APPROVAL_PIN) is not str
+            or not re.fullmatch(r'[0-9a-f]{64}', APPROVAL_PIN)):
+        raise ValueError('VERSION_SAFE_INSTALL_APPROVAL_NOT_YET_REVIEWED')
+    record = strict(checked(APPROVAL, APPROVAL_PIN, maximum=4096))
+    from scripts.volume_inspector.windows_output import current_sid
+    validate_operator_decision(record, operator_sid=current_sid())
+    return record
 
 
 def _qualify_native_clock_180s(clock, runtime_id):
@@ -291,21 +337,63 @@ SOURCE_COMMIT = SOURCE
 
 
 def install_unselected(*, approved_execution=False, clock=None):
-    """Fail-closed until a separate installation approval is reviewed and pinned.
+    """Separate exact consent, live native review and 180s NTP before copy.
 
-    This source-only milestone exposes the exact independent pre-install review.
-    Native copying/readback is intentionally NOT reachable via any current
-    public entrypoint; it will be enabled only by a later reviewed approval.
+    Current APPROVAL_PIN is None, so no actual code installation is enabled.
+    Caller owns the clock and must revoke it even on exceptions.
     """
     if approved_execution is not True:
         raise ValueError('VERSION_SAFE_INSTALL_EXPLICIT_EXECUTION_REQUIRED')
     require_separate_operator_approval()
-    raise ValueError('VERSION_SAFE_INSTALL_SOURCE_ONLY_NO_NATIVE_MUTATION')
+    from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
+    if type(clock) is not IndependentNtpClock:
+        raise ValueError('VERSION_SAFE_INSTALL_REAL_TWO_PEER_CLOCK_REQUIRED')
+    ready = prepare_reviewed_code()
+    runtime_id = 'qd-unselected-code-install-'+SOURCE_COMMIT
+    clock.require_operational(runtime_id)
+    preflight = _qualify_native_clock_180s(clock,runtime_id)
+    require_separate_operator_approval()  # consent still exact after 180s
+    require_v7_predecessor()
+    return _native_copy_only_after_approval(
+        prepared_review=ready, clock=clock, preflight=preflight)
 
 
 def main(argv=None):
-    raise SystemExit('VERSION_SAFE_INSTALL_NO_APPROVED_EXECUTION_ENTRYPOINT: source-only installer admission; approval and fresh 180s NTP preflight still required.')
+    """Read-only inspect or explicit approved install; no default action."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    actions = parser.add_mutually_exclusive_group(required=True)
+    actions.add_argument('--inspect', action='store_true', help='Read-only code-install plan; no network')
+    actions.add_argument('--execute-reviewed-code-only', action='store_true',
+                         help='Needs separate pinned operator approval; no financial action')
+    parser.add_argument('--confirm-scope', default=None)
+    argv=sys.argv[1:] if argv is None else argv
+    if not argv:
+        raise SystemExit('VERSION_SAFE_INSTALL_NO_APPROVED_EXECUTION_ENTRYPOINT: explicit read-only inspect or separately approved code-only action required')
+    args = parser.parse_args(argv)
+    if args.inspect:
+        if args.confirm_scope is not None:
+            raise ValueError('VERSION_SAFE_INSTALL_INSPECT_NO_EXECUTION_FLAG')
+        ready = prepare_reviewed_code()
+        return {'schema':'ATLAS_VERSION_SAFE_CODE_INSTALL_READONLY_PREVIEW_V1',
+                'status':'SOURCE_AND_NATIVE_PLAN_VALIDATED_NOT_APPROVED',
+                'source_commit':SOURCE_COMMIT,
+                'source_files':len(ready['prepared']['runtime']),
+                'python_files':len(ready['prepared']['dependencies']),
+                'target_files':len(ready['prepared']['names']),
+                'target_bytes':ready['prepared']['total'],
+                'approval_pinned':type(APPROVAL_PIN) is str,'install_attempted':False,
+                'financial_authority':False,'release_selection':False}
+    if args.confirm_scope != APPROVAL_CONFIRMATION:
+        raise ValueError('VERSION_SAFE_INSTALL_EXACT_CLI_CONFIRMATION_REQUIRED')
+    require_separate_operator_approval()  # before any external NTP access
+    from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
+    runtime_id='qd-unselected-code-install-'+SOURCE_COMMIT
+    clock=IndependentNtpClock(runtime_id=runtime_id)
+    try:
+        return install_unselected(approved_execution=True,clock=clock)
+    finally:
+        clock.revoke()
 
 
 if __name__=='__main__':
-    main()
+    print(json.dumps(main(), sort_keys=True))
