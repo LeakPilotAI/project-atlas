@@ -1,4 +1,4 @@
-"""Existing-only local operator approval record. No writer or default enrollment."""
+﻿"""Existing-only local operator approval record. No writer or default enrollment."""
 import importlib.util
 import ntpath
 from pathlib import Path
@@ -32,7 +32,8 @@ class NativePersonalActivationReader:
 
 def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_dependencies=None,
                                 native_dependencies=None, store=None, native_reader=None,
-                                installation=None, local_clock=None, runtime_id=None):
+                                installation=None, local_clock=None, runtime_id=None,
+                                clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4"):
     """Minimum installed QD assembly; no default authority, paths or activation.
 
     The sole operator's native activation record, actual clock and native-backed
@@ -67,13 +68,20 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
         PersonalRuntimeCurrent,
     )
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+    from scripts.observation_runtime.personal_v7_operator_clock import (
+        NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
+    )
     from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
 
+    valid_clock = (
+        clock_profile == "WINDOWS_TIME_OPERATOR_CLOCK_V4" and type(local_clock) is LocalWindowsClock
+        or clock_profile == V7_NTP_PROFILE and type(local_clock) is NativeV7PaperOperatorClock
+    )
     if (any(v is None for v in (policy, enrollment, runtime_dependencies, native_dependencies,
                                 store, native_reader, installation, local_clock, runtime_id))
             or type(installation) is not PersonalOperatorInstallation
             or type(installation.reader) is not NativePersonalActivationReader
-            or type(local_clock) is not LocalWindowsClock):
+            or not valid_clock):
         raise ValueError('PERSONAL_INSTALLED_NATIVE_DEPENDENCIES_REQUIRED')
     local_clock.require_operational(runtime_id)
     e = validate_enrollment(enrollment)
@@ -101,7 +109,8 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
 
     authority, owner, sessions = installation.identity, native_dependencies['ownership'], native_dependencies['sessions']
     if (type(authority) is not NativePersonalOperatorAuthority or authority.reader is not installation.reader
-            or authority.clock is not local_clock or body(authority.enrollment) != body(e)
+            or authority.clock is not local_clock or authority.clock_profile != clock_profile
+            or authority.runtime_id != runtime_id or body(authority.enrollment) != body(e)
             or type(owner) is not NativePersonalWriterOwnership or owner.authority is not authority
             or owner.read_only
             or owner.ledger is not ledger
@@ -113,6 +122,7 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
     if (type(technical) is not NativePersonalTechnicalChecks or technical.bootstrap is not custody.bootstrap
             or technical.ownership is not owner or technical.ledger is not ledger
             or technical.clock is not local_clock or technical.runtime_id != runtime_id
+            or technical.clock_profile != clock_profile
             or technical.current is not custody or technical.engine is not engine):
         raise ValueError('PERSONAL_INSTALLED_FACTUAL_TECHNICAL_CHECKS_REQUIRED')
     if (type(engine.session_authority) is not NativePersonalEngineSession
