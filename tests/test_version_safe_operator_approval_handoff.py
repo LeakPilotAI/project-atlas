@@ -111,14 +111,16 @@ def test_double_key_duplicate_approval_refused_even_with_matching_test_pin(monke
 
 def test_readonly_inspect_reports_pinned_plan_but_no_install():
     result=installer.main(['--inspect'])
-    assert result['status']=='SOURCE_AND_NATIVE_PLAN_VALIDATED_NOT_APPROVED'
+    assert result['status']=='INSTALLED_CODE_ONLY_UNSELECTED_RECEIPT_PINNED'
     assert result['source_files']==1008 and result['python_files']==9566
     assert result['target_files']==10574 and result['target_bytes']==265175432
     assert result['approval_pinned'] is True
-    assert result['install_attempted'] is False
+    assert result['install_attempted'] is True
+    assert result['independent_readback_recorded'] is True
+    assert result['artifact_digest']==installer.INSTALLED_ARTIFACT_DIGEST
     assert result['financial_authority'] is False
     assert result['release_selection'] is False
-    assert not (Path('D:/AtlasRuntime/releases')/installer.SOURCE).exists()
+    assert (Path('D:/AtlasRuntime/releases')/installer.SOURCE).exists()
 
 
 def test_explicit_cli_execution_refuses_before_ntp_or_native_when_no_approval(monkeypatch,tmp_path):
@@ -175,6 +177,7 @@ def test_simulated_separately_pinned_cli_proves_exact_invocation_and_revoke(monk
         lambda clock,rid: events.append(('synthetic_180s',rid)) or
            {'elapsed_seconds':180.0,'samples':37,'bound_ms':130})
     monkeypatch.setattr(installer,'require_v7_predecessor',lambda:True)
+    monkeypatch.setattr(installer,'installation_target',lambda *args:(None,None))
     def native_intercept(*,prepared_review,clock,preflight):
         assert prepared_review is ready
         assert type(clock) is FakeClock
@@ -188,4 +191,4 @@ def test_simulated_separately_pinned_cli_proves_exact_invocation_and_revoke(monk
     assert [row[0] for row in events]==[
         'new_clock','operational','synthetic_180s',
         'native_plan_after_ntp_preflight','NATIVE_INTERCEPTED_NO_WRITE','revoke']
-    assert not (Path('D:/AtlasRuntime/releases')/installer.SOURCE).exists()
+    assert (Path('D:/AtlasRuntime/releases')/installer.SOURCE).exists()

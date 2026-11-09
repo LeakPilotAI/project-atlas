@@ -62,9 +62,11 @@ def test_exact_archive_dependency_and_plan_hashes_pass_source_only():
     assert plan['total']==n['bytes']==265175432
     python_rows=sorted(plan['dependencies'].values(),key=lambda row:row['path'])
     assert hashlib.sha256(json.dumps(python_rows,sort_keys=True,separators=(',',':')).encode()).hexdigest()==d['python_inventory_sha256']
-    assert not Path(n['destination']).exists()
-    assert not Path(n['receipt_path']).exists()
-    assert not Path(n['receipt_path']).with_suffix('.pending.jsonl').exists()
+    assert Path(n['destination']).is_dir()
+    assert Path(n['receipt_path']).is_file()
+    assert Path(n['receipt_path']).with_suffix('.pending.jsonl').is_file()
+    assert hashlib.sha256(Path(n['receipt_path']).read_bytes()).hexdigest()==(
+        'acdae2f01fb5defdf0e302240dc589eca0f1c99e3fcc15ec319d98260125cbb6')
 
 
 @pytest.mark.parametrize('fault',('archive','inventory','dependency','source'))
@@ -80,7 +82,9 @@ def test_tampered_candidate_or_dependency_refuses_without_native_effect(fault):
     elif fault=='dependency':args['dependency_digest']='0'*64
     elif fault=='source':args['source_commit']='a'*40
     with pytest.raises(ValueError):prepare_install_inputs(**args)
-    assert not Path(p['native_plan']['destination']).exists()
+    assert Path(p['native_plan']['destination']).is_dir()
+    assert hashlib.sha256(Path(p['native_plan']['receipt_path']).read_bytes()).hexdigest()==(
+        'acdae2f01fb5defdf0e302240dc589eca0f1c99e3fcc15ec319d98260125cbb6')
 
 
 def test_cannot_reuse_historical_v8_installer_proposal_or_selection():

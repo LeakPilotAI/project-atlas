@@ -28,15 +28,13 @@ def test_new_installer_exact_review_and_old_install_source_unchanged():
 
 
 def test_actual_guarded_native_plan_never_installs_or_selects():
-    pre = next_install.prepare_reviewed_code()
-    assert pre['review']['status'] == 'DESIGN_NOT_PERMISSION'
-    assert pre['destination'] == Path('D:/AtlasRuntime/releases')/FUTURE
-    assert not pre['destination'].exists() and not pre['audit'].exists()
-    assert not pre['audit'].with_suffix('.pending.jsonl').exists()
-    assert len(pre['prepared']['runtime']) == 1008
-    assert len(pre['prepared']['dependencies']) == 9566
-    assert len(pre['prepared']['names']) == 10574
-    assert pre['prepared']['total'] == 265175432
+    # A verified completed one-time installation MUST refuse re-preparation.
+    with pytest.raises(ValueError, match='INSTALLATION_ALREADY_EXISTS_PRESERVE_NO_RETRY'):
+        next_install.prepare_reviewed_code()
+    assert (Path('D:/AtlasRuntime/releases')/FUTURE).is_dir()
+    receipt=ROOT/'logs/diagnostics'/('qd-unselected-release-'+FUTURE+'.json')
+    assert receipt.is_file()
+    assert hashlib.sha256(receipt.read_bytes()).hexdigest()==next_install.INSTALLED_RECEIPT_SHA
     assert not Path('D:/AtlasRuntime/selection/r0012.json').exists()
 
 
