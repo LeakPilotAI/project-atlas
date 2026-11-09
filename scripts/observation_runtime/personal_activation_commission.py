@@ -19,6 +19,10 @@ from scripts.observation_runtime.personal_v8_operator_clock import (
     NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
     ARTIFACT as V8_ARTIFACT,
 )
+from scripts.observation_runtime.personal_version_safe_release_clock import (
+    NativeVersionSafePaperOperatorClock, PROFILE as VERSION_SAFE_NTP_PROFILE,
+    require_version_safe_release_digest,
+)
 from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
 from scripts.volume_inspector.windows_output import current_sid
 
@@ -61,6 +65,9 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
     elif clock_profile == V8_NTP_PROFILE:
         if release_digest != V8_ARTIFACT or expected_clock_source != SOURCE:
             raise ValueError('EXACT_V8_NATIVE_RELEASE_AND_NTP_SOURCE_REQUIRED')
+    elif clock_profile == VERSION_SAFE_NTP_PROFILE:
+        if expected_clock_source != SOURCE:
+            raise ValueError('EXACT_VERSION_SAFE_NATIVE_NTP_SOURCE_REQUIRED')
     elif clock_profile != "WINDOWS_TIME_OPERATOR_CLOCK_V4":
         raise ValueError('UNREVIEWED_ACTIVATION_CLOCK_PROFILE')
     record = json.loads(Path(record_path).read_text(encoding='utf-8'))
@@ -104,9 +111,14 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
         clock = NativeV7PaperOperatorClock(runtime_id=runtime_id)
     elif clock_profile == V8_NTP_PROFILE:
         clock = NativeV8PaperOperatorClock(runtime_id=runtime_id)
+    elif clock_profile == VERSION_SAFE_NTP_PROFILE:
+        clock = NativeVersionSafePaperOperatorClock(runtime_id=runtime_id)
     else:
         clock = LocalWindowsClock(expected_source=expected_clock_source, runtime_id=runtime_id)
     try:
+        if clock_profile == VERSION_SAFE_NTP_PROFILE:
+            require_version_safe_release_digest(clock=clock, runtime_id=runtime_id,
+                                                release_digest=release_digest)
         return publish_personal_activation(root=root, record=record, policy=policy,
             operator_id=current_sid(), release_digest=release_digest,
             accounts=accounts, clock=clock, runtime_id=runtime_id,
@@ -123,7 +135,7 @@ def main(argv=None):
     parser.add_argument('--qd-enrollment-path', required=True)
     parser.add_argument('--perp-enrollment-path', required=True)
     parser.add_argument('--clock-profile', default='WINDOWS_TIME_OPERATOR_CLOCK_V4',
-                        choices=['WINDOWS_TIME_OPERATOR_CLOCK_V4', V7_NTP_PROFILE, V8_NTP_PROFILE])
+                        choices=['WINDOWS_TIME_OPERATOR_CLOCK_V4', V7_NTP_PROFILE, V8_NTP_PROFILE, VERSION_SAFE_NTP_PROFILE])
     args = vars(parser.parse_args(argv))
     result = commission(**{k.replace('-', '_'): v for k, v in args.items()})
     print(json.dumps(result, sort_keys=True))

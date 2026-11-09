@@ -99,6 +99,10 @@ def publish_personal_activation(
         NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
         ARTIFACT as V8_ARTIFACT,
     )
+    from scripts.observation_runtime.personal_version_safe_release_clock import (
+        NativeVersionSafePaperOperatorClock, PROFILE as VERSION_SAFE_NTP_PROFILE,
+        require_version_safe_release_digest,
+    )
     from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
     from scripts.volume_inspector.windows_output import current_sid
 
@@ -122,6 +126,14 @@ def publish_personal_activation(
             raise PersonalActivationPublicationRefused(
                 "Selected V8 native release and independent clock required"
             )
+    elif clock_profile == VERSION_SAFE_NTP_PROFILE:
+        if type(clock) is not NativeVersionSafePaperOperatorClock:
+            raise PersonalActivationPublicationRefused("Exact version-safe native clock required")
+        try:
+            require_version_safe_release_digest(clock=clock, runtime_id=runtime_id,
+                                                release_digest=release_digest)
+        except (ValueError, TypeError, OSError) as exc:
+            raise PersonalActivationPublicationRefused("Selected version-safe native release binding required") from exc
     else:
         raise PersonalActivationPublicationRefused(
             "Unreviewed activation clock profile"
@@ -135,7 +147,7 @@ def publish_personal_activation(
         raise PersonalActivationPublicationRefused(
             "Trusted selected clock verification failed"
         )
-    if clock_profile in (V7_NTP_PROFILE, V8_NTP_PROFILE) and (
+    if clock_profile in (V7_NTP_PROFILE, V8_NTP_PROFILE, VERSION_SAFE_NTP_PROFILE) and (
         type(sample) is not dict or sample.get("source_id") != SOURCE
         or type(sample.get("uncertainty_ms")) is not int
         or not 0 <= sample["uncertainty_ms"] <= 1000

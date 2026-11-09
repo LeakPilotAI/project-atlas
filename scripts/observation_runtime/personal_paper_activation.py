@@ -74,12 +74,16 @@ def compose_installed_personal_qd(*, policy=None, enrollment=None, runtime_depen
     from scripts.observation_runtime.personal_v8_operator_clock import (
         NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
     )
+    from scripts.observation_runtime.personal_version_safe_release_clock import (
+        NativeVersionSafePaperOperatorClock, PROFILE as VERSION_SAFE_NTP_PROFILE,
+    )
     from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
 
     valid_clock = (
         clock_profile == "WINDOWS_TIME_OPERATOR_CLOCK_V4" and type(local_clock) is LocalWindowsClock
         or clock_profile == V7_NTP_PROFILE and type(local_clock) is NativeV7PaperOperatorClock
         or clock_profile == V8_NTP_PROFILE and type(local_clock) is NativeV8PaperOperatorClock
+        or clock_profile == VERSION_SAFE_NTP_PROFILE and type(local_clock) is NativeVersionSafePaperOperatorClock
     )
     if (any(v is None for v in (policy, enrollment, runtime_dependencies, native_dependencies,
                                 store, native_reader, installation, local_clock, runtime_id))

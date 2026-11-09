@@ -180,3 +180,32 @@ class NativeVersionSafePaperOperatorClock:
             def __call__(self):
                 return owner()
         return RuntimeClock()
+
+
+def require_version_safe_release_digest(*, clock, runtime_id, release_digest):
+    """Bind a financial caller's release digest to the same selected native head.
+
+    Actual construction already deep-verified installed bytes; this repeats the
+    exact current selection and compares the independently selected artifact.
+    No new selection, approval, account or provider action is performed.
+    """
+    from scripts.release_selection_store import NativeSelectionStore
+    if (type(clock) is not NativeVersionSafePaperOperatorClock
+            or type(release_digest) is not str
+            or not re.fullmatch("[0-9a-f]{64}", release_digest)):
+        raise ValueError("VERSION_SAFE_CLOCK_EXACT_RELEASE_DIGEST_REQUIRED")
+    clock.require_operational(runtime_id)
+    source = Path(__file__).absolute()
+    if source.parent.parent.parent.parent != RELEASE_PARENT:
+        raise ValueError("VERSION_SAFE_CLOCK_INSTALLED_SOURCE_REQUIRED")
+    store = NativeSelectionStore(root=r"D:\AtlasRuntime\selection", native_root=list(SELECTOR_NATIVE))
+    try:
+        with store.locked():
+            head, spec = admit_version_safe_clock_source(
+                source_file=source, records=store.records())
+            if (head != clock._selected_head
+                    or spec["artifact_digest"] != release_digest):
+                raise ValueError("VERSION_SAFE_CLOCK_ARTIFACT_OR_SELECTION_MISMATCH")
+        return True
+    finally:
+        store.close()
