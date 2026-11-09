@@ -55,6 +55,17 @@ Write-Output 'DISPOSABLE_STOP_SIGNAL_SENT_UNVERIFIED'
                    for v in persisted['outcome']['lanes'].values())
         assert persisted['disposable_positions_before']=={'QUALITY_DIPS':5,'HYPERLIQUID':3}
         assert persisted['disposable_positions_after']=={'QUALITY_DIPS':0,'HYPERLIQUID':0}
+        from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger, StopReceiptConflict
+        db_path=tmp_path/'disposable-stop-ledger.sqlite'
+        assert db_path.is_file()
+        reopened=PaperStopReceiptLedger(db_path)
+        assert reopened.inspect_session('test-disposable-two-lane-session')=={
+            'state':'FINISHED','mode':'SHUTDOWN_FLATTEN','receipt':persisted}
+        assert PaperStopReceiptLedger(db_path).recover(
+            'test-disposable-two-lane-session','SHUTDOWN_FLATTEN')=={
+            'state':'RECEIPT_RECORDED','mode':'SHUTDOWN_FLATTEN','receipt':persisted}
+        with pytest.raises(StopReceiptConflict,match='STOP_INTENT_ALREADY_EXISTS'):
+            reopened.reserve_fresh('test-disposable-two-lane-session','SHUTDOWN_FLATTEN')
         assert not (ROOT/'logs/diagnostics'/'atlas-native-paper-stop-owner-persistent.json').exists()
     finally:
         if owner.poll() is None:
@@ -97,3 +108,37 @@ def test_real_desktop_shortcut_still_points_to_nonfinancial_observation_stop():
     assert 'REQUESTED_NOT_VERIFIED' in future
     assert 'NOT YET CONFIRMED' in future
     assert 'Atlas-Paper-Owned-Stop-Signal.psm1' in future
+
+
+def test_actual_stop_sqlite_fixture_refuses_forged_flat_and_preserves_pending(tmp_path):
+    """Real ledger, synthetic receipt. A false flat claim must stay pending."""
+    from app.services.paper_stop_receipt_ledger import PaperStopReceiptLedger
+    from tests.fixtures.atlas_disposable_stop_sqlite import operate, SESSION, MODE
+    db=tmp_path/'disposable-stop-ledger.sqlite'
+    receipt=tmp_path/'disposable-flatten-receipt.json'
+    operate('reserve',db,receipt)
+    forged={'schema':'QD_CONTROL_STOP_V1','phase':'FINISHED','outcome':{
+        'schema':'QD_AUTO_SHUTDOWN_V1','mode':MODE,'status':'FLATTENED',
+        'position_state':'FLAT','process_shutdown':'VERIFIED_EXIT',
+        'lanes':{'QUALITY_DIPS':{'state':'ACKNOWLEDGED_FLAT_AND_DRAINED'},
+                 'HYPERLIQUID':{'state':'ACKNOWLEDGED_FLAT_AND_DRAINED'}}},
+        'disposable_positions_before':{'QUALITY_DIPS':5,'HYPERLIQUID':3},
+        'disposable_positions_after':{'QUALITY_DIPS':1,'HYPERLIQUID':0}}
+    receipt.write_text(json.dumps(forged),encoding='utf-8')
+    with pytest.raises(ValueError,match='DISPOSABLE_NATIVE_STOP_TWO_LANE_FLATNESS_REFUSED'):
+        operate('finish',db,receipt)
+    assert PaperStopReceiptLedger(db).recover(SESSION,MODE)=={
+        'state':'SHUTDOWN_UNVERIFIED','mode':MODE,'receipt':None}
+    assert PaperStopReceiptLedger(db).summarize_recovery()['pending_unverified']==1
+    with pytest.raises(ValueError,match='DISPOSABLE_STOP_LEDGER_CREATE_ONCE_REQUIRED'):
+        operate('reserve',db,receipt)
+
+
+def test_real_stop_sqlite_fixture_requires_existing_pending_intent(tmp_path):
+    from tests.fixtures.atlas_disposable_stop_sqlite import operate
+    db=tmp_path/'disposable-stop-ledger.sqlite'
+    receipt=tmp_path/'disposable-flatten-receipt.json'
+    with pytest.raises(ValueError,match='DISPOSABLE_STOP_LEDGER_MISSING'):
+        operate('finish',db,receipt)
+    with pytest.raises(ValueError,match='DISPOSABLE_STOP_LEDGER_MISSING'):
+        operate('verify',db,receipt)

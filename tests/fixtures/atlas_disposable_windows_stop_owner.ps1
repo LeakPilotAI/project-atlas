@@ -5,8 +5,17 @@ param([Parameter(Mandatory=$true)][string]$OfflineTestId,
 $ErrorActionPreference='Stop'
 if($OfflineTestId -cnotmatch '^test-[a-f0-9]{32}$') {throw 'TEST_ISOLATED_NAMESPACE_REQUIRED'}
 if(Test-Path -LiteralPath $ReceiptPath){throw 'TEST_RECEIPT_MUST_NOT_EXIST'}
+$ledger=Join-Path (Split-Path -Parent $ReceiptPath) 'disposable-stop-ledger.sqlite'
+$fixture=Join-Path $PSScriptRoot 'atlas_disposable_stop_sqlite.py'
+$python=Join-Path $PSScriptRoot '..\..\backend\.venv\Scripts\python.exe'
+function Invoke-DisposableLedger([string]$Action){
+    & $python -B $fixture $Action $ledger $ReceiptPath 2>$null
+    if($LASTEXITCODE -ne 0){throw ('DISPOSABLE_STOP_SQLITE_'+$Action+'_REFUSED')}
+}
+Invoke-DisposableLedger 'reserve'
 Import-Module (Join-Path $PSScriptRoot '..\..\scripts\windows\Atlas-Paper-Owned-Stop-Signal.psm1') -Force
 $session=[pscustomobject]@{session_id='test-disposable-two-lane-session';path=$ReceiptPath;stops=0;
+    python=$python;fixture=$fixture;ledger=$ledger;
     positions=@{QUALITY_DIPS=5;HYPERLIQUID=3}}
 $session | Add-Member -MemberType ScriptMethod -Name verify_session -Value {
     return $this.session_id -ceq 'test-disposable-two-lane-session'
@@ -34,11 +43,15 @@ $session | Add-Member -MemberType ScriptMethod -Name request_stop -Value {
     $bytes=[System.Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -InputObject $receipt -Depth 12 -Compress))
     $s=[System.IO.File]::Open($this.path,[System.IO.FileMode]::CreateNew,[System.IO.FileAccess]::Write,[System.IO.FileShare]::None)
     try { $s.Write($bytes,0,$bytes.Length); $s.Flush($true) } finally {$s.Dispose()}
+    & $this.python -B $this.fixture finish $this.ledger $this.path 2>$null
+    if($LASTEXITCODE -ne 0){throw 'DISPOSABLE_SQLITE_STOP_FINISH_REFUSED'}
     return $receipt
 }
 $session | Add-Member -MemberType ScriptMethod -Name verify_durable_stop_receipt -Value {
     param($mode,$result)
     if($mode -cne 'SHUTDOWN_FLATTEN' -or $this.stops -ne 1){return $false}
+    & $this.python -B $this.fixture verify $this.ledger $this.path 2>$null
+    if($LASTEXITCODE -ne 0){return $false}
     $persisted=(Get-Content -LiteralPath $this.path -Raw | ConvertFrom-Json)
     return ($persisted.schema -ceq 'QD_CONTROL_STOP_V1' -and
       $persisted.phase -ceq 'FINISHED' -and
