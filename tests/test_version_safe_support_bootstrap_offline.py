@@ -39,20 +39,13 @@ def test_existing_verified_install_and_support_are_not_selected():
     assert not Path('D:/AtlasRuntime/selection/r0012.json').exists()
 
 
-def test_genuine_installed_python_read_only_bootstrap_success():
+def test_genuine_installed_python_preinstall_bootstrap_refuses_repeat():
     command=[str(b.APP/'python/python.exe'),'-I','-B','-S',str(Path(b.__file__)), '--inspect']
     output=subprocess.run(command,capture_output=True,text=True,timeout=90)
-    assert output.returncode==0,output.stderr
-    status=json.loads(output.stdout)
-    assert status['status']=='VERSION_SAFE_NTP_SUPPORT_NATIVE_BOOTSTRAP_REVIEW_PASS'
-    assert status['support_files']==10
-    assert status['native_application_dependencies']==24
-    assert status['native_support_installed'] is False
-    assert status['financial_authority'] is False
-    assert status['providers'] is False
-    assert status['selected'] is False
-    assert status['operator_approval_pinned'] is False
-    assert not output.stderr
+    assert output.returncode!=0
+    assert 'SUPPORT_VSAFE_NATIVE_ALREADY_INSTALLED_OR_PARTIAL_NO_RETRY' in output.stderr
+    assert not output.stdout
+    # Post-install source/ACK status uses atlas_version_safe_support_status.py.
 
 
 def test_running_bootstrap_on_workspace_python_refuses():
@@ -239,8 +232,10 @@ def test_synthetic_successful_support_copy_handoff_has_no_native_effect(monkeypa
         'synthetic_180s','consent_rechecked','native_manifest_checked',
         'ntp_check','native_app_intercepted','archive_reopened','ntp_check',
         'native_copy_intercepted','selector_preserved','clock_revoked']
-    assert not Path(m['destination']).exists()
-    assert not Path(m['control']).exists()
+    assert Path(m['destination']).is_dir()
+    assert Path(m['control']).is_dir()
+    assert hashlib.sha256((Path(m['control'])/'receipt.json').read_bytes()).hexdigest()==(
+        '2d2631152aea9086d95f2b60d06f1fde1c61ac61778d9ea36098d6883ce7eaac')
 
 
 def test_fake_ntp_runtime_refuses_before_native_copy(monkeypatch):

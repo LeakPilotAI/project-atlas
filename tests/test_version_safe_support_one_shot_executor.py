@@ -17,17 +17,13 @@ def test_executor_binds_unchanged_frozen_bootstrap_and_source_review():
     assert e.APPROVAL_PIN=='a3c669d1b4003e1c748b0225cec3b920513f1019a1eb6a113e661783e2c95029'
 
 
-def test_readonly_installed_python_executor_inspects_without_native_install():
+def test_preinstall_executor_inspect_now_refuses_completed_support_without_retry():
     result=subprocess.run([str(e.APP/'python/python.exe'),'-I','-B','-S',
         str(Path(e.__file__)),'--inspect'],capture_output=True,text=True,timeout=90)
-    assert result.returncode==0,result.stderr
-    item=json.loads(result.stdout)
-    assert item['status']=='VERSION_SAFE_NTP_SUPPORT_NATIVE_BOOTSTRAP_REVIEW_PASS'
-    assert item['execution_approved'] is True
-    assert item['native_support_installed'] is False
-    assert item['financial_authority'] is False
-    assert item['selected'] is False
-    assert not result.stderr
+    assert result.returncode!=0
+    assert 'SUPPORT_VSAFE_NATIVE_ALREADY_INSTALLED_OR_PARTIAL_NO_RETRY' in result.stderr
+    assert not result.stdout
+    # The separate post-install status reader must verify receipt and ACK.
 
 
 def test_workspace_python_cannot_use_executor():

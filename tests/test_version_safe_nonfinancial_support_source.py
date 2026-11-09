@@ -28,11 +28,12 @@ def evidence():
 
 def test_complete_create_only_archive_and_nonfinancial_app_proof():
     m,p=evidence()
-    assert vs.verify()=={
-        'status':'NONFINANCIAL_SUPPORT_SOURCE_ONLY_VERIFIED',
-        'manifest_sha256':MANIFEST,'support_manifest_sha256':SUPPORT,
-        'archive_sha256':ARCHIVE,'required_installed_app_files':24,
-        'files':10,'native_install':False,'selection':False,'financial':False}
+    # Once support has been physically installed, the old source-only
+    # verifier must refuse to reinterpret its create-only target as absent.
+    with pytest.raises(ValueError,match='VERSION_SAFE_SUPPORT_TARGET_ALREADY_EXISTS'):
+        vs.verify()
+    assert hashlib.sha256((vs.DEST/'support-source.zip').read_bytes()).hexdigest()==ARCHIVE
+    assert hashlib.sha256((vs.DEST/'deployment.json').read_bytes()).hexdigest()==MANIFEST
     assert m['schema']=='QD_SUPPORT_DEPLOYMENT_V2'
     assert m['status']=='REVIEW_INVENTORY_NOT_PERMISSION'
     assert m['application']=={
@@ -49,8 +50,8 @@ def test_complete_create_only_archive_and_nonfinancial_app_proof():
         assert p[flag] is False
     assert len(p['required_installed_application_sources'])==24
     assert len(m['files'])==10
-    assert not Path(m['destination']).exists()
-    assert not Path(m['control']).exists()
+    assert Path(m['destination']).is_dir()
+    assert Path(m['control']).is_dir()
 
 
 def test_explicit_installed_ntp_and_six_financial_admission_source_pins():
@@ -130,8 +131,8 @@ def test_old_v8_native_support_unmodified_and_new_target_not_selected():
     assert digest(selected)==vs.V7_HEAD
     assert selected['selected']['release']==vs.V7
     assert not Path('D:/AtlasRuntime/selection/r0012.json').exists()
-    assert not Path(m['destination']).exists()
-    assert not Path(m['control']).exists()
+    assert Path(m['destination']).is_dir()
+    assert Path(m['control']).is_dir()
 
 
 def test_second_source_build_refuses_without_overwrite():
