@@ -1,0 +1,61 @@
+{
+  "approval_record_present": false,
+  "candidate": {
+    "archive_path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-version-safe-ntp-source-candidate-20261109-r12-proposal\\atlas-source.zip",
+    "archive_sha256": "5b295cc8e60be9d078321b39197afa4d12ad31897bc258575889099b3f5f7dac",
+    "inventory_sha256": "22960eadfe5c6ca3e95b799788ba02cc702bd2db66ba14f61707380472ad7331",
+    "selection_inventory_path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-version-safe-ntp-source-selection-20261109-r12-proposal.json",
+    "selection_sha256": "0070390c30db6bcf027d59f32bd7ed3d5aab2996a9b886720f30154692b79f8a",
+    "source_commit": "2d4879878bf58bea5a3ed0a986b809791f638fec",
+    "source_files": 1008
+  },
+  "clock": {
+    "clock_financially_certified": false,
+    "fresh_180_second_qualification_required": true,
+    "profile": "INDEPENDENT_TWO_PEER_NTP_CODE_INSTALL_V1",
+    "source": "ATLAS_NTP_V1:time.cloudflare.com+time.google.com"
+  },
+  "dependencies": {
+    "cross_image_readback_not_self_execution": true,
+    "full_source_inventory_sha256": "93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91",
+    "native_source_physical_receipt_path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-version-safe-source-dependency-physical-20261109.json",
+    "native_source_physical_receipt_sha256": "9f2a90027b475666df0647815a48c0a9fbf363191eced3212302b5dfcd97559d",
+    "python_files": 9566,
+    "python_inventory_sha256": "2eaa943a5fa35fe4863defd9bc843dd93503367509b56c4880a0aef3c1f9960f",
+    "receipt_file_sha256": "b1363f4514d3cdce4a1914e79d14842ece94136ed5d035ea195b4883da99a7a0",
+    "receipt_path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-d-runtime-coordination-installation-20261028.json",
+    "source_commit": "fca29cfe7760a28d2569b8b4b91ed1ea99804c3c",
+    "source_root": "D:\\AtlasRuntime\\releases\\fca29cfe7760a28d2569b8b4b91ed1ea99804c3c"
+  },
+  "execution_attempted": false,
+  "future_version_pinned_installer_required": true,
+  "independent_installed_runtime_readback_required": true,
+  "live_trading_authorized": false,
+  "native_code_install_authorized": false,
+  "native_plan": {
+    "bytes": 265175432,
+    "create_only_targets_verified_absent": true,
+    "destination": "D:\\AtlasRuntime\\releases\\2d4879878bf58bea5a3ed0a986b809791f638fec",
+    "directories": 914,
+    "files": 10574,
+    "previous_selected_head": "933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997",
+    "previous_selected_revision": 11,
+    "r12_absent_at_review": true,
+    "receipt_path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-2d4879878bf58bea5a3ed0a986b809791f638fec.json"
+  },
+  "paper_account_inception_authorized": false,
+  "provider_connections_authorized": false,
+  "release_installer_currently_allows_this_candidate": false,
+  "reviewed_adapter_byte_sha256": {
+    "scripts/build_release_candidate.py": "2255e2f8c78891c4909387368a44c1fba8d5eaad59158119284e76357b3402d8",
+    "scripts/install_verified_release.py": "bcaea829d5466a293486624a95f689cf02d60e4893ef92a92ce00202c4a78571",
+    "scripts/native_install_candidate.py": "2f5a203f9187b8b7c18d1bb8cd5ce2bf5fe82aecd50ea8b0097c4e37d4a767d0",
+    "scripts/native_install_plan.py": "10bf8c2dd5d2ffdc3a92a576183a701e022c8e53bf5f948a6ad2fcaeb028263f",
+    "scripts/observation_runtime/personal_version_safe_release_clock.py": "4054239941084707ede0e5d434bb39bb4b572b6eb80bfcee7a94c00b2b2af1d3",
+    "scripts/release_selection.py": "1cca53421df327f173cf85029eb2e664be35f58bbefbfb79569d257f65b6c1b1"
+  },
+  "schema": "ATLAS_VERSION_SAFE_NONFINANCIAL_CODE_INSTALL_REVIEW_V1",
+  "selection_authorized": false,
+  "simulated_trading_authorized": false,
+  "status": "DESIGN_NOT_PERMISSION"
+}
