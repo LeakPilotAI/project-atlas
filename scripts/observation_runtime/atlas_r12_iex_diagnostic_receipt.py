@@ -50,8 +50,8 @@ def admit_packet(packet,requested,operation_id):
         or validated.get('paper_execution_authorized') is not False
         or validated.get('provider_data_rights_accepted') is not False):
         raise ValueError('IEX_DIAGNOSTIC_SUCCESS_BUT_UNVERIFIED_SCOPE')
-    return {'schema':'ATLAS_R12_IEX_DATA_ONLY_DIAGNOSTIC_BODY_V1',
-            'operation_id':operation_id,
+    body={'schema':'ATLAS_R12_IEX_DATA_ONLY_DIAGNOSTIC_BODY_V1',
+          'operation_id':operation_id,
             'provider':'ALPACA','feed':'IEX',
             'feed_scope':'SINGLE_EXCHANGE_NOT_NBBO',
             'requested_symbols':list(requested),
@@ -71,6 +71,16 @@ def admit_packet(packet,requested,operation_id):
             'paper_execution_authorized':False,
             'live_order_authorized':False,
             'startup_authorized':False}
+    if 'per_symbol_quote_diagnostics' in packet:
+        from scripts.observation_runtime.alpaca_iex_probe import _admit_symbol_diagnostics
+        validated_stats=_admit_symbol_diagnostics(
+            {'per_symbol_quote_diagnostics':packet['per_symbol_quote_diagnostics'],
+             'quote_count':packet['quote_count']},requested,
+            set(packet['observed_symbols']),packet['callback_quote_count'])
+        if validated_stats != packet['per_symbol_quote_diagnostics']:
+            raise ValueError('IEX_DIAGNOSTIC_INVALID_SYMBOL_TELEMETRY')
+        body['per_symbol_quote_diagnostics']=validated_stats
+    return body
 
 
 def _path(operation_id,root):
@@ -118,6 +128,8 @@ def read_receipt(operation_id,*,root=None):
                 'continuous_executable_prices_verified':False,
                 'provider_rights_independently_accepted':False,
                 'paper_fill_authorized':False,'live_order_authorized':False}
+        if 'per_symbol_quote_diagnostics' in body:
+            packet['per_symbol_quote_diagnostics'] = body['per_symbol_quote_diagnostics']
         if body.get('provider')!='ALPACA' or body.get('feed')!='IEX' or body.get('feed_scope')!='SINGLE_EXCHANGE_NOT_NBBO':
             raise ValueError('IEX_DIAGNOSTIC_RECEIPT_PROVIDER_CHANGED')
         if admit_packet(packet,body.get('requested_symbols'),operation_id)!=body:

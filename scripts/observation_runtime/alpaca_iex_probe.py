@@ -35,6 +35,32 @@ def request_scope(*, seconds, symbols, execute, confirm_scope):
     return list(symbols)
 
 
+def _admit_symbol_diagnostics(data, requested, observed, callback_count):
+    """Require complete per-symbol transport counts; never accept fabricated coverage.
+
+    Older injected test transports omit this optional source-only diagnostic.
+    Absence is UNKNOWN, not an all-zero report or financial acceptance.
+    """
+    rows = data.get('per_symbol_quote_diagnostics')
+    if rows is None:
+        return None
+    if (type(rows) is not dict or set(rows) != set(requested)
+            or any(type(row) is not dict or set(row) !=
+                   {'received', 'accepted', 'rejected', 'fresh_callbacks'}
+                   for row in rows.values())):
+        raise IEXRefused('IEX_PROBE_INVALID_PER_SYMBOL_DIAGNOSTICS')
+    for symbol, row in rows.items():
+        if (any(type(value) is not int or value < 0 for value in row.values())
+                or row['received'] != row['accepted'] + row['rejected']
+                or row['fresh_callbacks'] > row['accepted']
+                or (row['fresh_callbacks'] > 0) != (symbol in observed)):
+            raise IEXRefused('IEX_PROBE_INVALID_PER_SYMBOL_DIAGNOSTICS')
+    if (sum(x['accepted'] for x in rows.values()) > data['quote_count']
+            or sum(x['fresh_callbacks'] for x in rows.values()) != callback_count):
+        raise IEXRefused('IEX_PROBE_INVALID_PER_SYMBOL_DIAGNOSTICS')
+    return {symbol: dict(rows[symbol]) for symbol in sorted(rows)}
+
+
 def admit_result(data, *, observed_symbols, observed_count, requested_symbols):
     """Require fresh callback observation, not merely provider connection.
 
@@ -51,6 +77,8 @@ def admit_result(data, *, observed_symbols, observed_count, requested_symbols):
             or type(observed_symbols) is not set or not observed_symbols
             or not observed_symbols <= set(requested_symbols)):
         raise IEXRefused("IEX_PROBE_NO_AUTHENTICATED_FRESH_QUOTE")
+    per_symbol = _admit_symbol_diagnostics(data, requested_symbols,
+                                            observed_symbols, observed_count)
     packet={
         'schema':'ATLAS_IEX_BOUNDED_DATA_ONLY_PROBE_V1',
         'status':'BOUNDED_FRESH_IEX_OBSERVED_NOT_FINANCIAL_AUTHORITY',
@@ -67,6 +95,8 @@ def admit_result(data, *, observed_symbols, observed_count, requested_symbols):
         'paper_fill_authorized':False,
         'live_order_authorized':False,
     }
+    if per_symbol is not None:
+        packet['per_symbol_quote_diagnostics'] = per_symbol
     # Reuse current r12 source assessment; accepting a short provider sample
     # must never silently promote any of the nine financial operating gates.
     from scripts.observation_runtime.atlas_r12_alpaca_source_admission import validate_bounded_iex_probe

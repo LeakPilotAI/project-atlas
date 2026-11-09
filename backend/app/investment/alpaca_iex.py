@@ -107,6 +107,10 @@ class IEXFeed:
         self.roster_revision = 0
         self.position_symbols = position_symbols
         self.last_rotation = None
+        # Aggregate source diagnostics only: never retain raw rejected quote frames.
+        self.quote_messages_seen = {symbol: 0 for symbol in self.symbols}
+        self.quote_messages_accepted = {symbol: 0 for symbol in self.symbols}
+        self.quote_messages_rejected = {symbol: 0 for symbol in self.symbols}
 
     def request_roster(self, roster):
         """Rotate on a closed/reopened socket, never overlapping connections.
@@ -136,6 +140,10 @@ class IEXFeed:
                 self.last_rotation = now
                 self.roster_revision += 1
                 self.quotes.clear()
+                for symbol in self.symbols:
+                    self.quote_messages_seen.setdefault(symbol, 0)
+                    self.quote_messages_accepted.setdefault(symbol, 0)
+                    self.quote_messages_rejected.setdefault(symbol, 0)
                 self.disconnect("IEX_ROSTER_CHANGING")
 
     def disconnect(self, code="IEX_DISCONNECTED"):
@@ -180,11 +188,17 @@ class IEXFeed:
                     continue
                 if kind == "q":
                     symbol = message.get("S")
+                    in_roster = type(symbol) is str and symbol in self.symbols
+                    if in_roster:
+                        self.quote_messages_seen[symbol] += 1
                     try:
                         self._quote(message)
+                        if in_roster:
+                            self.quote_messages_accepted[symbol] += 1
                     except (ValueError, KeyError, TypeError, ArithmeticError):
                         self.rejected += 1
-                        if symbol in self.symbols:
+                        if in_roster:
+                            self.quote_messages_rejected[symbol] += 1
                             self.quotes.pop(symbol, None)
                         self.error = "IEX_QUOTE_REJECTED"
                 # No trade/bar/status message is reinterpreted as an executable quote.
@@ -288,6 +302,14 @@ class IEXFeed:
             raise IEXRefused("IEX_BOUNDED_CONNECTION_REQUIRED")
         if self.run_lock.locked():
             raise IEXRefused("IEX_ALREADY_CONNECTED")
+        with self.lock:
+            counters_before = {
+                symbol: (self.quote_messages_seen[symbol],
+                         self.quote_messages_accepted[symbol],
+                         self.quote_messages_rejected[symbol])
+                for symbol in self.symbols
+            }
+        callbacks_by_symbol = {symbol: 0 for symbol in self.symbols}
         if connect is None:
             from websockets.asyncio.client import connect
         # Never inherit a debug frame logger that could expose authentication.
@@ -377,6 +399,7 @@ class IEXFeed:
                                                                         "provider": "ALPACA_IEX",
                                                                         "paper_fill_authorized": False,
                                                                         "live_order_authorized": False})
+                                                        callbacks_by_symbol[q["symbol"]] += 1
                                                     except Exception as exc:
                                                         callback_failure = exc
                                                         raise
@@ -408,7 +431,20 @@ class IEXFeed:
             finally:
                 last_error = self.error
                 self.disconnect(last_error or "IEX_BOUNDED_PROBE_COMPLETE")
+        # Privacy-preserving counts for a single bounded run. No quote values,
+        # timestamps, malformed frames, account data or credentials escape.
+        with self.lock:
+            per_symbol_diagnostics = {
+                symbol: {
+                    "received": self.quote_messages_seen[symbol] - counters_before.get(symbol, (0, 0, 0))[0],
+                    "accepted": self.quote_messages_accepted[symbol] - counters_before.get(symbol, (0, 0, 0))[1],
+                    "rejected": self.quote_messages_rejected[symbol] - counters_before.get(symbol, (0, 0, 0))[2],
+                    "fresh_callbacks": callbacks_by_symbol.get(symbol, 0),
+                }
+                for symbol in self.symbols
+            }
         return {
+            "per_symbol_quote_diagnostics": per_symbol_diagnostics,
             "authenticated": authenticated,
             "subscribed": subscribed,
             "endpoint": URL,
