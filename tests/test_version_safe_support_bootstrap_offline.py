@@ -27,7 +27,8 @@ def proposal():
 
 def test_existing_verified_install_and_support_are_not_selected():
     assert b.APP.is_dir()
-    assert b.APPROVAL_PIN is None and not b.APPROVAL_FILE.exists()
+    assert b.APPROVAL_PIN is None  # frozen source never grants approval
+    assert b.APPROVAL_FILE.is_file()  # private, independently pinned by executor
     assert b.MANIFEST.is_file() and b.ARCHIVE.is_file()
     assert b.sha(b.MANIFEST.read_bytes())==b.MANIFEST_SHA
     assert b.sha(b.ARCHIVE.read_bytes())==b.ARCHIVE_SHA
@@ -59,7 +60,8 @@ def test_running_bootstrap_on_workspace_python_refuses():
         b.require_installed_interpreter()
 
 
-def test_real_install_cli_refuses_without_approval_before_any_clock(monkeypatch):
+def test_real_install_cli_refuses_without_approval_before_any_clock(monkeypatch,tmp_path):
+    monkeypatch.setattr(b,'APPROVAL_FILE',tmp_path/'no-approval.json')
     monkeypatch.setattr(b,'inspect',lambda:pytest.fail('INSPECT_NOT_BEFORE_APPROVAL'))
     with pytest.raises(ValueError,match='SUPPORT_VSAFE_SEPARATE_INSTALL_APPROVAL_ABSENT'):
         b.main(['--execute-reviewed-code-only','--confirm-scope',b.CONFIRM])
@@ -176,7 +178,7 @@ def test_source_has_no_release_selection_writer_or_financial_effect():
     assert 'clock.revoke()' in raw
     assert 'select_release(' not in raw
     assert 'allow_live_order' not in raw
-    assert not b.APPROVAL_FILE.exists()
+    assert b.APPROVAL_FILE.is_file()  # current private decision remains out of Git
 
 
 def test_synthetic_successful_support_copy_handoff_has_no_native_effect(monkeypatch):
