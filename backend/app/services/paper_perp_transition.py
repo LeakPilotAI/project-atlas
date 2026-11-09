@@ -87,6 +87,27 @@ def validate_manifest(m):
             or min(number(p[k]) for k in ("slippage_bps", "maker_bps", "taker_bps")) < 0):
         raise ValueError("Bounded explicit perpetual policy required")
     for k in ("fee_schedule_id", "instrument_cut", "market_source", "funding_source"): text(p[k])
+    # Structural validation also reads unapproved historical operational
+    # enrollment drafts. Trading cost admissibility is enforced by transition()
+    # BEFORE any command effect, not here, so old evidence stays inspectable.
+
+
+def require_operational_fee_policy(m):
+    """Reject underpriced operational financial commands, never certify fees.
+
+    Existing historical draft manifests remain structurally inspectable; this
+    guard runs before any operational command can mutate a financial state.
+    These are deliberately undiscounted *model assumptions* for validator
+    BTC/ETH/SOL perps, not independently accepted user/account fee entitlements.
+    A future approved lower tier needs a new versioned evidence contract.
+    """
+    if m["schema"] != "PAPER_EPOCH_PERP_OPERATIONAL_V1":
+        return
+    p = m["perp_policy"]
+    if (p["fee_schedule_id"].startswith("PENDING_")
+            or number(p["maker_bps"]) < number("1.5")
+            or number(p["taker_bps"]) < number("4.5")):
+        raise ValueError("Operational perpetual fee schedule unverified or understates public base")
 
 
 def refresh(m, s):
@@ -178,6 +199,7 @@ def book(m, c, symbol, side):
 
 
 def transition(m, s, c):
+    require_operational_fee_policy(m)
     common = "schema epoch operation_id kind expected_source_revision timestamp"
     kind = c.get("kind")
     recovery = c.get("schema") == "PAPER_PERP_FUNDING_RECOVERY_V1"

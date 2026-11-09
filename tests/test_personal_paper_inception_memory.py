@@ -30,7 +30,11 @@ def system(lane,fail=None):
         n['schema']='PERP_AUTO_NATIVE_ENROLLMENT_V1'
         for root in n['resources'].values():root['schema']='PERP_AUTO_NATIVE_ROOT_V1'
         n['writers']={r:copy.deepcopy(next(iter(n['writers'].values()))) for r in WRITERS}
-        m=perp_manifest();m.update(schema='PAPER_EPOCH_PERP_OPERATIONAL_V1',release=n['release_digest'],provenance='ACCEPTED_PERP_PAPER_PARAMETERS_V1');n['policy_digest']=digest(m['perp_policy'])
+        m=perp_manifest();m.update(schema='PAPER_EPOCH_PERP_OPERATIONAL_V1',release=n['release_digest'],provenance='ACCEPTED_PERP_PAPER_PARAMETERS_V1')
+        # The disposable native inception fixture must not endorse 1/2-bps
+        # legacy cost placeholders for an operational Hyperliquid policy.
+        m['perp_policy'].update(maker_bps='1.5',taker_bps='4.5',fee_schedule_id='HYPERLIQUID_PUBLIC_VALIDATOR_PERP_BASE_UNDISCOUNTED_REVIEW_ONLY_V1')
+        n['policy_digest']=digest(m['perp_policy'])
     n.update(epoch=m['epoch'],inception_digest=digest(m))
     scope={'schema':'FS3_QD_REPORT_SCOPE_V2' if lane=='QUALITY_DIPS' else 'FS3_PERP_REPORT_SCOPE_V3','account_id':n['account_id'],'epoch':n['epoch'],'policy_digest':digest(m),'timezone':m['timezone'],'session_reporting_policy':'ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1'}
     if lane=='HYPERLIQUID':scope['funding_reporting_policy']='POSTED_CASH_AND_SETTLEMENT_ACCRUAL_V1'

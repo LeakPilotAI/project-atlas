@@ -10,7 +10,23 @@ import pytest
 from app.services.paper_financial_replay import body, digest
 from app.services.perp_operational_contract import validate_enrollment
 from app.services.unified_native_writer import OperationalPerpFinancialWriter
-from test_perp_financial_v2 import entry, exit_command, funding, manifest
+from test_perp_financial_v2 import entry as fixture_entry, exit_command as fixture_exit_command, funding, manifest
+
+# Operational-only native test commands must use the same conservative fee ID
+# as the source-bound inception. Historical disposable test helpers are intact.
+_BASE_FEE_ID = 'HYPERLIQUID_PUBLIC_VALIDATOR_PERP_BASE_UNDISCOUNTED_REVIEW_ONLY_V1'
+
+
+def entry(*args, **kwargs):
+    c = fixture_entry(*args, **kwargs)
+    c['evidence']['fee_schedule_id'] = _BASE_FEE_ID
+    return c
+
+
+def exit_command(*args, **kwargs):
+    c = fixture_exit_command(*args, **kwargs)
+    c['evidence']['fee_schedule_id'] = _BASE_FEE_ID
+    return c
 from test_quality_dips_autonomous_enrollment import fixture
 
 
@@ -28,6 +44,7 @@ def system(tmp_path):
     e['writers'].update(funding=copy.deepcopy(e['writers']['source']), mark=copy.deepcopy(e['writers']['source']))
     params = manifest()
     params.update(schema='PAPER_EPOCH_PERP_OPERATIONAL_V1', release=e['release_digest'], provenance='ACCEPTED_PERP_PAPER_PARAMETERS_V1')
+    params['perp_policy'].update(maker_bps='1.5', taker_bps='4.5', fee_schedule_id=_BASE_FEE_ID)
     e.update(epoch=params['epoch'], account_id='synthetic-perp-account', inception_digest=digest(params), policy_digest=digest(params['perp_policy']))
     fs2 = module.base.fs2
     for role, resource in e['resources'].items():
@@ -80,7 +97,7 @@ def test_native_operational_long_partial_funding_final_and_restart(system):
     s.now[0] = 7202
     s.store.execute(exit_command(view, '0.3', 7202, 'final', '104'))
     cut = s.store.verified_cut()
-    assert cut['state']['cash'] == '1001.52936' and cut['state']['reserved_margin'] == '0'
+    assert cut['state']['cash'] == '1001.50396' and cut['state']['reserved_margin'] == '0'
     assert cut['pin_schema'] == 'PERP_AUTO_OP_PIN_V1'
     assert b'PERP_AUTO_OP_RECORD_V1' in (s.tmp_path / 'source/0001-record.json').read_bytes()
     s.store.close()
