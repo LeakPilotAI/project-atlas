@@ -1,4 +1,4 @@
-"""Create-new nonfinancial support deployment. No selection, providers or services.
+﻿"""Create-new nonfinancial support deployment. No selection, providers or services.
 
 Operational construction is separately authorized and bound to a reviewed
 manifest, real installed application, genuine clock and accepted parent identity.
@@ -34,6 +34,12 @@ V7_NTP_APP = "af96bec0484a8e43f9965610e071a907a0d316bf"
 V7_NTP_RECEIPT_SHA256 = "105c89ab10d20771474fe030489da7aabeb6900f22be57d25b745135bf28ac4d"
 V7_NTP_ARTIFACT_DIGEST = "94374eda7eea82ac1c44905b21ab56b524128bc49e4253f3522838d230961827"
 V7_NTP_CLOCK_PROFILE = "INDEPENDENT_TWO_PEER_NTP_CODE_SELECTION_V1"
+# V8 code-only support is separately bound to its actual immutable native
+# installation. It cannot be selected until a future clock/selector handoff.
+V8_NTP_APP = "c8cc4846508b29483d10a0b4c4353f8a26f1fc9c"
+V8_NTP_RECEIPT_SHA256 = "ecb94e00e262e371caea494b1cc552352c892fa437a3b5f4946b54f7f863ae34"
+V8_NTP_ARTIFACT_DIGEST = "65c4b4661ec6aef7359e9dae716a416327379f5082a5b309ccdb5a148a569c95"
+V8_NTP_SOURCE_SHA256 = "230a35d8b293be0d38ded533bb964d36bc5bf3c80d432a85656bc4c22650979c"
 
 
 def support_clock_profile(manifest):
@@ -44,6 +50,11 @@ def support_clock_profile(manifest):
         if (application.get("receipt_sha256") != V7_NTP_RECEIPT_SHA256
                 or application.get("artifact_digest") != V7_NTP_ARTIFACT_DIGEST):
             raise ValueError("V7_NTP_INSTALLED_APPLICATION_PIN_REQUIRED")
+        return V7_NTP_CLOCK_PROFILE
+    if application.get("release") == V8_NTP_APP:
+        if (application.get("receipt_sha256") != V8_NTP_RECEIPT_SHA256
+                or application.get("artifact_digest") != V8_NTP_ARTIFACT_DIGEST):
+            raise ValueError("V8_NTP_INSTALLED_APPLICATION_PIN_REQUIRED")
         return V7_NTP_CLOCK_PROFILE
     return "WINDOWS_TIME_CODE_SELECTION_V1"
 
@@ -197,13 +208,22 @@ def prepare(manifest, archive, expected_manifest_sha256):
         raise ValueError("SUPPORT_PACKAGE_BINDING")
     if support_clock_profile(m) == V7_NTP_CLOCK_PROFILE:
         required_ntp = {"path":"scripts/observation_runtime/atlas_independent_ntp_clock.py",
-                        "sha256":"230a35d8b293be0d38ded533bb964d36bc5bf3c80d432a85656bc4c22650979c"}
+                        "sha256": V8_NTP_SOURCE_SHA256}
         if (package.get("clock") != {
                 "issuer":"ATLAS_INDEPENDENT_DUAL_NTP_V1_GOOGLE_CLOUDFLARE",
                 "maximum_evidence_age_seconds":120,
                 "maximum_uncertainty_ms":1000}
                 or required_ntp not in package.get("required_installed_application_sources", [])):
-            raise ValueError("SUPPORT_V7_TWO_PEER_NTP_CLOCK_BINDING_REQUIRED")
+            raise ValueError("SUPPORT_REVIEWED_TWO_PEER_NTP_CLOCK_BINDING_REQUIRED")
+        if m["application"]["release"] == V8_NTP_APP:
+            required_v8 = {
+                "scripts/observation_runtime/personal_v7_operator_clock.py":
+                    "ded15bde4e2b3ce845b2eaf95818b6c81fb3b759daf2b9375a68533710599e8d",
+            }
+            existing = {r["path"]:r["sha256"]
+                        for r in package.get("required_installed_application_sources", [])}
+            if any(existing.get(path) != pin for path,pin in required_v8.items()):
+                raise ValueError("SUPPORT_V8_OPERATOR_CLOCK_SOURCE_BINDING_REQUIRED")
     return m, files
 
 
@@ -630,6 +650,10 @@ def select_release(*, approved=False, manifest=None, manifest_sha256=None, recei
     if type(clock) not in (LocalWindowsClock, IndependentNtpClock):
         raise ValueError("GENUINE_SELECTION_CLOCK_REQUIRED")
     m = validate_manifest(manifest)
+    # A support package cannot promote V8 while its included operator clock
+    # still pins V7's native r11 receipt/head; selection remains blocked.
+    if m["application"]["release"] == V8_NTP_APP:
+        raise ValueError("V8_SELECTION_CLOCK_HANDOFF_NOT_CERTIFIED")
     profile = support_clock_profile(m)
     if (profile == V7_NTP_CLOCK_PROFILE and type(clock) is not IndependentNtpClock
             or profile != V7_NTP_CLOCK_PROFILE and type(clock) is not LocalWindowsClock):

@@ -45,16 +45,29 @@ def build(*, output, historical_manifest, application, domain="WINDOWS_LOCAL", f
         if any(r['path'] not in actual for r in required):
             raise ValueError('RECOVERY_INSTALLED_APPLICATION_DEPENDENCY_MISSING')
         package['required_installed_application_sources']=[{'path':r['path'],'sha256':actual[r['path']]} for r in required]
-        if app == 'af96bec0484a8e43f9965610e071a907a0d316bf':
-            # Do not retroactively relabel old V4/V5 windows-clock manifests.
-            from scripts.support_deployment import V7_NTP_RECEIPT_SHA256, V7_NTP_ARTIFACT_DIGEST
-            if (application['receipt_sha256'] != V7_NTP_RECEIPT_SHA256
-                    or application['artifact_digest'] != V7_NTP_ARTIFACT_DIGEST):
-                raise ValueError('EXACT_V7_INSTALLED_NTP_APP_REQUIRED')
+        if app in ('af96bec0484a8e43f9965610e071a907a0d316bf',
+                   'c8cc4846508b29483d10a0b4c4353f8a26f1fc9c'):
+            # Do not retroactively relabel historic Windows-clock releases.
+            from scripts.support_deployment import (
+                V7_NTP_RECEIPT_SHA256,V7_NTP_ARTIFACT_DIGEST,
+                V8_NTP_RECEIPT_SHA256,V8_NTP_ARTIFACT_DIGEST,V8_NTP_APP,
+                V8_NTP_SOURCE_SHA256,
+            )
+            expected = ((V8_NTP_RECEIPT_SHA256,V8_NTP_ARTIFACT_DIGEST)
+                        if app == V8_NTP_APP else
+                        (V7_NTP_RECEIPT_SHA256,V7_NTP_ARTIFACT_DIGEST))
+            if (application['receipt_sha256'],application['artifact_digest']) != expected:
+                raise ValueError('EXACT_REVIEWED_INSTALLED_NTP_APP_REQUIRED')
             source='scripts/observation_runtime/atlas_independent_ntp_clock.py'
-            if actual.get(source)!='230a35d8b293be0d38ded533bb964d36bc5bf3c80d432a85656bc4c22650979c':
-                raise ValueError('EXACT_INSTALLED_V7_NTP_SOURCE_REQUIRED')
+            if actual.get(source)!=V8_NTP_SOURCE_SHA256:
+                raise ValueError('EXACT_INSTALLED_REVIEWED_NTP_SOURCE_REQUIRED')
             package['required_installed_application_sources'].append({'path':source,'sha256':actual[source]})
+            if app == V8_NTP_APP:
+                operator = 'scripts/observation_runtime/personal_v7_operator_clock.py'
+                if actual.get(operator)!='ded15bde4e2b3ce845b2eaf95818b6c81fb3b759daf2b9375a68533710599e8d':
+                    raise ValueError('EXACT_INSTALLED_V8_OPERATOR_CLOCK_REQUIRED')
+                package['required_installed_application_sources'].append(
+                    {'path':operator,'sha256':actual[operator]})
             package['clock']={
                 'issuer':'ATLAS_INDEPENDENT_DUAL_NTP_V1_GOOGLE_CLOUDFLARE',
                 'maximum_evidence_age_seconds':120,
