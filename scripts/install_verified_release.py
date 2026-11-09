@@ -1,4 +1,4 @@
-"""One explicitly approved unselected D: code copy; never promotion or enrollment.
+﻿"""One explicitly approved unselected D: code copy; never promotion or enrollment.
 
 Source-only until separately authorized. No selector, launcher, provider,
 financial root, account, service, credential or recovery mutation exists here.
@@ -21,6 +21,12 @@ from scripts.native_install_plan import prepare_install_inputs
 # Keep it disabled until an immutable new release source commit is separately
 # frozen and pinned. Never infer permission from a caller-selected proposal.
 INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT = 'af96bec0484a8e43f9965610e071a907a0d316bf'
+# V8 is a second, separately reviewed frozen code-only archive. The selected
+# V7 operator-clock path is NOT V8-certified; this permits no selection.
+INDEPENDENT_NTP_CODE_INSTALL_V8_SOURCE_COMMIT = 'c8cc4846508b29483d10a0b4c4353f8a26f1fc9c'
+INDEPENDENT_NTP_CODE_INSTALL_V8_ARCHIVE = 'd09717b36eaf9f484c4e7fa9dc5193aa6a1a147e8c7df5c0d0859bcee9f02a54'
+INDEPENDENT_NTP_CODE_INSTALL_V8_INVENTORY = '0b97513bfb318d3c656deef4061e9fe8de85af870cf7b87fcf77e6d894c47c6e'
+INDEPENDENT_NTP_CODE_INSTALL_V8_DEPENDENCY = '93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91'
 INDEPENDENT_NTP_CODE_ONLY_PROFILE = 'INDEPENDENT_TWO_PEER_NTP_CODE_INSTALL_V1'
 LEGACY_WINDOWS_CODE_ONLY_PROFILE = 'WINDOWS_TIME_CODE_INSTALL_V1'
 
@@ -156,9 +162,15 @@ def install_unselected_release(*, approved_execution=False, archive=None, archiv
         if type(clock) is not LocalWindowsClock:
             raise ValueError('GENUINE_INSTALL_CLOCK_REQUIRED')
     elif clock_profile == INDEPENDENT_NTP_CODE_ONLY_PROFILE:
-        if (INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT is None
-                or source_commit != INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT
-                or type(clock) is not IndependentNtpClock):
+        if type(clock) is not IndependentNtpClock:
+            raise ValueError('REVIEWED_INDEPENDENT_NTP_INSTALL_PIN_REQUIRED')
+        if source_commit == INDEPENDENT_NTP_CODE_INSTALL_V8_SOURCE_COMMIT:
+            if (archive_sha256 != INDEPENDENT_NTP_CODE_INSTALL_V8_ARCHIVE
+                    or inventory_digest != INDEPENDENT_NTP_CODE_INSTALL_V8_INVENTORY
+                    or dependency_digest != INDEPENDENT_NTP_CODE_INSTALL_V8_DEPENDENCY):
+                raise ValueError('EXACT_V8_NATIVE_CODE_INSTALL_SOURCE_PIN_REQUIRED')
+        elif (INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT is None
+                or source_commit != INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT):
             raise ValueError('REVIEWED_INDEPENDENT_NTP_INSTALL_PIN_REQUIRED')
     else:
         raise ValueError('UNREVIEWED_INSTALL_CLOCK_PROFILE')
@@ -249,7 +261,8 @@ def main(argv=None):
     candidate_v5=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V5_R1_2026-11-08.json'
     candidate_v6=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V6_R1_2026-11-08.json'
     candidate_v7=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V7_R1_2026-11-08.json'
-    if Path(args.proposal).absolute() not in (expected,candidate,candidate_v4,candidate_v5,candidate_v6,candidate_v7):
+    candidate_v8=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V8_R1_2026-11-08.json'
+    if Path(args.proposal).absolute() not in (expected,candidate,candidate_v4,candidate_v5,candidate_v6,candidate_v7,candidate_v8):
         raise ValueError('EXACT_INSTALL_PROPOSAL_REQUIRED')
     expected=Path(args.proposal).absolute()
     raw=source_bytes(repo,str(expected.relative_to(repo)).replace('\\','/'),maximum_bytes=65536)
@@ -277,13 +290,19 @@ def main(argv=None):
             or proposal['archive_sha256']!='253798f88386efedc41453169da402c4d09ce24e567687422a7a9c26dae5b631'
             or proposal['inventory_sha256']!='e57514a84927ae7087302a111683342ef23b162208382a442dada09b9ee364f1'):
         raise ValueError('EXACT_V7_DUAL_NTP_SELECTED_SOURCE_PIN_REQUIRED')
+    if expected == candidate_v8 and (
+            proposal['source_commit'] != INDEPENDENT_NTP_CODE_INSTALL_V8_SOURCE_COMMIT
+            or proposal['archive_sha256'] != INDEPENDENT_NTP_CODE_INSTALL_V8_ARCHIVE
+            or proposal['inventory_sha256'] != INDEPENDENT_NTP_CODE_INSTALL_V8_INVENTORY
+            or proposal['dependency_sha256'] != INDEPENDENT_NTP_CODE_INSTALL_V8_DEPENDENCY):
+        raise ValueError('EXACT_V8_NATIVE_CODE_INSTALL_SOURCE_PIN_REQUIRED')
     if set(proposal['adapter_source_sha256'])!={'scripts/install_verified_release.py','scripts/native_install_candidate.py','scripts/native_install_plan.py'}:
         raise ValueError('EXACT_INSTALL_ADAPTER_SOURCE_SET_REQUIRED')
     for name,pin in proposal['adapter_source_sha256'].items():
         actual=source_bytes(repo,name,maximum_bytes=65536).replace(b'\r\n',b'\n')
         if hashlib.sha256(actual).hexdigest()!=pin:raise ValueError('INSTALL_ADAPTER_SOURCE_CHANGED')
     runtime_id='qd-unselected-code-install-'+proposal['source_commit']
-    if expected == candidate_v7:
+    if expected in (candidate_v7,candidate_v8):
         from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
         clock=IndependentNtpClock(runtime_id=runtime_id)
         clock_profile=INDEPENDENT_NTP_CODE_ONLY_PROFILE

@@ -39,15 +39,24 @@ def test_v7_exact_pinned_code_only_proposal_and_immutable_review():
     assert p["destination"] == "D:\\AtlasRuntime\\releases\\" + COMMIT
 
 
-def test_three_exact_adapters_pinned_current_plus_invariant_release_source():
+def test_historic_v7_adapter_pins_immutable_with_new_v8_installer_refusal():
     p = verified()
     assert set(p["adapter_source_sha256"]) == {
         "scripts/install_verified_release.py", "scripts/native_install_candidate.py",
         "scripts/native_install_plan.py",
     }
-    for name, sha in p["adapter_source_sha256"].items():
-        assert hashlib.sha256(source_bytes(ROOT, name, maximum_bytes=65536).replace(
-            b"\r\n", b"\n")).hexdigest() == sha
+    assert p["adapter_source_sha256"]["scripts/install_verified_release.py"] == (
+        "bf958e0b7983ee95c2ab52e6e376003e4b14f32606344242af7247fe936faac5"
+    )
+    # Source-only V8 admission changed installer bytes. Never repin V7's
+    # historical proposal or reuse its old installer's authority.
+    for name, pin in p["adapter_source_sha256"].items():
+        actual = hashlib.sha256(source_bytes(ROOT, name, maximum_bytes=65536).replace(
+            b"\r\n", b"\n")).hexdigest()
+        if name == "scripts/install_verified_release.py":
+            assert actual != pin
+        else:
+            assert actual == pin
     assert installer.INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT == COMMIT
 
 
@@ -66,36 +75,18 @@ def test_wrong_hash_refused_before_ntp_or_install(monkeypatch):
                         "--proposal-sha256", "0"*64])
 
 
-def test_real_cli_routes_only_v7_to_distinct_independent_ntp_clock(monkeypatch):
-    events = []
-
-    class FakeNtp:
-        def __init__(self, **kwargs):
-            events.append(("ntp", kwargs))
-
-        def revoke(self):
-            events.append(("revoke", None))
-
-    monkeypatch.setattr(atlas_independent_ntp_clock, "IndependentNtpClock", FakeNtp)
+def test_historic_v7_cli_refuses_changed_adapter_before_network_or_install(monkeypatch):
+    monkeypatch.setattr(atlas_independent_ntp_clock, "IndependentNtpClock",
+                        lambda **kw: pytest.fail("V7 old installer authority reused"))
     monkeypatch.setattr(personal_windows_clock, "LocalWindowsClock",
-                        lambda **kw: pytest.fail("V7 accessed Windows Time clock"))
-    def inert_capture(**kw):
-        events.append(("reviewed_code_only", kw))
-        return {"status": "OFFLINE_NO_COPY"}
-    monkeypatch.setattr(installer, "install_unselected_release", inert_capture)
-    assert installer.main([
-        "--execute-approved-unselected", "--proposal", str(PROPOSAL),
-        "--proposal-sha256", PIN,
-    ]) == {"status": "OFFLINE_NO_COPY"}
-    assert [e[0] for e in events] == ["ntp", "reviewed_code_only", "revoke"]
-    assert events[0][1] == {"runtime_id": "qd-unselected-code-install-" + COMMIT}
-    kw = events[1][1]
-    assert kw["clock_profile"] == installer.INDEPENDENT_NTP_CODE_ONLY_PROFILE
-    assert kw["clock"] is not None
-    assert kw["approved_execution"] is True
-    assert kw["source_commit"] == COMMIT
-    assert kw["archive_sha256"] == ARCHIVE and kw["inventory_digest"] == INVENTORY
-    assert kw["dependency_digest"] == "93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91"
+                        lambda **kw: pytest.fail("V7 fallback to Windows Time"))
+    monkeypatch.setattr(installer, "install_unselected_release",
+                        lambda **kw: pytest.fail("V7 historical proposal copied again"))
+    with pytest.raises(ValueError, match="INSTALL_ADAPTER_SOURCE_CHANGED"):
+        installer.main([
+            "--execute-approved-unselected", "--proposal", str(PROPOSAL),
+            "--proposal-sha256", PIN,
+        ])
 
 
 def test_lookalike_filename_never_admitted_even_with_real_proposal_bytes(monkeypatch, tmp_path):
