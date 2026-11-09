@@ -109,9 +109,10 @@ def main(argv=None, *, credentials_loader=None, feed_factory=IEXFeed):
     parser.add_argument('--confirm-scope',default=None)
     parser.add_argument('--seconds',type=int,default=20)
     parser.add_argument('--symbols',nargs='+',default=['MSFT','SPY'])
+    parser.add_argument('--receipt-id',default=None,help='Exact 32-hex ID for create-only sanitized diagnostic; execute only')
     args=parser.parse_args(argv)
     if args.inspect:
-        if args.confirm_scope is not None:
+        if args.confirm_scope is not None or args.receipt_id is not None:
             print(json.dumps({'status':'REFUSED','reason':REASON}))
             return 1
         from scripts.observation_runtime.atlas_r12_alpaca_source_admission import assess
@@ -131,11 +132,26 @@ def main(argv=None, *, credentials_loader=None, feed_factory=IEXFeed):
     try:
         symbols=request_scope(seconds=args.seconds,symbols=args.symbols,
                               execute=args.execute_data_only,confirm_scope=args.confirm_scope)
+        if args.receipt_id is not None:
+            from scripts.observation_runtime.atlas_r12_iex_diagnostic_receipt import ID
+            if ID.fullmatch(args.receipt_id) is None:
+                raise IEXRefused('IEX_DIAGNOSTIC_EXACT_OPERATION_ID_REQUIRED')
         loader=credentials_loader or Credentials.load
         credentials=loader(REPO/'config/alpaca.env')
         outcome=asyncio.run(bounded_data_only_probe(
             seconds=args.seconds,symbols=symbols,credentials=credentials,
             feed_factory=feed_factory))
+        if args.receipt_id is not None:
+            from scripts.observation_runtime import atlas_r12_iex_diagnostic_receipt as receipt
+            # Only a fully admitted, authenticated fresh-quote result reaches
+            # this create-once diagnostic path. Never a native QD publication.
+            receipt.RECORDS_DIR.mkdir(parents=True,exist_ok=True)
+            evidence=receipt.write_receipt(outcome,symbols,args.receipt_id)
+            outcome['diagnostic_receipt']={
+                'operation_id':evidence['operation_id'],
+                'body_sha256':evidence['body_sha256'],
+                'status':evidence['status'],
+                'financial_authority':False}
         # Do not print raw quotes, transport headers, account info or keys.
         print(json.dumps(outcome,sort_keys=True))
         return 0
