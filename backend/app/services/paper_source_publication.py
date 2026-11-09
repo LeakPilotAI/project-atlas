@@ -207,7 +207,11 @@ class PerpSourcePublication(SourcePublication):
                     at=record['settlement_at_ms']//1000
                     oracle=self.settlements.read(symbol,at)
                     if oracle is None: continue  # Planner must refuse a due settlement, never substitute current oracle.
-                    if (set(oracle)!= {'symbol','settlement_at','price','source_id','revision'}
+                    if self.orders.manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1':
+                        from app.services.hyperliquid_consensus_settlement import require_consensus_settlement_oracle
+                        require_consensus_settlement_oracle(oracle, symbol=symbol, at=at, funding_record=record)
+                    if (self.orders.manifest['schema'] != 'PAPER_EPOCH_PERP_OPERATIONAL_V1'
+                            and set(oracle) != {'symbol','settlement_at','price','source_id','revision'}
                             or type(oracle['revision']) is not int or oracle['revision']<1
                             or type(oracle['source_id']) is not str or not oracle['source_id']
                             or oracle.get('symbol')!=symbol or oracle.get('settlement_at')!=at or number(oracle['price'])<=0

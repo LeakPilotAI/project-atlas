@@ -142,15 +142,19 @@ class PerpSourcePlanner:
             if position['next_funding'] <= now:
                 symbol, at = position['symbol'], position['next_funding']
                 history, oracle = packet['funding'].get(symbol), packet['oracles'].get(f'{symbol}:{at}')
-                verifier = getattr(self.writer.authority, 'verify_settlement_source', None)
                 if (history is None or oracle is None or history.get('schema') != 'ATLAS_HYPERLIQUID_FUNDING_HISTORY_V1'
                         or history.get('rate_history_complete') is not True or history.get('symbol') != symbol
-                        or oracle.get('symbol') != symbol or oracle.get('settlement_at') != at
-                        or verifier is None or verifier(self.writer.binding, history, oracle, now) is not True):
+                        or oracle.get('symbol') != symbol or oracle.get('settlement_at') != at):
                     raise ValueError('PERP_SETTLEMENT_RATE_AND_HISTORICAL_ORACLE_REQUIRED')
                 records = [r for r in history['records'] if r['settlement_at_ms'] == at * 1000]
                 if len(records) != 1 or now > at + 30 or number(oracle['price']) <= 0:
                     raise ValueError('PERP_SETTLEMENT_MISSING_OR_SEPARATE_RECOVERY_REQUIRED')
+                if manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1':
+                    from app.services.hyperliquid_consensus_settlement import require_consensus_settlement_oracle
+                    require_consensus_settlement_oracle(oracle, symbol=symbol, at=at, funding_record=records[0])
+                verifier = getattr(self.writer.authority, 'verify_settlement_source', None)
+                if verifier is None or verifier(self.writer.binding, history, oracle, now) is not True:
+                    raise ValueError('PERP_SETTLEMENT_RATE_AND_HISTORICAL_ORACLE_REQUIRED')
                 evidence = {'source': manifest['perp_policy']['funding_source'], 'symbol': symbol, 'settlement_at': at,
                             'interval_seconds': 3600, 'rate': records[0]['hourly_rate'], 'oracle': oracle['price'],
                             'source_id': digest([history, oracle])}
