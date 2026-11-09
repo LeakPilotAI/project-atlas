@@ -21,3 +21,7 @@ The user's expressly authorized **single 20-second Alpaca IEX data-only test on 
 - IEX is a single venue, not SIP/NBBO. Valid short quotes do not prove complete symbol availability, accepted provider rights, continuous financial-grade clock, durable current QD issuer, executable fills, account inception, safe PAPER Stop, or startup authority. No permissions have been relaxed.
 
 No Project Genesis changes, real broker orders, funding/account access, PAPER financial events, secrets exposure, Windows Time/boot/shortcuts, native selected R12 modification, release install, or remote GitHub push.
+
+## Final post-commit verified outcome
+
+At source commit `d09b57fe`, the combined **seven-suite** IEX/receipt/financial-readiness/rotation regression was re-executed with a clean tracked tree: **138 passed, zero failures or skips**. The previously dirty-source-only failure did not recur and no readiness assertion was relaxed. The selected native R12 remains unchanged; no additional Alpaca credentialed session ran. This outcome supersedes the intermediate uncommitted 137-pass/1-fail diagnostic above, without rewriting its history.
