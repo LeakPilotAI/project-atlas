@@ -196,6 +196,7 @@ def test_unified_cli_invokes_independent_probe_not_windows_time(monkeypatch, cap
     monkeypatch.setattr(unified.subprocess, "check_output",
                         lambda args, **kw: "a"*40)
     def fake_run(args, **kw):
+        assert args[1:3] == ["-B", "-m"]
         assert "--check-independent-ntp-clock" in args
         assert "--check-native-clock" not in args
         assert "--expected-source" in args and "a"*40 in args

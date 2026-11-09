@@ -99,7 +99,9 @@ def main():
     parser.add_argument('--observation-session', type=Path, help='Existing closed local observation directory (read-only)')
     args = parser.parse_args()
     sha = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
-    run = subprocess.run([sys.executable,'-m','scripts.observation_runtime.personal_commissioning_preflight',
+    # The native selected-release readback refuses a child interpreter that
+    # could write .pyc files into a verified native installation.
+    run = subprocess.run([sys.executable,'-B','-m','scripts.observation_runtime.personal_commissioning_preflight',
                           '--json','--expected-source',sha,'--check-independent-ntp-clock'],
                          cwd=ROOT,capture_output=True,text=True,check=False)
     if run.returncode not in (0,2):
