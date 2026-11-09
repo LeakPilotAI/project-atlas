@@ -1,4 +1,4 @@
-"""Native create-only publication of a local PAPER activation record.
+﻿"""Native create-only publication of a local PAPER activation record.
 
 No default operator authorization, financial inception, or runtime startup.
 """
@@ -38,6 +38,7 @@ def publish_personal_activation(
     accounts,
     clock,
     runtime_id,
+    clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4",
 ):
     """Create and independently verify one native-bound activation record.
 
@@ -84,9 +85,17 @@ def publish_personal_activation(
             "Explicit action authorization required"
         )
 
-    # Caller-supplied identity and time are insufficient authorization.
-    # Verify against the actual Windows operator and installed local clock.
+    # Caller-supplied identity/time never authorize native publication.
+    # V7 requires its own exact selected native release and two-peer NTP port.
+    # Existing Windows-time path retains its original default.
     from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+    from scripts.observation_runtime.personal_v7_operator_clock import (
+        NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
+    )
+    from scripts.observation_runtime.atlas_v7_commissioning_ntp_probe import (
+        V7_ARTIFACT,
+    )
+    from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
     from scripts.volume_inspector.windows_output import current_sid
 
     if operator_id != current_sid():
@@ -94,9 +103,19 @@ def publish_personal_activation(
             "Windows operator identity mismatch"
         )
 
-    if type(clock) is not LocalWindowsClock:
+    if clock_profile == "WINDOWS_TIME_OPERATOR_CLOCK_V4":
+        if type(clock) is not LocalWindowsClock:
+            raise PersonalActivationPublicationRefused(
+                "Operational Windows clock required"
+            )
+    elif clock_profile == V7_NTP_PROFILE:
+        if type(clock) is not NativeV7PaperOperatorClock or release_digest != V7_ARTIFACT:
+            raise PersonalActivationPublicationRefused(
+                "Selected V7 native release and independent clock required"
+            )
+    else:
         raise PersonalActivationPublicationRefused(
-            "Operational Windows clock required"
+            "Unreviewed activation clock profile"
         )
 
     clock.require_operational(runtime_id)
@@ -105,7 +124,15 @@ def publish_personal_activation(
 
     if not clock.verify_runtime_sample(sample):
         raise PersonalActivationPublicationRefused(
-            "Trusted Windows clock verification failed"
+            "Trusted selected clock verification failed"
+        )
+    if clock_profile == V7_NTP_PROFILE and (
+        type(sample) is not dict or sample.get("source_id") != SOURCE
+        or type(sample.get("uncertainty_ms")) is not int
+        or not 0 <= sample["uncertainty_ms"] <= 1000
+    ):
+        raise PersonalActivationPublicationRefused(
+            "Selected V7 two-peer UTC evidence required"
         )
 
     now = sample["utc"]

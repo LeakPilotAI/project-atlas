@@ -11,6 +11,11 @@ from pathlib import Path
 
 from scripts.observation_runtime.personal_activation_publisher import publish_personal_activation
 from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+from scripts.observation_runtime.personal_v7_operator_clock import (
+    NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
+)
+from scripts.observation_runtime.atlas_v7_commissioning_ntp_probe import V7_ARTIFACT
+from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
 from scripts.volume_inspector.windows_output import current_sid
 
 
@@ -31,7 +36,7 @@ def verify_enrollment_native_roots(enrollment):
 
 def commission(*, root, record_path, policy_path, release_digest, accounts_path,
                expected_clock_source, runtime_id, qd_enrollment_path=None,
-               perp_enrollment_path=None):
+               perp_enrollment_path=None, clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4"):
     if not all(type(v) is str and v for v in (root, record_path, policy_path,
                                               release_digest, accounts_path,
                                               expected_clock_source, runtime_id)):
@@ -46,6 +51,11 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
     if not (type(qd_enrollment_path) is str and qd_enrollment_path
             and type(perp_enrollment_path) is str and perp_enrollment_path):
         raise ValueError('BOTH_NATIVE_ACCOUNT_ENROLLMENTS_REQUIRED')
+    if clock_profile == V7_NTP_PROFILE:
+        if release_digest != V7_ARTIFACT or expected_clock_source != SOURCE:
+            raise ValueError('EXACT_V7_NATIVE_RELEASE_AND_NTP_SOURCE_REQUIRED')
+    elif clock_profile != "WINDOWS_TIME_OPERATOR_CLOCK_V4":
+        raise ValueError('UNREVIEWED_ACTIVATION_CLOCK_PROFILE')
     record = json.loads(Path(record_path).read_text(encoding='utf-8'))
     policy = json.loads(Path(policy_path).read_text(encoding='utf-8'))
     accounts = json.loads(Path(accounts_path).read_text(encoding='utf-8'))
@@ -83,11 +93,15 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             or not isinstance(record.get('actions'), list)
             or not record['actions']):
         raise ValueError('ACTIVATION_POLICY_OR_ACTION_BINDING_REQUIRED')
-    clock = LocalWindowsClock(expected_source=expected_clock_source, runtime_id=runtime_id)
+    if clock_profile == V7_NTP_PROFILE:
+        clock = NativeV7PaperOperatorClock(runtime_id=runtime_id)
+    else:
+        clock = LocalWindowsClock(expected_source=expected_clock_source, runtime_id=runtime_id)
     try:
         return publish_personal_activation(root=root, record=record, policy=policy,
             operator_id=current_sid(), release_digest=release_digest,
-            accounts=accounts, clock=clock, runtime_id=runtime_id)
+            accounts=accounts, clock=clock, runtime_id=runtime_id,
+            clock_profile=clock_profile)
     finally:
         clock.revoke()
 
@@ -99,6 +113,8 @@ def main(argv=None):
         parser.add_argument('--' + name, required=True)
     parser.add_argument('--qd-enrollment-path', required=True)
     parser.add_argument('--perp-enrollment-path', required=True)
+    parser.add_argument('--clock-profile', default='WINDOWS_TIME_OPERATOR_CLOCK_V4',
+                        choices=['WINDOWS_TIME_OPERATOR_CLOCK_V4', V7_NTP_PROFILE])
     args = vars(parser.parse_args(argv))
     result = commission(**{k.replace('-', '_'): v for k, v in args.items()})
     print(json.dumps(result, sort_keys=True))
