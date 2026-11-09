@@ -21,3 +21,10 @@
 - No financial positions, real orders, account writes, private brokerage access, Genesis edits, paid VPS, OS clock service/registry change, desktop shortcut rewiring or Windows startup changes occurred. Do not treat a preflight test success as PAPER production readiness.
 
 **No reliable remaining engineering-hours total can be inferred from code-only gate status:** the full remaining work depends on independent real market-data/provider acceptance, account custody and session acceptance, and long-lived soak evidence, not a fixed number of prompts.
+
+## Initial combined CLI NTP sample and diagnostic hardening
+
+- After the first clean commit e42c1691, the **first actual** unified preflight exit code was 2 and financial decision NO_GO as expected, but the independently acquired NTP diagnostic was **NOT_VERIFIED**, despite the earlier standalone read-only V7 NTP probe passing at 139ms/1ms. The first failed child diagnostic's exact reason was not retained; do not speculate about it or count it as a pass.
+- One separately invoked child personal commissioning preflight under the same clean source checkpoint then returned the new selected V7 NTP diagnostic **PASS**, 148ms conservative bound, 3ms peer difference, source and clean-tree checks both PASS, and still overall financial preflight exit 2 (BLOCKED). This demonstrates the read-only acquisition **can succeed** but does not establish persistent availability.
+- Improved unified report with bounded **independent_ntp_clock_diagnostic_detail** fields: `status`, sanitized `blocker` (maximum 120 characters), `uncertainty_ms` only for verified read-only diagnostics, and `financial_authority=false`. A failed or absent NTP observation remains `NOT_VERIFIED` and cannot affect any financial/source gates. Two new tests cover successful and refused diagnostics, 27 relevant tests passed, zero failed.
+- No automatic retries, W32Time resync, clock-authority downgrade, trading order, account inception or financial activation followed the failed probe. Public UDP NTP network/DNS availability is not guaranteed; the actual operational clock-loss response remains a distinct future certification requirement.

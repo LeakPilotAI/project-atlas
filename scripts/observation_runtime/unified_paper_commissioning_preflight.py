@@ -76,10 +76,21 @@ def inspect(*, root=ROOT, qd_report=None, observation_session=None):
                       and ntp.get('public_ntp_authenticated') is False
                       and ntp.get('continuous_financial_clock_lease_verified') is False
                       else 'NOT_VERIFIED')
+    clock_details = {
+        'status': ntp_diagnostic,
+        'blocker': (ntp.get('blocker') if type(ntp) is dict
+                    and type(ntp.get('blocker')) is str
+                    and len(ntp['blocker']) <= 120 else None),
+        'uncertainty_ms': (ntp.get('uncertainty_ms')
+                           if ntp_diagnostic != 'NOT_VERIFIED'
+                           and type(ntp.get('uncertainty_ms')) is int else None),
+        'financial_authority': False,
+    }
     return {'schema':'ATLAS_UNIFIED_PAPER_COMMISSIONING_PREFLIGHT_V1',
             'decision':'NO_GO', 'startup_authorized':False, 'live_trading_authorized':False,
             'prerequisites':prerequisites, 'retained_provider_observation':observation, 'hyperliquid_native_inventory':hl,
             'independent_ntp_clock_readonly_diagnostic':ntp_diagnostic,
+            'independent_ntp_clock_diagnostic_detail':clock_details,
             'note':'QD source evidence is read from existing preflight; Hyperliquid evidence has no installed verifier yet. No permission is inferred from scope approval.'}
 
 

@@ -159,6 +159,37 @@ def test_unified_refuses_fabricated_ntp_evidence(tamper):
     assert report["decision"] == "NO_GO" and not report["startup_authorized"]
 
 
+def test_unified_retains_bounded_clock_failure_reason_without_authority():
+    row = {"trusted_clock_verified_for_probe": False,
+           "blocker": "NTP_PINNED_PEER_UNREACHABLE",
+           "financial_clock_authorized": False}
+    report = unified.inspect(qd_report={"checks": [], "independent_ntp_clock_probe": row})
+    detail = report["independent_ntp_clock_diagnostic_detail"]
+    assert detail == {
+        "status": "NOT_VERIFIED",
+        "blocker": "NTP_PINNED_PEER_UNREACHABLE",
+        "uncertainty_ms": None,
+        "financial_authority": False,
+    }
+    assert report["startup_authorized"] is False
+    assert report["decision"] == "NO_GO"
+
+
+def test_unified_displays_verified_readonly_uncertainty_not_runtime_authority():
+    row = {"trusted_clock_verified_for_probe": True,
+           "selected_release": probe.V7_RELEASE,
+           "financial_clock_authorized": False,
+           "public_ntp_authenticated": False,
+           "continuous_financial_clock_lease_verified": False,
+           "uncertainty_ms": 148}
+    report = unified.inspect(qd_report={"checks": [], "independent_ntp_clock_probe": row})
+    detail = report["independent_ntp_clock_diagnostic_detail"]
+    assert detail["status"] == "V7_DUAL_NTP_READONLY_OBSERVED_NOT_FINANCIAL_AUTHORITY"
+    assert detail["uncertainty_ms"] == 148
+    assert detail["financial_authority"] is False
+    assert report["decision"] == "NO_GO"
+
+
 def test_unified_cli_invokes_independent_probe_not_windows_time(monkeypatch, capsys):
     from types import SimpleNamespace
     monkeypatch.setattr("sys.argv", ["unified"])
