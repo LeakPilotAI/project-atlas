@@ -13,22 +13,31 @@ from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 
 
 class NativePersonalOperatorAuthority:
-    def __init__(self, *, policy=None, enrollment=None, reader=None, clock=None, runtime_id=None):
+    def __init__(self, *, policy=None, enrollment=None, reader=None, clock=None,
+                 runtime_id=None, clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4"):
         from scripts.observation_runtime.personal_paper_activation import (
             NativePersonalActivationReader,
         )
+        from scripts.observation_runtime.personal_v7_operator_clock import (
+            NativeV7PaperOperatorClock, PROFILE,
+        )
 
+        allowed_clock = (
+            clock_profile == "WINDOWS_TIME_OPERATOR_CLOCK_V4" and type(clock) is LocalWindowsClock
+            or clock_profile == PROFILE and type(clock) is NativeV7PaperOperatorClock
+        )
         if (any(x is None for x in (policy, enrollment, reader, clock, runtime_id))
-                or type(reader) is not NativePersonalActivationReader or type(clock) is not LocalWindowsClock):
+                or type(reader) is not NativePersonalActivationReader or not allowed_clock):
             raise ValueError('PERSONAL_NATIVE_OPERATOR_DEPENDENCIES_REQUIRED')
         clock.require_operational(runtime_id)
         self.policy, self.enrollment = validate_policy(policy), validate_enrollment(enrollment)
         self.reader, self.clock, self.runtime_id = reader, clock, runtime_id
+        self.clock_profile = clock_profile
         self.native = native_primitives()
         self.operator = self.native.w.current_sid()
         self._config = body({'policy': self.policy, 'enrollment': self.enrollment,
                              'runtime_id': runtime_id, 'operator': self.operator})
-        self._ports = reader, clock, self.native
+        self._ports = reader, clock, self.native, clock_profile
         self.revoked, self._record, self._last = False, None, None
 
     def current_operator(self):
@@ -42,7 +51,8 @@ class NativePersonalOperatorAuthority:
 
     def activation(self, action):
         if (self.revoked or any(a is not b for a, b in zip(
-                (self.reader, self.clock, self.native), self._ports, strict=True))
+                (self.reader, self.clock, self.native), self._ports[:3], strict=True))
+                or self.clock_profile != self._ports[3]
                 or body({'policy': self.policy, 'enrollment': self.enrollment,
                          'runtime_id': self.runtime_id, 'operator': self.operator}) != self._config):
             raise ValueError('PERSONAL_LOCAL_AUTHORITY_REVOKED_OR_CHANGED')
