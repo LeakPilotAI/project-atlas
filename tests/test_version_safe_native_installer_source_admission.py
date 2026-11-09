@@ -46,7 +46,8 @@ def test_actual_guarded_native_plan_never_installs_or_selects():
     ('private_direct','VERSION_SAFE_INSTALL_SEPARATE_OPERATOR_APPROVAL_ABSENT'),
     ('cli','VERSION_SAFE_INSTALL_NO_APPROVED_EXECUTION_ENTRYPOINT'),
 ])
-def test_native_effects_are_not_reachable_from_any_public_or_private_entrypoint(monkeypatch,kind,pattern):
+def test_native_effects_are_not_reachable_from_any_public_or_private_entrypoint(monkeypatch,kind,pattern,tmp_path):
+    monkeypatch.setattr(next_install,'APPROVAL',tmp_path/'missing.json')
     monkeypatch.setattr(next_install, '_copy_prepared_code',
         lambda **kwargs: pytest.fail('NATIVE_COPY_MUST_NOT_RUN'))
     monkeypatch.setattr(next_install, 'write_new_json',
@@ -73,6 +74,7 @@ def test_even_forced_local_unreviewed_approval_is_refused(monkeypatch,tmp_path):
     fake = tmp_path / 'approval.json'
     fake.write_text(json.dumps({'approved':True,'scope':'CODE_ONLY'}),encoding='utf-8')
     monkeypatch.setattr(next_install, 'APPROVAL', fake)
+    monkeypatch.setattr(next_install, 'APPROVAL_PIN', None)
     with pytest.raises(ValueError,match='VERSION_SAFE_INSTALL_APPROVAL_NOT_YET_REVIEWED'):
         next_install.install_unselected(approved_execution=True)
 

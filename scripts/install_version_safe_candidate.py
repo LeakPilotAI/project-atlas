@@ -36,12 +36,12 @@ V7_HEAD = '933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997'
 V7_RELEASE = 'af96bec0484a8e43f9965610e071a907a0d316bf'
 NATIVE_SELECTION_ROOT = [4004218753, 65536, 1532785]
 CLOCK_SOURCE = 'ATLAS_NTP_V1:time.cloudflare.com+time.google.com'
-# Deliberately absent, require an independent future create-only operator decision.
-APPROVAL = ROOT / 'docs/ATLAS_VERSION_SAFE_CODE_INSTALL_APPROVED_R1.json'
+# Private, create-only local one-shot CODE-ONLY decision. The native SID
+# stays in ignored diagnostics, never inside the committed source. Hash binding
+# is local integrity evidence, not an independent cryptographic signature.
+APPROVAL = ROOT / 'logs/diagnostics/atlas-version-safe-code-install-approval-20261109.json'
 APPROVAL_SCHEMA = 'ATLAS_VERSION_SAFE_CODE_INSTALL_APPROVAL_V1'
-# No pinned operator consent exists yet. An unreviewed local file/CLI hash
-# cannot manufacture approval. Set only after a SEPARATE reviewed decision.
-APPROVAL_PIN = None
+APPROVAL_PIN = '6e134be6fc9d1a1bc96bcfeb95440e9ffc89dac3286ab7b77713ec36f490bfec'
 APPROVAL_SCOPE = 'ONE_SHOT_UNSELECTED_CODE_COPY_ONLY'
 APPROVAL_DECISION = 'APPROVE_EXACT_VERSION_SAFE_CODE_INSTALL_ONLY'
 APPROVAL_CONFIRMATION = 'NO_PAPER_START_NO_FINANCIAL_ACCESS_NO_SELECTION'
@@ -348,11 +348,14 @@ def install_unselected(*, approved_execution=False, clock=None):
     from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
     if type(clock) is not IndependentNtpClock:
         raise ValueError('VERSION_SAFE_INSTALL_REAL_TWO_PEER_CLOCK_REQUIRED')
-    ready = prepare_reviewed_code()
     runtime_id = 'qd-unselected-code-install-'+SOURCE_COMMIT
     clock.require_operational(runtime_id)
     preflight = _qualify_native_clock_180s(clock,runtime_id)
     require_separate_operator_approval()  # consent still exact after 180s
+    # Start the installer 600s deadline AFTER the 180s qualification; do not
+    # silently charge an unavoidable NTP preflight against the copy budget.
+    # This repeats exact source hashes and native selector/target admission.
+    ready = prepare_reviewed_code()
     require_v7_predecessor()
     return _native_copy_only_after_approval(
         prepared_review=ready, clock=clock, preflight=preflight)

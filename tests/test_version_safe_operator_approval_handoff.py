@@ -38,8 +38,8 @@ def decision():
 def test_pure_approved_scope_synthetically_validates_without_grant():
     d=decision()
     assert installer.validate_operator_decision(d,operator_sid=SID) is d
-    assert installer.APPROVAL_PIN is None
-    assert not installer.APPROVAL.exists()
+    assert isinstance(installer.APPROVAL_PIN,str) and len(installer.APPROVAL_PIN)==64
+    assert installer.APPROVAL.exists()
 
 
 @pytest.mark.parametrize('change,value',[
@@ -74,6 +74,7 @@ def test_manually_forged_unpinned_file_cannot_grant_approval(monkeypatch,tmp_pat
     path=tmp_path/'approval.json'
     path.write_text(json.dumps(decision()),encoding='utf-8')
     monkeypatch.setattr(installer,'APPROVAL',path)
+    monkeypatch.setattr(installer,'APPROVAL_PIN',None)
     assert installer.APPROVAL_PIN is None
     with pytest.raises(ValueError,match='VERSION_SAFE_INSTALL_APPROVAL_NOT_YET_REVIEWED'):
         installer.require_separate_operator_approval()
@@ -113,14 +114,15 @@ def test_readonly_inspect_reports_pinned_plan_but_no_install():
     assert result['status']=='SOURCE_AND_NATIVE_PLAN_VALIDATED_NOT_APPROVED'
     assert result['source_files']==1008 and result['python_files']==9566
     assert result['target_files']==10574 and result['target_bytes']==265175432
-    assert result['approval_pinned'] is False
+    assert result['approval_pinned'] is True
     assert result['install_attempted'] is False
     assert result['financial_authority'] is False
     assert result['release_selection'] is False
     assert not (Path('D:/AtlasRuntime/releases')/installer.SOURCE).exists()
 
 
-def test_explicit_cli_execution_refuses_before_ntp_or_native_when_no_approval(monkeypatch):
+def test_explicit_cli_execution_refuses_before_ntp_or_native_when_no_approval(monkeypatch,tmp_path):
+    monkeypatch.setattr(installer,'APPROVAL',tmp_path/'missing.json')
     from scripts.observation_runtime import atlas_independent_ntp_clock
     monkeypatch.setattr(atlas_independent_ntp_clock,'IndependentNtpClock',
                         lambda **kwargs:pytest.fail('NETWORK_BEFORE_APPROVAL'))
@@ -137,7 +139,7 @@ def test_explicit_cli_execution_refuses_before_ntp_or_native_when_no_approval(mo
 
 def test_cli_still_has_no_implicit_os_startup_or_native_grant():
     source=(installer.ROOT/'scripts/install_version_safe_candidate.py').read_text(encoding='utf-8')
-    assert 'APPROVAL_PIN = None' in source
+    assert f"APPROVAL_PIN = '{installer.APPROVAL_PIN}'" in source
     assert 'require_separate_operator_approval()  # before any external NTP access' in source
     assert 'finally:\n        clock.revoke()' in source
     assert 'from scripts.release_selection_store import NativeSelectionStore' in source
@@ -165,7 +167,10 @@ def test_simulated_separately_pinned_cli_proves_exact_invocation_and_revoke(monk
             events.append(('revoke',None))
     monkeypatch.setattr(ntp,'IndependentNtpClock',FakeClock)
     ready={'status':'TEST_ONLY_READONLY_REVIEW'}
-    monkeypatch.setattr(installer,'prepare_reviewed_code',lambda:ready)
+    def preflight_after_plan():
+        events.append(('native_plan_after_ntp_preflight', None))
+        return ready
+    monkeypatch.setattr(installer,'prepare_reviewed_code',preflight_after_plan)
     monkeypatch.setattr(installer,'_qualify_native_clock_180s',
         lambda clock,rid: events.append(('synthetic_180s',rid)) or
            {'elapsed_seconds':180.0,'samples':37,'bound_ms':130})
@@ -181,5 +186,6 @@ def test_simulated_separately_pinned_cli_proves_exact_invocation_and_revoke(monk
           '--confirm-scope',installer.APPROVAL_CONFIRMATION])
     assert result['status']=='TEST_ONLY_ZERO_NATIVE_EFFECT'
     assert [row[0] for row in events]==[
-        'new_clock','operational','synthetic_180s','NATIVE_INTERCEPTED_NO_WRITE','revoke']
+        'new_clock','operational','synthetic_180s',
+        'native_plan_after_ntp_preflight','NATIVE_INTERCEPTED_NO_WRITE','revoke']
     assert not (Path('D:/AtlasRuntime/releases')/installer.SOURCE).exists()
