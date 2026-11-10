@@ -41,6 +41,23 @@ OPERATION = "APPROVE_ONE_R15_CODE_ONLY_NATIVE_INSTALL"
 CLOCK_IDENTITY = "atlas-r15-code-only-install-" + SOURCE_COMMIT
 
 
+def approval_source_sha256():
+    """Hash exact installer code except the one-time approval pin value.
+
+    This avoids a circular code-hash/approval-hash dependency while ensuring
+    any OTHER source change invalidates an already reviewed operator record.
+    """
+    raw = Path(__file__).read_bytes()
+    marker = (b'APPROVAL_SHA256 = None  # Cannot become an install grant '
+              b'from chat or old R14 consent.')
+    pattern = (rb'(?m)^APPROVAL_SHA256 = (?:None|"[0-9a-f]{64}")  # Cannot '
+               rb'become an install grant from chat or old R14 consent\.')
+    canonical, count = re.subn(pattern, marker, raw)
+    if count != 1:
+        raise ValueError("R15_INSTALLER_EXACT_SINGLE_APPROVAL_PIN_SOURCE_REQUIRED")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def validate_operator_decision(record, *, sid):
     required = {
         "schema","decision","scope","source_commit","source_archive_sha256",
@@ -64,8 +81,7 @@ def validate_operator_decision(record, *, sid):
             or record.get("target")!=str(TARGET)
             or record.get("receipt")!=str(RECEIPT)
             or record.get("selected_r14_head")!=R14_HEAD
-            or record.get("installer_source_sha256")!=hashlib.sha256(
-                Path(__file__).read_bytes()).hexdigest()
+            or record.get("installer_source_sha256")!=approval_source_sha256()
             or record.get("operator_sid")!=sid
             or record.get("one_shot") is not True
             or any(record.get(key) is not False for key in (
@@ -222,6 +238,10 @@ def install(*, execute_approved=False, clock=None):
             raise ValueError("R15_EXACT_REVIEWED_INSTALL_PLAN_CHANGED")
         guard.tick()
         clock.require_operational(CLOCK_IDENTITY)
+        # The exact existing native copier starts its 600-second safety bound
+        # from this monotonic marker; absent it, the create-only intent would
+        # be written before a KeyError and leave a non-retryable partial.
+        prepared["started"] = time.monotonic()
         def admission():
             return _admit(clock=clock,guard=guard)
         admission()

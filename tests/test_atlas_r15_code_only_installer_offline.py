@@ -25,7 +25,7 @@ def sample_approval():
         "receipt":str(mod.RECEIPT),
         "dependency_inventory_sha256":DEPENDENCY_INVENTORY_SHA256,
         "selected_r14_head":R14_HEAD,
-        "installer_source_sha256":hashlib.sha256(Path(mod.__file__).read_bytes()).hexdigest(),
+        "installer_source_sha256":mod.approval_source_sha256(),
         "operator_sid":"S-1-5-21-1-2-3-1001",
         "one_shot":True,
         "selection_allowed":False,
@@ -228,3 +228,28 @@ def test_final_receipt_ack_never_expands_financial_authority(bad):
     receipt.update(bad)
     with pytest.raises(ValueError,match="FINAL_NONFINANCIAL_RECEIPT_REQUIRED"):
         mod.final_native_install_ack(receipt)
+
+
+def test_source_digest_stays_bound_when_only_one_approval_pin_is_inserted(monkeypatch,tmp_path):
+    """Source-SHA must ignore only the exact pin token, not any code change."""
+    raw=Path(mod.__file__).read_bytes()
+    baseline=mod.approval_source_sha256()
+    original=b'APPROVAL_SHA256 = None  # Cannot become an install grant from chat or old R14 consent.'
+    replacement=b'APPROVAL_SHA256 = "'+b'a'*64+b'"  # Cannot become an install grant from chat or old R14 consent.'
+    assert sum(line == original for line in raw.splitlines())==1
+    simulated=tmp_path/"atlas_installer_single_pin_simulated.py"
+    simulated.write_bytes(raw.replace(b'\n'+original+b'\n',b'\n'+replacement+b'\n',1))
+    monkeypatch.setattr(mod,"__file__",str(simulated))
+    assert mod.approval_source_sha256()==baseline
+    # Other changes cannot be concealed by the pin normalization.
+    simulated.write_bytes(simulated.read_bytes()+b"\n# unreviewed mutation\n")
+    assert mod.approval_source_sha256()!=baseline
+
+
+def test_native_copier_receives_started_marker_before_create_only_journal():
+    import inspect
+    code=inspect.getsource(mod.install)
+    assert code.index('prepared["started"] = time.monotonic()') < code.index(
+        'write_new_json(journal,')
+    assert code.index('prepared["started"] = time.monotonic()') < code.index(
+        'copied=_copy_prepared_code(')
