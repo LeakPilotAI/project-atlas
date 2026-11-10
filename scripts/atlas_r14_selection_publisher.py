@@ -272,7 +272,8 @@ def publish_with_native_lock(*, clock, identity, proof):
                 require_approved_operator()
                 guard.tick()
                 validate_clock(clock,identity)
-                operations=proposal.chain(store.records())
+                records_before=store.records()
+                operations=proposal.chain(records_before)
                 refuse_if(OPERATION in operations,
                           "R14_PUBLISHER_DUPLICATE_NATIVE_OPERATION")
                 proposal.checked(proposal.SEL/"r0012.json",
@@ -293,14 +294,27 @@ def publish_with_native_lock(*, clock, identity, proof):
                               "R14_PUBLISHER_INSTALLED_NONFINANCIAL_RECEIPT_REFUSED")
                     guard.tick()
                     validate_clock(clock, identity)
-                    require_approved_operator()
-                    refuse_if(selection.digest(review["row"]) != EXPECTED_HEAD,
-                              "R14_PUBLISHER_PROPOSED_NATIVE_HEAD_CHANGED")
-                    # ONLY irreversible operation, under held native mutex.
-                    store.publish(review["row"])
-                # DO NOT check the old R12 selector after the new R13 is published.
-            # Publication remains final. A failure must preserve any staged
-            # native r0013 evidence; no resume, retry or rollback is implied.
+                # The verifier's root-identity final check and original-handle
+                # close run ON EXIT. They must both succeed before publication.
+                guard.tick()
+                validate_clock(clock, identity)
+                require_approved_operator()
+                refuse_if(selection.digest(review["row"]) != EXPECTED_HEAD,
+                          "R14_PUBLISHER_PROPOSED_NATIVE_HEAD_CHANGED")
+                # ONLY irreversible operation, under held native mutex.
+                store.publish(review["row"])
+                # The real native publisher has already proved the new pair
+                # through original Windows handles; independently replay the
+                # whole append-only chain under the SAME lock before claiming
+                # a selected release. Failure means outcome UNKNOWN, no retry.
+                after=store.records()
+                refuse_if(len(after) != 13 or after[:12] != records_before
+                          or after[-1] != review["row"]
+                          or selection.digest(after[-1]) != EXPECTED_HEAD,
+                          "R14_PUBLISHER_POST_PUBLICATION_OUTCOME_UNKNOWN")
+            # Publication was checked without releasing the native mutex.
+            # A close/release error is still a non-acknowledged outcome; never
+            # rerun the one-shot decision or overwrite staged native evidence.
     finally:
         store.close()
     return {

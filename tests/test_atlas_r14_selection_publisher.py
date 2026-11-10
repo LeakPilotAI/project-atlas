@@ -202,6 +202,10 @@ def _simulate_native_publish(monkeypatch, *, fault=None):
                 changed=copy.deepcopy(self.rows)
                 changed[-1]["previous"]="0"*64
                 return changed
+            if fault=="postcommit_mismatch" and len(self.rows)==13:
+                changed=copy.deepcopy(self.rows)
+                changed[-1]["operation"]="0"*32
+                return changed
             return copy.deepcopy(self.rows)
         def publish(self,row):
             events.append("NATIVE_PUBLISH_INTERCEPTED")
@@ -223,6 +227,9 @@ def _simulate_native_publish(monkeypatch, *, fault=None):
                 "selected":False,"financial_effects":False,
                 "provider_connections":False,"operational_acceptance":False,
             }
+            if fault=="verifier_final_refused":
+                events.append("native_final_handle_refused")
+                raise ValueError("SYNTHETIC_NATIVE_FINAL_HANDLE_REFUSAL")
             events.append("native_readback_closed")
 
     class FakeEnvelope:
@@ -268,8 +275,10 @@ def test_synthetic_actual_publisher_flow_only_intercepts_native_write(monkeypatc
     assert result["orders"] is False
     assert events.count("NATIVE_PUBLISH_INTERCEPTED")==1
     assert events.index("native_lock_enter") < events.index("NATIVE_PUBLISH_INTERCEPTED")
-    assert events.index("native_readback_intercepted") < events.index("NATIVE_PUBLISH_INTERCEPTED")
+    assert events.index("native_readback_intercepted") < events.index("native_readback_closed")
+    assert events.index("native_readback_closed") < events.index("NATIVE_PUBLISH_INTERCEPTED")
     assert events.index("NATIVE_PUBLISH_INTERCEPTED") < events.index("native_lock_exit")
+    assert events.index("NATIVE_PUBLISH_INTERCEPTED") < events.index("native_records_read", events.index("NATIVE_PUBLISH_INTERCEPTED"))
     assert events[-1]=="store_closed"
     assert not (proposal.SEL/"r0013.json").exists()
 
@@ -277,7 +286,9 @@ def test_synthetic_actual_publisher_flow_only_intercepts_native_write(monkeypatc
 @pytest.mark.parametrize("fault,pattern", [
     ("changed_chain","R14_SELECTION_NATIVE_PREDECESSOR_CHAIN_REFUSED"),
     ("clock_refused","SYNTHETIC_NTP_REVOKED"),
+    ("verifier_final_refused","SYNTHETIC_NATIVE_FINAL_HANDLE_REFUSAL"),
     ("publish_refused","SYNTHETIC_NATIVE_PUBLISH_REFUSED"),
+    ("postcommit_mismatch","R14_PUBLISHER_POST_PUBLICATION_OUTCOME_UNKNOWN"),
 ])
 def test_synthetic_native_publication_fault_preserves_existing_selected_release(
         monkeypatch,fault,pattern):
@@ -289,8 +300,13 @@ def test_synthetic_native_publication_fault_preserves_existing_selected_release(
     assert (proposal.SEL/"r0012.json").read_bytes()==before
     assert not (proposal.SEL/"r0013.json").exists()
     assert "store_closed" in events
-    if fault!="publish_refused":
+    if fault not in ("publish_refused","postcommit_mismatch"):
         assert "NATIVE_PUBLISH_INTERCEPTED" not in events
+    if fault=="verifier_final_refused":
+        assert events.index("native_final_handle_refused") < events.index("native_lock_exit")
+    if fault=="postcommit_mismatch":
+        assert events.count("NATIVE_PUBLISH_INTERCEPTED")==1
+        assert events.index("NATIVE_PUBLISH_INTERCEPTED") < events.index("native_lock_exit")
 
 
 def test_forged_clock_proof_does_not_open_native_selector(monkeypatch):
