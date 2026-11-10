@@ -218,8 +218,23 @@ def execute_data_only(*, symbol, confirm_scope):
         clock.revoke()
 
 
+_SAFE_BOOK_REFUSALS = frozenset({
+    "SYMBOL_NOT_ALLOWLISTED",
+    "OBSERVATION_CLOCK_TYPE",
+    "OBSERVATION_CLOCK_REVERSED",
+    "OBSERVATION_DURATION_EXCEEDED",
+    "METADATA_ENVELOPE",
+    "METADATA_PART_TYPES",
+    "BOOK_ENVELOPE",
+    "BOOK_COIN_MISMATCH",
+    "BOOK_TIMESTAMP_TYPE",
+    "BOOK_TIMESTAMP_FUTURE",
+    "BOOK_TIMESTAMP_STALE",
+})
+
+
 def safe_refusal_code(error):
-    """A small classification only; never display provider bodies or credentials."""
+    """Classify only fixed, reviewed tokens; never emit raw provider content."""
     if isinstance(error, RequestGateRefused):
         return "HL_REQUEST_BUDGET_OR_GATE_REFUSED"
     if isinstance(error, (TimeoutError, httpx.TimeoutException)):
@@ -229,6 +244,9 @@ def safe_refusal_code(error):
     if isinstance(error, httpx.RequestError):
         return "HL_PUBLIC_TRANSPORT_REFUSED"
     if isinstance(error, HyperliquidPublicBookAdmissionRefused):
+        reason = getattr(error, "reason_code", None)
+        if type(reason) is str and reason in _SAFE_BOOK_REFUSALS:
+            return "HL_PUBLIC_BOOK_" + reason
         return "HL_PUBLIC_BOOK_ADMISSION_REFUSED"
     if isinstance(error, ValueError) and str(error).startswith("NTP_"):
         return "HL_INDEPENDENT_NTP_REFUSED"
