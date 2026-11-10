@@ -26,8 +26,8 @@ def test_observation_launcher_does_not_auto_authorize_market_data_or_legacy_stop
     text=START.read_text(encoding="utf-8-sig")
     assert "$ready = Open-AtlasObservationDashboard $root\n" in text.replace("\r\n","\n")
     assert "$ready = Open-AtlasObservationDashboard $root -BoundedDataOnly" not in text
-    assert "Atlas-Observation-Stop.ps1" in text
-    assert "legacy Stop Atlas shortcut is blocked" in text
+    assert "existing Stop Atlas desktop shortcut requests this observation dashboard" in text
+    assert "NOT financial PAPER position flattening" in text
     script=SCRIPT.read_text(encoding="utf-8-sig")
     active="\n".join(line for line in script.splitlines()
                      if line.strip() and not line.lstrip().startswith("#"))

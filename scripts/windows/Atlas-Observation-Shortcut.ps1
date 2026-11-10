@@ -70,8 +70,8 @@ try {
     Write-Host "Production trading: DISABLED"
     Write-Host ""
     Write-Host "Keep this window open while using Atlas."
-    Write-Host "Observation-only stop: run scripts\windows\Atlas-Observation-Stop.ps1"
-    Write-Host "The legacy Stop Atlas shortcut is blocked and cannot close this host."
+    Write-Host "Your existing Stop Atlas desktop shortcut requests this observation dashboard to close."
+    Write-Host "This is observation-only shutdown, NOT financial PAPER position flattening."
     Write-Host ""
 
     $stopEvent.WaitOne() | Out-Null
