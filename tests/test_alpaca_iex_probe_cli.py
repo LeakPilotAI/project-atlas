@@ -50,10 +50,12 @@ def test_old_unscoped_cli_is_not_an_implicit_provider_grant():
     assert 'Traceback' not in result.stderr
 
 
-def test_data_only_offline_inspect_avoids_private_config(monkeypatch,capsys):
+def test_data_only_offline_inspect_avoids_private_config(monkeypatch,capsys,tmp_path):
     from scripts.observation_runtime import atlas_r12_alpaca_source_admission as source
+    monkeypatch.setattr(probe, 'R14_SELECTED_ENVELOPE', tmp_path/'no-r14-selection')
     monkeypatch.setattr(source,'assess',lambda:{'native_revision':12,
-        'catalog':{'research_symbol_count':13487},'qd_forward_publication_verified':False})
+        'catalog':{'research_symbol_count':13487},'qd_forward_publication_verified':False,
+        'startup_authorized':False,'contract_entitlement_independently_verified':False})
     rc=probe.main(['--inspect'],credentials_loader=lambda path:pytest.fail('KEYS_OPENED'),
                   feed_factory=lambda symbols:pytest.fail('NETWORK_OPENED'))
     data=json.loads(capsys.readouterr().out)
@@ -134,12 +136,104 @@ def test_unrelated_fresh_symbol_from_forged_callback_refuses():
                            requested_symbols=['MSFT'])
 
 
-def test_actual_offline_inspection_uses_selected_r12_not_credentialed_provider():
+def test_actual_offline_inspection_uses_selected_r14_not_credentialed_provider():
     p=run_cli('--inspect')
     assert p.returncode==0,p.stderr
     data=json.loads(p.stdout)
-    assert data['selected_revision']==12
+    assert data['selected_revision']==13
     assert data['source_catalog_symbols']==13487
     assert data['forward_source_verified'] is False
     assert data['sample_already_verified'] is False
     assert data['private_credentials_accessed'] is False
+    assert data['provider_connected'] is False
+    assert data['provider_rights_independently_accepted'] is False
+    assert data['current_executable_quotes_verified'] is False
+    assert data['trading_authorized'] is False
+
+
+def test_r14_offline_inspect_never_reads_alpaca_keys_or_network(monkeypatch,capsys):
+    from scripts.observation_runtime import atlas_r14_two_lane_source_preflight as source
+    monkeypatch.setattr(probe.Credentials,'load',
+        lambda *_:pytest.fail('PRIVATE_KEYS_MUST_NOT_BE_OPENED'))
+    monkeypatch.setattr(source,'inspect', lambda: {
+        'schema':'ATLAS_R14_TWO_LANE_FINANCIAL_SOURCE_PREFLIGHT_V1',
+        'decision':'NO_GO',
+        'selected_code_revision':13,
+        'financial_operating_gates_accepted':0,
+        'paper_startup_authorized':False,
+        'provider_connections_opened':False,
+        'quality_dips':{
+            'research_inventory_verified':True,
+            'catalog_symbols':13487,
+            'operational_source_publication_verified':False,
+            'robinhood_equity_etf_universe_verified':False},
+        'hyperliquid':{'native_financial_writer_verified':False}})
+    result=probe.main(['--inspect'],
+        credentials_loader=lambda *_:pytest.fail('CREDENTIAL_LOAD_NOT_AUTHORIZED'),
+        feed_factory=lambda *_:pytest.fail('NETWORK_OR_SOCKET_NOT_AUTHORIZED'))
+    value=json.loads(capsys.readouterr().out)
+    assert result==0
+    assert value['selected_revision']==13
+    assert value['source_catalog_symbols']==13487
+    for field in ('private_credentials_accessed','provider_connected',
+                  'provider_authentication_performed',
+                  'provider_rights_independently_accepted',
+                  'current_executable_quotes_verified',
+                  'robinhood_universe_verified','trading_authorized',
+                  'sample_already_verified'):
+        assert value[field] is False
+
+
+@pytest.mark.parametrize('field,value',[
+    ('decision','GO'),
+    ('selected_code_revision',12),
+    ('financial_operating_gates_accepted',1),
+    ('paper_startup_authorized',True),
+    ('provider_connections_opened',True),
+])
+def test_r14_offline_preview_cannot_upgrade_financial_authority(
+        monkeypatch,capsys,field,value):
+    from scripts.observation_runtime import atlas_r14_two_lane_source_preflight as source
+    base={
+        'schema':'ATLAS_R14_TWO_LANE_FINANCIAL_SOURCE_PREFLIGHT_V1',
+        'decision':'NO_GO','selected_code_revision':13,
+        'financial_operating_gates_accepted':0,
+        'paper_startup_authorized':False,'provider_connections_opened':False,
+        'quality_dips':{
+            'research_inventory_verified':True,
+            'catalog_symbols':13487,
+            'operational_source_publication_verified':False,
+            'robinhood_equity_etf_universe_verified':False},
+        'hyperliquid':{'native_financial_writer_verified':False}}
+    base[field]=value
+    monkeypatch.setattr(source,'inspect',lambda:base)
+    rc=probe.main(['--inspect'],
+        credentials_loader=lambda *_:pytest.fail('KEYS_OPENED'),
+        feed_factory=lambda *_:pytest.fail('NETWORK_OPENED'))
+    result=json.loads(capsys.readouterr().out)
+    assert rc==1
+    assert result=={'status':'REFUSED','reason':probe.REASON}
+
+
+def test_r14_selected_invalid_source_report_refuses_without_r12_fallback(
+        monkeypatch,capsys):
+    from scripts.observation_runtime import atlas_r14_two_lane_source_preflight as source
+    from scripts.observation_runtime import atlas_r12_alpaca_source_admission as r12
+    monkeypatch.setattr(source,'inspect',
+        lambda: (_ for _ in ()).throw(ValueError('NATIVE_CHAIN_MISMATCH')))
+    monkeypatch.setattr(r12,'assess',
+        lambda:pytest.fail('R12_FALLBACK_MUST_NOT_BYPASS_SELECTED_R14'))
+    rc=probe.main(['--inspect'],
+        credentials_loader=lambda *_:pytest.fail('KEYS_OPENED'),
+        feed_factory=lambda *_:pytest.fail('NETWORK_OPENED'))
+    assert rc==1
+    assert json.loads(capsys.readouterr().out)['status']=='REFUSED'
+
+
+def test_credentials_mode_still_requires_exact_explicit_data_only_scope(
+        capsys,monkeypatch):
+    monkeypatch.setattr(probe.Credentials,'load',
+        lambda *_:pytest.fail('CREDENTIALS_MUST_NOT_BE_READ'))
+    assert probe.main(['--execute-data-only','--seconds','1','--symbols','MSFT'])==1
+    assert json.loads(capsys.readouterr().out)=={
+        'status':'REFUSED','reason':probe.REASON}

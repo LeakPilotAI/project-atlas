@@ -21,6 +21,7 @@ from app.investment.alpaca_iex import Credentials, IEXFeed, IEXRefused, SYMBOL
 
 SCOPE = "ALPACA_IEX_QUOTE_OBSERVATION_ONLY_NO_TRADING"
 REASON = "IEX_CONFIGURATION_OR_DATA_UNAVAILABLE"
+R14_SELECTED_ENVELOPE = Path("D:/AtlasRuntime/selection/r0013.json")
 
 
 def request_scope(*, seconds, symbols, execute, confirm_scope):
@@ -131,6 +132,64 @@ async def bounded_data_only_probe(*, seconds, symbols, credentials, feed_factory
                         requested_symbols=symbols)
 
 
+def inspect_selected_data_only():
+    """Offline selected-release preview, without credentials or provider I/O.
+
+    An existing r0013 is not authority by itself: the R14 preflight
+    independently checks the 13-record native chain and installed identity.
+    The old R12-only verifier remains available only for pre-R14 deployments.
+    """
+    if R14_SELECTED_ENVELOPE.exists():
+        from scripts.observation_runtime.atlas_r14_two_lane_source_preflight import (
+            inspect as inspect_r14,
+        )
+        report = inspect_r14()
+        qd = report.get("quality_dips")
+        hl = report.get("hyperliquid")
+        if (report.get("schema") != "ATLAS_R14_TWO_LANE_FINANCIAL_SOURCE_PREFLIGHT_V1"
+                or report.get("decision") != "NO_GO"
+                or report.get("selected_code_revision") != 13
+                or report.get("financial_operating_gates_accepted") != 0
+                or report.get("paper_startup_authorized") is not False
+                or report.get("provider_connections_opened") is not False
+                or type(qd) is not dict or type(hl) is not dict
+                or qd.get("research_inventory_verified") is not True
+                or qd.get("operational_source_publication_verified") is not False
+                or qd.get("robinhood_equity_etf_universe_verified") is not False
+                or hl.get("native_financial_writer_verified") is not False):
+            raise IEXRefused("IEX_PROBE_SELECTED_R14_SOURCE_GATE_REFUSED")
+        revision = 13
+        catalog_count = qd["catalog_symbols"]
+        qd_published = False
+    else:
+        from scripts.observation_runtime.atlas_r12_alpaca_source_admission import (
+            assess,
+        )
+        report = assess()
+        if (report.get("native_revision") != 12
+                or report.get("startup_authorized") is not False
+                or report.get("contract_entitlement_independently_verified") is not False):
+            raise IEXRefused("IEX_PROBE_SELECTED_R12_SOURCE_GATE_REFUSED")
+        revision = 12
+        catalog_count = report["catalog"]["research_symbol_count"]
+        qd_published = report["qd_forward_publication_verified"]
+    return {
+        "schema":"ATLAS_IEX_BOUNDED_DATA_ONLY_PREFLIGHT_V1",
+        "status":"REQUIRES_EXPLICIT_DATA_ONLY_SESSION_APPROVAL",
+        "selected_revision":revision,
+        "source_catalog_symbols":catalog_count,
+        "forward_source_verified":qd_published,
+        "provider_authentication_performed":False,
+        "private_credentials_accessed":False,
+        "provider_connected":False,
+        "provider_rights_independently_accepted":False,
+        "current_executable_quotes_verified":False,
+        "robinhood_universe_verified":False,
+        "trading_authorized":False,
+        "sample_already_verified":False,
+    }
+
+
 def main(argv=None, *, credentials_loader=None, feed_factory=IEXFeed):
     parser=argparse.ArgumentParser(description=__doc__)
     group=parser.add_mutually_exclusive_group(required=True)
@@ -145,20 +204,13 @@ def main(argv=None, *, credentials_loader=None, feed_factory=IEXFeed):
         if args.confirm_scope is not None or args.receipt_id is not None:
             print(json.dumps({'status':'REFUSED','reason':REASON}))
             return 1
-        from scripts.observation_runtime.atlas_r12_alpaca_source_admission import assess
-        report=assess()
-        print(json.dumps({
-            'schema':'ATLAS_IEX_BOUNDED_DATA_ONLY_PREFLIGHT_V1',
-            'status':'REQUIRES_EXPLICIT_DATA_ONLY_SESSION_APPROVAL',
-            'selected_revision':report['native_revision'],
-            'source_catalog_symbols':report['catalog']['research_symbol_count'],
-            'forward_source_verified':report['qd_forward_publication_verified'],
-            'provider_authentication_performed':False,
-            'private_credentials_accessed':False,
-            'trading_authorized':False,
-            'sample_already_verified':False,
-        },sort_keys=True))
-        return 0
+        try:
+            print(json.dumps(inspect_selected_data_only(),sort_keys=True))
+            return 0
+        except (IEXRefused, OSError, ValueError, KeyError, TypeError):
+            # An invalid/partial native selection never falls back to R12.
+            print(json.dumps({'status':'REFUSED','reason':REASON},sort_keys=True))
+            return 1
     try:
         symbols=request_scope(seconds=args.seconds,symbols=args.symbols,
                               execute=args.execute_data_only,confirm_scope=args.confirm_scope)
