@@ -1,0 +1,64 @@
+{
+  "schema": "ATLAS_R13_CODE_ONLY_INSTALL_DEPENDENCY_REVIEW_R1",
+  "status": "SOURCE_AND_NATIVE_DEPENDENCY_REVIEW_VERIFIED_NOT_INSTALL_AUTHORIZATION",
+  "release_label": "R13_CODE_ONLY_REVIEW_NOT_SELECTED",
+  "source": {
+    "commit": "c7dfb85665bbcd5ba4494c33365d4dff8ea92b12",
+    "artifact_path": "logs/diagnostics/atlas-r13-source-only-20261109-r01/atlas-source.zip",
+    "artifact_sha256": "20167da274294223333ea4668d288514176a675e9308a298786abd0b46b8f39c",
+    "inventory_sha256": "c070130867636c27ae3ca31f01921a186445e7f4bc8b7ea2e9b14900893680e4",
+    "selected_runtime_files": 952,
+    "source_raw_bytes": 10791263,
+    "tracked_files_only": true
+  },
+  "dependency": {
+    "source_release": "fca29cfe7760a28d2569b8b4b91ed1ea99804c3c",
+    "receipt_path": "logs/diagnostics/qd-d-runtime-coordination-installation-20261028.json",
+    "receipt_sha256": "b1363f4514d3cdce4a1914e79d14842ece94136ed5d035ea195b4883da99a7a0",
+    "inventory_sha256": "93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91",
+    "python_version": "3.12.10",
+    "native_python_dependency_files_sha256_verified": 9566,
+    "native_python_dependency_bytes_sha256_verified": 252648893,
+    "parent_directories_type_checked": 882,
+    "metadata_sha256_verified": 88,
+    "declared_project_requirements": 21,
+    "evaluated_dependency_requirements": 106,
+    "missing_requirements": [],
+    "incompatible_requirements": [],
+    "pyproject_sha256": "8ef76e01de46ac4192efaca89fcdea0b77bb31825b565b053babe7615fed8a54"
+  },
+  "dry_run_install_plan": {
+    "files": 10518,
+    "directories": 911,
+    "bytes": 263440156,
+    "destination": null,
+    "native_install_executed": false
+  },
+  "tests": {
+    "native_install_plan_candidate_selection_passed": 93,
+    "failed": 0
+  },
+  "existing_selection": {
+    "native_revision": 12,
+    "selector_sha256": "f685ff5c5d55ab87c4ee47b651afb823faa8d3696da4db120624bfac67c7c0c7",
+    "unchanged": true
+  },
+  "flags": {
+    "source_authenticated": false,
+    "signed_source_review": false,
+    "new_native_directory_acl_and_custody_verified": false,
+    "new_dependency_image_installed": false,
+    "code_install_approved": false,
+    "native_release_selected": false,
+    "provider_connections_authorized": false,
+    "paper_orders_authorized": false,
+    "live_orders_authorized": false,
+    "startup_authorized": false
+  },
+  "next_actions": [
+    "Independently review exact pinned archive, dependency entitlement, installed runtime constraints and Windows ACL and custody",
+    "Design and qualify a new-code-only install adapter for the exact reviewed candidate without reusing a historical one-shot approval",
+    "Obtain explicit fresh operator approval for any new native install and later a separate native selection",
+    "Do not conflate code-only selection with independent 0-of-9 financial operating gates"
+  ]
+}
