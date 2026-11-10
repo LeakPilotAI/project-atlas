@@ -17,7 +17,9 @@ def test_launcher_preflights_before_starting_observation():
 
 def test_launcher_is_observation_only_and_owned():
     source = LAUNCHER.read_text(encoding="utf-8-sig")
-    assert 'Open-AtlasObservationDashboard $root -BoundedDataOnly' in source
+    assert 'Open-AtlasObservationDashboard $root\n' in source.replace('\r\n','\n')
+    assert 'Open-AtlasObservationDashboard $root -BoundedDataOnly' not in source
+    assert 'Atlas-Observation-Stop.ps1' in source
     assert 'PAPER trading: DISABLED' in source
     assert 'Production trading: DISABLED' in source
     assert 'Local\\AtlasObservationOwner_$sid' in source

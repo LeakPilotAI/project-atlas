@@ -59,7 +59,8 @@ try {
 
     Write-Host "Starting Project Atlas observation-only dashboard..." -ForegroundColor Cyan
 
-    $ready = Open-AtlasObservationDashboard $root -BoundedDataOnly
+    # Offline observation must never silently request a bounded live-data probe.
+    $ready = Open-AtlasObservationDashboard $root
     $started = $true
 
     Write-Host ""
@@ -69,7 +70,8 @@ try {
     Write-Host "Production trading: DISABLED"
     Write-Host ""
     Write-Host "Keep this window open while using Atlas."
-    Write-Host "Use the Stop Atlas desktop shortcut for graceful shutdown."
+    Write-Host "Observation-only stop: run scripts\windows\Atlas-Observation-Stop.ps1"
+    Write-Host "The legacy Stop Atlas shortcut is blocked and cannot close this host."
     Write-Host ""
 
     $stopEvent.WaitOne() | Out-Null
