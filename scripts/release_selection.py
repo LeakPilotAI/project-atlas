@@ -9,6 +9,16 @@ from pathlib import Path
 MAX_RECORDS = 128
 DOMAINS = {"WINDOWS_LOCAL", "DISPOSABLE"}
 
+# R14's successfully installed unselected code-only receipt uses a strict
+# verified-before-publication protocol, not the historical last-line ACK.
+# This is *eligibility for verification*, never selection authorization.
+R14_CODE_RELEASE = "7ff9d3dba2eabe110f843c13efac49464805de2a"
+R14_RECEIPT_SHA256 = "4cbf4f78c4da879f0e7d35f7ab1c3e119b4e0e7fc04640f0984ad4c8ce912ba7"
+R14_ARTIFACT_DIGEST = "da64e2436d23fc2e3aa7ea14888e3fa0429bea801b83886c181ec3a72fd16fa8"
+R14_ARCHIVE_SHA256 = "22e4d00cb61c56d0b298c059e597937696df8deeca25c7ec6b38ec5ff01e192a"
+R14_INVENTORY_SHA256 = "bf7c37a4e424a7947b46636df06fc860253ee46abc038aa80b496e09b9d09367"
+R14_NTP_SELECTION_PROFILE = "INDEPENDENT_TWO_PEER_NTP_R14_CODE_SELECTION_V1"
+
 
 def encoded(value):
     return json.dumps(
@@ -81,6 +91,55 @@ def validate_spec(value, domain):
     return strict(encoded(value))
 
 
+def validate_native_install_ack(spec, receipt, journal_bytes):
+    """Validate an exact version-specific code install ACK, without native I/O.
+
+    R14's pending journal is only meaningful paired with its separate exact
+    final receipt. Never interpret a pending marker as installed acceptance.
+    Existing releases retain the historical single trailing ACK contract.
+    """
+    if type(journal_bytes) is not bytes or not journal_bytes:
+        raise ValueError("SELECTION_INSTALL_ACK_REQUIRED")
+    if spec["release"] != R14_CODE_RELEASE:
+        ack = strict(journal_bytes.splitlines()[-1])
+        if ack != {
+            "stage": "UNSELECTED_CODE_INSTALL_VERIFIED",
+            "receipt_sha256": spec["receipt_sha256"],
+        }:
+            raise ValueError("SELECTION_INSTALL_ACK_REQUIRED")
+        return True
+    if (spec["receipt_sha256"] != R14_RECEIPT_SHA256
+            or spec["artifact_digest"] != R14_ARTIFACT_DIGEST
+            or receipt.get("archive_sha256") != R14_ARCHIVE_SHA256
+            or receipt.get("inventory_sha256") != R14_INVENTORY_SHA256
+            or receipt.get("stage") != "D_RUNTIME_LAYOUT_VERIFIED"
+            or type(receipt.get("files")) is not list
+            or len(receipt["files"]) != 10519
+            or type(receipt.get("directories")) is not list
+            or len(receipt["directories"]) != 912):
+        raise ValueError("SELECTION_R14_EXACT_RECEIPT_REQUIRED")
+    rows = journal_bytes.splitlines()
+    if len(rows) != 2:
+        raise ValueError("SELECTION_R14_TWO_STAGE_ACK_REQUIRED")
+    first, second = strict(rows[0]), strict(rows[1])
+    if first != {
+        "schema": "ATLAS_R14_UNSELECTED_LOW_IMPACT_CODE_INSTALL_INTENT_V1",
+        "source_commit": R14_CODE_RELEASE,
+        "archive_sha256": R14_ARCHIVE_SHA256,
+        "destination": spec["root"],
+        "selection_allowed": False,
+        "financial_authority": False,
+        "provider_access": False,
+    } or second != {
+        "stage": "NATIVE_READBACK_VERIFIED_FINAL_RECEIPT_PENDING",
+        "artifact_digest": R14_ARTIFACT_DIGEST,
+        "selection_allowed": False,
+        "financial_authority": False,
+    }:
+        raise ValueError("SELECTION_R14_ACK_BINDING_REQUIRED")
+    return True
+
+
 class NativeInstalledReleaseVerifier:
     domain = "WINDOWS_LOCAL"
 
@@ -117,16 +176,11 @@ class NativeInstalledReleaseVerifier:
         # Reuse safe ancestor/file admission rather than an unchecked tail open.
         # This local installation journal is not a financial/observation journal.
         journal_bytes = source_bytes(
-            journal.parent, journal.name, maximum_bytes=128 * 1024**2
+            journal.parent, journal.name,
+            maximum_bytes=4096 if spec["release"] == R14_CODE_RELEASE
+            else 128 * 1024**2,
         )
-        if not journal_bytes:
-            raise ValueError("SELECTION_INSTALL_ACK_REQUIRED")
-        ack = strict(journal_bytes.splitlines()[-1])
-        if ack != {
-            "stage": "UNSELECTED_CODE_INSTALL_VERIFIED",
-            "receipt_sha256": spec["receipt_sha256"],
-        }:
-            raise ValueError("SELECTION_INSTALL_ACK_REQUIRED")
+        validate_native_install_ack(spec, receipt, journal_bytes)
         owner = NativePersonalReleaseIdentity(
             receipt=receipt, artifact_digest=spec["artifact_digest"]
         )
@@ -161,7 +215,10 @@ class ReleaseSelector:
 
             if clock_profile == "WINDOWS_TIME_CODE_SELECTION_V1":
                 accepted_clock = type(clock) is LocalWindowsClock
-            elif clock_profile == "INDEPENDENT_TWO_PEER_NTP_CODE_SELECTION_V1":
+            elif clock_profile in (
+                "INDEPENDENT_TWO_PEER_NTP_CODE_SELECTION_V1",
+                R14_NTP_SELECTION_PROFILE,
+            ):
                 accepted_clock = type(clock) is IndependentNtpClock
             else:
                 raise ValueError("UNREVIEWED_SELECTION_CLOCK_PROFILE")
@@ -310,10 +367,19 @@ class ReleaseSelector:
             if len(rows) >= MAX_RECORDS:
                 raise ValueError("SELECTION_CAPACITY_NO_RESET")
             target = grant["target"]
+            if (type(target) is dict and target.get("release") == R14_CODE_RELEASE
+                    and self.clock_profile != R14_NTP_SELECTION_PROFILE):
+                raise ValueError("R14_INDEPENDENT_TWO_PEER_NTP_PROFILE_REQUIRED")
             if self.clock_profile == "INDEPENDENT_TWO_PEER_NTP_CODE_SELECTION_V1" and (
                 grant["action"] != "SELECT" or type(target) is not dict
                 or target.get("release") != "af96bec0484a8e43f9965610e071a907a0d316bf"):
                 raise ValueError("EXACT_V7_INDEPENDENT_NTP_SELECTION_REQUIRED")
+            if self.clock_profile == R14_NTP_SELECTION_PROFILE and (
+                grant["action"] != "SELECT" or type(target) is not dict
+                or target.get("release") != R14_CODE_RELEASE
+                or target.get("receipt_sha256") != R14_RECEIPT_SHA256
+                or target.get("artifact_digest") != R14_ARTIFACT_DIGEST):
+                raise ValueError("EXACT_R14_INDEPENDENT_NTP_SELECTION_REQUIRED")
             if grant["action"] == "SELECT":
                 validate_spec(target, self.domain)
                 if grant["restores"] is not None:
