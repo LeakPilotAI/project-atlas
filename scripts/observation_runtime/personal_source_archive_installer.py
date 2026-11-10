@@ -13,7 +13,8 @@ from scripts.observation_runtime.personal_paper_inception import native_primitiv
 
 
 def install_source_archive(*, root, enrollment, reader, policy, release_digest,
-                           accounts, clock, runtime_id):
+                           accounts, clock, runtime_id,
+                           clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4"):
     """Install an empty, typed source image and verify native readback."""
     if (type(root) is not str or ntpath.normpath(root) != root
             or not ntpath.normcase(root).startswith('d:\\atlascustody\\qualitydips\\')
@@ -34,7 +35,7 @@ def install_source_archive(*, root, enrollment, reader, policy, release_digest,
             reader=reader, policy=policy, release_digest=release_digest,
             accounts=accounts, clock=clock, runtime_id=runtime_id,
             enrollment_digest=digest(enrollment), root_id=actual_id,
-            initial_image=image)
+            initial_image=image, clock_profile=clock_profile)
         images.initialize(image, authorization=authority)
         with images.transaction(readonly=True) as tx:
             if tx.read() != image:

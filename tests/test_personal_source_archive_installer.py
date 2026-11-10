@@ -26,7 +26,8 @@ def test_source_archive_installer_refuses_root_alias_before_native_access(root):
             policy={}, release_digest='', accounts={}, clock=None, runtime_id='')
 
 
-def test_source_archive_installer_native_genesis_ack_uses_exact_raw_sha256(monkeypatch):
+@pytest.mark.parametrize('clock_profile', [None, 'VERSION_SAFE_INDEPENDENT_NTP_OPERATOR_CLOCK_V1'])
+def test_source_archive_installer_native_genesis_ack_uses_exact_raw_sha256(monkeypatch, clock_profile):
     import hashlib
     from contextlib import contextmanager
     from types import SimpleNamespace
@@ -55,10 +56,16 @@ def test_source_archive_installer_native_genesis_ack_uses_exact_raw_sha256(monke
             yield SimpleNamespace(read=lambda: self.content)
         def close(self): pass
     monkeypatch.setattr(module, 'NativePersonalCoordinationImages', Images)
-    monkeypatch.setattr(module, 'NativePersonalSourceInstallAuthority', lambda **kwargs: object())
+    observed_authority = {}
+    def authority(**kwargs):
+        observed_authority.update(kwargs)
+        return object()
+    monkeypatch.setattr(module, 'NativePersonalSourceInstallAuthority', authority)
+    options = {} if clock_profile is None else {'clock_profile': clock_profile}
     result = module.install_source_archive(root='D:\\AtlasCustody\\QualityDips\\fresh',
         enrollment=enrollment, reader=None, policy={}, release_digest='a'*64,
-        accounts={}, clock=None, runtime_id='test')
+        accounts={}, clock=None, runtime_id='test', **options)
+    assert observed_authority['clock_profile'] == (clock_profile or 'WINDOWS_TIME_OPERATOR_CLOCK_V4')
     assert result['initial_image_digest'] == hashlib.sha256(image).hexdigest()
     assert result['source_publication_accepted'] is False
     assert result['financial_inception_authorized'] is False
