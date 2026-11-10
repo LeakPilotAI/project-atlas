@@ -14,17 +14,23 @@ from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentN
 
 V7_R11_HEAD = "933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997"
 V7_RELEASE = "af96bec0484a8e43f9965610e071a907a0d316bf"
+R12_R12_HEAD = "f4cf83bb1e98ecb7cfa3be37fe27e80a79b339dc26f73358a1702349b47958fd"
+R12_RELEASE = "2d4879878bf58bea5a3ed0a986b809791f638fec"
+R14_R13_HEAD = "3fd8e1972b559a5de90627a303fc663b11928f8b43e84621a6796e9f3dbe9383"
+R14_RELEASE = "7ff9d3dba2eabe110f843c13efac49464805de2a"
 SELECTOR_NATIVE = [4004218753, 65536, 1532785]
 RELEASE_PARENT = Path("D:/AtlasRuntime/releases")
 CLOCK_RELATIVE = Path("scripts/observation_runtime/personal_version_safe_release_clock.py")
 
 
 def admit_version_safe_clock_source(*, source_file, records):
-    """Pure, fail-closed source/selector binding: never an operational approval.
+    """Bind own native installed source to the currently selected code only.
 
-    Returns selected native head/spec only when a NEW installed candidate
-    physically owns the given module location and has an append-only r12 chain.
-    The installed files/receipt are independently reopened by the native verifier.
+    Revision 12 remains supported for historical verification. Revision 13
+    must match the immutable, independently selected R12/R14 anchors; any
+    later release must extend their exact digest-linked, SELECT-only chain.
+    The real native store independently checks every original-handle record
+    before this helper is called. This helper grants NO PAPER authority.
     """
     from scripts.release_selection import digest, validate_spec
 
@@ -38,24 +44,56 @@ def admit_version_safe_clock_source(*, source_file, records):
             or not re.fullmatch("[0-9a-f]{40}", release_root.name)
             or release_root.name == V7_RELEASE):
         raise ValueError("VERSION_SAFE_CLOCK_OWN_RELEASE_REQUIRED")
-    if (type(records) is not list or len(records) != 12
+    if (type(records) is not list or not 12 <= len(records) <= 64
             or type(records[10]) is not dict
             or records[10].get("revision") != 11
             or digest(records[10]) != V7_R11_HEAD
             or type(records[10].get("selected")) is not dict
             or records[10]["selected"].get("release") != V7_RELEASE):
         raise ValueError("VERSION_SAFE_CLOCK_NATIVE_V7_PREDECESSOR_REQUIRED")
+
     r12 = records[11]
     if (type(r12) is not dict or r12.get("revision") != 12
             or r12.get("action") != "SELECT"
             or r12.get("previous") != V7_R11_HEAD
             or r12.get("restores") is not None):
         raise ValueError("VERSION_SAFE_CLOCK_NATIVE_NEW_SELECT_REQUIRED")
-    spec = validate_spec(r12.get("selected"), "WINDOWS_LOCAL")
+    if len(records) == 12:
+        selected = r12
+    else:
+        # Rev 12 and rev 13 are already immutably published; neither a
+        # fabricated selection path nor a later altered native record can
+        # become a valid foundation for financial time.
+        r13 = records[12]
+        r12_spec = validate_spec(r12.get("selected"), "WINDOWS_LOCAL")
+        if (digest(r12) != R12_R12_HEAD
+                or r12_spec["release"] != R12_RELEASE
+                or type(r13) is not dict
+                or r13.get("revision") != 13
+                or r13.get("action") != "SELECT"
+                or r13.get("previous") != R12_R12_HEAD
+                or r13.get("restores") is not None
+                or digest(r13) != R14_R13_HEAD):
+            raise ValueError("VERSION_SAFE_CLOCK_NATIVE_R14_ANCESTRY_REQUIRED")
+        r13_spec = validate_spec(r13.get("selected"), "WINDOWS_LOCAL")
+        if r13_spec["release"] != R14_RELEASE:
+            raise ValueError("VERSION_SAFE_CLOCK_NATIVE_R14_ANCESTRY_REQUIRED")
+        for index in range(13, len(records)):
+            row = records[index]
+            previous = records[index - 1]
+            if (type(row) is not dict
+                    or row.get("revision") != index + 1
+                    or row.get("action") != "SELECT"
+                    or row.get("previous") != digest(previous)
+                    or row.get("restores") is not None):
+                raise ValueError("VERSION_SAFE_CLOCK_NATIVE_FORWARD_CHAIN_REFUSED")
+            validate_spec(row.get("selected"), "WINDOWS_LOCAL")
+        selected = records[-1]
+    spec = validate_spec(selected.get("selected"), "WINDOWS_LOCAL")
     if (spec["release"] != release_root.name
             or Path(spec["root"]) != release_root):
         raise ValueError("VERSION_SAFE_CLOCK_SELECTED_CODE_MISMATCH")
-    return digest(r12), spec
+    return digest(selected), spec
 
 
 def require_native_version_safe_clock_source(*, deep=True):
