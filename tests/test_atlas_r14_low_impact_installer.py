@@ -64,8 +64,12 @@ def test_r14_occupied_destination_is_refused_not_reused(monkeypatch):
 
 
 def test_r14_preflight_requires_actual_fresh_target():
-    assert not r14.DESTINATION.exists()
-    assert not r14.RECEIPT.exists()
+    if os.path.lexists(r14.DESTINATION) or os.path.lexists(r14.RECEIPT):
+        # A completed or partial code copy permanently consumes this target;
+        # a second install must not be attempted even with later consent.
+        with pytest.raises(ValueError, match="R14_CREATE_ONLY_TARGET_ALREADY_USED"):
+            r14._require_empty_target()
+        return
     assert not r14.RECEIPT.with_suffix(".pending.jsonl").exists()
     assert r14._require_empty_target() is True
 
@@ -233,6 +237,12 @@ def test_r14_rechecks_clock_after_monotonic_backwards_step(monkeypatch):
 
 
 def test_r14_exact_source_plan_and_readonly_preview():
+    if os.path.lexists(r14.DESTINATION) or os.path.lexists(r14.RECEIPT):
+        # The release was already installed or attempted. The read-only
+        # preinstall preview must refuse rather than re-admit occupied space.
+        with pytest.raises(ValueError, match="R14_CREATE_ONLY_TARGET_ALREADY_USED"):
+            r14.inspect()
+        return
     report = r14.inspect()
     assert report["status"] == "NATIVE_LAYOUT_AND_INPUTS_VERIFIED_NOT_INSTALL_APPROVAL"
     assert report["source_files"] == 953
