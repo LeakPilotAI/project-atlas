@@ -247,9 +247,12 @@ def install(*, execute_approved=False, clock=None):
     from scripts.install_version_safe_candidate import _qualify_native_clock_180s
     _qualify_native_clock_180s(clock, identity)
     _require_separate_consent()
-    prepared = prepare_readonly()
-    prepared["started"] = time.monotonic()
+    # Preflight walks and hashes the source/dependency inputs. It must run
+    # under the same IDLE CPU policy as the later native copy/readback.
     with LowImpactEnvelope() as envelope:
+        prepared = prepare_readonly()
+        envelope.tick()  # Refuse deadline/priority drift before any journal.
+        prepared["started"] = time.monotonic()
         def admission():
             envelope.tick()
             clock.require_operational(identity)

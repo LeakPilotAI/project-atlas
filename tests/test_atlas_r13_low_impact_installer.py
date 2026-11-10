@@ -199,6 +199,43 @@ def test_existing_partial_destination_does_not_block_priority_tick(monkeypatch):
     # A prior broken version incorrectly refused its own destination here.
 
 
+def test_future_install_preflight_runs_at_idle_before_any_journal(monkeypatch):
+    """An approved synthetic entry cannot hash inputs at normal priority."""
+    from scripts.observation_runtime import atlas_independent_ntp_clock as ntp
+    from scripts import install_version_safe_candidate as clock_gate
+
+    class FakeClock:
+        def require_operational(self, identity):
+            assert identity.startswith("r13-code-only-")
+
+    kernel = Kernel()
+    original_envelope = r13.LowImpactEnvelope
+
+    class SimulatedEnvelope(original_envelope):
+        def __init__(self):
+            super().__init__(kernel=kernel, wait=lambda _: None,
+                             monotonic=lambda: 1.0)
+
+    def refuse_after_priority_check():
+        assert kernel.priority == r13.IDLE_PRIORITY_CLASS
+        raise RuntimeError("SYNTHETIC_STOP_BEFORE_JOURNAL")
+
+    monkeypatch.setattr(ntp, "IndependentNtpClock", FakeClock)
+    monkeypatch.setattr(clock_gate, "_qualify_native_clock_180s",
+                        lambda *_: None)
+    monkeypatch.setattr(r13, "_require_separate_consent", lambda: None)
+    monkeypatch.setattr(r13, "LowImpactEnvelope", SimulatedEnvelope)
+    monkeypatch.setattr(r13, "prepare_readonly", refuse_after_priority_check)
+    monkeypatch.setattr(r13, "write_new_json",
+                        lambda *_args, **_kwargs: pytest.fail("NO_NATIVE_JOURNAL"))
+    monkeypatch.setattr(r13, "_copy_prepared_code",
+                        lambda **_kwargs: pytest.fail("NO_NATIVE_COPY"))
+    with pytest.raises(RuntimeError, match="SYNTHETIC_STOP_BEFORE_JOURNAL"):
+        r13.install(execute_approved=True, clock=FakeClock())
+    assert kernel.priority == 0x20
+    assert kernel.calls == [r13.IDLE_PRIORITY_CLASS, 0x20]
+
+
 def test_no_code_copy_without_fresh_pinned_separate_approval(monkeypatch):
     monkeypatch.setattr(r13,"_copy_prepared_code",
                         lambda **_:pytest.fail("NO_COPY_OR_NATIVE_WRITE"))
