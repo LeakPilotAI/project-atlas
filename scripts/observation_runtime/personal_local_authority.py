@@ -14,7 +14,8 @@ from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 
 class NativePersonalOperatorAuthority:
     def __init__(self, *, policy=None, enrollment=None, reader=None, clock=None,
-                 runtime_id=None, clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4"):
+                 runtime_id=None, clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4",
+                 accounts=None):
         from scripts.observation_runtime.personal_paper_activation import (
             NativePersonalActivationReader,
         )
@@ -39,12 +40,26 @@ class NativePersonalOperatorAuthority:
             raise ValueError('PERSONAL_NATIVE_OPERATOR_DEPENDENCIES_REQUIRED')
         clock.require_operational(runtime_id)
         self.policy, self.enrollment = validate_policy(policy), validate_enrollment(enrollment)
+        qd_digest = digest(self.enrollment)
+        if accounts is None:
+            # Preserve the previously scoped, separately approved QD-only pilot.
+            bound_accounts = {'QUALITY_DIPS': qd_digest}
+        else:
+            bound_accounts = strict(body(accounts))
+            if (type(accounts) is not dict
+                    or set(bound_accounts) != {'QUALITY_DIPS', 'HYPERLIQUID'}
+                    or bound_accounts.get('QUALITY_DIPS') != qd_digest
+                    or type(bound_accounts.get('HYPERLIQUID')) is not str
+                    or len(bound_accounts['HYPERLIQUID']) != 64
+                    or any(c not in '0123456789abcdef' for c in bound_accounts['HYPERLIQUID'])):
+                raise ValueError('PERSONAL_NATIVE_OPERATOR_TWO_ACCOUNT_BINDING_REQUIRED')
+        self.accounts = strict(body(bound_accounts))
         self.reader, self.clock, self.runtime_id = reader, clock, runtime_id
         self.clock_profile = clock_profile
         self.native = native_primitives()
         self.operator = self.native.w.current_sid()
         self._config = body({'policy': self.policy, 'enrollment': self.enrollment,
-                             'runtime_id': runtime_id, 'operator': self.operator})
+                             'runtime_id': runtime_id, 'operator': self.operator, 'accounts': self.accounts})
         self._ports = reader, clock, self.native, clock_profile
         self.revoked, self._record, self._last = False, None, None
 
@@ -62,7 +77,8 @@ class NativePersonalOperatorAuthority:
                 (self.reader, self.clock, self.native), self._ports[:3], strict=True))
                 or self.clock_profile != self._ports[3]
                 or body({'policy': self.policy, 'enrollment': self.enrollment,
-                         'runtime_id': self.runtime_id, 'operator': self.operator}) != self._config):
+                         'runtime_id': self.runtime_id, 'operator': self.operator,
+                         'accounts': self.accounts}) != self._config):
             raise ValueError('PERSONAL_LOCAL_AUTHORITY_REVOKED_OR_CHANGED')
         self.clock.require_operational(self.runtime_id)
         now = self.clock()
@@ -70,7 +86,7 @@ class NativePersonalOperatorAuthority:
             raise ValueError('PERSONAL_OPERATOR_CLOCK_ROLLBACK')
         record = validate_activation_record(self.reader.read(), policy=self.policy,
             operator_id=self.current_operator(), release=self.enrollment['release_digest'],
-            accounts={'QUALITY_DIPS': digest(self.enrollment)}, now=now, action=action)
+            accounts=self.accounts, now=now, action=action)
         if self._record is not None and body(record) != self._record:
             raise ValueError('PERSONAL_ACTIVATION_RECORD_CHANGED')
         self._record, self._last = body(record), now

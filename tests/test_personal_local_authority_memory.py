@@ -68,6 +68,46 @@ def test_operator_record_and_bounded_session_refusal(monkeypatch, damage):
     with pytest.raises(ValueError): s.port.verify(s.request)
 
 
+def test_explicit_two_lane_activation_matches_exact_existing_qd_enrollment(monkeypatch):
+    """A native two-account activation may authorize QD, but never by omission."""
+    s = authority(monkeypatch)
+    pair = {'QUALITY_DIPS': digest(s.f.e), 'HYPERLIQUID': 'a' * 64}
+    s.value['accounts'] = copy.deepcopy(pair)
+    bound = authority_module.NativePersonalOperatorAuthority(
+        policy=s.i.p, enrollment=s.f.e, reader=s.reader,
+        clock=s.clock, runtime_id='SYNTHETIC-RUNTIME', accounts=pair)
+    assert bound.accounts == pair
+    assert bound.verify(s.request) is True
+
+    # A changed second account must invalidate the original activation.
+    s.value['accounts']['HYPERLIQUID'] = 'b' * 64
+    with pytest.raises(ValueError, match='PERSONAL_EXPLICIT_ACTIVATION_REQUIRED'):
+        bound.verify(s.request)
+    s.value['accounts'] = copy.deepcopy(pair)
+    bound.accounts['HYPERLIQUID'] = 'b' * 64
+    with pytest.raises(ValueError, match='PERSONAL_LOCAL_AUTHORITY_REVOKED_OR_CHANGED'):
+        bound.verify(s.request)
+
+
+def test_two_lane_binding_requires_explicit_complete_pair(monkeypatch):
+    s = authority(monkeypatch)
+    qd = digest(s.f.e)
+    for bad in (
+        {'QUALITY_DIPS': qd},
+        {'QUALITY_DIPS': 'b' * 64, 'HYPERLIQUID': 'a' * 64},
+        {'QUALITY_DIPS': qd, 'HYPERLIQUID': 'not-a-digest'},
+        {'QUALITY_DIPS': qd, 'HYPERLIQUID': 'a' * 64, 'EXTRA': 'x'},
+    ):
+        with pytest.raises(ValueError, match='PERSONAL_NATIVE_OPERATOR_TWO_ACCOUNT_BINDING_REQUIRED'):
+            authority_module.NativePersonalOperatorAuthority(
+                policy=s.i.p, enrollment=s.f.e, reader=s.reader,
+                clock=s.clock, runtime_id='SYNTHETIC-RUNTIME', accounts=bad)
+    # The existing separately scoped QD-only activation still uses its
+    # historical one-account binding unless the two-lane pair is explicit.
+    assert s.port.accounts == {'QUALITY_DIPS': qd}
+    assert s.port.verify(s.request) is True
+
+
 def test_native_authority_defaults_to_refusal_without_native_binding():
     with pytest.raises(ValueError): authority_module.NativePersonalOperatorAuthority()
 
