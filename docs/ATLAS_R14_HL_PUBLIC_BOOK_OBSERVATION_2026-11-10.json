@@ -1,0 +1,20 @@
+{
+  "credentials_accessed": false,
+  "error_specific_cause_independently_verified": false,
+  "financial_operating_gates_accepted": 0,
+  "financial_writer_enrolled": false,
+  "live_order_submitted": false,
+  "no_auto_retry": true,
+  "paper_order_submitted": false,
+  "paper_startup_authorized": false,
+  "private_account_accessed": false,
+  "provider_quote_admitted": false,
+  "public_info_requests_consumed": 2,
+  "request_budget_after": 2,
+  "request_budget_before": 4,
+  "result": "REFUSED_NO_ACCEPTED_BOOK",
+  "schema": "ATLAS_R14_HL_PUBLIC_BOOK_ATTEMPT_REPORT_V1",
+  "selected_release": "7ff9d3dba2eabe110f843c13efac49464805de2a",
+  "selected_revision": 13,
+  "source_revision_selected_change": false
+}
