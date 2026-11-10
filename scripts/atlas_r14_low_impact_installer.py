@@ -21,6 +21,9 @@ from scripts.install_verified_release import (
 )
 from scripts.native_install_candidate import _copy_prepared_code
 from scripts.native_install_plan import prepare_install_inputs
+from scripts.observation_runtime.native_install_host_admission import (
+    require_code_install_host_ready,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 DIAG = ROOT / "logs/diagnostics"
@@ -46,6 +49,7 @@ PACE_EVERY = 128
 PAUSE_SECONDS = 0.06
 MAX_SECONDS = 500
 NTP_ADMISSION_REFRESH_SECONDS = 1.0
+HOST_ADMISSION_REFRESH_SECONDS = 10.0
 
 
 def _old_r13_refusal_preserved():
@@ -187,6 +191,13 @@ def _native_admission(clock, identity, guard):
             or guard.checks % CHECK_EVERY == 0):
         clock.require_operational(identity)
         guard.last_ntp_admission = guard.monotonic()
+    last_host = getattr(guard, "last_host_admission", None)
+    if (last_host is None or now < last_host
+            or now - last_host >= HOST_ADMISSION_REFRESH_SECONDS):
+        # A game started during the copy or lost RAM/disk headroom must
+        # fail closed, preserving any partial release with no automatic retry.
+        require_code_install_host_ready(DESTINATION.parent)
+        guard.last_host_admission = guard.monotonic()
     return True
 
 
@@ -204,6 +215,9 @@ def install(*, execute_approved=False, clock=None):
     if execute_approved is not True:
         raise ValueError("R14_EXPLICIT_CODE_INSTALL_EXECUTION_REQUIRED")
     _require_separate_consent()  # Hard blocks everything in this source revision.
+    # Check genuine host resources BEFORE spending 180 seconds on clock
+    # qualification, and do not attempt bulk copy during NBA 2K27 gameplay.
+    require_code_install_host_ready(DESTINATION.parent)
     from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
     if type(clock) is not IndependentNtpClock:
         raise ValueError("R14_REAL_TWO_PEER_INDEPENDENT_CLOCK_REQUIRED")
@@ -212,6 +226,7 @@ def install(*, execute_approved=False, clock=None):
     from scripts.install_version_safe_candidate import _qualify_native_clock_180s
     _qualify_native_clock_180s(clock, identity)
     _require_separate_consent()
+    require_code_install_host_ready(DESTINATION.parent)
     with LowImpactEnvelope(check_every=CHECK_EVERY, pace_every=PACE_EVERY,
                            pause_seconds=PAUSE_SECONDS, max_seconds=MAX_SECONDS) as guard:
         prepared = prepare_readonly()

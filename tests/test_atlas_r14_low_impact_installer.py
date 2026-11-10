@@ -132,7 +132,8 @@ def test_r14_inspect_uses_idle_envelope_even_on_preflight_error(monkeypatch):
     assert calls == ["enter","restore"]
 
 
-def test_r14_native_clock_admission_every_32_and_no_more_than_one_second():
+def test_r14_native_clock_admission_every_32_and_no_more_than_one_second(monkeypatch):
+    monkeypatch.setattr(r14, "require_code_install_host_ready", lambda *_: True)
     clock_calls = []
 
     class Guard:
@@ -163,7 +164,8 @@ def test_r14_native_clock_admission_every_32_and_no_more_than_one_second():
     assert clock_calls == [1, 32, 64, 96, 97]
 
 
-def test_r14_clock_refusal_fails_next_bounded_checkpoint():
+def test_r14_clock_refusal_fails_next_bounded_checkpoint(monkeypatch):
+    monkeypatch.setattr(r14, "require_code_install_host_ready", lambda *_: True)
     clock_calls = []
     class Guard:
         checks = 0
@@ -208,7 +210,8 @@ def test_r14_readback_child_timeout_never_exceeds_work_deadline():
         r14._remaining_installed_readback_timeout(guard)
 
 
-def test_r14_rechecks_clock_after_monotonic_backwards_step():
+def test_r14_rechecks_clock_after_monotonic_backwards_step(monkeypatch):
+    monkeypatch.setattr(r14, "require_code_install_host_ready", lambda *_: True)
     class Guard:
         checks = 0
         now = 2.0
@@ -283,6 +286,8 @@ def _disposable_install_harness(monkeypatch, tmp_path, *, copy_fails=False):
                         lambda *_: events.append("clock_180s_synthetic"))
     monkeypatch.setattr(r14, "_require_separate_consent",
                         lambda: events.append("consent"))
+    monkeypatch.setattr(r14, "require_code_install_host_ready",
+                        lambda *_: events.append("synthetic_host_ready") or True)
     monkeypatch.setattr(r14, "LowImpactEnvelope", SyntheticGuard)
     monkeypatch.setattr(r14, "prepare_readonly", lambda: {"started": 100.0})
     monkeypatch.setattr(r14, "_selector_unchanged", lambda: events.append("selector") or True)
