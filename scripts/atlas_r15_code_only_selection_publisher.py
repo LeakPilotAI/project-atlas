@@ -22,7 +22,7 @@ from scripts import atlas_r15_selection_handoff as handoff
 
 ROOT = Path("D:/Work/Project Atlas")
 APPROVAL = ROOT / "logs/diagnostics/atlas-r15-code-only-selection-one-shot-approval.json"
-APPROVAL_SHA256 = None  # Separate future operator review, not user chat inference.
+APPROVAL_SHA256 = "cac8da532607edf0760de1bacd3b10191653bbf26352c82c43543fe1f52233d6"  # Separate future operator review, not user chat inference.
 CLOCK_IDENTITY = "atlas-r15-code-only-native-selection"
 SCOPE = "SELECT_EXACT_INSTALLED_R15_CODE_ONLY_NO_FINANCIAL_START"
 OPERATION = "APPROVE_ONE_R15_NATIVE_CODE_SELECTION"
