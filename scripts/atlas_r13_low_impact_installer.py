@@ -119,16 +119,23 @@ class LowImpactEnvelope:
     """
 
     def __init__(self, *, wait=time.sleep, monotonic=time.monotonic, kernel=None,
-                 check_every=32, pause_seconds=0.06, max_seconds=500):
+                 check_every=32, pause_seconds=0.06, pace_every=None,
+                 max_seconds=500):
         if (type(check_every) is not int or not 8 <= check_every <= 128
                 or type(pause_seconds) not in (int, float)
                 or not 0.01 <= pause_seconds <= 0.25
                 or type(max_seconds) not in (int, float)
                 or not 30 <= max_seconds <= 590):
             raise ValueError("R13_BOUNDED_LOW_RESOURCE_POLICY_REQUIRED")
+        if pace_every is None:
+            pace_every = check_every
+        if (type(pace_every) is not int or not check_every <= pace_every <= 128
+                or pace_every % check_every):
+            raise ValueError("R13_BOUNDED_PACING_CADENCE_REQUIRED")
         self.wait, self.monotonic = wait, monotonic
         self.kernel = kernel
         self.check_every, self.pause_seconds = check_every, pause_seconds
+        self.pace_every = pace_every
         self.max_seconds = max_seconds
         self.started = None
         self.original_priority = None
@@ -175,7 +182,10 @@ class LowImpactEnvelope:
             raise ValueError("R13_LOW_IMPACT_INSTALL_DEADLINE_PRESERVE_PARTIAL")
         self.checks += 1
         if self.checks % self.check_every == 0:
-            self.wait(self.pause_seconds)
+            # Preserve frequent OS priority/selector checks, but do not spend
+            # a third of the 500s budget sleeping between 64KiB I/O chunks.
+            if self.checks % self.pace_every == 0:
+                self.wait(self.pause_seconds)
             if self.kernel.GetPriorityClass(self.process) != IDLE_PRIORITY_CLASS:
                 raise ValueError("R13_IDLE_PRIORITY_LOST_PRESERVE_PARTIAL")
             if self.monotonic() - self.started >= self.max_seconds:
@@ -253,7 +263,7 @@ def install(*, execute_approved=False, clock=None):
     _require_separate_consent()
     # Preflight walks and hashes the source/dependency inputs. It must run
     # under the same IDLE CPU policy as the later native copy/readback.
-    with LowImpactEnvelope() as envelope:
+    with LowImpactEnvelope(check_every=32, pace_every=128) as envelope:
         prepared = prepare_readonly()
         envelope.tick()  # Refuse deadline/priority drift before any journal.
         prepared["started"] = time.monotonic()

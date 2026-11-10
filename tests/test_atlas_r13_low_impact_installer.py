@@ -93,6 +93,45 @@ def test_low_impact_envelope_paces_and_restores_priority(monkeypatch):
         guard.tick()
 
 
+def test_r13_copy_pacing_decoupled_from_safety_checks(monkeypatch):
+    kernel = Kernel()
+    pauses, selectors = [], []
+    monkeypatch.setattr(r13, "_selector_unchanged",
+                        lambda: selectors.append(True) or True)
+    with r13.LowImpactEnvelope(
+            kernel=kernel, wait=pauses.append, monotonic=lambda: 5.0,
+            check_every=32, pace_every=128, pause_seconds=.06,
+            max_seconds=500) as guard:
+        for _ in range(256):
+            assert guard.tick() is True
+        assert guard.checks == 256
+        assert len(selectors) == 8  # Selector/priority every 32 admissions.
+        assert pauses == [.06, .06]  # Deliberate wait only every 128.
+        assert kernel.priority == r13.IDLE_PRIORITY_CLASS
+    assert kernel.priority == 0x20
+
+
+def test_r13_idle_priority_loss_still_refused_before_first_pause(monkeypatch):
+    kernel = Kernel()
+    pauses = []
+    monkeypatch.setattr(r13, "_selector_unchanged", lambda: True)
+    with r13.LowImpactEnvelope(
+            kernel=kernel, wait=pauses.append, monotonic=lambda: 5.0,
+            check_every=32, pace_every=128, max_seconds=500) as guard:
+        for _ in range(31):
+            guard.tick()
+        kernel.priority = 0x20
+        with pytest.raises(ValueError, match="IDLE_PRIORITY_LOST"):
+            guard.tick()
+    assert pauses == []  # The safety guard did not wait until 128.
+
+
+@pytest.mark.parametrize("invalid", [0, 16, 33, 129, True, 32.0])
+def test_r13_pacing_policy_rejects_invalid_cadence(invalid):
+    with pytest.raises(ValueError, match="BOUNDED_PACING_CADENCE"):
+        r13.LowImpactEnvelope(check_every=32, pace_every=invalid)
+
+
 def test_low_impact_envelope_restores_after_failure(monkeypatch):
     kernel=Kernel()
     monkeypatch.setattr(r13, "_selector_unchanged",lambda: True)
@@ -212,9 +251,9 @@ def test_future_install_preflight_runs_at_idle_before_any_journal(monkeypatch):
     original_envelope = r13.LowImpactEnvelope
 
     class SimulatedEnvelope(original_envelope):
-        def __init__(self):
+        def __init__(self, **kwargs):
             super().__init__(kernel=kernel, wait=lambda _: None,
-                             monotonic=lambda: 1.0)
+                             monotonic=lambda: 1.0, **kwargs)
 
     def refuse_after_priority_check():
         assert kernel.priority == r13.IDLE_PRIORITY_CLASS
@@ -310,6 +349,15 @@ def test_readonly_inspection_low_priority_refusal_restores(monkeypatch):
 
 
 def test_exact_pinned_readonly_plan_has_no_financial_or_native_effect():
+    # A prior one-shot attempt may have permanently occupied the destination.
+    # The read-only inspection must then refuse before source/plan work; the
+    # test cannot treat a preserved failed install as a fresh empty namespace.
+    if any(os.path.lexists(path) for path in (
+            r13.DESTINATION, r13.RECEIPT,
+            r13.RECEIPT.with_suffix(".pending.jsonl"))):
+        with pytest.raises(ValueError, match="R13_CREATE_ONLY_DESTINATION_ALREADY_USED"):
+            r13.inspect()
+        return
     report=r13.inspect()
     assert report["status"]=="SOURCE_DEPENDENCY_AND_LAYOUT_VERIFIED_NOT_INSTALL_APPROVAL"
     assert report["planned_files"]==10518
