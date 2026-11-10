@@ -102,6 +102,29 @@ def test_disconnect_refuses_previously_cached_quotes(monkeypatch):
         pairing.inspect(source=source.owner, feed=feed)
 
 
+@pytest.mark.parametrize("field,bad", [
+    ("schema", "ATLAS_UNVERIFIED_QUOTE_VIEW"),
+    ("provider", "FOREIGN_SOURCE"),
+    ("feed", "SIP"),
+    ("size_units", "SHARES_NOT_ROUND_LOTS"),
+    ("error", "IEX_SERVER_ERROR"),
+])
+def test_source_pairing_refuses_conflicting_authenticated_feed_metadata(monkeypatch, field, bad):
+    source, feed = setup(monkeypatch)
+    for symbol in ("MSFT", "AAPL"):
+        send(feed, source.s.now[0], symbol)
+    original = feed.snapshot
+
+    def contradictory_view():
+        view = original()
+        view[field] = bad
+        return view
+
+    feed.snapshot = contradictory_view
+    with pytest.raises(ValueError, match="CONNECTED_AUTHENTICATED_FEED_REQUIRED"):
+        pairing.inspect(source=source.owner, feed=feed)
+
+
 def test_clock_owner_mismatch_refused_without_source_read(monkeypatch):
     source, feed=setup(monkeypatch)
     feed.clock=lambda:source.s.now[0]

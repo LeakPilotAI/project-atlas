@@ -83,8 +83,13 @@ def _insert(instruments, instrument, *, allow_identical=False):
 
 def _snapshot(view, symbols, now):
     if (type(view) is not dict
+            or view.get("schema") != "ATLAS_ALPACA_IEX_VIEW_V1"
+            or view.get("provider") != "ALPACA"
+            or view.get("feed") != "IEX"
             or view.get("feed_id") != FEED
+            or view.get("size_units") != "ROUND_LOTS"
             or view.get("scope") != "SINGLE_EXCHANGE_NOT_NBBO"
+            or view.get("error") is not None
             or view.get("connection") != "CONNECTED"
             or view.get("authenticated") is not True
             or view.get("subscribed") is not True
