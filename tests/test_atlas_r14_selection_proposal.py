@@ -33,8 +33,12 @@ def test_native_r12_chain_exact_previous_head_and_no_r13_record(native_r12_recor
     assert digest(native_r12_records[-1]) == proposal.R12_HEAD
     assert native_r12_records[-1]["selected"]["release"] == proposal.R12_RELEASE
     assert hashlib.sha256((proposal.SEL/"r0012.json").read_bytes()).hexdigest() == proposal.R12_ENVELOPE_SHA256
-    assert not (proposal.SEL/"r0013.json").exists()
-    assert not (proposal.SEL/"r0013.pending").exists()
+    selected=proposal.SEL/"r0013.json"
+    pending=proposal.SEL/"r0013.pending"
+    assert selected.exists()==pending.exists()
+    if selected.exists():
+        assert hashlib.sha256(selected.read_bytes()).hexdigest()=="6b1e04b8f733d46421c81a5d158dbafbecf052e6f3a8e8289d175caca96d4e31"
+        assert selected.read_bytes()==pending.read_bytes()
 
 
 @pytest.mark.parametrize("mutation", [
@@ -67,6 +71,12 @@ def test_r14_exact_native_receipt_reference_no_installed_child_readback():
 
 
 def test_real_readonly_selection_proposal_is_pinned_and_nonfinancial():
+    if (proposal.SEL/"r0013.json").exists():
+        # Once R14 is selected, the original unapproved proposal is
+        # deliberately stale: it cannot be re-admitted or reused.
+        with pytest.raises(ValueError,match="R14_SELECTION_APPROVAL_FILE_PRESENT_REVIEW_REFUSED"):
+            proposal.read_only_proposal()
+        return
     before_r12 = hashlib.sha256((proposal.SEL/"r0012.json").read_bytes()).hexdigest()
     before_r14 = hashlib.sha256(proposal.R14_RECEIPT.read_bytes()).hexdigest()
     result = proposal.read_only_proposal()
@@ -96,7 +106,9 @@ def test_real_readonly_selection_proposal_is_pinned_and_nonfinancial():
     assert not (proposal.SEL/"r0013.pending").exists()
 
 
-def test_stale_selector_source_pin_refuses_before_native_lock(monkeypatch):
+def test_stale_selector_source_pin_refuses_before_native_lock(monkeypatch,tmp_path):
+    # Isolate the old planning state from consumed one-shot consent.
+    monkeypatch.setattr(proposal, "APPROVAL", tmp_path/"no-consent-file.json")
     monkeypatch.setattr(proposal, "SELECTOR_SHA256", "0"*64)
     with pytest.raises(ValueError,match="R14_SELECTION_PINNED_BYTES_CHANGED"):
         proposal.read_only_proposal()
@@ -117,6 +129,14 @@ def test_r14_installed_receipt_hash_change_refuses(monkeypatch):
 
 
 def test_create_only_review_writes_docs_only_and_refuses_second_write(monkeypatch,tmp_path):
+    if (proposal.SEL/"r0013.json").exists():
+        # Once selected, no new preselection review may be minted.
+        output=tmp_path/"r14-proposal.json"
+        monkeypatch.setattr(proposal,"REVIEW",output)
+        with pytest.raises(ValueError,match="R14_SELECTION_APPROVAL_FILE_PRESENT_REVIEW_REFUSED"):
+            proposal.main(["--write-review-once"])
+        assert not output.exists()
+        return
     output=tmp_path/"r14-proposal.json"
     monkeypatch.setattr(proposal,"REVIEW",output)
     before = set(proposal.SEL.iterdir())
@@ -133,6 +153,12 @@ def test_create_only_review_writes_docs_only_and_refuses_second_write(monkeypatc
 
 
 def test_inspect_cannot_perform_selection_even_with_inert_flag(monkeypatch,tmp_path):
+    if (proposal.SEL/"r0013.json").exists():
+        with pytest.raises(ValueError,match="R14_SELECTION_APPROVAL_FILE_PRESENT_REVIEW_REFUSED"):
+            proposal.main(["--inspect"])
+        with pytest.raises(SystemExit):
+            proposal.main(["--execute-one-shot-selection"])
+        return
     monkeypatch.setattr(proposal,"REVIEW",tmp_path/"absent.json")
     result=proposal.main(["--inspect"])
     assert result["review_recorded"] is False

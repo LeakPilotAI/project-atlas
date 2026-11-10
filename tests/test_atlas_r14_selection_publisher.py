@@ -52,6 +52,14 @@ def decision():
 
 
 def test_publisher_preview_real_readonly_source_and_no_consent():
+    if (proposal.SEL/"r0013.json").exists():
+        # A completed one-shot selection must not be presented as an
+        # unapproved pre-selection proposal, nor allow another execution.
+        with pytest.raises(ValueError,match="R14_PUBLISHER_INSPECT_SEPARATE_APPROVAL_PRESENT"):
+            pub.inspect()
+        assert pub.APPROVAL_PIN is None
+        assert pub.pinned_review()["proposed_head"]==pub.EXPECTED_HEAD
+        return
     report=pub.inspect()
     assert report["status"]=="READY_FOR_SEPARATE_SELECTION_OPERATOR_REVIEW_NOT_APPROVED"
     assert report["operation"]==pub.OPERATION
@@ -79,7 +87,9 @@ def test_explicit_selection_is_disabled_before_any_clock_or_store(monkeypatch):
     with pytest.raises(ValueError,match="R14_PUBLISHER_INSPECT_MIXED_SCOPE_REFUSED"):
         pub.main(["--inspect","--confirm-scope",pub.SCOPE])
     assert pub.APPROVAL_PIN is None
-    assert not pub.APPROVAL.exists()
+    # After native selection, the ignored one-shot evidence is preserved but
+    # its source authorization pin is permanently revoked.
+    assert pub.APPROVAL.exists() is (proposal.SEL/"r0013.json").exists()
 
 
 def test_exact_synthetic_operator_scope_can_be_validated_not_authorized():
@@ -160,6 +170,17 @@ def _simulate_native_publish(monkeypatch, *, fault=None):
     from scripts import atlas_r13_low_impact_installer as low
     from contextlib import contextmanager
     events=[]
+    # Keep this preselection simulation isolated from the genuine now-
+    # completed revision 13. Intercept only existence queries on the two
+    # native target names; never mutate, hide or rename real NTFS files.
+    original_lexists=pub.os.path.lexists
+    synthetic_targets={str(proposal.SEL/"r0013.pending"),
+                       str(proposal.SEL/"r0013.json")}
+    def fake_lexists(path):
+        if str(path) in synthetic_targets:
+            return False
+        return original_lexists(path)
+    monkeypatch.setattr(pub.os.path,"lexists",fake_lexists)
     real_rows=[]
     for n in range(1,13):
         path=proposal.SEL/f"r{n:04d}.json"
@@ -280,7 +301,10 @@ def test_synthetic_actual_publisher_flow_only_intercepts_native_write(monkeypatc
     assert events.index("NATIVE_PUBLISH_INTERCEPTED") < events.index("native_lock_exit")
     assert events.index("NATIVE_PUBLISH_INTERCEPTED") < events.index("native_records_read", events.index("NATIVE_PUBLISH_INTERCEPTED"))
     assert events[-1]=="store_closed"
-    assert not (proposal.SEL/"r0013.json").exists()
+    # The synthetic publisher must not touch the real selected R14 record.
+    native=proposal.SEL/"r0013.json"
+    if native.exists():
+        assert hashlib.sha256(native.read_bytes()).hexdigest()=="6b1e04b8f733d46421c81a5d158dbafbecf052e6f3a8e8289d175caca96d4e31"
 
 
 @pytest.mark.parametrize("fault,pattern", [
@@ -298,7 +322,9 @@ def test_synthetic_native_publication_fault_preserves_existing_selected_release(
         pub.publish_with_native_lock(
             clock=clock,identity="TEST_R14_ONLY",proof=proof)
     assert (proposal.SEL/"r0012.json").read_bytes()==before
-    assert not (proposal.SEL/"r0013.json").exists()
+    native=proposal.SEL/"r0013.json"
+    if native.exists():
+        assert hashlib.sha256(native.read_bytes()).hexdigest()=="6b1e04b8f733d46421c81a5d158dbafbecf052e6f3a8e8289d175caca96d4e31"
     assert "store_closed" in events
     if fault not in ("publish_refused","postcommit_mismatch"):
         assert "NATIVE_PUBLISH_INTERCEPTED" not in events
