@@ -22,6 +22,9 @@ def test_even_existing_personal_parent_never_proves_activation(tmp_path):
     assert result["personal_parent_exists"] is True
     assert "PERSONAL_PARENT_MISSING" not in result["blockers"]
     assert "NATIVE_OPERATOR_ACTIVATION_UNVERIFIED" in result["blockers"]
+    assert "CONTINUOUS_INDEPENDENT_FINANCIAL_CLOCK_LEASE_UNVERIFIED" in result["blockers"]
+    assert "TRUSTED_WINDOWS_CLOCK_UNVERIFIED" not in result["blockers"]
+    assert result["trusted_clock_verified"] is False
     assert result["native_activation_record_verified"] is False
     assert result["operator_lease_verified"] is False
     assert result["forward_financial_write_authorized"] is False

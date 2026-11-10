@@ -53,6 +53,7 @@ def test_old_unscoped_cli_is_not_an_implicit_provider_grant():
 def test_data_only_offline_inspect_avoids_private_config(monkeypatch,capsys,tmp_path):
     from scripts.observation_runtime import atlas_r12_alpaca_source_admission as source
     monkeypatch.setattr(probe, 'R14_SELECTED_ENVELOPE', tmp_path/'no-r14-selection')
+    monkeypatch.setattr(probe, 'R15_SELECTED_ENVELOPE', tmp_path/'no-r15-selection')
     monkeypatch.setattr(source,'assess',lambda:{'native_revision':12,
         'catalog':{'research_symbol_count':13487},'qd_forward_publication_verified':False,
         'startup_authorized':False,'contract_entitlement_independently_verified':False})
@@ -136,11 +137,11 @@ def test_unrelated_fresh_symbol_from_forged_callback_refuses():
                            requested_symbols=['MSFT'])
 
 
-def test_actual_offline_inspection_uses_selected_r14_not_credentialed_provider():
+def test_actual_offline_inspection_uses_selected_r15_not_credentialed_provider():
     p=run_cli('--inspect')
     assert p.returncode==0,p.stderr
     data=json.loads(p.stdout)
-    assert data['selected_revision']==13
+    assert data['selected_revision']==14
     assert data['source_catalog_symbols']==13487
     assert data['forward_source_verified'] is False
     assert data['sample_already_verified'] is False
@@ -151,7 +152,8 @@ def test_actual_offline_inspection_uses_selected_r14_not_credentialed_provider()
     assert data['trading_authorized'] is False
 
 
-def test_r14_offline_inspect_never_reads_alpaca_keys_or_network(monkeypatch,capsys):
+def test_r14_offline_inspect_never_reads_alpaca_keys_or_network(monkeypatch,capsys,tmp_path):
+    monkeypatch.setattr(probe, 'R15_SELECTED_ENVELOPE', tmp_path/'no-r15-selection')
     from scripts.observation_runtime import atlas_r14_two_lane_source_preflight as source
     monkeypatch.setattr(probe.Credentials,'load',
         lambda *_:pytest.fail('PRIVATE_KEYS_MUST_NOT_BE_OPENED'))
@@ -192,7 +194,8 @@ def test_r14_offline_inspect_never_reads_alpaca_keys_or_network(monkeypatch,caps
     ('provider_connections_opened',True),
 ])
 def test_r14_offline_preview_cannot_upgrade_financial_authority(
-        monkeypatch,capsys,field,value):
+        monkeypatch,capsys,tmp_path,field,value):
+    monkeypatch.setattr(probe, 'R15_SELECTED_ENVELOPE', tmp_path/'no-r15-selection')
     from scripts.observation_runtime import atlas_r14_two_lane_source_preflight as source
     base={
         'schema':'ATLAS_R14_TWO_LANE_FINANCIAL_SOURCE_PREFLIGHT_V1',
@@ -216,7 +219,8 @@ def test_r14_offline_preview_cannot_upgrade_financial_authority(
 
 
 def test_r14_selected_invalid_source_report_refuses_without_r12_fallback(
-        monkeypatch,capsys):
+        monkeypatch,capsys,tmp_path):
+    monkeypatch.setattr(probe, 'R15_SELECTED_ENVELOPE', tmp_path/'no-r15-selection')
     from scripts.observation_runtime import atlas_r14_two_lane_source_preflight as source
     from scripts.observation_runtime import atlas_r12_alpaca_source_admission as r12
     monkeypatch.setattr(source,'inspect',
@@ -237,3 +241,44 @@ def test_credentials_mode_still_requires_exact_explicit_data_only_scope(
     assert probe.main(['--execute-data-only','--seconds','1','--symbols','MSFT'])==1
     assert json.loads(capsys.readouterr().out)=={
         'status':'REFUSED','reason':probe.REASON}
+
+
+def test_selected_r15_inspect_does_not_read_keys_or_open_provider(monkeypatch,capsys):
+    monkeypatch.setattr(probe.Credentials,'load',
+        lambda *_:pytest.fail('PRIVATE_ALPACA_KEYS_NOT_AUTHORIZED'))
+    result=probe.main(
+        ['--inspect'],
+        credentials_loader=lambda *_:pytest.fail('KEYS_OPENED'),
+        feed_factory=lambda *_:pytest.fail('PROVIDER_SOCKET_OPENED'))
+    view=json.loads(capsys.readouterr().out)
+    assert result==0
+    assert view['selected_revision']==14
+    assert view['source_catalog_symbols']==13487
+    assert view['forward_source_verified'] is False
+    for field in ('provider_authentication_performed','private_credentials_accessed',
+                  'provider_connected','provider_rights_independently_accepted',
+                  'current_executable_quotes_verified','trading_authorized'):
+        assert view[field] is False
+
+
+def test_r15_selected_forged_financial_go_fails_before_credentials(monkeypatch,capsys):
+    from scripts.observation_runtime import atlas_r15_paper_offline_commissioning as r15
+    original=r15.inspect()
+    for field,forgery in (
+        ('decision','GO'),
+        ('selected_native_revision',13),
+        ('native_qd_forward_writer_enrolled',True),
+        ('provider_connection_opened',True),
+        ('paper_start_authorized',True),
+        ('financial_operating_gates_independently_accepted',1),
+    ):
+        monkeypatch.setattr(r15,'inspect',lambda f=field,v=forgery: {**original,f:v})
+        result=probe.main(
+            ['--execute-data-only','--confirm-scope',probe.SCOPE,
+             '--seconds','1','--symbols','MSFT'],
+            credentials_loader=lambda *_:pytest.fail(
+                'CREDENTIALS_MUST_NOT_OPEN_WHEN_SELECTED_R15_GATE_REFUSES'),
+            feed_factory=lambda *_:pytest.fail('PROVIDER_MUST_NOT_CONNECT'))
+        assert result==1
+        assert json.loads(capsys.readouterr().out)=={
+            'status':'REFUSED','reason':probe.REASON}

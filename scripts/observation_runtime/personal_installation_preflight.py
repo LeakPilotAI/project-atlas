@@ -35,7 +35,7 @@ def inspect_native_personal_installation(*, custody_parent=CUSTODY_PARENT):
         "blockers": (["CUSTODY_PARENT_MISSING"] if not custody_present else [])
         + (["PERSONAL_PARENT_MISSING"] if not personal_present else [])
         + ["NATIVE_OPERATOR_ACTIVATION_UNVERIFIED",
-           "TRUSTED_WINDOWS_CLOCK_UNVERIFIED",
+           "CONTINUOUS_INDEPENDENT_FINANCIAL_CLOCK_LEASE_UNVERIFIED",
            "PERSONAL_ENROLLMENT_AND_WRITER_OWNERSHIP_UNVERIFIED"],
     }
 

@@ -39,6 +39,7 @@ BUDGET = Path(DEFAULT_HYPERLIQUID_BUDGET)
 MAX_ATTEMPTS = 12
 MAX_HTTP_ATTEMPTS = 2
 HTTP_DEADLINE_SECONDS = 25
+R15_SELECTED_ENVELOPE = Path("D:/AtlasRuntime/selection/r0014.json")
 
 
 def read_enrolled_budget():
@@ -62,19 +63,47 @@ def read_enrolled_budget():
 
 
 def inspect():
-    selected = collect_selected_reference()
-    contracts = selected_contracts()
-    if (selected.get("revision") != 13
-            or selected.get("native_selection_record_verified") is not True
-            or selected.get("financial_authority") is not False
-            or "backend/app/services/personal_hyperliquid_public_data.py" not in contracts):
-        raise ValueError("R14_HL_SELECTED_RUNTIME_NOT_VERIFIED")
+    # An old selected r0013 remains on disk after native R15 selection.
+    # Never call an R14-only verifier to decide the CURRENT selected code.
+    if R15_SELECTED_ENVELOPE.exists():
+        from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
+            inspect as inspect_r15,
+        )
+        selected=inspect_r15()
+        codes=selected.get("selected_native_financial_port_sources")
+        if (selected.get("schema") != "ATLAS_SELECTED_R15_OFFLINE_FINANCIAL_COMMISSIONING_V1"
+                or selected.get("decision") != "NO_GO"
+                or selected.get("selected_native_revision") != 14
+                or selected.get("selected_code_verified") is not True
+                or selected.get("financial_operating_gates_independently_accepted") != 0
+                or selected.get("current_hyperliquid_public_book_verified") is not False
+                or selected.get("native_hyperliquid_forward_writer_enrolled") is not False
+                or selected.get("provider_connection_opened") is not False
+                or selected.get("paper_start_authorized") is not False
+                or selected.get("live_trading_authorized") is not False
+                or type(codes) is not dict
+                or codes.get("backend/app/services/personal_hyperliquid_public_data.py",{}).get(
+                    "native_installed_source_present") is not True):
+            raise ValueError("R15_HL_SELECTED_RUNTIME_NOT_VERIFIED")
+        revision=14
+        release=selected["selected_code_identity"]["selected_release"]
+    else:
+        selected = collect_selected_reference()
+        contracts = selected_contracts()
+        if (selected.get("revision") != 13
+                or selected.get("native_selection_record_verified") is not True
+                or selected.get("financial_authority") is not False
+                or "backend/app/services/personal_hyperliquid_public_data.py" not in contracts):
+            raise ValueError("R14_HL_SELECTED_RUNTIME_NOT_VERIFIED")
+        revision=13
+        release=selected["selected_release"]
     budget=read_enrolled_budget()
     return {
-        "schema":"ATLAS_SELECTED_R14_HL_PUBLIC_BOOK_PREFLIGHT_V1",
+        "schema":("ATLAS_SELECTED_R15_HL_PUBLIC_BOOK_PREFLIGHT_V1" if revision==14
+                  else "ATLAS_SELECTED_R14_HL_PUBLIC_BOOK_PREFLIGHT_V1"),
         "decision":"REQUIRES_EXPLICIT_DATA_ONLY_SCOPE",
-        "selected_code_revision":13,
-        "selected_code_release":selected["selected_release"],
+        "selected_code_revision":revision,
+        "selected_code_release":release,
         "selected_code_verified":True,
         "allowed_symbols":list(SYMBOLS),
         "public_info_requests_per_probe":MAX_HTTP_ATTEMPTS,
@@ -193,8 +222,9 @@ async def _perform_two_requests(symbol, clock, identity, gate):
 def execute_data_only(*, symbol, confirm_scope):
     require_execute_scope(mode=True,scope=confirm_scope,symbol=symbol)
     snapshot=inspect()
-    if (snapshot["selected_code_release"]
-            != "7ff9d3dba2eabe110f843c13efac49464805de2a"
+    expected={13:"7ff9d3dba2eabe110f843c13efac49464805de2a",
+              14:"2c79a8d846d6b33669008114732ae5896153812a"}
+    if (snapshot.get("selected_code_release") != expected.get(snapshot.get("selected_code_revision"))
             or snapshot["existing_request_budget"]["remaining"] is None
             or snapshot["existing_request_budget"]["remaining"] < MAX_HTTP_ATTEMPTS):
         raise ValueError("R14_HL_TWO_REQUEST_ENROLLED_BUDGET_NOT_AVAILABLE")
@@ -205,7 +235,9 @@ def execute_data_only(*, symbol, confirm_scope):
     if gate.remaining()<MAX_HTTP_ATTEMPTS:
         raise ValueError("R14_HL_TWO_REQUEST_BUDGET_ALREADY_CONSUMED")
     hyperliquid_gate_registry.install_gate(gate)
-    identity="atlas-r14-hl-public-book-"+symbol.lower()+"-data-only"
+    # Native selector revision 14 selects software R15 (not R14).
+    software_label="r15" if snapshot["selected_code_revision"]==14 else "r14"
+    identity="atlas-"+software_label+"-hl-public-book-"+symbol.lower()+"-data-only"
     clock=IndependentNtpClock(runtime_id=identity)
     if type(clock) is not IndependentNtpClock:
         raise ValueError('R14_HL_REAL_INDEPENDENT_NTP_CLOCK_REQUIRED')
@@ -213,7 +245,12 @@ def execute_data_only(*, symbol, confirm_scope):
         clock.require_operational(identity)
         book=asyncio.run(_perform_two_requests(symbol,clock,identity,gate))
         clock.require_operational(identity)
-        return admit_public_book(book,symbol)
+        accepted=admit_public_book(book,symbol)
+        if snapshot["selected_code_revision"]==14:
+            accepted["schema"]="ATLAS_R15_HL_PUBLIC_BOOK_DATA_ONLY_SAMPLE_V1"
+            accepted["selected_native_revision"]=14
+            accepted["selected_native_release"]=snapshot["selected_code_release"]
+        return accepted
     finally:
         clock.revoke()
 

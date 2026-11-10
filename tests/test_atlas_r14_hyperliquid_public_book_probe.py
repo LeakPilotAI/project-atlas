@@ -33,10 +33,10 @@ def fixture_book():
     }
 
 
-def test_actual_r14_native_selected_scope_and_existing_readonly_budget(preview):
-    assert preview["schema"]=="ATLAS_SELECTED_R14_HL_PUBLIC_BOOK_PREFLIGHT_V1"
+def test_actual_r15_native_selected_scope_and_existing_readonly_budget(preview):
+    assert preview["schema"]=="ATLAS_SELECTED_R15_HL_PUBLIC_BOOK_PREFLIGHT_V1"
     assert preview["decision"]=="REQUIRES_EXPLICIT_DATA_ONLY_SCOPE"
-    assert preview["selected_code_revision"]==13
+    assert preview["selected_code_revision"]==14
     assert preview["selected_code_verified"] is True
     assert preview["existing_request_budget"]["status"]=="EXISTING_UNAUTHORIZED_RESEARCH_BUDGET"
     # The one permitted BTC observation consumed two public info attempts; never reset it.
@@ -148,7 +148,7 @@ def test_offline_inspect_never_constructs_clock_or_provider_client(monkeypatch,c
                         lambda *_args,**_kw:pytest.fail("WRITABLE_LEDGER_STARTED"))
     assert probe.main(["--inspect"])==0
     result=json.loads(capsys.readouterr().out)
-    assert result["selected_code_revision"]==13
+    assert result["selected_code_revision"]==14
     assert result["provider_connection_opened"] is False
     assert result["financial_execution_authorized"] is False
 
@@ -227,3 +227,82 @@ def test_http_status_classification_does_not_echo_provider_body():
     response=httpx.Response(429,request=request)
     error=httpx.HTTPStatusError("private response detail",request=request,response=response)
     assert probe.safe_refusal_code(error)=="HL_PUBLIC_HTTP_STATUS_REFUSED"
+
+
+def test_current_r15_refused_promotion_stops_before_request_budget_and_ntp(
+        monkeypatch,capsys):
+    from scripts.observation_runtime import atlas_r15_paper_offline_commissioning as r15
+    original=r15.inspect()
+    for field,value in (
+        ('decision','GO'),
+        ('selected_native_revision',13),
+        ('native_hyperliquid_forward_writer_enrolled',True),
+        ('provider_connection_opened',True),
+        ('financial_operating_gates_independently_accepted',1),
+    ):
+        monkeypatch.setattr(
+            r15,'inspect',lambda f=field,v=value: {**original,f:v})
+        monkeypatch.setattr(probe,'HyperliquidRequestGate',
+                            lambda *_a,**_kw:pytest.fail('BUDGET_MUTATED'))
+        monkeypatch.setattr(probe,'IndependentNtpClock',
+                            lambda **_kw:pytest.fail('NTP_STARTED'))
+        monkeypatch.setattr(probe,'HyperliquidAdapter',
+                            lambda:pytest.fail('PUBLIC_INFO_REQUEST_STARTED'))
+        rc=probe.main([
+            '--execute-data-only','--confirm-scope',probe.SCOPE,
+            '--symbol','BTC'])
+        output=json.loads(capsys.readouterr().out)
+        assert rc==1
+        assert output['financial_execution_authorized'] is False
+        assert output['live_order_authorized'] is False
+
+
+def test_selected_r15_preview_refuses_provider_network_or_budget_writes(
+        monkeypatch,capsys):
+    monkeypatch.setattr(probe,'HyperliquidRequestGate',
+                        lambda *_a,**_kw:pytest.fail('BUDGET_WRITTEN'))
+    monkeypatch.setattr(probe,'HyperliquidAdapter',
+                        lambda:pytest.fail('INFO_REQUEST_STARTED'))
+    monkeypatch.setattr(probe,'IndependentNtpClock',
+                        lambda **_kw:pytest.fail('NTP_STARTED'))
+    assert probe.main(['--inspect'])==0
+    data=json.loads(capsys.readouterr().out)
+    assert data['schema']=='ATLAS_SELECTED_R15_HL_PUBLIC_BOOK_PREFLIGHT_V1'
+    assert data['selected_code_revision']==14
+    assert data['existing_request_budget']['remaining']==2
+    assert data['provider_connection_opened'] is False
+    assert data['financial_execution_authorized'] is False
+
+
+def test_future_authorized_r15_sample_uses_current_release_label_with_stubbed_provider(
+        monkeypatch):
+    # No request-gate installation, durable budget spend, NTP or HTTP.
+    current=probe.inspect()
+    assert current["selected_code_revision"]==14
+    monkeypatch.setattr(probe,"inspect",lambda:current)
+    class FakeGate:
+        def remaining(self):return 2
+    monkeypatch.setattr(probe,"HyperliquidRequestGate",lambda *_a,**_kw:FakeGate())
+    monkeypatch.setattr(probe.hyperliquid_gate_registry,"install_gate",
+                        lambda gate:None)
+    class FakeClock:
+        def __init__(self,*,runtime_id):
+            self.identity=runtime_id
+        def require_operational(self,identity):
+            assert identity==self.identity
+            assert identity.startswith("atlas-r15-hl-public-book-btc-data-only")
+        def revoke(self):pass
+    monkeypatch.setattr(probe,"IndependentNtpClock",FakeClock)
+    async def fake_two_requests(symbol,clock,identity,gate):
+        assert symbol=="BTC"
+        assert type(clock) is FakeClock
+        return fixture_book()
+    monkeypatch.setattr(probe,"_perform_two_requests",fake_two_requests)
+    admitted=probe.execute_data_only(symbol="BTC",confirm_scope=probe.SCOPE)
+    assert admitted["schema"]=="ATLAS_R15_HL_PUBLIC_BOOK_DATA_ONLY_SAMPLE_V1"
+    assert admitted["selected_native_revision"]==14
+    assert admitted["selected_native_release"]==current["selected_code_release"]
+    assert admitted["provider_book_validated"] is True
+    assert admitted["paper_order_authorized"] is False
+    assert admitted["live_order_authorized"] is False
+    assert admitted["automatic_startup_authorized"] is False

@@ -22,6 +22,7 @@ from app.investment.alpaca_iex import Credentials, IEXFeed, IEXRefused, SYMBOL
 SCOPE = "ALPACA_IEX_QUOTE_OBSERVATION_ONLY_NO_TRADING"
 REASON = "IEX_CONFIGURATION_OR_DATA_UNAVAILABLE"
 R14_SELECTED_ENVELOPE = Path("D:/AtlasRuntime/selection/r0013.json")
+R15_SELECTED_ENVELOPE = Path("D:/AtlasRuntime/selection/r0014.json")
 
 
 def request_scope(*, seconds, symbols, execute, confirm_scope):
@@ -135,11 +136,35 @@ async def bounded_data_only_probe(*, seconds, symbols, credentials, feed_factory
 def inspect_selected_data_only():
     """Offline selected-release preview, without credentials or provider I/O.
 
-    An existing r0013 is not authority by itself: the R14 preflight
-    independently checks the 13-record native chain and installed identity.
+    Historical r0013 remains present when R15 is selected. Always prefer
+    the latest known revision and verify its complete native selection chain;
+    never claim the obsolete R14 was selected merely because r0013 exists.
     The old R12-only verifier remains available only for pre-R14 deployments.
     """
-    if R14_SELECTED_ENVELOPE.exists():
+    if R15_SELECTED_ENVELOPE.exists():
+        from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
+            inspect as inspect_r15,
+        )
+        report = inspect_r15()
+        if (report.get("schema") != "ATLAS_SELECTED_R15_OFFLINE_FINANCIAL_COMMISSIONING_V1"
+                or report.get("decision") != "NO_GO"
+                or report.get("selected_native_revision") != 14
+                or report.get("selected_code_verified") is not True
+                or report.get("installed_financial_clock_source_binding_verified") is not True
+                or report.get("financial_operating_gates_independently_accepted") != 0
+                or report.get("current_iex_equity_quotes_verified") is not False
+                or report.get("native_qd_forward_writer_enrolled") is not False
+                or report.get("paper_start_authorized") is not False
+                or report.get("provider_connection_opened") is not False
+                or report.get("credential_bytes_read") is not False
+                or report.get("live_trading_authorized") is not False
+                or not isinstance(report.get("quality_dips_research_catalog_symbols"), int)
+                or report["quality_dips_research_catalog_symbols"] <= 0):
+            raise IEXRefused("IEX_PROBE_SELECTED_R15_SOURCE_GATE_REFUSED")
+        revision = 14
+        catalog_count = report["quality_dips_research_catalog_symbols"]
+        qd_published = False
+    elif R14_SELECTED_ENVELOPE.exists():
         from scripts.observation_runtime.atlas_r14_two_lane_source_preflight import (
             inspect as inspect_r14,
         )
@@ -214,6 +239,12 @@ def main(argv=None, *, credentials_loader=None, feed_factory=IEXFeed):
     try:
         symbols=request_scope(seconds=args.seconds,symbols=args.symbols,
                               execute=args.execute_data_only,confirm_scope=args.confirm_scope)
+        # Explicit data-only consent is necessary but not sufficient: verify
+        # the CURRENT selected native code before any private key bytes or
+        # provider transport can be opened. This never grants financial GO.
+        selected=inspect_selected_data_only()
+        if selected.get('selected_revision') not in (12,13,14) or selected.get('trading_authorized') is not False:
+            raise IEXRefused('IEX_PROBE_SELECTED_CODE_PREAUTH_REQUIRED')
         if args.receipt_id is not None:
             from scripts.observation_runtime.atlas_r12_iex_diagnostic_receipt import ID
             if ID.fullmatch(args.receipt_id) is None:
