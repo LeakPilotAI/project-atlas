@@ -37,7 +37,7 @@ DEPENDENCY = DIAG / "qd-d-runtime-coordination-installation-20261028.json"
 RECEIPT = DIAG / ("qd-unselected-release-" + SOURCE + ".json")
 DESTINATION = Path("D:/AtlasRuntime/releases") / SOURCE
 APPROVAL = DIAG / "atlas-r13-code-only-install-one-shot-approval.json"
-APPROVAL_SHA256 = None  # Separate, independently approved source revision REQUIRED.
+APPROVAL_SHA256 = "9ce61e55073dfbfb7ec54d31b11718b0ecfbb74f37f56001594f08c90956ce0c"  # Explicit one-time operator-authorized CODE-ONLY installation; revoke after outcome.
 IDLE_PRIORITY_CLASS = 0x40
 
 

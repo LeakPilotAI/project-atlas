@@ -237,6 +237,9 @@ def test_future_install_preflight_runs_at_idle_before_any_journal(monkeypatch):
 
 
 def test_no_code_copy_without_fresh_pinned_separate_approval(monkeypatch):
+    # Explicit one-time local operator consent never changes default fail-closed
+    # behavior in a fresh checkout without a separately pinned grant.
+    monkeypatch.setattr(r13, "APPROVAL_SHA256", None)
     monkeypatch.setattr(r13,"_copy_prepared_code",
                         lambda **_:pytest.fail("NO_COPY_OR_NATIVE_WRITE"))
     monkeypatch.setattr(r13,"prepare_readonly",
@@ -247,7 +250,8 @@ def test_no_code_copy_without_fresh_pinned_separate_approval(monkeypatch):
         r13.install(execute_approved=True)
 
 
-def test_readonly_review_file_is_not_an_install_approval():
+def test_readonly_review_file_is_not_an_install_approval(monkeypatch):
+    monkeypatch.setattr(r13, "APPROVAL_SHA256", None)
     review = r13._read_review()
     assert all(x is False for x in review["flags"].values())
     assert review["source"]["commit"] == r13.SOURCE
