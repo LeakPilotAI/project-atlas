@@ -17,6 +17,7 @@ from scripts.observation_runtime.personal_v8_operator_clock import (
 )
 from scripts.observation_runtime.personal_version_safe_release_clock import (
     NativeVersionSafePaperOperatorClock, PROFILE as VERSION_SAFE_NTP_PROFILE,
+    require_version_safe_release_digest,
 )
 from scripts.observation_runtime.personal_paper_activation import NativePersonalActivationReader
 from scripts.volume_inspector.windows_output import current_sid
@@ -34,6 +35,13 @@ class NativePersonalSourceInstallAuthority:
         )
         if type(reader) is not NativePersonalActivationReader or not valid_clock:
             raise ValueError('SOURCE_INSTALL_NATIVE_ACTIVATION_AND_CLOCK_REQUIRED')
+        # A valid R15 clock is not proof that a caller-selected release digest
+        # belongs to R15. Rebind the exact selected immutable artifact first.
+        if clock_profile == VERSION_SAFE_NTP_PROFILE:
+            if require_version_safe_release_digest(
+                    clock=clock, runtime_id=runtime_id,
+                    release_digest=release_digest) is not True:
+                raise ValueError('SOURCE_INSTALL_SELECTED_RELEASE_REQUIRED')
         clock.require_operational(runtime_id)
         if (type(enrollment_digest) is not str or len(enrollment_digest) != 64
                 or any(c not in '0123456789abcdef' for c in enrollment_digest)

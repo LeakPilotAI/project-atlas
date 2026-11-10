@@ -69,3 +69,17 @@ def test_source_archive_installer_native_genesis_ack_uses_exact_raw_sha256(monke
     assert result['initial_image_digest'] == hashlib.sha256(image).hexdigest()
     assert result['source_publication_accepted'] is False
     assert result['financial_inception_authorized'] is False
+
+
+def test_source_archive_rejects_foreign_release_before_native_root_open(monkeypatch):
+    from scripts.observation_runtime import personal_source_archive_installer as module
+    enrollment = {"schema":"PERSONAL_QD_SOURCE_ARCHIVE_V1", "account_id":"paper-qd",
+                  "epoch":"test", "source_id":"native-qd", "release_digest":"a"*64,
+                  "source_commit":"b"*40, "root_id":[1,2,3]}
+    monkeypatch.setattr(module, 'native_primitives',
+                        lambda: pytest.fail('NATIVE_ROOT_MUST_NOT_OPEN_ON_RELEASE_MISMATCH'))
+    with pytest.raises(ValueError, match='QD_SOURCE_SELECTED_RELEASE_ENROLLMENT_MISMATCH'):
+        module.install_source_archive(
+            root='D:\\AtlasCustody\\QualityDips\\fresh', enrollment=enrollment,
+            reader=None, policy={}, release_digest='c'*64,
+            accounts={}, clock=None, runtime_id='test')

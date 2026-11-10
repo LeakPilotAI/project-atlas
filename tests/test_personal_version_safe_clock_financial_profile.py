@@ -104,6 +104,11 @@ def test_new_source_install_port_still_needs_exact_native_reader(monkeypatch):
     clock = object.__new__(v.NativeVersionSafePaperOperatorClock)
     monkeypatch.setattr(source, 'validate_policy', lambda policy: policy)
     monkeypatch.setattr(source, 'current_sid', lambda: 'SYNTHETIC')
+    # This is an uninstalled synthetic clock: mock the mandatory selected
+    # release proof explicitly, not a native release or financial permission.
+    monkeypatch.setattr(source, 'require_version_safe_release_digest',
+                        lambda **args: args['clock'] is clock
+                        and args['release_digest'] == FUTURE_ARTIFACT)
     kw = dict(reader=object.__new__(NativePersonalActivationReader),policy={},
         release_digest=FUTURE_ARTIFACT,accounts={'QUALITY_DIPS':'a'*64},
         clock=clock,runtime_id='SYNTHETIC',enrollment_digest='b'*64,

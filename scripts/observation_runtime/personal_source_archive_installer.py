@@ -22,6 +22,10 @@ def install_source_archive(*, root, enrollment, reader, policy, release_digest,
             or any(part in ('', '.', '..') for part in root[3:].split('\\'))):
         raise ValueError('QD_SOURCE_EXPLICIT_CUSTODY_ROOT_REQUIRED')
     enrollment = validate_enrollment(enrollment)
+    # Native root identity alone cannot bind a source genesis to the selected
+    # release. Refuse a foreign/old enrollment before opening any native root.
+    if enrollment['release_digest'] != release_digest:
+        raise ValueError('QD_SOURCE_SELECTED_RELEASE_ENROLLMENT_MISMATCH')
     native = native_primitives()
     with native.w.WindowsOutput(root) as output:
         actual_id = native.native.file_identity(output.root_handle)
