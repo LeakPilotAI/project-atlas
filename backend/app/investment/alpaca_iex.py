@@ -200,7 +200,10 @@ class IEXFeed:
                         if in_roster:
                             self.quote_messages_rejected[symbol] += 1
                             self.quotes.pop(symbol, None)
-                        self.error = "IEX_QUOTE_REJECTED"
+                        # Reject only this symbol. A bad quote must not mark
+                        # unrelated subscribed symbols' valid quotes unusable.
+                        # Fatal transport/protocol/entitlement errors retain
+                        # their separate connection-level disconnect path.
                 # No trade/bar/status message is reinterpreted as an executable quote.
 
     def _quote(self, m):
