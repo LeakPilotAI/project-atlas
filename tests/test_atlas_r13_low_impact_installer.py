@@ -1,10 +1,14 @@
 """R13 review-only code installation safety. No copying or provider access.
 
-All low-impact process-priority, deadline and throttle cases use a fake
-kernel32 and clock. Exactly one real READ-ONLY release-plan check is allowed.
+Priority-drift, deadline and throttle cases use a fake kernel32 and clock.
+One tiny Windows child-priority inheritance case and one real READ-ONLY
+release-plan check are allowed; no native copy or market access.
 """
 import copy
 import json
+import os
+import subprocess
+import sys
 
 import pytest
 
@@ -37,6 +41,37 @@ class Kernel:
             return 0
         self.priority = priority
         return 1
+
+
+@pytest.mark.skipif(os.name != "nt", reason="native Windows priority inheritance")
+def test_installed_readback_style_child_inherits_idle_priority():
+    # Same CREATE_NO_WINDOW-only flag shape as installed_readback() uses.
+    # A real child must not silently undo the low-impact parent contract.
+    import ctypes
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.GetCurrentProcess.restype = ctypes.c_void_p
+    kernel.GetPriorityClass.argtypes = [ctypes.c_void_p]
+    kernel.GetPriorityClass.restype = ctypes.c_uint32
+    original = kernel.GetPriorityClass(kernel.GetCurrentProcess())
+    child_code = (
+        "import ctypes as C; k=C.WinDLL('kernel32'); "
+        "k.GetCurrentProcess.restype=C.c_void_p; "
+        "k.GetPriorityClass.argtypes=[C.c_void_p]; "
+        "k.GetPriorityClass.restype=C.c_uint32; "
+        "print(k.GetPriorityClass(k.GetCurrentProcess()))"
+    )
+    with r13.LowImpactEnvelope():
+        cp = subprocess.run(
+            [sys.executable, "-I", "-B", "-S", "-c", child_code],
+            capture_output=True, text=True, timeout=8,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+            env={key: os.environ[key] for key in
+                 ("SystemRoot", "WINDIR", "TEMP", "TMP", "PATH")
+                 if key in os.environ},
+        )
+        assert cp.returncode == 0, cp.stderr
+        assert cp.stdout.strip() == str(r13.IDLE_PRIORITY_CLASS)
+    assert kernel.GetPriorityClass(kernel.GetCurrentProcess()) == original
 
 
 def test_low_impact_envelope_paces_and_restores_priority(monkeypatch):
