@@ -244,3 +244,174 @@ def test_r14_exact_source_plan_and_readonly_preview():
     assert not os.path.lexists(r14.DESTINATION)
     assert not os.path.lexists(r14.RECEIPT)
     assert not os.path.lexists(r14.RECEIPT.with_suffix(".pending.jsonl"))
+
+
+def _disposable_install_harness(monkeypatch, tmp_path, *, copy_fails=False):
+    """Exercise the true R14 coordinator, replacing ALL native I/O/clock.
+
+    No real release directory, market account, NTP socket or child is touched.
+    """
+    from scripts.observation_runtime import atlas_independent_ntp_clock as ntp
+    from scripts import install_version_safe_candidate as clock_gate
+
+    events = []
+    class SyntheticClock:
+        def require_operational(self, identity):
+            assert identity == "r14-code-only-" + r14.SOURCE
+            events.append("clock")
+            return self
+
+    class SyntheticGuard:
+        def __init__(self, **kwargs):
+            assert kwargs["check_every"] == 32
+            assert kwargs["pace_every"] == 128
+            self.started, self.max_seconds, self.checks = None, 500, 0
+        def __enter__(self):
+            self.started = 100.0
+            events.append("idle_enter")
+            return self
+        def __exit__(self, *_):
+            events.append("idle_restore")
+        def monotonic(self):
+            return 100.0
+        def tick(self):
+            self.checks += 1
+            return True
+
+    monkeypatch.setattr(ntp, "IndependentNtpClock", SyntheticClock)
+    monkeypatch.setattr(clock_gate, "_qualify_native_clock_180s",
+                        lambda *_: events.append("clock_180s_synthetic"))
+    monkeypatch.setattr(r14, "_require_separate_consent",
+                        lambda: events.append("consent"))
+    monkeypatch.setattr(r14, "LowImpactEnvelope", SyntheticGuard)
+    monkeypatch.setattr(r14, "prepare_readonly", lambda: {"started": 100.0})
+    monkeypatch.setattr(r14, "_selector_unchanged", lambda: events.append("selector") or True)
+    monkeypatch.setattr(r14, "DESTINATION", tmp_path / "never_native_copy_here")
+    monkeypatch.setattr(r14, "RECEIPT", tmp_path / "synthetic-final-receipt.json")
+
+    def copy(*, destination, archive_sha256, source_commit,
+             prepared, observer, admission):
+        assert destination == tmp_path / "never_native_copy_here"
+        assert archive_sha256 == r14.ARCHIVE_SHA256
+        assert source_commit == r14.SOURCE
+        assert observer is None
+        assert r14.RECEIPT.with_suffix(".pending.jsonl").exists()
+        events.append("copy_stub")
+        admission()
+        if copy_fails:
+            raise ValueError("SYNTHETIC_NATIVE_COPY_REFUSAL")
+        return {"files": [{"path": "mock.py", "bytes": 0,
+                           "sha256": "0"*64, "id": [1, 2, 3]}],
+                "directories": [{"path": ".", "id": [1, 2, 4]}]}
+
+    def installed_readback(destination, receipt, digest, *, timeout):
+        assert destination == tmp_path / "never_native_copy_here"
+        assert receipt["selected"] is False
+        assert receipt["financial_effects"] is False
+        assert receipt["provider_connections"] is False
+        assert timeout <= 120 and timeout > 0
+        events.append("installed_readback_stub")
+        return {"layout": {"synthetic": "readback_mock_only"}}
+
+    monkeypatch.setattr(r14, "_copy_prepared_code", copy)
+    monkeypatch.setattr(r14, "installed_readback", installed_readback)
+    return SyntheticClock(), events
+
+
+def test_r14_synthetic_authorized_flow_writes_only_disposable_proof(monkeypatch, tmp_path):
+    clock, events = _disposable_install_harness(monkeypatch, tmp_path)
+    receipt = r14.install(execute_approved=True, clock=clock)
+    assert receipt["selected"] is False
+    assert receipt["provider_connections"] is False
+    assert receipt["financial_effects"] is False
+    assert receipt["operational_acceptance"] is False
+    assert receipt["source_commit"] == r14.SOURCE
+    assert r14.RECEIPT.is_file()
+    journal = r14.RECEIPT.with_suffix(".pending.jsonl").read_text().splitlines()
+    assert len(journal) == 2
+    assert json.loads(journal[0])["selection_allowed"] is False
+    assert json.loads(journal[-1])["stage"] == "NATIVE_READBACK_VERIFIED_FINAL_RECEIPT_PENDING"
+    assert json.loads(journal[-1])["financial_authority"] is False
+    assert json.loads(journal[-1])["artifact_digest"] == receipt["artifact_digest"]
+    assert "copy_stub" in events and "installed_readback_stub" in events
+    assert events[-1] == "idle_restore"
+    assert not r14.DESTINATION.exists()
+
+
+def test_r14_synthetic_copy_refusal_keeps_journal_without_final_receipt(monkeypatch, tmp_path):
+    clock, events = _disposable_install_harness(monkeypatch, tmp_path, copy_fails=True)
+    with pytest.raises(ValueError, match="SYNTHETIC_NATIVE_COPY_REFUSAL"):
+        r14.install(execute_approved=True, clock=clock)
+    assert not r14.RECEIPT.exists()
+    journal = r14.RECEIPT.with_suffix(".pending.jsonl").read_text().splitlines()
+    assert len(journal) == 2
+    assert json.loads(journal[-1])["stage"] == "REFUSED_PRESERVE_PARTIAL_NO_RETRY"
+    assert "installed_readback_stub" not in events
+    assert events[-1] == "idle_restore"
+
+
+def test_r14_disposable_final_receipt_write_failure_retains_refusal(monkeypatch, tmp_path):
+    """Never claim durable acceptance if create-only final receipt cannot land."""
+    clock, events = _disposable_install_harness(monkeypatch, tmp_path)
+    original_writer = r14.write_new_json
+    def refuse_final(path, value):
+        if path == r14.RECEIPT:
+            raise OSError("SYNTHETIC_FINAL_CREATE_ONLY_WRITE_REFUSAL")
+        return original_writer(path, value)
+    monkeypatch.setattr(r14, "write_new_json", refuse_final)
+    with pytest.raises(OSError, match="SYNTHETIC_FINAL_CREATE_ONLY_WRITE_REFUSAL"):
+        r14.install(execute_approved=True, clock=clock)
+    assert not r14.RECEIPT.exists()
+    journal = [json.loads(line) for line in
+               r14.RECEIPT.with_suffix(".pending.jsonl").read_text().splitlines()]
+    assert [row["stage"] for row in journal[1:]] == [
+        "NATIVE_READBACK_VERIFIED_FINAL_RECEIPT_PENDING",
+        "REFUSED_PRESERVE_PARTIAL_NO_RETRY"]
+    assert events[-1] == "idle_restore"
+    assert not r14.DESTINATION.exists()
+
+
+def test_r14_disposable_before_final_journal_failure_never_publishes_receipt(monkeypatch, tmp_path):
+    """The journal is write-ahead: no final receipt on journal fsync failure."""
+    clock, events = _disposable_install_harness(monkeypatch, tmp_path)
+    original_open = type(r14.RECEIPT).open
+    journal = r14.RECEIPT.with_suffix(".pending.jsonl")
+    # This tests the terminal journal's *second* append in a confined mock
+    # without changing real on-disk installation state.
+    calls = []
+    def refuse_prepublication(path, *args, **kwargs):
+        if path == journal and args and args[0] == "ab":
+            calls.append("journal_append")
+            if len(calls) == 1:
+                raise OSError("SYNTHETIC_PREPUBLICATION_JOURNAL_FAILURE")
+        return original_open(path, *args, **kwargs)
+    monkeypatch.setattr(type(r14.RECEIPT), "open", refuse_prepublication)
+    with pytest.raises(OSError, match="SYNTHETIC_PREPUBLICATION_JOURNAL_FAILURE"):
+        r14.install(execute_approved=True, clock=clock)
+    assert not r14.RECEIPT.exists()
+    entries = [json.loads(line) for line in journal.read_text().splitlines()]
+    assert entries[-1]["stage"] == "REFUSED_PRESERVE_PARTIAL_NO_RETRY"
+    assert events[-1] == "idle_restore"
+
+
+def test_r14_disposable_final_permission_revocation_prevents_publication(monkeypatch, tmp_path):
+    """Consent loss after durable prepublication journal cannot issue receipt."""
+    clock, events = _disposable_install_harness(monkeypatch, tmp_path)
+    consents = [0]
+    def consent_may_revoke():
+        consents[0] += 1
+        events.append("consent")
+        if consents[0] >= 4:
+            raise ValueError("SYNTHETIC_APPROVAL_REVOKED_BEFORE_FINAL_RECEIPT")
+    monkeypatch.setattr(r14, "_require_separate_consent", consent_may_revoke)
+    with pytest.raises(ValueError, match="SYNTHETIC_APPROVAL_REVOKED_BEFORE_FINAL_RECEIPT"):
+        r14.install(execute_approved=True, clock=clock)
+    assert consents[0] == 4
+    assert not r14.RECEIPT.exists()
+    journal = [json.loads(line) for line in
+               r14.RECEIPT.with_suffix(".pending.jsonl").read_text().splitlines()]
+    assert [row["stage"] for row in journal[1:]] == [
+        "NATIVE_READBACK_VERIFIED_FINAL_RECEIPT_PENDING",
+        "REFUSED_PRESERVE_PARTIAL_NO_RETRY"]
+    assert "installed_readback_stub" in events
+    assert events[-1] == "idle_restore"

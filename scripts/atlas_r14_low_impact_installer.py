@@ -267,8 +267,20 @@ def install(*, execute_approved=False, clock=None):
             _selector_unchanged()
             _require_separate_consent()
             receipt.update(layout=result["layout"], artifact_digest=digest)
+            # Durable pre-publication proof comes FIRST. The create-only final
+            # receipt is the last side effect: a later journal failure must
+            # never leave both a published acceptance receipt and a refusal.
+            event({"stage": "NATIVE_READBACK_VERIFIED_FINAL_RECEIPT_PENDING",
+                   "artifact_digest": digest, "selection_allowed": False,
+                   "financial_authority": False})
+            # The prepublication fsync may block. Re-check budget and real
+            # two-peer clock AFTER it, immediately before the final receipt.
+            guard.tick()
+            clock.require_operational(identity)
+            _selector_unchanged()
+            _require_separate_consent()
+            guard.tick()
             write_new_json(RECEIPT, receipt)
-            event({"stage": "CODE_ONLY_COPY_READBACK_VERIFIED_UNSELECTED"})
             return receipt
         except BaseException:
             event({"stage": "REFUSED_PRESERVE_PARTIAL_NO_RETRY"})
