@@ -128,10 +128,13 @@ def candidate_from_receipt(*, receipt, receipt_bytes, journal_bytes):
 
 def inspect():
     """No native-write/clock/provider operations, including if R15 is missing."""
-    validate_existing_r14_selected(collect_selected_reference())
+    # Check for an existing or uncertain one-shot publication before
+    # consulting the R14-only predecessor inspector, which is naturally
+    # obsolete after R15 has been selected.
     if os.path.lexists(SELECTION_ROOT/"r0014.pending") or os.path.lexists(
             SELECTION_ROOT/"r0014.json"):
         raise ValueError("R15_SELECTION_ALREADY_ATTEMPTED_DO_NOT_RETRY")
+    validate_existing_r14_selected(collect_selected_reference())
     if (not os.path.lexists(TARGET) and not os.path.lexists(RECEIPT)
             and not os.path.lexists(JOURNAL)):
         return {
