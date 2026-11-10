@@ -53,9 +53,10 @@ def prepared(tmp_path):
     return tmp_path
 
 
-def run(root, *, now=NOW, symbol="MSFT", cik=CIK):
+def run(root, *, now=NOW, symbol="MSFT", cik=CIK, accession=None):
     return replay.inspect_original_quarter(
-        symbol=symbol, cik=cik, cache_root=root, now=now)
+        symbol=symbol, cik=cik, cache_root=root, now=now,
+        accession=accession)
 
 
 def test_realistic_original_inline_and_separate_sec_companyfacts_agree(tmp_path):
@@ -157,3 +158,44 @@ def test_cache_recheck_refuses_symlinked_original_file(tmp_path):
 def test_security_symbol_must_be_exact_and_never_trigger_io(tmp_path, bad):
     with pytest.raises(ValueError, match="EXPLICIT_SECURITY"):
         run(tmp_path, symbol=bad)
+
+
+def test_explicit_accession_replays_only_matching_original_10q(tmp_path):
+    prepared(tmp_path)
+    result = run(tmp_path, accession=reference()["accession"])
+    assert result["accession"] == reference()["accession"]
+    assert result["diluted_eps_usd"] == "2.22"
+    assert result["original_filing_and_companyfacts_matched"] is True
+    assert result["twelve_quarter_history_accepted"] is False
+    assert result["financial_paper_authorized"] is False
+
+
+@pytest.mark.parametrize("bad_accession", [
+    "0000000000-26-000002", "0000000000-26-999999",
+])
+def test_exact_requested_quarter_never_falls_back_to_latest(tmp_path, bad_accession):
+    prepared(tmp_path)
+    with pytest.raises(ValueError, match="SUBMISSIONS_10Q_ACCESSION_REQUIRED"):
+        run(tmp_path, accession=bad_accession)
+
+
+@pytest.mark.parametrize("bad_accession", [
+    "", "000000000026000001", "0000000000-26-000001/../",
+    "0000000000-26-000001?fake", 123, True,
+])
+def test_invalid_accession_refuses_without_accessing_cached_resources(tmp_path, bad_accession):
+    with pytest.raises(ValueError, match="EXACT_HISTORICAL_ACCESSION_REQUIRED"):
+        run(tmp_path, accession=bad_accession)
+
+
+def test_explicit_accession_cannot_admit_annual_report_as_standalone_10q(tmp_path):
+    prepared(tmp_path)
+    path = tmp_path / (hashlib.sha256(SUB.encode()).hexdigest() + ".json")
+    cache = json.loads(path.read_text(encoding="utf-8"))
+    data = json.loads(cache["raw"])
+    data["filings"]["recent"]["form"][0] = "10-K"
+    cache["raw"] = json.dumps(data, sort_keys=True)
+    cache["sha256"] = hashlib.sha256(cache["raw"].encode()).hexdigest()
+    path.write_text(json.dumps(cache, sort_keys=True), encoding="utf-8")
+    with pytest.raises(ValueError, match="SUBMISSIONS_10Q_ACCESSION_REQUIRED"):
+        run(tmp_path, accession=reference()["accession"])

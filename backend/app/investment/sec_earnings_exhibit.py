@@ -196,7 +196,7 @@ def exhibit_rows(exhibits, *, cik):
                 or not re.fullmatch(r'\d{10}-\d{2}-\d{6}',ref.get('accession',''))):_refuse('EXHIBIT_PROJECTION_ISSUER')
         if date.fromisoformat(ref['report_date'])>date.fromisoformat(ref['filed']):_refuse('EXHIBIT_PROJECTION_DATE')
         prefix=f'https://www.sec.gov/Archives/edgar/data/{int(cik)}/{ref["accession"].replace("-","")}/'
-        if (not parsed['url'].startswith(prefix) or not re.fullmatch(r'[A-Za-z0-9_-]*ex99[_\.-]?1\.htm',
+        if (not parsed['url'].startswith(prefix) or not re.fullmatch(r'[A-Za-z0-9_-]{0,100}ex99(?:[_\.-]?1)?\.htm',
                 parsed['url'][len(prefix):],re.IGNORECASE) or not ref.get('url','').startswith(prefix)
                 or not re.fullmatch(r'[A-Za-z0-9_-][A-Za-z0-9_.-]{0,159}\.(?:htm|html|xml)',ref['url'][len(prefix):])):
             _refuse('EXHIBIT_PROJECTION_REFERENCE')

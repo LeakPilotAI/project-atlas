@@ -230,7 +230,7 @@ def earnings_exhibit_reference(main, reference, *, now):
     parsed=parse_original_filing(main,reference,now=now,require_facts=False)
     parser=_Links();parser.feed(main);parser.close()
     matches=[href for href,label in parser.links if re.fullmatch(
-        r'[A-Za-z0-9_-]*ex99[_\.-]?1\.htm',href,re.IGNORECASE)
+        r'[A-Za-z0-9_-]{0,100}ex99(?:[_\.-]?1)?\.htm',href,re.IGNORECASE)
         and ('press release' in label.lower() or 'earnings release' in label.lower())]
     if len(set(matches))!=1:_refuse('EARNINGS_EXHIBIT_REFERENCE')
     return {'url':reference['url'].rsplit('/',1)[0]+'/'+matches[0],

@@ -145,3 +145,28 @@ def test_projection_supplement_validation(damage):
     elif damage=='annual_period':ex['facts'][0]['start']='2025-07-01'
     elif damage=='future_filing':ex['facts'][0]['filed']=(NOW+timedelta(days=1)).date().isoformat()
     with pytest.raises(ResearchRefused):exhibit_rows([ex],cik='0000789019')
+
+
+def test_sec_exhibit_long_issuer_filename_is_safe_but_still_requires_gaap_quarter():
+    """A real AVGO 8-K uses an issuer-prefixed ex99 filename, not ex99_1."""
+    main=release_main().replace('msft-ex99_1.htm',
+        'avgo-11022025x8kxex99.htm')
+    parsed_original=parsed(main=main)
+    assert parsed_original['url'].endswith('/avgo-11022025x8kxex99.htm')
+    assert [r['val'] for r in exhibit_rows([parsed_original],cik='0000789019')]==['4.81','3.65']
+    # An identified SEC link alone never approves an unrelated or non-GAAP table.
+    with pytest.raises(ResearchRefused):
+        parsed(main=main,text=exhibit().replace('INCOME STATEMENTS','NON-GAAP INCOME STATEMENTS'))
+
+
+@pytest.mark.parametrize('bad_link',[
+    '../avgo-11022025x8kxex99.htm',
+    'avgo-11022025x8kxex99.htm?x=1',
+    'avgo-11022025x8kxex99.htm#f',
+    'avgo-11022025x8kxex99_2.htm',
+    '/avgo-11022025x8kxex99.htm',
+])
+def test_sec_long_original_exhibit_filename_refuses_unsafe_links(bad_link):
+    main=release_main().replace('msft-ex99_1.htm',bad_link)
+    with pytest.raises(ResearchRefused,match='EXHIBIT_REFERENCE'):
+        parsed(main=main)

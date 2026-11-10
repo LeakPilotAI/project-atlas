@@ -59,12 +59,16 @@ def _one(values, *, code):
     return values[0]
 
 
-def inspect_original_quarter(*, symbol, cik, cache_root=CACHE_ROOT, now=None):
+def inspect_original_quarter(*, symbol, cik, cache_root=CACHE_ROOT, now=None,
+                             accession=None):
     now = datetime.now(UTC) if now is None else now
     if (type(symbol) is not str or re.fullmatch("[A-Z]{1,8}",symbol) is None
             or type(cik) is not str or re.fullmatch("[0-9]{10}",cik) is None
             or type(now) is not datetime or now.utcoffset() is None):
         raise ValueError("QD_SEC_EXPLICIT_SECURITY_AND_UTC_REQUIRED")
+    if accession is not None and (type(accession) is not str
+            or re.fullmatch(r"[0-9]{10}-[0-9]{2}-[0-9]{6}", accession) is None):
+        raise ValueError("QD_SEC_EXACT_HISTORICAL_ACCESSION_REQUIRED")
     base = "https://data.sec.gov/"
     submission_url = base + "submissions/CIK" + cik + ".json"
     facts_url = base + "api/xbrl/companyfacts/CIK" + cik + ".json"
@@ -76,7 +80,9 @@ def inspect_original_quarter(*, symbol, cik, cache_root=CACHE_ROOT, now=None):
     filings = filing_rows(submissions,cik=cik,symbol=symbol)
     refs = sorted((r for r in filings.values() if r["form"] == "10-Q"),
                   key=lambda r: (r["filed"],r["accession"]), reverse=True)
-    reference = _one(refs[:1], code="QD_SEC_RECENT_10Q_REFERENCE_REQUIRED")
+    matching = ([r for r in refs if r['accession'] == accession]
+                if accession is not None else refs[:1])
+    reference = _one(matching, code="QD_SEC_SUBMISSIONS_10Q_ACCESSION_REQUIRED")
     if str(companyfacts.get("cik", "")).zfill(10) != cik:
         raise ValueError("QD_SEC_COMPANYFACTS_ISSUER_MISMATCH")
     original_raw, original_hash = _cached(
@@ -158,9 +164,12 @@ def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--symbol",required=True)
     p.add_argument("--cik",required=True)
+    p.add_argument("--accession",default=None,
+                   help="Exact SEC submissions 10-Q accession; defaults to latest")
     args=p.parse_args(argv)
     try:
-        result=inspect_original_quarter(symbol=args.symbol,cik=args.cik)
+        result=inspect_original_quarter(symbol=args.symbol,cik=args.cik,
+                                        accession=args.accession)
     except (ValueError,ResearchRefused,TypeError,KeyError,OSError):
         print(json.dumps({"schema":SCHEMA,"status":"REFUSED",
             "financial_paper_authorized":False,"live_order_authorized":False},sort_keys=True))
