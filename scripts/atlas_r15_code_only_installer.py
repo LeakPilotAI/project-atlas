@@ -35,7 +35,7 @@ from scripts.observation_runtime.native_install_host_admission import (
 )
 
 APPROVAL = ROOT / "logs/diagnostics/atlas-r15-code-only-native-install-one-shot-approval.json"
-APPROVAL_SHA256 = None  # Cannot become an install grant from chat or old R14 consent.
+APPROVAL_SHA256 = "0746bcf799af2a5b6069511b2de15ead45650f58db97eff729ce37154148986a"  # Cannot become an install grant from chat or old R14 consent.
 SCOPE = "INSTALL_EXACT_R15_UNSELECTED_CODE_ONLY_NO_FINANCIAL_START"
 OPERATION = "APPROVE_ONE_R15_CODE_ONLY_NATIVE_INSTALL"
 CLOCK_IDENTITY = "atlas-r15-code-only-install-" + SOURCE_COMMIT
