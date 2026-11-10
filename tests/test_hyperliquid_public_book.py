@@ -27,6 +27,33 @@ def test_book_is_executable_price_observation_not_authority_or_settlement():
     assert (metadata, book) == before
 
 
+@pytest.mark.parametrize("location", [
+    "mark", "oracle", "funding", "bid", "ask", "size",
+])
+def test_malformed_provider_decimal_refuses_through_sanitized_cli_path(location):
+    from scripts.observation_runtime.atlas_r14_hyperliquid_public_book_probe import (
+        safe_refusal_code,
+    )
+    metadata, book = inputs()
+    if location == "mark":
+        metadata[1][0]["markPx"] = "NOT_A_DECIMAL"
+    elif location == "oracle":
+        metadata[1][0]["oraclePx"] = "NOT_A_DECIMAL"
+    elif location == "funding":
+        metadata[1][0]["funding"] = "NOT_A_DECIMAL"
+    elif location == "bid":
+        book["levels"][0][0]["px"] = "NOT_A_DECIMAL"
+    elif location == "ask":
+        book["levels"][1][0]["px"] = "NOT_A_DECIMAL"
+    else:
+        book["levels"][0][0]["sz"] = "NOT_A_DECIMAL"
+    with pytest.raises(ValueError) as caught:
+        _paper_execution_observation("BTC", metadata, book, 99999, 100001)
+    assert type(caught.value) is ValueError
+    assert "NOT_A_DECIMAL" not in str(caught.value)
+    assert safe_refusal_code(caught.value) == "HL_SOURCE_OR_DATA_VALIDATION_REFUSED"
+
+
 @pytest.mark.parametrize("damage", ["mids", "stale", "future", "wrong-coin", "empty", "crossed",
     "duplicate", "nonfinite", "no-oracle", "delisted", "misaligned", "clock"])
 def test_missing_or_conflicting_book_evidence_refuses(damage):

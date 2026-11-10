@@ -106,12 +106,16 @@ def _paper_book_admission_reason(symbol, metadata, book, started, observed):
 
 def _paper_execution_observation(symbol, metadata, book, started, observed):
     """Strict Decimal-preserving public evidence parser, not a fill decision."""
-    from decimal import Decimal
+    from decimal import Decimal, InvalidOperation
 
     def decimal(value, *, positive=False):
         if type(value) is not str:
             raise ValueError("Provider decimal string required")
-        parsed = Decimal(value)
+        try:
+            parsed = Decimal(value)
+        except InvalidOperation:
+            # Malformed provider decimal must reach the CLI's fixed refusal path.
+            raise ValueError("Valid provider decimal required") from None
         if not parsed.is_finite() or (positive and parsed <= 0):
             raise ValueError("Finite provider quantity required")
         return parsed
