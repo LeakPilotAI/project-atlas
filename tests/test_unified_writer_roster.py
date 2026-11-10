@@ -63,3 +63,62 @@ def test_roster_observation_must_still_be_fresh_when_verification_finishes(finis
                                  authority=s.a, clock=lambda: now[0])
     with pytest.raises(ValueError):
         roster.owned_roster({'session_id': 'synthetic-session'}, s.writers, 100)
+
+
+@pytest.mark.parametrize('damage',[
+    'unknown_writer','unknown_operation','process_incarnation','resource_identity',
+    'read_authority','enrollment_authority','writer_object','clock_identity',
+    'observation_stale',
+])
+def test_successful_writer_lease_exit_must_revalidate_native_roster(damage):
+    """An ownership change after entry must not return cleanly to the caller."""
+    s=fixture()
+    with pytest.raises(ValueError):
+        with s.roster.lease({'session_id':'synthetic-session'},s.writers,100) as lease:
+            assert lease is not None
+            if damage=='unknown_writer':
+                s.value['unknown_writers'].append('SYNTHETIC_UNOWNED_PROCESS')
+            elif damage=='unknown_operation':
+                s.value['unknown_operations']=True
+            elif damage=='process_incarnation':
+                s.value['roles']['QD_PROJECTION']['process']['created']=5555
+            elif damage=='resource_identity':
+                s.value['roles']['PERP_SOURCE']['resource']=[9,8,7]
+            elif damage=='read_authority':
+                s.a.verify_observation=lambda *_:False
+            elif damage=='enrollment_authority':
+                s.a.verify_enrollment=lambda *_:False
+            elif damage=='writer_object':
+                s.writers['QUALITY_DIPS']=SimpleNamespace(manifest={'epoch':'NEW'})
+            elif damage=='clock_identity':
+                s.roster.clock=lambda:100
+            else:
+                s.value['observed_at']=90
+
+
+def test_successful_writer_lease_rechecks_read_observer_on_exit():
+    s=fixture()
+    count=[0]
+    def counted_read(expected):
+        count[0]+=1
+        return copy.deepcopy(s.value)
+    s.observer.read=counted_read
+    with s.roster.lease({'session_id':'synthetic-session'},s.writers,100):
+        assert count[0]==1
+    assert count[0]==2
+
+
+def test_failed_writer_lease_body_retains_original_unknown_error():
+    s=fixture()
+    with pytest.raises(RuntimeError,match='SYNTHETIC_FINANCIAL_EFFECT_UNKNOWN'):
+        with s.roster.lease({'session_id':'synthetic-session'},s.writers,100):
+            s.value['unknown_operations']=True
+            raise RuntimeError('SYNTHETIC_FINANCIAL_EFFECT_UNKNOWN')
+
+
+def test_writer_lease_failure_without_explicit_check_is_not_success():
+    s=fixture()
+    with pytest.raises(ValueError,match='NATIVE_WRITER_RESOURCE_OR_QUIESCENCE_UNVERIFIED'):
+        with s.roster.lease({'session_id':'synthetic-session'},s.writers,100):
+            # Deliberately skip lease.check(). The outer context must check.
+            s.value['unknown_writers']=['UNOWNED_AFTER_ENTRY']

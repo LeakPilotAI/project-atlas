@@ -85,7 +85,14 @@ class UnifiedWriterRoster:
             def check(self):
                 owner._read(grant,writers)
                 return True
-        yield Lease()
+        lease=Lease()
+        # Check the original selected writer, process incarnation, operation
+        # observation, enrollment authority and UTC freshness again on a
+        # successful exit.  A revoked lease after a native effect is an
+        # UNKNOWN outcome, never a successful acknowledgement or retry grant.
+        yield lease
+        if lease.check() is not True:
+            raise ValueError('NATIVE_WRITER_ROSTER_LEASE_FINAL_VERIFICATION_REFUSED')
 
     def drain(self,grant,writers,now):
         first=self._read(grant,writers)
