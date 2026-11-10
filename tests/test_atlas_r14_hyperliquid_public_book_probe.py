@@ -39,8 +39,10 @@ def test_actual_r15_native_selected_scope_and_existing_readonly_budget(preview):
     assert preview["selected_code_revision"]==14
     assert preview["selected_code_verified"] is True
     assert preview["existing_request_budget"]["status"]=="EXISTING_UNAUTHORIZED_RESEARCH_BUDGET"
-    # The one permitted BTC observation consumed two public info attempts; never reset it.
-    assert preview["existing_request_budget"]["remaining"]==2
+    # November 10: the separately approved final BTC probe consumed the last
+    # two public info attempts but did not yield an accepted book. Never
+    # silently replenish the durable budget or infer market-book readiness.
+    assert preview["existing_request_budget"]["remaining"]==0
     assert preview["public_info_requests_per_probe"]==2
     assert preview["total_durable_budget"]==12
     for key in (
@@ -269,7 +271,7 @@ def test_selected_r15_preview_refuses_provider_network_or_budget_writes(
     data=json.loads(capsys.readouterr().out)
     assert data['schema']=='ATLAS_SELECTED_R15_HL_PUBLIC_BOOK_PREFLIGHT_V1'
     assert data['selected_code_revision']==14
-    assert data['existing_request_budget']['remaining']==2
+    assert data['existing_request_budget']['remaining']==0
     assert data['provider_connection_opened'] is False
     assert data['financial_execution_authorized'] is False
 
@@ -277,8 +279,12 @@ def test_selected_r15_preview_refuses_provider_network_or_budget_writes(
 def test_future_authorized_r15_sample_uses_current_release_label_with_stubbed_provider(
         monkeypatch):
     # No request-gate installation, durable budget spend, NTP or HTTP.
-    current=probe.inspect()
+    current=copy.deepcopy(probe.inspect())
     assert current["selected_code_revision"]==14
+    assert current["existing_request_budget"]["remaining"]==0
+    # Only a simulated proposed future budget is injected; the real ledger
+    # stays exhausted and is never opened writable by this regression.
+    current["existing_request_budget"]["remaining"]=2
     monkeypatch.setattr(probe,"inspect",lambda:current)
     class FakeGate:
         def remaining(self):return 2
@@ -306,3 +312,22 @@ def test_future_authorized_r15_sample_uses_current_release_label_with_stubbed_pr
     assert admitted["paper_order_authorized"] is False
     assert admitted["live_order_authorized"] is False
     assert admitted["automatic_startup_authorized"] is False
+
+
+def test_real_exhausted_public_request_budget_refuses_before_any_new_io(monkeypatch):
+    """The failed Nov 10 bounded probe consumed the final two attempts.
+
+    New data-only probes cannot silently reset the budget or construct any
+    NTP, provider client, or mutable request gate after this terminal state.
+    """
+    current=probe.inspect()
+    assert current["selected_code_revision"]==14
+    assert current["existing_request_budget"]["remaining"]==0
+    monkeypatch.setattr(probe,"HyperliquidRequestGate",
+                        lambda *_a,**_kw:pytest.fail("DURABLE_HL_BUDGET_OPENED"))
+    monkeypatch.setattr(probe,"IndependentNtpClock",
+                        lambda **_kw:pytest.fail("NEW_HL_NTP_LEASE_STARTED"))
+    monkeypatch.setattr(probe,"HyperliquidAdapter",
+                        lambda:pytest.fail("NEW_HL_PUBLIC_REQUEST_STARTED"))
+    with pytest.raises(ValueError,match="TWO_REQUEST_ENROLLED_BUDGET_NOT_AVAILABLE"):
+        probe.execute_data_only(symbol="BTC",confirm_scope=probe.SCOPE)
