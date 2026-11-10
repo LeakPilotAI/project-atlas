@@ -146,7 +146,13 @@ def parse_original_filing(document, reference, *, now, require_facts=True):
             elif len(instants)==1 and not starts and not ends:
                 start=None;end=date.fromisoformat(instants[0].text().strip())
             else:_refuse('CONTEXT_PERIOD')
-            if end>date.fromisoformat(reference['filed']) or start is not None and start>end:_refuse('CONTEXT_PERIOD')
+            if start is not None and start>end:_refuse('CONTEXT_PERIOD')
+            if end>date.fromisoformat(reference['filed']):
+                # SEC filings can announce future dividend record/payment dates.
+                # Keep their IDs to reject duplicate definitions, but disallow
+                # the context for every admitted GAAP and DEI fact below.
+                contexts[identity]=None
+                continue
             contexts[identity]=(start,end,dimensioned)
         elif local=='unit':
             if parser.namespaces.get(node.tag.split(':')[0])!='http://www.xbrl.org/2003/instance':_refuse('UNIT_NAMESPACE')
@@ -173,7 +179,7 @@ def parse_original_filing(document, reference, *, now, require_facts=True):
         if re.fullmatch(r'https?://xbrl.sec.gov/dei/(?:\d{4}(?:-\d{2}-\d{2})?|202[12]q4)',namespace) and concept in (
                 'DocumentType','DocumentPeriodEndDate','EntityCentralIndexKey'):
             if (node.attrs.get('continuedat') or node.attrs.get('xsi:nil') in ('true','1')
-                    or node.attrs.get('contextref') not in contexts):_refuse('INCOMPLETE_DOCUMENT_IDENTITY')
+                    or contexts.get(node.attrs.get('contextref')) is None):_refuse('INCOMPLETE_DOCUMENT_IDENTITY')
             dei.setdefault(concept,set()).add(node.text().strip())
             continue
         if not sep or concept not in CONCEPTS or not re.fullmatch(r'https?://fasb.org/us-gaap/\d{4}(?:-\d{2}-\d{2})?',namespace):continue

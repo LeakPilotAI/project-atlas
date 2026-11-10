@@ -138,3 +138,40 @@ def test_narrow_source_scope_is_allowed_only_with_identification(tmp_path,url):
 def test_filing_endpoint_expansion_does_not_allow_escape_or_orders(tmp_path,url):
     c,_,_,_=client(tmp_path)
     with pytest.raises(ResearchRefused):c._scope(url)
+
+
+def _future_dividend_context():
+    return '''<xbrli:context id="future-dividend">
+      <xbrli:entity><xbrli:identifier scheme="http://www.sec.gov/CIK">0000789019</xbrli:identifier></xbrli:entity>
+      <xbrli:period><xbrli:startDate>2026-11-01</xbrli:startDate>
+      <xbrli:endDate>2026-11-01</xbrli:endDate></xbrli:period>
+      </xbrli:context>'''
+
+
+def test_future_post_filing_dividend_date_context_does_not_poison_reported_eps():
+    """Actual AVGO-like SEC dividend dates may occur after the filing date."""
+    text = document().replace('</html>', _future_dividend_context()
+        + '<ix:nonFraction name="us-gaap:DividendPayableDateToBePaidDayMonthAndYear" '
+          'contextRef="future-dividend" unitRef="shares">20261101</ix:nonFraction>'
+        + '</html>')
+    parsed = parse_original_filing(text, reference(), now=NOW)
+    eps = [f for f in parsed['facts'] if f['concept'] == 'EarningsPerShareDiluted']
+    assert len(eps) == 1 and eps[0]['value'] == '2.22'
+    assert all(f['concept'] != 'DividendPayableDateToBePaidDayMonthAndYear'
+               for f in parsed['facts'])
+
+
+@pytest.mark.parametrize('type_of_future_reference', ['GAAP', 'DEI', 'DUPLICATE_ID'])
+def test_future_period_never_admitted_for_recognized_eps_or_identity(type_of_future_reference):
+    extra = _future_dividend_context()
+    if type_of_future_reference == 'GAAP':
+        extra += ('<ix:nonFraction name="us-gaap:EarningsPerShareDiluted" '
+                  'contextRef="future-dividend" unitRef="eps">3.33</ix:nonFraction>')
+    elif type_of_future_reference == 'DEI':
+        extra += ('<ix:nonNumeric name="dei:DocumentType" '
+                  'contextRef="future-dividend">10-Q</ix:nonNumeric>')
+    else:
+        extra += _future_dividend_context()
+    text = document().replace('</html>', extra + '</html>')
+    with pytest.raises(ResearchRefused):
+        parse_original_filing(text, reference(), now=NOW)
