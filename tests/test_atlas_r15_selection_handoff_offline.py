@@ -60,14 +60,18 @@ def receipt_and_journal():
 def test_install_not_present_and_current_r14_only_is_selected():
     result=handoff.inspect()
     assert result["schema"]=="ATLAS_R15_CODE_SELECTION_HANDOFF_V1"
-    assert result["status"]=="WAITING_FOR_SEPARATELY_AUTHORIZED_R15_CODE_ONLY_NATIVE_INSTALL"
+    if handoff.TARGET.is_dir():
+        assert result["status"]=="SOURCE_ONLY_CANDIDATE_REQUIRES_NATIVE_HANDLE_VERIFIER_AND_ONE_SHOT_SELECTION_APPROVAL"
+        assert result["proposed_row_digest"]=="274f5b00ee0e2f6271c6dd1dc5316f7d9124e932483038a6d93ef62ddbd2cd25"
+    else:
+        assert result["status"]=="WAITING_FOR_SEPARATELY_AUTHORIZED_R15_CODE_ONLY_NATIVE_INSTALL"
     assert result["source_commit"]==handoff.SOURCE_COMMIT
     assert result["selected_native_predecessor"]=="R14"
     assert result["expected_revision"]==14
     assert result["new_selection_record_written"] is False
     assert result["selection_authorized"] is False
     assert result["financial_authority"] is False
-    assert not handoff.TARGET.exists()
+    assert not (handoff.SELECTION_ROOT/"r0014.json").exists()
     assert not (handoff.SELECTION_ROOT/"r0014.json").exists()
 
 

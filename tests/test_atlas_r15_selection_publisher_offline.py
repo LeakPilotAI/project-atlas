@@ -49,7 +49,7 @@ def approval(proposal):
         "proposed_head":proposal["proposed_row_digest"],
         "installed_receipt_sha256":row["selected"]["receipt_sha256"],
         "operation":row["operation"],
-        "publisher_source_sha256":hashlib.sha256(Path(pub.__file__).read_bytes()).hexdigest(),
+        "publisher_source_sha256":pub.approval_source_sha256(),
         "one_shot":True,
         "selection_allowed":True,
         "financial_authority":False,
@@ -62,7 +62,11 @@ def approval(proposal):
 
 def test_native_selection_waits_for_separate_installed_receipt():
     row=pub.inspect()
-    assert row["status"]=="WAITING_FOR_SEPARATELY_AUTHORIZED_R15_CODE_ONLY_INSTALL"
+    if pub.handoff.TARGET.is_dir():
+        assert row["status"]=="PROPOSAL_REVIEW_ONLY_AWAITING_EXACT_APPROVAL"
+        assert row["proposed_head"]=="274f5b00ee0e2f6271c6dd1dc5316f7d9124e932483038a6d93ef62ddbd2cd25"
+    else:
+        assert row["status"]=="WAITING_FOR_SEPARATELY_AUTHORIZED_R15_CODE_ONLY_INSTALL"
     assert row["target_revision"]==14
     assert row["exact_one_shot_operator_approval_pinned"] is False
     assert row["native_installed_child_readback_completed"] is False
@@ -159,3 +163,25 @@ def test_publisher_does_not_acquire_same_native_selector_mutex_recursively():
         line for line in locked.splitlines() if not line.lstrip().startswith("#"))
     assert "refreshed=handoff.candidate_from_receipt" in source
     assert "store.publish(row)" in source
+
+
+def test_selection_approval_digest_is_stable_for_exact_pin_only(monkeypatch,tmp_path):
+    raw=Path(pub.__file__).read_bytes()
+    baseline=pub.approval_source_sha256()
+    original=b'APPROVAL_SHA256 = None  # Separate future operator review, not user chat inference.'
+    pinned=(b'APPROVAL_SHA256 = "'+b'f'*64+
+            b'"  # Separate future operator review, not user chat inference.')
+    assert sum(line==original for line in raw.splitlines())==1
+    altered=tmp_path/"r15_publisher_reviewed_with_single_pin.py"
+    altered.write_bytes(raw.replace(b"\n"+original+b"\n",b"\n"+pinned+b"\n",1))
+    monkeypatch.setattr(pub,"__file__",str(altered))
+    assert pub.approval_source_sha256()==baseline
+    altered.write_bytes(altered.read_bytes()+b"\n# unapproved native selection mutation\n")
+    assert pub.approval_source_sha256()!=baseline
+
+
+def test_current_code_selection_source_grant_is_not_pinned_or_spent():
+    assert pub.APPROVAL_SHA256 is None
+    assert not pub.APPROVAL.exists()
+    assert not (pub.handoff.SELECTION_ROOT/"r0014.json").exists()
+    assert len(pub.approval_source_sha256())==64

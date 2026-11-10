@@ -32,6 +32,24 @@ QUALIFICATION_FRESH_SECONDS = 120
 _QUALIFIED = weakref.WeakKeyDictionary()
 
 
+def approval_source_sha256():
+    """Bind all publisher source bytes except its single one-shot pin.
+
+    Normalize only the exact beginning-of-line assignment, so inserting the
+    approved SHA does not invalidate the source digest in its approval record.
+    All other mutations change the digest and refuse the one-shot approval.
+    """
+    raw=Path(__file__).read_bytes()
+    pattern=(rb'(?m)^APPROVAL_SHA256 = (?:None|"[0-9a-f]{64}")  # Separate '
+             rb'future operator review, not user chat inference\.')
+    marker=(b'APPROVAL_SHA256 = None  # Separate future operator review, '
+            b'not user chat inference.')
+    normalized,count=re.subn(pattern,marker,raw)
+    if count!=1:
+        raise ValueError("R15_SELECTION_SINGLE_SOURCE_APPROVAL_PIN_REQUIRED")
+    return hashlib.sha256(normalized).hexdigest()
+
+
 def inspect():
     """No NTP or provider call, no installed child execution or native writes."""
     preview=handoff.inspect()
@@ -70,7 +88,7 @@ def validate_operator_decision(record, *, sid, proposal):
         "selection_allowed","financial_authority","paper_accounts",
         "provider_access","paper_start_authorized","live_orders_authorized",
     }
-    publisher_sha=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    publisher_sha=approval_source_sha256()
     row=proposal.get("proposed_row") if type(proposal) is dict else None
     actual_head=release_selection.digest(row) if type(row) is dict else None
     if (type(proposal) is not dict or type(row) is not dict
