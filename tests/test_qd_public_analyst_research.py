@@ -141,3 +141,75 @@ def test_bad_timestamp_refuses_even_with_valid_html():
     with pytest.raises(ValueError, match="BOUNDED_EXACT_INPUT"):
         research.parse_public_targets(three(), symbol="MSFT",
                                       retrieved_at=datetime(2026, 11, 10))
+
+
+def test_existing_explicit_val_review_counts_one_syndicated_domain_not_five_firms():
+    raw = fixture(
+        row("Mark Moerdler", "Bernstein", 722, "Nov 6, 2026"),
+        row("Thomas Blakey", "Cantor Fitzgerald", 630, "Nov 3, 2026"),
+        row("Brent Thill", "Jefferies", 650, "Nov 2, 2026"),
+    )
+    receipt = research.parse_public_targets(raw, symbol="MSFT", retrieved_at=NOW)
+    result = research.review_syndicated_receipt(receipt, now=NOW)
+    assert result["named_firms_in_syndicated_listing"] == 3
+    assert result["secondary_upstream_review_source_count"] == 1
+    assert result["fresh_secondary_target_count_for_review"] == 1
+    assert result["admissible_independent_valuation_sources"] == 0
+    assert result["independently_authenticated_original_issuers"] == 0
+    assert result["latest_original_firm_target_date"] == "2026-11-06"
+    assert result["review"]["source_count"] == 1
+    assert result["review"]["structural_window_complete"] is False
+    assert result["review"]["window_complete"] is False
+    assert result["review"]["issuer_independence_declared"] is False
+    assert result["review"]["base"] is None
+    for flag in ("operational_source_accepted", "paper_fill_authorized", "live_order_authorized"):
+        assert result[flag] is False
+
+
+def test_original_firm_asof_not_refreshed_by_recent_capture():
+    raw = fixture(
+        row("Mark Moerdler", "Bernstein", 722, "Oct 28, 2026"),
+        row("Thomas Blakey", "Cantor Fitzgerald", 630, "Oct 27, 2026"),
+        row("Brent Thill", "Jefferies", 650, "Oct 22, 2026"),
+    )
+    receipt = research.parse_public_targets(raw, symbol="MSFT", retrieved_at=NOW)
+    result = research.review_syndicated_receipt(receipt, now=NOW)
+    assert result["named_firms_in_syndicated_listing"] == 3
+    assert result["latest_original_firm_target_date"] == "2026-10-28"
+    assert result["fresh_secondary_target_count_for_review"] == 0
+    assert result["review"]["source_count"] == 0
+    assert result["review"]["base"] is None
+    assert result["status"] == "RESEARCH_REVIEW_ONLY_ORIGINAL_TARGET_TOO_OLD"
+
+
+@pytest.mark.parametrize("damage", [
+    "pretend_original", "pretend_issuer", "pretend_operational",
+    "foreign_source_url", "tamper_symbol", "duplicate_firm",
+    "bad_target", "future_receipt", "expired_receipt", "extra_attribute",
+])
+def test_secondary_receipt_cannot_claim_financial_or_original_authority(damage):
+    from copy import deepcopy
+    receipt = deepcopy(research.parse_public_targets(three(), symbol="MSFT", retrieved_at=NOW))
+    now = NOW
+    if damage == "pretend_original":
+        receipt["original_firm_reports_verified"] = True
+    elif damage == "pretend_issuer":
+        receipt["independent_issuer_authenticated"] = True
+    elif damage == "pretend_operational":
+        receipt["valuation_source_operationally_accepted"] = True
+    elif damage == "foreign_source_url":
+        receipt["secondary_source_url"] = "https://evil.invalid/msft"
+    elif damage == "tamper_symbol":
+        receipt["symbol"] = "AVGO"
+    elif damage == "duplicate_firm":
+        receipt["individually_attributed_targets"][1]["firm"] = "Bernstein"
+    elif damage == "bad_target":
+        receipt["individually_attributed_targets"][1]["target_usd"] = "nan"
+    elif damage == "future_receipt":
+        receipt["retrieved_at"] = (NOW + timedelta(seconds=1)).isoformat()
+    elif damage == "expired_receipt":
+        now = NOW + timedelta(days=2)
+    elif damage == "extra_attribute":
+        receipt["not_authorized"] = True
+    with pytest.raises(ValueError):
+        research.review_syndicated_receipt(receipt, now=now)

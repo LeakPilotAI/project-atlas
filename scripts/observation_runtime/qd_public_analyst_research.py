@@ -161,5 +161,116 @@ def main(argv=None):
     return 0
 
 
+def review_syndicated_receipt(receipt, *, now):
+    """Carry one syndicated upstream into Atlas's EXISTING valuation review.
+
+    Several named firms on one aggregating website are NOT separate original
+    authenticated issuer domains. Review exactly one most recent observed
+    individual target as a secondary-source RESEARCH observation. The others
+    remain visible in the unchanged raw receipt, not independently certified.
+    The existing review's one-source window MUST remain incomplete.
+    """
+    from scripts.observation_runtime.qd_explicit_valuation_review import review_estimates
+
+    if (type(receipt) is not dict
+            or set(receipt) != {
+                "schema", "symbol", "secondary_source_url", "retrieved_at",
+                "original_html_sha256", "individual_firm_count",
+                "individually_attributed_targets", "all_firm_targets_previewed",
+                "three_distinct_firms_observed", "syndicated_secondary_evidence",
+                "original_firm_reports_verified", "independent_issuer_authenticated",
+                "valuation_source_operationally_accepted",
+                "native_forward_publication_created",
+                "simulated_paper_order_authorized", "live_order_authorized",
+            }
+            or receipt["schema"] != SCHEMA
+            or type(receipt["symbol"]) is not str
+            or SYMBOL.fullmatch(receipt["symbol"]) is None
+            or receipt["secondary_source_url"] !=
+            "https://stockanalysis.com/stocks/" + receipt["symbol"].lower() + "/ratings/"
+            or type(receipt["original_html_sha256"]) is not str
+            or re.fullmatch("[0-9a-f]{64}", receipt["original_html_sha256"]) is None
+            or any(receipt[flag] is not False for flag in (
+                "original_firm_reports_verified", "independent_issuer_authenticated",
+                "valuation_source_operationally_accepted",
+                "native_forward_publication_created",
+                "simulated_paper_order_authorized", "live_order_authorized"))
+            or receipt["syndicated_secondary_evidence"] is not True
+            or receipt["three_distinct_firms_observed"] is not True
+            or receipt["all_firm_targets_previewed"] is not True
+            or type(receipt["individual_firm_count"]) is not int
+            or not 3 <= receipt["individual_firm_count"] <= 10
+            or type(receipt["individually_attributed_targets"]) is not list
+            or len(receipt["individually_attributed_targets"]) != receipt["individual_firm_count"]
+            or type(now) is not datetime or now.utcoffset() is None):
+        raise ValueError("QD_SECONDARY_RECEIPT_EXACT_SCOPE_REQUIRED")
+    try:
+        retrieved = datetime.fromisoformat(receipt["retrieved_at"])
+    except (TypeError, ValueError):
+        raise ValueError("QD_SECONDARY_RECEIPT_RETRIEVAL_TIME_REQUIRED") from None
+    if (retrieved.utcoffset() is None
+            or not 0 <= (now - retrieved).total_seconds() <= 86400):
+        raise ValueError("QD_SECONDARY_RECEIPT_EXPIRED_OR_FUTURE")
+    firms = set()
+    for row in receipt["individually_attributed_targets"]:
+        if (type(row) is not dict or set(row) != {
+                "firm", "analyst", "target_usd", "published_at"}
+                or type(row["firm"]) is not str or FIRM.fullmatch(row["firm"]) is None
+                or type(row["analyst"]) is not str or ANALYST.fullmatch(row["analyst"]) is None
+                or type(row["target_usd"]) is not str
+                or re.fullmatch("[0-9]{1,6}(?:\\.[0-9]{1,2})?", row["target_usd"]) is None):
+            raise ValueError("QD_SECONDARY_RECEIPT_ATTRIBUTION_INVALID")
+        try:
+            value = Decimal(row["target_usd"])
+            date = datetime.strptime(row["published_at"], "%Y-%m-%d").replace(tzinfo=UTC)
+        except (ValueError, InvalidOperation):
+            raise ValueError("QD_SECONDARY_RECEIPT_ORIGINAL_DATE_INVALID") from None
+        if not (value.is_finite() and 0 < value < 1000000
+                and 0 <= (now - date).total_seconds() / 86400 <= MAX_AGE_DAYS
+                and row["firm"].casefold() not in firms):
+            raise ValueError("QD_SECONDARY_RECEIPT_FIRM_OR_DATE_REFUSED")
+        firms.add(row["firm"].casefold())
+    selected = sorted(receipt["individually_attributed_targets"],
+                      key=lambda x: (x["published_at"], x["firm"]), reverse=True)[0]
+    review = review_estimates({
+        "schema": "QD_EXPLICIT_VALUATION_REVIEW_V1",
+        "symbol": receipt["symbol"],
+        "estimates": [{
+            "value": selected["target_usd"],
+            "provenance": "MANUAL_RESEARCH",
+            "as_of": selected["published_at"],
+            "source_url": receipt["secondary_source_url"],
+            "source_name": "StockAnalysis syndicated analyst listing",
+            "issuer_family": "SINGLE_SYNDICATED_SECONDARY_UPSTREAM",
+        }],
+    }, now=now)
+    # An originally dated target may be outside the stricter valuation TTL
+    # even when it remains useful inside the 90-day historical listing.
+    if (review["source_count"] not in (0, 1)
+            or review["structural_window_complete"] is not False
+            or review["window_complete"] is not False
+            or review["independent_source_authentication"] is not False
+            or review["operational_source_accepted"] is not False
+            or review["paper_fill_authorized"] is not False):
+        raise ValueError("QD_SECONDARY_RECEIPT_REVIEW_AUTHORITY_CONFLICT")
+    return {
+        "schema": "ATLAS_QD_SECONDARY_SINGLE_UPSTREAM_REVIEW_V1",
+        "symbol": receipt["symbol"],
+        "named_firms_in_syndicated_listing": len(firms),
+        "independently_authenticated_original_issuers": 0,
+        "admissible_independent_valuation_sources": 0,
+        "secondary_upstream_review_source_count": 1,
+        "fresh_secondary_target_count_for_review": review["source_count"],
+        "latest_original_firm_target_date": selected["published_at"],
+        "review": review,
+        "status": ("RESEARCH_REVIEW_ONLY_ORIGINAL_ISSUER_ATTESTATION_MISSING"
+                   if review["source_count"] else
+                   "RESEARCH_REVIEW_ONLY_ORIGINAL_TARGET_TOO_OLD"),
+        "operational_source_accepted": False,
+        "paper_fill_authorized": False,
+        "live_order_authorized": False,
+    }
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
