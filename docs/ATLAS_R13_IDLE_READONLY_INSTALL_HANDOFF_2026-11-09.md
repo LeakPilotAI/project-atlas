@@ -16,6 +16,10 @@
 
 **Not granted:** operational R13 selection, Atlas startup, PAPER financial writer/account activation, account/provider access, actual PAPER or live orders, or any Windows clock/boot/shortcut changes. Financial PAPER remains NO-GO, 0/9 accepted operating gates; this is a technical release prerequisite, not a financial acceptance gate. Project Genesis and deferred post-production cleanup remain untouched.
 
+## Subsequent one-shot operator-approved attempt — REFUSED, not installed
+
+The user explicitly authorized one low-resource CODE-ONLY R13 installation. The pinned consent record was created once, the 180-second independent NTP qualification advanced to a native copy, and the installer entered post-copy native readback. Its **500-second low-impact work deadline expired before installed readback acceptance**; terminal exit 1 after 682.27s total. The partial destination and refusal journal were preserved, no final receipt exists, and the approval pin was reset to `None`. **Never retry/reuse that occupied destination.** Exact terminal details and next recovery boundaries: `docs/ATLAS_R13_ONE_SHOT_CODE_INSTALL_REFUSAL_2026-11-09.md`.
+
 ## Host-resource boundaries
 
 One Windows IDLE-priority process, bounded admission/deadline and periodic pacing, avoid enormous progress reports/child spawning, do not restart a partial copy. Even idle priority does not rule out disk contention or VS Code indexing of huge workspace trees; one-time operational installation requires a deliberate permission and PC responsiveness check before any large file operation.
