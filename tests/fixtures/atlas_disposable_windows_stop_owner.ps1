@@ -2,7 +2,8 @@
 # The native event uses an explicitly isolated test-<32hex> namespace.
 param([Parameter(Mandatory=$true)][string]$OfflineTestId,
       [Parameter(Mandatory=$true)][string]$ReceiptPath,
-      [string]$SelectedR14StopModule = '')
+      [string]$SelectedR14StopModule = '',
+      [string]$SelectedR15StopModule = '')
 $ErrorActionPreference='Stop'
 if($OfflineTestId -cnotmatch '^test-[a-f0-9]{32}$') {throw 'TEST_ISOLATED_NAMESPACE_REQUIRED'}
 if(Test-Path -LiteralPath $ReceiptPath){throw 'TEST_RECEIPT_MUST_NOT_EXIST'}
@@ -15,12 +16,22 @@ function Invoke-DisposableLedger([string]$Action){
 }
 Invoke-DisposableLedger 'reserve'
 $stopModule = Join-Path $PSScriptRoot '..\..\scripts\windows\Atlas-Paper-Owned-Stop-Signal.psm1'
+if($SelectedR14StopModule -and $SelectedR15StopModule){throw 'DISPOSABLE_NATIVE_STOP_RELEASE_AMBIGUOUS'}
 if($SelectedR14StopModule){
     $expected = 'D:\AtlasRuntime\releases\7ff9d3dba2eabe110f843c13efac49464805de2a\scripts\windows\Atlas-Paper-Owned-Stop-Signal.psm1'
     $expectedSha = '893a81bf11f7849f8ba20b31bb9e96b45e30ed09e35485ad018e1d7a21d1e9dc'
     if($SelectedR14StopModule -cne $expected -or -not (Test-Path -LiteralPath $expected -PathType Leaf) -or
         (Get-FileHash -LiteralPath $expected -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expectedSha){
         throw 'DISPOSABLE_SELECTED_R14_NATIVE_STOP_SOURCE_REFUSED'
+    }
+    $stopModule = $expected
+}
+if($SelectedR15StopModule){
+    $expected = 'D:\AtlasRuntime\releases\2c79a8d846d6b33669008114732ae5896153812a\scripts\windows\Atlas-Paper-Owned-Stop-Signal.psm1'
+    $expectedSha = '893a81bf11f7849f8ba20b31bb9e96b45e30ed09e35485ad018e1d7a21d1e9dc'
+    if($SelectedR15StopModule -cne $expected -or -not (Test-Path -LiteralPath $expected -PathType Leaf) -or
+        (Get-FileHash -LiteralPath $expected -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expectedSha){
+        throw 'DISPOSABLE_SELECTED_R15_NATIVE_STOP_SOURCE_REFUSED'
     }
     $stopModule = $expected
 }
