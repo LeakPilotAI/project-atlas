@@ -12,6 +12,7 @@ from scripts import atlas_r14_low_impact_installer as r14
 
 
 def test_r14_operator_approval_absent_refuses_before_any_native_io(monkeypatch):
+    monkeypatch.setattr(r14, "APPROVAL_SHA256", None)
     monkeypatch.setattr(r14, "prepare_readonly",
                         lambda: pytest.fail("NO_SOURCE_HASH_BEFORE_CONSENT"))
     monkeypatch.setattr(r14, "_copy_prepared_code",
@@ -243,7 +244,9 @@ def test_r14_exact_source_plan_and_readonly_preview():
     assert not any(report[k] for k in (
         "installation_authorized", "installed","selection_allowed",
         "paper_orders_authorized","live_orders_authorized"))
-    assert r14.APPROVAL_SHA256 is None
+    # Inspection has no authority even when a separately pinned one-shot
+    # install approval exists for a single future attempt.
+    assert report["installation_authorized"] is False
     assert not os.path.lexists(r14.DESTINATION)
     assert not os.path.lexists(r14.RECEIPT)
     assert not os.path.lexists(r14.RECEIPT.with_suffix(".pending.jsonl"))
