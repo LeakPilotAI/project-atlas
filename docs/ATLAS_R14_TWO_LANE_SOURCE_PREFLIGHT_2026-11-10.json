@@ -1,0 +1,68 @@
+{
+  "continuous_financial_clock_authorized": false,
+  "decision": "NO_GO",
+  "financial_operating_gates_accepted": 0,
+  "financial_operating_gates_total": 9,
+  "hyperliquid": {
+    "account_inception_verified": false,
+    "current_market_data_rights_verified": false,
+    "market": "PERPETUALS_ONLY",
+    "native_custody_direct_child_count": 3,
+    "native_custody_parent_present": true,
+    "native_financial_writer_verified": false,
+    "paper_execution_authorized": false,
+    "provider": "HYPERLIQUID"
+  },
+  "installed_provider_writer_code_verified": true,
+  "live_trading_authorized": false,
+  "native_financial_ledger_and_owner_accepted": false,
+  "next_required_evidence": [
+    "Current allowed IEX entitlement plus continuously fresh subscribed quotes across bounded rotating rosters; validate eligible stocks/ETFs and avoid claiming Robinhood coverage from Alpaca listings",
+    "QD operational source-publication and independently enrolled native writer/ledger",
+    "Hyperliquid accepted public data and genuine native PAPER account/writer ownership",
+    "Continuous operational financial UTC authority, global custody, risk and two-lane Stop/readback"
+  ],
+  "orders_submitted": false,
+  "owned_financial_stop_verified": false,
+  "paper_accounts_created": false,
+  "paper_startup_authorized": false,
+  "provider_connections_opened": false,
+  "quality_dips": {
+    "alpaca_config_file_present": true,
+    "authenticated_current_quotes_verified": false,
+    "catalog_symbols": 13487,
+    "credential_bytes_opened": false,
+    "data_feed": "IEX_SINGLE_EXCHANGE_NOT_NBBO",
+    "market": "US_STOCKS_ETFS",
+    "minimum_sequential_30_symbol_rosters": 450,
+    "native_writer_enrolled": false,
+    "operational_source_publication_verified": false,
+    "paper_execution_authorized": false,
+    "provider": "ALPACA",
+    "research_catalog_sha256": "df3dff6294ffbc06f2e14daeb87b9e5c4e1b1ed840a5b1e845b537499c3c56e1",
+    "research_inventory_verified": true,
+    "robinhood_equity_etf_universe_verified": false
+  },
+  "schema": "ATLAS_R14_TWO_LANE_FINANCIAL_SOURCE_PREFLIGHT_V1",
+  "selected_code_release": "7ff9d3dba2eabe110f843c13efac49464805de2a",
+  "selected_code_revision": 13,
+  "selected_installed_source_contracts": {
+    "backend/app/services/hyperliquid_current_producer.py": {
+      "native_source_sha256": "fa31ae70faf142ceeda2e6732fd96f72e3e31f62789a7aef756f88ebfa19154b",
+      "selected_release_source_matches_workspace": true
+    },
+    "backend/app/services/personal_hyperliquid_public_data.py": {
+      "native_source_sha256": "420977492b8de66f2070ac72b431ccc85c342928d6c3832d812bf4feeaa6649a",
+      "selected_release_source_matches_workspace": true
+    },
+    "backend/app/services/personal_paper_iex_provider.py": {
+      "native_source_sha256": "7eb096e94b2bf7681ba8d3eb42bf24a6c00b77dbb3531132023cca83e8b43d2f",
+      "selected_release_source_matches_workspace": true
+    },
+    "backend/app/services/quality_dips_unified_writer.py": {
+      "native_source_sha256": "27b3d5fce8182546bd3c677a7ee6dbe72843840621dc78dddfcc7f236328f337",
+      "selected_release_source_matches_workspace": true
+    }
+  },
+  "source_rights_independently_accepted": false
+}

@@ -151,6 +151,25 @@ def test_actual_selected_r12_catalog_custody_inspection_returns_no_go_not_auth()
     result=subprocess.run([str(src.ROOT/'backend/.venv/Scripts/python.exe'),'-B',
             '-m','scripts.observation_runtime.atlas_r12_alpaca_source_admission',
             '--inspect'],cwd=src.ROOT,capture_output=True,text=True,timeout=150)
+    from scripts.observation_runtime.atlas_r14_selected_paper_readiness import collect_selected_reference
+    actual = collect_selected_reference()
+    if actual['revision'] == 13:
+        # R12-only executable cannot claim the current R14 selection.
+        assert result.returncode != 0
+        assert 'ATLAS_R12_SELECTED_STATUS_NATIVE_CHAIN_CHANGED' in result.stderr
+        updated = subprocess.run([str(src.ROOT/'backend/.venv/Scripts/python.exe'), '-B',
+            '-m','scripts.observation_runtime.atlas_r14_two_lane_source_preflight',
+            '--inspect'],cwd=src.ROOT,capture_output=True,text=True,timeout=30)
+        assert updated.returncode == 2, updated.stderr
+        review = json.loads(updated.stdout)
+        assert review['selected_code_revision'] == 13
+        assert review['decision'] == 'NO_GO'
+        assert review['quality_dips']['research_inventory_verified'] is True
+        assert review['quality_dips']['operational_source_publication_verified'] is False
+        assert review['quality_dips']['robinhood_equity_etf_universe_verified'] is False
+        assert review['hyperliquid']['native_financial_writer_verified'] is False
+        assert review['financial_operating_gates_accepted'] == 0
+        return
     assert result.returncode==2,result.stderr
     out=json.loads(result.stdout)
     assert out['native_revision']==12
