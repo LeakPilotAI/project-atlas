@@ -132,6 +132,102 @@ def test_r14_inspect_uses_idle_envelope_even_on_preflight_error(monkeypatch):
     assert calls == ["enter","restore"]
 
 
+def test_r14_native_clock_admission_every_32_and_no_more_than_one_second():
+    clock_calls = []
+
+    class Guard:
+        def __init__(self):
+            self.checks = 0
+            self.now = 100.0
+        def tick(self):
+            self.checks += 1
+            assert self.now < 600.0
+        def monotonic(self):
+            return self.now
+
+    class Clock:
+        def require_operational(self, identity):
+            assert identity.startswith("r14-code-only-")
+            clock_calls.append(guard.checks)
+
+    guard = Guard()
+    clock = Clock()
+    identity = "r14-code-only-" + r14.SOURCE
+    for _ in range(96):
+        assert r14._native_admission(clock, identity, guard) is True
+    assert clock_calls == [1, 32, 64, 96]
+    # A stalled disk must not bypass clock continuity just because there
+    # have been fewer than another 32 native I/O admissions.
+    guard.now += 1.001
+    assert r14._native_admission(clock, identity, guard) is True
+    assert clock_calls == [1, 32, 64, 96, 97]
+
+
+def test_r14_clock_refusal_fails_next_bounded_checkpoint():
+    clock_calls = []
+    class Guard:
+        checks = 0
+        def tick(self):
+            self.checks += 1
+        def monotonic(self):
+            return 1.0
+    class Clock:
+        def require_operational(self, identity):
+            clock_calls.append(guard.checks)
+            if len(clock_calls) == 2:
+                raise ValueError("NTP_CAPABILITY_REVOKED")
+    guard = Guard()
+    for _ in range(31):
+        assert r14._native_admission(Clock(), "r14-code-only-x", guard)
+    with pytest.raises(ValueError, match="NTP_CAPABILITY_REVOKED"):
+        r14._native_admission(Clock(), "r14-code-only-x", guard)
+    assert clock_calls == [1, 32]
+
+
+def test_r14_readback_child_timeout_never_exceeds_work_deadline():
+    class Guard:
+        started = 100.0
+        max_seconds = 500
+        now = 100.0
+        checks = 0
+        def tick(self):
+            self.checks += 1
+            if self.now - self.started >= self.max_seconds:
+                raise ValueError("R14_WORK_DEADLINE")
+        def monotonic(self):
+            return self.now
+    guard = Guard()
+    assert r14._remaining_installed_readback_timeout(guard) == 120
+    guard.now = 550.0  # 50 seconds left before hard 500s gate.
+    assert r14._remaining_installed_readback_timeout(guard) == 45
+    guard.now = 565.0  # 35 seconds cannot justify a new child readback.
+    with pytest.raises(ValueError, match="R14_INSTALLED_READBACK_TIME_BUDGET_REFUSED"):
+        r14._remaining_installed_readback_timeout(guard)
+    guard.now = 600.0  # Hard deadline must still refuse.
+    with pytest.raises(ValueError, match="R14_WORK_DEADLINE"):
+        r14._remaining_installed_readback_timeout(guard)
+
+
+def test_r14_rechecks_clock_after_monotonic_backwards_step():
+    class Guard:
+        checks = 0
+        now = 2.0
+        def tick(self):
+            self.checks += 1
+        def monotonic(self):
+            return self.now
+    class Clock:
+        def __init__(self):
+            self.calls = 0
+        def require_operational(self, identity):
+            self.calls += 1
+    guard, clock = Guard(), Clock()
+    r14._native_admission(clock, "r14-code-only-x", guard)
+    guard.now = 1.0
+    r14._native_admission(clock, "r14-code-only-x", guard)
+    assert clock.calls == 2
+
+
 def test_r14_exact_source_plan_and_readonly_preview():
     report = r14.inspect()
     assert report["status"] == "NATIVE_LAYOUT_AND_INPUTS_VERIFIED_NOT_INSTALL_APPROVAL"

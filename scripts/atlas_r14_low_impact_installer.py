@@ -45,6 +45,7 @@ CHECK_EVERY = 32
 PACE_EVERY = 128
 PAUSE_SECONDS = 0.06
 MAX_SECONDS = 500
+NTP_ADMISSION_REFRESH_SECONDS = 1.0
 
 
 def _old_r13_refusal_preserved():
@@ -170,6 +171,34 @@ def _require_separate_consent():
     return record
 
 
+def _native_admission(clock, identity, guard):
+    """Bound EVERY I/O admission; attest NTP at 32 calls or 1s, whichever first.
+
+    An already qualified two-peer clock must remain valid throughout the copy.
+    Avoid the timestamp-issuance cache cost of sampling on every 64KiB I/O,
+    but never skip a clock check merely because a slow disk delays 32 calls.
+    Final financial/selection authority remains entirely disabled.
+    """
+    guard.tick()  # Every native admission still checks the 500s deadline.
+    now = guard.monotonic()
+    last = getattr(guard, "last_ntp_admission", None)
+    if (last is None or now < last
+            or now - last >= NTP_ADMISSION_REFRESH_SECONDS
+            or guard.checks % CHECK_EVERY == 0):
+        clock.require_operational(identity)
+        guard.last_ntp_admission = guard.monotonic()
+    return True
+
+
+def _remaining_installed_readback_timeout(guard):
+    """Leave headroom for final checks; never overrun the 500-second gate."""
+    guard.tick()
+    left = guard.max_seconds - (guard.monotonic() - guard.started)
+    if left <= 35:
+        raise ValueError("R14_INSTALLED_READBACK_TIME_BUDGET_REFUSED_PRESERVE_PARTIAL")
+    return min(120, left - 5)
+
+
 def install(*, execute_approved=False, clock=None):
     """Install ONLY after new exact, separately pinned one-shot consent."""
     if execute_approved is not True:
@@ -187,11 +216,12 @@ def install(*, execute_approved=False, clock=None):
                            pause_seconds=PAUSE_SECONDS, max_seconds=MAX_SECONDS) as guard:
         prepared = prepare_readonly()
         guard.tick()
+        # Source hashing can take time; independently attest the live clock
+        # again immediately before first create-only journal/write.
+        clock.require_operational(identity)
         prepared["started"] = time.monotonic()
         def admit():
-            guard.tick()
-            clock.require_operational(identity)
-            return True
+            return _native_admission(clock, identity, guard)
         admit()
         journal = RECEIPT.with_suffix(".pending.jsonl")
         write_new_json(journal, {
@@ -224,10 +254,17 @@ def install(*, execute_approved=False, clock=None):
             digest = hashlib.sha256(json.dumps(
                 receipt["files"],sort_keys=True,separators=(",",":")
             ).encode()).hexdigest()
+            # Continuity is refreshed at the native phase boundary even if
+            # the last copy admission was not exactly a 32-call checkpoint.
+            clock.require_operational(identity)
+            timeout = _remaining_installed_readback_timeout(guard)
             result = installed_readback(
-                DESTINATION, receipt, digest,
-                timeout=min(120, max(1, 540-(time.monotonic()-prepared["started"]))))
+                DESTINATION, receipt, digest, timeout=timeout)
             admit()
+            # Require fresh two-peer continuity, selector and operator scope
+            # immediately before any final nonfinancial acceptance receipt.
+            clock.require_operational(identity)
+            _selector_unchanged()
             _require_separate_consent()
             receipt.update(layout=result["layout"], artifact_digest=digest)
             write_new_json(RECEIPT, receipt)
