@@ -213,7 +213,11 @@ def _require_separate_consent():
 
 
 def inspect():
-    prepared = prepare_readonly()
+    # The read-only CLI itself hashes and validates local release inputs;
+    # protect the operator's desktop just as the future installer is protected.
+    with LowImpactEnvelope() as envelope:
+        prepared = prepare_readonly()
+        envelope.tick()
     return {
         "schema": "ATLAS_R13_LOW_IMPACT_CODE_INSTALL_PREVIEW_V1",
         "status": "SOURCE_DEPENDENCY_AND_LAYOUT_VERIFIED_NOT_INSTALL_APPROVAL",

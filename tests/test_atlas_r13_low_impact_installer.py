@@ -255,6 +255,56 @@ def test_readonly_review_file_is_not_an_install_approval():
         r13._require_separate_consent()
 
 
+def test_readonly_inspection_low_priority_preflight_and_restoration(monkeypatch):
+    """The public inspect CLI must not hash inputs at normal CPU priority."""
+    kernel = Kernel()
+    original = r13.LowImpactEnvelope
+
+    class SimulatedEnvelope(original):
+        def __init__(self):
+            super().__init__(kernel=kernel, wait=lambda _: None,
+                             monotonic=lambda: 1.0)
+
+    def simulated_plan():
+        assert kernel.priority == r13.IDLE_PRIORITY_CLASS
+        return {
+            "runtime": {"source.py": {}},
+            "dependencies": {"python/python.exe": {}},
+            "names": ["source.py", "python/python.exe"],
+            "total": 42,
+        }
+
+    monkeypatch.setattr(r13, "LowImpactEnvelope", SimulatedEnvelope)
+    monkeypatch.setattr(r13, "prepare_readonly", simulated_plan)
+    report = r13.inspect()
+    assert report["planned_files"] == 2
+    assert report["planned_bytes"] == 42
+    assert report["installation_authorized"] is False
+    assert report["paper_orders_authorized"] is False
+    assert kernel.priority == 0x20
+    assert kernel.calls == [r13.IDLE_PRIORITY_CLASS, 0x20]
+
+
+def test_readonly_inspection_low_priority_refusal_restores(monkeypatch):
+    kernel = Kernel()
+    original = r13.LowImpactEnvelope
+
+    class SimulatedEnvelope(original):
+        def __init__(self):
+            super().__init__(kernel=kernel, wait=lambda _: None,
+                             monotonic=lambda: 1.0)
+
+    def refused_plan():
+        assert kernel.priority == r13.IDLE_PRIORITY_CLASS
+        raise ValueError("SIMULATED_PIN_MISMATCH")
+
+    monkeypatch.setattr(r13, "LowImpactEnvelope", SimulatedEnvelope)
+    monkeypatch.setattr(r13, "prepare_readonly", refused_plan)
+    with pytest.raises(ValueError, match="SIMULATED_PIN_MISMATCH"):
+        r13.inspect()
+    assert kernel.priority == 0x20
+
+
 def test_exact_pinned_readonly_plan_has_no_financial_or_native_effect():
     report=r13.inspect()
     assert report["status"]=="SOURCE_DEPENDENCY_AND_LAYOUT_VERIFIED_NOT_INSTALL_APPROVAL"
