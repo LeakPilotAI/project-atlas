@@ -149,6 +149,15 @@ class LowImpactEnvelope:
         if not self.original_priority or not self.kernel.SetPriorityClass(
                 self.process, IDLE_PRIORITY_CLASS):
             raise ValueError("R13_IDLE_PRIORITY_REQUIRED_BEFORE_NATIVE_IO")
+        if self.kernel.GetPriorityClass(self.process) != IDLE_PRIORITY_CLASS:
+            # A successful API call without a matching OS readback is not proof
+            # that CPU-intensive native work will actually run at idle priority.
+            try:
+                if not self.kernel.SetPriorityClass(self.process, self.original_priority):
+                    raise OSError("R13_PRIORITY_ROLLBACK_REFUSED")
+            finally:
+                self.original_priority = None
+            raise ValueError("R13_IDLE_PRIORITY_READBACK_REFUSED_BEFORE_NATIVE_IO")
         self.started = self.monotonic()
         return self
 
@@ -167,6 +176,10 @@ class LowImpactEnvelope:
         self.checks += 1
         if self.checks % self.check_every == 0:
             self.wait(self.pause_seconds)
+            if self.kernel.GetPriorityClass(self.process) != IDLE_PRIORITY_CLASS:
+                raise ValueError("R13_IDLE_PRIORITY_LOST_PRESERVE_PARTIAL")
+            if self.monotonic() - self.started >= self.max_seconds:
+                raise ValueError("R13_LOW_IMPACT_INSTALL_DEADLINE_PRESERVE_PARTIAL")
             # Additional lightweight selector check; not a cache of permission.
             _selector_unchanged()
         return True

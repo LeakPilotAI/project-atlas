@@ -27,6 +27,8 @@ Ran **one low-priority, small offline pytest process** with `tests/test_atlas_r1
 
 Existing source ZIP was built from an *earlier pinned commit* `c7df...` and intentionally does **not** contain this new installer adapter; the new adapter is an independently reviewed workspace-side installation coordinator. Its own source review must be completed before new native installation is ever approved.
 
+**2026-11-09 follow-up:** The existing disposable copy subsequently passed an independent native owner/ACL/identity/SHA readback (10,518 files, 912 directories), and the copied interpreter smoke receipt reports eight isolated module imports. This does **not** recover the original copy-creation handles or qualify an operational installation. The adapter was then strengthened with mandatory Windows IDLE-priority readback before native work, periodic drift refusal, and post-pacing deadline checks; **58 focused idle-priority tests passed**. Full boundary details: `docs/ATLAS_R13_DISPOSABLE_NATIVE_PROOF_AND_RESOURCE_GUARD_2026-11-09.md`.
+
 ## Remaining critical path
 
 1. Independent review and separate one-shot consent for a **new** create-only operational native code installation, including qualified Windows ACL/ownership and independent clock.

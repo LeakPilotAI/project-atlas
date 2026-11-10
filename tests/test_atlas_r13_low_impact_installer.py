@@ -12,17 +12,21 @@ from scripts import atlas_r13_low_impact_installer as r13
 
 
 class Kernel:
-    def __init__(self, *, fail_idle=False, fail_restore=False):
+    def __init__(self, *, fail_idle=False, fail_restore=False,
+                 false_idle_readback=False):
         self.priority = 0x20
         self.calls = []
         self.fail_idle = fail_idle
         self.fail_restore = fail_restore
+        self.false_idle_readback = false_idle_readback
 
     def GetCurrentProcess(self):
         return 1337
 
     def GetPriorityClass(self, handle):
         assert handle == 1337
+        if self.false_idle_readback and self.priority == r13.IDLE_PRIORITY_CLASS:
+            return 0x20
         return self.priority
 
     def SetPriorityClass(self, handle, priority):
@@ -71,6 +75,43 @@ def test_idle_priority_must_be_accepted_before_any_work():
                                    monotonic=lambda:1.0):
             pytest.fail("NO_WORK_BEFORE_LOW_PRIORITY")
     assert kernel.priority==0x20
+
+
+def test_idle_priority_must_read_back_before_native_io():
+    kernel = Kernel(false_idle_readback=True)
+    with pytest.raises(ValueError, match="IDLE_PRIORITY_READBACK_REFUSED"):
+        with r13.LowImpactEnvelope(kernel=kernel, wait=lambda _: None,
+                                   monotonic=lambda: 1.0):
+            pytest.fail("NO_NATIVE_IO_WITHOUT_CONFIRMED_IDLE_PRIORITY")
+    assert kernel.priority == 0x20
+    assert kernel.calls == [r13.IDLE_PRIORITY_CLASS, 0x20]
+
+
+def test_idle_priority_drift_mid_copy_refuses_and_restores(monkeypatch):
+    kernel = Kernel()
+    monkeypatch.setattr(r13, "_selector_unchanged", lambda: True)
+    with r13.LowImpactEnvelope(kernel=kernel, wait=lambda _: None,
+                               monotonic=lambda: 1.0, check_every=8) as guard:
+        for _ in range(7):
+            guard.tick()
+        kernel.priority = 0x20  # Simulate interference during native copying.
+        with pytest.raises(ValueError, match="IDLE_PRIORITY_LOST"):
+            guard.tick()
+    assert kernel.priority == 0x20
+
+
+def test_deadline_rechecked_after_throttle_wait(monkeypatch):
+    kernel = Kernel()
+    now = [1.0]
+    monkeypatch.setattr(r13, "_selector_unchanged", lambda: True)
+    with r13.LowImpactEnvelope(kernel=kernel, wait=lambda _: now.__setitem__(0, 32.0),
+                               monotonic=lambda: now[0], max_seconds=30,
+                               check_every=8) as guard:
+        for _ in range(7):
+            guard.tick()
+        with pytest.raises(ValueError, match="PRESERVE_PARTIAL"):
+            guard.tick()
+    assert kernel.priority == 0x20
 
 
 def test_low_impact_time_bound_refuses_and_restores(monkeypatch):
