@@ -1,8 +1,7 @@
-"""R16 real Windows native CODE-ONLY postinstall readback; no release selection.
+"""R16 actual native installed code and selected-revision-15 readback.
 
-The R16 original-handle verifier reopens an already installed immutable release
-from its actual create-only receipt. This fixture does not write or mutate
-native release files, operator approval, financial accounts or selection.
+The original Windows file-handle verifier reopens installed immutable R16
+without modifying code files, selector, approval or financial accounts.
 """
 from __future__ import annotations
 
@@ -15,8 +14,8 @@ import pytest
 from scripts import atlas_r16_code_only_installer as installer
 from scripts import atlas_r16_selection_handoff as handoff
 from scripts.release_selection import NativeInstalledReleaseVerifier
-from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
-    selected_code, inspect as r15_readiness,
+from scripts.observation_runtime.atlas_r16_selected_code_readback import (
+    selected_code, inspect as r16_readiness,
 )
 from scripts.observation_runtime.personal_existing_native_resource_evidence import (
     inspect_two_lane_native_roots,
@@ -67,14 +66,15 @@ def test_exact_r16_original_native_receipt_and_durable_two_stage_ack(installed):
 
 
 def test_independent_original_windows_native_handle_verifier_for_r16(installed):
-    receipt, _ = installed
-    proposal = handoff.inspect()
-    assert proposal["proposed_row_digest"] == PROPOSED_HEAD
-    assert proposal["selection_authorized"] is False
-    assert proposal["new_selection_record_written"] is False
-    # This verifies the actual Windows native release file handles and
-    # content readback; a synthetic receipt or static SHA alone is inadequate.
-    with NativeInstalledReleaseVerifier().open(proposal["proposed_row"]["selected"]) as observed:
+    receipt, journal = installed
+    row = handoff.candidate_from_receipt(
+        receipt=receipt, receipt_bytes=installer.RECEIPT.read_bytes(),
+        journal_bytes=journal)
+    assert handoff.selection.digest(row) == PROPOSED_HEAD
+    assert selected_code()["selected_native_head"] == PROPOSED_HEAD
+    # The real installed Windows native handles, not a synthetic receipt,
+    # must still match the selected release's exact file identities.
+    with NativeInstalledReleaseVerifier().open(row["selected"]) as observed:
         assert observed["source_commit"] == installer.SOURCE_COMMIT
         assert observed["artifact_digest"] == ARTIFACT
         assert len(observed["files"]) == 10549
@@ -104,20 +104,22 @@ def test_one_shot_install_approval_is_consumed_source_pin_revoked(installed):
         installer.require_separate_consent()
 
 
-def test_r16_installed_but_r15_native_selector_still_exact_and_paper_no_go(installed):
+def test_r16_native_selector_is_revision_15_but_paper_remains_no_go(installed):
     assert installed[0]["selected"] is False
-    assert selected_code()["revision"] == 14
-    assert selected_code()["selected_native_record_sha256"] == (
-        "b729ff718fc41d90942400db15fc17e1bcf0cac6ae9ccf18e0492e9c6c4f2eb2")
-    assert not (handoff.SELECTION_ROOT / "r0015.json").exists()
-    assert not (handoff.SELECTION_ROOT / "r0015.pending").exists()
+    code = selected_code()
+    assert code["selected_revision"] == 15
+    assert code["selected_native_record_sha256"] == (
+        "d8ea7097008019426d64f96ca717878082644d3ec7592d26ce0428607988cc6f")
+    assert (handoff.SELECTION_ROOT / "r0015.json").is_file()
+    assert (handoff.SELECTION_ROOT / "r0015.pending").is_file()
     personal = inspect_two_lane_native_roots()
     assert personal["native_root_total"] == 12
     assert personal["all_twelve_distinct_and_empty"] is True
     assert personal["financial_inception_verified"] is False
     assert personal["paper_start_authorized"] is False
-    readiness = r15_readiness()
+    readiness = r16_readiness()
     assert readiness["decision"] == "NO_GO"
     assert readiness["financial_operating_gates_independently_accepted"] == 0
+    assert readiness["financial_writer_roles_enrolled"] == 0
     assert readiness["paper_start_authorized"] is False
     assert readiness["live_trading_authorized"] is False

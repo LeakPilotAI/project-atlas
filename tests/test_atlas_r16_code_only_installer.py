@@ -154,15 +154,26 @@ def test_r16_exec_refused_before_ntp_native_copy_or_install_receipt(monkeypatch)
     assert plan.TARGET.exists() == plan.RECEIPT.exists()
 
 
+def original_selected_r15_synthetic_anchored_reference():
+    """Historic R15 installation admission contract, not CURRENT selector."""
+    return {
+        "revision":14,
+        "selected_release":plan.SELECTED_R15_RELEASE,
+        "selected_native_head":installer.SELECTED_HEAD,
+        "selected_native_record_sha256":installer.SELECTED_SHA,
+        "native_clock_own_release_source_admitted":True,
+        "independent_live_financial_clock_lease_accepted":False,
+        "financial_authority":False,
+    }
+
+
 @pytest.mark.parametrize("fault", [
     "revision", "selected_release", "selected_native_head",
     "selected_native_record_sha256", "native_clock_own_release_source_admitted",
     "independent_live_financial_clock_lease_accepted", "financial_authority",
 ])
 def test_selected_r15_native_chain_cannot_be_forged(fault):
-    from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import selected_code
-    actual=selected_code()
-    value=copy.deepcopy(actual)
+    value=copy.deepcopy(original_selected_r15_synthetic_anchored_reference())
     value[fault]=True if value[fault] is False else "FORGED"
     with pytest.raises(ValueError,match="R16_GENUINE_NATIVE_SELECTED_R15_ANCHOR_REQUIRED"):
         plan.validate_selected_r15(value)
@@ -178,7 +189,6 @@ def test_selected_r15_native_chain_cannot_be_forged(fault):
     "financial_operating_gates_accepted",
 ])
 def test_modified_source_review_or_financial_flag_refuses(field):
-    from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import selected_code
     review=json.loads(plan.FREEZE.read_text(encoding="utf-8"))
     synthetic={
         "selected_digest":plan.INVENTORY_SHA,
@@ -191,7 +201,8 @@ def test_modified_source_review_or_financial_flag_refuses(field):
     }
     review[field]= "FORGED" if field!="financial_authority" else True
     with pytest.raises(ValueError,match="R16_PINNED_SOURCE_FREEZE_REVIEW_REQUIRED"):
-        plan.evaluate(selected=selected_code(),prepared=synthetic,freeze=review)
+        plan.evaluate(selected=original_selected_r15_synthetic_anchored_reference(),
+                      prepared=synthetic,freeze=review)
 
 
 def test_create_only_target_and_future_receipt_occupied_refuse(tmp_path,monkeypatch):

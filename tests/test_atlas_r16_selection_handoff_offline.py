@@ -78,30 +78,18 @@ def pure(receipt, *, journal=None, raw=None):
     )
 
 
-def test_real_native_r15_predecessor_and_current_r16_phase_remain_read_only():
-    prior = selected_code()
-    assert prior["revision"] == 14
-    result = handoff.inspect()
-    assert result["schema"] == "ATLAS_R16_CODE_SELECTION_HANDOFF_V1"
-    assert result["expected_revision"] == 15
-    assert result["selected_predecessor_head"] == prior["selected_native_head"]
-    assert result["selected_predecessor_record_sha256"] == (
-        prior["selected_native_record_sha256"])
-    if TARGET.is_dir() and RECEIPT.is_file():
-        assert result["status"] == (
-            "NATIVE_INSTALL_RECEIPT_ELIGIBLE_FOR_SEPARATE_HANDLE_AND_OPERATOR_APPROVAL")
-        assert result["proposed_row"]["revision"] == 15
-        assert result["installed_native_handle_verification_performed"] is False
-    else:
-        assert not TARGET.exists() and not RECEIPT.exists()
-        assert result["status"] == "WAITING_FOR_SEPARATELY_APPROVED_R16_CODE_ONLY_NATIVE_INSTALL"
-        assert result["new_selection_record_proposed"] is False
-    assert result["new_selection_record_written"] is False
-    assert result["selection_authorized"] is False
-    assert result["financial_authority"] is False
-    assert result["paper_start_authorized"] is False
-    assert result["live_orders_authorized"] is False
-    assert not (handoff.SELECTION_ROOT / "r0015.json").exists()
+def test_real_native_selected_r16_refuses_to_reuse_preselection_handoff():
+    from scripts.observation_runtime.atlas_r16_selected_code_readback import (
+        selected_code as r16_selected,
+    )
+    selected = r16_selected()
+    assert selected["selected_revision"] == 15
+    assert selected["code_selection_accepted"] is True
+    assert selected["paper_start_authorized"] is False
+    with pytest.raises(ValueError, match="R16_SELECTION_ALREADY_ATTEMPTED_DO_NOT_RETRY"):
+        handoff.inspect()
+    assert (handoff.SELECTION_ROOT / "r0015.json").is_file()
+    assert (handoff.SELECTION_ROOT / "r0015.pending").is_file()
 
 
 def test_complete_synthetic_native_receipt_only_proposes_deterministic_r0015(baseline):
@@ -118,8 +106,9 @@ def test_complete_synthetic_native_receipt_only_proposes_deterministic_r0015(bas
     assert row == pure(baseline)
     assert selector.digest(row) == selector.digest(pure(baseline))
     assert row["restores"] is None
-    # Validating a synthetic row never makes it accepted native selection.
-    assert not (handoff.SELECTION_ROOT / "r0015.json").exists()
+    # Pure synthetic validation never mutates the ALREADY accepted real
+    # revision-15 selection; existing installed record remains immutable.
+    assert (handoff.SELECTION_ROOT / "r0015.json").is_file()
 
 
 @pytest.mark.parametrize("change", [
@@ -208,6 +197,20 @@ def test_noncanonical_and_duplicate_receipt_json_refuses(baseline):
 
 def test_partial_install_namespace_never_becomes_proposed_selection(tmp_path, monkeypatch):
     from scripts import atlas_r16_selection_handoff as handoff
+    unused_selection = tmp_path / "empty_selection"
+    unused_selection.mkdir()
+    monkeypatch.setattr(handoff, "SELECTION_ROOT", unused_selection)
+    # A disposable preselection fixture: the real machine has ALREADY
+    # selected R16, so R15-only selected_code() must not be consulted.
+    monkeypatch.setattr(handoff, "selected_r15_code", lambda: {
+        "revision":14,
+        "selected_release":"2c79a8d846d6b33669008114732ae5896153812a",
+        "selected_native_head":handoff.SELECTED_HEAD,
+        "selected_native_record_sha256":handoff.SELECTED_SHA,
+        "native_clock_own_release_source_admitted":True,
+        "independent_live_financial_clock_lease_accepted":False,
+        "financial_authority":False,
+    })
     target = tmp_path / "release"
     receipt = tmp_path / "install.json"
     journal = receipt.with_suffix(".pending.jsonl")
