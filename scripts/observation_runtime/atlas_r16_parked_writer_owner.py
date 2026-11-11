@@ -122,7 +122,12 @@ def validate_result(row):
     return row
 
 
-def inspect():
+def inspect(*, disposable_stop_requester=None):
+    # Optional test-only external request hook. The observed native Job stays
+    # in this process; this does not constitute a financial Stop owner.
+    if (disposable_stop_requester is not None
+            and not callable(disposable_stop_requester)):
+        raise ValueError("R16_PARKED_DISPOSABLE_STOP_CALLBACK_REQUIRED")
     if os.name != "nt" or sys.platform != "win32":
         raise ValueError("R16_PARKED_NATIVE_WINDOWS_REQUIRED")
     selection = selected_code(verify_original_installed_handles=True)
@@ -304,6 +309,22 @@ def inspect():
                     raise
             else:
                 raise ValueError("R16_FINANCIAL_ACTIVATION_GUARD_BYPASSED")
+        # Test-only external Windows event request must be observed by the
+        # host BEFORE signaling the original R16 child to drain. A requester
+        # returning an unverified financial flatness claim is never accepted.
+        if disposable_stop_requester is not None:
+            request = disposable_stop_requester()
+            if (type(request) is not dict or set(request) != {
+                    "schema", "status", "native_signal_received",
+                    "financial_flatness_verified"}
+                    or request["schema"] !=
+                       "ATLAS_R16_DISPOSABLE_WINDOWS_STOP_REQUEST_V1"
+                    or request["status"] != "REQUESTED_NOT_VERIFIED"
+                    or request["native_signal_received"] is not True
+                    or request["financial_flatness_verified"] is not False):
+                raise ValueError("R16_PARKED_UNVERIFIED_EXTERNAL_STOP_REQUEST_REFUSED")
+            if retained.require_exact_roster(qd=qd, perp=perp) is not True:
+                raise ValueError("R16_PARKED_NATIVE_OWNER_CHANGED_AFTER_EXTERNAL_STOP")
         # Cooperatively exit, then prove the actual original owned process
         # and Job drain. Never return any adoptable live PID/financial lease.
         k.SetEvent.argtypes = [wintypes.HANDLE]
