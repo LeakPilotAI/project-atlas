@@ -36,6 +36,13 @@ def _identity(value):
 
 
 def writer_roster(qd,perp,*,release_digest):
+    from scripts.observation_runtime.atlas_r16_selected_code_readback import (
+        ARTIFACT_DIGEST as R16_ARTIFACT,
+    )
+    # Direct callers cannot bypass the retained financial Job requirement
+    # by invoking the legacy process-HANDLE roster using the selected R16.
+    if release_digest == R16_ARTIFACT:
+        raise ValueError('PERSONAL_ACTIVATION_R16_PID_ONLY_ROSTER_REFUSED')
     if (type(qd) is not dict or type(perp) is not dict
             or qd.get('release_digest') != release_digest
             or perp.get('release_digest') != release_digest

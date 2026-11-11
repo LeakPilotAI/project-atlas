@@ -156,6 +156,14 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None):
     from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
         ARTIFACT as R15_ARTIFACT,
     )
+    from scripts.observation_runtime.atlas_r16_selected_code_readback import (
+        ARTIFACT_DIGEST as R16_ARTIFACT,
+    )
+    # The R16 read-only parked Job is intentionally CLOSED before returning.
+    # It is neither a retained financial process nor a ledger/writer lease.
+    # No legacy PID-open path may adopt a release-digest-matching R16 process.
+    if release_digest == R16_ARTIFACT:
+        raise ValueError('ACTIVATION_R16_RETAINED_FINANCIAL_OWNER_JOB_NOT_YET_ACCEPTED')
     if release_digest == R15_ARTIFACT:
         from scripts.observation_runtime.personal_r15_owned_job_activation import (
             RetainedSelectedR15OwnerJob,
