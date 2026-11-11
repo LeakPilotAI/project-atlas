@@ -103,6 +103,77 @@ def require_exact_r15_preinception_roots(qd, perp, evidence):
     return tuple(bound)
 
 
+def require_exact_r15_populated_root_identities(qd, perp, evidence, original_binding):
+    """Verify original native directory IDs after files MAY exist.
+
+    This is deliberately *identity only*. No file content, native ledger,
+    issuer, clock, publication acknowledgement or financial writer lease is
+    authenticated here. A populated namespace cannot satisfy the original
+    pre-inception empty-root activation gate.
+    """
+    if (type(original_binding) is not tuple or len(original_binding) != 12
+            or type(evidence) is not dict
+            or evidence.get("schema") !=
+                "ATLAS_TWO_LANE_EXISTING_NATIVE_ROOT_PRE_ENROLLMENT_V1"
+            or evidence.get("native_root_total") != 12
+            or evidence.get("native_root_ids_verified") != 12
+            or type(evidence.get("existing_empty_root_namespaces")) is not int
+            or not 0 <= evidence["existing_empty_root_namespaces"] <= 12
+            or type(evidence.get("lanes")) is not dict
+            or set(evidence["lanes"]) != {"QUALITY_DIPS", "HYPERLIQUID"}
+            or evidence.get("filesystem_writes") != 0
+            or evidence.get("network_requests") != 0
+            or any(evidence.get(k) is not False for k in (
+                "operator_account_enrollment_verified",
+                "writer_ownership_verified",
+                "financial_inception_verified",
+                "paper_start_authorized", "live_trading_authorized"))):
+        raise ValueError("R15_POPULATED_NATIVE_IDENTITY_EVIDENCE_REQUIRED")
+    verified = []
+    identities = set()
+    paths = set()
+    for lane, enrollment in (("QUALITY_DIPS", qd), ("HYPERLIQUID", perp)):
+        observed = evidence["lanes"][lane]
+        if (type(observed) is not dict
+                or type(enrollment) is not dict
+                or type(enrollment.get("resources")) is not dict
+                or set(enrollment["resources"]) != set(ROLES)
+                or type(observed.get("roots")) is not dict
+                or set(observed["roots"]) != set(ROLES)
+                or observed.get("epoch") != enrollment.get("epoch")):
+            raise ValueError("R15_POPULATED_NATIVE_ENROLLMENT_SCOPE_CHANGED")
+        for role in ROLES:
+            root = observed["roots"][role]
+            enrolled = enrollment["resources"][role]
+            if (type(root) is not dict or type(enrolled) is not dict
+                    or root.get("native_identity_verified") is not True
+                    or type(root.get("existing_empty_namespace_verified")) is not bool
+                    or type(root.get("native_id")) is not list
+                    or len(root["native_id"]) != 3
+                    or any(type(v) is not int or v < 0
+                           for v in root["native_id"])
+                    or type(root.get("path")) is not str
+                    or root["path"] != enrolled.get("path")
+                    or root["native_id"] != enrolled.get("native_id")):
+                raise ValueError("R15_POPULATED_NATIVE_RESOURCE_IDENTITY_CHANGED")
+            identity = tuple(root["native_id"])
+            path = root["path"].casefold()
+            if identity in identities or path in paths:
+                raise ValueError("R15_POPULATED_NATIVE_RESOURCE_ALIAS_REFUSED")
+            identities.add(identity)
+            paths.add(path)
+            verified.append((lane, role, root["path"], identity))
+    counted_empty = sum(
+        int(evidence["lanes"][lane]["roots"][role]["existing_empty_namespace_verified"])
+        for lane in ("QUALITY_DIPS", "HYPERLIQUID") for role in ROLES)
+    if (evidence["existing_empty_root_namespaces"] != counted_empty
+            or evidence.get("all_twelve_distinct_and_empty") is not (counted_empty == 12)):
+        raise ValueError("R15_POPULATED_NATIVE_INVENTORY_COUNTERS_INCONSISTENT")
+    if tuple(verified) != original_binding:
+        raise ValueError("R15_POPULATED_ORIGINAL_NATIVE_ROOT_BINDING_CHANGED")
+    return tuple(verified)
+
+
 class RetainedSelectedR15OwnerJob:
     """Retained native Job+PROCESS handles; no standalone authority issuer."""
 
@@ -133,7 +204,7 @@ class RetainedSelectedR15OwnerJob:
         self.verify_still_running()
         self._verified = True
 
-    def verify_still_running(self):
+    def _verify_owned_worker(self):
         if (self.child.closed or self.child.job != self.job
                 or self.child.process != self.process
                 or self.child.api is not self.api
@@ -169,6 +240,11 @@ class RetainedSelectedR15OwnerJob:
                 or ntpath.normcase(ntpath.normpath(observed["image"])) != image
                 or image != ntpath.normcase(str(RELEASE / "python/python.exe"))):
             raise ValueError("R15_ACTIVATION_OWNED_WORKER_INCARCATION_CHANGED")
+        return True
+
+    def verify_still_running(self):
+        """PRE-inception admission: all 12 directories must stay empty."""
+        self._verify_owned_worker()
         roots = inspect_two_lane_native_roots()
         if (roots != self._native_root_snapshot
                 or require_exact_r15_preinception_roots(
@@ -176,6 +252,32 @@ class RetainedSelectedR15OwnerJob:
                    != self._native_root_binding):
             raise ValueError("R15_ACTIVATION_NATIVE_ROOTS_CHANGED_DURING_OWNED_JOB")
         return True
+
+    def observe_original_roots_allowing_population(self, *, qd, perp):
+        """Identity continuity only: no post-inception financial acceptance.
+
+        Kept separate from require_exact_roster and its EMPTY ROOT gate.
+        Cannot produce an activation capability, writer lease or order grant.
+        """
+        if digest(qd) != self._qd or digest(perp) != self._perp:
+            raise ValueError("R15_POPULATED_NATIVE_ENROLLMENT_DRIFT")
+        self._verify_owned_worker()
+        observed = inspect_two_lane_native_roots()
+        require_exact_r15_populated_root_identities(
+            self._original_qd, self._original_perp,
+            observed, self._native_root_binding)
+        return {
+            "schema": "ATLAS_R15_NATIVE_ROOT_IDENTITY_CONTINUITY_ONLY_V1",
+            "selected_native_head": SELECTED_HEAD,
+            "original_root_count_native_identity_verified": 12,
+            "original_job_and_process_still_owned": True,
+            "empty_root_precondition_required_for_activation": True,
+            "financial_file_contents_or_coordination_ledger_audited": False,
+            "postinception_writer_lease_issued": False,
+            "native_financial_inception_accepted": False,
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+        }
 
     def require_exact_roster(self, *, qd, perp):
         if (digest(qd) != self._qd or digest(perp) != self._perp):

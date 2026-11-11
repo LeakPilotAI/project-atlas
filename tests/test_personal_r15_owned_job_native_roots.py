@@ -156,3 +156,141 @@ def test_actual_installed_r15_job_refuses_native_root_drift_and_owned_child_is_c
     assert len(calls) >= 2
     assert inspect_two_lane_native_roots() == actual
     assert actual["paper_start_authorized"] is False
+
+
+def populated_fixture():
+    accounts, evidence = fixture()
+    original = verified(accounts, evidence)
+    # Only the pre-inception namespace flags change, not directory identities.
+    for lane, role in (
+        ("QUALITY_DIPS", "source"), ("QUALITY_DIPS", "coordination"),
+        ("HYPERLIQUID", "source"), ("HYPERLIQUID", "report")):
+        evidence["lanes"][lane]["roots"][role]["existing_empty_namespace_verified"] = False
+    evidence["existing_empty_root_namespaces"] = 8
+    evidence["all_twelve_distinct_and_empty"] = False
+    return accounts, evidence, original
+
+
+def postcheck(accounts, evidence, original):
+    return gate.require_exact_r15_populated_root_identities(
+        accounts["QUALITY_DIPS"], accounts["HYPERLIQUID"],
+        evidence, original)
+
+
+def test_same_original_twelve_file_identified_roots_allow_later_file_population_not_activation():
+    accounts, evidence, original = populated_fixture()
+    before = copy.deepcopy(evidence)
+    assert postcheck(accounts, evidence, original) == original
+    assert evidence == before
+    with pytest.raises(ValueError, match="R15_ACTIVATION_"):
+        verified(accounts, evidence)
+    assert evidence["all_twelve_distinct_and_empty"] is False
+
+
+@pytest.mark.parametrize("damage", [
+    "source_native_id", "control_native_id", "report_path", "epoch",
+    "original_binding", "missing_lane", "duplicate_root_identity",
+    "duplicate_root_path", "missing_role", "foreign_role",
+    "missing_native_id", "bad_type_native_id", "unknown_native_identity",
+    "wrong_total", "wrong_verified_count", "negative_empty_count",
+    "wrong_empty_count_type", "stale_empty_count", "forged_all_empty",
+    "wrong_schema", "writer_acceptance",
+    "financial_activation", "live_order", "filesystem_writes",
+    "network_requests",
+])
+def test_populated_root_continuity_fail_closed_on_identity_or_authority_drift(damage):
+    accounts, evidence, original = populated_fixture()
+    qd = evidence["lanes"]["QUALITY_DIPS"]
+    hl = evidence["lanes"]["HYPERLIQUID"]
+    if damage == "source_native_id":
+        qd["roots"]["source"]["native_id"][1] += 1
+    elif damage == "control_native_id":
+        hl["roots"]["control"]["native_id"][1] += 1
+    elif damage == "report_path":
+        hl["roots"]["report"]["path"] = "D:\\FOREIGN\\report"
+    elif damage == "epoch":
+        hl["epoch"] += "-FOREIGN"
+    elif damage == "original_binding":
+        original = original[::-1]
+    elif damage == "missing_lane":
+        evidence["lanes"].pop("QUALITY_DIPS")
+    elif damage == "duplicate_root_identity":
+        hl["roots"]["source"]["native_id"] = qd["roots"]["source"]["native_id"][:]
+        accounts["HYPERLIQUID"]["resources"]["source"]["native_id"] = (
+            qd["roots"]["source"]["native_id"][:])
+    elif damage == "duplicate_root_path":
+        hl["roots"]["source"]["path"] = qd["roots"]["source"]["path"]
+        accounts["HYPERLIQUID"]["resources"]["source"]["path"] = qd["roots"]["source"]["path"]
+    elif damage == "missing_role":
+        qd["roots"].pop("custody")
+    elif damage == "foreign_role":
+        qd["roots"]["UNKNOWN"] = {}
+    elif damage == "missing_native_id":
+        qd["roots"]["source"].pop("native_id")
+    elif damage == "bad_type_native_id":
+        qd["roots"]["source"]["native_id"] = [True, 1, 0]
+    elif damage == "unknown_native_identity":
+        qd["roots"]["source"]["native_identity_verified"] = False
+    elif damage == "wrong_total":
+        evidence["native_root_total"] = 11
+    elif damage == "wrong_verified_count":
+        evidence["native_root_ids_verified"] = 11
+    elif damage == "negative_empty_count":
+        evidence["existing_empty_root_namespaces"] = -1
+    elif damage == "wrong_empty_count_type":
+        evidence["existing_empty_root_namespaces"] = True
+    elif damage == "stale_empty_count":
+        evidence["existing_empty_root_namespaces"] = 9
+    elif damage == "forged_all_empty":
+        evidence["all_twelve_distinct_and_empty"] = True
+    elif damage == "wrong_schema":
+        evidence["schema"] = "UNTRUSTED_SCHEMA"
+    elif damage == "writer_acceptance":
+        evidence["writer_ownership_verified"] = True
+    elif damage == "financial_activation":
+        evidence["financial_inception_verified"] = True
+    elif damage == "live_order":
+        evidence["live_trading_authorized"] = True
+    elif damage == "filesystem_writes":
+        evidence["filesystem_writes"] = 1
+    elif damage == "network_requests":
+        evidence["network_requests"] = 1
+    with pytest.raises(ValueError, match="R15_POPULATED_"):
+        postcheck(accounts, evidence, original)
+
+
+def test_populated_root_observer_never_promotes_to_financial_owner(monkeypatch):
+    from app.services.paper_financial_replay import digest
+    accounts, evidence, original = populated_fixture()
+    owner = object.__new__(gate.RetainedSelectedR15OwnerJob)
+    owner._qd = digest(accounts["QUALITY_DIPS"])
+    owner._perp = digest(accounts["HYPERLIQUID"])
+    owner._original_qd = copy.deepcopy(accounts["QUALITY_DIPS"])
+    owner._original_perp = copy.deepcopy(accounts["HYPERLIQUID"])
+    owner._native_root_binding = original
+    checked = []
+    def fake_worker():
+        checked.append(True)
+        return True
+    monkeypatch.setattr(gate.RetainedSelectedR15OwnerJob,
+                        "_verify_owned_worker", lambda self:fake_worker())
+    monkeypatch.setattr(gate,"inspect_two_lane_native_roots",
+                        lambda:copy.deepcopy(evidence))
+    view = owner.observe_original_roots_allowing_population(
+        qd=accounts["QUALITY_DIPS"],perp=accounts["HYPERLIQUID"])
+    assert checked == [True]
+    assert view == {
+        "schema": "ATLAS_R15_NATIVE_ROOT_IDENTITY_CONTINUITY_ONLY_V1",
+        "selected_native_head": gate.SELECTED_HEAD,
+        "original_root_count_native_identity_verified": 12,
+        "original_job_and_process_still_owned": True,
+        "empty_root_precondition_required_for_activation": True,
+        "financial_file_contents_or_coordination_ledger_audited": False,
+        "postinception_writer_lease_issued": False,
+        "native_financial_inception_accepted": False,
+        "paper_start_authorized": False,
+        "live_trading_authorized": False,
+    }
+    with pytest.raises(ValueError,match="R15_POPULATED_NATIVE_ENROLLMENT_DRIFT"):
+        owner.observe_original_roots_allowing_population(
+            qd={"tampered":True},perp=accounts["HYPERLIQUID"])

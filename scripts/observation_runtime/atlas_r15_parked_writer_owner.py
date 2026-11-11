@@ -288,6 +288,15 @@ def inspect():
         with retain_activation_writer_guard(qd=qd,perp=hl,
                 release_digest=ARTIFACT,owned_job=job_binding) as live:
             job_binding.require_exact_roster(qd=qd,perp=hl)
+            # Exercise the SAME live native Job/PROCESS HANDLE through the
+            # later identity-only observer. This does not assert inception,
+            # enable PAPER, or replace the strict empty-root admission gate.
+            continuity=job_binding.observe_original_roots_allowing_population(qd=qd,perp=hl)
+            if (continuity['original_root_count_native_identity_verified']!=12
+                    or continuity['financial_file_contents_or_coordination_ledger_audited'] is not False
+                    or continuity['postinception_writer_lease_issued'] is not False
+                    or continuity['paper_start_authorized'] is not False):
+                raise ValueError('R15_PARKED_OWNER_NONFINANCIAL_CONTINUITY_REFUSED')
             pure=job_binding.nonfinancial_handoff_readback()
             if (pure['writer_roles_examined']!=12
                     or pure['genuine_activation_or_owner_lease_issued'] is not False
