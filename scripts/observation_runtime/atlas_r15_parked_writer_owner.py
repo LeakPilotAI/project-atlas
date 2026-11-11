@@ -109,6 +109,9 @@ def validate_parked_proof(row):
             'suspended_before_native_job_assignment',
             'ready_from_same_parked_job_child',
             'twelve_existing_account_root_handles_held_while_job_active',
+            'same_parked_job_worker_matches_both_12_role_rosters',
+            'actual_job_kill_on_close_verified_before_handoff',
+            'stopped_owned_job_cannot_be_reused_for_paper_activation',
             'owned_job_active_children_before_stop',
             'owned_job_active_children_after_stop',
             'parked_process_exited_before_return',
@@ -133,6 +136,9 @@ def validate_parked_proof(row):
                 'suspended_before_native_job_assignment',
                 'ready_from_same_parked_job_child',
                 'twelve_existing_account_root_handles_held_while_job_active',
+                'same_parked_job_worker_matches_both_12_role_rosters',
+                'actual_job_kill_on_close_verified_before_handoff',
+                'stopped_owned_job_cannot_be_reused_for_paper_activation',
                 'parked_process_exited_before_return',
                 'original_native_roots_unchanged_after_stop'))
             or any(row[k] is not False for k in (
@@ -225,6 +231,42 @@ def inspect():
             raise ValueError('R15_PARKED_OWNER_CHILD_NOT_EXACT_OWNED_JOB')
         if inspect_two_lane_native_roots()!=before:
             raise ValueError('R15_PARKED_OWNER_ROOTS_CHANGED_WHILE_RUNNING')
+        # The future activation must retain this SAME Job and process, not
+        # adopt an unrelated live PID. Verify both complete 5+7 R15 native
+        # enrollment SCHEMAS while the real installed child remains parked.
+        # The synthetic candidate acceptance ID is explicitly nonoperational,
+        # never supplied to an actual activation publisher or account writer.
+        from copy import deepcopy
+        from app.services.quality_dips_autonomous_enrollment import (
+            WRITERS as QD_WRITERS, validate_enrollment as validate_qd,
+        )
+        from app.services.perp_operational_contract import (
+            WRITERS as HL_WRITERS, validate_enrollment as validate_hl,
+        )
+        from scripts.observation_runtime.atlas_r15_two_account_enrollment_handoff import inspect as draft
+        from scripts.observation_runtime.personal_native_writer_lifetime import retain_live_enrollment_writers
+        from scripts.observation_runtime.personal_r15_owned_job_activation import RetainedSelectedR15OwnerJob
+        from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import ARTIFACT
+        source=draft()
+        candidate={}
+        for lane,roles,validator in (
+            ('QUALITY_DIPS',QD_WRITERS,validate_qd),
+            ('HYPERLIQUID',HL_WRITERS,validate_hl)):
+            item=deepcopy(source['accounts'][lane]['provisional_r15_native_enrollment_unaccepted'])
+            identity={'schema':'QD_OP_PROCESS_ID_V1',**verified}
+            item['writers']={role:deepcopy(identity) for role in roles}
+            item['acceptance_id']='DISPOSABLE_PARKED_JOB_NO_FINANCIAL_AUTHORITY'
+            candidate[lane]=validator(item)
+        qd,hl=candidate['QUALITY_DIPS'],candidate['HYPERLIQUID']
+        with retain_live_enrollment_writers(qd,hl,release_digest=ARTIFACT) as live:
+            job_binding=RetainedSelectedR15OwnerJob(child=owner,qd=qd,perp=hl)
+            job_binding.require_exact_roster(qd=qd,perp=hl)
+            pure=job_binding.nonfinancial_handoff_readback()
+            if (pure['writer_roles_examined']!=12
+                    or pure['genuine_activation_or_owner_lease_issued'] is not False
+                    or pure['paper_start_authorized'] is not False
+                    or live.verify_still_running() is not True):
+                raise ValueError('R15_PARKED_OWNER_UNACCEPTED_WRITER_HANDOFF_REFUSED')
         # Nothing is activated. Stop ONLY this explicitly owned Job handle.
         api.terminate_job(owner.job)
         code=_wait_exit(api,owner.process,timeout_ms=5000)
@@ -235,6 +277,15 @@ def inspect():
             time.sleep(.025)
         if api.active_processes(owner.job)!=0:
             raise ValueError('R15_PARKED_OWNER_JOB_DID_NOT_DRAIN')
+        # Even though PROCESS_HANDLE remains owned until finally, an exited
+        # process can NEVER be used as an enrolled financial writer. Prove the
+        # same job-binding object now refuses its own expired native identity.
+        try:
+            job_binding.require_exact_roster(qd=qd,perp=hl)
+        except ValueError:
+            pass
+        else:
+            raise ValueError('R15_PARKED_OWNER_EXPIRED_JOB_REUSED')
         if inspect_two_lane_native_roots()!=before or selected_code()!=selection:
             raise ValueError('R15_PARKED_OWNER_ROOT_OR_RELEASE_CHANGED')
         return validate_parked_proof({
@@ -246,6 +297,9 @@ def inspect():
             'suspended_before_native_job_assignment':True,
             'ready_from_same_parked_job_child':True,
             'twelve_existing_account_root_handles_held_while_job_active':True,
+            'same_parked_job_worker_matches_both_12_role_rosters':True,
+            'actual_job_kill_on_close_verified_before_handoff':True,
+            'stopped_owned_job_cannot_be_reused_for_paper_activation':True,
             'owned_job_active_children_before_stop':1,
             'owned_job_active_children_after_stop':0,
             'parked_process_exited_before_return':True,

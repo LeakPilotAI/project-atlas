@@ -44,7 +44,8 @@ def verify_enrollment_native_roots(enrollment):
 
 def commission(*, root, record_path, policy_path, release_digest, accounts_path,
                expected_clock_source, runtime_id, qd_enrollment_path=None,
-               perp_enrollment_path=None, clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4"):
+               perp_enrollment_path=None, clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4",
+               owned_job=None):
     if not all(type(v) is str and v for v in (root, record_path, policy_path,
                                               release_digest, accounts_path,
                                               expected_clock_source, runtime_id)):
@@ -118,6 +119,22 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
         # Fail without acquiring a trusted clock or consuming the create-only
         # activation namespace when no *current* enrolled process exists.
         writers.verify_still_running()
+        # R15 requires the same current process to be in an Atlas-retained
+        # kill-on-close Windows Job. A matching executable/PID is insufficient.
+        # The CLI deliberately has no raw Job-HANDLE argument; a trusted owner
+        # must invoke this composition in-process with the retained Job object.
+        from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
+            ARTIFACT as R15_ARTIFACT,
+        )
+        if release_digest == R15_ARTIFACT:
+            from scripts.observation_runtime.personal_r15_owned_job_activation import (
+                RetainedSelectedR15OwnerJob,
+            )
+            if type(owned_job) is not RetainedSelectedR15OwnerJob:
+                raise ValueError('ACTIVATION_R15_RETAINED_NATIVE_JOB_REQUIRED')
+            owned_job.require_exact_roster(qd=qd, perp=perp)
+        elif owned_job is not None:
+            raise ValueError('ACTIVATION_FOREIGN_JOB_OR_RELEASE_REFUSED')
         if clock_profile == V7_NTP_PROFILE:
             clock = NativeV7PaperOperatorClock(runtime_id=runtime_id)
         elif clock_profile == V8_NTP_PROFILE:
@@ -131,10 +148,17 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
                 require_version_safe_release_digest(clock=clock, runtime_id=runtime_id,
                                                     release_digest=release_digest)
             writers.verify_still_running()
-            return publish_personal_activation(root=root, record=record, policy=policy,
+            if release_digest == R15_ARTIFACT:
+                owned_job.require_exact_roster(qd=qd, perp=perp)
+            result = publish_personal_activation(root=root, record=record, policy=policy,
                 operator_id=current_sid(), release_digest=release_digest,
                 accounts=accounts, clock=clock, runtime_id=runtime_id,
                 clock_profile=clock_profile)
+            # A disappearing owned process during the create-only publisher
+            # is UNKNOWN, never successful financial commissioning.
+            if release_digest == R15_ARTIFACT:
+                owned_job.require_exact_roster(qd=qd, perp=perp)
+            return result
         finally:
             clock.revoke()
 
