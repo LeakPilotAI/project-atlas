@@ -78,23 +78,29 @@ def pure(receipt, *, journal=None, raw=None):
     )
 
 
-def test_real_native_r15_predecessor_and_waiting_r16_is_read_only():
+def test_real_native_r15_predecessor_and_current_r16_phase_remain_read_only():
     prior = selected_code()
     assert prior["revision"] == 14
     result = handoff.inspect()
     assert result["schema"] == "ATLAS_R16_CODE_SELECTION_HANDOFF_V1"
-    assert result["status"] == "WAITING_FOR_SEPARATELY_APPROVED_R16_CODE_ONLY_NATIVE_INSTALL"
     assert result["expected_revision"] == 15
     assert result["selected_predecessor_head"] == prior["selected_native_head"]
     assert result["selected_predecessor_record_sha256"] == (
         prior["selected_native_record_sha256"])
-    assert result["new_selection_record_proposed"] is False
+    if TARGET.is_dir() and RECEIPT.is_file():
+        assert result["status"] == (
+            "NATIVE_INSTALL_RECEIPT_ELIGIBLE_FOR_SEPARATE_HANDLE_AND_OPERATOR_APPROVAL")
+        assert result["proposed_row"]["revision"] == 15
+        assert result["installed_native_handle_verification_performed"] is False
+    else:
+        assert not TARGET.exists() and not RECEIPT.exists()
+        assert result["status"] == "WAITING_FOR_SEPARATELY_APPROVED_R16_CODE_ONLY_NATIVE_INSTALL"
+        assert result["new_selection_record_proposed"] is False
     assert result["new_selection_record_written"] is False
     assert result["selection_authorized"] is False
     assert result["financial_authority"] is False
     assert result["paper_start_authorized"] is False
     assert result["live_orders_authorized"] is False
-    assert not TARGET.exists() and not RECEIPT.exists()
     assert not (handoff.SELECTION_ROOT / "r0015.json").exists()
 
 
