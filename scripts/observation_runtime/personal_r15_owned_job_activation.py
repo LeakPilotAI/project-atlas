@@ -279,6 +279,122 @@ class RetainedSelectedR15OwnerJob:
             "live_trading_authorized": False,
         }
 
+
+    def inspect_both_committed_initial_cuts(self, *, qd, perp,
+                                            qd_bootstrap, perp_bootstrap):
+        """Read two ACKed native initial cuts while retaining the SAME Job.
+
+        Existing-only and NO financial authority: this is NOT a runtime writer
+        lease. Native FS1/FS3 files, durable native coordination receipts,
+        initial arithmetic, and the two original roster/root identities must
+        each agree before returning even a technical read-only observation.
+        """
+        from app.services.paper_financial_replay import (
+            body, initial_state, strict,
+        )
+        from app.services.personal_native_coordination import (
+            PersonalNativeCoordination,
+        )
+        from app.services.personal_publication_custody import (
+            PersonalPublicationCustody,
+        )
+        from app.services.personal_paper_runtime import (
+            PersonalOperatorInstallation,
+        )
+        from scripts.observation_runtime.personal_coordination_store import (
+            NativePersonalCoordinationImages,
+        )
+        from scripts.observation_runtime.personal_paper_inception import (
+            NativePersonalInitialReadback, PersonalInceptionBootstrap,
+            PersonalPublicationIssuer, validate_personal_inception,
+        )
+
+        self.observe_original_roots_allowing_population(qd=qd, perp=perp)
+        if (type(qd) is not dict or type(perp) is not dict
+                or qd.get("account_id") == perp.get("account_id")
+                or qd.get("epoch") == perp.get("epoch")
+                or qd.get("release_digest") != ARTIFACT
+                or perp.get("release_digest") != ARTIFACT):
+            raise ValueError("R15_INITIAL_CUT_TWO_DISTINCT_SELECTED_ACCOUNTS_REQUIRED")
+        if (qd_bootstrap is perp_bootstrap
+                or getattr(qd_bootstrap, "issuer", None) is not
+                   getattr(perp_bootstrap, "issuer", None)):
+            raise ValueError("R15_INITIAL_CUT_ONE_OPERATOR_ISSUER_REQUIRED")
+        cuts = {}
+        for lane, enrollment, bootstrap in (
+                ("QUALITY_DIPS", qd, qd_bootstrap),
+                ("HYPERLIQUID", perp, perp_bootstrap)):
+            if (type(bootstrap) is not PersonalInceptionBootstrap
+                    or type(bootstrap.readback) is not NativePersonalInitialReadback
+                    or type(bootstrap.publication) is not PersonalPublicationCustody
+                    or type(bootstrap.issuer) is not PersonalPublicationIssuer
+                    or type(bootstrap.issuer.installation) is not PersonalOperatorInstallation):
+                raise ValueError("R15_INITIAL_CUT_REAL_NATIVE_BOOTSTRAP_REQUIRED:" + lane)
+            account_lane, native_enrollment, manifest = validate_personal_inception(
+                bootstrap.enrollment)
+            installation = bootstrap.issuer.installation
+            if (account_lane != lane
+                    or manifest.get("currency") !=
+                       ("USD" if lane == "QUALITY_DIPS" else "USDC")
+                    or digest(native_enrollment) != digest(enrollment)
+                    or installation.accounts.get(lane) != digest(enrollment)
+                    or installation.release != ARTIFACT):
+                raise ValueError("R15_INITIAL_CUT_ENROLLED_ACCOUNT_OR_RELEASE_CHANGED:" + lane)
+            ledger = bootstrap.publication.ledger
+            if (type(ledger) is not PersonalNativeCoordination
+                    or type(ledger.images) is not NativePersonalCoordinationImages
+                    or ledger.images.enrollment != digest(enrollment)
+                    or ledger.images.root != enrollment["resources"]["coordination"]["path"]
+                    or ledger.images.root_id != enrollment["resources"]["coordination"]["native_id"]
+                    or digest(ledger.manifest) != digest(manifest)):
+                raise ValueError("R15_INITIAL_CUT_GENUINE_NATIVE_COORDINATION_REQUIRED:" + lane)
+            # The publisher independently verifies an immutable ACK and every
+            # original FS1/FS3 file. Do NOT trust a submitted "verified" flag.
+            ready = bootstrap.verify_publication()
+            current = strict(body(ready["current"]))
+            with ledger.connect(readonly=True) as db:
+                state, head, operations = ledger._load(db)
+                pending_projections = db.execute(
+                    "SELECT 1 FROM projections WHERE receipt IS NULL").fetchone()
+                pending_publications = db.execute(
+                    "SELECT 1 FROM personal_publications "
+                    "WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()
+                pending_sessions = db.execute(
+                    "SELECT 1 FROM personal_sessions "
+                    "WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()
+            if (ready.get("financial_startup_authorized") is not False
+                    or current.get("status") != "ACKNOWLEDGED"
+                    or current.get("revision") != 0
+                    or state != initial_state(manifest)
+                    or head != digest(manifest) or operations
+                    or current["state_digest"] != digest(state)
+                    or pending_projections or pending_publications or pending_sessions):
+                raise ValueError("R15_INITIAL_CUT_NATIVE_LEDGER_UNACKNOWLEDGED:" + lane)
+            cuts[lane] = {
+                "enrollment_digest": digest(enrollment),
+                "initial_current_digest": ready["current_digest"],
+                "once_only_publication_receipt_digest": ready["publication_digest"],
+                "initial_cash_simulated": state["cash"],
+                "initial_position_count": len(state["positions"]),
+            }
+            # Check retained worker and all root IDs between the two readers.
+            self.observe_original_roots_allowing_population(qd=qd, perp=perp)
+        if (cuts["QUALITY_DIPS"]["initial_cash_simulated"] != "1000"
+                or cuts["HYPERLIQUID"]["initial_cash_simulated"] != "1000"
+                or cuts["QUALITY_DIPS"]["initial_position_count"] != 0
+                or cuts["HYPERLIQUID"]["initial_position_count"] != 0):
+            raise ValueError("R15_INITIAL_CUT_TWO_SEPARATE_BASELINES_REQUIRED")
+        return {
+            "schema": "ATLAS_R15_TWO_LANE_INITIAL_NATIVE_CUT_TECHNICAL_READBACK_V1",
+            "lanes": cuts,
+            "same_original_owned_r15_job_and_roots_reverified": True,
+            "acknowledged_native_initial_cuts_reverified": True,
+            "financial_operating_authority_granted": False,
+            "persistent_financial_writer_lease_issued": False,
+            "financial_startup_authorized": False,
+            "live_trading_authorized": False,
+        }
+
     def require_exact_roster(self, *, qd, perp):
         if (digest(qd) != self._qd or digest(perp) != self._perp):
             raise ValueError("R15_ACTIVATION_OWNED_JOB_ENROLLMENT_DRIFT")
