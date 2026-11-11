@@ -325,3 +325,80 @@ def test_avgo_original_gaap_requires_exact_sec_issuer_and_release(damage):
         main = main.replace('0001730168', '0000789019')
     with pytest.raises((ResearchRefused, ValueError)):
         parsed_avgo(ref=ref, main=main, issuer_name=name)
+
+
+def avgo_fy2024_fixture():
+    ref=avgo_release_reference()
+    ref.update(accession='0001730168-24-000125',
+               filed='2024-12-12',report_date='2024-12-12',
+               url=('https://www.sec.gov/Archives/edgar/data/1730168/'
+                    '000173016824000125/avgo-20241212.htm'))
+    main=(avgo_release_main()
+          .replace('2025-12-11','2024-12-12')
+          .replace('2025-09-01','2024-09-01')
+          .replace('avgo-11022025x8kxex99.htm',
+                   'avgo-11032024x8kxex99.htm'))
+    text=(avgo_gaap_table()
+          .replace('November 3,2024','October 29,2023')
+          .replace('November 2,2025','November 3,2024')
+          .replace('August 3,2025','August 4,2024')
+          .replace('basic income per share:',
+                   'basic income (loss) per share (1):')
+          .replace('diluted income per share:',
+                   'diluted income (loss) per share (1):')
+          .replace('weighted-average shares used in per share calculations:',
+                   'weighted-average shares used in per share calculations (1):')
+          .replace('<td colspan="3">net income</td>',
+                   '<td colspan="3">net income (loss)</td>')
+          .replace('net income per share','net income (loss) per share')
+          .replace('8,518','4,324')
+          .replace('1.74','0.90')
+          .replace('4,889','4,828'))
+    return main,text,ref
+
+
+def test_avgo_fy2024_original_gaap_footnoted_loss_sections_direct_quarter():
+    main,text,ref=avgo_fy2024_fixture()
+    parsed=parse_earnings_exhibit(
+        main,text,ref,issuer_name='BROADCOM INC.',now=NOW)
+    assert [(row['start'],row['end'],row['val'])
+            for row in exhibit_rows([parsed],cik='0001730168')]==[
+        ('2024-08-05','2024-11-03','0.90')]
+    assert {r['concept']:r['value'] for r in parsed['facts']}=={
+        'EarningsPerShareDiluted':'0.90',
+        'WeightedAverageNumberOfDilutedSharesOutstanding':'4828000000',
+        'NetIncomeLoss':'4324000000',
+    }
+    assert all(r['end'] != '2023-10-29' for r in parsed['facts'])
+
+
+@pytest.mark.parametrize('damage',[
+    'adjusted_eps','net_income_wrong','wrong_diluted_shares',
+    'basic_eps_substituted','missing_original_gaap_section',
+    'duplicate_gaap_footnote','future_report_date','foreign_entity',
+])
+def test_avgo_fy2024_footnoted_layout_never_promotes_non_gaap(damage):
+    main,text,ref=avgo_fy2024_fixture()
+    if damage=='adjusted_eps':
+        text=text.replace('0.90','1.42')
+    elif damage=='net_income_wrong':
+        text=text.replace('4,324','5,324')
+    elif damage=='wrong_diluted_shares':
+        text=text.replace('4,828','4,900')
+    elif damage=='basic_eps_substituted':
+        text=text.replace('diluted income (loss) per share (1):',
+                          'basic income (loss) per share (1):')
+    elif damage=='missing_original_gaap_section':
+        text=text.replace('CONDENSED CONSOLIDATED STATEMENTS OF OPERATIONS',
+                          'CONDENSED NON-GAAP STATEMENTS OF OPERATIONS')
+    elif damage=='duplicate_gaap_footnote':
+        duplicate=('<tr><td colspan="3">net income (loss) per share</td>'
+                   '<td colspan="30"></td></tr>')
+        text=text.replace('<tr><td colspan="3">weighted-average shares used in per share calculations (1):',
+                          duplicate+'<tr><td colspan="3">weighted-average shares used in per share calculations (1):',1)
+    elif damage=='future_report_date':
+        text=text.replace('November 3,2024','December 31,2025')
+    elif damage=='foreign_entity':
+        ref['cik']='0000789019'
+    with pytest.raises((ResearchRefused,ValueError)):
+        parse_earnings_exhibit(main,text,ref,issuer_name='BROADCOM INC.',now=NOW)

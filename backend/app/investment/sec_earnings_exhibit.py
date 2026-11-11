@@ -143,16 +143,21 @@ def _broadcom_original_gaap_quarter(tables, reference, issuer_name):
 
     def unique(label, *, lo=0, hi=None):
         ends = len(rows) if hi is None else hi
-        found = [i for i in range(lo, ends) if rows[i] and rows[i][0] == label]
+        labels = (label,) if type(label) is str else label
+        found = [i for i in range(lo, ends) if rows[i] and rows[i][0] in labels]
         if len(found) != 1:
             _refuse('EXHIBIT_AVGO_GAAP_UNIQUE_ROW_REQUIRED')
         return found[0]
 
-    basic = unique('basic income per share:')
-    diluted = unique('diluted income per share:')
-    weighted = unique('weighted-average shares used in per share calculations:')
-    income_row = unique('net income')
-    eps_row = unique('net income per share', lo=diluted + 1, hi=weighted)
+    # The original FY2024 statement uses (loss) and '(1)' footnote markers;
+    # permit ONLY those observed GAAP variants, not 'adjusted' EPS labels.
+    basic = unique(('basic income per share:', 'basic income (loss) per share (1):'))
+    diluted = unique(('diluted income per share:', 'diluted income (loss) per share (1):'))
+    weighted = unique(('weighted-average shares used in per share calculations:',
+                       'weighted-average shares used in per share calculations (1):'))
+    income_row = unique(('net income', 'net income (loss)'))
+    eps_row = unique(('net income per share', 'net income (loss) per share'),
+                     lo=diluted + 1, hi=weighted)
     share_row = unique('diluted', lo=weighted + 1)
     if not (income_row < basic < diluted < eps_row < weighted < share_row
             and share_row < weighted + 5):

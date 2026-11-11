@@ -132,3 +132,74 @@ def test_share_basis_refuses_incomplete_or_changed_security_evidence(damage):
     elif damage=='pagination':actions['next_page_token']='missing-page'
     with pytest.raises(ResearchRefused):no_split_basis(raw,split,p['calendar'],actions,symbol='MSFT',now=NOW,
         received_at=NOW,start=__import__('datetime').date(2020,1,1))
+
+
+def _realistic_fiscal_week_rows():
+    """Four AVGO-style Q1/Q2/Q3 dates surrounding an unreported fiscal Q4."""
+    return [
+        {'start':'2026-05-04','end':'2026-08-02','filed':'2026-09-10','form':'10-Q'},
+        {'start':'2026-02-02','end':'2026-05-03','filed':'2026-06-12','form':'10-Q'},
+        {'start':'2025-11-03','end':'2026-02-01','filed':'2026-03-12','form':'10-Q'},
+        {'start':'2025-05-05','end':'2025-08-03','filed':'2025-09-10','form':'10-Q'},
+        {'start':'2025-02-03','end':'2025-05-04','filed':'2025-06-12','form':'10-Q'},
+        {'start':'2024-11-04','end':'2025-02-02','filed':'2025-03-12','form':'10-Q'},
+        {'start':'2024-05-06','end':'2024-08-04','filed':'2024-09-12','form':'10-Q'},
+    ]
+
+
+def test_fiscal_week_original_quarter_discovery_never_guesses_calendar_month_ends():
+    from app.investment.genuine_historical_source import missing_original_quarter_ends
+    from datetime import date
+    dates=missing_original_quarter_ends(_realistic_fiscal_week_rows(),now=NOW)
+    assert dates==[date(2025,11,2),date(2024,11,3)]
+    assert date(2025,10,31) not in dates
+    assert date(2024,10,31) not in dates
+
+
+def test_calendar_quarter_discovery_remains_backward_compatible():
+    from app.investment.genuine_historical_source import missing_original_quarter_ends
+    from datetime import date
+    quarters=[
+        {'start':'2026-07-01','end':'2026-09-30','filed':'2026-10-28','form':'10-Q'},
+        {'start':'2026-01-01','end':'2026-03-31','filed':'2026-04-29','form':'10-Q'},
+        {'start':'2025-10-01','end':'2025-12-31','filed':'2026-01-28','form':'10-Q'},
+        {'start':'2025-07-01','end':'2025-09-30','filed':'2025-10-28','form':'10-Q'},
+    ]
+    assert missing_original_quarter_ends(quarters,now=NOW)==[date(2026,6,30)]
+
+
+@pytest.mark.parametrize('damage',[
+    'conflicting_restatement','gap_of_two_quarters','out_of_range_quarter',
+    'future_filed','filed_before_period_end','invalid_start','unknown_form',
+])
+def test_gap_discovery_refuses_uncorroborated_fiscal_quarter_shapes(damage):
+    from app.investment.genuine_historical_source import missing_original_quarter_ends
+    rows=deepcopy(_realistic_fiscal_week_rows())
+    if damage=='conflicting_restatement':
+        different=deepcopy(rows[0]);different['start']='2026-05-05';rows.append(different)
+    elif damage=='gap_of_two_quarters':
+        # Leave the still older known original quarter to expose a >110-day
+        # unsupported gap, not a truncated history with no observed gap.
+        rows.pop(3)
+    elif damage=='out_of_range_quarter':
+        rows[0]['start']='2026-04-01'
+    elif damage=='future_filed':
+        rows[0]['filed']='2027-09-10'
+    elif damage=='filed_before_period_end':
+        rows[0]['filed']='2026-07-01'
+    elif damage=='invalid_start':
+        rows[0]['start']='2026-INVALID'
+    elif damage=='unknown_form':
+        rows[0]['form']='8-K-UNKNOWN'
+    with pytest.raises(ResearchRefused):
+        missing_original_quarter_ends(rows,now=NOW)
+
+
+def test_gap_discovery_requires_direct_issuer_rows_and_never_forges_source():
+    from app.investment.genuine_historical_source import missing_original_quarter_ends
+    with pytest.raises(ResearchRefused,match='DIRECT_QUARTER_GAP_EVIDENCE_REQUIRED'):
+        missing_original_quarter_ends([],now=NOW)
+    # The routine reports ONLY missing exact period-end dates, with no EPS,
+    # original document, source authorization, or price adjustment fabricated.
+    assert all(type(day).__name__=='date' for day in
+        missing_original_quarter_ends(_realistic_fiscal_week_rows(),now=NOW))

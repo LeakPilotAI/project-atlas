@@ -51,6 +51,59 @@ def standalone_coverage(companyfacts, *, now, supplements=()):
     return {'complete':True,'latest_period':str(latest),'current_rows':parts,'rows':direct}
 
 
+
+def missing_original_quarter_ends(rows, *, now):
+    """Identify missing EPS quarters from reported period edges, never month math.
+
+    For a 52/53-week issuer a fiscal quarter may end on a Sunday, while a
+    calendar-month extrapolation would pick the wrong date. A gap is a
+    requirement to fetch and verify an original, separately reported quarter,
+    not permission to infer EPS or to invent a filing witness.
+    """
+    now=utc(now)
+    if type(rows) is not list or not 1<=len(rows)<=8192:
+        refuse('DIRECT_QUARTER_GAP_EVIDENCE_REQUIRED')
+    by_end={}
+    for row in rows:
+        if (type(row) is not dict
+                or any(type(row.get(k)) is not str for k in ('start','end','filed'))
+                or row.get('form') not in ('10-Q','10-K','10-Q/A','10-K/A','8-K')):
+            refuse('DIRECT_QUARTER_GAP_ROW')
+        try:
+            start,end,filed=(date.fromisoformat(row[k]) for k in ('start','end','filed'))
+        except ValueError:
+            refuse('DIRECT_QUARTER_GAP_DATE')
+        if (not 70<=(end-start).days+1<=110
+                or filed<end or filed>now.date()):
+            refuse('DIRECT_QUARTER_GAP_PERIOD')
+        existing=by_end.get(end)
+        if existing is not None and start!=existing[0]:
+            refuse('DIRECT_QUARTER_GAP_CONFLICTING_PERIOD')
+        if existing is None or filed>existing[1]:
+            by_end[end]=(start,filed)
+    latest=max(by_end)
+    earliest=min(by_end)
+    cursor=latest
+    missing=[]
+    visits=0
+    while cursor>=earliest:
+        visits+=1
+        if visits>40:refuse('DIRECT_QUARTER_GAP_CAPACITY')
+        direct=by_end.get(cursor)
+        if direct is not None:
+            cursor=direct[0]-timedelta(days=1)
+            continue
+        older=[end for end in by_end if end<cursor]
+        if not older:refuse('DIRECT_QUARTER_GAP_UNKNOWN_OLDEST')
+        previous=max(older)
+        if not 70<=(cursor-previous).days<=110:
+            refuse('DIRECT_QUARTER_GAP_UNSUPPORTED_SPAN')
+        missing.append(cursor)
+        cursor=previous
+        if len(missing)>8:refuse('EXHIBIT_QUARTER_CAPACITY')
+    return missing
+
+
 def no_split_basis(raw, split, calendar, actions, *, symbol, now, received_at, start):
     """Conservative first binding: no unsupported action/split is adjusted away.
 
@@ -209,20 +262,14 @@ class GenuineHistoricalSource:
             if any(key in references and references[key]!=value for key,value in additional.items()):refuse('ACCESSION_CONFLICT')
             references.update(additional);missing=needed-references.keys()
         supplements=[];exhibits=[]
-        direct_ends={row['end'] for row in coverage['rows']}
-        cursor=date.fromisoformat(coverage['latest_period']) if coverage.get('latest_period') else now.date()
-        earliest=min((date.fromisoformat(r['end']) for r in coverage['rows']),default=cursor)
-        missing_quarters=[]
-        while cursor>=earliest:
-            if str(cursor) not in direct_ends:missing_quarters.append(cursor)
-            month=cursor.month-3;year=cursor.year
-            if month<=0:month+=12;year-=1
-            from calendar import monthrange
-            cursor=date(year,month,monthrange(year,month)[1])
-        if len(missing_quarters)>8:refuse('EXHIBIT_QUARTER_CAPACITY')
-        # This table dialect has one explicit SEC-issuer/name equivalence. It
-        # does not restrict the Quality Dips universe or infer issuer aliases.
-        issuer_alias={'0000789019':'MICROSOFT CORPORATION'}.get(cik)
+        # Derive each missing fiscal quarter from exact SEC reported period
+        # edges; a calendar-month approximation silently breaks AVGO's 52/53-
+        # week year and could select an unrelated issuer's earnings release.
+        missing_quarters=missing_original_quarter_ends(coverage['rows'],now=now)
+        # Explicitly supported original SEC issuer GAAP table dialects only.
+        # The research source universe remains broader than these two issuers.
+        issuer_alias={'0000789019':'MICROSOFT CORPORATION',
+                      '0001730168':'BROADCOM INC.'}.get(cik)
         if missing_quarters and issuer_alias is None:refuse('EXHIBIT_ISSUER_DIALECT_UNSUPPORTED')
         for end in missing_quarters:
             candidates=[r for r in earnings.values() if 0<=(date.fromisoformat(r['filed'])-end).days<=60]
