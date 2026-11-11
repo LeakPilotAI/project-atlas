@@ -1,0 +1,158 @@
+"""R15 owned Job must bind 12 original, existing, EMPTY native roots.
+
+Pure synthetic root-drift cases plus one genuine selected Windows Job child.
+No activation, account file, provider request, PAPER order or live money.
+"""
+import copy
+import sys
+
+import pytest
+
+from scripts.observation_runtime import personal_r15_owned_job_activation as gate
+
+
+def fixture():
+    roles = tuple(gate.ROLES)
+    accounts = {}
+    lanes = {}
+    i = 0
+    for lane, epoch in (
+            ("QUALITY_DIPS", "qd-paper-preinception-test"),
+            ("HYPERLIQUID", "hl-paper-preinception-test")):
+        resources = {}
+        roots = {}
+        for role in roles:
+            i += 1
+            path = rf"D:\OfflineTest\{lane}\{epoch}\{role}"
+            identity = [1, i + 100, 0]
+            resources[role] = {"path": path, "native_id": identity}
+            roots[role] = {
+                "path": path, "native_id": copy.deepcopy(identity),
+                "native_identity_verified": True,
+                "existing_empty_namespace_verified": True,
+            }
+        accounts[lane] = {"epoch": epoch, "resources": resources}
+        lanes[lane] = {"epoch": epoch, "roots": roots}
+    evidence = {
+        "schema": "ATLAS_TWO_LANE_EXISTING_NATIVE_ROOT_PRE_ENROLLMENT_V1",
+        "lanes": lanes, "native_root_total": 12,
+        "native_root_ids_verified": 12,
+        "existing_empty_root_namespaces": 12,
+        "all_twelve_distinct_and_empty": True,
+        "operator_account_enrollment_verified": False,
+        "writer_ownership_verified": False,
+        "financial_inception_verified": False,
+        "paper_start_authorized": False,
+        "live_trading_authorized": False,
+        "filesystem_writes": 0, "network_requests": 0,
+    }
+    return accounts, evidence
+
+
+def verified(accounts, evidence):
+    return gate.require_exact_r15_preinception_roots(
+        accounts["QUALITY_DIPS"], accounts["HYPERLIQUID"], evidence)
+
+
+def test_twelve_native_roots_exactly_match_both_enrollments():
+    accounts, evidence = fixture()
+    original_a, original_e = copy.deepcopy(accounts), copy.deepcopy(evidence)
+    bound = verified(accounts, evidence)
+    assert len(bound) == 12
+    assert len(set(row[3] for row in bound)) == 12
+    assert bound[0][0] == "QUALITY_DIPS"
+    assert bound[-1][0] == "HYPERLIQUID"
+    assert accounts == original_a and evidence == original_e
+    assert all(type(row[3]) is tuple for row in bound)
+
+
+@pytest.mark.parametrize("case", [
+    "missing_lane", "extra_lane", "wrong_schema", "false_all_empty",
+    "missing_verified_root", "missing_empty_root", "wrong_native_id",
+    "wrong_path", "alias_native_id", "alias_path", "missing_resource",
+    "extra_resource", "wrong_epoch", "account_inception_claim",
+    "paper_start_claim", "live_money_claim", "writer_claim",
+    "filesystem_writes", "network_requests", "missing_native_id",
+    "boolean_native_id", "wrong_count", "duplicate_lane_root",
+])
+def test_mutated_native_root_or_financial_promotion_refuses_before_activation(case):
+    accounts, evidence = fixture()
+    qd, hl = evidence["lanes"]["QUALITY_DIPS"], evidence["lanes"]["HYPERLIQUID"]
+    if case == "missing_lane":
+        evidence["lanes"].pop("HYPERLIQUID")
+    elif case == "extra_lane":
+        evidence["lanes"]["FOREIGN"] = {}
+    elif case == "wrong_schema":
+        evidence["schema"] = "FORGED"
+    elif case == "false_all_empty":
+        evidence["all_twelve_distinct_and_empty"] = False
+    elif case == "missing_verified_root":
+        qd["roots"]["source"]["native_identity_verified"] = False
+    elif case == "missing_empty_root":
+        qd["roots"]["source"]["existing_empty_namespace_verified"] = False
+    elif case == "wrong_native_id":
+        qd["roots"]["source"]["native_id"] = [2, 300, 0]
+    elif case == "wrong_path":
+        hl["roots"]["source"]["path"] = r"D:\FOREIGN\source"
+    elif case == "alias_native_id":
+        hl["roots"]["report"]["native_id"] = qd["roots"]["report"]["native_id"]
+        accounts["HYPERLIQUID"]["resources"]["report"]["native_id"] = qd["roots"]["report"]["native_id"]
+    elif case == "alias_path":
+        hl["roots"]["report"]["path"] = qd["roots"]["report"]["path"]
+        accounts["HYPERLIQUID"]["resources"]["report"]["path"] = qd["roots"]["report"]["path"]
+    elif case == "missing_resource":
+        accounts["QUALITY_DIPS"]["resources"].pop("control")
+    elif case == "extra_resource":
+        accounts["QUALITY_DIPS"]["resources"]["UNAPPROVED"] = {}
+    elif case == "wrong_epoch":
+        evidence["lanes"]["HYPERLIQUID"]["epoch"] = "other"
+    elif case == "account_inception_claim":
+        evidence["financial_inception_verified"] = True
+    elif case == "paper_start_claim":
+        evidence["paper_start_authorized"] = True
+    elif case == "live_money_claim":
+        evidence["live_trading_authorized"] = True
+    elif case == "writer_claim":
+        evidence["writer_ownership_verified"] = True
+    elif case == "filesystem_writes":
+        evidence["filesystem_writes"] = 1
+    elif case == "network_requests":
+        evidence["network_requests"] = 1
+    elif case == "missing_native_id":
+        qd["roots"]["source"].pop("native_id")
+    elif case == "boolean_native_id":
+        qd["roots"]["source"]["native_id"] = [True, 1, 2]
+        accounts["QUALITY_DIPS"]["resources"]["source"]["native_id"] = [True, 1, 2]
+    elif case == "wrong_count":
+        evidence["native_root_ids_verified"] = 11
+    elif case == "duplicate_lane_root":
+        hl["roots"].pop("custody")
+    with pytest.raises(ValueError, match="R15_ACTIVATION_"):
+        verified(accounts, evidence)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Selected R15 native Windows Job required")
+def test_actual_installed_r15_job_refuses_native_root_drift_and_owned_child_is_cleaned(monkeypatch):
+    from scripts.observation_runtime import atlas_r15_parked_writer_owner as parked
+    from scripts.observation_runtime.personal_existing_native_resource_evidence import (
+        inspect_two_lane_native_roots,
+    )
+    actual = inspect_two_lane_native_roots()
+    assert actual["native_root_total"] == 12
+    assert actual["all_twelve_distinct_and_empty"] is True
+    original = gate.inspect_two_lane_native_roots
+    calls = []
+
+    def changing_snapshot():
+        current = original()
+        calls.append(len(calls) + 1)
+        if len(calls) >= 2:
+            current["lanes"]["QUALITY_DIPS"]["roots"]["source"]["native_id"][1] += 1
+        return current
+
+    monkeypatch.setattr(gate, "inspect_two_lane_native_roots", changing_snapshot)
+    with pytest.raises(ValueError, match="R15_ACTIVATION_NATIVE_ROOTS_CHANGED_DURING_OWNED_JOB"):
+        parked.inspect()
+    assert len(calls) >= 2
+    assert inspect_two_lane_native_roots() == actual
+    assert actual["paper_start_authorized"] is False
