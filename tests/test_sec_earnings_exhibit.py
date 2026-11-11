@@ -170,3 +170,158 @@ def test_sec_long_original_exhibit_filename_refuses_unsafe_links(bad_link):
     main=release_main().replace('msft-ex99_1.htm',bad_link)
     with pytest.raises(ResearchRefused,match='EXHIBIT_REFERENCE'):
         parsed(main=main)
+
+def avgo_release_reference():
+    ref = release_reference()
+    ref.update(cik='0001730168', accession='0001730168-25-000116',
+               form='8-K', filed='2025-12-11', report_date='2025-12-11',
+               url=('https://www.sec.gov/Archives/edgar/data/1730168/'
+                    '000173016825000116/avgo-20251211.htm'))
+    return ref
+
+
+def avgo_release_main():
+    return (release_main()
+            .replace('0000789019', '0001730168')
+            .replace('2026-07-29', '2025-12-11')
+            .replace('2026-07-01', '2025-09-01')
+            .replace('msft-ex99_1.htm', 'avgo-11022025x8kxex99.htm'))
+
+
+def avgo_gaap_table():
+    """Minimal synthetic version of original SEC AVGO GAAP operations layout."""
+    def row(label='', blocks=None):
+        head = '<td colspan="3">' + label + '</td><td colspan="3"></td>'
+        cells = ''
+        for column in range(5):
+            value = (blocks or {}).get(column)
+            width = 3 if column == 4 else 6
+            if isinstance(value, tuple):  # Dollar marker plus a numeric value
+                cells += ('<td>$</td><td>' + str(value[0])
+                          + '</td><td colspan="' + str(width - 2) + '"></td>')
+            elif value is not None:
+                cells += ('<td colspan="2">' + str(value)
+                          + '</td><td colspan="' + str(width - 2) + '"></td>')
+            else:
+                cells += '<td colspan="' + str(width) + '"></td>'
+        return '<tr>' + head + cells + '</tr>'
+
+    dates = ['November 2,2025', 'August 3,2025', 'November 3,2024',
+             'November 2,2025', 'November 3,2024']
+    header = ('<tr><td colspan="6"></td><td colspan="15">Fiscal Quarter Ended</td>'
+              '<td colspan="3"></td><td colspan="9">Fiscal Year Ended</td></tr>')
+    date_row = '<tr><td colspan="6"></td>'
+    for i, day in enumerate(dates):
+        date_row += '<td colspan="3">' + day + '</td>'
+        if i < 4:
+            date_row += '<td colspan="3"></td>'
+    date_row += '</tr>'
+    rows = ['<tr></tr>', header, date_row]
+    rows += ['<tr></tr>'] * 6
+    rows.append(row('net income', {0: ('8,518',), 1: ('4,140',),
+                                   2: ('4,324',), 3: ('23,126',),
+                                   4: ('5,895',)}))
+    rows += ['<tr></tr>'] * 25
+    rows.append(row('basic income per share:'))
+    rows.append(row('net income per share', {0: ('1.80',)}))
+    rows += ['<tr></tr>'] * 2
+    rows.append(row('diluted income per share:'))
+    rows.append(row('income per share from continuing operations', {0: ('1.74',)}))
+    rows.append(row('net income per share', {0: ('1.74',), 1: ('0.85',),
+                                            2: ('0.90',), 3: ('4.77',),
+                                            4: ('1.23',)}))
+    rows += ['<tr></tr>'] * 2
+    rows.append(row('weighted-average shares used in per share calculations:'))
+    rows.append(row('basic', {0: '4,732'}))
+    rows.append(row('diluted', {0: '4,889', 1: '4,860', 2: '4,828',
+                                3: '4,853', 4: '4,778'}))
+    while len(rows) < 60:
+        rows.append('<tr></tr>')
+    return ('<html><h2>BROADCOM INC. CONDENSED CONSOLIDATED STATEMENTS '
+            'OF OPERATIONS — UNAUDITED (IN MILLIONS, EXCEPT PER SHARE DATA)'
+            '</h2><table>' + ''.join(rows) + '</table></html>')
+
+
+def parsed_avgo(*, text=None, main=None, ref=None, issuer_name='BROADCOM INC.'):
+    return parse_earnings_exhibit(
+        avgo_release_main() if main is None else main,
+        avgo_gaap_table() if text is None else text,
+        avgo_release_reference() if ref is None else ref,
+        issuer_name=issuer_name, now=NOW)
+
+
+def test_avgo_original_gaap_column_layout_only_admits_direct_latest_quarter():
+    value = parsed_avgo()
+    assert [(f['concept'], f['value']) for f in value['facts']] == [
+        ('EarningsPerShareDiluted', '1.74'),
+        ('WeightedAverageNumberOfDilutedSharesOutstanding', '4889000000'),
+        ('NetIncomeLoss', '8518000000'),
+    ]
+    assert [(r['start'], r['end'], r['val']) for r in
+            exhibit_rows([value], cik='0001730168')] == [
+        ('2025-08-04', '2025-11-02', '1.74'),
+    ]
+    assert value['reference']['form'] == '8-K'
+    assert value['accounting_basis'] == 'REPORTED_GAAP_STANDALONE_QUARTER'
+    assert all(f['end'] != '2024-11-03' for f in value['facts'])
+    assert all(f['value'] != '1.95' for f in value['facts'])
+
+
+@pytest.mark.parametrize('damage', [
+    'non_gaap_statement', 'duplicate_gaap_table', 'wrong_income',
+    'adjusted_eps', 'wrong_shares', 'no_diluted_section',
+    'no_weighted_diluted_shares', 'quarter_header_says_year',
+    'changed_previous_quarter', 'future_period', 'wrong_yearly_end',
+    'duplicate_eps_row', 'annual_amount_as_eps',
+])
+def test_avgo_gaap_original_rejects_ambiguous_or_adjusted_quarters(damage):
+    text = avgo_gaap_table()
+    if damage == 'non_gaap_statement':
+        text = text.replace('UNAUDITED (IN MILLIONS', 'NON-GAAP UNAUDITED (IN MILLIONS')
+    elif damage == 'duplicate_gaap_table':
+        title = text[text.index('<h2>'):text.index('</h2>') + 5]
+        second = text[text.index('<table>'):text.index('</table>') + 8]
+        text = text.replace('</html>', title + second + '</html>')
+    elif damage == 'wrong_income':
+        text = text.replace('8,518', '9,518', 1)
+    elif damage == 'adjusted_eps':
+        text = text.replace('1.74', '1.95')
+    elif damage == 'wrong_shares':
+        text = text.replace('4,889', '4,990', 1)
+    elif damage == 'no_diluted_section':
+        text = text.replace('diluted income per share:', 'adjusted earnings per share:')
+    elif damage == 'no_weighted_diluted_shares':
+        text = text.replace('<td colspan="3">diluted</td>', '<td colspan="3">adjusted</td>')
+    elif damage == 'quarter_header_says_year':
+        text = text.replace('Fiscal Quarter Ended', 'Fiscal Year Ended')
+    elif damage == 'changed_previous_quarter':
+        text = text.replace('August 3,2025', 'May 3,2025')
+    elif damage == 'future_period':
+        text = text.replace('November 2,2025', 'December 31,2026')
+    elif damage == 'wrong_yearly_end':
+        text = text.replace('November 2,2025', 'November 7,2025', 1)
+    elif damage == 'duplicate_eps_row':
+        text = text.replace('weighted-average shares used in per share calculations:',
+            'net income per share</td></tr><tr><td colspan="3">'
+            'weighted-average shares used in per share calculations:', 1)
+    elif damage == 'annual_amount_as_eps':
+        text = text.replace('1.74', '4.77')
+    with pytest.raises((ResearchRefused, ValueError)):
+        parsed_avgo(text=text)
+
+
+@pytest.mark.parametrize('damage', ['wrong_issuer', 'wrong_cik', 'wrong_form', 'wrong_main'])
+def test_avgo_original_gaap_requires_exact_sec_issuer_and_release(damage):
+    ref = avgo_release_reference()
+    name = 'BROADCOM INC.'
+    main = avgo_release_main()
+    if damage == 'wrong_issuer':
+        name = 'FAKE BROADCOM INC.'
+    elif damage == 'wrong_cik':
+        ref['cik'] = '0000789019'
+    elif damage == 'wrong_form':
+        ref['form'] = '10-Q'
+    else:
+        main = main.replace('0001730168', '0000789019')
+    with pytest.raises((ResearchRefused, ValueError)):
+        parsed_avgo(ref=ref, main=main, issuer_name=name)

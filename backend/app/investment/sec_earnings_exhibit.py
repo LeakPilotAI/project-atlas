@@ -92,6 +92,111 @@ def parse_earnings_exhibit(main, document, reference, *, issuer_name, now):
         return _parse_earnings_exhibit(main,document,reference,issuer_name=issuer_name,now=now)
 
 
+
+
+def _broadcom_original_gaap_quarter(tables, reference, issuer_name):
+    """Only the named issuer's directly reported GAAP operations statement.
+
+    AVGO's authentic 8-K uses fiscal-quarter / fiscal-year groups, a diluted
+    income-per-share section and a separate weighted-average-shares section.
+    Never select the opening GAAP/non-GAAP highlights or reconciliation table.
+    Only the latest quarter has a previous-quarter date proving its start.
+    """
+    from datetime import datetime, timedelta
+
+    if (issuer_name.strip().casefold() != 'broadcom inc.'
+            or reference['cik'] != '0001730168'
+            or reference['form'] != '8-K'):
+        _refuse('EXHIBIT_AVGO_EXACT_ISSUER_REQUIRED')
+    candidates = [t for t in tables if re.search(
+        r'broadcom inc\. condensed consolidated statements of operations'
+        r'.{0,3}unaudited \(in millions, except per share data\)\s*$',
+        _words(t['context']))]
+    if len(candidates) != 1 or candidates[0]['unsupported_layout']:
+        _refuse('EXHIBIT_AVGO_ORIGINAL_GAAP_STATEMENT_REQUIRED')
+    rows = candidates[0]['rows']
+    if (not 51 <= len(rows) <= 80
+            or any(len(r) not in (0, 33) for r in rows)
+            or not rows[1] or len(rows[1]) != 33
+            or rows[1][6:21] != ['fiscal quarter ended'] * 15
+            or rows[1][21:24] != [''] * 3
+            or rows[1][24:] != ['fiscal year ended'] * 9):
+        _refuse('EXHIBIT_AVGO_GAAP_COLUMN_HEADERS')
+    dates = []
+    for column in (6, 12, 18, 24, 30):
+        span = rows[2][column:column + 3]
+        if len(span) != 3 or not span[0] or span != [span[0]] * 3:
+            _refuse('EXHIBIT_AVGO_GAAP_DATE_COLUMNS')
+        try:
+            parsed = datetime.strptime(span[0], '%B %d,%Y').date()
+        except ValueError:
+            _refuse('EXHIBIT_AVGO_GAAP_QUARTER_DATE')
+        dates.append(parsed)
+    current, previous, prior_year, annual, prior_annual = dates
+    start = previous + timedelta(days=1)
+    if (current != annual or prior_year != prior_annual
+            or not 70 <= (current - start).days + 1 <= 110
+            or not 340 <= (current - prior_year).days <= 385
+            or not start <= current <= date.fromisoformat(reference['filed'])
+            or previous >= current):
+        _refuse('EXHIBIT_AVGO_GAAP_QUARTER_PERIOD')
+
+    def unique(label, *, lo=0, hi=None):
+        ends = len(rows) if hi is None else hi
+        found = [i for i in range(lo, ends) if rows[i] and rows[i][0] == label]
+        if len(found) != 1:
+            _refuse('EXHIBIT_AVGO_GAAP_UNIQUE_ROW_REQUIRED')
+        return found[0]
+
+    basic = unique('basic income per share:')
+    diluted = unique('diluted income per share:')
+    weighted = unique('weighted-average shares used in per share calculations:')
+    income_row = unique('net income')
+    eps_row = unique('net income per share', lo=diluted + 1, hi=weighted)
+    share_row = unique('diluted', lo=weighted + 1)
+    if not (income_row < basic < diluted < eps_row < weighted < share_row
+            and share_row < weighted + 5):
+        _refuse('EXHIBIT_AVGO_GAAP_SECTION_ORDER')
+
+    def amount(index, *, money):
+        block = rows[index][6:12]
+        tokens = []
+        for token in block:
+            if token and (not tokens or tokens[-1] != token):
+                tokens.append(token)
+        if money:
+            if len(tokens) != 2 or tokens[0] != '$':
+                _refuse('EXHIBIT_AVGO_GAAP_CURRENCY_COLUMN')
+            number_text = tokens[1]
+        else:
+            if len(tokens) != 1:
+                _refuse('EXHIBIT_AVGO_GAAP_SHARE_COLUMN')
+            number_text = tokens[0]
+        return _amount(number_text)
+
+    eps = amount(eps_row, money=True)
+    shares = amount(share_row, money=False) * Decimal(1000000)
+    income = amount(income_row, money=True) * Decimal(1000000)
+    if (eps <= 0 or income <= 0 or shares <= 500000
+            or shares != shares.to_integral_value()):
+        _refuse('EXHIBIT_AVGO_GAAP_POSITIVE_FACTS_REQUIRED')
+    low = min(income / (shares - 500000), income / (shares + 500000))
+    high = max(income / (shares - 500000), income / (shares + 500000))
+    tolerance = Decimal(500000) / (shares - 500000) + Decimal('.005')
+    if not low - tolerance <= eps <= high + tolerance:
+        _refuse('EXHIBIT_AVGO_GAAP_EPS_SHARE_CONTRADICTION')
+    return [
+        {'concept': concept, 'start': str(start), 'end': str(current),
+         'units': units, 'value': str(value), 'filed': reference['filed'],
+         'accession': reference['accession']}
+        for concept, units, value in (
+            ('EarningsPerShareDiluted', 'USD/shares', eps),
+            ('WeightedAverageNumberOfDilutedSharesOutstanding', 'shares', shares),
+            ('NetIncomeLoss', 'USD', income),
+        )
+    ]
+
+
 def _parse_earnings_exhibit(main, document, reference, *, issuer_name, now):
     """Read only labelled, standalone GAAP income-statement quarter columns.
 
@@ -112,6 +217,14 @@ def _parse_earnings_exhibit(main, document, reference, *, issuer_name, now):
                 or _words(issuer_name)+' income statements' not in context[-350:]):continue
         if 'non-gaap' in context[-180:]:continue
         candidates.append(table)
+    if not candidates and issuer_name.strip().casefold() == 'broadcom inc.':
+        facts = _broadcom_original_gaap_quarter(parser.tables, reference, issuer_name)
+        return {'schema': SCHEMA, 'reference': dict(reference),
+                'main_sha256': linked['main_sha256'], 'url': linked['url'],
+                'sha256': hashlib.sha256(document.encode()).hexdigest(),
+                'accounting_basis': 'REPORTED_GAAP_STANDALONE_QUARTER',
+                'share_definition': 'WEIGHTED_AVERAGE_DILUTED',
+                'units_note': 'MILLIONS_EXCEPT_USD_PER_SHARE', 'facts': facts}
     if len(candidates)!=1:_refuse('EXHIBIT_GAAP_STATEMENT_UNRESOLVED')
     if candidates[0]['unsupported_layout']:_refuse('EXHIBIT_CAPACITY')
     rows=candidates[0]['rows'];facts=[]
