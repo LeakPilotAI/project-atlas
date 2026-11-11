@@ -21,6 +21,49 @@ from app.services.personal_paper_runtime import PROFILE, validate_policy
 
 from scripts.observation_runtime.quality_dips_one_time_publisher import OneTimePublisher
 
+# Existing root roles are distinct from the 5 QD / 7 HL process-writer roles.
+# Inception writes only source and report, but every account-root identity
+# remains a financial-custody prerequisite across the full publication.
+INCEPTION_ROOT_ROLES = ('source', 'projection', 'report',
+                        'control', 'coordination', 'custody')
+INCEPTION_FILE_ROLES = ('source', 'projection', 'report')
+INCEPTION_EMPTY_ROLES = ('control', 'custody')
+
+
+def verify_all_native_inception_roots(enrollment, outputs, native):
+    """All six original native IDs, including roles with no inception files.
+
+    Never infer financial ownership/permission from a matching root. The
+    coordination publisher owns validation of its separate durable journal.
+    """
+    resources = enrollment['native_enrollment']['resources']
+    if (type(resources) is not dict
+            or set(resources) != set(INCEPTION_ROOT_ROLES)
+            or set(outputs) != set(INCEPTION_ROOT_ROLES)):
+        raise ValueError('PERSONAL_INCEPTION_ALL_SIX_NATIVE_ROOTS_REQUIRED')
+    native_ids = set()
+    paths = set()
+    for role in INCEPTION_ROOT_ROLES:
+        root = resources[role]
+        output = outputs[role]
+        output._verify()
+        identity = native.native.file_identity(output.root_handle)
+        if (str(output.root) != root['path']
+                or identity != root['native_id']
+                or type(identity) is not list or len(identity) != 3
+                or any(type(k) is not int or k < 0 for k in identity)):
+            raise ValueError('PERSONAL_INCEPTION_NATIVE_ROOT_CHANGED:' + role)
+        native_key = tuple(identity)
+        path_key = root['path'].casefold()
+        if native_key in native_ids or path_key in paths:
+            raise ValueError('PERSONAL_INCEPTION_NATIVE_ROOT_ALIAS_REFUSED')
+        native_ids.add(native_key)
+        paths.add(path_key)
+    for role in INCEPTION_EMPTY_ROLES:
+        if any(Path(outputs[role].root).iterdir()):
+            raise ValueError('PERSONAL_INCEPTION_UNEXPECTED_CONTROL_OR_CUSTODY_FILES:' + role)
+    return True
+
 
 def native_primitives():
     # Existing-only native access;source tests may inject OS doubles explicitly.
@@ -144,21 +187,26 @@ class NativePersonalInceptionFiles:
             raise ValueError('PERSONAL_INCEPTION_FILES_ALREADY_ACTIVE')
         enrollment=strict(body(enrollment));_,e,_=validate_personal_inception(enrollment)
         native=native_primitives()
-        outputs={};expected={r:{} for r in ('source','projection','report')}
+        outputs={};expected={r:{} for r in INCEPTION_FILE_ROLES}
         try:
-            for role in expected:
+            for role in INCEPTION_ROOT_ROLES:
                 root=e['resources'][role]
                 outputs[role]=native.w.WindowsOutput(root['path'])
-                if native.native.file_identity(outputs[role].root_handle)!=root['native_id'] or list(Path(root['path']).iterdir()):raise ValueError('PERSONAL_EMPTY_ENROLLED_ROOT_REQUIRED')
+            verify_all_native_inception_roots(enrollment,outputs,native)
+            if any(list(Path(outputs[role].root).iterdir()) for role in INCEPTION_FILE_ROLES):
+                raise ValueError('PERSONAL_EMPTY_ENROLLED_ROOT_REQUIRED')
             class Files:
                 def write(self,role,name,value):
                     if role not in expected:raise ValueError('PERSONAL_FINANCIAL_ROLE')
                     binding=outputs[role].write_bound(name,body(value).encode());expected[role][name]=binding;self.verify();return binding
                 def verify(self):
-                    for role,out in outputs.items():
-                        out._verify()
-                        if {p.name for p in Path(out.root).iterdir()}!=set(expected[role]):raise ValueError('PERSONAL_INCEPTION_NAMESPACE_CHANGED')
-                        for name,binding in expected[role].items():native.read_bound(out,name,binding)
+                    verify_all_native_inception_roots(enrollment,outputs,native)
+                    for role in INCEPTION_FILE_ROLES:
+                        out=outputs[role]
+                        if {p.name for p in Path(out.root).iterdir()}!=set(expected[role]):
+                            raise ValueError('PERSONAL_INCEPTION_NAMESPACE_CHANGED')
+                        for name,binding in expected[role].items():
+                            native.read_bound(out,name,binding)
             files = Files()
             self._active = (get_ident(), body(enrollment), files)
             yield files
@@ -238,13 +286,11 @@ class NativePersonalInitialReadback:
         lane,n,expected_manifest,current=validate_initial_current(enrollment,current)
         native=native_primitives();outputs={}
         try:
-            for role in ('source','projection','report'):
-                out=native.w.WindowsOutput(n['resources'][role]['path']);outputs[role]=out
-                if native.native.file_identity(out.root_handle)!=n['resources'][role]['native_id']:raise ValueError('PERSONAL_INITIAL_ROOT_SUBSTITUTION')
+            for role in INCEPTION_ROOT_ROLES:
+                out=native.w.WindowsOutput(n['resources'][role]['path'])
+                outputs[role]=out
             def inventory():
-                for role,out in outputs.items():
-                    out._verify()
-                    if native.native.file_identity(out.root_handle)!=n['resources'][role]['native_id']:raise ValueError('PERSONAL_INITIAL_ROOT_SUBSTITUTION')
+                verify_all_native_inception_roots(enrollment,outputs,native)
                 if ({p.name for p in Path(outputs['source'].root).iterdir()}!={'inception.json'} or list(Path(outputs['projection'].root).iterdir())
                         or {p.name for p in Path(outputs['report'].root).iterdir()}!={'scope.json','0001-report.json'}):raise ValueError('PERSONAL_INITIAL_NAMESPACE')
             inventory()
