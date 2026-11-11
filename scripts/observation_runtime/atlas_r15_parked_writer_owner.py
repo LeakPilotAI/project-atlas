@@ -270,7 +270,7 @@ def inspect():
             WRITERS as HL_WRITERS, validate_enrollment as validate_hl,
         )
         from scripts.observation_runtime.atlas_r15_two_account_enrollment_handoff import inspect as draft
-        from scripts.observation_runtime.personal_native_writer_lifetime import retain_live_enrollment_writers
+        from scripts.observation_runtime.personal_activation_commission import retain_activation_writer_guard
         from scripts.observation_runtime.personal_r15_owned_job_activation import RetainedSelectedR15OwnerJob
         from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import ARTIFACT
         source=draft()
@@ -284,8 +284,9 @@ def inspect():
             item['acceptance_id']='DISPOSABLE_PARKED_JOB_NO_FINANCIAL_AUTHORITY'
             candidate[lane]=validator(item)
         qd,hl=candidate['QUALITY_DIPS'],candidate['HYPERLIQUID']
-        with retain_live_enrollment_writers(qd,hl,release_digest=ARTIFACT) as live:
-            job_binding=RetainedSelectedR15OwnerJob(child=owner,qd=qd,perp=hl)
+        job_binding=RetainedSelectedR15OwnerJob(child=owner,qd=qd,perp=hl)
+        with retain_activation_writer_guard(qd=qd,perp=hl,
+                release_digest=ARTIFACT,owned_job=job_binding) as live:
             job_binding.require_exact_roster(qd=qd,perp=hl)
             pure=job_binding.nonfinancial_handoff_readback()
             if (pure['writer_roles_examined']!=12

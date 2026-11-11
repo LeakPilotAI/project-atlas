@@ -130,7 +130,7 @@ def test_real_current_process_pid_with_wrong_filetime_never_passes():
 
 
 @pytest.mark.skipif(sys.platform!='win32',reason='Native R15 Windows resource IDs required')
-def test_actual_commission_command_refuses_expired_both_lane_writer_before_clock_or_native_publication(
+def test_actual_r15_commission_refuses_missing_original_owned_job_before_clock_or_native_publication(
         tmp_path,monkeypatch):
     import json
     from pathlib import Path
@@ -177,13 +177,13 @@ def test_actual_commission_command_refuses_expired_both_lane_writer_before_clock
         p=tmp_path/(name+'.json')
         p.write_text(json.dumps(body,sort_keys=True),encoding='utf-8')
         files[name]=str(p)
-    # A failed real writer HANDLE check must never instantiate any clock or
-    # attempt creation of the genuine native activation root.
+    # R15 requires the already-retained original owned Job; even a fabricated
+    # enrolled PID must not be opened, nor trigger clock/native publication.
     monkeypatch.setattr(commission,'NativeVersionSafePaperOperatorClock',
                         lambda **kw:pytest.fail('INVALID_PID_MUST_NOT_ACQUIRE_CLOCK'))
     monkeypatch.setattr(commission,'publish_personal_activation',
                         lambda **kw:pytest.fail('INVALID_PID_MUST_NOT_PUBLISH_NATIVE_ACTIVATION'))
-    with pytest.raises(ValueError,match='PERSONAL_ACTIVATION_ACTUAL_PROCESS_HANDLE_UNAVAILABLE'):
+    with pytest.raises(ValueError,match='ACTIVATION_R15_RETAINED_NATIVE_JOB_REQUIRED'):
         commission.commission(
             root=r'D:\AtlasCustody\PersonalPaper\expired-writer-only-test',
             record_path=files['record'],policy_path=files['policy'],

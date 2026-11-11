@@ -111,3 +111,44 @@ def test_actual_alive_r15_executable_without_atlas_owned_job_refused_before_cloc
         if child.poll() is None:
             child.terminate()
             child.wait(timeout=5)
+
+
+@pytest.mark.parametrize("foreign",[None,object(),False,{"job":123},123])
+def test_r15_guard_refuses_any_claim_without_original_held_job(foreign,monkeypatch):
+    """Foreign or absent Job must fail BEFORE opening an enrollment-supplied PID."""
+    from scripts.observation_runtime import personal_native_writer_lifetime as legacy
+    monkeypatch.setattr(legacy,"retain_live_enrollment_writers",
+                        lambda *a,**k:pytest.fail("R15_MUST_NOT_REOPEN_A_PID"))
+    with pytest.raises(ValueError,match="ACTIVATION_R15_RETAINED_NATIVE_JOB_REQUIRED"):
+        with activation.retain_activation_writer_guard(
+                qd={},perp={},release_digest=ARTIFACT,owned_job=foreign):
+            pytest.fail("FOREIGN_JOB_MUST_NOT_BE_ENTERED")
+
+
+def test_old_release_writer_guard_still_uses_original_retained_handle_port(monkeypatch):
+    from contextlib import contextmanager
+    from scripts.observation_runtime import personal_native_writer_lifetime as legacy
+    counts=[]
+    proof=object()
+    @contextmanager
+    def original(qd,perp,*,release_digest):
+        counts.append(("entered",qd,perp,release_digest))
+        yield proof
+        counts.append(("exited",))
+    monkeypatch.setattr(legacy,"retain_live_enrollment_writers",original)
+    with activation.retain_activation_writer_guard(
+            qd={"lane":"QD"},perp={"lane":"HL"},release_digest="f"*64) as port:
+        assert port is proof
+    assert counts == [
+        ("entered",{"lane":"QD"},{"lane":"HL"},"f"*64),("exited",),
+    ]
+
+
+def test_old_release_refuses_any_foreign_r15_job_before_process_open(monkeypatch):
+    from scripts.observation_runtime import personal_native_writer_lifetime as legacy
+    monkeypatch.setattr(legacy,"retain_live_enrollment_writers",
+                        lambda *a,**k:pytest.fail("FOREIGN_JOB_NOT_ALLOWED"))
+    with pytest.raises(ValueError,match="ACTIVATION_FOREIGN_JOB_OR_RELEASE_REFUSED"):
+        with activation.retain_activation_writer_guard(
+                qd={},perp={},release_digest="f"*64,owned_job=object()):
+            pytest.fail("FOREIGN_JOB_NOT_ALLOWED")

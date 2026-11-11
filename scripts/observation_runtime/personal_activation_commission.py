@@ -7,6 +7,7 @@ is inferred from commissioning scope or diagnostic data.
 import argparse
 import json
 import math
+from contextlib import contextmanager
 import ntpath
 import os
 import stat
@@ -142,6 +143,38 @@ def verify_enrollment_native_roots(enrollment):
             raise ValueError('ACTIVATION_NATIVE_RESOURCE_IDENTITY_MISMATCH:' + role)
 
 
+@contextmanager
+def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None):
+    """Use the original R15 Job+PROCESS HANDLE; never reopen its PID.
+
+    R15 ownership is necessarily *in-process*, holding the exact child
+    handles and native-root identities. A synthetic roster or standalone
+    observed PID cannot be adopted into an operator activation. Earlier
+    releases keep the independent native writer-HANDLE retention path.
+    This context does NOT confer a financial ownership lease.
+    """
+    from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
+        ARTIFACT as R15_ARTIFACT,
+    )
+    if release_digest == R15_ARTIFACT:
+        from scripts.observation_runtime.personal_r15_owned_job_activation import (
+            RetainedSelectedR15OwnerJob,
+        )
+        if type(owned_job) is not RetainedSelectedR15OwnerJob:
+            raise ValueError('ACTIVATION_R15_RETAINED_NATIVE_JOB_REQUIRED')
+        owned_job.require_exact_roster(qd=qd, perp=perp)
+        yield owned_job
+        owned_job.require_exact_roster(qd=qd, perp=perp)
+    else:
+        if owned_job is not None:
+            raise ValueError('ACTIVATION_FOREIGN_JOB_OR_RELEASE_REFUSED')
+        from scripts.observation_runtime.personal_native_writer_lifetime import (
+            retain_live_enrollment_writers,
+        )
+        with retain_live_enrollment_writers(qd, perp, release_digest=release_digest) as writers:
+            yield writers
+
+
 def commission(*, root, record_path, policy_path, release_digest, accounts_path,
                expected_clock_source, runtime_id, qd_enrollment_path=None,
                perp_enrollment_path=None, clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4",
@@ -210,33 +243,16 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             or not isinstance(record.get('actions'), list)
             or not record['actions']):
         raise ValueError('ACTIVATION_POLICY_OR_ACTION_BINDING_REQUIRED')
-    # A signed-in-session record and structurally correct enrollment JSON
-    # cannot certify an expired/foreign writer PID. Retain exact Windows
-    # PROCESS_HANDLES through the once-only native activation publisher. This
-    # is a necessary negative gate, never C1 ownership or a financial grant.
-    from scripts.observation_runtime.personal_native_writer_lifetime import (
-        retain_live_enrollment_writers,
+    # R15 must use the ORIGINAL owned Windows Job+PROCESS HANDLE in this
+    # trusted process. Never reopen a PID taken from enrollment JSON. The
+    # guarded context re-verifies exact 5+7 rosters and all 12 original
+    # empty native roots on entry and exit. No financial writer lease exists.
+    from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
+        ARTIFACT as R15_ARTIFACT,
     )
-    with retain_live_enrollment_writers(qd, perp, release_digest=release_digest) as writers:
-        # Fail without acquiring a trusted clock or consuming the create-only
-        # activation namespace when no *current* enrolled process exists.
+    with retain_activation_writer_guard(qd=qd, perp=perp,
+            release_digest=release_digest, owned_job=owned_job) as writers:
         writers.verify_still_running()
-        # R15 requires the same current process to be in an Atlas-retained
-        # kill-on-close Windows Job. A matching executable/PID is insufficient.
-        # The CLI deliberately has no raw Job-HANDLE argument; a trusted owner
-        # must invoke this composition in-process with the retained Job object.
-        from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
-            ARTIFACT as R15_ARTIFACT,
-        )
-        if release_digest == R15_ARTIFACT:
-            from scripts.observation_runtime.personal_r15_owned_job_activation import (
-                RetainedSelectedR15OwnerJob,
-            )
-            if type(owned_job) is not RetainedSelectedR15OwnerJob:
-                raise ValueError('ACTIVATION_R15_RETAINED_NATIVE_JOB_REQUIRED')
-            owned_job.require_exact_roster(qd=qd, perp=perp)
-        elif owned_job is not None:
-            raise ValueError('ACTIVATION_FOREIGN_JOB_OR_RELEASE_REFUSED')
         if clock_profile == V7_NTP_PROFILE:
             clock = NativeV7PaperOperatorClock(runtime_id=runtime_id)
         elif clock_profile == V8_NTP_PROFILE:

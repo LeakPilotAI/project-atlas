@@ -104,7 +104,11 @@ def test_detached_headless_creator_does_not_import_or_dispatch_financial_runtime
 
 
 @pytest.mark.skipif(sys.platform!="win32",reason="Requires real selected R15 Windows Job and native account directories")
-def test_one_real_installed_r15_parked_child_job_holds_all_12_handles_then_stops():
+def test_one_real_installed_r15_parked_child_job_holds_all_12_handles_then_stops(monkeypatch):
+    from scripts.observation_runtime import personal_native_writer_lifetime as lifetime
+    def forbidden_pid_reopen(*args,**kwargs):
+        pytest.fail('R15_ACTIVATION_MUST_USE_RETAINED_JOB_PROCESS_HANDLE_NOT_REOPEN_PID')
+    monkeypatch.setattr(lifetime,'WindowsRetainedWriter',forbidden_pid_reopen)
     value=parked.inspect()
     assert value==good()
     assert value["owned_job_active_children_before_stop"]==1
