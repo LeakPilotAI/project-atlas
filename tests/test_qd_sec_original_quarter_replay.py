@@ -327,3 +327,183 @@ def test_avgo_original_sec_split_provenance_fails_closed(tmp_path,damage):
     path.write_text(json.dumps(packet,sort_keys=True),encoding='utf-8')
     with pytest.raises((ValueError,ResearchRefused)):
         replay.inspect_original_avgo_split(cache_root=tmp_path,now=NOW)
+
+
+def _synthetic_avgo_raw_split_history(tmp_path):
+    from urllib.parse import urlencode
+
+    prepared_avgo_split(tmp_path)
+    days=['2024-07-11','2024-07-12','2024-07-15','2024-07-16']
+    def bars(adjustment):
+        data=[]
+        for day, raw_price, volume in zip(days,(1700,1650,165,170),
+                                           (50,80,120,140),strict=True):
+            is_pre=day <= '2024-07-12'
+            factor=10 if is_pre and adjustment=='split' else 1
+            price=raw_price/factor
+            v=volume*factor
+            data.append({'t':day+'T04:00:00Z','o':price,'h':price+1/factor,
+                         'l':price-1/factor,'c':price,'v':v,
+                         'n':1,'vw':price})
+        return data
+
+    sources={}
+    for adjustment in ('raw','split'):
+        rows=bars(adjustment)
+        query={'feed':'iex','timeframe':'1Day','adjustment':adjustment,
+               'sort':'asc','start':'2021-11-03','end':'2026-11-07','limit':1000}
+        original_url=('https://data.alpaca.markets/v2/stocks/AVGO/bars?'
+                      +urlencode(query))
+        store(tmp_path,original_url,{
+            'symbol':'AVGO','bars':rows[:2],
+            'next_page_token':'TEST_CONTINUATION'},provider='ALPACA_BASIC_IEX')
+        query['page_token']='TEST_CONTINUATION'
+        page2_url=('https://data.alpaca.markets/v2/stocks/AVGO/bars?'
+                   +urlencode(query))
+        store(tmp_path,page2_url,{
+            'symbol':'AVGO','bars':rows[2:],
+            'next_page_token':None},provider='ALPACA_BASIC_IEX')
+        sources[adjustment]=(original_url,page2_url)
+    action_query={'symbols':'AVGO','start':'2021-11-03',
+                  'end':'2026-11-07','region':'us',
+                  'limit':1000,'data_quality':'all'}
+    action_url=('https://data.alpaca.markets/v1/corporate-actions?'
+                +urlencode(action_query))
+    store(tmp_path,action_url,{
+        'corporate_actions': {
+            'forward_splits': [{
+                'symbol':'AVGO','id':'ab22e5df-2b84-427e-84c7-c0e6e24c4696',
+                'record_date':'2024-07-11','payable_date':'2024-07-12',
+                'ex_date':'2024-07-15','process_date':'2024-07-15',
+                'due_bill_redemption_date':'2024-07-15',
+                'old_rate':1,'new_rate':10
+            }],
+            'cash_dividends':[], 'stock_mergers':[],
+        },
+        'next_page_token':None,
+    },provider='ALPACA_BASIC_IEX')
+    return sources
+
+
+def test_original_avgo_split_certifies_historical_price_pair_only(tmp_path):
+    _synthetic_avgo_raw_split_history(tmp_path)
+    result=replay.inspect_avgo_split_only_history(cache_root=tmp_path,now=NOW)
+    assert result['matching_returned_daily_bar_count']==4
+    assert result['pre_split_returned_bars']==2
+    assert result['post_split_returned_bars']==2
+    assert result['maximum_split_adjustment_rounding_difference_usd']=='0'
+    assert result['sec_original_new_shares_per_old_share']==10
+    assert len(result['source_content_sha256_by_adjustment']['raw'])==2
+    for key in ('complete_exchange_calendar_sessions_verified',
+                'all_corporate_actions_covered','provider_price_data_rights_accepted',
+                'split_adjusted_share_basis_for_historical_valuation_accepted',
+                'twelve_historical_valuation_anchors_accepted',
+                'native_source_publisher_enrolled','financial_paper_order_authorized',
+                'real_money_order_authorized'):
+        assert result[key] is False
+    assert result['network_requests']==0
+
+
+@pytest.mark.parametrize('damage',[
+    'pre_split_price','pre_split_volume','post_split_price','post_split_volume',
+    'missing_day','duplicate_day','non_midnight_timestamp','future_date',
+    'negative_price','ohlc_high_below_open','nan_price','fractional_volume',
+    'duplicate_page_token','foreign_symbol','stale_or_forged_source',
+    'wrong_provider','missing_page','swapped_page_order',
+])
+def test_original_avgo_split_price_history_fails_closed(tmp_path,damage):
+    urls=_synthetic_avgo_raw_split_history(tmp_path)
+    if damage in ('missing_page',):
+        chosen=urls['split'][1]
+        (tmp_path/(hashlib.sha256(chosen.encode()).hexdigest()+'.json')).unlink()
+        with pytest.raises((ValueError,ResearchRefused,OSError)):
+            replay.inspect_avgo_split_only_history(cache_root=tmp_path,now=NOW)
+        return
+    selected='split'
+    page=0
+    if damage in ('negative_price','fractional_volume'):
+        selected='raw'
+    if damage in ('duplicate_day','swapped_page_order','post_split_price','post_split_volume',
+                  'non_midnight_timestamp','future_date','duplicate_page_token'):
+        page=1
+    url=urls[selected][page]
+    filename=tmp_path/(hashlib.sha256(url.encode()).hexdigest()+'.json')
+    receipt=json.loads(filename.read_text())
+    packet=json.loads(receipt['raw'])
+    bar=packet['bars'][0]
+    if damage=='pre_split_price':bar['c']+=3
+    elif damage=='pre_split_volume':bar['v']+=1
+    elif damage=='post_split_price':bar['c']+=3
+    elif damage=='post_split_volume':bar['v']+=1
+    elif damage=='missing_day':packet['bars'].pop(0)
+    elif damage=='duplicate_day':packet['bars'][1]['t']=bar['t']
+    elif damage=='non_midnight_timestamp':bar['t']='2024-07-15T05:00:00Z'
+    elif damage=='future_date':bar['t']='2027-11-15T05:00:00Z'
+    elif damage=='negative_price':bar['o']=-1
+    elif damage=='ohlc_high_below_open':bar['h']=bar['o']-2
+    elif damage=='nan_price':bar['c']='NaN'
+    elif damage=='fractional_volume':bar['v']=1.4
+    elif damage=='duplicate_page_token':packet['next_page_token']='TEST_CONTINUATION'
+    elif damage=='foreign_symbol':packet['symbol']='MSFT'
+    elif damage=='wrong_provider':receipt['provider']='SEC_EDGAR'
+    elif damage=='swapped_page_order':
+        packet['bars']=packet['bars'][::-1]
+    elif damage=='stale_or_forged_source':
+        receipt['sha256']='0'*64
+    if damage not in ('wrong_provider','stale_or_forged_source'):
+        receipt['raw']=json.dumps(packet,sort_keys=True)
+        receipt['sha256']=hashlib.sha256(receipt['raw'].encode()).hexdigest()
+    filename.write_text(json.dumps(receipt,sort_keys=True),encoding='utf-8')
+    with pytest.raises((ValueError,ResearchRefused,OSError)):
+        replay.inspect_avgo_split_only_history(cache_root=tmp_path,now=NOW)
+
+
+@pytest.mark.parametrize('damage',[
+    'forward_ratio_changed','old_ratio_changed','wrong_ex_date',
+    'wrong_payable_date','wrong_record_date','duplicate_split',
+    'missing_split','action_next_page_token','foreign_split_symbol',
+    'hidden_unrecognized_action_class','provider_action_hash_changed',
+    'action_history_missing',
+])
+def test_original_sec_alpaca_split_corporate_action_refuses_tampering(tmp_path,damage):
+    from urllib.parse import urlencode
+
+    _synthetic_avgo_raw_split_history(tmp_path)
+    q={'symbols':'AVGO','start':'2021-11-03','end':'2026-11-07',
+       'region':'us','limit':1000,'data_quality':'all'}
+    url='https://data.alpaca.markets/v1/corporate-actions?'+urlencode(q)
+    path=tmp_path/(hashlib.sha256(url.encode()).hexdigest()+'.json')
+    if damage=='action_history_missing':
+        path.unlink()
+    else:
+        receipt=json.loads(path.read_text())
+        actions=json.loads(receipt['raw'])
+        row=actions['corporate_actions']['forward_splits'][0]
+        if damage=='forward_ratio_changed':
+            row['new_rate']=9
+        elif damage=='old_ratio_changed':
+            row['old_rate']=2
+        elif damage=='wrong_ex_date':
+            row['ex_date']='2024-07-16'
+        elif damage=='wrong_payable_date':
+            row['payable_date']='2024-07-11'
+        elif damage=='wrong_record_date':
+            row['record_date']='2024-07-12'
+        elif damage=='duplicate_split':
+            actions['corporate_actions']['forward_splits'].append(deepcopy(row))
+        elif damage=='missing_split':
+            actions['corporate_actions']['forward_splits'].clear()
+        elif damage=='action_next_page_token':
+            actions['next_page_token']='UNFINISHED'
+        elif damage=='foreign_split_symbol':
+            row['symbol']='MSFT'
+        elif damage=='hidden_unrecognized_action_class':
+            actions['corporate_actions']['reverse_splits']=[{'symbol':'AVGO'}]
+        elif damage=='provider_action_hash_changed':
+            receipt['sha256']='0'*64
+        if damage!='provider_action_hash_changed':
+            receipt['raw']=json.dumps(actions,sort_keys=True)
+            receipt['sha256']=hashlib.sha256(receipt['raw'].encode()).hexdigest()
+        path.write_text(json.dumps(receipt,sort_keys=True),encoding='utf-8')
+    with pytest.raises((ValueError,ResearchRefused,OSError)):
+        replay.inspect_avgo_split_only_history(cache_root=tmp_path,now=NOW)

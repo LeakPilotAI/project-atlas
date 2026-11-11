@@ -273,6 +273,197 @@ def inspect_original_avgo_split(*, cache_root=CACHE_ROOT, now=None):
     }
 
 
+def inspect_avgo_split_only_history(*, cache_root=CACHE_ROOT, now=None):
+    """SEC split witness + bounded historical raw/split-only IEX cache comparison.
+
+    Precisely validates returned price and volume conversion across a known
+    original issuer action. A matching provider response does NOT certify
+    continuous exchange-calendar coverage, provider rights, EPS share basis,
+    executable quotes or financial PAPER orders. No network is performed.
+    """
+    from datetime import date as calendar_date
+    from decimal import InvalidOperation
+    from urllib.parse import urlencode
+    from zoneinfo import ZoneInfo
+
+    now = datetime.now(UTC) if now is None else now
+    split = inspect_original_avgo_split(cache_root=cache_root, now=now)
+    split_day = calendar_date.fromisoformat(split["stock_split_effective_date"])
+    bounds = ("2021-11-03", "2026-11-07")
+    source = "https://data.alpaca.markets/v2/stocks/AVGO/bars?"
+    eastern = ZoneInfo("America/New_York")
+    observed = {}
+    receipts = {}
+    for adjustment in ("raw", "split"):
+        query = {"feed": "iex", "timeframe": "1Day", "adjustment": adjustment,
+                 "sort": "asc", "start": bounds[0], "end": bounds[1],
+                 "limit": 1000}
+        rows = []
+        sha = []
+        seen_tokens = set()
+        previous = None
+        for page in range(3):
+            raw, content_sha = _cached(
+                cache_root, source + urlencode(query), "ALPACA_BASIC_IEX",
+                now=now, max_bytes=4*1024*1024)
+            packet = decode(raw)
+            if (type(packet) is not dict
+                    or set(packet) != {"symbol", "bars", "next_page_token"}
+                    or packet["symbol"] != "AVGO"
+                    or type(packet["bars"]) is not list
+                    or not 1 <= len(packet["bars"]) <= 1000):
+                raise ValueError("QD_AVGO_SPLIT_PRICE_EXACT_PAGE_REQUIRED")
+            sha.append(content_sha)
+            for record in packet["bars"]:
+                if (type(record) is not dict or not
+                        {"t", "o", "h", "l", "c", "v"} <= set(record)
+                        or type(record["t"]) is not str):
+                    raise ValueError("QD_AVGO_SPLIT_PRICE_BAR_SCHEMA")
+                try:
+                    stamp = datetime.fromisoformat(record["t"])
+                except ValueError:
+                    raise ValueError("QD_AVGO_SPLIT_PRICE_BAR_DATE") from None
+                if stamp.tzinfo is None or stamp.utcoffset() is None:
+                    raise ValueError("QD_AVGO_SPLIT_PRICE_UTC_REQUIRED")
+                local = stamp.astimezone(eastern)
+                day = local.date()
+                if (local.hour or local.minute or local.second
+                        or day.weekday() > 4 or not bounds[0] <= str(day) < bounds[1]
+                        or previous is not None and stamp <= previous):
+                    raise ValueError("QD_AVGO_SPLIT_PRICE_SESSION_ORDER")
+                previous = stamp
+                try:
+                    values = {}
+                    for k in ("o", "h", "l", "c", "v"):
+                        value = record[k]
+                        if type(value) not in (int, float, str):
+                            raise InvalidOperation()
+                        values[k] = Decimal(str(value))
+                except (InvalidOperation, ValueError):
+                    raise ValueError("QD_AVGO_SPLIT_PRICE_BAR_NUMERIC") from None
+                o, h, l, c, v = (values[k] for k in ("o", "h", "l", "c", "v"))
+                if (not all(n.is_finite() for n in values.values())
+                        or min(o, h, l, c) <= 0 or v < 0
+                        or v != v.to_integral_value()
+                        or not l <= min(o, c) <= max(o, c) <= h):
+                    raise ValueError("QD_AVGO_SPLIT_PRICE_BAR_OHLCV_REFUSED")
+                rows.append((stamp, day, values))
+                if len(rows) > 1600:
+                    raise ValueError("QD_AVGO_SPLIT_PRICE_CAPACITY")
+            token = packet["next_page_token"]
+            if token is None:
+                break
+            if (type(token) is not str or not 1 <= len(token) <= 2048
+                    or token in seen_tokens or page >= 2):
+                raise ValueError("QD_AVGO_SPLIT_PRICE_PAGINATION_REFUSED")
+            seen_tokens.add(token)
+            query["page_token"] = token
+        else:
+            raise ValueError("QD_AVGO_SPLIT_PRICE_PAGINATION_UNFINISHED")
+        if len(rows) < 4:
+            raise ValueError("QD_AVGO_SPLIT_PRICE_INSUFFICIENT_SESSIONS")
+        observed[adjustment] = rows
+        receipts[adjustment] = sha
+    raw_rows, split_rows = observed["raw"], observed["split"]
+    if (len(raw_rows) != len(split_rows)
+            or [r[0] for r in raw_rows] != [r[0] for r in split_rows]):
+        raise ValueError("QD_AVGO_SPLIT_PRICE_COVERAGE_MISMATCH")
+    pre = post = 0
+    maximum_difference = Decimal(0)
+    tolerance = Decimal("0.006")
+    for (_, day, unadjusted), (_, _, adjusted) in zip(
+            raw_rows, split_rows, strict=True):
+        factor = Decimal(10 if day <= split_day else 1)
+        if factor == 10:
+            pre += 1
+        else:
+            post += 1
+        if adjusted["v"] != unadjusted["v"] * factor:
+            raise ValueError("QD_AVGO_SPLIT_VOLUME_FACTOR_MISMATCH")
+        for k in ("o", "h", "l", "c"):
+            difference = abs(unadjusted[k] / factor - adjusted[k])
+            if difference > tolerance:
+                raise ValueError("QD_AVGO_SPLIT_PRICE_FACTOR_MISMATCH")
+            maximum_difference = max(maximum_difference, difference)
+    if not pre or not post:
+        raise ValueError("QD_AVGO_SPLIT_DATE_NOT_BRACKETED")
+    # An independent provider corporate-action snapshot is required in
+    # addition to SEC XBRL and a coherent raw/split-adjusted price ratio.
+    # This confirms the declared event but is NOT entitlement/completeness.
+    action_query = {"symbols": "AVGO", "start": bounds[0], "end": bounds[1],
+                    "region": "us", "limit": 1000, "data_quality": "all"}
+    action_url = ("https://data.alpaca.markets/v1/corporate-actions?"
+                  + urlencode(action_query))
+    action_raw, action_sha = _cached(cache_root, action_url,
+                                     "ALPACA_BASIC_IEX", now=now,
+                                     max_bytes=200_000)
+    actions = decode(action_raw)
+    if (type(actions) is not dict
+            or set(actions) != {"corporate_actions", "next_page_token"}
+            or actions["next_page_token"] is not None
+            or type(actions["corporate_actions"]) is not dict
+            or set(actions["corporate_actions"]) != {
+                "forward_splits", "cash_dividends", "stock_mergers"}):
+        raise ValueError("QD_AVGO_SPLIT_PROVIDER_ACTION_SNAPSHOT_REQUIRED")
+    categories = actions["corporate_actions"]
+    if (any(type(v) is not list or len(v) > 1000
+            for v in categories.values())
+            or len(categories["forward_splits"]) != 1):
+        raise ValueError("QD_AVGO_SPLIT_PROVIDER_ACTION_SCOPE_REFUSED")
+    event = categories["forward_splits"][0]
+    if (type(event) is not dict
+            or type(event.get("id")) is not str
+            or re.fullmatch("[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}",
+                            event["id"]) is None
+            or event.get("symbol") != "AVGO"
+            or type(event.get("new_rate")) not in (int, float)
+            or type(event.get("old_rate")) not in (int, float)
+            or Decimal(str(event["new_rate"])) != Decimal(10)
+            or Decimal(str(event["old_rate"])) != Decimal(1)
+            or event.get("payable_date") != str(split_day)
+            or event.get("ex_date") != "2024-07-15"
+            or event.get("due_bill_redemption_date") != "2024-07-15"
+            or event.get("process_date") != "2024-07-15"
+            or event.get("record_date") != "2024-07-11"):
+        raise ValueError("QD_AVGO_SPLIT_ORIGINAL_PROVIDER_ACTION_MISMATCH")
+    if not {"2024-07-12", event["ex_date"]} <= {
+            str(r[1]) for r in raw_rows}:
+        raise ValueError("QD_AVGO_SPLIT_EXDATE_SESSIONS_MISSING")
+    return {
+        "schema": "ATLAS_AVGO_SEC_SPLIT_ONLY_PRICE_PAIR_REPLAY_V1",
+        "status": "RETURNED_PROVIDER_RAW_AND_SPLIT_PRICE_PAIRS_CORROBORATED",
+        "sec_original_split_sha256": split["original_document_sha256"],
+        "sec_original_split_date": split["stock_split_effective_date"],
+        "sec_original_new_shares_per_old_share": 10,
+        "source": "ALPACA_BASIC_IEX_HISTORICAL_BARS",
+        "request_adjustment_pair": ["raw", "split"],
+        "source_content_sha256_by_adjustment": receipts,
+        "provider_corporate_action_sha256": action_sha,
+        "provider_original_split_event_corroborated": True,
+        "provider_split_ex_date": event["ex_date"],
+        "provider_non_split_actions_seen": {
+            "cash_dividends": len(categories["cash_dividends"]),
+            "stock_mergers": len(categories["stock_mergers"]),
+        },
+        "matching_returned_daily_bar_count": len(raw_rows),
+        "pre_split_returned_bars": pre,
+        "post_split_returned_bars": post,
+        "first_returned_session": str(raw_rows[0][1]),
+        "last_returned_session": str(raw_rows[-1][1]),
+        "maximum_split_adjustment_rounding_difference_usd": str(maximum_difference),
+        "returned_provider_sessions_match": True,
+        "complete_exchange_calendar_sessions_verified": False,
+        "all_corporate_actions_covered": False,
+        "provider_price_data_rights_accepted": False,
+        "split_adjusted_share_basis_for_historical_valuation_accepted": False,
+        "twelve_historical_valuation_anchors_accepted": False,
+        "native_source_publisher_enrolled": False,
+        "financial_paper_order_authorized": False,
+        "real_money_order_authorized": False,
+        "network_requests": 0,
+    }
+
+
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--symbol",required=True)
