@@ -160,6 +160,119 @@ def inspect_original_quarter(*, symbol, cik, cache_root=CACHE_ROOT, now=None,
     }
 
 
+def inspect_original_avgo_split(*, cache_root=CACHE_ROOT, now=None):
+    """Strict original AVGO July 2024 split factor; NOT price-basis approval.
+
+    Original public SEC 10-Q and separately published SEC Company Facts must
+    agree by accession, exact corporate-action date and the reported ratio.
+    A confirmed split increases the need for adjusted-price certification;
+    it cannot itself assert that any Alpaca historical bars are split-safe.
+    """
+    from app.investment.sec_filing_evidence import _Inline
+
+    now = datetime.now(UTC) if now is None else now
+    symbol, cik, accession = "AVGO", "0001730168", "0001730168-24-000099"
+    split_date, expected_ratio = "2024-07-12", Decimal(10)
+    # This also checks original document DEI, CIK, GAAP quarterly EPS and
+    # weighted diluted shares against independent SEC Company Facts.
+    quarter = inspect_original_quarter(
+        symbol=symbol, cik=cik, accession=accession,
+        cache_root=cache_root, now=now)
+    source_url = quarter["original_filing_url"]
+    original, digest = _cached(cache_root, source_url, "SEC_EDGAR_DOCUMENT",
+                               now=now, max_bytes=16*1024*1024)
+    parser = _Inline()
+    try:
+        parser.feed(original.decode("utf-8"))
+        parser.close()
+    except UnicodeError:
+        raise ValueError("QD_SEC_AVGO_SPLIT_INLINE_UTF8_REQUIRED") from None
+    if parser.stack or not re.fullmatch(
+            r"https?://fasb.org/us-gaap/202[34](?:-\d{2}-\d{2})?",
+            parser.namespaces.get("us-gaap", "")):
+        raise ValueError("QD_SEC_AVGO_SPLIT_STANDARD_NAMESPACE_REQUIRED")
+    wanted = "us-gaap:StockholdersEquityNoteStockSplitConversionRatio1"
+    facts = [n for n in parser.roots if
+             n.tag.split(":")[-1] == "nonfraction"
+             and n.attrs.get("name") == wanted]
+    if len(facts) != 1:
+        raise ValueError("QD_SEC_AVGO_SPLIT_EXACT_ORIGINAL_FACT_REQUIRED")
+    fact = facts[0]
+    if (fact.attrs.get("format", "").lower() != "ixt-sec:numwordsen"
+            or fact.attrs.get("decimals") != "0"
+            or fact.attrs.get("scale") != "0"
+            or fact.attrs.get("sign", "") != ""
+            or fact.attrs.get("continuedat") is not None
+            or fact.attrs.get("unitref") != "number"
+            or fact.attrs.get("xsi:nil") in ("true", "1")
+            or fact.text().strip().lower() != "ten"):
+        raise ValueError("QD_SEC_AVGO_SPLIT_ORIGINAL_TEN_TO_ONE_REQUIRED")
+    context = [n for n in parser.roots if
+               n.tag.split(":")[-1] == "context"
+               and n.attrs.get("id") == fact.attrs.get("contextref")]
+    units = [n for n in parser.roots if
+             n.tag.split(":")[-1] == "unit"
+             and n.attrs.get("id") == fact.attrs.get("unitref")]
+    if len(context) != 1 or len(units) != 1:
+        raise ValueError("QD_SEC_AVGO_SPLIT_CONTEXT_OR_UNIT_REQUIRED")
+    ctx, unit = context[0], units[0]
+    starts, ends = ctx.find("startdate"), ctx.find("enddate")
+    identities = ctx.find("identifier")
+    measures = unit.find("measure")
+    if (len(starts) != 1 or len(ends) != 1
+            or starts[0].text().strip() != split_date
+            or ends[0].text().strip() != split_date
+            or ctx.find("instant") or ctx.find("segment") or ctx.find("scenario")
+            or len(identities) != 1
+            or str(int(identities[0].text().strip())).zfill(10) != cik
+            or identities[0].attrs.get("scheme") not in (
+                "http://www.sec.gov/CIK", "https://www.sec.gov/CIK")
+            or len(measures) != 1
+            or measures[0].text().strip().lower() != "xbrli:pure"):
+        raise ValueError("QD_SEC_AVGO_SPLIT_EFFECTIVE_CONTEXT_REQUIRED")
+    companyfacts_url = "https://data.sec.gov/api/xbrl/companyfacts/CIK" + cik + ".json"
+    facts_bytes, companyfacts_sha = _cached(
+        cache_root, companyfacts_url, "SEC_EDGAR",
+        now=now, max_bytes=12*1024*1024)
+    packet = decode(facts_bytes)
+    if str(packet.get("cik", "")).zfill(10) != cik:
+        raise ValueError("QD_SEC_AVGO_SPLIT_ISSUER_REFUSED")
+    rows = packet.get("facts", {}).get("us-gaap", {}).get(
+        "StockholdersEquityNoteStockSplitConversionRatio1", {}).get(
+        "units", {}).get("pure", [])
+    if type(rows) is not list:
+        raise ValueError("QD_SEC_AVGO_SPLIT_COMPANYFACTS_SCHEMA_REQUIRED")
+    same_filing = [r for r in rows if type(r) is dict
+                   and r.get("accn") == accession]
+    if (len(same_filing) != 1
+            or same_filing[0].get("form") != "10-Q"
+            or same_filing[0].get("filed") != quarter["filed"]
+            or same_filing[0].get("end") != split_date
+            or same_filing[0].get("start") is not None
+            or type(same_filing[0].get("val")) not in (int, float)
+            or Decimal(str(same_filing[0]["val"])) != expected_ratio):
+        raise ValueError("QD_SEC_AVGO_SPLIT_COMPANYFACTS_RATIO_CONFLICT")
+    return {
+        "schema": "ATLAS_AVGO_ORIGINAL_SEC_SPLIT_FACTOR_CORROBORATION_V1",
+        "status": "ORIGINAL_SEC_SPLIT_RATIO_AND_DATE_VERIFIED",
+        "symbol": symbol, "cik": cik, "accession": accession,
+        "filing_date": quarter["filed"],
+        "stock_split_effective_date": split_date,
+        "forward_split_new_shares_per_old_share": 10,
+        "split_factor_source": "ORIGINAL_10Q_INLINE_XBRL_AND_SEC_COMPANYFACTS",
+        "original_document_url": source_url,
+        "original_document_sha256": digest,
+        "sec_companyfacts_sha256": companyfacts_sha,
+        "original_sec_quarter_facts_also_corroborated": True,
+        "pre_split_history_price_adjustment_verified": False,
+        "historical_share_basis_operationally_accepted": False,
+        "historical_valuation_12_anchors_accepted": False,
+        "paper_financial_order_authorized": False,
+        "real_money_order_authorized": False,
+        "external_provider_requests": 0,
+    }
+
+
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--symbol",required=True)

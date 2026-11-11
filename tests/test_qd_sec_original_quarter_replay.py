@@ -9,6 +9,7 @@ import json
 
 import pytest
 
+from app.investment.free_research_transport import ResearchRefused
 from scripts.observation_runtime import qd_sec_original_quarter_replay as replay
 from test_sec_filing_evidence import document, submission, reference
 
@@ -199,3 +200,130 @@ def test_explicit_accession_cannot_admit_annual_report_as_standalone_10q(tmp_pat
     path.write_text(json.dumps(cache, sort_keys=True), encoding="utf-8")
     with pytest.raises(ValueError, match="SUBMISSIONS_10Q_ACCESSION_REQUIRED"):
         run(tmp_path, accession=reference()["accession"])
+
+
+def prepared_avgo_split(tmp_path):
+    """Fully synthetic originals; never claim an installed issuer or market feed."""
+    from test_sec_filing_evidence import document, submission
+    sub=submission()
+    sub['cik']='1730168'
+    sub['tickers']=['AVGO']
+    recent=sub['filings']['recent']
+    acc='0001730168-24-000099'
+    recent['accessionNumber']=[acc]
+    recent['filingDate']=['2024-09-11']
+    recent['reportDate']=['2024-08-04']
+    recent['primaryDocument']=['avgo-20240804.htm']
+    original=(document()
+       .replace('0000789019','0001730168')
+       .replace('2026-07-01','2024-05-06')
+       .replace('2026-09-30','2024-08-04')
+       .replace('http://fasb.org/us-gaap/2026','http://fasb.org/us-gaap/2023')
+       .replace('http://xbrl.sec.gov/dei/2026','http://xbrl.sec.gov/dei/2024'))
+    insert = (
+       '<xbrli:context id="split"><xbrli:entity><xbrli:identifier '
+       'scheme="http://www.sec.gov/CIK">0001730168</xbrli:identifier>'
+       '</xbrli:entity><xbrli:period><xbrli:startDate>2024-07-12'
+       '</xbrli:startDate><xbrli:endDate>2024-07-12</xbrli:endDate>'
+       '</xbrli:period></xbrli:context>'
+       '<xbrli:unit id="number"><xbrli:measure>xbrli:pure'
+       '</xbrli:measure></xbrli:unit>'
+       '<ix:nonFraction name="us-gaap:StockholdersEquityNoteStockSplitConversionRatio1"'
+       ' contextRef="split" unitRef="number" decimals="0" scale="0"'
+       ' format="ixt-sec:numwordsen">ten</ix:nonFraction>')
+    original=original.replace('</html>',insert+'</html>')
+    facts=companyfacts()
+    facts['cik']=1730168
+    for concept,unit in (('EarningsPerShareDiluted','USD/shares'),
+                         ('WeightedAverageNumberOfDilutedSharesOutstanding','shares')):
+        row=facts['facts']['us-gaap'][concept]['units'][unit][0]
+        row.update(start='2024-05-06',end='2024-08-04',
+                   filed='2024-09-11',accn=acc)
+    facts['facts']['us-gaap']['StockholdersEquityNoteStockSplitConversionRatio1']={
+        'units': {'pure':[{'accn':acc,'form':'10-Q','filed':'2024-09-11',
+                          'end':'2024-07-12','val':10}]}}
+    url=('https://www.sec.gov/Archives/edgar/data/1730168/'
+         '000173016824000099/avgo-20240804.htm')
+    store(tmp_path,'https://data.sec.gov/submissions/CIK0001730168.json',sub)
+    store(tmp_path,'https://data.sec.gov/api/xbrl/companyfacts/CIK0001730168.json',facts)
+    store(tmp_path,url,original,provider='SEC_EDGAR_DOCUMENT')
+    return url
+
+
+def test_exact_avgo_split_ratio_corresponds_to_original_sec_inline_and_companyfacts(tmp_path):
+    prepared_avgo_split(tmp_path)
+    result=replay.inspect_original_avgo_split(cache_root=tmp_path,now=NOW)
+    assert result['forward_split_new_shares_per_old_share']==10
+    assert result['stock_split_effective_date']=='2024-07-12'
+    assert result['accession']=='0001730168-24-000099'
+    assert result['original_sec_quarter_facts_also_corroborated'] is True
+    for k in ('pre_split_history_price_adjustment_verified',
+              'historical_share_basis_operationally_accepted',
+              'historical_valuation_12_anchors_accepted',
+              'paper_financial_order_authorized','real_money_order_authorized'):
+        assert result[k] is False
+    assert result['external_provider_requests']==0
+
+
+@pytest.mark.parametrize('damage',[
+    'original_number_eleven','split_fact_missing','duplicate_split_fact',
+    'split_date_changed','split_unit_wrong','split_namespace_wrong',
+    'issuer_context_changed','original_split_factor_non_numeric',
+    'companyfacts_split_factor_mismatch','companyfacts_split_date_wrong',
+    'companyfacts_split_duplicate','wrong_companyfacts_accession',
+    'signed_source_hash_tampered','cached_provider_forged',
+])
+def test_avgo_original_sec_split_provenance_fails_closed(tmp_path,damage):
+    url=prepared_avgo_split(tmp_path)
+    original_path=tmp_path/(hashlib.sha256(url.encode()).hexdigest()+'.json')
+    cf_url='https://data.sec.gov/api/xbrl/companyfacts/CIK0001730168.json'
+    cf_path=tmp_path/(hashlib.sha256(cf_url.encode()).hexdigest()+'.json')
+    if damage.startswith('companyfacts') or damage=='wrong_companyfacts_accession':
+        path=cf_path
+    else:
+        path=original_path
+    packet=json.loads(path.read_text())
+    if damage=='signed_source_hash_tampered':
+        packet['sha256']='f'*64
+    elif damage=='cached_provider_forged':
+        packet['provider']='SYNTHETIC'
+    elif path==original_path:
+        body=packet['raw']
+        if damage=='original_number_eleven':
+            body=body.replace('>ten</ix:nonFraction>','>eleven</ix:nonFraction>')
+        elif damage=='split_fact_missing':
+            body=body.replace('StockholdersEquityNoteStockSplitConversionRatio1',
+                              'UnrelatedStockRatio')
+        elif damage=='duplicate_split_fact':
+            tag=('<ix:nonFraction name="us-gaap:StockholdersEquityNoteStockSplitConversionRatio1"'
+                 ' contextRef="split" unitRef="number" decimals="0" scale="0"'
+                 ' format="ixt-sec:numwordsen">ten</ix:nonFraction>')
+            body=body.replace('</html>',tag+'</html>')
+        elif damage=='split_date_changed':
+            body=body.replace('2024-07-12','2024-07-11')
+        elif damage=='split_unit_wrong':
+            body=body.replace('<xbrli:measure>xbrli:pure','<xbrli:measure>xbrli:shares')
+        elif damage=='split_namespace_wrong':
+            body=body.replace('http://fasb.org/us-gaap/2023','https://wrong.invalid/us-gaap/2023')
+        elif damage=='issuer_context_changed':
+            body=body.replace('0001730168</xbrli:identifier>','0000000001</xbrli:identifier>',1)
+        elif damage=='original_split_factor_non_numeric':
+            body=body.replace('format="ixt-sec:numwordsen"','format="ixt-sec:unverified"')
+        packet['raw']=body
+        packet['sha256']=hashlib.sha256(body.encode()).hexdigest()
+    else:
+        document=json.loads(packet['raw'])
+        row=document['facts']['us-gaap']['StockholdersEquityNoteStockSplitConversionRatio1']['units']['pure'][0]
+        if damage=='companyfacts_split_factor_mismatch':
+            row['val']=9
+        elif damage=='companyfacts_split_date_wrong':
+            row['end']='2024-07-11'
+        elif damage=='companyfacts_split_duplicate':
+            document['facts']['us-gaap']['StockholdersEquityNoteStockSplitConversionRatio1']['units']['pure'].append(deepcopy(row))
+        elif damage=='wrong_companyfacts_accession':
+            row['accn']='0001730168-24-000001'
+        packet['raw']=json.dumps(document,sort_keys=True)
+        packet['sha256']=hashlib.sha256(packet['raw'].encode()).hexdigest()
+    path.write_text(json.dumps(packet,sort_keys=True),encoding='utf-8')
+    with pytest.raises((ValueError,ResearchRefused)):
+        replay.inspect_original_avgo_split(cache_root=tmp_path,now=NOW)
