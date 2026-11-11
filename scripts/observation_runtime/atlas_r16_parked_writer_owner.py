@@ -83,6 +83,9 @@ def validate_result(row):
         "cooperative_stop_acknowledged",
         "owned_process_exited_before_return",
         "owned_job_closed_before_return",
+        "twelve_structural_roles_verified_under_original_retained_job",
+        "retained_original_job_liveness_checked_three_times",
+        "expired_retained_job_refused_after_stop",
         "financial_writer_roles_enrolled",
         "financial_account_files_created", "market_provider_requests",
         "paper_start_authorized", "live_trading_authorized",
@@ -103,7 +106,10 @@ def validate_result(row):
                 "owned_job_zero_processes_after_stop",
                 "cooperative_stop_acknowledged",
                 "owned_process_exited_before_return",
-                "owned_job_closed_before_return"))
+                "owned_job_closed_before_return",
+                "twelve_structural_roles_verified_under_original_retained_job",
+                "retained_original_job_liveness_checked_three_times",
+                "expired_retained_job_refused_after_stop"))
             or any(type(row[k]) is not int or row[k] != 0 for k in (
                 "financial_writer_roles_enrolled",
                 "financial_account_files_created",
@@ -218,6 +224,63 @@ def inspect():
             raise ValueError("R16_PARKED_CHILD_NOT_EXACT_ONE_OWNED_JOB_PROCESS")
         if inspect_two_lane_native_roots() != before:
             raise ValueError("R16_PARKED_NATIVE_ROOT_IDENTITY_CHANGED_WHILE_ALIVE")
+        # In-process handoff retains THIS very Job and original PROCESS handle.
+        # The candidate rosters have explicitly synthetic/unaccepted policy,
+        # inception and operator IDs; validate STRUCTURE/ownership only.
+        from copy import deepcopy
+        from app.services.quality_dips_autonomous_enrollment import (
+            WRITERS as QD_WRITERS, validate_enrollment as qd_validate,
+        )
+        from app.services.perp_operational_contract import (
+            WRITERS as HL_WRITERS, validate_enrollment as hl_validate,
+        )
+        from scripts.observation_runtime.atlas_independent_ntp_clock import (
+            SOURCE as CLOCK_SOURCE,
+        )
+        from scripts.observation_runtime.atlas_r16_selected_code_readback import (
+            ARTIFACT_DIGEST,
+        )
+        from scripts.observation_runtime.personal_r16_owned_job_activation import (
+            RetainedSelectedR16OwnerJob,
+        )
+        process_identity = {"schema": "QD_OP_PROCESS_ID_V1", **ready}
+        rosters = {}
+        for lane, roles, validator, native_schema, enrollment_schema in (
+            ("QUALITY_DIPS", QD_WRITERS, qd_validate,
+             "QD_AUTO_NATIVE_ROOT_V4", "QD_AUTO_NATIVE_ENROLLMENT_V4"),
+            ("HYPERLIQUID", HL_WRITERS, hl_validate,
+             "PERP_AUTO_NATIVE_ROOT_V1", "PERP_AUTO_NATIVE_ENROLLMENT_V1"),
+        ):
+            candidate = {
+                "schema": enrollment_schema,
+                "profile": "AUTONOMOUS_PAPER_ONLY_V1",
+                "account_id": "R16_DISPOSABLE_" + lane,
+                "epoch": before["lanes"][lane]["epoch"],
+                "policy_digest": "0" * 64,
+                "inception_digest": "1" * 64,
+                "release_digest": ARTIFACT_DIGEST,
+                "resources": {
+                    role: {"schema": native_schema, **deepcopy(entry)}
+                    for role, entry in entries[lane].items()
+                },
+                "writers": {role: deepcopy(process_identity) for role in roles},
+                "clock_source": CLOCK_SOURCE,
+                "acceptance_id": "DISPOSABLE_R16_" + lane + "_NOT_ACCEPTED",
+            }
+            rosters[lane] = validator(candidate)
+        qd, perp = rosters["QUALITY_DIPS"], rosters["HYPERLIQUID"]
+        retained = RetainedSelectedR16OwnerJob(child=child, qd=qd, perp=perp)
+        for index in range(3):
+            if retained.require_exact_roster(qd=qd, perp=perp) is not True:
+                raise ValueError("R16_PARKED_ORIGINAL_RETAINED_JOB_ROSTER_CHANGED")
+            if index != 2:
+                time.sleep(.2)
+        held = retained.nonfinancial_handoff_readback()
+        if (held["twelve_structural_writer_roles_bound_to_same_process"] is not True
+                or held["twelve_original_empty_native_directory_identities_verified"] is not True
+                or held["financial_writer_lease_issued"] is not False
+                or held["paper_start_authorized"] is not False):
+            raise ValueError("R16_PARKED_NONFINANCIAL_OWNED_ROSTER_REFUSED")
         # Cooperatively exit, then prove the actual original owned process
         # and Job drain. Never return any adoptable live PID/financial lease.
         k.SetEvent.argtypes = [wintypes.HANDLE]
@@ -234,6 +297,14 @@ def inspect():
             time.sleep(.025)
         if api.active_processes(child.job) != 0:
             raise ValueError("R16_PARKED_NATIVE_JOB_NOT_DRAINED")
+        # The in-process authority expires with the original child. An
+        # exited process must NEVER be reusable via the same retained object.
+        try:
+            retained.require_exact_roster(qd=qd, perp=perp)
+        except ValueError:
+            pass
+        else:
+            raise ValueError("R16_PARKED_EXPIRED_RETAINED_OWNER_REUSED")
         if inspect_two_lane_native_roots() != before:
             raise ValueError("R16_PARKED_NATIVE_ROOTS_CHANGED_AFTER_STOP")
         if selected_code()["selected_native_head"] != R16_HEAD:
@@ -258,6 +329,9 @@ def inspect():
             "cooperative_stop_acknowledged": True,
             "owned_process_exited_before_return": True,
             "owned_job_closed_before_return": True,
+            "twelve_structural_roles_verified_under_original_retained_job": True,
+            "retained_original_job_liveness_checked_three_times": True,
+            "expired_retained_job_refused_after_stop": True,
             "financial_writer_roles_enrolled": 0,
             "financial_account_files_created": 0,
             "market_provider_requests": 0,

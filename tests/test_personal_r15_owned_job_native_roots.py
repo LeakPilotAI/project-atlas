@@ -133,6 +133,16 @@ def test_mutated_native_root_or_financial_promotion_refuses_before_activation(ca
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Selected R15 native Windows Job required")
 def test_actual_installed_r15_job_refuses_native_root_drift_and_owned_child_is_cleaned(monkeypatch):
+    # This genuine installed-R15 Job rehearsal requires R15 to be CURRENTLY
+    # selected. Once native revision 15 selects R16, retain the pure R15
+    # root-identity tests but use the R16 owned-Job native lifecycle suite.
+    from pathlib import Path
+    if Path("D:/AtlasRuntime/selection/r0015.json").is_file():
+        from scripts.observation_runtime.atlas_r16_selected_code_readback import (
+            selected_code as r16_selected_code,
+        )
+        if r16_selected_code()["selected_revision"] == 15:
+            pytest.skip("R15 original native Job is no longer selected; R16 owner tested separately")
     from scripts.observation_runtime import atlas_r15_parked_writer_owner as parked
     from scripts.observation_runtime.personal_existing_native_resource_evidence import (
         inspect_two_lane_native_roots,
