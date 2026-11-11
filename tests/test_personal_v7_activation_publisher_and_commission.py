@@ -158,6 +158,14 @@ def test_v7_commission_validated_enrollments_then_only_invokes_bound_publisher(
     monkeypatch.setattr(he, "validate_enrollment", lambda o: audit.append("perp") or o)
     monkeypatch.setattr(commission, "verify_enrollment_native_roots",
                         lambda o:audit.append("native:"+o["account_id"]))
+    # This pre-existing synthetic integration test deliberately bypasses only
+    # the newly installed real HANDLE preflight; production never does.
+    from contextlib import nullcontext
+    from scripts.observation_runtime import personal_native_writer_lifetime as live
+    class SyntheticRetention:
+        def verify_still_running(self): return True
+    monkeypatch.setattr(live, 'retain_live_enrollment_writers',
+                        lambda *a, **kw: nullcontext(SyntheticRetention()))
     monkeypatch.setattr(commission, "NativeV7PaperOperatorClock", FakeNativeV7)
     monkeypatch.setattr(commission, "LocalWindowsClock",
                         lambda **kwargs:pytest.fail("V7 contacted Windows Time"))

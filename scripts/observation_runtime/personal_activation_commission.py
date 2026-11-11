@@ -107,24 +107,36 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             or not isinstance(record.get('actions'), list)
             or not record['actions']):
         raise ValueError('ACTIVATION_POLICY_OR_ACTION_BINDING_REQUIRED')
-    if clock_profile == V7_NTP_PROFILE:
-        clock = NativeV7PaperOperatorClock(runtime_id=runtime_id)
-    elif clock_profile == V8_NTP_PROFILE:
-        clock = NativeV8PaperOperatorClock(runtime_id=runtime_id)
-    elif clock_profile == VERSION_SAFE_NTP_PROFILE:
-        clock = NativeVersionSafePaperOperatorClock(runtime_id=runtime_id)
-    else:
-        clock = LocalWindowsClock(expected_source=expected_clock_source, runtime_id=runtime_id)
-    try:
-        if clock_profile == VERSION_SAFE_NTP_PROFILE:
-            require_version_safe_release_digest(clock=clock, runtime_id=runtime_id,
-                                                release_digest=release_digest)
-        return publish_personal_activation(root=root, record=record, policy=policy,
-            operator_id=current_sid(), release_digest=release_digest,
-            accounts=accounts, clock=clock, runtime_id=runtime_id,
-            clock_profile=clock_profile)
-    finally:
-        clock.revoke()
+    # A signed-in-session record and structurally correct enrollment JSON
+    # cannot certify an expired/foreign writer PID. Retain exact Windows
+    # PROCESS_HANDLES through the once-only native activation publisher. This
+    # is a necessary negative gate, never C1 ownership or a financial grant.
+    from scripts.observation_runtime.personal_native_writer_lifetime import (
+        retain_live_enrollment_writers,
+    )
+    with retain_live_enrollment_writers(qd, perp, release_digest=release_digest) as writers:
+        # Fail without acquiring a trusted clock or consuming the create-only
+        # activation namespace when no *current* enrolled process exists.
+        writers.verify_still_running()
+        if clock_profile == V7_NTP_PROFILE:
+            clock = NativeV7PaperOperatorClock(runtime_id=runtime_id)
+        elif clock_profile == V8_NTP_PROFILE:
+            clock = NativeV8PaperOperatorClock(runtime_id=runtime_id)
+        elif clock_profile == VERSION_SAFE_NTP_PROFILE:
+            clock = NativeVersionSafePaperOperatorClock(runtime_id=runtime_id)
+        else:
+            clock = LocalWindowsClock(expected_source=expected_clock_source, runtime_id=runtime_id)
+        try:
+            if clock_profile == VERSION_SAFE_NTP_PROFILE:
+                require_version_safe_release_digest(clock=clock, runtime_id=runtime_id,
+                                                    release_digest=release_digest)
+            writers.verify_still_running()
+            return publish_personal_activation(root=root, record=record, policy=policy,
+                operator_id=current_sid(), release_digest=release_digest,
+                accounts=accounts, clock=clock, runtime_id=runtime_id,
+                clock_profile=clock_profile)
+        finally:
+            clock.revoke()
 
 
 def main(argv=None):

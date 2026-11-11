@@ -153,6 +153,14 @@ def test_commission_never_publishes_without_selected_digest(monkeypatch, tmp_pat
     monkeypatch.setattr(he,'validate_enrollment',lambda x:x)
     monkeypatch.setattr(commission,'verify_enrollment_native_roots',lambda x:None)
     monkeypatch.setattr(commission,'NativeVersionSafePaperOperatorClock',FakeNativeV7)
+    # The synthetic clock/release test has no genuine installed Windows writer;
+    # intercept only the new live-retained writer dependency in this test.
+    from contextlib import nullcontext
+    from scripts.observation_runtime import personal_native_writer_lifetime as live
+    class SyntheticRetention:
+        def verify_still_running(self): return True
+    monkeypatch.setattr(live,'retain_live_enrollment_writers',
+                        lambda *a,**kw:nullcontext(SyntheticRetention()))
     observed=[]
     monkeypatch.setattr(commission,'require_version_safe_release_digest',
                         lambda **kw: observed.append(kw) or (_ for _ in ()).throw(ValueError('SELECTED_ARTIFACT_REFUSED')))
