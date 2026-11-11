@@ -5,9 +5,12 @@
       "account_fee_entitlement_verified": false,
       "existing_native_root_identity_matched": true,
       "financial_inception_published": false,
+      "historical_draft_reporting_timezone": "UTC",
       "opened_at_is_historical_stale_not_new_inception": true,
       "operational_source_rights_accepted": false,
       "parameters_structurally_valid_not_current": true,
+      "provisional_fs3_calendar_validated_without_publication": true,
+      "provisional_fs3_reporting_timezone": "UTC",
       "provisional_inception_digest": "123eb92a6c7980700d0aedd17a1ffa52a544fa72f9add503e394a405b31fee58",
       "provisional_r15_native_enrollment_unaccepted": {
         "acceptance_id": null,
@@ -134,16 +137,19 @@
       "account_fee_entitlement_verified": false,
       "existing_native_root_identity_matched": true,
       "financial_inception_published": false,
+      "historical_draft_reporting_timezone": "America/Chicago",
       "opened_at_is_historical_stale_not_new_inception": true,
       "operational_source_rights_accepted": false,
       "parameters_structurally_valid_not_current": true,
-      "provisional_inception_digest": "c4959e0fddbfe8dfbee301389732fb7052e117a9277d11aae891eea8229d7e3e",
+      "provisional_fs3_calendar_validated_without_publication": true,
+      "provisional_fs3_reporting_timezone": "America/New_York",
+      "provisional_inception_digest": "99ede0bad4bd2b7df95804083f97258574380c01fadc64fd673a09a43b6947a9",
       "provisional_r15_native_enrollment_unaccepted": {
         "acceptance_id": null,
         "account_id": "atlas-personal-quality-dips",
         "clock_source": "ATLAS_NTP_V1:time.cloudflare.com+time.google.com",
         "epoch": "qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
-        "inception_digest": "c4959e0fddbfe8dfbee301389732fb7052e117a9277d11aae891eea8229d7e3e",
+        "inception_digest": "99ede0bad4bd2b7df95804083f97258574380c01fadc64fd673a09a43b6947a9",
         "policy_digest": "21d7b375bc71c83b3bbb63687bc65f59f1636d6ff526b8fc737c9a25deef2840",
         "profile": "AUTONOMOUS_PAPER_ONLY_V1",
         "release_digest": "6db8cae881cd0f331b3f0aae78c92f27dbff860c658bb67ab1cfe91a6b8465e6",
@@ -228,15 +234,15 @@
         "schema": "PAPER_EPOCH_AUTONOMOUS_QD_V1",
         "slippage_bps": "2",
         "strategy": "QUALITY_DIPS",
-        "timezone": "America/Chicago"
+        "timezone": "America/New_York"
       },
       "provisional_report_scope_unaccepted": {
         "account_id": "atlas-personal-quality-dips",
         "epoch": "qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
-        "policy_digest": "c4959e0fddbfe8dfbee301389732fb7052e117a9277d11aae891eea8229d7e3e",
+        "policy_digest": "99ede0bad4bd2b7df95804083f97258574380c01fadc64fd673a09a43b6947a9",
         "schema": "FS3_QD_REPORT_SCOPE_V2",
         "session_reporting_policy": "ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1",
-        "timezone": "America/Chicago"
+        "timezone": "America/New_York"
       },
       "real_enrollment_accepted": false,
       "required_live_commissioning_inputs": [

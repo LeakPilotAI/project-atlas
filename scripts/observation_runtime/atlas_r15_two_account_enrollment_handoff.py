@@ -12,6 +12,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from app.services.paper_financial_replay import digest, validate_manifest
+from app.services.paper_daily_report import validate_scope
 from app.services.quality_dips_autonomous_enrollment import validate_enrollment as qd_enrollment
 from app.services.perp_operational_contract import validate_enrollment as perp_enrollment
 from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
@@ -137,11 +138,25 @@ def build_handoff(original, *, selected, roots, original_sha=LEGACY_SHA):
         # Historical opened_at is NOT the future native financial inception.
         # Keep that conspicuous; never manufacture an operator-approved time.
         params["release"] = ARTIFACT
+        # The historical QD proposal was in the operator's Chicago timezone,
+        # but the actual FS3 financial daily reporter REQUIRES exchange-local
+        # America/New_York for a Quality Dips inception. Do not change the
+        # pinned historical proposal; explicitly rebind the unapproved R15
+        # prospective policy+report pair together, including their digest.
+        historical_timezone = params["timezone"]
+        if lane == "QUALITY_DIPS":
+            if historical_timezone != "America/Chicago" or scope.get("timezone") != historical_timezone:
+                raise ValueError("R15_HANDOFF_HISTORICAL_QD_REPORT_CALENDAR_UNEXPECTED")
+            params["timezone"] = "America/New_York"
+        elif historical_timezone != "UTC" or scope.get("timezone") != historical_timezone:
+            raise ValueError("R15_HANDOFF_HISTORICAL_PERP_REPORT_CALENDAR_UNEXPECTED")
         validate_manifest(params)  # Structural only, not financial acceptance.
         enrollment["release_digest"] = ARTIFACT
         enrollment["inception_digest"] = digest(params)
         enrollment["clock_source"] = SOURCE
         scope["policy_digest"] = digest(params)
+        scope["timezone"] = params["timezone"]
+        validate_scope(scope, params)  # Real FS3 accounting contract, no file writes.
         for key in ("account_id", "epoch"):
             if scope.get(key) != enrollment[key]:
                 raise ValueError("R15_HANDOFF_REPORT_SCOPE_ACCOUNT_CHANGED")
@@ -163,6 +178,9 @@ def build_handoff(original, *, selected, roots, original_sha=LEGACY_SHA):
             "provisional_report_scope_unaccepted": scope,
             "existing_native_root_identity_matched": True,
             "parameters_structurally_valid_not_current": True,
+            "historical_draft_reporting_timezone": historical_timezone,
+            "provisional_fs3_reporting_timezone": params["timezone"],
+            "provisional_fs3_calendar_validated_without_publication": True,
             "real_enrollment_accepted": False,
             "writer_process_observed_and_leased": False,
             "opened_at_is_historical_stale_not_new_inception": True,
