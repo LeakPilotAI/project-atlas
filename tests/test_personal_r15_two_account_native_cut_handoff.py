@@ -5,6 +5,7 @@ Synthetic Windows output/coordination adapters exercise the integration only;
 they are NEVER accepted financial authority or native commissioning evidence.
 """
 import copy
+from contextlib import contextmanager
 from pathlib import Path as RealPath
 from types import SimpleNamespace
 
@@ -129,6 +130,7 @@ def synthetic_pair(monkeypatch):
     installation.release=original_qd["release_digest"]
     issuer=inception.PersonalPublicationIssuer(installation=installation)
 
+    view_events=[]
     for test in (q,h):
         test.b.readback=inception.NativePersonalInitialReadback()
         test.b.issuer=issuer
@@ -140,16 +142,27 @@ def synthetic_pair(monkeypatch):
         fake_images.root=root["path"]
         fake_images.root_id=list(root["native_id"])
         fake_images.enrollment=digest(enrolled)
+        @contextmanager
+        def owned_view(images=fake_images):
+            view_events.append(("enter",images.root))
+            try:
+                yield
+            finally:
+                view_events.append(("exit",images.root))
+        fake_images.read_view=owned_view
         ledger=object.__new__(PersonalNativeCoordination)
         ledger.images=fake_images
+        ledger.path=RealPath(fake_images.root)/"coordination.image"
         ledger.manifest=test.b.enrollment["parameters"]
+        ledger._manifest=body(ledger.manifest)
+        ledger._ports=(fake_images,ledger.path)
         ledger.connect=test.ledger.connect
         m=ledger.manifest
         ledger._load=lambda db,m=m:(initial_state(m),digest(m),[])
         test.b.publication.ledger=ledger
     return SimpleNamespace(
         q=q,h=h, owner=owner,qd=original_qd,perp=original_hl,
-        checked=checked,closed=closed, issuer=issuer,
+        checked=checked,closed=closed, issuer=issuer,view_events=view_events,
     )
 
 
@@ -177,8 +190,9 @@ def test_two_lane_synthetic_receipt_reader_wiring_never_issues_financial_grant(m
         assert result["persistent_financial_writer_lease_issued"] is False
         assert result["financial_startup_authorized"] is False
         assert result["live_trading_authorized"] is False
-        assert len(s.checked)==3
+        assert len(s.checked)==5
         assert len(s.closed)==12
+        assert [event[0] for event in s.view_events] == ["enter","enter","exit","exit"]
     finally:
         close_pair(s)
 
@@ -186,8 +200,10 @@ def test_two_lane_synthetic_receipt_reader_wiring_never_issues_financial_grant(m
 @pytest.mark.parametrize("failure", [
     "no_perp_bootstrap", "one_fake_issuer", "foreign_job_enrollment",
     "wrong_release", "missing_native_ledger", "wrong_native_images",
-    "unacknowledged_receipt", "pending_projection",
+    "unacknowledged_receipt", "pending_projection", "pending_session",
     "nonzero_position", "wrong_cash", "bad_fs3_receipt",
+    "wrong_ledger_path", "substituted_ledger_ports", "substituted_manifest",
+    "missing_native_read_view",
 ])
 def test_two_lane_initial_cut_fails_closed_for_missing_native_or_ack(failure,monkeypatch):
     s=synthetic_pair(monkeypatch)
@@ -214,6 +230,19 @@ def test_two_lane_initial_cut_fails_closed_for_missing_native_or_ack(failure,mon
         elif failure=="pending_projection":
             q.ledger.db.execute("INSERT INTO projections VALUES(NULL)")
             q.ledger.db.commit()
+        elif failure=="pending_session":
+            q.ledger.db.execute(
+                "INSERT INTO personal_sessions (id,body,state) "
+                "VALUES('SYNTHETIC-PENDING','{}','PENDING')")
+            q.ledger.db.commit()
+        elif failure=="wrong_ledger_path":
+            q.b.publication.ledger.path=RealPath(r"D:\DifferentAccount\coordination.image")
+        elif failure=="substituted_ledger_ports":
+            q.b.publication.ledger._ports=(object(),q.b.publication.ledger.path)
+        elif failure=="substituted_manifest":
+            q.b.publication.ledger._manifest="SUBSTITUTED"
+        elif failure=="missing_native_read_view":
+            q.b.publication.ledger.images.read_view=None
         elif failure=="nonzero_position":
             h.b.publication.ledger._load=lambda db:(dict(initial_state(h.m),positions={"BTC":"SYNTHETIC"}),digest(h.m),[])
         elif failure=="wrong_cash":
@@ -222,5 +251,54 @@ def test_two_lane_initial_cut_fails_closed_for_missing_native_or_ack(failure,mon
             h.files.values["report","0001-report.json"]["report_id"]="f"*64
         with pytest.raises((ValueError,TypeError,KeyError,AttributeError)):
             s.owner.inspect_both_committed_initial_cuts(**kwargs)
+    finally:
+        close_pair(s)
+
+
+def test_second_native_view_admission_refusal_releases_first_held_view(monkeypatch):
+    s=synthetic_pair(monkeypatch)
+    try:
+        @contextmanager
+        def refused_second():
+            s.view_events.append(("hl-refused", "NO_JOURNAL_ADOPTION"))
+            raise ValueError("SYNTHETIC_SECOND_NATIVE_VIEW_REFUSED")
+            yield
+        s.h.b.publication.ledger.images.read_view=refused_second
+        with pytest.raises(ValueError,match="SYNTHETIC_SECOND_NATIVE_VIEW_REFUSED"):
+            inspect(s)
+        assert [x[0] for x in s.view_events] == ["enter","hl-refused","exit"]
+    finally:
+        close_pair(s)
+
+
+def test_second_ledger_bad_report_releases_both_held_native_views(monkeypatch):
+    s=synthetic_pair(monkeypatch)
+    try:
+        s.h.files.values["report","0001-report.json"]["report_id"]="f"*64
+        with pytest.raises(ValueError):
+            inspect(s)
+        assert [x[0] for x in s.view_events] == ["enter","enter","exit","exit"]
+    finally:
+        close_pair(s)
+
+
+def test_first_ack_changed_before_second_view_is_not_reported_as_one_cut(monkeypatch):
+    s=synthetic_pair(monkeypatch)
+    try:
+        original=s.h.b.publication.ledger.images.read_view
+        @contextmanager
+        def injected_second():
+            with original():
+                # Synthetic adversarial mutation is permitted by this fake
+                # ledger, unlike genuine Windows native read_view. The
+                # reader still must reject the now-changed QD publication.
+                s.q.ledger.db.execute(
+                    "UPDATE personal_publications SET state='UNKNOWN'")
+                s.q.ledger.db.commit()
+                yield
+        s.h.b.publication.ledger.images.read_view=injected_second
+        with pytest.raises(ValueError,match="PERSONAL_PUBLICATION_NOT_ACKNOWLEDGED"):
+            inspect(s)
+        assert [x[0] for x in s.view_events] == ["enter","enter","exit","exit"]
     finally:
         close_pair(s)

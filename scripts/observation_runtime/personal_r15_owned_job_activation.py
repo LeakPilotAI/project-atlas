@@ -13,6 +13,7 @@ It can be used only in the same trusted owner process retaining the handles.
 import ctypes
 import ntpath
 import os
+from pathlib import Path
 from copy import deepcopy
 from ctypes import wintypes
 
@@ -289,6 +290,7 @@ class RetainedSelectedR15OwnerJob:
         initial arithmetic, and the two original roster/root identities must
         each agree before returning even a technical read-only observation.
         """
+        from contextlib import ExitStack
         from app.services.paper_financial_replay import (
             body, initial_state, strict,
         )
@@ -320,7 +322,7 @@ class RetainedSelectedR15OwnerJob:
                 or getattr(qd_bootstrap, "issuer", None) is not
                    getattr(perp_bootstrap, "issuer", None)):
             raise ValueError("R15_INITIAL_CUT_ONE_OPERATOR_ISSUER_REQUIRED")
-        cuts = {}
+        admitted = []
         for lane, enrollment, bootstrap in (
                 ("QUALITY_DIPS", qd, qd_bootstrap),
                 ("HYPERLIQUID", perp, perp_bootstrap)):
@@ -346,39 +348,53 @@ class RetainedSelectedR15OwnerJob:
                     or ledger.images.enrollment != digest(enrollment)
                     or ledger.images.root != enrollment["resources"]["coordination"]["path"]
                     or ledger.images.root_id != enrollment["resources"]["coordination"]["native_id"]
+                    or not isinstance(ledger.path, Path)
+                    or ledger.path.parent != Path(ledger.images.root)
+                    or ledger._ports != (ledger.images, ledger.path)
+                    or ledger._manifest != body(manifest)
                     or digest(ledger.manifest) != digest(manifest)):
                 raise ValueError("R15_INITIAL_CUT_GENUINE_NATIVE_COORDINATION_REQUIRED:" + lane)
-            # The publisher independently verifies an immutable ACK and every
-            # original FS1/FS3 file. Do NOT trust a submitted "verified" flag.
-            ready = bootstrap.verify_publication()
-            current = strict(body(ready["current"]))
-            with ledger.connect(readonly=True) as db:
-                state, head, operations = ledger._load(db)
-                pending_projections = db.execute(
-                    "SELECT 1 FROM projections WHERE receipt IS NULL").fetchone()
-                pending_publications = db.execute(
-                    "SELECT 1 FROM personal_publications "
-                    "WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()
-                pending_sessions = db.execute(
-                    "SELECT 1 FROM personal_sessions "
-                    "WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()
-            if (ready.get("financial_startup_authorized") is not False
-                    or current.get("status") != "ACKNOWLEDGED"
-                    or current.get("revision") != 0
-                    or state != initial_state(manifest)
-                    or head != digest(manifest) or operations
-                    or current["state_digest"] != digest(state)
-                    or pending_projections or pending_publications or pending_sessions):
-                raise ValueError("R15_INITIAL_CUT_NATIVE_LEDGER_UNACKNOWLEDGED:" + lane)
-            cuts[lane] = {
-                "enrollment_digest": digest(enrollment),
-                "initial_current_digest": ready["current_digest"],
-                "once_only_publication_receipt_digest": ready["publication_digest"],
-                "initial_cash_simulated": state["cash"],
-                "initial_position_count": len(state["positions"]),
-            }
-            # Check retained worker and all root IDs between the two readers.
-            self.observe_original_roots_allowing_population(qd=qd, perp=perp)
+            admitted.append((lane, enrollment, bootstrap, ledger, manifest))
+        # Acquire BOTH native immutable coordination read views in the
+        # deterministic QD-then-HL order. Keep both held until BOTH native
+        # ACK/FS1/FS3 cuts and original Job/root identities agree. This
+        # prevents a mixed-time two-account proof under cooperative writers.
+        cuts = {}
+        with ExitStack() as views:
+            for lane, enrollment, bootstrap, ledger, manifest in admitted:
+                views.enter_context(ledger.images.read_view())
+                self.observe_original_roots_allowing_population(qd=qd, perp=perp)
+            for lane, enrollment, bootstrap, ledger, manifest in admitted:
+                # Each native ACK and FS1/FS3 verifier reads under its
+                # own held immutable coordination image read view.
+                ready = bootstrap.verify_publication()
+                current = strict(body(ready["current"]))
+                with ledger.connect(readonly=True) as db:
+                    state, head, operations = ledger._load(db)
+                    pending_projections = db.execute(
+                        "SELECT 1 FROM projections WHERE receipt IS NULL").fetchone()
+                    pending_publications = db.execute(
+                        "SELECT 1 FROM personal_publications "
+                        "WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()
+                    pending_sessions = db.execute(
+                        "SELECT 1 FROM personal_sessions "
+                        "WHERE state!='ACKNOWLEDGED' OR state IS NULL").fetchone()
+                if (ready.get("financial_startup_authorized") is not False
+                        or current.get("status") != "ACKNOWLEDGED"
+                        or current.get("revision") != 0
+                        or state != initial_state(manifest)
+                        or head != digest(manifest) or operations
+                        or current["state_digest"] != digest(state)
+                        or pending_projections or pending_publications or pending_sessions):
+                    raise ValueError("R15_INITIAL_CUT_NATIVE_LEDGER_UNACKNOWLEDGED:" + lane)
+                cuts[lane] = {
+                    "enrollment_digest": digest(enrollment),
+                    "initial_current_digest": ready["current_digest"],
+                    "once_only_publication_receipt_digest": ready["publication_digest"],
+                    "initial_cash_simulated": state["cash"],
+                    "initial_position_count": len(state["positions"]),
+                }
+                self.observe_original_roots_allowing_population(qd=qd, perp=perp)
         if (cuts["QUALITY_DIPS"]["initial_cash_simulated"] != "1000"
                 or cuts["HYPERLIQUID"]["initial_cash_simulated"] != "1000"
                 or cuts["QUALITY_DIPS"]["initial_position_count"] != 0
