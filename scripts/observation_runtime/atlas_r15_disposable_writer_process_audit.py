@@ -227,5 +227,230 @@ def inspect():
                 process.stderr.close()
 
 
+# Bounded live-handle pre-enrollment feasibility check. This is NOT a
+# native writer enrollment, and handles are closed when the child exits.
+ROOT_CHILD = r'''
+import json
+import os
+import sys
+import time
+from contextlib import ExitStack
+from pathlib import Path
+from scripts.observation_runtime.personal_paper_inception import native_primitives
+from scripts.observation_runtime.quality_dips_read_service import observe_self
+from scripts.observation_runtime.personal_version_safe_release_clock import (
+    require_native_version_safe_clock_source,
+)
+
+planned = json.loads(sys.argv[1])
+if (type(planned) is not list or len(planned) != 12
+        or len({item["path"].casefold() for item in planned}) != 12):
+    raise ValueError("NATIVE_READ_ONLY_TWELVE_ROOTS_REQUIRED")
+native = native_primitives()
+with ExitStack() as owned:
+    first = []
+    handles = []
+    for item in planned:
+        path = Path(item["path"])
+        if (not path.is_dir() or path.is_symlink() or path.is_junction()
+                or not str(path).startswith("D:\\")
+                or any(path.iterdir())):
+            raise ValueError("NATIVE_READ_ONLY_UNCHANGED_ROOT_REQUIRED")
+        output = owned.enter_context(native.w.WindowsOutput(str(path)))
+        actual = native.native.file_identity(output.root_handle)
+        if actual != item["native_id"] or any(path.iterdir()):
+            raise ValueError("NATIVE_READ_ONLY_ROOT_HANDLE_CHANGED")
+        handles.append((path, output))
+        first.append({"lane": item["lane"], "role": item["role"],
+                      "path": str(path), "native_id": actual})
+    # The existing genuine native handles stay open while this bounded
+    # observation-only process is alive. No financial source or ledger opened.
+    time.sleep(1.2)
+    second = []
+    for (path, output), item in zip(handles, first, strict=True):
+        output._verify()
+        actual = native.native.file_identity(output.root_handle)
+        if actual != item["native_id"] or any(path.iterdir()):
+            raise ValueError("NATIVE_READ_ONLY_ROOT_IDENTITY_LOST")
+        second.append({"lane": item["lane"], "role": item["role"],
+                       "path": str(path), "native_id": actual})
+    result = {
+        "schema": "ATLAS_R15_INSTALLED_EXISTING_12_ROOT_HANDLES_LIFETIME_V1",
+        "installed_self": observe_self(),
+        "selected_native_head": require_native_version_safe_clock_source(deep=False),
+        "opened_first": first, "rechecked_before_exit": second,
+        "financial_account_enrolled": False,
+        "writer_lease_issued": False,
+        "financial_paper_start": False,
+        "live_trading": False,
+        "native_files_created": 0,
+        "provider_calls": 0,
+    }
+    print(json.dumps(result, sort_keys=True), flush=True)
+'''
+
+
+def verify_root_handle_lifetime(child, *, expected_roots, native_pid, parent,
+                                release=RELEASE, selected_head=SELECTED_HEAD):
+    """Pure strict comparison of temporary selected-R15 handle observations."""
+    if (type(expected_roots) is not dict
+            or expected_roots.get("schema") !=
+                "ATLAS_TWO_LANE_EXISTING_NATIVE_ROOT_PRE_ENROLLMENT_V1"
+            or expected_roots.get("native_root_total") != 12
+            or expected_roots.get("native_root_ids_verified") != 12
+            or expected_roots.get("existing_empty_root_namespaces") != 12
+            or expected_roots.get("all_twelve_distinct_and_empty") is not True
+            or type(child) is not dict
+            or set(child) != {
+                "schema", "installed_self", "selected_native_head",
+                "opened_first", "rechecked_before_exit",
+                "financial_account_enrolled", "writer_lease_issued",
+                "financial_paper_start", "live_trading",
+                "native_files_created", "provider_calls"}
+            or child["schema"] != "ATLAS_R15_INSTALLED_EXISTING_12_ROOT_HANDLES_LIFETIME_V1"
+            or child["selected_native_head"] != selected_head
+            or any(child[k] is not False for k in (
+                "financial_account_enrolled", "writer_lease_issued",
+                "financial_paper_start", "live_trading"))
+            or child["native_files_created"] != 0 or child["provider_calls"] != 0):
+        raise ValueError("R15_NATIVE_12_ROOT_AUTHORITY_OR_SOURCE_REFUSED")
+    from scripts.observation_runtime.personal_existing_native_resource_evidence import ROLES
+
+    expected = []
+    if set(expected_roots.get("lanes", {})) != {"HYPERLIQUID", "QUALITY_DIPS"}:
+        raise ValueError("R15_NATIVE_TWO_LANE_SCOPE_REQUIRED")
+    for lane in ("HYPERLIQUID", "QUALITY_DIPS"):
+        src = expected_roots["lanes"][lane]["roots"]
+        if set(src) != set(ROLES):
+            raise ValueError("R15_NATIVE_EXACT_ROOT_ROLES_REQUIRED")
+        for role in ROLES:
+            item = src[role]
+            if (item["native_identity_verified"] is not True
+                    or item["existing_empty_namespace_verified"] is not True
+                    or type(item["native_id"]) is not list
+                    or len(item["native_id"]) != 3):
+                raise ValueError("R15_NATIVE_12_ROOT_EXPECTED_IDENTITY_REFUSED")
+            expected.append({
+                "lane": lane, "role": role,
+                "path": item["path"], "native_id": item["native_id"],
+            })
+    if (child["opened_first"] != expected
+            or child["rechecked_before_exit"] != expected
+            or len({tuple(r["native_id"]) for r in expected}) != 12
+            or len({r["path"].casefold() for r in expected}) != 12):
+        raise ValueError("R15_NATIVE_12_ROOT_HANDLE_CONTINUITY_REFUSED")
+    observed = child["installed_self"]
+    expected_image = str(Path(release) / "python/python.exe")
+    if (type(observed) is not dict
+            or set(observed) != {"pid", "creation_filetime", "image"}
+            or type(native_pid) is not int or native_pid <= 0
+            or type(parent) is not dict
+            or type(parent.get("creation_filetime")) is not int
+            or parent["creation_filetime"] <= 0
+            or type(parent.get("image")) is not str
+            or type(observed["pid"]) is not int or observed["pid"] != native_pid
+            or type(observed["creation_filetime"]) is not int
+            or observed["creation_filetime"] != parent["creation_filetime"]
+            or type(observed["image"]) is not str
+            or ntpath.normcase(ntpath.normpath(observed["image"])) !=
+                ntpath.normcase(ntpath.normpath(parent["image"]))
+            or ntpath.normcase(ntpath.normpath(observed["image"])) !=
+                ntpath.normcase(ntpath.normpath(expected_image))):
+        raise ValueError("R15_NATIVE_ROOT_HANDLE_OR_PROCESS_IDENTITY_REFUSED")
+    return {
+        "schema": "ATLAS_R15_TWO_LANE_SHORT_LIVED_ROOT_HANDLE_PROOF_V1",
+        "status": "INSTALLED_NATIVE_R15_TWELVE_READ_ONLY_ROOT_HANDLES_RECHECKED",
+        "actual_existing_native_roots_verified": 12,
+        "root_handles_held_and_rechecked_in_same_process": True,
+        "process_native_pid_observed": native_pid,
+        "process_native_creation_filetime": observed["creation_filetime"],
+        "native_selected_release": str(release),
+        "selected_native_head": selected_head,
+        "financial_writer_process_enrolled": False,
+        "financial_writer_lease_active": False,
+        "native_paper_account_inception": False,
+        "paper_start_authorized": False,
+        "real_money_order_authorized": False,
+        "native_financial_files_written": 0,
+        "market_provider_requests": 0,
+    }
+
+
+def inspect_two_lane_native_root_handles():
+    """Bounded one-child real R15 root-handle check, followed by confirmed exit."""
+    import time
+    from scripts.observation_runtime.personal_existing_native_resource_evidence import (
+        ROLES, inspect_two_lane_native_roots,
+    )
+
+    selected_before = selected_code()
+    roots_before = inspect_two_lane_native_roots()
+    if (selected_before.get("revision") != 14
+            or selected_before.get("selected_native_head") != SELECTED_HEAD
+            or selected_before.get("financial_authority") is not False
+            or roots_before.get("all_twelve_distinct_and_empty") is not True
+            or not EXECUTABLE.is_file() or EXECUTABLE.is_symlink()):
+        raise ValueError("R15_ROOT_HANDLES_SELECTED_RELEASE_OR_ROOT_PRECONDITION_REFUSED")
+    requested = []
+    for lane in ("HYPERLIQUID", "QUALITY_DIPS"):
+        for role in ROLES:
+            row = roots_before["lanes"][lane]["roots"][role]
+            requested.append({
+                "lane": lane, "role": role, "path": row["path"],
+                "native_id": row["native_id"],
+            })
+    process = None
+    try:
+        env = {
+            k: os.environ[k] for k in (
+                "SystemRoot", "WINDIR", "TEMP", "TMP", "PATH")
+        }
+        env["PYTHONPATH"] = ";".join((str(RELEASE), str(RELEASE / "backend")))
+        env["PYTHONDONTWRITEBYTECODE"] = "1"
+        flags = getattr(subprocess, "BELOW_NORMAL_PRIORITY_CLASS", 0)
+        flags |= getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        process = subprocess.Popen(
+            [str(EXECUTABLE), "-B", "-u", "-c", ROOT_CHILD,
+             json.dumps(requested, separators=(",", ":"))],
+            cwd=str(RELEASE), env=env, creationflags=flags,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, text=True, encoding="utf-8")
+        # Native HANDLE observations and liveness throughout a short interval,
+        # NEVER PID lookup or termination of a process we do not own.
+        samples = []
+        for _ in range(3):
+            if process.poll() is not None:
+                raise ValueError("R15_ROOT_HANDLES_CHILD_PREMATURE_EXIT")
+            samples.append(_windows_handle_identity(process._handle))
+            time.sleep(.15)
+        if any(sample != samples[0] for sample in samples[1:]):
+            raise ValueError("R15_ROOT_HANDLES_PARENT_PROCESS_INCARNATION_CHANGED")
+        stdout, stderr = process.communicate(timeout=12)
+        if (process.returncode != 0
+                or stderr.strip()
+                or len(stdout.splitlines()) != 1):
+            raise ValueError("R15_ROOT_HANDLES_CHILD_OUTPUT_OR_EXIT_REFUSED")
+        child = json.loads(stdout)
+        qualified = verify_root_handle_lifetime(
+            child, expected_roots=roots_before, native_pid=process.pid,
+            parent=samples[0])
+        if (selected_code() != selected_before
+                or inspect_two_lane_native_roots() != roots_before):
+            raise ValueError("R15_ROOT_HANDLES_NATIVE_RELEASE_OR_ROOTS_CHANGED")
+        qualified["sample_count_while_process_alive"] = len(samples)
+        qualified["child_exited_and_handles_closed"] = True
+        qualified["all_twelve_root_ids_unchanged_after_exit"] = True
+        return qualified
+    finally:
+        if process is not None:
+            if process.poll() is None:
+                process.kill()
+                process.communicate(timeout=5)
+            if process.stdout is not None:
+                process.stdout.close()
+            if process.stderr is not None:
+                process.stderr.close()
+
+
 if __name__ == "__main__":
     print(json.dumps(inspect(), sort_keys=True))
