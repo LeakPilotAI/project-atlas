@@ -37,7 +37,7 @@ from scripts.observation_runtime.personal_native_windows_api import (
     PROCESS_INFORMATION, STARTUPINFOW, WindowsJobAPI,
 )
 
-SCHEMA="ATLAS_R15_PARKED_OWNER_NATIVE_JOB_AND_ACCOUNT_HANDLES_V1"
+SCHEMA="ATLAS_R15_PARKED_OWNER_COOPERATIVE_STOP_JOB_AND_HANDLES_V2"
 IMAGE=str(RELEASE/"python/python.exe")
 WAIT_OBJECT_0=0
 DETACHED_PROCESS=0x00000008  # Real headless child; no conhost.exe in owned Job.
@@ -54,7 +54,7 @@ sys.path[:0]=[str(root/'backend'),str(root),str(root/'python/Lib/site-packages')
 from scripts.observation_runtime import personal_paper_inception as installed_source
 native_primitives=installed_source.native_primitives
 info=json.loads(sys.argv[1])
-if (set(info)!={'selected_head','installed_root','ready_event','roots'}
+if (set(info)!={'selected_head','installed_root','ready_event','stop_event','roots'}
         or str(root).casefold()!=info['installed_root'].casefold()
         or Path(installed_source.__file__).resolve()!=root/'scripts/observation_runtime/personal_paper_inception.py'
         or type(info['selected_head']) is not str or len(info['selected_head'])!=64
@@ -96,9 +96,17 @@ with ExitStack() as owned:
         if not k.SetEvent(event):
             raise ValueError('R15_PARKED_BOOTSTRAP_PARENT_READY_NOT_SIGNALED')
     finally:k.CloseHandle(event)
-    # The child intentionally has NO activation/dispatch endpoint.
-    # It is only parkable while its creator retains the owned Job HANDLE.
-    time.sleep(12)
+    # The STOP event is a nonfinancial local lifetime control only. No
+    # activation, trading or provider dispatch endpoint exists in this child.
+    k.WaitForSingleObject.argtypes=[wintypes.HANDLE,wintypes.DWORD]
+    k.WaitForSingleObject.restype=wintypes.DWORD
+    stop=k.OpenEventW(0x00100000,False,info['stop_event'])
+    if not stop:
+        raise ValueError('R15_PARKED_BOOTSTRAP_STOP_EVENT_MISSING')
+    try:
+        if k.WaitForSingleObject(stop,12000)!=0:
+            raise ValueError('R15_PARKED_BOOTSTRAP_BOUNDED_STOP_NOT_RECEIVED')
+    finally:k.CloseHandle(stop)
 '''
 
 
@@ -112,6 +120,8 @@ def validate_parked_proof(row):
             'same_parked_job_worker_matches_both_12_role_rosters',
             'actual_job_kill_on_close_verified_before_handoff',
             'stopped_owned_job_cannot_be_reused_for_paper_activation',
+            'same_owned_child_retained_across_three_liveness_observations',
+            'cooperative_stop_signaled_and_child_exited_cleanly',
             'owned_job_active_children_before_stop',
             'owned_job_active_children_after_stop',
             'parked_process_exited_before_return',
@@ -120,7 +130,7 @@ def validate_parked_proof(row):
             'operator_activation_accepted','provider_calls',
             'paper_start_authorized','live_trading_authorized'}
             or row['schema']!=SCHEMA
-            or row['status']!='PARKED_R15_PREACTIVATION_JOB_BOOTSTRAP_NONFINANCIAL_PASS'
+            or row['status']!='PARKED_R15_PREACTIVATION_COOPERATIVE_STOP_NONFINANCIAL_PASS'
             or row['selected_native_head']!=SELECTED_HEAD
             or row['installed_release']!=str(RELEASE)
             or type(row['owned_job_active_children_before_stop']) is not int
@@ -139,6 +149,8 @@ def validate_parked_proof(row):
                 'same_parked_job_worker_matches_both_12_role_rosters',
                 'actual_job_kill_on_close_verified_before_handoff',
                 'stopped_owned_job_cannot_be_reused_for_paper_activation',
+                'same_owned_child_retained_across_three_liveness_observations',
+                'cooperative_stop_signaled_and_child_exited_cleanly',
                 'parked_process_exited_before_return',
                 'original_native_roots_unchanged_after_stop'))
             or any(row[k] is not False for k in (
@@ -146,6 +158,15 @@ def validate_parked_proof(row):
                 'paper_start_authorized','live_trading_authorized'))):
         raise ValueError('R15_PARKED_JOB_NONFINANCIAL_NATIVE_PROOF_REFUSED')
     return row
+
+
+def _signal_parked_stop(kernel, handle):
+    """One native local cooperative request, never financial Stop dispatch."""
+    kernel.SetEvent.argtypes=[wintypes.HANDLE]
+    kernel.SetEvent.restype=wintypes.BOOL
+    if not kernel.SetEvent(handle):
+        raise ValueError('R15_PARKED_OWNER_COOPERATIVE_STOP_SIGNAL_REFUSED')
+    return True
 
 
 def inspect():
@@ -182,15 +203,20 @@ def inspect():
         wintypes.HANDLE,wintypes.HANDLE,ctypes.POINTER(wintypes.BOOL)]
     k.IsProcessInJob.restype=wintypes.BOOL
     name='Local\\AtlasR15ParkedProof-'+secrets.token_hex(16)
+    stop_name='Local\\AtlasR15ParkedStop-'+secrets.token_hex(16)
     signal=k.CreateEventW(None,False,False,name)
     if not signal:
         raise ctypes.WinError(ctypes.get_last_error())
+    stop=None
     owner=None
     verified={}
     try:
+        stop=k.CreateEventW(None,False,False,stop_name)
+        if not stop:
+            raise ctypes.WinError(ctypes.get_last_error())
         args=json.dumps({
             'selected_head':SELECTED_HEAD,'installed_root':str(RELEASE),
-            'ready_event':name,'roots':entries},sort_keys=True,separators=(',',':'))
+            'ready_event':name,'stop_event':stop_name,'roots':entries},sort_keys=True,separators=(',',':'))
         command=subprocess.list2cmdline([
             IMAGE,'-I','-B','-S','-c',CHILD,args])
         if len(command)>28000:
@@ -267,11 +293,23 @@ def inspect():
                     or pure['paper_start_authorized'] is not False
                     or live.verify_still_running() is not True):
                 raise ValueError('R15_PARKED_OWNER_UNACCEPTED_WRITER_HANDOFF_REFUSED')
-        # Nothing is activated. Stop ONLY this explicitly owned Job handle.
-        api.terminate_job(owner.job)
+        # One full retained owner session: revalidate the SAME native process
+        # and original resources at three distinct monotonic observations.
+        for index in range(3):
+            job_binding.require_exact_roster(qd=qd,perp=hl)
+            if (_exact_process(api,owner.process,expected_pid=verified['pid'])!=verified
+                    or api.active_processes(owner.job)!=1
+                    or inspect_two_lane_native_roots()!=before):
+                raise ValueError('R15_PARKED_OWNER_MONITORED_LIFETIME_CHANGED')
+            if index!=2:
+                time.sleep(.35)
+        # Cooperative Stop: signal the local parked-only event, then require
+        # normal exit and automatic release of all 12 native root handles.
+        # If Stop fails, finally executes owned Job termination as fallback.
+        _signal_parked_stop(k, stop)
         code=_wait_exit(api,owner.process,timeout_ms=5000)
-        if code==0 or _exited_creation_filetime(api,owner.process)!=verified['creation_filetime']:
-            raise ValueError('R15_PARKED_OWNER_STOP_INCARCATION_OR_EXIT_REFUSED')
+        if code!=0 or _exited_creation_filetime(api,owner.process)!=verified['creation_filetime']:
+            raise ValueError('R15_PARKED_OWNER_COOPERATIVE_STOP_NOT_DURABLY_CLOSED')
         deadline=time.monotonic()+2
         while api.active_processes(owner.job) and time.monotonic()<deadline:
             time.sleep(.025)
@@ -290,7 +328,7 @@ def inspect():
             raise ValueError('R15_PARKED_OWNER_ROOT_OR_RELEASE_CHANGED')
         return validate_parked_proof({
             'schema':SCHEMA,
-            'status':'PARKED_R15_PREACTIVATION_JOB_BOOTSTRAP_NONFINANCIAL_PASS',
+            'status':'PARKED_R15_PREACTIVATION_COOPERATIVE_STOP_NONFINANCIAL_PASS',
             'selected_native_head':SELECTED_HEAD,
             'installed_release':str(RELEASE),
             'child_process_native_identity_verified':True,
@@ -300,6 +338,8 @@ def inspect():
             'same_parked_job_worker_matches_both_12_role_rosters':True,
             'actual_job_kill_on_close_verified_before_handoff':True,
             'stopped_owned_job_cannot_be_reused_for_paper_activation':True,
+            'same_owned_child_retained_across_three_liveness_observations':True,
+            'cooperative_stop_signaled_and_child_exited_cleanly':True,
             'owned_job_active_children_before_stop':1,
             'owned_job_active_children_after_stop':0,
             'parked_process_exited_before_return':True,
@@ -312,11 +352,20 @@ def inspect():
             'live_trading_authorized':False,
         })
     finally:
-        if owner is not None:
-            owner.close()
-            if not owner.closed:
-                raise ValueError('R15_PARKED_OWNER_HANDLES_NOT_CLOSED')
-        api.close_handle(signal)
+        # Emergency kill-on-close remains mandatory when the cooperative
+        # Stop signal cannot be sent/acknowledged. All local HANDLEs must be
+        # closed even when Job cleanup itself reports an error.
+        try:
+            if owner is not None:
+                owner.close()
+                if not owner.closed:
+                    raise ValueError('R15_PARKED_OWNER_HANDLES_NOT_CLOSED')
+        finally:
+            try:
+                if stop is not None:
+                    api.close_handle(stop)
+            finally:
+                api.close_handle(signal)
 
 
 if __name__=='__main__':
