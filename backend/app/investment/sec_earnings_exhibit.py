@@ -149,19 +149,38 @@ def _broadcom_original_gaap_quarter(tables, reference, issuer_name):
             _refuse('EXHIBIT_AVGO_GAAP_UNIQUE_ROW_REQUIRED')
         return found[0]
 
-    # The original FY2024 statement uses (loss) and '(1)' footnote markers;
-    # permit ONLY those observed GAAP variants, not 'adjusted' EPS labels.
-    basic = unique(('basic income per share:', 'basic income (loss) per share (1):'))
-    diluted = unique(('diluted income per share:', 'diluted income (loss) per share (1):'))
-    weighted = unique(('weighted-average shares used in per share calculations:',
-                       'weighted-average shares used in per share calculations (1):'))
-    income_row = unique(('net income', 'net income (loss)'))
-    eps_row = unique(('net income per share', 'net income (loss) per share'),
-                     lo=diluted + 1, hi=weighted)
-    share_row = unique('diluted', lo=weighted + 1)
-    if not (income_row < basic < diluted < eps_row < weighted < share_row
-            and share_row < weighted + 5):
-        _refuse('EXHIBIT_AVGO_GAAP_SECTION_ORDER')
+    # The original FY2023 (pre-split) filing uses a separate common-stock
+    # attribution layout, with distinct diluted (1) rows for EPS and shares.
+    # It MUST remain limited to the exact SEC issuer filing/date/dialect.
+    older_common_stock = (reference['accession'] == '0001730168-23-000093')
+    if older_common_stock:
+        if (reference['filed'] != '2023-12-07'
+                or str(current) != '2023-10-29'
+                or str(previous) != '2023-07-30'
+                or str(prior_year) != '2022-10-30'):
+            _refuse('EXHIBIT_AVGO_2023_COMMON_STOCK_ISSUER_PERIOD')
+        income_row = unique('net income attributable to common stock')
+        eps_section = unique('net income per share attributable to common stock:')
+        weighted = unique('weighted-average shares used in per share calculations:')
+        eps_row = unique('diluted (1)', lo=eps_section + 1, hi=weighted)
+        share_row = unique('diluted (1)', lo=weighted + 1)
+        if not (income_row < eps_section < eps_row < weighted < share_row
+                and share_row < weighted + 5):
+            _refuse('EXHIBIT_AVGO_2023_GAAP_SECTION_ORDER')
+    else:
+        # 2024+ GAAP statements use an EPS section and explicit weighted
+        # diluted shares. Limited observed 'loss' footnote variants only.
+        basic = unique(('basic income per share:', 'basic income (loss) per share (1):'))
+        diluted = unique(('diluted income per share:', 'diluted income (loss) per share (1):'))
+        weighted = unique(('weighted-average shares used in per share calculations:',
+                           'weighted-average shares used in per share calculations (1):'))
+        income_row = unique(('net income', 'net income (loss)'))
+        eps_row = unique(('net income per share', 'net income (loss) per share'),
+                         lo=diluted + 1, hi=weighted)
+        share_row = unique('diluted', lo=weighted + 1)
+        if not (income_row < basic < diluted < eps_row < weighted < share_row
+                and share_row < weighted + 5):
+            _refuse('EXHIBIT_AVGO_GAAP_SECTION_ORDER')
 
     def amount(index, *, money):
         block = rows[index][6:12]

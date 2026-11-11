@@ -487,6 +487,153 @@ def inspect_avgo_split_only_history(*, cache_root=CACHE_ROOT, now=None):
     }
 
 
+def reconcile_avgo_original_eps_split_basis(
+        original_quarters, split_price_proof):
+    """Research-only 2024 AVGO SEC EPS/share translation to post-split units.
+
+    This is NOT a SEC-reported restatement, GAAP audit, accepted valuation,
+    native financial issuer, or a substitute for a full 15-quarter witness
+    chain. Original, separately reported figures are retained without edits.
+    """
+    from datetime import timedelta
+
+    identity = (
+        ("0001730168-24-000023", "2023-10-30", "2024-02-04", "2024-03-14"),
+        ("0001730168-24-000080", "2024-02-05", "2024-05-05", "2024-06-13"),
+        ("0001730168-24-000099", "2024-05-06", "2024-08-04", "2024-09-11"),
+    )
+    if (type(original_quarters) is not list or len(original_quarters) != 3
+            or type(split_price_proof) is not dict
+            or split_price_proof.get("schema") !=
+                "ATLAS_AVGO_SEC_SPLIT_ONLY_PRICE_PAIR_REPLAY_V1"
+            or split_price_proof.get("sec_original_split_date") != "2024-07-12"
+            or type(split_price_proof.get("sec_original_new_shares_per_old_share")) is not int
+            or split_price_proof["sec_original_new_shares_per_old_share"] != 10
+            or split_price_proof.get("provider_original_split_event_corroborated") is not True
+            or split_price_proof.get("provider_calendar_session_coverage_verified") is not True
+            or split_price_proof.get("provider_split_ex_date") != "2024-07-15"
+            or split_price_proof.get("matching_returned_daily_bar_count") != 1258
+            or split_price_proof.get("pre_split_returned_bars") != 675
+            or split_price_proof.get("post_split_returned_bars") != 583
+            or split_price_proof.get("provider_calendar_expected_completed_sessions") != 1258
+            or any(split_price_proof.get(flag) is not False for flag in (
+                "complete_exchange_calendar_sessions_verified",
+                "provider_price_data_rights_accepted",
+                "split_adjusted_share_basis_for_historical_valuation_accepted",
+                "twelve_historical_valuation_anchors_accepted",
+                "financial_paper_order_authorized",
+                "real_money_order_authorized"))):
+        raise ValueError("QD_AVGO_SPLIT_EPS_ORIGIN_PRICE_PROOF_REQUIRED")
+    hashes = ("sec_original_split_sha256", "provider_corporate_action_sha256",
+              "provider_calendar_sha256")
+    if any(type(split_price_proof.get(k)) is not str
+           or re.fullmatch("[0-9a-f]{64}", split_price_proof[k]) is None
+           for k in hashes):
+        raise ValueError("QD_AVGO_SPLIT_EPS_SOURCE_HASHES_REQUIRED")
+    factor = Decimal(10)
+    cut = datetime.fromisoformat("2024-07-12").date()
+    translated = []
+    for index, (report, expected) in enumerate(zip(original_quarters, identity, strict=True)):
+        acc, start, end, filed = expected
+        if (type(report) is not dict
+                or report.get("schema") != SCHEMA
+                or report.get("symbol") != "AVGO"
+                or report.get("cik") != "0001730168"
+                or tuple(report.get(k) for k in (
+                    "accession", "period_start", "period_end", "filed")) != expected
+                or report.get("original_filing_and_companyfacts_matched") is not True
+                or any(report.get(flag) is not False for flag in (
+                    "share_adjustment_basis_accepted", "twelve_quarter_history_accepted",
+                    "operational_source_accepted", "financial_paper_authorized",
+                    "live_order_authorized"))
+                or type(report.get("original_filing_sha256")) is not str
+                or re.fullmatch("[0-9a-f]{64}", report["original_filing_sha256"]) is None
+                or type(report.get("companyfacts_sha256")) is not str
+                or re.fullmatch("[0-9a-f]{64}", report["companyfacts_sha256"]) is None
+                or type(report.get("diluted_eps_usd")) is not str
+                or type(report.get("diluted_weighted_average_shares")) is not str):
+            raise ValueError("QD_AVGO_SPLIT_EPS_EXACT_ORIGINAL_QUARTER_REQUIRED")
+        try:
+            eps = Decimal(report["diluted_eps_usd"])
+            shares = Decimal(report["diluted_weighted_average_shares"])
+        except InvalidOperation:
+            raise ValueError("QD_AVGO_SPLIT_EPS_ORIGINAL_FACT_INVALID") from None
+        if (not eps.is_finite() or not shares.is_finite()
+                or shares != shares.to_integral_value()
+                or not -1000 < eps < 1000
+                or (index < 2 and not Decimal(300_000_000) <= shares <= Decimal(600_000_000))
+                or (index == 2 and not Decimal(3_000_000_000) <= shares <= Decimal(6_000_000_000))
+                or (index < 2 and not datetime.fromisoformat(end).date() <
+                    datetime.fromisoformat(filed).date() < cut)
+                or (index == 2 and not datetime.fromisoformat(start).date() < cut <
+                    datetime.fromisoformat(end).date() <
+                    datetime.fromisoformat(filed).date())):
+            raise ValueError("QD_AVGO_SPLIT_EPS_SHARE_PERIOD_OR_SCALE_REFUSED")
+        multiplier = factor if index < 2 else Decimal(1)
+        adjusted_eps = eps / multiplier
+        adjusted_shares = shares * multiplier
+        if (adjusted_eps * adjusted_shares != eps * shares
+                or not Decimal(3_000_000_000) <= adjusted_shares <= Decimal(6_000_000_000)):
+            raise ValueError("QD_AVGO_SPLIT_EPS_VALUE_OR_COUNT_INVARIANT")
+        translated.append({
+            "original_sec_accession": acc,
+            "reported_period_start": start,
+            "reported_period_end": end,
+            "original_filing_sha256": report["original_filing_sha256"],
+            "sec_companyfacts_sha256": report["companyfacts_sha256"],
+            "as_reported_diluted_eps_usd": str(eps),
+            "as_reported_weighted_diluted_shares": str(shares),
+            "split_equivalent_eps_usd_research_only": str(adjusted_eps),
+            "split_equivalent_weighted_shares_research_only": str(adjusted_shares),
+            "derived_new_shares_per_reported_share": int(multiplier),
+            "transformed_not_sec_reported": multiplier == factor,
+        })
+    for older, newer in zip(translated, translated[1:]):
+        if (datetime.fromisoformat(newer["reported_period_start"]).date() !=
+                datetime.fromisoformat(older["reported_period_end"]).date() +
+                timedelta(days=1)):
+            raise ValueError("QD_AVGO_SPLIT_EPS_NONCONSECUTIVE_QUARTERS")
+    if Decimal(translated[2]["as_reported_diluted_eps_usd"]) >= 0:
+        raise ValueError("QD_AVGO_SPLIT_EPS_ORIGINAL_LOSS_MUST_BE_RETAINED")
+    return {
+        "schema": "ATLAS_AVGO_DIRECT_SEC_EPS_SPLIT_EQUIVALENCE_RESEARCH_V1",
+        "status": "ORIGINAL_EPS_AND_SPLIT_EQUIVALENT_UNITS_RECONCILED",
+        "issuer": "AVGO", "cik": "0001730168",
+        "split_effective_date": str(cut),
+        "original_split_and_prices_corroborated": True,
+        "split_price_and_calendar_origin_hashes": {
+            k: split_price_proof[k] for k in hashes},
+        "quarter_count": len(translated),
+        "quarters": translated,
+        "method": "RESEARCH_ONLY_EXACT_10_FOR_1_PER_SHARE_CONVERSION",
+        "original_sec_gaap_values_preserved": True,
+        "derived_values_are_not_restatements_of_original_sec_filings": True,
+        "full_15_quarter_earnings_witness_chain_complete": False,
+        "entire_historical_eps_price_basis_accepted": False,
+        "operational_qd_financial_source_enrolled": False,
+        "financial_paper_authorized": False,
+        "live_order_authorized": False,
+        "network_requests": 0,
+    }
+
+
+def inspect_avgo_original_eps_split_basis(*, cache_root=CACHE_ROOT, now=None):
+    """Apply verified SEC original quarter witnesses to corroborated split prices."""
+    now = datetime.now(UTC) if now is None else now
+    split = inspect_avgo_split_only_history(cache_root=cache_root, now=now)
+    quarters = [
+        inspect_original_quarter(
+            symbol="AVGO", cik="0001730168", accession=accession,
+            cache_root=cache_root, now=now)
+        for accession in (
+            "0001730168-24-000023",
+            "0001730168-24-000080",
+            "0001730168-24-000099",
+        )
+    ]
+    return reconcile_avgo_original_eps_split_basis(quarters, split)
+
+
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--symbol",required=True)

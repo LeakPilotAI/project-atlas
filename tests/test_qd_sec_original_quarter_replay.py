@@ -558,3 +558,138 @@ def test_avgo_split_provider_calendar_must_cover_exact_daily_bar_sessions(tmp_pa
         path.write_text(json.dumps(record,sort_keys=True),encoding='utf-8')
     with pytest.raises((ValueError,ResearchRefused,OSError)):
         replay.inspect_avgo_split_only_history(cache_root=tmp_path,now=NOW)
+
+
+def _synthetic_avgo_original_split_equivalence_inputs():
+    """Algebra-only fixture; no claim these artificial hashes attest SEC data."""
+    keys=[
+        ('0001730168-24-000023','2023-10-30','2024-02-04','2024-03-14','2.84','467000000'),
+        ('0001730168-24-000080','2024-02-05','2024-05-05','2024-06-13','4.42','480000000'),
+        ('0001730168-24-000099','2024-05-06','2024-08-04','2024-09-11','-0.40','4663000000'),
+    ]
+    quarters=[]
+    for i,(acc,start,end,filed,eps,shares) in enumerate(keys):
+        quarters.append({
+            'schema':replay.SCHEMA,'symbol':'AVGO','cik':'0001730168',
+            'accession':acc,'period_start':start,'period_end':end,'filed':filed,
+            'original_filing_sha256':str(i+1)*64,
+            'companyfacts_sha256':'a'*64,
+            'diluted_eps_usd':eps,
+            'diluted_weighted_average_shares':shares,
+            'original_filing_and_companyfacts_matched':True,
+            'share_adjustment_basis_accepted':False,
+            'twelve_quarter_history_accepted':False,
+            'operational_source_accepted':False,
+            'financial_paper_authorized':False,
+            'live_order_authorized':False,
+        })
+    proof={
+        'schema':'ATLAS_AVGO_SEC_SPLIT_ONLY_PRICE_PAIR_REPLAY_V1',
+        'sec_original_split_date':'2024-07-12',
+        'sec_original_new_shares_per_old_share':10,
+        'sec_original_split_sha256':'c'*64,
+        'provider_corporate_action_sha256':'d'*64,
+        'provider_calendar_sha256':'e'*64,
+        'provider_original_split_event_corroborated':True,
+        'provider_calendar_session_coverage_verified':True,
+        'provider_split_ex_date':'2024-07-15',
+        'matching_returned_daily_bar_count':1258,
+        'provider_calendar_expected_completed_sessions':1258,
+        'pre_split_returned_bars':675,
+        'post_split_returned_bars':583,
+        'complete_exchange_calendar_sessions_verified':False,
+        'provider_price_data_rights_accepted':False,
+        'split_adjusted_share_basis_for_historical_valuation_accepted':False,
+        'twelve_historical_valuation_anchors_accepted':False,
+        'financial_paper_order_authorized':False,
+        'real_money_order_authorized':False,
+    }
+    return quarters,proof
+
+
+def test_original_reported_eps_is_not_replaced_by_split_equivalence_research():
+    from decimal import Decimal
+
+    quarters,proof=_synthetic_avgo_original_split_equivalence_inputs()
+    original=deepcopy(quarters)
+    report=replay.reconcile_avgo_original_eps_split_basis(quarters,proof)
+    assert quarters==original
+    assert report['quarter_count']==3
+    rows=report['quarters']
+    assert [x['as_reported_diluted_eps_usd'] for x in rows]==['2.84','4.42','-0.40']
+    assert [x['split_equivalent_eps_usd_research_only'] for x in rows]==[
+        '0.284','0.442','-0.40']
+    assert [x['as_reported_weighted_diluted_shares'] for x in rows]==[
+        '467000000','480000000','4663000000']
+    assert [x['split_equivalent_weighted_shares_research_only'] for x in rows]==[
+        '4670000000','4800000000','4663000000']
+    assert [x['derived_new_shares_per_reported_share'] for x in rows]==[10,10,1]
+    assert [x['transformed_not_sec_reported'] for x in rows]==[True,True,False]
+    for source,adjusted in zip(quarters,rows,strict=True):
+        assert (Decimal(source['diluted_eps_usd']) *
+                Decimal(source['diluted_weighted_average_shares']) ==
+                Decimal(adjusted['split_equivalent_eps_usd_research_only']) *
+                Decimal(adjusted['split_equivalent_weighted_shares_research_only']))
+    assert report['original_sec_gaap_values_preserved'] is True
+    assert report['derived_values_are_not_restatements_of_original_sec_filings'] is True
+    for flag in ('full_15_quarter_earnings_witness_chain_complete',
+                 'entire_historical_eps_price_basis_accepted',
+                 'operational_qd_financial_source_enrolled',
+                 'financial_paper_authorized','live_order_authorized'):
+        assert report[flag] is False
+    assert report['network_requests']==0
+
+
+@pytest.mark.parametrize('damage',[
+    'wrong_symbol','wrong_cik','wrong_schema','different_accession',
+    'stale_original_quarter','future_quarter_filing',
+    'pre_split_report_labeled_as_post_split','post_split_report_labeled_as_pre_split',
+    'pre_split_reported_shares_already_scaled','post_split_shares_not_scaled',
+    'missing_original_hash','bogus_original_hash','foreign_companyfacts_hash',
+    'missing_original_match','original_claims_financial_authority',
+    'no_split_price_proof','wrong_split_ratio','wrong_split_date',
+    'wrong_provider_exdate','incomplete_calendar','missing_bars',
+    'wrong_pre_post_bar_count','provider_rights_falsely_accepted',
+    'nan_eps','invalid_shares','missing_quarter','duplicate_quarter',
+    'no_negative_original_loss',
+])
+def test_avgo_original_split_eps_basis_never_silently_accepts_bad_facts(damage):
+    quarters,proof=_synthetic_avgo_original_split_equivalence_inputs()
+    if damage=='wrong_symbol':quarters[0]['symbol']='MSFT'
+    elif damage=='wrong_cik':quarters[0]['cik']='0000789019'
+    elif damage=='wrong_schema':quarters[0]['schema']='UNVERIFIED'
+    elif damage=='different_accession':quarters[1]['accession']='0001730168-24-999999'
+    elif damage=='stale_original_quarter':quarters[0]['period_start']='2023-10-29'
+    elif damage=='future_quarter_filing':quarters[1]['filed']='2024-07-20'
+    elif damage=='pre_split_report_labeled_as_post_split':
+        quarters[1]['period_end']='2024-08-04'
+    elif damage=='post_split_report_labeled_as_pre_split':
+        quarters[2]['filed']='2024-06-13'
+    elif damage=='pre_split_reported_shares_already_scaled':
+        quarters[1]['diluted_weighted_average_shares']='4800000000'
+    elif damage=='post_split_shares_not_scaled':
+        quarters[2]['diluted_weighted_average_shares']='466300000'
+    elif damage=='missing_original_hash':quarters[0]['original_filing_sha256']=None
+    elif damage=='bogus_original_hash':quarters[0]['original_filing_sha256']='g'*64
+    elif damage=='foreign_companyfacts_hash':quarters[1]['companyfacts_sha256']='z'*64
+    elif damage=='missing_original_match':
+        quarters[0]['original_filing_and_companyfacts_matched']=False
+    elif damage=='original_claims_financial_authority':
+        quarters[1]['financial_paper_authorized']=True
+    elif damage=='no_split_price_proof':proof['schema']='WRONG_SCHEMA'
+    elif damage=='wrong_split_ratio':proof['sec_original_new_shares_per_old_share']=9
+    elif damage=='wrong_split_date':proof['sec_original_split_date']='2024-07-11'
+    elif damage=='wrong_provider_exdate':proof['provider_split_ex_date']='2024-07-12'
+    elif damage=='incomplete_calendar':
+        proof['provider_calendar_session_coverage_verified']=False
+    elif damage=='missing_bars':proof['matching_returned_daily_bar_count']=1257
+    elif damage=='wrong_pre_post_bar_count':proof['pre_split_returned_bars']=674
+    elif damage=='provider_rights_falsely_accepted':
+        proof['provider_price_data_rights_accepted']=True
+    elif damage=='nan_eps':quarters[0]['diluted_eps_usd']='NaN'
+    elif damage=='invalid_shares':quarters[1]['diluted_weighted_average_shares']='infinite'
+    elif damage=='missing_quarter':quarters.pop(0)
+    elif damage=='duplicate_quarter':quarters[1]=deepcopy(quarters[0])
+    elif damage=='no_negative_original_loss':quarters[2]['diluted_eps_usd']='0.40'
+    with pytest.raises(ValueError):
+        replay.reconcile_avgo_original_eps_split_basis(quarters,proof)

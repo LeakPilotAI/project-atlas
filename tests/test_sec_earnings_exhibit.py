@@ -402,3 +402,91 @@ def test_avgo_fy2024_footnoted_layout_never_promotes_non_gaap(damage):
         ref['cik']='0000789019'
     with pytest.raises((ResearchRefused,ValueError)):
         parse_earnings_exhibit(main,text,ref,issuer_name='BROADCOM INC.',now=NOW)
+
+
+def avgo_fy2023_common_stock_fixture():
+    """Synthetic older GAAP common-stock EPS layout; no real SEC certification."""
+    ref=avgo_release_reference()
+    ref.update(accession='0001730168-23-000093',
+               filed='2023-12-07',report_date='2023-12-07',
+               url=('https://www.sec.gov/Archives/edgar/data/1730168/'
+                    '000173016823000093/avgo-20231207.htm'))
+    main=(avgo_release_main()
+          .replace('2025-12-11','2023-12-07')
+          .replace('2025-09-01','2023-11-01')
+          .replace('avgo-11022025x8kxex99.htm',
+                   'avgo-10292023x8kxex99.htm'))
+    exhibit=(avgo_gaap_table()
+          .replace('November 3,2024','October 30,2022')
+          .replace('November 2,2025','October 29,2023')
+          .replace('August 3,2025','July 30,2023')
+          .replace('<td colspan="3">net income</td>',
+                   '<td colspan="3">net income attributable to common stock</td>')
+          .replace('basic income per share:',
+                   'net income per share attributable to common stock:')
+          .replace('diluted income per share:',
+                   'GAAP income attributable to common stock:')
+          .replace('<td colspan="3">net income per share</td>',
+                   '<td colspan="3">basic</td>',1)
+          .replace('<td colspan="3">net income per share</td>',
+                   '<td colspan="3">diluted (1)</td>',1)
+          .replace('<td colspan="3">diluted</td>',
+                   '<td colspan="3">diluted (1)</td>')
+          .replace('8,518','3,524')
+          .replace('1.74','8.25')
+          .replace('4,889','427'))
+    return main,exhibit,ref
+
+
+def test_avgo_fy2023_original_common_stock_gaap_eps_not_adjusted():
+    main,text,ref=avgo_fy2023_common_stock_fixture()
+    parsed=parse_earnings_exhibit(main,text,ref,issuer_name='BROADCOM INC.',now=NOW)
+    assert [(r['start'],r['end'],r['val']) for r in
+            exhibit_rows([parsed],cik='0001730168')] == [
+        ('2023-07-31','2023-10-29','8.25')]
+    assert {x['concept']:x['value'] for x in parsed['facts']}=={
+        'EarningsPerShareDiluted':'8.25',
+        'WeightedAverageNumberOfDilutedSharesOutstanding':'427000000',
+        'NetIncomeLoss':'3524000000',
+    }
+    assert parsed['accounting_basis']=='REPORTED_GAAP_STANDALONE_QUARTER'
+
+
+@pytest.mark.parametrize('damage',[
+    'wrong_accession','wrong_filed_date','wrong_fiscal_quarter',
+    'wrong_issuer','wrong_net_income','adjusted_eps_substituted',
+    'wrong_diluted_share_count','missing_common_share_attribution',
+    'wrong_diluted_label','duplicate_diluted_row','foreign_non_gaap_statement',
+])
+def test_avgo_2023_original_gaap_common_stock_layout_refuses_tampering(damage):
+    main,text,ref=avgo_fy2023_common_stock_fixture()
+    if damage=='wrong_accession':
+        ref['accession']='0001730168-23-000092'
+    elif damage=='wrong_filed_date':
+        ref['filed']='2023-12-08'
+    elif damage=='wrong_fiscal_quarter':
+        text=text.replace('October 29,2023','October 30,2023')
+    elif damage=='wrong_issuer':
+        ref['cik']='0000789019'
+    elif damage=='wrong_net_income':
+        text=text.replace('3,524','5,524',1)
+    elif damage=='adjusted_eps_substituted':
+        text=text.replace('8.25','11.06')
+    elif damage=='wrong_diluted_share_count':
+        text=text.replace('427','467')
+    elif damage=='missing_common_share_attribution':
+        text=text.replace('net income attributable to common stock',
+                          'adjusted non-GAAP income',1)
+    elif damage=='wrong_diluted_label':
+        text=text.replace('<td colspan="3">diluted (1)</td>',
+                          '<td colspan="3">adjusted diluted</td>',1)
+    elif damage=='duplicate_diluted_row':
+        duplicated=('<tr><td colspan="3">diluted (1)</td>'
+                    '<td colspan="30"></td></tr>')
+        text=text.replace('<tr><td colspan="3">weighted-average shares used in per share calculations:',
+                          duplicated+'<tr><td colspan="3">weighted-average shares used in per share calculations:',1)
+    elif damage=='foreign_non_gaap_statement':
+        text=text.replace('UNAUDITED (IN MILLIONS',
+                          'NON-GAAP UNAUDITED (IN MILLIONS')
+    with pytest.raises((ResearchRefused,ValueError)):
+        parse_earnings_exhibit(main,text,ref,issuer_name='BROADCOM INC.',now=NOW)
