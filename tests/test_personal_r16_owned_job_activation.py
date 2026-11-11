@@ -151,3 +151,67 @@ def test_no_financial_issuer_or_order_dispatch_port_in_retained_owner_class():
     assert '"paper_start_authorized": False' in source
     assert '"live_trading_authorized": False' in source
     assert R16_HEAD in gate.SCHEMA or gate.SCHEMA.startswith("ATLAS_R16_")
+
+
+def test_r16_shared_nonfinancial_owner_guard_uses_exact_type_and_finally(monkeypatch):
+    from scripts.observation_runtime import personal_activation_commission as activation
+    from scripts.observation_runtime import personal_r16_owned_job_activation as real
+    checks=[]
+    class DisposableOriginalHandle:
+        def require_exact_roster(self, *, qd, perp):
+            checks.append((qd,perp))
+            return True
+    monkeypatch.setattr(real, "RetainedSelectedR16OwnerJob", DisposableOriginalHandle)
+    fake=DisposableOriginalHandle()
+    qd={"lane":"STRUCTURAL_QD"}
+    perp={"lane":"STRUCTURAL_HL"}
+    with activation.retain_r16_nonfinancial_original_job(
+            qd=qd,perp=perp,owned_job=fake) as retained:
+        assert retained is fake
+    assert checks == [(qd,perp),(qd,perp)]
+    with pytest.raises(RuntimeError,match="DISPOSABLE_BODY_ERROR"):
+        with activation.retain_r16_nonfinancial_original_job(
+                qd=qd,perp=perp,owned_job=fake):
+            raise RuntimeError("DISPOSABLE_BODY_ERROR")
+    assert checks == [(qd,perp)]*4
+
+
+def test_r16_structural_owner_cannot_enter_financial_activation_publisher(monkeypatch):
+    from scripts.observation_runtime import personal_activation_commission as activation
+    from scripts.observation_runtime import personal_r16_owned_job_activation as real
+    checks=[]
+    class DisposableOriginalHandle:
+        def require_exact_roster(self, *, qd, perp):
+            checks.append((qd,perp))
+            return True
+    monkeypatch.setattr(real, "RetainedSelectedR16OwnerJob", DisposableOriginalHandle)
+    fake=DisposableOriginalHandle()
+    with pytest.raises(ValueError,match="ACTIVATION_R16_INDEPENDENT_FINANCIAL_LEASE_NOT_ACCEPTED"):
+        with activation.retain_activation_writer_guard(
+                qd={"readonly":"qd"},perp={"readonly":"hl"},
+                release_digest=ARTIFACT_DIGEST,owned_job=fake):
+            pytest.fail("R16_STRUCTURAL_JOB_CANNOT_YIELD_FINANCIAL_PUBLICATION")
+    assert len(checks)==2
+
+
+@pytest.mark.parametrize("foreign",[None,object(),{},123,False])
+def test_r16_shared_structural_guard_rejects_unowned_objects(foreign):
+    from scripts.observation_runtime.personal_activation_commission import (
+        retain_r16_nonfinancial_original_job,
+    )
+    with pytest.raises(ValueError,match="R16_NONFINANCIAL_EXACT_RETAINED_ORIGINAL_JOB_REQUIRED"):
+        with retain_r16_nonfinancial_original_job(qd={},perp={},owned_job=foreign):
+            pytest.fail("FOREIGN_OBJECT_CANNOT_PASS_R16_NATIVE_OWNER_GUARD")
+
+
+def test_r16_financial_guard_does_not_allow_untrusted_callers_to_claim_job(monkeypatch):
+    from scripts.observation_runtime import personal_activation_commission as activation
+    from scripts.observation_runtime import personal_native_writer_lifetime as legacy
+    def forbidden(*args, **kwargs):
+        pytest.fail("R16_FINANCE_MUST_NOT_REOPEN_PID_FROM_JSON")
+    monkeypatch.setattr(legacy,"retain_live_enrollment_writers",forbidden)
+    with pytest.raises(ValueError,match="ACTIVATION_R16_RETAINED_FINANCIAL_OWNER_JOB_NOT_YET_ACCEPTED"):
+        with activation.retain_activation_writer_guard(
+                qd={},perp={},release_digest=ARTIFACT_DIGEST,
+                owned_job=object()):
+            pytest.fail("R16_FOREIGN_JOB_MUST_NOT_ENTER")

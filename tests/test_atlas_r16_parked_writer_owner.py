@@ -41,6 +41,7 @@ def test_actual_selected_r16_original_job_holds_and_stops_twelve_empty_native_ro
     assert result["twelve_structural_roles_verified_under_original_retained_job"] is True
     assert result["retained_original_job_liveness_checked_three_times"] is True
     assert result["expired_retained_job_refused_after_stop"] is True
+    assert result["live_original_job_financial_activation_explicitly_refused"] is True
     assert result["financial_writer_roles_enrolled"]==0
     assert result["financial_account_files_created"]==0
     assert result["market_provider_requests"]==0
@@ -69,6 +70,7 @@ def test_actual_selected_r16_original_job_holds_and_stops_twelve_empty_native_ro
     ("twelve_structural_roles_verified_under_original_retained_job",False),
     ("retained_original_job_liveness_checked_three_times",False),
     ("expired_retained_job_refused_after_stop",False),
+    ("live_original_job_financial_activation_explicitly_refused",False),
     ("financial_writer_roles_enrolled",1),
     ("financial_account_files_created",1),
     ("market_provider_requests",1),
@@ -95,6 +97,7 @@ def test_native_job_report_never_promotes_financial_grants(field,value):
         "twelve_structural_roles_verified_under_original_retained_job":True,
         "retained_original_job_liveness_checked_three_times":True,
         "expired_retained_job_refused_after_stop":True,
+        "live_original_job_financial_activation_explicitly_refused":True,
         "financial_writer_roles_enrolled":0,
         "financial_account_files_created":0,
         "market_provider_requests":0,

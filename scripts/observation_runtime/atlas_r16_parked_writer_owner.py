@@ -86,6 +86,7 @@ def validate_result(row):
         "twelve_structural_roles_verified_under_original_retained_job",
         "retained_original_job_liveness_checked_three_times",
         "expired_retained_job_refused_after_stop",
+        "live_original_job_financial_activation_explicitly_refused",
         "financial_writer_roles_enrolled",
         "financial_account_files_created", "market_provider_requests",
         "paper_start_authorized", "live_trading_authorized",
@@ -109,7 +110,8 @@ def validate_result(row):
                 "owned_job_closed_before_return",
                 "twelve_structural_roles_verified_under_original_retained_job",
                 "retained_original_job_liveness_checked_three_times",
-                "expired_retained_job_refused_after_stop"))
+                "expired_retained_job_refused_after_stop",
+                "live_original_job_financial_activation_explicitly_refused"))
             or any(type(row[k]) is not int or row[k] != 0 for k in (
                 "financial_writer_roles_enrolled",
                 "financial_account_files_created",
@@ -270,17 +272,38 @@ def inspect():
             rosters[lane] = validator(candidate)
         qd, perp = rosters["QUALITY_DIPS"], rosters["HYPERLIQUID"]
         retained = RetainedSelectedR16OwnerJob(child=child, qd=qd, perp=perp)
-        for index in range(3):
-            if retained.require_exact_roster(qd=qd, perp=perp) is not True:
-                raise ValueError("R16_PARKED_ORIGINAL_RETAINED_JOB_ROSTER_CHANGED")
-            if index != 2:
-                time.sleep(.2)
-        held = retained.nonfinancial_handoff_readback()
-        if (held["twelve_structural_writer_roles_bound_to_same_process"] is not True
-                or held["twelve_original_empty_native_directory_identities_verified"] is not True
-                or held["financial_writer_lease_issued"] is not False
-                or held["paper_start_authorized"] is not False):
-            raise ValueError("R16_PARKED_NONFINANCIAL_OWNED_ROSTER_REFUSED")
+        from scripts.observation_runtime.personal_activation_commission import (
+            retain_r16_nonfinancial_original_job,
+            retain_activation_writer_guard,
+        )
+        with retain_r16_nonfinancial_original_job(
+                qd=qd, perp=perp, owned_job=retained) as observed_owner:
+            if observed_owner is not retained:
+                raise ValueError("R16_PARKED_ORIGINAL_GUARD_CHANGED_OWNER")
+            for index in range(3):
+                if retained.require_exact_roster(qd=qd, perp=perp) is not True:
+                    raise ValueError("R16_PARKED_ORIGINAL_RETAINED_JOB_ROSTER_CHANGED")
+                if index != 2:
+                    time.sleep(.2)
+            held = retained.nonfinancial_handoff_readback()
+            if (held["twelve_structural_writer_roles_bound_to_same_process"] is not True
+                    or held["twelve_original_empty_native_directory_identities_verified"] is not True
+                    or held["financial_writer_lease_issued"] is not False
+                    or held["paper_start_authorized"] is not False):
+                raise ValueError("R16_PARKED_NONFINANCIAL_OWNED_ROSTER_REFUSED")
+            # Even while the ORIGINAL Windows Job is alive, the real
+            # commission guard MUST refuse financial publication before
+            # any clock/ledger/market/provider is opened.
+            try:
+                with retain_activation_writer_guard(
+                        qd=qd, perp=perp, release_digest=ARTIFACT_DIGEST,
+                        owned_job=retained):
+                    raise ValueError("R16_FINANCIAL_ACTIVATION_UNEXPECTEDLY_GRANTED")
+            except ValueError as exc:
+                if str(exc) != "ACTIVATION_R16_INDEPENDENT_FINANCIAL_LEASE_NOT_ACCEPTED":
+                    raise
+            else:
+                raise ValueError("R16_FINANCIAL_ACTIVATION_GUARD_BYPASSED")
         # Cooperatively exit, then prove the actual original owned process
         # and Job drain. Never return any adoptable live PID/financial lease.
         k.SetEvent.argtypes = [wintypes.HANDLE]
@@ -332,6 +355,7 @@ def inspect():
             "twelve_structural_roles_verified_under_original_retained_job": True,
             "retained_original_job_liveness_checked_three_times": True,
             "expired_retained_job_refused_after_stop": True,
+            "live_original_job_financial_activation_explicitly_refused": True,
             "financial_writer_roles_enrolled": 0,
             "financial_account_files_created": 0,
             "market_provider_requests": 0,

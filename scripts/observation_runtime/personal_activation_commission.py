@@ -144,6 +144,27 @@ def verify_enrollment_native_roots(enrollment):
 
 
 @contextmanager
+def retain_r16_nonfinancial_original_job(*, qd, perp, owned_job):
+    """Guard real R16 structural rosters under original held Windows handles.
+
+    In-process observation ONLY, never an accepted financial writer lease,
+    issuer, operational clock, financial inception or activation permission.
+    Recheck in finally so an exception in the observed action cannot skip
+    the original process incarnation, Job and twelve-root verification.
+    """
+    from scripts.observation_runtime.personal_r16_owned_job_activation import (
+        RetainedSelectedR16OwnerJob,
+    )
+    if type(owned_job) is not RetainedSelectedR16OwnerJob:
+        raise ValueError('R16_NONFINANCIAL_EXACT_RETAINED_ORIGINAL_JOB_REQUIRED')
+    owned_job.require_exact_roster(qd=qd, perp=perp)
+    try:
+        yield owned_job
+    finally:
+        owned_job.require_exact_roster(qd=qd, perp=perp)
+
+
+@contextmanager
 def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None):
     """Use the original R15 Job+PROCESS HANDLE; never reopen its PID.
 
@@ -159,11 +180,19 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None):
     from scripts.observation_runtime.atlas_r16_selected_code_readback import (
         ARTIFACT_DIGEST as R16_ARTIFACT,
     )
-    # The R16 read-only parked Job is intentionally CLOSED before returning.
-    # It is neither a retained financial process nor a ledger/writer lease.
-    # No legacy PID-open path may adopt a release-digest-matching R16 process.
+    # The R16 structural owner guard checks an ORIGINAL live Job+PROCESS
+    # without reopening an enrolled PID. Even a genuine retained Job is NOT
+    # independently accepted financial lease/issuer/operator authority.
+    # There must be NO yield to the financial activation publisher here.
     if release_digest == R16_ARTIFACT:
-        raise ValueError('ACTIVATION_R16_RETAINED_FINANCIAL_OWNER_JOB_NOT_YET_ACCEPTED')
+        from scripts.observation_runtime.personal_r16_owned_job_activation import (
+            RetainedSelectedR16OwnerJob,
+        )
+        if type(owned_job) is not RetainedSelectedR16OwnerJob:
+            raise ValueError('ACTIVATION_R16_RETAINED_FINANCIAL_OWNER_JOB_NOT_YET_ACCEPTED')
+        with retain_r16_nonfinancial_original_job(
+                qd=qd, perp=perp, owned_job=owned_job):
+            raise ValueError('ACTIVATION_R16_INDEPENDENT_FINANCIAL_LEASE_NOT_ACCEPTED')
     if release_digest == R15_ARTIFACT:
         from scripts.observation_runtime.personal_r15_owned_job_activation import (
             RetainedSelectedR15OwnerJob,
