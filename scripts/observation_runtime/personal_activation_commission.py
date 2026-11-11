@@ -6,7 +6,10 @@ is inferred from commissioning scope or diagnostic data.
 """
 import argparse
 import json
+import math
 import ntpath
+import os
+import stat
 from pathlib import Path
 
 from scripts.observation_runtime.personal_activation_publisher import publish_personal_activation
@@ -26,6 +29,103 @@ from scripts.observation_runtime.personal_version_safe_release_clock import (
 from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
 from scripts.volume_inspector.windows_output import current_sid
 
+
+# File bounds apply before JSON parsing, native process retention, NTP sampling
+# or create-only operator activation. These are untrusted *input* files, never
+# native file-identity authority or a replacement for signed operator approval.
+INPUT_MAX_BYTES = {
+    'record': 65536,
+    'policy': 131072,
+    'accounts': 65536,
+    'quality_dips_enrollment': 131072,
+    'hyperliquid_enrollment': 131072,
+}
+
+
+def _unique_json_fields(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('ACTIVATION_DUPLICATE_JSON_INPUT_FIELD')
+        result[key] = value
+    return result
+
+
+def _finite_json_float(raw):
+    number = float(raw)
+    if not math.isfinite(number):
+        raise ValueError('ACTIVATION_NONFINITE_JSON_NUMBER')
+    return number
+
+
+def _limit_json_nesting(text, maximum=64):
+    # Avoid letting deeply nested but small JSON exhaust the interpreter.
+    # Brackets inside quoted strings, including escaped quotes, are not nodes.
+    depth = 0
+    quoted = escaped = False
+    for char in text:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif char == '\\':
+                escaped = True
+            elif char == '"':
+                quoted = False
+        elif char == '"':
+            quoted = True
+        elif char in '{[':
+            depth += 1
+            if depth > maximum:
+                raise ValueError('ACTIVATION_JSON_INPUT_NESTING_LIMIT')
+        elif char in '}]':
+            depth -= 1
+            if depth < 0:
+                raise ValueError('ACTIVATION_JSON_INPUT_NESTING_MALFORMED')
+
+
+def read_bounded_activation_input(path, *, role):
+    """Ordinary existing JSON only, bounded and exact; never reads credentials.
+
+    No input JSON may manufacture native file identity, finance acceptance,
+    account enrollment or provider rights. Caller must still verify all those.
+    """
+    if (type(role) is not str or role not in INPUT_MAX_BYTES
+            or type(path) is not str or not path or '\x00' in path):
+        raise ValueError('ACTIVATION_EXPLICIT_JSON_INPUT_PATH_REQUIRED')
+    item = Path(path)
+    if (not item.is_file() or item.is_symlink() or item.is_junction()):
+        raise ValueError('ACTIVATION_ORDINARY_JSON_INPUT_REQUIRED:' + role)
+    limit = INPUT_MAX_BYTES[role]
+    try:
+        # Reading through a single opened handle limits TOCTOU path retargets.
+        # This is NOT a signed native readback, authorization or anti-admin ACL.
+        with item.open('rb') as stream:
+            before = os.fstat(stream.fileno())
+            if not stat.S_ISREG(before.st_mode) or not 0 < before.st_size <= limit:
+                raise ValueError('ACTIVATION_BOUNDED_JSON_INPUT_REQUIRED:' + role)
+            raw = stream.read(limit + 1)
+            after = os.fstat(stream.fileno())
+            if (not 0 < len(raw) <= limit or len(raw) != before.st_size
+                    or after.st_size != before.st_size
+                    or after.st_mtime_ns != before.st_mtime_ns):
+                raise ValueError('ACTIVATION_JSON_INPUT_CHANGED_DURING_READ:' + role)
+    except (OSError, OverflowError) as exc:
+        raise ValueError('ACTIVATION_JSON_INPUT_UNAVAILABLE:' + role) from exc
+    try:
+        decoded = raw.decode('utf-8-sig')
+        _limit_json_nesting(decoded)
+        value = json.loads(
+            decoded,
+            object_pairs_hook=_unique_json_fields,
+            parse_float=_finite_json_float,
+            parse_constant=lambda bad: (_ for _ in ()).throw(
+                ValueError('ACTIVATION_NONFINITE_JSON_CONSTANT')),
+        )
+    except (UnicodeError, ValueError, TypeError, RecursionError) as exc:
+        raise ValueError('ACTIVATION_STRICT_JSON_INPUT_REFUSED:' + role) from exc
+    if type(value) is not dict:
+        raise ValueError('ACTIVATION_JSON_OBJECT_REQUIRED:' + role)
+    return value
 
 
 def verify_enrollment_native_roots(enrollment):
@@ -71,9 +171,9 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             raise ValueError('EXACT_VERSION_SAFE_NATIVE_NTP_SOURCE_REQUIRED')
     elif clock_profile != "WINDOWS_TIME_OPERATOR_CLOCK_V4":
         raise ValueError('UNREVIEWED_ACTIVATION_CLOCK_PROFILE')
-    record = json.loads(Path(record_path).read_text(encoding='utf-8'))
-    policy = json.loads(Path(policy_path).read_text(encoding='utf-8'))
-    accounts = json.loads(Path(accounts_path).read_text(encoding='utf-8'))
+    record = read_bounded_activation_input(record_path, role='record')
+    policy = read_bounded_activation_input(policy_path, role='policy')
+    accounts = read_bounded_activation_input(accounts_path, role='accounts')
     if (type(record) is not dict or type(accounts) is not dict
             or set(accounts) != {'HYPERLIQUID', 'QUALITY_DIPS'}
             or any(type(v) is not str or len(v) != 64
@@ -87,8 +187,10 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
     from app.services.quality_dips_autonomous_enrollment import validate_enrollment as qd_validate
     from app.services.perp_operational_contract import validate_enrollment as perp_validate
     from app.services.paper_financial_replay import digest as enrollment_digest
-    qd = qd_validate(json.loads(Path(qd_enrollment_path).read_text(encoding='utf-8')))
-    perp = perp_validate(json.loads(Path(perp_enrollment_path).read_text(encoding='utf-8')))
+    qd = qd_validate(read_bounded_activation_input(
+        qd_enrollment_path, role='quality_dips_enrollment'))
+    perp = perp_validate(read_bounded_activation_input(
+        perp_enrollment_path, role='hyperliquid_enrollment'))
     if (accounts != {'QUALITY_DIPS': enrollment_digest(qd),
                      'HYPERLIQUID': enrollment_digest(perp)}
             or qd['release_digest'] != release_digest
