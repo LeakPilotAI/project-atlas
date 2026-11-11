@@ -429,6 +429,26 @@ def inspect_avgo_split_only_history(*, cache_root=CACHE_ROOT, now=None):
     if not {"2024-07-12", event["ex_date"]} <= {
             str(r[1]) for r in raw_rows}:
         raise ValueError("QD_AVGO_SPLIT_EXDATE_SESSIONS_MISSING")
+    # Exact official provider calendar interval must cover every returned bar
+    # and contain NO omitted or extra completed trading sessions. A provider
+    # calendar is not an independent exchange or legal-data-rights certificate.
+    from app.investment.free_research_providers import calendar_sessions
+
+    calendar_url = ("https://paper-api.alpaca.markets/v2/calendar?"
+                    + urlencode({"start": bounds[0], "end": bounds[1]}))
+    calendar_bytes, calendar_sha = _cached(cache_root, calendar_url,
+                                          "ALPACA_BASIC_IEX", now=now,
+                                          max_bytes=2_000_000)
+    sessions = calendar_sessions(decode(calendar_bytes))
+    expected = {day for day, (opened, closed) in sessions.items()
+                if bounds[0] <= str(day) < bounds[1]
+                and opened < closed <= now}
+    actual = {row[1] for row in raw_rows}
+    if (not expected or expected != actual
+            or len(raw_rows) != len(expected)
+            or len(expected) > 1600
+            or any(not bounds[0] <= str(day) < bounds[1] for day in sessions)):
+        raise ValueError("QD_AVGO_SPLIT_PROVIDER_CALENDAR_COVERAGE_REFUSED")
     return {
         "schema": "ATLAS_AVGO_SEC_SPLIT_ONLY_PRICE_PAIR_REPLAY_V1",
         "status": "RETURNED_PROVIDER_RAW_AND_SPLIT_PRICE_PAIRS_CORROBORATED",
@@ -452,6 +472,9 @@ def inspect_avgo_split_only_history(*, cache_root=CACHE_ROOT, now=None):
         "last_returned_session": str(raw_rows[-1][1]),
         "maximum_split_adjustment_rounding_difference_usd": str(maximum_difference),
         "returned_provider_sessions_match": True,
+        "provider_calendar_sha256": calendar_sha,
+        "provider_calendar_expected_completed_sessions": len(expected),
+        "provider_calendar_session_coverage_verified": True,
         "complete_exchange_calendar_sessions_verified": False,
         "all_corporate_actions_covered": False,
         "provider_price_data_rights_accepted": False,

@@ -382,6 +382,13 @@ def _synthetic_avgo_raw_split_history(tmp_path):
         },
         'next_page_token':None,
     },provider='ALPACA_BASIC_IEX')
+    calendar_query={'start':'2021-11-03','end':'2026-11-07'}
+    calendar_url=('https://paper-api.alpaca.markets/v2/calendar?'
+                  +urlencode(calendar_query))
+    store(tmp_path,calendar_url,[
+        {'date':day,'open':'09:30','close':'16:00'}
+        for day in days
+    ],provider='ALPACA_BASIC_IEX')
     return sources
 
 
@@ -505,5 +512,49 @@ def test_original_sec_alpaca_split_corporate_action_refuses_tampering(tmp_path,d
             receipt['raw']=json.dumps(actions,sort_keys=True)
             receipt['sha256']=hashlib.sha256(receipt['raw'].encode()).hexdigest()
         path.write_text(json.dumps(receipt,sort_keys=True),encoding='utf-8')
+    with pytest.raises((ValueError,ResearchRefused,OSError)):
+        replay.inspect_avgo_split_only_history(cache_root=tmp_path,now=NOW)
+
+
+@pytest.mark.parametrize('damage',[
+    'calendar_missing_cache','calendar_wrong_provider','calendar_hash_tamper',
+    'calendar_missing_session','calendar_extra_session','calendar_duplicate_session',
+    'calendar_weekend_session','calendar_outside_requested_window',
+    'calendar_reversed_hours','calendar_invalid_date',
+])
+def test_avgo_split_provider_calendar_must_cover_exact_daily_bar_sessions(tmp_path,damage):
+    from urllib.parse import urlencode
+
+    _synthetic_avgo_raw_split_history(tmp_path)
+    url=('https://paper-api.alpaca.markets/v2/calendar?'
+         +urlencode({'start':'2021-11-03','end':'2026-11-07'}))
+    path=tmp_path/(hashlib.sha256(url.encode()).hexdigest()+'.json')
+    if damage=='calendar_missing_cache':
+        path.unlink()
+    else:
+        record=json.loads(path.read_text(encoding='utf-8'))
+        rows=json.loads(record['raw'])
+        if damage=='calendar_wrong_provider':
+            record['provider']='SEC_EDGAR'
+        elif damage=='calendar_hash_tamper':
+            record['sha256']='f'*64
+        elif damage=='calendar_missing_session':
+            rows.pop(1)
+        elif damage=='calendar_extra_session':
+            rows.append({'date':'2024-07-17','open':'09:30','close':'16:00'})
+        elif damage=='calendar_duplicate_session':
+            rows.append(deepcopy(rows[-1]))
+        elif damage=='calendar_weekend_session':
+            rows.append({'date':'2024-07-13','open':'09:30','close':'16:00'})
+        elif damage=='calendar_outside_requested_window':
+            rows.append({'date':'2021-11-02','open':'09:30','close':'16:00'})
+        elif damage=='calendar_reversed_hours':
+            rows[0]['open']='17:00'
+        elif damage=='calendar_invalid_date':
+            rows[0]['date']='2024-BAD'
+        if damage not in ('calendar_wrong_provider','calendar_hash_tamper'):
+            record['raw']=json.dumps(rows,sort_keys=True)
+            record['sha256']=hashlib.sha256(record['raw'].encode()).hexdigest()
+        path.write_text(json.dumps(record,sort_keys=True),encoding='utf-8')
     with pytest.raises((ValueError,ResearchRefused,OSError)):
         replay.inspect_avgo_split_only_history(cache_root=tmp_path,now=NOW)
