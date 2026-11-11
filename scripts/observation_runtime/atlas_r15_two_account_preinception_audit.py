@@ -9,6 +9,7 @@ create or certify a native financial epoch, report, writer, source or account.
 import json
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from app.services.paper_financial_audit import audit_financial_events
@@ -17,6 +18,15 @@ from app.services.paper_financial_replay import (
 )
 from app.services.paper_daily_report import (
     audit_daily_report, build_daily_report, validate_scope,
+)
+from app.services.personal_paper_runtime import (
+    PROFILE as PERSONAL_PROFILE, validate_policy,
+)
+from app.services.quality_dips_autonomous_enrollment import (
+    WRITERS as QD_WRITER_ROLES,
+)
+from app.services.perp_operational_contract import (
+    WRITERS as PERP_WRITER_ROLES,
 )
 from scripts.observation_runtime.atlas_r15_two_account_enrollment_handoff import (
     inspect as inspect_handoff,
@@ -31,7 +41,10 @@ from scripts.observation_runtime.personal_existing_native_resource_evidence impo
 SCHEMA = "ATLAS_R15_TWO_LANE_FINANCIAL_ARITHMETIC_BEFORE_INCEPTION_V1"
 
 
-def evaluate(*, proposal, roots, observed_at):
+def evaluate(*, proposal, roots, observed_at, personal_policy):
+    # The source-integration policy is the exact local personal PAPER policy,
+    # not a financial activation record or a substitute for native ownership.
+    policy = validate_policy(personal_policy)
     if (type(observed_at) is not int or observed_at <= 0
             or type(proposal) is not dict
             or proposal.get("schema") !=
@@ -107,6 +120,28 @@ def evaluate(*, proposal, roots, observed_at):
             keys.add(tuple(native["native_id"]))
         validate_manifest(m)
         validate_scope(scope,m)
+        role_contract = QD_WRITER_ROLES if lane == "QUALITY_DIPS" else PERP_WRITER_ROLES
+        if (type(role_contract) is not tuple or len(set(role_contract)) != len(role_contract)
+                or len(role_contract) != (5 if lane == "QUALITY_DIPS" else 7)
+                or policy.get("profile_id") != PERSONAL_PROFILE
+                or enrollment.get("profile") != "AUTONOMOUS_PAPER_ONLY_V1"
+                or m.get("initial_net_r") != "0"
+                or item.get("opened_at_is_historical_stale_not_new_inception") is not True):
+            raise ValueError("R15_PREINCEPTION_OPERATOR_POLICY_OR_REQUIRED_WRITER_ROSTER_REFUSED")
+        policy_account = policy["accounts"][lane]
+        if (lane == "QUALITY_DIPS" and (
+                m.get("provenance") != "ACCEPTED_AUTONOMOUS_PAPER_PARAMETERS_V1"
+                or enrollment.get("policy_digest") != digest(m.get("autonomous_policy"))
+                or m.get("fees_bps") != policy_account.get("fee_bps_per_side")
+                or m.get("slippage_bps") != policy_account.get("slippage_bps_per_side"))
+                or lane == "HYPERLIQUID" and (
+                    m.get("provenance") != "ACCEPTED_PERP_PAPER_PARAMETERS_V1"
+                    or enrollment.get("policy_digest") != digest(m.get("perp_policy"))
+                    or not set(m["perp_policy"]["symbols"]) <= set(policy_account["universe"])
+                    or Decimal(m["perp_policy"]["risk_limit"]) > Decimal("1")
+                    or m["perp_policy"]["max_positions"] > 3
+                    or Decimal(m["perp_policy"]["session_stop"]) > Decimal("-3"))):
+            raise ValueError("R15_PREINCEPTION_ACTUAL_OPERATOR_ACCOUNT_POLICY_CONFLICT")
         if ((lane=="QUALITY_DIPS" and (
                 m.get("schema")!="PAPER_EPOCH_AUTONOMOUS_QD_V1"
                 or m.get("currency")!="USD"
@@ -162,6 +197,10 @@ def evaluate(*, proposal, roots, observed_at):
             "native_initial_financial_ledger_accepted":False,
             "financial_account_inception_published":False,
             "real_writer_enrollment":False,
+            "required_writer_roles_not_enrolled":list(role_contract),
+            "required_writer_role_count":len(role_contract),
+            "operator_source_policy_binding_verified":True,
+            "operator_policy_is_activation_authority":False,
             "paper_order_authorized":False,
         }
     if len(keys)!=12 or len(ids)!=2 or len(epochs)!=2:
@@ -172,6 +211,8 @@ def evaluate(*, proposal, roots, observed_at):
         "accounts":accounts,
         "separate_simulated_usd_and_usdc_balances":True,
         "cash_netting_or_exchange_conversion_performed":False,
+        "approved_source_integration_policy_structurally_verified":True,
+        "total_required_actual_writer_roles_not_enrolled":len(QD_WRITER_ROLES)+len(PERP_WRITER_ROLES),
         "hypothetical_unpublished_report_count":2,
         "unapproved_historical_inception_timestamps_must_be_replaced":True,
         "operator_activation_accepted":False,
@@ -189,9 +230,11 @@ def evaluate(*, proposal, roots, observed_at):
 
 def inspect(*, observed_at=None):
     now=int(datetime.now(UTC).timestamp()) if observed_at is None else observed_at
+    source_policy = Path(__file__).resolve().parents[2] / "docs/ATLAS_PERSONAL_PAPER_RELEASE_POLICY.json"
     return evaluate(proposal=inspect_handoff(),
                     roots=inspect_two_lane_native_roots(),
-                    observed_at=now)
+                    observed_at=now,
+                    personal_policy=json.loads(source_policy.read_text(encoding="utf-8-sig")))
 
 
 if __name__=="__main__":
