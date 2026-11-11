@@ -634,6 +634,258 @@ def inspect_avgo_original_eps_split_basis(*, cache_root=CACHE_ROOT, now=None):
     return reconcile_avgo_original_eps_split_basis(quarters, split)
 
 
+def assess_avgo_split_research_multiples(quarter_chain, split_proof, session_prices, *, now):
+    """Independent read-only diagnostic; NEVER a financial valuation publisher.
+
+    Requires exactly fifteen independently documented consecutive as-reported
+    quarters, explicitly derived post-split EPS and matching split-only
+    sessions. Prices are measured after every trailing quarter is published.
+    Existing HistoricalEarningsMultipleV1 5..60x cap is reported, not relaxed.
+    """
+    from bisect import bisect_right
+    from datetime import date, timedelta
+
+    if (type(quarter_chain) is not dict
+            or quarter_chain.get("schema") !=
+                "ATLAS_AVGO_15_ORIGINAL_SEC_QUARTERS_AND_SPLIT_ONLY_RESEARCH_V1"
+            or quarter_chain.get("symbol") != "AVGO"
+            or quarter_chain.get("cik") != "0001730168"
+            or quarter_chain.get("source_origin_documents") != 15
+            or quarter_chain.get("quarterly_original_documents_consecutive") is not True
+            or quarter_chain.get("original_sec_reporting_values_preserved") is not True
+            or quarter_chain.get("split_adjusted_equivalents_derived_not_sec_reported") is not True
+            or quarter_chain.get("actual_valuation_anchors_accepted") != 0
+            or quarter_chain.get("price_to_eps_historical_multiple_approved") is not False
+            or quarter_chain.get("provider_data_rights_accepted") is not False
+            or quarter_chain.get("financial_paper_start_authorized") is not False
+            or quarter_chain.get("real_money_trading_authorized") is not False
+            or type(split_proof) is not dict
+            or split_proof.get("schema") !=
+                "ATLAS_AVGO_SEC_SPLIT_ONLY_PRICE_PAIR_REPLAY_V1"
+            or split_proof.get("provider_calendar_session_coverage_verified") is not True
+            or split_proof.get("provider_original_split_event_corroborated") is not True
+            or split_proof.get("sec_original_new_shares_per_old_share") != 10
+            or split_proof.get("sec_original_split_date") != "2024-07-12"
+            or split_proof.get("matching_returned_daily_bar_count") != 1258
+            or split_proof.get("provider_price_data_rights_accepted") is not False
+            or split_proof.get("financial_paper_order_authorized") is not False
+            or quarter_chain.get("original_split_sha256") !=
+                split_proof.get("sec_original_split_sha256")
+            or quarter_chain.get("alpaca_calendar_sha256") !=
+                split_proof.get("provider_calendar_sha256")
+            or quarter_chain.get("alpaca_split_corporate_action_sha256") !=
+                split_proof.get("provider_corporate_action_sha256")):
+        raise ValueError("QD_AVGO_RESEARCH_SPLIT_AND_ORIGIN_PROOFS_REQUIRED")
+    quarters = quarter_chain.get("original_sec_quarters")
+    windows = quarter_chain.get("possible_unapproved_trailing_four_quarter_research_windows")
+    if (type(quarters) is not list or len(quarters) != 15
+            or type(windows) is not list or len(windows) != 12
+            or type(session_prices) is not dict or len(session_prices) != 1258):
+        raise ValueError("QD_AVGO_RESEARCH_COMPLETE_15_Q_AND_1258_PRICES_REQUIRED")
+    now_date = now.date()
+    last_end = None
+    previous_publication = None
+    eps_values = []
+    accession_keys = set()
+    original_hashes = []
+    split_day = date(2024, 7, 12)
+    for i, q in enumerate(quarters):
+        if (type(q) is not dict
+                or q.get("original_form") not in ("10-Q", "8-K")
+                or type(q.get("original_evidence_sha256")) is not str
+                or re.fullmatch("[0-9a-f]{64}", q["original_evidence_sha256"]) is None
+                or type(q.get("accession")) is not str
+                or not re.fullmatch(r"0001730168-\d{2}-\d{6}", q["accession"])
+                or q["accession"] in accession_keys):
+            raise ValueError("QD_AVGO_RESEARCH_QUARTER_ORIGINAL_IDENTITY_REFUSED")
+        accession_keys.add(q["accession"])
+        original_hashes.append(q["original_evidence_sha256"])
+        try:
+            start, end, filed = (
+                date.fromisoformat(q[k]) for k in (
+                    "period_start", "period_end", "original_sec_filing_date"))
+            reported = Decimal(q["as_reported_diluted_eps"])
+            reported_shares = Decimal(q["as_reported_diluted_shares"])
+            equivalent = Decimal(q["research_derived_post_split_equivalent_eps"])
+            eq_shares = Decimal(q["research_derived_post_split_equivalent_shares"])
+        except (ValueError, TypeError, KeyError, InvalidOperation):
+            raise ValueError("QD_AVGO_RESEARCH_QUARTER_NUMERIC_OR_DATE_REFUSED") from None
+        factor = 10 if filed < split_day else 1
+        if (q.get("applied_research_conversion_factor") != factor
+                or not all(v.is_finite() for v in (
+                    reported, reported_shares, equivalent, eq_shares))
+                or reported_shares <= 0 or reported_shares != reported_shares.to_integral_value()
+                or equivalent != reported / factor
+                or eq_shares != reported_shares * factor
+                or not Decimal(3_000_000_000) < eq_shares < Decimal(6_000_000_000)
+                or not 70 <= (end - start).days+1 <= 110
+                or filed < end or filed > now_date
+                or last_end is not None and start != last_end + timedelta(days=1)
+                or previous_publication is not None and filed <= previous_publication
+                or (i % 4 == 3) != (q["original_form"] == "8-K")):
+            raise ValueError("QD_AVGO_RESEARCH_PERIOD_SPLIT_OR_PUBLISH_ORDER_REFUSED")
+        last_end = end
+        previous_publication = filed
+        eps_values.append(equivalent)
+    if (quarters[0]["period_start"] != "2022-10-31"
+            or quarters[-1]["period_end"] != "2026-08-02"
+            or quarter_chain.get("first_period_start") != "2022-10-31"
+            or quarter_chain.get("last_period_end") != "2026-08-02"):
+        raise ValueError("QD_AVGO_RESEARCH_QUARTER_CHAIN_SPAN_REFUSED")
+    parsed_prices = {}
+    for d, value in session_prices.items():
+        if type(d) is not str:
+            raise ValueError("QD_AVGO_RESEARCH_PRICE_DATE_REFUSED")
+        try:
+            day = date.fromisoformat(d)
+            px = Decimal(str(value))
+        except (ValueError, TypeError, InvalidOperation):
+            raise ValueError("QD_AVGO_RESEARCH_PRICE_VALUE_REFUSED") from None
+        if (day in parsed_prices or not px.is_finite() or px <= 0
+                or day < date(2021, 11, 3) or day > now_date):
+            raise ValueError("QD_AVGO_RESEARCH_PRICE_SCOPE_REFUSED")
+        parsed_prices[day] = px
+    session_dates = sorted(parsed_prices)
+    observations = []
+    for i in range(3, len(quarters)):
+        segment = quarters[i-3:i+1]
+        cut = max(date.fromisoformat(q["original_sec_filing_date"]) for q in segment)
+        j = bisect_right(session_dates, cut)
+        if j == len(session_dates):
+            raise ValueError("QD_AVGO_RESEARCH_NEXT_SESSION_MISSING")
+        day = session_dates[j]
+        if (day - cut).days > 7 or day > now_date:
+            raise ValueError("QD_AVGO_RESEARCH_PUBLICATION_TO_PRICE_LAG")
+        trailing = sum(eps_values[i-3:i+1], Decimal(0))
+        if trailing <= 0:
+            raise ValueError("QD_AVGO_RESEARCH_NEGATIVE_TRAILING_EPS_REFUSED")
+        expected_window = windows[i-3]
+        if (type(expected_window) is not dict
+                or expected_window.get("period_end") != segment[-1]["period_end"]
+                or Decimal(expected_window.get(
+                    "derived_four_quarter_eps_on_split_comparable_basis", "NaN")) != trailing):
+            raise ValueError("QD_AVGO_RESEARCH_TTM_EPS_CORROBORATION_REFUSED")
+        multiple = parsed_prices[day] / trailing
+        observations.append({
+            "original_sec_report_end": segment[-1]["period_end"],
+            "last_required_sec_publication": str(cut),
+            "first_following_completed_iex_session": str(day),
+            "split_only_iex_close_usd": str(parsed_prices[day]),
+            "derived_split_equivalent_trailing_eps_usd": str(trailing),
+            "observed_derived_pe_multiple": str(multiple),
+            "within_existing_v1_5_to_60_multiple_bounds":
+                Decimal(5) <= multiple <= Decimal(60),
+        })
+    span_start = date.fromisoformat(observations[0]["original_sec_report_end"])
+    span_end = date.fromisoformat(observations[-1]["original_sec_report_end"])
+    months = (span_end.year-span_start.year)*12+span_end.month-span_start.month
+    if len(observations) != 12 or months < 33:
+        raise ValueError("QD_AVGO_RESEARCH_ANCHOR_SPAN_REFUSED")
+    noncompliant = [r for r in observations if not
+                    r["within_existing_v1_5_to_60_multiple_bounds"]]
+    return {
+        "schema": "ATLAS_AVGO_SPLIT_AWARE_HISTORICAL_PE_DIAGNOSTIC_V1",
+        "status": ("RESEARCH_VALUATION_REFUSED_EXISTING_MULTIPLE_LIMITS"
+                   if noncompliant else "RESEARCH_OBSERVATIONS_WITHIN_BOUNDS_ONLY"),
+        "original_sec_evidence_count": 15,
+        "hypothetical_trailing_earnings_observations": len(observations),
+        "observations_exceeding_existing_v1_pe_bounds": len(noncompliant),
+        "historical_v1_pe_bounds": ["5", "60"],
+        "min_observed_pe": str(min(Decimal(r["observed_derived_pe_multiple"]) for r in observations)),
+        "max_observed_pe": str(max(Decimal(r["observed_derived_pe_multiple"]) for r in observations)),
+        "observations": observations,
+        "original_sec_filing_hashes": original_hashes,
+        "original_reporting_retained": True,
+        "published_at_or_before_historical_trade_day": True,
+        "financial_valuation_anchors_approved": 0,
+        "data_rights_accepted": False,
+        "native_source_issuer_accepted": False,
+        "financial_paper_authorized": False,
+        "live_trading_authorized": False,
+        "research_only": True,
+        "network_requests": 0,
+    }
+
+
+def inspect_avgo_split_research_valuation(*, cache_root=CACHE_ROOT,
+                                          now=None):
+    """No-network original-source pinned AVGO P/E diagnostic. No issuer authority.
+
+    Pinning a previously independently corroborated SEC quarter receipt guards
+    against silently substituting new EPS or altering archived GAAP facts.
+    Split-only bars and SEC action/calendar are freshly checked from cache.
+    """
+    from urllib.parse import urlencode
+    from app.investment.free_research_transport import decode
+    from app.investment.market_hours import ET
+
+    now = datetime.now(UTC) if now is None else now
+    root = Path(cache_root)
+    evidence = (root.parent / "qd-original-sec-quarter-corroboration"
+                / "direct-sec-avgo-15-original-quarters-split-comparable-research-20261110.json")
+    if (not evidence.is_file() or evidence.is_symlink()
+            or evidence.is_junction() or not 0 < evidence.stat().st_size < 20000):
+        raise ValueError("QD_AVGO_RESEARCH_PINNED_ORIGINAL_EVIDENCE_MISSING")
+    document = evidence.read_bytes()
+    original_digest = hashlib.sha256(document).hexdigest()
+    if original_digest != (
+            "377c62672367aa3b83e4b6118eb6be928a7f7e311bf48aac1a3400a52cf163a2"):
+        raise ValueError("QD_AVGO_RESEARCH_ORIGINAL_SEC_CHAIN_PIN_MISMATCH")
+    chain = decode(document)
+    split_proof = inspect_avgo_split_only_history(cache_root=root, now=now)
+    query = {"feed": "iex", "timeframe": "1Day", "adjustment": "split",
+             "sort": "asc", "start": "2021-11-03", "end": "2026-11-07",
+             "limit": 1000}
+    prices = {}
+    source_hashes = []
+    seen_tokens = set()
+    for i in range(3):
+        url = ("https://data.alpaca.markets/v2/stocks/AVGO/bars?"
+               + urlencode(query))
+        data, sha = _cached(root, url, "ALPACA_BASIC_IEX",
+                            now=now, max_bytes=4*1024*1024)
+        packet = decode(data)
+        if (type(packet) is not dict
+                or set(packet) != {"symbol", "bars", "next_page_token"}
+                or packet["symbol"] != "AVGO"
+                or type(packet["bars"]) is not list
+                or not 1 <= len(packet["bars"]) <= 1000):
+            raise ValueError("QD_AVGO_RESEARCH_SPLIT_ONLY_PAGE_REFUSED")
+        source_hashes.append(sha)
+        for row in packet["bars"]:
+            if type(row) is not dict or type(row.get("t")) is not str:
+                raise ValueError("QD_AVGO_RESEARCH_BAR_SECURITY_REFUSED")
+            # Verify exact UTC midnight mapped to the provider's ET session.
+            stamp = datetime.fromisoformat(row["t"])
+            if stamp.tzinfo is None or stamp.utcoffset() is None:
+                raise ValueError("QD_AVGO_RESEARCH_DAILY_BAR_UTC_REQUIRED")
+            local = stamp.astimezone(ET)
+            if local.hour or local.minute or local.second:
+                raise ValueError("QD_AVGO_RESEARCH_DAILY_BAR_ET_TIME")
+            day = str(local.date())
+            if day in prices:
+                raise ValueError("QD_AVGO_RESEARCH_DUPLICATE_SPLIT_SESSION")
+            prices[day] = str(row["c"])
+        token = packet["next_page_token"]
+        if token is None:
+            break
+        if (type(token) is not str or not 0 < len(token) <= 2048
+                or token in seen_tokens or i == 2):
+            raise ValueError("QD_AVGO_RESEARCH_SPLIT_PAGINATION_REFUSED")
+        seen_tokens.add(token)
+        query["page_token"] = token
+    else:
+        raise ValueError("QD_AVGO_RESEARCH_SPLIT_PAGES_INCOMPLETE")
+    if (source_hashes !=
+            split_proof["source_content_sha256_by_adjustment"]["split"]):
+        raise ValueError("QD_AVGO_RESEARCH_SPLIT_SOURCE_HASH_MISMATCH")
+    result = assess_avgo_split_research_multiples(
+        chain, split_proof, prices, now=now)
+    result["original_sec_chain_receipt_sha256"] = original_digest
+    result["alpaca_split_only_bar_source_hashes"] = source_hashes
+    return result
+
+
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--symbol",required=True)

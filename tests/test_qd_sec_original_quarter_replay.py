@@ -693,3 +693,179 @@ def test_avgo_original_split_eps_basis_never_silently_accepts_bad_facts(damage):
     elif damage=='no_negative_original_loss':quarters[2]['diluted_eps_usd']='0.40'
     with pytest.raises(ValueError):
         replay.reconcile_avgo_original_eps_split_basis(quarters,proof)
+
+
+def _synthetic_avgo_15_q_split_research_multiples():
+    """Pure arithmetic fixtures: never represent an independently signed issuer."""
+    from datetime import date,timedelta
+    from decimal import Decimal
+
+    ends=[
+        '2023-01-29','2023-04-30','2023-07-30','2023-10-29',
+        '2024-02-04','2024-05-05','2024-08-04','2024-11-03',
+        '2025-02-02','2025-05-04','2025-08-03','2025-11-02',
+        '2026-02-01','2026-05-03','2026-08-02',
+    ]
+    filings=[
+        '2023-03-08','2023-06-07','2023-09-06','2023-12-07',
+        '2024-03-14','2024-06-13','2024-09-11','2024-12-12',
+        '2025-03-12','2025-06-11','2025-09-10','2025-12-11',
+        '2026-03-11','2026-06-09','2026-09-10',
+    ]
+    quarters=[]
+    start=date(2022,10,31)
+    for i,(end,filing) in enumerate(zip(ends,filings,strict=True)):
+        factor=10 if i<6 else 1
+        quarters.append({
+            'period_start':str(start),'period_end':end,
+            'original_sec_filing_date':filing,
+            'original_form':'8-K' if i%4==3 else '10-Q',
+            'accession':'0001730168-'+filing[2:4]+'-'+str(i+1).zfill(6),
+            'original_evidence_sha256':str(i%10)*64,
+            'as_reported_diluted_eps':str(factor),
+            'as_reported_diluted_shares':str(4_500_000_000//factor),
+            'research_derived_post_split_equivalent_eps':'1',
+            'research_derived_post_split_equivalent_shares':'4500000000',
+            'applied_research_conversion_factor':factor,
+        })
+        start=date.fromisoformat(end)+timedelta(days=1)
+    windows=[
+        {'period_end':quarters[i]['period_end'],
+         'derived_four_quarter_eps_on_split_comparable_basis':'4'}
+        for i in range(3,15)
+    ]
+    chain={
+        'schema':'ATLAS_AVGO_15_ORIGINAL_SEC_QUARTERS_AND_SPLIT_ONLY_RESEARCH_V1',
+        'symbol':'AVGO','cik':'0001730168',
+        'source_origin_documents':15,
+        'quarterly_original_documents_consecutive':True,
+        'original_sec_reporting_values_preserved':True,
+        'split_adjusted_equivalents_derived_not_sec_reported':True,
+        'actual_valuation_anchors_accepted':0,
+        'price_to_eps_historical_multiple_approved':False,
+        'provider_data_rights_accepted':False,
+        'financial_paper_start_authorized':False,
+        'real_money_trading_authorized':False,
+        'original_split_sha256':'a'*64,
+        'alpaca_calendar_sha256':'b'*64,
+        'alpaca_split_corporate_action_sha256':'c'*64,
+        'first_period_start':'2022-10-31','last_period_end':'2026-08-02',
+        'original_sec_quarters':quarters,
+        'possible_unapproved_trailing_four_quarter_research_windows':windows,
+    }
+    split={
+        'schema':'ATLAS_AVGO_SEC_SPLIT_ONLY_PRICE_PAIR_REPLAY_V1',
+        'sec_original_split_date':'2024-07-12',
+        'sec_original_new_shares_per_old_share':10,
+        'provider_calendar_session_coverage_verified':True,
+        'provider_original_split_event_corroborated':True,
+        'matching_returned_daily_bar_count':1258,
+        'provider_price_data_rights_accepted':False,
+        'financial_paper_order_authorized':False,
+        'sec_original_split_sha256':'a'*64,
+        'provider_calendar_sha256':'b'*64,
+        'provider_corporate_action_sha256':'c'*64,
+    }
+    start=date(2021,11,3);end=date(2026,11,7)
+    sessions=[];cursor=start
+    while cursor<end:
+        if cursor.weekday()<5:sessions.append(cursor)
+        cursor+=timedelta(days=1)
+    # Synthetic observed days; this fixture does NOT certify exchange holidays.
+    sessions=sessions[-1258:]
+    prices={str(d):'100' for d in sessions}
+    assert len(prices)==1258 and sessions[-1]>date(2026,9,10)
+    return chain,split,prices
+
+
+def test_avgo_split_15_quarter_historical_valuation_research_never_promotes_finance():
+    from datetime import date
+
+    chain,proof,prices=_synthetic_avgo_15_q_split_research_multiples()
+    original=deepcopy(chain)
+    result=replay.assess_avgo_split_research_multiples(chain,proof,prices,now=NOW)
+    assert result['status']=='RESEARCH_OBSERVATIONS_WITHIN_BOUNDS_ONLY'
+    assert result['hypothetical_trailing_earnings_observations']==12
+    assert result['observations_exceeding_existing_v1_pe_bounds']==0
+    assert result['financial_valuation_anchors_approved']==0
+    for row in result['observations']:
+        assert date.fromisoformat(row['first_following_completed_iex_session']) > (
+            date.fromisoformat(row['last_required_sec_publication']))
+        assert row['observed_derived_pe_multiple']=='25'
+        assert row['within_existing_v1_5_to_60_multiple_bounds'] is True
+    assert chain==original
+    assert result['data_rights_accepted'] is False
+    assert result['native_source_issuer_accepted'] is False
+    assert result['financial_paper_authorized'] is False
+    assert result['live_trading_authorized'] is False
+    assert result['network_requests']==0
+
+
+def test_avgo_split_historical_valuation_above_60_is_refused_not_weakened():
+    chain,proof,prices=_synthetic_avgo_15_q_split_research_multiples()
+    sample=replay.assess_avgo_split_research_multiples(chain,proof,prices,now=NOW)
+    for row in sample['observations'][3:]:
+        prices[row['first_following_completed_iex_session']]='400'
+    result=replay.assess_avgo_split_research_multiples(chain,proof,prices,now=NOW)
+    assert result['status']=='RESEARCH_VALUATION_REFUSED_EXISTING_MULTIPLE_LIMITS'
+    assert result['observations_exceeding_existing_v1_pe_bounds']==9
+    assert result['min_observed_pe']=='25'
+    assert result['max_observed_pe']=='100'
+    assert result['historical_v1_pe_bounds']==['5','60']
+    assert result['financial_valuation_anchors_approved']==0
+
+
+@pytest.mark.parametrize('damage',[
+    'fake_proof_origin_hash','unlicensed_but_declared_true',
+    'unauthorized_financial_claim','changed_original_sec_hash',
+    'duplicated_accession','not_consecutive_quarter',
+    'changed_as_reported_eps','changed_split_converted_shares',
+    'double_split_adjustment','missing_original_quarter',
+    'altered_window_eps','short_price_history',
+    'nan_price','negative_price','missing_last_anchor_session',
+    'no_issuer_split_ratio','fake_paper_financial_permission',
+    'original_filing_future','wrong_genuine_issuer',
+])
+def test_avgo_split_historical_research_diagnostic_refuses_bad_evidence(damage):
+    chain,proof,prices=_synthetic_avgo_15_q_split_research_multiples()
+    if damage=='fake_proof_origin_hash':
+        proof['sec_original_split_sha256']='f'*64
+    elif damage=='unlicensed_but_declared_true':
+        proof['provider_price_data_rights_accepted']=True
+    elif damage=='unauthorized_financial_claim':
+        chain['financial_paper_start_authorized']=True
+    elif damage=='changed_original_sec_hash':
+        chain['original_sec_quarters'][1]['original_evidence_sha256']='x'*64
+    elif damage=='duplicated_accession':
+        chain['original_sec_quarters'][1]['accession']=chain['original_sec_quarters'][0]['accession']
+    elif damage=='not_consecutive_quarter':
+        chain['original_sec_quarters'][1]['period_start']='2023-01-31'
+    elif damage=='changed_as_reported_eps':
+        chain['original_sec_quarters'][1]['as_reported_diluted_eps']='999'
+    elif damage=='changed_split_converted_shares':
+        chain['original_sec_quarters'][2]['research_derived_post_split_equivalent_shares']='42'
+    elif damage=='double_split_adjustment':
+        chain['original_sec_quarters'][7]['applied_research_conversion_factor']=10
+    elif damage=='missing_original_quarter':
+        chain['original_sec_quarters'].pop(3)
+    elif damage=='altered_window_eps':
+        chain['possible_unapproved_trailing_four_quarter_research_windows'][2]['derived_four_quarter_eps_on_split_comparable_basis']='40'
+    elif damage=='short_price_history':
+        prices.pop(next(iter(prices)))
+    elif damage=='nan_price':
+        prices[next(iter(prices))]='NaN'
+    elif damage=='negative_price':
+        prices[next(iter(prices))]='-100'
+    elif damage=='missing_last_anchor_session':
+        keys=[k for k in prices if k>'2026-09-10']
+        for k in keys:prices.pop(k)
+    elif damage=='no_issuer_split_ratio':
+        proof['sec_original_new_shares_per_old_share']=1
+    elif damage=='fake_paper_financial_permission':
+        proof['financial_paper_order_authorized']=True
+    elif damage=='original_filing_future':
+        chain['original_sec_quarters'][-1]['original_sec_filing_date']='2027-01-01'
+    elif damage=='wrong_genuine_issuer':
+        chain['cik']='0000789019'
+    with pytest.raises((ValueError,ResearchRefused)):
+        replay.assess_avgo_split_research_multiples(chain,proof,prices,now=NOW)
