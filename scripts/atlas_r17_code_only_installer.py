@@ -58,12 +58,12 @@ from scripts.observation_runtime.personal_existing_native_resource_evidence impo
 
 ROOT = Path("D:/Work/Project Atlas")
 DIAG = ROOT / "logs/diagnostics"
-REVIEW_DIR = DIAG / "atlas-r17-source-only-20261111-r05"
+REVIEW_DIR = DIAG / "atlas-r17-source-only-20261112-r06"
 REVIEW = REVIEW_DIR / "source-and-native-plan-review.json"
-REVIEW_SHA = "eee3edfae944add14bca04e3ffcf80cbea971998f59f1a0d1418437617fc7a3f"
-SOURCE = "7aeb2b279316b6db34c988a8e4204c104684d1a6"
-ARCHIVE_SHA = "41899a0b10202646c1a9cb75f5cbf716d65bf91da8cfcdecc0cbf2503da55420"
-INVENTORY_SHA = "9313c78a28ce3b3b26af67be154086a1e750b9527a8a03c7dc16da34d9edbd55"
+REVIEW_SHA = "323673e5aa9e1f31c7c06e11b0d5ec9c785e6c9ecf05246c1133c8781fb7412b"
+SOURCE = "fba8a2477f844e3384f8030eceab1989f79eb0ab"
+ARCHIVE_SHA = "97c09b7f74805caa1b6e63fa49c04bfbc38763f8ad4ff24a6980cc90c74c81c8"
+INVENTORY_SHA = "071f1b4072ec38a9aef3f111fcfc055a0ad8299198bf569d17e84407c2b46cae"
 ARCHIVE = REVIEW_DIR / "package/atlas-source.zip"
 TARGET = Path("D:/AtlasRuntime/releases") / SOURCE
 RECEIPT = DIAG / ("qd-unselected-release-" + SOURCE + ".json")
@@ -73,11 +73,11 @@ SCOPE = "INSTALL_EXACT_R17_UNSELECTED_CODE_ONLY_NO_FINANCIAL_START"
 OPERATION = "APPROVE_ONE_R17_CODE_ONLY_NATIVE_INSTALL"
 CLOCK_IDENTITY = "atlas-r17-code-only-install-" + SOURCE
 
-EXPECTED_SOURCE_FILES = 1033
+EXPECTED_SOURCE_FILES = 1044
 EXPECTED_DEPENDENCY_FILES = 9566
-EXPECTED_TOTAL_FILES = 10599
+EXPECTED_TOTAL_FILES = 10610
 EXPECTED_TOTAL_DIRECTORIES = 914
-EXPECTED_TOTAL_BYTES = 264437110
+EXPECTED_TOTAL_BYTES = 264583312
 REVIEW_MAX_BYTES = 8192
 
 
@@ -182,22 +182,28 @@ def inspect_prepared():
         REVIEW, REVIEW_SHA, max_bytes=REVIEW_MAX_BYTES))
     # JSON lives inside diagnostics but must precisely match the frozen
     # SOURCE archive. It has NO approval effect.
-    if (review.get("schema") != "ATLAS_R17_DURABLE_TWO_ACCOUNT_HANDOFF_SOURCE_ONLY_REVIEW_V1"
-            or review.get("status") != "VERIFIED_NOT_INSTALLED_NOT_SELECTED"
+    if (review.get("schema") != "ATLAS_R17_R06_FULL_STOP_FIRST_24X7_SOURCE_ONLY_REVIEW_V1"
+            or review.get("status") != "SOURCE_AND_NATIVE_LAYOUT_PLAN_VERIFIED_NOT_INSTALLED"
             or review.get("source_commit") != SOURCE
-            or review.get("source_archive_sha256") != ARCHIVE_SHA
-            or review.get("selected_source_inventory_sha256") != INVENTORY_SHA
-            or review.get("selected_tracked_source_files") != EXPECTED_SOURCE_FILES
-            or review.get("pinned_dependency_files") != EXPECTED_DEPENDENCY_FILES
-            or review.get("planned_native_total_files") != EXPECTED_TOTAL_FILES
-            or review.get("planned_native_directories") != EXPECTED_TOTAL_DIRECTORIES
+            or review.get("frozen_source_archive_sha256") != ARCHIVE_SHA
+            or review.get("tracked_source_inventory_sha256") != INVENTORY_SHA
+            or review.get("tracked_source_files") != EXPECTED_SOURCE_FILES
+            or review.get("pinned_python_dependency_files") != EXPECTED_DEPENDENCY_FILES
+            or review.get("planned_total_native_files") != EXPECTED_TOTAL_FILES
+            or review.get("planned_total_native_directories") != EXPECTED_TOTAL_DIRECTORIES
             or review.get("planned_native_bytes") != EXPECTED_TOTAL_BYTES
-            or review.get("unoccupied_create_only_release_target") != str(TARGET)
-            or review.get("original_selected_r16_release_and_roots_unchanged") is not True
+            or review.get("create_only_native_target") != str(TARGET)
+            or review.get("original_12_financial_roots_unchanged_and_empty") is not True
+            or review.get("native_r16_selected_unchanged") is not True
+            or review.get("two_core_windows_cpu_budget_enforced") is not True
+            or review.get("pinned_dependency_inventory_sha256")
+               != DEPENDENCY_INVENTORY_SHA256
             or any(review.get(k) is not False for k in (
-                "native_code_installed", "native_code_selected",
-                "installed_financial_issuer_present", "paper_start_authorized",
+                "r17_real_code_installed", "r17_real_code_selected",
+                "financial_issuer_accepted", "paper_start_authorized",
                 "live_trading_authorized",
+                "native_operator_code_install_approved",
+                "real_account_inception_performed",
             ))):
         raise ValueError("R17_EXACT_FROZEN_SOURCE_REVIEW_REQUIRED")
     dependency_raw = _exact_bytes(
