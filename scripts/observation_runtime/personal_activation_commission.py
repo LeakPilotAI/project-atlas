@@ -209,7 +209,20 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None):
     # Job-backed financial writer issuer. Do NOT route an unknown successor
     # into the old PID-only historical adapter by default.
     if release_digest not in (R15_ARTIFACT, V7_ARTIFACT, V8_ARTIFACT):
-        raise ValueError('ACTIVATION_FUTURE_NATIVE_FINANCIAL_JOB_ISSUER_MISSING')
+        from scripts.observation_runtime.personal_native_selected_owned_job_preflight import (
+            RetainedSelectedNativeOwnerPreflight,
+        )
+        if (type(owned_job) is not RetainedSelectedNativeOwnerPreflight
+                or owned_job.release_digest != release_digest):
+            raise ValueError('ACTIVATION_FUTURE_NATIVE_FINANCIAL_JOB_ISSUER_MISSING')
+        # Future native successor structural custody now has its own exact
+        # original-handle check. It is STILL not a financial issuer, nor does
+        # this context yield to the financial activation publisher.
+        try:
+            owned_job.require_exact_roster(qd=qd, perp=perp)
+            raise ValueError('ACTIVATION_FUTURE_INDEPENDENT_FINANCIAL_LEASE_NOT_ACCEPTED')
+        finally:
+            owned_job.require_exact_roster(qd=qd, perp=perp)
     if release_digest == R15_ARTIFACT:
         from scripts.observation_runtime.personal_r15_owned_job_activation import (
             RetainedSelectedR15OwnerJob,
