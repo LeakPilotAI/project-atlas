@@ -106,7 +106,7 @@ def test_disconnect_refuses_previously_cached_quotes(monkeypatch):
     ("schema", "ATLAS_UNVERIFIED_QUOTE_VIEW"),
     ("provider", "FOREIGN_SOURCE"),
     ("feed", "SIP"),
-    ("size_units", "SHARES_NOT_ROUND_LOTS"),
+    ("size_units", "SHARES_NOT_SHARES"),
     ("error", "IEX_SERVER_ERROR"),
 ])
 def test_source_pairing_refuses_conflicting_authenticated_feed_metadata(monkeypatch, field, bad):

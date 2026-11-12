@@ -77,7 +77,7 @@ def test_disposable_validated_quote_to_journal_spread_slippage_and_restart(tmp_p
     args = dict(path=path, account_id="quote", observation=observation, now=now)
     def quote(bid, ask, stamp=now):
         return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
-                "bid_lots": 5, "ask_lots": 5, "timestamp": stamp.isoformat(),
+                "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": stamp.isoformat(),
                 "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     before = path.read_bytes()
     with pytest.raises(ValueError, match="PROVIDER_QUOTE_STALE_OR_FUTURE"):
@@ -116,7 +116,7 @@ def test_bounded_disposable_quote_lifecycle_validates_sequence_before_writes(tmp
     times = [start + timedelta(seconds=i) for i in range(3)]
     def quote(stamp, bid, ask):
         return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
-                "bid_lots": 5, "ask_lots": 5, "timestamp": stamp.isoformat(),
+                "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": stamp.isoformat(),
                 "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     quotes = [quote(times[0], "99.99", "100"),
               quote(times[1], "100.99", "101"),
@@ -146,7 +146,7 @@ def test_rule_driven_disposable_session_takes_profit_and_reconciles(tmp_path):
     times = [start + timedelta(seconds=i) for i in range(5)]
     def q(t, bid, ask):
         return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
-                "bid_lots": 5, "ask_lots": 5, "timestamp": t.isoformat(),
+                "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": t.isoformat(),
                 "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     quotes = [q(t, b, a) for t, b, a in zip(times,
         (99.9, 99.9, 101, 104, 105), (100, 100, 101.1, 104.1, 105.1))]
@@ -185,7 +185,7 @@ def test_rule_driven_disposable_session_stop_loss_and_end_flat(tmp_path):
     times = [start + timedelta(seconds=i) for i in range(3)]
     def q(t, bid):
         return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": bid+0.1,
-                "bid_lots": 5, "ask_lots": 5, "timestamp": t.isoformat(),
+                "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": t.isoformat(),
                 "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     obs = {"observation_id": "risk-1", "symbol": "MSFT", "evidence_class": "TEST_DATA"}
     for name, prices, reason in (("stop", [100, 97, 96], "SYNTHETIC_STOP_LOSS"),
@@ -208,7 +208,7 @@ def test_disposable_v3_strategy_recomputes_entries_from_quotes(tmp_path):
     times = [start + timedelta(seconds=i) for i in range(4)]
     def quote(t, bid, ask):
         return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
-                "bid_lots": 5, "ask_lots": 5, "timestamp": t.isoformat(),
+                "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": t.isoformat(),
                 "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     quotes = [quote(times[0], 101, 101.1), quote(times[1], 79.9, 80),
               quote(times[2], 80.9, 81), quote(times[3], 84, 84.1)]

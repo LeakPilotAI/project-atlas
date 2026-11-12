@@ -46,7 +46,7 @@ def test_valid_quote_preserves_precision_sizes_scope_and_latency():
     f.receive(json.dumps([message()]))
     v = f.snapshot()
     q = v["quotes"][0]
-    assert q["state"] == "FRESH" and q["ask"] == "100.1" and q["bid_lots"] == 2
+    assert q["state"] == "FRESH" and q["ask"] == "100.1" and q["bid_shares"] == 2
     assert q["source_ns"] == STAMP * 10**9 + 123456789
     assert (
         v["scope"] == "SINGLE_EXCHANGE_NOT_NBBO" and not v["paper_startup_authorized"]
@@ -554,3 +554,43 @@ async def test_readonly_callback_refusal_stops_feed_without_retry():
                        connect=connect, max_reconnects=2, on_fresh_quote=refuse)
     assert len(connects) == 1
     assert feed.snapshot()["connection"] == "DISCONNECTED"
+
+
+def test_2026_provider_quote_sizes_are_shares_not_round_lots(tmp_path):
+    """A provider bid of 2 shares must never become 200 PAPER shares.
+
+    The independently checked instrument round-lot size may be 100. It is
+    an eligibility/lot fact, NOT a multiplier of 2026 Alpaca quote sizes.
+    """
+    from test_quality_dips_autonomous_paper import candidate, quote, setup
+
+    setup_data = setup(tmp_path)
+    selection = candidate(setup_data)
+    instrument = selection["instrument"]
+    f, _ = feed()
+    f.clock = lambda: setup_data.now[0]
+    f.receive(json.dumps([message(bp=99.9, ap=100,
+                                  t="2026-10-26T14:00:00Z",
+                                  bs=2, **{"as": 3})]))
+    port = IEXPaperQuotes(
+        feed=f,
+        execution_authority=authority(
+            instrument, quote(setup_data, selection)["calendar"]),
+    )
+    packet = port.quote(instrument)
+    assert packet["size_units"] == "SHARES"
+    assert packet["bid_size"] == "2"
+    assert packet["ask_size"] == "3"
+    assert f.snapshot()["size_units"] == "SHARES"
+
+    # The exact same quote cannot be read as legacy round lots.
+    genuine = f.snapshot
+
+    def legacy_units():
+        observed = genuine()
+        observed["size_units"] = "ROUND_LOTS"
+        return observed
+
+    f.snapshot = legacy_units
+    with pytest.raises(IEXRefused, match="IEX_EXECUTABLE_QUOTE_UNAVAILABLE"):
+        port.quote(instrument)

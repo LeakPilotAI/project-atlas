@@ -29,7 +29,7 @@ def fake_feed(*,fresh=True,auth=True,subscribed=True,quote_count=1):
             if fresh:
                 on_fresh_quote({'symbol':'MSFT','provider':'ALPACA_IEX',
                     'timestamp':STAMP.isoformat(),'bid':'100','ask':'100.1',
-                    'bid_lots':1,'ask_lots':2,
+                    'bid_shares':1,'ask_shares':2,'size_units':'SHARES',
                     'paper_fill_authorized':False,'live_order_authorized':False})
             return {'authenticated':auth,'subscribed':subscribed,
                 'fresh_quote_observed_during_connection':fresh,

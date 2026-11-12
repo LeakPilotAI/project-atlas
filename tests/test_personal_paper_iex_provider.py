@@ -32,7 +32,7 @@ def test_existing_feed_adapter_maps_fresh_snapshot_without_fill_authority():
     feed.subscribed = True
     feed.connection = "CONNECTED"
     feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "399.99", "ask": "400.01",
-                           "bid_lots": 2, "ask_lots": 3, "timestamp": now.isoformat(),
+                           "bid_shares": 2, "ask_shares": 3, "timestamp": now.isoformat(),
                            "source_timestamp": now.timestamp(), "generation": feed.generation}
     adapter = PersonalPaperIEXProvider(feed)
     quote = adapter.read_iex_quote("MSFT")
@@ -104,7 +104,7 @@ def test_feed_adapter_rejects_generation_rotation_during_snapshot():
     feed.subscribed = True
     feed.connection = "CONNECTED"
     feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "399.99", "ask": "400.01",
-                           "bid_lots": 2, "ask_lots": 3, "timestamp": now.isoformat(),
+                           "bid_shares": 2, "ask_shares": 3, "timestamp": now.isoformat(),
                            "source_timestamp": now.timestamp(), "generation": feed.generation}
     original = feed.snapshot
     def rotating_snapshot():

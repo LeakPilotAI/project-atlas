@@ -26,7 +26,7 @@ def test_incremental_v3_entry_mark_exit_restarts_from_journal(tmp_path):
     for i, (bid, ask) in enumerate([(101, 101.1), (79.9, 80), (80.9, 81), (84, 84.1)]):
         now = start + timedelta(seconds=i)
         quote = {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
-                 "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+                 "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": now.isoformat(),
                  "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
         # Once a position is open, risk management must continue even if
         # the research input becomes stale or loses its entry provenance.
@@ -75,7 +75,7 @@ def test_incremental_v3_interrupted_tick_blocks_unsafe_recovery(tmp_path):
                 "valuation_score": 70, "drawdown_percentile": 80,
                 "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
     quote = {"symbol": "MSFT", "state": "FRESH", "bid": 101, "ask": 101.1,
-             "bid_lots": 5, "ask_lots": 5,
+             "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES",
              "timestamp": (start + timedelta(seconds=1)).isoformat(),
              "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     with pytest.raises(ValueError, match="INTERRUPTED_TICK_REQUIRES_RECONCILIATION"):
@@ -159,7 +159,7 @@ def test_incremental_v3_refuses_entry_when_research_not_verified(tmp_path):
                 "valuation_score": 70, "drawdown_percentile": 80,
                 "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
     quote = {"symbol": "MSFT", "state": "FRESH", "bid": 79.9, "ask": 80,
-             "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+             "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": now.isoformat(),
              "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     with pytest.raises(ValueError):
         execute_incremental_test_v3_tick(path=path, account_id="demo",
@@ -188,7 +188,7 @@ def test_explicit_session_end_flattens_position_without_reentry(tmp_path):
     for index, (bid, ask) in enumerate([(79.9, 80), (80, 80.1), (80, 80.1)]):
         now = start + timedelta(seconds=index)
         quote = {"symbol": "MSFT", "state": "FRESH", "bid": bid,
-                 "ask": ask, "bid_lots": 5, "ask_lots": 5,
+                 "ask": ask, "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES",
                  "timestamp": now.isoformat(),
                  "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
         result = execute_incremental_test_v3_tick(
@@ -230,7 +230,7 @@ def test_incremental_refuses_completed_tick_without_matching_financial_write(tmp
                 "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
     now = start + timedelta(seconds=1)
     quote = {"symbol": "MSFT", "state": "FRESH", "bid": 79.9, "ask": 80,
-             "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+             "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": now.isoformat(),
              "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     before = path.read_bytes()
     report = inspect_incremental_test_v3_recovery(path=path, account_id="demo")
@@ -265,7 +265,7 @@ def test_incremental_refuses_orphan_financial_write_after_completed_tick(tmp_pat
                 "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
     now = start + timedelta(seconds=1)
     quote = {"symbol": "MSFT", "state": "FRESH", "bid": 79.9, "ask": 80,
-             "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+             "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": now.isoformat(),
              "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     before = path.read_bytes()
     report = inspect_incremental_test_v3_recovery(path=path, account_id="demo")

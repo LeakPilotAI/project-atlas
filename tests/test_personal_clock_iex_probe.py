@@ -26,7 +26,7 @@ class Feed:
         Feed.called = True
         assert seconds == 3 and max_reconnects == 0
         on_fresh_quote({"symbol": "MSFT", "bid": 99, "ask": 100,
-                        "bid_lots": 2, "ask_lots": 2,
+                        "bid_shares": 2, "ask_shares": 2, "size_units": "SHARES",
                         "timestamp": "2026-11-07T00:00:00+00:00"})
         return {"authenticated": True, "subscribed": True,
                 "result": {"connection": "DISCONNECTED"}}
@@ -102,7 +102,7 @@ def test_quote_replay_refuses_and_revokes_clock(monkeypatch):
     class ReplayingFeed(Feed):
         async def run(self, credentials, *, seconds, max_reconnects, on_fresh_quote):
             quote = {"symbol": "MSFT", "bid": 99, "ask": 100,
-                     "bid_lots": 2, "ask_lots": 2,
+                     "bid_shares": 2, "ask_shares": 2, "size_units": "SHARES",
                      "timestamp": "2026-11-07T00:00:00+00:00"}
             on_fresh_quote(quote)
             on_fresh_quote(quote)
@@ -133,7 +133,7 @@ def test_native_publication_path_binds_provider_quote(monkeypatch):
         assert type(publication) is Published and type(provider) is Provider
         assert symbol == "MSFT"
         return {"candidate": True,
-                "quote_evidence": {"provider_timestamp": "2026-11-07T00:00:00+00:00", "bid": "99.0", "ask": "100.00", "bid_lots": 2, "ask_lots": 2}}
+                "quote_evidence": {"provider_timestamp": "2026-11-07T00:00:00+00:00", "bid": "99.0", "ask": "100.00", "bid_shares": 2, "ask_shares": 2, "size_units": "SHARES"}}
     monkeypatch.setattr(signal_mod, "evaluate_published_iex_v3_candidate", evaluate)
     monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
     result = probe.bounded_clock_iex_observation(
@@ -275,7 +275,7 @@ def test_same_timestamp_and_prices_different_quote_size_refused(monkeypatch):
                         lambda **kwargs: {"candidate": True,
                           "quote_evidence": {"provider_timestamp": "2026-11-07T00:00:00+00:00",
                                              "bid": "99", "ask": "100",
-                                             "bid_lots": 1, "ask_lots": 2}})
+                                             "bid_shares": 1, "ask_shares": 2, "size_units": "SHARES"}})
     monkeypatch.setattr(probe.Credentials, "load", lambda _: object())
     Clock.revoked = False
     with pytest.raises(ValueError, match="CLOCK_IEX_PUBLICATION_QUOTE_CHANGED"):
@@ -339,7 +339,7 @@ def test_publication_without_operational_producer_not_forward_research(monkeypat
     monkeypatch.setattr(signal_mod, 'evaluate_published_iex_v3_candidate',
         lambda **kwargs: {'candidate': True, 'quote_evidence': {
             'provider_timestamp': '2026-11-07T00:00:00+00:00',
-            'bid': '99', 'ask': '100', 'bid_lots': 2, 'ask_lots': 2}})
+            'bid': '99', 'ask': '100', 'bid_shares': 2, 'ask_shares': 2}})
     monkeypatch.setattr(probe.Credentials, 'load', lambda _: object())
     result = probe.bounded_clock_iex_observation(
         symbol='MSFT', seconds=3, credentials_path=Path('unused'),

@@ -12,7 +12,7 @@ from app.services.personal_paper_price_evidence import validate_stock_iex_quote
 
 def _quote(now, bid, ask):
     return {"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
-            "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+            "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": now.isoformat(),
             "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
 
 
@@ -86,7 +86,7 @@ def test_full_disposable_producer_operator_iex_candidate_entry_exit_restart(tmp_
     feed.connection = "CONNECTED"
     def set_quote(bid, ask):
         feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": bid, "ask": ask,
-                               "bid_lots": 5, "ask_lots": 5,
+                               "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES",
                                "timestamp": now.isoformat(),
                                "source_timestamp": now.timestamp(),
                                "generation": feed.generation}

@@ -28,7 +28,8 @@ def run_demo(*, scenario: str = "take_profit") -> dict:
         raise ValueError("DISPOSABLE_V3_DEMO_SCENARIO_UNKNOWN")
     prices = scenarios[scenario]
     quotes = [{"symbol": "MSFT", "state": "FRESH", "bid": bid, "ask": ask,
-               "bid_lots": 5, "ask_lots": 5, "timestamp": stamp.isoformat(),
+               "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES",
+               "timestamp": stamp.isoformat(),
                "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
               for stamp, (bid, ask) in zip(times, prices, strict=True)]
     research = {"symbol": "MSFT", "source_verified": True,

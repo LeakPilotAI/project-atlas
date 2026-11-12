@@ -14,7 +14,7 @@ from app.services.personal_paper_price_evidence import (
 
 def _quote(now):
     return {"symbol": "MSFT", "state": "FRESH", "bid": "99.99", "ask": "100",
-            "bid_lots": 10, "ask_lots": 10, "timestamp": now.isoformat(),
+            "bid_shares": 10, "ask_shares": 10, "size_units": "SHARES", "timestamp": now.isoformat(),
             "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
 
 

@@ -48,7 +48,9 @@ def validate_stock_iex_quote(
     spread_bps = (ask - bid) / ask * 10000
     if spread_bps > Decimal(str(max_spread_bps)):
         raise PriceEvidenceRejected("BID_ASK_SPREAD_EXCESSIVE")
-    if any(type(quote.get(key)) is not int or quote[key] <= 0 for key in ("bid_lots", "ask_lots")):
+    if quote.get("size_units") != "SHARES":
+        raise PriceEvidenceRejected("IEX_SHARE_UNIT_PROVENANCE_REQUIRED")
+    if any(type(quote.get(key)) is not int or quote[key] <= 0 for key in ("bid_shares", "ask_shares")):
         raise PriceEvidenceRejected("BID_ASK_SIZE_UNAVAILABLE")
     return {
         "schema": "ATLAS_PERSONAL_PAPER_PRICE_EVIDENCE_V1",
@@ -58,8 +60,8 @@ def validate_stock_iex_quote(
         "age_seconds": round(age, 6),
         "bid": str(bid),
         "ask": str(ask),
-        "bid_lots": quote["bid_lots"],
-        "ask_lots": quote["ask_lots"],
+        "bid_shares": quote["bid_shares"],
+        "ask_shares": quote["ask_shares"],
         "spread_bps": float(spread_bps),
         "paper_fill_authorized": False,
         "live_order_authorized": False,

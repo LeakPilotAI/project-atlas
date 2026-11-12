@@ -87,7 +87,7 @@ def _snapshot(view, symbols, now):
             or view.get("provider") != "ALPACA"
             or view.get("feed") != "IEX"
             or view.get("feed_id") != FEED
-            or view.get("size_units") != "ROUND_LOTS"
+            or view.get("size_units") != "SHARES"
             or view.get("scope") != "SINGLE_EXCHANGE_NOT_NBBO"
             or view.get("error") is not None
             or view.get("connection") != "CONNECTED"

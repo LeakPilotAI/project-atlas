@@ -1,7 +1,8 @@
 """Data-only IEX socket/cache. No broker client, orders or financial writes.
 
-IEX is a single venue, NOT NBBO. Sizes are round lots until an independently
-verified instrument mapping supplies the shares-per-lot conversion.
+IEX is a single venue, NOT NBBO. Alpaca quote size fields are in shares
+as of 2025-11-03. The older round-lot multiplication would overstate
+simulated liquidity; instrument lot eligibility remains separately verified.
 """
 
 import asyncio
@@ -238,7 +239,7 @@ class IEXFeed:
             source_ns < old["source_ns"]
             or source_ns == old["source_ns"]
             and (str(bid), str(ask), m["bs"], m["as"])
-            != (old["bid"], old["ask"], old["bid_lots"], old["ask_lots"])
+            != (old["bid"], old["ask"], old["bid_shares"], old["ask_shares"])
         ):
             raise ValueError
         self.observations += 1
@@ -246,8 +247,8 @@ class IEXFeed:
             "symbol": m["S"],
             "bid": str(bid),
             "ask": str(ask),
-            "bid_lots": m["bs"],
-            "ask_lots": m["as"],
+            "bid_shares": m["bs"],
+            "ask_shares": m["as"],
             "timestamp": stamp,
             "source_timestamp": source,
             "source_ns": source_ns,
@@ -282,7 +283,7 @@ class IEXFeed:
                 "feed": "IEX",
                 "feed_id": FEED,
                 "scope": "SINGLE_EXCHANGE_NOT_NBBO",
-                "size_units": "ROUND_LOTS",
+                "size_units": "SHARES",
                 "connection": self.connection,
                 "authenticated": self.authenticated,
                 "subscribed": self.subscribed,
@@ -396,10 +397,11 @@ class IEXFeed:
                                                     try:
                                                         on_fresh_quote({"symbol": q["symbol"],
                                                                         "bid": q["bid"], "ask": q["ask"],
-                                                                        "bid_lots": q["bid_lots"],
-                                                                        "ask_lots": q["ask_lots"],
+                                                                        "bid_shares": q["bid_shares"],
+                                                                        "ask_shares": q["ask_shares"],
                                                                         "timestamp": q["timestamp"],
                                                                         "provider": "ALPACA_IEX",
+                                                                        "size_units": "SHARES",
                                                                         "paper_fill_authorized": False,
                                                                         "live_order_authorized": False})
                                                         callbacks_by_symbol[q["symbol"]] += 1
@@ -485,5 +487,5 @@ class IEXFeed:
             "tradable_for_ladder": False,
             "is_live": fresh,
             "error": None if fresh else "IEX_QUOTE_UNAVAILABLE",
-            "size_units": "ROUND_LOTS",
+            "size_units": "SHARES",
         }

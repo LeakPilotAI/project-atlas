@@ -86,7 +86,7 @@
   function renderMarket(data, now) {
     if (!object(data) || data.schema !== 'ATLAS_ALPACA_IEX_VIEW_V1' ||
         data.feed !== 'IEX' || data.scope !== 'SINGLE_EXCHANGE_NOT_NBBO' ||
-        data.size_units !== 'ROUND_LOTS' || data.paper_startup_authorized !== false ||
+        data.size_units !== 'SHARES' || data.paper_startup_authorized !== false ||
         !['CONNECTED','DISCONNECTED'].includes(data.connection) ||
         typeof data.authenticated !== 'boolean' || typeof data.subscribed !== 'boolean' ||
         !Number.isFinite(data.observed_at) || !Array.isArray(data.quotes) || data.quotes.length > 30)
@@ -100,9 +100,9 @@
       const stamp = typeof q.timestamp === 'string' ? Date.parse(q.timestamp) : NaN;
       if (state === 'FRESH' && (data.connection !== 'CONNECTED' || !data.authenticated || !data.subscribed ||
           !Number.isFinite(stamp) || now-stamp < 0 || now-stamp > 5000 || now-data.observed_at*1000 < 0 || now-data.observed_at*1000 > 5000)) state='STALE';
-      return `<tr><td>${esc(q.symbol)}</td><td>${amount(q.bid)}</td><td>${amount(q.ask)}</td><td>${Number.isSafeInteger(q.bid_lots) && q.bid_lots > 0 ? q.bid_lots : 'UNAVAILABLE'}</td><td>${Number.isSafeInteger(q.ask_lots) && q.ask_lots > 0 ? q.ask_lots : 'UNAVAILABLE'}</td><td>${esc(q.timestamp || 'UNAVAILABLE')}</td><td>${esc(state)}</td></tr>`;
+      return `<tr><td>${esc(q.symbol)}</td><td>${amount(q.bid)}</td><td>${amount(q.ask)}</td><td>${Number.isSafeInteger(q.bid_shares) && q.bid_shares > 0 ? q.bid_shares : 'UNAVAILABLE'}</td><td>${Number.isSafeInteger(q.ask_shares) && q.ask_shares > 0 ? q.ask_shares : 'UNAVAILABLE'}</td><td>${esc(q.timestamp || 'UNAVAILABLE')}</td><td>${esc(state)}</td></tr>`;
     }).join('');
-    return `<h3>Live L1 — Alpaca IEX</h3><p>Single exchange — NOT consolidated NBBO. Sizes are round lots, not assumed shares. Data readiness does not authorize PAPER trading.</p><p>${esc(data.connection)} · ${data.authenticated ? 'AUTHENTICATED' : 'NOT AUTHENTICATED'} · ${data.subscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}</p><table><tr><th>Symbol</th><th>Bid</th><th>Ask</th><th>Bid lots</th><th>Ask lots</th><th>Exchange timestamp</th><th>State</th></tr>${rows}</table>`;
+    return `<h3>Live L1 — Alpaca IEX</h3><p>Single exchange — NOT consolidated NBBO. Sizes are provider-reported shares (not round lots). Data readiness does not authorize PAPER trading.</p><p>${esc(data.connection)} · ${data.authenticated ? 'AUTHENTICATED' : 'NOT AUTHENTICATED'} · ${data.subscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}</p><table><tr><th>Symbol</th><th>Bid</th><th>Ask</th><th>Bid shares</th><th>Ask shares</th><th>Exchange timestamp</th><th>State</th></tr>${rows}</table>`;
   }
 
   function validate(data) {

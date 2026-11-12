@@ -43,7 +43,7 @@ class IEXPaperQuotes:
         quote=next((q for q in view['quotes'] if q['symbol']==symbol),None)
         if (not view['authenticated'] or not view['subscribed'] or quote is None or quote['state']!='FRESH'
                 or view['feed_id']!=FEED or 'iex:'+digest([quote['symbol'],quote['timestamp'],quote['bid'],
-                    quote['ask'],quote['bid_lots'],quote['ask_lots']])!=packet['sequence']):
+                    quote['ask'],quote['bid_shares'],quote['ask_shares']])!=packet['sequence']):
             raise IEXRefused('IEX_RESEARCH_QUOTE_CHANGED_OR_UNAVAILABLE')
         stamp=datetime.fromtimestamp(quote['source_ns']//10**9,UTC).replace(microsecond=quote['source_ns']%10**9//1000)
         received=datetime.fromtimestamp(quote['received_at'],UTC)
@@ -70,10 +70,16 @@ class IEXPaperQuotes:
         view = self.feed.snapshot()
         q = next((q for q in view["quotes"] if q["symbol"] == instrument["symbol"]), None)
         if (
-            not view["authenticated"]
+            view.get("schema") != "ATLAS_ALPACA_IEX_VIEW_V1"
+            or view.get("feed_id") != FEED
+            or view.get("scope") != "SINGLE_EXCHANGE_NOT_NBBO"
+            or view.get("size_units") != "SHARES"
+            or not view["authenticated"]
             or not view["subscribed"]
             or q is None
             or q["state"] != "FRESH"
+            or any(type(q.get(k)) is not int or q[k] <= 0
+                   for k in ("bid_shares", "ask_shares"))
         ):
             raise IEXRefused("IEX_EXECUTABLE_QUOTE_UNAVAILABLE")
         now = int(view["observed_at"])
@@ -111,14 +117,17 @@ class IEXPaperQuotes:
                 "currency": instrument["currency"],
                 "bid": q["bid"],
                 "ask": q["ask"],
-                "bid_size": str(q["bid_lots"] * lot),
-                "ask_size": str(q["ask_lots"] * lot),
+                # Alpaca 2026 feed sizes are already shares. The independent
+                # instrument round_lot_shares is an eligibility fact, never a
+                # multiplier of raw bid/ask size (pre-Nov-2025 only).
+                "bid_size": str(q["bid_shares"]),
+                "ask_size": str(q["ask_shares"]),
                 "size_units": "SHARES",
                 "source_timestamp": q["source_ns"] // 10**9,
                 "received_timestamp": int(q["received_at"]),
                 "sequence": "iex:"
                 + digest(
-                    [q["symbol"], q["timestamp"], q["bid"], q["ask"], q["bid_lots"], q["ask_lots"]]
+                    [q["symbol"], q["timestamp"], q["bid"], q["ask"], q["bid_shares"], q["ask_shares"]]
                 ),
                 "session": "REGULAR",
                 "calendar": accepted["calendar"],

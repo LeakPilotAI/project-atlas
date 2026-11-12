@@ -124,8 +124,8 @@ def bounded_clock_iex_observation(*, symbol, seconds, credentials_path,
                 if (joined["provider_timestamp"] != evidence["provider_timestamp"]
                         or Decimal(str(joined["bid"])) != Decimal(evidence["bid"])
                         or Decimal(str(joined["ask"])) != Decimal(evidence["ask"])
-                        or joined.get("bid_lots") != evidence["bid_lots"]
-                        or joined.get("ask_lots") != evidence["ask_lots"]):
+                        or joined.get("bid_shares") != evidence["bid_shares"]
+                        or joined.get("ask_shares") != evidence["ask_shares"]):
                     raise ValueError("CLOCK_IEX_PUBLICATION_QUOTE_CHANGED")
                 research_checked.append(candidate["candidate"])
             accepted.append(evidence["provider_timestamp"])

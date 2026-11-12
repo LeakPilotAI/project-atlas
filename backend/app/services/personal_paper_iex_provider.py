@@ -19,7 +19,7 @@ class PersonalPaperIEXProvider:
             if (view.get("schema") != "ATLAS_ALPACA_IEX_VIEW_V1"
                     or view.get("feed_id") != "ALPACA_IEX_V1"
                     or view.get("scope") != "SINGLE_EXCHANGE_NOT_NBBO"
-                    or view.get("size_units") != "ROUND_LOTS"
+                    or view.get("size_units") != "SHARES"
                     or view.get("authenticated") is not True
                     or view.get("subscribed") is not True
                     or view.get("connection") != "CONNECTED"
@@ -35,8 +35,9 @@ class PersonalPaperIEXProvider:
                     or row.get("timestamp") is None):
                 raise ValueError("IEX_QUOTE_GENERATION_INVALID")
         return {"symbol": symbol, "state": row["state"],
+                "size_units": "SHARES",
                 "bid": row["bid"], "ask": row["ask"],
-                "bid_lots": row["bid_lots"], "ask_lots": row["ask_lots"],
+                "bid_shares": row["bid_shares"], "ask_shares": row["ask_shares"],
                 "timestamp": row["timestamp"],
                 "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP",
                 "source": "ALPACA_IEX_PROVIDER_QUOTE"}

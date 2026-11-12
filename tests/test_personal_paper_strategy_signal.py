@@ -9,7 +9,7 @@ NOW = datetime(2026, 11, 6, 20, tzinfo=UTC)
 
 def quote(price="80"):
     return {"symbol": "MSFT", "state": "FRESH", "bid": price, "ask": price,
-            "bid_lots": 2, "ask_lots": 2, "timestamp": NOW.isoformat(),
+            "bid_shares": 2, "ask_shares": 2, "size_units": "SHARES", "timestamp": NOW.isoformat(),
             "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
 
 
@@ -387,7 +387,7 @@ def test_original_producer_with_real_iex_feed_adapter_and_disposable_journal(tmp
     feed.authenticated = feed.subscribed = True  # Explicit synthetic fixture state
     feed.connection = "CONNECTED"
     feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "79.99", "ask": "80",
-                           "bid_lots": 2, "ask_lots": 2, "timestamp": now.isoformat(),
+                           "bid_shares": 2, "ask_shares": 2, "size_units": "SHARES", "timestamp": now.isoformat(),
                            "source_timestamp": now.timestamp(), "generation": feed.generation}
     provider = PersonalPaperIEXProvider(feed)
     path = tmp_path / "forward.jsonl"
@@ -474,7 +474,7 @@ def test_original_producer_real_operator_installation_iex_adapter_and_journal(tm
     feed.authenticated = feed.subscribed = True  # Simulated socket status, not live auth
     feed.connection = "CONNECTED"
     feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "79.99", "ask": "80",
-                           "bid_lots": 2, "ask_lots": 2, "timestamp": now.isoformat(),
+                           "bid_shares": 2, "ask_shares": 2, "size_units": "SHARES", "timestamp": now.isoformat(),
                            "source_timestamp": now.timestamp(), "generation": feed.generation}
     provider = PersonalPaperIEXProvider(feed)
     path = tmp_path / "forward.jsonl"
@@ -513,7 +513,7 @@ def test_leased_published_tick_planner_no_fill_and_existing_position(tmp_path, m
     feed.authenticated = feed.subscribed = True
     feed.connection = "CONNECTED"
     feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "79.99", "ask": "80",
-                           "bid_lots": 5, "ask_lots": 5, "timestamp": now.isoformat(),
+                           "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES", "timestamp": now.isoformat(),
                            "source_timestamp": now.timestamp(), "generation": feed.generation}
     path = tmp_path / "forward.jsonl"
     initialize_paper_account(account_id="fixture-forward", opening_cash=1000,
@@ -641,7 +641,7 @@ def test_bounded_session_original_source_real_lease_feed_and_journal(tmp_path, m
         clock.count += 1
         now[0] = stamp
         feed.quotes["MSFT"] = {"symbol": "MSFT", "bid": "79.99", "ask": "80",
-                               "bid_lots": 5, "ask_lots": 5,
+                               "bid_shares": 5, "ask_shares": 5, "size_units": "SHARES",
                                "timestamp": stamp.isoformat(),
                                "source_timestamp": stamp.timestamp(),
                                "generation": feed.generation}

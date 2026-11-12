@@ -186,6 +186,7 @@ class ReadonlyIEXEventConsumer:
             raise ValueError("READONLY_IEX_CONSUMER_NOT_STARTED")
         if (type(event) is not dict or event.get("symbol") != self.symbol
                 or event.get("provider") != "ALPACA_IEX"
+                or event.get("size_units") != "SHARES"
                 or event.get("paper_fill_authorized") is not False
                 or event.get("live_order_authorized") is not False):
             raise ValueError("READONLY_IEX_CONSUMER_EVENT_REFUSED")
@@ -210,9 +211,9 @@ class ReadonlyIEXEventConsumer:
                 same_prices = False
             if (evidence_stamp.astimezone(UTC) != stamp.astimezone(UTC)
                     or not same_prices
-                    or type(event.get("bid_lots")) is not int
-                    or type(event.get("ask_lots")) is not int
-                    or event["bid_lots"] <= 0 or event["ask_lots"] <= 0):
+                    or type(event.get("bid_shares")) is not int
+                    or type(event.get("ask_shares")) is not int
+                    or event["bid_shares"] <= 0 or event["ask_shares"] <= 0):
                 raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_QUOTE_CHANGED")
             if decision.get("publication_read_verified") is not True:
                 raise ValueError("READONLY_IEX_CONSUMER_PUBLISHED_SOURCE_UNVERIFIED")
@@ -221,7 +222,8 @@ class ReadonlyIEXEventConsumer:
             now = self.clock()
             quote = {"symbol": self.symbol, "state": "FRESH",
                      "bid": event.get("bid"), "ask": event.get("ask"),
-                     "bid_lots": event.get("bid_lots"), "ask_lots": event.get("ask_lots"),
+                     "bid_shares": event.get("bid_shares"), "ask_shares": event.get("ask_shares"),
+                     "size_units": event.get("size_units"),
                      "timestamp": event["timestamp"],
                      "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
             decision = evaluate_iex_quality_dips_signal(

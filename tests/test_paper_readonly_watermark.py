@@ -159,6 +159,7 @@ def test_iex_callback_consumer_persists_events_and_refuses_replay(tmp_path):
     advance_watermark(path, symbol="MSFT", provider_timestamp=stamp.isoformat())
     event = {"symbol": "MSFT", "provider": "ALPACA_IEX",
              "timestamp": (stamp + timedelta(seconds=1)).isoformat(),
+             "size_units": "SHARES",
              "paper_fill_authorized": False, "live_order_authorized": False}
     with ReadonlyIEXEventConsumer(path=path, symbol="MSFT") as consumer:
         consumer.on_fresh_quote(event)
@@ -201,7 +202,7 @@ def test_iex_callback_recomputes_v3_before_committing_watermark(tmp_path):
                 "evidence_quality": "HIGH", "thesis": "INTACT", "value_trap": False}
     event = {"symbol": "MSFT", "provider": "ALPACA_IEX",
              "timestamp": (now - timedelta(seconds=1)).isoformat(),
-             "bid": "80", "ask": "80", "bid_lots": 2, "ask_lots": 2,
+             "bid": "80", "ask": "80", "bid_shares": 2, "ask_shares": 2, "size_units": "SHARES",
              "paper_fill_authorized": False, "live_order_authorized": False}
     with ReadonlyIEXEventConsumer(path=path, symbol="MSFT",
                                   research=research, clock=lambda: now) as consumer:
@@ -230,6 +231,7 @@ def test_iex_published_mode_refuses_fake_ports_before_watermark_advance(tmp_path
         with pytest.raises(ValueError, match="QD_PUBLISHED_IEX_BOUND_PORTS_REQUIRED"):
             consumer.on_fresh_quote({"symbol": "MSFT", "provider": "ALPACA_IEX",
                                      "timestamp": (now - timedelta(seconds=1)).isoformat(),
+                                     "size_units": "SHARES",
                                      "paper_fill_authorized": False, "live_order_authorized": False})
         assert consumer.accepted == 0
     assert read_watermark(path, symbol="MSFT") == previous
@@ -257,14 +259,14 @@ def test_published_iex_callback_checks_full_quote_and_source_before_commit(tmp_p
                               "evidence_class": "FORWARD_COLLECTION", "timestamp": now.isoformat()},
               "board": [research]}]}
     provider_quote = {"symbol": "MSFT", "state": "FRESH", "bid": "80", "ask": "80",
-                      "bid_lots": 2, "ask_lots": 2, "timestamp": stamp,
+                      "bid_shares": 2, "ask_shares": 2, "size_units": "SHARES", "timestamp": stamp,
                       "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
     pub = object.__new__(QualityDipsSourcePublication)
     provider = object.__new__(PersonalPaperIEXProvider)
     monkeypatch.setattr(QualityDipsSourcePublication, "read_current", lambda self: packet)
     monkeypatch.setattr(PersonalPaperIEXProvider, "read_iex_quote", lambda self, symbol: provider_quote)
     event = {"symbol": "MSFT", "provider": "ALPACA_IEX", "timestamp": stamp,
-             "bid": "80", "ask": "80", "bid_lots": 2, "ask_lots": 2,
+             "bid": "80", "ask": "80", "bid_shares": 2, "ask_shares": 2, "size_units": "SHARES",
              "paper_fill_authorized": False, "live_order_authorized": False}
     with ReadonlyIEXEventConsumer(path=path, symbol="MSFT", publication=pub,
                                   provider=provider, clock=lambda: now) as consumer:
@@ -273,7 +275,7 @@ def test_published_iex_callback_checks_full_quote_and_source_before_commit(tmp_p
         assert consumer.accepted == 0
         assert read_watermark(path, symbol="MSFT") == previous
         with pytest.raises(ValueError, match="PUBLISHED_QUOTE_CHANGED"):
-            consumer.on_fresh_quote({**event, "bid_lots": 0})
+            consumer.on_fresh_quote({**event, "bid_shares": 0})
         consumer.on_fresh_quote(event)
         assert consumer.accepted == 1
         assert consumer.last_strategy["publication_read_verified"] is True

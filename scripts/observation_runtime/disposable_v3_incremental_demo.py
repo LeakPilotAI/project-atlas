@@ -39,7 +39,8 @@ def run_incremental_demo(*, scenario="take_profit"):
         for index, (bid, ask) in enumerate(scenarios[scenario]):
             now = start + timedelta(seconds=index)
             quote = {"symbol": "MSFT", "state": "FRESH", "bid": bid,
-                     "ask": ask, "bid_lots": 5, "ask_lots": 5,
+                     "ask": ask, "bid_shares": 5, "ask_shares": 5,
+                     "size_units": "SHARES",
                      "timestamp": now.isoformat(),
                      "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP"}
             tick = execute_incremental_test_v3_tick(

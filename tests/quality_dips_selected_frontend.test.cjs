@@ -46,8 +46,8 @@ test('unverified native cuts and currency substitutions refuse apparent financia
   d.accounts=accountCuts();assert.match(ui.renderUnified(d,(STAMP+6)*1000),/STALE \/ CLOCK UNCERTAIN/);
 });
 function iexView(){return {schema:'ATLAS_ALPACA_IEX_VIEW_V1',feed:'IEX',scope:'SINGLE_EXCHANGE_NOT_NBBO',
-  size_units:'ROUND_LOTS',connection:'CONNECTED',authenticated:true,subscribed:true,paper_startup_authorized:false,
-  observed_at:STAMP,quotes:[{symbol:'MSFT',bid:'100',ask:'100.1',bid_lots:1,ask_lots:2,
+  size_units:'SHARES',connection:'CONNECTED',authenticated:true,subscribed:true,paper_startup_authorized:false,
+  observed_at:STAMP,quotes:[{symbol:'MSFT',bid:'100',ask:'100.1',bid_shares:1,ask_shares:2,
     timestamp:new Date(STAMP*1000).toISOString(),state:'FRESH'}]};}
 
 test('IEX displays quote evidence without financial enrollment or extra requests',async()=>{
@@ -68,6 +68,14 @@ test('IEX labels are escaped and unsupported feed is refused',()=>{
   const v=iexView();v.quotes[0].symbol='<img src=x>';assert.match(ui.renderMarket(v,STAMP*1000),/&lt;img/);
   v.scope='NBBO';assert.match(ui.renderMarket(v,STAMP*1000),/refused/);
 });
+test('IEX share-size display refuses legacy lot units instead of misrepresenting liquidity',()=>{
+  const v=iexView();
+  assert.match(ui.renderMarket(v,STAMP*1000),/Bid shares/);
+  assert.match(ui.renderMarket(v,STAMP*1000),/Ask shares/);
+  v.size_units='ROUND_LOTS';
+  assert.match(ui.renderMarket(v,STAMP*1000),/UNAVAILABLE or refused/);
+});
+
 test('IEX network failure clears its quote display without legacy fallback',async()=>{
   const d=payload();d.market_data=iexView();const h=harness(d);await h.controller.load();
   h.setData(new Error('offline'));await h.controller.load();assert.match(h.elements.paperMarket.innerHTML,/UNAVAILABLE/);

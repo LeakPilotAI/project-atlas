@@ -11,8 +11,9 @@ from app.services.personal_paper_price_evidence import (
 def _quote(now):
     return {
         "symbol": "MSFT", "state": "FRESH", "bid": "399.99", "ask": "400.01",
-        "bid_lots": 2, "ask_lots": 3, "timestamp": now.isoformat(),
+        "bid_shares": 2, "ask_shares": 3, "timestamp": now.isoformat(),
         "timestamp_basis": "PROVIDER_EVENT_TIMESTAMP",
+        "size_units": "SHARES",
     }
 
 
@@ -26,7 +27,8 @@ def test_fresh_provider_bid_ask_validates_without_authorizing_execution():
 
 @pytest.mark.parametrize("mutation", [
     {"state": "STALE"}, {"symbol": "SPY"}, {"bid": "NaN"},
-    {"ask": "390"}, {"bid_lots": 0}, {"timestamp_basis": "REST_REQUEST_START"},
+    {"ask": "390"}, {"bid_shares": 0}, {"timestamp_basis": "REST_REQUEST_START"},
+    {"size_units": "ROUND_LOTS"}, {"size_units": None},
     {"timestamp": "2026-11-06T20:00:00"}, {"timestamp": "not a timestamp"},
 ])
 def test_rejects_bad_evidence(mutation):
