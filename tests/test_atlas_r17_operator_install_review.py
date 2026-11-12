@@ -18,7 +18,7 @@ def test_original_windows_release_operator_review_is_unapproved_and_nonfinancial
     assert record["cpu_guard_sha256"] == review.installer.CPU_GUARD_SHA256
     assert record["source_files"] == 1044
     assert record["planned_native_files"] == 10610
-    assert record["planned_bytes"] == 264583312
+    assert record["planned_bytes"] == 264594673
     assert record["selected_native_predecessor"] == "R16"
     assert record["installer_max_logical_processors"] == 2
     assert record["host_busy_threshold_percent"] == 70
@@ -53,7 +53,7 @@ def test_foreign_or_financial_status_never_becomes_a_review_packet(
         "native_target": str(review.installer.TARGET),
         "planned_native_files": 10610,
         "planned_source_files": 1044,
-        "planned_bytes": 264583312,
+        "planned_bytes": 264594673,
     }
     monkeypatch.setattr(review.installer, "inspect", lambda: deepcopy(fixture))
     monkeypatch.setattr(review.installer, "require_selected_r16", lambda: True)

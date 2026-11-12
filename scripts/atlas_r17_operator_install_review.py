@@ -1,4 +1,4 @@
-"""Read-only R17-r06 operator decision review; never grants installation.
+"""Read-only R17-r07 operator decision review; never grants installation.
 
 Resolves the exact selected R16 predecessor, frozen R17 archive and native
 destination, host CPU guard, code-only authority limits, and a SID fingerprint.
@@ -41,7 +41,7 @@ def operator_review():
             or approved_code["archive_sha256"] != installer.ARCHIVE_SHA
             or approved_code["native_target"] != str(installer.TARGET)
             or approved_code["planned_native_files"] != 10610
-            or approved_code["planned_bytes"] != 264583312):
+            or approved_code["planned_bytes"] != 264594673):
         raise ValueError("R17_CODE_ONLY_OPERATOR_REVIEW_PRECONDITIONS_REFUSED")
     sid = current_sid()
     if type(sid) is not str or not sid.startswith("S-1-"):

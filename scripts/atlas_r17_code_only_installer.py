@@ -58,12 +58,12 @@ from scripts.observation_runtime.personal_existing_native_resource_evidence impo
 
 ROOT = Path("D:/Work/Project Atlas")
 DIAG = ROOT / "logs/diagnostics"
-REVIEW_DIR = DIAG / "atlas-r17-source-only-20261112-r06"
+REVIEW_DIR = DIAG / "atlas-r17-source-only-20261112-r07"
 REVIEW = REVIEW_DIR / "source-and-native-plan-review.json"
-REVIEW_SHA = "323673e5aa9e1f31c7c06e11b0d5ec9c785e6c9ecf05246c1133c8781fb7412b"
-SOURCE = "fba8a2477f844e3384f8030eceab1989f79eb0ab"
-ARCHIVE_SHA = "97c09b7f74805caa1b6e63fa49c04bfbc38763f8ad4ff24a6980cc90c74c81c8"
-INVENTORY_SHA = "071f1b4072ec38a9aef3f111fcfc055a0ad8299198bf569d17e84407c2b46cae"
+REVIEW_SHA = "0431538e34d1f971c9a11cf5245e30e335292f6e6f73c5e1afb6bff05c0a0c61"
+SOURCE = "471205f2c4eaff6e3c4b17cc19f7e9d1a40522ae"
+ARCHIVE_SHA = "246be0782ce96b6013cff80b029d92ab8219f2dc139d3ee3b483d7bd6a73aa89"
+INVENTORY_SHA = "d090e7e5541d3ed3b9f012c77c36330d8942716b55f64f6a1992f9b76b18fedd"
 ARCHIVE = REVIEW_DIR / "package/atlas-source.zip"
 TARGET = Path("D:/AtlasRuntime/releases") / SOURCE
 RECEIPT = DIAG / ("qd-unselected-release-" + SOURCE + ".json")
@@ -77,7 +77,7 @@ EXPECTED_SOURCE_FILES = 1044
 EXPECTED_DEPENDENCY_FILES = 9566
 EXPECTED_TOTAL_FILES = 10610
 EXPECTED_TOTAL_DIRECTORIES = 914
-EXPECTED_TOTAL_BYTES = 264583312
+EXPECTED_TOTAL_BYTES = 264594673
 REVIEW_MAX_BYTES = 8192
 CPU_GUARD_FILE = ROOT / "scripts/observation_runtime/atlas_r17_cpu_budget.py"
 CPU_GUARD_SHA256 = "a162948f7d786b36b87ee00cbb29fcf3a457bf0ba735cba6e12565ebe5568e2c"
@@ -194,7 +194,7 @@ def inspect_prepared():
         REVIEW, REVIEW_SHA, max_bytes=REVIEW_MAX_BYTES))
     # JSON lives inside diagnostics but must precisely match the frozen
     # SOURCE archive. It has NO approval effect.
-    if (review.get("schema") != "ATLAS_R17_R06_FULL_STOP_FIRST_24X7_SOURCE_ONLY_REVIEW_V1"
+    if (review.get("schema") != "ATLAS_R17_R07_EXPLICIT_PERP_RESTING_LANE_SOURCE_ONLY_REVIEW_V1"
             or review.get("status") != "SOURCE_AND_NATIVE_LAYOUT_PLAN_VERIFIED_NOT_INSTALLED"
             or review.get("source_commit") != SOURCE
             or review.get("frozen_source_archive_sha256") != ARCHIVE_SHA

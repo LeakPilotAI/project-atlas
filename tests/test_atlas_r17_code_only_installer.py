@@ -153,7 +153,7 @@ def test_pinned_review_and_archive_exact_real_plan_readonly():
     assert preview["source_commit"] == installer.SOURCE
     assert preview["planned_source_files"] == 1044
     assert preview["planned_native_files"] == 10610
-    assert preview["planned_bytes"] == 264583312
+    assert preview["planned_bytes"] == 264594673
     assert preview["separate_approval_pinned"] is False
     assert not preview["installed"]
     assert not preview["selection_allowed"]
