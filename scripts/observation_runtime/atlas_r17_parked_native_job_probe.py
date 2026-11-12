@@ -127,8 +127,10 @@ def validate_report(row):
     return row
 
 
-def probe():
+def probe(*, verify_structural_rosters=False):
     """Bounded one-shot local native PROCESS; all handles closed on every exit."""
+    if type(verify_structural_rosters) is not bool:
+        raise ValueError('R17_PARKED_ROSTER_MODE_EXACT_BOOLEAN_REQUIRED')
     if os.name != "nt" or sys.platform != "win32":
         raise ValueError("R17_PARKED_EXACT_WINDOWS_HOST_REQUIRED")
     selected = require_selected_r17_nonfinancial()
@@ -231,6 +233,17 @@ def probe():
                 child.process, child.job, ctypes.byref(member))
                 or not member.value or api.active_processes(child.job) != 1):
             raise ValueError("R17_PARKED_ORIGINAL_PROCESS_NOT_IN_OWNED_JOB")
+        if verify_structural_rosters:
+            from scripts.observation_runtime.atlas_r17_native_roster_structure import (
+                verify_unaccepted_selected_rosters,
+            )
+            rosters = verify_unaccepted_selected_rosters(
+                original=first, evidence=before, release_digest=selected['artifact_digest'],
+                original_image=IMAGE,
+            )
+            if (rosters['original_process_writer_role_count'] != 12
+                    or rosters['financial_writer_enrolled'] != 0):
+                raise ValueError('R17_PARKED_ORIGINAL_ROSTER_PROOF_REFUSED')
         for _ in range(3):
             if (exact_process(api,child.process, expected_pid=first["pid"]) != first
                     or api.active_processes(child.job) != 1
@@ -262,7 +275,7 @@ def probe():
     if (inspect_two_lane_native_roots()!=before
             or require_selected_r17_nonfinancial()!=selected):
         raise ValueError("R17_PARKED_AFTER_STOP_ORIGINAL_NATIVE_IDENTITY_CHANGED")
-    return validate_report({
+    result = validate_report({
         "schema": SCHEMA,
         "status": "R17_ORIGINAL_JOB_NONFINANCIAL_ROOT_HOLD_STOP_PASS",
         "selected_head": HEAD,
@@ -284,9 +297,25 @@ def probe():
         "live_trading_authorized": False,
         "owned_child_retained_after_return": False,
     })
+    if verify_structural_rosters:
+        return {
+            'schema':'ATLAS_R17_R07_ORIGINAL_PROCESS_TWELVE_UNACCEPTED_WRITER_ROSTERS_V1',
+            'status':'R17_ORIGINAL_PROCESS_STRUCTURAL_ROSTER_VERIFIED_NO_INCEPTION',
+            'original_job_proof':result,
+            'unaccepted_twelve_original_process_writer_roles_verified':True,
+            'financial_writer_enrolled':0,
+            'financial_account_files_created':0,
+            'paper_start_authorized':False,
+            'live_trading_authorized':False,
+        }
+    return result
 
 
 SCOPE = "R17_ORIGINAL_JOB_TWELVE_EMPTY_NATIVE_ROOTS_READONLY_NO_TRADING"
+ROSTER_SCOPE = "R17_ORIGINAL_PROCESS_TWELVE_UNACCEPTED_ROSTERS_READONLY_NO_TRADING"
+ROSTER_RECEIPT = RECEIPT.with_name(
+    'atlas-r17-r07-original-nonfinancial-writer-roles-20261112.json'
+)
 
 
 def inspect():
@@ -315,6 +344,7 @@ def main(argv=None):
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--inspect", action="store_true")
     group.add_argument("--execute-readonly", action="store_true")
+    group.add_argument("--execute-structural-rosters", action="store_true")
     parser.add_argument("--confirm-scope")
     args = parser.parse_args(argv)
     if args.inspect:
@@ -322,21 +352,32 @@ def main(argv=None):
             parser.error("R17_PARKED_INSPECTION_MUST_NOT_INCLUDE_EXECUTION_SCOPE")
         print(json.dumps(inspect(), sort_keys=True), flush=True)
         return 0
-    if args.confirm_scope != SCOPE:
+    requested_scope = ROSTER_SCOPE if args.execute_structural_rosters else SCOPE
+    if args.confirm_scope != requested_scope:
         parser.error("R17_PARKED_EXACT_NONFINANCIAL_CHILD_SCOPE_REQUIRED")
+    target_receipt = ROSTER_RECEIPT if args.execute_structural_rosters else RECEIPT
     # The real bounded native child inherits the host's restricted process
     # affinity and low-priority startup. Refuse busy-host admission; never
     # launch multiple workers or run a permanent financial process here.
     from scripts.observation_runtime.atlas_r17_cpu_budget import NativeR17CpuBudget
 
-    if os.path.lexists(RECEIPT):
+    if os.path.lexists(target_receipt):
         raise ValueError('R17_PARKED_EXACT_RECEIPT_EXISTS_NO_SECOND_LAUNCH')
     with NativeR17CpuBudget() as cpu:
         cpu.pulse()
-        report = probe()
+        report = probe(verify_structural_rosters=args.execute_structural_rosters)
         cpu.pulse()
+    if args.execute_structural_rosters:
+        if (report.get('status')
+                != 'R17_ORIGINAL_PROCESS_STRUCTURAL_ROSTER_VERIFIED_NO_INCEPTION'
+                or report.get('unaccepted_twelve_original_process_writer_roles_verified') is not True
+                or report.get('financial_writer_enrolled') != 0):
+            raise ValueError('R17_PARKED_STRUCTURAL_ROSTER_OUTCOME_REFUSED')
+        validate_report(report['original_job_proof'])
+    else:
+        validate_report(report)
     raw = (json.dumps(report, sort_keys=True, indent=2)+'\n').encode('utf-8')
-    fd = os.open(RECEIPT, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_BINARY, 0o600)
+    fd = os.open(target_receipt, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_BINARY, 0o600)
     with os.fdopen(fd, 'wb') as file:
         file.write(raw)
         file.flush()
